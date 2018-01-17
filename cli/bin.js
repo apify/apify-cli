@@ -3,8 +3,7 @@
 'use strict';
 const args = require('minimist')(process.argv.slice(2));
 // const pwd = process.cwd();
-
-console.log(args);
+// console.log(args);
 
 const cmd = args._.shift();
 

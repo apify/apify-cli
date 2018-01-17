@@ -15,9 +15,8 @@ const initAct = (args) => {
     fs.copyFileSync(`${__dirname}/../templates/${template}/main.js`, path.join(actFolderDir, 'main.js'));
     fs.copyFileSync(`${__dirname}/../templates/${template}/INPUT`, path.join(actFolderDir, 'kvs-local', 'INPUT'));
     console.log('Installing npm packages ...');
-    shell.exec('npm init');
     shell.exec('npm install');
-    console.log(`Local act ${actName} created.`);
+    console.log(`Local act ${actName} created. Run it with "cd ${actName}" and "npm run run-local"`);
 };
 
 module.exports = (args) => {
