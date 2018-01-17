@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-var shell = require('shelljs');
+const shell = require('shelljs');
 
 const initAct = (args) => {
     const pwd = process.cwd();
@@ -14,6 +14,7 @@ const initAct = (args) => {
     fs.copyFileSync(`${__dirname}/../templates/${template}/package.json`, path.join(actFolderDir, 'package.json'));
     fs.copyFileSync(`${__dirname}/../templates/${template}/main.js`, path.join(actFolderDir, 'main.js'));
     fs.copyFileSync(`${__dirname}/../templates/${template}/INPUT`, path.join(actFolderDir, 'kvs-local', 'INPUT'));
+    // Install npm
     console.log('Installing npm packages ...');
     shell.exec('npm install');
     console.log(`Local act ${actName} created. Run it with "cd ${actName}" and "npm run run-local"`);
