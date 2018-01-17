@@ -1,0 +1,35 @@
+{
+  "name": "apify-cli",
+  "version": "0.0.1",
+  "description": "Command line client for Apify platform.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "apify": "cli/bin.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/drobnikj/apify-cli.git"
+  },
+  "keywords": [
+    "apify",
+    "client",
+    "node",
+    "command",
+    "line",
+    "bash"
+  ],
+  "author": "Jakub Drobnik <jakub.drobnik@apify.com>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/drobnikj/apify-cli/issues"
+  },
+  "homepage": "https://github.com/drobnikj/apify-cli#readme",
+  "dependencies": {
+    "cmnd": "^0.2.1",
+    "minimist": "^1.2.0",
+    "shelljs": "^0.8.0"
+  }
+}

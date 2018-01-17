@@ -1,0 +1,21 @@
+{
+    "name": "your-act-name",
+    "version": "1.0.0",
+    "description": "",
+    "main": "main.js",
+    "dependencies": {
+        "apify": "latest"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "run-local": "APIFY_DEV_KEY_VALUE_STORE_DIR=./kvs-local/ node main.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://drobnik@bitbucket.org/drobnik/apify-acts.git"
+    },
+    "author": "Jakub Drobnik <drobnik.j@gmail.com>",
+    "license": "ISC",
+    "homepage": "https://bitbucket.org/drobnik/apify-acts#readme"
+}
