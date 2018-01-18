@@ -28,7 +28,8 @@
   },
   "homepage": "https://github.com/drobnikj/apify-cli#readme",
   "dependencies": {
-    "cmnd": "^0.2.1",
+    "apify-client": "^0.1.60",
+    "inquirer": "^5.0.0",
     "minimist": "^1.2.0",
     "shelljs": "^0.8.0"
   }

@@ -1,8 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 const shell = require('shelljs');
+const { setLocalConfig } = require('../lib/configs');
 
-const initAct = (args) => {
+
+const initAct = async (args) => {
     const pwd = process.cwd();
     if (!args.n) console.log('Specified act name with param -n like "apify acts init -n my_act"');
     const actName = args.n;
@@ -17,10 +19,15 @@ const initAct = (args) => {
     // Install npm
     console.log('Installing npm packages ...');
     shell.exec('npm install');
+    await setLocalConfig({ name: actName }, actFolderDir);
     console.log(`Local act ${actName} created. Run it with "cd ${actName}" and "npm run run-local"`);
 };
 
-module.exports = (args) => {
+module.exports = async (args) => {
     const action = args._.shift();
-    if (action === 'init') initAct(args);
+    switch (action) {
+        case 'init':
+            await initAct(args);
+            break;
+    }
 };
