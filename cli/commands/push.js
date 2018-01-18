@@ -6,10 +6,11 @@ module.exports = async (args, config) => {
     if (!localConfig || !localConfig.name) return; //TODO
     const apifyClient = new ApifyClient(config);
     if (localConfig.id) {
-        // TODO
+        const fieldsToUpdate = { versions: localConfig.versions };
+        const act = await apifyClient.acts.updateAct({ actId: localConfig.id, act: fieldsToUpdate });
+        console.log(act);
     } else {
         // init push
-        console.log(localConfig)
         const act = await apifyClient.acts.createAct({ act: localConfig });
         console.log(act);
         await setLocalConfig(act);
