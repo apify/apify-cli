@@ -1,33 +1,39 @@
 #!/usr/bin/env node
 
+const parseArgs = require('minimist');
+
 (async () => {
-    const args = require('minimist')(process.argv.slice(2));
+    const args = parseArgs(process.argv.slice(2));
     const { getConfig } = require('./lib/configs');
     // const pwd = process.cwd();
     // console.log(args);
     // https://www.sitepoint.com/javascript-command-line-interface-cli-node-js/
 
     const cmd = args._.shift();
-    const config = await getConfig();
 
     switch (cmd) {
-        case undefined:
-            console.log('Specified command or use apify --help');
+        case 'login':
+        case 'logout':
+        case 'help':
+        case 'create':
+        case 'init':
+        case 'run':
+        case 'push':
+        case 'call':
+            await require(`./commands/${cmd}`)(args);
             break;
         case 'acts':
-            await require('./commands/acts')(args);
+        case 'keyValueStores':
+        case 'crawlers':
+        case 'datasets':
+        case 'logs':
+            console.log('We are working on this command, stay tune https://github.com/apifytech/apify-cli');
             break;
-        case 'login':
-            await require('./commands/login')(args);
-            break;
-        case 'push':
-        case 'build':
-        case 'run':
-            if (!config) console.log('You need to be logged with "apify login"');
-            await require(`./commands/${cmd}`)(args, config);
+        case undefined:
+            console.log('Specified command or call for help with apify help.');
             break;
         default:
-            console.log(`I don't know command ${cmd}`);
+            console.log(`I don't know command ${cmd}, call for help with apify help.`);
     }
     process.exit(0)
 })();

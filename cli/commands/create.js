@@ -24,10 +24,5 @@ const initAct = async (args) => {
 };
 
 module.exports = async (args) => {
-    const action = args._.shift();
-    switch (action) {
-        case 'init':
-            await initAct(args);
-            break;
-    }
+    await initAct(args);
 };
