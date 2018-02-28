@@ -4,18 +4,18 @@
     "description": "",
     "main": "main.js",
     "dependencies": {
-        "apify": "latest"
+        "apify": "^0.4.48"
     },
     "devDependencies": {},
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "run-local": "APIFY_DEV_KEY_VALUE_STORE_DIR=./kvs-local/ node main.js"
+        "run-local": "APIFY_LOCAL_EMULATION_DIR=./apify_local APIFY_DEFAULT_KEY_VALUE_STORE_ID=default APIFY_DEFAULT_DATASET_ID=default node main.js"
     },
     "repository": {
         "type": "git",
-        "url": "git+https://drobnik@bitbucket.org/drobnik/apify-acts.git"
+        "url": ""
     },
-    "author": "Jakub Drobnik <drobnik.j@gmail.com>",
+    "author": "",
     "license": "ISC",
-    "homepage": "https://bitbucket.org/drobnik/apify-acts#readme"
+    "homepage": ""
 }

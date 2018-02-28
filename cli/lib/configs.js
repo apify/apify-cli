@@ -1,22 +1,24 @@
 const os = require('os');
 const path = require('path');
 const fs = require('fs');
+const loadJSON = require('load-json-file');
+const writeJSON = require('write-json-file');
 const ApifyClient = require('apify-client');
 
 const GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
 const AUTH_FILE_PATH = path.join(GLOBAL_CONFIGS_FOLDER, 'auth.json');
 const LOCAL_CONFIG_NAME = 'apify.json';
 
-module.exports.getLocalAuth = async () => {
+const getLocalAuth = async () => {
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER) || !fs.existsSync(AUTH_FILE_PATH)) {
         console.log('You have to login using "apify login"');
         return;
     }
-    const auth = fs.readFileSync(AUTH_FILE_PATH, 'utf-8');
-    return JSON.parse(auth);
+    const auth = loadJSON.sync(AUTH_FILE_PATH);
+    return auth;
 };
 
-module.exports.setLocalAuth = async (token, userId) => {
+const setLocalAuth = async (token, userId) => {
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
         fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
     }
@@ -26,15 +28,15 @@ module.exports.setLocalAuth = async (token, userId) => {
     };
     // TODO: Use endpoint for get auth only with token
     const apifyClient = new ApifyClient(auth);
-    await apifyClient.crawlers.listCrawlers(); // Check if token works
-    fs.writeFileSync(AUTH_FILE_PATH, JSON.stringify(auth));
+    await apifyClient.crawlers.listCrawlers(); // Check if token works, otherwise throw error
+    writeJSON.sync(AUTH_FILE_PATH, auth);
 };
 
-module.exports.removeGlobalConfig = async () => {
+const removeGlobalConfig = async () => {
     fs.rmdirSync(GLOBAL_CONFIGS_FOLDER)
 };
 
-module.exports.getLocalConfig = async () => {
+const getLocalConfig = async () => {
     const localConfigPath = path.join(process.cwd(), LOCAL_CONFIG_NAME);
     if (!fs.existsSync(localConfigPath)) {
         console.log('Local config is missing!');
@@ -56,13 +58,15 @@ module.exports.getLocalConfig = async () => {
     return localConfig;
 };
 
-module.exports.setLocalConfig = async (localConfig, actDir) => {
+const setLocalConfig = async (localConfig, actDir) => {
     actDir = actDir || process.cwd();
-    fs.writeFileSync(path.join(actDir, LOCAL_CONFIG_NAME), JSON.stringify(localConfig));
+    writeJSON.sync(path.join(actDir, LOCAL_CONFIG_NAME), localConfig);
 };
 
-module.exports.getLocalInput = async () => {
-    const localInput = path.join(process.cwd(), 'kvs-local', 'INPUT');
-    if (!fs.existsSync(localInput)) return;
-    return (fs.existsSync(localInput)) ? fs.readFileSync(localInput, 'utf-8') : null;
+module.exports = {
+    getLocalAuth,
+    setLocalAuth,
+    removeGlobalConfig,
+    getLocalConfig,
+    setLocalConfig
 };

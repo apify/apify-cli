@@ -1,28 +1,44 @@
 const fs = require('fs');
 const path = require('path');
-const shell = require('shelljs');
+const copy = require('recursive-copy');
+const inquirer = require('inquirer');
+const execWithLog = require('../lib/exec');
+const outputs = require('../lib/outputs');
+const { updateLocalJSON } = require('../lib/misc');
 const { setLocalConfig } = require('../lib/configs');
-
-
-const initAct = async (args) => {
-    const pwd = process.cwd();
-    if (!args.n) console.log('Specified act name with param -n like "apify acts init -n my_act"');
-    const actName = args.n;
-    const template = args.t || 'basic';
-    const actFolderDir = path.join(pwd, actName);
-    // Create structure
-    fs.mkdirSync(actFolderDir);
-    fs.mkdirSync(path.join(actFolderDir, 'kvs-local'));
-    fs.copyFileSync(`${__dirname}/../templates/${template}/package.json`, path.join(actFolderDir, 'package.json'));
-    fs.copyFileSync(`${__dirname}/../templates/${template}/main.js`, path.join(actFolderDir, 'main.js'));
-    fs.copyFileSync(`${__dirname}/../templates/${template}/INPUT`, path.join(actFolderDir, 'kvs-local', 'INPUT'));
-    // Install npm
-    console.log('Installing npm packages ...');
-    shell.exec('npm install');
-    await setLocalConfig({ name: actName }, actFolderDir);
-    console.log(`Local act ${actName} created. Run it with "cd ${actName}" and "npm run run-local"`);
-};
+const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE } = require('../lib/consts');
 
 module.exports = async (args) => {
-    await initAct(args);
+    const actName = args._.shift();
+    if (!actName) {
+        outputs.error('Specified act name!');
+        return;
+    }
+    let template = args.template;
+    if (!template) {
+        const choices = Object.values(ACTS_TEMPLATES);
+        const answer = await inquirer.prompt([{
+            type: 'list',
+            name: 'template',
+            message: 'Which act do you want to create?',
+            default: DEFAULT_ACT_TEMPLATE,
+            choices,
+        }]);
+        template = answer.template;
+    }
+    const pwd = process.cwd();
+    const actFolderDir = path.join(pwd, actName);
+
+    // Create act structure
+    fs.mkdirSync(actFolderDir);
+    await copy(ACTS_TEMPLATES[template].dir, actFolderDir, { dot: true });
+    await setLocalConfig({ name: actName }, actFolderDir);
+    await updateLocalJSON(path.join(actFolderDir, 'package.json'), { name: actName });
+
+    // Run npm install in act dir
+    const cmd = 'npm install';
+    outputs.run(cmd);
+    await execWithLog(cmd, { cwd: actFolderDir });
+
+    outputs.success(`Act ${actName} was created. Run it with "apify run".`);
 };
