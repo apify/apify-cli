@@ -29,10 +29,13 @@
   "homepage": "https://github.com/drobnikj/apify-cli#readme",
   "dependencies": {
     "apify-client": "^0.1.60",
+    "archiver-promise": "^1.0.0",
     "child-process-promise": "^2.2.1",
+    "globy": "^0.1.8",
     "inquirer": "^5.0.0",
     "load-json-file": "^4.0.0",
     "minimist": "^1.2.0",
+    "parse-gitignore": "^0.4.0",
     "recursive-copy": "^2.0.9",
     "shelljs": "^0.8.0",
     "spawn-sync": "^1.0.15",

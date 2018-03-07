@@ -1,5 +1,6 @@
 const inquirer = require('inquirer');
-const { setLocalAuth } = require('../lib/configs');
+const { setLocalCredentials } = require('../lib/configs');
+const { success, error } = require('../lib/outputs');
 
 
 module.exports = async () => {
@@ -8,10 +9,10 @@ module.exports = async () => {
     console.log('You can find your userId and token on https://my.apify.com/account#/integrations.');
     const credentials = await inquirer.prompt([{ name: 'userId', message: 'userId:' }, { name: 'token', message: 'token:', type: 'password' }]);
     try {
-        await setLocalAuth(credentials.token, credentials.userId);
+        await setLocalCredentials(credentials.token, credentials.userId);
     } catch (e) {
-        console.log('Can not login to Apify with this credentials.');
+        error('Can not login to Apify with this credentials.');
         return;
     }
-    console.log('Logged into Apify!');
+    success('Logged into Apify!');
 };

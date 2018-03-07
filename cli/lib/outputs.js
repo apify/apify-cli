@@ -12,4 +12,8 @@ const run = (message) => {
     console.log(`${chalk.gray('Run:')} ${message}`);
 };
 
-module.exports = { error, success, run };
+const info = (message) => {
+    console.log(`${chalk.white('Info:')} ${message}`);
+};
+
+module.exports = { error, success, run, info };

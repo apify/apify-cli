@@ -19,23 +19,15 @@ Then install Apify client with:
 
 `apify login` - You can authenticate your local computer with your Apify account
 
-`apify acts init -n your-act-name` - This create directory with ready to use act
+`apify create act_name [--template template_name]` - This create directory with ready to use act
 
 ### Act commands
 
-`apify push` - Push your ready to use act to Apify cloud
-
-`apify build` - Build your act on Apify platform
-
-`apify run` - Run you act on Apify platform
-
+`apify push` - Push and build your ready to use act to Apify cloud
 
 ## Workflow
 
 1. `apify login` - Login
-2. `apify acts init -n my-first-act` - Create act boilerplate
+2. `apify create my-first-act` - Create act boilerplate
 3. `cd my-first-act`
-4. `npm run run-local` - Run act on local environment
 4. `apify push` - Push to Apify cloud
-4. `apify build` - Build act on Apify cloud
-6. `apify run` - Run act on Apify cloud

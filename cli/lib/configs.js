@@ -4,21 +4,27 @@ const fs = require('fs');
 const loadJSON = require('load-json-file');
 const writeJSON = require('write-json-file');
 const ApifyClient = require('apify-client');
+const { error } = require('./outputs');
 
 const GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
 const AUTH_FILE_PATH = path.join(GLOBAL_CONFIGS_FOLDER, 'auth.json');
 const LOCAL_CONFIG_NAME = 'apify.json';
 
-const getLocalAuth = async () => {
+const getLoggedClientOrError = async () => {
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER) || !fs.existsSync(AUTH_FILE_PATH)) {
-        console.log('You have to login using "apify login"');
+        error('You aren\'t logged call "apify login" to process login.');
         return;
     }
     const auth = loadJSON.sync(AUTH_FILE_PATH);
-    return auth;
+    const loggedClient = await getLoggedClient(auth);
+    if (!loggedClient) {
+        error('You aren\'t logged call "apify login" to process login.');
+        return;
+    }
+    return loggedClient;
 };
 
-const setLocalAuth = async (token, userId) => {
+const setLocalCredentials = async (token, userId) => {
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
         fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
     }
@@ -26,10 +32,22 @@ const setLocalAuth = async (token, userId) => {
         token,
         userId
     };
-    // TODO: Use endpoint for get auth only with token
-    const apifyClient = new ApifyClient(auth);
-    await apifyClient.crawlers.listCrawlers(); // Check if token works, otherwise throw error
-    writeJSON.sync(AUTH_FILE_PATH, auth);
+    const isUserLogged = await getLoggedClient(auth);
+    if (isUserLogged) {
+        writeJSON.sync(AUTH_FILE_PATH, auth);
+    } else {
+        error('Logging into Apify failed, token or userId in not correct.');
+    }
+};
+
+const getLoggedClient = async (auth) => {
+    try {
+        const apifiClient = new ApifyClient(auth);
+        await apifiClient.crawlers.listCrawlers();
+        return apifiClient;
+    } catch (e) {
+        return false;
+    }
 };
 
 const removeGlobalConfig = async () => {
@@ -39,23 +57,10 @@ const removeGlobalConfig = async () => {
 const getLocalConfig = async () => {
     const localConfigPath = path.join(process.cwd(), LOCAL_CONFIG_NAME);
     if (!fs.existsSync(localConfigPath)) {
-        console.log('Local config is missing!');
-        // TODO fix next steps
+        error('apify.json is missing in current dir! Call "apify init" to create it.');
         return;
     }
-    const localConfig = JSON.parse(fs.readFileSync(localConfigPath, 'utf-8'));
-    localConfig.versions = [
-        {
-            "versionNumber": "0.0",
-            "envVars": [],
-            "sourceType": "SOURCE_CODE",
-            "sourceCode": fs.readFileSync(path.join(process.cwd(), 'main.js'), 'utf-8'),
-            "baseDockerImage": "apify/actor-node-basic",
-            "applyEnvVarsToBuild": false,
-            "buildTag": "latest"
-        }
-    ];
-    return localConfig;
+    return loadJSON.sync(localConfigPath);
 };
 
 const setLocalConfig = async (localConfig, actDir) => {
@@ -64,8 +69,8 @@ const setLocalConfig = async (localConfig, actDir) => {
 };
 
 module.exports = {
-    getLocalAuth,
-    setLocalAuth,
+    getLoggedClientOrError,
+    setLocalCredentials,
     removeGlobalConfig,
     getLocalConfig,
     setLocalConfig
