@@ -36,7 +36,7 @@ const setLocalCredentials = async (token, userId) => {
     if (isUserLogged) {
         writeJSON.sync(AUTH_FILE_PATH, auth);
     } else {
-        error('Logging into Apify failed, token or userId in not correct.');
+        error('Logging into Apify failed, token or userId is not correct.');
     }
 };
 

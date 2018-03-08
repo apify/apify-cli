@@ -10,9 +10,9 @@ module.exports = async () => {
     const credentials = await inquirer.prompt([{ name: 'userId', message: 'userId:' }, { name: 'token', message: 'token:', type: 'password' }]);
     try {
         await setLocalCredentials(credentials.token, credentials.userId);
+        success('Logged into Apify!');
     } catch (e) {
         error('Can not login to Apify with this credentials.');
         return;
     }
-    success('Logged into Apify!');
 };
