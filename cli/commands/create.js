@@ -2,11 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const copy = require('recursive-copy');
 const inquirer = require('inquirer');
-const execWithLog = require('../lib/exec');
-const outputs = require('../lib/outputs');
-const { updateLocalJSON } = require('../lib/misc');
-const { setLocalConfig, setLocalEnv } = require('../lib/configs');
-const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE } = require('../lib/consts');
+const execWithLog = require('../utils/exec');
+const outputs = require('../utils/outputs');
+const { updateLocalJSON } = require('../utils/files');
+const { setLocalConfig, setLocalEnv } = require('../utils/configs');
+const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE, EMPTY_LOCAL_CONFIG } = require('../utils/consts');
 
 module.exports = async (args) => {
     const actName = args._.shift();
@@ -32,7 +32,7 @@ module.exports = async (args) => {
     // Create act structure
     fs.mkdirSync(actFolderDir);
     await copy(ACTS_TEMPLATES[template].dir, actFolderDir, { dot: true });
-    await setLocalConfig({ name: actName }, actFolderDir);
+    await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }), actFolderDir);
     await setLocalEnv(actFolderDir);
     await updateLocalJSON(path.join(actFolderDir, 'package.json'), { name: actName });
 

@@ -1,6 +1,6 @@
-const { getLocalConfig } = require('../lib/configs');
-const execWithLog = require('../lib/exec');
-const { APIFY_LOCAL_EMULATION_DIR, APIFY_DEFAULT_DATASET_ID, APIFY_DEFAULT_KEY_VALUE_STORE_ID } = require('../lib/consts');
+const { getLocalConfig } = require('../utils/configs');
+const execWithLog = require('../utils/exec');
+const { APIFY_LOCAL_EMULATION_DIR, APIFY_DEFAULT_DATASET_ID, APIFY_DEFAULT_KEY_VALUE_STORE_ID } = require('../utils/consts');
 
 module.exports = async (args) => {
     const localConfig = await getLocalConfig();

@@ -1,11 +1,11 @@
 const inquirer = require('inquirer');
-const { setLocalCredentials } = require('../lib/configs');
-const { success, error } = require('../lib/outputs');
+const { setLocalCredentials } = require('../utils/configs');
+const { success, error } = require('../utils/outputs');
 
 
 module.exports = async () => {
     // TODO: If we have API for user securities use it
-    // and prompt only token
+    // and prompts only token
     console.log('You can find your userId and token on https://my.apify.com/account#/integrations.');
     const credentials = await inquirer.prompt([{ name: 'userId', message: 'userId:' }, { name: 'token', message: 'token:', type: 'password' }]);
     try {
@@ -13,6 +13,5 @@ module.exports = async () => {
         success('Logged into Apify!');
     } catch (e) {
         error('Can not login to Apify with this credentials.');
-        return;
     }
 };

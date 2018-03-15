@@ -6,7 +6,7 @@ const writeJSON = require('write-json-file');
 const ApifyClient = require('apify-client');
 const { error } = require('./outputs');
 const { APIFY_LOCAL_EMULATION_DIR, APIFY_DEFAULT_DATASET_ID, APIFY_DEFAULT_KEY_VALUE_STORE_ID } = require('./consts');
-const { createFolderSync, updateLocalJSON } = require('./misc');
+const { createFolderSync, updateLocalJSON } = require('./files');
 
 const GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
 const AUTH_FILE_PATH = path.join(GLOBAL_CONFIGS_FOLDER, 'auth.json');
@@ -93,6 +93,15 @@ const setLocalEnv = async (actDir) => {
     }
 };
 
+const argsToCamelCase = (args) => {
+    const camelCasedArgs = {};
+    Object.keys(args).forEach((arg) => {
+        const camelCasedArg = arg.replace(/-(.)/g, $1 => $1.toUpperCase()).replace(/-/g, '');;
+        if (arg !== '_')  camelCasedArgs[camelCasedArg] = args[arg];
+    });
+    return camelCasedArgs;
+};
+
 module.exports = {
     getLoggedClientOrError,
     setLocalCredentials,
@@ -100,4 +109,5 @@ module.exports = {
     getLocalConfig,
     setLocalConfig,
     setLocalEnv,
+    argsToCamelCase,
 };

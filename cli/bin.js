@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 const parseArgs = require('minimist');
-const outputs = require('./lib/outputs');
-
+const outputs = require('./utils/outputs');
 
 (async () => {
     try {

@@ -1,5 +1,5 @@
-const { removeGlobalConfig } = require('../lib/configs');
-const { success } = require('../lib/outputs');
+const { removeGlobalConfig } = require('../utils/configs');
+const { success } = require('../utils/outputs');
 
 
 module.exports = async () => {

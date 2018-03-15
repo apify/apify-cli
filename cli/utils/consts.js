@@ -20,3 +20,10 @@ module.exports.APIFY_LOCAL_EMULATION_DIR = 'apify_local';
 module.exports.APIFY_DEFAULT_KEY_VALUE_STORE_ID = 'default';
 
 module.exports.APIFY_DEFAULT_DATASET_ID = 'default';
+
+module.exports.EMPTY_LOCAL_CONFIG = {
+    name: "",
+    actId: "",
+    versionNumber: "0.1",
+    buildTag: "latest",
+};

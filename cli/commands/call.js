@@ -1,4 +1,4 @@
-const { getLocalConfig, getLoggedClientOrError } = require('../lib/configs');
+const { getLocalConfig, getLoggedClientOrError } = require('../utils/configs');
 
 module.exports = async (args) => {
     const localConfig = await getLocalConfig();
