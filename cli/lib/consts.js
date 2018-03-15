@@ -1,4 +1,4 @@
-const ACTS_TEMPLATES = {
+module.exports.ACTS_TEMPLATES = {
     basic: {
         name: 'Basic act ("basic")',
         value: 'basic',
@@ -11,8 +11,12 @@ const ACTS_TEMPLATES = {
     }
 };
 
-const ACTS_TEMPLATE_LIST = Object.keys(ACTS_TEMPLATES);
+module.exports.ACTS_TEMPLATE_LIST = Object.keys(module.exports.ACTS_TEMPLATES);
 
-const DEFAULT_ACT_TEMPLATE = 'basic';
+module.exports.DEFAULT_ACT_TEMPLATE = 'basic';
 
-module.exports = { ACTS_TEMPLATES, ACTS_TEMPLATE_LIST, DEFAULT_ACT_TEMPLATE };
+module.exports.APIFY_LOCAL_EMULATION_DIR = 'apify_local';
+
+module.exports.APIFY_DEFAULT_KEY_VALUE_STORE_ID = 'default';
+
+module.exports.APIFY_DEFAULT_DATASET_ID = 'default';

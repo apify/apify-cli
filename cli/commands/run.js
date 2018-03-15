@@ -1,11 +1,9 @@
-const { getLocalConfig, getLocalInput } = require('../lib/configs');
-const ApifyClient = require('apify-client');
+const { getLocalConfig } = require('../lib/configs');
+const execWithLog = require('../lib/exec');
+const { APIFY_LOCAL_EMULATION_DIR, APIFY_DEFAULT_DATASET_ID, APIFY_DEFAULT_KEY_VALUE_STORE_ID } = require('../lib/consts');
 
-module.exports = async (args, config) => {
+module.exports = async (args) => {
     const localConfig = await getLocalConfig();
-    if (!localConfig || !localConfig.id) return; //TODO
-    const apifyClient = new ApifyClient(config);
-    const body = await getLocalInput();
-    const run = await apifyClient.acts.runAct({ actId: localConfig.id, body , contentType: 'application/json; charset=utf-8' });
-    console.log(run);
+    const cmd = `APIFY_LOCAL_EMULATION_DIR=./${APIFY_LOCAL_EMULATION_DIR} APIFY_DEFAULT_KEY_VALUE_STORE_ID=${APIFY_DEFAULT_KEY_VALUE_STORE_ID} APIFY_DEFAULT_DATASET_ID=${APIFY_DEFAULT_DATASET_ID} node main.js`;
+    await execWithLog(cmd);
 };

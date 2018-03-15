@@ -2,6 +2,7 @@
 const parseArgs = require('minimist');
 const outputs = require('./lib/outputs');
 
+
 (async () => {
     try {
         const args = parseArgs(process.argv.slice(2), { '--': false });

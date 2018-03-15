@@ -5,7 +5,7 @@ const inquirer = require('inquirer');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJSON } = require('../lib/misc');
-const { setLocalConfig } = require('../lib/configs');
+const { setLocalConfig, setLocalEnv } = require('../lib/configs');
 const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE } = require('../lib/consts');
 
 module.exports = async (args) => {
@@ -26,13 +26,14 @@ module.exports = async (args) => {
         }]);
         template = answer.template;
     }
-    const pwd = process.cwd();
-    const actFolderDir = path.join(pwd, actName);
+    const cwd = process.cwd();
+    const actFolderDir = path.join(cwd, actName);
 
     // Create act structure
     fs.mkdirSync(actFolderDir);
     await copy(ACTS_TEMPLATES[template].dir, actFolderDir, { dot: true });
     await setLocalConfig({ name: actName }, actFolderDir);
+    await setLocalEnv(actFolderDir);
     await updateLocalJSON(path.join(actFolderDir, 'package.json'), { name: actName });
 
     // Run npm install in act dir

@@ -1,4 +1,4 @@
-module.exports = async () => {
-    //TODO
-    console.log('Prints help')
+module.exports = async (args) => {
+    const cmd = args._.shift();
+    console.log(`Prints help for ${cmd}`)
 };
