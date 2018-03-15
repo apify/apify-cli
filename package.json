@@ -9,6 +9,9 @@
   "bin": {
     "apify": "cli/bin.js"
   },
+  "contributors": [
+    "Jakub Drobník <jakub.drobnik@apify.com>"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/apifytech/apify-cli.git"
@@ -21,8 +24,12 @@
     "line",
     "bash"
   ],
-  "author": "Jakub Drobnik <jakub.drobnik@apify.com>",
-  "license": "ISC",
+  "author": {
+    "name": "Apify",
+    "email": "support@apify.com",
+    "url": "https://www.apify.com"
+  },
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/apifytech/apify-cli/issues"
   },
