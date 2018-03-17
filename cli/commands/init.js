@@ -1,7 +1,7 @@
 const inquirer = require('inquirer');
-const outputs = require('../utils/outputs');
-const { setLocalConfig, setLocalEnv } = require('../utils/configs');
-const { EMPTY_LOCAL_CONFIG } = require('../utils/consts');
+const outputs = require('../lib/outputs');
+const { setLocalConfig, setLocalEnv } = require('../lib/utils');
+const { EMPTY_LOCAL_CONFIG } = require('../lib/consts');
 
 
 module.exports = async (args) => {

@@ -1,9 +1,11 @@
-const { removeGlobalConfig } = require('../utils/configs');
-const { success } = require('../utils/outputs');
+const { GLOBAL_CONFIGS_FOLDER } = require('../lib/consts');
+const { success } = require('../lib/outputs');
+const { promisify } = require('util');
+const rimraf = require('rimraf');
 
 
 module.exports = async () => {
-    removeGlobalConfig();
+    await promisify(rimraf)(GLOBAL_CONFIGS_FOLDER);
     success(`You are logout from Apify.`);
 };
 

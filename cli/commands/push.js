@@ -1,10 +1,10 @@
-const { getLocalConfig, setLocalConfig, getLoggedClientOrError } = require('../utils/configs');
+const { getLocalConfig, setLocalConfig, getLoggedClientOrError } = require('../lib/utils');
 const gitignore = require('parse-gitignore');
 const globby = require('globby');
 const archiver = require('archiver-promise');
 const fs = require('fs');
-const { run, success, info } = require('../utils/outputs');
-const { argsToCamelCase } = require('../utils/configs');
+const { run, success, info } = require('../lib/outputs');
+const { argsToCamelCase } = require('../lib/utils');
 
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';

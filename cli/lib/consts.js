@@ -1,3 +1,6 @@
+const os = require('os');
+const path = require('path');
+
 module.exports.ACTS_TEMPLATES = {
     basic: {
         name: 'Basic act ("basic")',
@@ -27,3 +30,9 @@ module.exports.EMPTY_LOCAL_CONFIG = {
     versionNumber: "0.1",
     buildTag: "latest",
 };
+
+module.exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
+
+module.exports.AUTH_FILE_PATH = path.join(module.exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
+
+module.exports.LOCAL_CONFIG_NAME = 'apify.json';

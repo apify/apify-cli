@@ -4,7 +4,8 @@
   "description": "Command line client for Apify.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --timeout 120000 --recursive",
+    "lint": "eslint cli test"
   },
   "bin": {
     "apify": "cli/bin.js"
@@ -44,8 +45,22 @@
     "minimist": "^1.2.0",
     "parse-gitignore": "^0.4.0",
     "recursive-copy": "^2.0.9",
+    "rimraf": "^2.6.2",
     "shelljs": "^0.8.0",
     "spawn-sync": "^1.0.15",
     "write-json-file": "^2.3.0"
+  },
+  "devDependencies": {
+    "chai": "^4.0.2",
+    "chai-as-promised": "^7.1.1",
+    "eslint": "^4.11.0",
+    "eslint-config-airbnb": "^16.1.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.2.0",
+    "eslint-plugin-jsx-a11y": "^6.0.2",
+    "eslint-plugin-promise": "^3.4.2",
+    "eslint-plugin-react": "^7.0.1",
+    "mocha": "^3.2.0",
+    "sinon": "^4.4.6"
   }
 }

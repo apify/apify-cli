@@ -7,7 +7,7 @@ Use on your own risk, it can be buggy.
 
 ## Usage
 
-To get started with Apify command line client, first make sure you have Node 8.x installed.
+To get started with Apify command line client, first make sure you have Node.js (7.10.x and higher) installed.
 Then install Apify client with:
 
 `npm -g install apify-cli`

@@ -2,11 +2,11 @@ const fs = require('fs');
 const path = require('path');
 const copy = require('recursive-copy');
 const inquirer = require('inquirer');
-const execWithLog = require('../utils/exec');
-const outputs = require('../utils/outputs');
-const { updateLocalJSON } = require('../utils/files');
-const { setLocalConfig, setLocalEnv } = require('../utils/configs');
-const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE, EMPTY_LOCAL_CONFIG } = require('../utils/consts');
+const execWithLog = require('../lib/exec');
+const outputs = require('../lib/outputs');
+const { updateLocalJSON } = require('../lib/files');
+const { setLocalConfig, setLocalEnv } = require('../lib/utils');
+const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE, EMPTY_LOCAL_CONFIG } = require('../lib/consts');
 
 module.exports = async (args) => {
     const actName = args._.shift();
