@@ -15,7 +15,7 @@ const spawnPromised = (cmd, args, opts) => {
 
     return new Promise((resolve, reject) => {
         command.on('close', (code) => {
-            if (code !== 0) reject(`${cmd} exited with code ${code}`);
+            if (code !== 0) reject(new Error(`${cmd} exited with code ${code}`));
             resolve();
         });
     });

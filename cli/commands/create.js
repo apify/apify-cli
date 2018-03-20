@@ -37,7 +37,7 @@ module.exports = async (args) => {
     await updateLocalJSON(path.join(actFolderDir, 'package.json'), { name: actName });
 
     // Run npm install in act dir
-    let cmd = 'npm';
+    const cmd = 'npm';
     const cmdArgs = ['install'];
     if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
     await execWithLog(cmd, cmdArgs, { cwd: actFolderDir });
