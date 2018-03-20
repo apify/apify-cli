@@ -12,8 +12,7 @@ module.exports = async ({ userId, token }) => {
     if (!userId && !token) {
         console.log('You can find your userId and token on https://my.apify.com/account#/integrations.');
         const credentials = await inquirer.prompt([{ name: 'userId', message: 'userId:' }, { name: 'token', message: 'token:', type: 'password' }]);
-        ({ userId } = credentials.userId);
-        ({ token } = credentials);
+        ({ userId, token } = credentials);
     }
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
         fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);

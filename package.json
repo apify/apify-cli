@@ -1,6 +1,6 @@
 {
     "name": "apify-cli",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Command line client for Apify.",
     "main": "index.js",
     "scripts": {
