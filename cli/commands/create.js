@@ -14,7 +14,7 @@ module.exports = async (args) => {
         outputs.error('Specified act name!');
         return;
     }
-    let template = args.template;
+    let { template } = args;
     if (!template) {
         const choices = Object.values(ACTS_TEMPLATES);
         const answer = await inquirer.prompt([{
@@ -24,7 +24,7 @@ module.exports = async (args) => {
             default: DEFAULT_ACT_TEMPLATE,
             choices,
         }]);
-        template = answer.template;
+        ({ template } = answer);
     }
     const cwd = process.cwd();
     const actFolderDir = path.join(cwd, actName);

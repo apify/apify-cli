@@ -2,7 +2,7 @@ const inquirer = require('inquirer');
 const writeJSON = require('write-json-file');
 const fs = require('fs');
 const { success, error } = require('../lib/outputs');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH} = require('../lib/consts');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../lib/consts');
 const utils = require('../lib/utils');
 
 
@@ -12,8 +12,8 @@ module.exports = async ({ userId, token }) => {
     if (!userId && !token) {
         console.log('You can find your userId and token on https://my.apify.com/account#/integrations.');
         const credentials = await inquirer.prompt([{ name: 'userId', message: 'userId:' }, { name: 'token', message: 'token:', type: 'password' }]);
-        userId = credentials.userId;
-        token = credentials.token;
+        ({ userId } = credentials.userId);
+        ({ token } = credentials);
     }
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
         fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);

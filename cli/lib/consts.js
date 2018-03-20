@@ -11,7 +11,7 @@ module.exports.ACTS_TEMPLATES = {
         name: 'Puppeteer crawler ("puppeteer")',
         value: 'puppeteer',
         dir: `${__dirname}/../templates/puppeteer`,
-    }
+    },
 };
 
 module.exports.ACTS_TEMPLATE_LIST = Object.keys(module.exports.ACTS_TEMPLATES);
@@ -29,10 +29,10 @@ module.exports.APIFY_DEFAULT_KEY_VALUE_STORE_ID = 'default';
 module.exports.APIFY_DEFAULT_DATASET_ID = 'default';
 
 module.exports.EMPTY_LOCAL_CONFIG = {
-    name: "",
-    actId: "",
-    versionNumber: "0.1",
-    buildTag: "latest",
+    name: '',
+    actId: '',
+    versionNumber: '0.1',
+    buildTag: 'latest',
 };
 
 module.exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');

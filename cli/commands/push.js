@@ -26,9 +26,9 @@ module.exports = async (args) => {
     const excludedPaths = gitignore('.gitignore').map(patern => `!${patern}`);
     const pathsToZip = await globby(['*', '*/**', ...excludedPaths]);
     const archive = archiver(TEMP_ZIP_FILE_NAME);
-    for (const path of pathsToZip) {
-        await archive.glob(path);
-    }
+    const archiveFilesPromises = [];
+    pathsToZip.forEach(path => archiveFilesPromises.push(archive.glob(path)));
+    await Promise.all(archiveFilesPromises);
     await archive.finalize();
 
     // Upload it to Apify.keyValueStores
@@ -44,7 +44,7 @@ module.exports = async (args) => {
     fs.unlinkSync(TEMP_ZIP_FILE_NAME);
 
     // Update act on Apify
-    const act = { name: localConfig.name, };
+    const act = { name: localConfig.name };
     const currentVersion = {
         versionNumber,
         buildTag,
@@ -56,7 +56,7 @@ module.exports = async (args) => {
         const actData = await apifyClient.acts.getAct({ actId });
         if (!actData) throw new Error(`Act with id ${actId} doesn't exist!`);
         let foundVersion = false;
-        act.versions = actData.versions.map((version)=> {
+        act.versions = actData.versions.map((version) => {
             if (version.versionNumber === currentVersion.versionNumber) {
                 foundVersion = true;
                 Object.assign(version, currentVersion);
@@ -82,7 +82,7 @@ module.exports = async (args) => {
         actId,
         version: versionNumber,
         waitForFinish: 120,
-        useCache: true
+        useCache: true,
     });
     success('Act was push to Apify!');
 };

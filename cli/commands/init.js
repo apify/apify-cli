@@ -8,7 +8,7 @@ module.exports = async (args) => {
     let actName = args._.shift();
     if (!actName) {
         const answer = await inquirer.prompt([{ name: 'actName', message: 'Act name:', default: __dirname }]);
-        actName = answer.actName;
+        ({ actName } = answer);
     }
     const cwd = process.cwd();
     await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }), cwd);

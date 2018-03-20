@@ -1,13 +1,11 @@
 #!/usr/bin/env node
+/* eslint-disable */
 const parseArgs = require('minimist');
 const outputs = require('./lib/outputs');
 
 (async () => {
     try {
         const args = parseArgs(process.argv.slice(2), { '--': false });
-        // const pwd = process.cwd();
-        // console.log(args);
-        // https://www.sitepoint.com/javascript-command-line-interface-cli-node-js/
 
         const cmd = args._.shift();
 

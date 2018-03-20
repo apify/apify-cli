@@ -66,16 +66,18 @@ const setLocalEnv = async (actDir) => {
     const packageJson = path.join(actDir, 'package.json');
     if (fs.existsSync(packageJson)) {
         await updateLocalJSON(packageJson, {
-                'run-local': `APIFY_LOCAL_EMULATION_DIR=./${APIFY_LOCAL_EMULATION_DIR} APIFY_DEFAULT_KEY_VALUE_STORE_ID=${APIFY_DEFAULT_KEY_VALUE_STORE_ID} APIFY_DEFAULT_DATASET_ID=${APIFY_DEFAULT_DATASET_ID} node main.js`,
-            }, 'scripts');
+            'run-local': `APIFY_LOCAL_EMULATION_DIR=./${APIFY_LOCAL_EMULATION_DIR} ` +
+            `APIFY_DEFAULT_KEY_VALUE_STORE_ID=${APIFY_DEFAULT_KEY_VALUE_STORE_ID} ` +
+            `APIFY_DEFAULT_DATASET_ID=${APIFY_DEFAULT_DATASET_ID} node main.js`,
+        }, 'scripts');
     }
 };
 
 const argsToCamelCase = (args) => {
     const camelCasedArgs = {};
     Object.keys(args).forEach((arg) => {
-        const camelCasedArg = arg.replace(/-(.)/g, $1 => $1.toUpperCase()).replace(/-/g, '');;
-        if (arg !== '_')  camelCasedArgs[camelCasedArg] = args[arg];
+        const camelCasedArg = arg.replace(/-(.)/g, $1 => $1.toUpperCase()).replace(/-/g, '');
+        if (arg !== '_') camelCasedArgs[camelCasedArg] = args[arg];
     });
     return camelCasedArgs;
 };

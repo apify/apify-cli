@@ -17,15 +17,15 @@ const credentials = { userId: 'myUserId', token: 'myToken' };
 const badCredentials = { userId: 'badUserId', token: 'badToken' };
 
 describe('apify login and logout', () => {
-
-    before(function () {
+    const test = this;
+    before(() => {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
             // Skip tests if user used CLI on local, it can break local environment!
-            this.skip();
+            test.skip();
         }
     });
 
-    beforeEach(function () {
+    beforeEach(() => {
         sinon.spy(console, 'log');
     });
 
@@ -37,15 +37,13 @@ describe('apify login and logout', () => {
     });
 
     it('login should work', async () => {
-
         await mockSuccessLogin(credentials);
 
         const credetialsFromConfig = loadJSON.sync(AUTH_FILE_PATH);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Success:');
-        expect(credetialsFromConfig).to
-        .eql(credentials);
+        expect(credetialsFromConfig).to.eql(credentials);
 
         await logout();
     });
@@ -59,7 +57,7 @@ describe('apify login and logout', () => {
         expect(isGlobalConfig).to.be.false;
     });
 
-    afterEach(function () {
+    afterEach(() => {
         console.log.restore();
     });
 });

@@ -8,8 +8,7 @@ const loadJSON = require('load-json-file');
 const actName = 'my-act-init';
 
 describe('apify init', () => {
-
-    before(function() {
+    before(() => {
         // create folder for init project
         fs.mkdirSync(actName);
         process.chdir(actName);
@@ -23,9 +22,8 @@ describe('apify init', () => {
         expect(loadJSON.sync(apifyJsonPath)).to.be.eql(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
     });
 
-    after(async function() {
-        process.chdir(`../`);
+    after(async () => {
+        process.chdir('../');
         if (fs.existsSync(actName)) await rimrafPromised(actName);
     });
-
 });

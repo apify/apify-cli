@@ -8,11 +8,9 @@ const { rimrafPromised } = require('../../cli/lib/files');
 const actName = 'my-act';
 
 describe('apify create', () => {
-
-    beforeEach(function() {
+    beforeEach(() => {
         sinon.spy(console, 'log');
     });
-
 
     it('error with no argument', async () => {
         await create({ _: [] });
@@ -30,12 +28,11 @@ describe('apify create', () => {
         expect(fs.existsSync(path.join(actName, 'apify.json'))).to.be.true;
     });
 
-    afterEach(function() {
+    afterEach(() => {
         console.log.restore();
     });
 
-    after(async function() {
+    after(async () => {
         if (fs.existsSync(actName)) await rimrafPromised(actName);
     });
-
 });

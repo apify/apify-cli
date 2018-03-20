@@ -19,9 +19,8 @@ const updateLocalJSON = async (path, updateAttrs = {}, nestedObjectAttr) => {
 };
 
 const createFolderSync = (folderPath) => {
-    if (!fs.existsSync(folderPath)){
-        fs.mkdirSync(folderPath);
-    }
+    if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
+
     return folderPath;
 };
 
