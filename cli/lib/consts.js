@@ -20,6 +20,10 @@ module.exports.DEFAULT_ACT_TEMPLATE = 'basic';
 
 module.exports.APIFY_LOCAL_EMULATION_DIR = 'apify_local';
 
+module.exports.APIFY_LOCAL_DATASETS_DIR = 'datasets';
+
+module.exports.APIFY_LOCAL_KEY_VALUE_STORES_DIR = 'key-value-stores';
+
 module.exports.APIFY_DEFAULT_KEY_VALUE_STORE_ID = 'default';
 
 module.exports.APIFY_DEFAULT_DATASET_ID = 'default';

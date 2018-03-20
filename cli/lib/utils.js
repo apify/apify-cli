@@ -6,7 +6,8 @@ const ApifyClient = require('apify-client');
 const { error } = require('./outputs');
 const { APIFY_LOCAL_EMULATION_DIR, APIFY_DEFAULT_DATASET_ID,
     APIFY_DEFAULT_KEY_VALUE_STORE_ID, GLOBAL_CONFIGS_FOLDER,
-    AUTH_FILE_PATH, LOCAL_CONFIG_NAME } = require('./consts');
+    AUTH_FILE_PATH, LOCAL_CONFIG_NAME, APIFY_LOCAL_DATASETS_DIR,
+    APIFY_LOCAL_KEY_VALUE_STORES_DIR } = require('./consts');
 const { createFolderSync, updateLocalJSON } = require('./files');
 
 const getLoggedClientOrError = async () => {
@@ -50,8 +51,8 @@ const setLocalConfig = async (localConfig, actDir) => {
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
     const localDir = createFolderSync(path.join(actDir, APIFY_LOCAL_EMULATION_DIR));
-    const datasetsDir = createFolderSync(path.join(localDir, 'datasets'));
-    const keyValueStoresDir = createFolderSync(path.join(localDir, 'key-value-stores'));
+    const datasetsDir = createFolderSync(path.join(localDir, APIFY_LOCAL_DATASETS_DIR));
+    const keyValueStoresDir = createFolderSync(path.join(localDir, APIFY_LOCAL_KEY_VALUE_STORES_DIR));
     createFolderSync(path.join(datasetsDir, APIFY_DEFAULT_DATASET_ID));
     createFolderSync(path.join(keyValueStoresDir, APIFY_DEFAULT_KEY_VALUE_STORE_ID));
 

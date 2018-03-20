@@ -59,7 +59,7 @@ module.exports = async (args) => {
         act.versions = actData.versions.map((version)=> {
             if (version.versionNumber === currentVersion.versionNumber) {
                 foundVersion = true;
-                return currentVersion;
+                Object.assign(version, currentVersion);
             }
             return version;
         });
@@ -67,6 +67,7 @@ module.exports = async (args) => {
         run('Updating act ...');
         await apifyClient.acts.updateAct({ actId, act });
     } else {
+        currentVersion.envVars = [];
         act.versions = [currentVersion];
         run('Creating act ...');
         const newAct = await apifyClient.acts.createAct({ act });

@@ -1,0 +1,49 @@
+const { expect } = require('chai');
+const fs = require('fs');
+const create = require('../../cli/commands/create');
+const run = require('../../cli/commands/run');
+const path = require('path');
+const { APIFY_LOCAL_EMULATION_DIR, APIFY_DEFAULT_KEY_VALUE_STORE_ID,
+    APIFY_LOCAL_KEY_VALUE_STORES_DIR, APIFY_LOCAL_DATASETS_DIR } = require('../../cli/lib/consts');
+const { rimrafPromised } = require('../../cli/lib/files');
+const loadJSON = require('load-json-file');
+
+const actName = 'my-act';
+
+describe('apify run', () => {
+
+    before(async function() {
+        await create({ _: [actName], template: 'basic' });
+        process.chdir(actName);
+    });
+
+    it('run act with output', async () => {
+        const expectOutput = {
+            my: 'output',
+        };
+        const actCode = `
+        const Apify = require('apify');
+
+        Apify.main(async () => {
+            const input = await Apify.getValue('INPUT');
+                
+            const output = ${JSON.stringify(expectOutput)};
+            await Apify.setValue('OUTPUT', output);
+            console.log('Done.');
+        });
+        `;
+        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+
+        await run();
+
+        // check act output
+        const actOutput = loadJSON.sync(path.join(APIFY_LOCAL_EMULATION_DIR, APIFY_LOCAL_KEY_VALUE_STORES_DIR, APIFY_DEFAULT_KEY_VALUE_STORE_ID, 'OUTPUT.json'));
+        expect(actOutput).to.be.eql(expectOutput);
+    });
+
+    after(async function() {
+        process.chdir('../');
+        if (fs.existsSync(actName)) await rimrafPromised(actName);
+    });
+
+});

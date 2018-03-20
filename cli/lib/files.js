@@ -1,6 +1,8 @@
 const loadJSON = require('load-json-file');
 const writeJSON = require('write-json-file');
 const fs = require('fs');
+const { promisify } = require('util');
+const rimraf = require('rimraf');
 
 const updateLocalJSON = async (path, updateAttrs = {}, nestedObjectAttr) => {
     const currentObject = await loadJSON(path);
@@ -23,4 +25,6 @@ const createFolderSync = (folderPath) => {
     return folderPath;
 };
 
-module.exports = { updateLocalJSON, createFolderSync };
+const rimrafPromised = promisify(rimraf);
+
+module.exports = { updateLocalJSON, createFolderSync, rimrafPromised };

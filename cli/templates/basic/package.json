@@ -4,7 +4,7 @@
     "description": "",
     "main": "main.js",
     "dependencies": {
-        "apify": "^0.4.48"
+        "apify": "^0.5.13"
     },
     "devDependencies": {},
     "scripts": {

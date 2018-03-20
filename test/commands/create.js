@@ -1,14 +1,11 @@
 const { expect } = require('chai');
 const fs = require('fs');
 const sinon = require('sinon');
-const loadJSON = require('load-json-file');
 const create = require('../../cli/commands/create');
-const logout = require('../../cli/commands/logout');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../cli/lib/consts');
-const utils = require('../../cli/lib/utils');
+const path = require('path');
+const { rimrafPromised } = require('../../cli/lib/files');
 
-const credentials = { userId: 'myUserId', token: 'myToken' };
-const badCredentials = { userId: 'badUserId', token: 'badToken'};
+const actName = 'my-act';
 
 describe('apify create', () => {
 
@@ -25,15 +22,20 @@ describe('apify create', () => {
     });
 
     it('basic template structure', async () => {
-        const actName = 'my-act';
         await create({ _: [actName], template: 'basic' });
 
-        expect(true).to.be.true;
+        // check files structure
+        expect(fs.existsSync(actName)).to.be.true;
+        expect(fs.existsSync(path.join(actName, 'package.json'))).to.be.true;
+        expect(fs.existsSync(path.join(actName, 'apify.json'))).to.be.true;
     });
-
 
     afterEach(function() {
         console.log.restore();
+    });
+
+    after(async function() {
+        if (fs.existsSync(actName)) await rimrafPromised(actName);
     });
 
 });
