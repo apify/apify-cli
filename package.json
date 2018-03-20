@@ -66,5 +66,7 @@
         "mocha": "^3.2.0",
         "sinon": "^4.4.6"
     },
-    "eslintIgnore": ["cli/templates/*"]
+    "eslintIgnore": [
+        "cli/templates/*"
+    ]
 }

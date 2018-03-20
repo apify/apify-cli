@@ -37,10 +37,10 @@ module.exports = async (args) => {
     await updateLocalJSON(path.join(actFolderDir, 'package.json'), { name: actName });
 
     // Run npm install in act dir
-    let cmd = 'npm install';
-    if (template === ACTS_TEMPLATES.basic.value) cmd += ' --no-optional';
-    outputs.run(cmd);
-    await execWithLog(cmd, { cwd: actFolderDir });
+    let cmd = 'npm';
+    const cmdArgs = ['install'];
+    if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
+    await execWithLog(cmd, cmdArgs, { cwd: actFolderDir });
 
     outputs.success(`Act ${actName} was created. Run it with "apify run".`);
 };

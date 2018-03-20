@@ -48,6 +48,7 @@ const setLocalConfig = async (localConfig, actDir) => {
     writeJSON.sync(path.join(actDir, LOCAL_CONFIG_NAME), localConfig);
 };
 
+
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
     const localDir = createFolderSync(path.join(actDir, APIFY_LOCAL_EMULATION_DIR));
@@ -73,13 +74,19 @@ const setLocalEnv = async (actDir) => {
     }
 };
 
-const argsToCamelCase = (args) => {
-    const camelCasedArgs = {};
-    Object.keys(args).forEach((arg) => {
+/**
+ * Convert Object with kebab-case keys to camelCased keys
+ *
+ * @param object
+ * @return {{}}
+ */
+const argsToCamelCase = (object) => {
+    const camelCasedObject = {};
+    Object.keys(object).forEach((arg) => {
         const camelCasedArg = arg.replace(/-(.)/g, $1 => $1.toUpperCase()).replace(/-/g, '');
-        if (arg !== '_') camelCasedArgs[camelCasedArg] = args[arg];
+        camelCasedObject[camelCasedArg] = object[arg];
     });
-    return camelCasedArgs;
+    return camelCasedObject;
 };
 
 module.exports = {

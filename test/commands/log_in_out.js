@@ -17,11 +17,10 @@ const credentials = { userId: 'myUserId', token: 'myToken' };
 const badCredentials = { userId: 'badUserId', token: 'badToken' };
 
 describe('apify login and logout', () => {
-    const test = this;
-    before(() => {
+    before(function () {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
             // Skip tests if user used CLI on local, it can break local environment!
-            test.skip();
+            this.skip();
         }
     });
 
