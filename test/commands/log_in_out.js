@@ -2,8 +2,8 @@ const { expect } = require('chai');
 const fs = require('fs');
 const sinon = require('sinon');
 const loadJSON = require('load-json-file');
-const login = require('../../cli/commands/login');
-const logout = require('../../cli/commands/logout');
+const login = require('../../cli/commands-old/login');
+const logout = require('../../cli/commands-old/logout');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../cli/lib/consts');
 const utils = require('../../cli/lib/utils');
 

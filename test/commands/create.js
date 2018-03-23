@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const fs = require('fs');
 const sinon = require('sinon');
-const create = require('../../cli/commands/create');
+const create = require('../../cli/commands-old/create');
 const path = require('path');
 const { rimrafPromised } = require('../../cli/lib/files');
 

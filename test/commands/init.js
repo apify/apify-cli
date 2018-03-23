@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const fs = require('fs');
-const init = require('../../cli/commands/init');
+const init = require('../../cli/commands-old/init');
 const { rimrafPromised } = require('../../cli/lib/files');
 const { EMPTY_LOCAL_CONFIG } = require('../../cli/lib/consts');
 const loadJSON = require('load-json-file');
