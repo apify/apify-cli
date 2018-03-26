@@ -2,14 +2,14 @@ const { expect } = require('chai');
 const fs = require('fs');
 const sinon = require('sinon');
 const loadJSON = require('load-json-file');
-const login = require('../../cli/commands-old/login');
-const logout = require('../../cli/commands-old/logout');
+const command = require('@oclif/command');
+const logout = require('../../cli/commands/logout');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../cli/lib/consts');
 const utils = require('../../cli/lib/utils');
 
 const mockSuccessLogin = async (credentials) => {
     sinon.stub(utils, 'getLoggedClient').withArgs(credentials).returns(true);
-    await login(credentials);
+    await command.run(['login', '--user-id', credentials.userId, '--token', credentials.token]);
     utils.getLoggedClient.restore();
 };
 
@@ -29,7 +29,7 @@ describe('apify login and logout', () => {
     });
 
     it('login should end with Error', async () => {
-        await login(badCredentials);
+        await command.run(['login', '--user-id', badCredentials.userId, '--token', badCredentials.token]);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Error:');

@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const fs = require('fs');
-const init = require('../../cli/commands-old/init');
+const command = require('@oclif/command');
 const { rimrafPromised } = require('../../cli/lib/files');
 const { EMPTY_LOCAL_CONFIG } = require('../../cli/lib/consts');
 const loadJSON = require('load-json-file');
@@ -15,7 +15,7 @@ describe('apify init', () => {
     });
 
     it('create basic structure', async () => {
-        await init({ _: [actName] });
+        await command.run(['init', actName])
 
         const apifyJsonPath = 'apify.json';
         expect(fs.existsSync(apifyJsonPath)).to.be.true;

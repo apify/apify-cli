@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const fs = require('fs');
 const sinon = require('sinon');
-const create = require('../../cli/commands-old/create');
+const command = require('@oclif/command');
 const path = require('path');
 const { rimrafPromised } = require('../../cli/lib/files');
 
@@ -13,14 +13,16 @@ describe('apify create', () => {
     });
 
     it('error with no argument', async () => {
-        await create({ _: [] });
-
-        expect(console.log.callCount).to.eql(1);
-        expect(console.log.args[0][0]).to.include('Error:');
+        try {
+            await command.run(['create']);
+        } catch(err) {
+            return;
+        }
+        throw new Error('Should have thrown an error');
     });
 
     it('basic template structure', async () => {
-        await create({ _: [actName], template: 'basic' });
+        await command.run(['create',actName ,'--template', 'basic']);
 
         // check files structure
         expect(fs.existsSync(actName)).to.be.true;

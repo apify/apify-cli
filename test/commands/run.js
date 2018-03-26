@@ -1,7 +1,6 @@
 const { expect } = require('chai');
 const fs = require('fs');
-const create = require('../../cli/commands-old/create');
-const run = require('../../cli/commands-old/run');
+const command = require('@oclif/command');
 const path = require('path');
 const { APIFY_LOCAL_EMULATION_DIR, APIFY_DEFAULT_KEY_VALUE_STORE_ID,
     APIFY_LOCAL_KEY_VALUE_STORES_DIR } = require('../../cli/lib/consts');
@@ -12,7 +11,7 @@ const actName = 'my-act';
 
 describe('apify run', () => {
     before(async () => {
-        await create({ _: [actName], template: 'basic' });
+        await command.run(['create', actName, '--template', 'basic']);
         process.chdir(actName);
     });
 
@@ -33,7 +32,7 @@ describe('apify run', () => {
         `;
         fs.writeFileSync('main.js', actCode, { flag: 'w' });
 
-        await run();
+        await command.run(['run']);
 
         // check act output
         const actOutputPath = path.join(APIFY_LOCAL_EMULATION_DIR, APIFY_LOCAL_KEY_VALUE_STORES_DIR, APIFY_DEFAULT_KEY_VALUE_STORE_ID, 'OUTPUT.json');
