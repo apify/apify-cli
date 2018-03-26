@@ -2,10 +2,9 @@ const { expect } = require('chai');
 const fs = require('fs');
 const command = require('@oclif/command');
 const path = require('path');
-const { APIFY_LOCAL_EMULATION_DIR, APIFY_DEFAULT_KEY_VALUE_STORE_ID,
-    APIFY_LOCAL_KEY_VALUE_STORES_DIR } = require('../../cli/lib/consts');
+const { LOCAL_ENV_VARS } = require('../../cli/lib/consts');
 const { rimrafPromised } = require('../../cli/lib/files');
-const loadJSON = require('load-json-file');
+const loadJson = require('load-json-file');
 
 const actName = 'my-act';
 
@@ -35,8 +34,10 @@ describe('apify run', () => {
         await command.run(['run']);
 
         // check act output
-        const actOutputPath = path.join(APIFY_LOCAL_EMULATION_DIR, APIFY_LOCAL_KEY_VALUE_STORES_DIR, APIFY_DEFAULT_KEY_VALUE_STORE_ID, 'OUTPUT.json');
-        const actOutput = loadJSON.sync(actOutputPath);
+        const actOutputPath = path.join(LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR,
+            LOCAL_ENV_VARS.APIFY_LOCAL_KEY_VALUE_STORES_DIR,
+            LOCAL_ENV_VARS.APIFY_DEFAULT_KEY_VALUE_STORE_ID, 'OUTPUT.json');
+        const actOutput = loadJson.sync(actOutputPath);
         expect(actOutput).to.be.eql(expectOutput);
     });
 

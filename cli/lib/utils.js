@@ -1,37 +1,44 @@
 const path = require('path');
 const fs = require('fs');
-const loadJSON = require('load-json-file');
-const writeJSON = require('write-json-file');
+const gitignore = require('parse-gitignore');
+const globby = require('globby');
+const archiver = require('archiver-promise');
+const loadJson = require('load-json-file');
+const writeJson = require('write-json-file');
 const ApifyClient = require('apify-client');
 const { error } = require('./outputs');
-const { APIFY_LOCAL_EMULATION_DIR, APIFY_DEFAULT_DATASET_ID,
-    APIFY_DEFAULT_KEY_VALUE_STORE_ID, GLOBAL_CONFIGS_FOLDER,
-    AUTH_FILE_PATH, LOCAL_CONFIG_NAME, APIFY_LOCAL_DATASETS_DIR,
-    APIFY_LOCAL_KEY_VALUE_STORES_DIR } = require('./consts');
-const { createFolderSync, updateLocalJSON } = require('./files');
+const { LOCAL_ENV_VARS, GLOBAL_CONFIGS_FOLDER,
+    AUTH_FILE_PATH, LOCAL_CONFIG_NAME} = require('./consts');
+const { createFolderSync, updateLocalJson } = require('./files');
+
+const apifyClient = new ApifyClient();
 
 const getLoggedClientOrError = async () => {
-    if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER) || !fs.existsSync(AUTH_FILE_PATH)) {
-        error('You aren\'t logged call "apify login" to process login.');
-        return;
-    }
-    const auth = loadJSON.sync(AUTH_FILE_PATH);
-    const loggedClient = await getLoggedClient(auth);
+    const loggedClient = await getLoggedClient();
     if (!loggedClient) {
-        error('You aren\'t logged call "apify login" to process login.');
+        error(`You aren\'t logged in! Call "apify login" to authenticate to Apify.`);
         return;
     }
     return loggedClient;
 };
 
-const getLoggedClient = async (auth) => {
+const getLoggedClient = async (token) => {
+    if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
+        ({token} = loadJson.sync(AUTH_FILE_PATH));
+    }
+
+    if (!token) return false;
+
     try {
-        const apifiClient = new ApifyClient(auth);
-        await apifiClient.crawlers.listCrawlers();
-        return apifiClient;
+        const userInfo = await apifyClient.users.getUser({ token });
+        // Always refresh credentials in Auth file
+        writeJson.sync(AUTH_FILE_PATH, Object.assign({ token }, userInfo));
+        apifyClient.setOptions({ token, userId: userInfo.userId });
     } catch (e) {
         return false;
     }
+
+    return apifyClient;
 };
 
 const getLocalConfig = async () => {
@@ -40,36 +47,36 @@ const getLocalConfig = async () => {
         error('apify.json is missing in current dir! Call "apify init" to create it.');
         return;
     }
-    return loadJSON.sync(localConfigPath);
+    return loadJson.sync(localConfigPath);
 };
 
 const setLocalConfig = async (localConfig, actDir) => {
     actDir = actDir || process.cwd();
-    writeJSON.sync(path.join(actDir, LOCAL_CONFIG_NAME), localConfig);
+    writeJson.sync(path.join(actDir, LOCAL_CONFIG_NAME), localConfig);
 };
 
 
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
-    const localDir = createFolderSync(path.join(actDir, APIFY_LOCAL_EMULATION_DIR));
-    const datasetsDir = createFolderSync(path.join(localDir, APIFY_LOCAL_DATASETS_DIR));
-    const keyValueStoresDir = createFolderSync(path.join(localDir, APIFY_LOCAL_KEY_VALUE_STORES_DIR));
-    createFolderSync(path.join(datasetsDir, APIFY_DEFAULT_DATASET_ID));
-    createFolderSync(path.join(keyValueStoresDir, APIFY_DEFAULT_KEY_VALUE_STORE_ID));
+    const localDir = createFolderSync(path.join(actDir, LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR));
+    const datasetsDir = createFolderSync(path.join(localDir, LOCAL_ENV_VARS.APIFY_LOCAL_DATASETS_DIR));
+    const keyValueStoresDir = createFolderSync(path.join(localDir, LOCAL_ENV_VARS.APIFY_LOCAL_KEY_VALUE_STORES_DIR));
+    createFolderSync(path.join(datasetsDir, LOCAL_ENV_VARS.APIFY_DEFAULT_DATASET_ID));
+    createFolderSync(path.join(keyValueStoresDir, LOCAL_ENV_VARS.APIFY_DEFAULT_KEY_VALUE_STORE_ID));
 
     // Update gitignore
     const gitingore = path.join(actDir, '.gitignore');
     if (fs.existsSync(gitingore)) {
-        fs.writeFileSync(gitingore, APIFY_LOCAL_EMULATION_DIR, { flag: 'a' });
+        fs.writeFileSync(gitingore, LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR, { flag: 'a' });
     }
 
     // Update package.json
     const packageJson = path.join(actDir, 'package.json');
     if (fs.existsSync(packageJson)) {
-        await updateLocalJSON(packageJson, {
-            'run-local': `APIFY_LOCAL_EMULATION_DIR=./${APIFY_LOCAL_EMULATION_DIR} ` +
-            `APIFY_DEFAULT_KEY_VALUE_STORE_ID=${APIFY_DEFAULT_KEY_VALUE_STORE_ID} ` +
-            `APIFY_DEFAULT_DATASET_ID=${APIFY_DEFAULT_DATASET_ID} node main.js`,
+        const envVarsPart = Object.keys(LOCAL_ENV_VARS).map(envVar => `${envVar}=${LOCAL_ENV_VARS.envVar}`).join(' ');
+        const runLocalCmd = `${envVarsPart} node main.js`;
+        await updateLocalJson(packageJson, {
+            'run-local': runLocalCmd,
         }, 'scripts');
     }
 };
@@ -89,6 +96,16 @@ const argsToCamelCase = (object) => {
     return camelCasedObject;
 };
 
+const createActZip = async (zipName) => {
+    const excludedPaths = gitignore('.gitignore').map(patern => `!${patern}`);
+    const pathsToZip = await globby(['*', '*/**', ...excludedPaths]);
+    const archive = archiver(zipName);
+    const archiveFilesPromises = [];
+    pathsToZip.forEach(path => archiveFilesPromises.push(archive.glob(path)));
+    await Promise.all(archiveFilesPromises);
+    await archive.finalize();
+};
+
 module.exports = {
     getLoggedClientOrError,
     getLocalConfig,
@@ -96,4 +113,6 @@ module.exports = {
     setLocalEnv,
     argsToCamelCase,
     getLoggedClient,
+    createActZip,
+    apifyClient
 };

@@ -6,7 +6,7 @@ const copy = require('recursive-copy');
 const inquirer = require('inquirer');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
-const { updateLocalJSON } = require('../lib/files');
+const { updateLocalJson } = require('../lib/files');
 const { setLocalConfig, setLocalEnv } = require('../lib/utils');
 const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE, EMPTY_LOCAL_CONFIG, ACTS_TEMPLATE_LIST } = require('../lib/consts');
 
@@ -30,11 +30,19 @@ class CreateCommand extends ApifyCommand {
         const actFolderDir = path.join(cwd, actName);
 
         // Create act structure
-        fs.mkdirSync(actFolderDir);
+        try {
+            fs.mkdirSync(actFolderDir);
+        } catch(err) {
+            if (err.code && err.code === 'EEXIST') {
+                outputs.error(`Folder with name ${actName} already exists. You can call 'apify init' to create local environment for act inside folder.`);
+                return;
+            }
+            throw err;
+        }
         await copy(ACTS_TEMPLATES[template].dir, actFolderDir, { dot: true });
         await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }), actFolderDir);
         await setLocalEnv(actFolderDir);
-        await updateLocalJSON(path.join(actFolderDir, 'package.json'), { name: actName });
+        await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actName });
 
         // Run npm install in act dir
         const cmd = 'npm';

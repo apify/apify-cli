@@ -1,20 +1,28 @@
 const { expect } = require('chai');
 const fs = require('fs');
 const sinon = require('sinon');
-const loadJSON = require('load-json-file');
+const loadJson = require('load-json-file');
 const command = require('@oclif/command');
 const logout = require('../../cli/commands/logout');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../cli/lib/consts');
-const utils = require('../../cli/lib/utils');
+const { apifyClient } = require('../../cli/lib/utils');
 
-const mockSuccessLogin = async (credentials) => {
-    sinon.stub(utils, 'getLoggedClient').withArgs(credentials).returns(true);
-    await command.run(['login', '--user-id', credentials.userId, '--token', credentials.token]);
-    utils.getLoggedClient.restore();
+const userInfo = {
+    userId: 'myUserId',
+    proxy: {
+        password: 'myProxyPass',
+    }
 };
-
-const credentials = { userId: 'myUserId', token: 'myToken' };
+const myUserToken = 'myToken';
 const badCredentials = { userId: 'badUserId', token: 'badToken' };
+
+const mockSuccessLogin = async (token) => {
+    sinon.stub(apifyClient.users, 'getUser').withArgs({ token }).returns(userInfo);
+
+    await command.run(['login', '--token', token]);
+
+    apifyClient.users.getUser.restore();
+};
 
 describe('apify login and logout', () => {
     before(function () {
@@ -29,30 +37,24 @@ describe('apify login and logout', () => {
     });
 
     it('login should end with Error', async () => {
-        await command.run(['login', '--user-id', badCredentials.userId, '--token', badCredentials.token]);
+        await command.run(['login', '--token', badCredentials.token]);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Error:');
     });
 
-    it('login should work', async () => {
-        await mockSuccessLogin(credentials);
+    it('login and logout should work', async () => {
+        await mockSuccessLogin(myUserToken);
 
-        const credetialsFromConfig = loadJSON.sync(AUTH_FILE_PATH);
+        const userInfoFromConfig = loadJson.sync(AUTH_FILE_PATH);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Success:');
-        expect(credetialsFromConfig).to.eql(credentials);
+        expect(userInfoFromConfig).to.eql(Object.assign({ token: myUserToken }, userInfo));
 
-        await logout();
-    });
-
-    it('logout should work', async () => {
-        await mockSuccessLogin(credentials);
-
-        await logout();
-
+        await command.run(['logout']);
         const isGlobalConfig = fs.existsSync(GLOBAL_CONFIGS_FOLDER);
+
         expect(isGlobalConfig).to.be.false;
     });
 

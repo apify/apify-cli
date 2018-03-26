@@ -3,7 +3,7 @@ const fs = require('fs');
 const command = require('@oclif/command');
 const { rimrafPromised } = require('../../cli/lib/files');
 const { EMPTY_LOCAL_CONFIG } = require('../../cli/lib/consts');
-const loadJSON = require('load-json-file');
+const loadJson = require('load-json-file');
 
 const actName = 'my-act-init';
 
@@ -19,7 +19,7 @@ describe('apify init', () => {
 
         const apifyJsonPath = 'apify.json';
         expect(fs.existsSync(apifyJsonPath)).to.be.true;
-        expect(loadJSON.sync(apifyJsonPath)).to.be.eql(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
+        expect(loadJson.sync(apifyJsonPath)).to.be.eql(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
     });
 
     after(async () => {

@@ -1,7 +1,7 @@
 const os = require('os');
 const path = require('path');
 
-module.exports.ACTS_TEMPLATES = {
+exports.ACTS_TEMPLATES = {
     basic: {
         name: 'Basic act ("basic")',
         value: 'basic',
@@ -14,29 +14,27 @@ module.exports.ACTS_TEMPLATES = {
     },
 };
 
-module.exports.ACTS_TEMPLATE_LIST = Object.keys(module.exports.ACTS_TEMPLATES);
+exports.ACTS_TEMPLATE_LIST = Object.keys(exports.ACTS_TEMPLATES);
 
-module.exports.DEFAULT_ACT_TEMPLATE = 'basic';
+exports.DEFAULT_ACT_TEMPLATE = 'basic';
 
-module.exports.APIFY_LOCAL_EMULATION_DIR = 'apify_local';
+exports.LOCAL_ENV_VARS = {
+    APIFY_LOCAL_EMULATION_DIR: 'apify_local',
+    APIFY_LOCAL_DATASETS_DIR: 'datasets',
+    APIFY_LOCAL_KEY_VALUE_STORES_DIR: 'key-value-stores',
+    APIFY_DEFAULT_KEY_VALUE_STORE_ID: 'default',
+    APIFY_DEFAULT_DATASET_ID: 'default',
+};
 
-module.exports.APIFY_LOCAL_DATASETS_DIR = 'datasets';
-
-module.exports.APIFY_LOCAL_KEY_VALUE_STORES_DIR = 'key-value-stores';
-
-module.exports.APIFY_DEFAULT_KEY_VALUE_STORE_ID = 'default';
-
-module.exports.APIFY_DEFAULT_DATASET_ID = 'default';
-
-module.exports.EMPTY_LOCAL_CONFIG = {
-    name: '',
-    actId: '',
+exports.EMPTY_LOCAL_CONFIG = {
+    name: null,
+    actId: null,
     versionNumber: '0.1',
     buildTag: 'latest',
 };
 
-module.exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
+exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
 
-module.exports.AUTH_FILE_PATH = path.join(module.exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
+exports.AUTH_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
 
-module.exports.LOCAL_CONFIG_NAME = 'apify.json';
+exports.LOCAL_CONFIG_NAME = 'apify.json';

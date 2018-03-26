@@ -1,14 +1,11 @@
 const { getLocalConfig, setLocalConfig, getLoggedClientOrError } = require('../lib/utils');
-const gitignore = require('parse-gitignore');
-const globby = require('globby');
-const archiver = require('archiver-promise');
-const fs = require('fs');
 const { run, success, info } = require('../lib/outputs');
-const { argsToCamelCase } = require('../lib/utils');
+const { createActZip } = require('../lib/utils');
 const {Command, flags} = require('@oclif/command');
+const fs = require('fs');
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
-const UPLOADS_STORE_NAME = 'apify-cli-uploads';
+const UPLOADS_STORE_NAME = 'apify-cli-deployments';
 
 class PushCommand extends Command {
     async run() {
@@ -25,13 +22,7 @@ class PushCommand extends Command {
 
         // Create zip
         run('Zipping all act files ...');
-        const excludedPaths = gitignore('.gitignore').map(patern => `!${patern}`);
-        const pathsToZip = await globby(['*', '*/**', ...excludedPaths]);
-        const archive = archiver(TEMP_ZIP_FILE_NAME);
-        const archiveFilesPromises = [];
-        pathsToZip.forEach(path => archiveFilesPromises.push(archive.glob(path)));
-        await Promise.all(archiveFilesPromises);
-        await archive.finalize();
+        await createActZip(TEMP_ZIP_FILE_NAME);
 
         // Upload it to Apify.keyValueStores
         const store = await apifyClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
@@ -74,7 +65,6 @@ class PushCommand extends Command {
             run('Creating act ...');
             const newAct = await apifyClient.acts.createAct({ act });
             actId = (newAct.username) ? `${newAct.username}/${newAct.name}` : newAct.id;
-            localConfig.actId = actId;
         }
         await setLocalConfig({ actId, buildTag, versionNumber });
 

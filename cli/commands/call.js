@@ -1,19 +1,26 @@
 const { ApifyCommand } = require('../lib/apify_command');
+const { ACT_TASK_STATUSES } = require('apify-shared/consts')
 const { flags } = require('@oclif/command');
 const { getLocalConfig, getLoggedClientOrError } = require('../lib/utils');
+const outputs = require('../lib/outputs');
 
 class CallCommand extends ApifyCommand {
     async run() {
         const { flags, args } = this.parse(CallCommand);
         const localConfig = await getLocalConfig();
-        const { actId } = args || localConfig;
-        if (!actId) throw new Error('ActId is missing');
+        const actId = args.actId || localConfig.actId;
 
         const apifyClient = await getLoggedClientOrError();
 
-        await apifyClient.acts.runAct({ actId });
+        outputs.run(`Calling act ${actId}`)
 
-        success('Act finished!');
+        const run = await apifyClient.acts.runAct({ actId, waitForFinish: 120 });
+
+        if (run.status === ACT_TASK_STATUSES.SUCCEEDED) {
+            outputs.success('Act finished!');
+        } else {
+            outputs.error('Act failed!');
+        }
     }
 }
 

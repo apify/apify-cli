@@ -1,10 +1,10 @@
-const loadJSON = require('load-json-file');
-const writeJSON = require('write-json-file');
+const loadJson = require('load-json-file');
+const writeJson = require('write-json-file');
 const fs = require('fs');
 const rimraf = require('rimraf');
 
-const updateLocalJSON = async (path, updateAttrs = {}, nestedObjectAttr) => {
-    const currentObject = await loadJSON(path);
+const updateLocalJson = async (path, updateAttrs = {}, nestedObjectAttr) => {
+    const currentObject = await loadJson(path);
     let newObject;
 
     if (nestedObjectAttr) {
@@ -14,7 +14,7 @@ const updateLocalJSON = async (path, updateAttrs = {}, nestedObjectAttr) => {
         newObject = Object.assign({}, currentObject, updateAttrs);
     }
 
-    await writeJSON(path, newObject);
+    await writeJson(path, newObject);
 };
 
 const createFolderSync = (folderPath) => {
@@ -32,4 +32,4 @@ const rimrafPromised = (path) => {
     });
 };
 
-module.exports = { updateLocalJSON, createFolderSync, rimrafPromised };
+module.exports = { updateLocalJson, createFolderSync, rimrafPromised };
