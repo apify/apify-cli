@@ -10,8 +10,8 @@ class ApifyCommand extends Command {
         super(argv, config);
     }
 
-    parse(Command) {
-        const { flags, args } = super.parse(Command);
+    parse(ApifyCommand) {
+        const { flags, args } = super.parse(ApifyCommand);
         const parsedFlags = argsToCamelCase(flags);
         return {
             flags: parsedFlags,

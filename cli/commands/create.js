@@ -55,8 +55,8 @@ class CreateCommand extends ApifyCommand {
 }
 
 CreateCommand.description = `
-Create directory for act local development.
-You can specified template for act.
+This creates directory with proper structure for local development.
+NOTE: You can specified act template, which can help you in specific use cases like crawling urls list or crawling with queue.
 `;
 
 CreateCommand.flags = {

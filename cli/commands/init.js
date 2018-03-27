@@ -20,7 +20,8 @@ class InitCommand extends ApifyCommand {
 }
 
 InitCommand.description = `
-Initials current directory for developing Apify acts.
+This asks you for your act name, writes apify.json and creates apify_local folder structure for local development.
+NOTE: This overrides your current apify.json.
 `;
 
 InitCommand.args = [
@@ -29,6 +30,6 @@ InitCommand.args = [
         required: false,
         description: 'Name of initeled act',
     }
-]
+];
 
 module.exports = InitCommand;

@@ -23,20 +23,22 @@ const getLoggedClientOrError = async () => {
 };
 
 const getLoggedClient = async (token) => {
+    let userInfo;
+
     if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
         ({token} = loadJson.sync(AUTH_FILE_PATH));
     }
 
-    if (!token) return false;
-
     try {
-        const userInfo = await apifyClient.users.getUser({ token });
-        // Always refresh credentials in Auth file
-        writeJson.sync(AUTH_FILE_PATH, Object.assign({ token }, userInfo));
-        apifyClient.setOptions({ token, userId: userInfo.userId });
+        userInfo = await apifyClient.users.getUser({ token });
     } catch (e) {
         return false;
     }
+
+    // Always refresh Auth file
+    if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
+    writeJson.sync(AUTH_FILE_PATH, Object.assign({ token }, userInfo));
+    apifyClient.setOptions({ token, userId: userInfo.userId });
 
     return apifyClient;
 };

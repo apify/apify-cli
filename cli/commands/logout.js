@@ -12,7 +12,8 @@ class LogoutCommand extends ApifyCommand {
 }
 
 LogoutCommand.description = `
-Use for logout local machine from Apify.
+Deletes all your stored tokens and keys from ~/.apify.
+NOTE: This deletes all your global settings. 
 `;
 
 module.exports = LogoutCommand;

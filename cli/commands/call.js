@@ -1,6 +1,5 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { ACT_TASK_STATUSES } = require('apify-shared/consts')
-const { flags } = require('@oclif/command');
 const { getLocalConfig, getLoggedClientOrError } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
@@ -25,7 +24,8 @@ class CallCommand extends ApifyCommand {
 }
 
 CallCommand.description = `
-Call act on Apify.
+This runs your act on Apify.
+It waits 120 second to finish act.
 `;
 
 module.exports = CallCommand;

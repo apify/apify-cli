@@ -1,10 +1,8 @@
 const { flags } = require('@oclif/command');
 const { ApifyCommand } = require('../lib/apify_command');
 const inquirer = require('inquirer');
-const fs = require('fs');
 const { success, error } = require('../lib/outputs');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../lib/consts');
-const utils = require('../lib/utils');
+const { getLoggedClient } = require('../lib/utils');
 
 class LoginCommand extends ApifyCommand {
     async run() {
@@ -15,21 +13,16 @@ class LoginCommand extends ApifyCommand {
             const tokenPrompt = await inquirer.prompt([{ name: 'token', message: 'token:', type: 'password' }]);
             ({ token } = tokenPrompt);
         }
-        if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
-            fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
-        }
-        const isUserLogged = await utils.getLoggedClient(token);
-        if (isUserLogged) {
-            success('Logged into Apify!');
-        } else {
+        const isUserLogged = await getLoggedClient(token);
+        return (isUserLogged) ?
+            success('Logged into Apify!') :
             error('Logging into Apify failed, token is not correct.');
-        }
     }
 }
 
 LoginCommand.description = `
-Use for authenticate your local machine with Apify.
-Command proms your credentials from console or you can pass them using parameters.`;
+This is an interactive prompt which authenticates you with Apify.
+NOTE: If you set up token options, prompt will skip`;
 
 LoginCommand.flags = {
     'token': flags.string({

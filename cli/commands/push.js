@@ -9,7 +9,7 @@ const UPLOADS_STORE_NAME = 'apify-cli-deployments';
 
 class PushCommand extends Command {
     async run() {
-        const { flags, args } = this.parse(PushCommand);
+        const { args } = this.parse(PushCommand);
         const apifyClient = await getLoggedClientOrError();
         const localConfig = await getLocalConfig();
 
@@ -81,9 +81,7 @@ class PushCommand extends Command {
 }
 
 PushCommand.description = `
-Describe the command here
-...
-Extra documentation goes here
+This uploads act from current directory to Apify and builds it.
 `;
 
 PushCommand.flags = {
