@@ -1,22 +1,24 @@
+const { ApifyCommand } = require('../lib/apify_command');
+const { flags } = require('@oclif/command');
 const { getLocalConfig, setLocalConfig, getLoggedClientOrError } = require('../lib/utils');
 const { run, success, info } = require('../lib/outputs');
 const { createActZip } = require('../lib/utils');
-const {Command, flags} = require('@oclif/command');
 const fs = require('fs');
+const { ACT_TASK_STATUSES } = require('apify-shared/consts');
+const outputs = require('../lib/outputs');
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
 const UPLOADS_STORE_NAME = 'apify-cli-deployments';
 
-class PushCommand extends Command {
+class PushCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(PushCommand);
         const apifyClient = await getLoggedClientOrError();
         const localConfig = await getLocalConfig();
 
-        // let actId = args._.shift() || localConfig.actId;
-        let actId = localConfig.actId;
-        const versionNumber = args.versionNumber || localConfig.versionNumber || '0.1';
-        const buildTag = args.buildTag || localConfig.buildTag || 'latest';
+        let actId = args.actId || localConfig.actId;
+        const versionNumber = args.versionNumber || localConfig.version.versionNumber;
+        const buildTag = args.buildTag || localConfig.version.buildTag;
 
         info(`Push ${localConfig.name} to Apify.`);
 
@@ -37,46 +39,56 @@ class PushCommand extends Command {
         fs.unlinkSync(TEMP_ZIP_FILE_NAME);
 
         // Update act on Apify
-        const act = { name: localConfig.name };
-        const currentVersion = {
+        const currentVersion = Object.assign(localConfig.version, {
             versionNumber,
             buildTag,
-            sourceType: 'TARBALL',
             tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
-        };
+        });
         if (actId) {
+            const updates = {};
             // Act was created yet or actId was passed
             const actData = await apifyClient.acts.getAct({ actId });
             if (!actData) throw new Error(`Act with id ${actId} doesn't exist!`);
             let foundVersion = false;
-            act.versions = actData.versions.map((version) => {
+            updates.versions = actData.versions.map((version) => {
                 if (version.versionNumber === currentVersion.versionNumber) {
                     foundVersion = true;
-                    Object.assign(version, currentVersion);
+                    return currentVersion;
                 }
                 return version;
             });
-            if (!foundVersion) actData.versions.push(currentVersion);
+            if (!foundVersion) updates.versions.push(currentVersion);
             run('Updating act ...');
-            await apifyClient.acts.updateAct({ actId, act });
+            const updatedAct = await apifyClient.acts.updateAct({ actId, act: updates });
+            console.dir(updatedAct);
         } else {
-            currentVersion.envVars = [];
-            act.versions = [currentVersion];
+            const newAct = {
+                name: localConfig.name,
+                versions: [currentVersion],
+            };
             run('Creating act ...');
-            const newAct = await apifyClient.acts.createAct({ act });
-            actId = (newAct.username) ? `${newAct.username}/${newAct.name}` : newAct.id;
+            const createdAct = await apifyClient.acts.createAct({ act: newAct });
+            actId = (createdAct.username) ? `${createdAct.username}/${createdAct.name}` : createdAct.id;
+            console.dir(createdAct);
         }
-        await setLocalConfig({ actId, buildTag, versionNumber });
+        await setLocalConfig(Object.assign(localConfig, { actId, version: currentVersion }));
 
         // Build act on Apify
         run('Building act ...');
-        await apifyClient.acts.buildAct({
+        const build = await apifyClient.acts.buildAct({
             actId,
             version: versionNumber,
             waitForFinish: 120,
             useCache: true,
         });
-        success('Act was push to Apify!');
+        if (build.status === ACT_TASK_STATUSES.SUCCEEDED) {
+            console.dir(build);
+            success('Act was build and push to Apify!');
+        } else {
+            console.dir(build);
+            outputs.error('Build failed! Log:');
+            console.log(await apifyClient.logs.getLog({ logId: build.id }));
+        }
     }
 }
 
@@ -87,8 +99,24 @@ NOTE: Act overrides current act with the same version on Apify.
 `;
 
 PushCommand.flags = {
-    userId: flags.string({ description: 'User ID'}),
-    token: flags.string({ description: 'Token'}),
+    'version-number': flags.string({
+        char: 'v',
+        description: 'Version number of pushing act version.',
+        required: false,
+    }),
+    'build-tag': flags.string({
+        char: 'b',
+        description: 'Build tag of pushing act version.',
+        required: false,
+    }),
 };
+
+PushCommand.args = [
+    {
+        name: 'actId',
+        required: false,
+        description: 'Act ID of pushing act. It overrides actId in apify.json.',
+    },
+];
 
 module.exports = PushCommand;

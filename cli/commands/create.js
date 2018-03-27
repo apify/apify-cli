@@ -1,5 +1,5 @@
 const { ApifyCommand } = require('../lib/apify_command');
-const { flags } = require('@oclif/command');
+const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
 const copy = require('recursive-copy');
@@ -13,7 +13,7 @@ const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE, EMPTY_LOCAL_CONFIG, ACTS_TEMPLATE_
 class CreateCommand extends ApifyCommand {
     async run() {
         const { flags, args } = this.parse(CreateCommand);
-        let { actName } = args;
+        const { actName } = args;
         let { template } = flags;
         if (!template) {
             const choices = Object.values(ACTS_TEMPLATES);
@@ -29,12 +29,13 @@ class CreateCommand extends ApifyCommand {
         const cwd = process.cwd();
         const actFolderDir = path.join(cwd, actName);
 
-        // Create act structure
+        // Create act folder structure
         try {
             fs.mkdirSync(actFolderDir);
-        } catch(err) {
+        } catch (err) {
             if (err.code && err.code === 'EEXIST') {
-                outputs.error(`Folder with name ${actName} already exists. You can call 'apify init' to create local environment for act inside folder.`);
+                outputs.error(`Folder with name ${actName} already exists. ` +
+                    'You can call "apify init" to create local environment for act inside folder.');
                 return;
             }
             throw err;
@@ -60,12 +61,12 @@ NOTE: You can specified act template, which can help you in specific use cases l
 `;
 
 CreateCommand.flags = {
-    template: flags.string({
+    template: flagsHelper.string({
         char: 't',
-        description: `Act template, if not pass it'll prompt from the console.`,
+        description: 'Act template, if not pass it\'ll prompt from the console.',
         required: false,
         options: ACTS_TEMPLATE_LIST,
-    })
+    }),
 };
 
 CreateCommand.args = [
@@ -73,7 +74,7 @@ CreateCommand.args = [
         name: 'actName',
         required: true,
         description: 'Name of creating act',
-    }
+    },
 ];
 
 module.exports = CreateCommand;

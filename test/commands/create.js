@@ -15,14 +15,14 @@ describe('apify create', () => {
     it('error with no argument', async () => {
         try {
             await command.run(['create']);
-        } catch(err) {
+        } catch (err) {
             return;
         }
         throw new Error('Should have thrown an error');
     });
 
     it('basic template structure', async () => {
-        await command.run(['create',actName ,'--template', 'basic']);
+        await command.run(['create', actName, '--template', 'basic']);
 
         // check files structure
         expect(fs.existsSync(actName)).to.be.true;

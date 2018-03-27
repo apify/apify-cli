@@ -1,7 +1,9 @@
 const { spawn } = require('child_process');
 const outputs = require('./outputs');
 
-
+/**
+ * Run child process and returns stout and stderr to user stout
+ */
 const spawnPromised = (cmd, args, opts) => {
     const command = spawn(cmd, args, opts);
 

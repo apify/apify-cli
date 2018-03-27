@@ -29,7 +29,7 @@ InitCommand.args = [
         name: 'actName',
         required: false,
         description: 'Name of initeled act',
-    }
+    },
 ];
 
 module.exports = InitCommand;

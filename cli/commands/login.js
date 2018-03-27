@@ -1,4 +1,4 @@
-const { flags } = require('@oclif/command');
+const { flags: flagsHelper } = require('@oclif/command');
 const { ApifyCommand } = require('../lib/apify_command');
 const inquirer = require('inquirer');
 const { success, error } = require('../lib/outputs');
@@ -26,7 +26,7 @@ All tokens and keys will store ~/.apify.
 NOTE: If you set up token options, prompt will skip`;
 
 LoginCommand.flags = {
-    'token': flags.string({
+    token: flagsHelper.string({
         char: 't',
         description: '[Optional] Your API token on Apify',
         required: false,

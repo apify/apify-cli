@@ -8,25 +8,34 @@ const writeJson = require('write-json-file');
 const ApifyClient = require('apify-client');
 const { error } = require('./outputs');
 const { LOCAL_ENV_VARS, GLOBAL_CONFIGS_FOLDER,
-    AUTH_FILE_PATH, LOCAL_CONFIG_NAME} = require('./consts');
+    AUTH_FILE_PATH, LOCAL_CONFIG_NAME } = require('./consts');
 const { createFolderSync, updateLocalJson } = require('./files');
 
 const apifyClient = new ApifyClient();
 
+/**
+ * Gets instance of ApifyClient for user otherwise throws error
+ * @return {Promise<boolean|*>}
+ */
 const getLoggedClientOrError = async () => {
     const loggedClient = await getLoggedClient();
     if (!loggedClient) {
-        error(`You aren\'t logged in! Call "apify login" to authenticate to Apify.`);
-        return;
+        throw new Error('You aren\'t logged into Apify! Call "apify login" to authenticate into Apify.');
     }
     return loggedClient;
 };
 
+/**
+ * Gets instance of ApifyClient for token or for params from global auth file.
+ * NOTE: It refreshes global auth file each run
+ * @param [token]
+ * @return {Promise<*>}
+ */
 const getLoggedClient = async (token) => {
     let userInfo;
 
     if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
-        ({token} = loadJson.sync(AUTH_FILE_PATH));
+        ({ token } = loadJson.sync(AUTH_FILE_PATH));
     }
 
     try {
@@ -98,12 +107,17 @@ const argsToCamelCase = (object) => {
     return camelCasedObject;
 };
 
+/**
+ * Create zip files with all act files, omit files regarding .gitignore settings
+ * @param zipName
+ * @return {Promise<void>}
+ */
 const createActZip = async (zipName) => {
     const excludedPaths = gitignore('.gitignore').map(patern => `!${patern}`);
     const pathsToZip = await globby(['*', '*/**', ...excludedPaths]);
     const archive = archiver(zipName);
     const archiveFilesPromises = [];
-    pathsToZip.forEach(path => archiveFilesPromises.push(archive.glob(path)));
+    pathsToZip.forEach(globPath => archiveFilesPromises.push(archive.glob(globPath)));
     await Promise.all(archiveFilesPromises);
     await archive.finalize();
 };
@@ -116,5 +130,5 @@ module.exports = {
     argsToCamelCase,
     getLoggedClient,
     createActZip,
-    apifyClient
+    apifyClient,
 };

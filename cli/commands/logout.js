@@ -5,7 +5,7 @@ const { rimrafPromised } = require('../lib/files');
 
 
 class LogoutCommand extends ApifyCommand {
-    async run() {
+    static async run() {
         await rimrafPromised(GLOBAL_CONFIGS_FOLDER);
         success('You are logout from Apify.');
     }

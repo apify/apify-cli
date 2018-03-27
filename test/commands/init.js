@@ -15,7 +15,7 @@ describe('apify init', () => {
     });
 
     it('create basic structure', async () => {
-        await command.run(['init', actName])
+        await command.run(['init', actName]);
 
         const apifyJsonPath = 'apify.json';
         expect(fs.existsSync(apifyJsonPath)).to.be.true;

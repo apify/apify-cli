@@ -34,9 +34,12 @@ describe('apify run', () => {
         await command.run(['run']);
 
         // check act output
-        const actOutputPath = path.join(LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR,
+        const actOutputPath = path.join(
+            LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR,
             LOCAL_ENV_VARS.APIFY_LOCAL_KEY_VALUE_STORES_DIR,
-            LOCAL_ENV_VARS.APIFY_DEFAULT_KEY_VALUE_STORE_ID, 'OUTPUT.json');
+            LOCAL_ENV_VARS.APIFY_DEFAULT_KEY_VALUE_STORE_ID,
+            'OUTPUT.json',
+        );
         const actOutput = loadJson.sync(actOutputPath);
         expect(actOutput).to.be.eql(expectOutput);
     });

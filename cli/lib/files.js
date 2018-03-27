@@ -23,6 +23,7 @@ const createFolderSync = (folderPath) => {
     return folderPath;
 };
 
+
 const rimrafPromised = (path) => {
     return new Promise((resolve, revoke) => {
         rimraf(path, (err) => {

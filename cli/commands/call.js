@@ -1,19 +1,32 @@
 const { ApifyCommand } = require('../lib/apify_command');
+const { flags: flagsHelper } = require('@oclif/command');
 const { ACT_TASK_STATUSES } = require('apify-shared/consts');
 const { getLocalConfig, getLoggedClientOrError } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
 class CallCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(CallCommand);
+        const { args, flags } = this.parse(CallCommand);
         const localConfig = await getLocalConfig();
-        const actId = args.actId || localConfig.actId;
+        const runOpts = {
+            actId: args.actId || localConfig.actId,
+            waitForFinish: 120,
+        };
+
+        ['build', 'timeout', 'memory'].forEach((opt) => {
+            if (flags[opt]) runOpts[opt] = flags[opt];
+        });
 
         const apifyClient = await getLoggedClientOrError();
 
-        outputs.run(`Calling act ${actId}`);
+        outputs.run(`Calling act ${runOpts.actId}...`);
 
-        const run = await apifyClient.acts.runAct({ actId, waitForFinish: 120 });
+        const run = await apifyClient.acts.runAct(runOpts);
+
+        console.dir(run);
+
+        const log = await apifyClient.logs.getLog({ logId: run.id });
+        console.log(log);
 
         if (run.status === ACT_TASK_STATUSES.SUCCEEDED) {
             outputs.success('Act finished!');
@@ -25,7 +38,34 @@ class CallCommand extends ApifyCommand {
 
 CallCommand.description = `
 This runs your act on Apify and fetches results from output.
-It waits 120 second to finish act.
 `;
+
+CallCommand.flags = {
+    build: flagsHelper.string({
+        char: 'b',
+        description: 'Tag or number of the build to run (e.g. latest or 1.2.34).',
+        required: false,
+    }),
+    timeout: flagsHelper.string({
+        char: 't',
+        description: 'Timeout for the act run in seconds. Zero value means there is no timeout.',
+        required: false,
+        parse: input => parseInt(input, 10),
+    }),
+    memory: flagsHelper.string({
+        char: 'm',
+        description: 'Amount of memory allocated for the act run, in megabytes.',
+        required: false,
+        parse: input => parseInt(input, 10),
+    }),
+};
+
+CallCommand.args = [
+    {
+        name: 'actId',
+        required: false,
+        description: 'Act ID of calling act. It overrides actId in apify.json.',
+    },
+];
 
 module.exports = CallCommand;

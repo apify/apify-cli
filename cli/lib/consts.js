@@ -39,8 +39,13 @@ exports.LOCAL_ENV_VARS = {
 exports.EMPTY_LOCAL_CONFIG = {
     name: null,
     actId: null,
-    versionNumber: '0.1',
-    buildTag: 'latest',
+    version: {
+        versionNumber: '0.1',
+        buildTag: 'latest',
+        envVars: [],
+        sourceType: 'TARBALL',
+        tarballUrl: null,
+    },
 };
 
 exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');

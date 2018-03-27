@@ -3,7 +3,6 @@ const fs = require('fs');
 const sinon = require('sinon');
 const loadJson = require('load-json-file');
 const command = require('@oclif/command');
-const logout = require('../../cli/commands/logout');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../cli/lib/consts');
 const { apifyClient } = require('../../cli/lib/utils');
 
@@ -11,7 +10,7 @@ const userInfo = {
     userId: 'myUserId',
     proxy: {
         password: 'myProxyPass',
-    }
+    },
 };
 const myUserToken = 'myToken';
 const badCredentials = { userId: 'badUserId', token: 'badToken' };
