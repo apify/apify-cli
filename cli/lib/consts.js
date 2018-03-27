@@ -3,14 +3,24 @@ const path = require('path');
 
 exports.ACTS_TEMPLATES = {
     basic: {
-        name: 'Basic act ("basic")',
+        name: 'Basic ("basic")',
         value: 'basic',
         dir: `${__dirname}/../templates/basic`,
     },
     puppeteer: {
-        name: 'Puppeteer crawler ("puppeteer")',
+        name: 'Puppeteer ("puppeteer")',
         value: 'puppeteer',
         dir: `${__dirname}/../templates/puppeteer`,
+    },
+    puppeteer_crawler: {
+        name: 'Puppeteer crawler ("puppeteer_crawler")',
+        value: 'puppeteer_crawler',
+        dir: `${__dirname}/../templates/puppeteer_crawler`,
+    },
+    plain_request_urls_list: {
+        name: 'Plain request url list crawler ("plain_request_urls_list")',
+        value: 'plain_request_urls_list',
+        dir: `${__dirname}/../templates/plain_request_urls_list`,
     },
 };
 

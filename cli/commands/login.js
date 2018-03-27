@@ -22,6 +22,7 @@ class LoginCommand extends ApifyCommand {
 
 LoginCommand.description = `
 This is an interactive prompt which authenticates you with Apify.
+All tokens and keys will store ~/.apify.
 NOTE: If you set up token options, prompt will skip`;
 
 LoginCommand.flags = {

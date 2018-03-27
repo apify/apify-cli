@@ -1,0 +1,21 @@
+{
+    "name": "your-act-name",
+    "version": "1.0.0",
+    "description": "",
+    "main": "main.js",
+    "dependencies": {
+        "apify": "^0.5.13"
+    },
+    "devDependencies": {},
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "run-local": "APIFY_LOCAL_EMULATION_DIR=./apify_local APIFY_DEFAULT_KEY_VALUE_STORE_ID=default APIFY_DEFAULT_DATASET_ID=default node main.js"
+    },
+    "repository": {
+        "type": "git",
+        "url": ""
+    },
+    "author": "",
+    "license": "ISC",
+    "homepage": ""
+}

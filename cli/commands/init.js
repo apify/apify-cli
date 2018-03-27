@@ -6,7 +6,7 @@ const { EMPTY_LOCAL_CONFIG } = require('../lib/consts');
 
 class InitCommand extends ApifyCommand {
     async run() {
-        const { flags, args } = this.parse(InitCommand);
+        const { args } = this.parse(InitCommand);
         let { actName } = args;
         if (!actName) {
             const answer = await inquirer.prompt([{ name: 'actName', message: 'Act name:', default: __dirname }]);
@@ -20,7 +20,7 @@ class InitCommand extends ApifyCommand {
 }
 
 InitCommand.description = `
-This asks you for your act name, writes apify.json and creates apify_local folder structure for local development.
+This asks you for your the act name, writes apify.json and creates apify_local folder structure for local development.
 NOTE: This overrides your current apify.json.
 `;
 

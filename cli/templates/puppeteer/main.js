@@ -9,6 +9,8 @@ Apify.main(async () => {
     const page = await browser.newPage();
     await page.goto(input.url);
 
+    await page.waitFor(10000); // You have time to see opened browser window
+
     console.log('Closing Puppeteer...');
     await browser.close();
 

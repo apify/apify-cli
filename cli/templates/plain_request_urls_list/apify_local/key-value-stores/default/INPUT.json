@@ -1,0 +1,10 @@
+{
+    "sources": [
+        {
+            "url": "http://www.example.com"
+        },
+        {
+            "url": "http://www.example.com/a"
+        }
+    ]
+}

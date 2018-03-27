@@ -62,7 +62,7 @@ NOTE: You can specified act template, which can help you in specific use cases l
 CreateCommand.flags = {
     template: flags.string({
         char: 't',
-        description: `Act template, if not pass it'll promt from console.`,
+        description: `Act template, if not pass it'll prompt from the console.`,
         required: false,
         options: ACTS_TEMPLATE_LIST,
     })
@@ -72,8 +72,8 @@ CreateCommand.args = [
     {
         name: 'actName',
         required: true,
-        description: 'Name of created act',
+        description: 'Name of creating act',
     }
-]
+];
 
 module.exports = CreateCommand;

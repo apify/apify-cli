@@ -1,17 +1,17 @@
 const { ApifyCommand } = require('../lib/apify_command');
-const { ACT_TASK_STATUSES } = require('apify-shared/consts')
+const { ACT_TASK_STATUSES } = require('apify-shared/consts');
 const { getLocalConfig, getLoggedClientOrError } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
 class CallCommand extends ApifyCommand {
     async run() {
-        const { flags, args } = this.parse(CallCommand);
+        const { args } = this.parse(CallCommand);
         const localConfig = await getLocalConfig();
         const actId = args.actId || localConfig.actId;
 
         const apifyClient = await getLoggedClientOrError();
 
-        outputs.run(`Calling act ${actId}`)
+        outputs.run(`Calling act ${actId}`);
 
         const run = await apifyClient.acts.runAct({ actId, waitForFinish: 120 });
 
@@ -24,7 +24,7 @@ class CallCommand extends ApifyCommand {
 }
 
 CallCommand.description = `
-This runs your act on Apify.
+This runs your act on Apify and fetches results from output.
 It waits 120 second to finish act.
 `;
 

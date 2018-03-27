@@ -81,7 +81,9 @@ class PushCommand extends Command {
 }
 
 PushCommand.description = `
-This uploads act from current directory to Apify and builds it.
+This uploads act from the current directory to Apify and builds it.
+If exists apify.json in the directory it takes options from there. You can override these with options below.
+NOTE: Act overrides current act with the same version on Apify.
 `;
 
 PushCommand.flags = {
