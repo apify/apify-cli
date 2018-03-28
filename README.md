@@ -1,6 +1,6 @@
 # Apify command line client (apify-cli)
 
-[![npm version](https://badge.fury.io/js/apify-cli.svg)](http://badge.fury.io/js/apify)
+[![npm version](https://badge.fury.io/js/apify-cli.svg)](http://badge.fury.io/js/apify-cli)
 [![Build Status](https://travis-ci.org/apifytech/apify-js.svg)](https://travis-ci.org/apifytech/apify-cli)
 
 Apify command client helps you to create and deploy [Apify Actor acts](https://www.apify.com/docs/actor).
