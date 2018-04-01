@@ -84,7 +84,7 @@ const setLocalEnv = async (actDir) => {
     // Update package.json
     const packageJson = path.join(actDir, 'package.json');
     if (fs.existsSync(packageJson)) {
-        const envVarsPart = Object.keys(LOCAL_ENV_VARS).map(envVar => `${envVar}=${LOCAL_ENV_VARS.envVar}`).join(' ');
+        const envVarsPart = Object.keys(LOCAL_ENV_VARS).map(envVar => `${envVar}=${LOCAL_ENV_VARS[envVar]}`).join(' ');
         const runLocalCmd = `${envVarsPart} node main.js`;
         await updateLocalJson(packageJson, {
             'run-local': runLocalCmd,

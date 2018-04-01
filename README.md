@@ -14,99 +14,136 @@ Then install Apify CLI with:
 
 `npm -g install apify-cli`
 
-## Commands
+##Commands
+```
+Command line client for Apify.
 
-### apify help [COMMAND]
-This prints help for specified command.
+VERSION
+  apify-cli/0.1.0 darwin-x64 node-v8.9.4
 
-- **Arguments**
+USAGE
+  $ apify [COMMAND]
 
-| Argument         |Required | Example value   |  Description  |
-| :---------------:|:-------:|:---------------:| :------------ |
-| COMMAND  |         | init | The command for which help will be print. |
+COMMANDS
+  call
+  create
+  init
+  login
+  logout
+  push
+  run
 
+```
+###apify call
+```
+USAGE
+  $ apify call [ACTID]
 
-### apify login
-This is an interactive prompt which authenticates you with Apify. All tokens and keys will store ~/.apify.
-NOTE: If you set up token options, prompt will skip
+ARGUMENTS
+  ACTID  Act ID of calling act. It overrides actId in apify.json.
 
-- **Options**
+OPTIONS
+  -b, --build=build      Tag or number of the build to run (e.g. latest or
+                         1.2.34).
 
-| Option         |Required | Example value   |  Description  |
-| :--------------|:-------:|:---------------:| :------------ |
-| -t, --token    |         | 6g5Nfz9zHt7k9Ub | Your API token on Apify. You can find it on you [Apify accout](https://my.apify.com/account#/integrations). |
+  -m, --memory=memory    Amount of memory allocated for the act run, in
+                         megabytes.
 
+  -t, --timeout=timeout  Timeout for the act run in seconds. Zero value means
+                         there is no timeout.
 
-### apify logout
-Deletes all your stored tokens and keys from ~/.apify.
-NOTE: This deletes all your global settings.
-
-
-### apify call [ACTID]
-This runs your act on Apify and fetches results from output.
-
-- **Arguments**
-
-| Argument         |Required | Example value   |  Description  |
-| :----------------|:-------:|:---------------:| :------------ |
-| ACTID            |         | 9h6Gfd87jg6ZGsb | Act ID of calling act. It overrides actId in apify.json. |
-
-- **Options**
-
-| Option               |Required | Example value   |  Description  |
-| :--------------------|:-------:|:---------------:| :------------ |
-| -b, --build          |         | 1.2.3           | Tag or number of the build to run (e.g. latest or 1.2.34). |
-| -m, --memory         |         | 1024            | Amount of memory allocated for the act run, in megabytes. |
-| -t, --timeout        |         | 300             | Timeout for the act run in seconds. Zero value means there is no timeout. |
+DESCRIPTION
+  This runs your act on Apify and fetches results from output.
 
 
-### apify create ACTNAME
-This creates directory with proper structure for local development.
+```
+###apify create
+```
+USAGE
+  $ apify create ACTNAME
 
-- **Arguments**
+ARGUMENTS
+  ACTNAME  Name of creating act
 
-| Argument         |Required | Example value   |  Description  |
-| :----------------|:-------:|:---------------:| :------------ |
-| ACTNAME          |    *    | my-act-name     | Act name of act you want to create. |
+OPTIONS
+  -t, --template=basic|puppeteer|puppeteer_crawler|plain_request_urls_list
+      Act template, if not pass it'll prompt from the console.
 
-- **Options**
-
-| Option         |Required | Example value   |  Description  |
-| :--------------|:-------:|:---------------:| :------------ |
-| -t, --template |         | basic           | Act template, if not pass it'll prompt from the console. |
-
-
-### apify init [ACTNAME]
-This asks you for your the act name, writes `apify.json` and creates `apify_local` folder structure for local development.
-
-- **Arguments**
-
-| Argument         |Required | Example value   |  Description  |
-| :----------------|:-------:|:---------------:| :------------ |
-| ACTNAME          |         | my-act-name     | Act name of act you want to init. If not set it will prompt. |
+DESCRIPTION
+  This creates directory with proper structure for local development.
+  NOTE: You can specified act template, which can help you in specific use cases
+  like crawling urls list or crawling with queue.
 
 
-### apify push [ACTID]
-This uploads act from the current directory to Apify and builds it.
-If exists apify.json in the directory it takes options from there. You can override these with options below.
+```
+###apify init
+```
+USAGE
+  $ apify init [ACTNAME]
 
-- **Arguments**
+ARGUMENTS
+  ACTNAME  Name of initeled act
 
-| Argument         |Required | Example value   |  Description  |
-| :----------------|:-------:|:---------------:| :------------ |
-| ACTID            |         | 9h6Gfd87jg6ZGsb | Act ID of act you want to push. It overrides actId in `apify.json`. |
-
-- **Options**
-
-| Option               |Required | Example value   |  Description  |
-| :--------------------|:-------:|:---------------:| :------------ |
-| -b, --build-tag      |         | latest          | Build tag of pushing act version. |
-| -v, --version-number |         | 0.1             | Version number of pushing act version. |
+DESCRIPTION
+  This asks you for your the act name, writes apify.json and creates apify_local
+  folder structure for local development.
+  NOTE: This overrides your current apify.json.
 
 
-### apify run
-This runs act from current directory. It uses `apify_local` for getting input and setting output and storing data.
+```
+###apify login
+```
+USAGE
+  $ apify login
+
+OPTIONS
+  -t, --token=token  [Optional] Your API token on Apify
+
+DESCRIPTION
+  This is an interactive prompt which authenticates you with Apify.
+  All tokens and keys will store ~/.apify.
+  NOTE: If you set up token options, prompt will skip
+
+```
+###apify logout
+```
+USAGE
+  $ apify logout
+
+DESCRIPTION
+  Deletes all your stored tokens and keys from ~/.apify.
+  NOTE: This deletes all your global settings.
 
 
-### apify --version
-This prints version of your command line client.
+```
+###apify push
+```
+USAGE
+  $ apify push [ACTID]
+
+ARGUMENTS
+  ACTID  Act ID of pushing act. It overrides actId in apify.json.
+
+OPTIONS
+  -b, --build-tag=build-tag            Build tag of pushing act version.
+  -v, --version-number=version-number  Version number of pushing act version.
+
+DESCRIPTION
+  This uploads act from the current directory to Apify and builds it.
+  If exists apify.json in the directory it takes options from there. You can
+  override these with options below.
+  NOTE: Act overrides current act with the same version on Apify.
+
+
+```
+###apify run
+```
+USAGE
+  $ apify run
+
+DESCRIPTION
+  This runs act from current directory. It uses apify_local for getting input
+  and setting output and storing data.
+
+
+```

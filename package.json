@@ -5,7 +5,8 @@
     "main": "index.js",
     "scripts": {
         "test": "mocha --timeout 120000 --recursive",
-        "lint": "eslint cli test"
+        "lint": "eslint cli test",
+        "commands_md": "./help_to_md.sh COMMANDS.md"
     },
     "bin": {
         "apify": "cli/bin.js"
