@@ -1,19 +1,3 @@
-# Apify command line client (apify-cli)
-
-[![npm version](https://badge.fury.io/js/apify-cli.svg)](http://badge.fury.io/js/apify-cli)
-[![Build Status](https://travis-ci.org/apifytech/apify-js.svg)](https://travis-ci.org/apifytech/apify-cli)
-
-Apify command client helps you to create and deploy [Apify Actor acts](https://www.apify.com/docs/actor).
-
-
-## Usage
-
-To get started with Apify command line client, first make sure you have Node.js (`v7.10.x` and higher) installed.
-
-Then install Apify CLI with:
-
-`npm -g install apify-cli`
-
 ## Commands
 ```
 Command line client for Apify.
@@ -71,7 +55,7 @@ OPTIONS
 
 DESCRIPTION
   This creates directory with proper structure for local development.
-  NOTE: You can specified act template, which can help you in specific use cases
+  NOTE: You can specified act template, which can help you in specific use cases 
   like crawling urls list or crawling with queue.
 
 
@@ -85,7 +69,7 @@ ARGUMENTS
   ACTNAME  Name of initeled act
 
 DESCRIPTION
-  This asks you for your the act name, writes apify.json and creates apify_local
+  This asks you for your the act name, writes apify.json and creates apify_local 
   folder structure for local development.
   NOTE: This overrides your current apify.json.
 
@@ -112,7 +96,7 @@ USAGE
 
 DESCRIPTION
   Deletes all your stored tokens and keys from ~/.apify.
-  NOTE: This deletes all your global settings.
+  NOTE: This deletes all your global settings. 
 
 
 ```
@@ -130,7 +114,7 @@ OPTIONS
 
 DESCRIPTION
   This uploads act from the current directory to Apify and builds it.
-  If exists apify.json in the directory it takes options from there. You can
+  If exists apify.json in the directory it takes options from there. You can 
   override these with options below.
   NOTE: Act overrides current act with the same version on Apify.
 
@@ -142,7 +126,7 @@ USAGE
   $ apify run
 
 DESCRIPTION
-  This runs act from current directory. It uses apify_local for getting input
+  This runs act from current directory. It uses apify_local for getting input 
   and setting output and storing data.
 
 
