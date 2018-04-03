@@ -35,7 +35,7 @@ COMMANDS
 
 ```
 ### apify call
-```
+<pre><code>
 USAGE
   $ apify call [ACTID]
 
@@ -56,7 +56,7 @@ DESCRIPTION
   This runs your act on Apify and fetches results from output.
 
 
-```
+</code></pre>
 ### apify create
 ```
 USAGE
