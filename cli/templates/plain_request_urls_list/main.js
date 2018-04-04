@@ -35,12 +35,6 @@ Apify.main(async () => {
         handleFailedRequestFunction,
     });
 
-    // Some info usefull for debugging.
-    setInterval(() => {
-        const { concurrency, runningCount } = basicCrawler.basicCrawler.autoscaledPool;
-        console.log(`Concurrency: ${concurrency}, runningCount: ${runningCount}`);
-    }, 10000);
-
     setInterval(() => Apify.setValue('request-list-state', requestList.getState()), 60000);
 
     await basicCrawler.run();

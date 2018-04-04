@@ -9,7 +9,7 @@ class RunCommand extends ApifyCommand {
 }
 
 RunCommand.description = `
-This runs act from current directory. It uses apify_local for getting input and setting output and storing data.
+This runs act locally from current directory. It uses apify_local for getting input and setting output and storing data.
 `;
 
 module.exports = RunCommand;

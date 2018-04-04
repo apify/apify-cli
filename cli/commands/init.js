@@ -28,7 +28,7 @@ InitCommand.args = [
     {
         name: 'actName',
         required: false,
-        description: 'Name of initeled act',
+        description: 'Name of initiated act',
     },
 ];
 
