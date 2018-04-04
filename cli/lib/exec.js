@@ -1,9 +1,29 @@
-const util = require('util');
-const exec = util.promisify(require('child_process').exec);
+const { spawn } = require('child_process');
+const outputs = require('./outputs');
 
-module.exports = async (cmd, opts) => {
-    opts = Object.assign({}, opts);
-    const { stdout, stderr } = await exec(cmd, opts);
-    console.log(stdout);
-    console.log(stderr);
+/**
+ * Run child process and returns stout and stderr to user stout
+ */
+const spawnPromised = (cmd, args, opts) => {
+    const command = spawn(cmd, args, opts);
+
+    command.stdout.on('data', (data) => {
+        if (data) console.log(data.toString());
+    });
+
+    command.stderr.on('data', (data) => {
+        if (data) console.log(data.toString());
+    });
+
+    return new Promise((resolve, reject) => {
+        command.on('close', (code) => {
+            if (code !== 0) reject(new Error(`${cmd} exited with code ${code}`));
+            resolve();
+        });
+    });
+};
+
+module.exports = async (cmd, args = [], opts = {}) => {
+    outputs.run(`${cmd} ${args.join(' ')}`);
+    await spawnPromised(cmd, args, opts);
 };

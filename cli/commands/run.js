@@ -1,11 +1,15 @@
-const { getLocalConfig, getLocalInput } = require('../lib/configs');
-const ApifyClient = require('apify-client');
+const { ApifyCommand } = require('../lib/apify_command');
+const execWithLog = require('../lib/exec');
+const { LOCAL_ENV_VARS } = require('../lib/consts');
 
-module.exports = async (args, config) => {
-    const localConfig = await getLocalConfig();
-    if (!localConfig || !localConfig.id) return; //TODO
-    const apifyClient = new ApifyClient(config);
-    const body = await getLocalInput();
-    const run = await apifyClient.acts.runAct({ actId: localConfig.id, body , contentType: 'application/json; charset=utf-8' });
-    console.log(run);
-};
+class RunCommand extends ApifyCommand {
+    static async run() {
+        await execWithLog('node', ['main.js'], { env: Object.assign(process.env, LOCAL_ENV_VARS) });
+    }
+}
+
+RunCommand.description = `
+This runs act locally from current directory. It uses apify_local for getting input and setting output and storing data.
+`;
+
+module.exports = RunCommand;
