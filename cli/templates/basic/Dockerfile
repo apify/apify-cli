@@ -1,4 +1,4 @@
-FROM apify/actor-node-puppeteer
+FROM apify/actor-node-basic
 
 # Copy source code
 COPY * ./
