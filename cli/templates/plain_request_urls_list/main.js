@@ -31,14 +31,8 @@ Apify.main(async () => {
 
     const basicCrawler = new Apify.BasicCrawler({
         requestList,
-        minConcurrency: 1,
-        maxConcurrency: 75,
-        abortInstanceAfterRequestCount: 1000,
-        maxOpenPagesPerInstance: 50,
         handleRequestFunction,
         handleFailedRequestFunction,
-        pageOpsTimeoutMillis: 180000,
-        puppeteerConfig: { dumpio: false },
     });
 
     // Some info usefull for debugging.

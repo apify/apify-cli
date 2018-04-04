@@ -1,59 +1,35 @@
 const Apify = require('apify');
 
 Apify.main(async () => {
-    const requestListState = 'my-request-list-state';
-    const pages = [];
-
-    // Get urls for crawl
-    if (!await Apify.getValue(requestListState)) {
-        const browser = await Apify.launchPuppeteer();
-
-        const page = await browser.newPage();
-        await page.goto('https://www.apify.com/library?type=acts&search=user%3Aapify%20example');
-
-        const links = await page.$$eval('.crawler-card a', links => links.map(link => link.href));
-
-        links.forEach(link => pages.push({ url: link }));
-
-        await browser.close();
-    }
-
+    // Create a request list.
     const requestList = new Apify.RequestList({
-        sources: pages,
-        // Initialize from previous state if act was restarted due to some error
-        state: await Apify.getValue(requestListState),
+        sources: [
+            { url: 'http://www.example.com' },
+            { url: 'http://www.some-nonexisting-domain.com' },
+        ],
     });
 
     await requestList.initialize();
 
-    /**
-     * This crawls all links using Puppeteer crawler
-     *
-     * How puppeteer crawler works:
-     * https://www.apify.com/docs/sdk/apify-runtime-js/latest#PuppeteerCrawler
-     */
     const crawler = new Apify.PuppeteerCrawler({
         requestList,
         disableProxy: true,
-        // Parameter page here is an intance of Puppeteer.Page with page.goto(request.url) already called
+
+        // This page is executed for each request.
+        // If request failes then it's retried 3 times.
+        // Parameter page is Puppeteers page object with loaded page.
         handlePageFunction: async ({ page, request }) => {
-            console.log(`Go to ---> ${request.url}`);
-            await Apify.pushData({
-                title: await page.title(),
-                url: request.url,
-                succeeded: true,
-            });
+            const title = await page.title();
+
+            console.log(`Request ${request.url} succeeded and it's title is ${title}`);
         },
+
+        // If request failed 4 times then this function is executed.
         handleFailedRequestFunction: async ({ request }) => {
-            await Apify.pushData({
-                url: request.url,
-                succeeded: false,
-                errors: request.errorMessages,
-            });
+            console.log(`Request ${request.url} failed 4 times`);
         },
     });
 
+    // Run crawler for request list.
     await crawler.run();
-
-    console.log('Done.');
 });
