@@ -2,3 +2,4 @@
 .DS_Store
 node_modules
 test-acts
+local_test.sh

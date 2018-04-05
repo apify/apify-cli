@@ -4,24 +4,7 @@ const sinon = require('sinon');
 const loadJson = require('load-json-file');
 const command = require('@oclif/command');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../cli/lib/consts');
-const { apifyClient } = require('../../cli/lib/utils');
-
-const userInfo = {
-    userId: 'myUserId',
-    proxy: {
-        password: 'myProxyPass',
-    },
-};
-const myUserToken = 'myToken';
-const badCredentials = { userId: 'badUserId', token: 'badToken' };
-
-const mockSuccessLogin = async (token) => {
-    sinon.stub(apifyClient.users, 'getUser').withArgs({ token }).returns(userInfo);
-
-    await command.run(['login', '--token', token]);
-
-    apifyClient.users.getUser.restore();
-};
+const { testUserClient, badUserClient } = require('./config');
 
 describe('apify login and logout', () => {
     before(function () {
@@ -36,20 +19,24 @@ describe('apify login and logout', () => {
     });
 
     it('login should end with Error', async () => {
-        await command.run(['login', '--token', badCredentials.token]);
+        const { token } = badUserClient.getOptions();
+        await command.run(['login', '--token', token]);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Error:');
     });
 
     it('login and logout should work', async () => {
-        await mockSuccessLogin(myUserToken);
+        const { token } = testUserClient.getOptions();
+        await command.run(['login', '--token', token]);
+
+        const expectedUserInfo = Object.assign(await testUserClient.users.getUser(), { token });
 
         const userInfoFromConfig = loadJson.sync(AUTH_FILE_PATH);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Success:');
-        expect(userInfoFromConfig).to.eql(Object.assign({ token: myUserToken }, userInfo));
+        expect(expectedUserInfo).to.eql(userInfoFromConfig);
 
         await command.run(['logout']);
         const isGlobalConfig = fs.existsSync(GLOBAL_CONFIGS_FOLDER);

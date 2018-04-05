@@ -1,67 +1,88 @@
-// TODO: Make it works
-// const { expect } = require('chai');
-// const sinon = require('sinon');
-// const fs = require('fs');
-// const command = require('@oclif/command');
-// const { rimrafPromised } = require('../../cli/lib/files');
-// const loadJson = require('load-json-file');
-// const { ACT_TASK_STATUSES } = require('apify-shared/consts');
-// const { apifyClient } = require('../../cli/lib/utils');
-//
-//
-// const storeId = 'my-store';
-// const objectKey = 'my-key';
-// const actName = 'my-act';
-// const actVersion = {
-//     versionNumber: '0.1',
-//     buildTag: 'latest',
-//     envVars: [],
-//     sourceType: 'TARBALL',
-//     tarballUrl: 'https://api.apify.com/v2/key-value-stores/6XZutK/keys/test.zip',
-// };
-// const act = {
-//     name: actName,
-//     versions: [actVersion]
-// };
-//
-// describe('apify push', () => {
-//     before(async () => {
-//         await command.run(['create', actName, '--template', 'basic']);
-//         process.chdir(actName);
-//     });
-//
-//     beforeEach(() => {
-//         sinon.spy(console, 'log');
-//     });
-//
-//     it('push without actId', async () => {
-//         sinon.stub(apifyClient.keyValueStores, 'getOrCreateStore').withArgs({ name: 'store-name' }).returns({ id: storeId });
-//         sinon.stub(apifyClient.keyValueStores, 'putRecord').withArgs({ storeId, key: objectKey }).returns();
-//         sinon.stub(apifyClient.acts, 'createAct').withArgs({ name: actName, versions: [actName] }).returns(act);
-//         sinon.stub(apifyClient.acts, 'buildAct').withArgs({ actId: act.id }).returns({ status: ACT_TASK_STATUSES.SUCCEEDED});
-//
-//         command.run(['push']);
-//
-//         expect(loadJson.sync('apify.json')).to.be.eql({ actName, actId: act.id, version: actVersion });
-//     });
-//
-//     it('push with actId', async () => {
-//         sinon.stub(apifyClient.keyValueStores, 'putObject').withArgs({ storeId, key: objectKey }).returns(act);
-//         sinon.stub(apifyClient.acts, 'createAct').withArgs({ name: actName, versions: [actName] }).returns(act);
-//
-//         await command.run(['init', actName]);
-//
-//         const apifyJsonPath = 'apify.json';
-//         expect(fs.existsSync(apifyJsonPath)).to.be.true;
-//         expect(loadJson.sync(apifyJsonPath)).to.be.eql(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
-//     });
-//
-//     afterEach(() => {
-//         console.log.restore();
-//     });
-//
-//     after(async () => {
-//         process.chdir('../');
-//         if (fs.existsSync(actName)) await rimrafPromised(actName);
-//     });
-// });
+const { expect } = require('chai');
+const sinon = require('sinon');
+const fs = require('fs');
+const command = require('@oclif/command');
+const { rimrafPromised } = require('../../cli/lib/files');
+const loadJson = require('load-json-file');
+const { GLOBAL_CONFIGS_FOLDER } = require('../../cli/lib/consts');
+const { testUserClient } = require('./config');
+
+const ACT_NAME = 'my-act';
+const TEST_ACT = {
+    name: 'my-testing-act',
+    isPublic: false,
+    versions: [
+        {
+            versionNumber: '0.0',
+            sourceType: 'TARBALL',
+            buildTag: 'latest',
+            sourceCode: 'http://example.com/my_test.zip',
+        },
+    ],
+};
+
+describe('apify push', () => {
+    before(async function () {
+        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
+            // Skip tests if user used CLI on local, it can break local environment!
+            this.skip();
+            return;
+        }
+        await command.run(['login', '--token', testUserClient.getOptions().token]);
+        await command.run(['create', ACT_NAME, '--template', 'basic']);
+        process.chdir(ACT_NAME);
+    });
+
+    beforeEach(() => {
+        sinon.spy(console, 'log');
+    });
+
+    it('push without actId', async () => {
+        await command.run(['push']);
+
+        const apifyJson = loadJson.sync('apify.json');
+
+        const { actId } = apifyJson;
+        const createdAct = await testUserClient.acts.getAct({ actId });
+
+        const expectedApifyJson = {
+            name: ACT_NAME,
+            actId,
+            version: createdAct.versions[0],
+        };
+
+        if (createdAct) await testUserClient.acts.deleteAct({ actId });
+
+        expect(expectedApifyJson).to.be.eql(apifyJson);
+    });
+
+    it('push with actId', async () => {
+        let testAct = await testUserClient.acts.createAct({ act: TEST_ACT });
+        const beforeApifyJson = loadJson.sync('apify.json');
+
+        await command.run(['push', testAct.id]);
+
+        const afterApifyJson = loadJson.sync('apify.json');
+        testAct = await testUserClient.acts.getAct({ actId: testAct.id });
+
+        const expectedApifyJson = {
+            name: beforeApifyJson.name,
+            actId: beforeApifyJson.actId,
+            version: testAct.versions.find(version => version.versionNumber === afterApifyJson.version.versionNumber),
+        };
+
+        if (testAct) await testUserClient.acts.deleteAct({ actId: testAct.id });
+
+        expect(expectedApifyJson).to.be.eql(afterApifyJson);
+    });
+
+    afterEach(() => {
+        console.log.restore();
+    });
+
+    after(async () => {
+        process.chdir('../');
+        if (fs.existsSync(ACT_NAME)) await rimrafPromised(ACT_NAME);
+        await command.run(['logout']);
+    });
+});

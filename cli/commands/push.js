@@ -1,5 +1,5 @@
 const { ApifyCommand } = require('../lib/apify_command');
-const { flags } = require('@oclif/command');
+const { flags: flagsHelper } = require('@oclif/command');
 const { getLocalConfig, setLocalConfig, getLoggedClientOrError } = require('../lib/utils');
 const { run, success, info } = require('../lib/outputs');
 const { createActZip } = require('../lib/utils');
@@ -12,13 +12,15 @@ const UPLOADS_STORE_NAME = 'apify-cli-deployments';
 
 class PushCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(PushCommand);
+        const { args, flags } = this.parse(PushCommand);
         const apifyClient = await getLoggedClientOrError();
         const localConfig = await getLocalConfig();
 
+        // User can override actId of pushing act.
+        // It causes that we push act to this id but actId and name in localConfig will remain same.
         let actId = args.actId || localConfig.actId;
-        const versionNumber = args.versionNumber || localConfig.version.versionNumber;
-        const buildTag = args.buildTag || localConfig.version.buildTag;
+        const versionNumber = flags.versionNumber || localConfig.version.versionNumber;
+        const buildTag = flags.buildTag || localConfig.version.buildTag;
 
         info(`Push ${localConfig.name} to Apify.`);
 
@@ -44,6 +46,7 @@ class PushCommand extends ApifyCommand {
             buildTag,
             tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
         });
+
         if (actId) {
             const updates = {};
             // Act was created yet or actId was passed
@@ -69,9 +72,12 @@ class PushCommand extends ApifyCommand {
             run('Creating act ...');
             const createdAct = await apifyClient.acts.createAct({ act: newAct });
             actId = (createdAct.username) ? `${createdAct.username}/${createdAct.name}` : createdAct.id;
+            // Set up new actId to localConfig
+            localConfig.actId = actId;
             console.dir(createdAct);
         }
-        await setLocalConfig(Object.assign(localConfig, { actId, version: currentVersion }));
+
+        await setLocalConfig(Object.assign(localConfig, { version: currentVersion }));
 
         // Build act on Apify
         run('Building act ...');
@@ -81,6 +87,7 @@ class PushCommand extends ApifyCommand {
             waitForFinish: 120,
             useCache: true,
         });
+
         if (build.status === ACT_TASK_STATUSES.SUCCEEDED) {
             console.dir(build);
             success('Act was build and push to Apify!');
@@ -99,12 +106,12 @@ NOTE: Act overrides current act with the same version on Apify.
 `;
 
 PushCommand.flags = {
-    'version-number': flags.string({
+    'version-number': flagsHelper.string({
         char: 'v',
         description: 'Version number of pushing act version.',
         required: false,
     }),
-    'build-tag': flags.string({
+    'build-tag': flagsHelper.string({
         char: 'b',
         description: 'Build tag of pushing act version.',
         required: false,
@@ -115,7 +122,7 @@ PushCommand.args = [
     {
         name: 'actId',
         required: false,
-        description: 'Act ID of pushing act. It overrides actId in apify.json.',
+        description: 'Act ID of pushing act. Warning: This overrides act with specific act ID!',
     },
 ];
 
