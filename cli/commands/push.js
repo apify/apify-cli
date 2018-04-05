@@ -44,6 +44,7 @@ class PushCommand extends ApifyCommand {
             buildTag,
             tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
         });
+        // TODO: we really need API endpoint that only updates one version!
         if (actId) {
             const updates = {};
             // Act was created yet or actId was passed

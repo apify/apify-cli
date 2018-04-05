@@ -15,6 +15,7 @@ class LoginCommand extends ApifyCommand {
         }
         const isUserLogged = await getLoggedClient(token);
         return (isUserLogged) ?
+            // TODO: print username or userId
             success('Logged into Apify!') :
             error('Logging into Apify failed, token is not correct.');
     }

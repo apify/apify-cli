@@ -18,6 +18,7 @@ const apifyClient = new ApifyClient();
  * @return {Promise<boolean|*>}
  */
 const getLoggedClientOrError = async () => {
+    // TODO: getLoggedClientOrThrow
     const loggedClient = await getLoggedClient();
     if (!loggedClient) {
         throw new Error('You aren\'t logged into Apify! Call "apify login" to authenticate into Apify.');
@@ -108,7 +109,7 @@ const argsToCamelCase = (object) => {
 };
 
 /**
- * Create zip files with all act files, omit files regarding .gitignore settings
+ * Create zip file with all act files, omit files defined in .gitignore
  * @param zipName
  * @return {Promise<void>}
  */

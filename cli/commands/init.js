@@ -15,7 +15,7 @@ class InitCommand extends ApifyCommand {
         const cwd = process.cwd();
         await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }), cwd);
         await setLocalEnv(cwd);
-        outputs.success(`Initialed act ${actName} in current dir.`);
+        outputs.success(`Initialized act ${actName} in current dir.`);
     }
 }
 
