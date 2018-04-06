@@ -108,17 +108,20 @@ const argsToCamelCase = (object) => {
 };
 
 /**
- * Create zip files with all act files, omit files regarding .gitignore settings
+ * Create zip files with all act files in current directory, omit files regarding .gitignore settings and ignore .git folder.
+ * NOTE: Zips .file files and .folder/ folders
  * @param zipName
  * @return {Promise<void>}
  */
 const createActZip = async (zipName) => {
-    const excludedPaths = gitignore('.gitignore').map(patern => `!${patern}`);
-    const pathsToZip = await globby(['*', '*/**', ...excludedPaths]);
+    const pathsToZip = await globby(['*', '**/**'], { ignore: ['.git/**'], gitignore: true, dot: true });
+
     const archive = archiver(zipName);
+
     const archiveFilesPromises = [];
     pathsToZip.forEach(globPath => archiveFilesPromises.push(archive.glob(globPath)));
     await Promise.all(archiveFilesPromises);
+
     await archive.finalize();
 };
 
