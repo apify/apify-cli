@@ -18,7 +18,8 @@ describe('apify call', () => {
             this.skip();
             return;
         }
-        await command.run(['login', '--token', testUserClient.getOptions().token]);
+        const { token } = testUserClient.getOptions();
+        await command.run(['login', '--token', token]);
         await command.run(['create', ACT_NAME, '--template', 'basic']);
         process.chdir(ACT_NAME);
         const actCode = `

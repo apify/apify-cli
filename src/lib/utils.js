@@ -26,8 +26,7 @@ const getLocalUserInfo = () => {
  * Gets instance of ApifyClient for user otherwise throws error
  * @return {Promise<boolean|*>}
  */
-const getLoggedClientOrError = async () => {
-    // TODO: getLoggedClientOrThrow
+const getLoggedClientOrThrow = async () => {
     const loggedClient = await getLoggedClient();
     if (!loggedClient) {
         throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
@@ -62,13 +61,20 @@ const getLoggedClient = async (token) => {
     return apifyClient;
 };
 
-const getLocalConfig = async () => {
+const getLocalConfig = () => {
     const localConfigPath = path.join(process.cwd(), LOCAL_CONFIG_NAME);
     if (!fs.existsSync(localConfigPath)) {
-        error('apify.json is missing in current dir! Call "apify init" to create it.');
         return;
     }
     return loadJson.sync(localConfigPath);
+};
+
+const getLocalConfigOrThrow = () => {
+    const localConfig = getLocalConfig();
+    if (!localConfig) {
+        throw new Error('apify.json is missing in current dir! Call "apify init" to create it.');
+    }
+    return localConfig;
 };
 
 const setLocalConfig = async (localConfig, actDir) => {
@@ -136,7 +142,7 @@ const createActZip = async (zipName) => {
 };
 
 module.exports = {
-    getLoggedClientOrError,
+    getLoggedClientOrThrow,
     getLocalConfig,
     setLocalConfig,
     setLocalEnv,
@@ -144,4 +150,5 @@ module.exports = {
     getLoggedClient,
     createActZip,
     getLocalUserInfo,
+    getLocalConfigOrThrow,
 };

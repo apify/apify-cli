@@ -1,25 +1,24 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const inquirer = require('inquirer');
 const outputs = require('../lib/outputs');
-const { setLocalConfig, setLocalEnv } = require('../lib/utils');
+const { setLocalConfig, setLocalEnv, getLocalConfig } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG } = require('../lib/consts');
-
-// TODO: BUG - if prompted act name is empty, the command prefills some weird directory
-// jan:myact1$ apify init
-//    ? Act name: /Users/jan/Projects/apify-cli/cli/commands
-// Success: Initialized act /Users/jan/Projects/apify-cli/cli/commands in current dir.
-
-// TODO: If apify.json already exists locally, you should return an error!
 
 class InitCommand extends ApifyCommand {
     async run() {
+        if (getLocalConfig()) {
+            throw new Error('File apify.json already exists in current directory.');
+        }
+
         const { args } = this.parse(InitCommand);
         let { actName } = args;
+        const cwd = process.cwd();
+
         if (!actName) {
-            const answer = await inquirer.prompt([{ name: 'actName', message: 'Act name:', default: __dirname }]);
+            const answer = await inquirer.prompt([{ name: 'actName', message: 'Act name:', default: cwd.split('/').pop() }]);
             ({ actName } = answer);
         }
-        const cwd = process.cwd();
+
         await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }), cwd);
         await setLocalEnv(cwd);
         outputs.success(`Initialized act ${actName} in current dir.`);

@@ -6,7 +6,7 @@
     "scripts": {
         "test": "mocha --timeout 120000 --recursive",
         "lint": "eslint cli test",
-        "commands_md": "./help_to_md.sh COMMANDS.md"
+        "commands_md": "./help_to_md.sh"
     },
     "bin": {
         "apify": "src/bin.js"

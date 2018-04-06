@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { getLocalConfig, setLocalConfig, getLoggedClientOrError } = require('../lib/utils');
+const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow } = require('../lib/utils');
 const { run, success, info } = require('../lib/outputs');
 const { createActZip } = require('../lib/utils');
 const { ACT_TASK_STATUSES } = require('apify-shared/consts');
@@ -14,8 +14,8 @@ const UPLOADS_STORE_NAME = 'apify-cli-deployments';
 class PushCommand extends ApifyCommand {
     async run() {
         const { args, flags } = this.parse(PushCommand);
-        const apifyClient = await getLoggedClientOrError();
-        const localConfig = await getLocalConfig();
+        const apifyClient = await getLoggedClientOrThrow();
+        const localConfig = getLocalConfigOrThrow();
 
         // User can override actId of pushing act.
         // It causes that we push act to this id but actId and name in localConfig will remain same.
