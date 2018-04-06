@@ -3,18 +3,66 @@
 [![npm version](https://badge.fury.io/js/apify-cli.svg)](http://badge.fury.io/js/apify-cli)
 [![Build Status](https://travis-ci.org/apifytech/apify-js.svg)](https://travis-ci.org/apifytech/apify-cli)
 
-Apify command client helps you to create and deploy [Apify Actor acts](https://www.apify.com/docs/actor).
+Apify command client client (CLI) helps you to create, develop and deploy
+[Apify Actor](https://www.apify.com/docs/actor) acts from your local computer.
 
+
+## Installation
+
+1) Install [Node.js](https://nodejs.org) version 7.10 or higher to your computer.
+
+2) Install Apify CLI with:
+
+```bash
+npm -g install apify-cli
+```
+
+3) Test everything was installed correctly by running:
+
+```bash
+apify info
+```
 
 ## Usage
 
-To get started with Apify command line client, first make sure you have Node.js (`v7.10.x` and higher) installed.
 
-Then install Apify CLI with:
+To start developing Apify Actor acts locally, first you need to create an act.
 
-`npm -g install apify-cli`
+### 1) Create a new act called `hello_world`:
 
-## Commands
+```bash
+apify create hello_world
+```
+
+You will be prompted to select a template for the act, to help you get started quickly.
+After that, the tool will create a directory `hello_world` that contains a Node.js project
+for the act.
+
+### 2) Run the act locally
+
+Go to the newly created directory:
+
+```bash
+cd hello_world
+```
+And run the act:
+
+```bash
+apify run
+```
+
+###  3) Push the act to Apify cloud
+
+LOGIN...
+
+###  4) Call the act running on Apify cloud
+
+
+
+
+## Command reference
+<!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
 ```
 Command line client for Apify.
 
