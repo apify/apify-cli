@@ -1,9 +1,9 @@
 const { expect } = require('chai');
 const fs = require('fs');
 const command = require('@oclif/command');
-const { rimrafPromised } = require('../../cli/lib/files');
+const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
-const { GLOBAL_CONFIGS_FOLDER } = require('../../cli/lib/consts');
+const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 
 const ACT_NAME = 'my-act';

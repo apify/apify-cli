@@ -1,5 +1,6 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
+const { DNS_SAFE_NAME_REGEX } = require('apify-shared/regexs');
 const fs = require('fs');
 const path = require('path');
 const copy = require('recursive-copy');
@@ -15,6 +16,13 @@ class CreateCommand extends ApifyCommand {
         const { flags, args } = this.parse(CreateCommand);
         const { actName } = args;
         let { template } = flags;
+
+        // Check proper format of actName
+        if (!DNS_SAFE_NAME_REGEX.test(actName)) {
+            throw new Error('Name of your act, ' +
+                'must be a DNS hostname-friendly string(e.g. my-newest-act).');
+        }
+
         if (!template) {
             const choices = Object.values(ACTS_TEMPLATES);
             const answer = await inquirer.prompt([{
@@ -41,12 +49,13 @@ class CreateCommand extends ApifyCommand {
             throw err;
         }
         await copy(ACTS_TEMPLATES[template].dir, actFolderDir, { dot: true });
-        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }), actFolderDir);
+        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName, template }), actFolderDir);
         await setLocalEnv(actFolderDir);
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actName });
 
         // Run npm install in act dir
-        const cmd = 'npm';
+        // NOTE: For window we have to call npm.cmd instead of npm, otherwise it fails
+        const cmd = /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
         const cmdArgs = ['install'];
         if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
         await execWithLog(cmd, cmdArgs, { cwd: actFolderDir });

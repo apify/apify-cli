@@ -6,21 +6,41 @@ exports.ACTS_TEMPLATES = {
         name: 'Basic ("basic")',
         value: 'basic',
         dir: `${__dirname}/../templates/basic`,
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 3600,
+            memoryMbytes: 512,
+        },
     },
     puppeteer: {
         name: 'Puppeteer ("puppeteer")',
         value: 'puppeteer',
         dir: `${__dirname}/../templates/puppeteer`,
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 0,
+            memoryMbytes: 2048,
+        },
     },
     puppeteer_crawler: {
         name: 'Puppeteer crawler ("puppeteer_crawler")',
         value: 'puppeteer_crawler',
         dir: `${__dirname}/../templates/puppeteer_crawler`,
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 0,
+            memoryMbytes: 2048,
+        },
     },
     plain_request_urls_list: {
         name: 'Plain request url list crawler ("plain_request_urls_list")',
         value: 'plain_request_urls_list',
         dir: `${__dirname}/../templates/plain_request_urls_list`,
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 0,
+            memoryMbytes: 2048,
+        },
     },
 };
 
@@ -34,7 +54,11 @@ exports.LOCAL_ENV_VARS = {
     APIFY_LOCAL_KEY_VALUE_STORES_DIR: 'key-value-stores',
     APIFY_DEFAULT_KEY_VALUE_STORE_ID: 'default',
     APIFY_DEFAULT_DATASET_ID: 'default',
+    APIFY_PROXY_HOSTNAME: 'proxy.apify.com',
+    APIFY_PROXY_PORT: 8000,
 };
+
+exports.PROXY_PASSWORD_ENV_VAR = 'APIFY_PROXY_PASSWORD';
 
 exports.EMPTY_LOCAL_CONFIG = {
     name: null,

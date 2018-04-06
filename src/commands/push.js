@@ -5,6 +5,7 @@ const { run, success, info } = require('../lib/outputs');
 const { createActZip } = require('../lib/utils');
 const fs = require('fs');
 const { ACT_TASK_STATUSES } = require('apify-shared/consts');
+const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES } = require('../lib/consts');
 const outputs = require('../lib/outputs');
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
@@ -30,7 +31,7 @@ class PushCommand extends ApifyCommand {
 
         // Upload it to Apify.keyValueStores
         const store = await apifyClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
-        const key = `${localConfig.name}-${versionNumber}-${Date.now()}.zip`;
+        const key = `${localConfig.name}-${versionNumber}.zip`;
         const buffer = fs.readFileSync(TEMP_ZIP_FILE_NAME);
         await apifyClient.keyValueStores.putRecord({
             storeId: store.id,
@@ -65,8 +66,10 @@ class PushCommand extends ApifyCommand {
             const updatedAct = await apifyClient.acts.updateAct({ actId, act: updates });
             console.dir(updatedAct);
         } else {
+            const actTemplate = localConfig.template || DEFAULT_ACT_TEMPLATE;
             const newAct = {
                 name: localConfig.name,
+                defaultRunOptions: ACTS_TEMPLATES[actTemplate].defaultRunOptions,
                 versions: [currentVersion],
             };
             run('Creating act ...');

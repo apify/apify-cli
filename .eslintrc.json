@@ -1,8 +1,7 @@
 {
     "extends": "airbnb-base",
     "plugins": [
-        "promise",
-        "async-await"
+        "promise"
     ],
     "rules": {
         "indent": [

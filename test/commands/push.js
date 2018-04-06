@@ -2,9 +2,9 @@ const { expect } = require('chai');
 const sinon = require('sinon');
 const fs = require('fs');
 const command = require('@oclif/command');
-const { rimrafPromised } = require('../../cli/lib/files');
+const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
-const { GLOBAL_CONFIGS_FOLDER } = require('../../cli/lib/consts');
+const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 
 const ACT_NAME = 'my-act';
@@ -20,6 +20,7 @@ const TEST_ACT = {
         },
     ],
 };
+const ACT_TEMPLATE = 'basic';
 
 describe('apify push', () => {
     before(async function () {
@@ -29,7 +30,7 @@ describe('apify push', () => {
             return;
         }
         await command.run(['login', '--token', testUserClient.getOptions().token]);
-        await command.run(['create', ACT_NAME, '--template', 'basic']);
+        await command.run(['create', ACT_NAME, '--template', ACT_TEMPLATE]);
         process.chdir(ACT_NAME);
     });
 
@@ -48,6 +49,7 @@ describe('apify push', () => {
         const expectedApifyJson = {
             name: ACT_NAME,
             actId,
+            template: ACT_TEMPLATE,
             version: createdAct.versions[0],
         };
 
@@ -68,6 +70,7 @@ describe('apify push', () => {
         const expectedApifyJson = {
             name: beforeApifyJson.name,
             actId: beforeApifyJson.actId,
+            template: ACT_TEMPLATE,
             version: testAct.versions.find(version => version.versionNumber === afterApifyJson.version.versionNumber),
         };
 

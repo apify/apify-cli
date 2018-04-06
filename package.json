@@ -9,7 +9,7 @@
         "commands_md": "./help_to_md.sh COMMANDS.md"
     },
     "bin": {
-        "apify": "cli/bin.js"
+        "apify": "src/bin.js"
     },
     "contributors": [
         "Jakub Drobník <jakub.drobnik@apify.com>"
@@ -50,14 +50,11 @@
         "chalk": "^2.3.2",
         "child-process-promise": "^2.2.1",
         "globby": "^8.0.1",
-        "globy": "^0.1.8",
         "inquirer": "^5.0.0",
         "load-json-file": "^4.0.0",
         "minimist": "^1.2.0",
         "recursive-copy": "^2.0.9",
         "rimraf": "^2.6.2",
-        "shelljs": "^0.8.0",
-        "spawn-sync": "^1.0.15",
         "write-json-file": "^2.3.0"
     },
     "devDependencies": {
@@ -80,6 +77,6 @@
     ],
     "oclif": {
         "bin": "apify",
-        "commands": "./cli/commands"
+        "commands": "./src/commands"
     }
 }

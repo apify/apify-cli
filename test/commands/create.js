@@ -3,9 +3,11 @@ const fs = require('fs');
 const sinon = require('sinon');
 const command = require('@oclif/command');
 const path = require('path');
-const { rimrafPromised } = require('../../cli/lib/files');
+const { rimrafPromised } = require('../../src/lib/files');
+const loadJson = require('load-json-file');
 
 const actName = 'my-act';
+const ACT_TEMPLATE = 'basic';
 
 describe('apify create', () => {
     beforeEach(() => {
@@ -22,12 +24,14 @@ describe('apify create', () => {
     });
 
     it('basic template structure', async () => {
-        await command.run(['create', actName, '--template', 'basic']);
+        await command.run(['create', actName, '--template', ACT_TEMPLATE]);
 
+        const apifyJsonPath = path.join(actName, 'apify.json');
         // check files structure
         expect(fs.existsSync(actName)).to.be.true;
         expect(fs.existsSync(path.join(actName, 'package.json'))).to.be.true;
-        expect(fs.existsSync(path.join(actName, 'apify.json'))).to.be.true;
+        expect(fs.existsSync(apifyJsonPath)).to.be.true;
+        expect(loadJson.sync(apifyJsonPath).template).to.be.eql(ACT_TEMPLATE);
     });
 
     afterEach(() => {

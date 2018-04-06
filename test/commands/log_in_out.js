@@ -3,7 +3,7 @@ const fs = require('fs');
 const sinon = require('sinon');
 const loadJson = require('load-json-file');
 const command = require('@oclif/command');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../cli/lib/consts');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { testUserClient, badUserClient } = require('./config');
 
 describe('apify login and logout', () => {
