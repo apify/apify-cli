@@ -27,9 +27,10 @@ const getLocalUserInfo = () => {
  * @return {Promise<boolean|*>}
  */
 const getLoggedClientOrError = async () => {
+    // TODO: getLoggedClientOrThrow
     const loggedClient = await getLoggedClient();
     if (!loggedClient) {
-        throw new Error('You aren\'t logged into Apify! Call "apify login" to authenticate into Apify.');
+        throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
     }
     return loggedClient;
 };
@@ -117,7 +118,7 @@ const argsToCamelCase = (object) => {
 };
 
 /**
- * Create zip files with all act files in current directory, omit files regarding .gitignore settings and ignore .git folder.
+ * Create zip file with all act files in current directory, omit files defined in .gitignore and ignore .git folder.
  * NOTE: Zips .file files and .folder/ folders
  * @param zipName
  * @return {Promise<void>}

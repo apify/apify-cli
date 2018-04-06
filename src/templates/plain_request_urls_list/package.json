@@ -1,7 +1,7 @@
 {
     "name": "your-act-name",
     "version": "1.0.0",
-    "description": "",
+    "description": "Crawls a list of URLs using a raw HTTP downloader",
     "main": "main.js",
     "dependencies": {
         "apify": "^0.5.13",

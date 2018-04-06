@@ -9,26 +9,25 @@ class LoginCommand extends ApifyCommand {
         const { flags } = this.parse(LoginCommand);
         let { token } = flags;
         if (!token) {
-            console.log('You can find your API token on https://my.apify.com/account#/integrations.');
+            console.log('Enter your Apify API token. You can find it at https://my.apify.com/account#/integrations');
             const tokenPrompt = await inquirer.prompt([{ name: 'token', message: 'token:', type: 'password' }]);
             ({ token } = tokenPrompt);
         }
         const isUserLogged = await getLoggedClient(token);
-        return (isUserLogged) ?
-            success('Logged into Apify!') :
-            error('Logging into Apify failed, token is not correct.');
+        return isUserLogged
+            ? success('You are logged in to Apify!') // TODO: print username or userId - "to Apify as bob"
+            : error('Login to Apify failed, the provided API token is not valid.');
     }
 }
 
-LoginCommand.description = `
-This is an interactive prompt which authenticates you with Apify.
-All tokens and keys will store ~/.apify.
-NOTE: If you set up token options, prompt will skip`;
+LoginCommand.description = 'Logs in to the Apify platform using the API token.\nThe token and other account '
+    + 'information is stored to the ~/.apify directory, from where it is read by all other "apify" commands. '
+    + 'To log out, call "apify logout".';
 
 LoginCommand.flags = {
     token: flagsHelper.string({
         char: 't',
-        description: '[Optional] Your API token on Apify',
+        description: '[Optional] Apify API token',
         required: false,
     }),
 };

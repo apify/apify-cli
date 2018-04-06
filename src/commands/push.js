@@ -1,9 +1,9 @@
+const fs = require('fs');
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const { getLocalConfig, setLocalConfig, getLoggedClientOrError } = require('../lib/utils');
 const { run, success, info } = require('../lib/outputs');
 const { createActZip } = require('../lib/utils');
-const fs = require('fs');
 const { ACT_TASK_STATUSES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES } = require('../lib/consts');
 const outputs = require('../lib/outputs');
@@ -23,10 +23,10 @@ class PushCommand extends ApifyCommand {
         const versionNumber = flags.versionNumber || localConfig.version.versionNumber;
         const buildTag = flags.buildTag || localConfig.version.buildTag;
 
-        info(`Push ${localConfig.name} to Apify.`);
+        info(`Deploying act '${localConfig.name}' to Apify.`);
 
         // Create zip
-        run('Zipping all act files ...');
+        run('Zipping act files');
         await createActZip(TEMP_ZIP_FILE_NAME);
 
         // Upload it to Apify.keyValueStores
@@ -48,11 +48,12 @@ class PushCommand extends ApifyCommand {
             tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
         });
 
+        // TODO: we really need API endpoint that only updates one version!
         if (actId) {
             const updates = {};
             // Act was created yet or actId was passed
             const actData = await apifyClient.acts.getAct({ actId });
-            if (!actData) throw new Error(`Act with id ${actId} doesn't exist!`);
+            if (!actData) throw new Error(`Act with ID '${actId}' does not exist!`);
             let foundVersion = false;
             updates.versions = actData.versions.map((version) => {
                 if (version.versionNumber === currentVersion.versionNumber) {
@@ -62,7 +63,7 @@ class PushCommand extends ApifyCommand {
                 return version;
             });
             if (!foundVersion) updates.versions.push(currentVersion);
-            run('Updating act ...');
+            run('Updating existing act');
             const updatedAct = await apifyClient.acts.updateAct({ actId, act: updates });
             console.dir(updatedAct);
         } else {
@@ -72,7 +73,7 @@ class PushCommand extends ApifyCommand {
                 defaultRunOptions: ACTS_TEMPLATES[actTemplate].defaultRunOptions,
                 versions: [currentVersion],
             };
-            run('Creating act ...');
+            run('Creating act');
             const createdAct = await apifyClient.acts.createAct({ act: newAct });
             actId = (createdAct.username) ? `${createdAct.username}/${createdAct.name}` : createdAct.id;
             // Set up new actId to localConfig
@@ -83,7 +84,7 @@ class PushCommand extends ApifyCommand {
         await setLocalConfig(Object.assign(localConfig, { version: currentVersion }));
 
         // Build act on Apify
-        run('Building act ...');
+        run('Building act');
         const build = await apifyClient.acts.buildAct({
             actId,
             version: versionNumber,
@@ -93,7 +94,7 @@ class PushCommand extends ApifyCommand {
 
         if (build.status === ACT_TASK_STATUSES.SUCCEEDED) {
             console.dir(build);
-            success('Act was build and push to Apify!');
+            success('Act was deployed to Apify platform and built there.');
         } else {
             console.dir(build);
             outputs.error('Build failed! Log:');
@@ -102,21 +103,20 @@ class PushCommand extends ApifyCommand {
     }
 }
 
-PushCommand.description = `
-This uploads act from the current directory to Apify and builds it.
-If exists apify.json in the directory it takes options from there. You can override these with options below.
-NOTE: Act overrides current act with the same version on Apify.
-`;
+PushCommand.description = 'Uploads the act to the Apify platform and builds it there.\n'
+    + 'The command creates a ZIP with files of the act from the current directory, uploads it to the Apify platform and builds it. The '
+    + 'act settings are read from the "apify.json" file in the current directory, but they can be overridden using command-line options.\n\n'
+    + 'WARNING: If the target act already exists in your Apify account, it will be overwritten!';
 
 PushCommand.flags = {
     'version-number': flagsHelper.string({
         char: 'v',
-        description: 'Version number of pushing act version.',
+        description: 'Act version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
         required: false,
     }),
     'build-tag': flagsHelper.string({
         char: 'b',
-        description: 'Build tag of pushing act version.',
+        description: 'Build tag to be applied to the successful act build. By default, it is taken from the "apify.json" file',
         required: false,
     }),
 };
@@ -125,7 +125,8 @@ PushCommand.args = [
     {
         name: 'actId',
         required: false,
-        description: 'Act ID of pushing act. Warning: This overrides act with specific act ID!',
+        description: 'ID of an existing act on the Apify platform where the files will be pushed. ' +
+        'If not provided, the command will create or modify the act with the name specified in "apify.json" file.',
     },
 ];
 
