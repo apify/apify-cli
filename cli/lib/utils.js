@@ -13,6 +13,18 @@ const { createFolderSync, updateLocalJson } = require('./files');
 const apifyClient = new ApifyClient();
 
 /**
+ * Returns object from auth file or empty object.
+ * @return {*}
+ */
+const getLocalUserInfo = () => {
+    try {
+        return loadJson.sync(AUTH_FILE_PATH) || {};
+    } catch (e) {
+        return {};
+    }
+};
+
+/**
  * Gets instance of ApifyClient for user otherwise throws error
  * @return {Promise<boolean|*>}
  */
@@ -46,7 +58,7 @@ const getLoggedClient = async (token) => {
     // Always refresh Auth file
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
     writeJson.sync(AUTH_FILE_PATH, Object.assign({ token }, userInfo));
-    apifyClient.setOptions({ token, userId: userInfo.userId });
+    apifyClient.setOptions({ token, userId: userInfo.id });
 
     return apifyClient;
 };
@@ -133,4 +145,5 @@ module.exports = {
     getLoggedClient,
     createActZip,
     apifyClient,
+    getLocalUserInfo,
 };

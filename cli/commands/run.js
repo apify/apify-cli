@@ -1,10 +1,17 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
-const { LOCAL_ENV_VARS } = require('../lib/consts');
+const { LOCAL_ENV_VARS, PROXY_PASSWORD_ENV_VAR } = require('../lib/consts');
+const { getLocalUserInfo } = require('../lib/utils');
 
 class RunCommand extends ApifyCommand {
     static async run() {
-        await execWithLog('node', ['main.js'], { env: Object.assign(process.env, LOCAL_ENV_VARS) });
+        const { proxy } = getLocalUserInfo();
+        const env = Object.assign(process.env, LOCAL_ENV_VARS);
+        if (proxy && proxy.password) {
+            env[PROXY_PASSWORD_ENV_VAR] = proxy.password;
+        }
+
+        await execWithLog('node', ['main.js'], { env });
     }
 }
 

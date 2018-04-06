@@ -54,7 +54,11 @@ exports.LOCAL_ENV_VARS = {
     APIFY_LOCAL_KEY_VALUE_STORES_DIR: 'key-value-stores',
     APIFY_DEFAULT_KEY_VALUE_STORE_ID: 'default',
     APIFY_DEFAULT_DATASET_ID: 'default',
+    APIFY_PROXY_HOSTNAME: 'proxy.apify.com',
+    APIFY_PROXY_PORT: 8000,
 };
+
+exports.PROXY_PASSWORD_ENV_VAR = 'APIFY_PROXY_PASSWORD';
 
 exports.EMPTY_LOCAL_CONFIG = {
     name: null,
