@@ -30,7 +30,7 @@ class PushCommand extends ApifyCommand {
 
         // Upload it to Apify.keyValueStores
         const store = await apifyClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
-        const key = `${localConfig.name}-${versionNumber}-${Date.now()}.zip`;
+        const key = `${localConfig.name}-${versionNumber}.zip`;
         const buffer = fs.readFileSync(TEMP_ZIP_FILE_NAME);
         await apifyClient.keyValueStores.putRecord({
             storeId: store.id,
