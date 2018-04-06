@@ -46,7 +46,8 @@ class CreateCommand extends ApifyCommand {
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actName });
 
         // Run npm install in act dir
-        const cmd = 'npm';
+        // NOTE: For window we have to call npm.cmd instead of npm, otherwise it fails
+        const cmd = /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
         const cmdArgs = ['install'];
         if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
         await execWithLog(cmd, cmdArgs, { cwd: actFolderDir });
