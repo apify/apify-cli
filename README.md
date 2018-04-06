@@ -45,56 +45,51 @@ The following examples show basic usage of the CLI.
 
 ### Create a new act from scratch
 
-First, let's create a new act called `hello-world`:
-
 ```bash
 apify create hello_world
 ```
 
-You will be prompted to select a template with the boilerplate for the act, to help you get started quickly.
+First, you will be prompted to select a template with the boilerplate for the act, to help you get started quickly.
 The command will create a directory called `hello_world` that contains a Node.js project
 for the act and a few configuration files.
 
 ### Create a new act from existing project
-
-If you already have your project ready in some directory, you can create the Apify configuration files
-in it by running:
 
 ```bash
 cd ./my/awesome/project
 apify init
 ```
 
-This will only create the `apify.json` file and `apify_local` directory, but will not touch anything else.
-
+This command will only create the `apify.json` file and `apify_local` directory in the current directory, but will not touch anything else.
 
 ### Run the act locally
-
-Go to the newly created directory and run the act:
 
 ```bash
 cd hello_world
 apify run
 ```
 
-Now it's the time for you to develop the logic (or magic?) of your act.
+This command runs the act on your local machine.
+Now it's the time for you to develop the logic (or magic?).
 
 ### Login using your Apify account
-
-Before you can interact with the Apify cloud, you need to [create an Apify account](https://my.apify.com/)
-and login
 
 ```bash
 apify login
 ```
 
-https://my.apify.com/account#/integrations
+Before you can interact with the Apify cloud, you need to [create an Apify account](https://my.apify.com/)
+and login to it using the above command. You will be prompted for
+your [Apify API token](https://my.apify.com/account#/integrations).
 
 
 ### Push the act to the Apify cloud
 
+```bash
+apify push
+```
 
-
+This command pushes
 
 ### Call the act running on Apify cloud
 
