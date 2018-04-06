@@ -1,9 +1,10 @@
 const { ApifyCommand } = require('../lib/apify_command');
-const { getLocalUserInfo } = require('../lib/utils');
+const { getLoggedClientOrThrow, getLocalUserInfo } = require('../lib/utils');
 const chalk = require('chalk');
 
 class InfoCommand extends ApifyCommand {
     static async run() {
+        await getLoggedClientOrThrow();
         const info = await getLocalUserInfo();
 
         if (info) {
