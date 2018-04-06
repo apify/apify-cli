@@ -3,15 +3,15 @@
 [![npm version](https://badge.fury.io/js/apify-cli.svg)](http://badge.fury.io/js/apify-cli)
 [![Build Status](https://travis-ci.org/apifytech/apify-js.svg)](https://travis-ci.org/apifytech/apify-cli)
 
-Apify command client client (CLI) helps you to create, develop, deploy and execute
+Apify command client client (CLI) helps you to create, develop, deploy and run
 [Apify Actor](https://www.apify.com/docs/actor) acts from your local computer.
 
 Apify Actor is a serverless computing platform that enables execution of arbitrary
 web scraping and automation jobs in the cloud. A single job is called an _act_.
 
 While you can develop the acts in a code editor directly in the [Apify web application](https://my.apify.com/),
-for more complex projects it is more convenient to develop the acts locally
-and only push them later to the Apify cloud.
+for more complex projects it is convenient to develop the acts locally
+and only push them to the Apify cloud for execution.
 This is were the CLI comes in.
 
 Note that the acts running on Apify Actor platform are executed in Docker containers, so with an appropriate `Dockerfile`
@@ -46,11 +46,11 @@ The following examples show basic usage of the CLI.
 ### Create a new act from scratch
 
 ```bash
-apify create hello_world
+apify create my_hello_world
 ```
 
 First, you will be prompted to select a template with the boilerplate for the act, to help you get started quickly.
-The command will create a directory called `hello_world` that contains a Node.js project
+The command will create a directory called `my_hello_world` that contains a Node.js project
 for the act and a few configuration files.
 
 ### Create a new act from existing project
@@ -65,14 +65,14 @@ This command will only create the `apify.json` file and `apify_local` directory 
 ### Run the act locally
 
 ```bash
-cd hello_world
+cd my_hello_world
 apify run
 ```
 
 This command runs the act on your local machine.
-Now it's the time for you to develop the logic (or magic?).
+Now it's your time to develop the logic (or magic?).
 
-### Login using your Apify account
+### Login with your Apify account
 
 ```bash
 apify login
@@ -81,6 +81,7 @@ apify login
 Before you can interact with the Apify cloud, you need to [create an Apify account](https://my.apify.com/)
 and login to it using the above command. You will be prompted for
 your [Apify API token](https://my.apify.com/account#/integrations).
+Note that the command will store the API token and other sensitive information to `~/.apify`.
 
 
 ### Push the act to the Apify cloud
@@ -89,11 +90,21 @@ your [Apify API token](https://my.apify.com/account#/integrations).
 apify push
 ```
 
-This command pushes
+This command creates a ZIP archive with your project, uploads it to Apify cloud and builds an act from it.
 
-### Call the act running on Apify cloud
+### Runs an act on the Apify cloud
 
+```bash
+apify call
+```
 
+Runs the act corresponding to the current directory on the Apify Actor platform.
+
+This command can be also used to run other acts, for example:
+
+```bash
+apify call apify/hello-world
+```
 
 ###  Need help?
 
@@ -109,7 +120,7 @@ To get information about a specific command run:
 apify help COMMAND
 ```
 
-If you still haven't found what you were looking for, please go to [Apify Help center](https://www.apify.com/help)
+Still haven't found what you were looking for? Please go to [Apify Help center](https://www.apify.com/help)
 or [contact us](https://www.apify.com/contact).
 
 
