@@ -1,7 +1,7 @@
 {
     "name": "your-act-name",
     "version": "1.0.0",
-    "description": "",
+    "description": "Load a web page using headless Chrome and Puppeteer and extract data from it",
     "main": "main.js",
     "dependencies": {
         "apify": "^0.5.13"

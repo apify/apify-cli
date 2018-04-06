@@ -1,6 +1,8 @@
 const os = require('os');
 const path = require('path');
 
+// TODO: The templates should go to apify-shared, and the JSON with all info should be generated from the directories and files in the template dir,
+// the name and description should be taken from package.json files in those dirs so that we edit it in a single location!
 exports.ACTS_TEMPLATES = {
     basic: {
         name: 'Basic ("basic")',

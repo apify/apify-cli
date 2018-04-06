@@ -1,7 +1,7 @@
 {
     "name": "your-act-name",
     "version": "1.0.0",
-    "description": "",
+    "description": "Crawl a number of web pages using headless Chrome and Puppeteer",
     "main": "main.js",
     "dependencies": {
         "apify": "^0.5.13"

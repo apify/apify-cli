@@ -1,7 +1,7 @@
 {
     "name": "your-act-name",
     "version": "1.0.0",
-    "description": "",
+    "description": "The minimum boilerplace of an Apify Actor act",
     "main": "main.js",
     "dependencies": {
         "apify": "^0.5.13"
