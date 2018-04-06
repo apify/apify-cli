@@ -50,7 +50,6 @@
         "chalk": "^2.3.2",
         "child-process-promise": "^2.2.1",
         "globby": "^8.0.1",
-        "globy": "^0.1.8",
         "inquirer": "^5.0.0",
         "load-json-file": "^4.0.0",
         "minimist": "^1.2.0",
