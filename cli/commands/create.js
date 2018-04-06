@@ -1,5 +1,6 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
+const { DNS_SAFE_NAME_REGEX } = require('apify-shared/regexs');
 const fs = require('fs');
 const path = require('path');
 const copy = require('recursive-copy');
@@ -15,6 +16,13 @@ class CreateCommand extends ApifyCommand {
         const { flags, args } = this.parse(CreateCommand);
         const { actName } = args;
         let { template } = flags;
+
+        // Check proper format of actName
+        if (DNS_SAFE_NAME_REGEX.test(actName)) {
+            throw new Error('Name of your act, ' +
+                'must be a DNS hostname-friendly string(e.g. my-newest-act).');
+        }
+
         if (!template) {
             const choices = Object.values(ACTS_TEMPLATES);
             const answer = await inquirer.prompt([{
