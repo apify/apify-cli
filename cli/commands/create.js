@@ -18,7 +18,7 @@ class CreateCommand extends ApifyCommand {
         let { template } = flags;
 
         // Check proper format of actName
-        if (DNS_SAFE_NAME_REGEX.test(actName)) {
+        if (!DNS_SAFE_NAME_REGEX.test(actName)) {
             throw new Error('Name of your act, ' +
                 'must be a DNS hostname-friendly string(e.g. my-newest-act).');
         }
