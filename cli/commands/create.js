@@ -20,7 +20,7 @@ class CreateCommand extends ApifyCommand {
             const answer = await inquirer.prompt([{
                 type: 'list',
                 name: 'template',
-                message: 'Which act do you want to create?',
+                message: 'Select template for the act',
                 default: DEFAULT_ACT_TEMPLATE,
                 choices,
             }]);
@@ -34,8 +34,8 @@ class CreateCommand extends ApifyCommand {
             fs.mkdirSync(actFolderDir);
         } catch (err) {
             if (err.code && err.code === 'EEXIST') {
-                outputs.error(`Folder with name ${actName} already exists. ` +
-                    'You can call "apify init" to create local environment for act inside folder.');
+                outputs.error(`Cannot create new act, directory '${actName}' already exists. ` +
+                    'You can use "apify init" to create a local act environment inside an existing directory.');
                 return;
             }
             throw err;
@@ -51,19 +51,16 @@ class CreateCommand extends ApifyCommand {
         if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
         await execWithLog(cmd, cmdArgs, { cwd: actFolderDir });
 
-        outputs.success(`Act ${actName} was created. Run it with "apify run".`);
+        outputs.success(`Act '${actName}' was created. To run it, run "cd ${actName}" and "apify run".`);
     }
 }
 
-CreateCommand.description = `
-This creates directory with proper structure for local development.
-NOTE: You can specified act template, which can help you in specific use cases like crawling urls list or crawling with queue.
-`;
+CreateCommand.description = 'Creates a new act project directory from a selected template.';
 
 CreateCommand.flags = {
     template: flagsHelper.string({
         char: 't',
-        description: 'Act template, if not pass it\'ll prompt from the console.',
+        description: 'Template for the act. If not provided, the command will prompt for it.',
         required: false,
         options: ACTS_TEMPLATE_LIST,
     }),
@@ -73,7 +70,7 @@ CreateCommand.args = [
     {
         name: 'actName',
         required: true,
-        description: 'Name of creating act',
+        description: 'Name of the act and its directory',
     },
 ];
 

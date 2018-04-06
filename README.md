@@ -3,8 +3,8 @@
 [![npm version](https://badge.fury.io/js/apify-cli.svg)](http://badge.fury.io/js/apify-cli)
 [![Build Status](https://travis-ci.org/apifytech/apify-js.svg)](https://travis-ci.org/apifytech/apify-cli)
 
-Apify command client client (CLI) helps you to create, develop, deploy and run
-[Apify Actor](https://www.apify.com/docs/actor) acts from your local computer.
+Apify command client client (CLI) helps you to create, develop, build and run
+[Apify Actor](https://www.apify.com/docs/actor) acts from a local computer.
 
 Apify Actor is a serverless computing platform that enables execution of arbitrary
 web scraping and automation jobs in the cloud. A single job is called an _act_.
@@ -60,7 +60,8 @@ cd ./my/awesome/project
 apify init
 ```
 
-This command will only create the `apify.json` file and `apify_local` directory in the current directory, but will not touch anything else.
+This command will only setup local act development environment in an existing directory,
+i.e. it will create the `apify.json` file and `apify_local` directory.
 
 ### Run the act locally
 

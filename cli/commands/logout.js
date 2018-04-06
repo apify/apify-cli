@@ -7,13 +7,11 @@ const { rimrafPromised } = require('../lib/files');
 class LogoutCommand extends ApifyCommand {
     static async run() {
         await rimrafPromised(GLOBAL_CONFIGS_FOLDER);
-        success('You are logout from Apify.');
+        success('You are logged out, all settings in the ~/.apify directory were deleted.');
     }
 }
 
-LogoutCommand.description = `
-Deletes all your stored tokens and keys from ~/.apify.
-NOTE: This deletes all your global settings. 
-`;
+LogoutCommand.description = 'Logs out of the Apify platform.\nThe command deletes the API token and all other '
+    + 'account information stored in the ~/.apify directory. To log in again, call "apify login".';
 
 module.exports = LogoutCommand;

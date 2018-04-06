@@ -36,14 +36,13 @@ class CallCommand extends ApifyCommand {
     }
 }
 
-CallCommand.description = `
-This runs your act on Apify and fetches results from output.
-`;
+CallCommand.description = 'Runs the act remotely on the Apify platform.\n' +
+    '';
 
 CallCommand.flags = {
     build: flagsHelper.string({
         char: 'b',
-        description: 'Tag or number of the build to run (e.g. latest or 1.2.34).',
+        description: 'Tag or number of the build to run (e.g. "latest" or "1.2.34").',
         required: false,
     }),
     timeout: flagsHelper.string({
@@ -64,7 +63,8 @@ CallCommand.args = [
     {
         name: 'actId',
         required: false,
-        description: 'Act ID of calling act. It overrides actId in apify.json.',
+        description: 'Name or ID of the act to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). ' +
+            'If not provided, the command runs the remote act specified in the "apify.json" file.',
     },
 ];
 

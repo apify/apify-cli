@@ -21,7 +21,7 @@ const getLoggedClientOrError = async () => {
     // TODO: getLoggedClientOrThrow
     const loggedClient = await getLoggedClient();
     if (!loggedClient) {
-        throw new Error('You aren\'t logged into Apify! Call "apify login" to authenticate into Apify.');
+        throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
     }
     return loggedClient;
 };

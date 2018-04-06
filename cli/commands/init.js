@@ -4,6 +4,13 @@ const outputs = require('../lib/outputs');
 const { setLocalConfig, setLocalEnv } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG } = require('../lib/consts');
 
+// TODO: BUG - if prompted act name is empty, the command prefills some weird directory
+// jan:myact1$ apify init
+//    ? Act name: /Users/jan/Projects/apify-cli/cli/commands
+// Success: Initialized act /Users/jan/Projects/apify-cli/cli/commands in current dir.
+
+// TODO: If apify.json already exists locally, you should return an error!
+
 class InitCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(InitCommand);
@@ -19,16 +26,16 @@ class InitCommand extends ApifyCommand {
     }
 }
 
-InitCommand.description = `
-This asks you for your the act name, writes apify.json and creates apify_local folder structure for local development.
-NOTE: This overrides your current apify.json.
-`;
+InitCommand.description = 'Initializes an act project in an existing directory.\n' +
+    'The command only creates the "apify.json" file and the "apify_local" directory in the current directory, ' +
+    'but will not touch anything else.\n\n' +
+    'WARNING: If the files already exist, they will be overwritten!';
 
 InitCommand.args = [
     {
         name: 'actName',
         required: false,
-        description: 'Name of initiated act',
+        description: 'Name of the act. If not provided, you will be prompted for it.',
     },
 ];
 
