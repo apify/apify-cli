@@ -1,6 +1,5 @@
 const path = require('path');
 const fs = require('fs');
-const gitignore = require('parse-gitignore');
 const globby = require('globby');
 const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');

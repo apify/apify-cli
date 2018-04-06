@@ -15,9 +15,7 @@ const FILES_IN_INGRONED_DIR = ['test_to_ignore/in_test_ignore.js'];
 const FILES_TO_IGNORE = ['ignored_module.js'];
 
 describe('Utils', () => {
-
     describe('argsToCamelCase()', () => {
-
         it('should convert object', () => {
             const object = {
                 'my-att': 'value',
@@ -26,31 +24,28 @@ describe('Utils', () => {
                 token: 'Ad7H9khHgd7H9khHg',
             };
             const expected = {
-                'myAtt': 'value',
-                'myAttrTest': 'secondValue',
-                'userId': 'd7H9khHg',
+                myAtt: 'value',
+                myAttrTest: 'secondValue',
+                userId: 'd7H9khHg',
                 token: 'Ad7H9khHgd7H9khHg',
             };
             const convertedObject = argsToCamelCase(object);
             expect(expected).to.be.eql(convertedObject);
         });
-
     });
-
     describe('createActZip()', () => {
-
-        before(async function () {
+        before(async () => {
             // Create folder structure
             if (!fs.existsSync(TEST_DIR)) createFolderSync(TEST_DIR);
             process.chdir(TEST_DIR);
 
             FOLDERS.concat(FOLDERS_TO_IGNORE).forEach(folder => createFolderSync(folder));
-            FILES.concat(FILES_TO_IGNORE, FILES_IN_INGRONED_DIR).forEach(file => fs.writeFileSync(file, Math.random().toString(36).substring(7), { flag: 'w' }));
+            FILES.concat(FILES_TO_IGNORE, FILES_IN_INGRONED_DIR).forEach(file =>
+                fs.writeFileSync(file, Math.random().toString(36).substring(7), { flag: 'w' }));
 
             const toIgnore = FOLDERS_TO_IGNORE.concat(FILES_TO_IGNORE).join('\n');
             fs.writeFileSync('.gitignore', toIgnore, { flag: 'w' });
         });
-
         it('should create zip without files in .gitignore', async () => {
             const zipName = 'test.zip';
             const tempFolder = 'unzip_temp';
@@ -60,17 +55,18 @@ describe('Utils', () => {
             // Unzip with same command as on Apify worker
             await exec('unzip', ['-oq', zipName, '-d', tempFolder]);
 
-            FOLDERS.forEach(folder => expect(fs.existsSync(path.join(tempFolder, folder))).to.be.true);
-            FOLDERS_TO_IGNORE.forEach(folder => expect(fs.existsSync(path.join(tempFolder, folder))).to.be.false);
-            FILES.forEach(file => expect(fs.existsSync(path.join(tempFolder, file))).to.be.true);
-            FILES_IN_INGRONED_DIR.concat(FILES_TO_IGNORE).forEach(file => expect(fs.existsSync(path.join(tempFolder, file))).to.be.false);
+            FOLDERS.forEach(folder =>
+                expect(fs.existsSync(path.join(tempFolder, folder))).to.be.true);
+            FOLDERS_TO_IGNORE.forEach(folder =>
+                expect(fs.existsSync(path.join(tempFolder, folder))).to.be.false);
+            FILES.forEach(file =>
+                expect(fs.existsSync(path.join(tempFolder, file))).to.be.true);
+            FILES_IN_INGRONED_DIR.concat(FILES_TO_IGNORE).forEach(file =>
+                expect(fs.existsSync(path.join(tempFolder, file))).to.be.false);
         });
-
         after(async () => {
             process.chdir('../');
             if (fs.existsSync(TEST_DIR)) await rimrafPromised(TEST_DIR);
         });
-
     });
-
 });
