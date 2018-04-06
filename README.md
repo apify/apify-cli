@@ -16,7 +16,7 @@ This is were the CLI comes in.
 
 Note that the acts running on Apify Actor platform are executed in Docker containers, so with an appropriate `Dockerfile`
 you can build your acts in any programming language.
-However, we recommend building the acts in JavaScript / Node.js, for which we provide the most libraries and support.
+However, we recommend using JavaScript / Node.js, for which we provide most libraries and support.
 
 
 ## Installation
@@ -41,9 +41,9 @@ apify info
 
 ## Basic usage
 
-The following steps describe basic usage of the CLI.
+The following examples show basic usage of the CLI.
 
-### 1) Create a new act
+### Create a new act from scratch
 
 First, let's create a new act called `hello-world`:
 
@@ -51,11 +51,24 @@ First, let's create a new act called `hello-world`:
 apify create hello_world
 ```
 
-You will be prompted to select a template with the boilerplate for the act in order to help you get started quickly.
-After that the command will create a directory called `hello_world` that contains a Node.js project
+You will be prompted to select a template with the boilerplate for the act, to help you get started quickly.
+The command will create a directory called `hello_world` that contains a Node.js project
 for the act and a few configuration files.
 
-### 2) Run the act locally
+### Create a new act from existing project
+
+If you already have your project ready in some directory, you can create the Apify configuration files
+in it by running:
+
+```bash
+cd ./my/awesome/project
+apify init
+```
+
+This will only create the `apify.json` file and `apify_local` directory, but will not touch anything else.
+
+
+### Run the act locally
 
 Go to the newly created directory and run the act:
 
@@ -64,9 +77,9 @@ cd hello_world
 apify run
 ```
 
-Now it's the time for you to develop.
+Now it's the time for you to develop the logic (or magic?) of your act.
 
-###  3) Login using your Apify account
+### Login using your Apify account
 
 Before you can interact with the Apify cloud, you need to [create an Apify account](https://my.apify.com/)
 and login
@@ -78,17 +91,37 @@ apify login
 https://my.apify.com/account#/integrations
 
 
-###  3) Push the act to the Apify cloud
+### Push the act to the Apify cloud
 
 
 
 
-###  4) Call the act running on Apify cloud
+### Call the act running on Apify cloud
 
 
+
+###  Need help?
+
+To see all CLI commands simply run:
+
+```bash
+apify help
+```
+
+To get information about a specific command run:
+
+```bash
+apify help COMMAND
+```
+
+If you still haven't found what you were looking for, please go to [Apify Help center](https://www.apify.com/help)
+or [contact us](https://www.apify.com/contact).
 
 
 ## Command reference
+
+This section contains printouts of `apify help` for all commands.
+
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
 ```
