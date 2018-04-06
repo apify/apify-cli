@@ -9,15 +9,17 @@ Apify command client client (CLI) helps you to create, develop and deploy
 
 ## Installation
 
-1) Install [Node.js](https://nodejs.org) version 7.10 or higher to your computer.
-2) Install Apify CLI by running:
-   ```bash
-   npm -g install apify-cli
-   ```
-3) Test the CLI was installed correctly:
-   ```bash
-   apify info
-   ```
+Install [Node.js](https://nodejs.org) version 7.10 or higher to your computer.
+
+Install Apify CLI by running:
+```bash
+npm -g install apify-cli
+```
+
+Test the CLI was installed correctly:
+```bash
+apify info
+```
 
 ## Usage
 
