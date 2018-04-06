@@ -3,13 +3,29 @@
 [![npm version](https://badge.fury.io/js/apify-cli.svg)](http://badge.fury.io/js/apify-cli)
 [![Build Status](https://travis-ci.org/apifytech/apify-js.svg)](https://travis-ci.org/apifytech/apify-cli)
 
-Apify command client client (CLI) helps you to create, develop and deploy
+Apify command client client (CLI) helps you to create, develop, deploy and execute
 [Apify Actor](https://www.apify.com/docs/actor) acts from your local computer.
+
+Apify Actor is a serverless computing platform that enables execution of arbitrary
+web scraping and automation jobs in the cloud. A single job is called an _act_.
+
+While you can develop the acts in a code editor directly in the [Apify web application](https://my.apify.com/),
+for more complex projects it is more convenient to develop the acts locally
+and only push them later to the Apify cloud.
+This is were the CLI comes in.
+
+Note that the acts running on Apify Actor platform are executed in Docker containers, so with an appropriate `Dockerfile`
+you can build your acts in any programming language.
+However, we recommend building the acts in JavaScript / Node.js, for which we provide the most libraries and support.
 
 
 ## Installation
 
-First, make sure you have [Node.js](https://nodejs.org) version 7.10 or higher installed on your computer.
+First, make sure you have [Node.js](https://nodejs.org) version 7.10 or higher installed on your computer:
+
+```bash
+node --version
+```
 
 Install Apify CLI by running:
 
@@ -23,10 +39,9 @@ Finally, you can test that the CLI was installed correctly:
 apify info
 ```
 
-## Usage
+## Basic usage
 
-
-To start developing Apify Actor acts locally, first you need to create an act.
+The following steps describe basic usage of the CLI.
 
 ### 1) Create a new act
 
@@ -36,8 +51,8 @@ First, let's create a new act called `hello-world`:
 apify create hello_world
 ```
 
-You will be prompted to select a template for the act, to help you get started quickly.
-After that, the command will create a directory called `hello_world` that contains a Node.js project
+You will be prompted to select a template with the boilerplate for the act in order to help you get started quickly.
+After that the command will create a directory called `hello_world` that contains a Node.js project
 for the act and a few configuration files.
 
 ### 2) Run the act locally
@@ -49,11 +64,22 @@ cd hello_world
 apify run
 ```
 
+Now it's the time for you to develop.
+
 ###  3) Login using your Apify account
 
-LOGIN...
+Before you can interact with the Apify cloud, you need to [create an Apify account](https://my.apify.com/)
+and login
 
-###  3) Push the act to Apify cloud
+```bash
+apify login
+```
+
+https://my.apify.com/account#/integrations
+
+
+###  3) Push the act to the Apify cloud
+
 
 
 
