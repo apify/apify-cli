@@ -1,12 +1,11 @@
 #!/bin/bash
 
-# create file .md with generated from command --help
+# Creates COMMANDS.md file with a content generated using "apify help"
 
-HELP_FILE="${1}"
+HELP_FILE="COMMANDS.md"
 COMMANDS_DIR='cli/commands/'
 
 # help command and title
-echo '## Commands' > ${HELP_FILE}
 echo "\`\`\`" >> ${HELP_FILE}
 apify help >> ${HELP_FILE}
 echo "\`\`\`" >> ${HELP_FILE}

@@ -132,35 +132,39 @@ This section contains printouts of `apify help` for all commands.
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
 ```
-Command line client for Apify.
+Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.0 darwin-x64 node-v8.9.4
+  apify-cli/0.1.2 darwin-x64 node-v8.9.1
 
 USAGE
   $ apify [COMMAND]
 
 COMMANDS
-  call
-  create
-  init
-  login
-  logout
-  push
-  run
+  call    Runs the act remotely on the Apify platform.
+  create  Creates a new act project directory from a selected template.
+  init    Initializes an act project in an existing directory.
+  login   Logs in to the Apify platform using the API token.
+  logout  Logs out of the Apify platform.
+  push    Uploads the act to the Apify platform and builds it there.
+  run     Runs the act locally in the current directory.
 
 ```
 ### apify call
-<pre><code>
+```
+Runs the act remotely on the Apify platform.
+
 USAGE
   $ apify call [ACTID]
 
 ARGUMENTS
-  ACTID  Act ID of calling act. It overrides actId in apify.json.
+  ACTID  Name or ID of the act to run (e.g. "apify/hello-world" or
+         "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the remote act
+         specified in the "apify.json" file.
 
 OPTIONS
-  -b, --build=build      Tag or number of the build to run (e.g. latest or
-                         1.2.34).
+  -b, --build=build      Tag or number of the build to run (e.g. "latest" or
+                         "1.2.34").
 
   -m, --memory=memory    Amount of memory allocated for the act run, in
                          megabytes.
@@ -169,97 +173,113 @@ OPTIONS
                          there is no timeout.
 
 DESCRIPTION
-  This runs your act on Apify and fetches results from output.
+  The act is run under your current Apify account, therefore you need to be
+  logged in by calling "apify login".
 
-
-</code></pre>
+```
 ### apify create
 ```
+Creates a new act project directory from a selected template.
+
 USAGE
   $ apify create ACTNAME
 
 ARGUMENTS
-  ACTNAME  Name of creating act
+  ACTNAME  Name of the act and its directory
 
 OPTIONS
   -t, --template=basic|puppeteer|puppeteer_crawler|plain_request_urls_list
-      Act template, if not pass it'll prompt from the console.
-
-DESCRIPTION
-  This creates directory with proper structure for local development.
-  NOTE: You can specified act template, which can help you in specific use cases
-  like crawling urls list or crawling with queue.
-
+      Template for the act. If not provided, the command will prompt for it.
 
 ```
 ### apify init
 ```
+Initializes an act project in an existing directory.
+
 USAGE
   $ apify init [ACTNAME]
 
 ARGUMENTS
-  ACTNAME  Name of initeled act
+  ACTNAME  Name of the act. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  This asks you for your the act name, writes apify.json and creates apify_local
-  folder structure for local development.
-  NOTE: This overrides your current apify.json.
+  The command only creates the "apify.json" file and the "apify_local" directory
+  in the current directory, but will not touch anything else.
 
+  WARNING: If the files already exist, they will be overwritten!
 
 ```
 ### apify login
 ```
+Logs in to the Apify platform using the API token.
+
 USAGE
   $ apify login
 
 OPTIONS
-  -t, --token=token  [Optional] Your API token on Apify
+  -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  This is an interactive prompt which authenticates you with Apify.
-  All tokens and keys will store ~/.apify.
-  NOTE: If you set up token options, prompt will skip
+  The token and other account information is stored to the ~/.apify directory,
+  from where it is read by all other "apify" commands. To log out, call "apify
+  logout".
 
 ```
 ### apify logout
 ```
+Logs out of the Apify platform.
+
 USAGE
   $ apify logout
 
 DESCRIPTION
-  Deletes all your stored tokens and keys from ~/.apify.
-  NOTE: This deletes all your global settings.
-
+  The command deletes the API token and all other account information stored in
+  the ~/.apify directory. To log in again, call "apify login".
 
 ```
 ### apify push
 ```
+Uploads the act to the Apify platform and builds it there.
+
 USAGE
   $ apify push [ACTID]
 
 ARGUMENTS
-  ACTID  Act ID of pushing act. It overrides actId in apify.json.
+  ACTID  ID of an existing act on the Apify platform where the files will be
+         pushed. If not provided, the command will create or modify the act with
+         the name specified in "apify.json" file.
 
 OPTIONS
-  -b, --build-tag=build-tag            Build tag of pushing act version.
-  -v, --version-number=version-number  Version number of pushing act version.
+  -b, --build-tag=build-tag            Build tag to be applied to the successful
+                                       act build. By default, it is taken from
+                                       the "apify.json" file
+
+  -v, --version-number=version-number  Act version number to which the files
+                                       should be pushed. By default, it is taken
+                                       from the "apify.json" file.
 
 DESCRIPTION
-  This uploads act from the current directory to Apify and builds it.
-  If exists apify.json in the directory it takes options from there. You can
-  override these with options below.
-  NOTE: Act overrides current act with the same version on Apify.
+  The command creates a ZIP with files of the act from the current directory,
+  uploads it to the Apify platform and builds it. The act settings are read from
+  the "apify.json" file in the current directory, but they can be overridden
+  using command-line options.
 
+  WARNING: If the target act already exists in your Apify account, it will be
+  overwritten!
 
 ```
 ### apify run
 ```
+Runs the act locally in the current directory.
+
 USAGE
   $ apify run
 
 DESCRIPTION
-  This runs act from current directory. It uses apify_local for getting input
-  and setting output and storing data.
-
+  The command runs a Node.js process with the act in the current directory. It
+  sets various APIFY_XYZ environment variablesin order to provide a working
+  execution environment for the act. For example, this causes the act input, as
+  well as all other data in key-value stores, datasets or request queues to be
+  stored in the "apify_local" directory,rather than on the Apify platform.
 
 ```
