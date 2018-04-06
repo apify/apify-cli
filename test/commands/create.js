@@ -3,7 +3,7 @@ const fs = require('fs');
 const sinon = require('sinon');
 const command = require('@oclif/command');
 const path = require('path');
-const { rimrafPromised } = require('../../cli/lib/files');
+const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
 
 const actName = 'my-act';

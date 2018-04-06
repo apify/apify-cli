@@ -77,6 +77,6 @@
     ],
     "oclif": {
         "bin": "apify",
-        "commands": "./cli/commands"
+        "commands": "./src/commands"
     }
 }

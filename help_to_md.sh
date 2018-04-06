@@ -3,7 +3,7 @@
 # create file .md with generated from command --help
 
 HELP_FILE="${1}"
-COMMANDS_DIR='cli/commands/'
+COMMANDS_DIR='src/commands/'
 
 # help command and title
 echo '## Commands' > ${HELP_FILE}

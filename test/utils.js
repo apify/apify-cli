@@ -1,9 +1,9 @@
 const { expect } = require('chai');
 const fs = require('fs');
 const path = require('path');
-const { createFolderSync, rimrafPromised } = require('../cli/lib/files');
-const { argsToCamelCase, createActZip } = require('../cli/lib/utils');
-const exec = require('../cli/lib/exec');
+const { createFolderSync, rimrafPromised } = require('../src/lib/files');
+const { argsToCamelCase, createActZip } = require('../src/lib/utils');
+const exec = require('../src/lib/exec');
 
 const TEST_DIR = 'my-test-dir';
 const FOLDERS = ['my_test', 'my_test/test_in_test', 'my_next_test', '.dot_test'];

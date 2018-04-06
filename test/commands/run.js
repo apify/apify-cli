@@ -2,8 +2,8 @@ const { expect } = require('chai');
 const fs = require('fs');
 const command = require('@oclif/command');
 const path = require('path');
-const { LOCAL_ENV_VARS } = require('../../cli/lib/consts');
-const { rimrafPromised } = require('../../cli/lib/files');
+const { LOCAL_ENV_VARS } = require('../../src/lib/consts');
+const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
 
 const actName = 'my-act';
