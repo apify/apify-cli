@@ -1,11 +1,15 @@
 #!/bin/bash
 
 # Creates COMMANDS.md file with a content generated using "apify help"
+# TODO: Automatically update readme.md!
 
 HELP_FILE="COMMANDS.md"
+#README_FILE="README.md"
 COMMANDS_DIR='src/commands/'
 
 # help command and title
+echo "<!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->" > ${HELP_FILE}
+echo "" >> ${HELP_FILE}
 echo "\`\`\`" >> ${HELP_FILE}
 apify help >> ${HELP_FILE}
 echo "\`\`\`" >> ${HELP_FILE}
@@ -20,3 +24,6 @@ do
     apify ${COMMAND_NAME} --help >> ${HELP_FILE}
     echo "\`\`\`" >> ${HELP_FILE}
 done
+
+echo "" >> ${HELP_FILE}
+echo "<!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->" >> ${HELP_FILE}

@@ -136,7 +136,7 @@ This section contains printouts of `apify help` for all commands.
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.2 darwin-x64 node-v8.9.1
+  apify-cli/0.1.3 darwin-x64 node-v8.9.4
 
 USAGE
   $ apify [COMMAND]
@@ -144,6 +144,7 @@ USAGE
 COMMANDS
   call    Runs the act remotely on the Apify platform.
   create  Creates a new act project directory from a selected template.
+  info    Displays information about Apify current settings.
   init    Initializes an act project in an existing directory.
   login   Logs in to the Apify platform using the API token.
   logout  Logs out of the Apify platform.
@@ -191,6 +192,17 @@ ARGUMENTS
 OPTIONS
   -t, --template=basic|puppeteer|puppeteer_crawler|plain_request_urls_list
       Template for the act. If not provided, the command will prompt for it.
+
+```
+### apify info
+```
+Displays information about Apify current settings.
+
+USAGE
+  $ apify info
+
+DESCRIPTION
+  This command prints information about Apify to console.
 
 ```
 ### apify init
@@ -284,3 +296,6 @@ DESCRIPTION
   stored in the "apify_local" directory,rather than on the Apify platform.
 
 ```
+
+<!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
