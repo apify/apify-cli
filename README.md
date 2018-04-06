@@ -129,6 +129,7 @@ or [contact us](https://www.apify.com/contact).
 
 This section contains printouts of `apify help` for all commands.
 
+
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
 ```
