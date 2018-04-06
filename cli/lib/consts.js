@@ -7,9 +7,9 @@ exports.ACTS_TEMPLATES = {
         value: 'basic',
         dir: `${__dirname}/../templates/basic`,
         defaultRunOptions: {
-            build: "latest",
+            build: 'latest',
             timeoutSecs: 3600,
-            memoryMbytes: 512
+            memoryMbytes: 512,
         },
     },
     puppeteer: {
@@ -17,9 +17,9 @@ exports.ACTS_TEMPLATES = {
         value: 'puppeteer',
         dir: `${__dirname}/../templates/puppeteer`,
         defaultRunOptions: {
-            build: "latest",
+            build: 'latest',
             timeoutSecs: 0,
-            memoryMbytes: 2048
+            memoryMbytes: 2048,
         },
     },
     puppeteer_crawler: {
@@ -27,9 +27,9 @@ exports.ACTS_TEMPLATES = {
         value: 'puppeteer_crawler',
         dir: `${__dirname}/../templates/puppeteer_crawler`,
         defaultRunOptions: {
-            build: "latest",
+            build: 'latest',
             timeoutSecs: 0,
-            memoryMbytes: 2048
+            memoryMbytes: 2048,
         },
     },
     plain_request_urls_list: {
@@ -37,9 +37,9 @@ exports.ACTS_TEMPLATES = {
         value: 'plain_request_urls_list',
         dir: `${__dirname}/../templates/plain_request_urls_list`,
         defaultRunOptions: {
-            build: "latest",
+            build: 'latest',
             timeoutSecs: 0,
-            memoryMbytes: 2048
+            memoryMbytes: 2048,
         },
     },
 };

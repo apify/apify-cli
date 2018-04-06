@@ -31,7 +31,7 @@ describe('apify create', () => {
         expect(fs.existsSync(actName)).to.be.true;
         expect(fs.existsSync(path.join(actName, 'package.json'))).to.be.true;
         expect(fs.existsSync(apifyJsonPath)).to.be.true;
-        expect(loadJson.sync(apifyJsonPath).template).to.be.eql(ACT_TEMPLATE)
+        expect(loadJson.sync(apifyJsonPath).template).to.be.eql(ACT_TEMPLATE);
     });
 
     afterEach(() => {
