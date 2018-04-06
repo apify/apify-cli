@@ -9,7 +9,7 @@
         "commands_md": "./help_to_md.sh COMMANDS.md"
     },
     "bin": {
-        "apify": "cli/bin.js"
+        "apify": "src/bin.js"
     },
     "contributors": [
         "Jakub Drobník <jakub.drobnik@apify.com>"
