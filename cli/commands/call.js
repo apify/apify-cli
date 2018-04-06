@@ -4,6 +4,11 @@ const { ACT_TASK_STATUSES } = require('apify-shared/consts');
 const { getLocalConfig, getLoggedClientOrError } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
+// TODO: Show full error messages and HTTP codes, this is not great:
+// jan:testx$ apify call help
+// Run: Calling act help...
+// Error: [record-not-found]
+
 class CallCommand extends ApifyCommand {
     async run() {
         const { args, flags } = this.parse(CallCommand);
@@ -37,7 +42,7 @@ class CallCommand extends ApifyCommand {
 }
 
 CallCommand.description = 'Runs the act remotely on the Apify platform.\n' +
-    '';
+    'The act is run under your current Apify account, therefore you need to be logged in by calling "apify login".';
 
 CallCommand.flags = {
     build: flagsHelper.string({
