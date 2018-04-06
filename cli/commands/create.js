@@ -41,7 +41,7 @@ class CreateCommand extends ApifyCommand {
             throw err;
         }
         await copy(ACTS_TEMPLATES[template].dir, actFolderDir, { dot: true });
-        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }), actFolderDir);
+        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName, template }), actFolderDir);
         await setLocalEnv(actFolderDir);
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actName });
 
