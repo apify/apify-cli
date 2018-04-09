@@ -14,7 +14,7 @@ for more complex projects it is convenient to develop the acts locally
 and only push them to the Apify cloud for execution.
 This is were the CLI comes in.
 
-Note that the acts running on Apify Actor platform are executed in Docker containers, so with an appropriate `Dockerfile`
+Note that the acts running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
 you can build your acts in any programming language.
 However, we recommend using JavaScript / Node.js, for which we provide most libraries and support.
 
@@ -99,7 +99,7 @@ This command creates a ZIP archive with your project, uploads it to Apify cloud 
 apify call
 ```
 
-Runs the act corresponding to the current directory on the Apify Actor platform.
+Runs the act corresponding to the current directory on the Apify platform.
 
 This command can be also used to run other acts, for example:
 
@@ -107,7 +107,14 @@ This command can be also used to run other acts, for example:
 apify call apify/hello-world
 ```
 
-###  Need help?
+### So what's in this `apify.json` file?
+
+This file associates your local development project with an act on the Apify platform.
+It contains information such as act name or ID, version and build tag.
+Make sure you commit this file to git repository.
+
+
+### Need help?
 
 To see all CLI commands simply run:
 
