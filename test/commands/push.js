@@ -7,7 +7,7 @@ const loadJson = require('load-json-file');
 const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 
-const ACT_NAME = 'my-act';
+const ACT_NAME = `my-act-${Date.now()}`;
 const TEST_ACT = {
     name: 'my-testing-act',
     isPublic: false,
