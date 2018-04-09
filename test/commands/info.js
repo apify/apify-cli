@@ -4,7 +4,7 @@ const fs = require('fs');
 const loadJson = require('load-json-file');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const command = require('@oclif/command');
-const { testUserClient, badUserClient } = require('./config');
+const { testUserClient } = require('./config');
 
 describe('apify info', () => {
     before(function () {
