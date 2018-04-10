@@ -1,6 +1,6 @@
 {
     "name": "apify-cli",
-    "version": "0.1.5",
+    "version": "0.1.6",
     "description": "Apify command line client to help you create, develop, build and run Actor acts.",
     "main": "index.js",
     "scripts": {
