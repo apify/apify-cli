@@ -1,10 +1,10 @@
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
-```
+```bash
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.3 darwin-x64 node-v8.9.4
+  apify-cli/0.1.5 darwin-x64 node-v8.9.4
 
 USAGE
   $ apify [COMMAND]
@@ -21,7 +21,7 @@ COMMANDS
 
 ```
 ### apify call
-```
+```bash
 Runs the act remotely on the Apify platform.
 
 USAGE
@@ -48,7 +48,7 @@ DESCRIPTION
 
 ```
 ### apify create
-```
+```bash
 Creates a new act project directory from a selected template.
 
 USAGE
@@ -63,7 +63,7 @@ OPTIONS
 
 ```
 ### apify info
-```
+```bash
 Displays information about Apify current settings.
 
 USAGE
@@ -74,7 +74,7 @@ DESCRIPTION
 
 ```
 ### apify init
-```
+```bash
 Initializes an act project in an existing directory.
 
 USAGE
@@ -91,7 +91,7 @@ DESCRIPTION
 
 ```
 ### apify login
-```
+```bash
 Logs in to the Apify platform using the API token.
 
 USAGE
@@ -107,7 +107,7 @@ DESCRIPTION
 
 ```
 ### apify logout
-```
+```bash
 Logs out of the Apify platform.
 
 USAGE
@@ -119,7 +119,7 @@ DESCRIPTION
 
 ```
 ### apify push
-```
+```bash
 Uploads the act to the Apify platform and builds it there.
 
 USAGE
@@ -150,7 +150,7 @@ DESCRIPTION
 
 ```
 ### apify run
-```
+```bash
 Runs the act locally in the current directory.
 
 USAGE
