@@ -1,7 +1,7 @@
 # Apify command line client (apify-cli)
 
-[![npm version](https://badge.fury.io/js/apify-cli.svg)](http://badge.fury.io/js/apify-cli)
-[![Build Status](https://travis-ci.org/apifytech/apify-js.svg)](https://travis-ci.org/apifytech/apify-cli)
+<a href="http://badge.fury.io/js/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version"></a>
+<a href="https://travis-ci.org/apifytech/apify-cli"><img src="https://travis-ci.org/apifytech/apify-js.svg" alt="Build Status"></a>
 
 Apify command client client (CLI) helps you to create, develop, build and run
 [Apify Actor](https://www.apify.com/docs/actor) acts from a local computer.
@@ -182,7 +182,7 @@ OPTIONS
                          there is no timeout.
 
 DESCRIPTION
-  The act is run under your current Apify account, therefore you need to be 
+  The act is run under your current Apify account, therefore you need to be
   logged in by calling "apify login".
 
 ```
@@ -223,7 +223,7 @@ ARGUMENTS
   ACTNAME  Name of the act. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "apify_local" directory 
+  The command only creates the "apify.json" file and the "apify_local" directory
   in the current directory, but will not touch anything else.
 
   WARNING: If the files already exist, they will be overwritten!
@@ -240,8 +240,8 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The token and other account information is stored to the ~/.apify directory, 
-  from where it is read by all other "apify" commands. To log out, call "apify 
+  The token and other account information is stored to the ~/.apify directory,
+  from where it is read by all other "apify" commands. To log out, call "apify
   logout".
 
 ```
@@ -253,7 +253,7 @@ USAGE
   $ apify logout
 
 DESCRIPTION
-  The command deletes the API token and all other account information stored in 
+  The command deletes the API token and all other account information stored in
   the ~/.apify directory. To log in again, call "apify login".
 
 ```
@@ -279,12 +279,12 @@ OPTIONS
                                        from the "apify.json" file.
 
 DESCRIPTION
-  The command creates a ZIP with files of the act from the current directory, 
-  uploads it to the Apify platform and builds it. The act settings are read from 
-  the "apify.json" file in the current directory, but they can be overridden 
+  The command creates a ZIP with files of the act from the current directory,
+  uploads it to the Apify platform and builds it. The act settings are read from
+  the "apify.json" file in the current directory, but they can be overridden
   using command-line options.
 
-  WARNING: If the target act already exists in your Apify account, it will be 
+  WARNING: If the target act already exists in your Apify account, it will be
   overwritten!
 
 ```
@@ -296,10 +296,10 @@ USAGE
   $ apify run
 
 DESCRIPTION
-  The command runs a Node.js process with the act in the current directory. It 
-  sets various APIFY_XYZ environment variablesin order to provide a working 
-  execution environment for the act. For example, this causes the act input, as 
-  well as all other data in key-value stores, datasets or request queues to be 
+  The command runs a Node.js process with the act in the current directory. It
+  sets various APIFY_XYZ environment variablesin order to provide a working
+  execution environment for the act. For example, this causes the act input, as
+  well as all other data in key-value stores, datasets or request queues to be
   stored in the "apify_local" directory,rather than on the Apify platform.
 
 ```
