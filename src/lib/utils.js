@@ -97,6 +97,8 @@ const setLocalEnv = async (actDir) => {
     const gitingore = path.join(actDir, '.gitignore');
     if (fs.existsSync(gitingore)) {
         fs.writeFileSync(gitingore, LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR, { flag: 'a' });
+    } else {
+        fs.writeFileSync(gitingore, `${LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR}\nnode_modules`, { flag: 'w' });
     }
 };
 
