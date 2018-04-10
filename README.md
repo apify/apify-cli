@@ -1,9 +1,9 @@
 # Apify command line client (apify-cli)
 
-[![npm version](https://badge.fury.io/js/apify-cli.svg)](http://badge.fury.io/js/apify-cli)
-[![Build Status](https://travis-ci.org/apifytech/apify-js.svg)](https://travis-ci.org/apifytech/apify-cli)
+<a href="http://badge.fury.io/js/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" style="display:inherit;"></a>
+<a href="https://travis-ci.org/apifytech/apify-cli"><img src="https://travis-ci.org/apifytech/apify-js.svg" alt="Build Status" style="display:inherit;"></a>
 
-Apify command client client (CLI) helps you to create, develop, build and run
+Apify command line client (CLI) helps you to create, develop, build and run
 [Apify Actor](https://www.apify.com/docs/actor) acts from a local computer.
 
 Apify Actor is a serverless computing platform that enables execution of arbitrary
@@ -139,11 +139,11 @@ This section contains printouts of `apify help` for all commands.
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
-```
+```bash
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.3 darwin-x64 node-v8.9.4
+  apify-cli/0.1.5 darwin-x64 node-v8.9.4
 
 USAGE
   $ apify [COMMAND]
@@ -160,7 +160,7 @@ COMMANDS
 
 ```
 ### apify call
-```
+```bash
 Runs the act remotely on the Apify platform.
 
 USAGE
@@ -187,7 +187,7 @@ DESCRIPTION
 
 ```
 ### apify create
-```
+```bash
 Creates a new act project directory from a selected template.
 
 USAGE
@@ -202,7 +202,7 @@ OPTIONS
 
 ```
 ### apify info
-```
+```bash
 Displays information about Apify current settings.
 
 USAGE
@@ -213,7 +213,7 @@ DESCRIPTION
 
 ```
 ### apify init
-```
+```bash
 Initializes an act project in an existing directory.
 
 USAGE
@@ -230,7 +230,7 @@ DESCRIPTION
 
 ```
 ### apify login
-```
+```bash
 Logs in to the Apify platform using the API token.
 
 USAGE
@@ -246,7 +246,7 @@ DESCRIPTION
 
 ```
 ### apify logout
-```
+```bash
 Logs out of the Apify platform.
 
 USAGE
@@ -258,7 +258,7 @@ DESCRIPTION
 
 ```
 ### apify push
-```
+```bash
 Uploads the act to the Apify platform and builds it there.
 
 USAGE
@@ -289,7 +289,7 @@ DESCRIPTION
 
 ```
 ### apify run
-```
+```bash
 Runs the act locally in the current directory.
 
 USAGE
@@ -305,4 +305,3 @@ DESCRIPTION
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
-
