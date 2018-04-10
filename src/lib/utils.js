@@ -87,24 +87,16 @@ const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
     const localDir = createFolderSync(path.join(actDir, LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR));
     const datasetsDir = createFolderSync(path.join(localDir, LOCAL_ENV_VARS.APIFY_LOCAL_DATASETS_DIR));
+    const requestQueuesDir = createFolderSync(path.join(localDir, LOCAL_ENV_VARS.APIFY_LOCAL_REQUEST_QUEUE_DIR));
     const keyValueStoresDir = createFolderSync(path.join(localDir, LOCAL_ENV_VARS.APIFY_LOCAL_KEY_VALUE_STORES_DIR));
     createFolderSync(path.join(datasetsDir, LOCAL_ENV_VARS.APIFY_DEFAULT_DATASET_ID));
+    createFolderSync(path.join(requestQueuesDir, LOCAL_ENV_VARS.APIFY_DEFAULT_REQUEST_QUEUE_ID));
     createFolderSync(path.join(keyValueStoresDir, LOCAL_ENV_VARS.APIFY_DEFAULT_KEY_VALUE_STORE_ID));
 
     // Update gitignore
     const gitingore = path.join(actDir, '.gitignore');
     if (fs.existsSync(gitingore)) {
         fs.writeFileSync(gitingore, LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR, { flag: 'a' });
-    }
-
-    // Update package.json
-    const packageJson = path.join(actDir, 'package.json');
-    if (fs.existsSync(packageJson)) {
-        const envVarsPart = Object.keys(LOCAL_ENV_VARS).map(envVar => `${envVar}=${LOCAL_ENV_VARS[envVar]}`).join(' ');
-        const runLocalCmd = `${envVarsPart} node main.js`;
-        await updateLocalJson(packageJson, {
-            'run-local': runLocalCmd,
-        }, 'scripts');
     }
 };
 
