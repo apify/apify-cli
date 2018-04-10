@@ -1,7 +1,7 @@
 # Apify command line client (apify-cli)
 
-<a href="http://badge.fury.io/js/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version"></a>
-<a href="https://travis-ci.org/apifytech/apify-cli"><img src="https://travis-ci.org/apifytech/apify-js.svg" alt="Build Status"></a>
+<a href="http://badge.fury.io/js/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" style="display:inherit;"></a>
+<a href="https://travis-ci.org/apifytech/apify-cli"><img src="https://travis-ci.org/apifytech/apify-js.svg" alt="Build Status" style="display:inherit;"></a>
 
 Apify command client client (CLI) helps you to create, develop, build and run
 [Apify Actor](https://www.apify.com/docs/actor) acts from a local computer.
