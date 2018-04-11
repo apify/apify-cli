@@ -160,7 +160,7 @@ COMMANDS
 
 ```
 ### apify call
-```bash
+```
 Runs the act remotely on the Apify platform.
 
 USAGE
@@ -187,7 +187,7 @@ DESCRIPTION
 
 ```
 ### apify create
-```bash
+```
 Creates a new act project directory from a selected template.
 
 USAGE
@@ -202,7 +202,7 @@ OPTIONS
 
 ```
 ### apify info
-```bash
+```
 Displays information about Apify current settings.
 
 USAGE
@@ -213,7 +213,7 @@ DESCRIPTION
 
 ```
 ### apify init
-```bash
+```
 Initializes an act project in an existing directory.
 
 USAGE
@@ -230,7 +230,7 @@ DESCRIPTION
 
 ```
 ### apify login
-```bash
+```
 Logs in to the Apify platform using the API token.
 
 USAGE
@@ -246,7 +246,7 @@ DESCRIPTION
 
 ```
 ### apify logout
-```bash
+```
 Logs out of the Apify platform.
 
 USAGE
@@ -258,7 +258,7 @@ DESCRIPTION
 
 ```
 ### apify push
-```bash
+```
 Uploads the act to the Apify platform and builds it there.
 
 USAGE
@@ -289,7 +289,7 @@ DESCRIPTION
 
 ```
 ### apify run
-```bash
+```
 Runs the act locally in the current directory.
 
 USAGE
@@ -297,7 +297,7 @@ USAGE
 
 DESCRIPTION
   The command runs a Node.js process with the act in the current directory. It
-  sets various APIFY_XYZ environment variablesin order to provide a working
+  sets various APIFY_XYZ environment variables in order to provide a working
   execution environment for the act. For example, this causes the act input, as
   well as all other data in key-value stores, datasets or request queues to be
   stored in the "apify_local" directory,rather than on the Apify platform.
@@ -305,3 +305,4 @@ DESCRIPTION
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
