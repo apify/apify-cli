@@ -1,18 +1,15 @@
 const Apify = require('apify');
 
 Apify.main(async () => {
-    // Create a request list.
-    const requestList = new Apify.RequestList({
-        sources: [
-            { url: 'http://www.example.com' },
-            { url: 'http://www.some-nonexisting-domain.com' },
-        ],
-    });
+    // Get queue and enqueue first url.
+    const requestQueue = await Apify.openRequestQueue();
 
-    await requestList.initialize();
+    // Enqueue Start url.
+    await requestQueue.addRequest(new Apify.Request({ url: 'https://news.ycombinator.com/' }));
 
+    // Create crawler.
     const crawler = new Apify.PuppeteerCrawler({
-        requestList,
+        requestQueue,
         disableProxy: true,
 
         // This page is executed for each request.
@@ -20,8 +17,24 @@ Apify.main(async () => {
         // Parameter page is Puppeteers page object with loaded page.
         handlePageFunction: async ({ page, request }) => {
             const title = await page.title();
+            const posts = await page.$$('.athing');
 
-            console.log(`Request ${request.url} succeeded and it's title is ${title}`);
+            console.log(`Page ${request.url} succeeded and it has ${posts.length} posts.`);
+
+            // Enqueue next page.
+            try {
+                const nextHref = await page.$eval('.morelink', el => el.href);
+                await requestQueue.addRequest(new Apify.Request({ url: nextHref }));
+            } catch (err) {
+                console.log(`Url ${request.url} is the last page!`);
+            }
+
+            // Save data.
+            await Apify.pushData({
+                url: request.url,
+                title,
+                postsCount: posts.length
+            });
         },
 
         // If request failed 4 times then this function is executed.
@@ -30,6 +43,6 @@ Apify.main(async () => {
         },
     });
 
-    // Run crawler for request list.
+    // Run crawler.
     await crawler.run();
 });
