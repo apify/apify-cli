@@ -3,8 +3,6 @@ const Apify = require('apify');
 Apify.main(async () => {
     // Get queue and enqueue first url.
     const requestQueue = await Apify.openRequestQueue();
-
-    // Enqueue Start url.
     await requestQueue.addRequest(new Apify.Request({ url: 'https://news.ycombinator.com/' }));
 
     // Create crawler.
@@ -21,19 +19,11 @@ Apify.main(async () => {
 
             console.log(`Page ${request.url} succeeded and it has ${posts.length} posts.`);
 
-            // Enqueue next page.
-            try {
-                const nextHref = await page.$eval('.morelink', el => el.href);
-                await requestQueue.addRequest(new Apify.Request({ url: nextHref }));
-            } catch (err) {
-                console.log(`Url ${request.url} is the last page!`);
-            }
-
             // Save data.
             await Apify.pushData({
                 url: request.url,
                 title,
-                postsCount: posts.length
+                postsCount: posts.length,
             });
         },
 
