@@ -1,10 +1,10 @@
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
-```bash
+```text
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.5 darwin-x64 node-v8.9.4
+  apify-cli/0.1.6 darwin-x64 node-v8.9.4
 
 USAGE
   $ apify [COMMAND]
@@ -21,7 +21,7 @@ COMMANDS
 
 ```
 ### apify call
-```
+```text
 Runs the act remotely on the Apify platform.
 
 USAGE
@@ -43,12 +43,12 @@ OPTIONS
                          there is no timeout.
 
 DESCRIPTION
-  The act is run under your current Apify account, therefore you need to be
+  The act is run under your current Apify account, therefore you need to be 
   logged in by calling "apify login".
 
 ```
 ### apify create
-```
+```text
 Creates a new act project directory from a selected template.
 
 USAGE
@@ -63,7 +63,7 @@ OPTIONS
 
 ```
 ### apify info
-```
+```text
 Displays information about Apify current settings.
 
 USAGE
@@ -74,7 +74,7 @@ DESCRIPTION
 
 ```
 ### apify init
-```
+```text
 Initializes an act project in an existing directory.
 
 USAGE
@@ -84,14 +84,14 @@ ARGUMENTS
   ACTNAME  Name of the act. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "apify_local" directory
+  The command only creates the "apify.json" file and the "apify_local" directory 
   in the current directory, but will not touch anything else.
 
   WARNING: If the files already exist, they will be overwritten!
 
 ```
 ### apify login
-```
+```text
 Logs in to the Apify platform using the API token.
 
 USAGE
@@ -101,25 +101,25 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The token and other account information is stored to the ~/.apify directory,
-  from where it is read by all other "apify" commands. To log out, call "apify
+  The token and other account information is stored to the ~/.apify directory, 
+  from where it is read by all other "apify" commands. To log out, call "apify 
   logout".
 
 ```
 ### apify logout
-```
+```text
 Logs out of the Apify platform.
 
 USAGE
   $ apify logout
 
 DESCRIPTION
-  The command deletes the API token and all other account information stored in
+  The command deletes the API token and all other account information stored in 
   the ~/.apify directory. To log in again, call "apify login".
 
 ```
 ### apify push
-```
+```text
 Uploads the act to the Apify platform and builds it there.
 
 USAGE
@@ -140,28 +140,28 @@ OPTIONS
                                        from the "apify.json" file.
 
 DESCRIPTION
-  The command creates a ZIP with files of the act from the current directory,
-  uploads it to the Apify platform and builds it. The act settings are read from
-  the "apify.json" file in the current directory, but they can be overridden
+  The command creates a ZIP with files of the act from the current directory, 
+  uploads it to the Apify platform and builds it. The act settings are read from 
+  the "apify.json" file in the current directory, but they can be overridden 
   using command-line options.
 
-  WARNING: If the target act already exists in your Apify account, it will be
+  WARNING: If the target act already exists in your Apify account, it will be 
   overwritten!
 
 ```
 ### apify run
-```
+```text
 Runs the act locally in the current directory.
 
 USAGE
   $ apify run
 
 DESCRIPTION
-  The command runs a Node.js process with the act in the current directory. It
-  sets various APIFY_XYZ environment variables in order to provide a working
-  execution environment for the act. For example, this causes the act input, as
-  well as all other data in key-value stores, datasets or request queues to be
-  stored in the "apify_local" directory,rather than on the Apify platform.
+  The command runs a Node.js process with the act in the current directory. It 
+  sets various APIFY_XYZ environment variables in order to provide a working 
+  execution environment for the act. For example, this causes the act input, as 
+  well as all other data in key-value stores, datasets or request queues to be 
+  stored in the "apify_local" directory, rather than on the Apify platform.
 
 ```
 
