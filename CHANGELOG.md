@@ -12,3 +12,8 @@
 ==================
 - Works for windows
 - New command apify info
+
+
+0.1.6 / 2018-04-11
+==================
+- add support for request queue

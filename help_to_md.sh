@@ -10,7 +10,7 @@ COMMANDS_DIR='src/commands/'
 # help command and title
 echo "<!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->" > ${HELP_FILE}
 echo "" >> ${HELP_FILE}
-echo "\`\`\`bash" >> ${HELP_FILE}
+echo "\`\`\`text" >> ${HELP_FILE}
 apify help >> ${HELP_FILE}
 echo "\`\`\`" >> ${HELP_FILE}
 
@@ -20,7 +20,7 @@ do
     COMMAND_FILE=${entry/$COMMANDS_DIR}
     COMMAND_NAME=${COMMAND_FILE/.js}
     echo "### apify $COMMAND_NAME" >> ${HELP_FILE}
-    echo "\`\`\`bash" >> ${HELP_FILE}
+    echo "\`\`\`text" >> ${HELP_FILE}
     apify ${COMMAND_NAME} --help >> ${HELP_FILE}
     echo "\`\`\`" >> ${HELP_FILE}
 done

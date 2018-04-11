@@ -9,7 +9,7 @@ const { testUserClient } = require('./config');
 
 const ACT_NAME = `my-act-${Date.now()}`;
 const TEST_ACT = {
-    name: 'my-testing-act',
+    name: `my-testing-act-${Date.now()}`,
     isPublic: false,
     versions: [
         {

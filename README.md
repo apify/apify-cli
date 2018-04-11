@@ -139,11 +139,11 @@ This section contains printouts of `apify help` for all commands.
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
-```bash
+```text
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.5 darwin-x64 node-v8.9.4
+  apify-cli/0.1.6 darwin-x64 node-v8.9.4
 
 USAGE
   $ apify [COMMAND]
@@ -160,7 +160,7 @@ COMMANDS
 
 ```
 ### apify call
-```bash
+```text
 Runs the act remotely on the Apify platform.
 
 USAGE
@@ -187,7 +187,7 @@ DESCRIPTION
 
 ```
 ### apify create
-```bash
+```text
 Creates a new act project directory from a selected template.
 
 USAGE
@@ -202,7 +202,7 @@ OPTIONS
 
 ```
 ### apify info
-```bash
+```text
 Displays information about Apify current settings.
 
 USAGE
@@ -213,7 +213,7 @@ DESCRIPTION
 
 ```
 ### apify init
-```bash
+```text
 Initializes an act project in an existing directory.
 
 USAGE
@@ -230,7 +230,7 @@ DESCRIPTION
 
 ```
 ### apify login
-```bash
+```text
 Logs in to the Apify platform using the API token.
 
 USAGE
@@ -246,7 +246,7 @@ DESCRIPTION
 
 ```
 ### apify logout
-```bash
+```text
 Logs out of the Apify platform.
 
 USAGE
@@ -258,7 +258,7 @@ DESCRIPTION
 
 ```
 ### apify push
-```bash
+```text
 Uploads the act to the Apify platform and builds it there.
 
 USAGE
@@ -289,7 +289,7 @@ DESCRIPTION
 
 ```
 ### apify run
-```bash
+```text
 Runs the act locally in the current directory.
 
 USAGE
@@ -297,11 +297,13 @@ USAGE
 
 DESCRIPTION
   The command runs a Node.js process with the act in the current directory. It
-  sets various APIFY_XYZ environment variablesin order to provide a working
+  sets various APIFY_XYZ environment variables in order to provide a working
   execution environment for the act. For example, this causes the act input, as
   well as all other data in key-value stores, datasets or request queues to be
-  stored in the "apify_local" directory,rather than on the Apify platform.
+  stored in the "apify_local" directory, rather than on the Apify platform.
 
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
+

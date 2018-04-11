@@ -9,8 +9,7 @@
     },
     "devDependencies": {},
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
-        "run-local": "APIFY_LOCAL_EMULATION_DIR=./apify_local APIFY_DEFAULT_KEY_VALUE_STORE_ID=default APIFY_DEFAULT_DATASET_ID=default node main.js"
+        "test": "echo \"Error: no test specified\" && exit 1"
     },
     "repository": {
         "type": "git",
