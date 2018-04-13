@@ -93,7 +93,7 @@ apify push
 
 This command creates a ZIP archive with your project, uploads it to the Apify cloud and builds an act from it.
 
-### Runs an act on the Apify cloud
+### Run an act on the Apify cloud
 
 ```bash
 apify call
