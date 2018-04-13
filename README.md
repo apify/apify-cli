@@ -6,13 +6,13 @@
 Apify command line client (CLI) helps you to create, develop, build and run
 [Apify Actor](https://www.apify.com/docs/actor) acts from a local computer.
 
-Apify Actor is a serverless computing platform that enables execution of arbitrary
+Apify Actor is a serverless computing platform that enables the execution of arbitrary
 web scraping and automation jobs in the cloud. A single job is called an _act_.
 
-While you can develop the acts in a code editor directly in the [Apify web application](https://my.apify.com/),
-for more complex projects it is convenient to develop the acts locally
+While you can develop acts in a code editor directly in the [Apify web application](https://my.apify.com/),
+for more complex projects it is more convenient to develop the acts locally
 and only push them to the Apify cloud for execution.
-This is were the CLI comes in.
+This is where the CLI comes in.
 
 Note that the acts running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
 you can build your acts in any programming language.
@@ -60,7 +60,7 @@ cd ./my/awesome/project
 apify init
 ```
 
-This command will only setup local act development environment in an existing directory,
+This command will only set up local act development environment in an existing directory,
 i.e. it will create the `apify.json` file and `apify_local` directory.
 
 ### Run the act locally
@@ -71,7 +71,7 @@ apify run
 ```
 
 This command runs the act on your local machine.
-Now it's your time to develop the logic (or magic?).
+Now's your chance to develop the logic - or magic :smirk:
 
 ### Login with your Apify account
 
@@ -80,7 +80,7 @@ apify login
 ```
 
 Before you can interact with the Apify cloud, you need to [create an Apify account](https://my.apify.com/)
-and login to it using the above command. You will be prompted for
+and log in to it using the above command. You will be prompted for
 your [Apify API token](https://my.apify.com/account#/integrations).
 Note that the command will store the API token and other sensitive information to `~/.apify`.
 
@@ -91,7 +91,7 @@ Note that the command will store the API token and other sensitive information t
 apify push
 ```
 
-This command creates a ZIP archive with your project, uploads it to Apify cloud and builds an act from it.
+This command creates a ZIP archive with your project, uploads it to the Apify cloud and builds an act from it.
 
 ### Runs an act on the Apify cloud
 
@@ -101,7 +101,7 @@ apify call
 
 Runs the act corresponding to the current directory on the Apify platform.
 
-This command can be also used to run other acts, for example:
+This command can also be used to run other acts, for example:
 
 ```bash
 apify call apify/hello-world
@@ -111,7 +111,7 @@ apify call apify/hello-world
 
 This file associates your local development project with an act on the Apify platform.
 It contains information such as act name or ID, version and build tag.
-Make sure you commit this file to git repository.
+Make sure you commit this file to the Git repository.
 
 
 ### Need help?
@@ -143,7 +143,7 @@ This section contains printouts of `apify help` for all commands.
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.6 darwin-x64 node-v8.9.4
+  apify-cli/0.1.7 darwin-x64 node-v8.9.4
 
 USAGE
   $ apify [COMMAND]
@@ -151,7 +151,7 @@ USAGE
 COMMANDS
   call    Runs the act remotely on the Apify platform.
   create  Creates a new act project directory from a selected template.
-  info    Displays information about Apify current settings.
+  info    Displays information about current Apify settings.
   init    Initializes an act project in an existing directory.
   login   Logs in to the Apify platform using the API token.
   logout  Logs out of the Apify platform.
@@ -203,13 +203,13 @@ OPTIONS
 ```
 ### apify info
 ```text
-Displays information about Apify current settings.
+Displays information about current Apify settings.
 
 USAGE
   $ apify info
 
 DESCRIPTION
-  This command prints information about Apify to console.
+  This command prints information about Apify to the console.
 
 ```
 ### apify init
@@ -305,5 +305,6 @@ DESCRIPTION
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
 
 
