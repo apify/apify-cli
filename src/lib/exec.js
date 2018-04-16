@@ -9,7 +9,13 @@ const spawnPromised = (cmd, args, opts) => {
 
     // Catch ctrl-c (SIGINT) and kills child process
     // NOTE: This fix kills also puppeteer child node process
-    process.on('SIGINT', () => childProcess.kill());
+    process.on('SIGINT', () => {
+        try {
+            childProcess.kill();
+        } catch (err) {
+            // SIGINT can come after the child process is finished, ignore it
+        }
+    });
 
     childProcess.stdout.on('data', (data) => {
         if (data) console.log(data.toString());
