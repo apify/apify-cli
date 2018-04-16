@@ -30,9 +30,9 @@ describe('apify login and logout', () => {
         const { token } = testUserClient.getOptions();
         await command.run(['login', '--token', token]);
 
-        const expectedUserInfo = Object.assign(await testUserClient.users.getUser(), { token });
-
-        const userInfoFromConfig = loadJson.sync(AUTH_FILE_PATH);
+        // Omit currentBillingPeriod, It can change during tests
+        const { currentBillingPeriod: expectCurrBillPer, ...expectedUserInfo } = Object.assign(await testUserClient.users.getUser(), { token });
+        const { currentBillingPeriod: currBillPer, ...userInfoFromConfig } = loadJson.sync(AUTH_FILE_PATH);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Success:');
