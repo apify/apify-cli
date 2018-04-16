@@ -5,10 +5,12 @@ const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const ApifyClient = require('apify-client');
-const { error } = require('./outputs');
+const { error, warning } = require('./outputs');
 const { LOCAL_ENV_VARS, GLOBAL_CONFIGS_FOLDER,
     AUTH_FILE_PATH, LOCAL_CONFIG_NAME } = require('./consts');
 const { createFolderSync, updateLocalJson } = require('./files');
+const { spawnSync } = require('child_process');
+const semver = require('semver');
 
 /**
  * Returns object from auth file or empty object.
@@ -135,6 +137,14 @@ const createActZip = async (zipName) => {
     await archive.finalize();
 };
 
+const checkLatestVersion = () => {
+    const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
+    const currentVersion = require('../../package.json').version;
+    if (semver.gt(latestVersion, currentVersion)) {
+        warning('You are using old version of apify-cli. Run "npm run apify-cli -g" to install the latest version.');
+    }
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -145,4 +155,5 @@ module.exports = {
     createActZip,
     getLocalUserInfo,
     getLocalConfigOrThrow,
+    checkLatestVersion,
 };
