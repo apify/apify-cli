@@ -6,8 +6,9 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const ApifyClient = require('apify-client');
 const { error } = require('./outputs');
-const { LOCAL_ENV_VARS, GLOBAL_CONFIGS_FOLDER,
-    AUTH_FILE_PATH, LOCAL_CONFIG_NAME } = require('./consts');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH,
+    LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID } = require('./consts');
+const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR } = require('apify-shared/consts');
 const { createFolderSync, updateLocalJson } = require('./files');
 
 /**
@@ -85,20 +86,20 @@ const setLocalConfig = async (localConfig, actDir) => {
 
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
-    const localDir = createFolderSync(path.join(actDir, LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR));
-    const datasetsDir = createFolderSync(path.join(localDir, LOCAL_ENV_VARS.APIFY_LOCAL_DATASETS_DIR));
-    const requestQueuesDir = createFolderSync(path.join(localDir, LOCAL_ENV_VARS.APIFY_LOCAL_REQUEST_QUEUE_DIR));
-    const keyValueStoresDir = createFolderSync(path.join(localDir, LOCAL_ENV_VARS.APIFY_LOCAL_KEY_VALUE_STORES_DIR));
-    createFolderSync(path.join(datasetsDir, LOCAL_ENV_VARS.APIFY_DEFAULT_DATASET_ID));
-    createFolderSync(path.join(requestQueuesDir, LOCAL_ENV_VARS.APIFY_DEFAULT_REQUEST_QUEUE_ID));
-    createFolderSync(path.join(keyValueStoresDir, LOCAL_ENV_VARS.APIFY_DEFAULT_KEY_VALUE_STORE_ID));
+    const localDir = createFolderSync(path.join(actDir, DEFAULT_LOCAL_EMULATION_DIR));
+    const datasetsDir = createFolderSync(path.join(localDir, LOCAL_EMULATION_SUBDIRS.datasets));
+    const requestQueuesDir = createFolderSync(path.join(localDir, LOCAL_EMULATION_SUBDIRS.keyValueStores));
+    const keyValueStoresDir = createFolderSync(path.join(localDir, LOCAL_EMULATION_SUBDIRS.requestQueues));
+    createFolderSync(path.join(datasetsDir, DEFAULT_LOCAL_STORES_ID));
+    createFolderSync(path.join(requestQueuesDir, DEFAULT_LOCAL_STORES_ID));
+    createFolderSync(path.join(keyValueStoresDir, DEFAULT_LOCAL_STORES_ID));
 
     // Update gitignore
     const gitingore = path.join(actDir, '.gitignore');
     if (fs.existsSync(gitingore)) {
-        fs.writeFileSync(gitingore, LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR, { flag: 'a' });
+        fs.writeFileSync(gitingore, DEFAULT_LOCAL_EMULATION_DIR, { flag: 'a' });
     } else {
-        fs.writeFileSync(gitingore, `${LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR}\nnode_modules`, { flag: 'w' });
+        fs.writeFileSync(gitingore, `${DEFAULT_LOCAL_EMULATION_DIR}\nnode_modules`, { flag: 'w' });
     }
 };
 

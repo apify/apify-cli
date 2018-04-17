@@ -6,8 +6,8 @@ const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
-const { APIFY_PROXY_PASSWORD_ENV_VAR, APIFY_USER_ID_ENV_VAR,
-    APIFY_TOKEN_ENV_VAR, LOCAL_ENV_VARS } = require('../../src/lib/consts');
+const { LOCAL_ENV_VARS, DEFAULT_LOCAL_STORES_ID } = require('../../src/lib/consts');
+const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR, ENV_VARS } = require('apify-shared/consts');
 
 const actName = 'my-act';
 
@@ -42,9 +42,9 @@ describe('apify run', () => {
         await command.run(['run']);
 
         // check act output
-        const actOutputPath = path.join(...[LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR,
-            LOCAL_ENV_VARS.APIFY_LOCAL_KEY_VALUE_STORES_DIR,
-            LOCAL_ENV_VARS.APIFY_DEFAULT_KEY_VALUE_STORE_ID,
+        const actOutputPath = path.join(...[DEFAULT_LOCAL_EMULATION_DIR,
+            LOCAL_EMULATION_SUBDIRS.keyValueStores,
+            DEFAULT_LOCAL_STORES_ID,
             'OUTPUT.json']);
         const actOutput = loadJson.sync(actOutputPath);
         expect(actOutput).to.be.eql(expectOutput);
@@ -67,17 +67,17 @@ describe('apify run', () => {
 
         await command.run(['run']);
 
-        const actOutputPath = path.join(...[LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR,
-            LOCAL_ENV_VARS.APIFY_LOCAL_KEY_VALUE_STORES_DIR,
-            LOCAL_ENV_VARS.APIFY_DEFAULT_KEY_VALUE_STORE_ID,
+        const actOutputPath = path.join(...[DEFAULT_LOCAL_EMULATION_DIR,
+            LOCAL_EMULATION_SUBDIRS.keyValueStores,
+            DEFAULT_LOCAL_STORES_ID,
             'OUTPUT.json']);
 
         const localEnvVars = loadJson.sync(actOutputPath);
         const auth = loadJson.sync(AUTH_FILE_PATH);
 
-        expect(localEnvVars[APIFY_PROXY_PASSWORD_ENV_VAR]).to.be.eql(auth.proxy.password);
-        expect(localEnvVars[APIFY_USER_ID_ENV_VAR]).to.be.eql(auth.id);
-        expect(localEnvVars[APIFY_TOKEN_ENV_VAR]).to.be.eql(auth.token);
+        expect(localEnvVars[ENV_VARS.PROXY_PASSWORD]).to.be.eql(auth.proxy.password);
+        expect(localEnvVars[ENV_VARS.USER_ID]).to.be.eql(auth.id);
+        expect(localEnvVars[ENV_VARS.TOKEN]).to.be.eql(auth.token);
         Object.keys(LOCAL_ENV_VARS).forEach(envVar => expect(localEnvVars[envVar]).to.be.eql(LOCAL_ENV_VARS[envVar]));
 
         await command.run(['logout']);
