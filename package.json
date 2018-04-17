@@ -56,6 +56,7 @@
         "minimist": "^1.2.0",
         "recursive-copy": "^2.0.9",
         "rimraf": "^2.6.2",
+        "underscore": "^1.8.3",
         "write-json-file": "^2.3.0"
     },
     "devDependencies": {
