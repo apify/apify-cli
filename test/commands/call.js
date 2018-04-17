@@ -1,15 +1,21 @@
 const { expect } = require('chai');
+const path = require('path');
 const fs = require('fs');
 const command = require('@oclif/command');
 const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
-const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
+const { GLOBAL_CONFIGS_FOLDER, DEFAULT_LOCAL_STORES_ID } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
+const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR } = require('apify-shared/consts');
 
 const ACT_NAME = `my-act-${Date.now()}`;
 const EXPECTED_OUTPUT = {
     test: Math.random(),
 };
+const EXPECTED_INPUT = {
+    myTestInput: Math.random(),
+};
+EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
 
 describe('apify call', () => {
     before(async function () {
@@ -31,6 +37,12 @@ describe('apify call', () => {
         });
         `;
         fs.writeFileSync('main.js', actCode, { flag: 'w' });
+
+        const inputFile = path.join(...[DEFAULT_LOCAL_EMULATION_DIR,
+            LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID, 'INPUT.json']);
+
+        fs.writeFileSync(inputFile, JSON.stringify(EXPECTED_INPUT), { flag: 'w' });
+
         await command.run(['push']);
     });
 
@@ -41,8 +53,11 @@ describe('apify call', () => {
         const lastRun = runs.items.pop();
         const lastRunDetail = await testUserClient.acts.getRun({ actId, runId: lastRun.id });
         const output = await testUserClient.keyValueStores.getRecord({ storeId: lastRunDetail.defaultKeyValueStoreId, key: 'OUTPUT' });
+        const input = await testUserClient.keyValueStores.getRecord({ storeId: lastRunDetail.defaultKeyValueStoreId, key: 'INPUT' });
 
         expect(EXPECTED_OUTPUT).to.be.eql(output.body);
+        expect(EXPECTED_INPUT).to.be.eql(input.body);
+        expect(EXPECTED_INPUT_CONTENT_TYPE).to.be.eql(input.contentType);
     });
 
     after(async () => {

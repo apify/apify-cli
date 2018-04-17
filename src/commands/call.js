@@ -1,7 +1,7 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const { ACT_TASK_STATUSES } = require('apify-shared/consts');
-const { getLocalConfig, getLoggedClientOrThrow } = require('../lib/utils');
+const { getLocalConfig, getLoggedClientOrThrow, getLocalInput } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
 // TODO: Show full error messages and HTTP codes, this is not great:
@@ -21,6 +21,10 @@ class CallCommand extends ApifyCommand {
         ['build', 'timeout', 'memory'].forEach((opt) => {
             if (flags[opt]) runOpts[opt] = flags[opt];
         });
+
+        // Get input for act
+        const localInput = getLocalInput();
+        if (localInput) Object.assign(runOpts, localInput);
 
         const apifyClient = await getLoggedClientOrThrow();
 

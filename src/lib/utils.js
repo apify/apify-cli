@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs');
+const mime = require('mime')
 const globby = require('globby');
 const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
@@ -136,6 +137,24 @@ const createActZip = async (zipName) => {
     await archive.finalize();
 };
 
+/**
+ * Get act imput from local store
+ * @return {{body: *, contentType: string}}
+ */
+const getLocalInput = () => {
+    const defaultLocalStorePath = path.join(process.cwd(), DEFAULT_LOCAL_EMULATION_DIR,
+        LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID);
+    const files = fs.readdirSync(defaultLocalStorePath);
+    const inputFileName = files.find(file => !!file.match(/INPUT\..*/));
+
+    // No input file
+    if (!inputFileName) return;
+
+    const inputFile = fs.readFileSync(path.join(defaultLocalStorePath, inputFileName));
+    const contentType = mime.getType(inputFileName);
+    return { body: inputFile, contentType };
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -146,4 +165,5 @@ module.exports = {
     createActZip,
     getLocalUserInfo,
     getLocalConfigOrThrow,
+    getLocalInput,
 };
