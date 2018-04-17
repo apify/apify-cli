@@ -1,6 +1,6 @@
 const { expect } = require('chai');
 const fs = require('fs');
-const _ = require('underscore')
+const _ = require('underscore');
 const sinon = require('sinon');
 const loadJson = require('load-json-file');
 const command = require('@oclif/command');
