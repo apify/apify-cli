@@ -51,6 +51,7 @@
         "child-process-promise": "^2.2.1",
         "globby": "^8.0.1",
         "inquirer": "^5.0.0",
+        "is-online": "^7.0.0",
         "load-json-file": "^4.0.0",
         "minimist": "^1.2.0",
         "recursive-copy": "^2.0.9",
@@ -78,6 +79,11 @@
     ],
     "oclif": {
         "bin": "apify",
-        "commands": "./src/commands"
+        "commands": "./src/commands",
+        "hooks": {
+            "prerun": [
+                "./src/hooks/pre_run.js"
+            ]
+        }
     }
 }

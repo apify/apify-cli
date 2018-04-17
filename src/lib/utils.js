@@ -11,6 +11,7 @@ const { LOCAL_ENV_VARS, GLOBAL_CONFIGS_FOLDER,
 const { createFolderSync, updateLocalJson } = require('./files');
 const { spawnSync } = require('child_process');
 const semver = require('semver');
+const isOnline = require('is-online');
 
 /**
  * Returns object from auth file or empty object.
@@ -137,11 +138,24 @@ const createActZip = async (zipName) => {
     await archive.finalize();
 };
 
-const checkLatestVersion = () => {
-    const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
-    const currentVersion = require('../../package.json').version;
-    if (semver.gt(latestVersion, currentVersion)) {
-        warning('You are using old version of apify-cli. Run "npm run apify-cli -g" to install the latest version.');
+/**
+ * Logs warning if client local package is not in the latest version
+ * Check'll be skip if user is offline
+ * @return {Promise<void>}
+ */
+const checkLatestVersion = async () => {
+    try {
+        // Skip if user is offline
+        if (!await isOnline({ timeout: 1000 })) return;
+
+        const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
+        const currentVersion = require('../../package.json').version;
+
+        if (semver.gt(latestVersion, currentVersion)) {
+            warning('You are using old version of apify-cli. Run "npm run apify-cli -g" to install the latest version.');
+        }
+    } catch (err) {
+        // Check should not break all commands
     }
 };
 
