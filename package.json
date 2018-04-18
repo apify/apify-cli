@@ -45,7 +45,7 @@
         "@oclif/errors": "^1.0.2",
         "@oclif/plugin-help": "^1.1.6",
         "apify-client": "^0.2.6",
-        "apify-shared": "0.0.23",
+        "apify-shared": "0.0.31",
         "archiver-promise": "^1.0.0",
         "chalk": "^2.3.2",
         "child-process-promise": "^2.2.1",
@@ -57,6 +57,7 @@
         "recursive-copy": "^2.0.9",
         "rimraf": "^2.6.2",
         "semver": "^5.5.0",
+        "underscore": "^1.8.3",
         "write-json-file": "^2.3.0"
     },
     "devDependencies": {

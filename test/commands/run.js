@@ -2,14 +2,22 @@ const { expect } = require('chai');
 const fs = require('fs');
 const command = require('@oclif/command');
 const path = require('path');
-const { LOCAL_ENV_VARS } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
+const { testUserClient } = require('./config');
+const { LOCAL_ENV_VARS, DEFAULT_LOCAL_STORES_ID } = require('../../src/lib/consts');
+const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR, ENV_VARS } = require('apify-shared/consts');
 
 const actName = 'my-act';
 
 describe('apify run', () => {
-    before(async () => {
+    before(async function () {
+        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
+            // Skip tests if user used CLI on local, it can break local environment!
+            this.skip();
+            return;
+        }
         await command.run(['create', actName, '--template', 'basic']);
         process.chdir(actName);
     });
@@ -34,12 +42,45 @@ describe('apify run', () => {
         await command.run(['run']);
 
         // check act output
-        const actOutputPath = path.join(...[LOCAL_ENV_VARS.APIFY_LOCAL_EMULATION_DIR,
-            LOCAL_ENV_VARS.APIFY_LOCAL_KEY_VALUE_STORES_DIR,
-            LOCAL_ENV_VARS.APIFY_DEFAULT_KEY_VALUE_STORE_ID,
+        const actOutputPath = path.join(...[DEFAULT_LOCAL_EMULATION_DIR,
+            LOCAL_EMULATION_SUBDIRS.keyValueStores,
+            DEFAULT_LOCAL_STORES_ID,
             'OUTPUT.json']);
         const actOutput = loadJson.sync(actOutputPath);
         expect(actOutput).to.be.eql(expectOutput);
+    });
+
+    it('run with env vars', async () => {
+        const { token } = testUserClient.getOptions();
+
+        await command.run(['login', '--token', token]);
+
+        const actCode = `
+        const Apify = require('apify');
+
+        Apify.main(async () => {    
+            await Apify.setValue('OUTPUT', process.env);
+            console.log('Done.');
+        });
+        `;
+        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+
+        await command.run(['run']);
+
+        const actOutputPath = path.join(...[DEFAULT_LOCAL_EMULATION_DIR,
+            LOCAL_EMULATION_SUBDIRS.keyValueStores,
+            DEFAULT_LOCAL_STORES_ID,
+            'OUTPUT.json']);
+
+        const localEnvVars = loadJson.sync(actOutputPath);
+        const auth = loadJson.sync(AUTH_FILE_PATH);
+
+        expect(localEnvVars[ENV_VARS.PROXY_PASSWORD]).to.be.eql(auth.proxy.password);
+        expect(localEnvVars[ENV_VARS.USER_ID]).to.be.eql(auth.id);
+        expect(localEnvVars[ENV_VARS.TOKEN]).to.be.eql(auth.token);
+        Object.keys(LOCAL_ENV_VARS).forEach(envVar => expect(localEnvVars[envVar]).to.be.eql(LOCAL_ENV_VARS[envVar]));
+
+        await command.run(['logout']);
     });
 
     after(async () => {

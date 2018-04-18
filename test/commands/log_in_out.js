@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const fs = require('fs');
+const _ = require('underscore');
 const sinon = require('sinon');
 const loadJson = require('load-json-file');
 const command = require('@oclif/command');
@@ -31,12 +32,12 @@ describe('apify login and logout', () => {
         await command.run(['login', '--token', token]);
 
         const expectedUserInfo = Object.assign(await testUserClient.users.getUser(), { token });
-
         const userInfoFromConfig = loadJson.sync(AUTH_FILE_PATH);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Success:');
-        expect(expectedUserInfo).to.eql(userInfoFromConfig);
+        // Omit currentBillingPeriod, It can change during tests
+        expect(_.omit(expectedUserInfo, 'currentBillingPeriod')).to.eql(_.omit(userInfoFromConfig, 'currentBillingPeriod'));
 
         await command.run(['logout']);
         const isGlobalConfig = fs.existsSync(GLOBAL_CONFIGS_FOLDER);
