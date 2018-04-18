@@ -17,13 +17,9 @@ const spawnPromised = (cmd, args, opts) => {
         }
     });
 
-    childProcess.stdout.on('data', (data) => {
-        if (data) console.log(data.toString());
-    });
-
-    childProcess.stderr.on('data', (data) => {
-        if (data) console.log(data.toString());
-    });
+    // Pipes stdout and stderr to main process log
+    childProcess.stdout.pipe(process.stdout);
+    childProcess.stderr.pipe(process.stderr);
 
     return new Promise((resolve, reject) => {
         childProcess.on('error', reject);
