@@ -19,7 +19,7 @@ class InfoCommand extends ApifyCommand {
     }
 }
 
-InfoCommand.description = 'Displays information about Apify current settings.\n' +
-    'This command prints information about Apify to console.';
+InfoCommand.description = 'Displays information about current Apify settings.\n' +
+    'This command prints information about Apify to the console.';
 
 module.exports = InfoCommand;

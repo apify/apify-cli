@@ -1,6 +1,6 @@
 {
     "name": "apify-cli",
-    "version": "0.1.7",
+    "version": "0.1.8",
     "description": "Apify command line client to help you create, develop, build and run Actor acts.",
     "main": "index.js",
     "scripts": {
@@ -51,11 +51,13 @@
         "child-process-promise": "^2.2.1",
         "globby": "^8.0.1",
         "inquirer": "^5.0.0",
+        "is-online": "^7.0.0",
         "load-json-file": "^4.0.0",
         "mime": "^2.3.1",
         "minimist": "^1.2.0",
         "recursive-copy": "^2.0.9",
         "rimraf": "^2.6.2",
+        "semver": "^5.5.0",
         "underscore": "^1.8.3",
         "write-json-file": "^2.3.0"
     },
@@ -79,6 +81,11 @@
     ],
     "oclif": {
         "bin": "apify",
-        "commands": "./src/commands"
+        "commands": "./src/commands",
+        "hooks": {
+            "prerun": [
+                "./src/hooks/pre_run.js"
+            ]
+        }
     }
 }
