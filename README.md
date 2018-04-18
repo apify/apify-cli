@@ -143,7 +143,7 @@ This section contains printouts of `apify help` for all commands.
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.8 darwin-x64 node-v8.9.4
+  apify-cli/0.1.9 darwin-x64 node-v8.4.0
 
 USAGE
   $ apify [COMMAND]
@@ -183,7 +183,8 @@ OPTIONS
 
 DESCRIPTION
   The act is run under your current Apify account, therefore you need to be
-  logged in by calling "apify login".
+  logged in by calling "apify login". It takes input for the act from default
+  local key-value store by default.
 
 ```
 ### apify create
@@ -305,6 +306,7 @@ DESCRIPTION
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
 
 
 

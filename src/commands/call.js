@@ -52,7 +52,8 @@ class CallCommand extends ApifyCommand {
 }
 
 CallCommand.description = 'Runs the act remotely on the Apify platform.\n' +
-    'The act is run under your current Apify account, therefore you need to be logged in by calling "apify login".';
+    'The act is run under your current Apify account, therefore you need to be logged in by calling "apify login". ' +
+    'It takes input for the act from default local key-value store by default.';
 
 CallCommand.flags = {
     build: flagsHelper.string({
