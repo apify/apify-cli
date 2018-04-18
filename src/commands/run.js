@@ -4,18 +4,17 @@ const { LOCAL_ENV_VARS } = require('../lib/consts');
 const { ENV_VARS } = require('apify-shared/consts');
 const { getLocalUserInfo } = require('../lib/utils');
 
-// TODO: Shall we also pass APIFY_TOKEN ?
-
 class RunCommand extends ApifyCommand {
     static async run() {
         const { proxy, id: userId, token } = getLocalUserInfo();
+        const apifyLocalEnvVars = LOCAL_ENV_VARS;
+
+        if (proxy && proxy.password) apifyLocalEnvVars[ENV_VARS.PROXY_PASSWORD] = proxy.password;
+        if (userId) apifyLocalEnvVars[ENV_VARS.USER_ID] = userId;
+        if (token) apifyLocalEnvVars[ENV_VARS.TOKEN] = token;
 
         // NOTE: User can overwrite env vars
-        const env = Object.assign(LOCAL_ENV_VARS, process.env);
-
-        if (proxy && proxy.password) env[ENV_VARS.PROXY_PASSWORD] = proxy.password;
-        if (userId) env[ENV_VARS.USER_ID] = userId;
-        if (token) env[ENV_VARS.TOKEN] = token;
+        const env = Object.assign(apifyLocalEnvVars, process.env);
 
         await execWithLog('node', ['main.js'], { env });
     }

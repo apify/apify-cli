@@ -8,7 +8,7 @@ const writeJson = require('write-json-file');
 const ApifyClient = require('apify-client');
 const { error, warning } = require('./outputs');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH,
-    LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID } = require('./consts');
+    LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID, INPUT_FILE_REG_EXP } = require('./consts');
 const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR } = require('apify-shared/consts');
 const { createFolderSync, updateLocalJson } = require('./files');
 const { spawnSync } = require('child_process');
@@ -148,7 +148,7 @@ const getLocalInput = () => {
     const defaultLocalStorePath = path.join(process.cwd(), DEFAULT_LOCAL_EMULATION_DIR,
         LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID);
     const files = fs.readdirSync(defaultLocalStorePath);
-    const inputFileName = files.find(file => !!file.match(/INPUT\..*/));
+    const inputFileName = files.find(file => !!file.match(INPUT_FILE_REG_EXP));
 
     // No input file
     if (!inputFileName) return;

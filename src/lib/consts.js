@@ -1,7 +1,8 @@
 const os = require('os');
 const path = require('path');
 const { DEFAULT_LOCAL_EMULATION_DIR, ENV_VARS,
-    DEFAULT_PROXY_HOSTNAME, DEFAULT_PROXY_PORT, LOCAL_EMULATION_SUBDIRS } = require('apify-shared/consts');
+    DEFAULT_PROXY_HOSTNAME, DEFAULT_PROXY_PORT,
+    LOCAL_EMULATION_SUBDIRS, KEY_VALUE_STORE_KEYS } = require('apify-shared/consts');
 
 // TODO: The templates should go to apify-shared, and the JSON with all info should be generated from the directories and files in the template dir,
 // the name and description should be taken from package.json files in those dirs so that we edit it in a single location!
@@ -81,3 +82,5 @@ exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
 exports.AUTH_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
 
 exports.LOCAL_CONFIG_NAME = 'apify.json';
+
+exports.INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..*`);
