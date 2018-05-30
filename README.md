@@ -143,7 +143,7 @@ This section contains printouts of `apify help` for all commands.
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.10 darwin-x64 node-v8.4.0
+  apify-cli/0.1.11 darwin-x64 node-v8.4.0
 
 USAGE
   $ apify [COMMAND]
@@ -306,9 +306,3 @@ DESCRIPTION
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
-
-
-
-
-
-

@@ -1,4 +1,4 @@
-0.1.10 / 2018-05-30
+0.1.11 / 2018-05-30
 ===================
 - Use npm-shrinkwrap.json instead of package-lock.json for published module
 - Update template, where we using proxy
