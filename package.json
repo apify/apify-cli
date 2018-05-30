@@ -1,12 +1,13 @@
 {
     "name": "apify-cli",
-    "version": "0.1.9",
+    "version": "0.1.10",
     "description": "Apify command line client to help you create, develop, build and run Actor acts.",
     "main": "index.js",
     "scripts": {
         "test": "mocha --timeout 120000 --recursive",
         "lint": "eslint cli test",
-        "commands_md": "./help_to_md.sh"
+        "commands_md": "./help_to_md.sh",
+        "prod_shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap"
     },
     "files": [],
     "bin": {

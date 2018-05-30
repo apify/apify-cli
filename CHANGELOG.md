@@ -1,3 +1,9 @@
+0.1.10 / 2018-05-30
+===================
+- Use npm-shrinkwrap.json instead of package-lock.json for published module
+- Update template, where we using proxy
+- Fix #30
+
 0.1.9 / 2018-04-18
 ==================
 - apify run takes APIFY_USER_ID and APIFY_TOKEN as environments variables, if client is logged locally

@@ -15,10 +15,8 @@ BRANCH=`git status | grep 'On branch' | cut -d ' ' -f 3`
 BRANCH_UP_TO_DATE=`git status | grep 'nothing to commit' | tr -s \n ' '`;
 GIT_TAG="v${PACKAGE_VERSION}"
 
-# Create npm-shrinkwrap.json, only for not dev packages
-rm -rf node_modules && rm package-lock.json
-npm install --production
-npm shrinkwrap
+# Create npm-shrinkwrap.json, only for production packages
+npm run prod_shrinkwrap
 
 if [ -z "${BRANCH_UP_TO_DATE}" ]; then
     printf "${RED}You have uncommitted changes!${NC}\n"
