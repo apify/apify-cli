@@ -15,20 +15,15 @@ BRANCH=`git status | grep 'On branch' | cut -d ' ' -f 3`
 BRANCH_UP_TO_DATE=`git status | grep 'nothing to commit' | tr -s \n ' '`;
 GIT_TAG="v${PACKAGE_VERSION}"
 
-## Credentials to upload doc to S3 configuration
-#DOC_DIR=${PWD}"/docs"
-#AWS_BUCKET="apify-client-js-doc"
+# Create npm-shrinkwrap.json, only for not dev packages
+rm -rf node_modules && rm package-lock.json
+npm install --production
+npm shrinkwrap
 
 if [ -z "${BRANCH_UP_TO_DATE}" ]; then
     printf "${RED}You have uncommitted changes!${NC}\n"
     exit 1
 fi
-
-#echo "Generating documentation ..."
-#npm run build-doc
-
-#echo "Uploading docs to S3 ..."
-#aws s3 cp "${DOC_DIR}/" "s3://${AWS_BUCKET}/${GIT_TAG}/" --recursive --region us-east-1 --acl public-read --cache-control "public, max-age=86400"
 
 echo "Pushing to git ..."
 git push
@@ -42,9 +37,6 @@ if [ "${BRANCH}" = "master" ]; then
     else
         echo "Tagging version ${PACKAGE_VERSION} on NPM with tag \"latest\" ..."
         RUNNING_FROM_SCRIPT=1 npm dist-tag add ${PACKAGE_NAME}@${PACKAGE_VERSION} latest
-        echo "Copy doc to latest folder..."
-#        aws s3 cp "s3://${AWS_BUCKET}/${GIT_TAG}/" "s3://${AWS_BUCKET}/latest/" --recursive --region us-east-1 --acl public-read --cache-control "public, max-age=86400"
-#        aws cloudfront create-invalidation --distribution-id E29XCV9LE9131X --paths "/docs/sdk/apify-client-js/*"
     fi
 
 # Any other branch gets published as BETA and we don't allow to override tag of existing version.
@@ -57,9 +49,6 @@ else
     git push origin ${GIT_TAG}
     echo "Git tag: ${GIT_TAG} created."
 
-#    echo "Copy docs to S3 to beta folder..."
-#    aws s3 cp "s3://${AWS_BUCKET}/${GIT_TAG}/" "s3://${AWS_BUCKET}/beta/" --recursive --region us-east-1 --acl public-read --cache-control "public, max-age=86400"
-#    aws cloudfront create-invalidation --distribution-id E29XCV9LE9131X --paths "/docs/sdk/apify-client-js/*"
 fi
 
 
