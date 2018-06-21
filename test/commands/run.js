@@ -132,7 +132,6 @@ describe('apify run', () => {
         expect(fs.existsSync(testJsonPath)).to.be.eql(false);
         expect(fs.existsSync(datasetPath)).to.be.eql(false);
         expect(fs.existsSync(queuePath)).to.be.eql(false);
-
     });
 
     after(async () => {
