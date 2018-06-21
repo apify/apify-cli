@@ -56,23 +56,20 @@ RunCommand.description = 'Runs the act locally in the current directory.\n' +
 
 RunCommand.flags = {
     'purge-stores': flagsHelper.boolean({
-        char: 'ps',
-        description: '',
+        char: 'p',
+        description: 'It deletes all default local folder stores without "INPUT.*" before a run.',
         required: false,
     }),
     'purge-queue': flagsHelper.boolean({
-        char: 'bq',
-        description: '',
+        description: 'It deletes default page queue before a run.',
         required: false,
     }),
     'purge-dataset': flagsHelper.boolean({
-        char: 'pd',
-        description: '',
+        description: 'It deletes default datatset folder before a run.',
         required: false,
     }),
     'purge-key-value-store': flagsHelper.boolean({
-        char: 'pk',
-        description: '',
+        description: 'It deletes all files from default key-value store folder without "INPUT.*" file before a run.',
         required: false,
     }),
 };
