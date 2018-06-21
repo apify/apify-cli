@@ -28,13 +28,16 @@ class RunCommand extends ApifyCommand {
         if (flags.purgeStores) {
             await Promise.all([purgeDefaultQueue(cwd), purgeDefaultKeyValueStore(cwd), purgeDefaultDataset(cwd)]);
             info('All default local stores were purge.');
-        } else if (flags.purgeQueue) {
+        }
+        if (flags.purgeQueue) {
             await purgeDefaultQueue(cwd);
             info('Default page queue was purge.');
-        } else if (flags.purgeDataset) {
+        }
+        if (flags.purgeDataset) {
             await purgeDefaultDataset(cwd);
             info('Default page dataset was purge.');
-        } else if (flags.purgeKeyValueStore) {
+        }
+        if (flags.purgeKeyValueStore) {
             await purgeDefaultKeyValueStore(cwd);
             info('Default key-value store was purge.');
         }
