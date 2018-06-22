@@ -89,8 +89,7 @@ describe('apify run', () => {
         const input = {
             myInput: 'value',
         };
-        const kvsPath = path.join(
-            DEFAULT_LOCAL_EMULATION_DIR, LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID);
+        const kvsPath = path.join(DEFAULT_LOCAL_EMULATION_DIR, LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID);
         const actInputPath = path.join(kvsPath, 'INPUT.json');
         const testJsonPath = path.join(kvsPath, 'TEST.json');
         const datasetPath = path.join(DEFAULT_LOCAL_EMULATION_DIR, LOCAL_EMULATION_SUBDIRS.datasets, DEFAULT_LOCAL_STORES_ID);
