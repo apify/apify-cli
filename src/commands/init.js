@@ -3,6 +3,7 @@ const inquirer = require('inquirer');
 const outputs = require('../lib/outputs');
 const { setLocalConfig, setLocalEnv, getLocalConfig } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG } = require('../lib/consts');
+const path = require('path');
 
 class InitCommand extends ApifyCommand {
     async run() {
@@ -15,7 +16,7 @@ class InitCommand extends ApifyCommand {
         const cwd = process.cwd();
 
         if (!actName) {
-            const answer = await inquirer.prompt([{ name: 'actName', message: 'Act name:', default: cwd.split('/').pop() }]);
+            const answer = await inquirer.prompt([{ name: 'actName', message: 'Act name:', default: path.basename(cwd) }]);
             ({ actName } = answer);
         }
 
