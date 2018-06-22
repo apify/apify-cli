@@ -172,7 +172,7 @@ const checkLatestVersion = async () => {
         const currentVersion = require('../../package.json').version;
 
         if (semver.gt(latestVersion, currentVersion)) {
-            warning('You are using old version of apify-cli. Run "npm run apify-cli -g" to install the latest version.');
+            warning('You are using old version of apify-cli. Run "npm update apify-cli -g" to install the latest version.');
         }
     } catch (err) {
         // Check should not break all commands
