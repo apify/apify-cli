@@ -123,7 +123,7 @@ describe('apify run', () => {
         `;
         fs.writeFileSync('main.js', actCode, { flag: 'w' });
 
-        await command.run(['run', '--purge-stores']);
+        await command.run(['run', '--purge']);
 
         expect(fs.existsSync(actInputPath)).to.be.eql(true);
         expect(fs.existsSync(testJsonPath)).to.be.eql(false);

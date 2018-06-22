@@ -25,7 +25,7 @@ class RunCommand extends ApifyCommand {
         if (token) apifyLocalEnvVars[ENV_VARS.TOKEN] = token;
 
         // Purge stores
-        if (flags.purgeStores) {
+        if (flags.purge) {
             await Promise.all([purgeDefaultQueue(cwd), purgeDefaultKeyValueStore(cwd), purgeDefaultDataset(cwd)]);
             info('All default local stores were purge.');
         }
@@ -58,21 +58,21 @@ RunCommand.description = 'Runs the act locally in the current directory.\n' +
     'rather than on the Apify platform.';
 
 RunCommand.flags = {
-    'purge-stores': flagsHelper.boolean({
+    purge: flagsHelper.boolean({
         char: 'p',
-        description: 'It deletes all default local folder stores without "INPUT.*" before a run.',
+        description: 'Shortcut that combines the --purge-queue, --purge-dataset and --purge-key-value-store options.',
         required: false,
     }),
     'purge-queue': flagsHelper.boolean({
-        description: 'It deletes default page queue before a run.',
+        description: 'Deletes the local directory containing the default request queue before the run starts.',
         required: false,
     }),
     'purge-dataset': flagsHelper.boolean({
-        description: 'It deletes default datatset folder before a run.',
+        description: 'Deletes the local directory containing the default dataset before the run starts.',
         required: false,
     }),
     'purge-key-value-store': flagsHelper.boolean({
-        description: 'It deletes all files from default key-value store folder without "INPUT.*" file before a run.',
+        description: 'Deletes all records from the default key-value store in the local directory before the run starts, except for the "INPUT" key.',
         required: false,
     }),
 };

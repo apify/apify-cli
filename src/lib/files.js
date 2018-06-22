@@ -2,7 +2,7 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const fs = require('fs');
 const rimraf = require('rimraf');
-const Promise = require("bluebird");
+const Promise = require('bluebird');
 
 const updateLocalJson = async (path, updateAttrs = {}, nestedObjectAttr) => {
     const currentObject = await loadJson(path);
