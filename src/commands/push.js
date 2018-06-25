@@ -1,10 +1,10 @@
 const fs = require('fs');
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow } = require('../lib/utils');
+const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow, waitForTaskFinish } = require('../lib/utils');
 const { run, success, info } = require('../lib/outputs');
 const { createActZip } = require('../lib/utils');
-const { ACT_TASK_STATUSES } = require('apify-shared/consts');
+const { ACT_TASK_STATUSES, ACT_TASK_TYPES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES } = require('../lib/consts');
 const outputs = require('../lib/outputs');
 
@@ -83,14 +83,13 @@ class PushCommand extends ApifyCommand {
 
         await setLocalConfig(Object.assign(localConfig, { version: currentVersion }));
 
-        // Build act on Apify
+        // Build act on Apify and wait for it finises
         run('Building act');
         const build = await apifyClient.acts.buildAct({
             actId,
             version: versionNumber,
-            waitForFinish: 120,
             useCache: true,
-        });
+        }).then(buildDetail => waitForTaskFinish(apifyClient, buildDetail, ACT_TASK_TYPES.BUILD));
 
         if (build.status === ACT_TASK_STATUSES.SUCCEEDED) {
             console.dir(build);

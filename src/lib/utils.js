@@ -9,11 +9,13 @@ const ApifyClient = require('apify-client');
 const { error, warning } = require('./outputs');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH,
     LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID, INPUT_FILE_REG_EXP } = require('./consts');
-const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR } = require('apify-shared/consts');
+const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR, ACT_TASK_TYPES, ACT_TASK_TERMINAL_STATUSES } = require('apify-shared/consts');
 const { createFolderSync, updateLocalJson } = require('./files');
 const { spawnSync } = require('child_process');
 const semver = require('semver');
 const isOnline = require('is-online');
+const _ = require('underscore');
+const { delayPromise } = require('apify-shared/utilities');
 
 /**
  * Returns object from auth file or empty object.
@@ -123,8 +125,8 @@ const argsToCamelCase = (object) => {
 };
 
 /**
- * Create zip file with all act files in current directory, omit files defined in .gitignore and ignore .git folder.
- * NOTE: Zips .file files and .folder/ folders
+ * Create zip file with all act files in current directory, omit files defined in .gitignore and
+ * ignore .git folder. NOTE: Zips .file files and .folder/ folders
  * @param zipName
  * @return {Promise<void>}
  */
@@ -179,6 +181,40 @@ const checkLatestVersion = async () => {
     }
 };
 
+/**
+ * It waits until task is in terminal status(not running).
+ * @param apifyClient
+ * @param task
+ * @param type
+ * @param timeout
+ * @return {Promise<*>}
+ */
+const waitForTaskFinish = async (apifyClient, task, type, timeout = 3600000) => {
+    const { actId } = task;
+    let taskDetailPromise; let taskOptions;
+    if (type === ACT_TASK_TYPES.BUILD) {
+        taskDetailPromise = apifyClient.acts.getBuild;
+        taskOptions = { actId, buildId: task.id, };
+    } else {
+        taskDetailPromise = apifyClient.acts.getBuild;
+        taskOptions = { actId, runId: task.id, };
+    }
+
+    const startedAt = Date.now();
+    let isRunning = true;
+    let taskDetail;
+    while (isRunning) {
+        taskDetail = await taskDetailPromise(taskOptions); // eslint-disable-line no-await-in-loop
+        if (ACT_TASK_TERMINAL_STATUSES.includes(taskDetail.status) || Date.now() - startedAt > timeout) {
+            isRunning = false;
+        } else {
+            await delayPromise(5000); // eslint-disable-line no-await-in-loop
+        }
+    }
+
+    return taskDetail;
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -191,4 +227,5 @@ module.exports = {
     getLocalConfigOrThrow,
     checkLatestVersion,
     getLocalInput,
+    waitForTaskFinish
 };
