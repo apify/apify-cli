@@ -84,3 +84,5 @@ exports.AUTH_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
 exports.LOCAL_CONFIG_NAME = 'apify.json';
 
 exports.INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..*`);
+
+exports.MAIN_FILE = 'main.js';

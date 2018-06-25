@@ -3,6 +3,7 @@ const fs = require('fs');
 const command = require('@oclif/command');
 const path = require('path');
 const { rimrafPromised } = require('../../src/lib/files');
+const writeJson = require('write-json-file');
 const loadJson = require('load-json-file');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
@@ -81,6 +82,53 @@ describe('apify run', () => {
         Object.keys(LOCAL_ENV_VARS).forEach(envVar => expect(localEnvVars[envVar]).to.be.eql(LOCAL_ENV_VARS[envVar]));
 
         await command.run(['logout']);
+    });
+
+
+    it('run purge stores', async () => {
+        const input = {
+            myInput: 'value',
+        };
+        const kvsPath = path.join(DEFAULT_LOCAL_EMULATION_DIR, LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID);
+        const actInputPath = path.join(kvsPath, 'INPUT.json');
+        const testJsonPath = path.join(kvsPath, 'TEST.json');
+        const datasetPath = path.join(DEFAULT_LOCAL_EMULATION_DIR, LOCAL_EMULATION_SUBDIRS.datasets, DEFAULT_LOCAL_STORES_ID);
+        const queuePath = path.join(DEFAULT_LOCAL_EMULATION_DIR, LOCAL_EMULATION_SUBDIRS.requestQueues, DEFAULT_LOCAL_STORES_ID);
+
+        writeJson.sync(actInputPath, input);
+
+        let actCode = `
+        const Apify = require('apify');
+
+        Apify.main(async () => {    
+            await Apify.setValue('TEST', process.env);
+            await Apify.pushData({aa: "bb" });
+            const requestQueue = await Apify.openRequestQueue();
+            await requestQueue.addRequest(new Apify.Request({ url: 'http://example.com/' }));
+        });
+        `;
+        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+
+        await command.run(['run']);
+
+        expect(fs.existsSync(actInputPath)).to.be.eql(true);
+        expect(fs.existsSync(testJsonPath)).to.be.eql(true);
+        expect(fs.existsSync(datasetPath)).to.be.eql(true);
+        expect(fs.existsSync(queuePath)).to.be.eql(true);
+
+        actCode = `
+        const Apify = require('apify');
+
+        Apify.main(async () => {});
+        `;
+        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+
+        await command.run(['run', '--purge']);
+
+        expect(fs.existsSync(actInputPath)).to.be.eql(true);
+        expect(fs.existsSync(testJsonPath)).to.be.eql(false);
+        expect(fs.existsSync(datasetPath)).to.be.eql(false);
+        expect(fs.existsSync(queuePath)).to.be.eql(false);
     });
 
     after(async () => {

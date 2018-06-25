@@ -10,7 +10,7 @@ const { error, warning } = require('./outputs');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH,
     LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID, INPUT_FILE_REG_EXP } = require('./consts');
 const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR } = require('apify-shared/consts');
-const { createFolderSync, updateLocalJson } = require('./files');
+const { createFolderSync, updateLocalJson, rimrafPromised, deleteFile } = require('./files');
 const { spawnSync } = require('child_process');
 const semver = require('semver');
 const isOnline = require('is-online');
@@ -179,6 +179,35 @@ const checkLatestVersion = async () => {
     }
 };
 
+const purgeDefaultQueue = async (cwd) => {
+    const defaultQueuesDir = path.join(cwd, DEFAULT_LOCAL_EMULATION_DIR,
+        LOCAL_EMULATION_SUBDIRS.requestQueues, DEFAULT_LOCAL_STORES_ID);
+    if (fs.existsSync(defaultQueuesDir)) {
+        await rimrafPromised(defaultQueuesDir);
+    }
+};
+
+const purgeDefaultDataset = async (cwd) => {
+    const defaultDatasetDir = path.join(cwd, DEFAULT_LOCAL_EMULATION_DIR,
+        LOCAL_EMULATION_SUBDIRS.datasets, DEFAULT_LOCAL_STORES_ID);
+    if (fs.existsSync(defaultDatasetDir)) {
+        await rimrafPromised(defaultDatasetDir);
+    }
+};
+
+const purgeDefaultKeyValueStore = async (cwd) => {
+    const defaultKeyValueStoreDir = path.join(cwd, DEFAULT_LOCAL_EMULATION_DIR,
+        LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID);
+    const filesToDelete = fs.readdirSync(defaultKeyValueStoreDir);
+
+    const deletePromises = [];
+    filesToDelete.forEach((file) => {
+        if (!file.match(INPUT_FILE_REG_EXP)) deletePromises.push(deleteFile(path.join(defaultKeyValueStoreDir, file)));
+    });
+
+    await Promise.all(deletePromises);
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -191,4 +220,7 @@ module.exports = {
     getLocalConfigOrThrow,
     checkLatestVersion,
     getLocalInput,
+    purgeDefaultQueue,
+    purgeDefaultDataset,
+    purgeDefaultKeyValueStore,
 };
