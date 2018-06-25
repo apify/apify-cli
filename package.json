@@ -54,6 +54,7 @@
         "apify-client": "^0.2.6",
         "apify-shared": "0.0.32",
         "archiver-promise": "^1.0.0",
+        "bluebird": "^3.5.1",
         "chalk": "^2.3.2",
         "child-process-promise": "^2.2.1",
         "globby": "^8.0.1",

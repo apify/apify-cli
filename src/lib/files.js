@@ -2,6 +2,7 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const fs = require('fs');
 const rimraf = require('rimraf');
+const Promise = require('bluebird');
 
 const updateLocalJson = async (path, updateAttrs = {}, nestedObjectAttr) => {
     const currentObject = await loadJson(path);
@@ -32,4 +33,14 @@ const rimrafPromised = (path) => {
     });
 };
 
-module.exports = { updateLocalJson, createFolderSync, rimrafPromised };
+const fileStat = Promise.promisify(fs.stat);
+const unlinkFile = Promise.promisify(fs.unlink);
+
+const deleteFile = async (path) => {
+    const stat = await fileStat(path);
+    if (stat.isFile()) {
+        await unlinkFile(path);
+    }
+};
+
+module.exports = { updateLocalJson, createFolderSync, rimrafPromised, deleteFile };
