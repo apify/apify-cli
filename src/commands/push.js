@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow, waitForTaskFinish, attachLogToStdOut } = require('../lib/utils');
+const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow, watchStreamLog } = require('../lib/utils');
 const { createActZip } = require('../lib/utils');
 const { ACT_TASK_STATUSES, ACT_TASK_TYPES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES } = require('../lib/consts');
@@ -89,15 +89,18 @@ class PushCommand extends ApifyCommand {
             actId,
             version: versionNumber,
             useCache: true,
-            waitForFinish: 2,
         });
 
         outputs.link('Act build detail', `https://my.apify.com/acts/${build.actId}#/builds/${build.buildNumber}`);
 
-        const attachedLog = attachLogToStdOut(build.id);
-        build = await waitForTaskFinish(apifyClient, build, ACT_TASK_TYPES.BUILD, waitForFinish);
-        await attachedLog.abort();
+        try {
+            await watchStreamLog(build.id, waitForFinish);
+        } catch (err) {
+            outputs.warning('Can not get log:');
+            console.error(err);
+        }
 
+        build = await apifyClient.acts.getBuild({ actId: build.actId, buildId: build.id });
         console.dir(build);
 
         if (build.status === ACT_TASK_STATUSES.SUCCEEDED) {

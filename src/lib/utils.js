@@ -246,14 +246,26 @@ const waitForTaskFinish = async (apifyClient, task, type, timeout) => {
     return taskDetail;
 };
 
-const attachLogToStdOut = (logId) => {
-    return https.get(`https://api.apify.com/v2/logs/${logId}?stream=1`)
-    .on('response', (response) => {
-        response.on('data', chunk => console.log(chunk.toString().trim()));
-        response.on('error', (err) => {
-            outputs.warning('Can not fetch log, error:');
-            console.error(err);
+const watchStreamLog = (logId, timeout) => {
+    return new Promise((resolve, reject) => {
+        const req = https.get(`https://api.apify.com/v2/logs/${logId}?stream=1`);
+
+        req.on('response', (response) => {
+            response.on('data', chunk => console.log(chunk.toString().trim()));
         });
+        req.on('error', (err) => {
+            reject(err);
+        });
+        req.on('close', () => {
+            resolve('finished');
+        });
+
+        if (timeout) {
+            setTimeout(() => {
+                if (req) req.abort();
+                resolve('timeouts');
+            }, timeout);
+        }
     });
 };
 
@@ -273,5 +285,5 @@ module.exports = {
     purgeDefaultDataset,
     purgeDefaultKeyValueStore,
     waitForTaskFinish,
-    attachLogToStdOut,
+    watchStreamLog,
 };
