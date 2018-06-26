@@ -85,7 +85,7 @@ class PushCommand extends ApifyCommand {
 
         await setLocalConfig(Object.assign(localConfig, { version: currentVersion }));
 
-        // Build act on Apify and wait for it finises
+        // Build act on Apify and wait for it finishes
         outputs.run('Building act');
         let build = await apifyClient.acts.buildAct({
             actId,
