@@ -218,7 +218,7 @@ const purgeDefaultKeyValueStore = async (cwd) => {
  * @param timeout
  * @return {Promise<*>}
  */
-const waitForTaskFinish = async (apifyClient, task, type, timeout = 3600000) => {
+const waitForTaskFinish = async (apifyClient, task, type, timeout) => {
     const { actId } = task;
     let taskDetailPromise; let taskOptions;
     if (type === ACT_TASK_TYPES.BUILD) {
@@ -234,7 +234,7 @@ const waitForTaskFinish = async (apifyClient, task, type, timeout = 3600000) => 
     let taskDetail;
     while (isRunning) {
         taskDetail = await taskDetailPromise(taskOptions); // eslint-disable-line no-await-in-loop
-        if (ACT_TASK_TERMINAL_STATUSES.includes(taskDetail.status) || Date.now() - startedAt > timeout) {
+        if (ACT_TASK_TERMINAL_STATUSES.includes(taskDetail.status) || (timeout && Date.now() - startedAt > timeout)) {
             isRunning = false;
         } else {
             await delayPromise(WAIT_FOR_TASK_INTERVAL); // eslint-disable-line no-await-in-loop

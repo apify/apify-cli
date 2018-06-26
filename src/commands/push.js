@@ -1,8 +1,9 @@
 const fs = require('fs');
+const http = require('http');
+const _ = require('underscore');
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow, waitForTaskFinish } = require('../lib/utils');
-const { run, success, info } = require('../lib/outputs');
 const { createActZip } = require('../lib/utils');
 const { ACT_TASK_STATUSES, ACT_TASK_TYPES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES } = require('../lib/consts');
@@ -22,11 +23,12 @@ class PushCommand extends ApifyCommand {
         let actId = args.actId || localConfig.actId;
         const versionNumber = flags.versionNumber || localConfig.version.versionNumber;
         const buildTag = flags.buildTag || localConfig.version.buildTag;
+        const waitForFinish = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
 
-        info(`Deploying act '${localConfig.name}' to Apify.`);
+        outputs.info(`Deploying act '${localConfig.name}' to Apify.`);
 
         // Create zip
-        run('Zipping act files');
+        outputs.run('Zipping act files');
         await createActZip(TEMP_ZIP_FILE_NAME);
 
         // Upload it to Apify.keyValueStores
@@ -63,7 +65,7 @@ class PushCommand extends ApifyCommand {
                 return version;
             });
             if (!foundVersion) updates.versions.push(currentVersion);
-            run('Updating existing act');
+            outputs.run('Updating existing act');
             const updatedAct = await apifyClient.acts.updateAct({ actId, act: updates });
             console.dir(updatedAct);
         } else {
@@ -73,7 +75,7 @@ class PushCommand extends ApifyCommand {
                 defaultRunOptions: ACTS_TEMPLATES[actTemplate].defaultRunOptions,
                 versions: [currentVersion],
             };
-            run('Creating act');
+            outputs.run('Creating act');
             const createdAct = await apifyClient.acts.createAct({ act: newAct });
             actId = (createdAct.username) ? `${createdAct.username}/${createdAct.name}` : createdAct.id;
             // Set up new actId to localConfig
@@ -84,20 +86,32 @@ class PushCommand extends ApifyCommand {
         await setLocalConfig(Object.assign(localConfig, { version: currentVersion }));
 
         // Build act on Apify and wait for it finises
-        run('Building act');
-        const build = await apifyClient.acts.buildAct({
+        outputs.run('Building act');
+        let build = await apifyClient.acts.buildAct({
             actId,
             version: versionNumber,
             useCache: true,
-        }).then(buildDetail => waitForTaskFinish(apifyClient, buildDetail, ACT_TASK_TYPES.BUILD));
+            waitForFinish: 2,
+        });
+
+        outputs.link('Act build detail', `https://my.apify.com/acts/${build.actId}#/builds/${build.buildNumber}`);
+
+        const streamRequest = http.get(`http://api.apify.com/v2/logs/${build.id}?stream=1`)
+        .on('response', (response) => {
+            response.on('data', chunk => console.log(chunk.toString().trim()));
+        });
+
+        build = await waitForTaskFinish(apifyClient, build, ACT_TASK_TYPES.BUILD, waitForFinish);
+        await streamRequest.abort();
+
+        console.dir(build);
 
         if (build.status === ACT_TASK_STATUSES.SUCCEEDED) {
-            console.dir(build);
-            success('Act was deployed to Apify platform and built there.');
+            outputs.success('Act was deployed to Apify platform and built there.');
+        } else if (build.status === ACT_TASK_STATUSES.RUNNING) {
+            outputs.warning('Build still running!');
         } else {
-            console.dir(build);
-            outputs.error('Build failed! Log:');
-            console.log(await apifyClient.logs.getLog({ logId: build.id }));
+            outputs.error('Build failed!');
         }
     }
 }
@@ -116,6 +130,11 @@ PushCommand.flags = {
     'build-tag': flagsHelper.string({
         char: 'b',
         description: 'Build tag to be applied to the successful act build. By default, it is taken from the "apify.json" file',
+        required: false,
+    }),
+    'wait-for-finish': flagsHelper.string({
+        char: 'w',
+        description: 'Seconds for waiting to build to finish, if no value passed, it waits forever.',
         required: false,
     }),
 };
