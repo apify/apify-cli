@@ -161,12 +161,15 @@ const getLocalInput = () => {
 /**
  * Logs warning if client local package is not in the latest version
  * Check'll be skip if user is offline
+ * Check'll run approximately every 10. call
  * @return {Promise<void>}
  */
 const checkLatestVersion = async () => {
     try {
+        // Run check approximately every 10. call
+        if (Math.random() <= 0.9) return;
         // Skip if user is offline
-        if (!await isOnline({ timeout: 1000 })) return;
+        if (!await isOnline({ timeout: 500 })) return;
 
         const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
         const currentVersion = require('../../package.json').version;
