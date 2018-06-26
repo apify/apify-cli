@@ -1,9 +1,7 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const http = require('http');
-const _ = require('underscore');
 const { ACT_TASK_STATUSES, ACT_TASK_TYPES } = require('apify-shared/consts');
-const { getLocalConfig, getLoggedClientOrThrow, getLocalInput, waitForTaskFinish } = require('../lib/utils');
+const { getLocalConfig, getLoggedClientOrThrow, getLocalInput, waitForTaskFinish, attachLogToStdOut } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
 // TODO: Show full error messages and HTTP codes, this is not great:
@@ -44,13 +42,9 @@ class CallCommand extends ApifyCommand {
 
         outputs.link('Act run detail', `https://my.apify.com/acts/${run.actId}#/runs/${run.id}`);
 
-        const streamRequest = http.get(`http://api.apify.com/v2/logs/${run.id}?stream=1`)
-        .on('response', (response) => {
-            response.on('data', chunk => console.log(chunk.toString().trim()));
-        });
-
+        const attachedLog = attachLogToStdOut(run.id);
         run = await waitForTaskFinish(apifyClient, run, ACT_TASK_TYPES.RUN, waitForFinish);
-        await streamRequest.abort();
+        await attachedLog.abort();
 
         console.dir(run);
 

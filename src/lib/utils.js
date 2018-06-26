@@ -5,6 +5,7 @@ const globby = require('globby');
 const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
+const https = require('https');
 const ApifyClient = require('apify-client');
 const { error, warning } = require('./outputs');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH,
@@ -16,6 +17,7 @@ const semver = require('semver');
 const isOnline = require('is-online');
 const _ = require('underscore');
 const { delayPromise } = require('apify-shared/utilities');
+const outputs = require('../lib/outputs');
 
 /**
  * Returns object from auth file or empty object.
@@ -244,6 +246,17 @@ const waitForTaskFinish = async (apifyClient, task, type, timeout) => {
     return taskDetail;
 };
 
+const attachLogToStdOut = (logId) => {
+    return https.get(`https://api.apify.com/v2/logs/${logId}?stream=1`)
+    .on('response', (response) => {
+        response.on('data', chunk => console.log(chunk.toString().trim()));
+        response.on('error', (err) => {
+            outputs.warning('Can not fetch log, error:');
+            console.error(err);
+        });
+    });
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -259,5 +272,6 @@ module.exports = {
     purgeDefaultQueue,
     purgeDefaultDataset,
     purgeDefaultKeyValueStore,
-    waitForTaskFinish
+    waitForTaskFinish,
+    attachLogToStdOut,
 };
