@@ -5,13 +5,14 @@ const path = require('path');
 const execWithLog = require('../lib/exec');
 const { LOCAL_ENV_VARS, MAIN_FILE } = require('../lib/consts');
 const { ENV_VARS } = require('apify-shared/consts');
-const { getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore, purgeDefaultDataset } = require('../lib/utils');
+const { getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore, purgeDefaultDataset, getLocalConfigOrThrow } = require('../lib/utils');
 const { info } = require('../lib/outputs');
 
 class RunCommand extends ApifyCommand {
     async run() {
         const { flags } = this.parse(RunCommand);
         const { proxy, id: userId, token } = getLocalUserInfo();
+        const localConfig = getLocalConfigOrThrow();
         const apifyLocalEnvVars = LOCAL_ENV_VARS;
         const cwd = process.cwd();
 
@@ -42,8 +43,15 @@ class RunCommand extends ApifyCommand {
             info('Default key-value store was purge.');
         }
 
+        // Attach env vars from local config files
+        const localEnvVars = {};
+        if (localConfig.version && localConfig.version.envVars) {
+            localConfig.version.envVars.forEach((envVar) => {
+                if (envVar.name && envVar.value) localEnvVars[envVar.name] = envVar.value;
+            });
+        }
         // NOTE: User can overwrite env vars
-        const env = Object.assign(apifyLocalEnvVars, process.env);
+        const env = Object.assign(apifyLocalEnvVars, localEnvVars, process.env);
 
         await execWithLog('node', [MAIN_FILE], { env });
     }

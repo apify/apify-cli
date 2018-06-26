@@ -53,6 +53,12 @@ describe('apify run', () => {
 
     it('run with env vars', async () => {
         const { token } = testUserClient.getOptions();
+        const testEnvVars = [
+            {
+                name: 'TEST_LOCAL',
+                value: 'testValue',
+            },
+        ];
 
         await command.run(['login', '--token', token]);
 
@@ -65,6 +71,11 @@ describe('apify run', () => {
         });
         `;
         fs.writeFileSync('main.js', actCode, { flag: 'w' });
+        const apifyJson = loadJson.sync('apify.json');
+        apifyJson.version = {
+            envVars: testEnvVars,
+        };
+        writeJson.sync('apify.json', apifyJson);
 
         await command.run(['run']);
 
@@ -79,6 +90,7 @@ describe('apify run', () => {
         expect(localEnvVars[ENV_VARS.PROXY_PASSWORD]).to.be.eql(auth.proxy.password);
         expect(localEnvVars[ENV_VARS.USER_ID]).to.be.eql(auth.id);
         expect(localEnvVars[ENV_VARS.TOKEN]).to.be.eql(auth.token);
+        expect(localEnvVars[testEnvVars[0].name]).to.be.eql(testEnvVars[0].value);
         Object.keys(LOCAL_ENV_VARS).forEach(envVar => expect(localEnvVars[envVar]).to.be.eql(LOCAL_ENV_VARS[envVar]));
 
         await command.run(['logout']);
