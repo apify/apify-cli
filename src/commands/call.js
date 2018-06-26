@@ -1,7 +1,7 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { ACT_TASK_STATUSES } = require('apify-shared/consts');
-const { getLocalConfig, getLoggedClientOrThrow, getLocalInput } = require('../lib/utils');
+const { ACT_TASK_STATUSES, ACT_TASK_TYPES } = require('apify-shared/consts');
+const { getLocalConfig, getLoggedClientOrThrow, getLocalInput, waitForTaskFinish } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
 // TODO: Show full error messages and HTTP codes, this is not great:
@@ -15,7 +15,6 @@ class CallCommand extends ApifyCommand {
         const localConfig = getLocalConfig() || {};
         const runOpts = {
             actId: args.actId || localConfig.actId,
-            waitForFinish: 120,
         };
 
         ['build', 'timeout', 'memory'].forEach((opt) => {
@@ -32,7 +31,7 @@ class CallCommand extends ApifyCommand {
 
         let run;
         try {
-            run = await apifyClient.acts.runAct(runOpts);
+            run = await apifyClient.acts.runAct(runOpts).then(runDetail => waitForTaskFinish(apifyClient, runDetail, ACT_TASK_TYPES.RUN));
         } catch (err) {
             // TODO: Better error message in apify-client-js
             if (err.type === 'record-not-found') throw new Error(`Act ${runOpts.actId} not found!`);

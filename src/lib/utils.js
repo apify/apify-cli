@@ -8,7 +8,7 @@ const writeJson = require('write-json-file');
 const ApifyClient = require('apify-client');
 const { error, warning } = require('./outputs');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH,
-    LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID, INPUT_FILE_REG_EXP } = require('./consts');
+    LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID, INPUT_FILE_REG_EXP, WAIT_FOR_TASK_INTERVAL } = require('./consts');
 const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR, ACT_TASK_TYPES, ACT_TASK_TERMINAL_STATUSES } = require('apify-shared/consts');
 const { createFolderSync, updateLocalJson, rimrafPromised, deleteFile } = require('./files');
 const { spawnSync } = require('child_process');
@@ -223,10 +223,10 @@ const waitForTaskFinish = async (apifyClient, task, type, timeout = 3600000) => 
     let taskDetailPromise; let taskOptions;
     if (type === ACT_TASK_TYPES.BUILD) {
         taskDetailPromise = apifyClient.acts.getBuild;
-        taskOptions = { actId, buildId: task.id, };
+        taskOptions = { actId, buildId: task.id };
     } else {
-        taskDetailPromise = apifyClient.acts.getBuild;
-        taskOptions = { actId, runId: task.id, };
+        taskDetailPromise = apifyClient.acts.getRun;
+        taskOptions = { actId, runId: task.id };
     }
 
     const startedAt = Date.now();
@@ -237,7 +237,7 @@ const waitForTaskFinish = async (apifyClient, task, type, timeout = 3600000) => 
         if (ACT_TASK_TERMINAL_STATUSES.includes(taskDetail.status) || Date.now() - startedAt > timeout) {
             isRunning = false;
         } else {
-            await delayPromise(5000); // eslint-disable-line no-await-in-loop
+            await delayPromise(WAIT_FOR_TASK_INTERVAL); // eslint-disable-line no-await-in-loop
         }
     }
 
