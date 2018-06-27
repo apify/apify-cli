@@ -89,6 +89,7 @@ class PushCommand extends ApifyCommand {
             actId,
             version: versionNumber,
             useCache: true,
+            waitForFinish: 2,
         });
 
         outputs.link('Act build detail', `https://my.apify.com/acts/${build.actId}#/builds/${build.buildNumber}`);

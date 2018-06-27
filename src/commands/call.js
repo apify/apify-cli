@@ -15,6 +15,7 @@ class CallCommand extends ApifyCommand {
         const localConfig = getLocalConfig() || {};
         const runOpts = {
             actId: args.actId || localConfig.actId,
+            waitForFinish: 2,
         };
         const waitForFinish = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
 
