@@ -1,7 +1,7 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { ACT_TASK_STATUSES } = require('apify-shared/consts');
-const { getLocalConfig, getLoggedClientOrThrow, getLocalInput } = require('../lib/utils');
+const { ACT_TASK_STATUSES, ACT_TASK_TYPES } = require('apify-shared/consts');
+const { getLocalConfig, getLoggedClientOrThrow, getLocalInput, outputLogStream } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
 // TODO: Show full error messages and HTTP codes, this is not great:
@@ -15,8 +15,9 @@ class CallCommand extends ApifyCommand {
         const localConfig = getLocalConfig() || {};
         const runOpts = {
             actId: args.actId || localConfig.actId,
-            waitForFinish: 120,
+            waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         };
+        const waitForFinishMillis = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
 
         ['build', 'timeout', 'memory'].forEach((opt) => {
             if (flags[opt]) runOpts[opt] = flags[opt];
@@ -38,13 +39,23 @@ class CallCommand extends ApifyCommand {
             if (err.type === 'record-not-found') throw new Error(`Act ${runOpts.actId} not found!`);
             else throw err;
         }
-        console.dir(run);
 
-        const log = await apifyClient.logs.getLog({ logId: run.id });
-        console.log(log);
+        outputs.link('Act run detail', `https://my.apify.com/acts/${run.actId}#/runs/${run.id}`);
+
+        try {
+            await outputLogStream(run.id, waitForFinishMillis);
+        } catch (err) {
+            outputs.warning('Can not get log:');
+            console.error(err);
+        }
+
+        run = await apifyClient.acts.getRun({ actId: run.actId, runId: run.id });
+        console.dir(run);
 
         if (run.status === ACT_TASK_STATUSES.SUCCEEDED) {
             outputs.success('Act finished!');
+        } else if (run.status === ACT_TASK_STATUSES.RUNNING) {
+            outputs.warning('Act still running!');
         } else {
             outputs.error('Act failed!');
         }
@@ -72,6 +83,11 @@ CallCommand.flags = {
         description: 'Amount of memory allocated for the act run, in megabytes.',
         required: false,
         parse: input => parseInt(input, 10),
+    }),
+    'wait-for-finish': flagsHelper.string({
+        char: 'w',
+        description: 'Seconds for waiting to run to finish, if no value passed, it waits forever.',
+        required: false,
     }),
 };
 

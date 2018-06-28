@@ -5,14 +5,14 @@ const path = require('path');
 const execWithLog = require('../lib/exec');
 const { LOCAL_ENV_VARS, MAIN_FILE } = require('../lib/consts');
 const { ENV_VARS } = require('apify-shared/consts');
-const { getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore, purgeDefaultDataset } = require('../lib/utils');
+const { getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore, purgeDefaultDataset, getLocalConfigOrThrow } = require('../lib/utils');
 const { info } = require('../lib/outputs');
 
 class RunCommand extends ApifyCommand {
     async run() {
         const { flags } = this.parse(RunCommand);
         const { proxy, id: userId, token } = getLocalUserInfo();
-        const apifyLocalEnvVars = LOCAL_ENV_VARS;
+        const localConfig = getLocalConfigOrThrow();
         const cwd = process.cwd();
 
         const mainJsFile = path.join(cwd, MAIN_FILE);
@@ -20,9 +20,9 @@ class RunCommand extends ApifyCommand {
             throw new Error('File main.js is missing in current dir! Call "apify init" to create it.');
         }
 
-        if (proxy && proxy.password) apifyLocalEnvVars[ENV_VARS.PROXY_PASSWORD] = proxy.password;
-        if (userId) apifyLocalEnvVars[ENV_VARS.USER_ID] = userId;
-        if (token) apifyLocalEnvVars[ENV_VARS.TOKEN] = token;
+        if (proxy && proxy.password) LOCAL_ENV_VARS[ENV_VARS.PROXY_PASSWORD] = proxy.password;
+        if (userId) LOCAL_ENV_VARS[ENV_VARS.USER_ID] = userId;
+        if (token) LOCAL_ENV_VARS[ENV_VARS.TOKEN] = token;
 
         // Purge stores
         if (flags.purge) {
@@ -42,8 +42,15 @@ class RunCommand extends ApifyCommand {
             info('Default key-value store was purge.');
         }
 
+        // Attach env vars from local config files
+        const localEnvVars = {};
+        if (localConfig.version && localConfig.version.envVars) {
+            localConfig.version.envVars.forEach((envVar) => {
+                if (envVar.name && envVar.value) localEnvVars[envVar.name] = envVar.value;
+            });
+        }
         // NOTE: User can overwrite env vars
-        const env = Object.assign(apifyLocalEnvVars, process.env);
+        const env = Object.assign(LOCAL_ENV_VARS, localEnvVars, process.env);
 
         await execWithLog('node', [MAIN_FILE], { env });
     }

@@ -20,4 +20,8 @@ const info = (message) => {
     console.log(`${chalk.white('Info:')} ${message}`);
 };
 
-module.exports = { error, success, run, info, warning };
+const link = (title, url) => {
+    console.log(`${chalk.blue(title)} -> ${url}`);
+};
+
+module.exports = { error, success, run, info, warning, link };

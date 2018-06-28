@@ -5,15 +5,17 @@ const globby = require('globby');
 const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
+const https = require('https');
 const ApifyClient = require('apify-client');
-const { error, warning } = require('./outputs');
+const { warning } = require('./outputs');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH,
     LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID, INPUT_FILE_REG_EXP } = require('./consts');
-const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR } = require('apify-shared/consts');
+const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR, ACT_TASK_TYPES, ACT_TASK_TERMINAL_STATUSES } = require('apify-shared/consts');
 const { createFolderSync, updateLocalJson, rimrafPromised, deleteFile } = require('./files');
 const { spawnSync } = require('child_process');
 const semver = require('semver');
 const isOnline = require('is-online');
+const _ = require('underscore');
 
 /**
  * Returns object from auth file or empty object.
@@ -211,6 +213,38 @@ const purgeDefaultKeyValueStore = async (cwd) => {
     await Promise.all(deletePromises);
 };
 
+const outputLogStream = (logId, timeout) => {
+    return new Promise((resolve, reject) => {
+        const req = https.get(`https://api.apify.com/v2/logs/${logId}?stream=1`);
+        let res;
+
+        req.on('response', (response) => {
+            res = response;
+            response.on('data', chunk => console.log(chunk.toString().trim()));
+            response.on('error', (err) => {
+                reject(err);
+            });
+        });
+        req.on('error', (err) => {
+            reject(err);
+        });
+        req.on('close', () => {
+            resolve('finished');
+        });
+
+        if (timeout) {
+            setTimeout(() => {
+                if (res) res.removeAllListeners();
+                if (req) {
+                    req.removeAllListeners();
+                    req.abort();
+                }
+                resolve('timeouts');
+            }, timeout);
+        }
+    });
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -226,4 +260,5 @@ module.exports = {
     purgeDefaultQueue,
     purgeDefaultDataset,
     purgeDefaultKeyValueStore,
+    outputLogStream,
 };
