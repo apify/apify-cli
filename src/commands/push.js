@@ -21,7 +21,7 @@ class PushCommand extends ApifyCommand {
         let actId = args.actId || localConfig.actId;
         const versionNumber = flags.versionNumber || localConfig.version.versionNumber;
         const buildTag = flags.buildTag || localConfig.version.buildTag;
-        const waitForFinish = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
+        const waitForFinishMillis = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
 
         outputs.info(`Deploying act '${localConfig.name}' to Apify.`);
 
@@ -95,7 +95,7 @@ class PushCommand extends ApifyCommand {
         outputs.link('Act build detail', `https://my.apify.com/acts/${build.actId}#/builds/${build.buildNumber}`);
 
         try {
-            await outputLogStream(build.id, waitForFinish);
+            await outputLogStream(build.id, waitForFinishMillis);
         } catch (err) {
             outputs.warning('Can not get log:');
             console.error(err);

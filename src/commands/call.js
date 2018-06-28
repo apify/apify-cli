@@ -17,7 +17,7 @@ class CallCommand extends ApifyCommand {
             actId: args.actId || localConfig.actId,
             waitForFinish: 2,
         };
-        const waitForFinish = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
+        const waitForFinishMillis = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
 
         ['build', 'timeout', 'memory'].forEach((opt) => {
             if (flags[opt]) runOpts[opt] = flags[opt];
@@ -43,7 +43,7 @@ class CallCommand extends ApifyCommand {
         outputs.link('Act run detail', `https://my.apify.com/acts/${run.actId}#/runs/${run.id}`);
 
         try {
-            await outputLogStream(run.id, waitForFinish);
+            await outputLogStream(run.id, waitForFinishMillis);
         } catch (err) {
             outputs.warning('Can not get log:');
             console.error(err);
