@@ -15,7 +15,7 @@ class CallCommand extends ApifyCommand {
         const localConfig = getLocalConfig() || {};
         const runOpts = {
             actId: args.actId || localConfig.actId,
-            waitForFinish: 2,
+            waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         };
         const waitForFinishMillis = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
 

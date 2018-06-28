@@ -89,7 +89,7 @@ class PushCommand extends ApifyCommand {
             actId,
             version: versionNumber,
             useCache: true,
-            waitForFinish: 2,
+            waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         });
 
         outputs.link('Act build detail', `https://my.apify.com/acts/${build.actId}#/builds/${build.buildNumber}`);
