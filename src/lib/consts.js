@@ -86,5 +86,3 @@ exports.LOCAL_CONFIG_NAME = 'apify.json';
 exports.INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..*`);
 
 exports.MAIN_FILE = 'main.js';
-
-exports.WAIT_FOR_TASK_INTERVAL = 500;

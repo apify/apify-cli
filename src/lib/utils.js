@@ -7,17 +7,15 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const https = require('https');
 const ApifyClient = require('apify-client');
-const { error, warning } = require('./outputs');
+const { warning } = require('./outputs');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH,
-    LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID, INPUT_FILE_REG_EXP, WAIT_FOR_TASK_INTERVAL } = require('./consts');
+    LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID, INPUT_FILE_REG_EXP } = require('./consts');
 const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR, ACT_TASK_TYPES, ACT_TASK_TERMINAL_STATUSES } = require('apify-shared/consts');
 const { createFolderSync, updateLocalJson, rimrafPromised, deleteFile } = require('./files');
 const { spawnSync } = require('child_process');
 const semver = require('semver');
 const isOnline = require('is-online');
 const _ = require('underscore');
-const { delayPromise } = require('apify-shared/utilities');
-const outputs = require('../lib/outputs');
 
 /**
  * Returns object from auth file or empty object.
@@ -212,46 +210,17 @@ const purgeDefaultKeyValueStore = async (cwd) => {
     await Promise.all(deletePromises);
 };
 
-/**
- * It waits until task is in terminal status(not running).
- * @param apifyClient
- * @param task
- * @param type
- * @param timeout
- * @return {Promise<*>}
- */
-const waitForTaskFinish = async (apifyClient, task, type, timeout) => {
-    const { actId } = task;
-    let taskDetailPromise; let taskOptions;
-    if (type === ACT_TASK_TYPES.BUILD) {
-        taskDetailPromise = apifyClient.acts.getBuild;
-        taskOptions = { actId, buildId: task.id };
-    } else {
-        taskDetailPromise = apifyClient.acts.getRun;
-        taskOptions = { actId, runId: task.id };
-    }
-
-    const startedAt = Date.now();
-    let isRunning = true;
-    let taskDetail;
-    while (isRunning) {
-        taskDetail = await taskDetailPromise(taskOptions); // eslint-disable-line no-await-in-loop
-        if (ACT_TASK_TERMINAL_STATUSES.includes(taskDetail.status) || (timeout && Date.now() - startedAt > timeout)) {
-            isRunning = false;
-        } else {
-            await delayPromise(WAIT_FOR_TASK_INTERVAL); // eslint-disable-line no-await-in-loop
-        }
-    }
-
-    return taskDetail;
-};
-
-const watchStreamLog = (logId, timeout) => {
+const outputLogStream = (logId, timeout) => {
     return new Promise((resolve, reject) => {
         const req = https.get(`https://api.apify.com/v2/logs/${logId}?stream=1`);
+        let res;
 
         req.on('response', (response) => {
+            res = response;
             response.on('data', chunk => console.log(chunk.toString().trim()));
+            response.on('error', (err) => {
+                reject(err);
+            });
         });
         req.on('error', (err) => {
             reject(err);
@@ -262,7 +231,11 @@ const watchStreamLog = (logId, timeout) => {
 
         if (timeout) {
             setTimeout(() => {
-                if (req) req.abort();
+                if (res) res.removeAllListeners();
+                if (req) {
+                    req.removeAllListeners();
+                    req.abort();
+                }
                 resolve('timeouts');
             }, timeout);
         }
@@ -284,6 +257,5 @@ module.exports = {
     purgeDefaultQueue,
     purgeDefaultDataset,
     purgeDefaultKeyValueStore,
-    waitForTaskFinish,
-    watchStreamLog,
+    outputLogStream,
 };
