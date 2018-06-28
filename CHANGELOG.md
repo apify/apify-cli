@@ -1,3 +1,10 @@
+0.1.12 / 2018-06-28
+===================
+- From now `apify call` and `apify push` commands stream live logs from run and build to your terminal
+- Add options -p, --purge, --purge-dataset, --purge-key-value-store, --purge-queue in `apify run` to clean stores before runs actor locally
+- Add option -w, --wait-for-finish=wait-for-finish in `apify push` and `apify call` - command waits x seconds to finish run or build on Apify
+- Fixes #26, #33, #34, #36, #38, #39, #37, #35
+
 0.1.11 / 2018-05-30
 ===================
 - Use npm-shrinkwrap.json instead of package-lock.json for published module

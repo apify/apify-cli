@@ -4,7 +4,7 @@
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.11 darwin-x64 node-v8.4.0
+  apify-cli/0.1.12 darwin-x64 node-v8.4.0
 
 USAGE
   $ apify [COMMAND]
@@ -33,14 +33,17 @@ ARGUMENTS
          specified in the "apify.json" file.
 
 OPTIONS
-  -b, --build=build      Tag or number of the build to run (e.g. "latest" or
-                         "1.2.34").
+  -b, --build=build                      Tag or number of the build to run (e.g.
+                                         "latest" or "1.2.34").
 
-  -m, --memory=memory    Amount of memory allocated for the act run, in
-                         megabytes.
+  -m, --memory=memory                    Amount of memory allocated for the act
+                                         run, in megabytes.
 
-  -t, --timeout=timeout  Timeout for the act run in seconds. Zero value means
-                         there is no timeout.
+  -t, --timeout=timeout                  Timeout for the act run in seconds.
+                                         Zero value means there is no timeout.
+
+  -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish,
+                                         if no value passed, it waits forever.
 
 DESCRIPTION
   The act is run under your current Apify account, therefore you need to be 
@@ -132,13 +135,16 @@ ARGUMENTS
          the name specified in "apify.json" file.
 
 OPTIONS
-  -b, --build-tag=build-tag            Build tag to be applied to the successful
-                                       act build. By default, it is taken from
-                                       the "apify.json" file
+  -b, --build-tag=build-tag              Build tag to be applied to the
+                                         successful act build. By default, it is
+                                         taken from the "apify.json" file
 
-  -v, --version-number=version-number  Act version number to which the files
-                                       should be pushed. By default, it is taken
-                                       from the "apify.json" file.
+  -v, --version-number=version-number    Act version number to which the files
+                                         should be pushed. By default, it is
+                                         taken from the "apify.json" file.
+
+  -w, --wait-for-finish=wait-for-finish  Seconds for waiting to build to finish,
+                                         if no value passed, it waits forever.
 
 DESCRIPTION
   The command creates a ZIP with files of the act from the current directory, 
@@ -156,6 +162,20 @@ Runs the act locally in the current directory.
 
 USAGE
   $ apify run
+
+OPTIONS
+  -p, --purge              Shortcut that combines the --purge-queue,
+                           --purge-dataset and --purge-key-value-store options.
+
+  --purge-dataset          Deletes the local directory containing the default
+                           dataset before the run starts.
+
+  --purge-key-value-store  Deletes all records from the default key-value store
+                           in the local directory before the run starts, except
+                           for the "INPUT" key.
+
+  --purge-queue            Deletes the local directory containing the default
+                           request queue before the run starts.
 
 DESCRIPTION
   The command runs a Node.js process with the act in the current directory. It 
