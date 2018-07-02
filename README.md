@@ -50,7 +50,7 @@ apify create my-hello-world
 ```
 
 First, you will be prompted to select a template with the boilerplate for the act, to help you get started quickly.
-The command will create a directory called `my_hello_world` that contains a Node.js project
+The command will create a directory called `my-hello-world` that contains a Node.js project
 for the act and a few configuration files.
 
 ### Create a new act from existing project
@@ -66,7 +66,7 @@ i.e. it will create the `apify.json` file and `apify_local` directory.
 ### Run the act locally
 
 ```bash
-cd my_hello_world
+cd my-hello-world
 apify run
 ```
 
