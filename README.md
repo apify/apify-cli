@@ -46,7 +46,7 @@ The following examples show basic usage of the CLI.
 ### Create a new act from scratch
 
 ```bash
-apify create my_hello_world
+apify create my-hello-world
 ```
 
 First, you will be prompted to select a template with the boilerplate for the act, to help you get started quickly.
