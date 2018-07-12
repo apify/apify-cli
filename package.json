@@ -1,6 +1,6 @@
 {
     "name": "apify-cli",
-    "version": "0.1.12",
+    "version": "0.1.13",
     "description": "Apify command line client to help you create, develop, build and run Actor acts.",
     "main": "index.js",
     "scripts": {
@@ -52,7 +52,7 @@
         "@oclif/errors": "^1.0.2",
         "@oclif/plugin-help": "^1.1.6",
         "apify-client": "^0.2.6",
-        "apify-shared": "0.0.32",
+        "apify-shared": "0.0.41",
         "archiver-promise": "^1.0.0",
         "bluebird": "^3.5.1",
         "chalk": "^2.3.2",
