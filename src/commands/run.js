@@ -17,7 +17,7 @@ class RunCommand extends ApifyCommand {
 
         const mainJsFile = path.join(cwd, MAIN_FILE);
         if (!fs.existsSync(mainJsFile)) {
-            throw new Error('File main.js is missing in current dir! Call "apify init" to create it.');
+            throw new Error('The "main.js" file not found in the current directory. Call "apify init" to create it.');
         }
 
         if (proxy && proxy.password) LOCAL_ENV_VARS[ENV_VARS.PROXY_PASSWORD] = proxy.password;
@@ -27,19 +27,19 @@ class RunCommand extends ApifyCommand {
         // Purge stores
         if (flags.purge) {
             await Promise.all([purgeDefaultQueue(cwd), purgeDefaultKeyValueStore(cwd), purgeDefaultDataset(cwd)]);
-            info('All default local stores were purge.');
+            info('All default local stores were purged.');
         }
         if (flags.purgeQueue) {
             await purgeDefaultQueue(cwd);
-            info('Default page queue was purge.');
+            info('Default local request queue was purged.');
         }
         if (flags.purgeDataset) {
             await purgeDefaultDataset(cwd);
-            info('Default page dataset was purge.');
+            info('Default local dataset was purged.');
         }
         if (flags.purgeKeyValueStore) {
             await purgeDefaultKeyValueStore(cwd);
-            info('Default key-value store was purge.');
+            info('Default local key-value store was purged.');
         }
 
         // Attach env vars from local config files
