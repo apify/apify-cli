@@ -1,3 +1,7 @@
+0.1.13 / 2018-07-12
+===================
+- Add environment variables for enable live view for local actors.
+
 0.1.12 / 2018-06-28
 ===================
 - From now `apify call` and `apify push` commands stream live logs from run and build to your terminal

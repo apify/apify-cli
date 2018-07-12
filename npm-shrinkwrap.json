@@ -1,6 +1,6 @@
 {
     "name": "apify-cli",
-    "version": "0.1.12",
+    "version": "0.1.13",
     "lockfileVersion": 1,
     "requires": true,
     "dependencies": {
@@ -142,9 +142,9 @@
             }
         },
         "apify-shared": {
-            "version": "0.0.32",
-            "resolved": "https://registry.npmjs.org/apify-shared/-/apify-shared-0.0.32.tgz",
-            "integrity": "sha512-dQww3Ge8KnUJVJe3iCQlplagGQhHR6lzgnYjXB6N6dkigz6SKj7hRmSmrN9kBt0ji46chwlTKluA1E1GvWprug==",
+            "version": "0.0.41",
+            "resolved": "https://registry.npmjs.org/apify-shared/-/apify-shared-0.0.41.tgz",
+            "integrity": "sha512-T3PqWqDosQOuEqgvsXlc4IRlBaalhSXK0bu58xvS0aFvx8Y5sbudXJOsJDs19lLwDkMgEzNMxYqKUscR2kv82A==",
             "requires": {
                 "bluebird": "3.5.1",
                 "clone": "2.1.2",

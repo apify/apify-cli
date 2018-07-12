@@ -3,7 +3,6 @@
 # Creates COMMANDS.md file with a content generated using "apify help"
 # TODO: Automatically update readme.md!
 
-npm install
 npm install . -g
 
 HELP_FILE="COMMANDS.md"

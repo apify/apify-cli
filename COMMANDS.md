@@ -4,7 +4,7 @@
 Apify command line client to help you create, develop, build and run Actor acts.
 
 VERSION
-  apify-cli/0.1.12 darwin-x64 node-v8.4.0
+  apify-cli/0.1.13 darwin-x64 node-v8.4.0
 
 USAGE
   $ apify [COMMAND]
