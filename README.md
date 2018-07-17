@@ -4,18 +4,17 @@
 <a href="https://travis-ci.org/apifytech/apify-cli"><img src="https://travis-ci.org/apifytech/apify-js.svg" alt="Build Status" style="display:inherit;"></a>
 
 Apify command line client (CLI) helps you to create, develop, build and run
-[Apify Actor](https://www.apify.com/docs/actor) acts from a local computer.
+[Apify actors](https://www.apify.com/docs/actor) from a local computer.
 
-Apify Actor is a serverless computing platform that enables the execution of arbitrary
-web scraping and automation jobs in the cloud. A single job is called an _act_.
+Apify actors enable the execution of arbitrary web scraping and automation jobs in the APify cloud.
 
-While you can develop acts in a code editor directly in the [Apify web application](https://my.apify.com/),
-for more complex projects it is more convenient to develop the acts locally
+While you can develop actors in a code editor directly in the [Apify web application](https://my.apify.com/),
+for more complex projects it is more convenient to develop actors locally
 and only push them to the Apify cloud for execution.
 This is where the CLI comes in.
 
-Note that the acts running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
-you can build your acts in any programming language.
+Note that actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
+you can build your actors in any programming language.
 However, we recommend using JavaScript / Node.js, for which we provide most libraries and support.
 
 
