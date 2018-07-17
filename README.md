@@ -50,7 +50,7 @@ apify create my-hello-world
 
 First, you will be prompted to select a template with the boilerplate for the actor, to help you get started quickly.
 The command will create a directory called `my-hello-world` that contains a Node.js project
-for the act and a few configuration files.
+for the actor and a few configuration files.
 
 ### Create a new actor from existing project
 
@@ -84,21 +84,21 @@ your [Apify API token](https://my.apify.com/account#/integrations).
 Note that the command will store the API token and other sensitive information to `~/.apify`.
 
 
-### Push the act to the Apify cloud
+### Push the actor to the Apify cloud
 
 ```bash
 apify push
 ```
 
-This command creates a ZIP archive with your project, uploads it to the Apify cloud and builds an act from it.
+This command creates a ZIP archive with your project, uploads it to the Apify cloud and builds an actor from it.
 
-### Run an act on the Apify cloud
+### Run an actor on the Apify cloud
 
 ```bash
 apify call
 ```
 
-Runs the act corresponding to the current directory on the Apify platform.
+Runs the actor corresponding to the current directory on the Apify platform.
 
 This command can also be used to run other actors, for example:
 
@@ -201,7 +201,7 @@ ARGUMENTS
 
 OPTIONS
   -t, --template=basic|puppeteer|puppeteer_crawler|plain_request_urls_list
-      Template for the act. If not provided, the command will prompt for it.
+      Template for the actor. If not provided, the command will prompt for it.
 
 ```
 ### apify info
@@ -286,7 +286,7 @@ OPTIONS
 
 DESCRIPTION
   The command creates a ZIP with files of the actor from the current directory,
-  uploads it to the Apify platform and builds it. The act settings are read from
+  uploads it to the Apify platform and builds it. The actor settings are read from
   the "apify.json" file in the current directory, but they can be overridden
   using command-line options.
 
@@ -296,7 +296,7 @@ DESCRIPTION
 ```
 ### apify run
 ```text
-Runs the act locally in the current directory.
+Runs the actor locally in the current directory.
 
 USAGE
   $ apify run
@@ -316,9 +316,9 @@ OPTIONS
                            request queue before the run starts.
 
 DESCRIPTION
-  The command runs a Node.js process with the act in the current directory. It
+  The command runs a Node.js process with the actor in the current directory. It
   sets various APIFY_XYZ environment variables in order to provide a working
-  execution environment for the act. For example, this causes the act input, as
+  execution environment for the actor. For example, this causes the actor input, as
   well as all other data in key-value stores, datasets or request queues to be
   stored in the "apify_local" directory, rather than on the Apify platform.
 
