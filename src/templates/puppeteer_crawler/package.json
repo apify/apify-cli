@@ -1,5 +1,5 @@
 {
-    "name": "your-act-name",
+    "name": "your-actor-name",
     "version": "1.0.0",
     "description": "Crawl a number of web pages using headless Chrome and Puppeteer",
     "main": "main.js",

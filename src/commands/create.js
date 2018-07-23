@@ -60,16 +60,16 @@ class CreateCommand extends ApifyCommand {
         if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
         await execWithLog(cmd, cmdArgs, { cwd: actFolderDir });
 
-        outputs.success(`Act '${actName}' was created. To run it, run "cd ${actName}" and "apify run".`);
+        outputs.success(`Actor '${actName}' was created. To run it, run "cd ${actName}" and "apify run".`);
     }
 }
 
-CreateCommand.description = 'Creates a new act project directory from a selected template.';
+CreateCommand.description = 'Creates a new actor project directory from a selected template.';
 
 CreateCommand.flags = {
     template: flagsHelper.string({
         char: 't',
-        description: 'Template for the act. If not provided, the command will prompt for it.',
+        description: 'Template for the actor. If not provided, the command will prompt for it.',
         required: false,
         options: ACTS_TEMPLATE_LIST,
     }),
@@ -79,7 +79,7 @@ CreateCommand.args = [
     {
         name: 'actName',
         required: true,
-        description: 'Name of the act and its directory',
+        description: 'Name of the actor and its directory',
     },
 ];
 

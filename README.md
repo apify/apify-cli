@@ -4,18 +4,17 @@
 <a href="https://travis-ci.org/apifytech/apify-cli"><img src="https://travis-ci.org/apifytech/apify-js.svg" alt="Build Status" style="display:inherit;"></a>
 
 Apify command line client (CLI) helps you to create, develop, build and run
-[Apify Actor](https://www.apify.com/docs/actor) acts from a local computer.
+[Apify actors](https://www.apify.com/docs/actor) from a local computer.
 
-Apify Actor is a serverless computing platform that enables the execution of arbitrary
-web scraping and automation jobs in the cloud. A single job is called an _act_.
+Apify actors enable the execution of arbitrary web scraping and automation jobs in the APify cloud.
 
-While you can develop acts in a code editor directly in the [Apify web application](https://my.apify.com/),
-for more complex projects it is more convenient to develop the acts locally
+While you can develop actors in a code editor directly in the [Apify web application](https://my.apify.com/),
+for more complex projects it is more convenient to develop actors locally
 and only push them to the Apify cloud for execution.
 This is where the CLI comes in.
 
-Note that the acts running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
-you can build your acts in any programming language.
+Note that actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
+you can build your actors in any programming language.
 However, we recommend using JavaScript / Node.js, for which we provide most libraries and support.
 
 
@@ -43,34 +42,34 @@ apify info
 
 The following examples show basic usage of the CLI.
 
-### Create a new act from scratch
+### Create a new actor from scratch
 
 ```bash
 apify create my-hello-world
 ```
 
-First, you will be prompted to select a template with the boilerplate for the act, to help you get started quickly.
+First, you will be prompted to select a template with the boilerplate for the actor, to help you get started quickly.
 The command will create a directory called `my-hello-world` that contains a Node.js project
-for the act and a few configuration files.
+for the actor and a few configuration files.
 
-### Create a new act from existing project
+### Create a new actor from existing project
 
 ```bash
 cd ./my/awesome/project
 apify init
 ```
 
-This command will only set up local act development environment in an existing directory,
+This command will only set up local actor development environment in an existing directory,
 i.e. it will create the `apify.json` file and `apify_local` directory.
 
-### Run the act locally
+### Run the actor locally
 
 ```bash
 cd my-hello-world
 apify run
 ```
 
-This command runs the act on your local machine.
+This command runs the actor on your local machine.
 Now's your chance to develop the logic - or magic :smirk:
 
 ### Login with your Apify account
@@ -85,23 +84,23 @@ your [Apify API token](https://my.apify.com/account#/integrations).
 Note that the command will store the API token and other sensitive information to `~/.apify`.
 
 
-### Push the act to the Apify cloud
+### Push the actor to the Apify cloud
 
 ```bash
 apify push
 ```
 
-This command creates a ZIP archive with your project, uploads it to the Apify cloud and builds an act from it.
+This command creates a ZIP archive with your project, uploads it to the Apify cloud and builds an actor from it.
 
-### Run an act on the Apify cloud
+### Run an actor on the Apify cloud
 
 ```bash
 apify call
 ```
 
-Runs the act corresponding to the current directory on the Apify platform.
+Runs the actor corresponding to the current directory on the Apify platform.
 
-This command can also be used to run other acts, for example:
+This command can also be used to run other actors, for example:
 
 ```bash
 apify call apify/hello-world
@@ -109,8 +108,8 @@ apify call apify/hello-world
 
 ### So what's in this `apify.json` file?
 
-This file associates your local development project with an act on the Apify platform.
-It contains information such as act name or ID, version and build tag.
+This file associates your local development project with an actor on the Apify platform.
+It contains information such as actor name or ID, version and build tag.
 Make sure you commit this file to the Git repository.
 
 
@@ -140,7 +139,7 @@ This section contains printouts of `apify help` for all commands.
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
 ```text
-Apify command line client to help you create, develop, build and run Actor acts.
+Apify command line client to help you create, develop, build and run Apify actors.
 
 VERSION
   apify-cli/0.1.13 darwin-x64 node-v8.4.0
@@ -149,60 +148,60 @@ USAGE
   $ apify [COMMAND]
 
 COMMANDS
-  call    Runs the act remotely on the Apify platform.
-  create  Creates a new act project directory from a selected template.
+  call    Runs the actor remotely on the Apify platform.
+  create  Creates a new actor project directory from a selected template.
   info    Displays information about current Apify settings.
-  init    Initializes an act project in an existing directory.
+  init    Initializes an actor project in an existing directory.
   login   Logs in to the Apify platform using the API token.
   logout  Logs out of the Apify platform.
-  push    Uploads the act to the Apify platform and builds it there.
-  run     Runs the act locally in the current directory.
+  push    Uploads the actor to the Apify platform and builds it there.
+  run     Runs the actor locally in the current directory.
 
 ```
 ### apify call
 ```text
-Runs the act remotely on the Apify platform.
+Runs the actor remotely on the Apify platform.
 
 USAGE
   $ apify call [ACTID]
 
 ARGUMENTS
-  ACTID  Name or ID of the act to run (e.g. "apify/hello-world" or
-         "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the remote act
+  ACTID  Name or ID of the actor to run (e.g. "apify/hello-world" or
+         "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the remote actor
          specified in the "apify.json" file.
 
 OPTIONS
   -b, --build=build                      Tag or number of the build to run (e.g.
                                          "latest" or "1.2.34").
 
-  -m, --memory=memory                    Amount of memory allocated for the act
+  -m, --memory=memory                    Amount of memory allocated for the actor
                                          run, in megabytes.
 
-  -t, --timeout=timeout                  Timeout for the act run in seconds.
+  -t, --timeout=timeout                  Timeout for the actor run in seconds.
                                          Zero value means there is no timeout.
 
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish,
                                          if no value passed, it waits forever.
 
 DESCRIPTION
-  The act is run under your current Apify account, therefore you need to be
-  logged in by calling "apify login". It takes input for the act from default
+  The actor is run under your current Apify account, therefore you need to be
+  logged in by calling "apify login". It takes input for the actor from the default
   local key-value store by default.
 
 ```
 ### apify create
 ```text
-Creates a new act project directory from a selected template.
+Creates a new actor project directory from a selected template.
 
 USAGE
   $ apify create ACTNAME
 
 ARGUMENTS
-  ACTNAME  Name of the act and its directory
+  ACTNAME  Name of the actor and its directory
 
 OPTIONS
   -t, --template=basic|puppeteer|puppeteer_crawler|plain_request_urls_list
-      Template for the act. If not provided, the command will prompt for it.
+      Template for the actor. If not provided, the command will prompt for it.
 
 ```
 ### apify info
@@ -218,13 +217,13 @@ DESCRIPTION
 ```
 ### apify init
 ```text
-Initializes an act project in an existing directory.
+Initializes an actor project in an existing directory.
 
 USAGE
   $ apify init [ACTNAME]
 
 ARGUMENTS
-  ACTNAME  Name of the act. If not provided, you will be prompted for it.
+  ACTNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
   The command only creates the "apify.json" file and the "apify_local" directory
@@ -263,22 +262,22 @@ DESCRIPTION
 ```
 ### apify push
 ```text
-Uploads the act to the Apify platform and builds it there.
+Uploads the actor to the Apify platform and builds it there.
 
 USAGE
   $ apify push [ACTID]
 
 ARGUMENTS
-  ACTID  ID of an existing act on the Apify platform where the files will be
-         pushed. If not provided, the command will create or modify the act with
+  ACTID  ID of an existing actor on the Apify platform where the files will be
+         pushed. If not provided, the command will create or modify the actor with
          the name specified in "apify.json" file.
 
 OPTIONS
   -b, --build-tag=build-tag              Build tag to be applied to the
-                                         successful act build. By default, it is
+                                         successful actor build. By default, it is
                                          taken from the "apify.json" file
 
-  -v, --version-number=version-number    Act version number to which the files
+  -v, --version-number=version-number    Actor version number to which the files
                                          should be pushed. By default, it is
                                          taken from the "apify.json" file.
 
@@ -286,18 +285,18 @@ OPTIONS
                                          if no value passed, it waits forever.
 
 DESCRIPTION
-  The command creates a ZIP with files of the act from the current directory,
-  uploads it to the Apify platform and builds it. The act settings are read from
+  The command creates a ZIP with files of the actor from the current directory,
+  uploads it to the Apify platform and builds it. The actor settings are read from
   the "apify.json" file in the current directory, but they can be overridden
   using command-line options.
 
-  WARNING: If the target act already exists in your Apify account, it will be
+  WARNING: If the target actor already exists in your Apify account, it will be
   overwritten!
 
 ```
 ### apify run
 ```text
-Runs the act locally in the current directory.
+Runs the actor locally in the current directory.
 
 USAGE
   $ apify run
@@ -317,9 +316,9 @@ OPTIONS
                            request queue before the run starts.
 
 DESCRIPTION
-  The command runs a Node.js process with the act in the current directory. It
+  The command runs a Node.js process with the actor in the current directory. It
   sets various APIFY_XYZ environment variables in order to provide a working
-  execution environment for the act. For example, this causes the act input, as
+  execution environment for the actor. For example, this causes the actor input, as
   well as all other data in key-value stores, datasets or request queues to be
   stored in the "apify_local" directory, rather than on the Apify platform.
 

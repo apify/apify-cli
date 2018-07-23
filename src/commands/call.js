@@ -62,9 +62,9 @@ class CallCommand extends ApifyCommand {
     }
 }
 
-CallCommand.description = 'Runs the act remotely on the Apify platform.\n' +
-    'The act is run under your current Apify account, therefore you need to be logged in by calling "apify login". ' +
-    'It takes input for the act from default local key-value store by default.';
+CallCommand.description = 'Runs the actor remotely on the Apify platform.\n' +
+    'The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". ' +
+    'It takes input for the actor from the default local key-value store by default.';
 
 CallCommand.flags = {
     build: flagsHelper.string({
@@ -74,13 +74,13 @@ CallCommand.flags = {
     }),
     timeout: flagsHelper.string({
         char: 't',
-        description: 'Timeout for the act run in seconds. Zero value means there is no timeout.',
+        description: 'Timeout for the actor run in seconds. Zero value means there is no timeout.',
         required: false,
         parse: input => parseInt(input, 10),
     }),
     memory: flagsHelper.string({
         char: 'm',
-        description: 'Amount of memory allocated for the act run, in megabytes.',
+        description: 'Amount of memory allocated for the actor run, in megabytes.',
         required: false,
         parse: input => parseInt(input, 10),
     }),
@@ -95,8 +95,8 @@ CallCommand.args = [
     {
         name: 'actId',
         required: false,
-        description: 'Name or ID of the act to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). ' +
-            'If not provided, the command runs the remote act specified in the "apify.json" file.',
+        description: 'Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). ' +
+            'If not provided, the command runs the remote actor specified in the "apify.json" file.',
     },
 ];
 

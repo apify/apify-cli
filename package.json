@@ -1,7 +1,7 @@
 {
     "name": "apify-cli",
     "version": "0.1.14",
-    "description": "Apify command line client to help you create, develop, build and run Actor acts.",
+    "description": "Apify command line client to help you create, develop, build and run Apify actors.",
     "main": "index.js",
     "scripts": {
         "test": "mocha --timeout 120000 --recursive",

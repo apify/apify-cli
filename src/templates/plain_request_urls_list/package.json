@@ -1,5 +1,5 @@
 {
-    "name": "your-act-name",
+    "name": "your-actor-name",
     "version": "1.0.0",
     "description": "Crawls a list of URLs using a raw HTTP downloader",
     "main": "main.js",

@@ -1,5 +1,5 @@
 {
-    "name": "your-act-name",
+    "name": "your-actor-name",
     "version": "1.0.0",
     "description": "Load a web page using headless Chrome and Puppeteer and extract data from it",
     "main": "main.js",

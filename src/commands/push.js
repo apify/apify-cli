@@ -114,20 +114,20 @@ class PushCommand extends ApifyCommand {
     }
 }
 
-PushCommand.description = 'Uploads the act to the Apify platform and builds it there.\n'
-    + 'The command creates a ZIP with files of the act from the current directory, uploads it to the Apify platform and builds it. The '
-    + 'act settings are read from the "apify.json" file in the current directory, but they can be overridden using command-line options.\n\n'
-    + 'WARNING: If the target act already exists in your Apify account, it will be overwritten!';
+PushCommand.description = 'Uploads the actor to the Apify platform and builds it there.\n'
+    + 'The command creates a ZIP with files of the actor from the current directory, uploads it to the Apify platform and builds it. The '
+    + 'actor settings are read from the "apify.json" file in the current directory, but they can be overridden using command-line options.\n\n'
+    + 'WARNING: If the target actor already exists in your Apify account, it will be overwritten!';
 
 PushCommand.flags = {
     'version-number': flagsHelper.string({
         char: 'v',
-        description: 'Act version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
+        description: 'Actor version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
         required: false,
     }),
     'build-tag': flagsHelper.string({
         char: 'b',
-        description: 'Build tag to be applied to the successful act build. By default, it is taken from the "apify.json" file',
+        description: 'Build tag to be applied to the successful actor build. By default, it is taken from the "apify.json" file',
         required: false,
     }),
     'wait-for-finish': flagsHelper.string({
@@ -141,8 +141,8 @@ PushCommand.args = [
     {
         name: 'actId',
         required: false,
-        description: 'ID of an existing act on the Apify platform where the files will be pushed. ' +
-        'If not provided, the command will create or modify the act with the name specified in "apify.json" file.',
+        description: 'ID of an existing actor on the Apify platform where the files will be pushed. ' +
+        'If not provided, the command will create or modify the actor with the name specified in "apify.json" file.',
     },
 ];
 
