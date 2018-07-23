@@ -4,7 +4,7 @@
 Apify command line client to help you create, develop, build and run Apify actors.
 
 VERSION
-  apify-cli/0.1.13 darwin-x64 node-v8.4.0
+  apify-cli/0.1.15 darwin-x64 node-v8.4.0
 
 USAGE
   $ apify [COMMAND]
@@ -29,15 +29,15 @@ USAGE
 
 ARGUMENTS
   ACTID  Name or ID of the actor to run (e.g. "apify/hello-world" or
-         "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the remote actor
-         specified in the "apify.json" file.
+         "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the remote
+         actor specified in the "apify.json" file.
 
 OPTIONS
   -b, --build=build                      Tag or number of the build to run (e.g.
                                          "latest" or "1.2.34").
 
-  -m, --memory=memory                    Amount of memory allocated for the actor
-                                         run, in megabytes.
+  -m, --memory=memory                    Amount of memory allocated for the
+                                         actor run, in megabytes.
 
   -t, --timeout=timeout                  Timeout for the actor run in seconds.
                                          Zero value means there is no timeout.
@@ -47,8 +47,8 @@ OPTIONS
 
 DESCRIPTION
   The actor is run under your current Apify account, therefore you need to be 
-  logged in by calling "apify login". It takes input for the actor from default 
-  local key-value store by default.
+  logged in by calling "apify login". It takes input for the actor from the 
+  default local key-value store by default.
 
 ```
 ### apify create
@@ -131,13 +131,13 @@ USAGE
 
 ARGUMENTS
   ACTID  ID of an existing actor on the Apify platform where the files will be
-         pushed. If not provided, the command will create or modify the actor with
-         the name specified in "apify.json" file.
+         pushed. If not provided, the command will create or modify the actor
+         with the name specified in "apify.json" file.
 
 OPTIONS
   -b, --build-tag=build-tag              Build tag to be applied to the
-                                         successful actor build. By default, it is
-                                         taken from the "apify.json" file
+                                         successful actor build. By default, it
+                                         is taken from the "apify.json" file
 
   -v, --version-number=version-number    Actor version number to which the files
                                          should be pushed. By default, it is
@@ -148,9 +148,9 @@ OPTIONS
 
 DESCRIPTION
   The command creates a ZIP with files of the actor from the current directory, 
-  uploads it to the Apify platform and builds it. The actor settings are read from 
-  the "apify.json" file in the current directory, but they can be overridden 
-  using command-line options.
+  uploads it to the Apify platform and builds it. The actor settings are read 
+  from the "apify.json" file in the current directory, but they can be 
+  overridden using command-line options.
 
   WARNING: If the target actor already exists in your Apify account, it will be 
   overwritten!
@@ -180,9 +180,9 @@ OPTIONS
 DESCRIPTION
   The command runs a Node.js process with the actor in the current directory. It 
   sets various APIFY_XYZ environment variables in order to provide a working 
-  execution environment for the actor. For example, this causes the actor input, as 
-  well as all other data in key-value stores, datasets or request queues to be 
-  stored in the "apify_local" directory, rather than on the Apify platform.
+  execution environment for the actor. For example, this causes the actor input, 
+  as well as all other data in key-value stores, datasets or request queues to 
+  be stored in the "apify_local" directory, rather than on the Apify platform.
 
 ```
 

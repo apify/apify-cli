@@ -1,3 +1,7 @@
+0.1.15 / 2018-07-23
+===================
+- Rename act to actor
+
 0.1.13 / 2018-07-12
 ===================
 - Add environment variables for enable live view for local actors.
