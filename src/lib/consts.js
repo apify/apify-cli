@@ -56,7 +56,7 @@ exports.DEFAULT_ACT_TEMPLATE = 'basic';
 
 exports.DEFAULT_LOCAL_STORES_ID = 'default';
 
-exports.DEFAULT_CONTAINER_URL = 'localhost';
+exports.DEFAULT_CONTAINER_URL = `http://localhost:${DEFAULT_CONTAINER_PORT}`;
 
 exports.LOCAL_ENV_VARS = {
     [ENV_VARS.LOCAL_EMULATION_DIR]: DEFAULT_LOCAL_EMULATION_DIR,
