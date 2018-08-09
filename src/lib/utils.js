@@ -125,7 +125,7 @@ const argsToCamelCase = (object) => {
 };
 
 /**
- * Create zip file with all act files in current directory, omit files defined in .gitignore and ignore .git folder.
+ * Create zip file with all actor files in current directory, omit files defined in .gitignore and ignore .git folder.
  * NOTE: Zips .file files and .folder/ folders
  * @param zipName
  * @return {Promise<void>}
@@ -143,7 +143,7 @@ const createActZip = async (zipName) => {
 };
 
 /**
- * Get act imput from local store
+ * Get actor input from local store
  * @return {{body: *, contentType: string}}
  */
 const getLocalInput = () => {

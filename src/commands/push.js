@@ -16,17 +16,17 @@ class PushCommand extends ApifyCommand {
         const apifyClient = await getLoggedClientOrThrow();
         const localConfig = getLocalConfigOrThrow();
 
-        // User can override actId of pushing act.
-        // It causes that we push act to this id but actId and name in localConfig will remain same.
+        // User can override actId of pushing actor.
+        // It causes that we push actor to this id but actId and name in localConfig will remain same.
         let actId = args.actId || localConfig.actId;
         const versionNumber = flags.versionNumber || localConfig.version.versionNumber;
         const buildTag = flags.buildTag || localConfig.version.buildTag;
         const waitForFinishMillis = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
 
-        outputs.info(`Deploying act '${localConfig.name}' to Apify.`);
+        outputs.info(`Deploying actor '${localConfig.name}' to Apify.`);
 
         // Create zip
-        outputs.run('Zipping act files');
+        outputs.run('Zipping actor files');
         await createActZip(TEMP_ZIP_FILE_NAME);
 
         // Upload it to Apify.keyValueStores
@@ -41,7 +41,7 @@ class PushCommand extends ApifyCommand {
         });
         fs.unlinkSync(TEMP_ZIP_FILE_NAME);
 
-        // Update act on Apify
+        // Update actor on Apify
         const currentVersion = Object.assign(localConfig.version, {
             versionNumber,
             buildTag,
@@ -51,9 +51,9 @@ class PushCommand extends ApifyCommand {
         // TODO: we really need API endpoint that only updates one version!
         if (actId) {
             const updates = {};
-            // Act was created yet or actId was passed
+            // Actor was created yet or actId was passed
             const actData = await apifyClient.acts.getAct({ actId });
-            if (!actData) throw new Error(`Act with ID '${actId}' does not exist!`);
+            if (!actData) throw new Error(`Cannot find actor with ID '${actId}' in your account.`);
             let foundVersion = false;
             updates.versions = actData.versions.map((version) => {
                 if (version.versionNumber === currentVersion.versionNumber) {
@@ -63,7 +63,7 @@ class PushCommand extends ApifyCommand {
                 return version;
             });
             if (!foundVersion) updates.versions.push(currentVersion);
-            outputs.run('Updating existing act');
+            outputs.run('Updating existing actor');
             const updatedAct = await apifyClient.acts.updateAct({ actId, act: updates });
             console.dir(updatedAct);
         } else {
@@ -73,7 +73,7 @@ class PushCommand extends ApifyCommand {
                 defaultRunOptions: ACTS_TEMPLATES[actTemplate].defaultRunOptions,
                 versions: [currentVersion],
             };
-            outputs.run('Creating act');
+            outputs.run('Creating actor');
             const createdAct = await apifyClient.acts.createAct({ act: newAct });
             actId = (createdAct.username) ? `${createdAct.username}/${createdAct.name}` : createdAct.id;
             // Set up new actId to localConfig
@@ -83,8 +83,8 @@ class PushCommand extends ApifyCommand {
 
         await setLocalConfig(Object.assign(localConfig, { version: currentVersion }));
 
-        // Build act on Apify and wait for it finishes
-        outputs.run('Building act');
+        // Build actor on Apify and wait for build finish
+        outputs.run('Building actor');
         let build = await apifyClient.acts.buildAct({
             actId,
             version: versionNumber,
@@ -92,7 +92,7 @@ class PushCommand extends ApifyCommand {
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         });
 
-        outputs.link('Act build detail', `https://my.apify.com/acts/${build.actId}#/builds/${build.buildNumber}`);
+        outputs.link('Actor build detail', `https://my.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
 
         try {
             await outputLogStream(build.id, waitForFinishMillis);
@@ -105,9 +105,9 @@ class PushCommand extends ApifyCommand {
         console.dir(build);
 
         if (build.status === ACT_TASK_STATUSES.SUCCEEDED) {
-            outputs.success('Act was deployed to Apify platform and built there.');
+            outputs.success('Actor was deployed to Apify platform and built there.');
         } else if (build.status === ACT_TASK_STATUSES.RUNNING) {
-            outputs.warning('Build still running!');
+            outputs.warning('Build is still running!');
         } else {
             outputs.error('Build failed!');
         }

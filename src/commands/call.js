@@ -29,18 +29,18 @@ class CallCommand extends ApifyCommand {
 
         const apifyClient = await getLoggedClientOrThrow();
 
-        outputs.run(`Calling act ${runOpts.actId}`);
+        outputs.run(`Calling actor ${runOpts.actId}`);
 
         let run;
         try {
             run = await apifyClient.acts.runAct(runOpts);
         } catch (err) {
             // TODO: Better error message in apify-client-js
-            if (err.type === 'record-not-found') throw new Error(`Act ${runOpts.actId} not found!`);
+            if (err.type === 'record-not-found') throw new Error(`Actor ${runOpts.actId} not found!`);
             else throw err;
         }
 
-        outputs.link('Act run detail', `https://my.apify.com/acts/${run.actId}#/runs/${run.id}`);
+        outputs.link('Actor run detail', `https://my.apify.com/actors/${run.actId}#/runs/${run.id}`);
 
         try {
             await outputLogStream(run.id, waitForFinishMillis);
@@ -53,11 +53,11 @@ class CallCommand extends ApifyCommand {
         console.dir(run);
 
         if (run.status === ACT_TASK_STATUSES.SUCCEEDED) {
-            outputs.success('Act finished!');
+            outputs.success('Actor finished.');
         } else if (run.status === ACT_TASK_STATUSES.RUNNING) {
-            outputs.warning('Act still running!');
+            outputs.warning('Actor is still running!');
         } else {
-            outputs.error('Act failed!');
+            outputs.error('Actor failed!');
         }
     }
 }
