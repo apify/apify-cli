@@ -1,8 +1,6 @@
 const os = require('os');
 const path = require('path');
-const { DEFAULT_LOCAL_EMULATION_DIR, ENV_VARS,
-    DEFAULT_PROXY_HOSTNAME, DEFAULT_PROXY_PORT, DEFAULT_CONTAINER_PORT,
-    LOCAL_EMULATION_SUBDIRS, KEY_VALUE_STORE_KEYS } = require('apify-shared/consts');
+const { KEY_VALUE_STORE_KEYS } = require('apify-shared/consts');
 
 // TODO: The templates should go to apify-shared, and the JSON with all info should be generated from the directories and files in the template dir,
 // the name and description should be taken from package.json files in those dirs so that we edit it in a single location!
@@ -53,21 +51,6 @@ exports.ACTS_TEMPLATES = {
 exports.ACTS_TEMPLATE_LIST = Object.keys(exports.ACTS_TEMPLATES);
 
 exports.DEFAULT_ACT_TEMPLATE = 'basic';
-
-exports.DEFAULT_LOCAL_STORES_ID = 'default';
-
-exports.DEFAULT_CONTAINER_URL = `http://localhost:${DEFAULT_CONTAINER_PORT}`;
-
-exports.LOCAL_ENV_VARS = {
-    [ENV_VARS.LOCAL_EMULATION_DIR]: DEFAULT_LOCAL_EMULATION_DIR,
-    [ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID]: exports.DEFAULT_LOCAL_STORES_ID,
-    [ENV_VARS.DEFAULT_DATASET_ID]: exports.DEFAULT_LOCAL_STORES_ID,
-    [ENV_VARS.DEFAULT_REQUEST_QUEUE_ID]: exports.DEFAULT_LOCAL_STORES_ID,
-    [ENV_VARS.PROXY_HOSTNAME]: DEFAULT_PROXY_HOSTNAME,
-    [ENV_VARS.PROXY_PORT]: DEFAULT_PROXY_PORT.toString(),
-    [ENV_VARS.CONTAINER_PORT]: DEFAULT_CONTAINER_PORT.toString(),
-    [ENV_VARS.CONTAINER_URL]: exports.DEFAULT_CONTAINER_URL,
-};
 
 exports.EMPTY_LOCAL_CONFIG = {
     name: null,

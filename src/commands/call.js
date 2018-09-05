@@ -1,6 +1,6 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { ACT_TASK_STATUSES, ACT_TASK_TYPES } = require('apify-shared/consts');
+const { ACT_TASK_STATUSES } = require('apify-shared/consts');
 const { getLocalConfig, getLoggedClientOrThrow, getLocalInput, outputLogStream } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
@@ -17,7 +17,9 @@ class CallCommand extends ApifyCommand {
             actId: args.actId || localConfig.actId,
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         };
-        const waitForFinishMillis = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
+        const waitForFinishMillis = Number.isNaN(flags.waitForFinish)
+            ? undefined
+            : parseInt(flags.waitForFinish, 10) * 1000;
 
         ['build', 'timeout', 'memory'].forEach((opt) => {
             if (flags[opt]) runOpts[opt] = flags[opt];

@@ -1,11 +1,12 @@
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const fs = require('fs');
+const path = require('path');
 const rimraf = require('rimraf');
 const Promise = require('bluebird');
 
-const updateLocalJson = async (path, updateAttrs = {}, nestedObjectAttr) => {
-    const currentObject = await loadJson(path);
+const updateLocalJson = async (jsonFilePath, updateAttrs = {}, nestedObjectAttr) => {
+    const currentObject = await loadJson(jsonFilePath);
     let newObject;
 
     if (nestedObjectAttr) {
@@ -15,18 +16,36 @@ const updateLocalJson = async (path, updateAttrs = {}, nestedObjectAttr) => {
         newObject = Object.assign({}, currentObject, updateAttrs);
     }
 
-    await writeJson(path, newObject);
+    await writeJson(jsonFilePath, newObject);
 };
 
-const createFolderSync = (folderPath) => {
-    if (!fs.existsSync(folderPath)) fs.mkdirSync(folderPath);
+/**
+ * If you pass /foo/bar as rootPath and /baz/raz as folderPath then it ensures that following folders exists:
+ *
+ * /foo/bar/baz
+ * /foo/bar/baz/raz
+ *
+ * If you pass only one parameter then rootPath is considered to be '.'
+ */
+const ensureFolderExistsSync = (rootPath, folderPath) => {
+    if (!folderPath) {
+        folderPath = rootPath;
+        rootPath = '.';
+    }
 
-    return folderPath;
+    const parts = folderPath.split(path.sep);
+    parts.reduce((currentPath, currentDir) => {
+        currentPath = path.join(currentPath, currentDir);
+
+        if (!fs.existsSync(currentPath)) fs.mkdirSync(currentPath);
+
+        return currentPath;
+    }, rootPath);
 };
 
-const rimrafPromised = (path) => {
+const rimrafPromised = (pathToBeRemoved) => {
     return new Promise((resolve, reject) => {
-        rimraf(path, (err) => {
+        rimraf(pathToBeRemoved, (err) => {
             if (err) reject(err);
             resolve();
         });
@@ -36,11 +55,11 @@ const rimrafPromised = (path) => {
 const fileStat = Promise.promisify(fs.stat);
 const unlinkFile = Promise.promisify(fs.unlink);
 
-const deleteFile = async (path) => {
-    const stat = await fileStat(path);
+const deleteFile = async (filePath) => {
+    const stat = await fileStat(filePath);
     if (stat.isFile()) {
-        await unlinkFile(path);
+        await unlinkFile(filePath);
     }
 };
 
-module.exports = { updateLocalJson, createFolderSync, rimrafPromised, deleteFile };
+module.exports = { updateLocalJson, ensureFolderExistsSync, rimrafPromised, deleteFile };

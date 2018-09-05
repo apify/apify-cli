@@ -1,21 +1,43 @@
 const path = require('path');
 const fs = require('fs');
-const mime = require('mime')
+const mime = require('mime');
 const globby = require('globby');
 const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
+const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS } = require('apify-shared/consts');
 const https = require('https');
 const ApifyClient = require('apify-client');
 const { warning } = require('./outputs');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH,
-    LOCAL_CONFIG_NAME, DEFAULT_LOCAL_STORES_ID, INPUT_FILE_REG_EXP } = require('./consts');
-const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR, ACT_TASK_TYPES, ACT_TASK_TERMINAL_STATUSES } = require('apify-shared/consts');
-const { createFolderSync, updateLocalJson, rimrafPromised, deleteFile } = require('./files');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_NAME, INPUT_FILE_REG_EXP } = require('./consts');
+const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
 const { spawnSync } = require('child_process');
 const semver = require('semver');
 const isOnline = require('is-online');
-const _ = require('underscore');
+
+const getLocalStorageDir = () => {
+    const envVar = ENV_VARS.LOCAL_STORAGE_DIR;
+
+    return process.env[envVar] || LOCAL_ENV_VARS[envVar];
+};
+const getLocalKeyValueStorePath = (storeId) => {
+    const envVar = ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
+    const storeDir = storeId || process.env[envVar] || LOCAL_ENV_VARS[envVar];
+
+    return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.keyValueStores, storeDir);
+};
+const getLocalDatasetPath = (storeId) => {
+    const envVar = ENV_VARS.DEFAULT_DATASET_ID;
+    const storeDir = storeId || process.env[envVar] || LOCAL_ENV_VARS[envVar];
+
+    return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.datasets, storeDir);
+};
+const getLocalRequestQueuePath = (storeId) => {
+    const envVar = ENV_VARS.DEFAULT_REQUEST_QUEUE_ID;
+    const storeDir = storeId || process.env[envVar] || LOCAL_ENV_VARS[envVar];
+
+    return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.requestQueues, storeDir);
+};
 
 /**
  * Returns object from auth file or empty object.
@@ -92,20 +114,16 @@ const setLocalConfig = async (localConfig, actDir) => {
 
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
-    const localDir = createFolderSync(path.join(actDir, DEFAULT_LOCAL_EMULATION_DIR));
-    const datasetsDir = createFolderSync(path.join(localDir, LOCAL_EMULATION_SUBDIRS.datasets));
-    const requestQueuesDir = createFolderSync(path.join(localDir, LOCAL_EMULATION_SUBDIRS.keyValueStores));
-    const keyValueStoresDir = createFolderSync(path.join(localDir, LOCAL_EMULATION_SUBDIRS.requestQueues));
-    createFolderSync(path.join(datasetsDir, DEFAULT_LOCAL_STORES_ID));
-    createFolderSync(path.join(requestQueuesDir, DEFAULT_LOCAL_STORES_ID));
-    createFolderSync(path.join(keyValueStoresDir, DEFAULT_LOCAL_STORES_ID));
+    ensureFolderExistsSync(actDir, getLocalDatasetPath());
+    ensureFolderExistsSync(actDir, getLocalRequestQueuePath());
+    ensureFolderExistsSync(actDir, getLocalKeyValueStorePath());
 
     // Update gitignore
     const gitingore = path.join(actDir, '.gitignore');
     if (fs.existsSync(gitingore)) {
-        fs.writeFileSync(gitingore, `\n${DEFAULT_LOCAL_EMULATION_DIR}`, { flag: 'a' });
+        fs.writeFileSync(gitingore, `\n${LOCAL_ENV_VARS[ENV_VARS.LOCAL_STORAGE_DIR]}`, { flag: 'a' });
     } else {
-        fs.writeFileSync(gitingore, `${DEFAULT_LOCAL_EMULATION_DIR}\nnode_modules`, { flag: 'w' });
+        fs.writeFileSync(gitingore, `${LOCAL_ENV_VARS[ENV_VARS.LOCAL_STORAGE_DIR]}\nnode_modules`, { flag: 'w' });
     }
 };
 
@@ -147,8 +165,7 @@ const createActZip = async (zipName) => {
  * @return {{body: *, contentType: string}}
  */
 const getLocalInput = () => {
-    const defaultLocalStorePath = path.join(process.cwd(), DEFAULT_LOCAL_EMULATION_DIR,
-        LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID);
+    const defaultLocalStorePath = getLocalKeyValueStorePath();
     const files = fs.readdirSync(defaultLocalStorePath);
     const inputFileName = files.find(file => !!file.match(INPUT_FILE_REG_EXP));
 
@@ -174,7 +191,7 @@ const checkLatestVersion = async () => {
         if (!await isOnline({ timeout: 500 })) return;
 
         const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
-        const currentVersion = require('../../package.json').version;
+        const currentVersion = require('../../package.json').version; //  eslint-disable-line
 
         if (semver.gt(latestVersion, currentVersion)) {
             warning('You are using an old version of apify-cli. Run "npm update apify-cli -g" to install the latest version.');
@@ -184,30 +201,27 @@ const checkLatestVersion = async () => {
     }
 };
 
-const purgeDefaultQueue = async (cwd) => {
-    const defaultQueuesDir = path.join(cwd, DEFAULT_LOCAL_EMULATION_DIR,
-        LOCAL_EMULATION_SUBDIRS.requestQueues, DEFAULT_LOCAL_STORES_ID);
-    if (fs.existsSync(defaultQueuesDir)) {
-        await rimrafPromised(defaultQueuesDir);
+const purgeDefaultQueue = async () => {
+    const defaultQueuesPath = getLocalRequestQueuePath();
+    if (fs.existsSync(defaultQueuesPath)) {
+        await rimrafPromised(defaultQueuesPath);
     }
 };
 
-const purgeDefaultDataset = async (cwd) => {
-    const defaultDatasetDir = path.join(cwd, DEFAULT_LOCAL_EMULATION_DIR,
-        LOCAL_EMULATION_SUBDIRS.datasets, DEFAULT_LOCAL_STORES_ID);
-    if (fs.existsSync(defaultDatasetDir)) {
-        await rimrafPromised(defaultDatasetDir);
+const purgeDefaultDataset = async () => {
+    const defaultDatasetPath = getLocalDatasetPath();
+    if (fs.existsSync(defaultDatasetPath)) {
+        await rimrafPromised(defaultDatasetPath);
     }
 };
 
-const purgeDefaultKeyValueStore = async (cwd) => {
-    const defaultKeyValueStoreDir = path.join(cwd, DEFAULT_LOCAL_EMULATION_DIR,
-        LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID);
-    const filesToDelete = fs.readdirSync(defaultKeyValueStoreDir);
+const purgeDefaultKeyValueStore = async () => {
+    const defaultKeyValueStorePath = getLocalKeyValueStorePath();
+    const filesToDelete = fs.readdirSync(defaultKeyValueStorePath);
 
     const deletePromises = [];
     filesToDelete.forEach((file) => {
-        if (!file.match(INPUT_FILE_REG_EXP)) deletePromises.push(deleteFile(path.join(defaultKeyValueStoreDir, file)));
+        if (!file.match(INPUT_FILE_REG_EXP)) deletePromises.push(deleteFile(path.join(defaultKeyValueStorePath, file)));
     });
 
     await Promise.all(deletePromises);
@@ -261,4 +275,7 @@ module.exports = {
     purgeDefaultDataset,
     purgeDefaultKeyValueStore,
     outputLogStream,
+    getLocalKeyValueStorePath,
+    getLocalDatasetPath,
+    getLocalRequestQueuePath,
 };

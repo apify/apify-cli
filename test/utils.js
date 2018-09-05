@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const fs = require('fs');
 const path = require('path');
-const { createFolderSync, rimrafPromised } = require('../src/lib/files');
+const { ensureFolderExistsSync, rimrafPromised } = require('../src/lib/files');
 const { argsToCamelCase, createActZip } = require('../src/lib/utils');
 const exec = require('../src/lib/exec');
 
@@ -36,10 +36,10 @@ describe('Utils', () => {
     describe('createActZip()', () => {
         before(async () => {
             // Create folder structure
-            if (!fs.existsSync(TEST_DIR)) createFolderSync(TEST_DIR);
+            if (!fs.existsSync(TEST_DIR)) ensureFolderExistsSync(TEST_DIR);
             process.chdir(TEST_DIR);
 
-            FOLDERS.concat(FOLDERS_TO_IGNORE).forEach(folder => createFolderSync(folder));
+            FOLDERS.concat(FOLDERS_TO_IGNORE).forEach(folder => ensureFolderExistsSync(folder));
             FILES.concat(FILES_TO_IGNORE, FILES_IN_INGRONED_DIR).forEach(file =>
                 fs.writeFileSync(file, Math.random().toString(36).substring(7), { flag: 'w' }));
 
@@ -49,7 +49,7 @@ describe('Utils', () => {
         it('should create zip without files in .gitignore', async () => {
             const zipName = 'test.zip';
             const tempFolder = 'unzip_temp';
-            createFolderSync(tempFolder);
+            ensureFolderExistsSync(tempFolder);
             await createActZip(zipName);
 
             // Unzip with same command as on Apify worker
