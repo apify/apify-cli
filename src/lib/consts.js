@@ -52,6 +52,8 @@ exports.ACTS_TEMPLATE_LIST = Object.keys(exports.ACTS_TEMPLATES);
 
 exports.DEFAULT_ACT_TEMPLATE = 'basic';
 
+exports.DEFAULT_LOCAL_STORAGE_DIR = 'apify_storage';
+
 exports.EMPTY_LOCAL_CONFIG = {
     name: null,
     actId: null,

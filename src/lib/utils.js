@@ -9,7 +9,7 @@ const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS } = require('apify-share
 const https = require('https');
 const ApifyClient = require('apify-client');
 const { warning } = require('./outputs');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_NAME, INPUT_FILE_REG_EXP } = require('./consts');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_NAME, INPUT_FILE_REG_EXP, DEFAULT_LOCAL_STORAGE_DIR } = require('./consts');
 const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
 const { spawnSync } = require('child_process');
 const semver = require('semver');
@@ -18,7 +18,7 @@ const isOnline = require('is-online');
 const getLocalStorageDir = () => {
     const envVar = ENV_VARS.LOCAL_STORAGE_DIR;
 
-    return process.env[envVar] || LOCAL_ENV_VARS[envVar];
+    return process.env[envVar] || DEFAULT_LOCAL_STORAGE_DIR;
 };
 const getLocalKeyValueStorePath = (storeId) => {
     const envVar = ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
@@ -121,9 +121,9 @@ const setLocalEnv = async (actDir) => {
     // Update gitignore
     const gitingore = path.join(actDir, '.gitignore');
     if (fs.existsSync(gitingore)) {
-        fs.writeFileSync(gitingore, `\n${LOCAL_ENV_VARS[ENV_VARS.LOCAL_STORAGE_DIR]}`, { flag: 'a' });
+        fs.writeFileSync(gitingore, `\n${LOCAL_ENV_VARS[DEFAULT_LOCAL_STORAGE_DIR]}`, { flag: 'a' });
     } else {
-        fs.writeFileSync(gitingore, `${LOCAL_ENV_VARS[ENV_VARS.LOCAL_STORAGE_DIR]}\nnode_modules`, { flag: 'w' });
+        fs.writeFileSync(gitingore, `${LOCAL_ENV_VARS[DEFAULT_LOCAL_STORAGE_DIR]}\nnode_modules`, { flag: 'w' });
     }
 };
 
