@@ -121,9 +121,9 @@ const setLocalEnv = async (actDir) => {
     // Update gitignore
     const gitingore = path.join(actDir, '.gitignore');
     if (fs.existsSync(gitingore)) {
-        fs.writeFileSync(gitingore, `\n${LOCAL_ENV_VARS[DEFAULT_LOCAL_STORAGE_DIR]}`, { flag: 'a' });
+        fs.writeFileSync(gitingore, `\n${DEFAULT_LOCAL_STORAGE_DIR}`, { flag: 'a' });
     } else {
-        fs.writeFileSync(gitingore, `${LOCAL_ENV_VARS[DEFAULT_LOCAL_STORAGE_DIR]}\nnode_modules`, { flag: 'w' });
+        fs.writeFileSync(gitingore, `${DEFAULT_LOCAL_STORAGE_DIR}\nnode_modules`, { flag: 'w' });
     }
 };
 
