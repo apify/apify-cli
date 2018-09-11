@@ -3,9 +3,11 @@ const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
 const execWithLog = require('../lib/exec');
-const { MAIN_FILE } = require('../lib/consts');
+const { MAIN_FILE, DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
 const { ENV_VARS } = require('apify-shared/consts');
-const { getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore, purgeDefaultDataset, getLocalConfigOrThrow } = require('../lib/utils');
+const {
+    getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore, purgeDefaultDataset, getLocalConfigOrThrow,
+} = require('../lib/utils');
 const { info } = require('../lib/outputs');
 
 class RunCommand extends ApifyCommand {
@@ -39,7 +41,9 @@ class RunCommand extends ApifyCommand {
         }
 
         // Attach env vars from local config files
-        const localEnvVars = {};
+        const localEnvVars = {
+            [ENV_VARS.LOCAL_STORAGE_DIR]: DEFAULT_LOCAL_STORAGE_DIR,
+        };
         if (proxy && proxy.password) localEnvVars[ENV_VARS.PROXY_PASSWORD] = proxy.password;
         if (userId) localEnvVars[ENV_VARS.USER_ID] = userId;
         if (token) localEnvVars[ENV_VARS.TOKEN] = token;
