@@ -21,7 +21,7 @@ However, we recommend using JavaScript / Node.js, for which we provide most libr
 
 ## Installation
 
-First, make sure you have [Node.js](https://nodejs.org) version 7.10 or higher installed on your computer:
+First, make sure you have [Node.js](https://nodejs.org) version 8 or higher installed on your computer:
 
 ```bash
 node --version
