@@ -6,7 +6,7 @@
 Apify command line client (CLI) helps you to create, develop, build and run
 [Apify actors](https://www.apify.com/docs/actor) from a local computer.
 
-Apify actors enable the execution of arbitrary web scraping and automation jobs in the APify cloud.
+Apify actors enable the execution of arbitrary web scraping and automation jobs in the Apify cloud.
 
 While you can develop actors in a code editor directly in the [Apify web application](https://my.apify.com/),
 for more complex projects it is more convenient to develop actors locally
