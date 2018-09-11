@@ -10,6 +10,7 @@ Apify actors enable the execution of arbitrary web scraping and automation jobs 
 
 While you can develop actors in a code editor directly in the [Apify web application](https://my.apify.com/),
 for more complex projects it is more convenient to develop actors locally
+using the <a href="https://github.com/apifytech/apify-js">Apify SDK</a>
 and only push them to the Apify cloud for execution.
 This is where the CLI comes in.
 
