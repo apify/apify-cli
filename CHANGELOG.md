@@ -1,3 +1,7 @@
+0.1.16 / 2018-09-12
+===================
+- Updated NPM dependencies, npm-shrinkwrap.json replaced with package-lock.json
+
 0.1.15 / 2018-07-23
 ===================
 - Rename act to actor
