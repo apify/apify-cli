@@ -20,6 +20,13 @@ if [ -z "${BRANCH_UP_TO_DATE}" ]; then
     exit 1
 fi
 
+read -p "Have you checked the code templates use the latest version of apify package? (press Y if yes): " -n 1 -r
+echo    # (optional) move to a new line
+if ! [[ $REPLY =~ ^[Yy]$ ]]; then
+    exit 1
+fi
+
+
 echo "Pushing to git ..."
 git push
 
