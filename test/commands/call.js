@@ -8,16 +8,19 @@ const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
-const ACT_NAME = `my-act-${Math.random().replace('.', '')}`;
+const ACT_NAME = `my-act-${Date.now()}`;
 const EXPECTED_OUTPUT = {
     test: Math.random(),
 };
 const EXPECTED_INPUT = {
     myTestInput: Math.random(),
 };
-EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
+const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
 
 describe('apify call', () => {
+    console.log(`ACT_NAME: ${ACT_NAME}`);
+
+
     before(async function () {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
             // Skip tests if user used CLI on local, it can break local environment!
