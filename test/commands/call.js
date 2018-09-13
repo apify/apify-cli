@@ -4,9 +4,9 @@ const fs = require('fs');
 const command = require('@oclif/command');
 const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
-const { GLOBAL_CONFIGS_FOLDER, DEFAULT_LOCAL_STORES_ID } = require('../../src/lib/consts');
+const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
-const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR } = require('apify-shared/consts');
+const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
 const ACT_NAME = `my-act-${Date.now()}`;
 const EXPECTED_OUTPUT = {
@@ -38,15 +38,14 @@ describe('apify call', () => {
         `;
         fs.writeFileSync('main.js', actCode, { flag: 'w' });
 
-        const inputFile = path.join(...[DEFAULT_LOCAL_EMULATION_DIR,
-            LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID, 'INPUT.json']);
+        const inputFile = path.join(getLocalKeyValueStorePath(), 'INPUT.json');
 
         fs.writeFileSync(inputFile, JSON.stringify(EXPECTED_INPUT), { flag: 'w' });
 
         await command.run(['push']);
     });
 
-    it('call without actId', async () => {
+    it('without actId', async () => {
         await command.run(['call']);
         const { actId } = loadJson.sync('apify.json');
         const runs = await testUserClient.acts.listRuns({ actId });

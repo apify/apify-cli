@@ -19,7 +19,7 @@ describe('apify login and logout', () => {
         sinon.spy(console, 'log');
     });
 
-    it('login should end with Error', async () => {
+    it('should end with Error', async () => {
         const { token } = badUserClient.getOptions();
         await command.run(['login', '--token', token]);
 
@@ -27,7 +27,7 @@ describe('apify login and logout', () => {
         expect(console.log.args[0][0]).to.include('Error:');
     });
 
-    it('login and logout should work', async () => {
+    it('should work', async () => {
         const { token } = testUserClient.getOptions();
         await command.run(['login', '--token', token]);
 

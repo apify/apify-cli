@@ -4,7 +4,7 @@
     "description": "Load a web page using headless Chrome and Puppeteer and extract data from it",
     "main": "main.js",
     "dependencies": {
-        "apify": "^0.6.4"
+        "apify": "^0.7.0"
     },
     "devDependencies": {},
     "scripts": {

@@ -3,7 +3,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow, outputLogStream } = require('../lib/utils');
 const { createActZip } = require('../lib/utils');
-const { ACT_TASK_STATUSES, ACT_TASK_TYPES } = require('apify-shared/consts');
+const { ACT_TASK_STATUSES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES } = require('../lib/consts');
 const outputs = require('../lib/outputs');
 
@@ -21,7 +21,9 @@ class PushCommand extends ApifyCommand {
         let actId = args.actId || localConfig.actId;
         const versionNumber = flags.versionNumber || localConfig.version.versionNumber;
         const buildTag = flags.buildTag || localConfig.version.buildTag;
-        const waitForFinishMillis = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
+        const waitForFinishMillis = Number.isNaN(flags.waitForFinish)
+            ? undefined
+            : parseInt(flags.waitForFinish, 10) * 1000;
 
         outputs.info(`Deploying actor '${localConfig.name}' to Apify.`);
 

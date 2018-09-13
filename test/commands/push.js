@@ -38,7 +38,7 @@ describe('apify push', () => {
         sinon.spy(console, 'log');
     });
 
-    it('push without actId', async () => {
+    it('should work without actId', async () => {
         await command.run(['push']);
 
         const apifyJson = loadJson.sync('apify.json');
@@ -58,7 +58,7 @@ describe('apify push', () => {
         expect(expectedApifyJson).to.be.eql(apifyJson);
     });
 
-    it('push with actId', async () => {
+    it('should work with actId', async () => {
         let testAct = await testUserClient.acts.createAct({ act: TEST_ACT });
         const beforeApifyJson = loadJson.sync('apify.json');
 
