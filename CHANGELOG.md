@@ -1,3 +1,8 @@
+0.2.0 / 2018-09-12
+==================
+- WARNING: Version 0.2.0 of Apify CLI supports only version 0.7.0 of API SDK or newer as management of environment variables
+  has been changed according to Apify SDK version 0.7.0.
+
 0.1.18 / 2018-09-12
 ===================
 - Updated NPM dependencies, npm-shrinkwrap.json replaced with package-lock.json
