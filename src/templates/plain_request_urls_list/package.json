@@ -4,7 +4,7 @@
     "description": "Crawls a list of URLs using a raw HTTP downloader",
     "main": "main.js",
     "dependencies": {
-        "apify": "^0.5.13",
+        "apify": "^0.7.0",
         "request-promise": "^4.2.2"
     },
     "devDependencies": {},

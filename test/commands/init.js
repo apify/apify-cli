@@ -14,7 +14,7 @@ describe('apify init', () => {
         process.chdir(actName);
     });
 
-    it('create basic structure', async () => {
+    it('correctly creates basic structure', async () => {
         await command.run(['init', actName]);
 
         const apifyJsonPath = 'apify.json';

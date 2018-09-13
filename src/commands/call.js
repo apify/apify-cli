@@ -1,6 +1,6 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { ACT_TASK_STATUSES, ACT_TASK_TYPES } = require('apify-shared/consts');
+const { ACT_TASK_STATUSES } = require('apify-shared/consts');
 const { getLocalConfig, getLoggedClientOrThrow, getLocalInput, outputLogStream } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
@@ -17,7 +17,9 @@ class CallCommand extends ApifyCommand {
             actId: args.actId || localConfig.actId,
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         };
-        const waitForFinishMillis = isNaN(flags.waitForFinish) ? undefined : parseInt(flags.waitForFinish, 10) * 1000;
+        const waitForFinishMillis = Number.isNaN(flags.waitForFinish)
+            ? undefined
+            : parseInt(flags.waitForFinish, 10) * 1000;
 
         ['build', 'timeout', 'memory'].forEach((opt) => {
             if (flags[opt]) runOpts[opt] = flags[opt];
@@ -29,18 +31,18 @@ class CallCommand extends ApifyCommand {
 
         const apifyClient = await getLoggedClientOrThrow();
 
-        outputs.run(`Calling act ${runOpts.actId}`);
+        outputs.run(`Calling actor ${runOpts.actId}`);
 
         let run;
         try {
             run = await apifyClient.acts.runAct(runOpts);
         } catch (err) {
             // TODO: Better error message in apify-client-js
-            if (err.type === 'record-not-found') throw new Error(`Act ${runOpts.actId} not found!`);
+            if (err.type === 'record-not-found') throw new Error(`Actor ${runOpts.actId} not found!`);
             else throw err;
         }
 
-        outputs.link('Act run detail', `https://my.apify.com/acts/${run.actId}#/runs/${run.id}`);
+        outputs.link('Actor run detail', `https://my.apify.com/actors/${run.actId}#/runs/${run.id}`);
 
         try {
             await outputLogStream(run.id, waitForFinishMillis);
@@ -53,11 +55,11 @@ class CallCommand extends ApifyCommand {
         console.dir(run);
 
         if (run.status === ACT_TASK_STATUSES.SUCCEEDED) {
-            outputs.success('Act finished!');
+            outputs.success('Actor finished.');
         } else if (run.status === ACT_TASK_STATUSES.RUNNING) {
-            outputs.warning('Act still running!');
+            outputs.warning('Actor is still running!');
         } else {
-            outputs.error('Act failed!');
+            outputs.error('Actor failed!');
         }
     }
 }

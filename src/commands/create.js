@@ -19,8 +19,8 @@ class CreateCommand extends ApifyCommand {
 
         // Check proper format of actName
         if (!DNS_SAFE_NAME_REGEX.test(actName)) {
-            throw new Error('Name of your act, ' +
-                'must be a DNS hostname-friendly string(e.g. my-newest-act).');
+            throw new Error('Name of your actor, ' +
+                'must be a DNS hostname-friendly string(e.g. my-newest-actor).');
         }
 
         if (!template) {
@@ -28,7 +28,7 @@ class CreateCommand extends ApifyCommand {
             const answer = await inquirer.prompt([{
                 type: 'list',
                 name: 'template',
-                message: 'Select template for the act',
+                message: 'Select template for the actor',
                 default: DEFAULT_ACT_TEMPLATE,
                 choices,
             }]);
@@ -37,13 +37,13 @@ class CreateCommand extends ApifyCommand {
         const cwd = process.cwd();
         const actFolderDir = path.join(cwd, actName);
 
-        // Create act folder structure
+        // Create actor directory structure
         try {
             fs.mkdirSync(actFolderDir);
         } catch (err) {
             if (err.code && err.code === 'EEXIST') {
-                outputs.error(`Cannot create new act, directory '${actName}' already exists. ` +
-                    'You can use "apify init" to create a local act environment inside an existing directory.');
+                outputs.error(`Cannot create new actor, directory '${actName}' already exists. ` +
+                    'You can use "apify init" to create a local actor environment inside an existing directory.');
                 return;
             }
             throw err;
@@ -53,7 +53,7 @@ class CreateCommand extends ApifyCommand {
         await setLocalEnv(actFolderDir);
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actName });
 
-        // Run npm install in act dir
+        // Run npm install in actor dir
         // NOTE: For window we have to call npm.cmd instead of npm, otherwise it fails
         const cmd = /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
         const cmdArgs = ['install'];

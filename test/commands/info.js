@@ -18,7 +18,7 @@ describe('apify info', () => {
         sinon.spy(console, 'log');
     });
 
-    it('info should end with Error', async () => {
+    it('should end with Error', async () => {
         try {
             await command.run(['info']);
         } catch (e) {
@@ -26,7 +26,7 @@ describe('apify info', () => {
         }
     });
 
-    it('info should work', async () => {
+    it('should work', async () => {
         const { token } = testUserClient.getOptions();
         await command.run(['login', '--token', token]);
         await command.run(['info']);

@@ -2,5 +2,6 @@
 .DS_Store
 node_modules
 test-acts
+test-actors
 local_test.sh
 _mytests

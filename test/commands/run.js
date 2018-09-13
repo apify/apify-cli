@@ -7,8 +7,9 @@ const writeJson = require('write-json-file');
 const loadJson = require('load-json-file');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
-const { LOCAL_ENV_VARS, DEFAULT_LOCAL_STORES_ID } = require('../../src/lib/consts');
-const { LOCAL_EMULATION_SUBDIRS, DEFAULT_LOCAL_EMULATION_DIR, ENV_VARS } = require('apify-shared/consts');
+const { ENV_VARS } = require('apify-shared/consts');
+const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath } = require('../../src/lib/utils');
+
 
 const actName = 'my-act';
 
@@ -32,7 +33,7 @@ describe('apify run', () => {
 
         Apify.main(async () => {
             const input = await Apify.getValue('INPUT');
-                
+
             const output = ${JSON.stringify(expectOutput)};
             await Apify.setValue('OUTPUT', output);
             console.log('Done.');
@@ -43,10 +44,7 @@ describe('apify run', () => {
         await command.run(['run']);
 
         // check act output
-        const actOutputPath = path.join(...[DEFAULT_LOCAL_EMULATION_DIR,
-            LOCAL_EMULATION_SUBDIRS.keyValueStores,
-            DEFAULT_LOCAL_STORES_ID,
-            'OUTPUT.json']);
+        const actOutputPath = path.join(getLocalKeyValueStorePath(), 'OUTPUT.json');
         const actOutput = loadJson.sync(actOutputPath);
         expect(actOutput).to.be.eql(expectOutput);
     });
@@ -65,7 +63,7 @@ describe('apify run', () => {
         const actCode = `
         const Apify = require('apify');
 
-        Apify.main(async () => {    
+        Apify.main(async () => {
             await Apify.setValue('OUTPUT', process.env);
             console.log('Done.');
         });
@@ -79,10 +77,7 @@ describe('apify run', () => {
 
         await command.run(['run']);
 
-        const actOutputPath = path.join(...[DEFAULT_LOCAL_EMULATION_DIR,
-            LOCAL_EMULATION_SUBDIRS.keyValueStores,
-            DEFAULT_LOCAL_STORES_ID,
-            'OUTPUT.json']);
+        const actOutputPath = path.join(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
         const localEnvVars = loadJson.sync(actOutputPath);
         const auth = loadJson.sync(AUTH_FILE_PATH);
@@ -91,7 +86,6 @@ describe('apify run', () => {
         expect(localEnvVars[ENV_VARS.USER_ID]).to.be.eql(auth.id);
         expect(localEnvVars[ENV_VARS.TOKEN]).to.be.eql(auth.token);
         expect(localEnvVars[testEnvVars[0].name]).to.be.eql(testEnvVars[0].value);
-        Object.keys(LOCAL_ENV_VARS).forEach(envVar => expect(localEnvVars[envVar]).to.be.eql(LOCAL_ENV_VARS[envVar]));
 
         await command.run(['logout']);
     });
@@ -101,18 +95,15 @@ describe('apify run', () => {
         const input = {
             myInput: 'value',
         };
-        const kvsPath = path.join(DEFAULT_LOCAL_EMULATION_DIR, LOCAL_EMULATION_SUBDIRS.keyValueStores, DEFAULT_LOCAL_STORES_ID);
-        const actInputPath = path.join(kvsPath, 'INPUT.json');
-        const testJsonPath = path.join(kvsPath, 'TEST.json');
-        const datasetPath = path.join(DEFAULT_LOCAL_EMULATION_DIR, LOCAL_EMULATION_SUBDIRS.datasets, DEFAULT_LOCAL_STORES_ID);
-        const queuePath = path.join(DEFAULT_LOCAL_EMULATION_DIR, LOCAL_EMULATION_SUBDIRS.requestQueues, DEFAULT_LOCAL_STORES_ID);
+        const actInputPath = path.join(getLocalKeyValueStorePath(), 'INPUT.json');
+        const testJsonPath = path.join(getLocalKeyValueStorePath(), 'TEST.json');
 
         writeJson.sync(actInputPath, input);
 
         let actCode = `
         const Apify = require('apify');
 
-        Apify.main(async () => {    
+        Apify.main(async () => {
             await Apify.setValue('TEST', process.env);
             await Apify.pushData({aa: "bb" });
             const requestQueue = await Apify.openRequestQueue();
@@ -125,8 +116,8 @@ describe('apify run', () => {
 
         expect(fs.existsSync(actInputPath)).to.be.eql(true);
         expect(fs.existsSync(testJsonPath)).to.be.eql(true);
-        expect(fs.existsSync(datasetPath)).to.be.eql(true);
-        expect(fs.existsSync(queuePath)).to.be.eql(true);
+        expect(fs.existsSync(getLocalDatasetPath())).to.be.eql(true);
+        expect(fs.existsSync(getLocalRequestQueuePath())).to.be.eql(true);
 
         actCode = `
         const Apify = require('apify');
@@ -139,8 +130,8 @@ describe('apify run', () => {
 
         expect(fs.existsSync(actInputPath)).to.be.eql(true);
         expect(fs.existsSync(testJsonPath)).to.be.eql(false);
-        expect(fs.existsSync(datasetPath)).to.be.eql(false);
-        expect(fs.existsSync(queuePath)).to.be.eql(false);
+        expect(fs.existsSync(getLocalDatasetPath())).to.be.eql(false);
+        expect(fs.existsSync(getLocalRequestQueuePath())).to.be.eql(false);
     });
 
     after(async () => {
