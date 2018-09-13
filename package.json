@@ -6,7 +6,8 @@
     "scripts": {
         "test": "mocha --timeout 120000 --recursive",
         "lint": "eslint cli test",
-        "commands_md": "./help_to_md.sh"
+        "commands_md": "./help_to_md.sh",
+        "prod_shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap"
     },
     "files": [
         "src",
@@ -51,7 +52,7 @@
         "@oclif/errors": "^1.0.2",
         "@oclif/plugin-commands": "^1.2.0",
         "@oclif/plugin-help": "^2.1.1",
-        "apify-client": "^0.2.6",
+        "apify-client": "^0.3.0",
         "apify-shared": "0.0.55",
         "archiver-promise": "^1.0.0",
         "bluebird": "^3.5.1",
@@ -81,7 +82,7 @@
         "eslint-plugin-jsx-a11y": "^6.0.2",
         "eslint-plugin-promise": "^3.4.2",
         "eslint-plugin-react": "^7.0.1",
-        "mocha": "^3.2.0",
+        "mocha": "^5.2.0",
         "sinon": "^4.4.6"
     },
     "eslintIgnore": [
