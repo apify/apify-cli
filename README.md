@@ -1,15 +1,16 @@
 # Apify command line client (apify-cli)
 
 <a href="http://badge.fury.io/js/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" style="display:inherit;"></a>
-<a href="https://travis-ci.org/apifytech/apify-cli"><img src="https://travis-ci.org/apifytech/apify-js.svg" alt="Build Status" style="display:inherit;"></a>
+<a href="https://travis-ci.org/apifytech/apify-cli?branch=master"><img src="https://travis-ci.org/apifytech/apify-js.svg" alt="Build Status" style="display:inherit;"></a>
 
 Apify command line client (CLI) helps you to create, develop, build and run
 [Apify actors](https://www.apify.com/docs/actor) from a local computer.
 
-Apify actors enable the execution of arbitrary web scraping and automation jobs in the APify cloud.
+Apify actors enable the execution of arbitrary web scraping and automation jobs in the Apify cloud.
 
 While you can develop actors in a code editor directly in the [Apify web application](https://my.apify.com/),
 for more complex projects it is more convenient to develop actors locally
+using the <a href="https://github.com/apifytech/apify-js">Apify SDK</a>
 and only push them to the Apify cloud for execution.
 This is where the CLI comes in.
 
@@ -20,7 +21,7 @@ However, we recommend using JavaScript / Node.js, for which we provide most libr
 
 ## Installation
 
-First, make sure you have [Node.js](https://nodejs.org) version 7.10 or higher installed on your computer:
+First, make sure you have [Node.js](https://nodejs.org) version 8 or higher installed on your computer:
 
 ```bash
 node --version
