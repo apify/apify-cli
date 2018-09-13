@@ -55,7 +55,7 @@ class RunCommand extends ApifyCommand {
         // NOTE: User can overwrite env vars
         const env = Object.assign(localEnvVars, process.env);
 
-        await execWithLog('node', [MAIN_FILE], { env });
+        await execWithLog('npm', ['start'], { env });
     }
 }
 
