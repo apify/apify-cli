@@ -1,3 +1,8 @@
+0.2.1 / 2018-09-17
+==================
+- WARNING: See [migration guide](/version_migrations.md) for existing projects if you are upgrading from 0.1.* to 0.2.*.
+- You can specified another file that main.js for `apify run` command using npm start script.
+
 0.2.0 / 2018-09-12
 ==================
 - WARNING: Version 0.2.0 of Apify CLI supports only version 0.7.0 of API SDK or newer as management of environment variables
