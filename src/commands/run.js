@@ -3,10 +3,12 @@ const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
 const execWithLog = require('../lib/exec');
-const { MAIN_FILE, DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
+const loadJson = require('load-json-file');
+const { DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
 const { ENV_VARS } = require('apify-shared/consts');
 const {
-    getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore, purgeDefaultDataset, getLocalConfigOrThrow,
+    getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
+    purgeDefaultDataset, getLocalConfigOrThrow,
 } = require('../lib/utils');
 const { info } = require('../lib/outputs');
 
@@ -17,11 +19,16 @@ class RunCommand extends ApifyCommand {
         const localConfig = getLocalConfigOrThrow();
         const cwd = process.cwd();
 
-        const mainJsFile = path.join(cwd, MAIN_FILE);
-        if (!fs.existsSync(mainJsFile)) {
-            throw new Error('The "main.js" file not found in the current directory. Call "apify init" to create it.');
+        const packageJsonPath = path.join(cwd, 'package.json');
+        if (!fs.existsSync(packageJsonPath)) {
+            throw new Error('The "package.json" file not found in the current directory. Call "npm init" to create it.');
         }
-
+        const serverJsFile = path.join(cwd, 'server.js');
+        const packageJson = await loadJson(packageJsonPath);
+        if ((!packageJson.scripts || !packageJson.scripts.start) && !fs.existsSync(serverJsFile)) {
+            throw new Error('The npm start script not found in package.json. Please set it up for your project. '
+                + 'For more information about that call "apify run --help".');
+        }
         // Purge stores
         if (flags.purge) {
             await Promise.all([purgeDefaultQueue(cwd), purgeDefaultKeyValueStore(cwd), purgeDefaultDataset(cwd)]);
