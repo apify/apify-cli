@@ -67,7 +67,7 @@ Before you can start to run your project using `apify run`, you have to set up r
 {
     ...
     "scripts": {
-        "start": "node your_start_file.js",
+        "start": "node your_main_file.js",
     },
     ...
 }
@@ -335,13 +335,15 @@ DESCRIPTION
   as all other data in key-value stores, datasets or request queues to be stored
   in the "apify_storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override behaviour for your actor in package.json under
-  scripts.start. You can set up your own main file or environment variables by
-  changing start script value.
+  NOTE: You can override the default behaviour of command overriding npm start
+  script value in a package.json file. You can set up your own main file or
+  environment variables by changing it.
 
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
+
 
 
 

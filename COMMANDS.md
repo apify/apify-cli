@@ -184,9 +184,9 @@ DESCRIPTION
   as all other data in key-value stores, datasets or request queues to be stored 
   in the "apify_storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override behaviour for your actor in package.json under 
-  scripts.start. You can set up your own main file or environment variables by 
-  changing start script value.
+  NOTE: You can override the default behaviour of command overriding npm start 
+  script value in a package.json file. You can set up your own main file or 
+  environment variables by changing it.
 
 ```
 
