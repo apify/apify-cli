@@ -61,11 +61,14 @@ class RunCommand extends ApifyCommand {
 
 // TODO: we should describe which env vars are set here:
 
-RunCommand.description = 'Runs the actor locally in the current directory.\n' +
-    'The command runs a Node.js process with the actor in the current directory. It sets various APIFY_XYZ environment variables ' +
-    'in order to provide a working execution environment for the actor. For example, this causes ' +
-    'the actor input, as well as all other data in key-value stores, datasets or request queues to be stored in the "apify_local" directory, ' +
-    'rather than on the Apify platform.';
+RunCommand.description = 'Runs the actor locally in the current directory.\n'
+    + 'The command runs a npm start script in the current directory. It sets various APIFY_XYZ environment variables '
+    + 'in order to provide a working execution environment for the actor. For example, this causes '
+    + 'the actor input, as well as all other data in key-value stores, '
+    + `datasets or request queues to be stored in the "${DEFAULT_LOCAL_STORAGE_DIR}" directory, `
+    + 'rather than on the Apify platform.\n\n'
+    + 'NOTE: You can override behaviour for your actor in package.json under scripts.start. '
+    + 'You can set up your own main file or environment variables by changing start script value.';
 
 RunCommand.flags = {
     purge: flagsHelper.boolean({

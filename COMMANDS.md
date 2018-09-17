@@ -88,8 +88,8 @@ ARGUMENTS
   ACTNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "apify_local" directory 
-  in the current directory, but will not touch anything else.
+  The command only creates the "apify.json" file and the "apify_storage" 
+  directory in the current directory, but will not touch anything else.
 
   WARNING: If the files already exist, they will be overwritten!
 
@@ -178,11 +178,15 @@ OPTIONS
                            request queue before the run starts.
 
 DESCRIPTION
-  The command runs a Node.js process with the actor in the current directory. It 
-  sets various APIFY_XYZ environment variables in order to provide a working 
-  execution environment for the actor. For example, this causes the actor input, 
-  as well as all other data in key-value stores, datasets or request queues to 
-  be stored in the "apify_local" directory, rather than on the Apify platform.
+  The command runs a npm start script in the current directory. It sets various 
+  APIFY_XYZ environment variables in order to provide a working execution 
+  environment for the actor. For example, this causes the actor input, as well 
+  as all other data in key-value stores, datasets or request queues to be stored 
+  in the "apify_storage" directory, rather than on the Apify platform.
+
+  NOTE: You can override behaviour for your actor in package.json under 
+  scripts.start. You can set up your own main file or environment variables by 
+  changing start script value.
 
 ```
 
