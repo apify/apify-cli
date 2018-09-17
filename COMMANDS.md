@@ -17,7 +17,8 @@ COMMANDS
   login   Logs in to the Apify platform using the API token.
   logout  Logs out of the Apify platform.
   push    Uploads the actor to the Apify platform and builds it there.
-  run     Runs the actor locally in the current directory.
+  run     Runs the actor locally in the current directory by executing "npm
+          start".
 
 ```
 ### apify call
@@ -158,7 +159,7 @@ DESCRIPTION
 ```
 ### apify run
 ```text
-Runs the actor locally in the current directory.
+Runs the actor locally in the current directory by executing "npm start".
 
 USAGE
   $ apify run
@@ -178,11 +179,10 @@ OPTIONS
                            request queue before the run starts.
 
 DESCRIPTION
-  The command runs a npm start script in the current directory. It sets various 
-  APIFY_XYZ environment variables in order to provide a working execution 
-  environment for the actor. For example, this causes the actor input, as well 
-  as all other data in key-value stores, datasets or request queues to be stored 
-  in the "apify_storage" directory, rather than on the Apify platform.
+  It sets various APIFY_XYZ environment variables in order to provide a working 
+  execution environment for the actor. For example, this causes the actor input, 
+  as well as all other data in key-value stores, datasets or request queues to 
+  be stored in the "apify_storage" directory, rather than on the Apify platform.
 
   NOTE: You can override the default behaviour of command overriding npm start 
   script value in a package.json file. You can set up your own main file or 

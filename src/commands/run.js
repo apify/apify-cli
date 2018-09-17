@@ -27,7 +27,7 @@ class RunCommand extends ApifyCommand {
         const packageJson = await loadJson(packageJsonPath);
         if ((!packageJson.scripts || !packageJson.scripts.start) && !fs.existsSync(serverJsFile)) {
             throw new Error('The npm start script not found in package.json. Please set it up for your project. '
-                + 'For more information about that call "apify run --help".');
+                + 'For more information about that call "apify help run".');
         }
         // Purge stores
         if (flags.purge) {
@@ -68,8 +68,8 @@ class RunCommand extends ApifyCommand {
 
 // TODO: we should describe which env vars are set here:
 
-RunCommand.description = 'Runs the actor locally in the current directory.\n'
-    + 'The command runs a npm start script in the current directory. It sets various APIFY_XYZ environment variables '
+RunCommand.description = 'Runs the actor locally in the current directory by executing "npm start".\n'
+    + 'It sets various APIFY_XYZ environment variables '
     + 'in order to provide a working execution environment for the actor. For example, this causes '
     + 'the actor input, as well as all other data in key-value stores, '
     + `datasets or request queues to be stored in the "${DEFAULT_LOCAL_STORAGE_DIR}" directory, `
