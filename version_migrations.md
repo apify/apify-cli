@@ -13,7 +13,7 @@ If you are using apify local storage in your project you need to rename storage 
 CLI uses `npm start` to run local actor instead of `node main.js` in 0.2.* .
 If you want to run your project after updating to 0.2.*, you need to add start script `node main.js` to your package.json into scripts field.
 
-```json
+```text
 {
     ...
     "scripts": {

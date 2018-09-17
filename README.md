@@ -63,7 +63,7 @@ This command will only set up local actor development environment in an existing
 i.e. it will create the `apify.json` file and `apify_storage` directory.
 
 Before you can run your project using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
-```json
+```text
 {
     ...
     "scripts": {
