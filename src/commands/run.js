@@ -3,10 +3,12 @@ const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
 const execWithLog = require('../lib/exec');
-const { MAIN_FILE, DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
+const loadJson = require('load-json-file');
+const { DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
 const { ENV_VARS } = require('apify-shared/consts');
 const {
-    getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore, purgeDefaultDataset, getLocalConfigOrThrow,
+    getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
+    purgeDefaultDataset, getLocalConfigOrThrow,
 } = require('../lib/utils');
 const { info } = require('../lib/outputs');
 
@@ -17,11 +19,16 @@ class RunCommand extends ApifyCommand {
         const localConfig = getLocalConfigOrThrow();
         const cwd = process.cwd();
 
-        const mainJsFile = path.join(cwd, MAIN_FILE);
-        if (!fs.existsSync(mainJsFile)) {
-            throw new Error('The "main.js" file not found in the current directory. Call "apify init" to create it.');
+        const packageJsonPath = path.join(cwd, 'package.json');
+        if (!fs.existsSync(packageJsonPath)) {
+            throw new Error('The "package.json" file not found in the current directory. Call "npm init" to create it.');
         }
-
+        const serverJsFile = path.join(cwd, 'server.js');
+        const packageJson = await loadJson(packageJsonPath);
+        if ((!packageJson.scripts || !packageJson.scripts.start) && !fs.existsSync(serverJsFile)) {
+            throw new Error('The npm start script not found in package.json. Please set it up for your project. '
+                + 'For more information about that call "apify help run".');
+        }
         // Purge stores
         if (flags.purge) {
             await Promise.all([purgeDefaultQueue(cwd), purgeDefaultKeyValueStore(cwd), purgeDefaultDataset(cwd)]);
@@ -55,17 +62,20 @@ class RunCommand extends ApifyCommand {
         // NOTE: User can overwrite env vars
         const env = Object.assign(localEnvVars, process.env);
 
-        await execWithLog('node', [MAIN_FILE], { env });
+        await execWithLog('npm', ['start'], { env });
     }
 }
 
 // TODO: we should describe which env vars are set here:
 
-RunCommand.description = 'Runs the actor locally in the current directory.\n' +
-    'The command runs a Node.js process with the actor in the current directory. It sets various APIFY_XYZ environment variables ' +
-    'in order to provide a working execution environment for the actor. For example, this causes ' +
-    'the actor input, as well as all other data in key-value stores, datasets or request queues to be stored in the "apify_local" directory, ' +
-    'rather than on the Apify platform.';
+RunCommand.description = 'Runs the actor locally in the current directory by executing "npm start".\n'
+    + 'It sets various APIFY_XYZ environment variables '
+    + 'in order to provide a working execution environment for the actor. For example, this causes '
+    + 'the actor input, as well as all other data in key-value stores, '
+    + `datasets or request queues to be stored in the "${DEFAULT_LOCAL_STORAGE_DIR}" directory, `
+    + 'rather than on the Apify platform.\n\n'
+    + 'NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. '
+    + 'You can set up your own main file or environment variables by changing it.';
 
 RunCommand.flags = {
     purge: flagsHelper.boolean({

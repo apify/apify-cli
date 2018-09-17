@@ -59,9 +59,20 @@ for the actor and a few configuration files.
 cd ./my/awesome/project
 apify init
 ```
-
 This command will only set up local actor development environment in an existing directory,
-i.e. it will create the `apify.json` file and `apify_local` directory.
+i.e. it will create the `apify.json` file and `apify_storage` directory.
+
+Before you can run your project using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
+```json
+{
+    ...
+    "scripts": {
+        "start": "node your_main_file.js",
+    },
+    ...
+}
+```
+You can find more information about by running `apify help run`.
 
 ### Run the actor locally
 
@@ -156,7 +167,8 @@ COMMANDS
   login   Logs in to the Apify platform using the API token.
   logout  Logs out of the Apify platform.
   push    Uploads the actor to the Apify platform and builds it there.
-  run     Runs the actor locally in the current directory.
+  run     Runs the actor locally in the current directory by executing "npm
+          start".
 
 ```
 ### apify call
@@ -227,8 +239,8 @@ ARGUMENTS
   ACTNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "apify_local" directory
-  in the current directory, but will not touch anything else.
+  The command only creates the "apify.json" file and the "apify_storage"
+  directory in the current directory, but will not touch anything else.
 
   WARNING: If the files already exist, they will be overwritten!
 
@@ -297,7 +309,7 @@ DESCRIPTION
 ```
 ### apify run
 ```text
-Runs the actor locally in the current directory.
+Runs the actor locally in the current directory by executing "npm start".
 
 USAGE
   $ apify run
@@ -317,15 +329,21 @@ OPTIONS
                            request queue before the run starts.
 
 DESCRIPTION
-  The command runs a Node.js process with the actor in the current directory. It
-  sets various APIFY_XYZ environment variables in order to provide a working
+  It sets various APIFY_XYZ environment variables in order to provide a working
   execution environment for the actor. For example, this causes the actor input,
   as well as all other data in key-value stores, datasets or request queues to
-  be stored in the "apify_local" directory, rather than on the Apify platform.
+  be stored in the "apify_storage" directory, rather than on the Apify platform.
+
+  NOTE: You can override the default behaviour of command overriding npm start
+  script value in a package.json file. You can set up your own main file or
+  environment variables by changing it.
 
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
+
+
 
 
 

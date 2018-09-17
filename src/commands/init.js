@@ -2,7 +2,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const inquirer = require('inquirer');
 const outputs = require('../lib/outputs');
 const { setLocalConfig, setLocalEnv, getLocalConfig } = require('../lib/utils');
-const { EMPTY_LOCAL_CONFIG } = require('../lib/consts');
+const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
 const path = require('path');
 
 class InitCommand extends ApifyCommand {
@@ -26,10 +26,10 @@ class InitCommand extends ApifyCommand {
     }
 }
 
-InitCommand.description = 'Initializes an actor project in an existing directory.\n' +
-    'The command only creates the "apify.json" file and the "apify_local" directory in the current directory, ' +
-    'but will not touch anything else.\n\n' +
-    'WARNING: If the files already exist, they will be overwritten!';
+InitCommand.description = 'Initializes an actor project in an existing directory.\n'
+    + `The command only creates the "apify.json" file and the "${DEFAULT_LOCAL_STORAGE_DIR}" directory in the current directory, `
+    + 'but will not touch anything else.\n\n'
+    + 'WARNING: If the files already exist, they will be overwritten!';
 
 InitCommand.args = [
     {

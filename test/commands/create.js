@@ -5,6 +5,7 @@ const command = require('@oclif/command');
 const path = require('path');
 const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
+const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
 const actName = 'my-act';
 const ACT_TEMPLATE = 'basic';
@@ -31,6 +32,7 @@ describe('apify create', () => {
         expect(fs.existsSync(actName)).to.be.true;
         expect(fs.existsSync(path.join(actName, 'package.json'))).to.be.true;
         expect(fs.existsSync(apifyJsonPath)).to.be.true;
+        expect(fs.existsSync(path.join(actName, getLocalKeyValueStorePath(), 'INPUT.json'))).to.be.true;
         expect(loadJson.sync(apifyJsonPath).template).to.be.eql(ACT_TEMPLATE);
     });
 

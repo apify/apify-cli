@@ -13,4 +13,6 @@ RUN npm --quiet set progress=false \
  && echo "NPM version:" \
  && npm --version
 
+CMD [ "npm", "start" ]
+
 
