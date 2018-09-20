@@ -4,6 +4,7 @@ const fs = require('fs');
 const command = require('@oclif/command');
 const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
+const Promise = require('bluebird');
 const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
@@ -18,9 +19,6 @@ const EXPECTED_INPUT = {
 const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
 
 describe('apify call', () => {
-    console.log(`ACT_NAME: ${ACT_NAME}`);
-
-
     before(async function () {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
             // Skip tests if user used CLI on local, it can break local environment!
@@ -46,6 +44,10 @@ describe('apify call', () => {
         fs.writeFileSync(inputFile, JSON.stringify(EXPECTED_INPUT), { flag: 'w' });
 
         await command.run(['push']);
+
+        // For some reason tests were failing with nonexisting build with "LATEST" tag.
+        // Adding some sleep here as attempt to fix this.
+        await Promise.delay(500);
     });
 
     it('without actId', async () => {
