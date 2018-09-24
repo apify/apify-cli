@@ -7,7 +7,7 @@ const { KEY_VALUE_STORE_KEYS } = require('apify-shared/consts');
 // BTW the templates should be clustered by languages, now we have only JS but we'll add other languages later.
 exports.ACTS_TEMPLATES = {
     puppeteer_crawler: {
-        name: 'Puppeteer crawler - Boilerplate for recursive crawling with headless Chrome and Puppeteer',
+        name: 'Puppeteer crawler - Recursively crawl a website using Chrome and Puppeteer',
         value: 'puppeteer_crawler',
         dir: `${__dirname}/../templates/puppeteer_crawler`,
         defaultRunOptions: {
@@ -17,7 +17,7 @@ exports.ACTS_TEMPLATES = {
         },
     },
     puppeteer: {
-        name: 'Puppeteer - Boilerplate for interaction with a web page using headless Chrome and Puppeteer',
+        name: 'Puppeteer single page - Interact with a single web page using Chrome and Puppeteer',
         value: 'puppeteer',
         dir: `${__dirname}/../templates/puppeteer`,
         defaultRunOptions: {
@@ -27,7 +27,7 @@ exports.ACTS_TEMPLATES = {
         },
     },
     basic: {
-        name: 'Basic - Minimum boilerplate for an actor without chrome browser',
+        name: 'Minimal - The smallest actor you will see today, it only takes input and generates output',
         value: 'basic',
         dir: `${__dirname}/../templates/basic`,
         defaultRunOptions: {
@@ -37,7 +37,7 @@ exports.ACTS_TEMPLATES = {
         },
     },
     hello_word: {
-        name: 'Hello word - An example actor demonstrating recursive crawling of a website using headless Chrome and Puppeteer',
+        name: 'Hello word - The basic example which recursively crawls a website using Chrome and Puppeteer',
         value: 'hello_word',
         dir: `${__dirname}/../templates/hello_word`,
         defaultRunOptions: {
@@ -50,7 +50,7 @@ exports.ACTS_TEMPLATES = {
 
 exports.ACTS_TEMPLATE_LIST = Object.keys(exports.ACTS_TEMPLATES);
 
-exports.DEFAULT_ACT_TEMPLATE = 'puppeteer_crawler';
+exports.DEFAULT_ACT_TEMPLATE = 'hello_word';
 
 exports.DEFAULT_LOCAL_STORAGE_DIR = 'apify_storage';
 

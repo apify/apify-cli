@@ -1,7 +1,7 @@
 {
     "name": "your-actor-name",
     "version": "1.0.0",
-    "description": "Load a web page using headless Chrome and Puppeteer and extract data from it",
+    "description": "This is a boilerplate of an Apify actor.",
     "main": "main.js",
     "dependencies": {
         "apify": "^0.8.0"

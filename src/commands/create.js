@@ -62,12 +62,12 @@ class CreateCommand extends ApifyCommand {
     }
 }
 
-CreateCommand.description = 'Creates a new actor project directory from a selected template.';
+CreateCommand.description = 'Creates a new actor project directory from a selected boilerplate template.';
 
 CreateCommand.flags = {
     template: flagsHelper.string({
         char: 't',
-        description: 'Template for the actor. If not provided, the command will prompt for it.',
+        description: 'Boilerplate template for the actor. If not provided, the command will prompt for it.',
         required: false,
         options: ACTS_TEMPLATE_LIST,
     }),
