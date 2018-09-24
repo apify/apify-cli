@@ -260,6 +260,15 @@ const outputLogStream = (logId, timeout) => {
     });
 };
 
+/**
+ * Returns npm command for current os
+ * NOTE: For window we have to returns npm.cmd instead of npm, otherwise it doesn't work
+ * @return {string}
+ */
+const getNpmCmd = () => {
+    return /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -279,4 +288,5 @@ module.exports = {
     getLocalKeyValueStorePath,
     getLocalDatasetPath,
     getLocalRequestQueuePath,
+    getNpmCmd,
 };

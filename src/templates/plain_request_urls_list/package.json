@@ -1,10 +1,10 @@
 {
     "name": "your-actor-name",
     "version": "1.0.0",
-    "description": "Crawls a list of URLs using a raw HTTP downloader",
+    "description": "This is a boilerplate of an Apify actor.",
     "main": "main.js",
     "dependencies": {
-        "apify": "^0.7.4",
+        "apify": "^0.8.0",
         "request-promise": "^4.2.2"
     },
     "devDependencies": {},

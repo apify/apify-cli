@@ -6,28 +6,8 @@ const { KEY_VALUE_STORE_KEYS } = require('apify-shared/consts');
 // the name and description should be taken from package.json files in those dirs so that we edit it in a single location!
 // BTW the templates should be clustered by languages, now we have only JS but we'll add other languages later.
 exports.ACTS_TEMPLATES = {
-    basic: {
-        name: 'Basic ("basic")',
-        value: 'basic',
-        dir: `${__dirname}/../templates/basic`,
-        defaultRunOptions: {
-            build: 'latest',
-            timeoutSecs: 3600,
-            memoryMbytes: 512,
-        },
-    },
-    puppeteer: {
-        name: 'Puppeteer ("puppeteer")',
-        value: 'puppeteer',
-        dir: `${__dirname}/../templates/puppeteer`,
-        defaultRunOptions: {
-            build: 'latest',
-            timeoutSecs: 0,
-            memoryMbytes: 2048,
-        },
-    },
     puppeteer_crawler: {
-        name: 'Puppeteer crawler ("puppeteer_crawler")',
+        name: 'Puppeteer crawler - Recursively crawl a website using Chrome and Puppeteer',
         value: 'puppeteer_crawler',
         dir: `${__dirname}/../templates/puppeteer_crawler`,
         defaultRunOptions: {
@@ -36,10 +16,30 @@ exports.ACTS_TEMPLATES = {
             memoryMbytes: 2048,
         },
     },
-    plain_request_urls_list: {
-        name: 'Plain request url list crawler ("plain_request_urls_list")',
-        value: 'plain_request_urls_list',
-        dir: `${__dirname}/../templates/plain_request_urls_list`,
+    puppeteer: {
+        name: 'Puppeteer single page - Interact with a single web page using Chrome and Puppeteer',
+        value: 'puppeteer',
+        dir: `${__dirname}/../templates/puppeteer`,
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 0,
+            memoryMbytes: 2048,
+        },
+    },
+    basic: {
+        name: 'Minimal - The smallest actor you will see today, it only takes input and generates output',
+        value: 'basic',
+        dir: `${__dirname}/../templates/basic`,
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 3600,
+            memoryMbytes: 512,
+        },
+    },
+    hello_word: {
+        name: 'Hello word - The basic example which recursively crawls a website using Chrome and Puppeteer',
+        value: 'hello_word',
+        dir: `${__dirname}/../templates/hello_word`,
         defaultRunOptions: {
             build: 'latest',
             timeoutSecs: 0,
@@ -50,7 +50,7 @@ exports.ACTS_TEMPLATES = {
 
 exports.ACTS_TEMPLATE_LIST = Object.keys(exports.ACTS_TEMPLATES);
 
-exports.DEFAULT_ACT_TEMPLATE = 'basic';
+exports.DEFAULT_ACT_TEMPLATE = 'hello_word';
 
 exports.DEFAULT_LOCAL_STORAGE_DIR = 'apify_storage';
 

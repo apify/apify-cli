@@ -5,5 +5,7 @@ Apify.main(async () => {
 
     console.log(`My test input: ${input.test}`);
 
+    await Apify.setValue('OUTPUT', { foo: 'bar' });
+
     console.log('Done.');
 });

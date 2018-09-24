@@ -94,8 +94,6 @@ class PushCommand extends ApifyCommand {
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         });
 
-        outputs.link('Actor build detail', `https://my.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
-
         try {
             await outputLogStream(build.id, waitForFinishMillis);
         } catch (err) {
@@ -105,6 +103,8 @@ class PushCommand extends ApifyCommand {
 
         build = await apifyClient.acts.getBuild({ actId: build.actId, buildId: build.id });
         console.dir(build);
+
+        outputs.link('Actor build detail', `https://my.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
 
         if (build.status === ACT_TASK_STATUSES.SUCCEEDED) {
             outputs.success('Actor was deployed to Apify platform and built there.');

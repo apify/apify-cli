@@ -1,8 +1,15 @@
 language: node_js
+cache:
+    directories:
+        - ~/.npm
+        - node_modules
+install:
+    - npm install
 node_js:
   - "10"
   - "9"
   - "8"
 script:
   - npm run lint
+  - npm install
   - npm test

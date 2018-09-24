@@ -8,7 +8,7 @@ const inquirer = require('inquirer');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
-const { setLocalConfig, setLocalEnv } = require('../lib/utils');
+const { setLocalConfig, setLocalEnv, getNpmCmd } = require('../lib/utils');
 const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE, EMPTY_LOCAL_CONFIG, ACTS_TEMPLATE_LIST } = require('../lib/consts');
 
 class CreateCommand extends ApifyCommand {
@@ -54,22 +54,20 @@ class CreateCommand extends ApifyCommand {
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actName });
 
         // Run npm install in actor dir
-        // NOTE: For window we have to call npm.cmd instead of npm, otherwise it fails
-        const cmd = /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
         const cmdArgs = ['install'];
         if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
-        await execWithLog(cmd, cmdArgs, { cwd: actFolderDir });
+        await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
 
         outputs.success(`Actor '${actName}' was created. To run it, run "cd ${actName}" and "apify run".`);
     }
 }
 
-CreateCommand.description = 'Creates a new actor project directory from a selected template.';
+CreateCommand.description = 'Creates a new actor project directory from a selected boilerplate template.';
 
 CreateCommand.flags = {
     template: flagsHelper.string({
         char: 't',
-        description: 'Template for the actor. If not provided, the command will prompt for it.',
+        description: 'Boilerplate template for the actor. If not provided, the command will prompt for it.',
         required: false,
         options: ACTS_TEMPLATE_LIST,
     }),

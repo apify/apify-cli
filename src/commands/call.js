@@ -42,8 +42,6 @@ class CallCommand extends ApifyCommand {
             else throw err;
         }
 
-        outputs.link('Actor run detail', `https://my.apify.com/actors/${run.actId}#/runs/${run.id}`);
-
         try {
             await outputLogStream(run.id, waitForFinishMillis);
         } catch (err) {
@@ -53,6 +51,8 @@ class CallCommand extends ApifyCommand {
 
         run = await apifyClient.acts.getRun({ actId: run.actId, runId: run.id });
         console.dir(run);
+
+        outputs.link('Actor run detail', `https://my.apify.com/actors/${run.actId}#/runs/${run.id}`);
 
         if (run.status === ACT_TASK_STATUSES.SUCCEEDED) {
             outputs.success('Actor finished.');
