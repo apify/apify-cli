@@ -8,7 +8,7 @@ const { DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
 const { ENV_VARS } = require('apify-shared/consts');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
-    purgeDefaultDataset, getLocalConfigOrThrow, npmCmd,
+    purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd,
 } = require('../lib/utils');
 const { info } = require('../lib/outputs');
 
@@ -62,7 +62,7 @@ class RunCommand extends ApifyCommand {
         // NOTE: User can overwrite env vars
         const env = Object.assign(localEnvVars, process.env);
 
-        await execWithLog(npmCmd(), ['start'], { env });
+        await execWithLog(getNpmCmd(), ['start'], { env });
     }
 }
 

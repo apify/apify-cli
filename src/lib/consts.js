@@ -17,7 +17,7 @@ exports.ACTS_TEMPLATES = {
         },
     },
     puppeteer: {
-        name: 'Puppeteer - Boilerplate for loading a web page using headless Chrome and Puppeteer',
+        name: 'Puppeteer - Boilerplate for interaction with a web page using headless Chrome and Puppeteer',
         value: 'puppeteer',
         dir: `${__dirname}/../templates/puppeteer`,
         defaultRunOptions: {
@@ -37,7 +37,7 @@ exports.ACTS_TEMPLATES = {
         },
     },
     hello_word: {
-        name: 'Hello word - Example boilerplate from apify SDK documentation',
+        name: 'Hello word - An example actor demonstrating recursive crawling of a website using headless Chrome and Puppeteer',
         value: 'hello_word',
         dir: `${__dirname}/../templates/hello_word`,
         defaultRunOptions: {

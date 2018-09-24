@@ -265,7 +265,7 @@ const outputLogStream = (logId, timeout) => {
  * NOTE: For window we have to returns npm.cmd instead of npm, otherwise it doesn't work
  * @return {string}
  */
-const npmCmd = () => {
+const getNpmCmd = () => {
     return /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
 };
 
@@ -288,5 +288,5 @@ module.exports = {
     getLocalKeyValueStorePath,
     getLocalDatasetPath,
     getLocalRequestQueuePath,
-    npmCmd,
+    getNpmCmd,
 };
