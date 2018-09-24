@@ -1,5 +1,10 @@
 language: node_js
-cache: false
+cache:
+    directories:
+        - ~/.npm
+        - node_modules
+install:
+    - npm install
 node_js:
   - "10"
   - "9"
