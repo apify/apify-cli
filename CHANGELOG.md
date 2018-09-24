@@ -1,3 +1,8 @@
+0.2.3 / 2018-09-17
+==================
+- Updated all templates to apify version 0.8.*
+- Added template named hello_word
+
 0.2.1 / 2018-09-17
 ==================
 - **BREAKING CHANGES**: The local storage directories have been renamed and package.json files needs a new `start` command.

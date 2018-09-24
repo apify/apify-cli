@@ -154,14 +154,15 @@ This section contains printouts of `apify help` for all commands.
 Apify command line client to help you create, develop, build and run Apify actors.
 
 VERSION
-  apify-cli/0.2.1 darwin-x64 node-v8.4.0
+  apify-cli/0.2.3 darwin-x64 node-v8.4.0
 
 USAGE
   $ apify [COMMAND]
 
 COMMANDS
   call    Runs the actor remotely on the Apify platform.
-  create  Creates a new actor project directory from a selected template.
+  create  Creates a new actor project directory from a selected boilerplate
+          template.
   info    Displays information about current Apify settings.
   init    Initializes an actor project in an existing directory.
   login   Logs in to the Apify platform using the API token.
@@ -204,7 +205,7 @@ DESCRIPTION
 ```
 ### apify create
 ```text
-Creates a new actor project directory from a selected template.
+Creates a new actor project directory from a selected boilerplate template.
 
 USAGE
   $ apify create ACTNAME
@@ -213,8 +214,9 @@ ARGUMENTS
   ACTNAME  Name of the actor and its directory
 
 OPTIONS
-  -t, --template=basic|puppeteer|puppeteer_crawler|plain_request_urls_list
-      Template for the actor. If not provided, the command will prompt for it.
+  -t, --template=puppeteer_crawler|puppeteer|basic|hello_word
+      Boilerplate template for the actor. If not provided, the command will prompt
+      for it.
 
 ```
 ### apify info
@@ -341,6 +343,7 @@ DESCRIPTION
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
 
 
 
