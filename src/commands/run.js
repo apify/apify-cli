@@ -10,7 +10,7 @@ const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
     purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd,
 } = require('../lib/utils');
-const { info } = require('../lib/outputs');
+const { info, warning } = require('../lib/outputs');
 
 class RunCommand extends ApifyCommand {
     async run() {
@@ -61,6 +61,10 @@ class RunCommand extends ApifyCommand {
         }
         // NOTE: User can overwrite env vars
         const env = Object.assign(localEnvVars, process.env);
+
+        if (!userId) {
+            warning('You are running actor without your Apify account. Some feature like Apify proxy won\'t work. Call "apify login" to fix that.');
+        }
 
         await execWithLog(getNpmCmd(), ['start'], { env });
     }
