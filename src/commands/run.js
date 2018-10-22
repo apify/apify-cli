@@ -63,7 +63,7 @@ class RunCommand extends ApifyCommand {
         const env = Object.assign(localEnvVars, process.env);
 
         if (!userId) {
-            warning('You are running actor without your Apify account. Some feature like Apify proxy won\'t work. Call "apify login" to fix that.');
+            warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
         }
 
         await execWithLog(getNpmCmd(), ['start'], { env });
