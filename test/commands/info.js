@@ -33,7 +33,7 @@ describe('apify info', () => {
 
         const userInfoFromConfig = loadJson.sync(AUTH_FILE_PATH);
 
-        expect(console.log.callCount).to.eql(5);
+        expect(console.log.callCount).to.eql(3);
         expect(console.log.args[2][0]).to.include(userInfoFromConfig.id);
 
         await command.run(['logout']);

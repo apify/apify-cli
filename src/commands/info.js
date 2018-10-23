@@ -11,8 +11,6 @@ class InfoCommand extends ApifyCommand {
             const niceInfo = {
                 username: info.username,
                 userId: info.id,
-                token: info.token,
-                proxyPassword: info.proxy.password,
             };
             Object.keys(niceInfo).forEach(key => console.log(`${chalk.gray(key)}: ${chalk.bold(niceInfo[key])}`));
         }
