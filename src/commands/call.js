@@ -1,6 +1,6 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { ACT_TASK_STATUSES } = require('apify-shared/consts');
+const { ACT_JOB_STATUSES } = require('apify-shared/consts');
 const { getLocalConfig, getLoggedClientOrThrow, getLocalInput, outputLogStream } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
@@ -54,9 +54,9 @@ class CallCommand extends ApifyCommand {
 
         outputs.link('Actor run detail', `https://my.apify.com/actors/${run.actId}#/runs/${run.id}`);
 
-        if (run.status === ACT_TASK_STATUSES.SUCCEEDED) {
+        if (run.status === ACT_JOB_STATUSES.SUCCEEDED) {
             outputs.success('Actor finished.');
-        } else if (run.status === ACT_TASK_STATUSES.RUNNING) {
+        } else if (run.status === ACT_JOB_STATUSES.RUNNING) {
             outputs.warning('Actor is still running!');
         } else {
             outputs.error('Actor failed!');

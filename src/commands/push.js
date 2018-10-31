@@ -3,7 +3,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow, outputLogStream } = require('../lib/utils');
 const { createActZip } = require('../lib/utils');
-const { ACT_TASK_STATUSES } = require('apify-shared/consts');
+const { ACT_JOB_STATUSES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES } = require('../lib/consts');
 const outputs = require('../lib/outputs');
 
@@ -106,9 +106,9 @@ class PushCommand extends ApifyCommand {
 
         outputs.link('Actor build detail', `https://my.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
 
-        if (build.status === ACT_TASK_STATUSES.SUCCEEDED) {
+        if (build.status === ACT_JOB_STATUSES.SUCCEEDED) {
             outputs.success('Actor was deployed to Apify platform and built there.');
-        } else if (build.status === ACT_TASK_STATUSES.RUNNING) {
+        } else if (build.status === ACT_JOB_STATUSES.RUNNING) {
             outputs.warning('Build is still running!');
         } else {
             outputs.error('Build failed!');

@@ -53,7 +53,7 @@
         "@oclif/plugin-commands": "^1.2.0",
         "@oclif/plugin-help": "^2.1.1",
         "apify-client": "^0.3.0",
-        "apify-shared": "0.0.55",
+        "apify-shared": "0.1.6",
         "archiver-promise": "^1.0.0",
         "bluebird": "^3.5.1",
         "chalk": "^2.3.2",
