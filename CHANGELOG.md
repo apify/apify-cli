@@ -1,3 +1,9 @@
+0.2.5 / 2018-10-31
+==================
+- Updated NPM dependencies
+- Upgraded to apify-shared@0.1.6
+- Fixed templates to use apify/actor-node-chrome Docker image instead of outdated apify/actor-node-puppeteer
+
 0.2.3 / 2018-09-17
 ==================
 - Updated all templates to apify version 0.8.*

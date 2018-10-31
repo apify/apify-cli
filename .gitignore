@@ -4,4 +4,6 @@ node_modules
 test-acts
 test-actors
 local_test.sh
+my-act-*
 _mytests
+package-lock.json

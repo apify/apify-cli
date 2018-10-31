@@ -13,8 +13,8 @@ Then you can run tests with commands in repository root directory:
 2. Logout your current Apify account if you used some:
 `apify logout`
 
-3. Run tests:
-`TEST_USER_ID=<apifyUserId> TEST_TOKEN=<apifyUserToken> npm run test`
+3. Run tests using credentials of the 'apify-test' user:
+`TEST_USER_ID=<apifyUserId> TEST_TOKEN=<apifyUserApiToken> npm run test`
 
 ## Publish new version
 
@@ -25,7 +25,7 @@ Only users with access to [apify-cli package](https://www.npmjs.com/package/apif
 
 2. Before publishing new version you have to generate and commit production `npm-shrinkwrap.json`
 `npm run prod_shrinkwrap`
-NOTE: File `package-lock.json` will be completely ignored during package publishing. Using `npm-shrinkwrap.json` we'll correctly lock dependencies.
+NOTE: File `package-lock.json` will be completely ignored during package publishing. Using `npm-shrinkwrap.json` will correctly lock dependencies.
 
 3. Run publish script, which publish package to npm:
 `./publish.sh`
