@@ -187,7 +187,7 @@ const getLocalInput = () => {
 const checkLatestVersion = async () => {
     try {
         // Run check approximately every 10. call
-        if (Math.random() <= 0.9) return;
+        if (Math.random() <= 0.8) return;
         // Skip if user is offline
         if (!await isOnline({ timeout: 500 })) return;
 
@@ -195,7 +195,7 @@ const checkLatestVersion = async () => {
         const currentVersion = require('../../package.json').version; //  eslint-disable-line
 
         if (semver.gt(latestVersion, currentVersion)) {
-            warning('You are using an old version of apify-cli. Run "npm update apify-cli -g" to install the latest version.');
+            warning('You are using an old version of apify-cli. Run "npm install apify-cli@latest -g" to install the latest version.');
         }
     } catch (err) {
         // Check should not break all commands
