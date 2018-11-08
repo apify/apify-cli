@@ -81,7 +81,7 @@ describe('templates', () => {
         await checkTemplateStructureAndRun(actorName, templateName);
     });
 
-    it('puppeteer works', async () => {
+    it('puppeteer crawler works', async () => {
         const actorName = 'pup-cra-template-actor';
         const templateName = ACTS_TEMPLATES.puppeteer_crawler.value;
         await command.run(['create', actorName, '--template', templateName]);
