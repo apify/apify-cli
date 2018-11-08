@@ -303,4 +303,5 @@ module.exports = {
     getLocalRequestQueuePath,
     getNpmCmd,
     checkIfStorageIsEmpty,
+    getLocalStorageDir,
 };
