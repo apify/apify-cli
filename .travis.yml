@@ -1,4 +1,7 @@
 language: node_js
+os:
+    - linux
+    - windows
 addons:
     chrome: latest
 cache:
