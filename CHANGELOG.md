@@ -1,3 +1,8 @@
+0.2.6 / 2018-11-09
+==================
+- Added warning if `apify run` reuse old state in storage
+- Fixed issues #70 #65 #68
+
 0.2.5 / 2018-10-31
 ==================
 - Updated NPM dependencies
