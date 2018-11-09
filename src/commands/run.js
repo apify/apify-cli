@@ -8,7 +8,7 @@ const { DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
 const { ENV_VARS } = require('apify-shared/consts');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
-    purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd,
+    purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty,
 } = require('../lib/utils');
 const { info, warning } = require('../lib/outputs');
 
@@ -31,20 +31,29 @@ class RunCommand extends ApifyCommand {
         }
         // Purge stores
         if (flags.purge) {
-            await Promise.all([purgeDefaultQueue(cwd), purgeDefaultKeyValueStore(cwd), purgeDefaultDataset(cwd)]);
+            await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
             info('All default local stores were purged.');
         }
         if (flags.purgeQueue) {
-            await purgeDefaultQueue(cwd);
+            await purgeDefaultQueue();
             info('Default local request queue was purged.');
         }
         if (flags.purgeDataset) {
-            await purgeDefaultDataset(cwd);
+            await purgeDefaultDataset();
             info('Default local dataset was purged.');
         }
         if (flags.purgeKeyValueStore) {
-            await purgeDefaultKeyValueStore(cwd);
+            await purgeDefaultKeyValueStore();
             info('Default local key-value store was purged.');
+        }
+
+        // Check if apify storage were purge, if not print error
+        if (!flags.purge) {
+            const isStorageEmpty = await checkIfStorageIsEmpty();
+            if (!isStorageEmpty) {
+                warning('The apify_storage directory contains a previous state, the actor will continue where it left off. ' +
+                    'To start from the initial state, use --purge parameter to clean the apify_storage directory.');
+            }
         }
 
         // Attach env vars from local config files
