@@ -3,6 +3,7 @@ const fs = require('fs');
 const sinon = require('sinon');
 const command = require('@oclif/command');
 const path = require('path');
+const { ENV_VARS } = require('apify-shared/consts');
 const { spawnSync } = require('child_process');
 const { rimrafPromised } = require('../src/lib/files');
 const loadJson = require('load-json-file');
@@ -37,13 +38,20 @@ const checkTemplateStructureAndRun = async (actorName, templateName) => {
     expect(console.log.args.map(arg => arg[0])).to.not.include('Error:');
 };
 
+let prevEnvHeadless;
+
 describe('templates', () => {
     before(async () => {
+        prevEnvHeadless = process.env[ENV_VARS.HEADLESS];
+        process.env[ENV_VARS.HEADLESS] = '1';
+
         if (!fs.existsSync(TEST_ACTORS_FOLDER)) fs.mkdirSync(TEST_ACTORS_FOLDER);
         process.chdir(TEST_ACTORS_FOLDER);
     });
 
     after(async () => {
+        process.env[ENV_VARS.HEADLESS] = prevEnvHeadless;
+
         process.chdir('../');
         if (fs.existsSync(TEST_ACTORS_FOLDER)) await rimrafPromised(TEST_ACTORS_FOLDER);
     });
