@@ -1,9 +1,8 @@
 language: node_js
 os:
     - linux
-    - windows
 addons:
-    chrome: latest
+    chrome: stable
 cache:
     directories:
         - ~/.npm
