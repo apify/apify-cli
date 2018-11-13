@@ -1,11 +1,13 @@
 const { spawn } = require('child_process');
-const { cli: cliUx } = require('cli-ux');
 const outputs = require('./outputs');
 
 /**
  * Run child process and returns stdout and stderr to user stout
  */
 const spawnPromised = (cmd, args, opts) => {
+    // NOTE: Pipes stderr, stdout to main process
+    Object.assign(opts, { stdio: 'inherit' });
+
     const childProcess = spawn(cmd, args, opts);
 
     // Catch ctrl-c (SIGINT) and kills child process
@@ -18,10 +20,6 @@ const spawnPromised = (cmd, args, opts) => {
         }
     });
 
-    // Pipes stdout and stderr to main process log
-    childProcess.stdout.pipe(process.stdout);
-    childProcess.stderr.pipe(process.stderr);
-
     return new Promise((resolve, reject) => {
         childProcess.on('error', reject);
         childProcess.on('close', (code) => {
@@ -31,10 +29,7 @@ const spawnPromised = (cmd, args, opts) => {
     });
 };
 
-module.exports = async (cmd, args = [], opts = {}, showLoader) => {
-    const message = `${cmd} ${args.join(' ')}`;
-    outputs.run(message);
-    if (showLoader) cliUx.action.start(message);
+module.exports = async (cmd, args = [], opts = {}) => {
+    outputs.run(`${cmd} ${args.join(' ')}`);
     await spawnPromised(cmd, args, opts);
-    if (showLoader) cliUx.action.stop('done!');
 };
