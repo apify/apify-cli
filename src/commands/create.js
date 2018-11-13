@@ -56,7 +56,7 @@ class CreateCommand extends ApifyCommand {
         // Run npm install in actor dir
         const cmdArgs = ['install'];
         if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
-        await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
+        await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir }, true);
 
         outputs.success(`Actor '${actName}' was created. To run it, run "cd ${actName}" and "apify run".`);
     }

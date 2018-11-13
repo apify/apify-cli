@@ -58,6 +58,7 @@
         "bluebird": "^3.5.1",
         "chalk": "^2.3.2",
         "child-process-promise": "^2.2.1",
+        "cli-ux": "^4.9.3",
         "globby": "^8.0.1",
         "inquirer": "^6.2.0",
         "is-online": "^7.0.0",

@@ -1,4 +1,5 @@
 const { spawn } = require('child_process');
+const { cli: cliUx } = require('cli-ux');
 const outputs = require('./outputs');
 
 /**
@@ -30,7 +31,10 @@ const spawnPromised = (cmd, args, opts) => {
     });
 };
 
-module.exports = async (cmd, args = [], opts = {}) => {
-    outputs.run(`${cmd} ${args.join(' ')}`);
+module.exports = async (cmd, args = [], opts = {}, showLoader) => {
+    const message = `${cmd} ${args.join(' ')}`;
+    outputs.run(message);
+    if (showLoader) cliUx.action.start(message);
     await spawnPromised(cmd, args, opts);
+    if (showLoader) cliUx.action.stop('done!');
 };
