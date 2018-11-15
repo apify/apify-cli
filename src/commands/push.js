@@ -1,7 +1,7 @@
 const fs = require('fs');
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow, outputLogStream } = require('../lib/utils');
+const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow, outputJobLog } = require('../lib/utils');
 const { createActZip } = require('../lib/utils');
 const { ACT_JOB_STATUSES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES } = require('../lib/consts');
@@ -95,7 +95,7 @@ class PushCommand extends ApifyCommand {
         });
 
         try {
-            await outputLogStream(build.id, waitForFinishMillis);
+            await outputJobLog(build, waitForFinishMillis);
         } catch (err) {
             outputs.warning('Can not get log:');
             console.error(err);

@@ -5,7 +5,7 @@ const globby = require('globby');
 const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
-const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS } = require('apify-shared/consts');
+const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES } = require('apify-shared/consts');
 const https = require('https');
 const ApifyClient = require('apify-client');
 const { warning } = require('./outputs');
@@ -228,14 +228,23 @@ const purgeDefaultKeyValueStore = async () => {
     await Promise.all(deletePromises);
 };
 
-const outputLogStream = (logId, timeout) => {
+const outputJobLog = async (job, jobStatus, timeout) => {
+    const { id: logId, status } = job;
+    // In case job was already done just output log
+    if (ACT_JOB_TERMINAL_STATUSES.includes(status)) {
+        const { logs } = new ApifyClient();
+        const log = await logs.getLog({ logId });
+        process.stdout.write(log);
+    }
+
+    // In other case stream it to stdout
     return new Promise((resolve, reject) => {
         const req = https.get(`https://api.apify.com/v2/logs/${logId}?stream=1`);
         let res;
 
         req.on('response', (response) => {
             res = response;
-            response.on('data', chunk => console.log(chunk.toString().trim()));
+            response.on('data', chunk => process.stdout.write(chunk.toString()));
             response.on('error', (err) => {
                 reject(err);
             });
@@ -297,7 +306,7 @@ module.exports = {
     purgeDefaultQueue,
     purgeDefaultDataset,
     purgeDefaultKeyValueStore,
-    outputLogStream,
+    outputJobLog,
     getLocalKeyValueStorePath,
     getLocalDatasetPath,
     getLocalRequestQueuePath,
