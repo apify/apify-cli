@@ -7,12 +7,10 @@ class AddCommand extends ApifyCommand {
         const { name, value } = args;
 
         addSecret(name, value);
-
-        console.log(name, value);
     }
 }
 
-AddCommand.description = 'Adds a new secret environment variable.\nSecrets are stored to the ~/.apify.';
+AddCommand.description = 'Adds a new secret.\nSecrets are stored to the ~/.apify.';
 
 AddCommand.args = [
     {

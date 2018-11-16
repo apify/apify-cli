@@ -11,7 +11,7 @@ const ApifyClient = require('apify-client');
 const { warning } = require('./outputs');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_NAME, INPUT_FILE_REG_EXP, DEFAULT_LOCAL_STORAGE_DIR } = require('./consts');
 const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
-const { spawnSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const semver = require('semver');
 const isOnline = require('is-online');
 
@@ -282,6 +282,15 @@ const checkIfStorageIsEmpty = async () => {
     return filesWithoutInput.length === 0;
 };
 
+/**
+ * Show help for command
+ * NOTE: This is not nice, but I can not find other way..
+ * @param command
+ */
+const showHelpForCommand = (command) => {
+    execSync(`apify ${command} --help`, { stdio: [0, 1, 2] });
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -304,4 +313,5 @@ module.exports = {
     getNpmCmd,
     checkIfStorageIsEmpty,
     getLocalStorageDir,
+    showHelpForCommand,
 };

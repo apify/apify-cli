@@ -10,7 +10,7 @@ class RmCommand extends ApifyCommand {
     }
 }
 
-RmCommand.description = 'Removes the secret environment variable.';
+RmCommand.description = 'Removes the secret.';
 
 RmCommand.args = [
     {
