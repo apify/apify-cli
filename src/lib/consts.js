@@ -70,6 +70,8 @@ exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
 
 exports.AUTH_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
 
+exports.SECRETS_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'secrets.json');
+
 exports.LOCAL_CONFIG_NAME = 'apify.json';
 
 exports.INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..*`);
