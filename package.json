@@ -4,7 +4,7 @@
     "description": "Apify command line client to help you create, develop, build and run Apify actors.",
     "main": "index.js",
     "scripts": {
-        "test": "mocha --timeout 120000 --recursive",
+        "test": "mocha --timeout 120000 --recursive -g push",
         "lint": "eslint cli test",
         "commands_md": "./help_to_md.sh",
         "prod_shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap"
@@ -52,7 +52,7 @@
         "@oclif/errors": "^1.0.2",
         "@oclif/plugin-commands": "^1.2.0",
         "@oclif/plugin-help": "^2.1.4",
-        "apify-client": "^0.3.4",
+        "apify-client": "^0.5.0",
         "apify-shared": "0.1.6",
         "archiver-promise": "^1.0.0",
         "bluebird": "^3.5.3",
