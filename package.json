@@ -4,7 +4,7 @@
     "description": "Apify command line client to help you create, develop, build and run Apify actors.",
     "main": "index.js",
     "scripts": {
-        "test": "mocha --timeout 120000 --recursive -g push",
+        "test": "mocha --timeout 120000 --recursive",
         "lint": "eslint cli test",
         "commands_md": "./help_to_md.sh",
         "prod_shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap"

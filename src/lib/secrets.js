@@ -2,7 +2,9 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const _ = require('underscore');
 const { SECRETS_FILE_PATH } = require('./consts');
+const { warning } = require('./outputs');
 
+const SECRET_KEY_PREFIX = '@';
 // TODO: Moved to shared
 const MAX_ENV_VAR_NAME_LENGTH = 100;
 const MAX_ENV_VAR_VALUE_LENGTH = 50000;
@@ -42,7 +44,35 @@ const removeSecret = (name) => {
     writeSecretsFile(secrets);
 };
 
+const isSecretKey = (envValue) => {
+    return new RegExp(`^${SECRET_KEY_PREFIX}.{1}`).test(envValue);
+};
+
+/**
+ * Replaces secure values in env with proper values from local secrets file.
+ * @param env
+ * @param secrets - Object with secrets, if not set, will be load from secrets file.
+ */
+const replaceSecretsValue = (env, secrets) => {
+    secrets = secrets || getSecretsFile();
+    const updatedEnv = {};
+    Object.keys(env).forEach((key) => {
+        if (isSecretKey(env[key])) {
+            const secretKey = env[key].replace(new RegExp(`^${SECRET_KEY_PREFIX}`), '');
+            if (secrets[secretKey]) {
+                updatedEnv[key] = secrets[secretKey];
+            } else {
+                warning(`Secrets with key ${secretKey} in local secrets. Set it up with "apify secrets:add ${secretKey} secretValue"`);
+            }
+        } else {
+            updatedEnv[key] = env[key];
+        }
+    });
+    return updatedEnv;
+};
+
 module.exports = {
     addSecret,
     removeSecret,
+    replaceSecretsValue,
 };
