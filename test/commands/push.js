@@ -70,7 +70,8 @@ describe('apify push', () => {
             versionNumber: apifyJson.version,
             buildTag: apifyJson.buildTag,
             envVars: [],
-            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}/records/${createdActor.name}-${apifyJson.version}.zip?disableRedirect=true`,
+            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}`
+                + `/records/${createdActor.name}-${apifyJson.version}.zip?disableRedirect=true`,
             sourceType: ACT_SOURCE_TYPES.TARBALL,
         });
     });
@@ -102,7 +103,8 @@ describe('apify push', () => {
         expect(testActorVersion).to.be.eql({
             versionNumber: apifyJson.version,
             buildTag: apifyJson.buildTag,
-            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}/records/${testActor.name}-${apifyJson.version}.zip?disableRedirect=true`,
+            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}`
+                + `/records/${testActor.name}-${apifyJson.version}.zip?disableRedirect=true`,
             envVars: [],
             sourceType: ACT_SOURCE_TYPES.TARBALL,
         });
