@@ -1,5 +1,4 @@
 const { expect } = require('chai');
-const sinon = require('sinon');
 const command = require('@oclif/command');
 const fs = require('fs');
 const { GLOBAL_CONFIGS_FOLDER } = require('../../../src/lib/consts');
@@ -23,18 +22,10 @@ describe('apify secrets:add', () => {
         }
     });
 
-    beforeEach(() => {
-        sinon.spy(console, 'log');
-    });
-
     it('should work', async () => {
         await command.run(['secrets:add', SECRET_KEY, SECRET_VALUE]);
         const secrets = getSecretsFile();
         expect(secrets[SECRET_KEY]).to.eql(SECRET_VALUE);
-    });
-
-    afterEach(() => {
-        console.log.restore();
     });
 
     after(async () => {

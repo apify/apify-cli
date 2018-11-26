@@ -5,6 +5,7 @@ const { createActZip, getLocalConfigOrThrow,
     getLoggedClientOrThrow, outputLogStream, getLocalUserInfo } = require('../lib/utils');
 const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES, UPLOADS_STORE_NAME } = require('../lib/consts');
+const { transformEnvToEnvVars } = require('../lib/secrets');
 const outputs = require('../lib/outputs');
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
@@ -31,7 +32,7 @@ class PushCommand extends ApifyCommand {
             if (!actor) throw new Error(`Cannot find actor with ID '${forceActorId}' in your account.`);
             actorId = actor.id;
         } else {
-            actor = await apifyClient.acts.getAct({ actId: `${userInfo}/${localConfig.name}` });
+            actor = await apifyClient.acts.getAct({ actId: `${userInfo.username}/${localConfig.name}` });
             if (actor) {
                 actorId = actor.id;
             } else {
@@ -72,26 +73,28 @@ class PushCommand extends ApifyCommand {
         const tarballUrl = `https://api.apify.com/v2/key-value-stores/${store.id}/records/${key}?disableRedirect=true`;
 
         // Update actor version
-        let actorVersion = await apifyClient.acts.getActVersion({ actId: actorId, versionNumber: version });
-        if (actorVersion) {
+        const actorCurrentVersion = await apifyClient.acts.getActVersion({ actId: actorId, versionNumber: version });
+        if (actorCurrentVersion) {
             const actorVersionModifier = { tarballUrl, buildTag, sourceType: ACT_SOURCE_TYPES.TARBALL };
-            actorVersion = await apifyClient.acts.updateActVersion({
+            if (localConfig.env) actorVersionModifier.envVars = transformEnvToEnvVars(localConfig.env);
+            await apifyClient.acts.updateActVersion({
                 actId: actorId,
                 versionNumber: version,
                 actVersion: actorVersionModifier,
             });
             outputs.run(`Updated version ${version} for ${actor.name} actor.`);
         } else {
-            const newActorVersion = {
+            const actorNewVersion = {
                 versionNumber: version,
                 tarballUrl,
                 buildTag,
                 sourceType: ACT_SOURCE_TYPES.TARBALL,
             };
-            actorVersion = await apifyClient.acts.createActVersion({
+            if (localConfig.env) actorNewVersion.envVars = transformEnvToEnvVars(localConfig.env);
+            await apifyClient.acts.createActVersion({
                 actId: actorId,
                 versionNumber: version,
-                actVersion: newActorVersion,
+                actVersion: actorNewVersion,
             });
             outputs.run(`Created version ${version} for ${actor.name} actor.`);
         }

@@ -62,7 +62,7 @@ const replaceSecretsValue = (env, secrets) => {
             if (secrets[secretKey]) {
                 updatedEnv[key] = secrets[secretKey];
             } else {
-                warning(`Secrets with key ${secretKey} in local secrets. Set it up with "apify secrets:add ${secretKey} secretValue"`);
+                warning(`Secrets with key ${secretKey} in local secrets. Set it up with "apify secrets:add ${secretKey} secretValue".`);
             }
         } else {
             updatedEnv[key] = env[key];
@@ -71,9 +71,41 @@ const replaceSecretsValue = (env, secrets) => {
     return updatedEnv;
 };
 
+/**
+ * Transform env to envVars format attribute, which uses Apify API
+ * It replaces secrets to values from secrets file.
+ * @param env
+ * @param secrets - Object with secrets, if not set, will be load from secrets file.
+ */
+const transformEnvToEnvVars = (env, secrets) => {
+    secrets = secrets || getSecretsFile();
+    const envVars = [];
+    Object.keys(env).forEach((key) => {
+        if (isSecretKey(env[key])) {
+            const secretKey = env[key].replace(new RegExp(`^${SECRET_KEY_PREFIX}`), '');
+            if (secrets[secretKey]) {
+                envVars.push({
+                    name: key,
+                    value: secrets[secretKey],
+                    isSecret: true
+                });
+            } else {
+                warning(`Secrets with key ${secretKey} in local secrets. Set it up with "apify secrets:add ${secretKey} secretValue"`);
+            }
+        } else {
+            envVars.push({
+                name: key,
+                value: env[key],
+            });
+        }
+    });
+    return envVars;
+};
+
 module.exports = {
     addSecret,
     removeSecret,
     replaceSecretsValue,
     getSecretsFile,
+    transformEnvToEnvVars,
 };
