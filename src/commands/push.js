@@ -52,7 +52,7 @@ class PushCommand extends ApifyCommand {
             }
         }
 
-        outputs.info(`Deploying actor '${localConfig.name}' to Apify as ${actor.name}.`);
+        outputs.info(`Deploying actor '${localConfig.name}' to Apify.`);
 
         // Create zip
         outputs.run('Zipping actor files');
