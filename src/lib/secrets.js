@@ -75,4 +75,5 @@ module.exports = {
     addSecret,
     removeSecret,
     replaceSecretsValue,
+    getSecretsFile,
 };
