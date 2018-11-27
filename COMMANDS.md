@@ -10,16 +10,17 @@ USAGE
   $ apify [COMMAND]
 
 COMMANDS
-  call    Runs the actor remotely on the Apify platform.
-  create  Creates a new actor project directory from a selected boilerplate
-          template.
-  info    Displays information about current Apify settings.
-  init    Initializes an actor project in an existing directory.
-  login   Logs in to the Apify platform using the API token.
-  logout  Logs out of the Apify platform.
-  push    Uploads the actor to the Apify platform and builds it there.
-  run     Runs the actor locally in the current directory by executing "npm
-          start".
+  call     Runs the actor remotely on the Apify platform.
+  create   Creates a new actor project directory from a selected boilerplate
+           template.
+  info     Displays information about current Apify settings.
+  init     Initializes an actor project in an existing directory.
+  login    Logs in to the Apify platform using the API token.
+  logout   Logs out of the Apify platform.
+  push     Uploads the actor to the Apify platform and builds it there.
+  run      Runs the actor locally in the current directory by executing "npm
+           start".
+  secrets  Manages your secrets environment variables.
 
 ```
 ### apify call
@@ -58,10 +59,10 @@ DESCRIPTION
 Creates a new actor project directory from a selected boilerplate template.
 
 USAGE
-  $ apify create ACTNAME
+  $ apify create ACTORNAME
 
 ARGUMENTS
-  ACTNAME  Name of the actor and its directory
+  ACTORNAME  Name of the actor and its directory
 
 OPTIONS
   -t, --template=puppeteer_crawler|puppeteer|basic|hello_word
@@ -130,24 +131,30 @@ DESCRIPTION
 Uploads the actor to the Apify platform and builds it there.
 
 USAGE
-  $ apify push [ACTID]
+  $ apify push [ACTORID]
 
 ARGUMENTS
-  ACTID  ID of an existing actor on the Apify platform where the files will be
-         pushed. If not provided, the command will create or modify the actor
-         with the name specified in "apify.json" file.
+  ACTORID  ID of an existing actor on the Apify platform where the files will be
+           pushed. If not provided, the command will create or modify the actor
+           with the name specified in "apify.json" file.
 
 OPTIONS
   -b, --build-tag=build-tag              Build tag to be applied to the
                                          successful actor build. By default, it
                                          is taken from the "apify.json" file
 
-  -v, --version-number=version-number    Actor version number to which the files
+  -v, --version=version                  Deprecated: Use version instead. Actor
+                                         version number to which the files
                                          should be pushed. By default, it is
                                          taken from the "apify.json" file.
 
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to build to finish,
                                          if no value passed, it waits forever.
+
+  --version-number=version-number        DEPRECATED: Use flag version instead.
+                                         Actor version number to which the files
+                                         should be pushed. By default, it is
+                                         taken from the "apify.json" file.
 
 DESCRIPTION
   The command creates a ZIP with files of the actor from the current directory, 
@@ -189,6 +196,34 @@ DESCRIPTION
   NOTE: You can override the default behaviour of command overriding npm start 
   script value in a package.json file. You can set up your own main file or 
   environment variables by changing it.
+
+```
+### apify secrets
+```text
+Manages your secrets environment variables.
+
+USAGE
+  $ apify secrets
+
+DESCRIPTION
+  Adds or removes your secrets. After adding secret you can use it actor 
+  environment variables with "@" prefix.
+  For example:
+  $ apify secret:add myToken my_secret_token_value
+  usage in apify.json:
+
+  {
+     "name": "my_actor",
+     "env": { "TOKEN": "@myToken" },
+     "version": "0.1
+  }
+
+  While we push actor to Apify platform,
+  value of myToken will be encrypted and used as environment variable.
+
+COMMANDS
+  secrets:add  Adds a new secret.
+  secrets:rm   Removes the secret.
 
 ```
 
