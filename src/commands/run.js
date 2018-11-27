@@ -17,7 +17,7 @@ class RunCommand extends ApifyCommand {
     async run() {
         const { flags } = this.parse(RunCommand);
         const { proxy, id: userId, token } = getLocalUserInfo();
-        const localConfig = getLocalConfigOrThrow();
+        const localConfig = await getLocalConfigOrThrow();
         const cwd = process.cwd();
 
         const packageJsonPath = path.join(cwd, 'package.json');

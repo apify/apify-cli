@@ -14,7 +14,7 @@ class PushCommand extends ApifyCommand {
     async run() {
         const { args, flags } = this.parse(PushCommand);
         const apifyClient = await getLoggedClientOrThrow();
-        const localConfig = getLocalConfigOrThrow();
+        const localConfig = await getLocalConfigOrThrow();
         const userInfo = await getLocalUserInfo();
 
         let actorId; let actor;
