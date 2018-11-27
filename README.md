@@ -121,7 +121,7 @@ apify call apify/hello-world
 ### So what's in this `apify.json` file?
 
 This file associates your local development project with an actor on the Apify platform.
-It contains information such as actor name or ID, version, build tag and environment variables.
+It contains information such as actor name, version, build tag and environment variables.
 Make sure you commit this file to the Git repository.
 
 For example, `apify.json` file can look as follows:
@@ -129,29 +129,18 @@ For example, `apify.json` file can look as follows:
 ```
 {
     "name": "dataset-to-mysql",
-    "actId": "drobnikj/dataset-to-mysql",
-    "version": {
-        "versionNumber": "0.1",
-        "buildTag": "latest",
-        "envVars": [
-            {
-                "name": "MYSQL_USER",
-                "value": "my_username"
-            },
-            {
-                "name": "MYSQL_PASSWORD",
-                "value": "my_secret_password"
-            }
-        ],
-        "sourceType": "TARBALL",
-        "tarballUrl": "https://api.apify.com/v2/key-value-stores/something/records/dataset-to-mysql-0.1.zip?disableRedirect=true"
+    "version": "0.1",
+    "buildTag": "latest",
+    "env": {
+      "MYSQL_USER": "my_username",
+      "MYSQL_PASSWORD": "@mySecretPassword"
     },
     "template": "basic"
 }
 ```
 
-Please note that currently you can't store secure environment variables
-to the `apify.json` file. Stay tuned, we're working on it.
+#### How to set secure environment variables
+
 
 
 ### Need help?
