@@ -142,7 +142,7 @@ PushCommand.flags = {
     }),
     'version': flagsHelper.string({
         char: 'v',
-        description: 'Deprecated: Use version instead. Actor version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
+        description: 'Actor version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
         required: false,
     }),
     'build-tag': flagsHelper.string({

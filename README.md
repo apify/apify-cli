@@ -322,8 +322,7 @@ OPTIONS
                                          successful actor build. By default, it
                                          is taken from the "apify.json" file
 
-  -v, --version=version                  Deprecated: Use version instead. Actor
-                                         version number to which the files
+  -v, --version=version                  Actor version number to which the files
                                          should be pushed. By default, it is
                                          taken from the "apify.json" file.
 
@@ -407,6 +406,7 @@ COMMANDS
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
 
 
 
