@@ -139,7 +139,7 @@ For example, `apify.json` file can look as follows:
 }
 ```
 
-#### How to set secure environment variables
+#### How to set secret environment variables
 
 CLI provides commands to manage secrets environment variables. Secrets are stored to the ~/.apify directory.
 Adds a new secret using command:
