@@ -4,7 +4,7 @@
 Apify command line client to help you create, develop, build and run Apify actors.
 
 VERSION
-  apify-cli/0.2.7 darwin-x64 node-v11.2.0
+  apify-cli/0.3.0 darwin-x64 node-v11.2.0
 
 USAGE
   $ apify [COMMAND]
@@ -221,7 +221,7 @@ DESCRIPTION
   value of myToken will be encrypted and used as environment variable.
 
 COMMANDS
-  secrets:add  Adds a new secret.
+  secrets:add  Adds a new secret value.
   secrets:rm   Removes the secret.
 
 ```
