@@ -11,12 +11,13 @@ const {
     purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty,
 } = require('../lib/utils');
 const { info, warning } = require('../lib/outputs');
+const { replaceSecretsValue } = require('../lib/secrets');
 
 class RunCommand extends ApifyCommand {
     async run() {
         const { flags } = this.parse(RunCommand);
         const { proxy, id: userId, token } = getLocalUserInfo();
-        const localConfig = getLocalConfigOrThrow();
+        const localConfig = await getLocalConfigOrThrow();
         const cwd = process.cwd();
 
         const packageJsonPath = path.join(cwd, 'package.json');
@@ -63,10 +64,9 @@ class RunCommand extends ApifyCommand {
         if (proxy && proxy.password) localEnvVars[ENV_VARS.PROXY_PASSWORD] = proxy.password;
         if (userId) localEnvVars[ENV_VARS.USER_ID] = userId;
         if (token) localEnvVars[ENV_VARS.TOKEN] = token;
-        if (localConfig.version && localConfig.version.envVars) {
-            localConfig.version.envVars.forEach((envVar) => {
-                if (envVar.name && envVar.value) localEnvVars[envVar.name] = envVar.value;
-            });
+        if (localConfig.env) {
+            const updatedEnv = replaceSecretsValue(localConfig.env);
+            Object.assign(localEnvVars, updatedEnv);
         }
         // NOTE: User can overwrite env vars
         const env = Object.assign(localEnvVars, process.env);

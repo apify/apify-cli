@@ -14,11 +14,11 @@ const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE, EMPTY_LOCAL_CONFIG, ACTS_TEMPLATE_
 class CreateCommand extends ApifyCommand {
     async run() {
         const { flags, args } = this.parse(CreateCommand);
-        const { actName } = args;
+        const { actorName } = args;
         let { template } = flags;
 
-        // Check proper format of actName
-        if (!DNS_SAFE_NAME_REGEX.test(actName)) {
+        // Check proper format of actorName
+        if (!DNS_SAFE_NAME_REGEX.test(actorName)) {
             throw new Error('Name of your actor, ' +
                 'must be a DNS hostname-friendly string(e.g. my-newest-actor).');
         }
@@ -35,30 +35,30 @@ class CreateCommand extends ApifyCommand {
             ({ template } = answer);
         }
         const cwd = process.cwd();
-        const actFolderDir = path.join(cwd, actName);
+        const actFolderDir = path.join(cwd, actorName);
 
         // Create actor directory structure
         try {
             fs.mkdirSync(actFolderDir);
         } catch (err) {
             if (err.code && err.code === 'EEXIST') {
-                outputs.error(`Cannot create new actor, directory '${actName}' already exists. ` +
+                outputs.error(`Cannot create new actor, directory '${actorName}' already exists. ` +
                     'You can use "apify init" to create a local actor environment inside an existing directory.');
                 return;
             }
             throw err;
         }
         await copy(ACTS_TEMPLATES[template].dir, actFolderDir, { dot: true });
-        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName, template }), actFolderDir);
+        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actorName, template }), actFolderDir);
         await setLocalEnv(actFolderDir);
-        await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actName });
+        await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actorName });
 
         // Run npm install in actor dir
         const cmdArgs = ['install'];
         if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
         await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
 
-        outputs.success(`Actor '${actName}' was created. To run it, run "cd ${actName}" and "apify run".`);
+        outputs.success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
     }
 }
 
@@ -75,7 +75,7 @@ CreateCommand.flags = {
 
 CreateCommand.args = [
     {
-        name: 'actName',
+        name: 'actorName',
         required: true,
         description: 'Name of the actor and its directory',
     },

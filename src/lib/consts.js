@@ -56,22 +56,22 @@ exports.DEFAULT_LOCAL_STORAGE_DIR = 'apify_storage';
 
 exports.EMPTY_LOCAL_CONFIG = {
     name: null,
-    actId: null,
-    version: {
-        versionNumber: '0.1',
-        buildTag: 'latest',
-        envVars: [],
-        sourceType: 'TARBALL',
-        tarballUrl: null,
-    },
+    version: '0.0',
+    buildTag: 'latest',
+    env: null,
 };
 
 exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
 
 exports.AUTH_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
 
+exports.SECRETS_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'secrets.json');
+
 exports.LOCAL_CONFIG_NAME = 'apify.json';
 
 exports.INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..*`);
 
 exports.MAIN_FILE = 'main.js';
+
+exports.UPLOADS_STORE_NAME = 'apify-cli-deployments';
+
