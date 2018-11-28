@@ -126,7 +126,7 @@ Make sure you commit this file to the Git repository.
 
 For example, `apify.json` file can look as follows:
 
-```
+```json
 {
     "name": "dataset-to-mysql",
     "version": "0.1",
@@ -141,7 +141,22 @@ For example, `apify.json` file can look as follows:
 
 #### How to set secure environment variables
 
-
+CLI provides commands to manage secrets environment variables. Secrets are stored to the ~/.apify directory.
+Adds a new secret using command:
+```bash
+apify secrets:add mySecretPassword pwd1234
+```
+After adding a new secret you can use the secret in apify.json
+```
+{
+    "name": "dataset-to-mysql",
+    ...
+    "env": {
+      "MYSQL_PASSWORD": "@mySecretPassword"
+    },
+    ...
+}
+```
 
 ### Need help?
 
