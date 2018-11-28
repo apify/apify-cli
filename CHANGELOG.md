@@ -1,3 +1,7 @@
+0.2.7 / 2018-11-27
+==================
+- Updated all templates to latest apify packages
+
 0.2.6 / 2018-11-09
 ==================
 - Added warning if `apify run` reuse old state in storage

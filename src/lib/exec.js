@@ -5,6 +5,9 @@ const outputs = require('./outputs');
  * Run child process and returns stdout and stderr to user stout
  */
 const spawnPromised = (cmd, args, opts) => {
+    // NOTE: Pipes stderr, stdout to main process
+    Object.assign(opts, { stdio: 'inherit' });
+
     const childProcess = spawn(cmd, args, opts);
 
     // Catch ctrl-c (SIGINT) and kills child process
@@ -16,10 +19,6 @@ const spawnPromised = (cmd, args, opts) => {
             // SIGINT can come after the child process is finished, ignore it
         }
     });
-
-    // Pipes stdout and stderr to main process log
-    childProcess.stdout.pipe(process.stdout);
-    childProcess.stderr.pipe(process.stderr);
 
     return new Promise((resolve, reject) => {
         childProcess.on('error', reject);

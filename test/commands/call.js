@@ -3,13 +3,12 @@ const path = require('path');
 const fs = require('fs');
 const command = require('@oclif/command');
 const { rimrafPromised } = require('../../src/lib/files');
-const loadJson = require('load-json-file');
 const Promise = require('bluebird');
 const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
-const ACT_NAME = `my-act-${Date.now()}`;
+const ACTOR_NAME = `my-act-${Date.now()}`;
 const EXPECTED_OUTPUT = {
     test: Math.random(),
 };
@@ -18,6 +17,7 @@ const EXPECTED_INPUT = {
 };
 const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
 
+let actorId;
 describe('apify call', () => {
     before(async function () {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
@@ -26,9 +26,10 @@ describe('apify call', () => {
             return;
         }
         const { token } = testUserClient.getOptions();
+        const { username } = await testUserClient.users.getUser();
         await command.run(['login', '--token', token]);
-        await command.run(['create', ACT_NAME, '--template', 'basic']);
-        process.chdir(ACT_NAME);
+        await command.run(['create', ACTOR_NAME, '--template', 'basic']);
+        process.chdir(ACTOR_NAME);
         const actCode = `
         const Apify = require('apify');
 
@@ -45,17 +46,18 @@ describe('apify call', () => {
 
         await command.run(['push']);
 
+        actorId = `${username}/${ACTOR_NAME}`;
+
         // For some reason tests were failing with nonexisting build with "LATEST" tag.
         // Adding some sleep here as attempt to fix this.
-        await Promise.delay(500);
+        await Promise.delay(1000);
     });
 
     it('without actId', async () => {
         await command.run(['call']);
-        const { actId } = loadJson.sync('apify.json');
-        const runs = await testUserClient.acts.listRuns({ actId });
+        const runs = await testUserClient.acts.listRuns({ actId: actorId });
         const lastRun = runs.items.pop();
-        const lastRunDetail = await testUserClient.acts.getRun({ actId, runId: lastRun.id });
+        const lastRunDetail = await testUserClient.acts.getRun({ actId: actorId, runId: lastRun.id });
         const output = await testUserClient.keyValueStores.getRecord({ storeId: lastRunDetail.defaultKeyValueStoreId, key: 'OUTPUT' });
         const input = await testUserClient.keyValueStores.getRecord({ storeId: lastRunDetail.defaultKeyValueStoreId, key: 'INPUT' });
 
@@ -65,10 +67,9 @@ describe('apify call', () => {
     });
 
     after(async () => {
-        const { actId } = loadJson.sync('apify.json');
-        await testUserClient.acts.deleteAct({ actId });
+        await testUserClient.acts.deleteAct({ actId: actorId });
         process.chdir('../');
-        if (fs.existsSync(ACT_NAME)) await rimrafPromised(ACT_NAME);
+        if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
         await command.run(['logout']);
     });
 });

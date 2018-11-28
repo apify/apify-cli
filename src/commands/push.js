@@ -1,29 +1,58 @@
 const fs = require('fs');
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
-const { getLocalConfigOrThrow, setLocalConfig, getLoggedClientOrThrow, outputJobLog } = require('../lib/utils');
-const { createActZip } = require('../lib/utils');
-const { ACT_JOB_STATUSES } = require('apify-shared/consts');
-const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES } = require('../lib/consts');
+const { createActZip, getLocalConfigOrThrow,
+    getLoggedClientOrThrow, outputJobLog, getLocalUserInfo } = require('../lib/utils');
+const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES } = require('apify-shared/consts');
+const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES, UPLOADS_STORE_NAME } = require('../lib/consts');
+const { transformEnvToEnvVars } = require('../lib/secrets');
 const outputs = require('../lib/outputs');
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
-const UPLOADS_STORE_NAME = 'apify-cli-deployments';
 
 class PushCommand extends ApifyCommand {
     async run() {
         const { args, flags } = this.parse(PushCommand);
         const apifyClient = await getLoggedClientOrThrow();
-        const localConfig = getLocalConfigOrThrow();
+        const localConfig = await getLocalConfigOrThrow();
+        const userInfo = await getLocalUserInfo();
 
-        // User can override actId of pushing actor.
-        // It causes that we push actor to this id but actId and name in localConfig will remain same.
-        let actId = args.actId || localConfig.actId;
-        const versionNumber = flags.versionNumber || localConfig.version.versionNumber;
-        const buildTag = flags.buildTag || localConfig.version.buildTag;
+        let actorId;
+        let actor;
+        // User can override actor version and build tag, attributes in localConfig will remain same.
+        const version = flags.version || flags.versionNumber || localConfig.version;
+        const buildTag = flags.buildTag || localConfig.buildTag;
         const waitForFinishMillis = Number.isNaN(flags.waitForFinish)
             ? undefined
             : parseInt(flags.waitForFinish, 10) * 1000;
+        // User can override actorId of pushing actor.
+        // It causes that we push actor to this id but attributes in localConfig will remain same.
+        const forceActorId = args.actorId;
+        if (forceActorId) {
+            actor = await apifyClient.acts.getAct({ actId: forceActorId });
+            if (!actor) throw new Error(`Cannot find actor with ID '${forceActorId}' in your account.`);
+            actorId = actor.id;
+        } else {
+            actor = await apifyClient.acts.getAct({ actId: `${userInfo.username}/${localConfig.name}` });
+            if (actor) {
+                actorId = actor.id;
+            } else {
+                const actTemplate = localConfig.template || DEFAULT_ACT_TEMPLATE;
+                const newActor = {
+                    name: localConfig.name,
+                    defaultRunOptions: ACTS_TEMPLATES[actTemplate].defaultRunOptions,
+                    versions: [{
+                        versionNumber: version,
+                        buildTag,
+                        sourceType: ACT_SOURCE_TYPES.TARBALL,
+                    }],
+                };
+                actor = await apifyClient.acts.createAct({ act: newActor });
+                actorId = actor.id;
+                outputs.info(`Created actor with name ${localConfig.name} on Apify.`);
+                console.dir(actor);
+            }
+        }
 
         outputs.info(`Deploying actor '${localConfig.name}' to Apify.`);
 
@@ -33,7 +62,7 @@ class PushCommand extends ApifyCommand {
 
         // Upload it to Apify.keyValueStores
         const store = await apifyClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
-        const key = `${localConfig.name}-${versionNumber}.zip`;
+        const key = `${actor.name}-${version}.zip`;
         const buffer = fs.readFileSync(TEMP_ZIP_FILE_NAME);
         await apifyClient.keyValueStores.putRecord({
             storeId: store.id,
@@ -42,54 +71,40 @@ class PushCommand extends ApifyCommand {
             contentType: 'application/zip',
         });
         fs.unlinkSync(TEMP_ZIP_FILE_NAME);
+        const tarballUrl = `https://api.apify.com/v2/key-value-stores/${store.id}/records/${key}?disableRedirect=true`;
 
-        // Update actor on Apify
-        const currentVersion = Object.assign(localConfig.version, {
-            versionNumber,
-            buildTag,
-            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
-        });
-
-        // TODO: we really need API endpoint that only updates one version!
-        if (actId) {
-            const updates = {};
-            // Actor was created yet or actId was passed
-            const actData = await apifyClient.acts.getAct({ actId });
-            if (!actData) throw new Error(`Cannot find actor with ID '${actId}' in your account.`);
-            let foundVersion = false;
-            updates.versions = actData.versions.map((version) => {
-                if (version.versionNumber === currentVersion.versionNumber) {
-                    foundVersion = true;
-                    return currentVersion;
-                }
-                return version;
+        // Update actor version
+        const actorCurrentVersion = await apifyClient.acts.getActVersion({ actId: actorId, versionNumber: version });
+        if (actorCurrentVersion) {
+            const actorVersionModifier = { tarballUrl, buildTag, sourceType: ACT_SOURCE_TYPES.TARBALL };
+            if (localConfig.env) actorVersionModifier.envVars = transformEnvToEnvVars(localConfig.env);
+            await apifyClient.acts.updateActVersion({
+                actId: actorId,
+                versionNumber: version,
+                actVersion: actorVersionModifier,
             });
-            if (!foundVersion) updates.versions.push(currentVersion);
-            outputs.run('Updating existing actor');
-            const updatedAct = await apifyClient.acts.updateAct({ actId, act: updates });
-            console.dir(updatedAct);
+            outputs.run(`Updated version ${version} for ${actor.name} actor.`);
         } else {
-            const actTemplate = localConfig.template || DEFAULT_ACT_TEMPLATE;
-            const newAct = {
-                name: localConfig.name,
-                defaultRunOptions: ACTS_TEMPLATES[actTemplate].defaultRunOptions,
-                versions: [currentVersion],
+            const actorNewVersion = {
+                versionNumber: version,
+                tarballUrl,
+                buildTag,
+                sourceType: ACT_SOURCE_TYPES.TARBALL,
             };
-            outputs.run('Creating actor');
-            const createdAct = await apifyClient.acts.createAct({ act: newAct });
-            actId = (createdAct.username) ? `${createdAct.username}/${createdAct.name}` : createdAct.id;
-            // Set up new actId to localConfig
-            localConfig.actId = actId;
-            console.dir(createdAct);
+            if (localConfig.env) actorNewVersion.envVars = transformEnvToEnvVars(localConfig.env);
+            await apifyClient.acts.createActVersion({
+                actId: actorId,
+                versionNumber: version,
+                actVersion: actorNewVersion,
+            });
+            outputs.run(`Created version ${version} for ${actor.name} actor.`);
         }
 
-        await setLocalConfig(Object.assign(localConfig, { version: currentVersion }));
-
         // Build actor on Apify and wait for build finish
-        outputs.run('Building actor');
+        outputs.run(`Building actor ${actor.name}`);
         let build = await apifyClient.acts.buildAct({
-            actId,
-            version: versionNumber,
+            actId: actorId,
+            version,
             useCache: true,
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         });
@@ -123,6 +138,10 @@ PushCommand.description = 'Uploads the actor to the Apify platform and builds it
 
 PushCommand.flags = {
     'version-number': flagsHelper.string({
+        description: 'DEPRECATED: Use flag version instead. Actor version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
+        required: false,
+    }),
+    'version': flagsHelper.string({
         char: 'v',
         description: 'Actor version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
         required: false,
@@ -141,7 +160,7 @@ PushCommand.flags = {
 
 PushCommand.args = [
     {
-        name: 'actId',
+        name: 'actorId',
         required: false,
         description: 'ID of an existing actor on the Apify platform where the files will be pushed. ' +
         'If not provided, the command will create or modify the actor with the name specified in "apify.json" file.',

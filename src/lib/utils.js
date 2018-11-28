@@ -1,17 +1,19 @@
 const path = require('path');
 const fs = require('fs');
 const mime = require('mime');
+const _ = require('underscore');
 const globby = require('globby');
 const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
+const inquirer = require('inquirer');
 const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES } = require('apify-shared/consts');
 const https = require('https');
 const ApifyClient = require('apify-client');
-const { warning } = require('./outputs');
+const { warning, info } = require('./outputs');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_NAME, INPUT_FILE_REG_EXP, DEFAULT_LOCAL_STORAGE_DIR } = require('./consts');
 const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
-const { spawnSync } = require('child_process');
+const { execSync, spawnSync } = require('child_process');
 const semver = require('semver');
 const isOnline = require('is-online');
 
@@ -90,19 +92,43 @@ const getLoggedClient = async (token) => {
     return apifyClient;
 };
 
+const getLocalConfigPath = () => path.join(process.cwd(), LOCAL_CONFIG_NAME);
+
 const getLocalConfig = () => {
-    const localConfigPath = path.join(process.cwd(), LOCAL_CONFIG_NAME);
+    const localConfigPath = getLocalConfigPath();
     if (!fs.existsSync(localConfigPath)) {
         return;
     }
     return loadJson.sync(localConfigPath);
 };
 
-const getLocalConfigOrThrow = () => {
-    const localConfig = getLocalConfig();
+const getLocalConfigOrThrow = async () => {
+    let localConfig = getLocalConfig();
     if (!localConfig) {
         throw new Error('apify.json is missing in current dir! Call "apify init" to create it.');
     }
+    // 27-11-2018: Check if apify.json contains old  deprecated structure. If so, updates it.
+    if (localConfig.version && _.isObject(localConfig.version)) {
+        const answer = await inquirer.prompt([{
+            name: 'isConfirm',
+            type: 'confirm',
+            message: 'With a new version of apify-cli, we changed the structure of apify.json. It will be updated before the command start.',
+        }]);
+        if (answer.isConfirm) {
+            try {
+                localConfig = updateLocalConfigStructure(localConfig);
+                writeJson.sync(getLocalConfigPath(), localConfig);
+                info('apify.json was updated, do not forget to commit the new version of apify.json to Git repository.');
+            } catch (e) {
+                throw new Error('Can not update apify.json structure. '
+                    + 'Follow guide on https://github.com/apifytech/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+            }
+        } else {
+            throw new Error('Command can not run with old apify.json structure. '
+                + 'Follow guide on https://github.com/apifytech/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+        }
+    }
+
     return localConfig;
 };
 
@@ -144,8 +170,8 @@ const argsToCamelCase = (object) => {
 };
 
 /**
- * Create zip file with all actor files in current directory, omit files defined in .gitignore and ignore .git folder.
- * NOTE: Zips .file files and .folder/ folders
+ * Create zip file with all actor files in current directory, omit files defined in .gitignore and
+ * ignore .git folder. NOTE: Zips .file files and .folder/ folders
  * @param zipName
  * @return {Promise<void>}
  */
@@ -291,6 +317,37 @@ const checkIfStorageIsEmpty = async () => {
     return filesWithoutInput.length === 0;
 };
 
+/**
+ * Show help for command
+ * NOTE: This is not nice, but I can not find other way..
+ * @param command
+ */
+const showHelpForCommand = (command) => {
+    execSync(`apify ${command} --help`, { stdio: [0, 1, 2] });
+};
+
+/**
+ * Migration for deprecated structure of apify.json to latest.
+ * @param localConfig
+ */
+const updateLocalConfigStructure = (localConfig) => {
+    const updatedLocalConfig = {
+        name: localConfig.name,
+        template: localConfig.template,
+        version: localConfig.version.versionNumber,
+        buildTag: localConfig.version.buildTag,
+        env: null,
+    };
+    if (localConfig.version.envVars && localConfig.version.envVars.length) {
+        const env = {};
+        localConfig.version.envVars.forEach((envVar) => {
+            if (envVar.name && envVar.value) env[envVar.name] = envVar.value;
+        });
+        updatedLocalConfig.env = env;
+    }
+    return updatedLocalConfig;
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -313,4 +370,5 @@ module.exports = {
     getNpmCmd,
     checkIfStorageIsEmpty,
     getLocalStorageDir,
+    showHelpForCommand,
 };

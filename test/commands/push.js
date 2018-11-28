@@ -2,21 +2,24 @@ const { expect } = require('chai');
 const sinon = require('sinon');
 const fs = require('fs');
 const command = require('@oclif/command');
+const { ACT_SOURCE_TYPES } = require('apify-shared/consts');
 const { rimrafPromised } = require('../../src/lib/files');
+const { getLocalUserInfo } = require('../../src/lib/utils');
 const loadJson = require('load-json-file');
-const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
+const writeJson = require('write-json-file');
+const { GLOBAL_CONFIGS_FOLDER, UPLOADS_STORE_NAME } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 
-const ACT_NAME = `my-act-${Date.now()}`;
-const TEST_ACT = {
-    name: `my-testing-act-${Date.now()}`,
+const ACTOR_NAME = `cli-test-${Date.now()}`;
+const TEST_ACTOR = {
+    name: `my-cli-test-${Date.now()}`,
     isPublic: false,
     versions: [
         {
             versionNumber: '0.0',
             sourceType: 'TARBALL',
             buildTag: 'latest',
-            sourceCode: 'http://example.com/my_test.zip',
+            tarballUrl: 'http://example.com/my_test.zip',
         },
     ],
 };
@@ -30,53 +33,131 @@ describe('apify push', () => {
             return;
         }
         await command.run(['login', '--token', testUserClient.getOptions().token]);
-        await command.run(['create', ACT_NAME, '--template', ACT_TEMPLATE]);
-        process.chdir(ACT_NAME);
+        await command.run(['create', ACTOR_NAME, '--template', ACT_TEMPLATE]);
+        process.chdir(ACTOR_NAME);
     });
 
     beforeEach(() => {
         sinon.spy(console, 'log');
     });
 
-    it('should work without actId', async () => {
+    it('should work without actorId', async () => {
+        const apifyJson = loadJson.sync('apify.json');
+        apifyJson.env = {
+            MY_ENV_VAR: 'envVarValue',
+        };
+        writeJson.sync('apify.json', apifyJson);
+
         await command.run(['push']);
 
-        const apifyJson = loadJson.sync('apify.json');
-
-        const { actId } = apifyJson;
-        const createdAct = await testUserClient.acts.getAct({ actId });
+        const userInfo = await getLocalUserInfo();
+        const { name } = apifyJson;
+        const actorId = `${userInfo.username}/${name}`;
+        const createdActor = await testUserClient.acts.getAct({ actId: actorId });
+        const createdActorVersion = await testUserClient.acts.getActVersion({
+            actId: actorId,
+            versionNumber: apifyJson.version,
+        });
+        const store = await testUserClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
 
         const expectedApifyJson = {
-            name: ACT_NAME,
-            actId,
+            name: ACTOR_NAME,
             template: ACT_TEMPLATE,
-            version: createdAct.versions[0],
+            version: createdActorVersion.versionNumber,
+            buildTag: createdActorVersion.buildTag,
+            env: apifyJson.env,
         };
 
-        if (createdAct) await testUserClient.acts.deleteAct({ actId });
+        if (createdActor) await testUserClient.acts.deleteAct({ actId: actorId });
 
         expect(expectedApifyJson).to.be.eql(apifyJson);
+        expect(createdActorVersion).to.be.eql({
+            versionNumber: apifyJson.version,
+            buildTag: apifyJson.buildTag,
+            envVars: [{
+                name: 'MY_ENV_VAR',
+                value: 'envVarValue',
+            }],
+            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}`
+                + `/records/${createdActor.name}-${apifyJson.version}.zip?disableRedirect=true`,
+            sourceType: ACT_SOURCE_TYPES.TARBALL,
+        });
     });
 
-    it('should work with actId', async () => {
-        let testAct = await testUserClient.acts.createAct({ act: TEST_ACT });
-        const beforeApifyJson = loadJson.sync('apify.json');
+    it('should work with actorId', async () => {
+        let testActor = await testUserClient.acts.createAct({ act: TEST_ACTOR });
+        const apifyJson = loadJson.sync('apify.json');
 
-        await command.run(['push', testAct.id]);
+        await command.run(['push', testActor.id]);
 
-        const afterApifyJson = loadJson.sync('apify.json');
-        testAct = await testUserClient.acts.getAct({ actId: testAct.id });
+        testActor = await testUserClient.acts.getAct({ actId: testActor.id });
+        const testActorVersion = await testUserClient.acts.getActVersion({
+            actId: testActor.id,
+            versionNumber: apifyJson.version,
+        });
+        const store = await testUserClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
 
         const expectedApifyJson = {
-            name: beforeApifyJson.name,
-            actId: beforeApifyJson.actId,
+            name: apifyJson.name,
             template: ACT_TEMPLATE,
-            version: testAct.versions.find(version => version.versionNumber === afterApifyJson.version.versionNumber),
+            version: apifyJson.version,
+            buildTag: apifyJson.buildTag,
+            env: apifyJson.env,
         };
 
-        if (testAct) await testUserClient.acts.deleteAct({ actId: testAct.id });
+        if (testActor) await testUserClient.acts.deleteAct({ actId: testActor.id });
 
-        expect(expectedApifyJson).to.be.eql(afterApifyJson);
+        expect(expectedApifyJson).to.be.eql(apifyJson);
+        expect(testActorVersion).to.be.eql({
+            versionNumber: apifyJson.version,
+            buildTag: apifyJson.buildTag,
+            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}`
+                + `/records/${testActor.name}-${apifyJson.version}.zip?disableRedirect=true`,
+            envVars: [{
+                name: 'MY_ENV_VAR',
+                value: 'envVarValue',
+            }],
+            sourceType: ACT_SOURCE_TYPES.TARBALL,
+        });
+    });
+
+    it('should not rewrite current actor envVars', async () => {
+        const testActorWithEnvVars = Object.assign({}, TEST_ACTOR);
+        testActorWithEnvVars.versions = [{
+            versionNumber: '0.0',
+            sourceType: 'TARBALL',
+            buildTag: 'latest',
+            tarballUrl: 'http://example.com/my_test.zip',
+            envVars: [{
+                name: 'MY_TEST',
+                value: 'myValue',
+            }],
+        }];
+        let testActor = await testUserClient.acts.createAct({ act: testActorWithEnvVars });
+        const apifyJson = loadJson.sync('apify.json');
+
+        apifyJson.env = null;
+        writeJson.sync('apify.json', apifyJson);
+
+        await command.run(['push', testActor.id]);
+
+        testActor = await testUserClient.acts.getAct({ actId: testActor.id });
+        const testActorVersion = await testUserClient.acts.getActVersion({
+            actId: testActor.id,
+            versionNumber: apifyJson.version,
+        });
+        const store = await testUserClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
+
+        if (testActor) await testUserClient.acts.deleteAct({ actId: testActor.id });
+
+        expect(testActorVersion).to.be.eql({
+            versionNumber: apifyJson.version,
+            buildTag: apifyJson.buildTag,
+            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}`
+                + `/records/${testActor.name}-${apifyJson.version}.zip?disableRedirect=true`,
+            envVars: testActorWithEnvVars.versions[0].envVars,
+            sourceType: ACT_SOURCE_TYPES.TARBALL,
+        });
     });
 
     afterEach(() => {
@@ -85,7 +166,7 @@ describe('apify push', () => {
 
     after(async () => {
         process.chdir('../');
-        if (fs.existsSync(ACT_NAME)) await rimrafPromised(ACT_NAME);
+        if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
         await command.run(['logout']);
     });
 });
