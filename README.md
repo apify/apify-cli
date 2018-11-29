@@ -220,7 +220,7 @@ This section contains printouts of `apify help` for all commands.
 Apify command line client to help you create, develop, build and run Apify actors.
 
 VERSION
-  apify-cli/0.3.0 darwin-x64 node-v11.2.0
+  apify-cli/0.3.1 darwin-x64 node-v11.2.0
 
 USAGE
   $ apify [COMMAND]

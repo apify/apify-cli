@@ -1,3 +1,11 @@
+0.3.1 / 2018-11-29
+==================
+- :tada: New commands to manage secret environment variables: `apify secrets:add`, `apify secrets:rm`.
+- New documentation how to set environment variable in `apify.json`, see [documentation](https://github.com/apifytech/apify-cli/blob/master/README.md#environment-variables).
+- **BREAKING CHANGES**: Simplified `apify.json` structure. It will be updated automatically before execution apify run and push command.
+- Command `apify create` now shows progress bar of npm install.
+- Small bugs fixes
+
 0.2.7 / 2018-11-27
 ==================
 - Updated all templates to latest apify packages
