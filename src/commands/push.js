@@ -2,7 +2,7 @@ const fs = require('fs');
 const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const { createActZip, getLocalConfigOrThrow,
-    getLoggedClientOrThrow, outputLogStream, getLocalUserInfo } = require('../lib/utils');
+    getLoggedClientOrThrow, outputJobLog, getLocalUserInfo } = require('../lib/utils');
 const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES, UPLOADS_STORE_NAME } = require('../lib/consts');
 const { transformEnvToEnvVars } = require('../lib/secrets');
@@ -110,7 +110,7 @@ class PushCommand extends ApifyCommand {
         });
 
         try {
-            await outputLogStream(build.id, waitForFinishMillis);
+            await outputJobLog(build, waitForFinishMillis);
         } catch (err) {
             outputs.warning('Can not get log:');
             console.error(err);

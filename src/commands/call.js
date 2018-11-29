@@ -2,7 +2,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const { ACT_JOB_STATUSES } = require('apify-shared/consts');
 const { getLocalConfig, getLoggedClientOrThrow,
-    getLocalUserInfo, getLocalInput, outputLogStream } = require('../lib/utils');
+    getLocalUserInfo, getLocalInput, outputJobLog } = require('../lib/utils');
 const outputs = require('../lib/outputs');
 
 // TODO: Show full error messages and HTTP codes, this is not great:
@@ -57,7 +57,7 @@ class CallCommand extends ApifyCommand {
         }
 
         try {
-            await outputLogStream(run.id, waitForFinishMillis);
+            await outputJobLog(run, waitForFinishMillis);
         } catch (err) {
             outputs.warning('Can not get log:');
             console.error(err);
