@@ -139,7 +139,40 @@ For example, `apify.json` file can look as follows:
 }
 ```
 
-#### How to set secret environment variables
+## Environment variables
+
+There are two options how you can set up environment variables for actors.
+
+### 1. Set up environment variables in `apify.json`
+All keys from `env` will be set as environment variables into Apify platform after you push actor to Apify. Current values on Apify will be overridden.
+```json
+{
+    "name": "dataset-to-mysql",
+    "version": "0.1",
+    "buildTag": "latest",
+    "env": {
+      "MYSQL_USER": "my_username",
+      "MYSQL_PASSWORD": "@mySecretPassword"
+    },
+    "template": "basic"
+}
+```
+
+### 2. Set up environment variables in Apify app
+In [Apify app](https://my.apify.com/actors) select your actor, you can set up variables into Source tab.
+After setting up variables in the app, set up `env` to `null` apify.json. Otherwise, variables from `apify.json` will override variables in the app.
+```json
+{
+    "name": "dataset-to-mysql",
+    "version": "0.1",
+    "buildTag": "latest",
+    "env": null,
+    "template": "basic"
+}
+```
+
+
+#### How to set secret environment variables in `apify.json`
 
 CLI provides commands to manage secrets environment variables. Secrets are stored to the ~/.apify directory.
 Adds a new secret using command:
