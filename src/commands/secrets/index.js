@@ -10,8 +10,8 @@ class SecretsIndexCommand extends Command {
 SecretsIndexCommand.description = 'Manages your secrets environment variables.\n' +
     'Adds or removes your secrets. After adding secret you can use it actor environment variables with "@" prefix.\n' +
     'For example:\n' +
-    '$ apify secret:add myToken my_secret_token_value\n' +
-    'usage in apify.json:\n\n' +
+    '$ apify secrets:add myToken my_secret_token_value\n\n' +
+    'Usage in apify.json file:\n\n' +
     '{\n' +
     '  "name": "my_actor",\n' +
     '  "env": { "TOKEN": "@myToken" },\n' +
