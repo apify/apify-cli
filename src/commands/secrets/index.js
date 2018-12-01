@@ -7,17 +7,15 @@ class SecretsIndexCommand extends Command {
     }
 }
 
-SecretsIndexCommand.description = 'Manages your secrets environment variables.\n' +
-    'Adds or removes your secrets. After adding secret you can use it actor environment variables with "@" prefix.\n' +
-    'For example:\n' +
-    '$ apify secrets:add myToken my_secret_token_value\n\n' +
-    'Usage in apify.json file:\n\n' +
+SecretsIndexCommand.description = 'Manages secret values for actor environment variables.\n\n' +
+    'Example:\n' +
+    '$ apify secrets:add mySecret TopSecretValue123\n\n' +
+    'Now the "mySecret" value can be used in an environment variable defined in "apify.json" file by adding the "@" prefix:\n\n' +
     '{\n' +
     '  "name": "my_actor",\n' +
-    '  "env": { "TOKEN": "@myToken" },\n' +
+    '  "env": { "SECRET_ENV_VAR": "@mySecret" },\n' +
     '  "version": "0.1\n' +
     '}\n\n' +
-    'While we push actor to Apify platform,\n' +
-    'value of myToken will be encrypted and used as environment variable.';
+    'When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable of the actor.';
 
 module.exports = SecretsIndexCommand;
