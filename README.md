@@ -220,7 +220,7 @@ This section contains printouts of `apify help` for all commands.
 Apify command line client to help you create, develop, build and run Apify actors.
 
 VERSION
-  apify-cli/0.3.1 darwin-x64 node-v11.2.0
+  apify-cli/0.3.2 darwin-x64 node-v11.2.0
 
 USAGE
   $ apify [COMMAND]
@@ -236,7 +236,7 @@ COMMANDS
   push     Uploads the actor to the Apify platform and builds it there.
   run      Runs the actor locally in the current directory by executing "npm
            start".
-  secrets  Manages your secrets environment variables.
+  secrets  Manages secret values for actor environment variables.
 
 ```
 ### apify call
@@ -415,26 +415,26 @@ DESCRIPTION
 ```
 ### apify secrets
 ```text
-Manages your secrets environment variables.
+Manages secret values for actor environment variables.
 
 USAGE
   $ apify secrets
 
 DESCRIPTION
-  Adds or removes your secrets. After adding secret you can use it actor
-  environment variables with "@" prefix.
-  For example:
-  $ apify secret:add myToken my_secret_token_value
-  usage in apify.json:
+  Example:
+  $ apify secrets:add mySecret TopSecretValue123
+
+  Now the "mySecret" value can be used in an environment variable defined in
+  "apify.json" file by adding the "@" prefix:
 
   {
      "name": "my_actor",
-     "env": { "TOKEN": "@myToken" },
+     "env": { "SECRET_ENV_VAR": "@mySecret" },
      "version": "0.1
   }
 
-  While we push actor to Apify platform,
-  value of myToken will be encrypted and used as environment variable.
+  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is
+  stored as a secret environment variable of the actor.
 
 COMMANDS
   secrets:add  Adds a new secret value.
@@ -443,6 +443,8 @@ COMMANDS
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
+
 
 
 

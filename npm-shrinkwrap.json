@@ -1,6 +1,6 @@
 {
     "name": "apify-cli",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "lockfileVersion": 1,
     "requires": true,
     "dependencies": {
@@ -146,9 +146,9 @@
             "integrity": "sha1-ZlWX3oap/+Oqm/vmyuXG6kJrSXk="
         },
         "apify-client": {
-            "version": "0.5.0",
-            "resolved": "https://registry.npmjs.org/apify-client/-/apify-client-0.5.0.tgz",
-            "integrity": "sha512-pnEgv72fpLIZE4M13B2hh0qwvwZlXbvf1sUaeo3va6B80HgLHD+wEAUq7EhojdfMvtbWtFZRHd1VSk+DIXT1/g==",
+            "version": "0.5.2",
+            "resolved": "https://registry.npmjs.org/apify-client/-/apify-client-0.5.2.tgz",
+            "integrity": "sha512-JcmLuQWVkwZQztme6p0a8W0wGQ3jrhuY/wqtP6YW/Ghoxi3zrBj0rxj1Fm2OL9Es6En4xoDRRy/OdIltjrl+ZA==",
             "requires": {
                 "apify-shared": "^0.1.9",
                 "content-type": "^1.0.3",

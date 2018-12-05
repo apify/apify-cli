@@ -1,3 +1,7 @@
+0.3.2 / 2018-12-05
+==================
+- Updated apify-client package. It fixed bug, when user can not push actor, whe he changed version in apify.json.
+
 0.3.1 / 2018-11-29
 ==================
 - :tada: New commands to manage secret environment variables: `apify secrets:add`, `apify secrets:rm`.
