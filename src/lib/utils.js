@@ -112,7 +112,8 @@ const getLocalConfigOrThrow = async () => {
         const answer = await inquirer.prompt([{
             name: 'isConfirm',
             type: 'confirm',
-            message: 'With a new version of apify-cli, we changed the structure of apify.json. It will be updated before the command start.',
+            // eslint-disable-next-line max-len
+            message: 'The new version of Apify CLI uses a new format of the "apify.json" file. Your file will be automatically updated to the new format.',
         }]);
         if (answer.isConfirm) {
             try {
