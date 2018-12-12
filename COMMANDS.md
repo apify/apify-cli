@@ -4,7 +4,7 @@
 Apify command line client to help you create, develop, build and run Apify actors.
 
 VERSION
-  apify-cli/0.3.2 darwin-x64 node-v11.2.0
+  apify-cli/0.3.3 darwin-x64 node-v11.2.0
 
 USAGE
   $ apify [COMMAND]
@@ -49,8 +49,8 @@ OPTIONS
                                          if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account, therefore you need to be 
-  logged in by calling "apify login". It takes input for the actor from the 
+  The actor is run under your current Apify account, therefore you need to be
+  logged in by calling "apify login". It takes input for the actor from the
   default local key-value store by default.
 
 ```
@@ -66,7 +66,7 @@ ARGUMENTS
 
 OPTIONS
   -t, --template=puppeteer_crawler|puppeteer|basic|hello_word
-      Boilerplate template for the actor. If not provided, the command will prompt 
+      Boilerplate template for the actor. If not provided, the command will prompt
       for it.
 
 ```
@@ -92,7 +92,7 @@ ARGUMENTS
   ACTNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "apify_storage" 
+  The command only creates the "apify.json" file and the "apify_storage"
   directory in the current directory, but will not touch anything else.
 
   WARNING: If the files already exist, they will be overwritten!
@@ -109,8 +109,8 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The token and other account information is stored to the ~/.apify directory, 
-  from where it is read by all other "apify" commands. To log out, call "apify 
+  The token and other account information is stored to the ~/.apify directory,
+  from where it is read by all other "apify" commands. To log out, call "apify
   logout".
 
 ```
@@ -122,7 +122,7 @@ USAGE
   $ apify logout
 
 DESCRIPTION
-  The command deletes the API token and all other account information stored in 
+  The command deletes the API token and all other account information stored in
   the ~/.apify directory. To log in again, call "apify login".
 
 ```
@@ -156,12 +156,12 @@ OPTIONS
                                          taken from the "apify.json" file.
 
 DESCRIPTION
-  The command creates a ZIP with files of the actor from the current directory, 
-  uploads it to the Apify platform and builds it. The actor settings are read 
-  from the "apify.json" file in the current directory, but they can be 
+  The command creates a ZIP with files of the actor from the current directory,
+  uploads it to the Apify platform and builds it. The actor settings are read
+  from the "apify.json" file in the current directory, but they can be
   overridden using command-line options.
 
-  WARNING: If the target actor already exists in your Apify account, it will be 
+  WARNING: If the target actor already exists in your Apify account, it will be
   overwritten!
 
 ```
@@ -187,13 +187,13 @@ OPTIONS
                            request queue before the run starts.
 
 DESCRIPTION
-  It sets various APIFY_XYZ environment variables in order to provide a working 
-  execution environment for the actor. For example, this causes the actor input, 
-  as well as all other data in key-value stores, datasets or request queues to 
+  It sets various APIFY_XYZ environment variables in order to provide a working
+  execution environment for the actor. For example, this causes the actor input,
+  as well as all other data in key-value stores, datasets or request queues to
   be stored in the "apify_storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the default behaviour of command overriding npm start 
-  script value in a package.json file. You can set up your own main file or 
+  NOTE: You can override the default behaviour of command overriding npm start
+  script value in a package.json file. You can set up your own main file or
   environment variables by changing it.
 
 ```
@@ -208,7 +208,7 @@ DESCRIPTION
   Example:
   $ apify secrets:add mySecret TopSecretValue123
 
-  Now the "mySecret" value can be used in an environment variable defined in 
+  Now the "mySecret" value can be used in an environment variable defined in
   "apify.json" file by adding the "@" prefix:
 
   {
@@ -217,7 +217,7 @@ DESCRIPTION
      "version": "0.1
   }
 
-  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is 
+  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is
   stored as a secret environment variable of the actor.
 
 COMMANDS

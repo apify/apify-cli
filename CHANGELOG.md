@@ -1,3 +1,7 @@
+0.3.3 / 2018-12-12
+==================
+- Omitted CMD command in all templates Dockerfile.
+
 0.3.2 / 2018-12-05
 ==================
 - Updated apify-client package. It fixed bug, when user can not push actor, whe he changed version in apify.json.
