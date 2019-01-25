@@ -1,3 +1,7 @@
+0.3.4 / 2018-01-25
+==================
+- Upgraded to apify@0.11 in templates
+
 0.3.3 / 2018-12-12
 ==================
 - Omitted CMD command in all templates Dockerfile.
