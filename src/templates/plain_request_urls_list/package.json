@@ -4,7 +4,7 @@
     "description": "This is a boilerplate of an Apify actor.",
     "main": "main.js",
     "dependencies": {
-        "apify": "^0.9.0",
+        "apify": "^0.11.0",
         "request-promise": "^4.2.2"
     },
     "devDependencies": {},
