@@ -4,7 +4,7 @@
 Apify command line client to help you create, develop, build and run Apify actors.
 
 VERSION
-  apify-cli/0.3.5 darwin-x64 node-v10.15.0
+  apify-cli/0.3.6 darwin-x64 node-v10.15.0
 
 USAGE
   $ apify [COMMAND]
@@ -21,6 +21,7 @@ COMMANDS
   run      Runs the actor locally in the current directory by executing "npm
            start".
   secrets  Manages secret values for actor environment variables.
+  vis      Validates INPUT_SCHEMA.json file and prints possible errors.
 
 ```
 ### apify call
@@ -223,6 +224,18 @@ DESCRIPTION
 COMMANDS
   secrets:add  Adds a new secret value.
   secrets:rm   Removes the secret.
+
+```
+### apify vis
+```text
+Validates INPUT_SCHEMA.json file and prints possible errors.
+
+USAGE
+  $ apify vis [PATH]
+
+ARGUMENTS
+  PATH  Optional path to your INPUT_SCHEMA.json file. If not provided
+        ./INPUT_SCHEMA.json is used.
 
 ```
 

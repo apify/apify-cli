@@ -1,3 +1,7 @@
+0.3.6 / 2018-01-29
+==================
+- Added command `apify vis` that validates actor input schema.
+
 0.3.5 / 2019-01-25
 ==================
 - Upgraded to apify@0.11 in templates
