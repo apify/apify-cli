@@ -1,4 +1,4 @@
-xxxxxxxxxxxxxxxxxx
+0.3.6 / 2018-01-29
 ==================
 - Added command `apify vis` that validates actor input schema.
 
