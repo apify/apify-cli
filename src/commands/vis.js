@@ -17,8 +17,7 @@ class ValidateInputSchemaCommand extends ApifyCommand {
             const ajv = new Ajv();
             inputSchemaValidator = ajv.compile(jsonSchemaOfInputSchema);
         } catch (err) {
-            outputs.error(`Cannot parse JSON schema of actor input schema (${err.message})`);
-            process.exit(1);
+            throw new Error(`Cannot parse JSON schema of actor input schema (${err.message})`);
         }
 
         let inputSchemaObj;
@@ -27,14 +26,12 @@ class ValidateInputSchemaCommand extends ApifyCommand {
             const inputSchemaStr = fs.readFileSync(path).toString();
             inputSchemaObj = JSON.parse(inputSchemaStr);
         } catch (err) {
-            outputs.error(`Input schema is not a valid JSON (${err})`);
-            process.exit(1);
+            throw new Error(`Input schema is not a valid JSON (${err})`);
         }
 
         if (!inputSchemaValidator(inputSchemaObj)) {
             const errors = JSON.stringify(inputSchemaValidator.errors, null, 2);
-            outputs.error(`Input schema is not valid (${errors})`);
-            process.exit(1);
+            throw new Error(`Input schema is not valid (${errors})`);
         }
 
         outputs.success('Input schema is valid.');
