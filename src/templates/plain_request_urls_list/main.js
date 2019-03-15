@@ -23,9 +23,8 @@ Apify.main(async () => {
 
     const handleFailedRequestFunction = async ({ request }) => {
         await Apify.pushData({
-            request,
-            finishedAt: new Date(),
-            isFailed: true,
+            '#isFailed': true,
+            '#debug': Apify.utils.createRequestDebugInfo(request),
         });
     };
 
