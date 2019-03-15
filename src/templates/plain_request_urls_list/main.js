@@ -2,7 +2,7 @@ const Apify = require('apify');
 const rp = require('request-promise');
 
 Apify.main(async () => {
-    const { sources } = await Apify.getValue('INPUT');
+    const { sources } = await Apify.getInput();
 
     if (!sources) throw new Error('input.sources is missing!!!!');
 
