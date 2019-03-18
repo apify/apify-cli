@@ -12,6 +12,12 @@ Apify.main(async () => {
             console.log(`Title of ${request.url}: ${title}`);
             await Apify.utils.puppeteer.enqueueLinks(page, 'a', pseudoUrls, requestQueue);
         },
+        handleFailedRequestFunction: async ({ request }) => {
+            console.log(`Request ${request.url} failed too many times`);
+            await Apify.pushData({
+                '#debug': Apify.utils.createRequestDebugInfo(request),
+            })
+        },
         maxRequestsPerCrawl: 50,
         maxConcurrency: 10,
     });

@@ -1,3 +1,10 @@
+0.3.7 / 2018-03-18
+==================
+- Fixed templates to use Apify.getInput(), replaced deprecated function and options,
+added debug fields, added .idea to .gitignore
+- Updated packages
+- Fixed bug: Users without username can use push/call command 
+
 0.3.6 / 2018-01-29
 ==================
 - Added command `apify vis` that validates actor input schema.

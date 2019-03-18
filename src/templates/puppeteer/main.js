@@ -1,7 +1,7 @@
 const Apify = require('apify');
 
 Apify.main(async () => {
-    const input = await Apify.getValue('INPUT');
+    const input = await Apify.getInput();
 
     if (!input || !input.url) throw new Error('INPUT must contain a url!');
 

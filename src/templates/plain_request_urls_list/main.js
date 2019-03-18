@@ -2,7 +2,7 @@ const Apify = require('apify');
 const rp = require('request-promise');
 
 Apify.main(async () => {
-    const { sources } = await Apify.getValue('INPUT');
+    const { sources } = await Apify.getInput();
 
     if (!sources) throw new Error('input.sources is missing!!!!');
 
@@ -23,9 +23,8 @@ Apify.main(async () => {
 
     const handleFailedRequestFunction = async ({ request }) => {
         await Apify.pushData({
-            request,
-            finishedAt: new Date(),
-            isFailed: true,
+            '#isFailed': true,
+            '#debug': Apify.utils.createRequestDebugInfo(request),
         });
     };
 

@@ -16,15 +16,16 @@ class CallCommand extends ApifyCommand {
         const localConfig = getLocalConfig() || {};
         const apifyClient = await getLoggedClientOrThrow();
         const userInfo = await getLocalUserInfo();
+        const usernameOrId = userInfo.username || userInfo.id;
 
         const forceActorId = args.actId;
         let actorId;
         if (forceActorId) {
             const actor = await apifyClient.acts.getAct({ actId: forceActorId });
             if (!actor) throw new Error(`Cannot find actor with ID '${forceActorId}' in your account.`);
-            actorId = `${userInfo.username}/${actor.name}`;
+            actorId = `${usernameOrId}/${actor.name}`;
         } else {
-            actorId = `${userInfo.username}/${localConfig.name}`;
+            actorId = `${usernameOrId}/${localConfig.name}`;
             const actor = await apifyClient.acts.getAct({ actId: actorId });
             if (!actor) throw new Error(`Cannot find actor with ID '${actorId}' in your account. Call "apify push" to push this actor to Apify platform.`);
         }
