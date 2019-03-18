@@ -32,7 +32,7 @@ describe('apify run', () => {
         const Apify = require('apify');
 
         Apify.main(async () => {
-            const input = await Apify.getValue('INPUT');
+            const input = await Apify.getInput();
 
             const output = ${JSON.stringify(expectOutput)};
             await Apify.setValue('OUTPUT', output);

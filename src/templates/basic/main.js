@@ -1,7 +1,7 @@
 const Apify = require('apify');
 
 Apify.main(async () => {
-    const input = await Apify.getValue('INPUT');
+    const input = await Apify.getInput();
 
     console.log(`My test input: ${input.test}`);
 

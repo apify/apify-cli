@@ -67,7 +67,7 @@ Apify.main(async () => {
             await Apify.pushData(data);
 
             // Find a link to the next page and enqueue it if it exists.
-            const infos = await Apify.utils.puppeteer.enqueueLinks({
+            const infos = await Apify.utils.enqueueLinks({
                 page,
                 requestQueue,
                 selector: '.morelink',
@@ -79,6 +79,9 @@ Apify.main(async () => {
         // This function is called if the page processing failed more than maxRequestRetries+1 times.
         handleFailedRequestFunction: async ({ request }) => {
             console.log(`Request ${request.url} failed too many times`);
+            await Apify.pushData({
+                '#debug': Apify.utils.createRequestDebugInfo(request),
+            })
         },
     });
 
