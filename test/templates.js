@@ -72,9 +72,9 @@ describe('templates', () => {
         await checkTemplateStructureAndRun(actorName, templateName);
     });
 
-    it('hello word works', async () => {
+    it('hello world works', async () => {
         const actorName = 'hello-template-actor';
-        const templateName = ACTS_TEMPLATES.hello_word.value;
+        const templateName = ACTS_TEMPLATES.hello_world.value;
         await command.run(['create', actorName, '--template', templateName]);
 
         await checkTemplateStructureAndRun(actorName, templateName);
