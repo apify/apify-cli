@@ -36,10 +36,10 @@ exports.ACTS_TEMPLATES = {
             memoryMbytes: 512,
         },
     },
-    hello_word: {
-        name: 'Hello word - The basic example which recursively crawls a website using Chrome and Puppeteer',
-        value: 'hello_word',
-        dir: `${__dirname}/../templates/hello_word`,
+    hello_world: {
+        name: 'Hello world - The basic example which recursively crawls a website using Chrome and Puppeteer',
+        value: 'hello_world',
+        dir: `${__dirname}/../templates/hello_world`,
         defaultRunOptions: {
             build: 'latest',
             timeoutSecs: 0,
@@ -50,7 +50,7 @@ exports.ACTS_TEMPLATES = {
 
 exports.ACTS_TEMPLATE_LIST = Object.keys(exports.ACTS_TEMPLATES);
 
-exports.DEFAULT_ACT_TEMPLATE = 'hello_word';
+exports.DEFAULT_ACT_TEMPLATE = 'hello_world';
 
 exports.DEFAULT_LOCAL_STORAGE_DIR = 'apify_storage';
 

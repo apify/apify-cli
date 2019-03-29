@@ -6,16 +6,11 @@ Apify.main(async () => {
 
     if (!sources) throw new Error('input.sources is missing!!!!');
 
-    const requestList = new Apify.RequestList({
-        sources,
-        state: await Apify.getValue('request-list-state'),
-    });
-
-    await requestList.initialize();
+    const requestList = await Apify.openRequestList('my-request-list', sources);
 
     const handleRequestFunction = async ({ request }) => {
         await Apify.pushData({
-            request: request,
+            request,
             finishedAt: new Date(),
             html: await rp(request.url),
         });
@@ -33,8 +28,6 @@ Apify.main(async () => {
         handleRequestFunction,
         handleFailedRequestFunction,
     });
-
-    setInterval(() => Apify.setValue('request-list-state', requestList.getState()), 60000);
 
     await basicCrawler.run();
 });

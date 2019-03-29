@@ -1,3 +1,7 @@
+0.3.8 / 2018-03-29
+==================
+- Updated all templates regarding the last version of apify SDK.
+
 0.3.7 / 2018-03-18
 ==================
 - Fixed templates to use Apify.getInput(), replaced deprecated function and options,
