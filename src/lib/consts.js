@@ -13,8 +13,9 @@ exports.ACTS_TEMPLATES = {
         defaultRunOptions: {
             build: 'latest',
             timeoutSecs: 0,
-            memoryMbytes: 2048,
+            memoryMbytes: 256,
         },
+        skipOptionalDeps: true,
     },
     puppeteer_crawler: {
         name: 'Puppeteer crawler - Recursively crawl a website using Chrome and Puppeteer',
@@ -45,6 +46,7 @@ exports.ACTS_TEMPLATES = {
             timeoutSecs: 3600,
             memoryMbytes: 512,
         },
+        skipOptionalDeps: true,
     },
     basic_crawler: {
         name: 'Basic crawler - Crawl a list of URLs using HTTP requests and Cheerio',
@@ -55,6 +57,7 @@ exports.ACTS_TEMPLATES = {
             timeoutSecs: 3600,
             memoryMbytes: 512,
         },
+        skipOptionalDeps: true,
     },
 };
 

@@ -23,7 +23,7 @@ const TEST_ACTOR = {
         },
     ],
 };
-const ACT_TEMPLATE = 'basic';
+const ACT_TEMPLATE = 'hello_world';
 
 describe('apify push', () => {
     before(async function () {

@@ -48,14 +48,16 @@ class CreateCommand extends ApifyCommand {
             }
             throw err;
         }
-        await copy(ACTS_TEMPLATES[template].dir, actFolderDir, { dot: true });
+        const templateObj = ACTS_TEMPLATES[template];
+        await copy(templateObj.dir, actFolderDir, { dot: true });
         await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actorName, template }), actFolderDir);
         await setLocalEnv(actFolderDir);
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actorName });
 
-        // Run npm install in actor dir
+        // Run npm install in actor dir.
+        // For efficiency, don't install Puppeteer for templates that don't use it
         const cmdArgs = ['install'];
-        if (template === ACTS_TEMPLATES.basic.value) cmdArgs.push('--no-optional');
+        if (templateObj.skipOptionalDeps) cmdArgs.push('--no-optional');
         await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
 
         outputs.success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
