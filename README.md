@@ -42,7 +42,7 @@ apify info
 
 ## Basic usage
 
-The following examples show basic usage of the CLI.
+The following examples demonstrate the basic usage of Apify CLI.
 
 ### Create a new actor from scratch
 
