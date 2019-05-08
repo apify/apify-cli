@@ -79,7 +79,7 @@ class CallCommand extends ApifyCommand {
     }
 }
 
-CallCommand.description = 'Runs the actor remotely on the Apify platform.\n' +
+CallCommand.description = 'Runs a specific actor remotely on the Apify cloud platform.\n' +
     'The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". ' +
     'It takes input for the actor from the default local key-value store by default.';
 

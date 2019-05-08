@@ -38,7 +38,7 @@ class ValidateInputSchemaCommand extends ApifyCommand {
     }
 }
 
-ValidateInputSchemaCommand.description = 'Validates INPUT_SCHEMA.json file and prints possible errors.';
+ValidateInputSchemaCommand.description = 'Validates INPUT_SCHEMA.json file and prints errors found.';
 
 ValidateInputSchemaCommand.args = [
     {
