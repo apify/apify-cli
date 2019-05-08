@@ -1,26 +1,27 @@
+// This is the main Node.js source code file of your actor.
+// It is referenced from the "scripts" section of the package.json file,
+// so that it can be started by running "npm start".
+
+// Include Apify SDK. For more information, see https://sdk.apify.com/
 const Apify = require('apify');
 
 Apify.main(async () => {
-    const requestQueue = await Apify.openRequestQueue();
-    await requestQueue.addRequest({ url: 'https://www.iana.org/' });
-    const pseudoUrls = [new Apify.PseudoUrl('https://www.iana.org/[.*]')];
+    // Get input of the actor.
+    // If you'd like to have your input checked and have Apify display
+    // a user interface for it, add INPUT_SCHEMA.json file to your actor.
+    // For more information, see https://apify.com/docs/actor/input-schema
+    const input = await Apify.getInput();
+    console.log('Input:');
+    console.dir(input);
 
-    const crawler = new Apify.PuppeteerCrawler({
-        requestQueue,
-        handlePageFunction: async ({ request, page }) => {
-            const title = await page.title();
-            console.log(`Title of ${request.url}: ${title}`);
-            await Apify.utils.enqueueLinks({ page, selector: 'a', pseudoUrls, requestQueue });
-        },
-        handleFailedRequestFunction: async ({ request }) => {
-            console.log(`Request ${request.url} failed too many times`);
-            await Apify.pushData({
-                '#debug': Apify.utils.createRequestDebugInfo(request),
-            });
-        },
-        maxRequestsPerCrawl: 100,
-        maxConcurrency: 10,
-    });
+    // Do something useful here...
 
-    await crawler.run();
+    // Save output
+    const output = {
+        receivedInput: input,
+        message: 'Hello sir!',
+    };
+    console.log('Output:');
+    console.dir(output);
+    await Apify.setValue('OUTPUT', output);
 });

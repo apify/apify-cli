@@ -6,6 +6,16 @@ const { KEY_VALUE_STORE_KEYS } = require('apify-shared/consts');
 // the name and description should be taken from package.json files in those dirs so that we edit it in a single location!
 // BTW the templates should be clustered by languages, now we have only JS but we'll add other languages later.
 exports.ACTS_TEMPLATES = {
+    hello_world: {
+        name: 'Hello world - The smallest actor you will see today, it only takes input and generates output',
+        value: 'hello_world',
+        dir: `${__dirname}/../templates/hello_world`,
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 0,
+            memoryMbytes: 2048,
+        },
+    },
     puppeteer_crawler: {
         name: 'Puppeteer crawler - Recursively crawl a website using Chrome and Puppeteer',
         value: 'puppeteer_crawler',
@@ -16,34 +26,34 @@ exports.ACTS_TEMPLATES = {
             memoryMbytes: 2048,
         },
     },
-    puppeteer: {
-        name: 'Puppeteer single page - Interact with a single web page using Chrome and Puppeteer',
-        value: 'puppeteer',
-        dir: `${__dirname}/../templates/puppeteer`,
+    puppeteer_single_page: {
+        name: 'Puppeteer single page - Load a single web page using Chrome and Puppeteer and extracts data',
+        value: 'puppeteer_single_page',
+        dir: `${__dirname}/../templates/puppeteer_single_page`,
         defaultRunOptions: {
             build: 'latest',
             timeoutSecs: 0,
             memoryMbytes: 2048,
         },
     },
-    basic: {
-        name: 'Minimal - The smallest actor you will see today, it only takes input and generates output',
-        value: 'basic',
-        dir: `${__dirname}/../templates/basic`,
+    cheerio_crawler: {
+        name: 'Cheerio crawler - Recursively crawl a website using raw HTTP requests and Cheerio',
+        value: 'cheerio_crawler',
+        dir: `${__dirname}/../templates/cheerio_crawler`,
         defaultRunOptions: {
             build: 'latest',
             timeoutSecs: 3600,
             memoryMbytes: 512,
         },
     },
-    hello_world: {
-        name: 'Hello world - The basic example which recursively crawls a website using Chrome and Puppeteer',
-        value: 'hello_world',
-        dir: `${__dirname}/../templates/hello_world`,
+    basic_crawler: {
+        name: 'Basic crawler - Crawl a list of URLs using HTTP requests and Cheerio',
+        value: 'basic_crawler',
+        dir: `${__dirname}/../templates/basic_crawler`,
         defaultRunOptions: {
             build: 'latest',
-            timeoutSecs: 0,
-            memoryMbytes: 2048,
+            timeoutSecs: 3600,
+            memoryMbytes: 512,
         },
     },
 };

@@ -28,7 +28,7 @@ class CreateCommand extends ApifyCommand {
             const answer = await inquirer.prompt([{
                 type: 'list',
                 name: 'template',
-                message: 'Please select a template for your new actor:',
+                message: 'Please select the template for your new actor',
                 default: DEFAULT_ACT_TEMPLATE,
                 choices,
             }]);
