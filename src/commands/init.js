@@ -26,10 +26,10 @@ class InitCommand extends ApifyCommand {
     }
 }
 
-InitCommand.description = 'Initializes an actor project in an existing directory.\n'
+InitCommand.description = 'Initializes a new actor project in an existing directory.\n'
     + `The command only creates the "apify.json" file and the "${DEFAULT_LOCAL_STORAGE_DIR}" directory in the current directory, `
     + 'but will not touch anything else.\n\n'
-    + 'WARNING: If the files already exist, they will be overwritten!';
+    + 'WARNING: If these files already exist, they will be overwritten!';
 
 InitCommand.args = [
     {

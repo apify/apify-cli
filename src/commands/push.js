@@ -101,7 +101,7 @@ class PushCommand extends ApifyCommand {
             outputs.run(`Created version ${version} for ${actor.name} actor.`);
         }
 
-        // Build actor on Apify and wait for build finish
+        // Build actor on Apify and wait for build to finish
         outputs.run(`Building actor ${actor.name}`);
         let build = await apifyClient.acts.buildAct({
             actId: actorId,
