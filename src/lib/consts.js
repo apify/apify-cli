@@ -60,6 +60,8 @@ exports.ACTS_TEMPLATES = {
         },
         skipOptionalDeps: true,
     },
+    // NOTE: We can use isDeprecated flag if we want to omit template from templates list which user can use for new actors.
+    // But if old users have this template in apify.json, it will work.
     puppeteer: {
         isDeprecated: true,
         value: 'puppeteer',
