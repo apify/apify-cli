@@ -8,7 +8,7 @@ const { spawnSync } = require('child_process');
 const { rimrafPromised } = require('../src/lib/files');
 const loadJson = require('load-json-file');
 const { getLocalKeyValueStorePath, getLocalStorageDir } = require('../src/lib/utils');
-const { ACTS_TEMPLATES } = require('../src/lib/consts');
+const { ACTS_TEMPLATE_LIST } = require('../src/lib/consts');
 
 const TEST_ACTORS_FOLDER = 'test-actors';
 const APIFY_LATEST_VERSION = spawnSync('npm', ['view', 'apify', 'version']).stdout.toString().trim();
@@ -64,36 +64,12 @@ describe('templates', () => {
         console.log.restore();
     });
 
-    it('basic works', async () => {
-        const actorName = 'basic-template-actor';
-        const templateName = ACTS_TEMPLATES.basic.value;
-        await command.run(['create', actorName, '--template', templateName]);
-
-        await checkTemplateStructureAndRun(actorName, templateName);
-    });
-
-    it('hello world works', async () => {
-        const actorName = 'hello-template-actor';
-        const templateName = ACTS_TEMPLATES.hello_world.value;
-        await command.run(['create', actorName, '--template', templateName]);
-
-        await checkTemplateStructureAndRun(actorName, templateName);
-    });
-
-
-    it('puppeteer works', async () => {
-        const actorName = 'pup-template-actor';
-        const templateName = ACTS_TEMPLATES.puppeteer.value;
-        await command.run(['create', actorName, '--template', templateName]);
-
-        await checkTemplateStructureAndRun(actorName, templateName);
-    });
-
-    it('puppeteer crawler works', async () => {
-        const actorName = 'pup-cra-template-actor';
-        const templateName = ACTS_TEMPLATES.puppeteer_crawler.value;
-        await command.run(['create', actorName, '--template', templateName]);
-
-        await checkTemplateStructureAndRun(actorName, templateName);
+    ACTS_TEMPLATE_LIST.forEach((template) => {
+        const templateName = template.value;
+        it(`${templateName} works`, async () => {
+            const actorName = `cli-test-${templateName.replace(/_/g, '-')}`;
+            await command.run(['create', actorName, '--template', templateName]);
+            await checkTemplateStructureAndRun(actorName, templateName);
+        });
     });
 });
