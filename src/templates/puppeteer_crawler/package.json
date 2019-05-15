@@ -1,21 +1,15 @@
 {
-    "name": "your-actor-name",
-    "version": "1.0.0",
-    "description": "Crawl a number of web pages using headless Chrome and Puppeteer",
-    "main": "main.js",
+    "name": "my-awesome-actor",
+    "version": "0.0.1",
+    "description": "This is a boilerplate of an Apify actor.",
     "dependencies": {
-        "apify": "^0.13.3"
+        "apify": "^0.14.3"
     },
     "devDependencies": {},
     "scripts": {
         "start": "node main.js",
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: oops, the actor has no tests yet, sad!\" && exit 1"
     },
-    "repository": {
-        "type": "git",
-        "url": ""
-    },
-    "author": "",
-    "license": "ISC",
-    "homepage": ""
+    "author": "It's not you it's me",
+    "license": "ISC"
 }
