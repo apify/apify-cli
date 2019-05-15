@@ -1,3 +1,7 @@
+0.3.9 / 2018-05-15
+==================
+- Improved the templates and texts
+
 0.3.8 / 2018-03-29
 ==================
 - Updated all templates regarding the last version of apify SDK.
