@@ -7,7 +7,6 @@ const { ENV_VARS } = require('apify-shared/consts');
 const { spawnSync } = require('child_process');
 const { rimrafPromised } = require('../src/lib/files');
 const loadJson = require('load-json-file');
-const _ = require('underscore');
 const { getLocalKeyValueStorePath, getLocalStorageDir } = require('../src/lib/utils');
 const { ACTS_TEMPLATE_LIST } = require('../src/lib/consts');
 
