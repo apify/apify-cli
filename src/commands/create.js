@@ -24,7 +24,7 @@ class CreateCommand extends ApifyCommand {
         }
 
         if (!template) {
-            const choices = Object.values(ACTS_TEMPLATES);
+            const choices = ACTS_TEMPLATE_LIST.map(templateKey => ACTS_TEMPLATES[templateKey]);
             const answer = await inquirer.prompt([{
                 type: 'list',
                 name: 'template',

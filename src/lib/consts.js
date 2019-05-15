@@ -1,5 +1,6 @@
 const os = require('os');
 const path = require('path');
+const _ = require('underscore');
 const { KEY_VALUE_STORE_KEYS } = require('apify-shared/consts');
 
 // TODO: The templates should go to apify-shared, and the JSON with all info should be generated from the directories and files in the template dir,
@@ -59,9 +60,29 @@ exports.ACTS_TEMPLATES = {
         },
         skipOptionalDeps: true,
     },
+    puppeteer: {
+        isDeprecated: true,
+        value: 'puppeteer',
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 0,
+            memoryMbytes: 2048,
+        },
+    },
+    basic: {
+        isDeprecated: true,
+        value: 'basic',
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 3600,
+            memoryMbytes: 512,
+        },
+    },
 };
 
-exports.ACTS_TEMPLATE_LIST = Object.keys(exports.ACTS_TEMPLATES);
+exports.DEPRECATED_ACTS_TEMPLATE_LIST = Object.keys(exports.ACTS_TEMPLATES).filter(key => exports.ACTS_TEMPLATES[key].isDeprecated);
+
+exports.ACTS_TEMPLATE_LIST = _.without(Object.keys(exports.ACTS_TEMPLATES), ...exports.DEPRECATED_ACTS_TEMPLATE_LIST);
 
 exports.DEFAULT_ACT_TEMPLATE = 'hello_world';
 

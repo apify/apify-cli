@@ -7,8 +7,9 @@ const { ENV_VARS } = require('apify-shared/consts');
 const { spawnSync } = require('child_process');
 const { rimrafPromised } = require('../src/lib/files');
 const loadJson = require('load-json-file');
+const _ = require('underscore');
 const { getLocalKeyValueStorePath, getLocalStorageDir } = require('../src/lib/utils');
-const { ACTS_TEMPLATES } = require('../src/lib/consts');
+const { ACTS_TEMPLATE_LIST } = require('../src/lib/consts');
 
 const TEST_ACTORS_FOLDER = 'test-actors';
 const APIFY_LATEST_VERSION = spawnSync('npm', ['view', 'apify', 'version']).stdout.toString().trim();
@@ -64,7 +65,7 @@ describe('templates', () => {
         console.log.restore();
     });
 
-    Object.values(ACTS_TEMPLATES).forEach((template) => {
+    ACTS_TEMPLATE_LIST.forEach((template) => {
         const templateName = template.value;
         it(`${templateName} works`, async () => {
             const actorName = `cli-test-${templateName.replace(/_/g, '-')}`;
