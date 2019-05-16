@@ -1,32 +1,32 @@
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
 ```text
-Apify command line client to help you create, develop, build and run Apify actors.
+Apify command-line client helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.
 
 VERSION
-  apify-cli/0.3.8 darwin-x64 node-v10.15.0
+  apify-cli/0.3.9 darwin-x64 node-v10.15.0
 
 USAGE
   $ apify [COMMAND]
 
 COMMANDS
-  call     Runs the actor remotely on the Apify platform.
+  call     Runs a specific actor remotely on the Apify cloud platform.
   create   Creates a new actor project directory from a selected boilerplate
            template.
-  info     Displays information about current Apify settings.
-  init     Initializes an actor project in an existing directory.
-  login    Logs in to the Apify platform using the API token.
-  logout   Logs out of the Apify platform.
+  info     Displays information about the currently active Apify account.
+  init     Initializes a new actor project in an existing directory.
+  login    Logs in to your Apify account using a provided API token.
+  logout   Logs out of your Apify account.
   push     Uploads the actor to the Apify platform and builds it there.
   run      Runs the actor locally in the current directory by executing "npm
            start".
   secrets  Manages secret values for actor environment variables.
-  vis      Validates INPUT_SCHEMA.json file and prints possible errors.
+  vis      Validates INPUT_SCHEMA.json file and prints errors found.
 
 ```
 ### apify call
 ```text
-Runs the actor remotely on the Apify platform.
+Runs a specific actor remotely on the Apify cloud platform.
 
 USAGE
   $ apify call [ACTID]
@@ -66,25 +66,25 @@ ARGUMENTS
   ACTORNAME  Name of the actor and its directory
 
 OPTIONS
-  -t, --template=puppeteer_crawler|puppeteer|basic|hello_word
+  -t, --template=puppeteer_crawler|puppeteer|basic|hello_world
       Boilerplate template for the actor. If not provided, the command will prompt 
       for it.
 
 ```
 ### apify info
 ```text
-Displays information about current Apify settings.
+Displays information about the currently active Apify account.
 
 USAGE
   $ apify info
 
 DESCRIPTION
-  This command prints information about Apify to the console.
+  The information is printed to the console.
 
 ```
 ### apify init
 ```text
-Initializes an actor project in an existing directory.
+Initializes a new actor project in an existing directory.
 
 USAGE
   $ apify init [ACTNAME]
@@ -96,12 +96,12 @@ DESCRIPTION
   The command only creates the "apify.json" file and the "apify_storage" 
   directory in the current directory, but will not touch anything else.
 
-  WARNING: If the files already exist, they will be overwritten!
+  WARNING: If these files already exist, they will be overwritten!
 
 ```
 ### apify login
 ```text
-Logs in to the Apify platform using the API token.
+Logs in to your Apify account using a provided API token.
 
 USAGE
   $ apify login
@@ -110,14 +110,14 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The token and other account information is stored to the ~/.apify directory, 
-  from where it is read by all other "apify" commands. To log out, call "apify 
-  logout".
+  The API token and other account information is stored in the ~/.apify 
+  directory, from where it is read by all other "apify" commands. To log out, 
+  call "apify logout".
 
 ```
 ### apify logout
 ```text
-Logs out of the Apify platform.
+Logs out of your Apify account.
 
 USAGE
   $ apify logout
@@ -228,7 +228,7 @@ COMMANDS
 ```
 ### apify vis
 ```text
-Validates INPUT_SCHEMA.json file and prints possible errors.
+Validates INPUT_SCHEMA.json file and prints errors found.
 
 USAGE
   $ apify vis [PATH]

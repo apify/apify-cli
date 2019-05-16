@@ -11,7 +11,7 @@ class LogoutCommand extends ApifyCommand {
     }
 }
 
-LogoutCommand.description = 'Logs out of the Apify platform.\nThe command deletes the API token and all other '
+LogoutCommand.description = 'Logs out of your Apify account.\nThe command deletes the API token and all other '
     + 'account information stored in the ~/.apify directory. To log in again, call "apify login".';
 
 module.exports = LogoutCommand;

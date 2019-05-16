@@ -1,18 +1,19 @@
-# Apify command line client (apify-cli)
+# Apify command-line client (apify-cli)
 
 <a href="http://badge.fury.io/js/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" style="display:inherit;"></a>
 <a href="https://travis-ci.org/apifytech/apify-cli?branch=master"><img src="https://travis-ci.org/apifytech/apify-cli.svg?branch=master" alt="Build Status" style="display:inherit;"></a>
 
-Apify command line client (CLI) helps you to create, develop, build and run
-[Apify actors](https://www.apify.com/docs/actor) from a local computer.
+Apify command-line client (CLI) helps you create, develop, build and run
+[Apify actors](https://www.apify.com/docs/actor),
+and manage the Apify cloud platform from any computer.
 
-Apify actors enable the execution of arbitrary web scraping and automation jobs in the Apify cloud.
-
-While you can develop actors in a code editor directly in the [Apify web application](https://my.apify.com/),
-for more complex projects it is more convenient to develop actors locally
-using the <a href="https://github.com/apifytech/apify-js">Apify SDK</a>
-and only push them to the Apify cloud for execution.
-This is where the CLI comes in.
+Apify actors are cloud programs that can perform arbitrary web scraping, automation or data processing job.
+They accept input, perform their job and generate output.
+While you can develop actors in an online IDE directly in the [Apify web application](https://my.apify.com/),
+for complex projects it is more convenient to develop actors locally on your computer
+using <a href="https://github.com/apifytech/apify-js">Apify SDK</a>
+and only push the actors to the Apify cloud during deployment.
+This is where the Apify CLI comes in.
 
 Note that actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
 you can build your actors in any programming language.
@@ -27,7 +28,7 @@ First, make sure you have [Node.js](https://nodejs.org) version 8 or higher inst
 node --version
 ```
 
-Install Apify CLI by running:
+Install or upgrade Apify CLI by running:
 
 ```bash
 npm -g install apify-cli
@@ -41,7 +42,7 @@ apify info
 
 ## Basic usage
 
-The following examples show basic usage of the CLI.
+The following examples demonstrate the basic usage of Apify CLI.
 
 ### Create a new actor from scratch
 
@@ -217,32 +218,32 @@ This section contains printouts of `apify help` for all commands.
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
 
 ```text
-Apify command line client to help you create, develop, build and run Apify actors.
+Apify command-line client helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.
 
 VERSION
-  apify-cli/0.3.8 darwin-x64 node-v10.15.0
+  apify-cli/0.3.9 darwin-x64 node-v10.15.0
 
 USAGE
   $ apify [COMMAND]
 
 COMMANDS
-  call     Runs the actor remotely on the Apify platform.
+  call     Runs a specific actor remotely on the Apify cloud platform.
   create   Creates a new actor project directory from a selected boilerplate
            template.
-  info     Displays information about current Apify settings.
-  init     Initializes an actor project in an existing directory.
-  login    Logs in to the Apify platform using the API token.
-  logout   Logs out of the Apify platform.
+  info     Displays information about the currently active Apify account.
+  init     Initializes a new actor project in an existing directory.
+  login    Logs in to your Apify account using a provided API token.
+  logout   Logs out of your Apify account.
   push     Uploads the actor to the Apify platform and builds it there.
   run      Runs the actor locally in the current directory by executing "npm
            start".
   secrets  Manages secret values for actor environment variables.
-  vis      Validates INPUT_SCHEMA.json file and prints possible errors.
+  vis      Validates INPUT_SCHEMA.json file and prints errors found.
 
 ```
 ### apify call
 ```text
-Runs the actor remotely on the Apify platform.
+Runs a specific actor remotely on the Apify cloud platform.
 
 USAGE
   $ apify call [ACTID]
@@ -282,25 +283,25 @@ ARGUMENTS
   ACTORNAME  Name of the actor and its directory
 
 OPTIONS
-  -t, --template=puppeteer_crawler|puppeteer|basic|hello_word
+  -t, --template=puppeteer_crawler|puppeteer|basic|hello_world
       Boilerplate template for the actor. If not provided, the command will prompt 
       for it.
 
 ```
 ### apify info
 ```text
-Displays information about current Apify settings.
+Displays information about the currently active Apify account.
 
 USAGE
   $ apify info
 
 DESCRIPTION
-  This command prints information about Apify to the console.
+  The information is printed to the console.
 
 ```
 ### apify init
 ```text
-Initializes an actor project in an existing directory.
+Initializes a new actor project in an existing directory.
 
 USAGE
   $ apify init [ACTNAME]
@@ -312,12 +313,12 @@ DESCRIPTION
   The command only creates the "apify.json" file and the "apify_storage" 
   directory in the current directory, but will not touch anything else.
 
-  WARNING: If the files already exist, they will be overwritten!
+  WARNING: If these files already exist, they will be overwritten!
 
 ```
 ### apify login
 ```text
-Logs in to the Apify platform using the API token.
+Logs in to your Apify account using a provided API token.
 
 USAGE
   $ apify login
@@ -326,14 +327,14 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The token and other account information is stored to the ~/.apify directory, 
-  from where it is read by all other "apify" commands. To log out, call "apify 
-  logout".
+  The API token and other account information is stored in the ~/.apify 
+  directory, from where it is read by all other "apify" commands. To log out, 
+  call "apify logout".
 
 ```
 ### apify logout
 ```text
-Logs out of the Apify platform.
+Logs out of your Apify account.
 
 USAGE
   $ apify logout
@@ -444,7 +445,7 @@ COMMANDS
 ```
 ### apify vis
 ```text
-Validates INPUT_SCHEMA.json file and prints possible errors.
+Validates INPUT_SCHEMA.json file and prints errors found.
 
 USAGE
   $ apify vis [PATH]
@@ -456,6 +457,7 @@ ARGUMENTS
 ```
 
 <!-- COMMANDS_ARE_AUTOMATICALLY_COPIED_BELOW_HERE -->
+
 
 
 

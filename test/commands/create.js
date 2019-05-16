@@ -8,7 +8,7 @@ const loadJson = require('load-json-file');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
 const actName = 'my-act';
-const ACT_TEMPLATE = 'basic';
+const ACT_TEMPLATE = 'hello_world';
 
 describe('apify create', () => {
     beforeEach(() => {

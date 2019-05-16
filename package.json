@@ -1,7 +1,7 @@
 {
     "name": "apify-cli",
-    "version": "0.3.8",
-    "description": "Apify command line client to help you create, develop, build and run Apify actors.",
+    "version": "0.3.9",
+    "description": "Apify command-line client helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.",
     "main": "index.js",
     "scripts": {
         "test": "mocha --timeout 180000 --recursive",
@@ -19,7 +19,8 @@
         "apify": "src/bin.js"
     },
     "contributors": [
-        "Jakub Drobník <jakub.drobnik@apify.com>"
+        "Jakub Drobník <jakub.drobnik@apify.com>",
+        "Jan Curn <jan@apify.com>"
     ],
     "repository": {
         "type": "git",

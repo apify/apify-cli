@@ -101,7 +101,7 @@ class PushCommand extends ApifyCommand {
             outputs.run(`Created version ${version} for ${actor.name} actor.`);
         }
 
-        // Build actor on Apify and wait for build finish
+        // Build actor on Apify and wait for build to finish
         outputs.run(`Building actor ${actor.name}`);
         let build = await apifyClient.acts.buildAct({
             actId: actorId,
@@ -123,7 +123,7 @@ class PushCommand extends ApifyCommand {
         outputs.link('Actor build detail', `https://my.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
 
         if (build.status === ACT_JOB_STATUSES.SUCCEEDED) {
-            outputs.success('Actor was deployed to Apify platform and built there.');
+            outputs.success('Actor was deployed to Apify cloud and built there.');
         } else if (build.status === ACT_JOB_STATUSES.RUNNING) {
             outputs.warning('Build is still running!');
         } else {
