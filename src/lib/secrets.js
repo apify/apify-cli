@@ -62,7 +62,8 @@ const replaceSecretsValue = (env, secrets) => {
             if (secrets[secretKey]) {
                 updatedEnv[key] = secrets[secretKey];
             } else {
-                warning(`Secrets with key ${secretKey} in local secrets. Set it up with "apify secrets:add ${secretKey} secretValue".`);
+                // eslint-disable-next-line max-len
+                warning(`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets:add ${secretKey} [SECRET_VALUE]"`);
             }
         } else {
             updatedEnv[key] = env[key];
@@ -87,10 +88,10 @@ const transformEnvToEnvVars = (env, secrets) => {
                 envVars.push({
                     name: key,
                     value: secrets[secretKey],
-                    isSecret: true
+                    isSecret: true,
                 });
             } else {
-                warning(`Secrets with key ${secretKey} in local secrets. Set it up with "apify secrets:add ${secretKey} secretValue"`);
+                warning(`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets:add ${secretKey} [SECRET_VALUE]"`);
             }
         } else {
             envVars.push({
