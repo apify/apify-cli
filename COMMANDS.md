@@ -4,7 +4,7 @@
 Apify command-line client helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.
 
 VERSION
-  apify-cli/0.3.9 darwin-x64 node-v10.15.0
+  apify-cli/0.3.10 darwin-x64 node-v10.15.0
 
 USAGE
   $ apify [COMMAND]
@@ -66,7 +66,9 @@ ARGUMENTS
   ACTORNAME  Name of the actor and its directory
 
 OPTIONS
-  -t, --template=puppeteer_crawler|puppeteer|basic|hello_world
+  -t, 
+  --template=hello_world|puppeteer_crawler|puppeteer_single_page|cheerio_crawler
+  |basic_crawler
       Boilerplate template for the actor. If not provided, the command will prompt 
       for it.
 
