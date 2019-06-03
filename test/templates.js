@@ -64,8 +64,7 @@ describe('templates', () => {
         console.log.restore();
     });
 
-    ACTS_TEMPLATE_LIST.forEach((template) => {
-        const templateName = template.value;
+    ACTS_TEMPLATE_LIST.forEach((templateName) => {
         it(`${templateName} works`, async () => {
             const actorName = `cli-test-${templateName.replace(/_/g, '-')}`;
             await command.run(['create', actorName, '--template', templateName]);
