@@ -1,19 +1,23 @@
-0.3.9 / 2018-05-15
+0.3.10 / 2019-06-03
+==================
+- Updated packages
+
+0.3.9 / 2019-05-15
 ==================
 - Improved the templates and texts
 
-0.3.8 / 2018-03-29
+0.3.8 / 2019-03-29
 ==================
 - Updated all templates regarding the last version of apify SDK.
 
-0.3.7 / 2018-03-18
+0.3.7 / 2019-03-18
 ==================
 - Fixed templates to use Apify.getInput(), replaced deprecated function and options,
 added debug fields, added .idea to .gitignore
 - Updated packages
 - Fixed bug: Users without username can use push/call command 
 
-0.3.6 / 2018-01-29
+0.3.6 / 2019-01-29
 ==================
 - Added command `apify vis` that validates actor input schema.
 
