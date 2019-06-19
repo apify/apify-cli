@@ -29,7 +29,7 @@ exports.ACTS_TEMPLATES = {
         },
     },
     puppeteer_single_page: {
-        name: 'Puppeteer single page - Load a single web page using Chrome and Puppeteer and extracts data',
+        name: 'Puppeteer single page - Load a single web page using Chrome and Puppeteer and extract data from it',
         value: 'puppeteer_single_page',
         dir: `${__dirname}/../templates/puppeteer_single_page`,
         defaultRunOptions: {
