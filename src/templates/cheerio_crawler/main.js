@@ -1,55 +1,75 @@
-// This is the main Node.js source code file of your actor.
-// It is referenced from the "scripts" section of the package.json file,
-// so that it can be started by running "npm start".
-
-// Include Apify SDK. For more information, see https://sdk.apify.com/
 const Apify = require('apify');
 
+// Apify.utils contains various utilities, e.g. for logging.
+// Here we turn off the logging of unimportant messages.
+const { log } = Apify.utils;
+log.setLevel(log.LEVELS.WARNING);
+
+// A link to a list of Fortune 500 companies' websites available on GitHub.
+const CSV_LINK = 'https://gist.githubusercontent.com/hrbrmstr/ae574201af3de035c684/raw/f1000.csv';
+
+// Apify.main() function wraps the crawler logic (it is optional).
 Apify.main(async () => {
-    // Get input of the actor (here only for demonstration purposes).
-    // If you'd like to have your input checked and have Apify display
-    // a user interface for it, add INPUT_SCHEMA.json file to your actor.
-    // For more information, see https://apify.com/docs/actor/input-schema
-    const input = await Apify.getInput();
-    console.log('Input:');
-    console.dir(input);
+    // Create an instance of the RequestList class that contains a list of URLs to crawl.
+    // Here we download and parse the list of URLs from an external file.
+    const requestList = new Apify.RequestList({
+        sources: [{ requestsFromUrl: CSV_LINK }],
+    });
+    await requestList.initialize();
 
-    // Open a request queue and add a start URL to it
-    const requestQueue = await Apify.openRequestQueue();
-    await requestQueue.addRequest({ url: 'https://www.iana.org/' });
+    // Create an instance of the CheerioCrawler class - a crawler
+    // that automatically loads the URLs and parses their HTML using the cheerio library.
+    const crawler = new Apify.CheerioCrawler({
+        // Let the crawler fetch URLs from our list.
+        requestList,
 
-    // Define a pattern of URLs that the crawler should visit
-    const pseudoUrls = [new Apify.PseudoUrl('https://www.iana.org/[.*]')];
+        // The crawler downloads and processes the web pages in parallel, with a concurrency
+        // automatically managed based on the available system memory and CPU (see AutoscaledPool class).
+        // Here we define some hard limits for the concurrency.
+        minConcurrency: 10,
+        maxConcurrency: 50,
 
-    // Create a crawler that will use headless Chrome / Puppeteer to extract data
-    // from pages and recursively add links to newly-found pages
-    const crawler = new Apify.PuppeteerCrawler({
-        requestQueue,
+        // On error, retry each page at most once.
+        maxRequestRetries: 1,
 
-        // This function is called for every page the crawler visits
-        handlePageFunction: async ({ request, page }) => {
-            const title = await page.title();
-            console.log(`Title of ${request.url}: ${title}`);
+        // Increase the timeout for processing of each page.
+        handlePageTimeoutSecs: 60,
+
+        // This function will be called for each URL to crawl.
+        // It accepts a single parameter, which is an object with the following fields:
+        // - request: an instance of the Request class with information such as URL and HTTP method
+        // - html: contains raw HTML of the page
+        // - $: the cheerio object containing parsed HTML
+        handlePageFunction: async ({ request, html, $ }) => {
+            console.log(`Processing ${request.url}...`);
+
+            // Extract data from the page using cheerio.
+            const title = $('title').text();
+            const h1texts = [];
+            $('h1').each((index, el) => {
+                h1texts.push({
+                    text: $(el).text(),
+                });
+            });
+
+            // Store the results to the default dataset. In local configuration,
+            // the data will be stored as JSON files in ./apify_storage/datasets/default
             await Apify.pushData({
+                url: request.url,
                 title,
-                '#debug': Apify.utils.createRequestDebugInfo(request),
+                h1texts,
+                html,
             });
-            await Apify.utils.enqueueLinks({ page, selector: 'a', pseudoUrls, requestQueue });
         },
 
-        // This function is called for every page the crawler failed to load
-        // or for which the handlePageFunction() throws at least "maxRequestRetries"-times
+        // This function is called if the page processing failed more than maxRequestRetries+1 times.
         handleFailedRequestFunction: async ({ request }) => {
-            console.log(`Request ${request.url} failed too many times`);
-            await Apify.pushData({
-                '#debug': Apify.utils.createRequestDebugInfo(request),
-            });
+            console.log(`Request ${request.url} failed twice.`);
         },
-
-        maxRequestRetries: 2,
-        maxRequestsPerCrawl: 100,
-        maxConcurrency: 10,
     });
 
+    // Run the crawler and wait for it to finish.
     await crawler.run();
+
+    console.log('Crawler finished.');
 });
