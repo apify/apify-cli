@@ -1,55 +1,46 @@
-// This is the main Node.js source code file of your actor.
-// It is referenced from the "scripts" section of the package.json file,
-// so that it can be started by running "npm start".
-
-// Include Apify SDK. For more information, see https://sdk.apify.com/
 const Apify = require('apify');
+const requestPromise = require('request-promise');
 
+// Apify.main() function wraps the crawler logic (it is optional).
 Apify.main(async () => {
-    // Get input of the actor (here only for demonstration purposes).
-    // If you'd like to have your input checked and have Apify display
-    // a user interface for it, add INPUT_SCHEMA.json file to your actor.
-    // For more information, see https://apify.com/docs/actor/input-schema
-    const input = await Apify.getInput();
-    console.log('Input:');
-    console.dir(input);
+    // Create and initialize an instance of the RequestList class that contains
+    // a list of URLs to crawl. Here we use just a few hard-coded URLs.
+    const requestList = new Apify.RequestList({
+        sources: [
+            { url: 'http://www.google.com/' },
+            { url: 'http://www.example.com/' },
+            { url: 'http://www.bing.com/' },
+            { url: 'http://www.wikipedia.com/' },
+        ],
+    });
+    await requestList.initialize();
 
-    // Open a request queue and add a start URL to it
-    const requestQueue = await Apify.openRequestQueue();
-    await requestQueue.addRequest({ url: 'https://www.iana.org/' });
+    // Create a BasicCrawler - the simplest crawler that enables
+    // users to implement the crawling logic themselves.
+    const crawler = new Apify.BasicCrawler({
 
-    // Define a pattern of URLs that the crawler should visit
-    const pseudoUrls = [new Apify.PseudoUrl('https://www.iana.org/[.*]')];
+        // Let the crawler fetch URLs from our list.
+        requestList,
 
-    // Create a crawler that will use headless Chrome / Puppeteer to extract data
-    // from pages and recursively add links to newly-found pages
-    const crawler = new Apify.PuppeteerCrawler({
-        requestQueue,
+        // This function will be called for each URL to crawl.
+        // The 'request' option is an instance of the Request class, which contains
+        // information such as URL and HTTP method, as supplied by the RequestList.
+        handleRequestFunction: async ({ request }) => {
+            console.log(`Processing ${request.url}...`);
 
-        // This function is called for every page the crawler visits
-        handlePageFunction: async ({ request, page }) => {
-            const title = await page.title();
-            console.log(`Title of ${request.url}: ${title}`);
+            // Fetch the page HTML
+            const html = await requestPromise(request.url);
+
+            // Store the HTML and URL to the default dataset.
             await Apify.pushData({
-                title,
-                '#debug': Apify.utils.createRequestDebugInfo(request),
-            });
-            await Apify.utils.enqueueLinks({ page, selector: 'a', pseudoUrls, requestQueue });
-        },
-
-        // This function is called for every page the crawler failed to load
-        // or for which the handlePageFunction() throws at least "maxRequestRetries"-times
-        handleFailedRequestFunction: async ({ request }) => {
-            console.log(`Request ${request.url} failed too many times`);
-            await Apify.pushData({
-                '#debug': Apify.utils.createRequestDebugInfo(request),
+                url: request.url,
+                html,
             });
         },
-
-        maxRequestRetries: 2,
-        maxRequestsPerCrawl: 100,
-        maxConcurrency: 10,
     });
 
+    // Run the crawler and wait for it to finish.
     await crawler.run();
+
+    console.log('Crawler finished.');
 });
