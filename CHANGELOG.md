@@ -131,3 +131,10 @@ added debug fields, added .idea to .gitignore
 0.0.x / 2018-03-01
 ==================
 - Initial development, lot of new stuff
+
+
+
+
+
+
+
