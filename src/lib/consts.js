@@ -29,7 +29,7 @@ exports.ACTS_TEMPLATES = {
         },
     },
     puppeteer_single_page: {
-        name: 'Puppeteer single page - Load a single web page using Chrome and Puppeteer and extracts data',
+        name: 'Puppeteer single page - Load a single web page using Chrome and Puppeteer and extract data from it',
         value: 'puppeteer_single_page',
         dir: `${__dirname}/../templates/puppeteer_single_page`,
         defaultRunOptions: {
@@ -39,7 +39,7 @@ exports.ACTS_TEMPLATES = {
         },
     },
     cheerio_crawler: {
-        name: 'Cheerio crawler - Recursively crawl a website using raw HTTP requests and Cheerio',
+        name: 'Cheerio crawler - Recursively crawl a website using raw HTTP requests and Cheerio HTML parser',
         value: 'cheerio_crawler',
         dir: `${__dirname}/../templates/cheerio_crawler`,
         defaultRunOptions: {
@@ -50,7 +50,7 @@ exports.ACTS_TEMPLATES = {
         skipOptionalDeps: true,
     },
     basic_crawler: {
-        name: 'Basic crawler - Crawl a list of URLs using HTTP requests and Cheerio',
+        name: 'Basic crawler - Crawl a list of URLs using raw HTTP requests and Cheerio HTML parser',
         value: 'basic_crawler',
         dir: `${__dirname}/../templates/basic_crawler`,
         defaultRunOptions: {
