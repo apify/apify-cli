@@ -4,7 +4,7 @@
 Apify command-line client helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.
 
 VERSION
-  apify-cli/0.3.10 darwin-x64 node-v10.15.0
+  apify-cli/0.3.11 darwin-x64 node-v10.15.0
 
 USAGE
   $ apify [COMMAND]

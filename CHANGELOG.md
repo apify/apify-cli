@@ -1,3 +1,9 @@
+0.3.11 / 2019-07-26
+==================
+- Updated packages
+- Updated Cheerio Crawler template
+- Updated Apify package version in all templates
+
 0.3.10 / 2019-06-03
 ==================
 - Updated packages
