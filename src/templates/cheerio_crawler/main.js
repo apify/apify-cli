@@ -5,15 +5,17 @@ const Apify = require('apify');
 const { log } = Apify.utils;
 log.setLevel(log.LEVELS.WARNING);
 
-// A link to a list of Fortune 500 companies' websites available on GitHub.
-const CSV_LINK = 'https://gist.githubusercontent.com/hrbrmstr/ae574201af3de035c684/raw/f1000.csv';
-
 // Apify.main() function wraps the crawler logic (it is optional).
 Apify.main(async () => {
-    // Create an instance of the RequestList class that contains a list of URLs to crawl.
-    // Here we download and parse the list of URLs from an external file.
+    // Create and initialize an instance of the RequestList class that contains
+    // a list of URLs to crawl. Here we use just a few hard-coded URLs.
     const requestList = new Apify.RequestList({
-        sources: [{ requestsFromUrl: CSV_LINK }],
+        sources: [
+            { url: 'http://www.google.com/' },
+            { url: 'http://www.example.com/' },
+            { url: 'http://www.bing.com/' },
+            { url: 'http://www.wikipedia.com/' },
+        ],
     });
     await requestList.initialize();
 
