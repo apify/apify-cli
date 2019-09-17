@@ -470,9 +470,9 @@
             }
         },
         "apify-shared": {
-            "version": "0.1.59",
-            "resolved": "https://registry.npmjs.org/apify-shared/-/apify-shared-0.1.59.tgz",
-            "integrity": "sha512-4HlHzibUdnG8tzK1mXZXp32S/ftzJl5vC2973LE0SBP/CPBn0W04F8L4NdXdIlD0u3srq/SK7EPwC0lGmTKOVA==",
+            "version": "0.1.60",
+            "resolved": "https://registry.npmjs.org/apify-shared/-/apify-shared-0.1.60.tgz",
+            "integrity": "sha512-H8CKJPnsre2ceSecFDrXgAZfb+09NKoz0VzIqI1OdAAsgigQF47qcH/+UaVxRHad7wHXqSKTz21WO9LCwSPeKw==",
             "requires": {
                 "bluebird": "^3.5.1",
                 "clone": "^2.1.1",
@@ -481,13 +481,6 @@
                 "slugg": "^1.2.1",
                 "underscore": "^1.8.3",
                 "url": "^0.11.0"
-            },
-            "dependencies": {
-                "is-buffer": {
-                    "version": "2.0.3",
-                    "resolved": "https://registry.npmjs.org/is-buffer/-/is-buffer-2.0.3.tgz",
-                    "integrity": "sha512-U15Q7MXTuZlrbymiz95PJpZxu8IlipAp4dtS3wOdgPXx3mqBnslrWU14kxfHB+Py/+2PVKSr37dMAgM2A4uArw=="
-                }
             }
         },
         "archiver": {
@@ -2341,6 +2334,11 @@
             "version": "0.2.1",
             "resolved": "https://registry.npmjs.org/is-arrayish/-/is-arrayish-0.2.1.tgz",
             "integrity": "sha1-d8mYQFJ6qOyxqLppe4BkWnqSap0="
+        },
+        "is-buffer": {
+            "version": "2.0.3",
+            "resolved": "https://registry.npmjs.org/is-buffer/-/is-buffer-2.0.3.tgz",
+            "integrity": "sha512-U15Q7MXTuZlrbymiz95PJpZxu8IlipAp4dtS3wOdgPXx3mqBnslrWU14kxfHB+Py/+2PVKSr37dMAgM2A4uArw=="
         },
         "is-callable": {
             "version": "1.1.4",
