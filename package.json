@@ -1,13 +1,13 @@
 {
     "name": "apify-cli",
-    "version": "0.3.11",
+    "version": "0.3.12",
     "description": "Apify command-line client helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.",
     "main": "index.js",
     "scripts": {
         "test": "mocha --timeout 180000 --recursive",
         "lint": "eslint cli test",
-        "commands_md": "./help_to_md.sh",
-        "prod_shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap"
+        "commands-md": "oclif-dev readme",
+        "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap"
     },
     "files": [
         "src",
@@ -73,6 +73,7 @@
         "write-json-file": "^4.2.0"
     },
     "devDependencies": {
+        "@oclif/dev-cli": "^1.22.2",
         "@oclif/test": "^1.0.1",
         "chai": "^4.0.2",
         "chai-as-promised": "^7.1.1",

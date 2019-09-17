@@ -20,11 +20,11 @@ Then you can run tests with commands in repository root directory:
 
 Only users with access to [apify-cli package](https://www.npmjs.com/package/apify-cli) can publish new version.
 
-1. Generate `COMMANDS.md` and copy content to `README.md`:
-`npm run commands_md`
+1. Generate command reference to `README.md`:
+`npm run commands-md`
 
 2. Before publishing new version you have to generate and commit production `npm-shrinkwrap.json`
-`npm run prod_shrinkwrap`
+`npm run prod-shrinkwrap`
 NOTE: File `package-lock.json` will be completely ignored during package publishing. Using `npm-shrinkwrap.json` will correctly lock dependencies.
 
 3. Run publish script, which publish package to npm:
