@@ -7,7 +7,8 @@
         "test": "mocha --timeout 180000 --recursive",
         "lint": "eslint cli test",
         "commands-md": "oclif-dev readme",
-        "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap"
+        "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap",
+        "manifest": "rm -f oclif.manifest.json && oclif-dev manifest"
     },
     "files": [
         "src",
@@ -16,7 +17,7 @@
         "package.json"
     ],
     "bin": {
-        "apify": "src/bin.js"
+        "apify": "./src/bin/run"
     },
     "contributors": [
         "Jakub Drobník <jakub.drobnik@apify.com>",

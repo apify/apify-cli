@@ -27,5 +27,7 @@ Only users with access to [apify-cli package](https://www.npmjs.com/package/apif
 `npm run prod-shrinkwrap`
 NOTE: File `package-lock.json` will be completely ignored during package publishing. Using `npm-shrinkwrap.json` will correctly lock dependencies.
 
-3. Run publish script, which publish package to npm:
+3. Create manifest file `npm run manifest`
+
+4. Run publish script, which publish package to npm:
 `./publish.sh`
