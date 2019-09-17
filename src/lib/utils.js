@@ -232,20 +232,23 @@ const checkLatestVersion = async () => {
 
 const purgeDefaultQueue = async () => {
     const defaultQueuesPath = getLocalRequestQueuePath();
-    if (fs.existsSync(defaultQueuesPath)) {
+    if (fs.existsSync(getLocalStorageDir()) && fs.existsSync(defaultQueuesPath)) {
         await rimrafPromised(defaultQueuesPath);
     }
 };
 
 const purgeDefaultDataset = async () => {
     const defaultDatasetPath = getLocalDatasetPath();
-    if (fs.existsSync(defaultDatasetPath)) {
+    if (fs.existsSync(getLocalStorageDir()) && fs.existsSync(defaultDatasetPath)) {
         await rimrafPromised(defaultDatasetPath);
     }
 };
 
 const purgeDefaultKeyValueStore = async () => {
     const defaultKeyValueStorePath = getLocalKeyValueStorePath();
+    if (!fs.existsSync(getLocalStorageDir()) || !fs.existsSync(defaultKeyValueStorePath)) {
+        return;
+    }
     const filesToDelete = fs.readdirSync(defaultKeyValueStorePath);
 
     const deletePromises = [];
