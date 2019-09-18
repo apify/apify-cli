@@ -15,13 +15,15 @@ describe('apify create', () => {
         sinon.spy(console, 'log');
     });
 
-    it('error with no argument', async () => {
-        try {
-            await command.run(['create']);
-        } catch (err) {
-            return;
-        }
-        throw new Error('Should have thrown an error');
+    ['superlongdescriptiontotesthtelengthofthename', 'sh', 'bad_escaped'].forEach((badActorName) => {
+        it(`returns error with bad actor name ${badActorName}`, async () => {
+            try {
+                await command.run(['create', badActorName]);
+            } catch (err) {
+                return;
+            }
+            throw new Error('Should have thrown an error');
+        });
     });
 
     it('basic template structure', async () => {

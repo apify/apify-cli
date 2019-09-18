@@ -8,7 +8,7 @@ const loadJson = require('load-json-file');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 const { ENV_VARS } = require('apify-shared/consts');
-const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath } = require('../../src/lib/utils');
+const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
 
 
 const actName = 'my-act';
@@ -127,6 +127,15 @@ describe('apify run', () => {
         expect(fs.existsSync(testJsonPath)).to.be.eql(false);
         expect(fs.existsSync(getLocalDatasetPath())).to.be.eql(false);
         expect(fs.existsSync(getLocalRequestQueuePath())).to.be.eql(false);
+    });
+
+    it('run with purge works without storage folder', async () => {
+        await rimrafPromised(getLocalStorageDir());
+        try {
+            await command.run(['run', '--purge']);
+        } catch (err) {
+            throw new Error('Can not run actor without storage folder!');
+        }
     });
 
     after(async () => {

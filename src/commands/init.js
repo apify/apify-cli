@@ -7,33 +7,32 @@ const path = require('path');
 
 class InitCommand extends ApifyCommand {
     async run() {
-        if (getLocalConfig()) {
-            throw new Error('File apify.json already exists in current directory.');
-        }
-
         const { args } = this.parse(InitCommand);
-        let { actName } = args;
+        let { actorName } = args;
         const cwd = process.cwd();
 
-        if (!actName) {
-            const answer = await inquirer.prompt([{ name: 'actName', message: 'Actor name:', default: path.basename(cwd) }]);
-            ({ actName } = answer);
+        if (getLocalConfig()) {
+            outputs.warning('Skipping creation of apify.json, the file already exists in the current directory.');
+        } else {
+            if (!actorName) {
+                const answer = await inquirer.prompt([{ name: 'actName', message: 'Actor name:', default: path.basename(cwd) }]);
+                ({ actName: actorName } = answer);
+            }
+            await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actorName }), cwd);
         }
-
-        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }), cwd);
         await setLocalEnv(cwd);
-        outputs.success(`Initialized actor ${actName} in current dir.`);
+        outputs.success('The Apify actor has been initialized in the current directory.');
     }
 }
 
 InitCommand.description = 'Initializes a new actor project in an existing directory.\n'
     + `The command only creates the "apify.json" file and the "${DEFAULT_LOCAL_STORAGE_DIR}" directory in the current directory, `
     + 'but will not touch anything else.\n\n'
-    + 'WARNING: If these files already exist, they will be overwritten!';
+    + `WARNING: The directory at "${DEFAULT_LOCAL_STORAGE_DIR}" will be overwritten if it already exists.`;
 
 InitCommand.args = [
     {
-        name: 'actName',
+        name: 'actorName',
         required: false,
         description: 'Name of the actor. If not provided, you will be prompted for it.',
     },

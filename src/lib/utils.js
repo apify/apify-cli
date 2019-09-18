@@ -7,7 +7,8 @@ const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
-const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES } = require('apify-shared/consts');
+const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS,
+    KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES, ACTOR_NAME } = require('apify-shared/consts');
 const https = require('https');
 const ApifyClient = require('apify-client');
 const { warning, info } = require('./outputs');
@@ -231,20 +232,23 @@ const checkLatestVersion = async () => {
 
 const purgeDefaultQueue = async () => {
     const defaultQueuesPath = getLocalRequestQueuePath();
-    if (fs.existsSync(defaultQueuesPath)) {
+    if (fs.existsSync(getLocalStorageDir()) && fs.existsSync(defaultQueuesPath)) {
         await rimrafPromised(defaultQueuesPath);
     }
 };
 
 const purgeDefaultDataset = async () => {
     const defaultDatasetPath = getLocalDatasetPath();
-    if (fs.existsSync(defaultDatasetPath)) {
+    if (fs.existsSync(getLocalStorageDir()) && fs.existsSync(defaultDatasetPath)) {
         await rimrafPromised(defaultDatasetPath);
     }
 };
 
 const purgeDefaultKeyValueStore = async () => {
     const defaultKeyValueStorePath = getLocalKeyValueStorePath();
+    if (!fs.existsSync(getLocalStorageDir()) || !fs.existsSync(defaultKeyValueStorePath)) {
+        return;
+    }
     const filesToDelete = fs.readdirSync(defaultKeyValueStorePath);
 
     const deletePromises = [];
@@ -349,6 +353,22 @@ const updateLocalConfigStructure = (localConfig) => {
     return updatedLocalConfig;
 };
 
+/**
+ * Validates actor name, if finds issue throws error.
+ * @param actorName
+ */
+const validateActorName = (actorName) => {
+    if (!ACTOR_NAME.REGEX.test(actorName)) {
+        throw new Error('The actor name must be a DNS hostname-friendly string (e.g. my-newest-actor).');
+    }
+    if (actorName.length < ACTOR_NAME.MIN_LENGTH) {
+        throw new Error('The actor name must be at least 3 characters long.');
+    }
+    if (actorName.length > ACTOR_NAME.MAX_LENGTH) {
+        throw new Error('The actor name must be a maximum of 30 characters long.');
+    }
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -372,4 +392,5 @@ module.exports = {
     checkIfStorageIsEmpty,
     getLocalStorageDir,
     showHelpForCommand,
+    validateActorName,
 };
