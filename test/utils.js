@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const fs = require('fs');
 const path = require('path');
 const { ensureFolderExistsSync, rimrafPromised } = require('../src/lib/files');
-const { argsToCamelCase, createActZip } = require('../src/lib/utils');
+const { argsToCamelCase, createActZip, getActorLocalFilePaths } = require('../src/lib/utils');
 const exec = require('../src/lib/exec');
 
 const TEST_DIR = 'my-test-dir';
@@ -40,8 +40,8 @@ describe('Utils', () => {
             process.chdir(TEST_DIR);
 
             FOLDERS.concat(FOLDERS_TO_IGNORE).forEach(folder => ensureFolderExistsSync(folder));
-            FILES.concat(FILES_TO_IGNORE, FILES_IN_INGRONED_DIR).forEach(file =>
-                fs.writeFileSync(file, Math.random().toString(36).substring(7), { flag: 'w' }));
+            FILES.concat(FILES_TO_IGNORE, FILES_IN_INGRONED_DIR)
+                .forEach(file => fs.writeFileSync(file, Math.random().toString(36).substring(7), { flag: 'w' }));
 
             const toIgnore = FOLDERS_TO_IGNORE.concat(FILES_TO_IGNORE).join('\n');
             fs.writeFileSync('.gitignore', toIgnore, { flag: 'w' });
@@ -50,19 +50,16 @@ describe('Utils', () => {
             const zipName = 'test.zip';
             const tempFolder = 'unzip_temp';
             ensureFolderExistsSync(tempFolder);
-            await createActZip(zipName);
+            const pathsToZip = await getActorLocalFilePaths();
+            await createActZip(zipName, pathsToZip);
 
             // Unzip with same command as on Apify worker
             await exec('unzip', ['-oq', zipName, '-d', tempFolder]);
 
-            FOLDERS.forEach(folder =>
-                expect(fs.existsSync(path.join(tempFolder, folder))).to.be.true);
-            FOLDERS_TO_IGNORE.forEach(folder =>
-                expect(fs.existsSync(path.join(tempFolder, folder))).to.be.false);
-            FILES.forEach(file =>
-                expect(fs.existsSync(path.join(tempFolder, file))).to.be.true);
-            FILES_IN_INGRONED_DIR.concat(FILES_TO_IGNORE).forEach(file =>
-                expect(fs.existsSync(path.join(tempFolder, file))).to.be.false);
+            FOLDERS.forEach(folder => expect(fs.existsSync(path.join(tempFolder, folder))).to.be.true);
+            FOLDERS_TO_IGNORE.forEach(folder => expect(fs.existsSync(path.join(tempFolder, folder))).to.be.false);
+            FILES.forEach(file => expect(fs.existsSync(path.join(tempFolder, file))).to.be.true);
+            FILES_IN_INGRONED_DIR.concat(FILES_TO_IGNORE).forEach(file => expect(fs.existsSync(path.join(tempFolder, file))).to.be.false);
         });
         after(async () => {
             process.chdir('../');

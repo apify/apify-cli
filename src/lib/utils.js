@@ -7,7 +7,8 @@ const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
-const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES } = require('apify-shared/consts');
+const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS,
+    KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES, SOURCE_FILE_FORMATS } = require('apify-shared/consts');
 const https = require('https');
 const ApifyClient = require('apify-client');
 const { warning, info } = require('./outputs');
@@ -170,15 +171,40 @@ const argsToCamelCase = (object) => {
     return camelCasedObject;
 };
 
+const createSourceFiles = async (paths) => {
+    return paths.map((filePath) => {
+        const file = fs.readFileSync(filePath);
+        const contentType = mime.getType(filePath) || 'text/plain';
+        const format = (contentType.startsWith('text/') || contentType.includes('javascript') || contentType.includes('json'))
+            ? SOURCE_FILE_FORMATS.TEXT
+            : SOURCE_FILE_FORMATS.BASE64;
+        return {
+            name: filePath,
+            format,
+            content: format === SOURCE_FILE_FORMATS.TEXT
+                ? file.toString('utf8')
+                : file.toString('base64'),
+        };
+    });
+};
+
 /**
- * Create zip file with all actor files in current directory, omit files defined in .gitignore and
- * ignore .git folder. NOTE: Zips .file files and .folder/ folders
+ * Get actor local files, omit files defined in .gitignore and .git folder
+ * All dot files(.file) and folders(.folder/) are included.
+ */
+const getActorLocalFilePaths = () => globby(['*', '**/**'], {
+    ignore: ['.git/**'],
+    gitignore: true,
+    dot: true,
+});
+
+/**
+ * Create zip file with all actor files specified with pathsToZip
  * @param zipName
+ * @param pathsToZip
  * @return {Promise<void>}
  */
-const createActZip = async (zipName) => {
-    const pathsToZip = await globby(['*', '**/**'], { ignore: ['.git/**'], gitignore: true, dot: true });
-
+const createActZip = async (zipName, pathsToZip) => {
     const archive = archiver(zipName);
 
     const archiveFilesPromises = [];
@@ -372,4 +398,6 @@ module.exports = {
     checkIfStorageIsEmpty,
     getLocalStorageDir,
     showHelpForCommand,
+    getActorLocalFilePaths,
+    createSourceFiles,
 };

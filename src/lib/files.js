@@ -62,4 +62,19 @@ const deleteFile = async (filePath) => {
     }
 };
 
-module.exports = { updateLocalJson, ensureFolderExistsSync, rimrafPromised, deleteFile };
+const sumFilesSizeInBytes = async (pathToFiles) => {
+    const filesStats = await Promise.all(pathToFiles.map(filePath => fileStat(filePath)));
+    const filesSizeBytes = filesStats
+        .map(stats => stats.size)
+        .reduce((sum, fileSize) => sum + fileSize, 0);
+    return filesSizeBytes;
+};
+
+module.exports = {
+    updateLocalJson,
+    ensureFolderExistsSync,
+    rimrafPromised,
+    deleteFile,
+    fileStat,
+    sumFilesSizeInBytes,
+};
