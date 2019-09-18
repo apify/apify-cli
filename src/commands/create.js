@@ -1,13 +1,13 @@
-const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
 const copy = require('recursive-copy');
 const inquirer = require('inquirer');
+const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
-const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName} = require('../lib/utils');
+const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName } = require('../lib/utils');
 const { ACTS_TEMPLATES, DEFAULT_ACT_TEMPLATE, EMPTY_LOCAL_CONFIG, ACTS_TEMPLATE_LIST } = require('../lib/consts');
 
 class CreateCommand extends ApifyCommand {
@@ -20,11 +20,11 @@ class CreateCommand extends ApifyCommand {
         if (!actorName) {
             const actorNamePrompt = await inquirer.prompt([{
                 name: 'actorName',
-                message: 'Actor name:',
+                message: 'Name of the new actor:',
                 type: 'input',
                 validate: (promptText) => {
                     try {
-                        validateActorName(promptText)
+                        validateActorName(promptText);
                     } catch (err) {
                         return err.message;
                     }
@@ -55,8 +55,8 @@ class CreateCommand extends ApifyCommand {
             fs.mkdirSync(actFolderDir);
         } catch (err) {
             if (err.code && err.code === 'EEXIST') {
-                outputs.error(`Cannot create new actor, directory '${actorName}' already exists. ` +
-                    'You can use "apify init" to create a local actor environment inside an existing directory.');
+                outputs.error(`Cannot create new actor, directory '${actorName}' already exists. `
+                    + 'You can use "apify init" to create a local actor environment inside an existing directory.');
                 return;
             }
             throw err;

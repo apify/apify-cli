@@ -12,7 +12,7 @@ class InitCommand extends ApifyCommand {
         const cwd = process.cwd();
 
         if (getLocalConfig()) {
-            outputs.warning('Skips creating of apify.json, file already exists in the directory.');
+            outputs.warning('Skipping creation of apify.json, the file already exists in the current directory.');
         } else {
             if (!actorName) {
                 const answer = await inquirer.prompt([{ name: 'actName', message: 'Actor name:', default: path.basename(cwd) }]);
@@ -21,14 +21,14 @@ class InitCommand extends ApifyCommand {
             await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actorName }), cwd);
         }
         await setLocalEnv(cwd);
-        outputs.success(`Initialized actor in current dir.`);
+        outputs.success('The Apify actor has been initialized in the current directory.');
     }
 }
 
 InitCommand.description = 'Initializes a new actor project in an existing directory.\n'
     + `The command only creates the "apify.json" file and the "${DEFAULT_LOCAL_STORAGE_DIR}" directory in the current directory, `
     + 'but will not touch anything else.\n\n'
-    + 'WARNING: If apify storage folder already exists, it will be overwritten!';
+    + `WARNING: The directory at "${DEFAULT_LOCAL_STORAGE_DIR}" will be overwritten if it already exists.`;
 
 InitCommand.args = [
     {

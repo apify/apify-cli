@@ -40,8 +40,8 @@ class PushCommand extends ApifyCommand {
             } else {
                 const actTemplate = localConfig.template || DEFAULT_ACT_TEMPLATE;
                 if (!ACTS_TEMPLATES[actTemplate]) {
-                    throw new Error(`Template ${actTemplate} doesn't exist. Please check apify.json`
-                        + ` and use one of ${Object.keys(ACTS_TEMPLATES).join('|')} template name.`);
+                    throw new Error(`Template ${actTemplate} doesn't exist. Please check apify.json `
+                        + `and use one of the following template names: ${Object.keys(ACTS_TEMPLATES).join('|')}.`);
                 }
                 const newActor = {
                     name: localConfig.name,
