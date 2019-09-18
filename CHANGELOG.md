@@ -1,3 +1,12 @@
+0.3.12 / 2019-09-18
+==================
+Bug fixes:
+- `apify create`: Added validation for actor name
+- `apify init` skips creation of apify.json if already exists
+- `apify run -p` runs actor, if apify_storage doesn't exist
+- Updated packages
+- Additional minor fixes
+
 0.3.11 / 2019-07-26
 ==================
 - Updated packages

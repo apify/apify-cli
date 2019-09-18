@@ -216,9 +216,9 @@ This section contains printouts of `apify help` for all commands.
 
 <!-- commands -->
 * [`apify call [ACTID]`](#apify-call-actid)
-* [`apify create ACTORNAME`](#apify-create-actorname)
+* [`apify create [ACTORNAME]`](#apify-create-actorname)
 * [`apify info`](#apify-info)
-* [`apify init [ACTNAME]`](#apify-init-actname)
+* [`apify init [ACTORNAME]`](#apify-init-actorname)
 * [`apify login`](#apify-login)
 * [`apify logout`](#apify-logout)
 * [`apify push [ACTORID]`](#apify-push-actorid)
@@ -253,13 +253,13 @@ DESCRIPTION
 
 _See code: [src/commands/call.js](https://github.com/apifytech/apify-cli/blob/v0.3.12/src/commands/call.js)_
 
-## `apify create ACTORNAME`
+## `apify create [ACTORNAME]`
 
 Creates a new actor project directory from a selected boilerplate template.
 
 ```
 USAGE
-  $ apify create ACTORNAME
+  $ apify create [ACTORNAME]
 
 ARGUMENTS
   ACTORNAME  Name of the actor and its directory
@@ -288,22 +288,22 @@ DESCRIPTION
 
 _See code: [src/commands/info.js](https://github.com/apifytech/apify-cli/blob/v0.3.12/src/commands/info.js)_
 
-## `apify init [ACTNAME]`
+## `apify init [ACTORNAME]`
 
 Initializes a new actor project in an existing directory.
 
 ```
 USAGE
-  $ apify init [ACTNAME]
+  $ apify init [ACTORNAME]
 
 ARGUMENTS
-  ACTNAME  Name of the actor. If not provided, you will be prompted for it.
+  ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
   The command only creates the "apify.json" file and the "apify_storage" directory in the current directory, but will 
   not touch anything else.
 
-  WARNING: If these files already exist, they will be overwritten!
+  WARNING: The directory at "apify_storage" will be overwritten if it already exists.
 ```
 
 _See code: [src/commands/init.js](https://github.com/apifytech/apify-cli/blob/v0.3.12/src/commands/init.js)_
