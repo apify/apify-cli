@@ -263,9 +263,9 @@
             }
         },
         "apify-shared": {
-            "version": "0.1.60",
-            "resolved": "https://registry.npmjs.org/apify-shared/-/apify-shared-0.1.60.tgz",
-            "integrity": "sha512-H8CKJPnsre2ceSecFDrXgAZfb+09NKoz0VzIqI1OdAAsgigQF47qcH/+UaVxRHad7wHXqSKTz21WO9LCwSPeKw==",
+            "version": "0.1.61",
+            "resolved": "https://registry.npmjs.org/apify-shared/-/apify-shared-0.1.61.tgz",
+            "integrity": "sha512-hSXRsKjwYiVn52NcNIREwtic4c3PXJUmGjFnS4XEKUFaDWuviOFQTcCNAzAhpzwb0pobTvA32B1U7OODiAi4bw==",
             "requires": {
                 "bluebird": "^3.5.1",
                 "clone": "^2.1.1",
