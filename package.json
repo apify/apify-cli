@@ -1,22 +1,24 @@
 {
     "name": "apify-cli",
-    "version": "0.3.11",
+    "version": "0.3.12",
     "description": "Apify command-line client helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.",
     "main": "index.js",
     "scripts": {
         "test": "mocha --timeout 180000 --recursive",
         "lint": "eslint cli test",
-        "commands_md": "./help_to_md.sh",
-        "prod_shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap"
+        "commands-md": "oclif-dev readme",
+        "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap",
+        "manifest": "rm -f oclif.manifest.json && oclif-dev manifest"
     },
     "files": [
         "src",
         "npm-shrinkwrap.json",
+        "oclif.manifest.json",
         "index.js",
         "package.json"
     ],
     "bin": {
-        "apify": "src/bin.js"
+        "apify": "./src/bin/run"
     },
     "contributors": [
         "Jakub Drobník <jakub.drobnik@apify.com>",
@@ -48,11 +50,11 @@
         "node": ">=8.0.0"
     },
     "dependencies": {
-        "@oclif/command": "^1.5.18",
-        "@oclif/config": "^1.13.2",
+        "@oclif/command": "^1.5.19",
+        "@oclif/config": "^1.13.3",
         "@oclif/errors": "^1.0.2",
-        "@oclif/plugin-commands": "^1.2.0",
-        "@oclif/plugin-help": "^2.2.0",
+        "@oclif/plugin-commands": "^1.2.3",
+        "@oclif/plugin-help": "^2.2.1",
         "ajv": "^6.10.2",
         "apify-client": "^0.5.22",
         "apify-shared": "^0.1.61",
@@ -60,19 +62,20 @@
         "bluebird": "^3.5.5",
         "chalk": "^2.3.2",
         "child-process-promise": "^2.2.1",
-        "globby": "^8.0.1",
-        "inquirer": "^6.5.0",
+        "globby": "^10.0.1",
+        "inquirer": "^7.0.0",
         "is-online": "^8.2.0",
         "load-json-file": "^6.2.0",
         "mime": "^2.4.4",
         "minimist": "^1.2.0",
         "recursive-copy": "^2.0.10",
-        "rimraf": "^2.6.2",
+        "rimraf": "^3.0.0",
         "semver": "^6.3.0",
         "underscore": "^1.8.3",
-        "write-json-file": "^4.1.1"
+        "write-json-file": "^4.2.0"
     },
     "devDependencies": {
+        "@oclif/dev-cli": "^1.22.2",
         "@oclif/test": "^1.0.1",
         "chai": "^4.0.2",
         "chai-as-promised": "^7.1.1",
