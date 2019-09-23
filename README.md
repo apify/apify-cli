@@ -366,9 +366,10 @@ OPTIONS
                                          should be pushed. By default, it is taken from the "apify.json" file.
 
 DESCRIPTION
-  The command creates a ZIP with files of the actor from the current directory, uploads it to the Apify platform and 
-  builds it. The actor settings are read from the "apify.json" file in the current directory, but they can be overridden 
-  using command-line options.
+  The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using 
+  command-line options.
+  NOTE: If the source files are smaller than 3 MB then they are uploaded as 
+  "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
 ```

@@ -6,7 +6,7 @@
     "scripts": {
         "test": "mocha --timeout 180000 --recursive",
         "lint": "eslint cli test",
-        "commands-md": "oclif-dev readme",
+        "commands-md": "npm run manifest && oclif-dev readme",
         "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap",
         "manifest": "rm -f oclif.manifest.json && oclif-dev manifest"
     },

@@ -153,7 +153,8 @@ class PushCommand extends ApifyCommand {
 
 PushCommand.description = 'Uploads the actor to the Apify platform and builds it there.\n'
     + 'The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using command-line options.\n'
-    + 'NOTE: The command creates a ZIP with files for source code larger than 3 MB.\n\n'
+    + `NOTE: If the source files are smaller than ${MAX_MULTIFILE_BYTES / (1024 ** 2)} MB then they are uploaded as \n`
+    + '"Multiple source files", otherwise they are uploaded as "Zip file".\n\n'
     + 'WARNING: If the target actor already exists in your Apify account, it will be overwritten!';
 
 PushCommand.flags = {

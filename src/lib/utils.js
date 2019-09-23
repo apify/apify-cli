@@ -175,7 +175,12 @@ const createSourceFiles = async (paths) => {
     return paths.map((filePath) => {
         const file = fs.readFileSync(filePath);
         const contentType = mime.getType(filePath) || 'text/plain';
-        const format = (contentType.startsWith('text/') || contentType.includes('javascript') || contentType.includes('json'))
+        // TODO: Use better check if file is text content
+        const format = (contentType.startsWith('text/')
+            || contentType.includes('javascript')
+            || contentType.includes('json')
+            || contentType.includes('xml')
+        )
             ? SOURCE_FILE_FORMATS.TEXT
             : SOURCE_FILE_FORMATS.BASE64;
         return {
