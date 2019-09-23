@@ -3,10 +3,10 @@ const sinon = require('sinon');
 const fs = require('fs');
 const command = require('@oclif/command');
 const { ACT_SOURCE_TYPES } = require('apify-shared/consts');
-const { rimrafPromised } = require('../../src/lib/files');
-const { getLocalUserInfo, getActorLocalFilePaths, createSourceFiles } = require('../../src/lib/utils');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
+const { rimrafPromised } = require('../../src/lib/files');
+const { getLocalUserInfo, getActorLocalFilePaths, createSourceFiles } = require('../../src/lib/utils');
 const { GLOBAL_CONFIGS_FOLDER, UPLOADS_STORE_NAME } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 

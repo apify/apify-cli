@@ -3,8 +3,8 @@ const fs = require('fs');
 const sinon = require('sinon');
 const command = require('@oclif/command');
 const path = require('path');
-const { rimrafPromised } = require('../../src/lib/files');
 const loadJson = require('load-json-file');
+const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
 const actName = 'my-act';

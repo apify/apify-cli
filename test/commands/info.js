@@ -2,8 +2,8 @@ const { expect } = require('chai');
 const sinon = require('sinon');
 const fs = require('fs');
 const loadJson = require('load-json-file');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const command = require('@oclif/command');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 
 describe('apify info', () => {

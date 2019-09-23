@@ -1,11 +1,11 @@
 const fs = require('fs');
-const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
+const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES, MAX_MULTIFILE_BYTES } = require('apify-shared/consts');
+const { ApifyCommand } = require('../lib/apify_command');
 const { createActZip, getLoggedClientOrThrow,
     outputJobLog, getLocalUserInfo, getActorLocalFilePaths,
     createSourceFiles, getLocalConfigOrThrow } = require('../lib/utils');
 const { sumFilesSizeInBytes } = require('../lib/files');
-const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES, MAX_MULTIFILE_BYTES } = require('apify-shared/consts');
 const { DEFAULT_ACT_TEMPLATE, ACTS_TEMPLATES, UPLOADS_STORE_NAME } = require('../lib/consts');
 const { transformEnvToEnvVars } = require('../lib/secrets');
 const outputs = require('../lib/outputs');
@@ -159,7 +159,8 @@ PushCommand.description = 'Uploads the actor to the Apify platform and builds it
 
 PushCommand.flags = {
     'version-number': flagsHelper.string({
-        description: 'DEPRECATED: Use flag version instead. Actor version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
+        description: 'DEPRECATED: Use flag version instead. Actor version number to which the files should be pushed. '
+            + 'By default, it is taken from the "apify.json" file.',
         required: false,
     }),
     version: flagsHelper.string({

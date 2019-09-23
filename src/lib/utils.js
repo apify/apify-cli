@@ -11,12 +11,12 @@ const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS,
     KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES, SOURCE_FILE_FORMATS, ACTOR_NAME } = require('apify-shared/consts');
 const https = require('https');
 const ApifyClient = require('apify-client');
-const { warning, info } = require('./outputs');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_NAME, INPUT_FILE_REG_EXP, DEFAULT_LOCAL_STORAGE_DIR } = require('./consts');
-const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
 const { execSync, spawnSync } = require('child_process');
 const semver = require('semver');
 const isOnline = require('is-online');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_NAME, INPUT_FILE_REG_EXP, DEFAULT_LOCAL_STORAGE_DIR } = require('./consts');
+const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
+const { warning, info } = require('./outputs');
 
 const getLocalStorageDir = () => {
     const envVar = ENV_VARS.LOCAL_STORAGE_DIR;

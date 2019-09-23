@@ -27,7 +27,10 @@ class CallCommand extends ApifyCommand {
         } else {
             actorId = `${usernameOrId}/${localConfig.name}`;
             const actor = await apifyClient.acts.getAct({ actId: actorId });
-            if (!actor) throw new Error(`Cannot find actor with ID '${actorId}' in your account. Call "apify push" to push this actor to Apify platform.`);
+            if (!actor) {
+                throw new Error(`Cannot find actor with ID '${actorId}' `
+                    + 'in your account. Call "apify push" to push this actor to Apify platform.');
+            }
         }
 
         const runOpts = {

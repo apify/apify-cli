@@ -1,6 +1,6 @@
+const chalk = require('chalk');
 const { ApifyCommand } = require('../lib/apify_command');
 const { getLoggedClientOrThrow, getLocalUserInfo } = require('../lib/utils');
-const chalk = require('chalk');
 
 class InfoCommand extends ApifyCommand {
     static async run() {
@@ -17,7 +17,7 @@ class InfoCommand extends ApifyCommand {
     }
 }
 
-InfoCommand.description = 'Displays information about the currently active Apify account.\n' +
-    'The information is printed to the console.';
+InfoCommand.description = 'Displays information about the currently active Apify account.\n'
+    + 'The information is printed to the console.';
 
 module.exports = InfoCommand;
