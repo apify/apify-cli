@@ -1,3 +1,7 @@
+0.4.0 / 2019-09-23
+==================
+- Breaking Change - `apify push`: Pushes source code as a "Multiple source files" in case source code is less that 3 MB
+
 0.3.12 / 2019-09-18
 ==================
 Bug fixes:
