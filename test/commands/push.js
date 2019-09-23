@@ -3,10 +3,10 @@ const sinon = require('sinon');
 const fs = require('fs');
 const command = require('@oclif/command');
 const { ACT_SOURCE_TYPES } = require('apify-shared/consts');
-const { rimrafPromised } = require('../../src/lib/files');
-const { getLocalUserInfo } = require('../../src/lib/utils');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
+const { rimrafPromised } = require('../../src/lib/files');
+const { getLocalUserInfo, getActorLocalFilePaths, createSourceFiles } = require('../../src/lib/utils');
 const { GLOBAL_CONFIGS_FOLDER, UPLOADS_STORE_NAME } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
 
@@ -19,7 +19,7 @@ const TEST_ACTOR = {
             versionNumber: '0.0',
             sourceType: 'TARBALL',
             buildTag: 'latest',
-            tarballUrl: 'http://example.com/my_test.zip',
+            sourceFiles: [],
         },
     ],
 };
@@ -58,7 +58,6 @@ describe('apify push', () => {
             actId: actorId,
             versionNumber: apifyJson.version,
         });
-        const store = await testUserClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
 
         const expectedApifyJson = {
             name: ACTOR_NAME,
@@ -68,20 +67,20 @@ describe('apify push', () => {
             env: apifyJson.env,
         };
 
+        const filePathsToPush = await getActorLocalFilePaths();
+        const sourceFiles = await createSourceFiles(filePathsToPush);
+
         if (createdActor) await testUserClient.acts.deleteAct({ actId: actorId });
 
         expect(expectedApifyJson).to.be.eql(apifyJson);
-        expect(createdActorVersion).to.be.eql({
-            versionNumber: apifyJson.version,
-            buildTag: apifyJson.buildTag,
-            envVars: [{
-                name: 'MY_ENV_VAR',
-                value: 'envVarValue',
-            }],
-            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}`
-                + `/records/${createdActor.name}-${apifyJson.version}.zip?disableRedirect=true`,
-            sourceType: ACT_SOURCE_TYPES.TARBALL,
-        });
+        expect(createdActorVersion.versionNumber).to.be.eql(apifyJson.version);
+        expect(createdActorVersion.buildTag).to.be.eql(apifyJson.buildTag);
+        expect(createdActorVersion.envVars).to.be.eql([{
+            name: 'MY_ENV_VAR',
+            value: 'envVarValue',
+        }]);
+        expect(createdActorVersion.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+        expect(createdActorVersion.sourceType).to.be.eql(ACT_SOURCE_TYPES.SOURCE_FILES);
     });
 
     it('should work with actorId', async () => {
@@ -95,7 +94,6 @@ describe('apify push', () => {
             actId: testActor.id,
             versionNumber: apifyJson.version,
         });
-        const store = await testUserClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
 
         const expectedApifyJson = {
             name: apifyJson.name,
@@ -105,23 +103,61 @@ describe('apify push', () => {
             env: apifyJson.env,
         };
 
+        const filePathsToPush = await getActorLocalFilePaths();
+        const sourceFiles = await createSourceFiles(filePathsToPush);
+
         if (testActor) await testUserClient.acts.deleteAct({ actId: testActor.id });
 
         expect(expectedApifyJson).to.be.eql(apifyJson);
-        expect(testActorVersion).to.be.eql({
-            versionNumber: apifyJson.version,
-            buildTag: apifyJson.buildTag,
-            tarballUrl: `https://api.apify.com/v2/key-value-stores/${store.id}`
-                + `/records/${testActor.name}-${apifyJson.version}.zip?disableRedirect=true`,
-            envVars: [{
-                name: 'MY_ENV_VAR',
-                value: 'envVarValue',
-            }],
-            sourceType: ACT_SOURCE_TYPES.TARBALL,
-        });
+        expect(testActorVersion.versionNumber).to.be.eql(apifyJson.version);
+        expect(testActorVersion.buildTag).to.be.eql(apifyJson.buildTag);
+        expect(testActorVersion.envVars).to.be.eql([{
+            name: 'MY_ENV_VAR',
+            value: 'envVarValue',
+        }]);
+        expect(testActorVersion.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+        expect(testActorVersion.sourceType).to.be.eql(ACT_SOURCE_TYPES.SOURCE_FILES);
     });
 
     it('should not rewrite current actor envVars', async () => {
+        const testActorWithEnvVars = Object.assign({}, TEST_ACTOR);
+        testActorWithEnvVars.versions = [{
+            versionNumber: '0.0',
+            sourceType: 'TARBALL',
+            buildTag: 'latest',
+            sourceFiles: [],
+            envVars: [{
+                name: 'MY_TEST',
+                value: 'myValue',
+            }],
+        }];
+        let testActor = await testUserClient.acts.createAct({ act: testActorWithEnvVars });
+        const apifyJson = loadJson.sync('apify.json');
+
+        apifyJson.env = null;
+        writeJson.sync('apify.json', apifyJson);
+
+        await command.run(['push', testActor.id]);
+
+        testActor = await testUserClient.acts.getAct({ actId: testActor.id });
+        const testActorVersion = await testUserClient.acts.getActVersion({
+            actId: testActor.id,
+            versionNumber: apifyJson.version,
+        });
+
+        const filePathsToPush = await getActorLocalFilePaths();
+        const sourceFiles = await createSourceFiles(filePathsToPush);
+
+        if (testActor) await testUserClient.acts.deleteAct({ actId: testActor.id });
+
+        expect(testActorVersion.versionNumber).to.be.eql(apifyJson.version);
+        expect(testActorVersion.buildTag).to.be.eql(apifyJson.buildTag);
+        expect(testActorVersion.envVars).to.be.eql(testActorWithEnvVars.versions[0].envVars);
+        expect(testActorVersion.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+        expect(testActorVersion.sourceType).to.be.eql(ACT_SOURCE_TYPES.SOURCE_FILES);
+    });
+
+    it('should upload zip for source files larger that 3MB', async () => {
         const testActorWithEnvVars = Object.assign({}, TEST_ACTOR);
         testActorWithEnvVars.versions = [{
             versionNumber: '0.0',
@@ -138,6 +174,9 @@ describe('apify push', () => {
 
         apifyJson.env = null;
         writeJson.sync('apify.json', apifyJson);
+
+        // Create large file to ensure actor will be uploaded as zip
+        fs.writeFileSync('3mb-file.txt', Buffer.alloc(1024 * 1024 * 3));
 
         await command.run(['push', testActor.id]);
 
@@ -159,6 +198,7 @@ describe('apify push', () => {
             sourceType: ACT_SOURCE_TYPES.TARBALL,
         });
     });
+
 
     afterEach(() => {
         console.log.restore();

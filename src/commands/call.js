@@ -1,6 +1,6 @@
-const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const { ACT_JOB_STATUSES } = require('apify-shared/consts');
+const { ApifyCommand } = require('../lib/apify_command');
 const { getLocalConfig, getLoggedClientOrThrow,
     getLocalUserInfo, getLocalInput, outputJobLog } = require('../lib/utils');
 const outputs = require('../lib/outputs');
@@ -27,7 +27,10 @@ class CallCommand extends ApifyCommand {
         } else {
             actorId = `${usernameOrId}/${localConfig.name}`;
             const actor = await apifyClient.acts.getAct({ actId: actorId });
-            if (!actor) throw new Error(`Cannot find actor with ID '${actorId}' in your account. Call "apify push" to push this actor to Apify platform.`);
+            if (!actor) {
+                throw new Error(`Cannot find actor with ID '${actorId}' `
+                    + 'in your account. Call "apify push" to push this actor to Apify platform.');
+            }
         }
 
         const runOpts = {
@@ -79,9 +82,9 @@ class CallCommand extends ApifyCommand {
     }
 }
 
-CallCommand.description = 'Runs a specific actor remotely on the Apify cloud platform.\n' +
-    'The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". ' +
-    'It takes input for the actor from the default local key-value store by default.';
+CallCommand.description = 'Runs a specific actor remotely on the Apify cloud platform.\n'
+    + 'The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". '
+    + 'It takes input for the actor from the default local key-value store by default.';
 
 CallCommand.flags = {
     build: flagsHelper.string({
@@ -112,8 +115,8 @@ CallCommand.args = [
     {
         name: 'actId',
         required: false,
-        description: 'Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). ' +
-            'If not provided, the command runs the remote actor specified in the "apify.json" file.',
+        description: 'Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
+            + 'If not provided, the command runs the remote actor specified in the "apify.json" file.',
     },
 ];
 

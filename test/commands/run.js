@@ -2,12 +2,12 @@ const { expect } = require('chai');
 const fs = require('fs');
 const command = require('@oclif/command');
 const path = require('path');
-const { rimrafPromised } = require('../../src/lib/files');
 const writeJson = require('write-json-file');
 const loadJson = require('load-json-file');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
-const { testUserClient } = require('./config');
 const { ENV_VARS } = require('apify-shared/consts');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
+const { rimrafPromised } = require('../../src/lib/files');
+const { testUserClient } = require('./config');
 const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
 
 

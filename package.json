@@ -5,8 +5,9 @@
     "main": "index.js",
     "scripts": {
         "test": "mocha --timeout 180000 --recursive",
-        "lint": "eslint cli test",
-        "commands-md": "oclif-dev readme",
+        "lint": "eslint src test",
+        "lint:fix": "eslint src test --fix",
+        "commands-md": "npm run manifest && oclif-dev readme",
         "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap",
         "manifest": "rm -f oclif.manifest.json && oclif-dev manifest"
     },
@@ -57,7 +58,7 @@
         "@oclif/plugin-help": "^2.2.1",
         "ajv": "^6.10.2",
         "apify-client": "^0.5.22",
-        "apify-shared": "^0.1.60",
+        "apify-shared": "^0.1.61",
         "archiver-promise": "^1.0.0",
         "bluebird": "^3.5.5",
         "chalk": "^2.3.2",

@@ -1,11 +1,11 @@
-const { ApifyCommand } = require('../lib/apify_command');
 const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
-const execWithLog = require('../lib/exec');
 const loadJson = require('load-json-file');
-const { DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
 const { ENV_VARS } = require('apify-shared/consts');
+const execWithLog = require('../lib/exec');
+const { DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
+const { ApifyCommand } = require('../lib/apify_command');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
     purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty,
@@ -52,8 +52,8 @@ class RunCommand extends ApifyCommand {
         if (!flags.purge) {
             const isStorageEmpty = await checkIfStorageIsEmpty();
             if (!isStorageEmpty) {
-                warning('The apify_storage directory contains a previous state, the actor will continue where it left off. ' +
-                    'To start from the initial state, use --purge parameter to clean the apify_storage directory.');
+                warning('The apify_storage directory contains a previous state, the actor will continue where it left off. '
+                    + 'To start from the initial state, use --purge parameter to clean the apify_storage directory.');
             }
         }
 

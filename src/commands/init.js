@@ -1,9 +1,9 @@
-const { ApifyCommand } = require('../lib/apify_command');
 const inquirer = require('inquirer');
+const path = require('path');
+const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
 const { setLocalConfig, setLocalEnv, getLocalConfig } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
-const path = require('path');
 
 class InitCommand extends ApifyCommand {
     async run() {

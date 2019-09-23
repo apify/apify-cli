@@ -1,9 +1,9 @@
 const { expect } = require('chai');
 const fs = require('fs');
 const command = require('@oclif/command');
+const loadJson = require('load-json-file');
 const { rimrafPromised } = require('../../src/lib/files');
 const { EMPTY_LOCAL_CONFIG } = require('../../src/lib/consts');
-const loadJson = require('load-json-file');
 
 const actName = 'my-act-init';
 
