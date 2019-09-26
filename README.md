@@ -468,7 +468,7 @@ _See code: [src/commands/secrets/rm.js](https://github.com/apifytech/apify-cli/b
 
 Validates INPUT_SCHEMA.json file and prints errors found.
 
-```
+```sh-session
 USAGE
   $ apify vis [PATH]
 
