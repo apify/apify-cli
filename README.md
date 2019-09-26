@@ -181,7 +181,7 @@ Adds a new secret using command:
 apify secrets:add mySecretPassword pwd1234
 ```
 After adding a new secret you can use the secret in apify.json
-```
+```text
 {
     "name": "dataset-to-mysql",
     ...
@@ -232,7 +232,7 @@ This section contains printouts of `apify help` for all commands.
 
 Runs a specific actor remotely on the Apify cloud platform.
 
-```
+```bash
 USAGE
   $ apify call [ACTID]
 
@@ -257,7 +257,7 @@ _See code: [src/commands/call.js](https://github.com/apifytech/apify-cli/blob/v0
 
 Creates a new actor project directory from a selected boilerplate template.
 
-```
+```bash
 USAGE
   $ apify create [ACTORNAME]
 
@@ -278,7 +278,7 @@ _See code: [src/commands/create.js](https://github.com/apifytech/apify-cli/blob/
 
 Displays information about the currently active Apify account.
 
-```
+```bash
 USAGE
   $ apify info
 
@@ -292,7 +292,7 @@ _See code: [src/commands/info.js](https://github.com/apifytech/apify-cli/blob/v0
 
 Initializes a new actor project in an existing directory.
 
-```
+```bash
 USAGE
   $ apify init [ACTORNAME]
 
@@ -312,7 +312,7 @@ _See code: [src/commands/init.js](https://github.com/apifytech/apify-cli/blob/v0
 
 Logs in to your Apify account using a provided API token.
 
-```
+```bash
 USAGE
   $ apify login
 
@@ -330,7 +330,7 @@ _See code: [src/commands/login.js](https://github.com/apifytech/apify-cli/blob/v
 
 Logs out of your Apify account.
 
-```
+```bash
 USAGE
   $ apify logout
 
@@ -345,7 +345,7 @@ _See code: [src/commands/logout.js](https://github.com/apifytech/apify-cli/blob/
 
 Uploads the actor to the Apify platform and builds it there.
 
-```
+```bash
 USAGE
   $ apify push [ACTORID]
 
@@ -380,7 +380,7 @@ _See code: [src/commands/push.js](https://github.com/apifytech/apify-cli/blob/v0
 
 Runs the actor locally in the current directory by executing "npm start".
 
-```
+```bash
 USAGE
   $ apify run
 
@@ -410,7 +410,7 @@ _See code: [src/commands/run.js](https://github.com/apifytech/apify-cli/blob/v0.
 
 Manages secret values for actor environment variables.
 
-```
+```bash
 USAGE
   $ apify secrets
 
@@ -436,7 +436,7 @@ _See code: [src/commands/secrets/index.js](https://github.com/apifytech/apify-cl
 
 Adds a new secret value.
 
-```
+```bash
 USAGE
   $ apify secrets:add NAME VALUE
 
@@ -454,7 +454,7 @@ _See code: [src/commands/secrets/add.js](https://github.com/apifytech/apify-cli/
 
 Removes the secret.
 
-```
+```bash
 USAGE
   $ apify secrets:rm NAME
 
@@ -468,7 +468,7 @@ _See code: [src/commands/secrets/rm.js](https://github.com/apifytech/apify-cli/b
 
 Validates INPUT_SCHEMA.json file and prints errors found.
 
-```sh-session
+```bash
 USAGE
   $ apify vis [PATH]
 
