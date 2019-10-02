@@ -5,9 +5,14 @@
     "dependencies": {
         "apify": "^0.16.0"
     },
-    "devDependencies": {},
+    "devDependencies": {
+        "@apify/eslint-config": "0.0.3",
+        "eslint": "^6.4.0"
+    },
     "scripts": {
-        "start": "node main.js",
+        "start": "node src/main.js",
+        "lint": "./node_modules/.bin/eslint ./src --ext .js,.jsx",
+        "lint:fix": "./node_modules/.bin/eslint ./src --ext .js,.jsx --fix",
         "test": "echo \"Error: oops, the actor has no tests yet, sad!\" && exit 1"
     },
     "author": "It's not you it's me",

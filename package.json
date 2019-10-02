@@ -92,7 +92,7 @@
         "sinon": "^4.4.6"
     },
     "eslintIgnore": [
-        "cli/templates/*"
+        "src/templates/*"
     ],
     "oclif": {
         "bin": "apify",

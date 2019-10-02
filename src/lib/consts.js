@@ -60,6 +60,16 @@ exports.ACTS_TEMPLATES = {
         },
         skipOptionalDeps: true,
     },
+    apify_project: {
+        name: 'Apify project - Standardized template containing boilerplate and code style rules used for Apify Marketplace projects',
+        value: 'apify_project',
+        dir: `${__dirname}/../templates/apify_project`,
+        defaultRunOptions: {
+            build: 'latest',
+            timeoutSecs: 3600,
+            memoryMbytes: 2048,
+        },
+    },
     // NOTE: We can use isDeprecated flag if we want to omit template from templates list which user can use for new actors.
     // But if old users have this template in apify.json, it will work.
     puppeteer: {
