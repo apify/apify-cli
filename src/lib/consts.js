@@ -61,7 +61,7 @@ exports.ACTS_TEMPLATES = {
         skipOptionalDeps: true,
     },
     apify_project: {
-        name: 'Apify project - Template for Apify projects, mainly for Apify Marketplace developers',
+        name: 'Apify project - Standardized template containing boilerplate and code style rules used for Apify Marketplace projects',
         value: 'apify_project',
         dir: `${__dirname}/../templates/apify_project`,
         defaultRunOptions: {

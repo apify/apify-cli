@@ -11,6 +11,8 @@
     },
     "scripts": {
         "start": "node src/main.js",
+        "lint": "./node_modules/.bin/eslint ./src ./test --ext .js,.jsx",
+        "lint:fix": "./node_modules/.bin/eslint ./src ./test --ext .js,.jsx --fix",
         "test": "echo \"Error: oops, the actor has no tests yet, sad!\" && exit 1"
     },
     "author": "It's not you it's me",
