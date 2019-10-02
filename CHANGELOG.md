@@ -1,3 +1,8 @@
+0.4.0 / 2019-10-02
+==================
+- New actor template for Apify projects, you can create it with `apify create --template apify_project`
+- `apify vis` - Using improved schema validator
+
 0.4.0 / 2019-09-23
 ==================
 - Breaking Change - `apify push`: Pushes source code as a "Multiple source files" in case source code is less that 3 MB
