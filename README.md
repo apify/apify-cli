@@ -103,7 +103,7 @@ Note that the command will store the API token and other sensitive information t
 apify push
 ```
 
-This command creates a ZIP archive with your project, uploads it to the Apify cloud and builds an actor from it.
+This command uploads your project to the Apify cloud and builds an actor from it.
 
 ### Run an actor on the Apify cloud
 
