@@ -75,6 +75,10 @@ class RunCommand extends ApifyCommand {
             warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
         }
 
+        // --max-http-header-size=80000
+        // Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
+        // However they did not think about all the sites there with large headers,
+        // so we put back the old limit of 80kb, which seems to work just fine.
         await execWithLog(getNpmCmd(), ['start'], { env, NODE_OPTIONS: '--max-http-header-size=80000' });
     }
 }
