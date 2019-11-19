@@ -75,7 +75,7 @@ class RunCommand extends ApifyCommand {
             warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
         }
 
-        await execWithLog(getNpmCmd(), ['start'], { env });
+        await execWithLog(getNpmCmd(), ['start'], { env, NODE_OPTIONS: '--max-http-header-size=80000' });
     }
 }
 
