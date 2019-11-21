@@ -3,7 +3,7 @@
     "version": "0.0.1",
     "description": "This is a boilerplate of an Apify actor.",
     "dependencies": {
-        "apify": "^0.16.0"
+        "apify": "^0.16.2"
     },
     "devDependencies": {
         "@apify/eslint-config": "0.0.3",

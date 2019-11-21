@@ -1,4 +1,9 @@
-0.4.0 / 2019-10-02
+0.5.0 / 2019-11-21
+==================
+- Drop support for node 8 and 9
+- Fix: Pass the --max-http-header-size=80000 to the nodeJs process
+
+0.4.1 / 2019-10-02
 ==================
 - New actor template for Apify projects, you can create it with `apify create --template apify_project`
 - `apify vis` - Using improved schema validator
