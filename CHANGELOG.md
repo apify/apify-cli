@@ -1,4 +1,4 @@
-0.5.0 / 2019-11-21
+0.5.0 / 2019-11-27
 ==================
 - Drop support for node 8 and 9
 - Fix: Pass the --max-http-header-size=80000 to the nodeJs process
@@ -44,7 +44,7 @@ Bug fixes:
 - Fixed templates to use Apify.getInput(), replaced deprecated function and options,
 added debug fields, added .idea to .gitignore
 - Updated packages
-- Fixed bug: Users without username can use push/call command 
+- Fixed bug: Users without username can use push/call command
 
 0.3.6 / 2019-01-29
 ==================
