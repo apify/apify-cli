@@ -228,7 +228,7 @@ This section contains printouts of `apify help` for all commands.
 * [`apify secrets:rm NAME`](#apify-secretsrm-name)
 * [`apify vis [PATH]`](#apify-vis-path)
 
-## `apify call [ACTID]`
+### `apify call [ACTID]`
 
 Runs a specific actor remotely on the Apify cloud platform.
 
@@ -247,13 +247,13 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It 
+  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It
   takes input for the actor from the default local key-value store by default.
 ```
 
 _See code: [src/commands/call.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/call.js)_
 
-## `apify create [ACTORNAME]`
+### `apify create [ACTORNAME]`
 
 Creates a new actor project directory from a selected boilerplate template.
 
@@ -271,7 +271,7 @@ OPTIONS
 
 _See code: [src/commands/create.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/create.js)_
 
-## `apify info`
+### `apify info`
 
 Displays information about the currently active Apify account.
 
@@ -285,7 +285,7 @@ DESCRIPTION
 
 _See code: [src/commands/info.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/info.js)_
 
-## `apify init [ACTORNAME]`
+### `apify init [ACTORNAME]`
 
 Initializes a new actor project in an existing directory.
 
@@ -297,7 +297,7 @@ ARGUMENTS
   ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "apify_storage" directory in the current directory, but will 
+  The command only creates the "apify.json" file and the "apify_storage" directory in the current directory, but will
   not touch anything else.
 
   WARNING: The directory at "apify_storage" will be overwritten if it already exists.
@@ -305,7 +305,7 @@ DESCRIPTION
 
 _See code: [src/commands/init.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/init.js)_
 
-## `apify login`
+### `apify login`
 
 Logs in to your Apify account using a provided API token.
 
@@ -317,13 +317,13 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other 
+  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other
   "apify" commands. To log out, call "apify logout".
 ```
 
 _See code: [src/commands/login.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/login.js)_
 
-## `apify logout`
+### `apify logout`
 
 Logs out of your Apify account.
 
@@ -332,13 +332,13 @@ USAGE
   $ apify logout
 
 DESCRIPTION
-  The command deletes the API token and all other account information stored in the ~/.apify directory. To log in again, 
+  The command deletes the API token and all other account information stored in the ~/.apify directory. To log in again,
   call "apify login".
 ```
 
 _See code: [src/commands/logout.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/logout.js)_
 
-## `apify push [ACTORID]`
+### `apify push [ACTORID]`
 
 Uploads the actor to the Apify platform and builds it there.
 
@@ -363,9 +363,9 @@ OPTIONS
                                          should be pushed. By default, it is taken from the "apify.json" file.
 
 DESCRIPTION
-  The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using 
+  The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using
   command-line options.
-  NOTE: If the source files are smaller than 3 MB then they are uploaded as 
+  NOTE: If the source files are smaller than 3 MB then they are uploaded as
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
@@ -373,7 +373,7 @@ DESCRIPTION
 
 _See code: [src/commands/push.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/push.js)_
 
-## `apify run`
+### `apify run`
 
 Runs the actor locally in the current directory by executing "npm start".
 
@@ -393,17 +393,17 @@ OPTIONS
   --purge-queue            Deletes the local directory containing the default request queue before the run starts.
 
 DESCRIPTION
-  It sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For 
-  example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be 
+  It sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For
+  example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
   stored in the "apify_storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You 
+  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You
   can set up your own main file or environment variables by changing it.
 ```
 
 _See code: [src/commands/run.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/run.js)_
 
-## `apify secrets`
+### `apify secrets`
 
 Manages secret values for actor environment variables.
 
@@ -423,13 +423,13 @@ DESCRIPTION
      "version": "0.1
   }
 
-  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable 
+  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable
   of the actor.
 ```
 
 _See code: [src/commands/secrets/index.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/secrets/index.js)_
 
-## `apify secrets:add NAME VALUE`
+### `apify secrets:add NAME VALUE`
 
 Adds a new secret value.
 
@@ -447,7 +447,7 @@ DESCRIPTION
 
 _See code: [src/commands/secrets/add.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/secrets/add.js)_
 
-## `apify secrets:rm NAME`
+### `apify secrets:rm NAME`
 
 Removes the secret.
 
@@ -461,7 +461,7 @@ ARGUMENTS
 
 _See code: [src/commands/secrets/rm.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/secrets/rm.js)_
 
-## `apify vis [PATH]`
+### `apify vis [PATH]`
 
 Validates INPUT_SCHEMA.json file and prints errors found.
 
