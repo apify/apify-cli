@@ -142,9 +142,11 @@ const setLocalConfig = async (localConfig, actDir) => {
 
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
+    const keyValueStorePath = getLocalKeyValueStorePath();
+    const inputJsonPath = path.join(keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
     ensureFolderExistsSync(actDir, getLocalDatasetPath());
     ensureFolderExistsSync(actDir, getLocalRequestQueuePath());
-    ensureFolderExistsSync(actDir, getLocalKeyValueStorePath());
+    ensureFolderExistsSync(actDir, keyValueStorePath);
 
     // Update gitignore
     const localStorageDir = getLocalStorageDir();
@@ -153,6 +155,11 @@ const setLocalEnv = async (actDir) => {
         fs.writeFileSync(gitingore, `\n${localStorageDir}`, { flag: 'a' });
     } else {
         fs.writeFileSync(gitingore, `${localStorageDir}\nnode_modules`, { flag: 'w' });
+    }
+
+    // Create an empty INPUT.json file if it does not exist.
+    if (!fs.existsSync(inputJsonPath)) {
+        writeJson.sync(inputJsonPath, {});
     }
 };
 
