@@ -3,8 +3,9 @@ const fs = require('fs');
 const path = require('path');
 const loadJson = require('load-json-file');
 const { ENV_VARS } = require('apify-shared/consts');
+const semver = require('semver');
 const execWithLog = require('../lib/exec');
-const { DEFAULT_LOCAL_STORAGE_DIR } = require('../lib/consts');
+const { DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
@@ -70,7 +71,6 @@ class RunCommand extends ApifyCommand {
         }
         // NOTE: User can overwrite env vars
         const env = Object.assign(localEnvVars, process.env);
-        env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
 
         if (!userId) {
             warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
@@ -80,6 +80,12 @@ class RunCommand extends ApifyCommand {
         // Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
         // However they did not think about all the sites there with large headers,
         // so we put back the old limit of 80kb, which seems to work just fine.
+        if (semver.gte(process.versions.node, semver.minVersion(SUPPORTED_NODEJS_VERSION))) {
+            env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
+        } else {
+            warning('You are running an version of nodejs, which is not supported. '
+                + `Please update your nodejs version to ${SUPPORTED_NODEJS_VERSION}.`)
+        }
         await execWithLog(getNpmCmd(), ['start'], { env });
     }
 }
