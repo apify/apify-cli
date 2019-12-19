@@ -251,7 +251,7 @@ DESCRIPTION
   takes input for the actor from the default local key-value store by default.
 ```
 
-_See code: [src/commands/call.js](https://github.com/apifytech/apify-cli/blob/v0.5.0/src/commands/call.js)_
+_See code: [src/commands/call.js](https://github.com/apifytech/apify-cli/blob/v0.5.1/src/commands/call.js)_
 
 ### `apify create [ACTORNAME]`
 
