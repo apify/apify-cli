@@ -210,6 +210,9 @@ const getActorLocalFilePaths = () => globby(['*', '**/**'], {
  * @return {Promise<void>}
  */
 const createActZip = async (zipName, pathsToZip) => {
+    // NOTE: There can be a zip from a previous unfinished operation.
+    if (fs.existsSync(zipName)) await deleteFile(zipName);
+
     const archive = archiver(zipName);
 
     const archiveFilesPromises = [];
