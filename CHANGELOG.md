@@ -1,3 +1,10 @@
+0.5.1 / 2019-12-19
+==================
+- Added warning about outdated node.js version
+- Fixed infinite push, when the previous one was interrupted
+- Fixed calling public actors with `apify call`
+- `apify init` create empty INPUT.json file
+
 0.5.0 / 2019-11-27
 ==================
 - Drop support for node 8 and 9
