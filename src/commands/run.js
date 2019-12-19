@@ -84,7 +84,7 @@ class RunCommand extends ApifyCommand {
             env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
         } else {
             warning('You are running an version of nodejs, which is not supported. '
-                + `Please update your nodejs version to ${SUPPORTED_NODEJS_VERSION}.`)
+                + `Please update your nodejs version to ${SUPPORTED_NODEJS_VERSION}.`);
         }
         await execWithLog(getNpmCmd(), ['start'], { env });
     }
