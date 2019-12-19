@@ -120,3 +120,5 @@ exports.INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..*`);
 exports.MAIN_FILE = 'main.js';
 
 exports.UPLOADS_STORE_NAME = 'apify-cli-deployments';
+
+exports.SUPPORTED_NODEJS_VERSION = require('../../package.json').engines.node; //  eslint-disable-line;

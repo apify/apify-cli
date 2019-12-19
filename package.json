@@ -48,7 +48,7 @@
     },
     "homepage": "https://github.com/apifytech/apify-cli#readme",
     "engines": {
-        "node": ">=8.0.0"
+        "node": ">=10.0.0"
     },
     "dependencies": {
         "@oclif/command": "^1.5.19",

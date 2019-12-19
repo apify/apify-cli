@@ -23,7 +23,7 @@ class CallCommand extends ApifyCommand {
         if (forceActorId) {
             const actor = await apifyClient.acts.getAct({ actId: forceActorId });
             if (!actor) throw new Error(`Cannot find actor with ID '${forceActorId}' in your account.`);
-            actorId = `${usernameOrId}/${actor.name}`;
+            actorId = actor.username ? `${actor.username}/${actor.name}` : actor.id;
         } else {
             actorId = `${usernameOrId}/${localConfig.name}`;
             const actor = await apifyClient.acts.getAct({ actId: actorId });
