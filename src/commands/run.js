@@ -80,11 +80,13 @@ class RunCommand extends ApifyCommand {
         // Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
         // However they did not think about all the sites there with large headers,
         // so we put back the old limit of 80kb, which seems to work just fine.
-        if (semver.gte(process.versions.node, semver.minVersion(SUPPORTED_NODEJS_VERSION))) {
+        const currentNodeVersion = process.versions.node;
+        const lastSupportedVersion = semver.minVersion(SUPPORTED_NODEJS_VERSION);
+        if (semver.gte(currentNodeVersion, lastSupportedVersion)) {
             env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
         } else {
-            warning('You are running an version of nodejs, which is not supported. '
-                + `Please update your nodejs version to ${SUPPORTED_NODEJS_VERSION}.`);
+            warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
+                + `Please upgrade to Node.js version ${lastSupportedVersion} or later.`);
         }
         await execWithLog(getNpmCmd(), ['start'], { env });
     }
