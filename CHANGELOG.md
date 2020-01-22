@@ -1,3 +1,8 @@
+0.5.2 / 2020-01-22
+==================
+- Updated apify package in all templates
+- Updated npm packages and fixed all npm audit issues
+
 0.5.1 / 2019-12-19
 ==================
 - Added warning about outdated node.js version
