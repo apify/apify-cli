@@ -1,5 +1,6 @@
 0.5.2 / 2020-01-22
 ==================
+- Added bot(dependabot.com) to check latest Apify SDK version in all templates
 - Updated apify package in all templates
 - Updated npm packages and fixed all npm audit issues
 
