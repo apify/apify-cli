@@ -3,9 +3,9 @@ const path = require('path');
 const _ = require('underscore');
 const { KEY_VALUE_STORE_KEYS, ACTOR_TEMPLATES } = require('apify-shared/consts');
 
-exports.DEPRECATED_ACTS_TEMPLATE_LIST = Object.keys(exports.ACTOR_TEMPLATES).filter(key => exports.ACTOR_TEMPLATES[key].isDeprecated);
+exports.DEPRECATED_ACTS_TEMPLATE_LIST = Object.keys(ACTOR_TEMPLATES).filter(key => ACTOR_TEMPLATES[key].isDeprecated);
 
-exports.ACTS_TEMPLATE_LIST = _.without(Object.keys(exports.ACTOR_TEMPLATES), ...exports.DEPRECATED_ACTS_TEMPLATE_LIST);
+exports.ACTS_TEMPLATE_LIST = _.without(Object.keys(ACTOR_TEMPLATES), ...exports.DEPRECATED_ACTS_TEMPLATE_LIST);
 
 exports.DEFAULT_ACT_TEMPLATE = 'hello_world';
 
