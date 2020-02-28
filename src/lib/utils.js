@@ -143,7 +143,7 @@ const setLocalConfig = async (localConfig, actDir) => {
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
     const keyValueStorePath = getLocalKeyValueStorePath();
-    const inputJsonPath = path.join(keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
+    const inputJsonPath = path.join(actDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
     ensureFolderExistsSync(actDir, getLocalDatasetPath());
     ensureFolderExistsSync(actDir, getLocalRequestQueuePath());
     ensureFolderExistsSync(actDir, keyValueStorePath);
