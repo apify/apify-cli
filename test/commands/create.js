@@ -36,6 +36,7 @@ describe('apify create', () => {
         expect(fs.existsSync(apifyJsonPath)).to.be.true;
         expect(fs.existsSync(path.join(actName, getLocalKeyValueStorePath(), 'INPUT.json'))).to.be.true;
         expect(loadJson.sync(apifyJsonPath).template).to.be.eql(ACT_TEMPLATE);
+        expect(fs.existsSync('apify_storage')).to.be.false;
     });
 
     afterEach(() => {
