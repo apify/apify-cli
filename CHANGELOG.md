@@ -1,3 +1,8 @@
+0.5.3 / 2020-03-03
+==================
+- Moved templates to separate repository https://github.com/apifytech/actor-templates
+- Fixed: creating `apify_storage` in root folder after `apify create` command
+
 0.5.2 / 2020-01-22
 ==================
 - Added bot(dependabot.com) to check latest Apify SDK version in all templates
