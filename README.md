@@ -22,10 +22,11 @@ However, we recommend using JavaScript / Node.js, for which we provide most libr
 
 ## Installation
 
-First, make sure you have [Node.js](https://nodejs.org) version 10 or higher installed on your computer:
+First, make sure you have [Node.js](https://nodejs.org) version 10 or higher with NPM installed on your computer:
 
 ```bash
 node --version
+npm --version
 ```
 
 Install or upgrade Apify CLI by running:
@@ -34,10 +35,29 @@ Install or upgrade Apify CLI by running:
 npm -g install apify-cli
 ```
 
-Finally, you can test that the CLI was installed correctly:
+If you receive an `EACCES` error, you might need to run the commnad as root:
 
 ```bash
-apify info
+sudo npm -g install apify-cli
+```
+
+Alternativaly, you can use [Node Version Manager (nvm)](https://github.com/nvm-sh/nvm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
+
+```
+nvm install 12
+nvm use 12
+npm -g install apify-cli
+```
+
+Finally, test that the CLI was installed correctly by running:
+
+```bash
+apify --version
+```
+
+The command should print something like:
+```
+apify-cli/0.5.3 darwin-x64 node-v12.16.1
 ```
 
 ## Basic usage
