@@ -49,13 +49,13 @@ nvm use 12
 npm -g install apify-cli
 ```
 
-Finally, test that the CLI was installed correctly by running:
+Finally, verify that Apify CLI was installed correctly by running:
 
 ```bash
 apify --version
 ```
 
-The command should print something like:
+which should print something like:
 ```
 apify-cli/0.5.3 darwin-x64 node-v12.16.1
 ```
