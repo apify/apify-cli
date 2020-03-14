@@ -28,7 +28,7 @@ class RunCommand extends ApifyCommand {
         const serverJsFile = path.join(cwd, 'server.js');
         const packageJson = await loadJson(packageJsonPath);
         if ((!packageJson.scripts || !packageJson.scripts.start) && !fs.existsSync(serverJsFile)) {
-            throw new Error('The npm start script not found in package.json. Please set it up for your project. '
+            throw new Error('The "npm start" script was not found in package.json. Please set it up for your project. '
                 + 'For more information about that call "apify help run".');
         }
         // Purge stores
