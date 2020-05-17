@@ -204,11 +204,29 @@ const createSourceFiles = async (paths) => {
  * Get actor local files, omit files defined in .gitignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
-const getActorLocalFilePaths = () => globby(['*', '**/**'], {
-    ignore: ['.git/**'],
-    gitignore: true,
-    dot: true,
-});
+const getActorLocalFilePaths = () => {
+
+  let opt;
+
+  if (fs.existsSync('.apifyignore')) {
+    info('Using .apifyignore for ignore list.');
+    const ignorelist = fs.readFileSync('.apifyignore', 'UTF-8').split(/\r?\n/).filter( (line) => line !== '');
+    opt = {
+      ignore: ['.git/**', ...ignorelist],
+      gitignore: false,
+      dot: true,
+    }
+
+  } else {
+    info('Using .gitignore for ignore list.');
+    opt = {
+      ignore: ['.git/**'],
+      gitignore: true,
+      dot: true,
+    }
+  }
+  return globby(['*', '**/**'], opt)
+};
 
 /**
  * Create zip file with all actor files specified with pathsToZip
