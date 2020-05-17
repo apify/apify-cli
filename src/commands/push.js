@@ -1,13 +1,14 @@
 const fs = require('fs');
 const { flags: flagsHelper } = require('@oclif/command');
+const actorTemplates = require('@apify/actor-templates');
 const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES,
-    MAX_MULTIFILE_BYTES, ACTOR_TEMPLATES } = require('apify-shared/consts');
+    MAX_MULTIFILE_BYTES } = require('apify-shared/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const { createActZip, getLoggedClientOrThrow,
     outputJobLog, getLocalUserInfo, getActorLocalFilePaths,
     createSourceFiles, getLocalConfigOrThrow } = require('../lib/utils');
 const { sumFilesSizeInBytes } = require('../lib/files');
-const { DEFAULT_ACT_TEMPLATE, UPLOADS_STORE_NAME } = require('../lib/consts');
+const { UPLOADS_STORE_NAME } = require('../lib/consts');
 const { transformEnvToEnvVars } = require('../lib/secrets');
 const outputs = require('../lib/outputs');
 
@@ -41,14 +42,12 @@ class PushCommand extends ApifyCommand {
             if (actor) {
                 actorId = actor.id;
             } else {
-                const actTemplate = localConfig.template || DEFAULT_ACT_TEMPLATE;
-                if (!ACTOR_TEMPLATES[actTemplate]) {
-                    throw new Error(`Template ${actTemplate} doesn't exist. Please check apify.json `
-                        + `and use one of the following template names: ${Object.keys(ACTOR_TEMPLATES).join('|')}.`);
-                }
+                const { templates } = await actorTemplates.fetchManifest();
+                let actorTemplate = templates.find(t => t.name === localConfig.template);
+                if (!actorTemplate) [actorTemplate] = templates;
                 const newActor = {
                     name: localConfig.name,
-                    defaultRunOptions: ACTOR_TEMPLATES[actTemplate].defaultRunOptions,
+                    defaultRunOptions: actorTemplate.defaultRunOptions,
                     versions: [{
                         versionNumber: version,
                         buildTag,
