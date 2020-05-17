@@ -18,7 +18,7 @@ describe('apify init', () => {
         await command.run(['init', actName]);
 
         const apifyJsonPath = 'apify.json';
-        expect(fs.existsSync(apifyJsonPath)).to.be.true;
+        expect(fs.existsSync(apifyJsonPath)).to.be.eql(true);
         expect(loadJson.sync(apifyJsonPath)).to.be.eql(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
     });
 

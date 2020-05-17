@@ -1,6 +1,5 @@
 const os = require('os');
 const path = require('path');
-const _ = require('underscore');
 const { KEY_VALUE_STORE_KEYS } = require('apify-shared/consts');
 
 exports.DEFAULT_LOCAL_STORAGE_DIR = 'apify_storage';

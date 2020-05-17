@@ -8,7 +8,7 @@ const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
 const actName = 'my-act';
-const ACT_TEMPLATE = 'project_cheerio_crawler';
+const ACT_TEMPLATE = 'example_hello_world';
 
 describe('apify create', () => {
     beforeEach(() => {

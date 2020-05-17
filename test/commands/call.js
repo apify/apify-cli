@@ -27,7 +27,7 @@ describe('apify call', () => {
         const { token } = testUserClient.getOptions();
         const { username } = await testUserClient.users.getUser();
         await command.run(['login', '--token', token]);
-        await command.run(['create', ACTOR_NAME, '--template', 'hello_world']);
+        await command.run(['create', ACTOR_NAME, '--template', 'example_hello_world']);
         process.chdir(ACTOR_NAME);
         const actCode = `
         const Apify = require('apify');
