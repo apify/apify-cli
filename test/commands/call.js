@@ -2,7 +2,6 @@ const { expect } = require('chai');
 const path = require('path');
 const fs = require('fs');
 const command = require('@oclif/command');
-const Promise = require('bluebird');
 const { rimrafPromised } = require('../../src/lib/files');
 const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
@@ -50,7 +49,7 @@ describe('apify call', () => {
 
         // For some reason tests were failing with nonexisting build with "LATEST" tag.
         // Adding some sleep here as attempt to fix this.
-        await Promise.delay(1000);
+        await new Promise(resolve => setTimeout(resolve, 1000));
     });
 
     it('without actId', async () => {
