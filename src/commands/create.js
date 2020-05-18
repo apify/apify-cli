@@ -2,21 +2,21 @@ const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
 const inquirer = require('inquirer');
-const got = require('got');
+const httpRequest = require('@apify/http-request');
+const actorTemplates = require('@apify/actor-templates');
 const unzipper = require('unzipper');
-const { ACTOR_TEMPLATES } = require('apify-shared/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
 const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName } = require('../lib/utils');
-const { DEFAULT_ACT_TEMPLATE, EMPTY_LOCAL_CONFIG, ACTS_TEMPLATE_LIST } = require('../lib/consts');
+const { EMPTY_LOCAL_CONFIG } = require('../lib/consts');
 
 class CreateCommand extends ApifyCommand {
     async run() {
         const { flags, args } = this.parse(CreateCommand);
         let { actorName } = args;
-        let { template } = flags;
+        let templateName = flags.template;
 
         // Check proper format of actorName
         if (!actorName) {
@@ -38,16 +38,20 @@ class CreateCommand extends ApifyCommand {
             validateActorName(actorName);
         }
 
-        if (!template) {
-            const choices = ACTS_TEMPLATE_LIST.map(templateKey => ACTOR_TEMPLATES[templateKey]);
-            const answer = await inquirer.prompt([{
+        const manifest = await actorTemplates.fetchManifest();
+        const choices = manifest.templates.map(t => ({
+            value: t.name,
+            name: t.description,
+        }));
+
+        if (!templateName) {
+            templateName = await inquirer.prompt([{
                 type: 'list',
                 name: 'template',
                 message: 'Please select the template for your new actor',
-                default: DEFAULT_ACT_TEMPLATE,
+                default: choices[0],
                 choices,
             }]);
-            ({ template } = answer);
         }
         const cwd = process.cwd();
         const actFolderDir = path.join(cwd, actorName);
@@ -63,14 +67,17 @@ class CreateCommand extends ApifyCommand {
             }
             throw err;
         }
-        const templateObj = ACTOR_TEMPLATES[template];
+        const templateObj = manifest.templates.find(t => t.name === templateName);
         const { archiveUrl } = templateObj;
 
-        const zipBuffer = got.stream(archiveUrl, { responseType: 'buffer' });
+        const zipStream = await httpRequest({
+            url: archiveUrl,
+            stream: true,
+        });
         const unzip = unzipper.Extract({ path: actFolderDir });
-        await zipBuffer.pipe(unzip).promise();
+        await zipStream.pipe(unzip).promise();
 
-        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actorName, template }), actFolderDir);
+        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actorName, template: templateName }), actFolderDir);
         await setLocalEnv(actFolderDir);
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actorName });
 
@@ -89,9 +96,9 @@ CreateCommand.description = 'Creates a new actor project directory from a select
 CreateCommand.flags = {
     template: flagsHelper.string({
         char: 't',
-        description: 'Boilerplate template for the actor. If not provided, the command will prompt for it.',
+        description: 'Template for the actor. If not provided, the command will prompt for it.'
+            + `Visit ${actorTemplates.manifestUrl} to find available template names.`,
         required: false,
-        options: ACTS_TEMPLATE_LIST,
     }),
 };
 

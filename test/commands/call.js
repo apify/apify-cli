@@ -2,7 +2,6 @@ const { expect } = require('chai');
 const path = require('path');
 const fs = require('fs');
 const command = require('@oclif/command');
-const Promise = require('bluebird');
 const { rimrafPromised } = require('../../src/lib/files');
 const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient } = require('./config');
@@ -28,7 +27,7 @@ describe('apify call', () => {
         const { token } = testUserClient.getOptions();
         const { username } = await testUserClient.users.getUser();
         await command.run(['login', '--token', token]);
-        await command.run(['create', ACTOR_NAME, '--template', 'hello_world']);
+        await command.run(['create', ACTOR_NAME, '--template', 'example_hello_world']);
         process.chdir(ACTOR_NAME);
         const actCode = `
         const Apify = require('apify');
@@ -50,7 +49,7 @@ describe('apify call', () => {
 
         // For some reason tests were failing with nonexisting build with "LATEST" tag.
         // Adding some sleep here as attempt to fix this.
-        await Promise.delay(1000);
+        await new Promise(resolve => setTimeout(resolve, 1000));
     });
 
     it('without actId', async () => {

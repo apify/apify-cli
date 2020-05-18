@@ -3,7 +3,6 @@ const writeJson = require('write-json-file');
 const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
-const Promise = require('bluebird');
 
 const updateLocalJson = async (jsonFilePath, updateAttrs = {}, nestedObjectAttr) => {
     const currentObject = await loadJson(jsonFilePath);
@@ -52,18 +51,15 @@ const rimrafPromised = (pathToBeRemoved) => {
     });
 };
 
-const fileStat = Promise.promisify(fs.stat);
-const unlinkFile = Promise.promisify(fs.unlink);
-
 const deleteFile = async (filePath) => {
-    const stat = await fileStat(filePath);
+    const stat = await fs.promises.stat(filePath);
     if (stat.isFile()) {
-        await unlinkFile(filePath);
+        await fs.promises.unlink(filePath);
     }
 };
 
 const sumFilesSizeInBytes = async (pathToFiles) => {
-    const filesStats = await Promise.all(pathToFiles.map(filePath => fileStat(filePath)));
+    const filesStats = await Promise.all(pathToFiles.map(filePath => fs.promises.stat(filePath)));
     const filesSizeBytes = filesStats
         .map(stats => stats.size)
         .reduce((sum, fileSize) => sum + fileSize, 0);
@@ -75,6 +71,5 @@ module.exports = {
     ensureFolderExistsSync,
     rimrafPromised,
     deleteFile,
-    fileStat,
     sumFilesSizeInBytes,
 };

@@ -20,7 +20,7 @@ describe('apify run', () => {
             this.skip();
             return;
         }
-        await command.run(['create', actName, '--template', 'hello_world']);
+        await command.run(['create', actName, '--template', 'example_hello_world']);
         process.chdir(actName);
     });
 

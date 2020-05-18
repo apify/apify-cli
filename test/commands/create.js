@@ -8,7 +8,7 @@ const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
 const actName = 'my-act';
-const ACT_TEMPLATE = 'hello_world';
+const ACT_TEMPLATE = 'example_hello_world';
 
 describe('apify create', () => {
     beforeEach(() => {
@@ -27,6 +27,7 @@ describe('apify create', () => {
     });
 
     it('basic template structure', async () => {
+        /* eslint-disable no-unused-expressions */
         await command.run(['create', actName, '--template', ACT_TEMPLATE]);
 
         const apifyJsonPath = path.join(actName, 'apify.json');

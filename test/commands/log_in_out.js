@@ -42,7 +42,7 @@ describe('apify login and logout', () => {
         await command.run(['logout']);
         const isGlobalConfig = fs.existsSync(GLOBAL_CONFIGS_FOLDER);
 
-        expect(isGlobalConfig).to.be.false;
+        expect(isGlobalConfig).to.be.eql(false);
     });
 
     afterEach(() => {
