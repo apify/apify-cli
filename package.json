@@ -61,7 +61,7 @@
         "apify-shared": "^0.2.9",
         "archiver-promise": "^1.0.0",
         "bluebird": "^3.7.2",
-        "chalk": "^2.3.2",
+        "chalk": "^4.0.0",
         "child-process-promise": "^2.2.1",
         "extract-zip": "^1.6.7",
         "globby": "^10.0.2",
