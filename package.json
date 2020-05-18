@@ -65,7 +65,7 @@
         "child-process-promise": "^2.2.1",
         "extract-zip": "^1.6.7",
         "globby": "^10.0.2",
-        "got": "^10.6.0",
+        "got": "^11.1.4",
         "inquirer": "^7.0.3",
         "is-online": "^8.2.1",
         "load-json-file": "^6.2.0",
