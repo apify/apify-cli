@@ -1,6 +1,17 @@
+0.6.0 / 2020-05-18
+==================
+- **BREAKING:** Templates are now fully decoupled from this project and
+  the [templates repository](https://github.com/apifytech/actor-templates)
+  serves as the single source of truth. Some templates were replaced
+  and others were renamed to better clarify their purpose.
+- **BREAKING:** Providing an invalid template in `apify.json` no longer
+  throws, but rather silently uses a reasonable default configuration.
+  This is to support regular changes to templates without breaking older
+  versions of the CLI.
+
 0.5.3 / 2020-03-03
 ==================
-- Moved templates to separate repository https://github.com/apifytech/actor-templates
+- Moved templates to separate repository
 - Fixed: creating `apify_storage` in root folder after `apify create` command
 
 0.5.2 / 2020-01-22
