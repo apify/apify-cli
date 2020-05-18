@@ -84,7 +84,7 @@
         "chai-as-promised": "^7.1.1",
         "eslint": "^4.11.0",
         "eslint-config-airbnb": "^16.1.0",
-        "eslint-config-airbnb-base": "^12.1.0",
+        "eslint-config-airbnb-base": "^14.1.0",
         "eslint-plugin-async-await": "0.0.0",
         "eslint-plugin-import": "^2.18.2",
         "eslint-plugin-jsx-a11y": "^6.2.3",
