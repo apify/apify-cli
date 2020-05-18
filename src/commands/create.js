@@ -45,13 +45,14 @@ class CreateCommand extends ApifyCommand {
         }));
 
         if (!templateName) {
-            templateName = await inquirer.prompt([{
+            const answer = await inquirer.prompt([{
                 type: 'list',
                 name: 'template',
                 message: 'Please select the template for your new actor',
                 default: choices[0],
                 choices,
             }]);
+            templateName = answer.template;
         }
         const cwd = process.cwd();
         const actFolderDir = path.join(cwd, actorName);

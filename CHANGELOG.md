@@ -1,4 +1,4 @@
-0.6.0 / 2020-05-18
+0.6.1 / 2020-05-18
 ==================
 - **BREAKING:** Templates are now fully decoupled from this project and
   the [templates repository](https://github.com/apifytech/actor-templates)
