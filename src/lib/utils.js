@@ -123,11 +123,11 @@ const getLocalConfigOrThrow = async () => {
                 info('apify.json was updated, do not forget to commit the new version of apify.json to Git repository.');
             } catch (e) {
                 throw new Error('Can not update apify.json structure. '
-                    + 'Follow guide on https://github.com/apifytech/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+                    + 'Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
             }
         } else {
             throw new Error('Command can not run with old apify.json structure. '
-                + 'Follow guide on https://github.com/apifytech/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+                + 'Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
         }
     }
 

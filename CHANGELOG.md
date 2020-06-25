@@ -1,7 +1,7 @@
 0.6.1 / 2020-05-18
 ==================
 - **BREAKING:** Templates are now fully decoupled from this project and
-  the [templates repository](https://github.com/apifytech/actor-templates)
+  the [templates repository](https://github.com/apify/actor-templates)
   serves as the single source of truth. Some templates were replaced
   and others were renamed to better clarify their purpose.
 - **BREAKING:** Providing an invalid template in `apify.json` no longer
@@ -94,7 +94,7 @@ added debug fields, added .idea to .gitignore
 0.3.1 / 2018-11-29
 ==================
 - :tada: New commands to manage secret environment variables: `apify secrets:add`, `apify secrets:rm`.
-- New documentation how to set environment variable in `apify.json`, see [documentation](https://github.com/apifytech/apify-cli/blob/master/README.md#environment-variables).
+- New documentation how to set environment variable in `apify.json`, see [documentation](https://github.com/apify/apify-cli/blob/master/README.md#environment-variables).
 - **BREAKING CHANGES**: Simplified `apify.json` structure. It will be updated automatically before execution apify run and push command.
 - Command `apify create` now shows progress bar of npm install.
 - Small bugs fixes
@@ -167,7 +167,7 @@ added debug fields, added .idea to .gitignore
 ==================
 - Print warning if you have old version of cli
 - apify run - kills all sub processes for SIGINT signal (ctrl+c) - It kills all related browsers in apify run command, related issue:
-  https://github.com/apifytech/apify-js/issues/72
+  https://github.com/apify/apify-js/issues/72
 
 0.1.7 / 2018-04-12
 ==================

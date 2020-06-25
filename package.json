@@ -27,7 +27,7 @@
     ],
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/apifytech/apify-cli.git"
+        "url": "git+https://github.com/apify/apify-cli.git"
     },
     "keywords": [
         "apify",
@@ -44,9 +44,9 @@
     },
     "license": "Apache-2.0",
     "bugs": {
-        "url": "https://github.com/apifytech/apify-cli/issues"
+        "url": "https://github.com/apify/apify-cli/issues"
     },
-    "homepage": "https://github.com/apifytech/apify-cli#readme",
+    "homepage": "https://github.com/apify/apify-cli#readme",
     "engines": {
         "node": ">=10.0.0"
     },

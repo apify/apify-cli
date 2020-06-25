@@ -11,7 +11,7 @@ Apify actors are cloud programs that can perform arbitrary web scraping, automat
 They accept input, perform their job and generate output.
 While you can develop actors in an online IDE directly in the [Apify web application](https://my.apify.com/),
 for complex projects it is more convenient to develop actors locally on your computer
-using <a href="https://github.com/apifytech/apify-js">Apify SDK</a>
+using <a href="https://github.com/apify/apify-js">Apify SDK</a>
 and only push the actors to the Apify cloud during deployment.
 This is where the Apify CLI comes in.
 
@@ -271,7 +271,7 @@ DESCRIPTION
   takes input for the actor from the default local key-value store by default.
 ```
 
-_See code: [src/commands/call.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/call.js)_
+_See code: [src/commands/call.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/call.js)_
 
 ### `apify create [ACTORNAME]`
 
@@ -286,11 +286,11 @@ ARGUMENTS
 
 OPTIONS
   -t, --template=template  Template for the actor. If not provided, the command will prompt for it.Visit
-                           https://github.com/apifytech/actor-templates/raw/master/templates/manifest.json to find
+                           https://github.com/apify/actor-templates/raw/master/templates/manifest.json to find
                            available template names.
 ```
 
-_See code: [src/commands/create.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/create.js)_
+_See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/create.js)_
 
 ### `apify info`
 
@@ -304,7 +304,7 @@ DESCRIPTION
   The information is printed to the console.
 ```
 
-_See code: [src/commands/info.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/info.js)_
+_See code: [src/commands/info.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/info.js)_
 
 ### `apify init [ACTORNAME]`
 
@@ -324,7 +324,7 @@ DESCRIPTION
   WARNING: The directory at "apify_storage" will be overwritten if it already exists.
 ```
 
-_See code: [src/commands/init.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/init.js)_
+_See code: [src/commands/init.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/init.js)_
 
 ### `apify login`
 
@@ -342,7 +342,7 @@ DESCRIPTION
   "apify" commands. To log out, call "apify logout".
 ```
 
-_See code: [src/commands/login.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/login.js)_
+_See code: [src/commands/login.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/login.js)_
 
 ### `apify logout`
 
@@ -357,7 +357,7 @@ DESCRIPTION
   call "apify login".
 ```
 
-_See code: [src/commands/logout.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/logout.js)_
+_See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/logout.js)_
 
 ### `apify push [ACTORID]`
 
@@ -392,7 +392,7 @@ DESCRIPTION
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
 ```
 
-_See code: [src/commands/push.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/push.js)_
+_See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/push.js)_
 
 ### `apify run`
 
@@ -422,7 +422,7 @@ DESCRIPTION
   can set up your own main file or environment variables by changing it.
 ```
 
-_See code: [src/commands/run.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/run.js)_
+_See code: [src/commands/run.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/run.js)_
 
 ### `apify secrets`
 
@@ -448,7 +448,7 @@ DESCRIPTION
   of the actor.
 ```
 
-_See code: [src/commands/secrets/index.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/secrets/index.js)_
+_See code: [src/commands/secrets/index.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/secrets/index.js)_
 
 ### `apify secrets:add NAME VALUE`
 
@@ -466,7 +466,7 @@ DESCRIPTION
   The secrets are stored to a file at ~/.apify
 ```
 
-_See code: [src/commands/secrets/add.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/secrets/add.js)_
+_See code: [src/commands/secrets/add.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/secrets/add.js)_
 
 ### `apify secrets:rm NAME`
 
@@ -480,7 +480,7 @@ ARGUMENTS
   NAME  Name of the secret
 ```
 
-_See code: [src/commands/secrets/rm.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/secrets/rm.js)_
+_See code: [src/commands/secrets/rm.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/secrets/rm.js)_
 
 ### `apify vis [PATH]`
 
@@ -494,5 +494,5 @@ ARGUMENTS
   PATH  Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.
 ```
 
-_See code: [src/commands/vis.js](https://github.com/apifytech/apify-cli/blob/v0.6.1/src/commands/vis.js)_
+_See code: [src/commands/vis.js](https://github.com/apify/apify-cli/blob/v0.6.1/src/commands/vis.js)_
 <!-- commandsstop -->
