@@ -164,7 +164,7 @@ For example, `apify.json` file can look as follows:
 
 There are two options how you can set up environment variables for actors.
 
-### 1. Set up environment variables in `apify.json`
+### Set up environment variables in `apify.json`
 All keys from `env` will be set as environment variables into Apify platform after you push actor to Apify. Current values on Apify will be overridden.
 ```json
 {
@@ -179,7 +179,7 @@ All keys from `env` will be set as environment variables into Apify platform aft
 }
 ```
 
-### 2. Set up environment variables in Apify app
+### Set up environment variables in Apify app
 In [Apify app](https://my.apify.com/actors) select your actor, you can set up variables into Source tab.
 After setting up variables in the app, set up `env` to `null` apify.json. Otherwise, variables from `apify.json` will override variables in the app.
 ```json
