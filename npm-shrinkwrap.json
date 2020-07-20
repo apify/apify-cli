@@ -10,17 +10,17 @@
             "integrity": "sha512-1P2WuineLOGqltg9evbzGgDmmwiM8A8IrqF20kwnY5we70ar38Z7P7YhsNvojuo+qq7b4ZqltFxZJFYYKENd6Q=="
         },
         "@apify/eslint-config": {
-            "version": "0.0.3",
-            "resolved": "https://registry.npmjs.org/@apify/eslint-config/-/eslint-config-0.0.3.tgz",
-            "integrity": "sha512-WbjC0Xv1bEWN9DcOayv5y4Zygv4N8zPq/XZQygHfq+As+P6sxK5sSrAQzHIHWd+9jNX4TI9iJDcPqFzxsAxTgw==",
+            "version": "0.1.0",
+            "resolved": "https://registry.npmjs.org/@apify/eslint-config/-/eslint-config-0.1.0.tgz",
+            "integrity": "sha512-+tN11ObQU+982ZNf0sk0DiBumdSnCq+EnP7zvTSEysNx3+//RCliLRYvPGMYr9ErupB/T4/pgaDHsog8yaDYGw==",
             "dev": true,
             "requires": {
-                "eslint-config-airbnb": "^17.1.1",
-                "eslint-config-airbnb-base": "^13.2.0",
-                "eslint-plugin-import": "^2.18.2",
+                "eslint-config-airbnb": "^18.1.0",
+                "eslint-config-airbnb-base": "^14.1.0",
+                "eslint-plugin-import": "^2.20.2",
                 "eslint-plugin-jsx-a11y": "^6.2.3",
                 "eslint-plugin-promise": "^4.2.1",
-                "eslint-plugin-react": "^7.14.3"
+                "eslint-plugin-react": "^7.20.0"
             }
         },
         "@apify/http-request": {
@@ -2049,25 +2049,25 @@
             }
         },
         "eslint-config-airbnb": {
-            "version": "17.1.1",
-            "resolved": "https://registry.npmjs.org/eslint-config-airbnb/-/eslint-config-airbnb-17.1.1.tgz",
-            "integrity": "sha512-xCu//8a/aWqagKljt+1/qAM62BYZeNq04HmdevG5yUGWpja0I/xhqd6GdLRch5oetEGFiJAnvtGuTEAese53Qg==",
+            "version": "18.2.0",
+            "resolved": "https://registry.npmjs.org/eslint-config-airbnb/-/eslint-config-airbnb-18.2.0.tgz",
+            "integrity": "sha512-Fz4JIUKkrhO0du2cg5opdyPKQXOI2MvF8KUvN2710nJMT6jaRUpRE2swrJftAjVGL7T1otLM5ieo5RqS1v9Udg==",
             "dev": true,
             "requires": {
-                "eslint-config-airbnb-base": "^13.2.0",
+                "eslint-config-airbnb-base": "^14.2.0",
                 "object.assign": "^4.1.0",
-                "object.entries": "^1.1.0"
+                "object.entries": "^1.1.2"
             }
         },
         "eslint-config-airbnb-base": {
-            "version": "13.2.0",
-            "resolved": "https://registry.npmjs.org/eslint-config-airbnb-base/-/eslint-config-airbnb-base-13.2.0.tgz",
-            "integrity": "sha512-1mg/7eoB4AUeB0X1c/ho4vb2gYkNH8Trr/EgCT/aGmKhhG+F6vF5s8+iRBlWAzFIAphxIdp3YfEKgEl0f9Xg+w==",
+            "version": "14.2.0",
+            "resolved": "https://registry.npmjs.org/eslint-config-airbnb-base/-/eslint-config-airbnb-base-14.2.0.tgz",
+            "integrity": "sha512-Snswd5oC6nJaevs3nZoLSTvGJBvzTfnBqOIArkf3cbyTyq9UD79wOk8s+RiL6bhca0p/eRO6veczhf6A/7Jy8Q==",
             "dev": true,
             "requires": {
-                "confusing-browser-globals": "^1.0.5",
+                "confusing-browser-globals": "^1.0.9",
                 "object.assign": "^4.1.0",
-                "object.entries": "^1.1.0"
+                "object.entries": "^1.1.2"
             }
         },
         "eslint-import-resolver-node": {
