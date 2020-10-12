@@ -817,9 +817,9 @@
             }
         },
         "aggregate-error": {
-            "version": "3.0.1",
-            "resolved": "https://registry.npmjs.org/aggregate-error/-/aggregate-error-3.0.1.tgz",
-            "integrity": "sha512-quoaXsZ9/BLNae5yiNoUz+Nhkwz83GhWwtYFglcjEQB2NDHCIpApbqXxIFnm4Pq/Nvhrsq5sYJFyohrrxnTGAA==",
+            "version": "3.1.0",
+            "resolved": "https://registry.npmjs.org/aggregate-error/-/aggregate-error-3.1.0.tgz",
+            "integrity": "sha512-4I7Td01quW/RpocfNayFdFVk1qSuoh0E7JrbRJ16nH01HhKFQ88INq9Sd+nd72zqRySlr9BmDA8xlEJ6vJMrYA==",
             "requires": {
                 "clean-stack": "^2.0.0",
                 "indent-string": "^4.0.0"
@@ -1827,9 +1827,9 @@
             }
         },
         "dns-socket": {
-            "version": "4.2.0",
-            "resolved": "https://registry.npmjs.org/dns-socket/-/dns-socket-4.2.0.tgz",
-            "integrity": "sha512-4XuD3z28jht3jvHbiom6fAipgG5LkjYeDLrX5OH8cbl0AtzTyUUAxGckcW8T7z0pLfBBV5qOiuC4wUEohk6FrQ==",
+            "version": "4.2.1",
+            "resolved": "https://registry.npmjs.org/dns-socket/-/dns-socket-4.2.1.tgz",
+            "integrity": "sha512-fNvDq86lS522+zMbh31X8cQzYQd6xumCNlxsuZF5TKxQThF/e+rJbVM6K8mmlsdcSm6yNjKJQq3Sf38viAJj8g==",
             "requires": {
                 "dns-packet": "^5.1.2"
             }
@@ -2962,9 +2962,9 @@
             "integrity": "sha1-vd7XARQpCCjAoDnnLvJfWq7ENUo="
         },
         "ip-regex": {
-            "version": "4.1.0",
-            "resolved": "https://registry.npmjs.org/ip-regex/-/ip-regex-4.1.0.tgz",
-            "integrity": "sha512-pKnZpbgCTfH/1NLIlOduP/V+WRXzC2MOz3Qo8xmxk8C5GudJLgK5QyLVXOSWy3ParAH7Eemurl3xjv/WXYFvMA=="
+            "version": "4.2.0",
+            "resolved": "https://registry.npmjs.org/ip-regex/-/ip-regex-4.2.0.tgz",
+            "integrity": "sha512-n5cDDeTWWRwK1EBoWwRti+8nP4NbytBBY0pldmnIkq6Z55KNFmWofh4rl9dPZpj+U/nVq7gweR3ylrvMt4YZ5A=="
         },
         "is-arrayish": {
             "version": "0.2.1",
@@ -3035,9 +3035,9 @@
             "integrity": "sha512-41Cifkg6e8TylSpdtTpeLVMqvSBEVzTttHvERD741+pnZ8ANv0004MRL43QKPDlK9cGvNp6NZWZUBlbGXYxxng=="
         },
         "is-online": {
-            "version": "8.3.1",
-            "resolved": "https://registry.npmjs.org/is-online/-/is-online-8.3.1.tgz",
-            "integrity": "sha512-SOyioWVyX4xp6EpQT1P7PCiTC1YZmqShZqVSFmq1gEVuIuc+lzTzVMZSYiyR6Chna+U7EKqwtlBBk8nnmPHCsQ==",
+            "version": "8.5.0",
+            "resolved": "https://registry.npmjs.org/is-online/-/is-online-8.5.0.tgz",
+            "integrity": "sha512-CcBJAVvhLpluDD0KCXlOXSXGyOWnzCtJf/WuQT4xE1PPMIQkGKoqSkV1xWmgvX1ZNw62B7BZ0AfK4TiK1NTddQ==",
             "requires": {
                 "got": "^9.6.0",
                 "p-any": "^2.0.0",
@@ -4137,11 +4137,11 @@
             "integrity": "sha512-RIdOzyoavK+hA18OGGWDqUTsCLhtA7IcZ/6NCs4fFJaHBDab+pDDmDIByWFRQJq2Cd7r1OoQxBGKOaztq+hjIQ=="
         },
         "public-ip": {
-            "version": "4.0.1",
-            "resolved": "https://registry.npmjs.org/public-ip/-/public-ip-4.0.1.tgz",
-            "integrity": "sha512-uy7G5RtP7MH9KILMX6cschB9aOxxRwFo0zv7Lf+ZXIw5IrH4EfdKQfACIwUEFilEHtkgJ9lpRfggwi1GVzN2vw==",
+            "version": "4.0.2",
+            "resolved": "https://registry.npmjs.org/public-ip/-/public-ip-4.0.2.tgz",
+            "integrity": "sha512-ZHqUjaYT/+FuSiy5/o2gBxvj0PF7M3MXGnaLJBsJNMCyXI4jzuXXHJKrk0gDxx1apiF/jYsBwjTQOM9V8G6oCQ==",
             "requires": {
-                "dns-socket": "^4.2.0",
+                "dns-socket": "^4.2.1",
                 "got": "^9.6.0",
                 "is-ip": "^3.1.0"
             }
