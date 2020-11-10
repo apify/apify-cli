@@ -1,6 +1,6 @@
 # Apify command-line interface (Apify CLI)
 
-<a href="http://badge.fury.io/js/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" style="display:inherit;"></a>
+<a href="https://www.npmjs.com/package/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" style="display:inherit;"></a>
 <a href="https://travis-ci.com/apify/apify-cli?branch=master"><img src="https://travis-ci.com/apify/apify-cli.svg?branch=master" alt="Build Status" style="display:inherit;"></a>
 
 Apify command-line interface (Apify CLI) helps you create, develop, build and run
@@ -244,8 +244,8 @@ This section contains printouts of `apify help` for all commands.
 * [`apify push [ACTORID]`](#apify-push-actorid)
 * [`apify run`](#apify-run)
 * [`apify secrets`](#apify-secrets)
-* [`apify secrets:add NAME VALUE`](#apify-secretsadd-name-value)
-* [`apify secrets:rm NAME`](#apify-secretsrm-name)
+* [`apify secrets:add NAME VALUE`](#apify-secrets-add-name-value)
+* [`apify secrets:rm NAME`](#apify-secrets-rm-name)
 * [`apify vis [PATH]`](#apify-vis-path)
 
 ### `apify call [ACTID]`
