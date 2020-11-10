@@ -244,8 +244,8 @@ This section contains printouts of `apify help` for all commands.
 * [`apify push [ACTORID]`](#apify-push-actorid)
 * [`apify run`](#apify-run)
 * [`apify secrets`](#apify-secrets)
-* [`apify secrets:add NAME VALUE`](#apify-secrets-add-name-value)
-* [`apify secrets:rm NAME`](#apify-secrets-rm-name)
+* [`apify secrets:add NAME VALUE`](#apify-secretsadd-name-value)
+* [`apify secrets:rm NAME`](#apify-secretsrm-name)
 * [`apify vis [PATH]`](#apify-vis-path)
 
 ### `apify call [ACTID]`
