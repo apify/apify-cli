@@ -1,7 +1,7 @@
 # Apify command-line interface (Apify CLI)
 
-<a href="https://www.npmjs.com/package/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" style="display:inherit;"></a>
-<a href="https://travis-ci.com/apify/apify-cli?branch=master"><img src="https://travis-ci.com/apify/apify-cli.svg?branch=master" alt="Build Status" style="display:inherit;"></a>
+<a href="https://www.npmjs.com/package/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" loading="lazy" style="display:inherit;"></a>
+<a href="https://travis-ci.com/apify/apify-cli?branch=master"><img src="https://travis-ci.com/apify/apify-cli.svg?branch=master" loading="lazy" alt="Build Status" style="display:inherit;"></a>
 
 Apify command-line interface (Apify CLI) helps you create, develop, build and run
 [Apify actors](https://www.apify.com/actors),
