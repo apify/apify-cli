@@ -96,13 +96,13 @@ CallCommand.flags = {
         char: 't',
         description: 'Timeout for the actor run in seconds. Zero value means there is no timeout.',
         required: false,
-        parse: input => parseInt(input, 10),
+        parse: (input) => parseInt(input, 10),
     }),
     memory: flagsHelper.string({
         char: 'm',
         description: 'Amount of memory allocated for the actor run, in megabytes.',
         required: false,
-        parse: input => parseInt(input, 10),
+        parse: (input) => parseInt(input, 10),
     }),
     'wait-for-finish': flagsHelper.string({
         char: 'w',

@@ -39,7 +39,7 @@ class CreateCommand extends ApifyCommand {
         }
 
         const manifest = await actorTemplates.fetchManifest();
-        const choices = manifest.templates.map(t => ({
+        const choices = manifest.templates.map((t) => ({
             value: t.name,
             name: t.description,
         }));
@@ -68,7 +68,7 @@ class CreateCommand extends ApifyCommand {
             }
             throw err;
         }
-        const templateObj = manifest.templates.find(t => t.name === templateName);
+        const templateObj = manifest.templates.find((t) => t.name === templateName);
         const { archiveUrl } = templateObj;
 
         const zipStream = await httpRequest({

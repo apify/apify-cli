@@ -12,7 +12,7 @@ class InfoCommand extends ApifyCommand {
                 username: info.username,
                 userId: info.id,
             };
-            Object.keys(niceInfo).forEach(key => console.log(`${chalk.gray(key)}: ${chalk.bold(niceInfo[key])}`));
+            Object.keys(niceInfo).forEach((key) => console.log(`${chalk.gray(key)}: ${chalk.bold(niceInfo[key])}`));
         }
     }
 }

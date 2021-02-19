@@ -120,7 +120,7 @@ describe('apify push', () => {
     });
 
     it('should not rewrite current actor envVars', async () => {
-        const testActorWithEnvVars = Object.assign({}, TEST_ACTOR);
+        const testActorWithEnvVars = { ...TEST_ACTOR };
         testActorWithEnvVars.versions = [{
             versionNumber: '0.0',
             sourceType: 'TARBALL',
@@ -158,7 +158,7 @@ describe('apify push', () => {
     });
 
     it('should upload zip for source files larger that 3MB', async () => {
-        const testActorWithEnvVars = Object.assign({}, TEST_ACTOR);
+        const testActorWithEnvVars = { ...TEST_ACTOR };
         testActorWithEnvVars.versions = [{
             versionNumber: '0.0',
             sourceType: 'TARBALL',
@@ -198,7 +198,6 @@ describe('apify push', () => {
             sourceType: ACT_SOURCE_TYPES.TARBALL,
         });
     });
-
 
     afterEach(() => {
         console.log.restore();

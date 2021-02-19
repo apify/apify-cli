@@ -43,7 +43,7 @@ class PushCommand extends ApifyCommand {
                 actorId = actor.id;
             } else {
                 const { templates } = await actorTemplates.fetchManifest();
-                let actorTemplate = templates.find(t => t.name === localConfig.template);
+                let actorTemplate = templates.find((t) => t.name === localConfig.template);
                 if (!actorTemplate) [actorTemplate] = templates;
                 const newActor = {
                     name: localConfig.name,

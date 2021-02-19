@@ -10,7 +10,6 @@ const { rimrafPromised } = require('../../src/lib/files');
 const { testUserClient } = require('./config');
 const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
 
-
 const actName = 'my-act';
 
 describe('apify run', () => {
@@ -84,7 +83,6 @@ describe('apify run', () => {
 
         await command.run(['logout']);
     });
-
 
     it('run purge stores', async () => {
         const input = {

@@ -3,7 +3,6 @@ const { GLOBAL_CONFIGS_FOLDER } = require('../lib/consts');
 const { success } = require('../lib/outputs');
 const { rimrafPromised } = require('../lib/files');
 
-
 class LogoutCommand extends ApifyCommand {
     static async run() {
         await rimrafPromised(GLOBAL_CONFIGS_FOLDER);
