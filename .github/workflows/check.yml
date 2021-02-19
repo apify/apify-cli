@@ -41,8 +41,8 @@ jobs:
                 name: Run Tests
                 run: npm test
                 env:
-                    TEST_USER_ID: secrets.USER_ID
-                    TEST_TOKEN: secrets.USER_TOKEN
+                    TEST_USER_ID: {{ secrets.USER_ID }}
+                    TEST_TOKEN: {{ secrets.USER_TOKEN }}
 
     lint:
         name: Lint
