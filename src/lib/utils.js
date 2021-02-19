@@ -88,7 +88,7 @@ const getLoggedClient = async (token) => {
 
     // Always refresh Auth file
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
-    writeJson.sync(AUTH_FILE_PATH, Object.assign({ token }, userInfo));
+    writeJson.sync(AUTH_FILE_PATH, { token, ...userInfo });
     apifyClient.setOptions({ token, userId: userInfo.id });
     return apifyClient;
 };
@@ -139,7 +139,6 @@ const setLocalConfig = async (localConfig, actDir) => {
     writeJson.sync(path.join(actDir, LOCAL_CONFIG_NAME), localConfig);
 };
 
-
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
     const keyValueStorePath = getLocalKeyValueStorePath();
@@ -172,7 +171,7 @@ const setLocalEnv = async (actDir) => {
 const argsToCamelCase = (object) => {
     const camelCasedObject = {};
     Object.keys(object).forEach((arg) => {
-        const camelCasedArg = arg.replace(/-(.)/g, $1 => $1.toUpperCase()).replace(/-/g, '');
+        const camelCasedArg = arg.replace(/-(.)/g, ($1) => $1.toUpperCase()).replace(/-/g, '');
         camelCasedObject[camelCasedArg] = object[arg];
     });
     return camelCasedObject;
@@ -223,7 +222,7 @@ const createActZip = async (zipName, pathsToZip) => {
     const archive = archiver(zipName);
 
     const archiveFilesPromises = [];
-    pathsToZip.forEach(globPath => archiveFilesPromises.push(archive.glob(globPath)));
+    pathsToZip.forEach((globPath) => archiveFilesPromises.push(archive.glob(globPath)));
     await Promise.all(archiveFilesPromises);
 
     await archive.finalize();
@@ -236,7 +235,7 @@ const createActZip = async (zipName, pathsToZip) => {
 const getLocalInput = () => {
     const defaultLocalStorePath = getLocalKeyValueStorePath();
     const files = fs.readdirSync(defaultLocalStorePath);
-    const inputFileName = files.find(file => !!file.match(INPUT_FILE_REG_EXP));
+    const inputFileName = files.find((file) => !!file.match(INPUT_FILE_REG_EXP));
 
     // No input file
     if (!inputFileName) return;
@@ -315,7 +314,7 @@ const outputJobLog = async (job, jobStatus, timeout) => {
 
         req.on('response', (response) => {
             res = response;
-            response.on('data', chunk => process.stdout.write(chunk.toString()));
+            response.on('data', (chunk) => process.stdout.write(chunk.toString()));
             response.on('error', (err) => {
                 reject(err);
             });

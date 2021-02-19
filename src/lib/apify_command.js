@@ -1,5 +1,5 @@
 const { Command } = require('@oclif/command');
-const { argsToCamelCase } = require('../lib/utils');
+const { argsToCamelCase } = require('./utils');
 
 /**
  * Adding parsing flags to oclif Command class

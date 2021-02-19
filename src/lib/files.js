@@ -10,9 +10,9 @@ const updateLocalJson = async (jsonFilePath, updateAttrs = {}, nestedObjectAttr)
 
     if (nestedObjectAttr) {
         newObject = currentObject;
-        newObject[nestedObjectAttr] = Object.assign({}, currentObject[nestedObjectAttr], updateAttrs);
+        newObject[nestedObjectAttr] = { ...currentObject[nestedObjectAttr], ...updateAttrs };
     } else {
-        newObject = Object.assign({}, currentObject, updateAttrs);
+        newObject = { ...currentObject, ...updateAttrs };
     }
 
     await writeJson(jsonFilePath, newObject);
@@ -59,9 +59,9 @@ const deleteFile = async (filePath) => {
 };
 
 const sumFilesSizeInBytes = async (pathToFiles) => {
-    const filesStats = await Promise.all(pathToFiles.map(filePath => fs.promises.stat(filePath)));
+    const filesStats = await Promise.all(pathToFiles.map((filePath) => fs.promises.stat(filePath)));
     const filesSizeBytes = filesStats
-        .map(stats => stats.size)
+        .map((stats) => stats.size)
         .reduce((sum, fileSize) => sum + fileSize, 0);
     return filesSizeBytes;
 };
