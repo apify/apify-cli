@@ -35,7 +35,7 @@ Install or upgrade Apify CLI by running:
 npm -g install apify-cli
 ```
 
-If you receive an `EACCES` error, you might need to run the commnad as root:
+If you receive an `EACCES` error, you might need to run the command as root:
 
 ```bash
 sudo npm -g install apify-cli
