@@ -9,7 +9,7 @@ and manage the Apify cloud platform from any computer.
 
 Apify actors are cloud programs that can perform arbitrary web scraping, automation or data processing job.
 They accept input, perform their job and generate output.
-While you can develop actors in an online IDE directly in the [Apify web application](https://my.apify.com/),
+While you can develop actors in an online IDE directly in the [Apify web application](https://console.apify.com/),
 for complex projects it is more convenient to develop actors locally on your computer
 using <a href="https://github.com/apify/apify-js">Apify SDK</a>
 and only push the actors to the Apify cloud during deployment.
@@ -111,9 +111,9 @@ Now's your chance to develop the logic - or magic :smirk:
 apify login
 ```
 
-Before you can interact with the Apify cloud, you need to [create an Apify account](https://my.apify.com/)
+Before you can interact with the Apify cloud, you need to [create an Apify account](https://console.apify.com/)
 and log in to it using the above command. You will be prompted for
-your [Apify API token](https://my.apify.com/account#/integrations).
+your [Apify API token](https://console.apify.com/account#/integrations).
 Note that the command will store the API token and other sensitive information to `~/.apify`.
 
 
@@ -179,8 +179,8 @@ All keys from `env` will be set as environment variables into Apify platform aft
 }
 ```
 
-### Set up environment variables in Apify app
-In [Apify app](https://my.apify.com/actors) select your actor, you can set up variables into Source tab.
+### Set up environment variables in Apify Console
+In [Apify Console](https://console.apify.com/actors) select your actor, you can set up variables into Source tab.
 After setting up variables in the app, set up `env` to `null` apify.json. Otherwise, variables from `apify.json` will override variables in the app.
 ```json
 {
@@ -267,7 +267,7 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It 
+  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It
   takes input for the actor from the default local key-value store by default.
 ```
 
@@ -318,7 +318,7 @@ ARGUMENTS
   ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "apify_storage" directory in the current directory, but will 
+  The command only creates the "apify.json" file and the "apify_storage" directory in the current directory, but will
   not touch anything else.
 
   WARNING: The directory at "apify_storage" will be overwritten if it already exists.
@@ -338,7 +338,7 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other 
+  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other
   "apify" commands. To log out, call "apify logout".
 ```
 
@@ -353,7 +353,7 @@ USAGE
   $ apify logout
 
 DESCRIPTION
-  The command deletes the API token and all other account information stored in the ~/.apify directory. To log in again, 
+  The command deletes the API token and all other account information stored in the ~/.apify directory. To log in again,
   call "apify login".
 ```
 
@@ -384,9 +384,9 @@ OPTIONS
                                          should be pushed. By default, it is taken from the "apify.json" file.
 
 DESCRIPTION
-  The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using 
+  The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using
   command-line options.
-  NOTE: If the source files are smaller than 3 MB then they are uploaded as 
+  NOTE: If the source files are smaller than 3 MB then they are uploaded as
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
@@ -414,11 +414,11 @@ OPTIONS
   --purge-queue            Deletes the local directory containing the default request queue before the run starts.
 
 DESCRIPTION
-  It sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For 
-  example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be 
+  It sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For
+  example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
   stored in the "apify_storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You 
+  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You
   can set up your own main file or environment variables by changing it.
 ```
 
@@ -444,7 +444,7 @@ DESCRIPTION
      "version": "0.1
   }
 
-  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable 
+  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable
   of the actor.
 ```
 

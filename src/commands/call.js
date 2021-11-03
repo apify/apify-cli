@@ -70,7 +70,7 @@ class CallCommand extends ApifyCommand {
         run = await apifyClient.acts.getRun({ actId: run.actId, runId: run.id });
         console.dir(run);
 
-        outputs.link('Actor run detail', `https://my.apify.com/actors/${run.actId}#/runs/${run.id}`);
+        outputs.link('Actor run detail', `https://console.apify.com/actors/${run.actId}#/runs/${run.id}`);
 
         if (run.status === ACT_JOB_STATUSES.SUCCEEDED) {
             outputs.success('Actor finished.');
