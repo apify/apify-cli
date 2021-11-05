@@ -37,7 +37,8 @@ describe('apify login and logout', () => {
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Success:');
         // Omit currentBillingPeriod, It can change during tests
-        expect(_.omit(expectedUserInfo, ['currentBillingPeriod', 'plan'])).to.eql(_.omit(userInfoFromConfig, ['currentBillingPeriod', 'plan']));
+        const floatFields =  ['currentBillingPeriod', 'plan', 'createdAt'];
+        expect(_.omit(expectedUserInfo, floatFields)).to.eql(_.omit(userInfoFromConfig, floatFields));
 
         await command.run(['logout']);
         const isGlobalConfig = fs.existsSync(GLOBAL_CONFIGS_FOLDER);
