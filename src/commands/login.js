@@ -10,7 +10,7 @@ class LoginCommand extends ApifyCommand {
         const { flags } = this.parse(LoginCommand);
         let { token } = flags;
         if (!token) {
-            console.log('Enter your Apify API token. You can find it at https://my.apify.com/account#/integrations');
+            console.log('Enter your Apify API token. You can find it at https://console.apify.com/account#/integrations');
             const tokenPrompt = await inquirer.prompt([{ name: 'token', message: 'token:', type: 'password' }]);
             ({ token } = tokenPrompt);
         }

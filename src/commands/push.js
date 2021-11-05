@@ -139,7 +139,7 @@ class PushCommand extends ApifyCommand {
         build = await apifyClient.acts.getBuild({ actId: build.actId, buildId: build.id });
         console.dir(build);
 
-        outputs.link('Actor build detail', `https://my.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
+        outputs.link('Actor build detail', `https://console.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
 
         if (build.status === ACT_JOB_STATUSES.SUCCEEDED) {
             outputs.success('Actor was deployed to Apify cloud and built there.');
