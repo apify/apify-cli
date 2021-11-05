@@ -37,7 +37,7 @@ describe('apify login and logout', () => {
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Success:');
         // Omit currentBillingPeriod, It can change during tests
-        const floatFields =  ['currentBillingPeriod', 'plan', 'createdAt'];
+        const floatFields = ['currentBillingPeriod', 'plan', 'createdAt'];
         expect(_.omit(expectedUserInfo, floatFields)).to.eql(_.omit(userInfoFromConfig, floatFields));
 
         await command.run(['logout']);
