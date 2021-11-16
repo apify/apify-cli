@@ -123,7 +123,7 @@ describe('apify push', () => {
         const testActorWithEnvVars = { ...TEST_ACTOR };
         testActorWithEnvVars.versions = [{
             versionNumber: '0.0',
-            sourceType: 'TARBALL',
+            sourceType: 'SOURCE_FILES',
             buildTag: 'latest',
             sourceFiles: [],
             envVars: [{
