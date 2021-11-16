@@ -17,7 +17,7 @@ const TEST_ACTOR = {
     versions: [
         {
             versionNumber: '0.0',
-            sourceType: 'TARBALL',
+            sourceType: 'SOURCE_FILES',
             buildTag: 'latest',
             sourceFiles: [],
         },
