@@ -52,6 +52,7 @@ class PushCommand extends ApifyCommand {
                         versionNumber: version,
                         buildTag,
                         sourceType: ACT_SOURCE_TYPES.TARBALL,
+                        tarballUrl: actorTemplate.archiveUrl,
                     }],
                 };
                 actor = await apifyClient.acts.createAct({ act: newActor });
