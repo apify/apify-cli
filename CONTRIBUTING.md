@@ -29,5 +29,7 @@ NOTE: File `package-lock.json` will be completely ignored during package publish
 3. Generate command reference to `README.md`:
 `npm run commands-md`
 
-4. Run publish script, which publish package to npm:
-`./publish.sh`
+4. Merge the PR with your changes to master. This will trigger release of `beta` version.
+
+5. If the beta version works properly, create new release. This will publish `latest` version.
+
