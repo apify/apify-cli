@@ -224,7 +224,9 @@ describe('apify push', () => {
             versionNumber: version,
         });
 
-        if (createdActor) await testUserClient.acts.deleteAct({ actId: actorId });
+        console.log('created actor', { createdActor });
+
+        // if (createdActor) await testUserClient.acts.deleteAct({ actId: actorId });
 
         expect(createdActorVersion.sourceFiles.find((file) => file.name === 'some-typescript-file.ts').format)
             .to.be.equal(SOURCE_FILE_FORMATS.TEXT);
