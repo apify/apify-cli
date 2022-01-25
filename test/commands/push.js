@@ -197,16 +197,9 @@ describe('apify push', () => {
             envVars: testActorWithEnvVars.versions[0].envVars,
             sourceType: ACT_SOURCE_TYPES.TARBALL,
         });
-    });
 
-    afterEach(() => {
-        console.log.restore();
-    });
-
-    after(async () => {
-        process.chdir('../');
-        if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
-        await command.run(['logout']);
+        // Remove the big file so sources in following tests are not zipped
+        fs.unlinkSync('3mb-file.txt');
     });
 
     it('typescript files should be treated as text', async () => {
@@ -224,11 +217,19 @@ describe('apify push', () => {
             versionNumber: version,
         });
 
-        console.log('created actor', { createdActor });
-
-        // if (createdActor) await testUserClient.acts.deleteAct({ actId: actorId });
+        if (createdActor) await testUserClient.acts.deleteAct({ actId: actorId });
 
         expect(createdActorVersion.sourceFiles.find((file) => file.name === 'some-typescript-file.ts').format)
             .to.be.equal(SOURCE_FILE_FORMATS.TEXT);
+    });
+
+    afterEach(() => {
+        console.log.restore();
+    });
+
+    after(async () => {
+        process.chdir('../');
+        if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
+        await command.run(['logout']);
     });
 });
