@@ -187,8 +187,8 @@ const createSourceFiles = async (paths) => {
             || contentType.includes('json')
             || contentType.includes('xml')
             // Detected mime-type for .ts(x) files is video/mp2t. But for us it's almost always typescript, which we want to treat as text
-            || contentType.endsWith('.ts')
-            || contentType.endsWith('.tsx')
+            || filePath.endsWith('.ts')
+            || filePath.endsWith('.tsx')
         )
             ? SOURCE_FILE_FORMATS.TEXT
             : SOURCE_FILE_FORMATS.BASE64;
