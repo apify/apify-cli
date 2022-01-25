@@ -2,7 +2,7 @@ const { expect } = require('chai');
 const sinon = require('sinon');
 const fs = require('fs');
 const command = require('@oclif/command');
-const { ACT_SOURCE_TYPES } = require('apify-shared/consts');
+const { ACT_SOURCE_TYPES, SOURCE_FILE_FORMATS } = require('apify-shared/consts');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const { rimrafPromised } = require('../../src/lib/files');
@@ -207,5 +207,26 @@ describe('apify push', () => {
         process.chdir('../');
         if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
         await command.run(['logout']);
+    });
+
+    it('typescript files should be treated as text', async () => {
+        const { name, version } = loadJson.sync('apify.json');
+
+        fs.writeFileSync('some-typescript-file.ts', `console.log('ok');`);
+
+        await command.run(['push']);
+
+        const userInfo = await getLocalUserInfo();
+        const actorId = `${userInfo.username}/${name}`;
+        const createdActor = await testUserClient.acts.getAct({ actId: actorId });
+        const createdActorVersion = await testUserClient.acts.getActVersion({
+            actId: actorId,
+            versionNumber: version,
+        });
+
+        if (createdActor) await testUserClient.acts.deleteAct({ actId: actorId });
+
+        expect(createdActorVersion.sourceFiles.find((file) => file.name === 'some-typescript-file.ts').format)
+            .to.be.equal(SOURCE_FILE_FORMATS.TEXT);
     });
 });
