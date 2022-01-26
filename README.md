@@ -271,7 +271,7 @@ DESCRIPTION
   takes input for the actor from the default local key-value store by default.
 ```
 
-_See code: [src/commands/call.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/call.js)_
+_See code: [src/commands/call.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/call.js)_
 
 ## `apify create [ACTORNAME]`
 
@@ -290,7 +290,7 @@ OPTIONS
                            available template names.
 ```
 
-_See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/create.js)_
+_See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/create.js)_
 
 ## `apify info`
 
@@ -304,7 +304,7 @@ DESCRIPTION
   The information is printed to the console.
 ```
 
-_See code: [src/commands/info.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/info.js)_
+_See code: [src/commands/info.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/info.js)_
 
 ## `apify init [ACTORNAME]`
 
@@ -324,7 +324,7 @@ DESCRIPTION
   WARNING: The directory at "apify_storage" will be overwritten if it already exists.
 ```
 
-_See code: [src/commands/init.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/init.js)_
+_See code: [src/commands/init.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/init.js)_
 
 ## `apify login`
 
@@ -342,7 +342,7 @@ DESCRIPTION
   "apify" commands. To log out, call "apify logout".
 ```
 
-_See code: [src/commands/login.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/login.js)_
+_See code: [src/commands/login.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/login.js)_
 
 ## `apify logout`
 
@@ -353,11 +353,11 @@ USAGE
   $ apify logout
 
 DESCRIPTION
-  The command deletes the API token and all other account information stored in the ~/.apify directory. To log in again, 
-  call "apify login".
+  The command deletes the API token and all other account information stored in the ~/.apify directory. To log in again,
+   call "apify login".
 ```
 
-_See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/logout.js)_
+_See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/logout.js)_
 
 ## `apify push [ACTORID]`
 
@@ -392,7 +392,7 @@ DESCRIPTION
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
 ```
 
-_See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/push.js)_
+_See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/push.js)_
 
 ## `apify run`
 
@@ -414,15 +414,15 @@ OPTIONS
   --purge-queue            Deletes the local directory containing the default request queue before the run starts.
 
 DESCRIPTION
-  It sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For 
-  example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be 
-  stored in the "apify_storage" directory, rather than on the Apify platform.
+  It sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For
+   example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
+   stored in the "apify_storage" directory, rather than on the Apify platform.
 
   NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You 
   can set up your own main file or environment variables by changing it.
 ```
 
-_See code: [src/commands/run.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/run.js)_
+_See code: [src/commands/run.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/run.js)_
 
 ## `apify secrets`
 
@@ -439,16 +439,16 @@ DESCRIPTION
   Now the "mySecret" value can be used in an environment variable defined in "apify.json" file by adding the "@" prefix:
 
   {
-     "name": "my_actor",
-     "env": { "SECRET_ENV_VAR": "@mySecret" },
-     "version": "0.1
+    "name": "my_actor",
+    "env": { "SECRET_ENV_VAR": "@mySecret" },
+    "version": "0.1
   }
 
-  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable 
-  of the actor.
+  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable
+   of the actor.
 ```
 
-_See code: [src/commands/secrets/index.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/secrets/index.js)_
+_See code: [src/commands/secrets/index.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/secrets/index.js)_
 
 ## `apify secrets:add NAME VALUE`
 
@@ -466,7 +466,7 @@ DESCRIPTION
   The secrets are stored to a file at ~/.apify
 ```
 
-_See code: [src/commands/secrets/add.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/secrets/add.js)_
+_See code: [src/commands/secrets/add.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/secrets/add.js)_
 
 ## `apify secrets:rm NAME`
 
@@ -480,7 +480,7 @@ ARGUMENTS
   NAME  Name of the secret
 ```
 
-_See code: [src/commands/secrets/rm.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/secrets/rm.js)_
+_See code: [src/commands/secrets/rm.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/secrets/rm.js)_
 
 ## `apify vis [PATH]`
 
@@ -494,5 +494,5 @@ ARGUMENTS
   PATH  Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.
 ```
 
-_See code: [src/commands/vis.js](https://github.com/apify/apify-cli/blob/v0.6.5/src/commands/vis.js)_
+_See code: [src/commands/vis.js](https://github.com/apify/apify-cli/blob/v0.6.7/src/commands/vis.js)_
 <!-- commandsstop -->
