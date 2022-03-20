@@ -10,7 +10,7 @@ class ValidateInputSchemaCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(ValidateInputSchemaCommand);
         const { path = DEFAULT_INPUT_SCHEMA_PATH } = args;
-        const validator = new Ajv({ cache: false });
+        const validator = new Ajv({ cache: false, strict: false });
 
         let inputSchemaObj;
 
