@@ -1,4 +1,4 @@
-const { validateInputSchema } = require('apify-shared/input_schema');
+const { validateInputSchema } = require('@apify/input_schema');
 const Ajv = require('ajv');
 const fs = require('fs');
 const { ApifyCommand } = require('../lib/apify_command');
