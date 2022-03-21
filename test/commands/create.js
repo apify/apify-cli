@@ -1,4 +1,5 @@
 const { expect } = require('chai');
+const _ = require('underscore');
 const fs = require('fs');
 const sinon = require('sinon');
 const command = require('@oclif/command');
@@ -15,7 +16,7 @@ describe('apify create', () => {
         sinon.spy(console, 'log');
     });
 
-    ['superlongdescriptiontotesthtelengthofthename', 'sh', 'bad_escaped'].forEach((badActorName) => {
+    [_.times(151, () => 'a').join(''), 'sh', 'bad_escaped'].forEach((badActorName) => {
         it(`returns error with bad actor name ${badActorName}`, async () => {
             try {
                 await command.run(['create', badActorName]);
