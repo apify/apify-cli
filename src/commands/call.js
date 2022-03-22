@@ -46,13 +46,14 @@ class CallCommand extends ApifyCommand {
 
         // Get input for act
         const localInput = getLocalInput();
-        if (localInput) Object.assign(runOpts, localInput);
 
         outputs.run(`Calling actor ${runOpts.actId}`);
 
         let run;
         try {
-            run = await apifyClient.actor(actorId).start(runOpts);
+            run = localInput
+                ? await apifyClient.actor(actorId).start(localInput.body, { ...runOpts, contentType: localInput.contentType })
+                : await apifyClient.actor(actorId).start(null, runOpts);
         } catch (err) {
             // TODO: Better error message in apify-client-js
             if (err.type === 'record-not-found') throw new Error(`Actor ${runOpts.actId} not found!`);

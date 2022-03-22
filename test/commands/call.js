@@ -60,8 +60,8 @@ describe('apify call', () => {
         const output = await testUserClient.keyValueStore(lastRunDetail.defaultKeyValueStoreId).getRecord('OUTPUT');
         const input = await testUserClient.keyValueStore(lastRunDetail.defaultKeyValueStoreId).getRecord('INPUT');
 
-        expect(EXPECTED_OUTPUT).to.be.eql(output.body);
-        expect(EXPECTED_INPUT).to.be.eql(input.body);
+        expect(EXPECTED_OUTPUT).to.be.eql(output.value);
+        expect(EXPECTED_INPUT).to.be.eql(input.value);
         expect(EXPECTED_INPUT_CONTENT_TYPE).to.be.eql(input.contentType);
     });
 

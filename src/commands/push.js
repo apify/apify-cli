@@ -85,7 +85,7 @@ class PushCommand extends ApifyCommand {
             const buffer = fs.readFileSync(TEMP_ZIP_FILE_NAME);
             await apifyClient.keyValueStore(store.id).setRecord({
                 key,
-                body: buffer,
+                value: buffer,
                 contentType: 'application/zip',
             });
             fs.unlinkSync(TEMP_ZIP_FILE_NAME);
