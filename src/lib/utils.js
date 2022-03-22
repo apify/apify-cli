@@ -8,7 +8,7 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
 const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS,
-    KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES, SOURCE_FILE_FORMATS, ACTOR_NAME } = require('apify-shared/consts');
+    KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES, SOURCE_FILE_FORMATS, ACTOR_NAME } = require('@apify/consts');
 const https = require('https');
 const { ApifyClient } = require('apify-client');
 const { execSync, spawnSync } = require('child_process');

@@ -4,7 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const rimraf = require('rimraf');
 
-const updateLocalJson = async (jsonFilePath, updateAttrs = {}, nestedObjectAttr) => {
+const updateLocalJson = async (jsonFilePath, updateAttrs = {}, nestedObjectAttr = null) => {
     const currentObject = await loadJson(jsonFilePath);
     let newObject;
 

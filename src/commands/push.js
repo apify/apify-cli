@@ -2,7 +2,7 @@ const fs = require('fs');
 const { flags: flagsHelper } = require('@oclif/command');
 const actorTemplates = require('@apify/actor-templates');
 const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES,
-    MAX_MULTIFILE_BYTES } = require('apify-shared/consts');
+    MAX_MULTIFILE_BYTES } = require('@apify/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const { createActZip, getLoggedClientOrThrow,
     outputJobLog, getLocalUserInfo, getActorLocalFilePaths,
