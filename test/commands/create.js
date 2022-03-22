@@ -15,7 +15,7 @@ describe('apify create', () => {
         sinon.spy(console, 'log');
     });
 
-    ['superlongdescriptiontotesthtelengthofthename', 'sh', 'bad_escaped'].forEach((badActorName) => {
+    ['a'.repeat(151), 'sh', 'bad_escaped'].forEach((badActorName) => {
         it(`returns error with bad actor name ${badActorName}`, async () => {
             try {
                 await command.run(['create', badActorName]);

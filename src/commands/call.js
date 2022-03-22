@@ -1,5 +1,5 @@
 const { flags: flagsHelper } = require('@oclif/command');
-const { ACT_JOB_STATUSES } = require('apify-shared/consts');
+const { ACT_JOB_STATUSES } = require('@apify/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const { getLocalConfig, getLoggedClientOrThrow,
     getLocalUserInfo, getLocalInput, outputJobLog } = require('../lib/utils');
