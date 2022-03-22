@@ -1,5 +1,6 @@
 const { flags: flagsHelper } = require('@oclif/command');
 const { ACT_JOB_STATUSES } = require('apify-shared/consts');
+const mime = require('mime');
 const { ApifyCommand } = require('../lib/apify_command');
 const { getLocalConfig, getLoggedClientOrThrow,
     getLocalUserInfo, getLocalInput, outputJobLog } = require('../lib/utils');
@@ -47,13 +48,19 @@ class CallCommand extends ApifyCommand {
         // Get input for act
         const localInput = getLocalInput();
 
-        outputs.run(`Calling actor ${runOpts.actId}`);
+        outputs.run(`Calling actor ${actorId}`);
 
         let run;
         try {
-            run = localInput
-                ? await apifyClient.actor(actorId).start(localInput.body, { ...runOpts, contentType: localInput.contentType })
-                : await apifyClient.actor(actorId).start(null, runOpts);
+            if (localInput) {
+                // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
+                // It will save malformed JSON which looks like buffer as INPUT.
+                // We need to fix this in v1 during removing call under actor namespace.
+                const input = mime.getExtension(localInput.contentType) === 'json' ? JSON.parse(localInput.body.toString('utf-8')) : localInput.body;
+                run = await apifyClient.actor(actorId).start(input, { ...runOpts, contentType: localInput.contentType })
+            } else {
+                run = await apifyClient.actor(actorId).start(null, runOpts);
+            }
         } catch (err) {
             // TODO: Better error message in apify-client-js
             if (err.type === 'record-not-found') throw new Error(`Actor ${runOpts.actId} not found!`);
