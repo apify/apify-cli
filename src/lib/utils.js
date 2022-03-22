@@ -73,7 +73,6 @@ const getLoggedClientOrThrow = async () => {
  * @return {Promise<*>}
  */
 const getLoggedClient = async (token) => {
-
     if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
         ({ token } = loadJson.sync(AUTH_FILE_PATH));
     }

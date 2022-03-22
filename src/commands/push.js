@@ -66,7 +66,7 @@ class PushCommand extends ApifyCommand {
 
         const filePathsToPush = await getActorLocalFilePaths();
         const filesSize = await sumFilesSizeInBytes(filePathsToPush);
-        const actorClient = apifyClient.actor(actor.id);
+        const actorClient = apifyClient.actor(actorId);
 
         let sourceType;
         let sourceFiles;

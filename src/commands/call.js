@@ -57,7 +57,7 @@ class CallCommand extends ApifyCommand {
                 // It will save malformed JSON which looks like buffer as INPUT.
                 // We need to fix this in v1 during removing call under actor namespace.
                 const input = mime.getExtension(localInput.contentType) === 'json' ? JSON.parse(localInput.body.toString('utf-8')) : localInput.body;
-                run = await apifyClient.actor(actorId).start(input, { ...runOpts, contentType: localInput.contentType })
+                run = await apifyClient.actor(actorId).start(input, { ...runOpts, contentType: localInput.contentType });
             } else {
                 run = await apifyClient.actor(actorId).start(null, runOpts);
             }
