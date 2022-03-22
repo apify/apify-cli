@@ -1,10 +1,10 @@
 const { ApifyClient } = require('apify-client');
 
-const { TEST_USER_ID, TEST_USER_TOKEN } = process.env;
+const { TEST_USER_TOKEN } = process.env;
 const TEST_USER_BAD_TOKEN = 'badToken';
 
-if (!TEST_USER_ID || !TEST_USER_TOKEN) {
-    throw Error('You must configure "TEST_USER_ID" and "TEST_USER_TOKEN" environment variables to run tests!');
+if (!TEST_USER_TOKEN) {
+    throw Error('You must configure "TEST_USER_TOKEN" environment variable to run tests!');
 }
 
 exports.testUserClient = new ApifyClient({

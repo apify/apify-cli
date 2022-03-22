@@ -14,7 +14,7 @@ Then you can run tests with commands in repository root directory:
 `apify logout`
 
 3. Run tests using credentials of the 'apify-test' user:
-`TEST_USER_ID=<apifyUserId> TEST_TOKEN=<apifyUserApiToken> npm run test`
+`TEST_USER_TOKEN=<apifyUserApiToken> npm run test`
 
 ## Publish new version
 
