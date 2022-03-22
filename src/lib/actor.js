@@ -48,17 +48,19 @@ const outputRecordFromDefaultStore = async (key) => {
     const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key);
     // If record does not exist return empty string.
     if (!record) return;
-    // TODO: Value can be anything, so we should print it in a readable way based on its type.
+    // TODO: Value can be any file or string, so we should print it in a readable way based on its type.
     if (mime.getExtension(record.contentType) !== 'json') throw new Error(`Value for INPUT is not a JSON, it is ${record.contentType}.`);
 
     console.log(record.value);
-}
+};
 
 const outputInputFromDefaultStore = async () => {
-    return outputRecordFromDefaultStore(process.env[ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT)
-}
+    return outputRecordFromDefaultStore(process.env[ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT);
+};
 
 module.exports = {
     outputRecordFromDefaultStore,
     outputInputFromDefaultStore,
+    getApifyStorageClient,
+    getDefaultStoreId,
 };

@@ -3,17 +3,17 @@ const { outputInputFromDefaultStore } = require('../../lib/actor');
 
 class GetInputCommand extends ApifyCommand {
     async run() {
-        await outputInputFromDefaultStore()
+        await outputInputFromDefaultStore();
     }
 }
 
-GetInputCommand.description = 'Gets a value from the default KeyValueStore associated with the actor.';
+GetInputCommand.description = 'Gets the actor input value from the default key-value store associated with the actor run.';
 
 GetInputCommand.args = [
     {
         name: 'key',
         required: true,
-        description: 'Key of the record in key-value store.',
+        description: 'Key of the record in key-value store',
     },
 ];
 

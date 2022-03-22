@@ -10,13 +10,13 @@ class GetValueCommand extends ApifyCommand {
     }
 }
 
-GetValueCommand.description = 'Gets a value from the default KeyValueStore associated with the actor.';
+GetValueCommand.description = 'Gets a value from the default key-value store associated with the actor run.';
 
 GetValueCommand.args = [
     {
         name: 'key',
         required: true,
-        description: 'Key of the record in key-value store.',
+        description: 'Key of the record in key-value store',
     },
 ];
 
