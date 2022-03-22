@@ -1,4 +1,4 @@
-const { validateInputSchema } = require('apify-shared/input_schema');
+const { validateInputSchema } = require('@apify/input_schema');
 const Ajv = require('ajv');
 const fs = require('fs');
 const { ApifyCommand } = require('../lib/apify_command');
@@ -10,7 +10,7 @@ class ValidateInputSchemaCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(ValidateInputSchemaCommand);
         const { path = DEFAULT_INPUT_SCHEMA_PATH } = args;
-        const validator = new Ajv({ cache: false });
+        const validator = new Ajv({ cache: false, strict: false });
 
         let inputSchemaObj;
 

@@ -3,7 +3,7 @@ const command = require('@oclif/command');
 const fs = require('fs');
 const { GLOBAL_CONFIGS_FOLDER } = require('../../../src/lib/consts');
 const { getSecretsFile } = require('../../../src/lib/secrets');
-const { testUserClient } = require('../config');
+const { TEST_USER_TOKEN } = require('../config');
 
 const SECRET_KEY = 'mySecret';
 const SECRET_VALUE = 'mySecretValue';
@@ -14,8 +14,7 @@ describe('apify secrets:add', () => {
             // Skip tests if user used CLI on local, it can break local environment!
             this.skip();
         }
-        const { token } = testUserClient.getOptions();
-        await command.run(['login', '--token', token]);
+        await command.run(['login', '--token', TEST_USER_TOKEN]);
         const secrets = getSecretsFile();
         if (secrets[SECRET_KEY]) {
             await command.run(['secrets:rm', SECRET_KEY]);

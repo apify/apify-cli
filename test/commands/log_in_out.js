@@ -5,7 +5,7 @@ const sinon = require('sinon');
 const loadJson = require('load-json-file');
 const command = require('@oclif/command');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
-const { testUserClient, badUserClient } = require('./config');
+const { testUserClient, TEST_USER_TOKEN, TEST_USER_BAD_TOKEN } = require('./config');
 
 describe('apify login and logout', () => {
     before(function () {
@@ -20,18 +20,16 @@ describe('apify login and logout', () => {
     });
 
     it('should end with Error', async () => {
-        const { token } = badUserClient.getOptions();
-        await command.run(['login', '--token', token]);
+        await command.run(['login', '--token', TEST_USER_BAD_TOKEN]);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Error:');
     });
 
     it('should work', async () => {
-        const { token } = testUserClient.getOptions();
-        await command.run(['login', '--token', token]);
+        await command.run(['login', '--token', TEST_USER_TOKEN]);
 
-        const expectedUserInfo = Object.assign(await testUserClient.users.getUser(), { token });
+        const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), { token: TEST_USER_TOKEN });
         const userInfoFromConfig = loadJson.sync(AUTH_FILE_PATH);
 
         expect(console.log.callCount).to.eql(1);

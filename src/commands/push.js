@@ -2,7 +2,7 @@ const fs = require('fs');
 const { flags: flagsHelper } = require('@oclif/command');
 const actorTemplates = require('@apify/actor-templates');
 const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES,
-    MAX_MULTIFILE_BYTES } = require('apify-shared/consts');
+    MAX_MULTIFILE_BYTES } = require('@apify/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const { createActZip, getLoggedClientOrThrow,
     outputJobLog, getLocalUserInfo, getActorLocalFilePaths,
@@ -33,12 +33,12 @@ class PushCommand extends ApifyCommand {
         // It causes that we push actor to this id but attributes in localConfig will remain same.
         const forceActorId = args.actorId;
         if (forceActorId) {
-            actor = await apifyClient.acts.getAct({ actId: forceActorId });
+            actor = await apifyClient.actor(forceActorId).get();
             if (!actor) throw new Error(`Cannot find actor with ID '${forceActorId}' in your account.`);
             actorId = actor.id;
         } else {
             const usernameOrId = userInfo.username || userInfo.id;
-            actor = await apifyClient.acts.getAct({ actId: `${usernameOrId}/${localConfig.name}` });
+            actor = await apifyClient.actor(`${usernameOrId}/${localConfig.name}`).get();
             if (actor) {
                 actorId = actor.id;
             } else {
@@ -55,7 +55,7 @@ class PushCommand extends ApifyCommand {
                         tarballUrl: actorTemplate.archiveUrl,
                     }],
                 };
-                actor = await apifyClient.acts.createAct({ act: newActor });
+                actor = await apifyClient.actors().create(newActor);
                 actorId = actor.id;
                 outputs.info(`Created actor with name ${localConfig.name} on Apify.`);
                 console.dir(actor);
@@ -66,6 +66,7 @@ class PushCommand extends ApifyCommand {
 
         const filePathsToPush = await getActorLocalFilePaths();
         const filesSize = await sumFilesSizeInBytes(filePathsToPush);
+        const actorClient = apifyClient.actor(actorId);
 
         let sourceType;
         let sourceFiles;
@@ -79,13 +80,12 @@ class PushCommand extends ApifyCommand {
             await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush);
 
             // Upload it to Apify.keyValueStores
-            const store = await apifyClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
+            const store = await apifyClient.keyValueStores().getOrCreate(UPLOADS_STORE_NAME);
             const key = `${actor.name}-${version}.zip`;
             const buffer = fs.readFileSync(TEMP_ZIP_FILE_NAME);
-            await apifyClient.keyValueStores.putRecord({
-                storeId: store.id,
+            await apifyClient.keyValueStore(store.id).setRecord({
                 key,
-                body: buffer,
+                value: buffer,
                 contentType: 'application/zip',
             });
             fs.unlinkSync(TEMP_ZIP_FILE_NAME);
@@ -94,15 +94,11 @@ class PushCommand extends ApifyCommand {
         }
 
         // Update actor version
-        const actorCurrentVersion = await apifyClient.acts.getActVersion({ actId: actorId, versionNumber: version });
+        const actorCurrentVersion = await actorClient.version(version).get();
         if (actorCurrentVersion) {
             const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType };
             if (localConfig.env) actorVersionModifier.envVars = transformEnvToEnvVars(localConfig.env);
-            await apifyClient.acts.updateActVersion({
-                actId: actorId,
-                versionNumber: version,
-                actVersion: actorVersionModifier,
-            });
+            await actorClient.version(version).update(actorVersionModifier);
             outputs.run(`Updated version ${version} for ${actor.name} actor.`);
         } else {
             const actorNewVersion = {
@@ -113,19 +109,16 @@ class PushCommand extends ApifyCommand {
                 sourceType,
             };
             if (localConfig.env) actorNewVersion.envVars = transformEnvToEnvVars(localConfig.env);
-            await apifyClient.acts.createActVersion({
-                actId: actorId,
+            await actorClient.versions().create({
                 versionNumber: version,
-                actVersion: actorNewVersion,
+                ...actorNewVersion,
             });
             outputs.run(`Created version ${version} for ${actor.name} actor.`);
         }
 
         // Build actor on Apify and wait for build to finish
         outputs.run(`Building actor ${actor.name}`);
-        let build = await apifyClient.acts.buildAct({
-            actId: actorId,
-            version,
+        let build = await actorClient.build(version, {
             useCache: true,
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         });
@@ -137,7 +130,7 @@ class PushCommand extends ApifyCommand {
             console.error(err);
         }
 
-        build = await apifyClient.acts.getBuild({ actId: build.actId, buildId: build.id });
+        build = await apifyClient.build(build.id).get();
         console.dir(build);
 
         outputs.link('Actor build detail', `https://console.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);

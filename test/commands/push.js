@@ -2,13 +2,13 @@ const { expect } = require('chai');
 const sinon = require('sinon');
 const fs = require('fs');
 const command = require('@oclif/command');
-const { ACT_SOURCE_TYPES, SOURCE_FILE_FORMATS } = require('apify-shared/consts');
+const { ACT_SOURCE_TYPES, SOURCE_FILE_FORMATS } = require('@apify/consts');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalUserInfo, getActorLocalFilePaths, createSourceFiles } = require('../../src/lib/utils');
 const { GLOBAL_CONFIGS_FOLDER, UPLOADS_STORE_NAME } = require('../../src/lib/consts');
-const { testUserClient } = require('./config');
+const { testUserClient, TEST_USER_TOKEN } = require('./config');
 
 const ACTOR_NAME = `cli-test-${Date.now()}`;
 const TEST_ACTOR = {
@@ -32,7 +32,7 @@ describe('apify push', () => {
             this.skip();
             return;
         }
-        await command.run(['login', '--token', testUserClient.getOptions().token]);
+        await command.run(['login', '--token', TEST_USER_TOKEN]);
         await command.run(['create', ACTOR_NAME, '--template', ACT_TEMPLATE]);
         process.chdir(ACTOR_NAME);
     });
@@ -53,11 +53,9 @@ describe('apify push', () => {
         const userInfo = await getLocalUserInfo();
         const { name } = apifyJson;
         const actorId = `${userInfo.username}/${name}`;
-        const createdActor = await testUserClient.acts.getAct({ actId: actorId });
-        const createdActorVersion = await testUserClient.acts.getActVersion({
-            actId: actorId,
-            versionNumber: apifyJson.version,
-        });
+        const createdActorClient = testUserClient.actor(actorId);
+        const createdActor = await createdActorClient.get();
+        const createdActorVersion = await createdActorClient.version(apifyJson.version).get();
 
         const expectedApifyJson = {
             name: ACTOR_NAME,
@@ -70,7 +68,7 @@ describe('apify push', () => {
         const filePathsToPush = await getActorLocalFilePaths();
         const sourceFiles = await createSourceFiles(filePathsToPush);
 
-        if (createdActor) await testUserClient.acts.deleteAct({ actId: actorId });
+        if (createdActor) await createdActorClient.delete();
 
         expect(expectedApifyJson).to.be.eql(apifyJson);
         expect(createdActorVersion.versionNumber).to.be.eql(apifyJson.version);
@@ -84,16 +82,14 @@ describe('apify push', () => {
     });
 
     it('should work with actorId', async () => {
-        let testActor = await testUserClient.acts.createAct({ act: TEST_ACTOR });
+        let testActor = await testUserClient.actors().create(TEST_ACTOR);
+        const testActorClient = testUserClient.actor(testActor.id);
         const apifyJson = loadJson.sync('apify.json');
 
         await command.run(['push', testActor.id]);
 
-        testActor = await testUserClient.acts.getAct({ actId: testActor.id });
-        const testActorVersion = await testUserClient.acts.getActVersion({
-            actId: testActor.id,
-            versionNumber: apifyJson.version,
-        });
+        testActor = await testActorClient.get();
+        const testActorVersion = await testActorClient.version(apifyJson.version).get();
 
         const expectedApifyJson = {
             name: apifyJson.name,
@@ -106,7 +102,7 @@ describe('apify push', () => {
         const filePathsToPush = await getActorLocalFilePaths();
         const sourceFiles = await createSourceFiles(filePathsToPush);
 
-        if (testActor) await testUserClient.acts.deleteAct({ actId: testActor.id });
+        if (testActor) await testActorClient.delete();
 
         expect(expectedApifyJson).to.be.eql(apifyJson);
         expect(testActorVersion.versionNumber).to.be.eql(apifyJson.version);
@@ -131,7 +127,8 @@ describe('apify push', () => {
                 value: 'myValue',
             }],
         }];
-        let testActor = await testUserClient.acts.createAct({ act: testActorWithEnvVars });
+        let testActor = await testUserClient.actors().create(testActorWithEnvVars);
+        const testActorClient = testUserClient.actor(testActor.id);
         const apifyJson = loadJson.sync('apify.json');
 
         apifyJson.env = null;
@@ -139,16 +136,13 @@ describe('apify push', () => {
 
         await command.run(['push', testActor.id]);
 
-        testActor = await testUserClient.acts.getAct({ actId: testActor.id });
-        const testActorVersion = await testUserClient.acts.getActVersion({
-            actId: testActor.id,
-            versionNumber: apifyJson.version,
-        });
+        testActor = await testActorClient.get();
+        const testActorVersion = await testActorClient.version(apifyJson.version).get();
 
         const filePathsToPush = await getActorLocalFilePaths();
         const sourceFiles = await createSourceFiles(filePathsToPush);
 
-        if (testActor) await testUserClient.acts.deleteAct({ actId: testActor.id });
+        if (testActor) await testActorClient.delete();
 
         expect(testActorVersion.versionNumber).to.be.eql(apifyJson.version);
         expect(testActorVersion.buildTag).to.be.eql(apifyJson.buildTag);
@@ -169,7 +163,8 @@ describe('apify push', () => {
                 value: 'myValue',
             }],
         }];
-        let testActor = await testUserClient.acts.createAct({ act: testActorWithEnvVars });
+        let testActor = await testUserClient.actors().create(testActorWithEnvVars);
+        const testActorClient = testUserClient.actor(testActor.id);
         const apifyJson = loadJson.sync('apify.json');
 
         apifyJson.env = null;
@@ -180,14 +175,11 @@ describe('apify push', () => {
 
         await command.run(['push', testActor.id]);
 
-        testActor = await testUserClient.acts.getAct({ actId: testActor.id });
-        const testActorVersion = await testUserClient.acts.getActVersion({
-            actId: testActor.id,
-            versionNumber: apifyJson.version,
-        });
-        const store = await testUserClient.keyValueStores.getOrCreateStore({ storeName: UPLOADS_STORE_NAME });
+        testActor = await testActorClient.get();
+        const testActorVersion = await testActorClient.version(apifyJson.version).get();
+        const store = await testUserClient.keyValueStores().getOrCreate(UPLOADS_STORE_NAME);
 
-        if (testActor) await testUserClient.acts.deleteAct({ actId: testActor.id });
+        if (testActor) await testActorClient.delete();
 
         expect(testActorVersion).to.be.eql({
             versionNumber: apifyJson.version,
@@ -211,13 +203,11 @@ describe('apify push', () => {
 
         const userInfo = await getLocalUserInfo();
         const actorId = `${userInfo.username}/${name}`;
-        const createdActor = await testUserClient.acts.getAct({ actId: actorId });
-        const createdActorVersion = await testUserClient.acts.getActVersion({
-            actId: actorId,
-            versionNumber: version,
-        });
+        const createdActorClient = testUserClient.actor(actorId);
+        const createdActor = await createdActorClient.get();
+        const createdActorVersion = await createdActorClient.version(version).get();
 
-        if (createdActor) await testUserClient.acts.deleteAct({ actId: actorId });
+        if (createdActor) await createdActorClient.delete();
 
         expect(createdActorVersion.sourceFiles.find((file) => file.name === 'some-typescript-file.ts').format)
             .to.be.equal(SOURCE_FILE_FORMATS.TEXT);
