@@ -1,17 +1,19 @@
-const ApifyClient = require('apify-client');
+const { ApifyClient } = require('apify-client');
 
-const { TEST_USER_ID, TEST_TOKEN } = process.env;
+const { TEST_USER_TOKEN } = process.env;
+const TEST_USER_BAD_TOKEN = 'badToken';
 
-if (!TEST_USER_ID || !TEST_TOKEN) {
-    throw Error('You must configure "TEST_USER_ID" and "TEST_TOKEN" environment variables to run tests!');
+if (!TEST_USER_TOKEN) {
+    throw Error('You must configure "TEST_USER_TOKEN" environment variable to run tests!');
 }
 
 exports.testUserClient = new ApifyClient({
-    userId: TEST_USER_ID,
-    token: TEST_TOKEN,
+    token: TEST_USER_TOKEN,
 });
 
 exports.badUserClient = new ApifyClient({
-    userId: 'badUserId',
-    token: 'badToken',
+    token: TEST_USER_BAD_TOKEN,
 });
+
+exports.TEST_USER_TOKEN = TEST_USER_TOKEN;
+exports.TEST_USER_BAD_TOKEN = TEST_USER_BAD_TOKEN;

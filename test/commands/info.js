@@ -4,7 +4,7 @@ const fs = require('fs');
 const loadJson = require('load-json-file');
 const command = require('@oclif/command');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
-const { testUserClient } = require('./config');
+const { TEST_USER_TOKEN } = require('./config');
 
 describe('apify info', () => {
     before(function () {
@@ -27,8 +27,7 @@ describe('apify info', () => {
     });
 
     it('should work', async () => {
-        const { token } = testUserClient.getOptions();
-        await command.run(['login', '--token', token]);
+        await command.run(['login', '--token', TEST_USER_TOKEN]);
         await command.run(['info']);
 
         const userInfoFromConfig = loadJson.sync(AUTH_FILE_PATH);

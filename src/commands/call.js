@@ -1,5 +1,6 @@
 const { flags: flagsHelper } = require('@oclif/command');
 const { ACT_JOB_STATUSES } = require('@apify/consts');
+const mime = require('mime');
 const { ApifyCommand } = require('../lib/apify_command');
 const { getLocalConfig, getLoggedClientOrThrow,
     getLocalUserInfo, getLocalInput, outputJobLog } = require('../lib/utils');
@@ -21,12 +22,12 @@ class CallCommand extends ApifyCommand {
         const forceActorId = args.actId;
         let actorId;
         if (forceActorId) {
-            const actor = await apifyClient.acts.getAct({ actId: forceActorId });
+            const actor = await apifyClient.actor(forceActorId).get();
             if (!actor) throw new Error(`Cannot find actor with ID '${forceActorId}' in your account.`);
             actorId = actor.username ? `${actor.username}/${actor.name}` : actor.id;
         } else {
             actorId = `${usernameOrId}/${localConfig.name}`;
-            const actor = await apifyClient.acts.getAct({ actId: actorId });
+            const actor = await apifyClient.actor(actorId).get();
             if (!actor) {
                 throw new Error(`Cannot find actor with ID '${actorId}' `
                     + 'in your account. Call "apify push" to push this actor to Apify platform.');
@@ -34,7 +35,6 @@ class CallCommand extends ApifyCommand {
         }
 
         const runOpts = {
-            actId: actorId,
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         };
         const waitForFinishMillis = Number.isNaN(flags.waitForFinish)
@@ -47,13 +47,20 @@ class CallCommand extends ApifyCommand {
 
         // Get input for act
         const localInput = getLocalInput();
-        if (localInput) Object.assign(runOpts, localInput);
 
-        outputs.run(`Calling actor ${runOpts.actId}`);
+        outputs.run(`Calling actor ${actorId}`);
 
         let run;
         try {
-            run = await apifyClient.acts.runAct(runOpts);
+            if (localInput) {
+                // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
+                // It will save malformed JSON which looks like buffer as INPUT.
+                // We need to fix this in v1 during removing call under actor namespace.
+                const input = mime.getExtension(localInput.contentType) === 'json' ? JSON.parse(localInput.body.toString('utf-8')) : localInput.body;
+                run = await apifyClient.actor(actorId).start(input, { ...runOpts, contentType: localInput.contentType });
+            } else {
+                run = await apifyClient.actor(actorId).start(null, runOpts);
+            }
         } catch (err) {
             // TODO: Better error message in apify-client-js
             if (err.type === 'record-not-found') throw new Error(`Actor ${runOpts.actId} not found!`);
@@ -67,7 +74,7 @@ class CallCommand extends ApifyCommand {
             console.error(err);
         }
 
-        run = await apifyClient.acts.getRun({ actId: run.actId, runId: run.id });
+        run = await apifyClient.run(run.id).get();
         console.dir(run);
 
         outputs.link('Actor run detail', `https://console.apify.com/actors/${run.actId}#/runs/${run.id}`);
