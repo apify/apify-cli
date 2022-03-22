@@ -7,7 +7,7 @@ const loadJson = require('load-json-file');
 const { ENV_VARS } = require('apify-shared/consts');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
-const { testUserClient } = require('./config');
+const { TEST_USER_TOKEN } = require('./config');
 const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
 
 const actName = 'my-act';
@@ -49,12 +49,11 @@ describe('apify run', () => {
     });
 
     it('run with env vars from apify.json', async () => {
-        const { token } = testUserClient.getOptions();
         const testEnvVars = {
             TEST_LOCAL: 'testValue',
         };
 
-        await command.run(['login', '--token', token]);
+        await command.run(['login', '--token', TEST_USER_TOKEN]);
 
         const actCode = `
         const Apify = require('apify');

@@ -10,7 +10,7 @@ const inquirer = require('inquirer');
 const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS,
     KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES, SOURCE_FILE_FORMATS, ACTOR_NAME } = require('apify-shared/consts');
 const https = require('https');
-const ApifyClient = require('apify-client');
+const { ApifyClient } = require('apify-client');
 const { execSync, spawnSync } = require('child_process');
 const semver = require('semver');
 const isOnline = require('is-online');
@@ -73,15 +73,15 @@ const getLoggedClientOrThrow = async () => {
  * @return {Promise<*>}
  */
 const getLoggedClient = async (token) => {
-    let userInfo;
-    const apifyClient = new ApifyClient();
 
     if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
         ({ token } = loadJson.sync(AUTH_FILE_PATH));
     }
 
+    const apifyClient = new ApifyClient({ token });
+    let userInfo;
     try {
-        userInfo = await apifyClient.users.getUser({ token });
+        userInfo = await apifyClient.user('me').get();
     } catch (e) {
         return false;
     }
@@ -89,7 +89,6 @@ const getLoggedClient = async (token) => {
     // Always refresh Auth file
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
     writeJson.sync(AUTH_FILE_PATH, { token, ...userInfo });
-    apifyClient.setOptions({ token, userId: userInfo.id });
     return apifyClient;
 };
 
@@ -305,12 +304,13 @@ const outputJobLog = async (job, jobStatus, timeout) => {
     const { id: logId, status } = job;
     // In case job was already done just output log
     if (ACT_JOB_TERMINAL_STATUSES.includes(status)) {
-        const { logs } = new ApifyClient();
-        const log = await logs.getLog({ logId });
+        const apifyClient = new ApifyClient();
+        const log = await apifyClient.log(logId).get();
         process.stdout.write(log);
     }
 
     // In other case stream it to stdout
+    // TODO: Use apifyClient.log(logId).stream() instead of http request stream.
     return new Promise((resolve, reject) => {
         const req = https.get(`https://api.apify.com/v2/logs/${logId}?stream=1`);
         let res;

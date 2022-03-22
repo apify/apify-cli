@@ -21,12 +21,12 @@ class CallCommand extends ApifyCommand {
         const forceActorId = args.actId;
         let actorId;
         if (forceActorId) {
-            const actor = await apifyClient.acts.getAct({ actId: forceActorId });
+            const actor = await apifyClient.actor(forceActorId).get();
             if (!actor) throw new Error(`Cannot find actor with ID '${forceActorId}' in your account.`);
             actorId = actor.username ? `${actor.username}/${actor.name}` : actor.id;
         } else {
             actorId = `${usernameOrId}/${localConfig.name}`;
-            const actor = await apifyClient.acts.getAct({ actId: actorId });
+            const actor = await apifyClient.actor(actorId).get();
             if (!actor) {
                 throw new Error(`Cannot find actor with ID '${actorId}' `
                     + 'in your account. Call "apify push" to push this actor to Apify platform.');
@@ -34,7 +34,6 @@ class CallCommand extends ApifyCommand {
         }
 
         const runOpts = {
-            actId: actorId,
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
         };
         const waitForFinishMillis = Number.isNaN(flags.waitForFinish)
@@ -53,7 +52,7 @@ class CallCommand extends ApifyCommand {
 
         let run;
         try {
-            run = await apifyClient.acts.runAct(runOpts);
+            run = await apifyClient.actor(actorId).start(runOpts);
         } catch (err) {
             // TODO: Better error message in apify-client-js
             if (err.type === 'record-not-found') throw new Error(`Actor ${runOpts.actId} not found!`);
@@ -67,7 +66,7 @@ class CallCommand extends ApifyCommand {
             console.error(err);
         }
 
-        run = await apifyClient.acts.getRun({ actId: run.actId, runId: run.id });
+        run = await apifyClient.run(run.id).get();
         console.dir(run);
 
         outputs.link('Actor run detail', `https://console.apify.com/actors/${run.actId}#/runs/${run.id}`);

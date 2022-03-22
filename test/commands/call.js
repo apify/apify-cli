@@ -4,7 +4,7 @@ const fs = require('fs');
 const command = require('@oclif/command');
 const { rimrafPromised } = require('../../src/lib/files');
 const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
-const { testUserClient } = require('./config');
+const { testUserClient, TEST_USER_TOKEN } = require('./config');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
 const ACTOR_NAME = `my-act-${Date.now()}`;
@@ -24,9 +24,8 @@ describe('apify call', () => {
             this.skip();
             return;
         }
-        const { token } = testUserClient.getOptions();
-        const { username } = await testUserClient.users.getUser();
-        await command.run(['login', '--token', token]);
+        const { username } = await testUserClient.user('me').get();
+        await command.run(['login', '--token', TEST_USER_TOKEN]);
         await command.run(['create', ACTOR_NAME, '--template', 'example_hello_world']);
         process.chdir(ACTOR_NAME);
         const actCode = `
@@ -54,11 +53,12 @@ describe('apify call', () => {
 
     it('without actId', async () => {
         await command.run(['call']);
-        const runs = await testUserClient.acts.listRuns({ actId: actorId });
+        const actorClient = testUserClient.actor(actorId);
+        const runs = await actorClient.runs().list();
         const lastRun = runs.items.pop();
-        const lastRunDetail = await testUserClient.acts.getRun({ actId: actorId, runId: lastRun.id });
-        const output = await testUserClient.keyValueStores.getRecord({ storeId: lastRunDetail.defaultKeyValueStoreId, key: 'OUTPUT' });
-        const input = await testUserClient.keyValueStores.getRecord({ storeId: lastRunDetail.defaultKeyValueStoreId, key: 'INPUT' });
+        const lastRunDetail = await testUserClient.run(lastRun.id).get();
+        const output = await testUserClient.keyValueStore(lastRunDetail.defaultKeyValueStoreId).getRecord('OUTPUT');
+        const input = await testUserClient.keyValueStore(lastRunDetail.defaultKeyValueStoreId).getRecord('INPUT');
 
         expect(EXPECTED_OUTPUT).to.be.eql(output.body);
         expect(EXPECTED_INPUT).to.be.eql(input.body);
@@ -66,7 +66,7 @@ describe('apify call', () => {
     });
 
     after(async () => {
-        await testUserClient.acts.deleteAct({ actId: actorId });
+        await testUserClient.actor(actorId).delete();
         process.chdir('../');
         if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
         await command.run(['logout']);
