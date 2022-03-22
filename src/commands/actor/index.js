@@ -7,7 +7,6 @@ class ActorIndexCommand extends Command {
     }
 }
 
-ActorIndexCommand.description = 'TBD.\n\n'
-    + 'TODO: Some clever description and example of usage';
+ActorIndexCommand.description = 'Commands are designed to be used in actor runs. All commands are in PoC state, do not use in production environments.\n'
 
 module.exports = ActorIndexCommand;
