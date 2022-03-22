@@ -1,5 +1,4 @@
 const { expect } = require('chai');
-const _ = require('underscore');
 const fs = require('fs');
 const sinon = require('sinon');
 const command = require('@oclif/command');
