@@ -5,6 +5,13 @@ const { ApifyStorageLocal } = require('@apify/storage-local');
 const { ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
 const { getLocalUserInfo } = require('./utils');
 
+const APIFY_LOCAL_DEFAULT_STORE_ID = 'default';
+const APIFY_STORE_TYPES = {
+    KEY_VALUE_STORE: 'KEY_VALUE_STORE',
+    DATASET: 'DATASET',
+    REQUEST_QUEUE: 'REQUEST_QUEUE',
+}
+
 /**
  * Returns instance of ApifyClient or ApifyStorageLocal based on environment variables.
  * @param options - ApifyClient options
@@ -40,8 +47,20 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
     });
 };
 
-const getDefaultStoreId = () => {
-    return process.env[ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID] || 'default';
+/**
+ * Returns default storage id based on environment variables.
+ * Throws error if not set and actor running on platform.
+ * @param storeType
+ * @return {string}
+ */
+const getDefaultStorageId = (storeType) => {
+    const envVarName = ENV_VARS[`DEFAULT_${storeType}_ID`];
+    const storeId = process.env[envVarName];
+    // If actor running on platform throw error if storage id is not set.
+    if (!storeId && !process.env[ENV_VARS.LOCAL_STORAGE_DIR]) {
+        throw new Error(`Storage ID is not set. Please set it using the environment variable ${envVarName}.`);
+    }
+    return storeId || APIFY_LOCAL_DEFAULT_STORE_ID;
 };
 
 /**
@@ -53,7 +72,7 @@ const outputRecordFromDefaultStore = async (key) => {
     ow(key, ow.string);
 
     const apifyClient = getApifyStorageClient();
-    const defaultStoreId = getDefaultStoreId();
+    const defaultStoreId = getDefaultStorageId(APIFY_STORE_TYPES.KEY_VALUE_STORE);
     const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key);
     // If record does not exist return empty string.
     if (!record) return;
@@ -71,5 +90,6 @@ module.exports = {
     outputRecordFromDefaultStore,
     outputInputFromDefaultStore,
     getApifyStorageClient,
-    getDefaultStoreId,
+    getDefaultStorageId,
+    APIFY_STORE_TYPES,
 };

@@ -1,6 +1,6 @@
 const { flags: flagsHelper } = require('@oclif/command');
 const { ApifyCommand } = require('../../lib/apify_command');
-const { getApifyStorageClient, getDefaultStoreId } = require('../../lib/actor');
+const { getApifyStorageClient, getDefaultStorageId, APIFY_STORE_TYPES } = require('../../lib/actor');
 
 class SetValueCommand extends ApifyCommand {
     async init() {
@@ -17,7 +17,7 @@ class SetValueCommand extends ApifyCommand {
         // NOTE: If user pass value as argument and data on stdin same time. We use the value from argument.
         const recordValue = value || stdin;
         const apifyClient = await getApifyStorageClient();
-        const storeClient = apifyClient.keyValueStore(getDefaultStoreId());
+        const storeClient = apifyClient.keyValueStore(getDefaultStorageId(APIFY_STORE_TYPES.KEY_VALUE_STORE));
         if (recordValue) {
             await storeClient.setRecord({ key, value: recordValue, contentType });
         } else {
