@@ -3,10 +3,13 @@ const mime = require('mime');
 const ow = require('ow');
 const { ApifyStorageLocal } = require('@apify/storage-local');
 const { ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const { getLocalUserInfo } = require('./utils');
 
 /**
  * Returns instance of ApifyClient or ApifyStorageLocal based on environment variables.
- * @param options
+ * @param options - ApifyClient options
+ * @param forceCloud - If true then ApifyClient will be returned.
+ * @return {ApifyStorageLocal|ApifyClient}
  */
 const getApifyStorageClient = (options = {}, forceCloud = false) => {
     const storageDir = process.env[ENV_VARS.LOCAL_STORAGE_DIR];
@@ -21,12 +24,18 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
         });
     }
 
-    if (!process.env[ENV_VARS.TOKEN]) {
-        throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN.');
+    // NOTE: Token in env var overrides token in local auth file.
+    let apifyToken = process.env[ENV_VARS.TOKEN];
+    if (!apifyToken) {
+        const localUserInfo = getLocalUserInfo();
+        if (!localUserInfo || !localUserInfo.token) {
+            throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.');
+        }
+        apifyToken = localUserInfo.token;
     }
 
     return new ApifyClient({
-        token: process.env[ENV_VARS.TOKEN],
+        token: apifyToken,
         ...options,
     });
 };

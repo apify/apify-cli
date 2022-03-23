@@ -4,6 +4,7 @@ const { getApifyStorageClient, getDefaultStoreId } = require('../../lib/actor');
 
 class SetValueCommand extends ApifyCommand {
     async init() {
+        // Read data from stdin of the command
         this.stdin = await this.readStdin(process.stdin);
     }
 
@@ -13,7 +14,7 @@ class SetValueCommand extends ApifyCommand {
         const { key, value } = args;
         const { contentType = 'application/json' } = flags;
 
-        // NOTE: If user pass value as argument and data on stdin same time. We use value from argument.
+        // NOTE: If user pass value as argument and data on stdin same time. We use the value from argument.
         const recordValue = value || stdin;
         const apifyClient = await getApifyStorageClient();
         const storeClient = apifyClient.keyValueStore(getDefaultStoreId());
@@ -39,12 +40,12 @@ SetValueCommand.args = [
         description: 'Key of the record in key-value store.',
     },
     {
-        // TODO: It can be path of the file where value is store in the next version.
+        // TODO: It can be path of the file where value is store. We can add it in the next version.
         name: 'value',
         required: false,
         description: 'Record data, which can be one of the following values:\n'
             + '- If empty, the record in the key-value store is deleted.\n'
-            + '- If no `contentType` flag is specified, value can be any JSON string value.\n'
+            + '- If no `contentType` flag is specified, value is expected to be any JSON string value.\n'
             + '- If options.contentType is set, value is taken as is.',
     },
 ];

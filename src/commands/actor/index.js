@@ -7,6 +7,6 @@ class ActorIndexCommand extends Command {
     }
 }
 
-ActorIndexCommand.description = 'Commands are designed to be used in actor runs. All commands are in PoC state, do not use in production environments.\n'
+ActorIndexCommand.description = 'Commands are designed to be used in actor runs. All commands are in PoC state, do not use in production environments.\n';
 
 module.exports = ActorIndexCommand;
