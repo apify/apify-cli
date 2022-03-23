@@ -1,6 +1,6 @@
 const { ApifyClient } = require('apify-client');
 const mime = require('mime');
-const ow = require('ow');
+const { default: ow } = require('ow');
 const { ApifyStorageLocal } = require('@apify/storage-local');
 const { ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
 const { getLocalUserInfo } = require('./utils');
@@ -60,7 +60,7 @@ const outputRecordFromDefaultStore = async (key) => {
     // TODO: Value can be any file or string, so we should print it in a readable way based on its type.
     if (mime.getExtension(record.contentType) !== 'json') throw new Error(`Value for INPUT is not a JSON, it is ${record.contentType}.`);
 
-    console.log(record.value);
+    console.log(JSON.stringify(record.value));
 };
 
 const outputInputFromDefaultStore = async () => {
