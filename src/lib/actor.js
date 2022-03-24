@@ -1,9 +1,12 @@
 const { ApifyClient } = require('apify-client');
-const mime = require('mime');
+const { pipeline } = require('stream');
+const { promisify } = require('util');
 const { default: ow } = require('ow');
 const { ApifyStorageLocal } = require('@apify/storage-local');
-const { ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const { ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
 const { getLocalUserInfo } = require('./utils');
+
+const pipelinePromise = promisify(pipeline);
 
 /**
  * Returns instance of ApifyClient or ApifyStorageLocal based on environment variables.
@@ -41,7 +44,13 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
 };
 
 const getDefaultStoreId = () => {
-    return process.env[ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID] || 'default';
+    const isRunningOnApify = !process.env[ENV_VARS.LOCAL_STORAGE_DIR];
+    const defaultKvsIdEnvVar = ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
+    if (isRunningOnApify) {
+        return process.env[defaultKvsIdEnvVar];
+    }
+
+    return process.env[defaultKvsIdEnvVar] || LOCAL_ENV_VARS[defaultKvsIdEnvVar];
 };
 
 /**
@@ -54,13 +63,11 @@ const outputRecordFromDefaultStore = async (key) => {
 
     const apifyClient = getApifyStorageClient();
     const defaultStoreId = getDefaultStoreId();
-    const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key);
+    const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key, { stream: true });
     // If record does not exist return empty string.
     if (!record) return;
-    // TODO: Value can be any file or string, so we should print it in a readable way based on its type.
-    if (mime.getExtension(record.contentType) !== 'json') throw new Error(`Value for INPUT is not a JSON, it is ${record.contentType}.`);
 
-    console.log(JSON.stringify(record.value));
+    await pipelinePromise(record.value, process.stdout);
 };
 
 const outputInputFromDefaultStore = async () => {

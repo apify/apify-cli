@@ -12,16 +12,16 @@ class SetValueCommand extends ApifyCommand {
         const { args, flags } = this.parse(SetValueCommand);
         const { stdin } = this;
         const { key, value } = args;
-        const { contentType = 'application/json' } = flags;
+        const { contentType = 'application/json; charset=utf-8' } = flags;
 
         // NOTE: If user pass value as argument and data on stdin same time. We use the value from argument.
         const recordValue = value || stdin;
         const apifyClient = await getApifyStorageClient();
         const storeClient = apifyClient.keyValueStore(getDefaultStoreId());
-        if (recordValue) {
-            await storeClient.setRecord({ key, value: recordValue, contentType });
-        } else {
+        if (recordValue === undefined || recordValue === null) {
             await storeClient.deleteRecord(key);
+        } else {
+            await storeClient.setRecord({ key, value: recordValue, contentType });
         }
     }
 }

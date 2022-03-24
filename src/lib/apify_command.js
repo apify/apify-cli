@@ -21,6 +21,8 @@ class ApifyCommand extends Command {
      * @return {Promise<string|undefined>}
      */
     async readStdin(stdinStream) {
+        // The isTTY params says if TTY is connected to the process, if so the stdout is
+        // synchronous and the stdout steam is empty.
         // See https://nodejs.org/docs/latest-v12.x/api/tty.html#tty_readstream_istty
         if (stdinStream.isTTY) return;
 
