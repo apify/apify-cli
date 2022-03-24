@@ -12,21 +12,21 @@ class SetValueCommand extends ApifyCommand {
         const { args, flags } = this.parse(SetValueCommand);
         const { stdin } = this;
         const { key, value } = args;
-        const { contentType = 'application/json' } = flags;
+        const { contentType = 'application/json; charset=utf-8' } = flags;
 
         // NOTE: If user pass value as argument and data on stdin same time. We use the value from argument.
         const recordValue = value || stdin;
         const apifyClient = await getApifyStorageClient();
         const storeClient = apifyClient.keyValueStore(getDefaultStorageId(APIFY_STORE_TYPES.KEY_VALUE_STORE));
-        if (recordValue) {
-            await storeClient.setRecord({ key, value: recordValue, contentType });
-        } else {
+        if (recordValue === undefined || recordValue === null) {
             await storeClient.deleteRecord(key);
+        } else {
+            await storeClient.setRecord({ key, value: recordValue, contentType });
         }
     }
 }
 
-SetValueCommand.description = 'Set record into the default KeyValueStore associated with the actor run.\n'
+SetValueCommand.description = 'Sets or removes record into the default KeyValueStore associated with the actor run.\n'
     + 'It is possible to pass data using argument or stdin.\n'
     + 'Passing data using argument:\n'
     + '$ apify actor:set-value KEY my-value\n'
