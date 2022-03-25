@@ -291,7 +291,7 @@ _See code: [src/commands/actor/get-value.js](https://github.com/apify/apify-cli/
 
 ## `apify actor:push-data [ITEM]`
 
-Stores an object or an array of objects to the default dataset of the actor run.NaNPassing data using argument:
+Stores an object or an array of objects to the default dataset of the actor run.
 
 ```
 USAGE
@@ -301,7 +301,9 @@ ARGUMENTS
   ITEM  JSON string with one object or array of objects containing data to be stored in the default dataset.
 
 DESCRIPTION
-  $ apify actor:push-data "{ "foo": "bar" }"
+  It is possible to pass data using item argument or stdin.
+  Passing data using argument:
+  $ apify actor:push-data {"foo": "bar"}
   Passing data using stdin with pipe:
   $ cat ./test.json | apify actor:push-data
 ```
@@ -310,7 +312,7 @@ _See code: [src/commands/actor/push-data.js](https://github.com/apify/apify-cli/
 
 ## `apify actor:set-value KEY [VALUE]`
 
-Set record into the default KeyValueStore associated with the actor run.
+Sets or removes record into the default KeyValueStore associated with the actor run.
 
 ```
 USAGE

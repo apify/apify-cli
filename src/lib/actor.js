@@ -8,7 +8,7 @@ const { getLocalUserInfo } = require('./utils');
 
 const pipelinePromise = promisify(pipeline);
 
-const APIFY_STORE_TYPES = {
+const APIFY_STORAGE_TYPES = {
     KEY_VALUE_STORE: 'KEY_VALUE_STORE',
     DATASET: 'DATASET',
     REQUEST_QUEUE: 'REQUEST_QUEUE',
@@ -76,7 +76,7 @@ const outputRecordFromDefaultStore = async (key) => {
     ow(key, ow.string);
 
     const apifyClient = getApifyStorageClient();
-    const defaultStoreId = getDefaultStorageId(APIFY_STORE_TYPES.KEY_VALUE_STORE);
+    const defaultStoreId = getDefaultStorageId(APIFY_STORAGE_TYPES.KEY_VALUE_STORE);
     const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key, { stream: true });
     // If record does not exist return empty string.
     if (!record) return;
@@ -93,5 +93,5 @@ module.exports = {
     outputInputFromDefaultStore,
     getApifyStorageClient,
     getDefaultStorageId,
-    APIFY_STORE_TYPES,
+    APIFY_STORAGE_TYPES,
 };

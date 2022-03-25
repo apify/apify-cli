@@ -1,5 +1,5 @@
 const { ApifyCommand } = require('../../lib/apify_command');
-const { getApifyStorageClient, getDefaultStorageId, APIFY_STORE_TYPES } = require('../../lib/actor');
+const { getApifyStorageClient, getDefaultStorageId, APIFY_STORAGE_TYPES } = require('../../lib/actor');
 
 class PushDataCommand extends ApifyCommand {
     async init() {
@@ -12,7 +12,7 @@ class PushDataCommand extends ApifyCommand {
         const { item } = args;
 
         const apifyClient = getApifyStorageClient();
-        const defaultStoreId = getDefaultStorageId(APIFY_STORE_TYPES.DATASET);
+        const defaultStoreId = getDefaultStorageId(APIFY_STORAGE_TYPES.DATASET);
         const data = item || this.stdin;
         let parsedData;
         try {
@@ -26,7 +26,7 @@ class PushDataCommand extends ApifyCommand {
     }
 }
 
-PushDataCommand.description = 'Stores an object or an array of objects to the default dataset of the actor run.'
+PushDataCommand.description = 'Stores an object or an array of objects to the default dataset of the actor run.\n'
     + 'It is possible to pass data using item argument or stdin.\n'
     + 'Passing data using argument:\n'
     + '$ apify actor:push-data {"foo": "bar"}\n'
