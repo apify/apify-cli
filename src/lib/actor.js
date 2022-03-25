@@ -57,22 +57,16 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
  * @return {string}
  */
 const getDefaultStorageId = (storeType) => {
+    const isRunningOnApify = !process.env[ENV_VARS.LOCAL_STORAGE_DIR];
     const envVarName = ENV_VARS[`DEFAULT_${storeType}_ID`];
     const storeId = process.env[envVarName];
-    // If actor running on platform throw error if storage id is not set.
-    if (!storeId && !process.env[ENV_VARS.LOCAL_STORAGE_DIR]) {
-        throw new Error(`Storage ID is not set. Please set it using the environment variable ${envVarName}.`);
-    }
-    return storeId || APIFY_LOCAL_DEFAULT_STORE_ID;
-const getDefaultStoreId = () => {
-    const isRunningOnApify = !process.env[ENV_VARS.LOCAL_STORAGE_DIR];
-    const defaultKvsIdEnvVar = ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
-    if (isRunningOnApify) {
-        return process.env[defaultKvsIdEnvVar];
+    if (isRunningOnApify && !storeId) {
+        throw new Error(`Default storage ID is not set. You can set it using the environment `
+        + `variable ${envVarName} or use local storage with setting ${ENV_VARS.LOCAL_STORAGE_DIR} variable.`);
     }
 
-    return process.env[defaultKvsIdEnvVar] || LOCAL_ENV_VARS[defaultKvsIdEnvVar];
-};
+    return storeId || LOCAL_ENV_VARS[envVarName];
+}
 
 /**
  * Outputs value of record into standard output of the command.
