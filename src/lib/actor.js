@@ -8,12 +8,11 @@ const { getLocalUserInfo } = require('./utils');
 
 const pipelinePromise = promisify(pipeline);
 
-const APIFY_LOCAL_DEFAULT_STORE_ID = 'default';
 const APIFY_STORE_TYPES = {
     KEY_VALUE_STORE: 'KEY_VALUE_STORE',
     DATASET: 'DATASET',
     REQUEST_QUEUE: 'REQUEST_QUEUE',
-}
+};
 
 /**
  * Returns instance of ApifyClient or ApifyStorageLocal based on environment variables.
@@ -66,7 +65,7 @@ const getDefaultStorageId = (storeType) => {
     }
 
     return storeId || LOCAL_ENV_VARS[envVarName];
-}
+};
 
 /**
  * Outputs value of record into standard output of the command.
