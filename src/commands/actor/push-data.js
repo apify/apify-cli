@@ -20,9 +20,8 @@ class PushDataCommand extends ApifyCommand {
         } catch (err) {
             throw new Error(`Failed to parse data as JSON string: ${err.message}`);
         }
-        const dataset = await apifyClient.datasets().getOrCreate(defaultStoreId);
-        const datasetClient = apifyClient.dataset(dataset.id);
-        await datasetClient.pushItems(parsedData);
+
+        await apifyClient.dataset(defaultStoreId).pushItems(parsedData);
     }
 }
 
