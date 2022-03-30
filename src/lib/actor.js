@@ -8,6 +8,12 @@ const { getLocalUserInfo } = require('./utils');
 
 const pipelinePromise = promisify(pipeline);
 
+const APIFY_STORAGE_TYPES = {
+    KEY_VALUE_STORE: 'KEY_VALUE_STORE',
+    DATASET: 'DATASET',
+    REQUEST_QUEUE: 'REQUEST_QUEUE',
+};
+
 /**
  * Returns instance of ApifyClient or ApifyStorageLocal based on environment variables.
  * @param options - ApifyClient options
@@ -43,14 +49,22 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
     });
 };
 
-const getDefaultStoreId = () => {
+/**
+ * Returns default storage id based on environment variables.
+ * Throws error if not set and actor running on platform.
+ * @param storeType
+ * @return {string}
+ */
+const getDefaultStorageId = (storeType) => {
     const isRunningOnApify = !process.env[ENV_VARS.LOCAL_STORAGE_DIR];
-    const defaultKvsIdEnvVar = ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
-    if (isRunningOnApify) {
-        return process.env[defaultKvsIdEnvVar];
+    const envVarName = ENV_VARS[`DEFAULT_${storeType}_ID`];
+    const storeId = process.env[envVarName];
+    if (isRunningOnApify && !storeId) {
+        throw new Error(`Default storage ID is not set. You can set it using the environment `
+        + `variable ${envVarName} or use local storage with setting ${ENV_VARS.LOCAL_STORAGE_DIR} variable.`);
     }
 
-    return process.env[defaultKvsIdEnvVar] || LOCAL_ENV_VARS[defaultKvsIdEnvVar];
+    return storeId || LOCAL_ENV_VARS[envVarName];
 };
 
 /**
@@ -62,7 +76,7 @@ const outputRecordFromDefaultStore = async (key) => {
     ow(key, ow.string);
 
     const apifyClient = getApifyStorageClient();
-    const defaultStoreId = getDefaultStoreId();
+    const defaultStoreId = getDefaultStorageId(APIFY_STORAGE_TYPES.KEY_VALUE_STORE);
     const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key, { stream: true });
     // If record does not exist return empty string.
     if (!record) return;
@@ -78,5 +92,6 @@ module.exports = {
     outputRecordFromDefaultStore,
     outputInputFromDefaultStore,
     getApifyStorageClient,
-    getDefaultStoreId,
+    getDefaultStorageId,
+    APIFY_STORAGE_TYPES,
 };

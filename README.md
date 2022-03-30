@@ -238,6 +238,7 @@ This section contains printouts of `apify help` for all commands.
 * [`apify actor`](#apify-actor)
 * [`apify actor:get-input`](#apify-actorget-input)
 * [`apify actor:get-value KEY`](#apify-actorget-value-key)
+* [`apify actor:push-data [ITEM]`](#apify-actorpush-data-item)
 * [`apify actor:set-value KEY [VALUE]`](#apify-actorset-value-key-value)
 * [`apify call [ACTID]`](#apify-call-actid)
 * [`apify create [ACTORNAME]`](#apify-create-actorname)
@@ -288,9 +289,30 @@ ARGUMENTS
 
 _See code: [src/commands/actor/get-value.js](https://github.com/apify/apify-cli/blob/v0.7.1/src/commands/actor/get-value.js)_
 
+## `apify actor:push-data [ITEM]`
+
+Stores an object or an array of objects to the default dataset of the actor run.
+
+```
+USAGE
+  $ apify actor:push-data [ITEM]
+
+ARGUMENTS
+  ITEM  JSON string with one object or array of objects containing data to be stored in the default dataset.
+
+DESCRIPTION
+  It is possible to pass data using item argument or stdin.
+  Passing data using argument:
+  $ apify actor:push-data {"foo": "bar"}
+  Passing data using stdin with pipe:
+  $ cat ./test.json | apify actor:push-data
+```
+
+_See code: [src/commands/actor/push-data.js](https://github.com/apify/apify-cli/blob/v0.7.1/src/commands/actor/push-data.js)_
+
 ## `apify actor:set-value KEY [VALUE]`
 
-Set record into the default KeyValueStore associated with the actor run.
+Sets or removes record into the default KeyValueStore associated with the actor run.
 
 ```
 USAGE
