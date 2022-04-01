@@ -13,7 +13,6 @@
     },
     "files": [
         "src",
-        "npm-shrinkwrap.json",
         "oclif.manifest.json",
         "index.js",
         "package.json"
