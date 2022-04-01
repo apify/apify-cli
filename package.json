@@ -50,7 +50,7 @@
         "node": ">=12.0.0"
     },
     "dependencies": {
-        "@apify/actor-templates": "^0.1.1",
+        "@apify/actor-templates": "^0.1.2",
         "@apify/consts": "^1.7.0",
         "@apify/http-request": "^2.1.2",
         "@apify/input_schema": "^2.0.8",
@@ -89,9 +89,6 @@
         "mocha": "^8.4.0",
         "sinon": "^9.2.4"
     },
-    "eslintIgnore": [
-        "src/templates/*"
-    ],
     "oclif": {
         "bin": "apify",
         "commands": "./src/commands",
