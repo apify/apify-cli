@@ -5,7 +5,7 @@ const { getApifyStorageClient, getDefaultStorageId, APIFY_STORAGE_TYPES } = requ
 class SetValueCommand extends ApifyCommand {
     async init() {
         // Read data from stdin of the command
-        this.stdin = await this.readStdin(process.stdin);
+        this.stdin = process.stdin;
     }
 
     async run() {
