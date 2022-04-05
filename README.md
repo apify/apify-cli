@@ -378,8 +378,8 @@ ARGUMENTS
 
 OPTIONS
   -t, --template=template  Template for the actor. If not provided, the command will prompt for it.Visit
-                           https://github.com/apifytech/actor-templates/raw/master/templates/manifest.json to find
-                           available template names.
+                           https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json to
+                           find available template names.
 ```
 
 _See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.7.1/src/commands/create.js)_
