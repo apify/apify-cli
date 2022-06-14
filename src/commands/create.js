@@ -2,7 +2,7 @@ const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
 const inquirer = require('inquirer');
-const httpRequest = require('@apify/http-request');
+const { gotScraping } = require('got-scraping');
 const actorTemplates = require('@apify/actor-templates');
 const unzipper = require('unzipper');
 const { ApifyCommand } = require('../lib/apify_command');
@@ -71,9 +71,9 @@ class CreateCommand extends ApifyCommand {
         const templateObj = manifest.templates.find((t) => t.name === templateName);
         const { archiveUrl } = templateObj;
 
-        const zipStream = await httpRequest({
+        const zipStream = await gotScraping({
             url: archiveUrl,
-            stream: true,
+            isStream: true,
         });
         const unzip = unzipper.Extract({ path: actFolderDir });
         await zipStream.pipe(unzip).promise();
