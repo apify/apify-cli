@@ -68,6 +68,9 @@ class PushCommand extends ApifyCommand {
         const filesSize = await sumFilesSizeInBytes(filePathsToPush);
         const actorClient = apifyClient.actor(actorId);
 
+        outputs.info('Local files size is: ' + filesSize);
+        outputs.info('Local files to be pushed: ' + filePathsToPush);
+
         let sourceType;
         let sourceFiles;
         let tarballUrl;
