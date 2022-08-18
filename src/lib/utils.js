@@ -205,7 +205,7 @@ const createSourceFiles = async (paths) => {
  * All dot files(.file) and folders(.folder/) are included.
  */
 const getActorLocalFilePaths = () => globby(['*', '**/**'], {
-    ignore: ['.git/**'],
+    ignore: ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'],
     gitignore: true,
     dot: true,
 });
