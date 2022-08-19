@@ -49,7 +49,7 @@ class PushCommand extends ApifyCommand {
                     name: localConfig.name,
                     defaultRunOptions: actorTemplate.defaultRunOptions,
                     versions: [{
-                        versionNumber: version,
+                        versionNumber: version || '0.0',
                         buildTag,
                         sourceType: ACT_SOURCE_TYPES.TARBALL,
                         tarballUrl: actorTemplate.archiveUrl,
