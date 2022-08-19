@@ -104,7 +104,7 @@ const getLocalConfig = () => {
 const getLocalConfigOrThrow = async () => {
     let localConfig = getLocalConfig();
     if (!localConfig) {
-        throw new Error('apify.json is missing in current dir! Call "apify init" to create it.');
+        return {};
     }
     // 27-11-2018: Check if apify.json contains old  deprecated structure. If so, updates it.
     if (localConfig.version && _.isObject(localConfig.version)) {
