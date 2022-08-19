@@ -26,13 +26,13 @@ describe('apify call', () => {
         }
         const { username } = await testUserClient.user('me').get();
         await command.run(['login', '--token', TEST_USER_TOKEN]);
-        await command.run(['create', ACTOR_NAME, '--template', 'example_hello_world']);
+        await command.run(['create', ACTOR_NAME, '--template', 'project_empty']);
         process.chdir(ACTOR_NAME);
         const actCode = `
-        const Apify = require('apify');
+        const { Actor } = require('apify');
 
-        Apify.main(async () => {
-            await Apify.setValue('OUTPUT', ${JSON.stringify(EXPECTED_OUTPUT)});
+        Actor.main(async () => {
+            await Actor.setValue('OUTPUT', ${JSON.stringify(EXPECTED_OUTPUT)});
             console.log('Done.');
         });
         `;

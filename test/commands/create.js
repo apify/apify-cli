@@ -8,7 +8,7 @@ const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
 const actName = 'my-act';
-const ACT_TEMPLATE = 'example_hello_world';
+const ACT_TEMPLATE = 'project_empty';
 
 describe('apify create', () => {
     beforeEach(() => {
@@ -37,7 +37,7 @@ describe('apify create', () => {
         expect(fs.existsSync(apifyJsonPath)).to.be.true;
         expect(fs.existsSync(path.join(actName, getLocalKeyValueStorePath(), 'INPUT.json'))).to.be.true;
         expect(loadJson.sync(apifyJsonPath).template).to.be.eql(ACT_TEMPLATE);
-        expect(fs.existsSync('apify_storage')).to.be.false;
+        expect(fs.existsSync('storage')).to.be.false;
     });
 
     afterEach(() => {
