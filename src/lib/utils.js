@@ -13,7 +13,6 @@ const https = require('https');
 const { ApifyClient } = require('apify-client');
 const { execSync, spawnSync } = require('child_process');
 const semver = require('semver');
-const isOnline = require('is-online');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_NAME, INPUT_FILE_REG_EXP, DEFAULT_LOCAL_STORAGE_DIR } = require('./consts');
 const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
 const { warning, info } = require('./outputs');
@@ -257,7 +256,8 @@ const checkLatestVersion = async () => {
         // Run check approximately every 10. call
         if (Math.random() <= 0.8) return;
         // Skip if user is offline
-        if (!await isOnline({ timeout: 500 })) return;
+        const isOnline = await import('is-online');
+        if (!await isOnline.default({ timeout: 500 })) return;
 
         const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
         const currentVersion = require('../../package.json').version; //  eslint-disable-line
