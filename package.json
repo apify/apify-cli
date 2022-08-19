@@ -68,7 +68,7 @@
         "globby": "^11.1.0",
         "got-scraping": "^3.2.9",
         "inquirer": "^7.3.3",
-        "is-online": "^9.0.1",
+        "is-online": "^10.0.0",
         "load-json-file": "^6.2.0",
         "mime": "^2.6.0",
         "minimist": "^1.2.5",
