@@ -24,7 +24,7 @@ class PushCommand extends ApifyCommand {
         let actorId;
         let actor;
         // User can override actor version and build tag, attributes in localConfig will remain same.
-        const version = flags.version || flags.versionNumber || localConfig.version;
+        const version = flags.version || flags.versionNumber || localConfig.version || '0.0';
         const buildTag = flags.buildTag || localConfig.buildTag;
         const waitForFinishMillis = Number.isNaN(flags.waitForFinish)
             ? undefined

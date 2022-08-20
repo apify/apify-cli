@@ -2,9 +2,9 @@ const { ApifyClient } = require('apify-client');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
 const { default: ow } = require('ow');
-const { ApifyStorageLocal } = require('@apify/storage-local');
+const { MemoryStorage } = require('@crawlee/memory-storage');
 const { ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
-const { getLocalUserInfo } = require('./utils');
+const { getLocalUserInfo, getLocalStorageDir } = require('./utils');
 
 const pipelinePromise = promisify(pipeline);
 
@@ -18,17 +18,14 @@ const APIFY_STORAGE_TYPES = {
  * Returns instance of ApifyClient or ApifyStorageLocal based on environment variables.
  * @param options - ApifyClient options
  * @param forceCloud - If true then ApifyClient will be returned.
- * @return {ApifyStorageLocal|ApifyClient}
+ * @return {MemoryStorage|ApifyClient}
  */
 const getApifyStorageClient = (options = {}, forceCloud = false) => {
-    const storageDir = process.env[ENV_VARS.LOCAL_STORAGE_DIR];
+    const storageDir = getLocalStorageDir();
 
     if (storageDir && !forceCloud) {
-        // TODO: APIFY_LOCAL_STORAGE_ENABLE_WAL_MODE is not in shared const.
-        const enableWalMode = !!process.env.APIFY_LOCAL_STORAGE_ENABLE_WAL_MODE;
-        return new ApifyStorageLocal({
+        return new MemoryStorage({
             storageDir,
-            enableWalMode,
             ...options,
         });
     }

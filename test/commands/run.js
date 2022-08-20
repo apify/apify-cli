@@ -19,7 +19,7 @@ describe('apify run', () => {
             this.skip();
             return;
         }
-        await command.run(['create', actName, '--template', 'example_hello_world']);
+        await command.run(['create', actName, '--template', 'project_empty']);
         process.chdir(actName);
     });
 
@@ -28,13 +28,13 @@ describe('apify run', () => {
             my: 'output',
         };
         const actCode = `
-        const Apify = require('apify');
+        const { Actor } = require('apify');
 
-        Apify.main(async () => {
-            const input = await Apify.getInput();
+        Actor.main(async () => {
+            const input = await Actor.getInput();
 
             const output = ${JSON.stringify(expectOutput)};
-            await Apify.setValue('OUTPUT', output);
+            await Actor.setValue('OUTPUT', output);
             console.log('Done.');
         });
         `;
@@ -56,10 +56,10 @@ describe('apify run', () => {
         await command.run(['login', '--token', TEST_USER_TOKEN]);
 
         const actCode = `
-        const Apify = require('apify');
+        const { Actor } = require('apify');
 
-        Apify.main(async () => {
-            await Apify.setValue('OUTPUT', process.env);
+        Actor.main(async () => {
+            await Actor.setValue('OUTPUT', process.env);
             console.log('Done.');
         });
         `;
@@ -93,13 +93,13 @@ describe('apify run', () => {
         writeJson.sync(actInputPath, input);
 
         let actCode = `
-        const Apify = require('apify');
+        const { Actor } = require('apify');
 
-        Apify.main(async () => {
-            await Apify.setValue('TEST', process.env);
-            await Apify.pushData({aa: "bb" });
-            const requestQueue = await Apify.openRequestQueue();
-            await requestQueue.addRequest(new Apify.Request({ url: 'http://example.com/' }));
+        Actor.main(async () => {
+            await Actor.setValue('TEST', process.env);
+            await Actor.pushData({aa: "bb" });
+            const requestQueue = await Actor.openRequestQueue();
+            await requestQueue.addRequest({ url: 'http://example.com/' });
         });
         `;
         fs.writeFileSync('main.js', actCode, { flag: 'w' });
@@ -112,9 +112,9 @@ describe('apify run', () => {
         expect(fs.existsSync(getLocalRequestQueuePath())).to.be.eql(true);
 
         actCode = `
-        const Apify = require('apify');
+        const { Actor } = require('apify');
 
-        Apify.main(async () => {});
+        Actor.main(async () => {});
         `;
         fs.writeFileSync('main.js', actCode, { flag: 'w' });
 
