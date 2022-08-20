@@ -22,7 +22,7 @@ However, we recommend using JavaScript / Node.js, for which we provide most libr
 
 ## Installation
 
-First, make sure you have [Node.js](https://nodejs.org) version 12 or higher with NPM installed on your computer:
+First, make sure you have [Node.js](https://nodejs.org) version 16 or higher with NPM installed on your computer:
 
 ```bash
 node --version
@@ -44,8 +44,8 @@ sudo npm -g install apify-cli
 Alternativaly, you can use [Node Version Manager (nvm)](https://github.com/nvm-sh/nvm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
 
 ```
-nvm install 12
-nvm use 12
+nvm install 16
+nvm use 16
 npm -g install apify-cli
 ```
 
@@ -57,7 +57,7 @@ apify --version
 
 which should print something like:
 ```
-apify-cli/0.5.3 darwin-x64 node-v12.16.1
+apify-cli/0.8.0 darwin-x64 node-v16.16.0
 ```
 
 ## Basic usage
@@ -359,7 +359,7 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It 
+  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It
   takes input for the actor from the default local key-value store by default.
 ```
 
@@ -410,7 +410,7 @@ ARGUMENTS
   ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "storage" directory in the current directory, but will not 
+  The command only creates the "apify.json" file and the "storage" directory in the current directory, but will not
   touch anything else.
 
   WARNING: The directory at "storage" will be overwritten if it already exists.
@@ -430,7 +430,7 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other 
+  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other
   "apify" commands. To log out, call "apify logout".
 ```
 
@@ -476,9 +476,9 @@ OPTIONS
                                          should be pushed. By default, it is taken from the "apify.json" file.
 
 DESCRIPTION
-  The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using 
+  The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using
   command-line options.
-  NOTE: If the source files are smaller than 3 MB then they are uploaded as 
+  NOTE: If the source files are smaller than 3 MB then they are uploaded as
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
@@ -510,7 +510,7 @@ DESCRIPTION
    example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
    stored in the "storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You 
+  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You
   can set up your own main file or environment variables by changing it.
 ```
 
