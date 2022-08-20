@@ -34,8 +34,8 @@ class RunCommand extends ApifyCommand {
 
         if (fs.existsSync(LEGACY_LOCAL_STORAGE_DIR) && !fs.existsSync(DEFAULT_LOCAL_STORAGE_DIR)) {
             fs.renameSync(LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR);
-            warning("The legacy 'apify_storage' directory was renamed to 'storage' to align it with Apify SDK v3." +
-                " Contents were left intact.");
+            warning("The legacy 'apify_storage' directory was renamed to 'storage' to align it with Apify SDK v3."
+                + ' Contents were left intact.');
         }
 
         // Purge stores

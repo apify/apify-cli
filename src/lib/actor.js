@@ -21,7 +21,7 @@ const APIFY_STORAGE_TYPES = {
  * @return {MemoryStorage|ApifyClient}
  */
 const getApifyStorageClient = (options = {}, forceCloud = false) => {
-    const storageDir = getLocalStorageDir()
+    const storageDir = getLocalStorageDir();
 
     if (storageDir && !forceCloud) {
         return new MemoryStorage({
