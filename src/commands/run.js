@@ -5,7 +5,7 @@ const loadJson = require('load-json-file');
 const { ENV_VARS } = require('@apify/consts');
 const semver = require('semver');
 const execWithLog = require('../lib/exec');
-const { DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
+const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
@@ -31,6 +31,13 @@ class RunCommand extends ApifyCommand {
             throw new Error('The "npm start" script was not found in package.json. Please set it up for your project. '
                 + 'For more information about that call "apify help run".');
         }
+
+        if (fs.existsSync(LEGACY_LOCAL_STORAGE_DIR) && !fs.existsSync(DEFAULT_LOCAL_STORAGE_DIR)) {
+            fs.renameSync(LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR);
+            warning("The legacy 'apify_storage' directory was renamed to 'storage' to align it with Apify SDK v3." +
+                " Contents were left intact.");
+        }
+
         // Purge stores
         if (flags.purge) {
             await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
@@ -49,12 +56,11 @@ class RunCommand extends ApifyCommand {
             info('Default local key-value store was purged.');
         }
 
-        // Check if apify storage were purge, if not print error
         if (!flags.purge) {
             const isStorageEmpty = await checkIfStorageIsEmpty();
             if (!isStorageEmpty) {
-                warning('The apify_storage directory contains a previous state, the actor will continue where it left off. '
-                    + 'To start from the initial state, use --purge parameter to clean the apify_storage directory.');
+                warning('The storage directory contains a previous state, the actor will continue where it left off. '
+                    + 'To start from the initial state, use --purge parameter to clean the storage directory.');
             }
         }
 
