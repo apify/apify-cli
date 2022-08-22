@@ -49,7 +49,7 @@ class PushCommand extends ApifyCommand {
             } else {
                 const { templates } = await actorTemplates.fetchManifest();
                 const actorTemplate = templates.find((t) => t.name === localConfig.template);
-                const defaultRunOptions = actorTemplate.defaultRunOptions || DEFAULT_RUN_OPTIONS;
+                const defaultRunOptions = actorTemplate?.defaultRunOptions || DEFAULT_RUN_OPTIONS;
                 const newActor = {
                     name: localConfig.name,
                     defaultRunOptions,
