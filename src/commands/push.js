@@ -13,6 +13,11 @@ const { transformEnvToEnvVars } = require('../lib/secrets');
 const outputs = require('../lib/outputs');
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
+const DEFAULT_RUN_OPTIONS = {
+    build: 'latest',
+    memoryMbytes: 4096,
+    timeoutSecs: 3600,
+};
 
 class PushCommand extends ApifyCommand {
     async run() {
@@ -43,16 +48,16 @@ class PushCommand extends ApifyCommand {
                 actorId = actor.id;
             } else {
                 const { templates } = await actorTemplates.fetchManifest();
-                let actorTemplate = templates.find((t) => t.name === localConfig.template);
-                if (!actorTemplate) [actorTemplate] = templates;
+                const actorTemplate = templates.find((t) => t.name === localConfig.template);
+                const defaultRunOptions = actorTemplate.defaultRunOptions || DEFAULT_RUN_OPTIONS;
                 const newActor = {
                     name: localConfig.name,
-                    defaultRunOptions: actorTemplate.defaultRunOptions,
+                    defaultRunOptions,
                     versions: [{
                         versionNumber: version,
                         buildTag,
-                        sourceType: ACT_SOURCE_TYPES.TARBALL,
-                        tarballUrl: actorTemplate.archiveUrl,
+                        sourceType: ACT_SOURCE_TYPES.SOURCE_FILES,
+                        sourceFiles: [],
                     }],
                 };
                 actor = await apifyClient.actors().create(newActor);
