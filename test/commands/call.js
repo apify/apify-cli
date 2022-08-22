@@ -48,7 +48,7 @@ describe('apify call', () => {
 
         // For some reason tests were failing with nonexisting build with "LATEST" tag.
         // Adding some sleep here as attempt to fix this.
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 10000));
     });
 
     it('without actId', async () => {
