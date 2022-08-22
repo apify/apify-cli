@@ -29,7 +29,7 @@ describe('apify call', () => {
         await command.run(['create', ACTOR_NAME, '--template', 'project_empty']);
         process.chdir(ACTOR_NAME);
         const actCode = `
-        const { Actor } = require('apify');
+        import { Actor } from 'apify';
 
         Actor.main(async () => {
             await Actor.setValue('OUTPUT', ${JSON.stringify(EXPECTED_OUTPUT)});

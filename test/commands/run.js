@@ -28,7 +28,7 @@ describe('apify run', () => {
             my: 'output',
         };
         const actCode = `
-        const { Actor } = require('apify');
+        import { Actor } from 'apify';
 
         Actor.main(async () => {
             const input = await Actor.getInput();
@@ -56,7 +56,7 @@ describe('apify run', () => {
         await command.run(['login', '--token', TEST_USER_TOKEN]);
 
         const actCode = `
-        const { Actor } = require('apify');
+        import { Actor } from 'apify';
 
         Actor.main(async () => {
             await Actor.setValue('OUTPUT', process.env);
@@ -93,7 +93,7 @@ describe('apify run', () => {
         writeJson.sync(actInputPath, input);
 
         let actCode = `
-        const { Actor } = require('apify');
+        import { Actor } from 'apify';
 
         Actor.main(async () => {
             await Actor.setValue('TEST', process.env);
@@ -112,7 +112,7 @@ describe('apify run', () => {
         expect(fs.existsSync(getLocalRequestQueuePath())).to.be.eql(true);
 
         actCode = `
-        const { Actor } = require('apify');
+        import { Actor } from 'apify';
 
         Actor.main(async () => {});
         `;
