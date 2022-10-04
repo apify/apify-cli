@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const mime = require('mime');
+const { getEncoding } = require('istextorbinary');
 const _ = require('underscore');
 const globby = require('globby');
 const archiver = require('archiver-promise');
@@ -174,21 +175,39 @@ const argsToCamelCase = (object) => {
     return camelCasedObject;
 };
 
-const createSourceFiles = async (paths) => {
-    return paths.map((filePath) => {
-        const file = fs.readFileSync(filePath);
-        const contentType = mime.getType(filePath) || 'text/plain';
-        // TODO: Use better check if file is text content
-        const format = (contentType.startsWith('text/')
+// Detect whether file is binary from its MIME type, or if not available, contents
+const getSourceFileFormat = (filePath, fileContent) => {
+    // Try to detect the MIME type from the file path
+    // .tgz files don't have a MIME type defined, this fixes it
+    mime.define({ 'application/gzip': ['tgz'] }, true);
+    // Default mime-type for .ts(x) files is video/mp2t. But in our usecases they're almost always TypeScript, which we want to treat as text
+    mime.define({ 'text/typescript': ['ts', 'tsx', 'mts'] }, true);
+
+    const contentType = mime.getType(filePath);
+    if (contentType) {
+        const format = (
+            contentType.startsWith('text/')
             || contentType.includes('javascript')
             || contentType.includes('json')
             || contentType.includes('xml')
-            // Detected mime-type for .ts(x) files is video/mp2t. But for us it's almost always typescript, which we want to treat as text
-            || filePath.endsWith('.ts')
-            || filePath.endsWith('.tsx')
+            || contentType.includes('application/node') // .cjs files
+            || contentType.includes('application/toml') // for example pyproject.toml files
+            || contentType.includes('application/x-httpd-php') // .php files
         )
             ? SOURCE_FILE_FORMATS.TEXT
             : SOURCE_FILE_FORMATS.BASE64;
+        return format;
+    }
+
+    // If the MIME type detection failed, try to detect the file encoding from the file content
+    const encoding = getEncoding(fileContent);
+    return encoding === 'binary' ? SOURCE_FILE_FORMATS.BASE64 : SOURCE_FILE_FORMATS.TEXT;
+};
+
+const createSourceFiles = async (paths) => {
+    return paths.map((filePath) => {
+        const file = fs.readFileSync(filePath);
+        const format = getSourceFileFormat(filePath, file);
         return {
             name: filePath,
             format,
