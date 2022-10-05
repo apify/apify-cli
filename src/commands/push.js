@@ -136,7 +136,6 @@ class PushCommand extends ApifyCommand {
         }
 
         build = await apifyClient.build(build.id).get();
-        console.dir(build);
 
         outputs.link('Actor build detail', `https://console.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
 
