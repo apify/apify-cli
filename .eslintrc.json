@@ -1,6 +1,3 @@
 {
-    "extends": "@apify",
-    "parserOptions": {
-        "ecmaVersion": 2022
-    }
+    "extends": "@apify"
 }

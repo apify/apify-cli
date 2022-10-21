@@ -11,9 +11,6 @@ const DEFAULT_INPUT_SCHEMA_PATH = './INPUT_SCHEMA.json';
 const INPUT_SCHEMA_EDITOR_BASE_URL = `https://apify.github.io/input-schema-editor-react/`;
 
 class EditInputSchemaCommand extends ApifyCommand {
-    static hidden = true;
-    static aliases = ['eis']
-
     async run() {
         const { args } = this.parse(EditInputSchemaCommand);
         const { path = DEFAULT_INPUT_SCHEMA_PATH } = args;
@@ -114,5 +111,9 @@ EditInputSchemaCommand.args = [
         description: 'Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.',
     },
 ];
+
+EditInputSchemaCommand.hidden = true;
+
+EditInputSchemaCommand.aliases = ['eis'];
 
 module.exports = EditInputSchemaCommand;
