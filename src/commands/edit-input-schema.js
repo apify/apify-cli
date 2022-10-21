@@ -9,6 +9,7 @@ const outputs = require('../lib/outputs');
 
 const DEFAULT_INPUT_SCHEMA_PATH = './INPUT_SCHEMA.json';
 const INPUT_SCHEMA_EDITOR_BASE_URL = `https://apify.github.io/input-schema-editor-react/`;
+const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
 
 class EditInputSchemaCommand extends ApifyCommand {
     async run() {
@@ -25,8 +26,8 @@ class EditInputSchemaCommand extends ApifyCommand {
         const app = express();
         app.use(express.json());
         app.use((req, res, next) => {
-            res.header('Access-Control-Allow-Origin', '*');
-            res.header('Access-Control-Allow-Headers', '*');
+            res.header('Access-Control-Allow-Origin', INPUT_SCHEMA_EDITOR_ORIGIN);
+            res.header('Access-Control-Allow-Headers', 'Content-Type');
             res.set('Connection', 'close');
             next();
         });
