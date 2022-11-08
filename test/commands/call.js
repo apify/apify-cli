@@ -2,7 +2,6 @@ const { expect } = require('chai');
 const path = require('path');
 const fs = require('fs');
 const command = require('@oclif/command');
-const { ACT_JOB_STATUSES } = require('@apify/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
@@ -16,35 +15,6 @@ const EXPECTED_INPUT = {
     myTestInput: Math.random(),
 };
 const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
-
-/**
- * Waits for the build to finish
- *
- * @param {Object} client
- * @param {String} buildId
- * @returns {Object}
- */
-const waitForBuildToFinish = async (client, buildId) => {
-    while (true) {
-        const build = await client.build(buildId).get();
-        if (build.status !== ACT_JOB_STATUSES.RUNNING) return build;
-        await new Promise((resolve) => setTimeout(resolve, 2500));
-    }
-};
-
-/**
- * Waits for build to finish with timeout, throws an error on timeout
- *
- * @param {Object} client
- * @param {String} buildId
- * @param {Number} timeoutSecs
- */
-const waitForBuildToFinishWithTimeout = async (client, buildId, timeoutSecs = 60) => {
-    const buildPromise = waitForBuildToFinish(client, buildId);
-    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(false), timeoutSecs * 1000));
-    const result = await Promise.race([buildPromise, timeoutPromise]);
-    if (!result) throw new Error(`Timedout after ${timeoutSecs} seconds`);
-};
 
 let actorId;
 describe('apify call', () => {
@@ -76,10 +46,9 @@ describe('apify call', () => {
 
         actorId = `${username}/${ACTOR_NAME}`;
 
-        // Build must finish before doing `apify call`, otherwise we would get nonexisting build with "LATEST" tag error.
-        const builds = await testUserClient.actor(actorId).builds().list();
-        const lastBuild = builds.items.pop();
-        await waitForBuildToFinishWithTimeout(testUserClient, lastBuild.id);
+        // For some reason tests were failing with nonexisting build with "LATEST" tag.
+        // Adding some sleep here as attempt to fix this.
+        await new Promise((resolve) => setTimeout(resolve, 10000));
     });
 
     it('without actId', async () => {
