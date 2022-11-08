@@ -123,7 +123,7 @@ CallCommand.args = [
         name: 'actId',
         required: false,
         description: 'Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
-            + 'If not provided, the command runs the remote actor specified in the "apify.json" file.',
+            + 'If not provided, the command runs the remote actor specified in the ".actor/actor.json" file.',
     },
 ];
 

@@ -81,7 +81,7 @@ cd ./my/awesome/project
 apify init
 ```
 This command will only set up local actor development environment in an existing directory,
-i.e. it will create the `apify.json` file and `apify_storage` directory.
+i.e. it will create the `.actor/actor.json` file and `apify_storage` directory.
 
 Before you can run your project using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
 ```text
@@ -139,24 +139,24 @@ This command can also be used to run other actors, for example:
 apify call apify/hello-world
 ```
 
-### So what's in this `apify.json` file?
+### So what's in this `.actor/actor.json` file?
 
 This file associates your local development project with an actor on the Apify platform.
 It contains information such as actor name, version, build tag and environment variables.
 Make sure you commit this file to the Git repository.
 
-For example, `apify.json` file can look as follows:
+For example, `.actor/actor.json` file can look as follows:
 
 ```json
 {
+    "actorSpecification": 1,
     "name": "dataset-to-mysql",
     "version": "0.1",
     "buildTag": "latest",
-    "env": {
+    "environmentVariables": {
       "MYSQL_USER": "my_username",
       "MYSQL_PASSWORD": "@mySecretPassword"
-    },
-    "template": "basic"
+    }
 }
 ```
 
@@ -164,48 +164,48 @@ For example, `apify.json` file can look as follows:
 
 There are two options how you can set up environment variables for actors.
 
-### Set up environment variables in `apify.json`
+### Set up environment variables in `.actor/actor.json`
 All keys from `env` will be set as environment variables into Apify platform after you push actor to Apify. Current values on Apify will be overridden.
 ```json
 {
+    "actorSpecification": 1,
     "name": "dataset-to-mysql",
     "version": "0.1",
     "buildTag": "latest",
-    "env": {
+    "environmentVariables": {
       "MYSQL_USER": "my_username",
       "MYSQL_PASSWORD": "@mySecretPassword"
-    },
-    "template": "basic"
+    }
 }
 ```
 
 ### Set up environment variables in Apify Console
 In [Apify Console](https://console.apify.com/actors) select your actor, you can set up variables into Source tab.
-After setting up variables in the app, set up `env` to `null` apify.json. Otherwise, variables from `apify.json` will override variables in the app.
+After setting up variables in the app, remove the `environmentVariables` from `.actor/actor.json`. Otherwise, variables from `.actor/actor.json` will override variables in the app.
 ```json
 {
+    "actorSpecification": 1,
     "name": "dataset-to-mysql",
     "version": "0.1",
-    "buildTag": "latest",
-    "env": null,
-    "template": "basic"
+    "buildTag": "latest"
 }
 ```
 
 
-#### How to set secret environment variables in `apify.json`
+#### How to set secret environment variables in `.actor/actor.json`
 
 CLI provides commands to manage secrets environment variables. Secrets are stored to the ~/.apify directory.
 Adds a new secret using command:
 ```bash
 apify secrets:add mySecretPassword pwd1234
 ```
-After adding a new secret you can use the secret in apify.json
+After adding a new secret you can use the secret in `.actor/actor.json`
 ```text
 {
+    "actorSpecification": 1,
     "name": "dataset-to-mysql",
     ...
-    "env": {
+    "environmentVariables": {
       "MYSQL_PASSWORD": "@mySecretPassword"
     },
     ...
@@ -350,7 +350,7 @@ USAGE
 
 ARGUMENTS
   ACTID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command
-         runs the remote actor specified in the "apify.json" file.
+         runs the remote actor specified in the ".actor/actor.json" file.
 
 OPTIONS
   -b, --build=build                      Tag or number of the build to run (e.g. "latest" or "1.2.34").
@@ -359,7 +359,7 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It 
+  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It
   takes input for the actor from the default local key-value store by default.
 ```
 
@@ -410,7 +410,7 @@ ARGUMENTS
   ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "storage" directory in the current directory, but will not 
+  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will not
   touch anything else.
 
   WARNING: The directory at "storage" will be overwritten if it already exists.
@@ -430,7 +430,7 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other 
+  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other
   "apify" commands. To log out, call "apify logout".
 ```
 
@@ -461,24 +461,24 @@ USAGE
 
 ARGUMENTS
   ACTORID  ID of an existing actor on the Apify platform where the files will be pushed. If not provided, the command
-           will create or modify the actor with the name specified in "apify.json" file.
+           will create or modify the actor with the name specified in ".actor/actor.json" file.
 
 OPTIONS
   -b, --build-tag=build-tag              Build tag to be applied to the successful actor build. By default, it is taken
-                                         from the "apify.json" file
+                                         from the ".actor/actor.json" file
 
   -v, --version=version                  Actor version number to which the files should be pushed. By default, it is
-                                         taken from the "apify.json" file.
+                                         taken from the ".actor/actor.json" file.
 
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to build to finish, if no value passed, it waits forever.
 
   --version-number=version-number        DEPRECATED: Use flag version instead. Actor version number to which the files
-                                         should be pushed. By default, it is taken from the "apify.json" file.
+                                         should be pushed. By default, it is taken from the ".actor/actor.json" file.
 
 DESCRIPTION
-  The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using 
+  The actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden using
   command-line options.
-  NOTE: If the source files are smaller than 3 MB then they are uploaded as 
+  NOTE: If the source files are smaller than 3 MB then they are uploaded as
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
@@ -510,7 +510,7 @@ DESCRIPTION
    example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
    stored in the "storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You 
+  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You
   can set up your own main file or environment variables by changing it.
 ```
 
@@ -528,11 +528,12 @@ DESCRIPTION
   Example:
   $ apify secrets:add mySecret TopSecretValue123
 
-  Now the "mySecret" value can be used in an environment variable defined in "apify.json" file by adding the "@" prefix:
+  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@" prefix:
 
   {
+    "actorSpecification": 1,
     "name": "my_actor",
-    "env": { "SECRET_ENV_VAR": "@mySecret" },
+    "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" },
     "version": "0.1
   }
 
