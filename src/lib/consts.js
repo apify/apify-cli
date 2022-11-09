@@ -6,8 +6,10 @@ exports.DEFAULT_LOCAL_STORAGE_DIR = 'storage';
 
 exports.LEGACY_LOCAL_STORAGE_DIR = 'apify_storage';
 
+exports.ACTOR_SPECIFICATION_VERSION = 1;
+
 exports.EMPTY_LOCAL_CONFIG = {
-    actorSpecification: 1,
+    actorSpecification: exports.ACTOR_SPECIFICATION_VERSION,
     name: null,
     version: '0.0',
     buildTag: 'latest',

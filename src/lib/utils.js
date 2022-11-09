@@ -21,9 +21,13 @@ const {
     DEFAULT_LOCAL_STORAGE_DIR,
     LOCAL_CONFIG_PATH,
     DEPRECATED_LOCAL_CONFIG_NAME,
+    ACTOR_SPECIFICATION_VERSION,
 } = require('./consts');
 const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
 const { warning, info } = require('./outputs');
+
+// Properties from apify.json file that will me migrated to actor specs in .actor/actor.json
+const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'title', 'version', 'buildTag', 'description'];
 
 const getLocalStorageDir = () => {
     const envVar = ENV_VARS.LOCAL_STORAGE_DIR;
@@ -100,6 +104,10 @@ const getLoggedClient = async (token) => {
 
 const getLocalConfigPath = () => path.join(process.cwd(), LOCAL_CONFIG_PATH);
 
+/**
+ * @deprecated Use getLocalConfigPath
+ * @returns {string}
+ */
 const getDeprecatedLocalConfigPath = () => path.join(process.cwd(), DEPRECATED_LOCAL_CONFIG_NAME);
 
 const getJsonFileContent = (filePath) => {
@@ -111,6 +119,10 @@ const getJsonFileContent = (filePath) => {
 
 const getLocalConfig = () => getJsonFileContent(getLocalConfigPath());
 
+/**
+ * @deprecated Use getLocalConfig
+ * @returns {string}
+ */
 const getDeprecatedLocalConfig = () => getJsonFileContent(getDeprecatedLocalConfigPath());
 
 const getLocalConfigOrThrow = async () => {
@@ -128,7 +140,7 @@ const getLocalConfigOrThrow = async () => {
             // eslint-disable-next-line max-len
             message: 'The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Your "apify.json" file will be automatically updated to the new format.',
         }]);
-        if (answer.isConfirm) {
+        if (!answer.isConfirm) {
             throw new Error('Command can not run with old apify.json structure. '
                 + 'Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
         }
@@ -138,9 +150,9 @@ const getLocalConfigOrThrow = async () => {
                 deprecatedLocalConfig = updateLocalConfigStructure(deprecatedLocalConfig);
             }
             localConfig = {
-                actorSpecification: 1,
+                actorSpecification: ACTOR_SPECIFICATION_VERSION,
                 environmentVariables: deprecatedLocalConfig.env || undefined,
-                ..._.pick(deprecatedLocalConfig, 'name', 'title', 'version', 'buildTag', 'description'),
+                ..._.pick(deprecatedLocalConfig, MIGRATED_APIFY_JSON_PROPERTIES),
             };
 
             // TODO: Maybe remove the apify.json? Or leave it up to the user...
