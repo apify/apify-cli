@@ -94,15 +94,17 @@ class PushCommand extends ApifyCommand {
                 contentType: 'application/zip',
             });
             fs.unlinkSync(TEMP_ZIP_FILE_NAME);
-            tarballUrl = `https://api.apify.com/v2/key-value-stores/${store.id}/records/${key}?disableRedirect=true`;
+            tarballUrl = `${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`;
             sourceType = ACT_SOURCE_TYPES.TARBALL;
         }
 
         // Update actor version
         const actorCurrentVersion = await actorClient.version(version).get();
+        const envVars = localConfig.environmentVariables
+            ? transformEnvToEnvVars(localConfig.environmentVariables)
+            : undefined;
         if (actorCurrentVersion) {
-            const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType };
-            if (localConfig.env) actorVersionModifier.envVars = transformEnvToEnvVars(localConfig.env);
+            const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
             await actorClient.version(version).update(actorVersionModifier);
             outputs.run(`Updated version ${version} for ${actor.name} actor.`);
         } else {
@@ -112,8 +114,8 @@ class PushCommand extends ApifyCommand {
                 sourceFiles,
                 buildTag,
                 sourceType,
+                envVars,
             };
-            if (localConfig.env) actorNewVersion.envVars = transformEnvToEnvVars(localConfig.env);
             await actorClient.versions().create({
                 versionNumber: version,
                 ...actorNewVersion,

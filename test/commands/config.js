@@ -9,10 +9,12 @@ if (!TEST_USER_TOKEN) {
 
 exports.testUserClient = new ApifyClient({
     token: TEST_USER_TOKEN,
+    baseUrl: process.env.APIFY_CLIENT_BASE_URL,
 });
 
 exports.badUserClient = new ApifyClient({
     token: TEST_USER_BAD_TOKEN,
+    baseUrl: process.env.APIFY_CLIENT_BASE_URL,
 });
 
 exports.TEST_USER_TOKEN = TEST_USER_TOKEN;

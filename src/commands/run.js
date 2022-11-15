@@ -71,8 +71,8 @@ class RunCommand extends ApifyCommand {
         if (proxy && proxy.password) localEnvVars[ENV_VARS.PROXY_PASSWORD] = proxy.password;
         if (userId) localEnvVars[ENV_VARS.USER_ID] = userId;
         if (token) localEnvVars[ENV_VARS.TOKEN] = token;
-        if (localConfig.env) {
-            const updatedEnv = replaceSecretsValue(localConfig.env);
+        if (localConfig.environmentVariables) {
+            const updatedEnv = replaceSecretsValue(localConfig.environmentVariables);
             Object.assign(localEnvVars, updatedEnv);
         }
         // NOTE: User can overwrite env vars

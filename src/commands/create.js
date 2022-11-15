@@ -9,7 +9,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
-const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName } = require('../lib/utils');
+const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName, getLocalConfig } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG } = require('../lib/consts');
 
 class CreateCommand extends ApifyCommand {
@@ -78,7 +78,9 @@ class CreateCommand extends ApifyCommand {
         const unzip = unzipper.Extract({ path: actFolderDir });
         await zipStream.pipe(unzip).promise();
 
-        await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actorName, template: templateName }), actFolderDir);
+        // There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
+        const localConfig = await getLocalConfig();
+        await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), actFolderDir);
         await setLocalEnv(actFolderDir);
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actorName });
 
