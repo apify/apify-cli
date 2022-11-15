@@ -1,15 +1,22 @@
 const fs = require('fs');
 
+const cors = require('cors');
 const detectIndent = require('detect-indent');
 const express = require('express');
 const open = require('open');
 
+const { cryptoRandomObjectId } = require('@apify/utilities');
+
 const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
 
-const DEFAULT_INPUT_SCHEMA_PATH = './INPUT_SCHEMA.json';
-const INPUT_SCHEMA_EDITOR_BASE_URL = `https://apify.github.io/input-schema-editor-react/`;
+const INPUT_SCHEMA_EDITOR_BASE_URL = 'https://apify.github.io/input-schema-editor-react/';
 const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
+
+const DEFAULT_INPUT_SCHEMA_PATH = './INPUT_SCHEMA.json';
+
+// Not really checked right now, but it might come useful if we ever need to do some breaking changes
+const API_VERSION = 'v1';
 
 class EditInputSchemaCommand extends ApifyCommand {
     async run() {
@@ -20,19 +27,53 @@ class EditInputSchemaCommand extends ApifyCommand {
         outputs.info(`Editing input schema at "${path}"...`);
 
         let server;
-        let jsonIndentation = '    ';
-        let appendFinalNewline = true;
-
         const app = express();
-        app.use(express.json());
+
+        // To send requests from browser to localhost, CORS has to be configured properly
+        app.use(cors({
+            origin: INPUT_SCHEMA_EDITOR_ORIGIN,
+            allowedHeaders: ['Content-Type', 'Authorization'],
+        }));
+
+        // Turn off keepalive, otherwise closing the server when command is finished is lagging
         app.use((req, res, next) => {
-            res.header('Access-Control-Allow-Origin', INPUT_SCHEMA_EDITOR_ORIGIN);
-            res.header('Access-Control-Allow-Headers', 'Content-Type');
             res.set('Connection', 'close');
             next();
         });
 
-        app.get('/api/input-schema', (req, res) => {
+        app.use(express.json());
+
+        // Basic authorization via a random token, which is passed to the input schema editor,
+        // and that sends it back via the `token` query param, or `Authorization` header
+        const authToken = cryptoRandomObjectId();
+        app.use((req, res, next) => {
+            let { token } = req.query;
+            if (!token) {
+                const authorizationHeader = req.get('Authorization');
+                if (authorizationHeader) {
+                    const [schema, tokenFromHeader, ...extra] = authorizationHeader.trim().split(/\s+/);
+                    if (schema.toLowerCase() === 'bearer' && tokenFromHeader && extra.length === 0) {
+                        token = tokenFromHeader;
+                    }
+                }
+            }
+
+            if (token !== authToken) {
+                res.status(401);
+                res.send('Authorization failed');
+            } else {
+                next();
+            }
+        });
+
+        const apiRouter = express.Router();
+        app.use(`/api/${API_VERSION}`, apiRouter);
+
+        // We detect the format of the input schema JSON, so that updating it does not cause too many changes
+        let jsonIndentation = '    ';
+        let appendFinalNewline = true;
+
+        apiRouter.get('/input-schema', (req, res) => {
             let inputSchemaStr;
             try {
                 inputSchemaStr = fs.readFileSync(path, { encoding: 'utf-8', flag: 'a+' });
@@ -66,7 +107,7 @@ class EditInputSchemaCommand extends ApifyCommand {
             outputs.info('Input schema sent to editor.');
         });
 
-        app.post('/api/input-schema', (req, res) => {
+        apiRouter.post('/input-schema', (req, res) => {
             try {
                 outputs.info('Got input schema from editor...');
                 const inputSchemaObj = req.body;
@@ -83,7 +124,7 @@ class EditInputSchemaCommand extends ApifyCommand {
             }
         });
 
-        app.post('/api/exit', (req, res) => {
+        apiRouter.post('/exit', (req, res) => {
             if (req.body.isWindowClosed) {
                 outputs.info('Editor closed, finishing...');
             } else {
@@ -93,11 +134,12 @@ class EditInputSchemaCommand extends ApifyCommand {
             server.close(() => outputs.success('Done.'));
         });
 
+        // Listening on port 0 will assign a random available port
         server = app.listen(0);
         const { port } = server.address();
         outputs.info(`Listening for messages from input schema editor on port ${port}...`);
 
-        const editorUrl = `${INPUT_SCHEMA_EDITOR_BASE_URL}?localCliPort=${port}`;
+        const editorUrl = `${INPUT_SCHEMA_EDITOR_BASE_URL}?localCliPort=${port}&localCliToken=${authToken}&localCliApiVersion=${API_VERSION}`;
         outputs.info(`Opening input schema editor at "${editorUrl}"...`);
         await open(editorUrl);
     }
