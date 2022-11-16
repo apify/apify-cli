@@ -27,7 +27,7 @@ const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files'
 const { warning, info } = require('./outputs');
 
 // Properties from apify.json file that will me migrated to actor specs in .actor/actor.json
-const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'title', 'version', 'buildTag', 'description'];
+const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
 
 const getLocalStorageDir = () => {
     const envVar = ENV_VARS.LOCAL_STORAGE_DIR;
@@ -155,9 +155,12 @@ const getLocalConfigOrThrow = async () => {
                 ..._.pick(deprecatedLocalConfig, MIGRATED_APIFY_JSON_PROPERTIES),
             };
 
-            // TODO: Maybe remove the apify.json? Or leave it up to the user...
             writeJson.sync(getLocalConfigPath(), localConfig);
-            info('.actor/actor.json was created, do not forget to commit the new version to Git repository.');
+            fs.renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
+            info(`apify.json has been migrated to .actor/actor.json and renamed to apify.json.deprecated.
+The deprecated file is no longer used by the CLI or the Apify console.
+If you do not need it for some specific purpose, it can be safely deleted.
+Do not forget to check the new file to your Git repository.`);
         } catch (e) {
             throw new Error('Can not update .actor/actor.json structure. '
                 + 'Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
