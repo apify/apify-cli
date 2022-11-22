@@ -160,7 +160,7 @@ const getLocalConfigOrThrow = async () => {
             info(`apify.json has been migrated to .actor/actor.json and renamed to apify.json.deprecated.
 The deprecated file is no longer used by the CLI or the Apify console.
 If you do not need it for some specific purpose, it can be safely deleted.
-Do not forget to check the new file to your Git repository.`);
+Do not forget to commit the new file to your Git repository.`);
         } catch (e) {
             throw new Error('Can not update .actor/actor.json structure. '
                 + 'Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');

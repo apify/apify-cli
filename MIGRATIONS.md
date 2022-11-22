@@ -1,4 +1,4 @@
-# Migration from 0.3.x to 0.4.0
+# Migration from 0.9.x to 0.10.0
 ## Breaking change: deprecating apify.json in favor of .actor/actor.json
 The actor config previously stored in `apify.json` has been deprecated in favor of `.actor/actor.json`. The new config
 follows very similar structure and it looks as follows
