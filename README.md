@@ -577,14 +577,14 @@ _See code: [src/commands/secrets/rm.js](https://github.com/apify/apify-cli/blob/
 
 ## `apify vis [PATH]`
 
-Validates INPUT_SCHEMA.json file and prints errors found.
+Validates input schema file and prints errors found.
 
 ```
 USAGE
   $ apify vis [PATH]
 
 ARGUMENTS
-  PATH  Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.
+  PATH  Optional path to your INPUT_SCHEMA.json file. If not provided input schema from platform default location is used (see --help for default locations in order of preference).
 ```
 
 _See code: [src/commands/vis.js](https://github.com/apify/apify-cli/blob/v0.9.0/src/commands/vis.js)_
