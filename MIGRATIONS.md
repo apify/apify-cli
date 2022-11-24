@@ -1,3 +1,29 @@
+# Migration from 0.9.x to 0.10.0
+## Breaking change: deprecating apify.json in favor of .actor/actor.json
+The actor config previously stored in `apify.json` has been deprecated in favor of `.actor/actor.json`. The new config
+follows very similar structure and it looks as follows
+```json
+{
+  "actorSpecification": 1,
+  "name": "name-of-my-scraper", // same as before
+  "version": "0.0", // same as before
+  "buildTag": "latest", // same as before
+  "environmentVariables": {}, // same as 'env' field before
+  "dockerfile": "./Dockerfile", // if omitted, it checks "./Dockerfile" and "../Dockerfile"
+  "readme": "./ACTOR.md", // if omitted, it checks "./ACTOR.md", "./README.md" and "../README.md"
+  "input": "./input_schema.json", // either embedded object or path to json. If omitted, it checks ./INPUT_SCHEMA.json and ../INPUT_SCHEMA.json
+  "storages": {
+    "dataset": "./dataset_schema.json", // either embedded object or path to json
+  }
+}
+```
+
+When running any CLI script that uses the config, you will be prompted to automatically migrate the old format to the new format in order to proceed.
+Alternatively, you can always update it manually. The old config apify.json can be safely deleted after migration unless you store in there some
+information specific for your use case.
+
+All commands will then honor the new config stored in .actor/actor.json.
+
 # Migration from 0.2.x to 0.3.0
 
 ## Breaking change 1: Simplified apify.json
