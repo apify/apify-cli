@@ -22,15 +22,17 @@ Only users with access to [apify-cli package](https://www.npmjs.com/package/apif
 
 Release of new versions is managed by GitHub Actions. On pushes to the master branch, prerelease versions are automatically produced. Latest releases are triggered manually through the GitHub release tool. After creating a release there, Actions will automatically produce the latest version of the package.
 
-1. Before publishing new version you have to generate and commit production `npm-shrinkwrap.json`
-`npm run prod-shrinkwrap`
-NOTE: File `package-lock.json` will be completely ignored during package publishing. Using `npm-shrinkwrap.json` will correctly lock dependencies.
+1. Manually increment version in `package.json`
 
 2. Create manifest file `npm run manifest`
 
 3. Generate command reference to `README.md`:
 `npm run commands-md`
 
-4. GitHub Actions build is triggered by a push to `master` (typically a merge of a PR). If it breaks with a `version already exists error` increment version in `package.json` and push again.
+4. Before publishing new version you have to generate and commit production `npm-shrinkwrap.json`
+`npm run prod-shrinkwrap`
+NOTE: File `package-lock.json` will be completely ignored during package publishing. Using `npm-shrinkwrap.json` will correctly lock dependencies.
 
-5. To trigger the latest release, go to the GitHub release tool (select `releases` under `<> Code`). There, draft a new release, fill the form and hit `Publish release`. Actions will automatically release the latest version of the package.
+5. GitHub Actions build is triggered by a push to `master` (typically a merge of a PR).
+
+6. To trigger the latest release, go to the GitHub release tool (select `releases` under `<> Code`). There, draft a new release, fill the form and hit `Publish release`. Actions will automatically release the latest version of the package.
