@@ -2,7 +2,7 @@ const inquirer = require('inquirer');
 const path = require('path');
 const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
-const { setLocalConfig, setLocalEnv, getLocalConfig } = require('../lib/utils');
+const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR, LOCAL_CONFIG_PATH } = require('../lib/consts');
 
 class InitCommand extends ApifyCommand {
@@ -18,7 +18,9 @@ class InitCommand extends ApifyCommand {
                 const answer = await inquirer.prompt([{ name: 'actName', message: 'Actor name:', default: path.basename(cwd) }]);
                 ({ actName: actorName } = answer);
             }
-            await setLocalConfig(Object.assign(EMPTY_LOCAL_CONFIG, { name: actorName }), cwd);
+            // Migrate apify.json to .actor/actor.json
+            const localConfig = { ...EMPTY_LOCAL_CONFIG, ...await getLocalConfigOrThrow() };
+            await setLocalConfig(Object.assign(localConfig, { name: actorName }), cwd);
         }
         await setLocalEnv(cwd);
         outputs.success('The Apify actor has been initialized in the current directory.');
