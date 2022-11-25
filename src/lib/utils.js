@@ -282,8 +282,8 @@ const checkLatestVersion = async () => {
 
         if (semver.gt(latestVersion, currentVersion)) {
             console.log('');
-            warning('You are using an old version of apify-cli.');
-            console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(' npm install apify-cli@latest -g '))} to install the latest version. \n`);
+            warning('You are using an old version of Apify CLI. We strongly recommend you always use the latest version.');
+            console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(' npm install apify-cli@latest -g '))} to install the latest available version. \n`);
         }
     } catch (err) {
         // Check should not break all commands
