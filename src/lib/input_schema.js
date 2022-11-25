@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const { ACTOR_SPECIFICATION_FOLDER } = require('./consts');
 const outputs = require('./outputs');
-const { getLocalConfig } = require('./utils');
+const { getLocalConfig, getJsonFileContent } = require('./utils');
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
     '.actor/INPUT_SCHEMA.json',
@@ -14,12 +14,7 @@ const readInputSchemaOnPath = async (inputSchemaPath) => {
     if (!fs.existsSync(inputSchemaPath)) {
         throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
     }
-    try {
-        const inputSchema = JSON.parse(fs.readFileSync(inputSchemaPath).toString());
-        return inputSchema;
-    } catch (err) {
-        throw new Error(`Input schema is not a valid JSON (${err})`);
-    }
+    return getJsonFileContent(inputSchemaPath);
 };
 
 /**
