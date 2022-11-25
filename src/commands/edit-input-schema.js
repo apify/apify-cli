@@ -9,7 +9,7 @@ const { cryptoRandomObjectId } = require('@apify/utilities');
 
 const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
-const { readInputSchema } = require('../lib/input_schema');
+const { readInputSchema, DEFAULT_INPUT_SCHEMA_PATHS } = require('../lib/input_schema');
 
 const INPUT_SCHEMA_EDITOR_BASE_URL = 'https://apify.github.io/input-schema-editor-react/';
 const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
@@ -20,13 +20,20 @@ const API_VERSION = 'v1';
 class EditInputSchemaCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(EditInputSchemaCommand);
+        let path = null;
 
-        // This call fails if no input schema is found on any of the default locations
-        const { path } = await readInputSchema(args.path);
+        // This call fails if the input schema is invalid JSON
+        const inputSchemaWithPath = await readInputSchema(args.path);
 
-        if (!path) {
-            // If path is not returned, it means the input schema must be directly embedded as object in actor.json
+        if (!inputSchemaWithPath) {
+            outputs.warning('Input schema has not been found. Default one will be created.');
+            fs.writeFileSync(DEFAULT_INPUT_SCHEMA_PATHS[0], '{}');
+            path = DEFAULT_INPUT_SCHEMA_PATHS[0];
+        } else if (!inputSchemaWithPath.path) {
+            // If path is not returned in inputSchemaWithPath, it means the input schema must be directly embedded as object in actor.json
             throw new Error('Cannot edit an input schema directly embedded in .actor/actor.json at this time. Please, submit a feature request!');
+        } else {
+            path = inputSchemaWithPath.path;
         }
 
         outputs.warning('This command is still experimental and might break at any time. Use at your own risk.\n');

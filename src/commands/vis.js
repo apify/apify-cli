@@ -9,7 +9,13 @@ class ValidateInputSchemaCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(ValidateInputSchemaCommand);
 
-        const { schema: inputSchema } = await readInputSchema(args.path);
+        const inputSchemaWithPath = await readInputSchema(args.path);
+
+        if (!inputSchemaWithPath) {
+            throw new Error('Input schema has not been found.');
+        }
+
+        const { schema: inputSchema } = inputSchemaWithPath;
 
         if (_.isEmpty(inputSchema)) {
             throw new Error('Input schema is empty.');

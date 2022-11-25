@@ -27,7 +27,7 @@ const readInputSchemaOnPath = async (inputSchemaPath) => {
  * If the returned path is "null", the input schema is directly embedded in actor.json.
  *
  * @param {string} forcePath
- * @returns {{schema: object, path: string | null}}
+ * @returns {{schema: object, path: string | null} | null}
  */
 const readInputSchema = async (forcePath) => {
     if (forcePath) {
@@ -70,9 +70,10 @@ const readInputSchema = async (forcePath) => {
         };
     }
 
-    throw new Error('Input schema has not been found.');
+    return null;
 };
 
 module.exports = {
     readInputSchema,
+    DEFAULT_INPUT_SCHEMA_PATHS,
 };
