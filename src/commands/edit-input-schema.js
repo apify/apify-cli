@@ -22,9 +22,9 @@ class EditInputSchemaCommand extends ApifyCommand {
         const { args } = this.parse(EditInputSchemaCommand);
 
         // This call fails if no input schema is found on any of the default locations
-        const { path } = await readInputSchema(args.path);
+        const { schema: existingSchema, path } = await readInputSchema(args.path);
 
-        if (!path) {
+        if (existingSchema && !path) {
             // If path is not returned, it means the input schema must be directly embedded as object in actor.json
             throw new Error('Cannot edit an input schema directly embedded in .actor/actor.json at this time. Please, submit a feature request!');
         }
