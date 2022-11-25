@@ -12,6 +12,7 @@ SecretsIndexCommand.description = 'Manages secret values for actor environment v
     + '$ apify secrets:add mySecret TopSecretValue123\n\n'
     + 'Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@" prefix:\n\n'
     + '{\n'
+    + '  "actorSpecification": 1,\n'
     + '  "name": "my_actor",\n'
     + '  "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" },\n'
     + '  "version": "0.1\n'
