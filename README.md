@@ -57,7 +57,7 @@ apify --version
 
 which should print something like:
 ```
-apify-cli/0.8.0 darwin-x64 node-v16.16.0
+apify-cli/0.10.0 darwin-x64 node-v16.14.2
 ```
 
 ## Basic usage
@@ -83,7 +83,7 @@ apify init
 This command will only set up local actor development environment in an existing directory,
 i.e. it will create the `.actor/actor.json` file and `apify_storage` directory.
 
-Before you can run your project using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
+Before you can run your project locally using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
 ```text
 {
     ...
@@ -123,7 +123,7 @@ Note that the command will store the API token and other sensitive information t
 apify push
 ```
 
-This command uploads your project to the Apify cloud and builds an actor from it.
+This command uploads your project to the Apify cloud and builds an actor from it. On the platform, actor needs to be built before it can be run.
 
 ### Run an actor on the Apify cloud
 
@@ -147,18 +147,39 @@ Make sure you commit this file to the Git repository.
 
 For example, `.actor/actor.json` file can look as follows:
 
+
 ```json
 {
-    "actorSpecification": 1,
-    "name": "dataset-to-mysql",
-    "version": "0.1",
-    "buildTag": "latest",
-    "environmentVariables": {
+  "actorSpecification": 1,
+  "name": "name-of-my-scraper",
+  "version": "0.0",
+  "buildTag": "latest",
+  "environmentVariables": {
       "MYSQL_USER": "my_username",
       "MYSQL_PASSWORD": "@mySecretPassword"
-    }
+  },
+  "dockerfile": "./Dockerfile",
+  "readme": "./ACTOR.md",
+  "input": "./input_schema.json",
+  "storages": {
+    "dataset": "./dataset_schema.json",
+  }
 }
 ```
+
+**`Dockerfile` field**\
+If you specify path to to your Docker file under the `dockerfile` field, this file will be used for actor builds on the platform. If not specified, the system will looks for Docker files at `.actor/Dockerfile` and `Dockerfile`, in this order of preference.
+
+**`Readme` field** \
+If you specify path to to your readme file under the `readme` field, the readme at this path will be used on the platform. If not specified, readme at `.actor/README.md` and `README.md` will be used, in this order of preference.
+**`Input` field**\
+You can embed your [input schema](https://docs.apify.com/actors/development/input-schema#specification-version-1) object directly in `actor.json` under `input` field. Alternatively, you can provide a path to a custom input schema. If not provided, input schema at `.actor/INPUT_SCHEMA.json` and `INPUT_SCHEMA.json` is used, in this order of preference.
+
+**`Storages.dataset` field**\
+You can define the schema of the items in your dataset under `storages.dataset` field. This can be either in a form of an embedded object, or a path to a json schema file. You can read more about the schema of your actor output [here](https://docs.apify.com/actors/development/output-schema#specification-version-1).
+
+**Note on migration from deprecated config "apify.json"**\
+*Note that previously, actor config was stored in the `apify.json` file that has been deprecated. You can find the (very slight) differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).*
 
 ## Environment variables
 
@@ -194,12 +215,12 @@ After setting up variables in the app, remove the `environmentVariables` from `.
 
 #### How to set secret environment variables in `.actor/actor.json`
 
-CLI provides commands to manage secrets environment variables. Secrets are stored to the ~/.apify directory.
-Adds a new secret using command:
+CLI provides commands to manage secrets environment variables. Secrets are stored to the `~/.apify` directory.
+You can add a new secret using command:
 ```bash
 apify secrets:add mySecretPassword pwd1234
 ```
-After adding a new secret you can use the secret in `.actor/actor.json`
+After adding a new secret you can use the secret in `.actor/actor.json`.
 ```text
 {
     "actorSpecification": 1,
