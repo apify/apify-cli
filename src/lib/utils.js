@@ -280,7 +280,7 @@ const checkLatestVersion = async () => {
         const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
         const currentVersion = require('../../package.json').version; //  eslint-disable-line
 
-        if (!semver.gt(latestVersion, currentVersion)) {
+        if (semver.gt(latestVersion, currentVersion)) {
             console.log('');
             warning('You are using an old version of apify-cli.');
             console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(' npm install apify-cli@latest -g '))} to install the latest version. \n`);
