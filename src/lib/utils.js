@@ -128,6 +128,26 @@ const getDeprecatedLocalConfig = () => getJsonFileContent(getDeprecatedLocalConf
 const getLocalConfigOrThrow = async () => {
     let localConfig = getLocalConfig();
     let deprecatedLocalConfig = getDeprecatedLocalConfig();
+
+    if (localConfig && deprecatedLocalConfig) {
+        const answer = await inquirer.prompt([{
+            name: 'isConfirm',
+            type: 'confirm',
+            // eslint-disable-next-line max-len
+            message: 'The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Since we have found both files in your actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use ".actor/actor.json". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?',
+        }]);
+        if (!answer.isConfirm) {
+            throw new Error('Command can not run with old "apify.json" file present in your actor directory., Please, either rename or remove it.');
+        }
+        try {
+            fs.renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
+            // eslint-disable-next-line max-len
+            info(`The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or the Apify console. If you do not need it for some specific purpose, it can be safely deleted.`);
+        } catch (e) {
+            throw new Error('Failed to rename deprecated "apify.json".');
+        }
+    }
+
     if (!localConfig && !deprecatedLocalConfig) {
         return {};
     }
@@ -138,11 +158,10 @@ const getLocalConfigOrThrow = async () => {
             name: 'isConfirm',
             type: 'confirm',
             // eslint-disable-next-line max-len
-            message: 'The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Your "apify.json" file will be automatically updated to the new format.',
+            message: 'The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Your "apify.json" file will be automatically updated to the new format under .actor/actor.json. The original file will be renamed by adding the ".deprecated" suffix. Do you want to continue?',
         }]);
         if (!answer.isConfirm) {
-            throw new Error('Command can not run with old apify.json structure. '
-                + 'Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+            throw new Error('Command can not run with old apify.json structure. Either let CLI to auto-update it or follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
         }
         try {
             // Check if apify.json contains old deprecated structure. If so, updates it.
@@ -157,13 +176,10 @@ const getLocalConfigOrThrow = async () => {
 
             writeJson.sync(getLocalConfigPath(), localConfig);
             fs.renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
-            info(`apify.json has been migrated to .actor/actor.json and renamed to apify.json.deprecated.
-The deprecated file is no longer used by the CLI or the Apify console.
-If you do not need it for some specific purpose, it can be safely deleted.
-Do not forget to commit the new file to your Git repository.`);
+            // eslint-disable-next-line max-len
+            info(`The "apify.json" file has been migrated to ".actor/actor.json" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or the Apify console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`);
         } catch (e) {
-            throw new Error('Can not update .actor/actor.json structure. '
-                + 'Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+            throw new Error('Can not update .actor/actor.json structure. Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
         }
     }
 
