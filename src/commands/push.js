@@ -152,7 +152,7 @@ class PushCommand extends ApifyCommand {
 }
 
 PushCommand.description = 'Uploads the actor to the Apify platform and builds it there.\n'
-    + 'The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using command-line options.\n'
+    + 'The actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden using command-line options.\n'
     + `NOTE: If the source files are smaller than ${MAX_MULTIFILE_BYTES / (1024 ** 2)} MB then they are uploaded as \n`
     + '"Multiple source files", otherwise they are uploaded as "Zip file".\n\n'
     + 'WARNING: If the target actor already exists in your Apify account, it will be overwritten!';
@@ -160,17 +160,17 @@ PushCommand.description = 'Uploads the actor to the Apify platform and builds it
 PushCommand.flags = {
     'version-number': flagsHelper.string({
         description: 'DEPRECATED: Use flag version instead. Actor version number to which the files should be pushed. '
-            + 'By default, it is taken from the "apify.json" file.',
+            + 'By default, it is taken from the ".actor/actor.json" file.',
         required: false,
     }),
     version: flagsHelper.string({
         char: 'v',
-        description: 'Actor version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
+        description: 'Actor version number to which the files should be pushed. By default, it is taken from the ".actor/actor.json" file.',
         required: false,
     }),
     'build-tag': flagsHelper.string({
         char: 'b',
-        description: 'Build tag to be applied to the successful actor build. By default, it is taken from the "apify.json" file',
+        description: 'Build tag to be applied to the successful actor build. By default, it is taken from the ".actor/actor.json" file',
         required: false,
     }),
     'wait-for-finish': flagsHelper.string({
@@ -185,7 +185,7 @@ PushCommand.args = [
         name: 'actorId',
         required: false,
         description: 'ID of an existing actor on the Apify platform where the files will be pushed. '
-        + 'If not provided, the command will create or modify the actor with the name specified in "apify.json" file.',
+        + 'If not provided, the command will create or modify the actor with the name specified in ".actor/actor.json" file.',
     },
 ];
 
