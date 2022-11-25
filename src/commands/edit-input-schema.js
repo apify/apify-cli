@@ -9,11 +9,10 @@ const { cryptoRandomObjectId } = require('@apify/utilities');
 
 const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
+const { readInputSchema } = require('../lib/input_schema');
 
 const INPUT_SCHEMA_EDITOR_BASE_URL = 'https://apify.github.io/input-schema-editor-react/';
 const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
-
-const DEFAULT_INPUT_SCHEMA_PATH = './INPUT_SCHEMA.json';
 
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
@@ -21,7 +20,14 @@ const API_VERSION = 'v1';
 class EditInputSchemaCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(EditInputSchemaCommand);
-        const { path = DEFAULT_INPUT_SCHEMA_PATH } = args;
+
+        // This call fails if no input schema is found on any of the default locations
+        const { path } = await readInputSchema(args.path);
+
+        if (!path) {
+            // If path is not returned, it means the input schema must be directly embedded as object in actor.json
+            throw new Error('Cannot edit an input schema directly embedded in .actor/actor.json at this time. Please, submit a feature request!');
+        }
 
         outputs.warning('This command is still experimental and might break at any time. Use at your own risk.\n');
         outputs.info(`Editing input schema at "${path}"...`);
@@ -145,7 +151,7 @@ class EditInputSchemaCommand extends ApifyCommand {
     }
 }
 
-EditInputSchemaCommand.description = 'Lets you edit your input schema in a visual input schema editor.';
+EditInputSchemaCommand.description = 'Lets you edit your input schema that would be used on the platform in a visual input schema editor.';
 
 EditInputSchemaCommand.args = [
     {
