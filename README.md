@@ -168,15 +168,16 @@ For example, `.actor/actor.json` file can look as follows:
 ```
 
 **`Dockerfile` field**\
-If you specify path to to your Docker file under the `dockerfile` field, this file will be used for actor builds on the platform. If not specified, the system will looks for Docker files at `.actor/Dockerfile` and `Dockerfile`, in this order of preference.
+If you specify the path to your Docker file under the `dockerfile` field, this file will be used for actor builds on the platform. If not specified, the system will look for Docker files at `.actor/Dockerfile` and `Dockerfile` in this order of preference.
 
 **`Readme` field** \
-If you specify path to to your readme file under the `readme` field, the readme at this path will be used on the platform. If not specified, readme at `.actor/README.md` and `README.md` will be used, in this order of preference.
+If you specify the path to your readme file under the `readme` field, the readme at this path will be used on the platform. If not specified, readme at `.actor/README.md` and `README.md` will be used in this order of preference.
+
 **`Input` field**\
-You can embed your [input schema](https://docs.apify.com/actors/development/input-schema#specification-version-1) object directly in `actor.json` under `input` field. Alternatively, you can provide a path to a custom input schema. If not provided, input schema at `.actor/INPUT_SCHEMA.json` and `INPUT_SCHEMA.json` is used, in this order of preference.
+You can embed your [input schema](https://docs.apify.com/actors/development/input-schema#specification-version-1) object directly in `actor.json` under `input` field. Alternatively, you can provide a path to a custom input schema. If not provided, the input schema at `.actor/INPUT_SCHEMA.json` and `INPUT_SCHEMA.json` is used in this order of preference.
 
 **`Storages.dataset` field**\
-You can define the schema of the items in your dataset under `storages.dataset` field. This can be either in a form of an embedded object, or a path to a json schema file. You can read more about the schema of your actor output [here](https://docs.apify.com/actors/development/output-schema#specification-version-1).
+You can define the schema of the items in your dataset under the `storages.dataset` field. This can be either an embedded object or a path to a JSON schema file. You can read more about the schema of your actor output [here](https://docs.apify.com/actors/development/output-schema#specification-version-1).
 
 **Note on migration from deprecated config "apify.json"**\
 *Note that previously, actor config was stored in the `apify.json` file that has been deprecated. You can find the (very slight) differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).*
@@ -216,7 +217,7 @@ After setting up variables in the app, remove the `environmentVariables` from `.
 #### How to set secret environment variables in `.actor/actor.json`
 
 CLI provides commands to manage secrets environment variables. Secrets are stored to the `~/.apify` directory.
-You can add a new secret using command:
+You can add a new secret using the command:
 ```bash
 apify secrets:add mySecretPassword pwd1234
 ```
@@ -380,7 +381,7 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It
+  The actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It
   takes input for the actor from the default local key-value store by default.
 ```
 
@@ -531,7 +532,7 @@ DESCRIPTION
    example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
    stored in the "storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You
+  NOTE: You can override the command's default behavior by overriding the npm start script value in a package.json file. You
   can set up your own main file or environment variables by changing it.
 ```
 
@@ -605,7 +606,7 @@ USAGE
   $ apify vis [PATH]
 
 ARGUMENTS
-  PATH  Optional path to your INPUT_SCHEMA.json file. If not provided input schema from platform default location is used (see --help for default locations in order of preference).
+  PATH Optional path to your INPUT_SCHEMA.json file. If not provided, the input schema from the platform default location is used (see --help for default locations in order of preference).
 ```
 
 _See code: [src/commands/vis.js](https://github.com/apify/apify-cli/blob/v0.10.0/src/commands/vis.js)_

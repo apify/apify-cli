@@ -142,7 +142,7 @@ const getLocalConfigOrThrow = async () => {
         try {
             fs.renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
             // eslint-disable-next-line max-len
-            info(`The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or the Apify console. If you do not need it for some specific purpose, it can be safely deleted.`);
+            info(`The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.`);
         } catch (e) {
             throw new Error('Failed to rename deprecated "apify.json".');
         }
@@ -161,7 +161,7 @@ const getLocalConfigOrThrow = async () => {
             message: 'The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Your "apify.json" file will be automatically updated to the new format under .actor/actor.json. The original file will be renamed by adding the ".deprecated" suffix. Do you want to continue?',
         }]);
         if (!answer.isConfirm) {
-            throw new Error('Command can not run with old apify.json structure. Either let CLI to auto-update it or follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+            throw new Error('Command can not run with old apify.json structure. Either let the CLI auto-update it or follow the guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
         }
         try {
             // Check if apify.json contains old deprecated structure. If so, updates it.
@@ -177,7 +177,7 @@ const getLocalConfigOrThrow = async () => {
             writeJson.sync(getLocalConfigPath(), localConfig);
             fs.renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
             // eslint-disable-next-line max-len
-            info(`The "apify.json" file has been migrated to ".actor/actor.json" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or the Apify console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`);
+            info(`The "apify.json" file has been migrated to ".actor/actor.json" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`);
         } catch (e) {
             throw new Error('Can not update .actor/actor.json structure. Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
         }
