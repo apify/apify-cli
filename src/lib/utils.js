@@ -176,8 +176,15 @@ const getLocalConfigOrThrow = async () => {
 
             writeJson.sync(getLocalConfigPath(), localConfig);
             fs.renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
+<<<<<<< HEAD
             // eslint-disable-next-line max-len
             info(`The "apify.json" file has been migrated to ".actor/actor.json" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or the Apify console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`);
+=======
+            info(`apify.json has been migrated to .actor/actor.json and renamed to apify.json.deprecated.
+The deprecated file is no longer used by the CLI or the Apify console.
+If you do not need it for some specific purpose, it can be safely deleted.
+Do not forget to commit the new file to your Git repository.`);
+>>>>>>> feat/improving-migration-to-actor-json
         } catch (e) {
             throw new Error('Can not update .actor/actor.json structure. Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
         }

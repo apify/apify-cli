@@ -19,6 +19,7 @@ follows very similar structure and it looks as follows
 ```
 
 When running any CLI script that uses the config, you will be prompted to automatically migrate the old format to the new format in order to proceed.
+
 Alternatively, you can always update it manually. The old config `apify.json` can be safely deleted after migration unless you store in there some
 information specific for your use case.
 
