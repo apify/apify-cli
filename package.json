@@ -99,8 +99,8 @@
         "bin": "apify",
         "commands": "./src/commands",
         "hooks": {
-            "prerun": [
-                "./src/hooks/pre_run.js"
+            "init": [
+                "./src/hooks/init"
             ]
         }
     }

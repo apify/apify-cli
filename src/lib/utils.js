@@ -8,6 +8,7 @@ const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
+const chalk = require('chalk');
 const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS,
     KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES, SOURCE_FILE_FORMATS, ACTOR_NAME } = require('@apify/consts');
 const https = require('https');
@@ -272,8 +273,6 @@ const getLocalInput = () => {
  */
 const checkLatestVersion = async () => {
     try {
-        // Run check approximately every 10. call
-        if (Math.random() <= 0.8) return;
         // Skip if user is offline
         const isOnline = await import('is-online');
         if (!await isOnline.default({ timeout: 500 })) return;
@@ -281,8 +280,10 @@ const checkLatestVersion = async () => {
         const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
         const currentVersion = require('../../package.json').version; //  eslint-disable-line
 
-        if (semver.gt(latestVersion, currentVersion)) {
-            warning('You are using an old version of apify-cli. Run "npm install apify-cli@latest -g" to install the latest version.');
+        if (!semver.gt(latestVersion, currentVersion)) {
+            console.log('');
+            warning('You are using an old version of apify-cli.');
+            console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(' npm install apify-cli@latest -g '))} to install the latest version. \n`);
         }
     } catch (err) {
         // Check should not break all commands
