@@ -72,12 +72,12 @@ const getLoggedClientOrThrow = async () => {
  * @param [token]
  * @return {Promise<*>}
  */
-const getLoggedClient = async (token) => {
+const getLoggedClient = async (token, apiBaseUrl) => {
     if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
         ({ token } = loadJson.sync(AUTH_FILE_PATH));
     }
 
-    const apifyClient = new ApifyClient({ token });
+    const apifyClient = new ApifyClient({ token, baseUrl: apiBaseUrl });
     let userInfo;
     try {
         userInfo = await apifyClient.user('me').get();
