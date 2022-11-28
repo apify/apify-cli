@@ -1,4 +1,3 @@
-const _ = require('underscore');
 const { validateInputSchema } = require('@apify/input_schema');
 const Ajv = require('ajv');
 const { ApifyCommand } = require('../lib/apify_command');
@@ -9,10 +8,16 @@ class ValidateInputSchemaCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(ValidateInputSchemaCommand);
 
-        const { schema: inputSchema } = await readInputSchema(args.path);
+        const { inputSchema, inputSchemaPath } = await readInputSchema(args.path);
 
-        if (_.isEmpty(inputSchema)) {
-            throw new Error('Input schema is empty.');
+        if (!inputSchema) {
+            throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
+        }
+
+        if (inputSchemaPath) {
+            outputs.info(`Validating input schema stored at ${inputSchemaPath}`);
+        } else {
+            outputs.info(`Validating input schema embedded in .actor/actor.json`);
         }
 
         const validator = new Ajv({ strict: false });

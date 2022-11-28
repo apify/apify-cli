@@ -10,62 +10,67 @@ const DEFAULT_INPUT_SCHEMA_PATHS = [
 ];
 
 const readInputSchemaOnPath = async (inputSchemaPath) => {
-    outputs.info(`Reading input schema stored at ${inputSchemaPath}`);
     if (!fs.existsSync(inputSchemaPath)) {
-        throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
+        return null;
     }
     return getJsonFileContent(inputSchemaPath);
 };
 
 /**
- * Reads and returns the input schema from the default location. If no input schema is found, the function throws.
- * If the returned path is "null", the input schema is directly embedded in actor.json.
+ * Return the input schema from the default location.
+ *
+ * When the input schema does not exist, null is returned for schema.
+ * In such a acase, path would be set to the location
+ * where the input schema would be expected to be found (and e.g. can be created there).
  *
  * @param {string} forcePath
- * @returns {{schema: object, path: string | null}}
+ * @returns {{inputSchema: object, inputSchemaPath: string | null}}
  */
 const readInputSchema = async (forcePath) => {
     if (forcePath) {
         return {
-            schema: await readInputSchemaOnPath(forcePath),
-            path,
+            inputSchema: await readInputSchemaOnPath(forcePath),
+            inputSchemaPath: forcePath,
         };
     }
 
     const localConfig = getLocalConfig();
 
     if (typeof localConfig?.input === 'object') {
-        outputs.info('Note: Input schema is directly embedded in .actor/actor.json');
         return {
-            schema: localConfig.input,
-            path: null,
+            inputSchema: localConfig.input,
+            inputSchemaPath: null,
         };
     }
 
     if (typeof localConfig?.input === 'string') {
-        outputs.info('Note: Input schema is explicitly referenced in .actor/actor.json');
         const fullPath = path.join(ACTOR_SPECIFICATION_FOLDER, localConfig.input);
         return {
-            schema: await readInputSchemaOnPath(fullPath),
-            path: fullPath,
+            inputSchema: await readInputSchemaOnPath(fullPath),
+            inputSchemaPath: fullPath,
         };
     }
 
     if (fs.existsSync(DEFAULT_INPUT_SCHEMA_PATHS[0])) {
         return {
-            schema: await readInputSchemaOnPath(DEFAULT_INPUT_SCHEMA_PATHS[0]),
-            path: DEFAULT_INPUT_SCHEMA_PATHS[0],
+            inputSchema: await readInputSchemaOnPath(DEFAULT_INPUT_SCHEMA_PATHS[0]),
+            inputSchemaPath: DEFAULT_INPUT_SCHEMA_PATHS[0],
         };
     }
 
     if (fs.existsSync(DEFAULT_INPUT_SCHEMA_PATHS[1])) {
         return {
-            schema: await readInputSchemaOnPath(DEFAULT_INPUT_SCHEMA_PATHS[1]),
-            path: DEFAULT_INPUT_SCHEMA_PATHS[1],
+            inputSchema: await readInputSchemaOnPath(DEFAULT_INPUT_SCHEMA_PATHS[1]),
+            inputSchemaPath: DEFAULT_INPUT_SCHEMA_PATHS[1],
         };
     }
 
-    throw new Error('Input schema has not been found.');
+    // If not input schema has been found so far, return the first default path
+    // where the input schema would be expected.
+    return {
+        inputSchema: null,
+        inputSchemaPath: DEFAULT_INPUT_SCHEMA_PATHS[0],
+    };
 };
 
 module.exports = {

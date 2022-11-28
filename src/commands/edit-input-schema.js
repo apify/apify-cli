@@ -22,15 +22,16 @@ class EditInputSchemaCommand extends ApifyCommand {
         const { args } = this.parse(EditInputSchemaCommand);
 
         // This call fails if no input schema is found on any of the default locations
-        const { schema: existingSchema, path } = await readInputSchema(args.path);
+        const { inputSchema: existingSchema, inputSchemaPath } = await readInputSchema(args.path);
 
-        if (existingSchema && !path) {
+        if (existingSchema && !inputSchemaPath) {
             // If path is not returned, it means the input schema must be directly embedded as object in actor.json
-            throw new Error('Cannot edit an input schema directly embedded in .actor/actor.json at this time. Please, submit a feature request!');
+            // TODO - allow editing input schema embedded in actor.json
+            throw new Error('Editing an input schema directly embedded in .actor/actor.json is not yet supported.');
         }
 
         outputs.warning('This command is still experimental and might break at any time. Use at your own risk.\n');
-        outputs.info(`Editing input schema at "${path}"...`);
+        outputs.info(`Editing input schema at "${inputSchemaPath}"...`);
 
         let server;
         const app = express();
@@ -82,14 +83,18 @@ class EditInputSchemaCommand extends ApifyCommand {
         apiRouter.get('/input-schema', (req, res) => {
             let inputSchemaStr;
             try {
-                inputSchemaStr = fs.readFileSync(path, { encoding: 'utf-8', flag: 'a+' });
+                inputSchemaStr = fs.existsSync(inputSchemaPath) ? fs.readFileSync(inputSchemaPath, { encoding: 'utf-8' }) : '{}';
                 if (inputSchemaStr.length > 2) {
                     jsonIndentation = detectIndent(inputSchemaStr).indent || jsonIndentation;
                 }
                 if (inputSchemaStr) {
                     appendFinalNewline = inputSchemaStr[inputSchemaStr.length - 1] === '\n';
                 }
-                outputs.info('Input schema loaded from disk.');
+                if (fs.existsSync(inputSchemaPath)) {
+                    outputs.info(`Input schema loaded from "${inputSchemaPath}"`);
+                } else {
+                    outputs.info(`Empty input schema created at ${inputSchemaPath}.`);
+                }
             } catch (err) {
                 const errorMessage = `Reading input schema from disk failed with: ${err.message}`;
                 outputs.error(errorMessage);
@@ -119,7 +124,7 @@ class EditInputSchemaCommand extends ApifyCommand {
                 const inputSchemaObj = req.body;
                 let inputSchemaStr = JSON.stringify(inputSchemaObj, null, jsonIndentation);
                 if (appendFinalNewline) inputSchemaStr += '\n';
-                fs.writeFileSync(path, inputSchemaStr, { encoding: 'utf-8', flag: 'w+' });
+                fs.writeFileSync(inputSchemaPath, inputSchemaStr, { encoding: 'utf-8', flag: 'w+' });
                 res.end();
                 outputs.info('Input schema saved to disk.');
             } catch (err) {
@@ -157,7 +162,7 @@ EditInputSchemaCommand.args = [
     {
         name: 'path',
         required: false,
-        description: 'Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.',
+        description: 'Optional path to your INPUT_SCHEMA.json file. If not provided default platform location for input schema is used.',
     },
 ];
 
