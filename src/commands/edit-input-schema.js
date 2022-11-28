@@ -1,4 +1,5 @@
 const fs = require('fs');
+const path = require('path');
 
 const cors = require('cors');
 const detectIndent = require('detect-indent');
@@ -83,8 +84,8 @@ class EditInputSchemaCommand extends ApifyCommand {
         apiRouter.get('/input-schema', (req, res) => {
             let inputSchemaStr;
             try {
-                inputSchemaStr = fs.existsSync(inputSchemaPath) ? fs.readFileSync(inputSchemaPath, { encoding: 'utf-8' }) : '{}';
-                if (inputSchemaStr.length > 2) {
+                inputSchemaStr = fs.existsSync(inputSchemaPath) ? fs.readFileSync(inputSchemaPath, { encoding: 'utf-8' }) : '{}\n';
+                if (inputSchemaStr.length > 3) {
                     jsonIndentation = detectIndent(inputSchemaStr).indent || jsonIndentation;
                 }
                 if (inputSchemaStr) {
@@ -93,7 +94,7 @@ class EditInputSchemaCommand extends ApifyCommand {
                 if (fs.existsSync(inputSchemaPath)) {
                     outputs.info(`Input schema loaded from "${inputSchemaPath}"`);
                 } else {
-                    outputs.info(`Empty input schema created at ${inputSchemaPath}.`);
+                    outputs.info(`Empty input schema initialized.`);
                 }
             } catch (err) {
                 const errorMessage = `Reading input schema from disk failed with: ${err.message}`;
@@ -124,6 +125,12 @@ class EditInputSchemaCommand extends ApifyCommand {
                 const inputSchemaObj = req.body;
                 let inputSchemaStr = JSON.stringify(inputSchemaObj, null, jsonIndentation);
                 if (appendFinalNewline) inputSchemaStr += '\n';
+
+                const inputSchemaDir = path.dirname(inputSchemaPath);
+                if (!fs.existsSync(inputSchemaDir)) {
+                    fs.mkdirSync(inputSchemaDir, { recursive: true });
+                }
+
                 fs.writeFileSync(inputSchemaPath, inputSchemaStr, { encoding: 'utf-8', flag: 'w+' });
                 res.end();
                 outputs.info('Input schema saved to disk.');

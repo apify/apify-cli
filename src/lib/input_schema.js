@@ -1,20 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 const { ACTOR_SPECIFICATION_FOLDER } = require('./consts');
-const outputs = require('./outputs');
 const { getLocalConfig, getJsonFileContent } = require('./utils');
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
     '.actor/INPUT_SCHEMA.json',
     './INPUT_SCHEMA.json',
 ];
-
-const readInputSchemaOnPath = async (inputSchemaPath) => {
-    if (!fs.existsSync(inputSchemaPath)) {
-        return null;
-    }
-    return getJsonFileContent(inputSchemaPath);
-};
 
 /**
  * Return the input schema from the default location.
@@ -29,7 +21,7 @@ const readInputSchemaOnPath = async (inputSchemaPath) => {
 const readInputSchema = async (forcePath) => {
     if (forcePath) {
         return {
-            inputSchema: await readInputSchemaOnPath(forcePath),
+            inputSchema: await getJsonFileContent(forcePath),
             inputSchemaPath: forcePath,
         };
     }
@@ -46,21 +38,21 @@ const readInputSchema = async (forcePath) => {
     if (typeof localConfig?.input === 'string') {
         const fullPath = path.join(ACTOR_SPECIFICATION_FOLDER, localConfig.input);
         return {
-            inputSchema: await readInputSchemaOnPath(fullPath),
+            inputSchema: await getJsonFileContent(fullPath),
             inputSchemaPath: fullPath,
         };
     }
 
     if (fs.existsSync(DEFAULT_INPUT_SCHEMA_PATHS[0])) {
         return {
-            inputSchema: await readInputSchemaOnPath(DEFAULT_INPUT_SCHEMA_PATHS[0]),
+            inputSchema: await getJsonFileContent(DEFAULT_INPUT_SCHEMA_PATHS[0]),
             inputSchemaPath: DEFAULT_INPUT_SCHEMA_PATHS[0],
         };
     }
 
     if (fs.existsSync(DEFAULT_INPUT_SCHEMA_PATHS[1])) {
         return {
-            inputSchema: await readInputSchemaOnPath(DEFAULT_INPUT_SCHEMA_PATHS[1]),
+            inputSchema: await getJsonFileContent(DEFAULT_INPUT_SCHEMA_PATHS[1]),
             inputSchemaPath: DEFAULT_INPUT_SCHEMA_PATHS[1],
         };
     }
