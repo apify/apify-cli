@@ -48,7 +48,7 @@ describe('apify run', () => {
         expect(actOutput).to.be.eql(expectOutput);
     });
 
-    it('run with env vars from .actor/actor.json', async () => {
+    it(`run with env vars from "${LOCAL_CONFIG_PATH}"`, async () => {
         const testEnvVars = {
             TEST_LOCAL: 'testValue',
         };

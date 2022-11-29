@@ -11,6 +11,7 @@ const { cryptoRandomObjectId } = require('@apify/utilities');
 const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
 const { readInputSchema } = require('../lib/input_schema');
+const { LOCAL_CONFIG_PATH } = require('../lib/consts');
 
 const INPUT_SCHEMA_EDITOR_BASE_URL = 'https://apify.github.io/input-schema-editor-react/';
 const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
@@ -28,7 +29,7 @@ class EditInputSchemaCommand extends ApifyCommand {
         if (existingSchema && !inputSchemaPath) {
             // If path is not returned, it means the input schema must be directly embedded as object in actor.json
             // TODO - allow editing input schema embedded in actor.json
-            throw new Error('Editing an input schema directly embedded in .actor/actor.json is not yet supported.');
+            throw new Error(`Editing an input schema directly embedded in "${LOCAL_CONFIG_PATH}" is not yet supported.`);
         }
 
         outputs.warning('This command is still experimental and might break at any time. Use at your own risk.\n');

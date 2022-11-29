@@ -12,7 +12,7 @@ class InitCommand extends ApifyCommand {
         const cwd = process.cwd();
 
         if (getLocalConfig()) {
-            outputs.warning('Skipping creation of .actor/actor.json, the file already exists in the current directory.');
+            outputs.warning(`Skipping creation of "${LOCAL_CONFIG_PATH}", the file already exists in the current directory.`);
         } else {
             if (!actorName) {
                 const answer = await inquirer.prompt([{ name: 'actName', message: 'Actor name:', default: path.basename(cwd) }]);

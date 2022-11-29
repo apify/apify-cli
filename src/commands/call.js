@@ -5,6 +5,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const { getLocalConfig, getLoggedClientOrThrow,
     getLocalUserInfo, getLocalInput, outputJobLog } = require('../lib/utils');
 const outputs = require('../lib/outputs');
+const { LOCAL_CONFIG_PATH } = require('../lib/consts');
 
 // TODO: Show full error messages and HTTP codes, this is not great:
 // jan:testx$ apify call help
@@ -123,7 +124,7 @@ CallCommand.args = [
         name: 'actId',
         required: false,
         description: 'Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
-            + 'If not provided, the command runs the remote actor specified in the ".actor/actor.json" file.',
+            + `If not provided, the command runs the remote actor specified in the "${LOCAL_CONFIG_PATH}" file.`,
     },
 ];
 
