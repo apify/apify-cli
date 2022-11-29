@@ -612,8 +612,8 @@ ARGUMENTS
 DESCRIPTION
   The input schema for the actor is used from these locations in order of preference.
   The first one found is validated as it would be the one used on the Apify platform.
-  1. Directly embedded object in .actor/actor.json under 'input' key
-  2. Path to JSON file referenced in .actor/actor.json under 'input' key
+  1. Directly embedded object in ".actor/actor.json" under 'input' key
+  2. Path to JSON file referenced in ".actor/actor.json" under 'input' key
   3. JSON file at .actor/INPUT_SCHEMA.json
   4. JSON file at INPUT_SCHEMA.json
 
