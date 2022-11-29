@@ -22,7 +22,7 @@ describe('apify vis', () => {
             await command.run(['vis', path.join(__dirname, 'input-schemas', 'unparsable.json')]);
             throw new Error('This should have failed!');
         } catch (err) {
-            expect(err.message).to.contain('is not a valid JSON');
+            expect(err.message).to.contain('Unexpected token "}');
         }
     });
 });
