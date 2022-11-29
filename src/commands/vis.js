@@ -1,70 +1,28 @@
 const { validateInputSchema } = require('@apify/input_schema');
 const Ajv = require('ajv');
-const fs = require('fs');
-const path = require('path');
 const { ApifyCommand } = require('../lib/apify_command');
-const { ACTOR_SPECIFICATION_FOLDER } = require('../lib/consts');
+const { readInputSchema } = require('../lib/input_schema');
 const outputs = require('../lib/outputs');
-const { getLocalConfig } = require('../lib/utils');
-
-const DEFAULT_INPUT_SCHEMA_PATHS = [
-    '.actor/INPUT_SCHEMA.json',
-    './INPUT_SCHEMA.json',
-];
 
 class ValidateInputSchemaCommand extends ApifyCommand {
-    validateInputSchemaObject(inputSchema) {
-        const validator = new Ajv({ strict: false });
-        validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
-        outputs.success('Input schema is valid.');
-    }
-
-    readAndValidateInputSchemaOnPath(inputSchemaPath) {
-        outputs.info(`Validating input schema stored at ${inputSchemaPath}`);
-        if (!fs.existsSync(inputSchemaPath)) {
-            throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
-        }
-        try {
-            const inputSchema = JSON.parse(fs.readFileSync(inputSchemaPath).toString());
-            this.validateInputSchemaObject(inputSchema);
-        } catch (err) {
-            throw new Error(`Input schema is not a valid JSON (${err})`);
-        }
-    }
-
     async run() {
         const { args } = this.parse(ValidateInputSchemaCommand);
 
-        if (args.path) {
-            this.readAndValidateInputSchemaOnPath(args.path);
-            return;
+        const { inputSchema, inputSchemaPath } = await readInputSchema(args.path);
+
+        if (!inputSchema) {
+            throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
         }
 
-        const localConfig = getLocalConfig();
-
-        if (typeof localConfig?.input === 'object') {
-            outputs.info('Validating input schema directly embedded in .actor/actor.json');
-            this.validateInputSchemaObject(localConfig.input);
-            return;
+        if (inputSchemaPath) {
+            outputs.info(`Validating input schema stored at ${inputSchemaPath}`);
+        } else {
+            outputs.info(`Validating input schema embedded in .actor/actor.json`);
         }
 
-        if (typeof localConfig?.input === 'string') {
-            outputs.info(`Found path to input schema (${localConfig?.input}) in .actor/actor.json`);
-            this.readAndValidateInputSchemaOnPath(path.join(ACTOR_SPECIFICATION_FOLDER, localConfig.input));
-            return;
-        }
-
-        if (fs.existsSync(DEFAULT_INPUT_SCHEMA_PATHS[0])) {
-            this.readAndValidateInputSchemaOnPath(DEFAULT_INPUT_SCHEMA_PATHS[0]);
-            return;
-        }
-
-        if (fs.existsSync(DEFAULT_INPUT_SCHEMA_PATHS[1])) {
-            this.readAndValidateInputSchemaOnPath(DEFAULT_INPUT_SCHEMA_PATHS[1]);
-            return;
-        }
-
-        throw new Error('No input schema found.');
+        const validator = new Ajv({ strict: false });
+        validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
+        outputs.success('Input schema is valid.');
     }
 }
 
