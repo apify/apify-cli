@@ -81,6 +81,7 @@ class CreateCommand extends ApifyCommand {
         // There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
         const localConfig = await getJsonFileContent(path.join(actFolderDir, LOCAL_CONFIG_PATH));
         await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), actFolderDir);
+        await setLocalEnv(actFolderDir);
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actorName });
 
         // Run npm install in actor dir.
