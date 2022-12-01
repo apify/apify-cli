@@ -9,8 +9,8 @@ const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
-const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName, getLocalConfig } = require('../lib/utils');
-const { EMPTY_LOCAL_CONFIG } = require('../lib/consts');
+const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName, getJsonFileContent } = require('../lib/utils');
+const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } = require('../lib/consts');
 
 class CreateCommand extends ApifyCommand {
     async run() {
@@ -79,9 +79,8 @@ class CreateCommand extends ApifyCommand {
         await zipStream.pipe(unzip).promise();
 
         // There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
-        const localConfig = await getLocalConfig();
+        const localConfig = await getJsonFileContent(path.join(actFolderDir, LOCAL_CONFIG_PATH));
         await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), actFolderDir);
-        await setLocalEnv(actFolderDir);
         await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actorName });
 
         // Run npm install in actor dir.
