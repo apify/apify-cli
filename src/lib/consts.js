@@ -6,11 +6,14 @@ exports.DEFAULT_LOCAL_STORAGE_DIR = 'storage';
 
 exports.LEGACY_LOCAL_STORAGE_DIR = 'apify_storage';
 
+exports.ACTOR_SPECIFICATION_VERSION = 1;
+
 exports.EMPTY_LOCAL_CONFIG = {
+    actorSpecification: exports.ACTOR_SPECIFICATION_VERSION,
     name: null,
     version: '0.0',
     buildTag: 'latest',
-    env: null,
+    environmentVariables: {},
 };
 
 exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
@@ -19,7 +22,13 @@ exports.AUTH_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
 
 exports.SECRETS_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'secrets.json');
 
-exports.LOCAL_CONFIG_NAME = 'apify.json';
+exports.DEPRECATED_LOCAL_CONFIG_NAME = 'apify.json';
+
+exports.ACTOR_SPECIFICATION_FOLDER = '.actor';
+
+exports.LOCAL_CONFIG_NAME = 'actor.json';
+
+exports.LOCAL_CONFIG_PATH = path.join(exports.ACTOR_SPECIFICATION_FOLDER, exports.LOCAL_CONFIG_NAME);
 
 exports.INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..*`);
 

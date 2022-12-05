@@ -71,8 +71,8 @@ class RunCommand extends ApifyCommand {
         if (proxy && proxy.password) localEnvVars[ENV_VARS.PROXY_PASSWORD] = proxy.password;
         if (userId) localEnvVars[ENV_VARS.USER_ID] = userId;
         if (token) localEnvVars[ENV_VARS.TOKEN] = token;
-        if (localConfig.env) {
-            const updatedEnv = replaceSecretsValue(localConfig.env);
+        if (localConfig.environmentVariables) {
+            const updatedEnv = replaceSecretsValue(localConfig.environmentVariables);
             Object.assign(localEnvVars, updatedEnv);
         }
         // NOTE: User can overwrite env vars
@@ -106,7 +106,7 @@ RunCommand.description = 'Runs the actor locally in the current directory by exe
     + 'the actor input, as well as all other data in key-value stores, '
     + `datasets or request queues to be stored in the "${DEFAULT_LOCAL_STORAGE_DIR}" directory, `
     + 'rather than on the Apify platform.\n\n'
-    + 'NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. '
+    + 'NOTE: You can override the command\'s default behavior by overriding the npm start script value in a package.json file. '
     + 'You can set up your own main file or environment variables by changing it.';
 
 RunCommand.flags = {
