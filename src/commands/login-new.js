@@ -86,6 +86,8 @@ class LoginNewCommand extends ApifyCommand {
                     if (req.body.apiToken) {
                         outputs.info('Got token from console...');
                         await tryToLogin(req.body.apiToken);
+                    } else {
+                        throw new Error('Request did not contain API token');
                     }
                     res.end();
                 } catch (err) {
@@ -116,7 +118,7 @@ class LoginNewCommand extends ApifyCommand {
             outputs.info(`Waiting for token from Apify console (on port ${port})...`);
 
             const consoleUrl = new URL(CONSOLE_BASE_URL);
-            consoleUrl.searchParams.set('logInToApifyCli', true);
+            consoleUrl.searchParams.set('localCliCommand', 'login');
             consoleUrl.searchParams.set('localCliPort', port);
             consoleUrl.searchParams.set('localCliToken', authToken);
             consoleUrl.searchParams.set('localCliApiVersion', API_VERSION);
