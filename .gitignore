@@ -1,5 +1,6 @@
-.idea
-.DS_Store
+build
+dist
+build-docs
 node_modules
 test-acts
 test-actors
