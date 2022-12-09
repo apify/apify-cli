@@ -1,0 +1,70 @@
+{
+  "title": {
+    "message": "Apify SDK",
+    "description": "The title in the navbar"
+  },
+  "item.label.Guide": {
+    "message": "Guide",
+    "description": "Navbar item with label Guide"
+  },
+  "item.label.Examples": {
+    "message": "Examples",
+    "description": "Navbar item with label Examples"
+  },
+  "item.label.API Reference": {
+    "message": "API Reference",
+    "description": "Navbar item with label API Reference"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  },
+  "item.label.Version": {
+    "message": "Version",
+    "description": "Navbar item with label Version"
+  },
+  "item.label.2.0.6": {
+    "message": "2.0.6",
+    "description": "Navbar item with label 2.0.6"
+  },
+  "item.label.2.0.1": {
+    "message": "2.0.1",
+    "description": "Navbar item with label 2.0.1"
+  },
+  "item.label.1.3.1": {
+    "message": "1.3.1",
+    "description": "Navbar item with label 1.3.1"
+  },
+  "item.label.1.2.0": {
+    "message": "1.2.0",
+    "description": "Navbar item with label 1.2.0"
+  },
+  "item.label.1.1.2": {
+    "message": "1.1.2",
+    "description": "Navbar item with label 1.1.2"
+  },
+  "item.label.1.1.0": {
+    "message": "1.1.0",
+    "description": "Navbar item with label 1.1.0"
+  },
+  "item.label.1.0.2": {
+    "message": "1.0.2",
+    "description": "Navbar item with label 1.0.2"
+  },
+  "item.label.1.0.1": {
+    "message": "1.0.1",
+    "description": "Navbar item with label 1.0.1"
+  },
+  "item.label.1.0.0": {
+    "message": "1.0.0",
+    "description": "Navbar item with label 1.0.0"
+  },
+  "item.label.0.22.4": {
+    "message": "0.22.4",
+    "description": "Navbar item with label 0.22.4"
+  },
+  "item.label.Main/Unreleased": {
+    "message": "Main/Unreleased",
+    "description": "Navbar item with label Main/Unreleased"
+  }
+}
