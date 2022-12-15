@@ -1,6 +1,6 @@
 const os = require('os');
 const path = require('path');
-const { KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const { KEY_VALUE_STORE_KEYS, META_ORIGINS } = require('@apify/consts');
 
 exports.DEFAULT_LOCAL_STORAGE_DIR = 'storage';
 
@@ -37,3 +37,5 @@ exports.MAIN_FILE = 'main.js';
 exports.UPLOADS_STORE_NAME = 'apify-cli-deployments';
 
 exports.SUPPORTED_NODEJS_VERSION = require('../../package.json').engines.node; //  eslint-disable-line;
+
+exports.APIFY_CLIENT_DEFAULT_HEADERS = { 'X-Apify-Request-Origin': META_ORIGINS.CLI };
