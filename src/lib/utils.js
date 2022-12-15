@@ -115,7 +115,7 @@ const getLoggedClient = async (token) => {
 
     // Always refresh Auth file
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
-    writeJson.sync(AUTH_FILE_PATH, { token, ...userInfo });
+    writeJson.sync(AUTH_FILE_PATH, { token: apifyClient.token, ...userInfo });
     return apifyClient;
 };
 
