@@ -13,7 +13,7 @@ exports.EMPTY_LOCAL_CONFIG = {
     env: null,
 };
 
-exports.CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000;
+exports.CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
 
 exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
 
