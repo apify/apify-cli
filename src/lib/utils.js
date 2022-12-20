@@ -9,15 +9,38 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
-const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS,
-    KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES, SOURCE_FILE_FORMATS, ACTOR_NAME } = require('@apify/consts');
+const { LOCAL_STORAGE_SUBDIRS,
+    ENV_VARS,
+    LOCAL_ENV_VARS,
+    KEY_VALUE_STORE_KEYS,
+    ACT_JOB_TERMINAL_STATUSES,
+    SOURCE_FILE_FORMATS,
+    ACTOR_NAME,
+} = require('@apify/consts');
 const https = require('https');
 const { ApifyClient } = require('apify-client');
-const { execSync, spawnSync } = require('child_process');
+const {
+    execSync,
+    spawnSync,
+} = require('child_process');
 const semver = require('semver');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_NAME, INPUT_FILE_REG_EXP, DEFAULT_LOCAL_STORAGE_DIR } = require('./consts');
-const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
-const { warning, info } = require('./outputs');
+const {
+    GLOBAL_CONFIGS_FOLDER,
+    AUTH_FILE_PATH,
+    STATE_FILE_PATH,
+    LOCAL_CONFIG_NAME,
+    INPUT_FILE_REG_EXP,
+    DEFAULT_LOCAL_STORAGE_DIR,
+    CHECK_VERSION_EVERY_MILLIS,
+} = require('./consts');
+const {
+    ensureFolderExistsSync,
+    rimrafPromised, deleteFile,
+} = require('./files');
+const {
+    warning,
+    info,
+} = require('./outputs');
 
 const getLocalStorageDir = () => {
     const envVar = ENV_VARS.LOCAL_STORAGE_DIR;
@@ -50,6 +73,18 @@ const getLocalRequestQueuePath = (storeId) => {
 const getLocalUserInfo = () => {
     try {
         return loadJson.sync(AUTH_FILE_PATH) || {};
+    } catch (e) {
+        return {};
+    }
+};
+
+/**
+ * Returns state object from auth file or empty object.
+ * @return {*}
+ */
+const getLocalState = () => {
+    try {
+        return loadJson.sync(STATE_FILE_PATH) || {};
     } catch (e) {
         return {};
     }
@@ -266,27 +301,54 @@ const getLocalInput = () => {
 };
 
 /**
+ * Fetches the latest NPM version of Apify CLI and caches it locally.
+ */
+const getAndCacheLatestNpmVersion = () => {
+    try {
+        info('Checking that Apify CLI is up to date...');
+
+        const latestNpmVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
+
+        // These are the blocking functions to beware of various race conditions.
+        const state = getLocalState();
+        writeJson.sync(STATE_FILE_PATH, {
+            ...state,
+            latestNpmVersion,
+            latestNpmVersionCheckedAt: new Date(),
+        });
+
+        return latestNpmVersion;
+    } catch (err) {
+        warning('Cannot fetch the latest Apify CLI version from NPM!');
+    }
+};
+
+/**
  * Logs warning if client local package is not in the latest version
  * Check'll be skip if user is offline
  * Check'll run approximately every 10. call
  * @return {Promise<void>}
  */
 const checkLatestVersion = async () => {
-    try {
-        // Skip if user is offline
-        const isOnline = await import('is-online');
-        if (!await isOnline.default({ timeout: 500 })) return;
+    const {
+        latestNpmVersion: cachedLatestNpmVersion,
+        latestNpmVersionCheckedAt,
+    } = getLocalState();
 
-        const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
-        const currentVersion = require('../../package.json').version; //  eslint-disable-line
+    const isCheckOutdated = !latestNpmVersionCheckedAt || Date.now() - new Date(latestNpmVersionCheckedAt) > CHECK_VERSION_EVERY_MILLIS;
+    const isOnline = await import('is-online');
 
-        if (semver.gt(latestVersion, currentVersion)) {
-            console.log('');
-            warning('You are using an old version of Apify CLI. We strongly recommend you always use the latest available version.');
-            console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(' npm install apify-cli@latest -g '))} to install it! 👍 \n`);
-        }
-    } catch (err) {
-        // Check should not break all commands
+    // If check is outdated and we are online then update the current NPM version.
+    const latestNpmVersion = (isCheckOutdated && await isOnline.default({ timeout: 500 }))
+        ? getAndCacheLatestNpmVersion()
+        : cachedLatestNpmVersion;
+
+    const currentNpmVersion = require('../../package.json').version; //  eslint-disable-line
+
+    if (latestNpmVersion && semver.gt(latestNpmVersion, currentNpmVersion)) {
+        console.log('');
+        warning('You are using an old version of Apify CLI. We strongly recommend you always use the latest available version.');
+        console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(' npm install apify-cli@latest -g '))} to install it! 👍 \n`);
     }
 };
 

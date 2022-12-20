@@ -13,11 +13,15 @@ exports.EMPTY_LOCAL_CONFIG = {
     env: null,
 };
 
+exports.CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000;
+
 exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
 
 exports.AUTH_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
 
 exports.SECRETS_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'secrets.json');
+
+exports.STATE_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'state.json');
 
 exports.LOCAL_CONFIG_NAME = 'apify.json';
 
