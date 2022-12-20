@@ -22,6 +22,7 @@ const {
     LOCAL_CONFIG_PATH,
     DEPRECATED_LOCAL_CONFIG_NAME,
     ACTOR_SPECIFICATION_VERSION,
+    APIFY_CLIENT_DEFAULT_HEADERS,
 } = require('./consts');
 const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
 const { warning, info } = require('./outputs');
@@ -78,17 +79,33 @@ const getLoggedClientOrThrow = async () => {
 };
 
 /**
+ * Returns options for ApifyClient
+ * @param {String|null|undefined} token
+ * @returns {Object}
+ */
+const getApifyClientOptions = (token) => {
+    if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
+        ({ token } = loadJson.sync(AUTH_FILE_PATH));
+    }
+
+    return {
+        token,
+        baseUrl: process.env.APIFY_CLIENT_BASE_URL,
+        requestInterceptors: [(config) => {
+            config.headers = { ...APIFY_CLIENT_DEFAULT_HEADERS, ...config.headers };
+            return config;
+        }],
+    };
+};
+
+/**
  * Gets instance of ApifyClient for token or for params from global auth file.
  * NOTE: It refreshes global auth file each run
  * @param [token]
  * @return {Promise<*>}
  */
 const getLoggedClient = async (token) => {
-    if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
-        ({ token } = loadJson.sync(AUTH_FILE_PATH));
-    }
-
-    const apifyClient = new ApifyClient({ token, baseUrl: process.env.APIFY_CLIENT_BASE_URL });
+    const apifyClient = new ApifyClient(getApifyClientOptions(token));
     let userInfo;
     try {
         userInfo = await apifyClient.user('me').get();
@@ -98,7 +115,7 @@ const getLoggedClient = async (token) => {
 
     // Always refresh Auth file
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
-    writeJson.sync(AUTH_FILE_PATH, { token, ...userInfo });
+    writeJson.sync(AUTH_FILE_PATH, { token: apifyClient.token, ...userInfo });
     return apifyClient;
 };
 
@@ -510,4 +527,5 @@ module.exports = {
     createSourceFiles,
     validateActorName,
     getJsonFileContent,
+    getApifyClientOptions,
 };

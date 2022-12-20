@@ -4,7 +4,7 @@ const { promisify } = require('util');
 const { default: ow } = require('ow');
 const { MemoryStorage } = require('@crawlee/memory-storage');
 const { ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
-const { getLocalUserInfo, getLocalStorageDir } = require('./utils');
+const { getLocalUserInfo, getLocalStorageDir, getApifyClientOptions } = require('./utils');
 
 const pipelinePromise = promisify(pipeline);
 
@@ -41,7 +41,7 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
     }
 
     return new ApifyClient({
-        token: apifyToken,
+        ...getApifyClientOptions(apifyToken),
         ...options,
     });
 };
