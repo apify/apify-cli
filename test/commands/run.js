@@ -5,7 +5,7 @@ const path = require('path');
 const writeJson = require('write-json-file');
 const loadJson = require('load-json-file');
 const { ENV_VARS } = require('@apify/consts');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
+const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_PATH, EMPTY_LOCAL_CONFIG } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const { TEST_USER_TOKEN } = require('./config');
 const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
@@ -48,7 +48,7 @@ describe('apify run', () => {
         expect(actOutput).to.be.eql(expectOutput);
     });
 
-    it('run with env vars from apify.json', async () => {
+    it(`run with env vars from "${LOCAL_CONFIG_PATH}"`, async () => {
         const testEnvVars = {
             TEST_LOCAL: 'testValue',
         };
@@ -64,9 +64,9 @@ describe('apify run', () => {
         });
         `;
         fs.writeFileSync('main.js', actCode, { flag: 'w' });
-        const apifyJson = loadJson.sync('apify.json');
-        apifyJson.env = testEnvVars;
-        writeJson.sync('apify.json', apifyJson);
+        const apifyJson = EMPTY_LOCAL_CONFIG;
+        apifyJson.environmentVariables = testEnvVars;
+        writeJson.sync(LOCAL_CONFIG_PATH, apifyJson);
 
         await command.run(['run']);
 

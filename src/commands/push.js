@@ -8,7 +8,7 @@ const { createActZip, getLoggedClientOrThrow,
     outputJobLog, getLocalUserInfo, getActorLocalFilePaths,
     createSourceFiles, getLocalConfigOrThrow } = require('../lib/utils');
 const { sumFilesSizeInBytes } = require('../lib/files');
-const { UPLOADS_STORE_NAME } = require('../lib/consts');
+const { UPLOADS_STORE_NAME, LOCAL_CONFIG_PATH } = require('../lib/consts');
 const { transformEnvToEnvVars } = require('../lib/secrets');
 const outputs = require('../lib/outputs');
 
@@ -94,15 +94,17 @@ class PushCommand extends ApifyCommand {
                 contentType: 'application/zip',
             });
             fs.unlinkSync(TEMP_ZIP_FILE_NAME);
-            tarballUrl = `https://api.apify.com/v2/key-value-stores/${store.id}/records/${key}?disableRedirect=true`;
+            tarballUrl = `${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`;
             sourceType = ACT_SOURCE_TYPES.TARBALL;
         }
 
         // Update actor version
         const actorCurrentVersion = await actorClient.version(version).get();
+        const envVars = localConfig.environmentVariables
+            ? transformEnvToEnvVars(localConfig.environmentVariables)
+            : undefined;
         if (actorCurrentVersion) {
-            const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType };
-            if (localConfig.env) actorVersionModifier.envVars = transformEnvToEnvVars(localConfig.env);
+            const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
             await actorClient.version(version).update(actorVersionModifier);
             outputs.run(`Updated version ${version} for ${actor.name} actor.`);
         } else {
@@ -112,8 +114,8 @@ class PushCommand extends ApifyCommand {
                 sourceFiles,
                 buildTag,
                 sourceType,
+                envVars,
             };
-            if (localConfig.env) actorNewVersion.envVars = transformEnvToEnvVars(localConfig.env);
             await actorClient.versions().create({
                 versionNumber: version,
                 ...actorNewVersion,
@@ -150,7 +152,7 @@ class PushCommand extends ApifyCommand {
 }
 
 PushCommand.description = 'Uploads the actor to the Apify platform and builds it there.\n'
-    + 'The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using command-line options.\n'
+    + `The actor settings are read from the "${LOCAL_CONFIG_PATH}" file in the current directory, but they can be overridden using command-line options.\n`
     + `NOTE: If the source files are smaller than ${MAX_MULTIFILE_BYTES / (1024 ** 2)} MB then they are uploaded as \n`
     + '"Multiple source files", otherwise they are uploaded as "Zip file".\n\n'
     + 'WARNING: If the target actor already exists in your Apify account, it will be overwritten!';
@@ -158,17 +160,17 @@ PushCommand.description = 'Uploads the actor to the Apify platform and builds it
 PushCommand.flags = {
     'version-number': flagsHelper.string({
         description: 'DEPRECATED: Use flag version instead. Actor version number to which the files should be pushed. '
-            + 'By default, it is taken from the "apify.json" file.',
+            + `By default, it is taken from the "${LOCAL_CONFIG_PATH}" file.`,
         required: false,
     }),
     version: flagsHelper.string({
         char: 'v',
-        description: 'Actor version number to which the files should be pushed. By default, it is taken from the "apify.json" file.',
+        description: `Actor version number to which the files should be pushed. By default, it is taken from the "${LOCAL_CONFIG_PATH}" file.`,
         required: false,
     }),
     'build-tag': flagsHelper.string({
         char: 'b',
-        description: 'Build tag to be applied to the successful actor build. By default, it is taken from the "apify.json" file',
+        description: `Build tag to be applied to the successful actor build. By default, it is taken from the "${LOCAL_CONFIG_PATH}" file`,
         required: false,
     }),
     'wait-for-finish': flagsHelper.string({
@@ -183,7 +185,7 @@ PushCommand.args = [
         name: 'actorId',
         required: false,
         description: 'ID of an existing actor on the Apify platform where the files will be pushed. '
-        + 'If not provided, the command will create or modify the actor with the name specified in "apify.json" file.',
+        + `If not provided, the command will create or modify the actor with the name specified in "${LOCAL_CONFIG_PATH}" file.`,
     },
 ];
 

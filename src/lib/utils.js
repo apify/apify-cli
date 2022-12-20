@@ -28,19 +28,26 @@ const {
     GLOBAL_CONFIGS_FOLDER,
     AUTH_FILE_PATH,
     STATE_FILE_PATH,
-    LOCAL_CONFIG_NAME,
+    CHECK_VERSION_EVERY_MILLIS,
     INPUT_FILE_REG_EXP,
     DEFAULT_LOCAL_STORAGE_DIR,
-    CHECK_VERSION_EVERY_MILLIS,
+    LOCAL_CONFIG_PATH,
+    DEPRECATED_LOCAL_CONFIG_NAME,
+    ACTOR_SPECIFICATION_VERSION,
+    APIFY_CLIENT_DEFAULT_HEADERS,
 } = require('./consts');
 const {
     ensureFolderExistsSync,
-    rimrafPromised, deleteFile,
+    rimrafPromised,
+    deleteFile,
 } = require('./files');
 const {
     warning,
     info,
 } = require('./outputs');
+
+// Properties from apify.json file that will me migrated to actor specs in .actor/actor.json
+const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
 
 const getLocalStorageDir = () => {
     const envVar = ENV_VARS.LOCAL_STORAGE_DIR;
@@ -103,17 +110,33 @@ const getLoggedClientOrThrow = async () => {
 };
 
 /**
+ * Returns options for ApifyClient
+ * @param {String|null|undefined} token
+ * @returns {Object}
+ */
+const getApifyClientOptions = (token) => {
+    if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
+        ({ token } = loadJson.sync(AUTH_FILE_PATH));
+    }
+
+    return {
+        token,
+        baseUrl: process.env.APIFY_CLIENT_BASE_URL,
+        requestInterceptors: [(config) => {
+            config.headers = { ...APIFY_CLIENT_DEFAULT_HEADERS, ...config.headers };
+            return config;
+        }],
+    };
+};
+
+/**
  * Gets instance of ApifyClient for token or for params from global auth file.
  * NOTE: It refreshes global auth file each run
  * @param [token]
  * @return {Promise<*>}
  */
 const getLoggedClient = async (token) => {
-    if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
-        ({ token } = loadJson.sync(AUTH_FILE_PATH));
-    }
-
-    const apifyClient = new ApifyClient({ token });
+    const apifyClient = new ApifyClient(getApifyClientOptions(token));
     let userInfo;
     try {
         userInfo = await apifyClient.user('me').get();
@@ -123,45 +146,88 @@ const getLoggedClient = async (token) => {
 
     // Always refresh Auth file
     if (!fs.existsSync(GLOBAL_CONFIGS_FOLDER)) fs.mkdirSync(GLOBAL_CONFIGS_FOLDER);
-    writeJson.sync(AUTH_FILE_PATH, { token, ...userInfo });
+    writeJson.sync(AUTH_FILE_PATH, { token: apifyClient.token, ...userInfo });
     return apifyClient;
 };
 
-const getLocalConfigPath = () => path.join(process.cwd(), LOCAL_CONFIG_NAME);
+const getLocalConfigPath = () => path.join(process.cwd(), LOCAL_CONFIG_PATH);
 
-const getLocalConfig = () => {
-    const localConfigPath = getLocalConfigPath();
-    if (!fs.existsSync(localConfigPath)) {
+/**
+ * @deprecated Use getLocalConfigPath
+ * @returns {string}
+ */
+const getDeprecatedLocalConfigPath = () => path.join(process.cwd(), DEPRECATED_LOCAL_CONFIG_NAME);
+
+const getJsonFileContent = (filePath) => {
+    if (!fs.existsSync(filePath)) {
         return;
     }
-    return loadJson.sync(localConfigPath);
+    return loadJson.sync(filePath);
 };
+
+const getLocalConfig = () => getJsonFileContent(getLocalConfigPath());
+
+/**
+ * @deprecated Use getLocalConfig
+ * @returns {string}
+ */
+const getDeprecatedLocalConfig = () => getJsonFileContent(getDeprecatedLocalConfigPath());
 
 const getLocalConfigOrThrow = async () => {
     let localConfig = getLocalConfig();
-    if (!localConfig) {
-        return {};
-    }
-    // 27-11-2018: Check if apify.json contains old  deprecated structure. If so, updates it.
-    if (localConfig.version && _.isObject(localConfig.version)) {
+    let deprecatedLocalConfig = getDeprecatedLocalConfig();
+
+    if (localConfig && deprecatedLocalConfig) {
         const answer = await inquirer.prompt([{
             name: 'isConfirm',
             type: 'confirm',
             // eslint-disable-next-line max-len
-            message: 'The new version of Apify CLI uses a new format of the "apify.json" file. Your file will be automatically updated to the new format.',
+            message: `The new version of Apify CLI uses the "${LOCAL_CONFIG_PATH}" instead of the "apify.json" file. Since we have found both files in your actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use "${LOCAL_CONFIG_PATH}". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?`,
         }]);
-        if (answer.isConfirm) {
-            try {
-                localConfig = updateLocalConfigStructure(localConfig);
-                writeJson.sync(getLocalConfigPath(), localConfig);
-                info('apify.json was updated, do not forget to commit the new version of apify.json to Git repository.');
-            } catch (e) {
-                throw new Error('Can not update apify.json structure. '
-                    + 'Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+        if (!answer.isConfirm) {
+            throw new Error('Command can not run with old "apify.json" file present in your actor directory., Please, either rename or remove it.');
+        }
+        try {
+            fs.renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
+            // eslint-disable-next-line max-len
+            info(`The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.`);
+        } catch (e) {
+            throw new Error('Failed to rename deprecated "apify.json".');
+        }
+    }
+
+    if (!localConfig && !deprecatedLocalConfig) {
+        return {};
+    }
+
+    // If apify.json exists migrate it to .actor/actor.json
+    if (!localConfig && deprecatedLocalConfig) {
+        const answer = await inquirer.prompt([{
+            name: 'isConfirm',
+            type: 'confirm',
+            // eslint-disable-next-line max-len
+            message: `The new version of Apify CLI uses the "${LOCAL_CONFIG_PATH}" instead of the "apify.json" file. Your "apify.json" file will be automatically updated to the new format under "${LOCAL_CONFIG_PATH}". The original file will be renamed by adding the ".deprecated" suffix. Do you want to continue?`,
+        }]);
+        if (!answer.isConfirm) {
+            throw new Error('Command can not run with old apify.json structure. Either let the CLI auto-update it or follow the guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+        }
+        try {
+            // Check if apify.json contains old deprecated structure. If so, updates it.
+            if (_.isObject(deprecatedLocalConfig.version)) {
+                deprecatedLocalConfig = updateLocalConfigStructure(deprecatedLocalConfig);
             }
-        } else {
-            throw new Error('Command can not run with old apify.json structure. '
-                + 'Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+            localConfig = {
+                actorSpecification: ACTOR_SPECIFICATION_VERSION,
+                environmentVariables: deprecatedLocalConfig.env || undefined,
+                ..._.pick(deprecatedLocalConfig, MIGRATED_APIFY_JSON_PROPERTIES),
+            };
+
+            writeJson.sync(getLocalConfigPath(), localConfig);
+            fs.renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
+            // eslint-disable-next-line max-len
+            info(`The "apify.json" file has been migrated to "${LOCAL_CONFIG_PATH}" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`);
+        } catch (e) {
+            throw new Error(`Can not update "${LOCAL_CONFIG_PATH}" structure. Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.`);
         }
     }
 
@@ -170,7 +236,7 @@ const getLocalConfigOrThrow = async () => {
 
 const setLocalConfig = async (localConfig, actDir) => {
     actDir = actDir || process.cwd();
-    writeJson.sync(path.join(actDir, LOCAL_CONFIG_NAME), localConfig);
+    writeJson.sync(path.join(actDir, LOCAL_CONFIG_PATH), localConfig);
 };
 
 const setLocalEnv = async (actDir) => {
@@ -385,7 +451,7 @@ const outputJobLog = async (job, jobStatus, timeout) => {
     const { id: logId, status } = job;
     // In case job was already done just output log
     if (ACT_JOB_TERMINAL_STATUSES.includes(status)) {
-        const apifyClient = new ApifyClient();
+        const apifyClient = new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
         const log = await apifyClient.log(logId).get();
         process.stdout.write(log);
     }
@@ -518,4 +584,6 @@ module.exports = {
     getActorLocalFilePaths,
     createSourceFiles,
     validateActorName,
+    getJsonFileContent,
+    getApifyClientOptions,
 };

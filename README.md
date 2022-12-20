@@ -57,7 +57,7 @@ apify --version
 
 which should print something like:
 ```
-apify-cli/0.8.0 darwin-x64 node-v16.16.0
+apify-cli/0.10.0 darwin-x64 node-v16.14.2
 ```
 
 ## Basic usage
@@ -81,9 +81,9 @@ cd ./my/awesome/project
 apify init
 ```
 This command will only set up local actor development environment in an existing directory,
-i.e. it will create the `apify.json` file and `apify_storage` directory.
+i.e. it will create the `.actor/actor.json` file and `apify_storage` directory.
 
-Before you can run your project using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
+Before you can run your project locally using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
 ```text
 {
     ...
@@ -123,7 +123,7 @@ Note that the command will store the API token and other sensitive information t
 apify push
 ```
 
-This command uploads your project to the Apify cloud and builds an actor from it.
+This command uploads your project to the Apify cloud and builds an actor from it. On the platform, actor needs to be built before it can be run.
 
 ### Run an actor on the Apify cloud
 
@@ -139,73 +139,95 @@ This command can also be used to run other actors, for example:
 apify call apify/hello-world
 ```
 
-### So what's in this `apify.json` file?
+### So what's in this `.actor/actor.json` file?
 
 This file associates your local development project with an actor on the Apify platform.
 It contains information such as actor name, version, build tag and environment variables.
 Make sure you commit this file to the Git repository.
 
-For example, `apify.json` file can look as follows:
+For example, `.actor/actor.json` file can look as follows:
+
 
 ```json
 {
-    "name": "dataset-to-mysql",
-    "version": "0.1",
-    "buildTag": "latest",
-    "env": {
+  "actorSpecification": 1,
+  "name": "name-of-my-scraper",
+  "version": "0.0",
+  "buildTag": "latest",
+  "environmentVariables": {
       "MYSQL_USER": "my_username",
       "MYSQL_PASSWORD": "@mySecretPassword"
-    },
-    "template": "basic"
+  },
+  "dockerfile": "./Dockerfile",
+  "readme": "./ACTOR.md",
+  "input": "./input_schema.json",
+  "storages": {
+    "dataset": "./dataset_schema.json",
+  }
 }
 ```
+
+**`Dockerfile` field**\
+If you specify the path to your Docker file under the `dockerfile` field, this file will be used for actor builds on the platform. If not specified, the system will look for Docker files at `.actor/Dockerfile` and `Dockerfile` in this order of preference.
+
+**`Readme` field** \
+If you specify the path to your readme file under the `readme` field, the readme at this path will be used on the platform. If not specified, readme at `.actor/README.md` and `README.md` will be used in this order of preference.
+
+**`Input` field**\
+You can embed your [input schema](https://docs.apify.com/actors/development/input-schema#specification-version-1) object directly in `actor.json` under `input` field. Alternatively, you can provide a path to a custom input schema. If not provided, the input schema at `.actor/INPUT_SCHEMA.json` and `INPUT_SCHEMA.json` is used in this order of preference.
+
+**`Storages.dataset` field**\
+You can define the schema of the items in your dataset under the `storages.dataset` field. This can be either an embedded object or a path to a JSON schema file. You can read more about the schema of your actor output [here](https://docs.apify.com/actors/development/output-schema#specification-version-1).
+
+**Note on migration from deprecated config "apify.json"**\
+*Note that previously, actor config was stored in the `apify.json` file that has been deprecated. You can find the (very slight) differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).*
 
 ## Environment variables
 
 There are two options how you can set up environment variables for actors.
 
-### Set up environment variables in `apify.json`
+### Set up environment variables in `.actor/actor.json`
 All keys from `env` will be set as environment variables into Apify platform after you push actor to Apify. Current values on Apify will be overridden.
 ```json
 {
+    "actorSpecification": 1,
     "name": "dataset-to-mysql",
     "version": "0.1",
     "buildTag": "latest",
-    "env": {
+    "environmentVariables": {
       "MYSQL_USER": "my_username",
       "MYSQL_PASSWORD": "@mySecretPassword"
-    },
-    "template": "basic"
+    }
 }
 ```
 
 ### Set up environment variables in Apify Console
 In [Apify Console](https://console.apify.com/actors) select your actor, you can set up variables into Source tab.
-After setting up variables in the app, set up `env` to `null` apify.json. Otherwise, variables from `apify.json` will override variables in the app.
+After setting up variables in the app, remove the `environmentVariables` from `.actor/actor.json`. Otherwise, variables from `.actor/actor.json` will override variables in the app.
 ```json
 {
+    "actorSpecification": 1,
     "name": "dataset-to-mysql",
     "version": "0.1",
-    "buildTag": "latest",
-    "env": null,
-    "template": "basic"
+    "buildTag": "latest"
 }
 ```
 
 
-#### How to set secret environment variables in `apify.json`
+#### How to set secret environment variables in `.actor/actor.json`
 
-CLI provides commands to manage secrets environment variables. Secrets are stored to the ~/.apify directory.
-Adds a new secret using command:
+CLI provides commands to manage secrets environment variables. Secrets are stored to the `~/.apify` directory.
+You can add a new secret using the command:
 ```bash
 apify secrets:add mySecretPassword pwd1234
 ```
-After adding a new secret you can use the secret in apify.json
+After adding a new secret you can use the secret in `.actor/actor.json`.
 ```text
 {
+    "actorSpecification": 1,
     "name": "dataset-to-mysql",
     ...
-    "env": {
+    "environmentVariables": {
       "MYSQL_PASSWORD": "@mySecretPassword"
     },
     ...
@@ -262,7 +284,11 @@ USAGE
   $ apify actor
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/actor/index.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/actor/index.js)_
+=======
+_See code: [src/commands/actor/index.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/actor/index.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify actor:get-input`
 
@@ -273,7 +299,11 @@ USAGE
   $ apify actor:get-input
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/actor/get-input.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/actor/get-input.js)_
+=======
+_See code: [src/commands/actor/get-input.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/actor/get-input.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify actor:get-value KEY`
 
@@ -287,7 +317,11 @@ ARGUMENTS
   KEY  Key of the record in key-value store
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/actor/get-value.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/actor/get-value.js)_
+=======
+_See code: [src/commands/actor/get-value.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/actor/get-value.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify actor:push-data [ITEM]`
 
@@ -308,7 +342,11 @@ DESCRIPTION
   $ cat ./test.json | apify actor:push-data
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/actor/push-data.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/actor/push-data.js)_
+=======
+_See code: [src/commands/actor/push-data.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/actor/push-data.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify actor:set-value KEY [VALUE]`
 
@@ -338,7 +376,11 @@ DESCRIPTION
   $ cat ./my-text-file.txt | apify actor:set-value KEY --contentType text/plain
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/actor/set-value.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/actor/set-value.js)_
+=======
+_See code: [src/commands/actor/set-value.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/actor/set-value.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify call [ACTID]`
 
@@ -350,7 +392,7 @@ USAGE
 
 ARGUMENTS
   ACTID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command
-         runs the remote actor specified in the "apify.json" file.
+         runs the remote actor specified in the ".actor/actor.json" file.
 
 OPTIONS
   -b, --build=build                      Tag or number of the build to run (e.g. "latest" or "1.2.34").
@@ -359,11 +401,15 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account, therefore you need to be logged in by calling "apify login". It 
+  The actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It 
   takes input for the actor from the default local key-value store by default.
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/call.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/call.js)_
+=======
+_See code: [src/commands/call.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/call.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify create [ACTORNAME]`
 
@@ -382,7 +428,11 @@ OPTIONS
                            find available template names.
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/create.js)_
+=======
+_See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/create.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify info`
 
@@ -396,7 +446,11 @@ DESCRIPTION
   The information is printed to the console.
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/info.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/info.js)_
+=======
+_See code: [src/commands/info.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/info.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify init [ACTORNAME]`
 
@@ -410,13 +464,17 @@ ARGUMENTS
   ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the "apify.json" file and the "storage" directory in the current directory, but will not 
-  touch anything else.
+  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will 
+  not touch anything else.
 
   WARNING: The directory at "storage" will be overwritten if it already exists.
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/init.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/init.js)_
+=======
+_See code: [src/commands/init.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/init.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify login`
 
@@ -434,7 +492,11 @@ DESCRIPTION
   "apify" commands. To log out, call "apify logout".
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/login.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/login.js)_
+=======
+_See code: [src/commands/login.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/login.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify logout`
 
@@ -449,7 +511,11 @@ DESCRIPTION
    call "apify login".
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/logout.js)_
+=======
+_See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/logout.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify push [ACTORID]`
 
@@ -461,30 +527,34 @@ USAGE
 
 ARGUMENTS
   ACTORID  ID of an existing actor on the Apify platform where the files will be pushed. If not provided, the command
-           will create or modify the actor with the name specified in "apify.json" file.
+           will create or modify the actor with the name specified in ".actor/actor.json" file.
 
 OPTIONS
   -b, --build-tag=build-tag              Build tag to be applied to the successful actor build. By default, it is taken
-                                         from the "apify.json" file
+                                         from the ".actor/actor.json" file
 
   -v, --version=version                  Actor version number to which the files should be pushed. By default, it is
-                                         taken from the "apify.json" file.
+                                         taken from the ".actor/actor.json" file.
 
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to build to finish, if no value passed, it waits forever.
 
   --version-number=version-number        DEPRECATED: Use flag version instead. Actor version number to which the files
-                                         should be pushed. By default, it is taken from the "apify.json" file.
+                                         should be pushed. By default, it is taken from the ".actor/actor.json" file.
 
 DESCRIPTION
-  The actor settings are read from the "apify.json" file in the current directory, but they can be overridden using 
-  command-line options.
+  The actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden 
+  using command-line options.
   NOTE: If the source files are smaller than 3 MB then they are uploaded as 
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/push.js)_
+=======
+_See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/push.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify run`
 
@@ -510,11 +580,15 @@ DESCRIPTION
    example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
    stored in the "storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the default behaviour of command overriding npm start script value in a package.json file. You 
-  can set up your own main file or environment variables by changing it.
+  NOTE: You can override the command's default behavior by overriding the npm start script value in a package.json file.
+   You can set up your own main file or environment variables by changing it.
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/run.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/run.js)_
+=======
+_See code: [src/commands/run.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/run.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify secrets`
 
@@ -528,11 +602,13 @@ DESCRIPTION
   Example:
   $ apify secrets:add mySecret TopSecretValue123
 
-  Now the "mySecret" value can be used in an environment variable defined in "apify.json" file by adding the "@" prefix:
+  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@" 
+  prefix:
 
   {
+    "actorSpecification": 1,
     "name": "my_actor",
-    "env": { "SECRET_ENV_VAR": "@mySecret" },
+    "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" },
     "version": "0.1
   }
 
@@ -540,7 +616,11 @@ DESCRIPTION
    of the actor.
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/secrets/index.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/secrets/index.js)_
+=======
+_See code: [src/commands/secrets/index.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/secrets/index.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify secrets:add NAME VALUE`
 
@@ -558,7 +638,11 @@ DESCRIPTION
   The secrets are stored to a file at ~/.apify
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/secrets/add.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/secrets/add.js)_
+=======
+_See code: [src/commands/secrets/add.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/secrets/add.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify secrets:rm NAME`
 
@@ -572,11 +656,15 @@ ARGUMENTS
   NAME  Name of the secret
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/secrets/rm.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/secrets/rm.js)_
+=======
+_See code: [src/commands/secrets/rm.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/secrets/rm.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 
 ## `apify vis [PATH]`
 
-Validates INPUT_SCHEMA.json file and prints errors found.
+Validates input schema and prints errors found.
 
 ```
 USAGE
@@ -584,7 +672,21 @@ USAGE
 
 ARGUMENTS
   PATH  Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.
+
+DESCRIPTION
+  The input schema for the actor is used from these locations in order of preference.
+  The first one found is validated as it would be the one used on the Apify platform.
+  1. Directly embedded object in ".actor/actor.json" under 'input' key
+  2. Path to JSON file referenced in ".actor/actor.json" under 'input' key
+  3. JSON file at .actor/INPUT_SCHEMA.json
+  4. JSON file at INPUT_SCHEMA.json
+
+  You can also pass any custom path to your input schema to have it validated instead.
 ```
 
+<<<<<<< HEAD
 _See code: [src/commands/vis.js](https://github.com/apify/apify-cli/blob/v0.13.0/src/commands/vis.js)_
+=======
+_See code: [src/commands/vis.js](https://github.com/apify/apify-cli/blob/v0.12.0/src/commands/vis.js)_
+>>>>>>> dc8222c7d6bd3ac968dabc5b728b5f023944be4b
 <!-- commandsstop -->
