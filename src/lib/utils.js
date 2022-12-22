@@ -86,18 +86,6 @@ const getLocalUserInfo = () => {
 };
 
 /**
- * Returns state object from auth file or empty object.
- * @return {*}
- */
-const getLocalState = () => {
-    try {
-        return loadJson.sync(STATE_FILE_PATH) || {};
-    } catch (e) {
-        return {};
-    }
-};
-
-/**
  * Gets instance of ApifyClient for user otherwise throws error
  * @return {Promise<boolean|*>}
  */
@@ -366,58 +354,6 @@ const getLocalInput = () => {
     return { body: inputFile, contentType };
 };
 
-/**
- * Fetches the latest NPM version of Apify CLI and caches it locally.
- */
-const getAndCacheLatestNpmVersion = () => {
-    try {
-        info('Checking that Apify CLI is up to date...');
-
-        const latestNpmVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
-
-        // These are the blocking functions to beware of various race conditions.
-        const state = getLocalState();
-        writeJson.sync(STATE_FILE_PATH, {
-            ...state,
-            latestNpmVersion,
-            latestNpmVersionCheckedAt: new Date(),
-        });
-
-        return latestNpmVersion;
-    } catch (err) {
-        warning('Cannot fetch the latest Apify CLI version from NPM!');
-    }
-};
-
-/**
- * Logs warning if client local package is not in the latest version
- * Check'll be skip if user is offline
- * Check'll run approximately every 10. call
- * @return {Promise<void>}
- */
-const checkLatestVersion = async () => {
-    const {
-        latestNpmVersion: cachedLatestNpmVersion,
-        latestNpmVersionCheckedAt,
-    } = getLocalState();
-
-    const isCheckOutdated = !latestNpmVersionCheckedAt || Date.now() - new Date(latestNpmVersionCheckedAt) > CHECK_VERSION_EVERY_MILLIS;
-    const isOnline = await import('is-online');
-
-    // If check is outdated and we are online then update the current NPM version.
-    const latestNpmVersion = (isCheckOutdated && await isOnline.default({ timeout: 500 }))
-        ? getAndCacheLatestNpmVersion()
-        : cachedLatestNpmVersion;
-
-    const currentNpmVersion = require('../../package.json').version; //  eslint-disable-line
-
-    if (latestNpmVersion && semver.gt(latestNpmVersion, currentNpmVersion)) {
-        console.log('');
-        warning('You are using an old version of Apify CLI. We strongly recommend you always use the latest available version.');
-        console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(' npm install apify-cli@latest -g '))} to install it! 👍 \n`);
-    }
-};
-
 const purgeDefaultQueue = async () => {
     const defaultQueuesPath = getLocalRequestQueuePath();
     if (fs.existsSync(getLocalStorageDir()) && fs.existsSync(defaultQueuesPath)) {
@@ -568,7 +504,6 @@ module.exports = {
     createActZip,
     getLocalUserInfo,
     getLocalConfigOrThrow,
-    checkLatestVersion,
     getLocalInput,
     purgeDefaultQueue,
     purgeDefaultDataset,

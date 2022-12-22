@@ -9,7 +9,8 @@
         "lint:fix": "eslint src test --fix",
         "commands-md": "npm run manifest && oclif-dev readme",
         "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap",
-        "manifest": "rm -f oclif.manifest.json && oclif-dev manifest"
+        "manifest": "rm -f oclif.manifest.json && oclif-dev manifest",
+        "postinstall": "./src/bin/run check-version"
     },
     "files": [
         "src",
