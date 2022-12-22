@@ -38,7 +38,7 @@ const getAndCacheLatestNpmVersion = () => {
 /**
  * Logs warning if client local package is not in the latest version
  * Check'll be skip if user is offline
- * Check'll run approximately every 10. call
+ * Check results will be cached for 24 hours
  * @return {Promise<void>}
  */
 const checkLatestVersion = async (enforeUpdate = false) => {
