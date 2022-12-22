@@ -6,14 +6,14 @@ class CheckVersionCommand extends ApifyCommand {
     async run() {
         const { flags } = this.parse(CheckVersionCommand);
 
-        checkLatestVersion(flags.enforeUpdate);
+        checkLatestVersion(flags.enforceUpdate);
     }
 }
 
 CheckVersionCommand.description = 'Checks that installed Apify CLI version is up to date.';
 
 CheckVersionCommand.flags = {
-    'enfore-update': flagsHelper.boolean({
+    'enforce-update': flagsHelper.boolean({
         char: 'e',
         description: '[Optional] Enforce version update from NPM',
         required: false,
