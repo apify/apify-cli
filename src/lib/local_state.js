@@ -1,8 +1,8 @@
+const loadJson = require('load-json-file');
+const writeJson = require('write-json-file');
 const {
     STATE_FILE_PATH,
 } = require('./consts');
-const loadJson = require('load-json-file');
-const writeJson = require('write-json-file');
 
 /**
  * Returns state object from auth file or empty object.

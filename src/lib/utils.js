@@ -8,7 +8,6 @@ const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
-const chalk = require('chalk');
 const { LOCAL_STORAGE_SUBDIRS,
     ENV_VARS,
     LOCAL_ENV_VARS,
@@ -21,14 +20,10 @@ const https = require('https');
 const { ApifyClient } = require('apify-client');
 const {
     execSync,
-    spawnSync,
 } = require('child_process');
-const semver = require('semver');
 const {
     GLOBAL_CONFIGS_FOLDER,
     AUTH_FILE_PATH,
-    STATE_FILE_PATH,
-    CHECK_VERSION_EVERY_MILLIS,
     INPUT_FILE_REG_EXP,
     DEFAULT_LOCAL_STORAGE_DIR,
     LOCAL_CONFIG_PATH,
@@ -42,7 +37,6 @@ const {
     deleteFile,
 } = require('./files');
 const {
-    warning,
     info,
 } = require('./outputs');
 
