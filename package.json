@@ -10,7 +10,7 @@
         "commands-md": "npm run manifest && oclif-dev readme",
         "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap",
         "manifest": "rm -f oclif.manifest.json && oclif-dev manifest",
-        "postinstall": "$npm_package_bin_apify check-version"
+        "postinstall": "node \"./src/bin/run\" check-version"
     },
     "files": [
         "src",
