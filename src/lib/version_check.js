@@ -31,7 +31,8 @@ const getAndCacheLatestNpmVersion = () => {
 
         return latestNpmVersion;
     } catch (err) {
-        warning('Cannot fetch the latest Apify CLI version from NPM!');
+        console.log(err);
+        warning('Cannot fetch the latest Apify CLI version from NPM, using the cached version instead.');
     }
 };
 
