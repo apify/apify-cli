@@ -22,7 +22,7 @@ const getAndCacheLatestNpmVersion = () => {
     try {
         info('Making sure that Apify CLI is up to date...');
 
-        const latestNpmVersion = spawnSync('npm.cmd', ['view', 'apify-cli', 'version']).stdout.toString().trim();
+        const latestNpmVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
 
         extendLocalState({
             latestNpmVersion,
