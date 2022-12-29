@@ -13,6 +13,8 @@ const {
     extendLocalState,
 } = require('./local_state');
 
+const getLatestNpmVersion = () => spawn.sync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
+
 /**
  * Fetches the latest NPM version of Apify CLI and caches it locally.
  */
@@ -20,7 +22,7 @@ const getAndCacheLatestNpmVersion = () => {
     try {
         info('Making sure that Apify CLI is up to date...');
 
-        const latestNpmVersion = spawn.sync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
+        const latestNpmVersion = getLatestNpmVersion();
 
         extendLocalState({
             latestNpmVersion,
@@ -70,4 +72,5 @@ const checkLatestVersion = async (enforeUpdate = false) => {
 
 module.exports = {
     checkLatestVersion,
+    getLatestNpmVersion,
 };
