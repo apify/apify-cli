@@ -25,7 +25,7 @@ const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
  * @returns {Object}
  */
 const waitForBuildToFinish = async (client, buildId) => {
-    while (true) {
+    while (true) { // eslint-disable-line
         const build = await client.build(buildId).get();
         if (build.status !== ACT_JOB_STATUSES.RUNNING) return build;
         await new Promise((resolve) => setTimeout(resolve, 2500));
@@ -51,6 +51,7 @@ describe('apify call', () => {
     before(async function () {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
             // Skip tests if user used CLI on local, it can break local environment!
+            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
             this.skip();
             return;
         }
@@ -97,6 +98,7 @@ describe('apify call', () => {
     });
 
     after(async () => {
+        if (!actorId) return; // Test was skipped.
         await testUserClient.actor(actorId).delete();
         process.chdir('../');
         if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
