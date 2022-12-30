@@ -30,7 +30,18 @@ class PushCommand extends ApifyCommand {
         let actor;
         // User can override actor version and build tag, attributes in localConfig will remain same.
         const version = flags.version || flags.versionNumber || localConfig.version || '0.0';
-        const buildTag = flags.buildTag || localConfig.buildTag;
+        let buildTag = flags.buildTag || localConfig.buildTag;
+        // We can't add the latest tag to everything. If a user creates a new
+        // version, e.g. for testing, but forgets to add the tag, it would default
+        // to latest and his production runs might switch to test version ❌
+        // TODO: revisit this when we have better build tagging system on platform.
+        if (!buildTag && version === '0.0') {
+            // It would be better to tag this `version-0.0` or similar,
+            // or even keep it tag-less, but the platform complains when
+            // actor does not have a build with a `latest` tag, so until
+            // that changes, we have to add it.
+            buildTag = 'latest';
+        }
         const waitForFinishMillis = Number.isNaN(flags.waitForFinish)
             ? undefined
             : parseInt(flags.waitForFinish, 10) * 1000;
