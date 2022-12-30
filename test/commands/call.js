@@ -25,7 +25,7 @@ const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
  * @returns {Object}
  */
 const waitForBuildToFinish = async (client, buildId) => {
-    while (true) {
+    while (true) { // eslint-disable-line
         const build = await client.build(buildId).get();
         if (build.status !== ACT_JOB_STATUSES.RUNNING) return build;
         await new Promise((resolve) => setTimeout(resolve, 2500));
