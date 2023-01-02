@@ -1,6 +1,6 @@
 {
     "name": "apify-cli",
-    "version": "0.12.1",
+    "version": "0.13.1",
     "description": "Apify command-line interface helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.",
     "main": "index.js",
     "scripts": {
@@ -8,8 +8,10 @@
         "lint": "eslint src test",
         "lint:fix": "eslint src test --fix",
         "commands-md": "npm run manifest && oclif-dev readme",
+        "prepare-release": "npm run manifest && npm run commands-md && npm run prod-shrinkwrap",
         "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap",
-        "manifest": "rm -f oclif.manifest.json && oclif-dev manifest"
+        "manifest": "rm -f oclif.manifest.json && oclif-dev manifest",
+        "postinstall": "node \"./src/bin/run\" check-version"
     },
     "files": [
         "src",
@@ -66,6 +68,7 @@
         "chalk": "^4.1.2",
         "child-process-promise": "^2.2.1",
         "cors": "^2.8.5",
+        "cross-spawn": "^7.0.3",
         "detect-indent": "^6.1.0",
         "express": "^4.18.2",
         "extract-zip": "^2.0.1",
@@ -91,6 +94,7 @@
         "@oclif/test": "^2.1.0",
         "chai": "^4.3.4",
         "chai-as-promised": "^7.1.1",
+        "chai-match": "^1.1.1",
         "eslint": "^8.11.0",
         "mocha": "^10.0.0",
         "sinon": "^9.2.4"
@@ -99,8 +103,8 @@
         "bin": "apify",
         "commands": "./src/commands",
         "hooks": {
-            "prerun": [
-                "./src/hooks/pre_run.js"
+            "init": [
+                "./src/hooks/init"
             ]
         }
     }
