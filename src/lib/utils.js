@@ -8,12 +8,19 @@ const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
-const { LOCAL_STORAGE_SUBDIRS, ENV_VARS, LOCAL_ENV_VARS,
-    KEY_VALUE_STORE_KEYS, ACT_JOB_TERMINAL_STATUSES, SOURCE_FILE_FORMATS, ACTOR_NAME } = require('@apify/consts');
+const { LOCAL_STORAGE_SUBDIRS,
+    ENV_VARS,
+    LOCAL_ENV_VARS,
+    KEY_VALUE_STORE_KEYS,
+    ACT_JOB_TERMINAL_STATUSES,
+    SOURCE_FILE_FORMATS,
+    ACTOR_NAME,
+} = require('@apify/consts');
 const https = require('https');
 const { ApifyClient } = require('apify-client');
-const { execSync, spawnSync } = require('child_process');
-const semver = require('semver');
+const {
+    execSync,
+} = require('child_process');
 const {
     GLOBAL_CONFIGS_FOLDER,
     AUTH_FILE_PATH,
@@ -24,8 +31,14 @@ const {
     ACTOR_SPECIFICATION_VERSION,
     APIFY_CLIENT_DEFAULT_HEADERS,
 } = require('./consts');
-const { ensureFolderExistsSync, rimrafPromised, deleteFile } = require('./files');
-const { warning, info } = require('./outputs');
+const {
+    ensureFolderExistsSync,
+    rimrafPromised,
+    deleteFile,
+} = require('./files');
+const {
+    info,
+} = require('./outputs');
 
 // Properties from apify.json file that will me migrated to actor specs in .actor/actor.json
 const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
@@ -335,31 +348,6 @@ const getLocalInput = () => {
     return { body: inputFile, contentType };
 };
 
-/**
- * Logs warning if client local package is not in the latest version
- * Check'll be skip if user is offline
- * Check'll run approximately every 10. call
- * @return {Promise<void>}
- */
-const checkLatestVersion = async () => {
-    try {
-        // Run check approximately every 10. call
-        if (Math.random() <= 0.8) return;
-        // Skip if user is offline
-        const isOnline = await import('is-online');
-        if (!await isOnline.default({ timeout: 500 })) return;
-
-        const latestVersion = spawnSync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
-        const currentVersion = require('../../package.json').version; //  eslint-disable-line
-
-        if (semver.gt(latestVersion, currentVersion)) {
-            warning('You are using an old version of apify-cli. Run "npm install apify-cli@latest -g" to install the latest version.');
-        }
-    } catch (err) {
-        // Check should not break all commands
-    }
-};
-
 const purgeDefaultQueue = async () => {
     const defaultQueuesPath = getLocalRequestQueuePath();
     if (fs.existsSync(getLocalStorageDir()) && fs.existsSync(defaultQueuesPath)) {
@@ -510,7 +498,6 @@ module.exports = {
     createActZip,
     getLocalUserInfo,
     getLocalConfigOrThrow,
-    checkLatestVersion,
     getLocalInput,
     purgeDefaultQueue,
     purgeDefaultDataset,
