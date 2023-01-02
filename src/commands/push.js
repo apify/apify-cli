@@ -20,6 +20,12 @@ const DEFAULT_RUN_OPTIONS = {
 };
 const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 
+// It would be better to use `version-0.0` or similar,
+// or even have no default tag, but the platform complains when
+// actor does not have a build with a `latest` tag, so until
+// that changes, we have to add it.
+const DEFAULT_BUILD_TAG = 'latest';
+
 class PushCommand extends ApifyCommand {
     async run() {
         const { args, flags } = this.parse(PushCommand);
@@ -32,16 +38,12 @@ class PushCommand extends ApifyCommand {
         // User can override actor version and build tag, attributes in localConfig will remain same.
         const version = flags.version || flags.versionNumber || localConfig.version || DEFAULT_ACTOR_VERSION_NUMBER;
         let buildTag = flags.buildTag || localConfig.buildTag;
-        // We can't add the latest tag to everything. If a user creates a new
-        // version, e.g. for testing, but forgets to add the tag, it would default
-        // to latest and his production runs might switch to test version ❌
+        // We can't add the default build tag to everything. If a user creates a new
+        // version, e.g. for testing, but forgets to add a tag, it would use the default
+        // tag and their production runs might be affected ❌
         // TODO: revisit this when we have better build tagging system on platform.
         if (!buildTag && version === DEFAULT_ACTOR_VERSION_NUMBER) {
-            // It would be better to tag this `version-0.0` or similar,
-            // or even keep it tag-less, but the platform complains when
-            // actor does not have a build with a `latest` tag, so until
-            // that changes, we have to add it.
-            buildTag = 'latest';
+            buildTag = DEFAULT_BUILD_TAG;
         }
         const waitForFinishMillis = Number.isNaN(flags.waitForFinish)
             ? undefined
