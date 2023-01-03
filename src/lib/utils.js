@@ -488,6 +488,18 @@ const validateActorName = (actorName) => {
     }
 };
 
+/**
+ * Detects language of actor based on the files present in its directory
+ * @param {string} actorDirectory Path to the actor's root directory
+ * @return {string} The language of the actor, or 'uknown' for unknown language
+ */
+const detectActorLanguage = (actorDirectory) => {
+    // This is very very crude, but since we have only Node and Python actor templates now, it will do
+    if (fs.existsSync(path.join(actorDirectory, 'package.json'))) return 'node.js';
+    if (fs.existsSync(path.join(actorDirectory, 'requirements.txt')) && fs.existsSync(path.join(actorDirectory, 'Makefile'))) return 'python';
+    return 'unknown';
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -515,4 +527,5 @@ module.exports = {
     validateActorName,
     getJsonFileContent,
     getApifyClientOptions,
+    detectActorLanguage,
 };
