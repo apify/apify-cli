@@ -1,12 +1,12 @@
 {
     "name": "apify-cli",
-    "version": "0.13.1",
+    "version": "0.13.0",
     "lockfileVersion": 2,
     "requires": true,
     "packages": {
         "": {
             "name": "apify-cli",
-            "version": "0.13.1",
+            "version": "0.13.0",
             "hasInstallScript": true,
             "license": "Apache-2.0",
             "dependencies": {
@@ -61,7 +61,7 @@
                 "sinon": "^9.2.4"
             },
             "engines": {
-                "node": ">=12.0.0"
+                "node": ">=16.0.0"
             }
         },
         "node_modules/@apify/actor-templates": {
