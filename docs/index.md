@@ -1,5 +1,4 @@
 ---
-sidebar: null
 ---
 
 # Apify command-line interface (Apify CLI)
