@@ -499,7 +499,7 @@ const checkIfMakefileTargetExists = (actorDirectory, target) => {
     const makefilePath = path.join(actorDirectory, 'Makefile');
     if (fs.existsSync(makefilePath)) {
         const makefileContents = fs.readFileSync(makefilePath, { encoding: 'utf-8' });
-        if (new RegExp(`^${target}:`).test(makefileContents)) {
+        if (new RegExp(`^${target}:`, 'mg').test(makefileContents)) {
             return true;
         }
     }
