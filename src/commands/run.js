@@ -5,11 +5,11 @@ const loadJson = require('load-json-file');
 const { ENV_VARS } = require('@apify/consts');
 const semver = require('semver');
 const execWithLog = require('../lib/exec');
-const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
+const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, MAKEFILE_TARGETS } = require('../lib/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
-    purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty, detectActorLanguage,
+    purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty, checkIfMakefileTargetExists,
 } = require('../lib/utils');
 const { info, warning } = require('../lib/outputs');
 const { replaceSecretsValue } = require('../lib/secrets');
@@ -21,9 +21,16 @@ class RunCommand extends ApifyCommand {
         const localConfig = await getLocalConfigOrThrow();
         const cwd = process.cwd();
 
-        const actorLanguage = detectActorLanguage(cwd);
-        if (actorLanguage === 'unknown') {
-            throw new Error("Actor is of an uknown format. Make sure either the 'package.json' file or 'Makefile' is present");
+        const packageJsonPath = path.join(cwd, 'package.json');
+
+        const packageJsonExists = fs.existsSync(packageJsonPath);
+        const makefileContainsActorRunTarget = checkIfMakefileTargetExists(cwd, MAKEFILE_TARGETS.ACTOR_RUN);
+
+        if (!packageJsonExists && !makefileContainsActorRunTarget) {
+            throw new Error(
+                'Actor is of an uknown format.'
+                + ` Make sure either the 'package.json' file exists or 'Makefile' with target '${MAKEFILE_TARGETS.ACTOR_RUN}' is present`,
+            );
         }
 
         if (fs.existsSync(LEGACY_LOCAL_STORAGE_DIR) && !fs.existsSync(DEFAULT_LOCAL_STORAGE_DIR)) {
@@ -76,8 +83,10 @@ class RunCommand extends ApifyCommand {
             warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
         }
 
-        if (actorLanguage === 'node.js') { // Actor is written in Node.js
-            const packageJsonPath = path.join(cwd, 'package.json');
+        if (makefileContainsActorRunTarget) { // Makefile exists and target `actor-run` is present
+            // Run `make actor-run` in the current directory
+            await execWithLog('make', [MAKEFILE_TARGETS.ACTOR_RUN], { env });
+        } else if (packageJsonExists) { // Actor is written in Node.js
             const serverJsFile = path.join(cwd, 'server.js');
             const packageJson = await loadJson(packageJsonPath);
             if ((!packageJson.scripts || !packageJson.scripts.start) && !fs.existsSync(serverJsFile)) {
@@ -98,9 +107,6 @@ class RunCommand extends ApifyCommand {
                     + `Please upgrade to Node.js version ${lastSupportedVersion} or later.`);
             }
             await execWithLog(getNpmCmd(), ['start'], { env });
-        } else { // Makefile exists, actor is (most probably) written in Python
-            // Run `make run` in the current directory
-            await execWithLog('make', ['run'], { env });
         }
     }
 }

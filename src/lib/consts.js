@@ -43,3 +43,8 @@ exports.UPLOADS_STORE_NAME = 'apify-cli-deployments';
 exports.SUPPORTED_NODEJS_VERSION = require('../../package.json').engines.node; //  eslint-disable-line;
 
 exports.APIFY_CLIENT_DEFAULT_HEADERS = { 'X-Apify-Request-Origin': META_ORIGINS.CLI };
+
+exports.MAKEFILE_TARGETS = {
+    ACTOR_RUN: 'actor-run',
+    ACTOR_POST_CREATE: 'actor-post-create',
+};

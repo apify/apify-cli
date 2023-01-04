@@ -9,8 +9,8 @@ const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
-const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName, getJsonFileContent, detectActorLanguage } = require('../lib/utils');
-const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } = require('../lib/consts');
+const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName, getJsonFileContent, checkIfMakefileTargetExists } = require('../lib/utils');
+const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, MAKEFILE_TARGETS } = require('../lib/consts');
 
 class CreateCommand extends ApifyCommand {
     async run() {
@@ -88,18 +88,19 @@ class CreateCommand extends ApifyCommand {
         await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), actFolderDir);
         await setLocalEnv(actFolderDir);
 
-        const actorLanguage = detectActorLanguage(actFolderDir);
-        if (actorLanguage === 'node.js') {
-            await updateLocalJson(path.join(actFolderDir, 'package.json'), { name: actorName });
+        const packageJsonPath = path.join(actFolderDir, 'package.json');
+
+        // If Makefile exists and it has the `actor-post-create` target, run `make actor-post-create` in the actor dir
+        if (checkIfMakefileTargetExists(actFolderDir, MAKEFILE_TARGETS.ACTOR_POST_CREATE)) {
+            await execWithLog('make', [MAKEFILE_TARGETS.ACTOR_POST_CREATE], { cwd: actFolderDir });
+        } else if (fs.existsSync(packageJsonPath)) {
+            // Otherwise, if the actor is a Node.js actor (has package.json), run `npm install`
+            await updateLocalJson(packageJsonPath, { name: actorName });
             // Run npm install in actor dir.
             // For efficiency, don't install Puppeteer for templates that don't use it
             const cmdArgs = ['install'];
             if (skipOptionalDeps) cmdArgs.push('--no-optional');
             await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
-        } else if (actorLanguage === 'python') {
-            // Run `make create-venv` and `make setup` in the actor dir
-            await execWithLog('make', ['create-venv'], { cwd: actFolderDir });
-            await execWithLog('make', ['setup'], { cwd: actFolderDir });
         }
         outputs.success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
     }

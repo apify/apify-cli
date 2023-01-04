@@ -489,15 +489,21 @@ const validateActorName = (actorName) => {
 };
 
 /**
- * Detects language of actor based on the files present in its directory
+ * Checks whether a Makefile target exists in an actor directory, or not
+ *
  * @param {string} actorDirectory Path to the actor's root directory
- * @return {string} The language of the actor, or 'uknown' for unknown language
+ * @param {string} target The Makefile target for which to chck
+ * @return {bool} True if the specified target exists in the Makefile in the actor directory, otherwise false
  */
-const detectActorLanguage = (actorDirectory) => {
-    // This is very very crude, but since we have only Node and Python actor templates now, it will do
-    if (fs.existsSync(path.join(actorDirectory, 'package.json'))) return 'node.js';
-    if (fs.existsSync(path.join(actorDirectory, 'requirements.txt')) && fs.existsSync(path.join(actorDirectory, 'Makefile'))) return 'python';
-    return 'unknown';
+const checkIfMakefileTargetExists = (actorDirectory, target) => {
+    const makefilePath = path.join(actorDirectory, 'Makefile');
+    if (fs.existsSync(makefilePath)) {
+        const makefileContents = fs.readFileSync(makefilePath, { encoding: 'utf-8' });
+        if (new RegExp(`^${target}:`).test(makefileContents)) {
+            return true;
+        }
+    }
+    return false;
 };
 
 module.exports = {
@@ -527,5 +533,5 @@ module.exports = {
     validateActorName,
     getJsonFileContent,
     getApifyClientOptions,
-    detectActorLanguage,
+    checkIfMakefileTargetExists,
 };
