@@ -39,7 +39,7 @@ function Hero() {
                 </div>
                 <div className={clsx(styles.relative, 'col', 'col--5')}>
                     <div className={styles.logoBlur}>
-                        <img src={require('../../static/img/logo-blur.png').default} className={clsx(styles.hideSmall)} />
+                        <img src={require('/img/logo-blur.png').default} className={clsx(styles.hideSmall)} />
                     </div>
                     <div className={styles.codeBlock}>
                         <CodeBlock className="language-bash">
@@ -53,7 +53,7 @@ function Hero() {
 }
 
 export default function Home() {
-    const SvgLogo = require('../../static/img/apify_logo.svg').default;
+    const SvgLogo = require('/img/apify_logo.svg').default;
     const { siteConfig } = useDocusaurusContext();
     return (
         <Layout
