@@ -59,9 +59,6 @@ module.exports = {
                     sidebarPath: './sidebars.js',
                     rehypePlugins: [externalLinkProcessor],
                 },
-                theme: {
-                    customCss: '/src/css/custom.css',
-                },
             }),
         ],
     ]),
@@ -74,4 +71,5 @@ module.exports = {
         // ],
     ],
     themeConfig: config.themeConfig,
+    staticDirectories: ['node_modules/@apify/docs-theme/static', 'static'],
 };
