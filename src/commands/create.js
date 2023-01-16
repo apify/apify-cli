@@ -51,6 +51,8 @@ class CreateCommand extends ApifyCommand {
                 message: 'Please select the template for your new actor',
                 default: choices[0],
                 choices,
+                loop: false,
+                pageSize: 8, // Due to the answers wrapping, the prompt looks best if the `pageSize` is a multiple of 2
             }]);
             templateName = answer.template;
         }

@@ -11,6 +11,7 @@ describe('apify secrets:rm', () => {
     before(async function () {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
             // Skip tests if user used CLI on local, it can break local environment!
+            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
             this.skip();
         }
         await command.run(['login', '--token', TEST_USER_TOKEN]);
