@@ -6,6 +6,7 @@ const open = require('open');
 
 const { cryptoRandomObjectId } = require('@apify/utilities');
 
+const inquirer = require('inquirer');
 const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
 const { getLoggedClient } = require('../lib/utils');
@@ -20,11 +21,16 @@ const API_BASE_URL = CONSOLE_BASE_URL.includes('localhost') ? 'http://localhost:
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
-const tryToLogin = async (token) => {
+let tokenPrompt;
+let promptUi;
+
+const tryToLogin = async (token, fromPrompt) => {
     const isUserLogged = await getLoggedClient(token, API_BASE_URL);
     const userInfo = getLocalUserInfo();
     if (isUserLogged) {
         outputs.success(`You are logged in to Apify as ${userInfo.username || userInfo.id}!`);
+        if (fromPrompt) process.exit();
+        promptUi.close();
     } else {
         outputs.error('Login to Apify failed, the provided API token is not valid.');
     }
@@ -36,8 +42,8 @@ class LoginNewCommand extends ApifyCommand {
         outputs.warning('This command is still experimental and might break at any time. Use at your own risk.\n');
 
         const { flags } = this.parse(LoginNewCommand);
-        const { token: apiToken } = flags;
-        if (!apiToken) {
+        let { token } = flags;
+        if (!token) {
             let server;
             const app = express();
 
@@ -59,18 +65,18 @@ class LoginNewCommand extends ApifyCommand {
             // and that sends it back via the `token` query param, or `Authorization` header
             const authToken = cryptoRandomObjectId();
             app.use((req, res, next) => {
-                let { token } = req.query;
-                if (!token) {
+                let { token: serverToken } = req.query;
+                if (!serverToken) {
                     const authorizationHeader = req.get('Authorization');
                     if (authorizationHeader) {
                         const [schema, tokenFromHeader, ...extra] = authorizationHeader.trim().split(/\s+/);
                         if (schema.toLowerCase() === 'bearer' && tokenFromHeader && extra.length === 0) {
-                            token = tokenFromHeader;
+                            serverToken = tokenFromHeader;
                         }
                     }
                 }
 
-                if (token !== authToken) {
+                if (serverToken !== authToken) {
                     res.status(401);
                     res.send('Authorization failed');
                 } else {
@@ -125,10 +131,17 @@ class LoginNewCommand extends ApifyCommand {
             consoleUrl.searchParams.set('localCliComputerName', encodeURIComponent(computerName()));
 
             outputs.info(`Opening Apify Console at "${consoleUrl.href}"...`);
+            outputs.info('You can also insert token manually below');
             await open(consoleUrl.href);
+            tokenPrompt = inquirer.prompt([{ name: 'token', message: 'token:', type: 'password' }]);
+            promptUi = tokenPrompt.ui;
+            const { token: insertedToken } = await tokenPrompt;
+            const loginSuccessful = await tryToLogin(insertedToken, true);
+            if (loginSuccessful) {
+                token = insertedToken;
+            }
         } else {
-            // eslint-disable-next-line no-return-await
-            return await tryToLogin(apiToken);
+            return tryToLogin(token);
         }
     }
 }
