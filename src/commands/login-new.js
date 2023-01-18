@@ -12,8 +12,8 @@ const outputs = require('../lib/outputs');
 const { getLoggedClient } = require('../lib/utils');
 const { getLocalUserInfo } = require('../lib/utils');
 
-// const CONSOLE_BASE_URL = 'https://console.apify.com/account?tab=integrations';
-const CONSOLE_BASE_URL = 'http://localhost:3000/account?tab=integrations';
+const CONSOLE_BASE_URL = 'https://console.apify.com/account?tab=integrations';
+// const CONSOLE_BASE_URL = 'http://localhost:3000/account?tab=integrations';
 const CONSOLE_URL_ORIGIN = new URL(CONSOLE_BASE_URL).origin;
 
 const API_BASE_URL = CONSOLE_BASE_URL.includes('localhost') ? 'http://localhost:3333' : undefined;
