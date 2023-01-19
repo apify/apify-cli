@@ -24,12 +24,11 @@ const API_VERSION = 'v1';
 let tokenPrompt;
 let promptUi;
 
-const tryToLogin = async (token, fromPrompt) => {
+const tryToLogin = async (token) => {
     const isUserLogged = await getLoggedClient(token, API_BASE_URL);
     const userInfo = getLocalUserInfo();
     if (isUserLogged) {
         outputs.success(`You are logged in to Apify as ${userInfo.username || userInfo.id}!`);
-        if (fromPrompt) process.exit();
         promptUi.close();
     } else {
         outputs.error('Login to Apify failed, the provided API token is not valid.');
@@ -137,7 +136,8 @@ class LoginNewCommand extends ApifyCommand {
             tokenPrompt = inquirer.prompt([{ name: 'token', message: 'token:', type: 'password' }]);
             promptUi = tokenPrompt.ui;
             const { token: insertedToken } = await tokenPrompt;
-            const loginSuccessful = await tryToLogin(insertedToken, true);
+            server.close();
+            const loginSuccessful = await tryToLogin(insertedToken);
             if (loginSuccessful) {
                 token = insertedToken;
             }
