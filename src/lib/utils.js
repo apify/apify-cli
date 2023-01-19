@@ -495,6 +495,9 @@ const getPythonCommand = (directory) => {
         ? './.venv/bin/python3.exe'
         : './.venv/bin/python3';
 
+    if (process.env.VIRTUAL_ENV) {
+        directory = process.env.VIRTUAL_ENV;
+    }
     const fullPythonVenvPath = path.join(directory, pythonVenvPath);
     if (fs.existsSync(fullPythonVenvPath)) {
         return pythonVenvPath;

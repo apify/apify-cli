@@ -121,8 +121,13 @@ class CreateCommand extends ApifyCommand {
                         const venvPath = path.join(actFolderDir, '.venv');
                         outputs.info(`Python version ${pythonVersion} detected.`);
                         outputs.info(`Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...`);
-                        await execWithLog('python3', ['-m', 'venv', '--prompt', '.', PYTHON_VENV_PATH], { cwd: actFolderDir });
-                        const pythonCommand = getPythonCommand(actFolderDir);
+                        let pythonCommand = getPythonCommand(actFolderDir);
+                        if (!process.env.VIRTUAL_ENV) {
+                            // If Python is not running in a virtual environment, create a new one
+                            await execWithLog(pythonCommand, ['-m', 'venv', '--prompt', '.', PYTHON_VENV_PATH], { cwd: actFolderDir });
+                            // regenerate the `pythonCommand` after we create the virtual environment
+                            pythonCommand = getPythonCommand(actFolderDir);
+                        }
                         await execWithLog(pythonCommand, ['-m', 'pip', 'install', '--upgrade', 'pip'], { cwd: actFolderDir });
                         await execWithLog(pythonCommand, ['-m', 'pip', 'install', '-r', 'requirements.txt'], { cwd: actFolderDir });
                         dependenciesInstalled = true;
