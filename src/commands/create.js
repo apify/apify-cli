@@ -128,8 +128,8 @@ class CreateCommand extends ApifyCommand {
                             // regenerate the `pythonCommand` after we create the virtual environment
                             pythonCommand = getPythonCommand(actFolderDir);
                         }
-                        await execWithLog(pythonCommand, ['-m', 'pip', 'install', '--upgrade', 'pip'], { cwd: actFolderDir });
-                        await execWithLog(pythonCommand, ['-m', 'pip', 'install', '-r', 'requirements.txt'], { cwd: actFolderDir });
+                        await execWithLog(pythonCommand, ['-m', 'pip', 'install', '--no-cache-dir', '--upgrade', 'pip'], { cwd: actFolderDir });
+                        await execWithLog(pythonCommand, ['-m', 'pip', 'install', '--no-cache-dir', '-r', 'requirements.txt'], { cwd: actFolderDir });
                         dependenciesInstalled = true;
                     } else {
                         outputs.warning(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
