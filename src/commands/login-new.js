@@ -131,7 +131,7 @@ class LoginNewCommand extends ApifyCommand {
             consoleUrl.searchParams.set('localCliComputerName', encodeURIComponent(computerName()));
 
             outputs.info(`Opening Apify Console at "${consoleUrl.href}"...`);
-            outputs.info('You can also insert token manually below');
+            outputs.info('You can also paste your Apify token below');
             await open(consoleUrl.href);
             tokenPrompt = inquirer.prompt([{ name: 'token', message: 'token:', type: 'password' }]);
             promptUi = tokenPrompt.ui;
