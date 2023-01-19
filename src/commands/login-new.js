@@ -90,7 +90,8 @@ class LoginNewCommand extends ApifyCommand {
             apiRouter.post('/login-token', async (req, res) => {
                 try {
                     if (req.body.apiToken) {
-                        outputs.info('cancelled\nGot token from console...');
+                        console.log('canceled');
+                        outputs.info('Got token from console...');
                         await tryToLogin(req.body.apiToken);
                     } else {
                         throw new Error('Request did not contain API token');
