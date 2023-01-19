@@ -9,14 +9,24 @@ const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
-const { setLocalConfig, setLocalEnv, getNpmCmd, validateActorName, getJsonFileContent, checkIfMakefileTargetExists } = require('../lib/utils');
-const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, MAKEFILE_TARGETS } = require('../lib/consts');
+const {
+    setLocalConfig,
+    setLocalEnv,
+    getNpmCmd,
+    validateActorName,
+    getJsonFileContent,
+    detectPythonVersion,
+    isPythonVersionSupported,
+    getPythonCommand,
+} = require('../lib/utils');
+const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH } = require('../lib/consts');
 
 class CreateCommand extends ApifyCommand {
     async run() {
         const { flags, args } = this.parse(CreateCommand);
         let { actorName } = args;
         let { templateArchiveUrl, template: templateName } = flags;
+        const { dontInstallDependencies } = flags;
         let skipOptionalDeps = false;
 
         // Check proper format of actorName
@@ -91,20 +101,46 @@ class CreateCommand extends ApifyCommand {
         await setLocalEnv(actFolderDir);
 
         const packageJsonPath = path.join(actFolderDir, 'package.json');
+        const requirementsTxtPath = path.join(actFolderDir, 'requirements.txt');
 
-        // If Makefile exists and it has the `actor-post-create` target, run `make actor-post-create` in the actor dir
-        if (checkIfMakefileTargetExists(actFolderDir, MAKEFILE_TARGETS.ACTOR_POST_CREATE)) {
-            await execWithLog('make', [MAKEFILE_TARGETS.ACTOR_POST_CREATE], { cwd: actFolderDir });
-        } else if (fs.existsSync(packageJsonPath)) {
-            // Otherwise, if the actor is a Node.js actor (has package.json), run `npm install`
-            await updateLocalJson(packageJsonPath, { name: actorName });
-            // Run npm install in actor dir.
-            // For efficiency, don't install Puppeteer for templates that don't use it
-            const cmdArgs = ['install'];
-            if (skipOptionalDeps) cmdArgs.push('--no-optional');
-            await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
+        let dependenciesInstalled = false;
+        if (!dontInstallDependencies) {
+            if (fs.existsSync(packageJsonPath)) {
+                // If the actor is a Node.js actor (has package.json), run `npm install`
+                await updateLocalJson(packageJsonPath, { name: actorName });
+                // Run npm install in actor dir.
+                // For efficiency, don't install Puppeteer for templates that don't use it
+                const cmdArgs = ['install'];
+                if (skipOptionalDeps) cmdArgs.push('--no-optional');
+                await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
+                dependenciesInstalled = true;
+            } else if (fs.existsSync(requirementsTxtPath)) {
+                const pythonVersion = detectPythonVersion(actFolderDir);
+                if (pythonVersion) {
+                    if (isPythonVersionSupported(pythonVersion)) {
+                        const venvPath = path.join(actFolderDir, '.venv');
+                        outputs.info(`Python version ${pythonVersion} detected.`);
+                        outputs.info(`Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...`);
+                        await execWithLog('python3', ['-m', 'venv', '--prompt', '.', PYTHON_VENV_PATH], { cwd: actFolderDir });
+                        const pythonCommand = getPythonCommand(actFolderDir);
+                        await execWithLog(pythonCommand, ['-m', 'pip', 'install', '--upgrade', 'pip'], { cwd: actFolderDir });
+                        await execWithLog(pythonCommand, ['-m', 'pip', 'install', '-r', 'requirements.txt'], { cwd: actFolderDir });
+                        dependenciesInstalled = true;
+                    } else {
+                        outputs.warning(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
+                        outputs.warning('Please install Python 3.8 or higher to be able to run Python actors locally.');
+                    }
+                } else {
+                    outputs.warning('No Python detected! Please install Python 3.8 or higher to be able to run Python actors locally.');
+                }
+            }
         }
-        outputs.success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
+
+        if (dependenciesInstalled) {
+            outputs.success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
+        } else {
+            outputs.success(`Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`);
+        }
     }
 }
 
@@ -115,6 +151,10 @@ CreateCommand.flags = {
         char: 't',
         description: 'Template for the actor. If not provided, the command will prompt for it.\n'
             + `Visit ${actorTemplates.manifestUrl} to find available template names.`,
+        required: false,
+    }),
+    'dont-install-dependencies': flagsHelper.boolean({
+        description: 'Skip installing actor dependencies.',
         required: false,
     }),
     'template-archive-url': flagsHelper.string({

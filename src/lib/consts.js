@@ -44,7 +44,6 @@ exports.SUPPORTED_NODEJS_VERSION = require('../../package.json').engines.node; /
 
 exports.APIFY_CLIENT_DEFAULT_HEADERS = { 'X-Apify-Request-Origin': META_ORIGINS.CLI };
 
-exports.MAKEFILE_TARGETS = {
-    ACTOR_RUN: 'actor-run',
-    ACTOR_POST_CREATE: 'actor-post-create',
-};
+exports.MINIMUM_SUPPORTED_PYTHON_VERSION = '3.8.0';
+
+exports.PYTHON_VENV_PATH = '.venv';
