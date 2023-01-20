@@ -26,7 +26,7 @@ class CreateCommand extends ApifyCommand {
         const { flags, args } = this.parse(CreateCommand);
         let { actorName } = args;
         let { templateArchiveUrl, template: templateName } = flags;
-        const { dontInstallDependencies } = flags;
+        const { skipDependencyInstall } = flags;
         let skipOptionalDeps = false;
 
         // Check proper format of actorName
@@ -104,7 +104,7 @@ class CreateCommand extends ApifyCommand {
         const requirementsTxtPath = path.join(actFolderDir, 'requirements.txt');
 
         let dependenciesInstalled = false;
-        if (!dontInstallDependencies) {
+        if (!skipDependencyInstall) {
             if (fs.existsSync(packageJsonPath)) {
                 // If the actor is a Node.js actor (has package.json), run `npm install`
                 await updateLocalJson(packageJsonPath, { name: actorName });
@@ -158,7 +158,7 @@ CreateCommand.flags = {
             + `Visit ${actorTemplates.manifestUrl} to find available template names.`,
         required: false,
     }),
-    'dont-install-dependencies': flagsHelper.boolean({
+    'skip-dependency-install': flagsHelper.boolean({
         description: 'Skip installing actor dependencies.',
         required: false,
     }),

@@ -111,7 +111,7 @@ class RunCommand extends ApifyCommand {
             if (pythonVersion) {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);
-                    await execWithLog(pythonCommand, ['-m', 'src'], { cwd });
+                    await execWithLog(pythonCommand, ['-m', 'src'], { env });
                 } else {
                     error(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
                     error('Please install Python 3.8 or higher to be able to run Python actors locally.');

@@ -399,12 +399,12 @@ ARGUMENTS
   ACTORNAME  Name of the actor and its directory
 
 OPTIONS
-  -t, --template=template      Template for the actor. If not provided, the command will prompt for it.
-                               Visit
-                               https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json to
-                               find available template names.
+  -t, --template=template    Template for the actor. If not provided, the command will prompt for it.
+                             Visit
+                             https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json to
+                             find available template names.
 
-  --dont-install-dependencies  Skip installing actor dependencies.
+  --skip-dependency-install  Skip installing actor dependencies.
 ```
 
 _See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.13.1/src/commands/create.js)_

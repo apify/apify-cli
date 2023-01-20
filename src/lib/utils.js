@@ -492,15 +492,18 @@ const validateActorName = (actorName) => {
 
 const getPythonCommand = (directory) => {
     const pythonVenvPath = /^win/.test(process.platform)
-        ? './.venv/bin/python3.exe'
-        : './.venv/bin/python3';
+        ? 'bin/python3.exe'
+        : 'bin/python3';
 
+    let fullPythonVenvPath;
     if (process.env.VIRTUAL_ENV) {
-        directory = process.env.VIRTUAL_ENV;
+        fullPythonVenvPath = path.join(process.env.VIRTUAL_ENV, pythonVenvPath);
+    } else {
+        fullPythonVenvPath = path.join(directory, '.venv', pythonVenvPath);
     }
-    const fullPythonVenvPath = path.join(directory, pythonVenvPath);
+
     if (fs.existsSync(fullPythonVenvPath)) {
-        return pythonVenvPath;
+        return fullPythonVenvPath;
     }
     return 'python3';
 };
@@ -515,7 +518,7 @@ const detectPythonVersion = (directory) => {
 };
 
 const isPythonVersionSupported = (installedPythonVersion) => {
-    return semver.gte(installedPythonVersion, MINIMUM_SUPPORTED_PYTHON_VERSION);
+    return semver.satisfies(installedPythonVersion, `^${MINIMUM_SUPPORTED_PYTHON_VERSION}`);
 };
 
 module.exports = {
