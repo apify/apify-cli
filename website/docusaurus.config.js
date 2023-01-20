@@ -31,19 +31,19 @@ module.exports = {
                             position: 'left',
                             activeBaseRegex: 'docs',
                         },
-                        // {
-                        //     to: 'api/changelog',
-                        //     label: 'Changelog',
-                        //     position: 'left',
-                        //     activeBaseRegex: 'changelog',
-                        // },
                         {
-                            type: 'docsVersionDropdown',
+                            to: '/changelog',
+                            label: 'Changelog',
                             position: 'left',
-                            className: 'navbar__item', // fixes margin around dropdown - hackish, should be fixed in theme
-                            dropdownItemsBefore: [],
-                            dropdownItemsAfter: [],
+                            activeBaseRegex: 'changelog',
                         },
+                        // {
+                        //     type: 'docsVersionDropdown',
+                        //     position: 'left',
+                        //     className: 'navbar__item', // fixes margin around dropdown - hackish, should be fixed in theme
+                        //     dropdownItemsBefore: [],
+                        //     dropdownItemsAfter: [],
+                        // },
                     ],
                 },
             },
