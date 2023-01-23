@@ -29,13 +29,13 @@ module.exports = {
                             to: 'docs',
                             label: 'Docs',
                             position: 'left',
-                            activeBaseRegex: 'docs',
+                            activeBaseRegex: 'docs/(?!changelog)',
                         },
                         {
-                            to: '/changelog',
+                            to: 'docs/changelog',
                             label: 'Changelog',
                             position: 'left',
-                            activeBaseRegex: 'changelog',
+                            activeBaseRegex: 'docs/changelog',
                         },
                         // {
                         //     type: 'docsVersionDropdown',
