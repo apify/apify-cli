@@ -492,7 +492,7 @@ const validateActorName = (actorName) => {
 
 const getPythonCommand = (directory) => {
     const pythonVenvPath = /^win/.test(process.platform)
-        ? 'bin/python3.exe'
+        ? 'Scripts/python.exe'
         : 'bin/python3';
 
     let fullPythonVenvPath;
@@ -505,7 +505,10 @@ const getPythonCommand = (directory) => {
     if (fs.existsSync(fullPythonVenvPath)) {
         return fullPythonVenvPath;
     }
-    return 'python3';
+
+    return /^win/.test(process.platform)
+        ? 'python'
+        : 'python3';
 };
 
 const detectPythonVersion = (directory) => {
