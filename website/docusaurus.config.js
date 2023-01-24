@@ -29,7 +29,7 @@ module.exports = {
                             to: 'docs',
                             label: 'Docs',
                             position: 'left',
-                            activeBaseRegex: 'docs/(?!changelog)',
+                            activeBaseRegex: 'docs(?!/changelog)',
                         },
                         {
                             to: 'docs/changelog',
