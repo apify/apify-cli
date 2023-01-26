@@ -77,7 +77,6 @@ class PushCommand extends ApifyCommand {
                 actor = await apifyClient.actors().create(newActor);
                 actorId = actor.id;
                 outputs.info(`Created actor with name ${localConfig.name} on Apify.`);
-                console.dir(actor);
             }
         }
 

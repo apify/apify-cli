@@ -10,8 +10,9 @@ const { ApifyCommand } = require('../lib/apify_command');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
     purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty,
+    detectPythonVersion, isPythonVersionSupported, getPythonCommand,
 } = require('../lib/utils');
-const { info, warning } = require('../lib/outputs');
+const { error, info, warning } = require('../lib/outputs');
 const { replaceSecretsValue } = require('../lib/secrets');
 
 class RunCommand extends ApifyCommand {
@@ -22,14 +23,16 @@ class RunCommand extends ApifyCommand {
         const cwd = process.cwd();
 
         const packageJsonPath = path.join(cwd, 'package.json');
-        if (!fs.existsSync(packageJsonPath)) {
-            throw new Error('The "package.json" file not found in the current directory. Call "npm init" to create it.');
-        }
-        const serverJsFile = path.join(cwd, 'server.js');
-        const packageJson = await loadJson(packageJsonPath);
-        if ((!packageJson.scripts || !packageJson.scripts.start) && !fs.existsSync(serverJsFile)) {
-            throw new Error('The "npm start" script was not found in package.json. Please set it up for your project. '
-                + 'For more information about that call "apify help run".');
+        const mainPyPath = path.join(cwd, 'src/__main__.py');
+
+        const packageJsonExists = fs.existsSync(packageJsonPath);
+        const mainPyExists = fs.existsSync(mainPyPath);
+
+        if (!packageJsonExists && !mainPyExists) {
+            throw new Error(
+                'Actor is of an uknown format.'
+                + ` Make sure either the 'package.json' file or 'src/__main__.py' file exists.`,
+            );
         }
 
         if (fs.existsSync(LEGACY_LOCAL_STORAGE_DIR) && !fs.existsSync(DEFAULT_LOCAL_STORAGE_DIR)) {
@@ -82,19 +85,41 @@ class RunCommand extends ApifyCommand {
             warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
         }
 
-        // --max-http-header-size=80000
-        // Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
-        // However they did not think about all the sites there with large headers,
-        // so we put back the old limit of 80kb, which seems to work just fine.
-        const currentNodeVersion = process.versions.node;
-        const lastSupportedVersion = semver.minVersion(SUPPORTED_NODEJS_VERSION);
-        if (semver.gte(currentNodeVersion, lastSupportedVersion)) {
-            env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
-        } else {
-            warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
-                + `Please upgrade to Node.js version ${lastSupportedVersion} or later.`);
+        if (packageJsonExists) { // Actor is written in Node.js
+            const serverJsFile = path.join(cwd, 'server.js');
+            const packageJson = await loadJson(packageJsonPath);
+            if ((!packageJson.scripts || !packageJson.scripts.start) && !fs.existsSync(serverJsFile)) {
+                throw new Error('The "npm start" script was not found in package.json. Please set it up for your project. '
+                    + 'For more information about that call "apify help run".');
+            }
+
+            // --max-http-header-size=80000
+            // Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
+            // However they did not think about all the sites there with large headers,
+            // so we put back the old limit of 80kb, which seems to work just fine.
+            const currentNodeVersion = process.versions.node;
+            const lastSupportedVersion = semver.minVersion(SUPPORTED_NODEJS_VERSION);
+            if (semver.gte(currentNodeVersion, lastSupportedVersion)) {
+                env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
+            } else {
+                warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
+                    + `Please upgrade to Node.js version ${lastSupportedVersion} or later.`);
+            }
+            await execWithLog(getNpmCmd(), ['start'], { env });
+        } else if (mainPyExists) {
+            const pythonVersion = detectPythonVersion(cwd);
+            if (pythonVersion) {
+                if (isPythonVersionSupported(pythonVersion)) {
+                    const pythonCommand = getPythonCommand(cwd);
+                    await execWithLog(pythonCommand, ['-m', 'src'], { env });
+                } else {
+                    error(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
+                    error('Please install Python 3.8 or higher to be able to run Python actors locally.');
+                }
+            } else {
+                error('No Python detected! Please install Python 3.8 or higher to be able to run Python actors locally.');
+            }
         }
-        await execWithLog(getNpmCmd(), ['start'], { env });
     }
 }
 
