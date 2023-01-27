@@ -7,3 +7,4 @@ local_test.sh
 my-act-*
 _mytests
 package-lock.json
+.vscode

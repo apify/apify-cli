@@ -76,7 +76,6 @@ class CallCommand extends ApifyCommand {
         }
 
         run = await apifyClient.run(run.id).get();
-        console.dir(run);
 
         outputs.link('Actor run detail', `https://console.apify.com/actors/${run.actId}#/runs/${run.id}`);
 
