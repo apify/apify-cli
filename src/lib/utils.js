@@ -21,6 +21,7 @@ const { ApifyClient } = require('apify-client');
 const {
     execSync,
 } = require('child_process');
+const semver = require('semver');
 const {
     GLOBAL_CONFIGS_FOLDER,
     AUTH_FILE_PATH,
@@ -30,6 +31,7 @@ const {
     DEPRECATED_LOCAL_CONFIG_NAME,
     ACTOR_SPECIFICATION_VERSION,
     APIFY_CLIENT_DEFAULT_HEADERS,
+    MINIMUM_SUPPORTED_PYTHON_VERSION,
 } = require('./consts');
 const {
     ensureFolderExistsSync,
@@ -488,6 +490,40 @@ const validateActorName = (actorName) => {
     }
 };
 
+const getPythonCommand = (directory) => {
+    const pythonVenvPath = /^win/.test(process.platform)
+        ? 'Scripts/python.exe'
+        : 'bin/python3';
+
+    let fullPythonVenvPath;
+    if (process.env.VIRTUAL_ENV) {
+        fullPythonVenvPath = path.join(process.env.VIRTUAL_ENV, pythonVenvPath);
+    } else {
+        fullPythonVenvPath = path.join(directory, '.venv', pythonVenvPath);
+    }
+
+    if (fs.existsSync(fullPythonVenvPath)) {
+        return fullPythonVenvPath;
+    }
+
+    return /^win/.test(process.platform)
+        ? 'python'
+        : 'python3';
+};
+
+const detectPythonVersion = (directory) => {
+    const pythonCommand = getPythonCommand(directory);
+    try {
+        return execSync(`${pythonCommand} -c "import platform; print(platform.python_version(), end='')"`, { encoding: 'utf-8' });
+    } catch {
+        return undefined;
+    }
+};
+
+const isPythonVersionSupported = (installedPythonVersion) => {
+    return semver.satisfies(installedPythonVersion, `^${MINIMUM_SUPPORTED_PYTHON_VERSION}`);
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -515,4 +551,7 @@ module.exports = {
     validateActorName,
     getJsonFileContent,
     getApifyClientOptions,
+    detectPythonVersion,
+    isPythonVersionSupported,
+    getPythonCommand,
 };
