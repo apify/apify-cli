@@ -32,7 +32,7 @@ function Hero() {
                         <div className="col">
                             <div className={styles.heroButtons}>
                                 <Link to="docs/guides/apify-platform" className={styles.getStarted}>Get Started</Link>
-                                <iframe src="https://ghbtns.com/github-btn.html?user=apify&repo=apify-sdk-js&type=star&count=true&size=large" frameBorder="0" scrolling="0" width="170" height="30" title="GitHub"></iframe>
+                                <iframe src="https://ghbtns.com/github-btn.html?user=apify&repo=apify-cli&type=star&count=true&size=large" frameBorder="0" scrolling="0" width="170" height="30" title="GitHub"></iframe>
                             </div>
                         </div>
                     </div>
@@ -43,7 +43,7 @@ function Hero() {
                     </div>
                     <div className={styles.codeBlock}>
                         <CodeBlock className="language-bash">
-                            npx apify create
+                            npx apify-cli create
                         </CodeBlock>
                     </div>
                 </div>
@@ -53,17 +53,38 @@ function Hero() {
 }
 
 export default function Home() {
-    const SvgLogo = require('/img/apify_logo.svg').default;
     const { siteConfig } = useDocusaurusContext();
     return (
         <Layout
             title={`${siteConfig.title} · ${siteConfig.tagline}`}
             description={siteConfig.description}>
             <Hero />
-            <div className="container">
-                <div className="row">
-                    <div className="col text--center padding-top--lg padding-bottom--xl">
-                        <SvgLogo className={styles.bottomLogo} />
+            <div>
+                <div className="container">
+                    <div className="row padding-horiz--md" >
+                        <div className="col col--6">
+                            <p style={{ lineHeight: '200%' }}>
+                            Apify actors are cloud programs that can perform arbitrary web scraping,
+                            automation, or data processing job. They accept input, perform their job and generate output.
+                            </p>
+                            <p style={{ lineHeight: '200%' }}>
+                            While you can develop actors in an online IDE directly in the Apify web application, for complex projects
+                            it is more convenient to develop actors locally on your computer using Apify SDK and only push the actors
+                            to the Apify cloud during deployment. This is where the Apify CLI comes in and allows you to quickly develop
+                            locally and then deploy to the cloud with a single command.
+                            </p>
+                        </div>
+                        <div className="col col--6">
+                            <CodeBlock language='bash'>{`# Create your first actor
+npx apify-cli create my-actor
+
+# Run it locally
+npx apify-cli run
+
+# Log into your Apify account and deploy it to Apify Platform
+npx apify-cli login
+npx apify-cli push`}</CodeBlock>
+                        </div>
                     </div>
                 </div>
             </div>
