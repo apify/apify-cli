@@ -43,7 +43,7 @@ function Hero() {
                     </div>
                     <div className={styles.codeBlock}>
                         <CodeBlock className="language-bash">
-                            npx apify create
+                            npx apify-cli create
                         </CodeBlock>
                     </div>
                 </div>
@@ -53,17 +53,41 @@ function Hero() {
 }
 
 export default function Home() {
-    const SvgLogo = require('/img/apify_logo.svg').default;
     const { siteConfig } = useDocusaurusContext();
     return (
         <Layout
             title={`${siteConfig.title} · ${siteConfig.tagline}`}
             description={siteConfig.description}>
             <Hero />
-            <div className="container">
-                <div className="row">
-                    <div className="col text--center padding-top--lg padding-bottom--xl">
-                        <SvgLogo className={styles.bottomLogo} />
+            <div>
+                <div className="container">
+                    <div className="row padding-horiz--md" >
+                        <div className="col col--6">
+                            <p style={{ lineHeight: '200%' }}>
+                            Apify actors are cloud programs that can perform arbitrary web scraping,
+                            automation, or data processing job. They accept input, perform their job and generate output.
+                            </p>
+                            <p style={{ lineHeight: '200%' }}>
+                            While you can develop actors in an online IDE directly in the Apify web application, for complex projects
+                            it is more convenient to develop actors locally on your computer using Apify SDK and only push the actors
+                            to the Apify cloud during deployment. This is where the Apify CLI comes in and allows you to quickly develop
+                            locally and then deploy to the cloud with a single command.
+                            </p>
+                        </div>
+                        <div className="col col--6">
+                            <CodeBlock language='bash'>{`# Install Apify CLI
+npm i -g apify-cli
+
+# Create your first actor
+apify create my-actor
+
+# Run it locally
+apify run
+
+# Log into your Apify account and deploy it to Apify Platform
+apify login
+apify push`}</CodeBlock>
+                        </div>
                     </div>
                 </div>
             </div>
