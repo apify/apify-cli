@@ -75,18 +75,15 @@ export default function Home() {
                             </p>
                         </div>
                         <div className="col col--6">
-                            <CodeBlock language='bash'>{`# Install Apify CLI
-npm i -g apify-cli
-
-# Create your first actor
-apify create my-actor
+                            <CodeBlock language='bash'>{`# Create your first actor
+npx apify-cli create my-actor
 
 # Run it locally
-apify run
+npx apify-cli run
 
 # Log into your Apify account and deploy it to Apify Platform
-apify login
-apify push`}</CodeBlock>
+npx apify-cli login
+npx apify-cli push`}</CodeBlock>
                         </div>
                     </div>
                 </div>
