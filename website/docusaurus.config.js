@@ -29,13 +29,30 @@ module.exports = {
                             to: 'docs',
                             label: 'Docs',
                             position: 'left',
-                            activeBaseRegex: 'docs(?!/changelog)',
+                            activeBaseRegex: 'docs(?!/changelog|/examples|/reference)',
+                        },
+                        {
+                            to: 'docs/examples',
+                            label: 'Examples',
+                            position: 'left',
+                            activeBaseRegex: 'docs/examples',
+                        },
+                        {
+                            to: '/docs/reference',
+                            label: 'Reference',
+                            position: 'left',
+                            activeBaseRegex: '/docs/reference',
                         },
                         {
                             to: 'docs/changelog',
                             label: 'Changelog',
                             position: 'left',
                             activeBaseRegex: 'docs/changelog',
+                        },
+                        {
+                            to: 'https://github.com/apify/apify-cli',
+                            label: 'GitHub',
+                            position: 'left',
                         },
                         // {
                         //     type: 'docsVersionDropdown',
