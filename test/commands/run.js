@@ -8,7 +8,8 @@ const { ENV_VARS } = require('@apify/consts');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_PATH, EMPTY_LOCAL_CONFIG } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const { TEST_USER_TOKEN } = require('./config');
-const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
+const { getLocalKeyValueStorePath, getLocalStorageDir } = require('../../src/lib/utils');
+// const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
 
 const actName = 'my-act';
 
