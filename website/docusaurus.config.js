@@ -44,7 +44,7 @@ module.exports = {
                             activeBaseRegex: 'docs/changelog',
                         },
                         {
-                            to: 'https://github.com/apify/apify-cli',
+                            href: 'https://github.com/apify/apify-cli',
                             label: 'GitHub',
                             position: 'left',
                         },
