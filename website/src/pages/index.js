@@ -78,6 +78,9 @@ export default function Home() {
                             <CodeBlock language='bash'>{`# Create your first actor
 npx apify-cli create my-actor
 
+# Go into the project directory
+cd my-actor
+
 # Run it locally
 npx apify-cli run
 
