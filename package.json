@@ -66,6 +66,7 @@
         "apify-client": "^2.2.0",
         "archiver-promise": "^1.0.0",
         "chalk": "^4.1.2",
+        "computer-name": "^0.1.0",
         "cors": "^2.8.5",
         "cross-spawn": "^7.0.3",
         "detect-indent": "^6.1.0",

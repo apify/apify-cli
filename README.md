@@ -381,7 +381,7 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It
+  The actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It 
   takes input for the actor from the default local key-value store by default.
 ```
 
@@ -435,7 +435,7 @@ ARGUMENTS
   ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will
+  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will 
   not touch anything else.
 
   WARNING: The directory at "storage" will be overwritten if it already exists.
@@ -455,7 +455,7 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other
+  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other 
   "apify" commands. To log out, call "apify logout".
 ```
 
@@ -501,9 +501,9 @@ OPTIONS
                                          should be pushed. By default, it is taken from the ".actor/actor.json" file.
 
 DESCRIPTION
-  The actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden
+  The actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden 
   using command-line options.
-  NOTE: If the source files are smaller than 3 MB then they are uploaded as
+  NOTE: If the source files are smaller than 3 MB then they are uploaded as 
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
@@ -553,7 +553,7 @@ DESCRIPTION
   Example:
   $ apify secrets:add mySecret TopSecretValue123
 
-  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@"
+  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@" 
   prefix:
 
   {
