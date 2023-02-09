@@ -1,0 +1,70 @@
+{
+  "version.label": {
+    "message": "1.3.1",
+    "description": "The label for version 1.3.1"
+  },
+  "sidebar.docs.category.Guide": {
+    "message": "Guide",
+    "description": "The label for category Guide in sidebar docs"
+  },
+  "sidebar.docs.category.Examples": {
+    "message": "Examples",
+    "description": "The label for category Examples in sidebar docs"
+  },
+  "sidebar.docs.category.API Reference": {
+    "message": "API Reference",
+    "description": "The label for category API Reference in sidebar docs"
+  },
+  "sidebar.docs.category.Crawlers": {
+    "message": "Crawlers",
+    "description": "The label for category Crawlers in sidebar docs"
+  },
+  "sidebar.docs.category.Result Stores": {
+    "message": "Result Stores",
+    "description": "The label for category Result Stores in sidebar docs"
+  },
+  "sidebar.docs.category.Scaling": {
+    "message": "Scaling",
+    "description": "The label for category Scaling in sidebar docs"
+  },
+  "sidebar.docs.category.Sources": {
+    "message": "Sources",
+    "description": "The label for category Sources in sidebar docs"
+  },
+  "sidebar.docs.category.Utilities": {
+    "message": "Utilities",
+    "description": "The label for category Utilities in sidebar docs"
+  },
+  "sidebar.docs.category.Type Definitions": {
+    "message": "Type Definitions",
+    "description": "The label for category Type Definitions in sidebar docs"
+  },
+  "sidebar.docs.category.Constructor Options": {
+    "message": "Constructor Options",
+    "description": "The label for category Constructor Options in sidebar docs"
+  },
+  "sidebar.docs.category.Functions - Crawlers": {
+    "message": "Functions - Crawlers",
+    "description": "The label for category Functions - Crawlers in sidebar docs"
+  },
+  "sidebar.docs.category.Functions - Dataset": {
+    "message": "Functions - Dataset",
+    "description": "The label for category Functions - Dataset in sidebar docs"
+  },
+  "sidebar.docs.category.Functions - KeyValueStore": {
+    "message": "Functions - KeyValueStore",
+    "description": "The label for category Functions - KeyValueStore in sidebar docs"
+  },
+  "sidebar.docs.category.Functions - Sessions": {
+    "message": "Functions - Sessions",
+    "description": "The label for category Functions - Sessions in sidebar docs"
+  },
+  "sidebar.docs.category.Functions - Utilities": {
+    "message": "Functions - Utilities",
+    "description": "The label for category Functions - Utilities in sidebar docs"
+  },
+  "sidebar.docs.category.Return Types": {
+    "message": "Return Types",
+    "description": "The label for category Return Types in sidebar docs"
+  }
+}
