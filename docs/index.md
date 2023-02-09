@@ -13,7 +13,7 @@ Apify actors are cloud programs that can perform arbitrary web scraping, automat
 They accept input, perform their job and generate output.
 While you can develop actors in an online IDE directly in the [Apify web application](https://console.apify.com/),
 for complex projects it is more convenient to develop actors locally on your computer
-using <a href="https://github.com/apify/apify-js">Apify SDK</a>
+using <a href="https://github.com/apify/apify-sdk-js">Apify SDK</a>
 and only push the actors to the Apify cloud during deployment.
 This is where the Apify CLI comes in.
 
