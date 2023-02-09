@@ -60,6 +60,8 @@ which should print something like:
 apify-cli/0.10.0 darwin-x64 node-v16.14.2
 ```
 
+> You can also skip the manual global installation altogether and use `npx apify-cli` with all the following commands instead. 
+
 ## Basic usage
 
 The following examples demonstrate the basic usage of Apify CLI.
@@ -73,6 +75,8 @@ apify create my-hello-world
 First, you will be prompted to select a template with the boilerplate for the actor, to help you get started quickly.
 The command will create a directory called `my-hello-world` that contains a Node.js project
 for the actor and a few configuration files.
+
+> If you decided to skip the installation and go with `npx`, the command will be `npx apify-cli create my-hello-world`.
 
 ### Create a new actor from existing project
 
