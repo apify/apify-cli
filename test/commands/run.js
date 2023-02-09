@@ -8,8 +8,7 @@ const { ENV_VARS } = require('@apify/consts');
 const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_PATH, EMPTY_LOCAL_CONFIG } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const { TEST_USER_TOKEN } = require('./config');
-const { getLocalKeyValueStorePath, getLocalStorageDir } = require('../../src/lib/utils');
-// const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
+const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
 
 const actName = 'my-act';
 
@@ -85,51 +84,48 @@ describe('apify run', () => {
         await command.run(['logout']);
     });
 
-    // NOTE: Because of bug in crawlee v3.2.1 this test is failing
-    // it('run purge stores', async () => {
-    //     const input = {
-    //         myInput: 'value',
-    //     };
-    //     const actInputPath = path.join(getLocalKeyValueStorePath(), 'INPUT.json');
-    //     const testJsonPath = path.join(getLocalKeyValueStorePath(), 'TEST.json');
-    //
-    //     writeJson.sync(actInputPath, input);
-    //
-    //     let actCode = `
-    //     import { Actor } from 'apify';
-    //
-    //     Actor.main(async () => {
-    //         await Actor.setValue('TEST', process.env);
-    //         await Actor.pushData({aa: "bb" });
-    //         const requestQueue = await Actor.openRequestQueue();
-    //         await requestQueue.addRequest({ url: 'http://example.com/' });
-    //     });
-    //     `;
-    //     fs.writeFileSync('main.js', actCode, { flag: 'w' });
-    //
-    //     await command.run(['run']);
-    //
-    //     expect(fs.existsSync(actInputPath)).to.be.eql(true);
-    //     expect(fs.existsSync(testJsonPath)).to.be.eql(true);
-    //     console.log(getLocalDatasetPath())
-    //     expect(fs.existsSync(getLocalDatasetPath())).to.be.eql(true);
-    //     console.log(getLocalRequestQueuePath())
-    //     expect(fs.existsSync(getLocalRequestQueuePath())).to.be.eql(true);
-    //
-    //     actCode = `
-    //     import { Actor } from 'apify';
-    //
-    //     Actor.main(async () => {});
-    //     `;
-    //     fs.writeFileSync('main.js', actCode, { flag: 'w' });
-    //
-    //     await command.run(['run', '--purge']);
-    //
-    //     expect(fs.existsSync(actInputPath)).to.be.eql(true);
-    //     expect(fs.existsSync(testJsonPath)).to.be.eql(false);
-    //     expect(fs.existsSync(getLocalDatasetPath())).to.be.eql(false);
-    //     expect(fs.existsSync(getLocalRequestQueuePath())).to.be.eql(false);
-    // });
+    it('run purge stores', async () => {
+        const input = {
+            myInput: 'value',
+        };
+        const actInputPath = path.join(getLocalKeyValueStorePath(), 'INPUT.json');
+        const testJsonPath = path.join(getLocalKeyValueStorePath(), 'TEST.json');
+
+        writeJson.sync(actInputPath, input);
+
+        let actCode = `
+        import { Actor } from 'apify';
+
+        Actor.main(async () => {
+            await Actor.setValue('TEST', process.env);
+            await Actor.pushData({aa: "bb" });
+            const requestQueue = await Actor.openRequestQueue();
+            await requestQueue.addRequest({ url: 'http://example.com/' });
+        });
+        `;
+        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+
+        await command.run(['run']);
+
+        expect(fs.existsSync(actInputPath)).to.be.eql(true);
+        expect(fs.existsSync(testJsonPath)).to.be.eql(true);
+        expect(fs.existsSync(getLocalDatasetPath())).to.be.eql(true);
+        expect(fs.existsSync(getLocalRequestQueuePath())).to.be.eql(true);
+
+        actCode = `
+        import { Actor } from 'apify';
+
+        Actor.main(async () => {});
+        `;
+        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+
+        await command.run(['run', '--purge']);
+
+        expect(fs.existsSync(actInputPath)).to.be.eql(true);
+        expect(fs.existsSync(testJsonPath)).to.be.eql(false);
+        expect(fs.existsSync(getLocalDatasetPath())).to.be.eql(false);
+        expect(fs.existsSync(getLocalRequestQueuePath())).to.be.eql(false);
+    });
 
     it('run with purge works without storage folder', async () => {
         await rimrafPromised(getLocalStorageDir());
