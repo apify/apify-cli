@@ -166,7 +166,7 @@ For example, `.actor/actor.json` file can look as follows:
   "readme": "./ACTOR.md",
   "input": "./input_schema.json",
   "storages": {
-    "dataset": "./dataset_schema.json",
+    "dataset": "./dataset_schema.json"
   }
 }
 ```

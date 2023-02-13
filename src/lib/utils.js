@@ -98,14 +98,14 @@ const getLoggedClientOrThrow = async () => {
  * @param {String|null|undefined} token
  * @returns {Object}
  */
-const getApifyClientOptions = (token) => {
+const getApifyClientOptions = (token, apiBaseUrl) => {
     if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
         ({ token } = loadJson.sync(AUTH_FILE_PATH));
     }
 
     return {
         token,
-        baseUrl: process.env.APIFY_CLIENT_BASE_URL,
+        baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
         requestInterceptors: [(config) => {
             config.headers = { ...APIFY_CLIENT_DEFAULT_HEADERS, ...config.headers };
             return config;
@@ -119,8 +119,12 @@ const getApifyClientOptions = (token) => {
  * @param [token]
  * @return {Promise<*>}
  */
-const getLoggedClient = async (token) => {
-    const apifyClient = new ApifyClient(getApifyClientOptions(token));
+const getLoggedClient = async (token, apiBaseUrl) => {
+    if (!token && fs.existsSync(GLOBAL_CONFIGS_FOLDER) && fs.existsSync(AUTH_FILE_PATH)) {
+        ({ token } = loadJson.sync(AUTH_FILE_PATH));
+    }
+
+    const apifyClient = new ApifyClient(getApifyClientOptions(token, apiBaseUrl));
     let userInfo;
     try {
         userInfo = await apifyClient.user('me').get();
