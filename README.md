@@ -1,7 +1,7 @@
 # Apify command-line interface (Apify CLI)
 
-<a href="https://www.npmjs.com/package/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" loading="lazy" style="display:inherit;"></a>
-<a href="https://travis-ci.com/apify/apify-cli?branch=master"><img src="https://travis-ci.com/apify/apify-cli.svg?branch=master" loading="lazy" alt="Build Status" style="display:inherit;"></a>
+<a href="https://www.npmjs.com/package/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" loading="lazy" style="display:inherit;" /></a>
+<a href="https://travis-ci.com/apify/apify-cli?branch=master"><img src="https://travis-ci.com/apify/apify-cli.svg?branch=master" loading="lazy" alt="Build Status" style="display:inherit;" /></a>
 
 Apify command-line interface (Apify CLI) helps you create, develop, build and run
 [Apify actors](https://www.apify.com/actors),
@@ -11,7 +11,7 @@ Apify actors are cloud programs that can perform arbitrary web scraping, automat
 They accept input, perform their job and generate output.
 While you can develop actors in an online IDE directly in the [Apify web application](https://console.apify.com/),
 for complex projects it is more convenient to develop actors locally on your computer
-using <a href="https://github.com/apify/apify-js">Apify SDK</a>
+using <a href="https://github.com/apify/apify-sdk-js">Apify SDK</a>
 and only push the actors to the Apify cloud during deployment.
 This is where the Apify CLI comes in.
 
@@ -60,6 +60,8 @@ which should print something like:
 apify-cli/0.10.0 darwin-x64 node-v16.14.2
 ```
 
+> You can also skip the manual global installation altogether and use `npx apify-cli` with all the following commands instead. 
+
 ## Basic usage
 
 The following examples demonstrate the basic usage of Apify CLI.
@@ -73,6 +75,8 @@ apify create my-hello-world
 First, you will be prompted to select a template with the boilerplate for the actor, to help you get started quickly.
 The command will create a directory called `my-hello-world` that contains a Node.js project
 for the actor and a few configuration files.
+
+> If you decided to skip the installation and go with `npx`, the command will be `npx apify-cli create my-hello-world`.
 
 ### Create a new actor from existing project
 
@@ -381,7 +385,7 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It 
+  The actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It
   takes input for the actor from the default local key-value store by default.
 ```
 
@@ -435,7 +439,7 @@ ARGUMENTS
   ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will 
+  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will
   not touch anything else.
 
   WARNING: The directory at "storage" will be overwritten if it already exists.
@@ -455,7 +459,7 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other 
+  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other
   "apify" commands. To log out, call "apify logout".
 ```
 
@@ -501,9 +505,9 @@ OPTIONS
                                          should be pushed. By default, it is taken from the ".actor/actor.json" file.
 
 DESCRIPTION
-  The actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden 
+  The actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden
   using command-line options.
-  NOTE: If the source files are smaller than 3 MB then they are uploaded as 
+  NOTE: If the source files are smaller than 3 MB then they are uploaded as
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target actor already exists in your Apify account, it will be overwritten!
@@ -553,7 +557,7 @@ DESCRIPTION
   Example:
   $ apify secrets:add mySecret TopSecretValue123
 
-  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@" 
+  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@"
   prefix:
 
   {
