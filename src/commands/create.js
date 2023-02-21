@@ -54,7 +54,7 @@ class CreateCommand extends ApifyCommand {
             if (!templateName) {
                 const choices = manifest.templates.map((t) => ({
                     value: t.name,
-                    name: t.description,
+                    name: `${t.label}: ${t.description}`,
                 }));
 
                 const answer = await inquirer.prompt([{
