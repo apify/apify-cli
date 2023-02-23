@@ -1,6 +1,6 @@
 const inquirer = require('inquirer');
 const actorTemplates = require('@apify/actor-templates');
-const { validateActorName } = require('../lib/utils');
+const { validateActorName } = require('./utils');
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 

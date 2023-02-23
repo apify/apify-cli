@@ -1,7 +1,6 @@
 const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
-const inquirer = require('inquirer');
 const { gotScraping } = require('got-scraping');
 const actorTemplates = require('@apify/actor-templates');
 const unzipper = require('unzipper');
@@ -13,14 +12,13 @@ const {
     setLocalConfig,
     setLocalEnv,
     getNpmCmd,
-    validateActorName,
     getJsonFileContent,
     detectPythonVersion,
     isPythonVersionSupported,
     getPythonCommand,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH } = require('../lib/consts');
-const { ensureValidActorName, getTemplateDefinition } = require('./create-utils');
+const { ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
 
 class CreateCommand extends ApifyCommand {
     async run() {
