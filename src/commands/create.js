@@ -20,58 +20,17 @@ const {
     getPythonCommand,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH } = require('../lib/consts');
+const { ensureValidActorName, getTemplateDefinition } = require('./create-utils');
 
 class CreateCommand extends ApifyCommand {
     async run() {
         const { flags, args } = this.parse(CreateCommand);
         let { actorName } = args;
-        let { templateArchiveUrl, template: templateName } = flags;
+        const { template: templateName } = flags;
         const { skipDependencyInstall } = flags;
-        let skipOptionalDeps = false;
 
-        // Check proper format of actorName
-        if (!actorName) {
-            const actorNamePrompt = await inquirer.prompt([{
-                name: 'actorName',
-                message: 'Name of the new actor:',
-                type: 'input',
-                validate: (promptText) => {
-                    try {
-                        validateActorName(promptText);
-                    } catch (err) {
-                        return err.message;
-                    }
-                    return true;
-                },
-            }]);
-            ({ actorName } = actorNamePrompt);
-        } else {
-            validateActorName(actorName);
-        }
-
-        if (!templateArchiveUrl) {
-            const manifest = await actorTemplates.fetchManifest();
-            if (!templateName) {
-                const choices = manifest.templates.map((t) => ({
-                    value: t.name,
-                    name: `${t.label}: ${t.description}`,
-                }));
-
-                const answer = await inquirer.prompt([{
-                    type: 'list',
-                    name: 'template',
-                    message: 'Please select the template for your new actor',
-                    default: choices[0],
-                    choices,
-                    loop: false,
-                    pageSize: 8, // Due to the answers wrapping, the prompt looks best if the `pageSize` is a multiple of 2
-                }]);
-                templateName = answer.template;
-            }
-
-            const templateObj = manifest.templates.find((t) => t.name === templateName);
-            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps } = templateObj);
-        }
+        actorName = await ensureValidActorName(actorName);
+        const { archiveUrl, skipOptionalDeps } = await getTemplateDefinition(templateName);
 
         const cwd = process.cwd();
         const actFolderDir = path.join(cwd, actorName);
@@ -89,7 +48,7 @@ class CreateCommand extends ApifyCommand {
         }
 
         const zipStream = await gotScraping({
-            url: templateArchiveUrl,
+            url: archiveUrl,
             isStream: true,
         });
         const unzip = unzipper.Extract({ path: actFolderDir });
