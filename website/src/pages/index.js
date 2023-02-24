@@ -22,16 +22,15 @@ function Hero() {
                         <div className="col">
                             <h2></h2>
                             <h2>
-                                Apify command-line interface (Apify CLI) helps you create, develop, build and
-                                run <a href="https://www.apify.com/actors">Apify actors</a>, and manage the Apify
-                                cloud platform from any computer.
+                                Create, develop, build, and run <a href="https://docs.apify.com/actors">Apify actors</a>
+                                from your terminal. Manage the Apify platform from shell scripts.
                             </h2>
                         </div>
                     </div>
                     <div className="row">
                         <div className="col">
                             <div className={styles.heroButtons}>
-                                <Link to="docs" className={styles.getStarted}>Get Started</Link>
+                                <Link to="docs" className={styles.getStarted}>Learn more</Link>
                                 <iframe src="https://ghbtns.com/github-btn.html?user=apify&repo=apify-cli&type=star&count=true&size=large" frameBorder="0" scrolling="0" width="170" height="30" title="GitHub"></iframe>
                             </div>
                         </div>
@@ -68,9 +67,10 @@ export default function Home() {
                             automation, or data processing job. They accept input, perform their job and generate output.
                             </p>
                             <p style={{ lineHeight: '200%' }}>
-                            While you can develop actors in an online IDE directly in the Apify web application, for complex projects
-                            it is more convenient to develop actors locally on your computer using Apify SDK and only push the actors
-                            to the Apify cloud during deployment. This is where the Apify CLI comes in and allows you to quickly develop
+                            While you can develop actors in an online IDE in <a href="https://console.apify.com/">Apify Console</a>, for
+                            larger projects, it is more convenient to develop actors locally on your computer
+                            using <a href="https://docs.apify.com/sdk/js/">Apify SDK</a> and only push the actors
+                            to the Apify platform during deployment. This is where the Apify CLI comes in to allow you to quickly develop
                             locally and then deploy to the cloud with a single command.
                             </p>
                         </div>
