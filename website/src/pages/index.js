@@ -22,8 +22,8 @@ function Hero() {
                         <div className="col">
                             <h2></h2>
                             <h2>
-                                Create, develop, build, and run <a href="https://docs.apify.com/actors">Apify actors</a>
-                                from your terminal. Manage the Apify platform from shell scripts.
+                                Create, develop, build, and run <a href="https://docs.apify.com/actors">Apify actors</a> from
+                                your terminal. Manage the Apify platform from shell scripts.
                             </h2>
                         </div>
                     </div>
