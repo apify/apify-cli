@@ -5,10 +5,9 @@ chai.use(require('chai-match'));
 
 describe('VersionCheck', () => {
     describe('getLatestNpmVersion()', () => {
-        it('should return package version', () => {
-            chai.expect(
-                getLatestNpmVersion(),
-            ).to.match(/^\d+\.\d+\.\d+$/);
+        it('should return package version', async () => {
+            const latestVersion = await getLatestNpmVersion();
+            chai.expect(latestVersion).to.match(/^\d+\.\d+\.\d+$/);
         });
     });
 });

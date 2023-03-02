@@ -1,12 +1,12 @@
 {
     "name": "apify-cli",
-    "version": "0.14.1",
+    "version": "0.14.2",
     "lockfileVersion": 2,
     "requires": true,
     "packages": {
         "": {
             "name": "apify-cli",
-            "version": "0.14.1",
+            "version": "0.14.2",
             "hasInstallScript": true,
             "license": "Apache-2.0",
             "dependencies": {
@@ -26,7 +26,6 @@
                 "chalk": "^4.1.2",
                 "computer-name": "^0.1.0",
                 "cors": "^2.8.5",
-                "cross-spawn": "^7.0.3",
                 "detect-indent": "^6.1.0",
                 "express": "^4.18.2",
                 "globby": "^11.1.0",
@@ -2154,6 +2153,7 @@
             "version": "7.0.3",
             "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.3.tgz",
             "integrity": "sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==",
+            "dev": true,
             "dependencies": {
                 "path-key": "^3.1.0",
                 "shebang-command": "^2.0.0",
@@ -6177,6 +6177,7 @@
             "version": "3.1.1",
             "resolved": "https://registry.npmjs.org/path-key/-/path-key-3.1.1.tgz",
             "integrity": "sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==",
+            "dev": true,
             "engines": {
                 "node": ">=8"
             }
@@ -7038,6 +7039,7 @@
             "version": "2.0.0",
             "resolved": "https://registry.npmjs.org/shebang-command/-/shebang-command-2.0.0.tgz",
             "integrity": "sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==",
+            "dev": true,
             "dependencies": {
                 "shebang-regex": "^3.0.0"
             },
@@ -7049,6 +7051,7 @@
             "version": "3.0.0",
             "resolved": "https://registry.npmjs.org/shebang-regex/-/shebang-regex-3.0.0.tgz",
             "integrity": "sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==",
+            "dev": true,
             "engines": {
                 "node": ">=8"
             }
@@ -7776,6 +7779,7 @@
             "version": "2.0.2",
             "resolved": "https://registry.npmjs.org/which/-/which-2.0.2.tgz",
             "integrity": "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==",
+            "dev": true,
             "dependencies": {
                 "isexe": "^2.0.0"
             },
@@ -9645,6 +9649,7 @@
             "version": "7.0.3",
             "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.3.tgz",
             "integrity": "sha512-iRDPJKUPVEND7dHPO8rkbOnPpyDygcDFtWjpeWNCgy8WP2rXcxXL8TskReQl6OrB2G7+UJrags1q15Fudc7G6w==",
+            "dev": true,
             "requires": {
                 "path-key": "^3.1.0",
                 "shebang-command": "^2.0.0",
@@ -12603,7 +12608,8 @@
         "path-key": {
             "version": "3.1.1",
             "resolved": "https://registry.npmjs.org/path-key/-/path-key-3.1.1.tgz",
-            "integrity": "sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q=="
+            "integrity": "sha512-ojmeN0qd+y0jszEtoY48r0Peq5dwMEkIlCOu6Q5f41lfkswXuKtYrhgoTpLnyIcHm24Uhqx+5Tqm2InSwLhE6Q==",
+            "dev": true
         },
         "path-parse": {
             "version": "1.0.7",
@@ -13250,6 +13256,7 @@
             "version": "2.0.0",
             "resolved": "https://registry.npmjs.org/shebang-command/-/shebang-command-2.0.0.tgz",
             "integrity": "sha512-kHxr2zZpYtdmrN1qDjrrX/Z1rR1kG8Dx+gkpK1G4eXmvXswmcE1hTWBWYUzlraYw1/yZp6YuDY77YtvbN0dmDA==",
+            "dev": true,
             "requires": {
                 "shebang-regex": "^3.0.0"
             }
@@ -13257,7 +13264,8 @@
         "shebang-regex": {
             "version": "3.0.0",
             "resolved": "https://registry.npmjs.org/shebang-regex/-/shebang-regex-3.0.0.tgz",
-            "integrity": "sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A=="
+            "integrity": "sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==",
+            "dev": true
         },
         "side-channel": {
             "version": "1.0.4",
@@ -13824,6 +13832,7 @@
             "version": "2.0.2",
             "resolved": "https://registry.npmjs.org/which/-/which-2.0.2.tgz",
             "integrity": "sha512-BLI3Tl1TW3Pvl70l3yq3Y64i+awpwXqsGBYWkkqMtnbXgrMD+yj7rhW0kuEDxzJaYXGjEW5ogapKNMEKNMjibA==",
+            "dev": true,
             "requires": {
                 "isexe": "^2.0.0"
             }
