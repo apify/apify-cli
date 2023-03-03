@@ -158,7 +158,7 @@ async function promptTemplateInstallation(templateDefinition) {
 
     const message = 'Do you want to install the following template?';
     const label = chalk.underline(templateDefinition.label);
-    const description = chalk.dim(templateDefinition.description.repeat(5));
+    const description = chalk.dim(templateDefinition.description);
     const suffix = `\n ${label}:\n ${description}`;
 
     const answer = await inquirer.prompt([{
