@@ -1,8 +1,25 @@
+const chalk = require('chalk');
 const inquirer = require('inquirer');
-const actorTemplates = require('@apify/actor-templates');
+const https = require('https');
 const { validateActorName } = require('./utils');
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
+
+/**
+ * @param {string} url
+ * @returns {Promise<unknown>}
+ */
+exports.httpsGet = async (url) => {
+    return new Promise((resolve, reject) => {
+        https.get(url, (response) => {
+            if (response.statusCode === 301 || response.statusCode === 302) {
+                resolve(exports.httpsGet(response.headers.location));
+            } else {
+                resolve(response);
+            }
+        }).on('error', reject);
+    });
+};
 
 /**
  * @param {string} maybeActorName
@@ -18,21 +35,46 @@ exports.ensureValidActorName = async (maybeActorName) => {
 
 /**
  * @param {string} maybeTemplateName
+ * @param {Promise<object>} manifestPromise
  * @returns {Promise<object>}
  */
-exports.getTemplateDefinition = async (maybeTemplateName) => {
-    const manifest = await actorTemplates.fetchManifest();
+exports.getTemplateDefinition = async (maybeTemplateName, manifestPromise) => {
+    const manifest = await manifestPromise;
+    // If the fetch failed earlier, the resolve value of
+    // the promise will be the error from fetching the manifest.
+    if (manifest instanceof Error) throw manifest;
+
     if (maybeTemplateName) {
-        return manifest.templates.find((t) => t.name === maybeTemplateName);
+        const templateDefinition = manifest.templates.find((t) => t.name === maybeTemplateName);
+        if (!templateDefinition) {
+            throw new Error(`Could not find the selected template: ${maybeTemplateName} in the list of templates.`);
+        }
+        return templateDefinition;
     }
 
+    return executePrompts(manifest);
+};
+
+/**
+ * Inquirer does not have a native way to "go back" between prompts.
+ * @param {object} manifest
+ * @returns {Promise<object>}
+ */
+async function executePrompts(manifest) {
     const programmingLanguage = await promptProgrammingLanguage();
+    // eslint-disable-next-line no-constant-condition
     while (true) {
         const templateDefinition = await promptTemplateDefinition(manifest, programmingLanguage);
-        const shouldInstall = await promptTemplateInstallation(templateDefinition);
-        if (shouldInstall) return templateDefinition;
+        if (templateDefinition) {
+            const shouldInstall = await promptTemplateInstallation(templateDefinition);
+            if (shouldInstall) {
+                return templateDefinition;
+            }
+        } else {
+            return executePrompts(manifest);
+        }
     }
-};
+}
 
 /**
  * @returns {Promise<string>}
@@ -58,16 +100,12 @@ async function promptActorName() {
  * @returns {Promise<string>}
  */
 async function promptProgrammingLanguage() {
-    const choices = PROGRAMMING_LANGUAGES.map((lang) => ({
-        name: `👉 ${lang}`,
-        value: lang,
-    }));
     const answer = await inquirer.prompt([{
         type: 'list',
         name: 'programmingLanguage',
         message: 'Choose the programming language of your new actor:',
-        default: choices[0],
-        choices,
+        default: PROGRAMMING_LANGUAGES[0],
+        choices: PROGRAMMING_LANGUAGES,
         loop: false,
     }]);
     return answer.programmingLanguage;
@@ -85,20 +123,25 @@ async function promptTemplateDefinition(manifest, programmingLanguage) {
         })
         .map((t) => {
             return {
-                name: `👉 ${t.label}`,
+                name: t.label,
                 value: t,
             };
         });
 
+    choices.push(new inquirer.Separator());
+    choices.push({
+        name: 'Go back',
+        value: false,
+    });
+
     const answer = await inquirer.prompt([{
         type: 'list',
         name: 'templateDefinition',
-        message: 'Choose a template for your new actor. A description of each template will be shown after selection.'
-            + ' You\'ll be able to go back to choose another template.',
+        message: 'Choose a template for your new actor. Detailed information about the template will be shown in the next step.',
         default: choices[0],
         choices,
         loop: false,
-        pageSize: 8, // Due to the answers wrapping, the prompt looks best if the `pageSize` is a multiple of 2
+        pageSize: 8,
     }]);
 
     return answer.templateDefinition;
@@ -109,17 +152,20 @@ async function promptTemplateDefinition(manifest, programmingLanguage) {
  * @returns {Promise<string>}
  */
 async function promptTemplateInstallation(templateDefinition) {
-    const choices = [{
-        name: `✅ Install ${templateDefinition.label}`,
-        value: true,
-    }, {
-        name: '⏪ Go back',
-        value: false,
-    }];
+    const choices = [{ name: `Install template`, value: true }];
+    choices.push(new inquirer.Separator());
+    choices.push({ name: 'Go back', value: false });
+
+    const message = 'Do you want to install the following template?';
+    const label = chalk.underline(templateDefinition.label);
+    const description = chalk.dim(templateDefinition.description.repeat(5));
+    const suffix = `\n ${label}:\n ${description}`;
+
     const answer = await inquirer.prompt([{
         type: 'list',
         name: 'shouldInstall',
-        message: `Chosen template: ${templateDefinition.label} - ${templateDefinition.description} \n 🚀 Do you want to install it?`,
+        message,
+        suffix,
         default: choices[0],
         choices,
         loop: false,

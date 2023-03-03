@@ -1,7 +1,6 @@
 const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
-const { gotScraping } = require('got-scraping');
 const actorTemplates = require('@apify/actor-templates');
 const unzipper = require('unzipper');
 const { ApifyCommand } = require('../lib/apify_command');
@@ -18,17 +17,34 @@ const {
     getPythonCommand,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH } = require('../lib/consts');
-const { ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
+const { httpsGet, ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
 
 class CreateCommand extends ApifyCommand {
     async run() {
         const { flags, args } = this.parse(CreateCommand);
         let { actorName } = args;
-        const { template: templateName } = flags;
-        const { skipDependencyInstall } = flags;
+        const {
+            template: templateName,
+            skipDependencyInstall,
+        } = flags;
+
+        // --template-archive-url is an internal, undocumented flag that's used
+        // for testing of templates that are not yet published in the manifest
+        let { templateArchiveUrl } = flags;
+        let skipOptionalDeps = false;
+
+        // Start fetching manifest immediately to prevent
+        // annoying delays that sometimes happen on CLI startup.
+        const manifestPromise = templateArchiveUrl
+            ? undefined // not fetching manifest when we have direct template URL
+            : actorTemplates.fetchManifest().catch((err) => {
+                return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
+            });
 
         actorName = await ensureValidActorName(actorName);
-        const { archiveUrl, skipOptionalDeps } = await getTemplateDefinition(templateName);
+        if (manifestPromise) {
+            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps } = await getTemplateDefinition(templateName, manifestPromise));
+        }
 
         const cwd = process.cwd();
         const actFolderDir = path.join(cwd, actorName);
@@ -45,10 +61,7 @@ class CreateCommand extends ApifyCommand {
             throw err;
         }
 
-        const zipStream = await gotScraping({
-            url: archiveUrl,
-            isStream: true,
-        });
+        const zipStream = await httpsGet(templateArchiveUrl);
         const unzip = unzipper.Extract({ path: actFolderDir });
         await zipStream.pipe(unzip).promise();
 
