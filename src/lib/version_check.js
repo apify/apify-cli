@@ -51,16 +51,8 @@ const detectInstallationType = () => {
 }
 
 const getLatestNpmVersion = async () => {
-    const response = await axios({
-        url: 'https://registry.npmjs.org/apify-cli/',
-        headers: {
-            // This is necessary so that NPM returns the abbreviated version of the metadata
-            // See https://github.com/npm/registry/blob/master/docs/responses/package-metadata.md
-            accept: 'application/vnd.npm.install-v1+json',
-        },
-    });
-    const packageMetadata = response.data;
-    const latestVersion = packageMetadata['dist-tags'].latest;
+    const response = await axios({ url: 'https://registry.npmjs.org/apify-cli/latest' });
+    const latestVersion = response.data.version;
     return latestVersion;
 };
 
