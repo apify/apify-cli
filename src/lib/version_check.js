@@ -1,3 +1,4 @@
+const { execSync } = require('child_process');
 const process = require('process');
 const axios = require('axios');
 const chalk = require('chalk');
@@ -31,18 +32,21 @@ const UPDATE_COMMAND = {
  */
 const detectInstallationType = () => {
     // The path of the alias to the `src/bin/run` file is in process.argv[1]
-    const command = process.argv[1];
+    const commandPath = process.argv[1];
 
-    // If the command is like `/opt/homebrew/bin/apify` or `/home/.linuxbrew/bin/apify`,
-    // then the CLI is installed via Homebrew
-    if (command) {
-        if (command.includes('homebrew') || command.includes('linuxbrew')) {
-            return INSTALLATION_TYPE.HOMEBREW;
+    if (commandPath) {
+        // If the real command path is like `/opt/homebrew/Cellar/apify-cli/...` or `/home/linuxbrew/.linuxbrew/Cellar/apify-cli/...`,
+        // then the CLI is installed via Homebrew
+        if (process.platform === 'linux' || process.platform === 'darwin') {
+            const realCommandPath = execSync(`realpath "${commandPath}"`);
+            if (realCommandPath.includes('homebrew/Cellar') || realCommandPath.includes('linuxbrew/Cellar')) {
+                return INSTALLATION_TYPE.HOMEBREW;
+            }
         }
         // Add more install types here once we have the CLI in other package managers
     }
 
-    // By default, assume the CLI was installed through NPM
+    // If we didn't detect otherwise, assume the CLI was installed through NPM
     return INSTALLATION_TYPE.NPM
 }
 
@@ -109,7 +113,7 @@ const checkLatestVersion = async (enforeUpdate = false) => {
         const updateCommand = `' ${UPDATE_COMMAND[installationType]} '`;
         console.log('');
         warning('You are using an old version of Apify CLI. We strongly recommend you always use the latest available version.');
-        console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(updateCommand))} to install it! 👍 \n`);
+        console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(updateCommand))} to update! 👍 \n`);
     } else if (shouldGetCurrentVersion) {
         // In this case the version was refreshed from the NPM which took a while and "Info: Making sure that Apify ..." was printed
         // so also print the state.
