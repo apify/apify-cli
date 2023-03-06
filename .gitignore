@@ -9,3 +9,4 @@ my-act-*
 _mytests
 package-lock.json
 .vscode
+.idea

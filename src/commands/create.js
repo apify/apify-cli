@@ -1,8 +1,6 @@
 const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
-const inquirer = require('inquirer');
-const { gotScraping } = require('got-scraping');
 const actorTemplates = require('@apify/actor-templates');
 const unzipper = require('unzipper');
 const { ApifyCommand } = require('../lib/apify_command');
@@ -13,64 +11,39 @@ const {
     setLocalConfig,
     setLocalEnv,
     getNpmCmd,
-    validateActorName,
     getJsonFileContent,
     detectPythonVersion,
     isPythonVersionSupported,
     getPythonCommand,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH } = require('../lib/consts');
+const { httpsGet, ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
 
 class CreateCommand extends ApifyCommand {
     async run() {
         const { flags, args } = this.parse(CreateCommand);
         let { actorName } = args;
-        let { templateArchiveUrl, template: templateName } = flags;
-        const { skipDependencyInstall } = flags;
+        const {
+            template: templateName,
+            skipDependencyInstall,
+        } = flags;
+
+        // --template-archive-url is an internal, undocumented flag that's used
+        // for testing of templates that are not yet published in the manifest
+        let { templateArchiveUrl } = flags;
         let skipOptionalDeps = false;
 
-        // Check proper format of actorName
-        if (!actorName) {
-            const actorNamePrompt = await inquirer.prompt([{
-                name: 'actorName',
-                message: 'Name of the new actor:',
-                type: 'input',
-                validate: (promptText) => {
-                    try {
-                        validateActorName(promptText);
-                    } catch (err) {
-                        return err.message;
-                    }
-                    return true;
-                },
-            }]);
-            ({ actorName } = actorNamePrompt);
-        } else {
-            validateActorName(actorName);
-        }
+        // Start fetching manifest immediately to prevent
+        // annoying delays that sometimes happen on CLI startup.
+        const manifestPromise = templateArchiveUrl
+            ? undefined // not fetching manifest when we have direct template URL
+            : actorTemplates.fetchManifest().catch((err) => {
+                return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
+            });
 
-        if (!templateArchiveUrl) {
-            const manifest = await actorTemplates.fetchManifest();
-            if (!templateName) {
-                const choices = manifest.templates.map((t) => ({
-                    value: t.name,
-                    name: `${t.label}: ${t.description}`,
-                }));
-
-                const answer = await inquirer.prompt([{
-                    type: 'list',
-                    name: 'template',
-                    message: 'Please select the template for your new actor',
-                    default: choices[0],
-                    choices,
-                    loop: false,
-                    pageSize: 8, // Due to the answers wrapping, the prompt looks best if the `pageSize` is a multiple of 2
-                }]);
-                templateName = answer.template;
-            }
-
-            const templateObj = manifest.templates.find((t) => t.name === templateName);
-            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps } = templateObj);
+        actorName = await ensureValidActorName(actorName);
+        if (manifestPromise) {
+            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps } = await getTemplateDefinition(templateName, manifestPromise));
         }
 
         const cwd = process.cwd();
@@ -88,10 +61,7 @@ class CreateCommand extends ApifyCommand {
             throw err;
         }
 
-        const zipStream = await gotScraping({
-            url: templateArchiveUrl,
-            isStream: true,
-        });
+        const zipStream = await httpsGet(templateArchiveUrl);
         const unzip = unzipper.Extract({ path: actFolderDir });
         await zipStream.pipe(unzip).promise();
 
