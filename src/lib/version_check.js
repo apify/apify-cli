@@ -15,7 +15,6 @@ const {
     extendLocalState,
 } = require('./local_state');
 
-
 const INSTALLATION_TYPE = {
     HOMEBREW: 'HOMEBREW',
     NPM: 'NPM',
@@ -47,8 +46,8 @@ const detectInstallationType = () => {
     }
 
     // If we didn't detect otherwise, assume the CLI was installed through NPM
-    return INSTALLATION_TYPE.NPM
-}
+    return INSTALLATION_TYPE.NPM;
+};
 
 const getLatestNpmVersion = async () => {
     const response = await axios({ url: 'https://registry.npmjs.org/apify-cli/latest' });
