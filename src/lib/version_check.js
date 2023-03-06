@@ -1,3 +1,4 @@
+const process = require('process');
 const axios = require('axios');
 const chalk = require('chalk');
 const semver = require('semver');
@@ -12,6 +13,38 @@ const {
     getLocalState,
     extendLocalState,
 } = require('./local_state');
+
+
+const INSTALLATION_TYPE = {
+    HOMEBREW: 'HOMEBREW',
+    NPM: 'NPM',
+};
+
+const UPDATE_COMMAND = {
+    [INSTALLATION_TYPE.HOMEBREW]: 'brew update && brew upgrade apify-cli',
+    [INSTALLATION_TYPE.NPM]: 'npm install -g apify-cli@latest',
+};
+
+/**
+ * Detect through which package manager the Apify CLI was installed.
+ * @returns {INSTALLATION_TYPE} The installation type of the CLI.
+ */
+const detectInstallationType = () => {
+    // The path of the alias to the `src/bin/run` file is in process.argv[1]
+    const command = process.argv[1];
+
+    // If the command is like `/opt/homebrew/bin/apify` or `/home/.linuxbrew/bin/apify`,
+    // then the CLI is installed via Homebrew
+    if (command) {
+        if (command.includes('homebrew') || command.includes('linuxbrew')) {
+            return INSTALLATION_TYPE.HOMEBREW;
+        }
+        // Add more install types here once we have the CLI in other package managers
+    }
+
+    // By default, assume the CLI was installed through NPM
+    return INSTALLATION_TYPE.NPM
+}
 
 const getLatestNpmVersion = async () => {
     const response = await axios({
@@ -72,9 +105,11 @@ const checkLatestVersion = async (enforeUpdate = false) => {
     const currentNpmVersion = require('../../package.json').version; //  eslint-disable-line
 
     if (latestNpmVersion && semver.gt(latestNpmVersion, currentNpmVersion)) {
+        const installationType = detectInstallationType();
+        const updateCommand = `' ${UPDATE_COMMAND[installationType]} '`;
         console.log('');
         warning('You are using an old version of Apify CLI. We strongly recommend you always use the latest available version.');
-        console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(' npm install apify-cli@latest -g '))} to install it! 👍 \n`);
+        console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(updateCommand))} to install it! 👍 \n`);
     } else if (shouldGetCurrentVersion) {
         // In this case the version was refreshed from the NPM which took a while and "Info: Making sure that Apify ..." was printed
         // so also print the state.
