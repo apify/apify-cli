@@ -1,5 +1,5 @@
+const axios = require('axios');
 const chalk = require('chalk');
-const { spawn } = require('cross-spawn');
 const semver = require('semver');
 const {
     CHECK_VERSION_EVERY_MILLIS,
@@ -13,16 +13,28 @@ const {
     extendLocalState,
 } = require('./local_state');
 
-const getLatestNpmVersion = () => spawn.sync('npm', ['view', 'apify-cli', 'version']).stdout.toString().trim();
+const getLatestNpmVersion = async () => {
+    const response = await axios({
+        url: 'https://registry.npmjs.org/apify-cli/',
+        headers: {
+            // This is necessary so that NPM returns the abbreviated version of the metadata
+            // See https://github.com/npm/registry/blob/master/docs/responses/package-metadata.md
+            accept: 'application/vnd.npm.install-v1+json',
+        },
+    });
+    const packageMetadata = response.data;
+    const latestVersion = packageMetadata['dist-tags'].latest;
+    return latestVersion;
+};
 
 /**
  * Fetches the latest NPM version of Apify CLI and caches it locally.
  */
-const getAndCacheLatestNpmVersion = () => {
+const getAndCacheLatestNpmVersion = async () => {
     try {
         info('Making sure that Apify CLI is up to date...');
 
-        const latestNpmVersion = getLatestNpmVersion();
+        const latestNpmVersion = await getLatestNpmVersion();
 
         extendLocalState({
             latestNpmVersion,
@@ -54,7 +66,7 @@ const checkLatestVersion = async (enforeUpdate = false) => {
     // If check is outdated and we are online then update the current NPM version.
     const shouldGetCurrentVersion = enforeUpdate || (isCheckOutdated && await isOnline.default({ timeout: 500 }));
     const latestNpmVersion = shouldGetCurrentVersion
-        ? getAndCacheLatestNpmVersion()
+        ? await getAndCacheLatestNpmVersion()
         : cachedLatestNpmVersion;
 
     const currentNpmVersion = require('../../package.json').version; //  eslint-disable-line

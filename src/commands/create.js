@@ -100,7 +100,7 @@ class CreateCommand extends ApifyCommand {
                         }
                         await execWithLog(
                             pythonCommand,
-                            ['-m', 'pip', 'install', '--no-cache-dir', '--no-warn-script-location', '--upgrade', 'pip'],
+                            ['-m', 'pip', 'install', '--no-cache-dir', '--no-warn-script-location', '--upgrade', 'pip', 'setuptools', 'wheel'],
                             { cwd: actFolderDir },
                         );
                         await execWithLog(
