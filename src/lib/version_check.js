@@ -1,5 +1,5 @@
+const axios = require('axios');
 const chalk = require('chalk');
-const { gotScraping } = require('got-scraping');
 const semver = require('semver');
 const {
     CHECK_VERSION_EVERY_MILLIS,
@@ -14,7 +14,7 @@ const {
 } = require('./local_state');
 
 const getLatestNpmVersion = async () => {
-    const response = await gotScraping({
+    const response = await axios({
         url: 'https://registry.npmjs.org/apify-cli/',
         headers: {
             // This is necessary so that NPM returns the abbreviated version of the metadata
@@ -22,7 +22,7 @@ const getLatestNpmVersion = async () => {
             accept: 'application/vnd.npm.install-v1+json',
         },
     });
-    const packageMetadata = JSON.parse(response.body);
+    const packageMetadata = response.data;
     const latestVersion = packageMetadata['dist-tags'].latest;
     return latestVersion;
 };
