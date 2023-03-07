@@ -5,6 +5,7 @@
     "main": "index.js",
     "scripts": {
         "test": "mocha --timeout 180000 --recursive",
+        "test-python": "mocha --timeout 180000 --recursive --grep '\\[python\\]'",
         "lint": "eslint src test",
         "lint:fix": "eslint src test --fix",
         "commands-md": "npm run manifest && oclif-dev readme",
