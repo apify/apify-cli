@@ -17,9 +17,9 @@ describe('Python support [python]', () => {
     });
 
     it('Python templates work [python]', async () => {
-        const pythonCommand = detectPythonVersion('.');
+        const pythonVersion = detectPythonVersion('.');
         // Don't fail this test when Python is not installed (it will be installed in the right CI workflow)
-        if (!pythonCommand) {
+        if (!pythonVersion && !process.env.CI) {
             console.log('Skipping Python template test since Python is not installed');
             return;
         }
