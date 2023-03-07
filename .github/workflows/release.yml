@@ -114,3 +114,11 @@ jobs:
           git_tag=v`node -p "require('./package.json').version"`
           git tag $git_tag
           git push origin $git_tag
+      -
+        name: Update Homebrew formula in homebrew-tap repo
+        if: env.RELEASE_TAG == 'latest'
+        run: |
+          PACKAGE_VERSION=`node -p "require('./package.json').version"`
+          gh workflow run update_formula.yaml --repo apify/homebrew-tap --field package=apify-cli --field version=$PACKAGE_VERSION
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_WORKFLOW_CALL_GH_TOKEN }}

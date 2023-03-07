@@ -22,6 +22,16 @@ However, we recommend using JavaScript / Node.js, for which we provide most libr
 
 ## Installation
 
+### Via Homebrew
+
+On macOS (or Linux), you can install the Apify CLI via the [Homebrew package manager](https://brew.sh).
+
+```bash
+brew install apify/tap/apify-cli
+```
+
+### Via NPM
+
 First, make sure you have [Node.js](https://nodejs.org) version 16 or higher with NPM installed on your computer:
 
 ```bash
