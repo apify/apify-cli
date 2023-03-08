@@ -20,6 +20,7 @@ const https = require('https');
 const { ApifyClient } = require('apify-client');
 const {
     execSync,
+    spawnSync,
 } = require('child_process');
 const semver = require('semver');
 const {
@@ -519,7 +520,10 @@ const getPythonCommand = (directory) => {
 const detectPythonVersion = (directory) => {
     const pythonCommand = getPythonCommand(directory);
     try {
-        return execSync(`${pythonCommand} -c "import platform; print(platform.python_version(), end='')"`, { encoding: 'utf-8' });
+        const spawnResult = spawnSync(pythonCommand, ['-c', 'import platform; print(platform.python_version())'], { encoding: 'utf-8' });
+        if (!spawnResult.error && spawnResult.stdout) {
+            return spawnResult.stdout.trim();
+        }
     } catch {
         return undefined;
     }
@@ -531,7 +535,10 @@ const isPythonVersionSupported = (installedPythonVersion) => {
 
 const detectNodeVersion = () => {
     try {
-        return execSync(`node --version`, { encoding: 'utf-8' }).replace(/^v/, '');
+        const spawnResult = spawnSync('node', ['--version'], { encoding: 'utf-8' });
+        if (!spawnResult.error && spawnResult.stdout) {
+            return spawnResult.stdout.trim().replace(/^v/, '');
+        }
     } catch {
         return undefined;
     }
