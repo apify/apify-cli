@@ -1,4 +1,4 @@
-const { execSync } = require('child_process');
+const fs = require('fs');
 const process = require('process');
 const axios = require('axios');
 const chalk = require('chalk');
@@ -37,7 +37,7 @@ const detectInstallationType = () => {
         // If the real command path is like `/opt/homebrew/Cellar/apify-cli/...` or `/home/linuxbrew/.linuxbrew/Cellar/apify-cli/...`,
         // then the CLI is installed via Homebrew
         if (process.platform === 'linux' || process.platform === 'darwin') {
-            const realCommandPath = execSync(`realpath "${commandPath}"`);
+            const realCommandPath = fs.realpathSync(commandPath);
             if (realCommandPath.includes('homebrew/Cellar') || realCommandPath.includes('linuxbrew/Cellar')) {
                 return INSTALLATION_TYPE.HOMEBREW;
             }

@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const actorTemplates = require('@apify/actor-templates');
 const unzipper = require('unzipper');
+const semver = require('semver');
 const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
@@ -15,8 +16,10 @@ const {
     detectPythonVersion,
     isPythonVersionSupported,
     getPythonCommand,
+    detectNodeVersion,
+    isNodeVersionSupported,
 } = require('../lib/utils');
-const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH } = require('../lib/consts');
+const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
 const { httpsGet, ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
 
 class CreateCommand extends ApifyCommand {
@@ -76,14 +79,24 @@ class CreateCommand extends ApifyCommand {
         let dependenciesInstalled = false;
         if (!skipDependencyInstall) {
             if (fs.existsSync(packageJsonPath)) {
-                // If the actor is a Node.js actor (has package.json), run `npm install`
-                await updateLocalJson(packageJsonPath, { name: actorName });
-                // Run npm install in actor dir.
-                // For efficiency, don't install Puppeteer for templates that don't use it
-                const cmdArgs = ['install'];
-                if (skipOptionalDeps) cmdArgs.push('--no-optional');
-                await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
-                dependenciesInstalled = true;
+                const currentNodeVersion = detectNodeVersion();
+                const minimumSupportedNodeVersion = semver.minVersion(SUPPORTED_NODEJS_VERSION);
+                if (currentNodeVersion) {
+                    if (!isNodeVersionSupported(currentNodeVersion)) {
+                        warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
+                            + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
+                    }
+                    // If the actor is a Node.js actor (has package.json), run `npm install`
+                    await updateLocalJson(packageJsonPath, { name: actorName });
+                    // Run npm install in actor dir.
+                    // For efficiency, don't install Puppeteer for templates that don't use it
+                    const cmdArgs = ['install'];
+                    if (skipOptionalDeps) cmdArgs.push('--no-optional');
+                    await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
+                    dependenciesInstalled = true;
+                } else {
+                    error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js actors locally.`);
+                }
             } else if (fs.existsSync(requirementsTxtPath)) {
                 const pythonVersion = detectPythonVersion(actFolderDir);
                 if (pythonVersion) {

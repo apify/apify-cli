@@ -31,6 +31,7 @@ const {
     DEPRECATED_LOCAL_CONFIG_NAME,
     ACTOR_SPECIFICATION_VERSION,
     APIFY_CLIENT_DEFAULT_HEADERS,
+    SUPPORTED_NODEJS_VERSION,
     MINIMUM_SUPPORTED_PYTHON_VERSION,
 } = require('./consts');
 const {
@@ -528,6 +529,21 @@ const isPythonVersionSupported = (installedPythonVersion) => {
     return semver.satisfies(installedPythonVersion, `^${MINIMUM_SUPPORTED_PYTHON_VERSION}`);
 };
 
+const detectNodeVersion = () => {
+    try {
+        return execSync(`node --version`, { encoding: 'utf-8' }).replace(/^v/, '');
+    } catch {
+        return undefined;
+    }
+};
+
+const isNodeVersionSupported = (installedNodeVersion) => {
+    // SUPPORTED_NODEJS_VERSION can be a version range,
+    // we need to get the minimum supported version from that range to be able to compare them
+    const minimumSupportedNodeVersion = semver.minVersion(SUPPORTED_NODEJS_VERSION);
+    return semver.gte(installedNodeVersion, minimumSupportedNodeVersion);
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -558,4 +574,6 @@ module.exports = {
     detectPythonVersion,
     isPythonVersionSupported,
     getPythonCommand,
+    detectNodeVersion,
+    isNodeVersionSupported,
 };
