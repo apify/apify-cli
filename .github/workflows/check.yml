@@ -43,9 +43,45 @@ jobs:
                     TEST_USER_TOKEN: ${{ secrets.USER_TOKEN }}
                 run: npm test
 
+    test_python_support:
+        name: Test Python template support
+        needs: [build_and_test]
+        strategy:
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                python-version: ["3.8", "3.9", "3.10", "3.11"]
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            -
+                uses: actions/checkout@v3
+            -
+                name: Use Node.js 16
+                uses: actions/setup-node@v3
+                with:
+                    node-version: 16
+            -
+                name: Load cached node_modules
+                uses: actions/cache@v3
+                with:
+                    path: |
+                        node_modules
+                        build
+                    key: cache-${{ github.run_id }}
+            -
+                name: Set up Python ${{ matrix.python-version }}
+                uses: actions/setup-python@v4
+                with:
+                    python-version: ${{ matrix.python-version }}
+            -
+                name: Run Python tests
+                env:
+                    TEST_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+                run: npm run test-python
+
     lint:
         name: Lint
-        needs: [build_and_test]
+        needs: [build_and_test, test_python_support]
         runs-on: ubuntu-latest
 
         steps:
