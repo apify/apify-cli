@@ -83,7 +83,7 @@ class CreateCommand extends ApifyCommand {
                 const minimumSupportedNodeVersion = semver.minVersion(SUPPORTED_NODEJS_VERSION);
                 if (currentNodeVersion) {
                     if (!isNodeVersionSupported(currentNodeVersion)) {
-                        warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
+                        outputs.warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
                             + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
                     }
                     // If the actor is a Node.js actor (has package.json), run `npm install`
@@ -95,7 +95,8 @@ class CreateCommand extends ApifyCommand {
                     await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
                     dependenciesInstalled = true;
                 } else {
-                    error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js actors locally.`);
+                    outputs.error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher`
+                        + ' to be able to run Node.js actors locally.');
                 }
             } else if (fs.existsSync(requirementsTxtPath)) {
                 const pythonVersion = detectPythonVersion(actFolderDir);
