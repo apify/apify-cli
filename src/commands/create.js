@@ -18,6 +18,7 @@ const {
     getPythonCommand,
     detectNodeVersion,
     isNodeVersionSupported,
+    detectNpmVersion,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
 const { httpsGet, ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
@@ -91,7 +92,14 @@ class CreateCommand extends ApifyCommand {
                     // Run npm install in actor dir.
                     // For efficiency, don't install Puppeteer for templates that don't use it
                     const cmdArgs = ['install'];
-                    if (skipOptionalDeps) cmdArgs.push('--no-optional');
+                    if (skipOptionalDeps) {
+                        const currentNpmVersion = detectNpmVersion();
+                        if (semver.gte(currentNpmVersion, '7.0.0')) {
+                            cmdArgs.push('--omit=optional');
+                        } else {
+                            cmdArgs.push('--no-optional');
+                        }
+                    }
                     await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
                     dependenciesInstalled = true;
                 } else {
