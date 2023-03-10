@@ -551,6 +551,18 @@ const isNodeVersionSupported = (installedNodeVersion) => {
     return semver.gte(installedNodeVersion, minimumSupportedNodeVersion);
 };
 
+const detectNpmVersion = () => {
+    const npmCommand = getNpmCmd();
+    try {
+        const spawnResult = spawnSync(npmCommand, ['--version'], { encoding: 'utf-8' });
+        if (!spawnResult.error && spawnResult.stdout) {
+            return spawnResult.stdout.trim().replace(/^v/, '');
+        }
+    } catch {
+        return undefined;
+    }
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -583,4 +595,5 @@ module.exports = {
     getPythonCommand,
     detectNodeVersion,
     isNodeVersionSupported,
+    detectNpmVersion,
 };
