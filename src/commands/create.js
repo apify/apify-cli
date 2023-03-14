@@ -46,8 +46,9 @@ class CreateCommand extends ApifyCommand {
             });
 
         actorName = await ensureValidActorName(actorName);
+        let messages = null;
         if (manifestPromise) {
-            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps } = await getTemplateDefinition(templateName, manifestPromise));
+            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = await getTemplateDefinition(templateName, manifestPromise));
         }
 
         const cwd = process.cwd();
@@ -143,6 +144,9 @@ class CreateCommand extends ApifyCommand {
 
         if (dependenciesInstalled) {
             outputs.success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
+            if (messages?.postCreate) {
+                outputs.info(messages?.postCreate);
+            }
         } else {
             outputs.success(`Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`);
         }
