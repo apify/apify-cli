@@ -74,12 +74,7 @@ module.exports = {
         ],
     ]),
     plugins: [
-        // [
-        //     'docusaurus-gtm-plugin',
-        //     {
-        //         id: 'GTM-TKBX678',
-        //     },
-        // ],
+        ...config.plugins,
     ],
     themeConfig: config.themeConfig,
     staticDirectories: ['node_modules/@apify/docs-theme/static', 'static'],
