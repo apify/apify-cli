@@ -527,7 +527,7 @@ _See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.15.
 
 ## `apify run`
 
-Runs the actor locally in the current directory by executing "npm start".
+Runs the actor locally in the current directory.
 
 ```
 USAGE
@@ -549,8 +549,8 @@ DESCRIPTION
    example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
    stored in the "storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the command's default behavior by overriding the npm start script value in a package.json file.
-   You can set up your own main file or environment variables by changing it.
+  NOTE: You can override the command's default behavior for Node.js actors by overriding the "start" script in the 
+  package.json file. You can set up your own main file or environment variables by changing it.
 ```
 
 _See code: [src/commands/run.js](https://github.com/apify/apify-cli/blob/v0.15.1/src/commands/run.js)_
