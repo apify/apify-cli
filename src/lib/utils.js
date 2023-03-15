@@ -385,7 +385,7 @@ const purgeDefaultKeyValueStore = async () => {
     await Promise.all(deletePromises);
 };
 
-const outputJobLog = async (job, jobStatus, timeout) => {
+const outputJobLog = async (job, timeout) => {
     const { id: logId, status } = job;
     // In case job was already done just output log
     if (ACT_JOB_TERMINAL_STATUSES.includes(status)) {

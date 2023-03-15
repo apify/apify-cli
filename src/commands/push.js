@@ -156,8 +156,12 @@ class PushCommand extends ApifyCommand {
 
         if (build.status === ACT_JOB_STATUSES.SUCCEEDED) {
             outputs.success('Actor was deployed to Apify cloud and built there.');
-        } else if (build.status === ACT_JOB_STATUSES.RUNNING) {
+        } else if (build.status === ACT_JOB_STATUSES.RUNNING || build.status === ACT_JOB_STATUSES.READY) {
             outputs.warning('Build is still running!');
+        } else if (build.status === ACT_JOB_STATUSES.ABORTED || build.status === ACT_JOB_STATUSES.ABORTING) {
+            outputs.warning('Build was aborted!');
+        } else if (build.status === ACT_JOB_STATUSES.TIMED_OUT || build.status === ACT_JOB_STATUSES.TIMING_OUT) {
+            outputs.warning('Build timed out!');
         } else {
             outputs.error('Build failed!');
         }
