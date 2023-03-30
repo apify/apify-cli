@@ -157,7 +157,7 @@ class PushCommand extends ApifyCommand {
         outputs.link('Actor build detail', `https://console.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
 
         const shouldOpenBrowser = await inquirer.prompt([
-            { type: 'confirm', name: 'continue', message: 'Do you want to open build detail in your browser?', default: true },
+            { type: 'confirm', name: 'continue', message: 'Do you want to open the actor detail in your browser?', default: true },
         ]);
 
         if (shouldOpenBrowser.continue) {
