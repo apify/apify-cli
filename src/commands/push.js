@@ -3,6 +3,8 @@ const { flags: flagsHelper } = require('@oclif/command');
 const actorTemplates = require('@apify/actor-templates');
 const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES,
     MAX_MULTIFILE_BYTES } = require('@apify/consts');
+const open = require('open');
+const inquirer = require('inquirer');
 const { ApifyCommand } = require('../lib/apify_command');
 const { createActZip, getLoggedClientOrThrow,
     outputJobLog, getLocalUserInfo, getActorLocalFilePaths,
@@ -32,6 +34,8 @@ class PushCommand extends ApifyCommand {
         const apifyClient = await getLoggedClientOrThrow();
         const localConfig = await getLocalConfigOrThrow();
         const userInfo = await getLocalUserInfo();
+        const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
+        const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
 
         let actorId;
         let actor;
@@ -152,7 +156,15 @@ class PushCommand extends ApifyCommand {
 
         build = await apifyClient.build(build.id).get();
 
-        outputs.link('Actor build detail', `https://console.apify.com/actors/${build.actId}#/builds/${build.buildNumber}`);
+        outputs.link('Actor build detail', `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`);
+
+        const shouldOpenBrowser = await inquirer.prompt([
+            { type: 'confirm', name: 'continue', message: 'Do you want to open the actor detail in your browser?', default: true },
+        ]);
+
+        if (shouldOpenBrowser.continue) {
+            open(`https://console.apify.com${redirectUrlPart}/actors/${build.actId}`);
+        }
 
         if (build.status === ACT_JOB_STATUSES.SUCCEEDED) {
             outputs.success('Actor was deployed to Apify cloud and built there.');
