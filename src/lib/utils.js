@@ -23,6 +23,7 @@ const {
     spawnSync,
 } = require('child_process');
 const semver = require('semver');
+const escapeStringRegexp = require('escape-string-regexp');
 const {
     GLOBAL_CONFIGS_FOLDER,
     AUTH_FILE_PATH,
@@ -229,6 +230,8 @@ const setLocalConfig = async (localConfig, actDir) => {
     writeJson.sync(path.join(actDir, LOCAL_CONFIG_PATH), localConfig);
 };
 
+const GITIGNORE_REQUIRED_CONTENTS = [getLocalStorageDir(), 'node_modules', '.venv'];
+
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
     const keyValueStorePath = getLocalKeyValueStorePath();
@@ -237,13 +240,26 @@ const setLocalEnv = async (actDir) => {
     ensureFolderExistsSync(actDir, getLocalRequestQueuePath());
     ensureFolderExistsSync(actDir, keyValueStorePath);
 
-    // Update gitignore
-    const localStorageDir = getLocalStorageDir();
-    const gitingore = path.join(actDir, '.gitignore');
-    if (fs.existsSync(gitingore)) {
-        fs.writeFileSync(gitingore, `\n${localStorageDir}`, { flag: 'a' });
-    } else {
-        fs.writeFileSync(gitingore, `${localStorageDir}\nnode_modules`, { flag: 'w' });
+    // Create or update gitignore
+    const gitignorePath = path.join(actDir, '.gitignore');
+    let gitignoreContents = '';
+    if (fs.existsSync(gitignorePath)) {
+        gitignoreContents = fs.readFileSync(gitignorePath, { encoding: 'utf-8' });
+    }
+
+    const gitignoreAdditions = [];
+    for (const gitignoreRequirement of GITIGNORE_REQUIRED_CONTENTS) {
+        if (!RegExp(`^${escapeStringRegexp(gitignoreRequirement)}$`, 'mg').test(gitignoreContents)) {
+            gitignoreAdditions.push(gitignoreRequirement);
+        }
+    }
+
+    if (gitignoreAdditions.length > 0) {
+        if (gitignoreContents.length > 0) {
+            fs.writeFileSync(gitignorePath, `\n${gitignoreAdditions.join('\n')}\n`, { flag: 'a' });
+        } else {
+            fs.writeFileSync(gitignorePath, `${gitignoreAdditions.join('\n')}\n`, { flag: 'w' });
+        }
     }
 
     // Create an empty INPUT.json file if it does not exist.
