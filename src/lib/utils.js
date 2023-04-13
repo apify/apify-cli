@@ -256,6 +256,7 @@ const setLocalEnv = async (actDir) => {
 
     if (gitignoreAdditions.length > 0) {
         if (gitignoreContents.length > 0) {
+            gitignoreAdditions.unshift('# Added by Apify CLI');
             fs.writeFileSync(gitignorePath, `\n${gitignoreAdditions.join('\n')}\n`, { flag: 'a' });
         } else {
             fs.writeFileSync(gitignorePath, `${gitignoreAdditions.join('\n')}\n`, { flag: 'w' });
