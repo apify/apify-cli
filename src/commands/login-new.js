@@ -21,15 +21,11 @@ const API_BASE_URL = CONSOLE_BASE_URL.includes('localhost') ? 'http://localhost:
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
-let tokenPrompt;
-let promptUi;
-
 const tryToLogin = async (token) => {
     const isUserLogged = await getLoggedClient(token, API_BASE_URL);
     const userInfo = getLocalUserInfo();
     if (isUserLogged) {
         outputs.success(`You are logged in to Apify as ${userInfo.username || userInfo.id}!`);
-        promptUi.close();
     } else {
         outputs.error('Login to Apify failed, the provided API token is not valid.');
     }
@@ -41,8 +37,23 @@ class LoginNewCommand extends ApifyCommand {
         outputs.warning('This command is still experimental and might break at any time. Use at your own risk.\n');
 
         const { flags } = this.parse(LoginNewCommand);
-        let { token } = flags;
-        if (!token) {
+        const { token } = flags;
+        if (token) {
+            return tryToLogin(token);
+        }
+
+        const answer = await inquirer.prompt([{
+            type: 'list',
+            name: 'loginMethod',
+            message: 'Choose how you want to log in to Apify',
+            choices: [
+                { value: 'console', name: 'Log in through Apify Console in your default browser', short: 'Through Apify Console' },
+                { value: 'manual', name: 'Enter API token manually', short: 'Manually' },
+            ],
+            loop: false,
+        }]);
+
+        if (answer.loginMethod === 'console') {
             let server;
             const app = express();
 
@@ -89,8 +100,7 @@ class LoginNewCommand extends ApifyCommand {
             apiRouter.post('/login-token', async (req, res) => {
                 try {
                     if (req.body.apiToken) {
-                        console.log('canceled');
-                        outputs.info('Got token from console...');
+                        // outputs.info('Got token from console...');
                         await tryToLogin(req.body.apiToken);
                     } else {
                         throw new Error('Request did not contain API token');
@@ -121,28 +131,24 @@ class LoginNewCommand extends ApifyCommand {
             // Listening on port 0 will assign a random available port
             server = app.listen(0);
             const { port } = server.address();
-            outputs.info(`Waiting for token from Apify console (on port ${port})...`);
+            // outputs.info(`Waiting for token from Apify console (on port ${port})...`);
 
             const consoleUrl = new URL(CONSOLE_BASE_URL);
             consoleUrl.searchParams.set('localCliCommand', 'login');
             consoleUrl.searchParams.set('localCliPort', port);
             consoleUrl.searchParams.set('localCliToken', authToken);
             consoleUrl.searchParams.set('localCliApiVersion', API_VERSION);
-            consoleUrl.searchParams.set('localCliComputerName', encodeURIComponent(computerName()));
+            try {
+                consoleUrl.searchParams.set('localCliComputerName', encodeURIComponent(computerName()));
+            } catch (err) {
+                // Ignore errors from fetching computer name as it's not critical
+            }
 
             outputs.info(`Opening Apify Console at "${consoleUrl.href}"...`);
-            outputs.info('You can also paste your Apify token below');
             await open(consoleUrl.href);
-            tokenPrompt = inquirer.prompt([{ name: 'token', message: 'token:', type: 'password' }]);
-            promptUi = tokenPrompt.ui;
-            const { token: insertedToken } = await tokenPrompt;
-            server.close();
-            const loginSuccessful = await tryToLogin(insertedToken);
-            if (loginSuccessful) {
-                token = insertedToken;
-            }
         } else {
-            return tryToLogin(token);
+            const tokenAnswer = await inquirer.prompt([{ name: 'token', message: 'Insert your Apify API token', type: 'password' }]);
+            return tryToLogin(tokenAnswer.token);
         }
     }
 }
