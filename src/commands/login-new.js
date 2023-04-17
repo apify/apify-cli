@@ -47,7 +47,7 @@ class LoginNewCommand extends ApifyCommand {
             name: 'loginMethod',
             message: 'Choose how you want to log in to Apify',
             choices: [
-                { value: 'console', name: 'Log in through Apify Console in your default browser', short: 'Through Apify Console' },
+                { value: 'console', name: 'Through Apify Console in your default browser', short: 'Through Apify Console' },
                 { value: 'manual', name: 'Enter API token manually', short: 'Manually' },
             ],
             loop: false,
