@@ -100,7 +100,6 @@ class LoginNewCommand extends ApifyCommand {
             apiRouter.post('/login-token', async (req, res) => {
                 try {
                     if (req.body.apiToken) {
-                        // outputs.info('Got token from console...');
                         await tryToLogin(req.body.apiToken);
                     } else {
                         throw new Error('Request did not contain API token');
@@ -131,7 +130,6 @@ class LoginNewCommand extends ApifyCommand {
             // Listening on port 0 will assign a random available port
             server = app.listen(0);
             const { port } = server.address();
-            // outputs.info(`Waiting for token from Apify console (on port ${port})...`);
 
             const consoleUrl = new URL(CONSOLE_BASE_URL);
             consoleUrl.searchParams.set('localCliCommand', 'login');
@@ -140,7 +138,7 @@ class LoginNewCommand extends ApifyCommand {
             consoleUrl.searchParams.set('localCliApiVersion', API_VERSION);
             try {
                 consoleUrl.searchParams.set('localCliComputerName', encodeURIComponent(computerName()));
-            } catch (err) {
+            } catch {
                 // Ignore errors from fetching computer name as it's not critical
             }
 
