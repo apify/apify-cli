@@ -1,8 +1,10 @@
 const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
+const { finished } = require('stream');
+const { promisify } = require('util');
 const actorTemplates = require('@apify/actor-templates');
-const unzipper = require('unzipper');
+const AdmZip = require('adm-zip');
 const semver = require('semver');
 const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
@@ -67,8 +69,11 @@ class CreateCommand extends ApifyCommand {
         }
 
         const zipStream = await httpsGet(templateArchiveUrl);
-        const unzip = unzipper.Extract({ path: actFolderDir });
-        await zipStream.pipe(unzip).promise();
+        const chunks = [];
+        zipStream.on('data', (chunk) => chunks.push(chunk));
+        await promisify(finished)(zipStream);
+        const zip = new AdmZip(Buffer.concat(chunks));
+        zip.extractAllTo(actFolderDir, true);
 
         // There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
         const localConfig = await getJsonFileContent(path.join(actFolderDir, LOCAL_CONFIG_PATH));
