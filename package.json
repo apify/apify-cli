@@ -80,10 +80,12 @@
         "istextorbinary": "^6.0.0",
         "load-json-file": "^6.2.0",
         "mime": "^2.6.0",
+        "mkdirp": "^3.0.1",
         "open": "^8.4.0",
         "ow": "^0.28.1",
         "rimraf": "^3.0.2",
         "semver": "^7.3.5",
+        "tiged": "^2.12.4",
         "underscore": "^1.13.2",
         "write-json-file": "^4.3.0"
     },
