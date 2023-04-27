@@ -2,7 +2,9 @@ const mkdirp = require('mkdirp');
 const fs = require('fs');
 const path = require('path');
 const tiged = require('tiged');
-const { ActorSourceType } = require('apify-client/dist/resource_clients/actor_version');
+const AdmZip = require('adm-zip');
+const semverGt = require('semver/functions/gt');
+const { get } = require('axios');
 const { ApifyCommand } = require('../lib/apify_command');
 const { success, error } = require('../lib/outputs');
 const { getLoggedClientOrThrow } = require('../lib/utils');
@@ -18,8 +20,10 @@ class PullCommand extends ApifyCommand {
         if (!actor) throw new Error(`Cannot find actor with ID '${actorId}' in your account.`);
         const { name, versions } = actor;
 
-        // TODO: Check is sorted chronologically
-        const lastVersion = versions[versions.length - 1];
+        const latestVersion = versions.reduce((match, curr) => {
+            if (semverGt(`${curr.versionNumber}.0`, `${match.versionNumber}.0`)) return curr;
+            return match;
+        });
 
         const dirpath = path.join(cwd, name);
         mkdirp.sync(dirpath);
@@ -30,10 +34,18 @@ class PullCommand extends ApifyCommand {
 
         let isPullSuccessful = false;
 
-        switch (lastVersion.sourceType) {
-            case ActorSourceType.Tarball:
-            case ActorSourceType.SourceFiles: {
-                const { sourceFiles } = lastVersion;
+        switch (latestVersion.sourceType) {
+            case 'TARBALL': {
+                const { tarballUrl } = latestVersion;
+
+                const { data } = await get(tarballUrl, { responseType: 'arraybuffer' });
+
+                const zipFile = new AdmZip(Buffer.from(data, 'binary'));
+                zipFile.extractAllTo(dirpath);
+                break;
+            }
+            case 'SOURCE_FILES': {
+                const { sourceFiles } = latestVersion;
                 for (const file of sourceFiles) {
                     if (!file.folder) {
                         mkdirp.sync(dirpath);
@@ -43,9 +55,9 @@ class PullCommand extends ApifyCommand {
                 isPullSuccessful = true;
                 break;
             }
-            case ActorSourceType.GitRepo: {
+            case 'GIT_REPO': {
                 // e.g. https://github.com/jakubbalada/Datasety.git#master:RejstrikPolitickychStran
-                const { gitRepoUrl } = lastVersion;
+                const { gitRepoUrl } = latestVersion;
                 const [repoUrl, branchDirPart] = gitRepoUrl.split('#');
 
                 let branch;
@@ -63,10 +75,10 @@ class PullCommand extends ApifyCommand {
                 isPullSuccessful = true;
                 break;
             }
-            case ActorSourceType.GitHubGist:
+            case 'GITHUB_GIST':
                 throw new Error('Pulling from GitHub Gist is not supported.');
             default:
-                throw new Error(`Unknown source type: ${lastVersion.sourceType}`);
+                throw new Error(`Unknown source type: ${latestVersion.sourceType}`);
         }
 
         if (isPullSuccessful) success(`Pulled to ${dirpath}/`);
