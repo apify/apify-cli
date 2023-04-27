@@ -24,6 +24,7 @@ class PullCommand extends ApifyCommand {
         mkdirp.sync(dirpath);
 
         switch (lastVersion.sourceType) {
+            case 'TARBALL':
             case 'SOURCE_FILES': {
                 const { sourceFiles } = lastVersion;
                 for (const file of sourceFiles) {
