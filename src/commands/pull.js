@@ -1,9 +1,10 @@
-const chalk = require('chalk');
 const mkdirp = require('mkdirp');
 const fs = require('fs');
 const path = require('path');
 const tiged = require('tiged');
+const { ActorSourceType } = require('apify-client/dist/resource_clients/actor_version');
 const { ApifyCommand } = require('../lib/apify_command');
+const { success, error } = require('../lib/outputs');
 const { getLoggedClientOrThrow } = require('../lib/utils');
 
 class PullCommand extends ApifyCommand {
@@ -23,35 +24,52 @@ class PullCommand extends ApifyCommand {
         const dirpath = path.join(cwd, name);
         mkdirp.sync(dirpath);
 
+        if (!(fs.readdirSync(dirpath).length === 0)) {
+            error(`Directory ${dirpath} is not empty. Please empty it or choose another directory.`);
+        }
+
+        let isPullSuccessful = false;
+
         switch (lastVersion.sourceType) {
-            case 'TARBALL':
-            case 'SOURCE_FILES': {
+            case ActorSourceType.Tarball:
+            case ActorSourceType.SourceFiles: {
                 const { sourceFiles } = lastVersion;
                 for (const file of sourceFiles) {
-                    if (file.folder) mkdirp.sync(path.join(cwd, name, file.name));
-                    else fs.writeFileSync(`${dirpath}/${file.name}`, file.content);
+                    if (!file.folder) {
+                        mkdirp.sync(dirpath);
+                        fs.writeFileSync(`${dirpath}/${file.name}`, file.content);
+                    }
                 }
-                console.log(`${chalk.green('Pulled to')} ${dirpath}/`);
+                isPullSuccessful = true;
                 break;
             }
-            case 'GIT_REPO': {
+            case ActorSourceType.GitRepo: {
                 // e.g. https://github.com/jakubbalada/Datasety.git#master:RejstrikPolitickychStran
                 const { gitRepoUrl } = lastVersion;
                 const [repoUrl, branchDirPart] = gitRepoUrl.split('#');
 
-                // TODO: Handle defaults and edge cases
                 let branch;
                 let dir;
                 if (branchDirPart) [branch, dir] = branchDirPart.split(':');
 
-                const emitter = tiged(`${repoUrl}/${dir}#${branch}`);
-                await emitter.clone(dirpath);
+                const emitter = tiged(branchDirPart ? `${repoUrl}/${dir}#${branch}` : repoUrl);
+                try {
+                    await emitter.clone(dirpath);
+                } catch (err) {
+                    error(`Failed to pull actor from ${gitRepoUrl}.`);
+                    break;
+                }
 
+                isPullSuccessful = true;
                 break;
             }
+            case ActorSourceType.GitHubGist:
+                throw new Error('Pulling from GitHub Gist is not supported.');
             default:
                 throw new Error(`Unknown source type: ${lastVersion.sourceType}`);
         }
+
+        if (isPullSuccessful) success(`Pulled to ${dirpath}/`);
     }
 }
 
@@ -60,9 +78,8 @@ PullCommand.description = 'Pulls the latest version of an actor from the Apify p
 PullCommand.args = [
     {
         name: 'actorId',
-        required: false,
-        description: 'ID of an existing actor on the Apify platform which will be pulled. '
-            + 'If not provided, the command will pull the actor specified in "apify.json" file.',
+        required: true,
+        description: 'ID or name (username/actor_name) of an existing actor on the Apify platform which will be pulled. ',
     },
 ];
 
