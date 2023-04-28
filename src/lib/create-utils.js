@@ -12,8 +12,11 @@ const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 exports.httpsGet = async (url) => {
     return new Promise((resolve, reject) => {
         https.get(url, (response) => {
+            // Handle redirects
             if (response.statusCode === 301 || response.statusCode === 302) {
                 resolve(exports.httpsGet(response.headers.location));
+                // Destroy the response to close the HTTP connection, otherwise this hangs for a long time with Node 19+ (due to HTTP keep-alive).
+                response.destroy();
             } else {
                 resolve(response);
             }
