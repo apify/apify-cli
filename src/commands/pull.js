@@ -1,4 +1,3 @@
-const mkdirp = require('mkdirp');
 const fs = require('fs');
 const path = require('path');
 const tiged = require('tiged');
@@ -26,7 +25,7 @@ class PullCommand extends ApifyCommand {
         });
 
         const dirpath = path.join(cwd, name);
-        mkdirp.sync(dirpath);
+        fs.mkdirSync(dirpath, { recursive: true }, null);
 
         if (!(fs.readdirSync(dirpath).length === 0)) {
             error(`Directory ${dirpath} is not empty. Please empty it or choose another directory.`);
@@ -42,14 +41,21 @@ class PullCommand extends ApifyCommand {
 
                 const zipFile = new AdmZip(Buffer.from(data, 'binary'));
                 zipFile.extractAllTo(dirpath);
+                isPullSuccessful = true;
                 break;
             }
             case 'SOURCE_FILES': {
                 const { sourceFiles } = latestVersion;
                 for (const file of sourceFiles) {
                     if (!file.folder) {
-                        mkdirp.sync(dirpath);
-                        fs.writeFileSync(`${dirpath}/${file.name}`, file.content);
+                        const fileParts = file.name.split('/');
+
+                        if (fileParts.length > 1) {
+                            const folderPath = fileParts.slice(0, -1).join('/');
+                            fs.mkdirSync(`${dirpath}/${folderPath}`, { recursive: true }, null);
+                        }
+                        const fileContent = file.format === 'BASE64' ? Buffer.from(file.content, 'base64') : file.content;
+                        fs.writeFileSync(`${dirpath}/${file.name}`, fileContent);
                     }
                 }
                 isPullSuccessful = true;
@@ -63,8 +69,11 @@ class PullCommand extends ApifyCommand {
                 let branch;
                 let dir;
                 if (branchDirPart) [branch, dir] = branchDirPart.split(':');
+                let branchDirRepoUrl = repoUrl;
+                if (dir) branchDirRepoUrl += `/${dir}`;
+                if (branch) branchDirRepoUrl += `#${branch}`;
 
-                const emitter = tiged(branchDirPart ? `${repoUrl}/${dir}#${branch}` : repoUrl);
+                const emitter = tiged(branchDirPart ? branchDirRepoUrl : repoUrl);
                 try {
                     await emitter.clone(dirpath);
                 } catch (err) {
