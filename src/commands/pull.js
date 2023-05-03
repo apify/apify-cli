@@ -8,6 +8,13 @@ const { ApifyCommand } = require('../lib/apify_command');
 const { success, error } = require('../lib/outputs');
 const { getLoggedClientOrThrow } = require('../lib/utils');
 
+const extractGitHubZip = async (url, directoryPath) => {
+    const { data } = await get(url, { responseType: 'arraybuffer' });
+
+    const zipFile = new AdmZip(Buffer.from(data, 'binary'));
+    zipFile.extractAllTo(directoryPath);
+};
+
 class PullCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(PullCommand);
@@ -35,25 +42,17 @@ class PullCommand extends ApifyCommand {
 
         switch (latestVersion.sourceType) {
             case 'TARBALL': {
-                const { tarballUrl } = latestVersion;
-
-                const { data } = await get(tarballUrl, { responseType: 'arraybuffer' });
-
-                const zipFile = new AdmZip(Buffer.from(data, 'binary'));
-                zipFile.extractAllTo(dirpath);
+                await extractGitHubZip(latestVersion.tarballUrl, dirpath);
                 isPullSuccessful = true;
                 break;
             }
             case 'SOURCE_FILES': {
                 const { sourceFiles } = latestVersion;
                 for (const file of sourceFiles) {
-                    if (!file.folder) {
-                        const fileParts = file.name.split('/');
+                    const folderPath = file.folder ? file.folder : path.dirname(file.name);
+                    fs.mkdirSync(`${dirpath}/${folderPath}`, { recursive: true }, null);
 
-                        if (fileParts.length > 1) {
-                            const folderPath = fileParts.slice(0, -1).join('/');
-                            fs.mkdirSync(`${dirpath}/${folderPath}`, { recursive: true }, null);
-                        }
+                    if (!file.folder) {
                         const fileContent = file.format === 'BASE64' ? Buffer.from(file.content, 'base64') : file.content;
                         fs.writeFileSync(`${dirpath}/${file.name}`, fileContent);
                     }
@@ -84,8 +83,12 @@ class PullCommand extends ApifyCommand {
                 isPullSuccessful = true;
                 break;
             }
-            case 'GITHUB_GIST':
-                throw new Error('Pulling from GitHub Gist is not supported.');
+            case 'GITHUB_GIST': {
+                await extractGitHubZip(`${latestVersion.gitHubGistUrl}/archive/master.zip`, dirpath);
+
+                isPullSuccessful = true;
+                break;
+            }
             default:
                 throw new Error(`Unknown source type: ${latestVersion.sourceType}`);
         }
