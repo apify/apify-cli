@@ -45,7 +45,7 @@ jobs:
                     # build and deploy the docs
                     npm run deploy
                 env:
-                    GIT_USER: "GitHub Actions:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
+                    GIT_USER: "apify-service-account:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
                     GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             -   name: Commit the updated package(-lock).json
