@@ -44,7 +44,7 @@ jobs:
       -
         name: Run Tests
         env:
-            TEST_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+            TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
         run: npm test
 
   test_python_support:
@@ -80,7 +80,7 @@ jobs:
       -
         name: Run Python tests
         env:
-          TEST_USER_TOKEN: ${{ secrets.USER_TOKEN }}
+          TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
         run: npm run test-python
 
   lint:
@@ -141,7 +141,7 @@ jobs:
         run: node ./.github/scripts/before-beta-release.js
       -
         name: Publish to NPM
-        run: NODE_AUTH_TOKEN=${{secrets.NPM_TOKEN}} npm publish --tag ${{ env.RELEASE_TAG }} --access public
+        run: NODE_AUTH_TOKEN=${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }} npm publish --tag ${{ env.RELEASE_TAG }} --access public
       -
         # Latest version is tagged by the release process so we only tag beta here.
         name: Tag Version
@@ -157,4 +157,4 @@ jobs:
           PACKAGE_VERSION=`node -p "require('./package.json').version"`
           gh workflow run update_formula.yaml --repo apify/homebrew-tap --field package=apify-cli --field version=$PACKAGE_VERSION
         env:
-          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_WORKFLOW_CALL_GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
