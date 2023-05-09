@@ -72,7 +72,7 @@ class PullCommand extends ApifyCommand {
                 if (dir) branchDirRepoUrl += `/${dir}`;
                 if (branch) branchDirRepoUrl += `#${branch}`;
 
-                const emitter = tiged(branchDirPart ? branchDirRepoUrl : repoUrl);
+                const emitter = tiged(branchDirRepoUrl);
                 try {
                     await emitter.clone(dirpath);
                 } catch (err) {
@@ -103,7 +103,7 @@ PullCommand.args = [
     {
         name: 'actorId',
         required: true,
-        description: 'ID or name (username/actor_name) of an existing actor on the Apify platform which will be pulled. ',
+        description: 'ID or name (username/actor_name, ~actor_name for logged user) of an existing actor on the Apify platform which will be pulled. ',
     },
 ];
 
