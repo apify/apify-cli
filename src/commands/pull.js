@@ -6,7 +6,7 @@ const semverGt = require('semver/functions/gt');
 const { get } = require('axios');
 const { ApifyCommand } = require('../lib/apify_command');
 const { success, error } = require('../lib/outputs');
-const { getLoggedClientOrThrow } = require('../lib/utils');
+const { getLoggedClientOrThrow, getLocalConfigOrThrow, getLocalUserInfo } = require('../lib/utils');
 
 const extractGitHubZip = async (url, directoryPath) => {
     const { data } = await get(url, { responseType: 'arraybuffer' });
@@ -18,12 +18,19 @@ const extractGitHubZip = async (url, directoryPath) => {
 class PullCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(PullCommand);
+        const localConfig = await getLocalConfigOrThrow();
+        const userInfo = await getLocalUserInfo();
         const apifyClient = await getLoggedClientOrThrow();
         const cwd = process.cwd();
 
-        const { actorId } = args;
+        const isActorAutomaticallyDetected = !args?.actorId;
+        const usernameOrId = userInfo.username || userInfo.id;
+
+        const actorId = args?.actorId || `${usernameOrId}/${localConfig.name}`;
+
         const actor = await apifyClient.actor(actorId).get();
         if (!actor) throw new Error(`Cannot find actor with ID '${actorId}' in your account.`);
+
         const { name, versions } = actor;
 
         const latestVersion = versions.reduce((match, curr) => {
@@ -31,11 +38,12 @@ class PullCommand extends ApifyCommand {
             return match;
         });
 
-        const dirpath = path.join(cwd, name);
+        const dirpath = isActorAutomaticallyDetected ? cwd : path.join(cwd, name);
         fs.mkdirSync(dirpath, { recursive: true }, null);
 
-        if (!(fs.readdirSync(dirpath).length === 0)) {
+        if (!isActorAutomaticallyDetected && !(fs.readdirSync(dirpath).length === 0)) {
             error(`Directory ${dirpath} is not empty. Please empty it or choose another directory.`);
+            return;
         }
 
         let isPullSuccessful = false;
@@ -93,7 +101,7 @@ class PullCommand extends ApifyCommand {
                 throw new Error(`Unknown source type: ${latestVersion.sourceType}`);
         }
 
-        if (isPullSuccessful) success(`Pulled to ${dirpath}/`);
+        if (isPullSuccessful) success(isActorAutomaticallyDetected ? `Actor ${name} updated at ${dirpath}/` : `Pulled to ${dirpath}/`);
     }
 }
 
@@ -102,7 +110,7 @@ PullCommand.description = 'Pulls the latest version of an actor from the Apify p
 PullCommand.args = [
     {
         name: 'actorId',
-        required: true,
+        required: false,
         description: 'ID or name (username/actor_name, ~actor_name for logged user) of an existing actor on the Apify platform which will be pulled. ',
     },
 ];

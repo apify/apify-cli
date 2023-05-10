@@ -282,7 +282,7 @@ This section contains printouts of `apify help` for all commands.
 * [`apify init [ACTORNAME]`](#apify-init-actorname)
 * [`apify login`](#apify-login)
 * [`apify logout`](#apify-logout)
-* [`apify pull ACTORID`](#apify-pull-actorid)
+* [`apify pull [ACTORID]`](#apify-pull-actorid)
 * [`apify push [ACTORID]`](#apify-push-actorid)
 * [`apify run`](#apify-run)
 * [`apify secrets`](#apify-secrets)
@@ -491,16 +491,17 @@ DESCRIPTION
 
 _See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.16.1/src/commands/logout.js)_
 
-## `apify pull ACTORID`
+## `apify pull [ACTORID]`
 
 Pulls the latest version of an actor from the Apify platform to the current directory.
 
 ```
 USAGE
-  $ apify pull ACTORID
+  $ apify pull [ACTORID]
 
 ARGUMENTS
-  ACTORID  ID or name (username/actor_name) of an existing actor on the Apify platform which will be pulled.
+  ACTORID  ID or name (username/actor_name, ~actor_name for logged user) of an existing actor on the Apify platform
+           which will be pulled.
 ```
 
 _See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.16.1/src/commands/pull.js)_
