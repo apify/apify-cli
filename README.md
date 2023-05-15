@@ -504,7 +504,7 @@ ARGUMENTS
            which will be pulled.
 ```
 
-_See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.16.1/src/commands/pull.js)_
+_See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/pull.js)_
 
 ## `apify push [ACTORID]`
 
