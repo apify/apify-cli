@@ -80,6 +80,7 @@
         "istextorbinary": "^6.0.0",
         "load-json-file": "^6.2.0",
         "mime": "^2.6.0",
+        "mixpanel": "^0.17.0",
         "open": "^8.4.0",
         "ow": "^0.28.1",
         "rimraf": "^3.0.2",

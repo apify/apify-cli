@@ -47,3 +47,5 @@ exports.APIFY_CLIENT_DEFAULT_HEADERS = { 'X-Apify-Request-Origin': META_ORIGINS.
 exports.MINIMUM_SUPPORTED_PYTHON_VERSION = '3.8.0';
 
 exports.PYTHON_VENV_PATH = '.venv';
+
+exports.MIXPANEL_TOKEN = '428a8adfe4ebe8708b3c85637eb7a360';
