@@ -21,7 +21,10 @@ const getOrCreateLocalDistinctId = () => {
     }
 };
 
+const isTelemetryEnabled = !['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE);
+
 module.exports = {
     mixpanel,
     getOrCreateLocalDistinctId,
+    isTelemetryEnabled,
 };

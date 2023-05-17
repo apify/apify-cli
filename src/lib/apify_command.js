@@ -2,7 +2,8 @@ const { Command } = require('@oclif/command');
 const { finished } = require('stream');
 const { promisify } = require('util');
 const { argsToCamelCase } = require('./utils');
-const { mixpanel, getOrCreateLocalDistinctId } = require('./telemetry');
+const { mixpanel, getOrCreateLocalDistinctId, isTelemetryEnabled } = require('./telemetry');
+const { detectInstallationType } = require('./version_check');
 
 /**
  * Adding parsing flags to oclif Command class
@@ -10,16 +11,22 @@ const { mixpanel, getOrCreateLocalDistinctId } = require('./telemetry');
 class ApifyCommand extends Command {
     parse(cmd) {
         const { flags, args } = super.parse(cmd);
+        let distinctId = null;
+        const parsedFlags = argsToCamelCase(flags);
 
-        const untrackedCommands = ['secrets'];
-
-        if (!['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE) && !untrackedCommands.includes(cmd.id)) {
-            const distinctId = getOrCreateLocalDistinctId();
-            mixpanel.track('cli_command', { distinct_id: distinctId, command: cmd.id, args, $os: process.platform });
+        if (isTelemetryEnabled) {
+            distinctId = getOrCreateLocalDistinctId();
+            const flagsUsed = Object.keys(parsedFlags);
+            mixpanel.track('cli_command', {
+                distinct_id: distinctId,
+                command: cmd.id,
+                flagsUsed,
+                $os: process.platform,
+                installationType: detectInstallationType(),
+            });
         }
 
-        const parsedFlags = argsToCamelCase(flags);
-        return { flags: parsedFlags, args };
+        return { flags: parsedFlags, args, distinctId };
     }
 
     /**

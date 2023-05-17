@@ -10,6 +10,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
+const { isTelemetryEnabled } = require('../lib/telemetry');
 const {
     setLocalConfig,
     setLocalEnv,
@@ -24,11 +25,11 @@ const {
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
 const { httpsGet, ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
-const { mixpanel, getOrCreateLocalDistinctId } = require('../lib/telemetry');
+const { mixpanel } = require('../lib/telemetry');
 
 class CreateCommand extends ApifyCommand {
     async run() {
-        const { flags, args } = this.parse(CreateCommand);
+        const { flags, args, distinctId } = this.parse(CreateCommand);
         let { actorName } = args;
         const {
             template: templateName,
@@ -52,10 +53,17 @@ class CreateCommand extends ApifyCommand {
 
         actorName = await ensureValidActorName(actorName);
         let messages = null;
+        const templateTrackProps = { fromArchiveUrl: !!templateArchiveUrl };
         if (manifestPromise) {
-            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = await getTemplateDefinition(templateName, manifestPromise));
-            const distinctId = getOrCreateLocalDistinctId();
-            mixpanel.track('create_template', { distinct_id: distinctId, templateArchiveUrl, $os: process.platform });
+            const templateDefinition = await getTemplateDefinition(templateName, manifestPromise);
+            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = templateDefinition);
+            templateTrackProps.templateId = templateDefinition.id;
+            templateTrackProps.templateName = templateDefinition.name;
+            templateTrackProps.templateLanguage = templateDefinition.category;
+        }
+
+        if (distinctId && isTelemetryEnabled) {
+            mixpanel.track('create_template', { distinct_id: distinctId, ...templateTrackProps });
         }
 
         const cwd = process.cwd();

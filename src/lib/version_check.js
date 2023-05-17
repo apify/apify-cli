@@ -115,4 +115,5 @@ const checkLatestVersion = async (enforeUpdate = false) => {
 module.exports = {
     checkLatestVersion,
     getLatestNpmVersion,
+    detectInstallationType,
 };
