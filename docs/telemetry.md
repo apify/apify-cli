@@ -10,8 +10,8 @@ Participation in this program is optional, and you may opt-out if you'd not like
 
 We currently collect the following metrics:
 
-- TBD
-- ...
+- Usage of commands except `secrets` commands.
+- Templates used for `actor create` command.
 
 All telemetry data are collected and stored securely on Mixpanel.
 
