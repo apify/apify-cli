@@ -11,16 +11,15 @@ class ApifyCommand extends Command {
     parse(cmd) {
         const { flags, args } = super.parse(cmd);
 
-        if (!['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE)) {
+        const trackedCommands = ['create', 'login', 'call', 'init', 'push', 'vis', 'logout', 'run', 'actor'];
+
+        if (!['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE) && trackedCommands.includes(cmd.id)) {
             const distinctId = getOrCreateLocalDistinctId();
-            mixpanel.track('cli_command', { distinct_id: distinctId, command: cmd.id, $os: process.platform });
+            mixpanel.track('cli_command', { distinct_id: distinctId, command: cmd.id, args, $os: process.platform });
         }
 
         const parsedFlags = argsToCamelCase(flags);
-        return {
-            flags: parsedFlags,
-            args,
-        };
+        return { flags: parsedFlags, args };
     }
 
     /**
