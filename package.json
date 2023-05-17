@@ -4,8 +4,8 @@
     "description": "Apify command-line interface helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.",
     "main": "index.js",
     "scripts": {
-        "test": "mocha --timeout 180000 --recursive",
-        "test-python": "mocha --timeout 180000 --recursive --grep '\\[python\\]'",
+        "test": "APIFY_CLI_TELEMETRY_DISABLE=1 mocha --timeout 180000 --recursive",
+        "test-python": "APIFY_CLI_TELEMETRY_DISABLE=1 mocha --timeout 180000 --recursive --grep '\\[python\\]'",
         "lint": "eslint src test",
         "lint:fix": "eslint src test --fix",
         "commands-md": "npm run manifest && oclif-dev readme",
