@@ -11,7 +11,9 @@ class ApifyCommand extends Command {
     parse(cmd) {
         const { flags, args } = super.parse(cmd);
 
-        mixpanel.track('cli_command', { distinct_id: '', command: args });
+        if (!['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE)) {
+            mixpanel.track('cli_command', { distinct_id: '', command: args });
+        }
 
         const parsedFlags = argsToCamelCase(flags);
         return {
