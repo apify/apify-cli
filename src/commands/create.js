@@ -36,8 +36,6 @@ class CreateCommand extends ApifyCommand {
             skipDependencyInstall,
         } = flags;
 
-        console.log({ templateName });
-
         // --template-archive-url is an internal, undocumented flag that's used
         // for testing of templates that are not yet published in the manifest
         let { templateArchiveUrl } = flags;
