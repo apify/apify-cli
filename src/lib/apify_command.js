@@ -2,6 +2,7 @@ const { Command } = require('@oclif/command');
 const { finished } = require('stream');
 const { promisify } = require('util');
 const { argsToCamelCase } = require('./utils');
+const { mixpanel } = require('./telemetry');
 
 /**
  * Adding parsing flags to oclif Command class
@@ -9,6 +10,9 @@ const { argsToCamelCase } = require('./utils');
 class ApifyCommand extends Command {
     parse(cmd) {
         const { flags, args } = super.parse(cmd);
+
+        mixpanel.track('cli_command', { distinct_id: '', command: args });
+
         const parsedFlags = argsToCamelCase(flags);
         return {
             flags: parsedFlags,
