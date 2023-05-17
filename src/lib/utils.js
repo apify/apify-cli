@@ -8,7 +8,8 @@ const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
-const { LOCAL_STORAGE_SUBDIRS,
+const {
+    LOCAL_STORAGE_SUBDIRS,
     ENV_VARS,
     LOCAL_ENV_VARS,
     KEY_VALUE_STORE_KEYS,

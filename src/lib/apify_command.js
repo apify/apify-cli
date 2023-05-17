@@ -2,7 +2,7 @@ const { Command } = require('@oclif/command');
 const { finished } = require('stream');
 const { promisify } = require('util');
 const { argsToCamelCase } = require('./utils');
-const { mixpanel } = require('./telemetry');
+const { mixpanel, getOrCreateLocalDistinctId } = require('./telemetry');
 
 /**
  * Adding parsing flags to oclif Command class
@@ -12,7 +12,8 @@ class ApifyCommand extends Command {
         const { flags, args } = super.parse(cmd);
 
         if (!['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE)) {
-            mixpanel.track('cli_command', { distinct_id: '', command: args });
+            const distinctId = getOrCreateLocalDistinctId();
+            mixpanel.track('cli_command', { distinct_id: distinctId, command: args });
         }
 
         const parsedFlags = argsToCamelCase(flags);

@@ -1,4 +1,27 @@
 const Mixpanel = require('mixpanel');
-const { MIXPANEL_TOKEN } = require('./consts');
+const loadJson = require('load-json-file');
+const writeJson = require('write-json-file');
+const { cryptoRandomObjectId } = require('@apify/utilities');
+const { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } = require('./consts');
 
-exports.mixpanel = Mixpanel.init(MIXPANEL_TOKEN, { keepAlive: false });
+const mixpanel = Mixpanel.init(MIXPANEL_TOKEN, { keepAlive: false });
+
+/**
+ * Returns telemetry distinctId for current local environment or creates new one.
+ * @returns {Promise<*|string>}
+ */
+const getOrCreateLocalDistinctId = async () => {
+    try {
+        const telemetry = await loadJson(TELEMETRY_FILE_PATH);
+        return telemetry.distinctId;
+    } catch (e) {
+        const distinctId = cryptoRandomObjectId();
+        await writeJson(TELEMETRY_FILE_PATH, { distinctId });
+        return distinctId;
+    }
+};
+
+module.exports = {
+    mixpanel,
+    getOrCreateLocalDistinctId,
+};

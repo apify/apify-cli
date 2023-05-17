@@ -26,6 +26,8 @@ exports.SECRETS_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'secrets.js
 
 exports.STATE_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'state.json');
 
+exports.TELEMETRY_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'telemetry.json');
+
 exports.DEPRECATED_LOCAL_CONFIG_NAME = 'apify.json';
 
 exports.ACTOR_SPECIFICATION_FOLDER = '.actor';
