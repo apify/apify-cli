@@ -24,6 +24,7 @@ const {
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
 const { httpsGet, ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
+const { mixpanel, getOrCreateLocalDistinctId } = require('../lib/telemetry');
 
 class CreateCommand extends ApifyCommand {
     async run() {
@@ -33,6 +34,8 @@ class CreateCommand extends ApifyCommand {
             template: templateName,
             skipDependencyInstall,
         } = flags;
+
+        console.log({ templateName });
 
         // --template-archive-url is an internal, undocumented flag that's used
         // for testing of templates that are not yet published in the manifest
@@ -51,6 +54,8 @@ class CreateCommand extends ApifyCommand {
         let messages = null;
         if (manifestPromise) {
             ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = await getTemplateDefinition(templateName, manifestPromise));
+            const distinctId = getOrCreateLocalDistinctId();
+            mixpanel.track('create_template', { distinct_id: distinctId, templateArchiveUrl, $os: process.platform });
         }
 
         const cwd = process.cwd();
