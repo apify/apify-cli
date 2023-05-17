@@ -55,7 +55,7 @@ class CreateCommand extends ApifyCommand {
         if (manifestPromise) {
             ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = await getTemplateDefinition(templateName, manifestPromise));
             const distinctId = getOrCreateLocalDistinctId();
-            mixpanel.track('create_template', { distinctId, templateArchiveUrl, $os: process.platform });
+            mixpanel.track('create_template', { distinct_id: distinctId, templateArchiveUrl, $os: process.platform });
         }
 
         const cwd = process.cwd();
