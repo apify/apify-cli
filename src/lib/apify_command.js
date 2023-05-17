@@ -13,7 +13,7 @@ class ApifyCommand extends Command {
 
         if (!['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE)) {
             const distinctId = getOrCreateLocalDistinctId();
-            mixpanel.track('cli_command', { distinct_id: distinctId, command: args });
+            mixpanel.track('cli_command', { distinct_id: distinctId, command: cmd.id, $os: process.platform });
         }
 
         const parsedFlags = argsToCamelCase(flags);

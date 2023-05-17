@@ -10,13 +10,13 @@ const mixpanel = Mixpanel.init(MIXPANEL_TOKEN, { keepAlive: false });
  * Returns telemetry distinctId for current local environment or creates new one.
  * @returns {Promise<*|string>}
  */
-const getOrCreateLocalDistinctId = async () => {
+const getOrCreateLocalDistinctId = () => {
     try {
-        const telemetry = await loadJson(TELEMETRY_FILE_PATH);
+        const telemetry = loadJson.sync(TELEMETRY_FILE_PATH);
         return telemetry.distinctId;
     } catch (e) {
         const distinctId = cryptoRandomObjectId();
-        await writeJson(TELEMETRY_FILE_PATH, { distinctId });
+        writeJson.sync(TELEMETRY_FILE_PATH, { distinctId });
         return distinctId;
     }
 };
