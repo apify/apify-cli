@@ -29,7 +29,7 @@ class PullCommand extends ApifyCommand {
         const actorId = args?.actorId || `${usernameOrId}/${localConfig.name}`;
 
         const actor = await apifyClient.actor(actorId).get();
-        if (!actor) throw new Error(`Cannot find actor with ID '${actorId}' in your account.`);
+        if (!actor) throw new Error(`Cannot find Actor with ID '${actorId}' in your account.`);
 
         const { name, versions } = actor;
 
@@ -84,7 +84,7 @@ class PullCommand extends ApifyCommand {
                 try {
                     await emitter.clone(dirpath);
                 } catch (err) {
-                    error(`Failed to pull actor from ${gitRepoUrl}.`);
+                    error(`Failed to pull Actor from ${gitRepoUrl}.`);
                     break;
                 }
 
