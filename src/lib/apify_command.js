@@ -11,9 +11,9 @@ class ApifyCommand extends Command {
     parse(cmd) {
         const { flags, args } = super.parse(cmd);
 
-        const trackedCommands = ['create', 'login', 'call', 'init', 'push', 'vis', 'logout', 'run', 'actor'];
+        const untrackedCommands = ['secrets'];
 
-        if (!['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE) && trackedCommands.includes(cmd.id)) {
+        if (!['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE) && !untrackedCommands.includes(cmd.id)) {
             const distinctId = getOrCreateLocalDistinctId();
             mixpanel.track('cli_command', { distinct_id: distinctId, command: cmd.id, args, $os: process.platform });
         }
