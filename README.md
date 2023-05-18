@@ -500,8 +500,8 @@ USAGE
   $ apify pull [ACTORID]
 
 ARGUMENTS
-  ACTORID  ID or name (username/actor_name, ~actor_name for logged user) of an existing actor on the Apify platform
-           which will be pulled.
+  ACTORID  ID of an existing actor on the Apify platform where the files will be pushed. If not provided, the command
+           will create or modify the actor with the name specified in ".actor/actor.json" file.
 ```
 
 _See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/pull.js)_

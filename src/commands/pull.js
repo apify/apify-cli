@@ -4,9 +4,11 @@ const tiged = require('tiged');
 const AdmZip = require('adm-zip');
 const semverGt = require('semver/functions/gt');
 const { get } = require('axios');
+const { flags: flagsHelper } = require('@oclif/command');
 const { ApifyCommand } = require('../lib/apify_command');
 const { success, error } = require('../lib/outputs');
 const { getLoggedClientOrThrow, getLocalConfigOrThrow, getLocalUserInfo } = require('../lib/utils');
+const { LOCAL_CONFIG_PATH } = require('../lib/consts');
 
 const extractGitHubZip = async (url, directoryPath) => {
     const { data } = await get(url, { responseType: 'arraybuffer' });
@@ -17,7 +19,7 @@ const extractGitHubZip = async (url, directoryPath) => {
 
 class PullCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(PullCommand);
+        const { args, flags } = this.parse(PullCommand);
         const localConfig = await getLocalConfigOrThrow();
         const userInfo = await getLocalUserInfo();
         const apifyClient = await getLoggedClientOrThrow();
@@ -33,10 +35,20 @@ class PullCommand extends ApifyCommand {
 
         const { name, versions } = actor;
 
-        const latestVersion = versions.reduce((match, curr) => {
-            if (semverGt(`${curr.versionNumber}.0`, `${match.versionNumber}.0`)) return curr;
-            return match;
-        });
+        let correctVersion = null;
+        if (flags?.version) {
+            correctVersion = versions.find((version) => version.versionNumber === flags?.version);
+            if (!correctVersion) {
+                error(`Cannot find version ${flags?.version} of actor ${actorId}. Pulling latest version instead.`);
+            }
+        }
+
+        if (!correctVersion) {
+            correctVersion = versions.reduce((match, curr) => {
+                if (semverGt(`${curr.versionNumber}.0`, `${match.versionNumber}.0`)) return curr;
+                return match;
+            });
+        }
 
         const dirpath = isActorAutomaticallyDetected ? cwd : path.join(cwd, name);
         fs.mkdirSync(dirpath, { recursive: true }, null);
@@ -48,14 +60,14 @@ class PullCommand extends ApifyCommand {
 
         let isPullSuccessful = false;
 
-        switch (latestVersion.sourceType) {
+        switch (correctVersion.sourceType) {
             case 'TARBALL': {
-                await extractGitHubZip(latestVersion.tarballUrl, dirpath);
+                await extractGitHubZip(correctVersion.tarballUrl, dirpath);
                 isPullSuccessful = true;
                 break;
             }
             case 'SOURCE_FILES': {
-                const { sourceFiles } = latestVersion;
+                const { sourceFiles } = correctVersion;
                 for (const file of sourceFiles) {
                     const folderPath = file.folder ? file.folder : path.dirname(file.name);
                     fs.mkdirSync(`${dirpath}/${folderPath}`, { recursive: true }, null);
@@ -70,7 +82,7 @@ class PullCommand extends ApifyCommand {
             }
             case 'GIT_REPO': {
                 // e.g. https://github.com/jakubbalada/Datasety.git#master:RejstrikPolitickychStran
-                const { gitRepoUrl } = latestVersion;
+                const { gitRepoUrl } = correctVersion;
                 const [repoUrl, branchDirPart] = gitRepoUrl.split('#');
 
                 let branch;
@@ -92,13 +104,13 @@ class PullCommand extends ApifyCommand {
                 break;
             }
             case 'GITHUB_GIST': {
-                await extractGitHubZip(`${latestVersion.gitHubGistUrl}/archive/master.zip`, dirpath);
+                await extractGitHubZip(`${correctVersion.gitHubGistUrl}/archive/master.zip`, dirpath);
 
                 isPullSuccessful = true;
                 break;
             }
             default:
-                throw new Error(`Unknown source type: ${latestVersion.sourceType}`);
+                throw new Error(`Unknown source type: ${correctVersion.sourceType}`);
         }
 
         if (isPullSuccessful) success(isActorAutomaticallyDetected ? `Actor ${name} updated at ${dirpath}/` : `Pulled to ${dirpath}/`);
@@ -107,11 +119,20 @@ class PullCommand extends ApifyCommand {
 
 PullCommand.description = 'Pulls the latest version of an actor from the Apify platform to the current directory. ';
 
+PullCommand.flags = {
+    version: flagsHelper.string({
+        char: 'v',
+        description: `Actor version number to which the files should be pushed. By default, it is taken from the "${LOCAL_CONFIG_PATH}" file.`,
+        required: false,
+    }),
+};
+
 PullCommand.args = [
     {
         name: 'actorId',
         required: false,
-        description: 'ID or name (username/actor_name, ~actor_name for logged user) of an existing actor on the Apify platform which will be pulled. ',
+        description: 'ID of an existing actor on the Apify platform where the files will be pushed. If not provided, '
+            + 'the command will create or modify the actor with the name specified in ".actor/actor.json" file.',
     },
 ];
 
