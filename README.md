@@ -502,6 +502,10 @@ USAGE
 ARGUMENTS
   ACTORID  ID of an existing actor on the Apify platform where the files will be pushed. If not provided, the command
            will create or modify the actor with the name specified in ".actor/actor.json" file.
+
+OPTIONS
+  -v, --version=version  Actor version number to which the files should be pushed. By default, it is taken from the
+                         ".actor/actor.json" file.
 ```
 
 _See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/pull.js)_

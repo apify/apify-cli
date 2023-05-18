@@ -14,7 +14,8 @@ const extractGitHubZip = async (url, directoryPath) => {
     const { data } = await get(url, { responseType: 'arraybuffer' });
 
     const zipFile = new AdmZip(Buffer.from(data, 'binary'));
-    zipFile.extractAllTo(directoryPath);
+
+    zipFile.extractEntryTo(zipFile.getEntries()[0].entryName, directoryPath, false);
 };
 
 class PullCommand extends ApifyCommand {

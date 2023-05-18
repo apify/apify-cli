@@ -4,10 +4,10 @@ const sinon = require('sinon');
 const path = require('path');
 const { expect } = require('chai');
 const { testUserClient } = require('./config');
-const { LOCAL_CONFIG_PATH } = require('../../src/lib/consts');
+const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME } = require('../../src/lib/consts');
 
 const ACTOR_NAME = `pull-test-${Date.now()}`;
-const TEST_ACTOR = {
+const TEST_ACTOR_SOURCE_FILES = {
     name: ACTOR_NAME,
     isPublic: false,
     versions: [
@@ -28,52 +28,15 @@ const TEST_ACTOR = {
                 {
                     name: '.actor/actor.json',
                     format: 'TEXT',
-                    content: '{\n'
-                        + '\t"actorSpecification": 1,\n'
-                        + `\t"name": "${ACTOR_NAME}",\n`
-                        + '\t"title": "Getting Started with Apify Python SDK",\n'
-                        + '\t"description": "Adds two integers.",\n'
-                        + '\t"version": "0.0",\n'
-                        + '\t"meta": {\n'
-                        + '\t\t"templateId": "python-start"\n'
-                        + '\t},\n'
-                        + '\t"dockerfile": "./Dockerfile",\n'
-                        + '\t"storages": {\n'
-                        + '\t\t"dataset": {\n'
-                        + '\t\t\t"actorSpecification": 1,\n'
-                        + '\t\t\t"title": "Numbers and their sums",\n'
-                        + '\t\t\t"views": {\n'
-                        + '\t\t\t\t"sums": {\n'
-                        + '\t\t\t\t\t"title": "A sum of two numbers",\n'
-                        + '\t\t\t\t\t"transformation": {\n'
-                        + '\t\t\t\t\t\t"fields": [\n'
-                        + '\t\t\t\t\t\t\t"sum",\n'
-                        + '\t\t\t\t\t\t\t"first_number",\n'
-                        + '\t\t\t\t\t\t\t"second_number"\n'
-                        + '\t\t\t\t\t\t]\n'
-                        + '\t\t\t\t\t},\n'
-                        + '\t\t\t\t\t"display": {\n'
-                        + '\t\t\t\t\t\t"component": "table",\n'
-                        + '\t\t\t\t\t\t"properties": {\n'
-                        + '\t\t\t\t\t\t\t"sum": {\n'
-                        + '\t\t\t\t\t\t\t\t"label": "Sum",\n'
-                        + '\t\t\t\t\t\t\t\t"format": "number"\n'
-                        + '\t\t\t\t\t\t\t},\n'
-                        + '\t\t\t\t\t\t\t"first_number": {\n'
-                        + '\t\t\t\t\t\t\t\t"label": "First number",\n'
-                        + '\t\t\t\t\t\t\t\t"format": "number"\n'
-                        + '\t\t\t\t\t\t\t},\n'
-                        + '\t\t\t\t\t\t\t"second_number": {\n'
-                        + '\t\t\t\t\t\t\t\t"label": "Second number",\n'
-                        + '\t\t\t\t\t\t\t\t"format": "number"\n'
-                        + '\t\t\t\t\t\t\t}\n'
-                        + '\t\t\t\t\t\t}\n'
-                        + '\t\t\t\t\t}\n'
-                        + '\t\t\t\t}\n'
-                        + '\t\t\t}\n'
-                        + '\t\t}\n'
-                        + '\t}\n'
-                        + '}\n',
+                    content:
+                        '{"actorSpecification": 1,"name": "","title": "Getting Started with Apify Python SDK","description": "Adds two integers.",'
+                        + '"version": "0.0","meta": {"templateId": "python-start"},"dockerfile": "./Dockerfile",'
+                        + '"storages": {"dataset": {"actorSpecification": 1,"title": "Numbers and their sums",'
+                        + '"views": {"sums": {"title": "A sum of two numbers",'
+                        + '"transformation": {"fields": ["sum","first_number","second_number"]},'
+                        + '"display": {"component": "table","properties": {"sum": {"label": "Sum","format": "number"},'
+                        + '"first_number": {"label": "First number","format": "number"},'
+                        + '"second_number": {"label": "Second number","format": "number"}}}}}}}}',
                 },
                 {
                     name: 'src',
@@ -99,13 +62,39 @@ const TEST_ACTOR = {
     ],
 };
 
+const TEST_ACTOR_GITHUB_GIST = {
+    name: ACTOR_NAME,
+    isPublic: false,
+    versions: [
+        {
+            versionNumber: '0.0',
+            sourceType: 'GITHUB_GIST',
+            buildTag: 'latest',
+            gitHubGistUrl: 'https://gist.github.com/DennisKallerhoff/32f1efd686e11f6a05f1af87bddb1f1a',
+        },
+    ],
+};
+
+const TEST_ACTOR_GIT_REPO = {
+    name: ACTOR_NAME,
+    isPublic: false,
+    versions: [
+        {
+            versionNumber: '0.0',
+            sourceType: 'GIT_REPO',
+            buildTag: 'latest',
+            gitRepoUrl: 'https://github.com/HonzaTuron/baidu-scraper#multipage',
+        },
+    ],
+};
+
 describe('apify pull', () => {
     beforeEach(() => {
         sinon.spy(console, 'log');
     });
 
-    it('should work with actor id', async () => {
-        const testActor = await testUserClient.actors().create(TEST_ACTOR);
+    it('should work with actor SOURCE_FILES', async () => {
+        const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
         const testActorClient = testUserClient.actor(testActor.id);
         const actorFromServer = await testActorClient.get();
 
@@ -114,5 +103,25 @@ describe('apify pull', () => {
         const actorJson = loadJson.sync(path.join(testActor.name, LOCAL_CONFIG_PATH));
 
         expect(actorJson.name).to.be.eql(actorFromServer.name);
+    });
+
+    it('should work with GITHUB_GIST', async () => {
+        const testActor = await testUserClient.actors().create(TEST_ACTOR_GITHUB_GIST);
+
+        await command.run(['pull', testActor.id]);
+
+        const actorPackageJson = loadJson.sync(path.join(testActor.name, 'package.json'));
+
+        expect(actorPackageJson.name).to.be.eql('act-in-gist');
+    });
+
+    it('should work with GIT_REPO', async () => {
+        const testActor = await testUserClient.actors().create(TEST_ACTOR_GIT_REPO);
+
+        await command.run(['pull', testActor.id]);
+
+        const actorJson = loadJson.sync(path.join(testActor.name, DEPRECATED_LOCAL_CONFIG_NAME));
+
+        expect(actorJson.name).to.be.eql('baidu-scraper');
     });
 });
