@@ -3,6 +3,7 @@ const command = require('@oclif/command');
 const sinon = require('sinon');
 const path = require('path');
 const { expect } = require('chai');
+const writeJsonFile = require('write-json-file');
 const { testUserClient } = require('./config');
 const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME } = require('../../src/lib/consts');
 
@@ -123,5 +124,21 @@ describe('apify pull', () => {
         const actorJson = loadJson.sync(path.join(testActor.name, DEPRECATED_LOCAL_CONFIG_NAME));
 
         expect(actorJson.name).to.be.eql('baidu-scraper');
+    });
+
+    it('should work without actorId', async () => {
+        const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
+
+        const contentBeforeEdit = JSON.parse(TEST_ACTOR_SOURCE_FILES.versions[0].sourceFiles[2].content);
+        contentBeforeEdit.id = testActor.id;
+        TEST_ACTOR_SOURCE_FILES.versions[0].sourceFiles[2].content = contentBeforeEdit;
+
+        await writeJsonFile(LOCAL_CONFIG_PATH, TEST_ACTOR_SOURCE_FILES.versions[0].sourceFiles[2].content);
+
+        await command.run(['pull']);
+
+        const actorJson = loadJson.sync(LOCAL_CONFIG_PATH);
+
+        expect(actorJson.id).to.be.eql(testActor.id);
     });
 });

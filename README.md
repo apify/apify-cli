@@ -500,8 +500,8 @@ USAGE
   $ apify pull [ACTORID]
 
 ARGUMENTS
-  ACTORID  ID of an existing actor on the Apify platform where the files will be pushed. If not provided, the command
-           will create or modify the actor with the name specified in ".actor/actor.json" file.
+  ACTORID  ID of an existing actor on the Apify platform which will be pulled. If not provided, the command will update
+           actor in current directory based on ID in ".actor/actor.json" file.
 
 OPTIONS
   -v, --version=version  Actor version number to which the files should be pushed. By default, it is taken from the

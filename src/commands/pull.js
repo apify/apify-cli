@@ -29,10 +29,12 @@ class PullCommand extends ApifyCommand {
         const isActorAutomaticallyDetected = !args?.actorId;
         const usernameOrId = userInfo.username || userInfo.id;
 
-        const actorId = args?.actorId || `${usernameOrId}/${localConfig.name}`;
+        const actorId = args?.actorId || localConfig?.id || `${usernameOrId}/${localConfig.name}`;
+
+        if (!actorId) throw new Error('Cannot find actor in this directory.');
 
         const actor = await apifyClient.actor(actorId).get();
-        if (!actor) throw new Error(`Cannot find Actor with ID '${actorId}' in your account.`);
+        if (!actor) throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
 
         const { name, versions } = actor;
 
@@ -75,7 +77,14 @@ class PullCommand extends ApifyCommand {
 
                     if (!file.folder) {
                         const fileContent = file.format === 'BASE64' ? Buffer.from(file.content, 'base64') : file.content;
-                        fs.writeFileSync(`${dirpath}/${file.name}`, fileContent);
+
+                        if (file.name === LOCAL_CONFIG_PATH) {
+                            const actorJson = JSON.parse(fileContent);
+                            actorJson.id = actorId;
+                            fs.writeFileSync(`${dirpath}/${file.name}`, JSON.stringify(actorJson, null, 2));
+                        } else {
+                            fs.writeFileSync(`${dirpath}/${file.name}`, fileContent);
+                        }
                     }
                 }
                 isPullSuccessful = true;
@@ -132,8 +141,8 @@ PullCommand.args = [
     {
         name: 'actorId',
         required: false,
-        description: 'ID of an existing actor on the Apify platform where the files will be pushed. If not provided, '
-            + 'the command will create or modify the actor with the name specified in ".actor/actor.json" file.',
+        description: 'ID of an existing actor on the Apify platform which will be pulled. If not provided, '
+            + 'the command will update actor in current directory based on ID in ".actor/actor.json" file.',
     },
 ];
 
