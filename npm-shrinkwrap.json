@@ -35,6 +35,7 @@
                 "inquirer": "^7.3.3",
                 "is-online": "^10.0.0",
                 "istextorbinary": "^6.0.0",
+                "json5": "^2.2.3",
                 "load-json-file": "^6.2.0",
                 "mime": "^2.6.0",
                 "open": "^8.4.0",

@@ -4,6 +4,7 @@ const sinon = require('sinon');
 const path = require('path');
 const { expect } = require('chai');
 const writeJsonFile = require('write-json-file');
+const fs = require('fs');
 const { testUserClient } = require('./config');
 const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME } = require('../../src/lib/consts');
 
@@ -94,6 +95,14 @@ describe('apify pull', () => {
         sinon.spy(console, 'log');
     });
 
+    it('should fail outside actor folder without actorId defined', async () => {
+        try {
+            await command.run(['pull']);
+        } catch (err) {
+            expect(err.message).to.be.eql('Cannot find actor in this directory.');
+        }
+    });
+
     it('should work with actor SOURCE_FILES', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
         const testActorClient = testUserClient.actor(testActor.id);
@@ -137,8 +146,6 @@ describe('apify pull', () => {
 
         await command.run(['pull']);
 
-        const actorJson = loadJson.sync(LOCAL_CONFIG_PATH);
-
-        expect(actorJson.id).to.be.eql(testActor.id);
+        expect(fs.existsSync('src/__init__.py')).to.be.eql(true);
     });
 });

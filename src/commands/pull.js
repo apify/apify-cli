@@ -5,6 +5,7 @@ const AdmZip = require('adm-zip');
 const semverGt = require('semver/functions/gt');
 const { get } = require('axios');
 const { flags: flagsHelper } = require('@oclif/command');
+const json5 = require('json5');
 const { ApifyCommand } = require('../lib/apify_command');
 const { success, error } = require('../lib/outputs');
 const { getLoggedClientOrThrow, getLocalConfigOrThrow, getLocalUserInfo } = require('../lib/utils');
@@ -29,7 +30,7 @@ class PullCommand extends ApifyCommand {
         const isActorAutomaticallyDetected = !args?.actorId;
         const usernameOrId = userInfo.username || userInfo.id;
 
-        const actorId = args?.actorId || localConfig?.id || `${usernameOrId}/${localConfig.name}`;
+        const actorId = args?.actorId || localConfig?.id || (localConfig.name ? `${usernameOrId}/${localConfig.name}` : undefined);
 
         if (!actorId) throw new Error('Cannot find actor in this directory.');
 
@@ -54,7 +55,7 @@ class PullCommand extends ApifyCommand {
         }
 
         const dirpath = isActorAutomaticallyDetected ? cwd : path.join(cwd, name);
-        fs.mkdirSync(dirpath, { recursive: true }, null);
+        fs.mkdirSync(dirpath, { recursive: true });
 
         if (!isActorAutomaticallyDetected && !(fs.readdirSync(dirpath).length === 0)) {
             error(`Directory ${dirpath} is not empty. Please empty it or choose another directory.`);
@@ -79,9 +80,9 @@ class PullCommand extends ApifyCommand {
                         const fileContent = file.format === 'BASE64' ? Buffer.from(file.content, 'base64') : file.content;
 
                         if (file.name === LOCAL_CONFIG_PATH) {
-                            const actorJson = JSON.parse(fileContent);
+                            const actorJson = json5.parse(fileContent);
                             actorJson.id = actorId;
-                            fs.writeFileSync(`${dirpath}/${file.name}`, JSON.stringify(actorJson, null, 2));
+                            fs.writeFileSync(`${dirpath}/${file.name}`, json5.stringify(actorJson, null, 2));
                         } else {
                             fs.writeFileSync(`${dirpath}/${file.name}`, fileContent);
                         }
@@ -132,7 +133,7 @@ PullCommand.description = 'Pulls the latest version of an actor from the Apify p
 PullCommand.flags = {
     version: flagsHelper.string({
         char: 'v',
-        description: `Actor version number to which the files should be pushed. By default, it is taken from the "${LOCAL_CONFIG_PATH}" file.`,
+        description: 'Actor version number which will be pulled.',
         required: false,
     }),
 };

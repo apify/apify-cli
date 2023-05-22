@@ -504,8 +504,7 @@ ARGUMENTS
            actor in current directory based on ID in ".actor/actor.json" file.
 
 OPTIONS
-  -v, --version=version  Actor version number to which the files should be pushed. By default, it is taken from the
-                         ".actor/actor.json" file.
+  -v, --version=version  Actor version number which will be pulled.
 ```
 
 _See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/pull.js)_
