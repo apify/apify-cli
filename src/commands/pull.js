@@ -81,7 +81,7 @@ class PullCommand extends ApifyCommand {
 
                         if (file.name === LOCAL_CONFIG_PATH) {
                             const actorJson = json5.parse(fileContent);
-                            actorJson.id = actorId;
+                            actorJson.name = actor.name;
                             fs.writeFileSync(`${dirpath}/${file.name}`, json5.stringify(actorJson, null, 2));
                         } else {
                             fs.writeFileSync(`${dirpath}/${file.name}`, fileContent);
