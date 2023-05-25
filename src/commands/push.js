@@ -160,7 +160,7 @@ class PushCommand extends ApifyCommand {
         outputs.link('Actor build detail', `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`);
 
         // Disable open browser on CI, or if user passed --no-prompt flag
-        if (isCI || !flags.noPrompt) {
+        if (!isCI || !flags.noPrompt) {
             const shouldOpenBrowser = await inquirer.prompt([
                 { type: 'confirm', name: 'continue', message: 'Do you want to open the actor detail in your browser?', default: true },
             ]);
