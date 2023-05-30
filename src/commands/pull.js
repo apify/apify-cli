@@ -5,7 +5,7 @@ const AdmZip = require('adm-zip');
 const semverGt = require('semver/functions/gt');
 const { get } = require('axios');
 const { flags: flagsHelper } = require('@oclif/command');
-const json5 = require('json5');
+const jju = require('jju');
 const { ApifyCommand } = require('../lib/apify_command');
 const { success, error } = require('../lib/outputs');
 const { getLoggedClientOrThrow, getLocalConfigOrThrow, getLocalUserInfo } = require('../lib/utils');
@@ -34,7 +34,13 @@ class PullCommand extends ApifyCommand {
 
         if (!actorId) throw new Error('Cannot find actor in this directory.');
 
-        const actor = await apifyClient.actor(actorId).get();
+        let actor;
+        try {
+            actor = await apifyClient.actor(actorId).get();
+        } catch {
+            throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
+        }
+
         if (!actor) throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
 
         const { name, versions } = actor;
@@ -80,9 +86,9 @@ class PullCommand extends ApifyCommand {
                         const fileContent = file.format === 'BASE64' ? Buffer.from(file.content, 'base64') : file.content;
 
                         if (file.name === LOCAL_CONFIG_PATH) {
-                            const actorJson = json5.parse(fileContent);
+                            const actorJson = jju.parse(fileContent);
                             actorJson.name = actor.name;
-                            fs.writeFileSync(`${dirpath}/${file.name}`, json5.stringify(actorJson, null, 2));
+                            fs.writeFileSync(`${dirpath}/${file.name}`, jju.update(fileContent, actorJson));
                         } else {
                             fs.writeFileSync(`${dirpath}/${file.name}`, fileContent);
                         }
