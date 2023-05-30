@@ -148,8 +148,8 @@ PullCommand.args = [
     {
         name: 'actorId',
         required: false,
-        description: 'ID of an existing Actor on the Apify platform which will be pulled. If not provided, '
-            + 'the command will update the Actor in the current directory based on its name in ".actor/actor.json" file.',
+        description: 'Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
+            + 'If not provided, the command will update the Actor in the current directory based on its name in ".actor/actor.json" file.',
     },
 ];
 

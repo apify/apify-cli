@@ -215,7 +215,7 @@ PushCommand.args = [
     {
         name: 'actorId',
         required: false,
-        description: 'ID of an existing actor on the Apify platform where the files will be pushed. '
+        description: 'Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
         + `If not provided, the command will create or modify the actor with the name specified in "${LOCAL_CONFIG_PATH}" file.`,
     },
 ];

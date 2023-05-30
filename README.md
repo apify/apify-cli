@@ -493,15 +493,15 @@ _See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.1
 
 ## `apify pull [ACTORID]`
 
-Pulls the latest version of an actor from the Apify platform to the current directory.
+Pulls the latest version of an Actor from the Apify platform to the current directory.
 
 ```
 USAGE
   $ apify pull [ACTORID]
 
 ARGUMENTS
-  ACTORID  ID of an existing actor on the Apify platform which will be pulled. If not provided, the command will update
-           actor in current directory based on ID in ".actor/actor.json" file.
+  ACTORID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
+           command will update the Actor in the current directory based on its name in ".actor/actor.json" file.
 
 OPTIONS
   -v, --version=version  Actor version number which will be pulled.
@@ -518,8 +518,8 @@ USAGE
   $ apify push [ACTORID]
 
 ARGUMENTS
-  ACTORID  ID of an existing actor on the Apify platform where the files will be pushed. If not provided, the command
-           will create or modify the actor with the name specified in ".actor/actor.json" file.
+  ACTORID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
+           command will create or modify the actor with the name specified in ".actor/actor.json" file.
 
 OPTIONS
   -b, --build-tag=build-tag              Build tag to be applied to the successful actor build. By default, it is taken
