@@ -32,7 +32,7 @@ class PullCommand extends ApifyCommand {
 
         const actorId = args?.actorId || localConfig?.id || (localConfig.name ? `${usernameOrId}/${localConfig.name}` : undefined);
 
-        if (!actorId) throw new Error('Cannot find actor in this directory.');
+        if (!actorId) throw new Error('Cannot find an Actor in this directory.');
 
         const actor = await apifyClient.actor(actorId).get();
         if (!actor) throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
@@ -43,7 +43,7 @@ class PullCommand extends ApifyCommand {
         if (flags?.version) {
             correctVersion = versions.find((version) => version.versionNumber === flags?.version);
             if (!correctVersion) {
-                error(`Cannot find version ${flags?.version} of actor ${actorId}. Pulling latest version instead.`);
+                error(`Cannot find version ${flags?.version} of Actor ${actorId}. Pulling latest version instead.`);
             }
         }
 
@@ -128,7 +128,7 @@ class PullCommand extends ApifyCommand {
     }
 }
 
-PullCommand.description = 'Pulls the latest version of an actor from the Apify platform to the current directory. ';
+PullCommand.description = 'Pulls the latest version of an Actor from the Apify platform to the current directory. ';
 
 PullCommand.flags = {
     version: flagsHelper.string({
@@ -142,8 +142,8 @@ PullCommand.args = [
     {
         name: 'actorId',
         required: false,
-        description: 'ID of an existing actor on the Apify platform which will be pulled. If not provided, '
-            + 'the command will update actor in current directory based on ID in ".actor/actor.json" file.',
+        description: 'ID of an existing Actor on the Apify platform which will be pulled. If not provided, '
+            + 'the command will update the Actor in the current directory based on its name in the ".actor/actor.json" file.',
     },
 ];
 
