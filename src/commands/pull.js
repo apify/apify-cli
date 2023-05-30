@@ -134,7 +134,7 @@ class PullCommand extends ApifyCommand {
     }
 }
 
-PullCommand.description = 'Pulls the latest version of an actor from the Apify platform to the current directory. ';
+PullCommand.description = 'Pulls the latest version of an Actor from the Apify platform to the current directory. ';
 
 PullCommand.flags = {
     version: flagsHelper.string({
@@ -148,8 +148,8 @@ PullCommand.args = [
     {
         name: 'actorId',
         required: false,
-        description: 'ID of an existing actor on the Apify platform which will be pulled. If not provided, '
-            + 'the command will update actor in current directory based on ID in ".actor/actor.json" file.',
+        description: 'ID of an existing Actor on the Apify platform which will be pulled. If not provided, '
+            + 'the command will update the Actor in the current directory based on its name in ".actor/actor.json" file.',
     },
 ];
 
