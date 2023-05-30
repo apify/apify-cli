@@ -5,8 +5,8 @@ const path = require('path');
 const { expect } = require('chai');
 const writeJsonFile = require('write-json-file');
 const fs = require('fs');
-const { testUserClient } = require('./config');
-const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME } = require('../../src/lib/consts');
+const { testUserClient, TEST_USER_TOKEN } = require('./config');
+const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME, GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
 
 const ACTOR_NAME = `pull-test-${Date.now()}`;
 const TEST_ACTOR_SOURCE_FILES = {
@@ -91,6 +91,17 @@ const TEST_ACTOR_GIT_REPO = {
 };
 
 describe('apify pull', () => {
+    before(async function () {
+        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
+            // Skip tests if user used CLI on local, it can break local environment!
+            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
+            this.skip();
+            return;
+        }
+        await command.run(['login', '--token', TEST_USER_TOKEN]);
+        process.chdir(ACTOR_NAME);
+    });
+
     beforeEach(() => {
         sinon.spy(console, 'log');
     });
