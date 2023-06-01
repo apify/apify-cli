@@ -113,7 +113,7 @@ class PullCommand extends ApifyCommand {
                 try {
                     await emitter.clone(dirpath);
                 } catch (err) {
-                    error(`Failed to pull Actor from ${gitRepoUrl}.`);
+                    error(`Failed to pull Actor from ${gitRepoUrl}.`, err);
                     break;
                 }
 
@@ -134,12 +134,13 @@ class PullCommand extends ApifyCommand {
     }
 }
 
-PullCommand.description = 'Pulls the latest version of an Actor from the Apify platform to the current directory. ';
+PullCommand.description = 'Pulls an Actor from the Apify platform to the current directory. '
+    + 'If it is defined as Git repository, it will be cloned. If it is defined as Web IDE, it will fetch the files.';
 
 PullCommand.flags = {
     version: flagsHelper.string({
         char: 'v',
-        description: 'Actor version number which will be pulled.',
+        description: 'Actor version number which will be pulled, e.g. 1.2. Default: the highest version',
         required: false,
     }),
 };
