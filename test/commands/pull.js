@@ -90,6 +90,8 @@ const TEST_ACTOR_GIT_REPO = {
     ],
 };
 
+const actorIds = [];
+
 describe('apify pull', () => {
     before(async function () {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
@@ -116,6 +118,7 @@ describe('apify pull', () => {
 
     it('should work with actor SOURCE_FILES', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
+        actorIds.push(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
         const actorFromServer = await testActorClient.get();
 
@@ -128,6 +131,7 @@ describe('apify pull', () => {
 
     it('should work with GITHUB_GIST', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_GITHUB_GIST);
+        actorIds.push(testActor.id);
 
         await command.run(['pull', testActor.id]);
 
@@ -138,6 +142,7 @@ describe('apify pull', () => {
 
     it('should work with GIT_REPO', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_GIT_REPO);
+        actorIds.push(testActor.id);
 
         await command.run(['pull', testActor.id]);
 
@@ -146,11 +151,12 @@ describe('apify pull', () => {
         expect(actorJson.name).to.be.eql('baidu-scraper');
     });
 
-    it('should work without actorId', async () => {
+    it('should work without actor name', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
+        actorIds.push(testActor.id);
 
         const contentBeforeEdit = JSON.parse(TEST_ACTOR_SOURCE_FILES.versions[0].sourceFiles[2].content);
-        contentBeforeEdit.id = testActor.id;
+        contentBeforeEdit.name = testActor.name;
         TEST_ACTOR_SOURCE_FILES.versions[0].sourceFiles[2].content = contentBeforeEdit;
 
         await writeJsonFile(LOCAL_CONFIG_PATH, TEST_ACTOR_SOURCE_FILES.versions[0].sourceFiles[2].content);
@@ -158,5 +164,14 @@ describe('apify pull', () => {
         await command.run(['pull']);
 
         expect(fs.existsSync('src/__init__.py')).to.be.eql(true);
+    });
+
+    after(async () => {
+        for (const id of actorIds) {
+            await testUserClient.actor(id).delete();
+        }
+
+        process.chdir('../');
+        await command.run(['logout']);
     });
 });

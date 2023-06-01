@@ -518,7 +518,7 @@ USAGE
   $ apify push [ACTORID]
 
 ARGUMENTS
-  ACTORID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
+  ACTORID  Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
            command will create or modify the actor with the name specified in ".actor/actor.json" file.
 
 OPTIONS

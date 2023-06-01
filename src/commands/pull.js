@@ -49,7 +49,7 @@ class PullCommand extends ApifyCommand {
         if (flags?.version) {
             correctVersion = versions.find((version) => version.versionNumber === flags?.version);
             if (!correctVersion) {
-                error(`Cannot find version ${flags?.version} of Actor ${actorId}. Pulling latest version instead.`);
+                throw new Error(`Cannot find version ${flags?.version} of Actor ${actorId}.`);
             }
         }
 
@@ -68,12 +68,10 @@ class PullCommand extends ApifyCommand {
             return;
         }
 
-        let isPullSuccessful = false;
-
         switch (correctVersion.sourceType) {
             case 'TARBALL': {
                 await extractGitHubZip(correctVersion.tarballUrl, dirpath);
-                isPullSuccessful = true;
+
                 break;
             }
             case 'SOURCE_FILES': {
@@ -94,7 +92,7 @@ class PullCommand extends ApifyCommand {
                         }
                     }
                 }
-                isPullSuccessful = true;
+
                 break;
             }
             case 'GIT_REPO': {
@@ -113,24 +111,21 @@ class PullCommand extends ApifyCommand {
                 try {
                     await emitter.clone(dirpath);
                 } catch (err) {
-                    error(`Failed to pull Actor from ${gitRepoUrl}.`, err);
-                    break;
+                    throw new Error(`Failed to pull Actor from ${gitRepoUrl}. ${err.message}`);
                 }
 
-                isPullSuccessful = true;
                 break;
             }
             case 'GITHUB_GIST': {
                 await extractGitHubZip(`${correctVersion.gitHubGistUrl}/archive/master.zip`, dirpath);
 
-                isPullSuccessful = true;
                 break;
             }
             default:
                 throw new Error(`Unknown source type: ${correctVersion.sourceType}`);
         }
 
-        if (isPullSuccessful) success(isActorAutomaticallyDetected ? `Actor ${name} updated at ${dirpath}/` : `Pulled to ${dirpath}/`);
+        success(isActorAutomaticallyDetected ? `Actor ${name} updated at ${dirpath}/` : `Pulled to ${dirpath}/`);
     }
 }
 
