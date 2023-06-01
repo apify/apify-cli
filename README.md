@@ -493,7 +493,7 @@ _See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.1
 
 ## `apify pull [ACTORID]`
 
-Pulls the latest version of an Actor from the Apify platform to the current directory.
+Pulls an Actor from the Apify platform to the current directory. If it is defined as Git repository, it will be cloned. If it is defined as Web IDE, it will fetch the files.
 
 ```
 USAGE
@@ -504,7 +504,7 @@ ARGUMENTS
            command will update the Actor in the current directory based on its name in ".actor/actor.json" file.
 
 OPTIONS
-  -v, --version=version  Actor version number which will be pulled.
+  -v, --version=version  Actor version number which will be pulled, e.g. 1.2. Default: the highest version
 ```
 
 _See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/pull.js)_
@@ -522,7 +522,7 @@ ARGUMENTS
            command will create or modify the actor with the name specified in ".actor/actor.json" file.
 
 OPTIONS
-  -b, --build-tag=build-tag              Build tag to be applied to the successful actor build. By default, it is taken
+  -b, --build-tag=build-tag              Build tag to be applied to the successful Actor build. By default, it is taken
                                          from the ".actor/actor.json" file
 
   -v, --version=version                  Actor version number to which the files should be pushed. By default, it is
@@ -539,7 +539,7 @@ DESCRIPTION
   NOTE: If the source files are smaller than 3 MB then they are uploaded as 
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
-  WARNING: If the target actor already exists in your Apify account, it will be overwritten!
+  WARNING: If the target Actor already exists in your Apify account, it will be overwritten!
 ```
 
 _See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/push.js)_
