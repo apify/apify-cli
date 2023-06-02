@@ -39,7 +39,12 @@ jobs:
                 run: npm install
             -
                 name: Remove .apify directory
-                run: rm -rf ~/.apify
+                run: |
+                    if [ "$RUNNER_OS" == "Windows" ]; then
+                        if exist .apify ( rmdir /s /q .apify )
+                    else
+                        rm -rf ~/.apify
+                    fi
             -
                 name: Run Tests
                 env:
