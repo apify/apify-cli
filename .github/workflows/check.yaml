@@ -38,6 +38,9 @@ jobs:
                 name: Install Dependencies
                 run: npm install
             -
+                name: Remove .apify directory
+                run: rm -rf ~/.apify
+            -
                 name: Run Tests
                 env:
                     TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
