@@ -8,11 +8,12 @@ const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts'
 const { testUserClient, TEST_USER_TOKEN, TEST_USER_BAD_TOKEN } = require('./config');
 
 describe('apify login and logout', () => {
-    before(function () {
+    let skipAfterHook = false;
+    before(() => {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
-            // Skip tests if user used CLI on local, it can break local environment!
-            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
-            this.skip();
+            // Tests could break local environment if user is already logged in
+            skipAfterHook = true;
+            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
         }
     });
 
@@ -20,14 +21,14 @@ describe('apify login and logout', () => {
         sinon.spy(console, 'log');
     });
 
-    it('should end with Error', async () => {
+    it('should end with Error with bad token', async () => {
         await command.run(['login', '--token', TEST_USER_BAD_TOKEN]);
 
         expect(console.log.callCount).to.eql(1);
         expect(console.log.args[0][0]).to.include('Error:');
     });
 
-    it('should work', async () => {
+    it('should work with correct token', async () => {
         await command.run(['login', '--token', TEST_USER_TOKEN]);
 
         const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), { token: TEST_USER_TOKEN });
@@ -47,5 +48,10 @@ describe('apify login and logout', () => {
 
     afterEach(() => {
         console.log.restore();
+    });
+
+    after(() => {
+        if (skipAfterHook) return;
+        fs.rmSync(GLOBAL_CONFIGS_FOLDER, { recursive: true, force: true });
     });
 });

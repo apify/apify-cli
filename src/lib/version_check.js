@@ -25,6 +25,11 @@ const UPDATE_COMMAND = {
     [INSTALLATION_TYPE.NPM]: 'npm install -g apify-cli@latest',
 };
 
+const SKIP_UPDATE_CHECK = (
+    process.env.APIFY_CLI_SKIP_UPDATE_CHECK
+    && !['0', 'false'].includes(process.env.APIFY_CLI_SKIP_UPDATE_CHECK.toLowerCase())
+);
+
 /**
  * Detect through which package manager the Apify CLI was installed.
  * @returns {INSTALLATION_TYPE} The installation type of the CLI.
@@ -115,4 +120,5 @@ const checkLatestVersion = async (enforeUpdate = false) => {
 module.exports = {
     checkLatestVersion,
     getLatestNpmVersion,
+    SKIP_UPDATE_CHECK,
 };

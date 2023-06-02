@@ -13,13 +13,14 @@ const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath
 const actName = 'my-act';
 
 describe('apify run', () => {
-    before(async function () {
+    let skipAfterHook = false;
+    before(async () => {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
-            // Skip tests if user used CLI on local, it can break local environment!
-            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
-            this.skip();
-            return;
+            // Tests could break local environment if user is already logged in
+            skipAfterHook = true;
+            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
         }
+
         await command.run(['create', actName, '--template', 'project_empty']);
         process.chdir(actName);
     });
@@ -137,7 +138,9 @@ describe('apify run', () => {
     });
 
     after(async () => {
+        if (skipAfterHook) return;
         process.chdir('../');
         if (fs.existsSync(actName)) await rimrafPromised(actName);
+        await command.run(['logout']);
     });
 });
