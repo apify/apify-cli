@@ -38,13 +38,13 @@ jobs:
                 name: Install Dependencies
                 run: npm install
             -
-                name: Remove .apify directory
-                run: |
-                    if [ "$RUNNER_OS" == "Windows" ]; then
-                        if exist .apify ( rmdir /s /q .apify )
-                    else
-                        rm -rf ~/.apify
-                    fi
+                name: Remove .apify directory on Windows
+                if: runner.os == 'Windows'
+                run: if exist .apify ( rmdir /s /q .apify )
+            -
+                name: Remove ~/.apify directory on Linux
+                if: runner.os != 'Windows'
+                run: rm -rf ~/.apify
             -
                 name: Run Tests
                 env:
