@@ -7,6 +7,7 @@ const writeJsonFile = require('write-json-file');
 const fs = require('fs');
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
 const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME, GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
+const { rimrafPromised } = require('../../src/lib/files');
 
 const ACTOR_NAME = `pull-test-${Date.now()}`;
 const TEST_ACTOR_SOURCE_FILES = {
@@ -90,15 +91,13 @@ const TEST_ACTOR_GIT_REPO = {
     ],
 };
 
-const actorIds = [];
-
 describe('apify pull', () => {
-    before(async function () {
-        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
-            // Skip tests if user used CLI on local, it can break local environment!
-            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
-            this.skip();
-            return;
+    let skipAfterHook = false;
+    const actorsForCleanup = new Set();
+    before(async () => {
+        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) { // Tests could break local environment if user is already logged in
+            skipAfterHook = true;
+            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
         }
         await command.run(['login', '--token', TEST_USER_TOKEN]);
         process.chdir(ACTOR_NAME);
@@ -118,7 +117,7 @@ describe('apify pull', () => {
 
     it('should work with actor SOURCE_FILES', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
-        actorIds.push(testActor.id);
+        actorsForCleanup.push(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
         const actorFromServer = await testActorClient.get();
 
@@ -131,7 +130,7 @@ describe('apify pull', () => {
 
     it('should work with GITHUB_GIST', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_GITHUB_GIST);
-        actorIds.push(testActor.id);
+        actorsForCleanup.push(testActor.id);
 
         await command.run(['pull', testActor.id]);
 
@@ -142,7 +141,7 @@ describe('apify pull', () => {
 
     it('should work with GIT_REPO', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_GIT_REPO);
-        actorIds.push(testActor.id);
+        actorsForCleanup.push(testActor.id);
 
         await command.run(['pull', testActor.id]);
 
@@ -153,7 +152,7 @@ describe('apify pull', () => {
 
     it('should work without actor name', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
-        actorIds.push(testActor.id);
+        actorsForCleanup.push(testActor.id);
 
         const contentBeforeEdit = JSON.parse(TEST_ACTOR_SOURCE_FILES.versions[0].sourceFiles[2].content);
         contentBeforeEdit.name = testActor.name;
@@ -166,12 +165,18 @@ describe('apify pull', () => {
         expect(fs.existsSync('src/__init__.py')).to.be.eql(true);
     });
 
+    afterEach(() => {
+        console.log.restore();
+    });
+
     after(async () => {
-        for (const id of actorIds) {
+        if (skipAfterHook) return;
+        process.chdir('../');
+        if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
+        for (const id of actorsForCleanup) {
             await testUserClient.actor(id).delete();
         }
 
-        process.chdir('../');
         await command.run(['logout']);
     });
 });
