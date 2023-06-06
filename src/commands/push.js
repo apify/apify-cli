@@ -5,6 +5,7 @@ const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES,
     MAX_MULTIFILE_BYTES } = require('@apify/consts');
 const open = require('open');
 const inquirer = require('inquirer');
+const isCI = require('is-ci');
 const { ApifyCommand } = require('../lib/apify_command');
 const { createActZip, getLoggedClientOrThrow,
     outputJobLog, getLocalUserInfo, getActorLocalFilePaths,
@@ -158,12 +159,15 @@ class PushCommand extends ApifyCommand {
 
         outputs.link('Actor build detail', `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`);
 
-        const shouldOpenBrowser = await inquirer.prompt([
-            { type: 'confirm', name: 'continue', message: 'Do you want to open the actor detail in your browser?', default: true },
-        ]);
+        // Disable open browser on CI, or if user passed --no-prompt flag
+        if (!isCI && !flags.noPrompt) {
+            const shouldOpenBrowser = await inquirer.prompt([
+                { type: 'confirm', name: 'continue', message: 'Do you want to open the actor detail in your browser?', default: true },
+            ]);
 
-        if (shouldOpenBrowser.continue) {
-            open(`https://console.apify.com${redirectUrlPart}/actors/${build.actId}`);
+            if (shouldOpenBrowser.continue) {
+                open(`https://console.apify.com${redirectUrlPart}/actors/${build.actId}`);
+            }
         }
 
         if (build.status === ACT_JOB_STATUSES.SUCCEEDED) {
@@ -207,6 +211,11 @@ PushCommand.flags = {
     'wait-for-finish': flagsHelper.string({
         char: 'w',
         description: 'Seconds for waiting to build to finish, if no value passed, it waits forever.',
+        required: false,
+    }),
+    'no-prompt': flagsHelper.boolean({
+        description: 'Do not prompt for opening the actor details in a browser. This will also not open the browser automatically.',
+        default: false,
         required: false,
     }),
 };

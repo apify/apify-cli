@@ -7,11 +7,12 @@ const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts'
 const { TEST_USER_TOKEN } = require('./config');
 
 describe('apify info', () => {
-    before(function () {
+    let skipAfterHook = false;
+    before(() => {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
-            // Skip tests if user used CLI on local, it can break local environment!
-            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
-            this.skip();
+            // Tests could break local environment if user is already logged in
+            skipAfterHook = true;
+            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
         }
     });
 
@@ -19,7 +20,7 @@ describe('apify info', () => {
         sinon.spy(console, 'log');
     });
 
-    it('should end with Error', async () => {
+    it('should end with Error when not logged in', async () => {
         try {
             await command.run(['info']);
         } catch (e) {
@@ -27,7 +28,7 @@ describe('apify info', () => {
         }
     });
 
-    it('should work', async () => {
+    it('should work when logged in', async () => {
         await command.run(['login', '--token', TEST_USER_TOKEN]);
         await command.run(['info']);
 
@@ -35,11 +36,14 @@ describe('apify info', () => {
 
         expect(console.log.callCount).to.eql(3);
         expect(console.log.args[2][0]).to.include(userInfoFromConfig.id);
-
-        await command.run(['logout']);
     });
 
     afterEach(() => {
         console.log.restore();
+    });
+
+    after(async () => {
+        if (skipAfterHook) return;
+        await command.run(['logout']);
     });
 });
