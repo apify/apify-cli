@@ -112,6 +112,7 @@ describe('apify pull', () => {
     it('should work with actor SOURCE_FILES', async () => {
         const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_SOURCE_FILES });
         actorsForCleanup.add(testActor.id);
+
         const testActorClient = testUserClient.actor(testActor.id);
         const actorFromServer = await testActorClient.get();
 
