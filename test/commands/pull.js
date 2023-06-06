@@ -110,13 +110,13 @@ describe('apify pull', () => {
         try {
             await command.run(['pull']);
         } catch (err) {
-            expect(err.message).to.be.eql('Cannot find actor in this directory.');
+            expect(err.message).to.be.eql('Cannot find Actor in this directory.');
         }
     });
 
     it('should work with actor SOURCE_FILES', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
-        actorsForCleanup.push(testActor.id);
+        actorsForCleanup.add(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
         const actorFromServer = await testActorClient.get();
 
@@ -129,7 +129,7 @@ describe('apify pull', () => {
 
     it('should work with GITHUB_GIST', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_GITHUB_GIST);
-        actorsForCleanup.push(testActor.id);
+        actorsForCleanup.add(testActor.id);
 
         await command.run(['pull', testActor.id]);
 
@@ -140,7 +140,7 @@ describe('apify pull', () => {
 
     it('should work with GIT_REPO', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_GIT_REPO);
-        actorsForCleanup.push(testActor.id);
+        actorsForCleanup.add(testActor.id);
 
         await command.run(['pull', testActor.id]);
 
@@ -151,7 +151,7 @@ describe('apify pull', () => {
 
     it('should work without actor name', async () => {
         const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
-        actorsForCleanup.push(testActor.id);
+        actorsForCleanup.add(testActor.id);
 
         const contentBeforeEdit = JSON.parse(TEST_ACTOR_SOURCE_FILES.versions[0].sourceFiles[2].content);
         contentBeforeEdit.name = testActor.name;
