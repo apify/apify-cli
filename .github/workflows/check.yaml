@@ -38,6 +38,14 @@ jobs:
                 name: Install Dependencies
                 run: npm install
             -
+                name: Remove $HOME\.apify directory on Windows
+                if: runner.os == 'Windows'
+                run: Remove-Item -Recurse -Force $HOME\.apify
+            -
+                name: Remove ~/.apify directory on Linux
+                if: runner.os != 'Windows'
+                run: rm -rf ~/.apify
+            -
                 name: Run Tests
                 env:
                     TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}

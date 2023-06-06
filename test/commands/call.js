@@ -48,13 +48,14 @@ const waitForBuildToFinishWithTimeout = async (client, buildId, timeoutSecs = 60
 
 let actorId;
 describe('apify call', () => {
-    before(async function () {
+    let skipAfterHook = false;
+    before(async () => {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
-            // Skip tests if user used CLI on local, it can break local environment!
-            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
-            this.skip();
-            return;
+            // Tests could break local environment if user is already logged in
+            skipAfterHook = true;
+            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
         }
+
         const { username } = await testUserClient.user('me').get();
         await command.run(['login', '--token', TEST_USER_TOKEN]);
         await command.run(['create', ACTOR_NAME, '--template', 'project_empty']);
@@ -73,7 +74,7 @@ describe('apify call', () => {
 
         fs.writeFileSync(inputFile, JSON.stringify(EXPECTED_INPUT), { flag: 'w' });
 
-        await command.run(['push']);
+        await command.run(['push', '--no-prompt']);
 
         actorId = `${username}/${ACTOR_NAME}`;
 
@@ -98,7 +99,7 @@ describe('apify call', () => {
     });
 
     after(async () => {
-        if (!actorId) return; // Test was skipped.
+        if (skipAfterHook) return;
         await testUserClient.actor(actorId).delete();
         process.chdir('../');
         if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
