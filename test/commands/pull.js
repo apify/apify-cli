@@ -7,11 +7,8 @@ const writeJsonFile = require('write-json-file');
 const fs = require('fs');
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
 const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME, GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
-const { rimrafPromised } = require('../../src/lib/files');
 
-const ACTOR_NAME = `pull-test-${Date.now()}`;
 const TEST_ACTOR_SOURCE_FILES = {
-    name: ACTOR_NAME,
     isPublic: false,
     versions: [
         {
@@ -66,7 +63,6 @@ const TEST_ACTOR_SOURCE_FILES = {
 };
 
 const TEST_ACTOR_GITHUB_GIST = {
-    name: ACTOR_NAME,
     isPublic: false,
     versions: [
         {
@@ -79,7 +75,6 @@ const TEST_ACTOR_GITHUB_GIST = {
 };
 
 const TEST_ACTOR_GIT_REPO = {
-    name: ACTOR_NAME,
     isPublic: false,
     versions: [
         {
@@ -115,7 +110,7 @@ describe('apify pull', () => {
     });
 
     it('should work with actor SOURCE_FILES', async () => {
-        const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
+        const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_SOURCE_FILES });
         actorsForCleanup.add(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
         const actorFromServer = await testActorClient.get();
@@ -128,7 +123,7 @@ describe('apify pull', () => {
     });
 
     it('should work with GITHUB_GIST', async () => {
-        const testActor = await testUserClient.actors().create(TEST_ACTOR_GITHUB_GIST);
+        const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_GITHUB_GIST });
         actorsForCleanup.add(testActor.id);
 
         await command.run(['pull', testActor.id]);
@@ -139,7 +134,7 @@ describe('apify pull', () => {
     });
 
     it('should work with GIT_REPO', async () => {
-        const testActor = await testUserClient.actors().create(TEST_ACTOR_GIT_REPO);
+        const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_GIT_REPO });
         actorsForCleanup.add(testActor.id);
 
         await command.run(['pull', testActor.id]);
@@ -150,7 +145,7 @@ describe('apify pull', () => {
     });
 
     it('should work without actor name', async () => {
-        const testActor = await testUserClient.actors().create(TEST_ACTOR_SOURCE_FILES);
+        const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_SOURCE_FILES });
         actorsForCleanup.add(testActor.id);
 
         const contentBeforeEdit = JSON.parse(TEST_ACTOR_SOURCE_FILES.versions[0].sourceFiles[2].content);
@@ -171,7 +166,6 @@ describe('apify pull', () => {
     after(async () => {
         if (skipAfterHook) return;
         process.chdir('../');
-        if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
         for (const id of actorsForCleanup) {
             await testUserClient.actor(id).delete();
         }
