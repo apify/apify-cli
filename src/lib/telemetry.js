@@ -3,6 +3,7 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const { cryptoRandomObjectId } = require('@apify/utilities');
 const { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } = require('./consts');
+const { detectInstallationType } = require('./version_check');
 
 const mixpanel = Mixpanel.init(MIXPANEL_TOKEN, { keepAlive: false });
 
@@ -21,10 +22,33 @@ const getOrCreateLocalDistinctId = () => {
     }
 };
 
-const isTelemetryEnabled = !['true', '1'].includes(process.env.APIFY_CLI_TELEMETRY_DISABLE);
+const isTelemetryEnabled = !process.env.APIFY_CLI_DISABLE_TELEMETRY
+    || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY);
+
+/**
+ * Tracks telemetry event if telemetry is enabled.
+ *
+ * @param eventName
+ * @param eventData
+ * @param distinctId
+ */
+const maybeTrackTelemetry = ({ eventName, eventData, distinctId }) => {
+    if (isTelemetryEnabled) {
+        if (!distinctId) distinctId = getOrCreateLocalDistinctId();
+        mixpanel.track(eventName, {
+            distinct_id: distinctId,
+            $os: process.platform,
+            metadata: {
+                installationType: detectInstallationType(),
+            },
+            ...eventData,
+        }, () => { /* Ignore errors */ });
+    }
+};
 
 module.exports = {
     mixpanel,
     getOrCreateLocalDistinctId,
     isTelemetryEnabled,
+    maybeTrackTelemetry,
 };

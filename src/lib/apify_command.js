@@ -2,7 +2,7 @@ const { Command } = require('@oclif/command');
 const { finished } = require('stream');
 const { promisify } = require('util');
 const { argsToCamelCase } = require('./utils');
-const { mixpanel, getOrCreateLocalDistinctId, isTelemetryEnabled } = require('./telemetry');
+const { mixpanel, getOrCreateLocalDistinctId, isTelemetryEnabled, maybeTrackTelemetry } = require('./telemetry');
 const { detectInstallationType } = require('./version_check');
 
 /**
@@ -11,22 +11,29 @@ const { detectInstallationType } = require('./version_check');
 class ApifyCommand extends Command {
     parse(cmd) {
         const { flags, args } = super.parse(cmd);
-        let distinctId = null;
         const parsedFlags = argsToCamelCase(flags);
+        // Initialize telemetry data, all attributes are tracked in the finally method.
+        this.telemetryData = {
+            command: cmd.id,
+            flagsUsed: Object.keys(parsedFlags),
+        };
+        return { flags: parsedFlags, args };
+    }
 
+    async finally(err) {
         if (isTelemetryEnabled) {
-            distinctId = getOrCreateLocalDistinctId();
-            const flagsUsed = Object.keys(parsedFlags);
-            mixpanel.track('cli_command', {
-                distinct_id: distinctId,
-                command: cmd.id,
-                flagsUsed,
-                $os: process.platform,
-                installationType: detectInstallationType(),
+            const distinctId = getOrCreateLocalDistinctId();
+            maybeTrackTelemetry({
+                eventName: 'cli_command',
+                eventData: {
+                    command: this.constructor.id,
+                    error: err ? err.message : null,
+                },
+                distinctId,
+                ...this.telemetryData,
             });
         }
-
-        return { flags: parsedFlags, args, distinctId };
+        return super.finally(err);
     }
 
     /**

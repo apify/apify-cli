@@ -10,7 +10,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
-const { isTelemetryEnabled } = require('../lib/telemetry');
+const { maybeTrackTelemetry } = require('../lib/telemetry');
 const {
     setLocalConfig,
     setLocalEnv,
@@ -60,9 +60,11 @@ class CreateCommand extends ApifyCommand {
             templateTrackProps.templateLanguage = templateDefinition.category;
         }
 
-        if (distinctId && isTelemetryEnabled) {
-            mixpanel.track('create_template', { distinct_id: distinctId, ...templateTrackProps });
-        }
+        maybeTrackTelemetry({
+            distinctId,
+            eventName: 'create_template',
+            eventData: templateTrackProps,
+        });
 
         const cwd = process.cwd();
         const actFolderDir = path.join(cwd, actorName);
