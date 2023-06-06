@@ -100,7 +100,6 @@ describe('apify pull', () => {
             throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
         }
         await command.run(['login', '--token', TEST_USER_TOKEN]);
-        process.chdir(ACTOR_NAME);
     });
 
     beforeEach(() => {
