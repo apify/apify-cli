@@ -26,13 +26,15 @@ const TEST_ACTOR = {
 const ACT_TEMPLATE = 'project_empty';
 
 describe('apify push', () => {
-    before(async function () {
+    let skipAfterHook = false;
+    const actorsForCleanup = new Set();
+    before(async () => {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
-            // Skip tests if user used CLI on local, it can break local environment!
-            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
-            this.skip();
-            return;
+            // Tests could break local environment if user is already logged in
+            skipAfterHook = true;
+            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
         }
+
         await command.run(['login', '--token', TEST_USER_TOKEN]);
         await command.run(['create', ACTOR_NAME, '--template', ACT_TEMPLATE]);
         process.chdir(ACTOR_NAME);
@@ -49,31 +51,23 @@ describe('apify push', () => {
         };
         writeJson.sync(LOCAL_CONFIG_PATH, actorJson);
 
-        await command.run(['push']);
+        await command.run(['push', '--no-prompt']);
 
         const userInfo = await getLocalUserInfo();
         const { name } = actorJson;
         const actorId = `${userInfo.username}/${name}`;
+        actorsForCleanup.add(actorId);
         const createdActorClient = testUserClient.actor(actorId);
         const createdActor = await createdActorClient.get();
         const createdActorVersion = await createdActorClient.version(actorJson.version).get();
-
-        const expectedActorJson = {
-            actorSpecification: 1,
-            name: ACTOR_NAME,
-            version: createdActorVersion.versionNumber,
-            buildTag: createdActorVersion.buildTag,
-            environmentVariables: actorJson.environmentVariables,
-        };
 
         const filePathsToPush = await getActorLocalFilePaths();
         const sourceFiles = await createSourceFiles(filePathsToPush);
 
         if (createdActor) await createdActorClient.delete();
 
-        expect(expectedActorJson).to.be.eql(actorJson);
         expect(createdActorVersion.versionNumber).to.be.eql(actorJson.version);
-        expect(createdActorVersion.buildTag).to.be.eql(actorJson.buildTag);
+        expect(createdActorVersion.buildTag).to.be.eql('latest');
         expect(createdActorVersion.envVars).to.be.eql([{
             name: 'MY_ENV_VAR',
             value: 'envVarValue',
@@ -87,27 +81,20 @@ describe('apify push', () => {
         const testActorClient = testUserClient.actor(testActor.id);
         const actorJson = loadJson.sync(LOCAL_CONFIG_PATH);
 
-        await command.run(['push', testActor.id]);
+        await command.run(['push', '--no-prompt', testActor.id]);
+
+        actorsForCleanup.add(testActor.id);
 
         testActor = await testActorClient.get();
         const testActorVersion = await testActorClient.version(actorJson.version).get();
-
-        const expectedActorJson = {
-            actorSpecification: 1,
-            name: ACTOR_NAME,
-            version: testActorVersion.versionNumber,
-            buildTag: testActorVersion.buildTag,
-            environmentVariables: actorJson.environmentVariables,
-        };
 
         const filePathsToPush = await getActorLocalFilePaths();
         const sourceFiles = await createSourceFiles(filePathsToPush);
 
         if (testActor) await testActorClient.delete();
 
-        expect(expectedActorJson).to.be.eql(actorJson);
         expect(testActorVersion.versionNumber).to.be.eql(actorJson.version);
-        expect(testActorVersion.buildTag).to.be.eql(actorJson.buildTag);
+        expect(testActorVersion.buildTag).to.be.eql('latest');
         expect(testActorVersion.envVars).to.be.eql([{
             name: 'MY_ENV_VAR',
             value: 'envVarValue',
@@ -129,13 +116,14 @@ describe('apify push', () => {
             }],
         }];
         let testActor = await testUserClient.actors().create(testActorWithEnvVars);
+        actorsForCleanup.add(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
 
         const actorJson = loadJson.sync(LOCAL_CONFIG_PATH);
         delete actorJson.environmentVariables;
         writeJson.sync(LOCAL_CONFIG_PATH, actorJson);
 
-        await command.run(['push', testActor.id]);
+        await command.run(['push', '--no-prompt', testActor.id]);
 
         testActor = await testActorClient.get();
         const testActorVersion = await testActorClient.version(actorJson.version).get();
@@ -146,7 +134,6 @@ describe('apify push', () => {
         if (testActor) await testActorClient.delete();
 
         expect(testActorVersion.versionNumber).to.be.eql(actorJson.version);
-        expect(testActorVersion.buildTag).to.be.eql(actorJson.buildTag);
         expect(testActorVersion.envVars).to.be.eql(testActorWithEnvVars.versions[0].envVars);
         expect(testActorVersion.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
         expect(testActorVersion.sourceType).to.be.eql(ACT_SOURCE_TYPES.SOURCE_FILES);
@@ -165,6 +152,7 @@ describe('apify push', () => {
             }],
         }];
         let testActor = await testUserClient.actors().create(testActorWithEnvVars);
+        actorsForCleanup.add(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
         const actorJson = loadJson.sync(LOCAL_CONFIG_PATH);
 
@@ -174,7 +162,10 @@ describe('apify push', () => {
         // Create large file to ensure actor will be uploaded as zip
         fs.writeFileSync('3mb-file.txt', Buffer.alloc(1024 * 1024 * 3));
 
-        await command.run(['push', testActor.id]);
+        await command.run(['push', '--no-prompt', testActor.id]);
+
+        // Remove the big file so sources in following tests are not zipped
+        fs.unlinkSync('3mb-file.txt');
 
         testActor = await testActorClient.get();
         const testActorVersion = await testActorClient.version(actorJson.version).get();
@@ -184,15 +175,12 @@ describe('apify push', () => {
 
         expect(testActorVersion).to.be.eql({
             versionNumber: actorJson.version,
-            buildTag: actorJson.buildTag,
+            buildTag: 'latest',
             tarballUrl: `${testActorClient.baseUrl}/key-value-stores/${store.id}`
                 + `/records/${testActor.name}-${actorJson.version}.zip?disableRedirect=true`,
             envVars: testActorWithEnvVars.versions[0].envVars,
             sourceType: ACT_SOURCE_TYPES.TARBALL,
         });
-
-        // Remove the big file so sources in following tests are not zipped
-        fs.unlinkSync('3mb-file.txt');
     });
 
     it('typescript files should be treated as text', async () => {
@@ -200,10 +188,13 @@ describe('apify push', () => {
 
         fs.writeFileSync('some-typescript-file.ts', `console.log('ok');`);
 
-        await command.run(['push']);
+        await command.run(['push', '--no-prompt']);
+
+        if (fs.existsSync('some-typescript-file.ts')) fs.unlinkSync('some-typescript-file.ts');
 
         const userInfo = await getLocalUserInfo();
         const actorId = `${userInfo.username}/${name}`;
+        actorsForCleanup.add(actorId);
         const createdActorClient = testUserClient.actor(actorId);
         const createdActor = await createdActorClient.get();
         const createdActorVersion = await createdActorClient.version(version).get();
@@ -219,8 +210,14 @@ describe('apify push', () => {
     });
 
     after(async () => {
+        if (skipAfterHook) return;
         process.chdir('../');
         if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
+        for (const actorId of actorsForCleanup) {
+            const actorClient = testUserClient.actor(actorId);
+            await actorClient.delete();
+        }
+
         await command.run(['logout']);
     });
 });

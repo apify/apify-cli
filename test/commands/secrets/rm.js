@@ -8,12 +8,14 @@ const { TEST_USER_TOKEN } = require('../config');
 const SECRET_KEY = 'mySecret';
 
 describe('apify secrets:rm', () => {
-    before(async function () {
+    let skipAfterHook = false;
+    before(async () => {
         if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
-            // Skip tests if user used CLI on local, it can break local environment!
-            console.warn(`Test was skipped as directory ${GLOBAL_CONFIGS_FOLDER} exists!`);
-            this.skip();
+            // Tests could break local environment if user is already logged in
+            skipAfterHook = true;
+            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
         }
+
         await command.run(['login', '--token', TEST_USER_TOKEN]);
         const secrets = getSecretsFile();
         if (!secrets[SECRET_KEY]) {
@@ -28,6 +30,7 @@ describe('apify secrets:rm', () => {
     });
 
     after(async () => {
+        if (skipAfterHook) return;
         await command.run(['logout']);
     });
 });

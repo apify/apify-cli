@@ -10,6 +10,7 @@ const outputs = require('../lib/outputs');
         if (exitCode !== 0) {
             outputs.error(err.message);
             if (process.env.DEBUG) console.error(err);
+            process.exit(exitCode);
         }
     }
 })();
