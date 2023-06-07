@@ -25,11 +25,10 @@ const {
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
 const { httpsGet, ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
-const { mixpanel } = require('../lib/telemetry');
 
 class CreateCommand extends ApifyCommand {
     async run() {
-        const { flags, args, distinctId } = this.parse(CreateCommand);
+        const { flags, args } = this.parse(CreateCommand);
         let { actorName } = args;
         const {
             template: templateName,
@@ -61,7 +60,6 @@ class CreateCommand extends ApifyCommand {
         }
 
         maybeTrackTelemetry({
-            distinctId,
             eventName: 'create_template',
             eventData: templateTrackProps,
         });

@@ -33,16 +33,21 @@ const isTelemetryEnabled = !process.env.APIFY_CLI_DISABLE_TELEMETRY
  * @param distinctId
  */
 const maybeTrackTelemetry = ({ eventName, eventData, distinctId }) => {
-    if (isTelemetryEnabled) {
-        if (!distinctId) distinctId = getOrCreateLocalDistinctId();
-        mixpanel.track(eventName, {
-            distinct_id: distinctId,
-            $os: process.platform,
-            metadata: {
-                installationType: detectInstallationType(),
-            },
-            ...eventData,
-        }, () => { /* Ignore errors */ });
+    try {
+        if (isTelemetryEnabled) {
+            if (!distinctId) distinctId = getOrCreateLocalDistinctId();
+            // NOTE: We don't use callback here, because we don't want to wait for Mixpanel to finish.
+            mixpanel.track(eventName, {
+                distinct_id: distinctId,
+                $os: process.platform,
+                metadata: {
+                    installationType: detectInstallationType(),
+                },
+                ...eventData,
+            }, () => { /* Ignore errors */ });
+        }
+    } catch (e) {
+        // Ignore errors
     }
 };
 

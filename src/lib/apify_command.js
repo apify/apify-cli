@@ -2,8 +2,7 @@ const { Command } = require('@oclif/command');
 const { finished } = require('stream');
 const { promisify } = require('util');
 const { argsToCamelCase } = require('./utils');
-const { mixpanel, getOrCreateLocalDistinctId, isTelemetryEnabled, maybeTrackTelemetry } = require('./telemetry');
-const { detectInstallationType } = require('./version_check');
+const { isTelemetryEnabled, maybeTrackTelemetry } = require('./telemetry');
 
 /**
  * Adding parsing flags to oclif Command class
@@ -22,15 +21,12 @@ class ApifyCommand extends Command {
 
     async finally(err) {
         if (isTelemetryEnabled) {
-            const distinctId = getOrCreateLocalDistinctId();
             maybeTrackTelemetry({
                 eventName: 'cli_command',
                 eventData: {
-                    command: this.constructor.id,
+                    ...this.telemetryData,
                     error: err ? err.message : null,
                 },
-                distinctId,
-                ...this.telemetryData,
             });
         }
         return super.finally(err);
