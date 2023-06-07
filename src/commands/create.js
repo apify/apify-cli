@@ -38,6 +38,7 @@ class CreateCommand extends ApifyCommand {
         // for testing of templates that are not yet published in the manifest
         let { templateArchiveUrl } = flags;
         let skipOptionalDeps = false;
+        let localReadmeSuffix = '';
 
         // Start fetching manifest immediately to prevent
         // annoying delays that sometimes happen on CLI startup.
@@ -50,7 +51,7 @@ class CreateCommand extends ApifyCommand {
         actorName = await ensureValidActorName(actorName);
         let messages = null;
         if (manifestPromise) {
-            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = await getTemplateDefinition(templateName, manifestPromise));
+            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages, localReadmeSuffix } = await getTemplateDefinition(templateName, manifestPromise));
         }
 
         const cwd = process.cwd();
@@ -82,6 +83,14 @@ class CreateCommand extends ApifyCommand {
 
         const packageJsonPath = path.join(actFolderDir, 'package.json');
         const requirementsTxtPath = path.join(actFolderDir, 'requirements.txt');
+        const readmePath = path.join(actFolderDir, 'README.md');
+
+        // Add localReadmeSuffix which is fetched from manifest to README.md
+        // The suffix contains local development instructions
+        if (fs.existsSync(readmePath)) {
+            const readmeContent = fs.readFileSync(readmePath, 'utf8');
+            fs.writeFileSync(readmePath, `${readmeContent}\n\n${localReadmeSuffix}`);
+        }
 
         let dependenciesInstalled = false;
         if (!skipDependencyInstall) {
