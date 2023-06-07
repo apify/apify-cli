@@ -282,6 +282,7 @@ This section contains printouts of `apify help` for all commands.
 * [`apify init [ACTORNAME]`](#apify-init-actorname)
 * [`apify login`](#apify-login)
 * [`apify logout`](#apify-logout)
+* [`apify pull [ACTORID]`](#apify-pull-actorid)
 * [`apify push [ACTORID]`](#apify-push-actorid)
 * [`apify run`](#apify-run)
 * [`apify secrets`](#apify-secrets)
@@ -490,6 +491,24 @@ DESCRIPTION
 
 _See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/logout.js)_
 
+## `apify pull [ACTORID]`
+
+Pulls an Actor from the Apify platform to the current directory. If it is defined as Git repository, it will be cloned. If it is defined as Web IDE, it will fetch the files.
+
+```
+USAGE
+  $ apify pull [ACTORID]
+
+ARGUMENTS
+  ACTORID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
+           command will update the Actor in the current directory based on its name in ".actor/actor.json" file.
+
+OPTIONS
+  -v, --version=version  Actor version number which will be pulled, e.g. 1.2. Default: the highest version
+```
+
+_See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/pull.js)_
+
 ## `apify push [ACTORID]`
 
 Uploads the actor to the Apify platform and builds it there.
@@ -499,11 +518,11 @@ USAGE
   $ apify push [ACTORID]
 
 ARGUMENTS
-  ACTORID  ID of an existing actor on the Apify platform where the files will be pushed. If not provided, the command
-           will create or modify the actor with the name specified in ".actor/actor.json" file.
+  ACTORID  Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
+           command will create or modify the actor with the name specified in ".actor/actor.json" file.
 
 OPTIONS
-  -b, --build-tag=build-tag              Build tag to be applied to the successful actor build. By default, it is taken
+  -b, --build-tag=build-tag              Build tag to be applied to the successful Actor build. By default, it is taken
                                          from the ".actor/actor.json" file
 
   -v, --version=version                  Actor version number to which the files should be pushed. By default, it is
@@ -520,7 +539,7 @@ DESCRIPTION
   NOTE: If the source files are smaller than 3 MB then they are uploaded as 
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
-  WARNING: If the target actor already exists in your Apify account, it will be overwritten!
+  WARNING: If the target Actor already exists in your Apify account, it will be overwritten!
 ```
 
 _See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/push.js)_

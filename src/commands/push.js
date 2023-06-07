@@ -190,7 +190,7 @@ PushCommand.description = 'Uploads the actor to the Apify platform and builds it
     + `The actor settings are read from the "${LOCAL_CONFIG_PATH}" file in the current directory, but they can be overridden using command-line options.\n`
     + `NOTE: If the source files are smaller than ${MAX_MULTIFILE_BYTES / (1024 ** 2)} MB then they are uploaded as \n`
     + '"Multiple source files", otherwise they are uploaded as "Zip file".\n\n'
-    + 'WARNING: If the target actor already exists in your Apify account, it will be overwritten!';
+    + 'WARNING: If the target Actor already exists in your Apify account, it will be overwritten!';
 
 PushCommand.flags = {
     'version-number': flagsHelper.string({
@@ -205,7 +205,7 @@ PushCommand.flags = {
     }),
     'build-tag': flagsHelper.string({
         char: 'b',
-        description: `Build tag to be applied to the successful actor build. By default, it is taken from the "${LOCAL_CONFIG_PATH}" file`,
+        description: `Build tag to be applied to the successful Actor build. By default, it is taken from the "${LOCAL_CONFIG_PATH}" file`,
         required: false,
     }),
     'wait-for-finish': flagsHelper.string({
@@ -224,7 +224,7 @@ PushCommand.args = [
     {
         name: 'actorId',
         required: false,
-        description: 'ID of an existing actor on the Apify platform where the files will be pushed. '
+        description: 'Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
         + `If not provided, the command will create or modify the actor with the name specified in "${LOCAL_CONFIG_PATH}" file.`,
     },
 ];
