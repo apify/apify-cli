@@ -10,7 +10,6 @@ const { ApifyCommand } = require('../lib/apify_command');
 const execWithLog = require('../lib/exec');
 const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
-const { maybeTrackTelemetry } = require('../lib/telemetry');
 const {
     setLocalConfig,
     setLocalEnv,
