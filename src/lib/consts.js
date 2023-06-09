@@ -50,4 +50,4 @@ exports.MINIMUM_SUPPORTED_PYTHON_VERSION = '3.8.0';
 
 exports.PYTHON_VENV_PATH = '.venv';
 
-exports.MIXPANEL_TOKEN = '428a8adfe4ebe8708b3c85637eb7a360';
+exports.MIXPANEL_TOKEN = 'ea75e434d4b4d2405d79ed9d14bfc93b';

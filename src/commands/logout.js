@@ -1,11 +1,13 @@
 const { ApifyCommand } = require('../lib/apify_command');
-const { GLOBAL_CONFIGS_FOLDER } = require('../lib/consts');
+const { AUTH_FILE_PATH } = require('../lib/consts');
 const { success } = require('../lib/outputs');
 const { rimrafPromised } = require('../lib/files');
+const { regenerateLocalDistinctId } = require('../lib/telemetry');
 
 class LogoutCommand extends ApifyCommand {
     static async run() {
-        await rimrafPromised(GLOBAL_CONFIGS_FOLDER);
+        await rimrafPromised(AUTH_FILE_PATH);
+        regenerateLocalDistinctId();
         success('You are logged out, all settings in the ~/.apify directory were deleted.');
     }
 }

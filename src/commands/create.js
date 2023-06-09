@@ -60,7 +60,7 @@ class CreateCommand extends ApifyCommand {
         }
 
         maybeTrackTelemetry({
-            eventName: 'create_template',
+            eventName: 'cli_use_template',
             eventData: templateTrackProps,
         });
 
