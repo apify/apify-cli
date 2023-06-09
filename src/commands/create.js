@@ -50,19 +50,14 @@ class CreateCommand extends ApifyCommand {
 
         actorName = await ensureValidActorName(actorName);
         let messages = null;
-        const templateTrackProps = { fromArchiveUrl: !!templateArchiveUrl };
+        this.telemetryData.fromArchiveUrl = !!templateArchiveUrl;
         if (manifestPromise) {
             const templateDefinition = await getTemplateDefinition(templateName, manifestPromise);
             ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = templateDefinition);
-            templateTrackProps.templateId = templateDefinition.id;
-            templateTrackProps.templateName = templateDefinition.name;
-            templateTrackProps.templateLanguage = templateDefinition.category;
+            this.telemetryData.templateId = templateDefinition.id;
+            this.telemetryData.templateName = templateDefinition.name;
+            this.telemetryData.templateLanguage = templateDefinition.category;
         }
-
-        maybeTrackTelemetry({
-            eventName: 'cli_use_template',
-            eventData: templateTrackProps,
-        });
 
         const cwd = process.cwd();
         const actFolderDir = path.join(cwd, actorName);

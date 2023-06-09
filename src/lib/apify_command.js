@@ -22,7 +22,7 @@ class ApifyCommand extends Command {
     async finally(err) {
         if (isTelemetryEnabled) {
             maybeTrackTelemetry({
-                eventName: 'cli_command',
+                eventName: `cli_command_${this.telemetryData.command}`,
                 eventData: {
                     ...this.telemetryData,
                     error: err ? err.message : null,

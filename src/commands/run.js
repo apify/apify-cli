@@ -107,12 +107,16 @@ class RunCommand extends ApifyCommand {
                     warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
                         + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
                 }
+                this.telemetryData.nodeVersion = currentNodeVersion;
+                this.telemetryData.useNode = true;
                 await execWithLog(getNpmCmd(), ['start'], { env });
             } else {
                 error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js actors locally.`);
             }
         } else if (mainPyExists) {
             const pythonVersion = detectPythonVersion(cwd);
+            this.telemetryData.pythonVersion = pythonVersion;
+            this.telemetryData.usePython = true;
             if (pythonVersion) {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);
