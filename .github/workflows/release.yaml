@@ -53,7 +53,7 @@ jobs:
         name: Run Tests
         env:
             TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
-            APIFY_CLI_TELEMETRY_DISABLE: 1
+            APIFY_CLI_DISABLE_TELEMETRY: 1
         run: npm test
 
   test_python_support:
@@ -90,7 +90,7 @@ jobs:
         name: Run Python tests
         env:
           TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
-          APIFY_CLI_TELEMETRY_DISABLE: 1
+          APIFY_CLI_DISABLE_TELEMETRY: 1
         run: npm run test-python
 
   lint:

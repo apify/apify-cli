@@ -108,7 +108,7 @@ class RunCommand extends ApifyCommand {
                         + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
                 }
                 this.telemetryData.nodeVersion = currentNodeVersion;
-                this.telemetryData.useNode = true;
+                this.telemetryData.isActorNode = true;
                 await execWithLog(getNpmCmd(), ['start'], { env });
             } else {
                 error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js actors locally.`);
@@ -116,7 +116,7 @@ class RunCommand extends ApifyCommand {
         } else if (mainPyExists) {
             const pythonVersion = detectPythonVersion(cwd);
             this.telemetryData.pythonVersion = pythonVersion;
-            this.telemetryData.usePython = true;
+            this.telemetryData.isActorPython = true;
             if (pythonVersion) {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);
