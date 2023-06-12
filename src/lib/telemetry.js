@@ -1,9 +1,10 @@
 const Mixpanel = require('mixpanel');
+const { promisify } = require('util');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const { cryptoRandomObjectId } = require('@apify/utilities');
 const { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } = require('./consts');
-const { detectInstallationType } = require('./version_check');
+const { detectInstallationType, CURRENT_APIFY_CLI_VERSION } = require('./version_check');
 const outputs = require('./outputs');
 const { getLocalUserInfo } = require('./utils');
 
@@ -57,19 +58,19 @@ const isTelemetryEnabled = !process.env.APIFY_CLI_DISABLE_TELEMETRY
  * @param eventData
  * @param distinctId
  */
-const maybeTrackTelemetry = ({ eventName, eventData, distinctId }) => {
+const maybeTrackTelemetry = async ({ eventName, eventData }) => {
     if (!isTelemetryEnabled) return;
     try {
-        if (!distinctId) distinctId = getOrCreateLocalDistinctId();
+        const distinctId = getOrCreateLocalDistinctId();
         // NOTE: We don't use callback here, because we don't want to wait for Mixpanel to finish.
-        mixpanel.track(eventName, {
+        await promisify(mixpanel.track.bind(mixpanel))(eventName, {
             distinct_id: distinctId,
             $os: process.platform,
-            metadata: {
-                installationType: detectInstallationType(),
-            },
+            nodeJsVersion: process.version,
+            apifyCliVersion: CURRENT_APIFY_CLI_VERSION,
+            installationType: detectInstallationType(),
             ...eventData,
-        }, () => { /* Ignore errors */ });
+        });
     } catch (e) {
         // Ignore errors
     }
@@ -84,7 +85,7 @@ const maybeTrackTelemetry = ({ eventName, eventData, distinctId }) => {
 const useApifyIdentity = async (userId) => {
     if (!isTelemetryEnabled) return;
     try {
-        maybeTrackTelemetry({
+        await maybeTrackTelemetry({
             eventName: 'cli_use_apify_identity',
             eventData: {
                 userId,

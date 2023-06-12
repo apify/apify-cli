@@ -8,7 +8,7 @@ class LogoutCommand extends ApifyCommand {
     static async run() {
         await rimrafPromised(AUTH_FILE_PATH);
         regenerateLocalDistinctId();
-        success('You are logged out, all settings in the ~/.apify directory were deleted.');
+        success('You are logged out from your Apify account.');
     }
 }
 

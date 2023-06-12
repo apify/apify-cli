@@ -30,6 +30,8 @@ const SKIP_UPDATE_CHECK = (
     && !['0', 'false'].includes(process.env.APIFY_CLI_SKIP_UPDATE_CHECK.toLowerCase())
 );
 
+const CURRENT_APIFY_CLI_VERSION = require('../../package.json').version;
+
 /**
  * Detect through which package manager the Apify CLI was installed.
  * @returns {INSTALLATION_TYPE} The installation type of the CLI.
@@ -102,9 +104,7 @@ const checkLatestVersion = async (enforeUpdate = false) => {
         ? await getAndCacheLatestNpmVersion()
         : cachedLatestNpmVersion;
 
-    const currentNpmVersion = require('../../package.json').version; //  eslint-disable-line
-
-    if (latestNpmVersion && semver.gt(latestNpmVersion, currentNpmVersion)) {
+    if (latestNpmVersion && semver.gt(latestNpmVersion, CURRENT_APIFY_CLI_VERSION)) {
         const installationType = detectInstallationType();
         const updateCommand = `' ${UPDATE_COMMAND[installationType]} '`;
         console.log('');
@@ -122,4 +122,5 @@ module.exports = {
     getLatestNpmVersion,
     SKIP_UPDATE_CHECK,
     detectInstallationType,
+    CURRENT_APIFY_CLI_VERSION,
 };

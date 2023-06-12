@@ -2,7 +2,7 @@ const { Command } = require('@oclif/command');
 const { finished } = require('stream');
 const { promisify } = require('util');
 const { argsToCamelCase } = require('./utils');
-const { isTelemetryEnabled, maybeTrackTelemetry } = require('./telemetry');
+const { maybeTrackTelemetry } = require('./telemetry');
 
 /**
  * Adding parsing flags to oclif Command class
@@ -20,15 +20,13 @@ class ApifyCommand extends Command {
     }
 
     async finally(err) {
-        if (isTelemetryEnabled) {
-            maybeTrackTelemetry({
-                eventName: `cli_command_${this.telemetryData.command}`,
-                eventData: {
-                    ...this.telemetryData,
-                    error: err ? err.message : null,
-                },
-            });
-        }
+        await maybeTrackTelemetry({
+            eventName: `cli_command_${this.telemetryData.command}`,
+            eventData: {
+                ...this.telemetryData,
+                error: err ? err.message : null,
+            },
+        });
         return super.finally(err);
     }
 
