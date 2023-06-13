@@ -10,10 +10,10 @@ const { testUserClient, TEST_USER_TOKEN, TEST_USER_BAD_TOKEN } = require('./conf
 describe('apify login and logout', () => {
     let skipAfterHook = false;
     before(() => {
-        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
+        if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
-            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
+            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
         }
     });
 
@@ -41,7 +41,7 @@ describe('apify login and logout', () => {
         expect(_.omit(expectedUserInfo, floatFields)).to.eql(_.omit(userInfoFromConfig, floatFields));
 
         await command.run(['logout']);
-        const isGlobalConfig = fs.existsSync(GLOBAL_CONFIGS_FOLDER);
+        const isGlobalConfig = fs.existsSync(AUTH_FILE_PATH);
 
         expect(isGlobalConfig).to.be.eql(false);
     });

@@ -5,7 +5,7 @@ const path = require('path');
 const writeJson = require('write-json-file');
 const loadJson = require('load-json-file');
 const { ENV_VARS } = require('@apify/consts');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH, LOCAL_CONFIG_PATH, EMPTY_LOCAL_CONFIG } = require('../../src/lib/consts');
+const { AUTH_FILE_PATH, LOCAL_CONFIG_PATH, EMPTY_LOCAL_CONFIG } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const { TEST_USER_TOKEN } = require('./config');
 const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
@@ -15,10 +15,10 @@ const actName = 'my-act';
 describe('apify run', () => {
     let skipAfterHook = false;
     before(async () => {
-        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
+        if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
-            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
+            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
         }
 
         await command.run(['create', actName, '--template', 'project_empty']);

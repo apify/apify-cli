@@ -7,7 +7,7 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalUserInfo, getActorLocalFilePaths, createSourceFiles } = require('../../src/lib/utils');
-const { GLOBAL_CONFIGS_FOLDER, UPLOADS_STORE_NAME, LOCAL_CONFIG_PATH } = require('../../src/lib/consts');
+const { UPLOADS_STORE_NAME, LOCAL_CONFIG_PATH, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
 
 const ACTOR_NAME = `cli-test-${Date.now()}`;
@@ -29,10 +29,10 @@ describe('apify push', () => {
     let skipAfterHook = false;
     const actorsForCleanup = new Set();
     before(async () => {
-        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
+        if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
-            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
+            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
         }
 
         await command.run(['login', '--token', TEST_USER_TOKEN]);
