@@ -28,10 +28,10 @@ class ApifyCommand extends Command {
         const command = this.id;
         const eventData = {
             command,
-            $os: this.platform,
-            shell: this.shell,
-            arch: this.arch,
-            apifyCliVersion: this.version,
+            $os: this.config.platform,
+            shell: this.config.shell,
+            arch: this.config.arch,
+            apifyCliVersion: this.config.version,
             nodeJsVersion: process.version,
             ...this.telemetryData,
             error: err ? err.message : null,

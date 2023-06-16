@@ -79,13 +79,14 @@ const maybeTrackTelemetry = async ({ eventName, eventData }) => {
 const useApifyIdentity = async (userId) => {
     if (!isTelemetryEnabled) return;
     try {
+        const distinctId = getOrCreateLocalDistinctId();
+        writeJson.sync(TELEMETRY_FILE_PATH, { distinctId: userId });
         await maybeTrackTelemetry({
-            eventName: 'cli_use_apify_identity',
+            eventName: '$create_alias',
             eventData: {
-                userId,
+                alias: distinctId,
             },
         });
-        writeJson.sync(TELEMETRY_FILE_PATH, { distinctId: userId });
     } catch (e) {
         // Ignore errors
     }
