@@ -5,13 +5,12 @@ const loadJson = require('load-json-file');
 const { ENV_VARS } = require('@apify/consts');
 const semver = require('semver');
 const execWithLog = require('../lib/exec');
-const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
+const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE_USED } = require('../lib/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
     purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty,
-    detectPythonVersion, isPythonVersionSupported, getPythonCommand,
-    detectNodeVersion, isNodeVersionSupported,
+    detectLocalActorLanguage, isPythonVersionSupported, getPythonCommand, isNodeVersionSupported,
 } = require('../lib/utils');
 const { error, info, warning } = require('../lib/outputs');
 const { replaceSecretsValue } = require('../lib/secrets');
@@ -86,8 +85,9 @@ class RunCommand extends ApifyCommand {
             warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
         }
 
-        if (packageJsonExists) { // Actor is written in Node.js
-            const currentNodeVersion = detectNodeVersion();
+        const { language, languageVersion } = detectLocalActorLanguage();
+        if (language === LANGUAGE_USED.NODEJS) { // Actor is written in Node.js
+            const currentNodeVersion = languageVersion;
             const minimumSupportedNodeVersion = semver.minVersion(SUPPORTED_NODEJS_VERSION);
             if (currentNodeVersion) {
                 const serverJsFile = path.join(cwd, 'server.js');
@@ -107,16 +107,16 @@ class RunCommand extends ApifyCommand {
                     warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
                         + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
                 }
-                this.telemetryData.nodeVersion = currentNodeVersion;
-                this.telemetryData.isActorNode = true;
+                this.telemetryData.nodejsVersion = currentNodeVersion;
+                this.telemetryData.language = LANGUAGE_USED.NODEJS;
                 await execWithLog(getNpmCmd(), ['start'], { env });
             } else {
                 error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js actors locally.`);
             }
-        } else if (mainPyExists) {
-            const pythonVersion = detectPythonVersion(cwd);
+        } else if (language === LANGUAGE_USED.PYTHON) {
+            const pythonVersion = languageVersion;
             this.telemetryData.pythonVersion = pythonVersion;
-            this.telemetryData.isActorPython = true;
+            this.telemetryData.language = LANGUAGE_USED.PYTHON;
             if (pythonVersion) {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);

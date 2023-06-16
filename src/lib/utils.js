@@ -36,6 +36,7 @@ const {
     APIFY_CLIENT_DEFAULT_HEADERS,
     SUPPORTED_NODEJS_VERSION,
     MINIMUM_SUPPORTED_PYTHON_VERSION,
+    LANGUAGE_USED,
 } = require('./consts');
 const {
     ensureFolderExistsSync,
@@ -581,6 +582,23 @@ const detectNpmVersion = () => {
     }
 };
 
+const detectLocalActorLanguage = () => {
+    const cwd = process.cwd();
+    const isActorInNode = fs.existsSync(path.join(process.cwd(), 'package.json'));
+    const isActorInPython = fs.existsSync(path.join(process.cwd(), 'src/__main__.py'));
+    const result = {};
+    if (isActorInNode) {
+        result.language = LANGUAGE_USED.NODEJS;
+        result.nodejsVersion = detectNodeVersion();
+    } else if (isActorInPython) {
+        result.language = LANGUAGE_USED.PYTHON;
+        result.pythonVersion = detectPythonVersion(cwd);
+    } else {
+        result.language = LANGUAGE_USED.UNKNOWN;
+    }
+    return result;
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -614,4 +632,5 @@ module.exports = {
     detectNodeVersion,
     isNodeVersionSupported,
     detectNpmVersion,
+    detectLocalActorLanguage,
 };

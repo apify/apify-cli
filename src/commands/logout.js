@@ -5,7 +5,7 @@ const { rimrafPromised } = require('../lib/files');
 const { regenerateLocalDistinctId } = require('../lib/telemetry');
 
 class LogoutCommand extends ApifyCommand {
-    static async run() {
+    async run() {
         await rimrafPromised(AUTH_FILE_PATH);
         regenerateLocalDistinctId();
         success('You are logged out from your Apify account.');

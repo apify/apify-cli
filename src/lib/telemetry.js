@@ -4,7 +4,6 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const { cryptoRandomObjectId } = require('@apify/utilities');
 const { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } = require('./consts');
-const { detectInstallationType, CURRENT_APIFY_CLI_VERSION } = require('./version_check');
 const outputs = require('./outputs');
 const { getLocalUserInfo } = require('./utils');
 
@@ -62,13 +61,8 @@ const maybeTrackTelemetry = async ({ eventName, eventData }) => {
     if (!isTelemetryEnabled) return;
     try {
         const distinctId = getOrCreateLocalDistinctId();
-        // NOTE: We don't use callback here, because we don't want to wait for Mixpanel to finish.
         await promisify(mixpanel.track.bind(mixpanel))(eventName, {
             distinct_id: distinctId,
-            $os: process.platform,
-            nodeJsVersion: process.version,
-            apifyCliVersion: CURRENT_APIFY_CLI_VERSION,
-            installationType: detectInstallationType(),
             ...eventData,
         });
     } catch (e) {

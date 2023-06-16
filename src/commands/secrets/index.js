@@ -3,7 +3,7 @@ const { LOCAL_CONFIG_PATH } = require('../../lib/consts');
 const { showHelpForCommand } = require('../../lib/utils');
 
 class SecretsIndexCommand extends Command {
-    static async run() {
+    async run() {
         showHelpForCommand('secrets');
     }
 }

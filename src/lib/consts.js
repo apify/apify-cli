@@ -16,6 +16,14 @@ exports.EMPTY_LOCAL_CONFIG = {
     environmentVariables: {},
 };
 
+exports.LANGUAGE_USED = {
+    NODEJS: 'nodejs',
+    PYTHON: 'python',
+    UNKNOWN: 'n/a',
+};
+
+exports.COMMANDS_WITHIN_ACTOR = ['init', 'run', 'push', 'pull', 'call'];
+
 exports.CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
 
 exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
