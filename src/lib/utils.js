@@ -36,7 +36,7 @@ const {
     APIFY_CLIENT_DEFAULT_HEADERS,
     SUPPORTED_NODEJS_VERSION,
     MINIMUM_SUPPORTED_PYTHON_VERSION,
-    LANGUAGE_USED,
+    LANGUAGE,
 } = require('./consts');
 const {
     ensureFolderExistsSync,
@@ -588,13 +588,13 @@ const detectLocalActorLanguage = () => {
     const isActorInPython = fs.existsSync(path.join(process.cwd(), 'src/__main__.py'));
     const result = {};
     if (isActorInNode) {
-        result.language = LANGUAGE_USED.NODEJS;
-        result.nodejsVersion = detectNodeVersion();
+        result.language = LANGUAGE.NODEJS;
+        result.languageVersion = detectNodeVersion();
     } else if (isActorInPython) {
-        result.language = LANGUAGE_USED.PYTHON;
-        result.pythonVersion = detectPythonVersion(cwd);
+        result.language = LANGUAGE.PYTHON;
+        result.languageVersion = detectPythonVersion(cwd);
     } else {
-        result.language = LANGUAGE_USED.UNKNOWN;
+        result.language = LANGUAGE.UNKNOWN;
     }
     return result;
 };

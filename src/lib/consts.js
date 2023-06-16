@@ -16,7 +16,7 @@ exports.EMPTY_LOCAL_CONFIG = {
     environmentVariables: {},
 };
 
-exports.LANGUAGE_USED = {
+exports.LANGUAGE = {
     NODEJS: 'nodejs',
     PYTHON: 'python',
     UNKNOWN: 'n/a',

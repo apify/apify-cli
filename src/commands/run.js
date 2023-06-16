@@ -5,7 +5,7 @@ const loadJson = require('load-json-file');
 const { ENV_VARS } = require('@apify/consts');
 const semver = require('semver');
 const execWithLog = require('../lib/exec');
-const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE_USED } = require('../lib/consts');
+const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE } = require('../lib/consts');
 const { ApifyCommand } = require('../lib/apify_command');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
@@ -86,7 +86,7 @@ class RunCommand extends ApifyCommand {
         }
 
         const { language, languageVersion } = detectLocalActorLanguage();
-        if (language === LANGUAGE_USED.NODEJS) { // Actor is written in Node.js
+        if (language === LANGUAGE.NODEJS) { // Actor is written in Node.js
             const currentNodeVersion = languageVersion;
             const minimumSupportedNodeVersion = semver.minVersion(SUPPORTED_NODEJS_VERSION);
             if (currentNodeVersion) {
@@ -107,16 +107,16 @@ class RunCommand extends ApifyCommand {
                     warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
                         + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
                 }
-                this.telemetryData.nodejsVersion = currentNodeVersion;
-                this.telemetryData.language = LANGUAGE_USED.NODEJS;
+                this.telemetryData.actorNodejsVersion = currentNodeVersion;
+                this.telemetryData.actorLanguage = LANGUAGE.NODEJS;
                 await execWithLog(getNpmCmd(), ['start'], { env });
             } else {
                 error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js actors locally.`);
             }
-        } else if (language === LANGUAGE_USED.PYTHON) {
+        } else if (language === LANGUAGE.PYTHON) {
             const pythonVersion = languageVersion;
-            this.telemetryData.pythonVersion = pythonVersion;
-            this.telemetryData.language = LANGUAGE_USED.PYTHON;
+            this.telemetryData.actorPythonVersion = pythonVersion;
+            this.telemetryData.actorLanguage = LANGUAGE.PYTHON;
             if (pythonVersion) {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);

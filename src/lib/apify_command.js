@@ -5,7 +5,7 @@ const { argsToCamelCase } = require('./utils');
 const { maybeTrackTelemetry } = require('./telemetry');
 const { detectInstallationType } = require('./version_check');
 const { detectLocalActorLanguage } = require('./utils');
-const { LANGUAGE_USED, COMMANDS_WITHIN_ACTOR } = require('./consts');
+const { LANGUAGE, COMMANDS_WITHIN_ACTOR } = require('./consts');
 
 /**
  * Adding parsing flags to oclif Command class
@@ -32,17 +32,19 @@ class ApifyCommand extends Command {
             shell: this.shell,
             arch: this.arch,
             apifyCliVersion: this.version,
+            nodeJsVersion: process.version,
             ...this.telemetryData,
             error: err ? err.message : null,
         };
         try {
             eventData.installationType = await detectInstallationType();
-            if (!this.telemetryData.language && command && COMMANDS_WITHIN_ACTOR.includes(command)) {
+            if (!this.telemetryData.actorLanguage && command && COMMANDS_WITHIN_ACTOR.includes(command)) {
                 const { language, languageVersion } = detectLocalActorLanguage();
-                if (language === LANGUAGE_USED.NODEJS) {
-                    eventData.nodejsVersion = languageVersion;
-                } else if (language === LANGUAGE_USED.PYTHON) {
-                    eventData.pythonVersion = languageVersion;
+                eventData.actorLanguage = language;
+                if (language === LANGUAGE.NODEJS) {
+                    eventData.actorNodejsVersion = languageVersion;
+                } else if (language === LANGUAGE.PYTHON) {
+                    eventData.actorPythonVersion = languageVersion;
                 }
             }
             await maybeTrackTelemetry({
