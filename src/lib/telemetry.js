@@ -8,7 +8,7 @@ const outputs = require('./outputs');
 const { getLocalUserInfo } = require('./utils');
 
 const mixpanel = Mixpanel.init(MIXPANEL_TOKEN, { keepAlive: false });
-const TELEMETRY_WARNING_TEXT = 'Apify collects telemetry data about general usage of CLI to help us improve the product. '
+const TELEMETRY_WARNING_TEXT = 'Apify collects telemetry data about general usage of Apify CLI to help us improve the product. '
     + 'This feature is enabled by default, and you can disable it by setting the "APIFY_CLI_DISABLE_TELEMETRY" environment variable to "1". '
     + 'You can find more about telemetry in https://docs.apify.com/cli/docs/telemetry.';
 
