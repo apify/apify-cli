@@ -18,7 +18,7 @@ Before a user connects to the Apify platform, we collect anonymous information a
 
 After a user connects to the Apify platform (successful `apify login`), we collect the same information about CLI usage along with the ID of the connected user. You can read more about how we protect personal information in our [Privacy Policy](https://apify.com/privacy-policy).
 
-## How to opt-out
+## How to opt out
 
 You can disable telemetry by setting the "APIFY_CLI_DISABLE_TELEMETRY" environment variable to "1". After setting this variable, the CLI will not send any telemetry data whether you are connected with Apify or not.
 

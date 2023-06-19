@@ -26,7 +26,7 @@ class LoginCommand extends ApifyCommand {
 
 LoginCommand.description = 'Logs in to your Apify account using a provided API token.\nThe API token and other account '
     + 'information is stored in the ~/.apify directory, from where it is read by all other "apify" commands. '
-    + 'To log out, call "apify logout". By using Apify account you agree with [Terms of Service](https://apify.com/terms-of-use).';
+    + 'To log out, call "apify logout".';
 
 LoginCommand.flags = {
     token: flagsHelper.string({
