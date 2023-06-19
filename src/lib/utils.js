@@ -505,13 +505,13 @@ const updateLocalConfigStructure = (localConfig) => {
  */
 const validateActorName = (actorName) => {
     if (!ACTOR_NAME.REGEX.test(actorName)) {
-        throw new Error('The actor name must be a DNS hostname-friendly string (e.g. my-newest-actor).');
+        throw new Error('The Actor name must be a DNS hostname-friendly string (e.g. my-newest-actor).');
     }
     if (actorName.length < ACTOR_NAME.MIN_LENGTH) {
-        throw new Error('The actor name must be at least 3 characters long.');
+        throw new Error('The Actor name must be at least 3 characters long.');
     }
     if (actorName.length > ACTOR_NAME.MAX_LENGTH) {
-        throw new Error('The actor name must be a maximum of 30 characters long.');
+        throw new Error('The Actor name must be a maximum of 30 characters long.');
     }
 };
 
