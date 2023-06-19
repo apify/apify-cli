@@ -77,7 +77,7 @@ class PullCommand extends ApifyCommand {
             case 'SOURCE_FILES': {
                 const { sourceFiles } = correctVersion;
                 for (const file of sourceFiles) {
-                    const folderPath = file.folder ? file.folder : path.dirname(file.name);
+                    const folderPath = path.dirname(file.name);
                     fs.mkdirSync(`${dirpath}/${folderPath}`, { recursive: true }, null);
 
                     if (!file.folder) {
