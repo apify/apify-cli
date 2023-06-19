@@ -396,8 +396,8 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It 
-  takes input for the actor from the default local key-value store by default.
+  The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It 
+  takes input for the Actor from the default local key-value store by default.
 ```
 
 _See code: [src/commands/call.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/call.js)_
@@ -537,7 +537,7 @@ OPTIONS
                                          should be pushed. By default, it is taken from the ".actor/actor.json" file.
 
 DESCRIPTION
-  The actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden 
+  The Actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden 
   using command-line options.
   NOTE: If the source files are smaller than 3 MB then they are uploaded as 
   "Multiple source files", otherwise they are uploaded as "Zip file".
