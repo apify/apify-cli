@@ -264,7 +264,7 @@ OPTIONS
 
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to build to finish, if no value passed, it waits forever.
 
-  --no-prompt                            Do not prompt for opening the actor details in a browser. This will also not
+  --no-prompt                            Do not prompt for opening the Actor details in a browser. This will also not
                                          open the browser automatically.
 
   --version-number=version-number        DEPRECATED: Use flag version instead. Actor version number to which the files
