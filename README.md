@@ -299,7 +299,7 @@ USAGE
   $ apify actor
 ```
 
-_See code: [src/commands/actor/index.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/actor/index.js)_
+_See code: [src/commands/actor/index.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/actor/index.js)_
 
 ## `apify actor:get-input`
 
@@ -310,7 +310,7 @@ USAGE
   $ apify actor:get-input
 ```
 
-_See code: [src/commands/actor/get-input.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/actor/get-input.js)_
+_See code: [src/commands/actor/get-input.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/actor/get-input.js)_
 
 ## `apify actor:get-value KEY`
 
@@ -324,7 +324,7 @@ ARGUMENTS
   KEY  Key of the record in key-value store
 ```
 
-_See code: [src/commands/actor/get-value.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/actor/get-value.js)_
+_See code: [src/commands/actor/get-value.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/actor/get-value.js)_
 
 ## `apify actor:push-data [ITEM]`
 
@@ -345,7 +345,7 @@ DESCRIPTION
   $ cat ./test.json | apify actor:push-data
 ```
 
-_See code: [src/commands/actor/push-data.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/actor/push-data.js)_
+_See code: [src/commands/actor/push-data.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/actor/push-data.js)_
 
 ## `apify actor:set-value KEY [VALUE]`
 
@@ -375,7 +375,7 @@ DESCRIPTION
   $ cat ./my-text-file.txt | apify actor:set-value KEY --contentType text/plain
 ```
 
-_See code: [src/commands/actor/set-value.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/actor/set-value.js)_
+_See code: [src/commands/actor/set-value.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/actor/set-value.js)_
 
 ## `apify call [ACTID]`
 
@@ -400,7 +400,7 @@ DESCRIPTION
   takes input for the actor from the default local key-value store by default.
 ```
 
-_See code: [src/commands/call.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/call.js)_
+_See code: [src/commands/call.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/call.js)_
 
 ## `apify create [ACTORNAME]`
 
@@ -422,7 +422,7 @@ OPTIONS
   --skip-dependency-install  Skip installing actor dependencies.
 ```
 
-_See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/create.js)_
+_See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/create.js)_
 
 ## `apify info`
 
@@ -436,7 +436,7 @@ DESCRIPTION
   The information is printed to the console.
 ```
 
-_See code: [src/commands/info.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/info.js)_
+_See code: [src/commands/info.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/info.js)_
 
 ## `apify init [ACTORNAME]`
 
@@ -456,7 +456,7 @@ DESCRIPTION
   WARNING: The directory at "storage" will be overwritten if it already exists.
 ```
 
-_See code: [src/commands/init.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/init.js)_
+_See code: [src/commands/init.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/init.js)_
 
 ## `apify login`
 
@@ -474,7 +474,7 @@ DESCRIPTION
   "apify" commands. To log out, call "apify logout".
 ```
 
-_See code: [src/commands/login.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/login.js)_
+_See code: [src/commands/login.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/login.js)_
 
 ## `apify logout`
 
@@ -489,7 +489,7 @@ DESCRIPTION
    call "apify login".
 ```
 
-_See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/logout.js)_
+_See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/logout.js)_
 
 ## `apify pull [ACTORID]`
 
@@ -507,7 +507,7 @@ OPTIONS
   -v, --version=version  Actor version number which will be pulled, e.g. 1.2. Default: the highest version
 ```
 
-_See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/pull.js)_
+_See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/pull.js)_
 
 ## `apify push [ACTORID]`
 
@@ -530,6 +530,9 @@ OPTIONS
 
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to build to finish, if no value passed, it waits forever.
 
+  --no-prompt                            Do not prompt for opening the actor details in a browser. This will also not
+                                         open the browser automatically.
+
   --version-number=version-number        DEPRECATED: Use flag version instead. Actor version number to which the files
                                          should be pushed. By default, it is taken from the ".actor/actor.json" file.
 
@@ -542,7 +545,7 @@ DESCRIPTION
   WARNING: If the target Actor already exists in your Apify account, it will be overwritten!
 ```
 
-_See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/push.js)_
+_See code: [src/commands/push.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/push.js)_
 
 ## `apify run`
 
@@ -572,7 +575,7 @@ DESCRIPTION
   package.json file. You can set up your own main file or environment variables by changing it.
 ```
 
-_See code: [src/commands/run.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/run.js)_
+_See code: [src/commands/run.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/run.js)_
 
 ## `apify secrets`
 
@@ -600,7 +603,7 @@ DESCRIPTION
    of the actor.
 ```
 
-_See code: [src/commands/secrets/index.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/secrets/index.js)_
+_See code: [src/commands/secrets/index.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/secrets/index.js)_
 
 ## `apify secrets:add NAME VALUE`
 
@@ -618,7 +621,7 @@ DESCRIPTION
   The secrets are stored to a file at ~/.apify
 ```
 
-_See code: [src/commands/secrets/add.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/secrets/add.js)_
+_See code: [src/commands/secrets/add.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/secrets/add.js)_
 
 ## `apify secrets:rm NAME`
 
@@ -632,7 +635,7 @@ ARGUMENTS
   NAME  Name of the secret
 ```
 
-_See code: [src/commands/secrets/rm.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/secrets/rm.js)_
+_See code: [src/commands/secrets/rm.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/secrets/rm.js)_
 
 ## `apify vis [PATH]`
 
@@ -656,5 +659,5 @@ DESCRIPTION
   You can also pass any custom path to your input schema to have it validated instead.
 ```
 
-_See code: [src/commands/vis.js](https://github.com/apify/apify-cli/blob/v0.16.2/src/commands/vis.js)_
+_See code: [src/commands/vis.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/vis.js)_
 <!-- commandsstop -->

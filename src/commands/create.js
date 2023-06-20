@@ -23,7 +23,7 @@ const {
     detectNpmVersion,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
-const { httpsGet, ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
+const { httpsGet, ensureValidActorName, getTemplateDefinition, getLocalReadmeSuffix } = require('../lib/create-utils');
 
 class CreateCommand extends ApifyCommand {
     async run() {
@@ -38,20 +38,18 @@ class CreateCommand extends ApifyCommand {
         // for testing of templates that are not yet published in the manifest
         let { templateArchiveUrl } = flags;
         let skipOptionalDeps = false;
-        let localReadmeSuffix = '';
 
         // Start fetching manifest immediately to prevent
         // annoying delays that sometimes happen on CLI startup.
-        const manifestPromise = templateArchiveUrl
-            ? undefined // not fetching manifest when we have direct template URL
-            : actorTemplates.fetchManifest().catch((err) => {
-                return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
-            });
+        const manifestPromise = actorTemplates.fetchManifest().catch((err) => {
+            return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
+        });
 
         actorName = await ensureValidActorName(actorName);
         let messages = null;
-        if (manifestPromise) {
-            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages, localReadmeSuffix } = await getTemplateDefinition(templateName, manifestPromise));
+
+        if (!templateArchiveUrl) {
+            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = await getTemplateDefinition(templateName, manifestPromise));
         }
 
         const cwd = process.cwd();
@@ -85,9 +83,11 @@ class CreateCommand extends ApifyCommand {
         const requirementsTxtPath = path.join(actFolderDir, 'requirements.txt');
         const readmePath = path.join(actFolderDir, 'README.md');
 
+        const localReadmeSuffix = await getLocalReadmeSuffix(manifestPromise);
+
         // Add localReadmeSuffix which is fetched from manifest to README.md
         // The suffix contains local development instructions
-        if (fs.existsSync(readmePath)) {
+        if (localReadmeSuffix && fs.existsSync(readmePath)) {
             const readmeContent = fs.readFileSync(readmePath, 'utf8');
             fs.writeFileSync(readmePath, `${readmeContent}\n\n${localReadmeSuffix}`);
         }

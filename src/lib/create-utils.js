@@ -1,7 +1,12 @@
 const chalk = require('chalk');
 const inquirer = require('inquirer');
 const https = require('https');
+const { finished } = require('stream');
+const { promisify } = require('util');
 const { validateActorName } = require('./utils');
+const {
+    warning,
+} = require('./outputs');
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 
@@ -56,6 +61,32 @@ exports.getTemplateDefinition = async (maybeTemplateName, manifestPromise) => {
     }
 
     return executePrompts(manifest);
+};
+
+/**
+ *
+ * @param {Promise<object>} manifestPromise
+ * @returns {string}
+ */
+exports.getLocalReadmeSuffix = async (manifestPromise) => {
+    const manifest = await manifestPromise;
+    // If the fetch failed earlier, the resolve value of
+    // the promise will be the error from fetching the manifest.
+    if (manifest instanceof Error) throw manifest;
+
+    let localReadmeSuffix = '';
+
+    try {
+        const suffixStream = await this.httpsGet(manifest.localReadmeSuffixUrl);
+        suffixStream.on('data', (chunk) => {
+            localReadmeSuffix += chunk;
+        });
+        await promisify(finished)(suffixStream);
+    } catch (err) {
+        warning(`Could not fetch readme suffix from github. Cause: ${err.message}`);
+    }
+
+    return localReadmeSuffix;
 };
 
 /**
