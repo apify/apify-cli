@@ -7,6 +7,7 @@ const { validateActorName } = require('./utils');
 const {
     warning,
 } = require('./outputs');
+const fs = require('fs');
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 
@@ -64,29 +65,31 @@ exports.getTemplateDefinition = async (maybeTemplateName, manifestPromise) => {
 };
 
 /**
- *
+ * Fetch local readme suffix from the manifest and append it to the readme.
+ * @param {string} readmePath
  * @param {Promise<object>} manifestPromise
- * @returns {string}
  */
-exports.getLocalReadmeSuffix = async (manifestPromise) => {
+exports.enhanceReadmeWithLocalSuffix = async (readmePath, manifestPromise) => {
     const manifest = await manifestPromise;
     // If the fetch failed earlier, the resolve value of
     // the promise will be the error from fetching the manifest.
     if (manifest instanceof Error) throw manifest;
 
-    let localReadmeSuffix = '';
-
     try {
+        let localReadmeSuffix = '';
         const suffixStream = await this.httpsGet(manifest.localReadmeSuffixUrl);
+
         suffixStream.on('data', (chunk) => {
             localReadmeSuffix += chunk;
         });
-        await promisify(finished)(suffixStream);
-    } catch (err) {
-        warning(`Could not fetch readme suffix from github. Cause: ${err.message}`);
-    }
 
-    return localReadmeSuffix;
+        await promisify(finished)(suffixStream);
+
+        const readmeContent = fs.readFileSync(readmePath, 'utf8');
+        fs.writeFileSync(readmePath, `${readmeContent}\n\n${localReadmeSuffix}`);
+    } catch (err) {
+        warning(`Could not append local development instructions to README.md. Cause: ${err.message}`)
+    }
 };
 
 /**
