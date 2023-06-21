@@ -88,7 +88,7 @@ exports.enhanceReadmeWithLocalSuffix = async (readmePath, manifestPromise) => {
         const readmeContent = fs.readFileSync(readmePath, 'utf8');
         fs.writeFileSync(readmePath, `${readmeContent}\n\n${localReadmeSuffix}`);
     } catch (err) {
-        warning(`Could not append local development instructions to README.md. Cause: ${err.message}`)
+        warning(`Could not append local development instructions to README.md. Cause: ${err.message}`);
     }
 };
 
