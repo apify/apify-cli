@@ -23,7 +23,7 @@ const {
     detectNpmVersion,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
-const { httpsGet, ensureValidActorName, getTemplateDefinition } = require('../lib/create-utils');
+const { httpsGet, ensureValidActorName, getTemplateDefinition, enhanceReadmeWithLocalSuffix } = require('../lib/create-utils');
 
 class CreateCommand extends ApifyCommand {
     async run() {
@@ -41,16 +41,16 @@ class CreateCommand extends ApifyCommand {
 
         // Start fetching manifest immediately to prevent
         // annoying delays that sometimes happen on CLI startup.
-        const manifestPromise = templateArchiveUrl
-            ? undefined // not fetching manifest when we have direct template URL
-            : actorTemplates.fetchManifest().catch((err) => {
-                return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
-            });
+        const manifestPromise = actorTemplates.fetchManifest().catch((err) => {
+            return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
+        });
 
         actorName = await ensureValidActorName(actorName);
         let messages = null;
+
         this.telemetryData.fromArchiveUrl = !!templateArchiveUrl;
-        if (manifestPromise) {
+
+        if (!templateArchiveUrl) {
             const templateDefinition = await getTemplateDefinition(templateName, manifestPromise);
             ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = templateDefinition);
             this.telemetryData.templateId = templateDefinition.id;
@@ -87,6 +87,11 @@ class CreateCommand extends ApifyCommand {
 
         const packageJsonPath = path.join(actFolderDir, 'package.json');
         const requirementsTxtPath = path.join(actFolderDir, 'requirements.txt');
+        const readmePath = path.join(actFolderDir, 'README.md');
+
+        // Add localReadmeSuffix which is fetched from manifest to README.md
+        // The suffix contains local development instructions
+        await enhanceReadmeWithLocalSuffix(readmePath, manifestPromise);
 
         let dependenciesInstalled = false;
         if (!skipDependencyInstall) {
