@@ -4,6 +4,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const { success, error } = require('../lib/outputs');
 const { getLoggedClient } = require('../lib/utils');
 const { getLocalUserInfo } = require('../lib/utils');
+const { useApifyIdentity } = require('../lib/telemetry');
 
 class LoginCommand extends ApifyCommand {
     async run() {
@@ -16,6 +17,7 @@ class LoginCommand extends ApifyCommand {
         }
         const isUserLogged = await getLoggedClient(token);
         const userInfo = getLocalUserInfo();
+        await useApifyIdentity(userInfo.id);
         return isUserLogged
             ? success(`You are logged in to Apify as ${userInfo.username || userInfo.id}!`)
             : error('Login to Apify failed, the provided API token is not valid.');

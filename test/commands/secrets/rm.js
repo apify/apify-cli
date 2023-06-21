@@ -1,7 +1,7 @@
 const { expect } = require('chai');
 const command = require('@oclif/command');
 const fs = require('fs');
-const { GLOBAL_CONFIGS_FOLDER } = require('../../../src/lib/consts');
+const { AUTH_FILE_PATH } = require('../../../src/lib/consts');
 const { getSecretsFile } = require('../../../src/lib/secrets');
 const { TEST_USER_TOKEN } = require('../config');
 
@@ -10,10 +10,10 @@ const SECRET_KEY = 'mySecret';
 describe('apify secrets:rm', () => {
     let skipAfterHook = false;
     before(async () => {
-        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
+        if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
-            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
+            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
         }
 
         await command.run(['login', '--token', TEST_USER_TOKEN]);

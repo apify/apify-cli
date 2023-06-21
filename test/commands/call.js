@@ -4,7 +4,7 @@ const fs = require('fs');
 const command = require('@oclif/command');
 const { ACT_JOB_STATUSES } = require('@apify/consts');
 const { rimrafPromised } = require('../../src/lib/files');
-const { GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
+const { AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
@@ -50,10 +50,10 @@ let actorId;
 describe('apify call', () => {
     let skipAfterHook = false;
     before(async () => {
-        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
+        if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
-            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
+            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
         }
 
         const { username } = await testUserClient.user('me').get();

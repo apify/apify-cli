@@ -3,7 +3,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const { getLoggedClientOrThrow, getLocalUserInfo } = require('../lib/utils');
 
 class InfoCommand extends ApifyCommand {
-    static async run() {
+    async run() {
         await getLoggedClientOrThrow();
         const info = await getLocalUserInfo();
 

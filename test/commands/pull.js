@@ -6,7 +6,7 @@ const { expect } = require('chai');
 const writeJsonFile = require('write-json-file');
 const fs = require('fs');
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
-const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME, GLOBAL_CONFIGS_FOLDER } = require('../../src/lib/consts');
+const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME, AUTH_FILE_PATH } = require('../../src/lib/consts');
 
 const TEST_ACTOR_SOURCE_FILES = {
     isPublic: false,
@@ -90,9 +90,9 @@ describe('apify pull', () => {
     let skipAfterHook = false;
     const actorsForCleanup = new Set();
     before(async () => {
-        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) { // Tests could break local environment if user is already logged in
+        if (fs.existsSync(AUTH_FILE_PATH)) {
             skipAfterHook = true;
-            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
+            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
         }
         await command.run(['login', '--token', TEST_USER_TOKEN]);
     });

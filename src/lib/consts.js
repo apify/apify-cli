@@ -16,6 +16,14 @@ exports.EMPTY_LOCAL_CONFIG = {
     environmentVariables: {},
 };
 
+exports.LANGUAGE = {
+    NODEJS: 'nodejs',
+    PYTHON: 'python',
+    UNKNOWN: 'n/a',
+};
+
+exports.COMMANDS_WITHIN_ACTOR = ['init', 'run', 'push', 'pull', 'call'];
+
 exports.CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
 
 exports.GLOBAL_CONFIGS_FOLDER = path.join(os.homedir(), '.apify');
@@ -25,6 +33,8 @@ exports.AUTH_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'auth.json');
 exports.SECRETS_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'secrets.json');
 
 exports.STATE_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'state.json');
+
+exports.TELEMETRY_FILE_PATH = path.join(exports.GLOBAL_CONFIGS_FOLDER, 'telemetry.json');
 
 exports.DEPRECATED_LOCAL_CONFIG_NAME = 'apify.json';
 
@@ -47,3 +57,5 @@ exports.APIFY_CLIENT_DEFAULT_HEADERS = { 'X-Apify-Request-Origin': META_ORIGINS.
 exports.MINIMUM_SUPPORTED_PYTHON_VERSION = '3.8.0';
 
 exports.PYTHON_VENV_PATH = '.venv';
+
+exports.MIXPANEL_TOKEN = 'ea75e434d4b4d2405d79ed9d14bfc93b';

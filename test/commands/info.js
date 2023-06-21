@@ -3,16 +3,16 @@ const sinon = require('sinon');
 const fs = require('fs');
 const loadJson = require('load-json-file');
 const command = require('@oclif/command');
-const { GLOBAL_CONFIGS_FOLDER, AUTH_FILE_PATH } = require('../../src/lib/consts');
+const { AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { TEST_USER_TOKEN } = require('./config');
 
 describe('apify info', () => {
     let skipAfterHook = false;
     before(() => {
-        if (fs.existsSync(GLOBAL_CONFIGS_FOLDER)) {
+        if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
-            throw new Error(`Cannot run tests, directory ${GLOBAL_CONFIGS_FOLDER} exists! Run "apify logout" to fix this.`);
+            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
         }
     });
 

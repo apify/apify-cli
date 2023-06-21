@@ -49,8 +49,13 @@ class CreateCommand extends ApifyCommand {
 
         actorName = await ensureValidActorName(actorName);
         let messages = null;
+        this.telemetryData.fromArchiveUrl = !!templateArchiveUrl;
         if (manifestPromise) {
-            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = await getTemplateDefinition(templateName, manifestPromise));
+            const templateDefinition = await getTemplateDefinition(templateName, manifestPromise);
+            ({ archiveUrl: templateArchiveUrl, skipOptionalDeps, messages } = templateDefinition);
+            this.telemetryData.templateId = templateDefinition.id;
+            this.telemetryData.templateName = templateDefinition.name;
+            this.telemetryData.templateLanguage = templateDefinition.category;
         }
 
         const cwd = process.cwd();
