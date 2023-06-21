@@ -39,6 +39,7 @@
                 "jju": "^1.4.0",
                 "load-json-file": "^6.2.0",
                 "mime": "^2.6.0",
+                "mixpanel": "^0.17.0",
                 "open": "^8.4.0",
                 "ow": "^0.28.1",
                 "rimraf": "^3.0.2",
@@ -5439,6 +5440,17 @@
             },
             "engines": {
                 "node": ">=8"
+            }
+        },
+        "node_modules/mixpanel": {
+            "version": "0.17.0",
+            "resolved": "https://registry.npmjs.org/mixpanel/-/mixpanel-0.17.0.tgz",
+            "integrity": "sha512-DY5WeOy/hmkPrNiiZugJpWR0iMuOwuj1a3u0bgwB2eUFRV6oIew/pIahhpawdbNjb+Bye4a8ID3gefeNPvL81g==",
+            "dependencies": {
+                "https-proxy-agent": "5.0.0"
+            },
+            "engines": {
+                "node": ">=10.0"
             }
         },
         "node_modules/mkdirp-classic": {
@@ -12173,6 +12185,14 @@
                         "yallist": "^4.0.0"
                     }
                 }
+            }
+        },
+        "mixpanel": {
+            "version": "0.17.0",
+            "resolved": "https://registry.npmjs.org/mixpanel/-/mixpanel-0.17.0.tgz",
+            "integrity": "sha512-DY5WeOy/hmkPrNiiZugJpWR0iMuOwuj1a3u0bgwB2eUFRV6oIew/pIahhpawdbNjb+Bye4a8ID3gefeNPvL81g==",
+            "requires": {
+                "https-proxy-agent": "5.0.0"
             }
         },
         "mkdirp-classic": {

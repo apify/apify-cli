@@ -2,18 +2,59 @@ const { Command } = require('@oclif/command');
 const { finished } = require('stream');
 const { promisify } = require('util');
 const { argsToCamelCase } = require('./utils');
+const { maybeTrackTelemetry } = require('./telemetry');
+const { detectInstallationType } = require('./version_check');
+const { detectLocalActorLanguage } = require('./utils');
+const { LANGUAGE, COMMANDS_WITHIN_ACTOR } = require('./consts');
 
 /**
  * Adding parsing flags to oclif Command class
  */
 class ApifyCommand extends Command {
+    async init() {
+        await super.init();
+        // Initialize telemetry data, all attributes are tracked in the finally method
+        this.telemetryData = {};
+    }
+
     parse(cmd) {
         const { flags, args } = super.parse(cmd);
         const parsedFlags = argsToCamelCase(flags);
-        return {
-            flags: parsedFlags,
-            args,
+        this.telemetryData.flagsUsed = Object.keys(parsedFlags);
+        return { flags: parsedFlags, args };
+    }
+
+    async finally(err) {
+        const command = this.id;
+        const eventData = {
+            command,
+            $os: this.config.platform,
+            shell: this.config.shell,
+            arch: this.config.arch,
+            apifyCliVersion: this.config.version,
+            nodeJsVersion: process.version,
+            ...this.telemetryData,
+            error: err ? err.message : null,
         };
+        try {
+            eventData.installationType = await detectInstallationType();
+            if (!this.telemetryData.actorLanguage && command && COMMANDS_WITHIN_ACTOR.includes(command)) {
+                const { language, languageVersion } = detectLocalActorLanguage();
+                eventData.actorLanguage = language;
+                if (language === LANGUAGE.NODEJS) {
+                    eventData.actorNodejsVersion = languageVersion;
+                } else if (language === LANGUAGE.PYTHON) {
+                    eventData.actorPythonVersion = languageVersion;
+                }
+            }
+            await maybeTrackTelemetry({
+                eventName: `cli_command_${command}`,
+                eventData,
+            });
+        } catch (e) {
+            // Ignore errors
+        }
+        return super.finally(err);
     }
 
     /**

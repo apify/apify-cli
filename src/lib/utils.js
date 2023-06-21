@@ -8,7 +8,8 @@ const archiver = require('archiver-promise');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
-const { LOCAL_STORAGE_SUBDIRS,
+const {
+    LOCAL_STORAGE_SUBDIRS,
     ENV_VARS,
     LOCAL_ENV_VARS,
     KEY_VALUE_STORE_KEYS,
@@ -35,6 +36,7 @@ const {
     APIFY_CLIENT_DEFAULT_HEADERS,
     SUPPORTED_NODEJS_VERSION,
     MINIMUM_SUPPORTED_PYTHON_VERSION,
+    LANGUAGE,
 } = require('./consts');
 const {
     ensureFolderExistsSync,
@@ -503,13 +505,13 @@ const updateLocalConfigStructure = (localConfig) => {
  */
 const validateActorName = (actorName) => {
     if (!ACTOR_NAME.REGEX.test(actorName)) {
-        throw new Error('The actor name must be a DNS hostname-friendly string (e.g. my-newest-actor).');
+        throw new Error('The Actor name must be a DNS hostname-friendly string (e.g. my-newest-actor).');
     }
     if (actorName.length < ACTOR_NAME.MIN_LENGTH) {
-        throw new Error('The actor name must be at least 3 characters long.');
+        throw new Error('The Actor name must be at least 3 characters long.');
     }
     if (actorName.length > ACTOR_NAME.MAX_LENGTH) {
-        throw new Error('The actor name must be a maximum of 30 characters long.');
+        throw new Error('The Actor name must be a maximum of 30 characters long.');
     }
 };
 
@@ -580,6 +582,23 @@ const detectNpmVersion = () => {
     }
 };
 
+const detectLocalActorLanguage = () => {
+    const cwd = process.cwd();
+    const isActorInNode = fs.existsSync(path.join(process.cwd(), 'package.json'));
+    const isActorInPython = fs.existsSync(path.join(process.cwd(), 'src/__main__.py'));
+    const result = {};
+    if (isActorInNode) {
+        result.language = LANGUAGE.NODEJS;
+        result.languageVersion = detectNodeVersion();
+    } else if (isActorInPython) {
+        result.language = LANGUAGE.PYTHON;
+        result.languageVersion = detectPythonVersion(cwd);
+    } else {
+        result.language = LANGUAGE.UNKNOWN;
+    }
+    return result;
+};
+
 module.exports = {
     getLoggedClientOrThrow,
     getLocalConfig,
@@ -613,4 +632,5 @@ module.exports = {
     detectNodeVersion,
     isNodeVersionSupported,
     detectNpmVersion,
+    detectLocalActorLanguage,
 };

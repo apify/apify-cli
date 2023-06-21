@@ -11,6 +11,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
 const { getLoggedClient } = require('../lib/utils');
 const { getLocalUserInfo } = require('../lib/utils');
+const { useApifyIdentity } = require('../lib/telemetry');
 
 const CONSOLE_BASE_URL = 'https://console.apify.com/account?tab=integrations';
 // const CONSOLE_BASE_URL = 'http://localhost:3000/account?tab=integrations';
@@ -25,6 +26,7 @@ const tryToLogin = async (token) => {
     const isUserLogged = await getLoggedClient(token, API_BASE_URL);
     const userInfo = getLocalUserInfo();
     if (isUserLogged) {
+        await useApifyIdentity(userInfo.id);
         outputs.success(`You are logged in to Apify as ${userInfo.username || userInfo.id}!`);
     } else {
         outputs.error('Login to Apify failed, the provided API token is not valid.');
