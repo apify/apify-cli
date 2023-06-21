@@ -1,13 +1,13 @@
 const chalk = require('chalk');
 const inquirer = require('inquirer');
 const https = require('https');
-const { finished } = require('stream');
+const { pipeline } = require('stream');
 const { promisify } = require('util');
+const fs = require('fs');
 const { validateActorName } = require('./utils');
 const {
     warning,
 } = require('./outputs');
-const fs = require('fs');
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 
@@ -76,17 +76,10 @@ exports.enhanceReadmeWithLocalSuffix = async (readmePath, manifestPromise) => {
     if (manifest instanceof Error) throw manifest;
 
     try {
-        let localReadmeSuffix = '';
         const suffixStream = await this.httpsGet(manifest.localReadmeSuffixUrl);
-
-        suffixStream.on('data', (chunk) => {
-            localReadmeSuffix += chunk;
-        });
-
-        await promisify(finished)(suffixStream);
-
-        const readmeContent = fs.readFileSync(readmePath, 'utf8');
-        fs.writeFileSync(readmePath, `${readmeContent}\n\n${localReadmeSuffix}`);
+        const readmeStream = fs.createWriteStream(readmePath, { flags: 'a' });
+        readmeStream.write('\n\n');
+        await promisify(pipeline)(suffixStream, readmeStream);
     } catch (err) {
         warning(`Could not append local development instructions to README.md. Cause: ${err.message}`);
     }
