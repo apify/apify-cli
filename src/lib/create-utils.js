@@ -8,6 +8,7 @@ const { validateActorName } = require('./utils');
 const {
     warning,
 } = require('./outputs');
+const { readInputSchema } = require('./input_schema');
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 
@@ -82,6 +83,33 @@ exports.enhanceReadmeWithLocalSuffix = async (readmePath, manifestPromise) => {
         await promisify(pipeline)(suffixStream, readmeStream);
     } catch (err) {
         warning(`Could not append local development instructions to README.md. Cause: ${err.message}`);
+    }
+};
+
+/**
+ * Goes to the Actor directory and creates INPUT.json file from the input schema prefills.
+ * @param {string} actFolderDir
+ */
+exports.createInputFromSchema = async (actFolderDir) => {
+    try {
+        const currentDir = process.cwd();
+        process.chdir(actFolderDir);
+        const { inputSchema } = await readInputSchema();
+
+        if (inputSchema) {
+            const input = Object.keys(inputSchema.properties).reduce((acc, key) => {
+                const { prefill } = inputSchema.properties[key];
+                if (prefill) acc[key] = prefill;
+                return acc;
+            }, {});
+
+            fs.mkdirSync('./storage/key_value_stores/default', { recursive: true });
+            fs.writeFileSync('./storage/key_value_stores/default/INPUT.json', JSON.stringify(input, null, 2));
+        }
+
+        process.chdir(currentDir);
+    } catch (err) {
+        warning(`Could not create INPUT.json file. Cause: ${err.message}`);
     }
 };
 

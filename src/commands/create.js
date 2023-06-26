@@ -23,7 +23,7 @@ const {
     detectNpmVersion,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
-const { httpsGet, ensureValidActorName, getTemplateDefinition, enhanceReadmeWithLocalSuffix } = require('../lib/create-utils');
+const { httpsGet, ensureValidActorName, getTemplateDefinition, enhanceReadmeWithLocalSuffix, createInputFromSchema } = require('../lib/create-utils');
 
 class CreateCommand extends ApifyCommand {
     async run() {
@@ -88,6 +88,7 @@ class CreateCommand extends ApifyCommand {
         const packageJsonPath = path.join(actFolderDir, 'package.json');
         const requirementsTxtPath = path.join(actFolderDir, 'requirements.txt');
         const readmePath = path.join(actFolderDir, 'README.md');
+        await createInputFromSchema(actFolderDir);
 
         // Add localReadmeSuffix which is fetched from manifest to README.md
         // The suffix contains local development instructions
