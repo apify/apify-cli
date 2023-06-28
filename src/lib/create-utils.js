@@ -90,9 +90,10 @@ exports.enhanceReadmeWithLocalSuffix = async (readmePath, manifestPromise) => {
  * Goes to the Actor directory and creates INPUT.json file from the input schema prefills.
  * @param {string} actFolderDir
  */
-exports.createInputFromSchema = async (actFolderDir) => {
+exports.createInputFileFromInputSchema = async (actFolderDir) => {
+    const currentDir = process.cwd();
+
     try {
-        const currentDir = process.cwd();
         process.chdir(actFolderDir);
         const { inputSchema } = await readInputSchema();
 
@@ -103,13 +104,13 @@ exports.createInputFromSchema = async (actFolderDir) => {
                 return acc;
             }, {});
 
-            fs.mkdirSync('./storage/key_value_stores/default', { recursive: true });
-            fs.writeFileSync('./storage/key_value_stores/default/INPUT.json', JSON.stringify(input, null, 2));
+            await fs.mkdir('./storage/key_value_stores/default', { recursive: true });
+            await fs.writeFile('./storage/key_value_stores/default/INPUT.json', JSON.stringify(input, null, 2));
         }
-
-        process.chdir(currentDir);
     } catch (err) {
         warning(`Could not create INPUT.json file. Cause: ${err.message}`);
+    } finally {
+        process.chdir(currentDir);
     }
 };
 
