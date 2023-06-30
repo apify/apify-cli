@@ -77,6 +77,7 @@ const readInputSchema = async (forcePath) => {
  */
 const createPrefilledInputFileFromInputSchema = async (actorFolderDir) => {
     const currentDir = process.cwd();
+    let inputFile = {};
     try {
         process.chdir(actorFolderDir);
         const { inputSchema } = await readInputSchema();
@@ -84,18 +85,17 @@ const createPrefilledInputFileFromInputSchema = async (actorFolderDir) => {
             const validator = new Ajv({ strict: false });
             validateInputSchema(validator, inputSchema);
 
-            const inputFile = _.mapObject(inputSchema.properties, (fieldSchema) => ((fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden')
+            inputFile = _.mapObject(inputSchema.properties, (fieldSchema) => ((fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden')
                 ? fieldSchema.default
                 : fieldSchema.prefill
             ));
-
-            const keyValueStorePath = getLocalKeyValueStorePath();
-            const inputJsonPath = path.join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
-            await writeJsonFile(inputJsonPath, inputFile);
         }
     } catch (err) {
         warning(`Could not create INPUT.json file. Cause: ${err.message}`);
     } finally {
+        const keyValueStorePath = getLocalKeyValueStorePath();
+        const inputJsonPath = path.join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
+        await writeJsonFile(inputJsonPath, inputFile);
         process.chdir(currentDir);
     }
 };

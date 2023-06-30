@@ -10,7 +10,6 @@ const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 const { LOCAL_CONFIG_PATH } = require('../../src/lib/consts');
 
 const actName = 'my-act';
-const ACT_TEMPLATE = 'getting_started_typescript';
 
 describe('apify create', () => {
     beforeEach(() => {
@@ -28,9 +27,11 @@ describe('apify create', () => {
         });
     });
 
-    it('basic template structure with prefilled INPUT.json', async () => {
+    it('basic template structure with empty INPUT.json', async () => {
+        const ACT_TEMPLATE = 'project_empty';
+        const expectedInput = {};
         /* eslint-disable no-unused-expressions */
-        await command.run(['create', actName, '--template', ACT_TEMPLATE]);
+        await command.run(['create', actName, '--template', ACT_TEMPLATE, '--skip-dependency-install']);
 
         // Check that create command won't create the deprecated apify.json file
         // TODO: we can remove this later
@@ -42,16 +43,35 @@ describe('apify create', () => {
         expect(fs.existsSync(path.join(actName, 'package.json'))).to.be.true;
         expect(fs.existsSync(apifyJsonPath)).to.be.false;
         expect(fs.existsSync(actorJsonPath)).to.be.true;
-        expect(loadJson.sync(path.join(actName, getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql({ url: 'https://www.apify.com' });
         expect(loadJson.sync(actorJsonPath).name).to.be.eql(actName);
         expect(fs.existsSync('storage')).to.be.false;
+        expect(loadJson.sync(path.join(actName, getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql(expectedInput);
     });
 
-    afterEach(() => {
+    it('basic template structure with prefilled INPUT.json', async () => {
+        const ACT_TEMPLATE = 'getting_started_typescript';
+        const expectedInput = { url: 'https://www.apify.com' };
+
+        /* eslint-disable no-unused-expressions */
+        await command.run(['create', actName, '--template', ACT_TEMPLATE, '--skip-dependency-install']);
+
+        // Check that create command won't create the deprecated apify.json file
+        // TODO: we can remove this later
+        const apifyJsonPath = path.join(actName, 'apify.json');
+        const actorJsonPath = path.join(actName, LOCAL_CONFIG_PATH);
+
+        // check files structure
+        expect(fs.existsSync(actName)).to.be.true;
+        expect(fs.existsSync(path.join(actName, 'package.json'))).to.be.true;
+        expect(fs.existsSync(apifyJsonPath)).to.be.false;
+        expect(fs.existsSync(actorJsonPath)).to.be.true;
+        expect(loadJson.sync(actorJsonPath).name).to.be.eql(actName);
+        expect(fs.existsSync('storage')).to.be.false;
+        expect(loadJson.sync(path.join(actName, getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql(expectedInput);
+    });
+
+    afterEach(async () => {
         console.log.restore();
-    });
-
-    after(async () => {
         if (fs.existsSync(actName)) await rimrafPromised(actName);
     });
 });

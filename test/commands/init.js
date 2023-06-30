@@ -18,7 +18,7 @@ describe('apify init', () => {
         process.chdir(actName);
     });
 
-    it('correctly creates basic structure', async () => {
+    it('correctly creates basic structure with empty INPUT.json', async () => {
         await command.run(['init', actName]);
 
         // Check that it won't create deprecated config
@@ -27,6 +27,7 @@ describe('apify init', () => {
         expect(fs.existsSync(apifyJsonPath)).to.be.eql(false);
 
         expect(loadJson.sync(LOCAL_CONFIG_PATH)).to.be.eql(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
+        expect(loadJson.sync(path.join(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql({});
     });
 
     it('correctly creates structure with prefilled INPUT.json', async () => {
