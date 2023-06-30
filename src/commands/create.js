@@ -23,7 +23,13 @@ const {
     detectNpmVersion,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
-const { httpsGet, ensureValidActorName, getTemplateDefinition, enhanceReadmeWithLocalSuffix, createInputFromSchema } = require('../lib/create-utils');
+const {
+    httpsGet,
+    ensureValidActorName,
+    getTemplateDefinition,
+    enhanceReadmeWithLocalSuffix,
+    createPrefilledInputFileFromInputSchema,
+} = require('../lib/create-utils');
 
 class CreateCommand extends ApifyCommand {
     async run() {
@@ -80,6 +86,8 @@ class CreateCommand extends ApifyCommand {
         const zip = new AdmZip(Buffer.concat(chunks));
         zip.extractAllTo(actFolderDir, true);
 
+        // Create prefilled INPUT.json file from the input schema prefills
+        await createPrefilledInputFileFromInputSchema(actFolderDir);
         // There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
         const localConfig = await getJsonFileContent(path.join(actFolderDir, LOCAL_CONFIG_PATH));
         await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), actFolderDir);
@@ -88,7 +96,6 @@ class CreateCommand extends ApifyCommand {
         const packageJsonPath = path.join(actFolderDir, 'package.json');
         const requirementsTxtPath = path.join(actFolderDir, 'requirements.txt');
         const readmePath = path.join(actFolderDir, 'README.md');
-        await createInputFromSchema(actFolderDir);
 
         // Add localReadmeSuffix which is fetched from manifest to README.md
         // The suffix contains local development instructions

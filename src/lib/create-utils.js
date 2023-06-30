@@ -4,7 +4,11 @@ const https = require('https');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
 const fs = require('fs');
-const { validateActorName } = require('./utils');
+const { default: ow } = require('ow');
+const _ = require('underscore');
+const { KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const path = require('path');
+const { validateActorName, getLocalKeyValueStorePath } = require('./utils');
 const {
     warning,
 } = require('./outputs');
@@ -88,24 +92,32 @@ exports.enhanceReadmeWithLocalSuffix = async (readmePath, manifestPromise) => {
 
 /**
  * Goes to the Actor directory and creates INPUT.json file from the input schema prefills.
- * @param {string} actFolderDir
+ * @param {string} actorFolderDir
  */
-exports.createInputFileFromInputSchema = async (actFolderDir) => {
+exports.createPrefilledInputFileFromInputSchema = async (actorFolderDir) => {
     const currentDir = process.cwd();
-
     try {
-        process.chdir(actFolderDir);
+        process.chdir(actorFolderDir);
         const { inputSchema } = await readInputSchema();
 
+        /**
+         * TODO: This is copied from @apify-packages/actor -> getPrefillFromInputSchema
+         * It is not possible to install the package here as it is private.
+         * We should move the function to apify-shared-js package and use it from there.
+         */
         if (inputSchema) {
-            const input = Object.keys(inputSchema.properties).reduce((acc, key) => {
-                const { prefill } = inputSchema.properties[key];
-                if (prefill) acc[key] = prefill;
-                return acc;
-            }, {});
+            ow(inputSchema, ow.object.partialShape({
+                properties: ow.object,
+            }));
 
-            await fs.mkdir('./storage/key_value_stores/default', { recursive: true });
-            await fs.writeFile('./storage/key_value_stores/default/INPUT.json', JSON.stringify(input, null, 2));
+            const inputFile = _.mapObject(inputSchema.properties, (fieldSchema) => ((fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden')
+                ? fieldSchema.default
+                : fieldSchema.prefill
+            ));
+
+            const keyValueStorePath = getLocalKeyValueStorePath();
+            const inputJsonPath = path.join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
+            await promisify(fs.writeFile)(inputJsonPath, JSON.stringify(inputFile, null, 2));
         }
     } catch (err) {
         warning(`Could not create INPUT.json file. Cause: ${err.message}`);

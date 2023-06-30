@@ -9,7 +9,7 @@ const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 const { LOCAL_CONFIG_PATH } = require('../../src/lib/consts');
 
 const actName = 'my-act';
-const ACT_TEMPLATE = 'project_empty';
+const ACT_TEMPLATE = 'getting_started_typescript';
 
 describe('apify create', () => {
     beforeEach(() => {
@@ -42,6 +42,7 @@ describe('apify create', () => {
         expect(fs.existsSync(apifyJsonPath)).to.be.false;
         expect(fs.existsSync(actorJsonPath)).to.be.true;
         expect(fs.existsSync(path.join(actName, getLocalKeyValueStorePath(), 'INPUT.json'))).to.be.true;
+        expect(JSON.parse(fs.readFileSync(path.join(actName, getLocalKeyValueStorePath(), 'INPUT.json')))).to.be.eql({ url: 'https://www.apify.com' });
         expect(loadJson.sync(actorJsonPath).name).to.be.eql(actName);
         expect(fs.existsSync('storage')).to.be.false;
     });
