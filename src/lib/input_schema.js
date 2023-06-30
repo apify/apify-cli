@@ -81,7 +81,13 @@ const createPrefilledInputFileFromInputSchema = async (actorFolderDir) => {
     try {
         process.chdir(actorFolderDir);
         const { inputSchema } = await readInputSchema();
+
         if (inputSchema) {
+            /**
+             * TODO: The logic is copied from @apify-packages/actor -> getPrefillFromInputSchema
+             * It is not possible to install the package here because it is private
+             * We should move it to @apify/input_schema and use it from there.
+             */
             const validator = new Ajv({ strict: false });
             validateInputSchema(validator, inputSchema);
 
