@@ -1,7 +1,13 @@
 const fs = require('fs');
 const path = require('path');
+const Ajv = require('ajv');
+const { validateInputSchema } = require('@apify/input_schema');
+const _ = require('underscore');
+const { KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const writeJsonFile = require('write-json-file');
 const { ACTOR_SPECIFICATION_FOLDER } = require('./consts');
-const { getLocalConfig, getJsonFileContent } = require('./utils');
+const { getLocalConfig, getJsonFileContent, getLocalKeyValueStorePath } = require('./utils');
+const { warning } = require('./outputs');
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
     '.actor/INPUT_SCHEMA.json',
@@ -65,6 +71,36 @@ const readInputSchema = async (forcePath) => {
     };
 };
 
+/**
+ * Goes to the Actor directory and creates INPUT.json file from the input schema prefills.
+ * @param {string} actorFolderDir
+ */
+const createPrefilledInputFileFromInputSchema = async (actorFolderDir) => {
+    const currentDir = process.cwd();
+    try {
+        process.chdir(actorFolderDir);
+        const { inputSchema } = await readInputSchema();
+        if (inputSchema) {
+            const validator = new Ajv({ strict: false });
+            validateInputSchema(validator, inputSchema);
+
+            const inputFile = _.mapObject(inputSchema.properties, (fieldSchema) => ((fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden')
+                ? fieldSchema.default
+                : fieldSchema.prefill
+            ));
+
+            const keyValueStorePath = getLocalKeyValueStorePath();
+            const inputJsonPath = path.join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
+            await writeJsonFile(inputJsonPath, inputFile);
+        }
+    } catch (err) {
+        warning(`Could not create INPUT.json file. Cause: ${err.message}`);
+    } finally {
+        process.chdir(currentDir);
+    }
+};
+
 module.exports = {
     readInputSchema,
+    createPrefilledInputFileFromInputSchema,
 };

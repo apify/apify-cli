@@ -4,6 +4,7 @@ const sinon = require('sinon');
 const command = require('@oclif/command');
 const path = require('path');
 const loadJson = require('load-json-file');
+const { KEY_VALUE_STORE_KEYS } = require('@apify/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 const { LOCAL_CONFIG_PATH } = require('../../src/lib/consts');
@@ -27,7 +28,7 @@ describe('apify create', () => {
         });
     });
 
-    it('basic template structure', async () => {
+    it('basic template structure with prefilled INPUT.json', async () => {
         /* eslint-disable no-unused-expressions */
         await command.run(['create', actName, '--template', ACT_TEMPLATE]);
 
@@ -41,8 +42,7 @@ describe('apify create', () => {
         expect(fs.existsSync(path.join(actName, 'package.json'))).to.be.true;
         expect(fs.existsSync(apifyJsonPath)).to.be.false;
         expect(fs.existsSync(actorJsonPath)).to.be.true;
-        expect(fs.existsSync(path.join(actName, getLocalKeyValueStorePath(), 'INPUT.json'))).to.be.true;
-        expect(JSON.parse(fs.readFileSync(path.join(actName, getLocalKeyValueStorePath(), 'INPUT.json')))).to.be.eql({ url: 'https://www.apify.com' });
+        expect(loadJson.sync(path.join(actName, getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql({ url: 'https://www.apify.com' });
         expect(loadJson.sync(actorJsonPath).name).to.be.eql(actName);
         expect(fs.existsSync('storage')).to.be.false;
     });

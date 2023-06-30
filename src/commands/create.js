@@ -28,8 +28,8 @@ const {
     ensureValidActorName,
     getTemplateDefinition,
     enhanceReadmeWithLocalSuffix,
-    createPrefilledInputFileFromInputSchema,
 } = require('../lib/create-utils');
+const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
 
 class CreateCommand extends ApifyCommand {
     async run() {
@@ -86,12 +86,13 @@ class CreateCommand extends ApifyCommand {
         const zip = new AdmZip(Buffer.concat(chunks));
         zip.extractAllTo(actFolderDir, true);
 
-        // Create prefilled INPUT.json file from the input schema prefills
-        await createPrefilledInputFileFromInputSchema(actFolderDir);
         // There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
         const localConfig = await getJsonFileContent(path.join(actFolderDir, LOCAL_CONFIG_PATH));
         await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), actFolderDir);
         await setLocalEnv(actFolderDir);
+
+        // Create prefilled INPUT.json file from the input schema prefills
+        await createPrefilledInputFileFromInputSchema(actFolderDir);
 
         const packageJsonPath = path.join(actFolderDir, 'package.json');
         const requirementsTxtPath = path.join(actFolderDir, 'requirements.txt');
