@@ -4,6 +4,7 @@ const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
 const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR, LOCAL_CONFIG_PATH } = require('../lib/consts');
+const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
 
 class InitCommand extends ApifyCommand {
     async run() {
@@ -23,6 +24,8 @@ class InitCommand extends ApifyCommand {
             await setLocalConfig(Object.assign(localConfig, { name: actorName }), cwd);
         }
         await setLocalEnv(cwd);
+        // Create prefilled INPUT.json file from the input schema prefills
+        await createPrefilledInputFileFromInputSchema(cwd);
         outputs.success('The Apify actor has been initialized in the current directory.');
     }
 }

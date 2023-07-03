@@ -40,7 +40,7 @@ describe('apify run', () => {
             console.log('Done.');
         });
         `;
-        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+        fs.writeFileSync('src/main.js', actCode, { flag: 'w' });
 
         await command.run(['run']);
 
@@ -65,7 +65,7 @@ describe('apify run', () => {
             console.log('Done.');
         });
         `;
-        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+        fs.writeFileSync('src/main.js', actCode, { flag: 'w' });
         const apifyJson = EMPTY_LOCAL_CONFIG;
         apifyJson.environmentVariables = testEnvVars;
         writeJson.sync(LOCAL_CONFIG_PATH, apifyJson);
@@ -104,7 +104,7 @@ describe('apify run', () => {
             await requestQueue.addRequest({ url: 'http://example.com/' });
         });
         `;
-        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+        fs.writeFileSync('src/main.js', actCode, { flag: 'w' });
 
         await command.run(['run']);
 
@@ -118,7 +118,7 @@ describe('apify run', () => {
 
         Actor.main(async () => {});
         `;
-        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+        fs.writeFileSync('src/main.js', actCode, { flag: 'w' });
 
         await command.run(['run', '--purge']);
 

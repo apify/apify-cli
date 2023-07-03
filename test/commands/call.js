@@ -68,7 +68,7 @@ describe('apify call', () => {
             console.log('Done.');
         });
         `;
-        fs.writeFileSync('main.js', actCode, { flag: 'w' });
+        fs.writeFileSync('src/main.js', actCode, { flag: 'w' });
 
         const inputFile = path.join(getLocalKeyValueStorePath(), 'INPUT.json');
 

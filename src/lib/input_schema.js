@@ -1,7 +1,13 @@
 const fs = require('fs');
 const path = require('path');
+const Ajv = require('ajv');
+const { validateInputSchema } = require('@apify/input_schema');
+const _ = require('underscore');
+const { KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const writeJsonFile = require('write-json-file');
 const { ACTOR_SPECIFICATION_FOLDER } = require('./consts');
-const { getLocalConfig, getJsonFileContent } = require('./utils');
+const { getLocalConfig, getJsonFileContent, getLocalKeyValueStorePath } = require('./utils');
+const { warning } = require('./outputs');
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
     '.actor/INPUT_SCHEMA.json',
@@ -65,6 +71,42 @@ const readInputSchema = async (forcePath) => {
     };
 };
 
+/**
+ * Goes to the Actor directory and creates INPUT.json file from the input schema prefills.
+ * @param {string} actorFolderDir
+ */
+const createPrefilledInputFileFromInputSchema = async (actorFolderDir) => {
+    const currentDir = process.cwd();
+    let inputFile = {};
+    try {
+        process.chdir(actorFolderDir);
+        const { inputSchema } = await readInputSchema();
+
+        if (inputSchema) {
+            /**
+             * TODO: The logic is copied from @apify-packages/actor -> getPrefillFromInputSchema
+             * It is not possible to install the package here because it is private
+             * We should move it to @apify/input_schema and use it from there.
+             */
+            const validator = new Ajv({ strict: false });
+            validateInputSchema(validator, inputSchema);
+
+            inputFile = _.mapObject(inputSchema.properties, (fieldSchema) => ((fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden')
+                ? fieldSchema.default
+                : fieldSchema.prefill
+            ));
+        }
+    } catch (err) {
+        warning(`Could not create default input based on input schema, creating empty input instead. Cause: ${err.message}`);
+    } finally {
+        const keyValueStorePath = getLocalKeyValueStorePath();
+        const inputJsonPath = path.join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
+        await writeJsonFile(inputJsonPath, inputFile);
+        process.chdir(currentDir);
+    }
+};
+
 module.exports = {
     readInputSchema,
+    createPrefilledInputFileFromInputSchema,
 };

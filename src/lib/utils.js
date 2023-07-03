@@ -237,7 +237,6 @@ const GITIGNORE_REQUIRED_CONTENTS = [getLocalStorageDir(), 'node_modules', '.ven
 const setLocalEnv = async (actDir) => {
     // Create folders for emulation Apify stores
     const keyValueStorePath = getLocalKeyValueStorePath();
-    const inputJsonPath = path.join(actDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
     ensureFolderExistsSync(actDir, getLocalDatasetPath());
     ensureFolderExistsSync(actDir, getLocalRequestQueuePath());
     ensureFolderExistsSync(actDir, keyValueStorePath);
@@ -263,11 +262,6 @@ const setLocalEnv = async (actDir) => {
         } else {
             fs.writeFileSync(gitignorePath, `${gitignoreAdditions.join('\n')}\n`, { flag: 'w' });
         }
-    }
-
-    // Create an empty INPUT.json file if it does not exist.
-    if (!fs.existsSync(inputJsonPath)) {
-        writeJson.sync(inputJsonPath, {});
     }
 };
 
@@ -365,14 +359,14 @@ const createActZip = async (zipName, pathsToZip) => {
 const getLocalInput = () => {
     const defaultLocalStorePath = getLocalKeyValueStorePath();
     const files = fs.readdirSync(defaultLocalStorePath);
-    const inputFileName = files.find((file) => !!file.match(INPUT_FILE_REG_EXP));
+    const inputName = files.find((file) => !!file.match(INPUT_FILE_REG_EXP));
 
     // No input file
-    if (!inputFileName) return;
+    if (!inputName) return;
 
-    const inputFile = fs.readFileSync(path.join(defaultLocalStorePath, inputFileName));
-    const contentType = mime.getType(inputFileName);
-    return { body: inputFile, contentType };
+    const input = fs.readFileSync(path.join(defaultLocalStorePath, inputName));
+    const contentType = mime.getType(inputName);
+    return { body: input, contentType };
 };
 
 const purgeDefaultQueue = async () => {

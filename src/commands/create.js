@@ -23,7 +23,13 @@ const {
     detectNpmVersion,
 } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
-const { httpsGet, ensureValidActorName, getTemplateDefinition, enhanceReadmeWithLocalSuffix } = require('../lib/create-utils');
+const {
+    httpsGet,
+    ensureValidActorName,
+    getTemplateDefinition,
+    enhanceReadmeWithLocalSuffix,
+} = require('../lib/create-utils');
+const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
 
 class CreateCommand extends ApifyCommand {
     async run() {
@@ -84,6 +90,9 @@ class CreateCommand extends ApifyCommand {
         const localConfig = await getJsonFileContent(path.join(actFolderDir, LOCAL_CONFIG_PATH));
         await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), actFolderDir);
         await setLocalEnv(actFolderDir);
+
+        // Create prefilled INPUT.json file from the input schema prefills
+        await createPrefilledInputFileFromInputSchema(actFolderDir);
 
         const packageJsonPath = path.join(actFolderDir, 'package.json');
         const requirementsTxtPath = path.join(actFolderDir, 'requirements.txt');
