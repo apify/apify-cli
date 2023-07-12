@@ -3,7 +3,7 @@ const { pipeline } = require('stream');
 const { promisify } = require('util');
 const { default: ow } = require('ow');
 const { MemoryStorage } = require('@crawlee/memory-storage');
-const { ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const { ACTOR_ENV_VARS, APIFY_ENV_VARS, LOCAL_ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
 const { getLocalUserInfo, getLocalStorageDir, getApifyClientOptions } = require('./utils');
 
 const pipelinePromise = promisify(pipeline);
@@ -31,7 +31,7 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
     }
 
     // NOTE: Token in env var overrides token in local auth file.
-    let apifyToken = process.env[ENV_VARS.TOKEN];
+    let apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
     if (!apifyToken) {
         const localUserInfo = getLocalUserInfo();
         if (!localUserInfo || !localUserInfo.token) {
@@ -53,12 +53,12 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
  * @return {string}
  */
 const getDefaultStorageId = (storeType) => {
-    const isRunningOnApify = !process.env[ENV_VARS.LOCAL_STORAGE_DIR];
-    const envVarName = ENV_VARS[`DEFAULT_${storeType}_ID`];
+    const isRunningOnApify = !process.env[APIFY_ENV_VARS.LOCAL_STORAGE_DIR];
+    const envVarName = APIFY_ENV_VARS[`DEFAULT_${storeType}_ID`]; // TODO: Use Actor env vars
     const storeId = process.env[envVarName];
     if (isRunningOnApify && !storeId) {
         throw new Error(`Default storage ID is not set. You can set it using the environment `
-        + `variable ${envVarName} or use local storage with setting ${ENV_VARS.LOCAL_STORAGE_DIR} variable.`);
+        + `variable ${envVarName} or use local storage with setting ${APIFY_ENV_VARS.LOCAL_STORAGE_DIR} variable.`);
     }
 
     return storeId || LOCAL_ENV_VARS[envVarName];
@@ -82,7 +82,7 @@ const outputRecordFromDefaultStore = async (key) => {
 };
 
 const outputInputFromDefaultStore = async () => {
-    return outputRecordFromDefaultStore(process.env[ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT);
+    return outputRecordFromDefaultStore(process.env[ACTOR_ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT);
 };
 
 module.exports = {

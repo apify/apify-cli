@@ -10,7 +10,7 @@ const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
 const {
     LOCAL_STORAGE_SUBDIRS,
-    ENV_VARS,
+    APIFY_ENV_VARS,
     LOCAL_ENV_VARS,
     KEY_VALUE_STORE_KEYS,
     ACT_JOB_TERMINAL_STATUSES,
@@ -51,24 +51,24 @@ const {
 const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
 
 const getLocalStorageDir = () => {
-    const envVar = ENV_VARS.LOCAL_STORAGE_DIR;
+    const envVar = APIFY_ENV_VARS.LOCAL_STORAGE_DIR;
 
     return process.env[envVar] || DEFAULT_LOCAL_STORAGE_DIR;
 };
 const getLocalKeyValueStorePath = (storeId) => {
-    const envVar = ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
+    const envVar = APIFY_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID; // TODO: Use Actor env var
     const storeDir = storeId || process.env[envVar] || LOCAL_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.keyValueStores, storeDir);
 };
 const getLocalDatasetPath = (storeId) => {
-    const envVar = ENV_VARS.DEFAULT_DATASET_ID;
+    const envVar = APIFY_ENV_VARS.DEFAULT_DATASET_ID; // TODO: Use Actor env var
     const storeDir = storeId || process.env[envVar] || LOCAL_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.datasets, storeDir);
 };
 const getLocalRequestQueuePath = (storeId) => {
-    const envVar = ENV_VARS.DEFAULT_REQUEST_QUEUE_ID;
+    const envVar = APIFY_ENV_VARS.DEFAULT_REQUEST_QUEUE_ID; // TODO: Use Actor env var
     const storeDir = storeId || process.env[envVar] || LOCAL_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.requestQueues, storeDir);
