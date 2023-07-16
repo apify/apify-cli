@@ -11,7 +11,7 @@ const inquirer = require('inquirer');
 const {
     ACT_JOB_TERMINAL_STATUSES,
     ACTOR_ENV_VARS,
-    ACTOR_LOCAL_ENV_VARS,
+    LOCAL_ACTOR_ENV_VARS,
     ACTOR_NAME,
     APIFY_ENV_VARS,
     KEY_VALUE_STORE_KEYS,
@@ -58,19 +58,19 @@ const getLocalStorageDir = () => {
 };
 const getLocalKeyValueStorePath = (storeId) => {
     const envVar = ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
-    const storeDir = storeId || process.env[envVar] || ACTOR_LOCAL_ENV_VARS[envVar];
+    const storeDir = storeId || process.env[envVar] || LOCAL_ACTOR_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.keyValueStores, storeDir);
 };
 const getLocalDatasetPath = (storeId) => {
     const envVar = ACTOR_ENV_VARS.DEFAULT_DATASET_ID;
-    const storeDir = storeId || process.env[envVar] || ACTOR_LOCAL_ENV_VARS[envVar];
+    const storeDir = storeId || process.env[envVar] || LOCAL_ACTOR_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.datasets, storeDir);
 };
 const getLocalRequestQueuePath = (storeId) => {
     const envVar = ACTOR_ENV_VARS.DEFAULT_REQUEST_QUEUE_ID;
-    const storeDir = storeId || process.env[envVar] || ACTOR_LOCAL_ENV_VARS[envVar];
+    const storeDir = storeId || process.env[envVar] || LOCAL_ACTOR_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.requestQueues, storeDir);
 };

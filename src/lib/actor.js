@@ -3,7 +3,7 @@ const { pipeline } = require('stream');
 const { promisify } = require('util');
 const { default: ow } = require('ow');
 const { MemoryStorage } = require('@crawlee/memory-storage');
-const { ACTOR_ENV_VARS, ACTOR_LOCAL_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const { ACTOR_ENV_VARS, LOCAL_ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
 const { getLocalUserInfo, getLocalStorageDir, getApifyClientOptions } = require('./utils');
 
 const pipelinePromise = promisify(pipeline);
@@ -61,7 +61,7 @@ const getDefaultStorageId = (storeType) => {
         + `variable ${envVarName} or use local storage with setting ${APIFY_ENV_VARS.LOCAL_STORAGE_DIR} variable.`);
     }
 
-    return storeId || ACTOR_LOCAL_ENV_VARS[envVarName];
+    return storeId || LOCAL_ACTOR_ENV_VARS[envVarName];
 };
 
 /**
