@@ -11,7 +11,7 @@
             "license": "Apache-2.0",
             "dependencies": {
                 "@apify/actor-templates": "^0.1.3",
-                "@apify/consts": "^2.19.0",
+                "@apify/consts": "^2.20.0",
                 "@apify/input_schema": "^3.3.0",
                 "@apify/utilities": "^2.2.3",
                 "@crawlee/memory-storage": "^3.0.3",
@@ -72,9 +72,9 @@
             "integrity": "sha512-sEASkPNvZ2ZWqSyUftJYhZo5EyWOqSnuVyQOzNDzvnYqN7Ev/H4f4tHas84BxWRdI8GPsIXLnArg0p4b6QrhJw=="
         },
         "node_modules/@apify/consts": {
-            "version": "2.19.0",
-            "resolved": "https://registry.npmjs.org/@apify/consts/-/consts-2.19.0.tgz",
-            "integrity": "sha512-ndDk2U1/7pgj8sVywH/R0pQ9BdPcCtM/QqFTZzUyQD2nHBWHQh0QYx4kt6G4pFbtdPCznR0mtpMzANtuntbkdg=="
+            "version": "2.20.0",
+            "resolved": "https://registry.npmjs.org/@apify/consts/-/consts-2.20.0.tgz",
+            "integrity": "sha512-1vvMsSN2WG7b4zMLMj/LI6PIT94XH4Nr15mizEe+qi8xob5Y+g5LxOBR4qQQ1GlunsGBlrXo0v3dWMcVd4lRLQ=="
         },
         "node_modules/@apify/eslint-config": {
             "version": "0.2.4",
@@ -8151,9 +8151,9 @@
             "integrity": "sha512-sEASkPNvZ2ZWqSyUftJYhZo5EyWOqSnuVyQOzNDzvnYqN7Ev/H4f4tHas84BxWRdI8GPsIXLnArg0p4b6QrhJw=="
         },
         "@apify/consts": {
-            "version": "2.19.0",
-            "resolved": "https://registry.npmjs.org/@apify/consts/-/consts-2.19.0.tgz",
-            "integrity": "sha512-ndDk2U1/7pgj8sVywH/R0pQ9BdPcCtM/QqFTZzUyQD2nHBWHQh0QYx4kt6G4pFbtdPCznR0mtpMzANtuntbkdg=="
+            "version": "2.20.0",
+            "resolved": "https://registry.npmjs.org/@apify/consts/-/consts-2.20.0.tgz",
+            "integrity": "sha512-1vvMsSN2WG7b4zMLMj/LI6PIT94XH4Nr15mizEe+qi8xob5Y+g5LxOBR4qQQ1GlunsGBlrXo0v3dWMcVd4lRLQ=="
         },
         "@apify/eslint-config": {
             "version": "0.2.4",

@@ -57,19 +57,19 @@ const getLocalStorageDir = () => {
     return process.env[envVar] || DEFAULT_LOCAL_STORAGE_DIR;
 };
 const getLocalKeyValueStorePath = (storeId) => {
-    const envVar = ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID; // TODO: fallback to apify env var
+    const envVar = ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
     const storeDir = storeId || process.env[envVar] || ACTOR_LOCAL_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.keyValueStores, storeDir);
 };
 const getLocalDatasetPath = (storeId) => {
-    const envVar = ACTOR_ENV_VARS.DEFAULT_DATASET_ID; // TODO: fallback to apify env var
+    const envVar = ACTOR_ENV_VARS.DEFAULT_DATASET_ID;
     const storeDir = storeId || process.env[envVar] || ACTOR_LOCAL_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.datasets, storeDir);
 };
 const getLocalRequestQueuePath = (storeId) => {
-    const envVar = ACTOR_ENV_VARS.DEFAULT_REQUEST_QUEUE_ID; // TODO: fallback to apify env var
+    const envVar = ACTOR_ENV_VARS.DEFAULT_REQUEST_QUEUE_ID;
     const storeDir = storeId || process.env[envVar] || ACTOR_LOCAL_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.requestQueues, storeDir);

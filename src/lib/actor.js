@@ -55,14 +55,13 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
 const getDefaultStorageId = (storeType) => {
     const isRunningOnApify = !process.env[APIFY_ENV_VARS.LOCAL_STORAGE_DIR]; // TODO: wtf is this??? we have "IS_AT_HOME"...
     const envVarName = ACTOR_ENV_VARS[`DEFAULT_${storeType}_ID`];
-    const fallbackEnvVarName = APIFY_ENV_VARS[`DEFAULT_${storeType}_ID`];
-    const storeId = process.env[envVarName] || process.env[fallbackEnvVarName];
-    if (isRunningOnApify && !storeId) { // this condition means it wil complain when running in the cloud? wtf?
+    const storeId = process.env[envVarName];
+    if (isRunningOnApify && !storeId) { // TODO: this condition means it wil complain when running in the cloud? wtf?
         throw new Error(`Default storage ID is not set. You can set it using the environment `
         + `variable ${envVarName} or use local storage with setting ${APIFY_ENV_VARS.LOCAL_STORAGE_DIR} variable.`);
     }
 
-    return storeId || ACTOR_LOCAL_ENV_VARS[envVarName]; // TODO: Wtf 2???
+    return storeId || ACTOR_LOCAL_ENV_VARS[envVarName];
 };
 
 /**
@@ -83,7 +82,7 @@ const outputRecordFromDefaultStore = async (key) => {
 };
 
 const outputInputFromDefaultStore = async () => {
-    return outputRecordFromDefaultStore(process.env[ACTOR_ENV_VARS.INPUT_KEY] || process.env[APIFY_ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT);
+    return outputRecordFromDefaultStore(process.env[ACTOR_ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT);
 };
 
 module.exports = {
