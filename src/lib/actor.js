@@ -53,15 +53,9 @@ const getApifyStorageClient = (options = {}, forceCloud = false) => {
  * @return {string}
  */
 const getDefaultStorageId = (storeType) => {
-    const isRunningOnApify = !process.env[APIFY_ENV_VARS.LOCAL_STORAGE_DIR]; // TODO: wtf is this??? we have "IS_AT_HOME"...
     const envVarName = ACTOR_ENV_VARS[`DEFAULT_${storeType}_ID`];
-    const storeId = process.env[envVarName];
-    if (isRunningOnApify && !storeId) { // TODO: this condition means it wil complain when running in the cloud? wtf?
-        throw new Error(`Default storage ID is not set. You can set it using the environment `
-        + `variable ${envVarName} or use local storage with setting ${APIFY_ENV_VARS.LOCAL_STORAGE_DIR} variable.`);
-    }
 
-    return storeId || LOCAL_ACTOR_ENV_VARS[envVarName];
+    return process.env[envVarName] || LOCAL_ACTOR_ENV_VARS[envVarName];
 };
 
 /**
