@@ -9,13 +9,14 @@ const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 const inquirer = require('inquirer');
 const {
-    LOCAL_STORAGE_SUBDIRS,
-    ENV_VARS,
-    LOCAL_ENV_VARS,
-    KEY_VALUE_STORE_KEYS,
     ACT_JOB_TERMINAL_STATUSES,
-    SOURCE_FILE_FORMATS,
+    ACTOR_ENV_VARS,
+    LOCAL_ACTOR_ENV_VARS,
     ACTOR_NAME,
+    APIFY_ENV_VARS,
+    KEY_VALUE_STORE_KEYS,
+    LOCAL_STORAGE_SUBDIRS,
+    SOURCE_FILE_FORMATS,
 } = require('@apify/consts');
 const https = require('https');
 const { ApifyClient } = require('apify-client');
@@ -51,25 +52,25 @@ const {
 const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
 
 const getLocalStorageDir = () => {
-    const envVar = ENV_VARS.LOCAL_STORAGE_DIR;
+    const envVar = APIFY_ENV_VARS.LOCAL_STORAGE_DIR;
 
     return process.env[envVar] || DEFAULT_LOCAL_STORAGE_DIR;
 };
 const getLocalKeyValueStorePath = (storeId) => {
-    const envVar = ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
-    const storeDir = storeId || process.env[envVar] || LOCAL_ENV_VARS[envVar];
+    const envVar = ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
+    const storeDir = storeId || process.env[envVar] || LOCAL_ACTOR_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.keyValueStores, storeDir);
 };
 const getLocalDatasetPath = (storeId) => {
-    const envVar = ENV_VARS.DEFAULT_DATASET_ID;
-    const storeDir = storeId || process.env[envVar] || LOCAL_ENV_VARS[envVar];
+    const envVar = ACTOR_ENV_VARS.DEFAULT_DATASET_ID;
+    const storeDir = storeId || process.env[envVar] || LOCAL_ACTOR_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.datasets, storeDir);
 };
 const getLocalRequestQueuePath = (storeId) => {
-    const envVar = ENV_VARS.DEFAULT_REQUEST_QUEUE_ID;
-    const storeDir = storeId || process.env[envVar] || LOCAL_ENV_VARS[envVar];
+    const envVar = ACTOR_ENV_VARS.DEFAULT_REQUEST_QUEUE_ID;
+    const storeDir = storeId || process.env[envVar] || LOCAL_ACTOR_ENV_VARS[envVar];
 
     return path.join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.requestQueues, storeDir);
 };

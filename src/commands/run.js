@@ -2,7 +2,7 @@ const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
 const loadJson = require('load-json-file');
-const { ENV_VARS } = require('@apify/consts');
+const { APIFY_ENV_VARS } = require('@apify/consts');
 const semver = require('semver');
 const execWithLog = require('../lib/exec');
 const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE } = require('../lib/consts');
@@ -69,11 +69,11 @@ class RunCommand extends ApifyCommand {
 
         // Attach env vars from local config files
         const localEnvVars = {
-            [ENV_VARS.LOCAL_STORAGE_DIR]: DEFAULT_LOCAL_STORAGE_DIR,
+            [APIFY_ENV_VARS.LOCAL_STORAGE_DIR]: DEFAULT_LOCAL_STORAGE_DIR,
         };
-        if (proxy && proxy.password) localEnvVars[ENV_VARS.PROXY_PASSWORD] = proxy.password;
-        if (userId) localEnvVars[ENV_VARS.USER_ID] = userId;
-        if (token) localEnvVars[ENV_VARS.TOKEN] = token;
+        if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
+        if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
+        if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
         if (localConfig.environmentVariables) {
             const updatedEnv = replaceSecretsValue(localConfig.environmentVariables);
             Object.assign(localEnvVars, updatedEnv);

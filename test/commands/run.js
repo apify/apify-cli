@@ -4,7 +4,7 @@ const command = require('@oclif/command');
 const path = require('path');
 const writeJson = require('write-json-file');
 const loadJson = require('load-json-file');
-const { ENV_VARS } = require('@apify/consts');
+const { APIFY_ENV_VARS } = require('@apify/consts');
 const { AUTH_FILE_PATH, LOCAL_CONFIG_PATH, EMPTY_LOCAL_CONFIG } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const { TEST_USER_TOKEN } = require('./config');
@@ -77,9 +77,9 @@ describe('apify run', () => {
         const localEnvVars = loadJson.sync(actOutputPath);
         const auth = loadJson.sync(AUTH_FILE_PATH);
 
-        expect(localEnvVars[ENV_VARS.PROXY_PASSWORD]).to.be.eql(auth.proxy.password);
-        expect(localEnvVars[ENV_VARS.USER_ID]).to.be.eql(auth.id);
-        expect(localEnvVars[ENV_VARS.TOKEN]).to.be.eql(auth.token);
+        expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).to.be.eql(auth.proxy.password);
+        expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).to.be.eql(auth.id);
+        expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).to.be.eql(auth.token);
         expect(localEnvVars.TEST_LOCAL).to.be.eql(testEnvVars.TEST_LOCAL);
 
         await command.run(['logout']);
