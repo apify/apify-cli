@@ -5,8 +5,7 @@ const { externalLinkProcessor } = require('./tools/utils/externalLink');
 const { absoluteUrl } = config;
 /** @type {Partial<import('@docusaurus/types').DocusaurusConfig>} */
 module.exports = {
-    title: 'Apify Documentation',
-    tagline: 'Apify Documentation',
+    title: 'CLI | Apify Documentation',
     url: absoluteUrl,
     baseUrl: '/cli',
     trailingSlash: false,
