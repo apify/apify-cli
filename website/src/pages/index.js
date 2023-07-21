@@ -14,7 +14,7 @@ function Hero() {
                     <div className={clsx(styles.relative, 'row')}>
                         <div className="col">
                             <h1 className={styles.tagline}>
-                                Apify command-line interface (Apify CLI)
+                                Apify command-line interface (CLI)
                             </h1>
                         </div>
                     </div>
@@ -22,7 +22,7 @@ function Hero() {
                         <div className="col">
                             <h2></h2>
                             <h2>
-                                Create, develop, build, and run <a href="https://docs.apify.com/actors">Apify actors</a> from
+                                Create, develop, build, and run <a href="https://docs.apify.com/actors">Apify Actors</a> from
                                 your terminal. Manage the Apify platform from shell scripts.
                             </h2>
                         </div>
