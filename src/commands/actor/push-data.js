@@ -3,6 +3,7 @@ const { getApifyStorageClient, getDefaultStorageId, APIFY_STORAGE_TYPES } = requ
 
 class PushDataCommand extends ApifyCommand {
     async init() {
+        await super.init();
         // Read data from stdin of the command
         this.stdin = await this.readStdin(process.stdin);
     }
