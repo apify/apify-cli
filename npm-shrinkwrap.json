@@ -1,12 +1,12 @@
 {
     "name": "apify-cli",
-    "version": "0.18.1",
+    "version": "0.18.2",
     "lockfileVersion": 2,
     "requires": true,
     "packages": {
         "": {
             "name": "apify-cli",
-            "version": "0.18.1",
+            "version": "0.18.2",
             "hasInstallScript": true,
             "license": "Apache-2.0",
             "dependencies": {
