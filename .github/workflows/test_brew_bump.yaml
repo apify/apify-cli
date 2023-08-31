@@ -25,7 +25,9 @@ jobs:
           brew tap apify/tap
           brew bump-formula-pr apify/tap/apify-cli \
             --version 0.18.2-beta.0 \
-            --message "Automatic update of the `apify-cli` formula.\nCC @fnesveda" \
+            --message "Automatic update of the `apify-cli` formula
+
+            CC @fnesveda" \
             --no-browse \
             --force
         env:
