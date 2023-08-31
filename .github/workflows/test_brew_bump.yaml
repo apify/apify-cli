@@ -1,0 +1,30 @@
+name: Check & Release
+
+on:
+  # Push to master will deploy a beta version
+  push:
+
+jobs:
+  brew_bump:
+    name: Update Homebrew formula
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
+
+      - name: Set git identity
+        run: |
+          git config --global user.name 'Apify Service Account'
+          git config --global user.email 'apify-service-account@users.noreply.github.com'
+
+      - name: Update Homebrew formula
+        run: |
+          brew bump-formula-pr apify/tap/apify-cli \
+            --version 0.18.2-beta.0 \
+            --message "Automatic update of the `apify-cli` formula.\nCC @fnesveda" \
+            --no-browse
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
