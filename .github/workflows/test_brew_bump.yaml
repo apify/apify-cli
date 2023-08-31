@@ -25,6 +25,8 @@ jobs:
           brew tap apify/tap
           brew bump-formula-pr apify/tap/apify-cli \
             --version 0.18.2-beta.0 \
+            --tag v0.18.1 \
+            --revision 8475411beea8c2c6c73d5d67c5628500de8d2842 \
             --message "Automatic update of the \`apify-cli\` formula
 
             CC @fnesveda" \
