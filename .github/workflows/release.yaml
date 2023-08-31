@@ -207,7 +207,6 @@ jobs:
           brew bump-formula-pr apify-cli \
             --version ${PACKAGE_VERSION} \
             --no-browse \
-            --fork-org apify \
             --message "Automatic update of the \`apify-cli\` formula.
 
             CC @fnesveda @B4nan"
