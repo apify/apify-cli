@@ -22,7 +22,7 @@ jobs:
 
       - name: Update Homebrew formula
         run: |
-          brew update
+          brew tap --force homebrew/core
           brew bump-formula-pr apify-cli \
             --version 0.18.1 \
             --no-browse \
