@@ -30,7 +30,7 @@ class RunCommand extends ApifyCommand {
 
         if (!packageJsonExists && !mainPyExists) {
             throw new Error(
-                'Actor is of an uknown format.'
+                'Actor is of an unknown format.'
                 + ` Make sure either the 'package.json' file or 'src/__main__.py' file exists.`,
             );
         }
