@@ -68,6 +68,7 @@ module.exports = {
                     path: '../docs',
                     sidebarPath: './sidebars.js',
                     rehypePlugins: [externalLinkProcessor],
+                    editUrl: 'https://github.com/apify/apify-cli/edit/master/website/',
                 },
             }),
         ],
