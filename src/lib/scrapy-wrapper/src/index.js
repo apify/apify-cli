@@ -28,11 +28,11 @@ async function merge(fromPath, toPath, options = { bindings: {} }) {
             return merge(pathname, path.join(toPath, toRelPath));
         }
 
-        if (relPath.includes('.template.py')) {
+        if (relPath.includes('.template')) {
             fs.writeFileSync(
                 path.join(
                     toPath,
-                    toRelPath.replace('.template.py', '.py'),
+                    toRelPath.replace('.template', ''),
                 ),
                 handlebars.compile(fs.readFileSync(pathname, 'utf8'))(options.bindings));
         } else {
