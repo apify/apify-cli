@@ -1,0 +1,25 @@
+# This file tells Git which files shouldn't be added to source control
+
+.idea
+.DS_Store
+
+apify_storage
+storage
+
+.venv/
+.env/
+__pypackages__
+dist/
+build/
+*.egg-info/
+*.egg
+
+__pycache__
+
+.mypy_cache
+.dmypy.json
+dmypy.json
+.pytest_cache
+
+.scrapy
+*.log

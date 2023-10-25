@@ -1,0 +1,42 @@
+{
+    "actorSpecification": 1,
+    "name": "getting-started-python-scrapy",
+    "title": "Getting started with Python and Scrapy",
+    "description": "Scrapes titles of websites using Scrapy.",
+    "version": "0.0",
+    "meta": {
+        "templateId": "python-scrapy"
+    },
+    "input": "./input_schema.json",
+    "dockerfile": "./Dockerfile",
+    "storages": {
+        "dataset": {
+            "actorSpecification": 1,
+            "title": "URLs and their titles",
+            "views": {
+                "titles": {
+                    "title": "URLs and their titles",
+                    "transformation": {
+                        "fields": [
+                            "url",
+                            "title"
+                        ]
+                    },
+                    "display": {
+                        "component": "table",
+                        "properties": {
+                            "url": {
+                                "label": "URL",
+                                "format": "text"
+                            },
+                            "title": {
+                                "label": "Title",
+                                "format": "text"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
