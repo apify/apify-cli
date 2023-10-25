@@ -1,5 +1,6 @@
 const { spawnSync } = require('child_process');
 const path = require('path');
+const fs = require('fs');
 const { Spider } = require('./Spider');
 
 class SpiderFileAnalyzer {
@@ -8,24 +9,14 @@ class SpiderFileAnalyzer {
     }
 
     getSpiders() {
-        const pythonProcess = spawnSync('python', [
-            path.join(__dirname, 'parseSpiderFile.py'),
-            this.pathname,
-        ]);
-        const result = pythonProcess.stdout?.toString()?.trim();
+        const file = fs.readFileSync(this.pathname, 'utf8');
 
-        if (pythonProcess.status !== 0) {
-            const e = new Error(`There was an error while parsing the spider file.
-
-${pythonProcess.stderr?.toString()}`);
-
-            throw e;
-        }
-
+        const regex = /class\s+(\w+)/g;
+        let match;
         const spiders = [];
 
-        for (const spider of JSON.parse(result)) {
-            spiders.push(new Spider({ ...spider, pathname: this.pathname }));
+        while ((match = regex.exec(file)) !== null) {
+            spiders.push(new Spider({ class_name: match[1], pathname: this.pathname }));
         }
 
         return spiders;

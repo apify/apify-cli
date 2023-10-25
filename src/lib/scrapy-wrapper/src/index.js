@@ -3,6 +3,7 @@ const path = require('path');
 const { walk } = require('@root/walk');
 const handlebars = require('handlebars');
 const { ProjectAnalyzer } = require('./ProjectAnalyzer');
+const inquirer = require('inquirer');
 
 async function merge(fromPath, toPath, options = { bindings: {} }) {
     await walk(fromPath, async (err, pathname, dirent) => {
@@ -43,15 +44,28 @@ async function merge(fromPath, toPath, options = { bindings: {} }) {
 async function wrapScrapyProject({ p }) {
     if (!p) p = '.';
 
-    const project = new ProjectAnalyzer(p);
-    await project.init();
+    const analyzer = new ProjectAnalyzer(p);
+
+    await analyzer.init();
+
+    const { spiderIndex } = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'spiderIndex',
+            message: 'Pick the Scrapy spider you want to wrap:',
+            choices: analyzer.getAvailableSpiders().map((spider, i) => ({
+                name: `${spider.class_name} (${spider.pathname})`,
+                value: i,
+            })),
+        },
+    ]);
 
     const templateBindings = {
-        scrapy_settings_module: project.configuration.get('settings', 'default'),
-        apify_module_path: `${project.settings.BOT_NAME}.apify`,
-        spider_class_name: project.getAvailableSpiders()[0].class_name,
-        spider_module_name: `..spiders.${project.getAvailableSpiders()[0].pathname.split(path.sep).slice(-1)[0].replace('.py', '')}`,
-        projectFolder: project.settings.BOT_NAME,
+        scrapy_settings_module: analyzer.configuration.get('settings', 'default'),
+        apify_module_path: `${analyzer.settings.BOT_NAME}.apify`,
+        spider_class_name: analyzer.getAvailableSpiders()[spiderIndex].class_name,
+        spider_module_name: `..spiders.${analyzer.getAvailableSpiders()[spiderIndex].pathname.split(path.sep).slice(-1)[0].replace('.py', '')}`,
+        projectFolder: analyzer.settings.BOT_NAME,
     };
 
     merge(

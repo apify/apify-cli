@@ -51,7 +51,7 @@ Are you sure there is a Scrapy project there?`);
             {
                 type: 'input',
                 name: 'SPIDER_MODULES',
-                message: 'What folder are the Scrapy spider modules stored? (see SPIDER_MODULES in settings.py):',
+                message: 'What folder are the Scrapy spider modules stored in? (see SPIDER_MODULES in settings.py):',
                 default: [`${assumedBotName}.spiders`]
             },
         ]);
