@@ -1,4 +1,3 @@
-const { spawnSync } = require('child_process');
 const ConfigParser = require('configparser');
 const { readdirSync } = require('fs');
 const path = require('path');
@@ -6,6 +5,7 @@ const fs = require('fs');
 
 const { SpiderFileAnalyzer } = require('./SpiderFileAnalyzer');
 const inquirer = require('inquirer');
+const { warning } = require('../../outputs');
 
 /**
  * A simple example of analyzing the scrapy project.
@@ -36,6 +36,10 @@ Are you sure there is a Scrapy project there?`);
 
         config.read(scrapyCfgPath);
         this.configuration = config;
+
+        if(this.configuration.hasSection('apify')) {
+            throw new Error(`The Scrapy project configuration already contains Apify settings. Are you sure you didn't already wrap this project?`);
+        }
     }
 
     async loadSettings(){
@@ -55,6 +59,21 @@ Are you sure there is a Scrapy project there?`);
                 default: [`${assumedBotName}.spiders`]
             },
         ]);
+
+        const apifyConf = new ConfigParser();
+        apifyConf.addSection('apify');
+        apifyConf.set('apify', 'mainpy_location', settings.BOT_NAME);
+
+        const s = fs.createWriteStream(path.join(this.pathname, 'scrapy.cfg'), { flags: 'a' });
+
+        await new Promise(r => {
+            s.on('open', (fd) => {
+                s.write('\n', () => {
+                    apifyConf.write(fd);
+                    r();
+                });
+            })
+        })
 
         if(typeof settings.SPIDER_MODULES == 'string') settings.SPIDER_MODULES = [settings.SPIDER_MODULES];
 

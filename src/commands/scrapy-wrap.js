@@ -1,4 +1,5 @@
 const { ApifyCommand } = require('../lib/apify_command');
+const { info } = require('../lib/outputs');
 const { wrapScrapyProject } = require('../lib/scrapy-wrapper/src/index');
 
 class ScrapyWrapCommand extends ApifyCommand {
@@ -9,7 +10,7 @@ class ScrapyWrapCommand extends ApifyCommand {
 
         await wrapScrapyProject({ p: args.path });
 
-        this.log('Scrapy project wrapped successfully.');
+        info('Scrapy project wrapped successfully.');
     }
 }
 
