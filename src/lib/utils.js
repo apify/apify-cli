@@ -49,6 +49,7 @@ const {
 const {
     info,
 } = require('./outputs');
+const { ProjectAnalyzer } = require('./scrapy-wrapper/src/ProjectAnalyzer');
 
 // Properties from apify.json file that will me migrated to actor specs in .actor/actor.json
 const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
@@ -582,7 +583,7 @@ const detectNpmVersion = () => {
 const detectLocalActorLanguage = () => {
     const cwd = process.cwd();
     const isActorInNode = fs.existsSync(path.join(process.cwd(), 'package.json'));
-    const isActorInPython = fs.existsSync(path.join(process.cwd(), 'src/__main__.py'));
+    const isActorInPython = fs.existsSync(path.join(process.cwd(), 'src/__main__.py')) || ProjectAnalyzer.isScrapyProject(cwd);
     const result = {};
     if (isActorInNode) {
         result.language = LANGUAGE.NODEJS;

@@ -16,6 +16,7 @@ const {
     purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty,
     detectLocalActorLanguage, isPythonVersionSupported, getPythonCommand, isNodeVersionSupported,
 } = require('../lib/utils');
+const { ProjectAnalyzer } = require('../lib/scrapy-wrapper/src/ProjectAnalyzer');
 
 class RunCommand extends ApifyCommand {
     async run() {
@@ -29,11 +30,12 @@ class RunCommand extends ApifyCommand {
 
         const packageJsonExists = fs.existsSync(packageJsonPath);
         const mainPyExists = fs.existsSync(mainPyPath);
+        const isScrapyProject = ProjectAnalyzer.isScrapyProject(cwd);
 
-        if (!packageJsonExists && !mainPyExists) {
+        if (!packageJsonExists && !mainPyExists && !isScrapyProject) {
             throw new Error(
                 'Actor is of an unknown format.'
-                + ` Make sure either the 'package.json' file or 'src/__main__.py' file exists.`,
+                + ` Make sure either the 'package.json' file or 'src/__main__.py' file exists or you are in a migrated Scrapy project.`,
             );
         }
 
@@ -122,7 +124,16 @@ class RunCommand extends ApifyCommand {
             if (pythonVersion) {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);
-                    await execWithLog(pythonCommand, ['-m', 'src'], { env });
+                    if (isScrapyProject) {
+                        const a = new ProjectAnalyzer(cwd);
+                        a.loadScrapyCfg();
+                        if (!a.configuration.hasKey('apify', 'mainpy_location')) {
+                            throw new Error(`This Scrapy project's configuration does not contain Apify settings. Did you forget to run "apify init"?`);
+                        }
+                        await execWithLog(pythonCommand, ['-m', a.configuration.get('apify', 'mainpy_location')], { env });
+                    } else {
+                        await execWithLog(pythonCommand, ['-m', 'src'], { env });
+                    }
                 } else {
                     error(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
                     error('Please install Python 3.8 or higher to be able to run Python actors locally.');

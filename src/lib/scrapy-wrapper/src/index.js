@@ -2,8 +2,9 @@ const fs = require('fs');
 const path = require('path');
 const { walk } = require('@root/walk');
 const handlebars = require('handlebars');
-const { ProjectAnalyzer } = require('./ProjectAnalyzer');
 const inquirer = require('inquirer');
+const ConfigParser = require('configparser');
+const { ProjectAnalyzer } = require('./ProjectAnalyzer');
 
 async function merge(fromPath, toPath, options = { bindings: {} }) {
     await walk(fromPath, async (err, pathname, dirent) => {
@@ -46,6 +47,10 @@ async function wrapScrapyProject({ p }) {
 
     const analyzer = new ProjectAnalyzer(p);
 
+    if (analyzer.configuration.hasSection('apify')) {
+        throw new Error(`The Scrapy project configuration already contains Apify settings. Are you sure you didn't already wrap this project?`);
+    }
+
     await analyzer.init();
 
     const { spiderIndex } = await inquirer.prompt([
@@ -75,6 +80,21 @@ async function wrapScrapyProject({ p }) {
             bindings: templateBindings,
         },
     );
+
+    const apifyConf = new ConfigParser();
+    apifyConf.addSection('apify');
+    apifyConf.set('apify', 'mainpy_location', analyzer.settings.BOT_NAME);
+
+    const s = fs.createWriteStream(path.join(p, 'scrapy.cfg'), { flags: 'a' });
+
+    await new Promise((r) => {
+        s.on('open', (fd) => {
+            s.write('\n', () => {
+                apifyConf.write(fd);
+                r();
+            });
+        });
+    });
 }
 
 module.exports = { wrapScrapyProject };
