@@ -3,8 +3,6 @@ const { info } = require('../lib/outputs');
 const { wrapScrapyProject } = require('../lib/scrapy-wrapper/src/index');
 
 class ScrapyWrapCommand extends ApifyCommand {
-    static hidden = true;
-
     async run() {
         const { args } = this.parse(ScrapyWrapCommand);
 
@@ -13,6 +11,8 @@ class ScrapyWrapCommand extends ApifyCommand {
         info('Scrapy project wrapped successfully.');
     }
 }
+
+ScrapyWrapCommand.hidden = true;
 
 ScrapyWrapCommand.description = `Enhances your existing Scrapy project with Apify's Scrapy middleware.
 
