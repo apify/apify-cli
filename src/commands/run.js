@@ -128,7 +128,7 @@ class RunCommand extends ApifyCommand {
                         const a = new ProjectAnalyzer(cwd);
                         a.loadScrapyCfg();
                         if (!a.configuration.hasKey('apify', 'mainpy_location')) {
-                            throw new Error(`This Scrapy project's configuration does not contain Apify settings. Did you forget to run "apify init"?`);
+                            throw new Error(`This Scrapy project's configuration does not contain Apify settings. Did you forget to run "apify scrapy-wrap"?`);
                         }
                         await execWithLog(pythonCommand, ['-m', a.configuration.get('apify', 'mainpy_location')], { env });
                     } else {
