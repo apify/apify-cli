@@ -6,6 +6,11 @@ const inquirer = require('inquirer');
 const ConfigParser = require('configparser');
 const { ProjectAnalyzer } = require('./ProjectAnalyzer');
 
+/**
+ * Files that should be concatenated instead of copied (and overwritten).
+ */
+const concatenableFiles = ['.dockerignore', '.gitignore'];
+
 async function merge(fromPath, toPath, options = { bindings: {} }) {
     await walk(fromPath, async (err, pathname, dirent) => {
         if (pathname === fromPath) return;
@@ -22,11 +27,13 @@ async function merge(fromPath, toPath, options = { bindings: {} }) {
             return part;
         }).join(path.sep);
 
+        const targetPath = path.join(toPath, toRelPath);
+
         if (dirent.isDirectory()) {
-            if (!fs.existsSync(path.join(toPath, toRelPath))) {
-                fs.mkdirSync(path.join(toPath, toRelPath));
+            if (!fs.existsSync(targetPath)) {
+                fs.mkdirSync(targetPath);
             }
-            return merge(pathname, path.join(toPath, toRelPath));
+            return merge(pathname, targetPath);
         }
 
         if (relPath.includes('.template')) {
@@ -36,8 +43,10 @@ async function merge(fromPath, toPath, options = { bindings: {} }) {
                     toRelPath.replace('.template', ''),
                 ),
                 handlebars.compile(fs.readFileSync(pathname, 'utf8'))(options.bindings));
+        } else if (fs.existsSync(targetPath) && concatenableFiles.includes(path.basename(toRelPath))) {
+            fs.appendFileSync(targetPath, fs.readFileSync(pathname));
         } else {
-            fs.copyFileSync(pathname, path.join(toPath, toRelPath));
+            fs.copyFileSync(pathname, targetPath);
         }
     });
 }
