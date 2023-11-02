@@ -7,8 +7,6 @@ const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR, LOCAL_CONFIG_PATH } = req
 const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
 const outputs = require('../lib/outputs');
 const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow } = require('../lib/utils');
-const { ProjectAnalyzer } = require('../lib/scrapy-wrapper/src/ProjectAnalyzer');
-const { wrapScrapyProject } = require('../lib/scrapy-wrapper/src');
 
 class InitCommand extends ApifyCommand {
     async run() {
@@ -19,9 +17,6 @@ class InitCommand extends ApifyCommand {
         if (getLocalConfig()) {
             outputs.warning(`Skipping creation of "${LOCAL_CONFIG_PATH}", the file already exists in the current directory.`);
         } else {
-            if (ProjectAnalyzer.isScrapyProject(cwd)) {
-                await wrapScrapyProject({ p: cwd });
-            }
             if (!actorName) {
                 const answer = await inquirer.prompt([{ name: 'actName', message: 'Actor name:', default: path.basename(cwd) }]);
                 ({ actName: actorName } = answer);
