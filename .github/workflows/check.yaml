@@ -3,7 +3,10 @@
 name: Check
 
 on:
+    push:
+        branches: [ master, renovate/** ]
     pull_request:
+        branches: [ master ]
 
 jobs:
     # NPM install is done in a separate job and cached to speed up the following jobs.
@@ -13,13 +16,18 @@ jobs:
         runs-on: ${{ matrix.os }}
 
         strategy:
+            fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest]
                 node-version: [ 16, 18, 20 ]
 
         steps:
+            -   name: Cancel Workflow Action
+                uses: styfle/cancel-workflow-action@0.12.0
+                with:
+                    access_token: ${{ github.token }}
             -
-                uses: actions/checkout@v3
+                uses: actions/checkout@v4
             -
                 name: Use Node.js ${{ matrix.node-version }}
                 uses: actions/setup-node@v3
@@ -63,7 +71,7 @@ jobs:
 
         steps:
             -
-                uses: actions/checkout@v3
+                uses: actions/checkout@v4
             -
                 name: Use Node.js 16
                 uses: actions/setup-node@v3
@@ -89,6 +97,30 @@ jobs:
                     APIFY_CLI_DISABLE_TELEMETRY: 1
                 run: npm run test-python
 
+    docs:
+        name: Docs build
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        runs-on: ubuntu-latest
+        steps:
+            -   name: Checkout Source code
+                uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
+
+            -   name: Use Node.js 18
+                uses: actions/setup-node@v4
+                with:
+                    node-version: 18
+                    cache: 'npm'
+                    cache-dependency-path: 'npm-shrinkwrap.json'
+
+            -   name: Install Dependencies
+                run: npm ci --force
+
+            -   name: Build & deploy docs
+                run: |
+                    cd website
+                    npm ci
+                    npm run build
+
     lint:
         name: Lint
         needs: [build_and_test, test_python_support]
@@ -96,7 +128,7 @@ jobs:
 
         steps:
             -
-                uses: actions/checkout@v3
+                uses: actions/checkout@v4
             -
                 name: Use Node.js 16
                 uses: actions/setup-node@v3

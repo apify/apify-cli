@@ -10,3 +10,4 @@ _mytests
 package-lock.json
 .vscode
 .idea
+docs/changelog.md

@@ -1,4 +1,3 @@
-/* eslint-disable global-require,import/no-extraneous-dependencies */
 const { config } = require('@apify/docs-theme');
 const { externalLinkProcessor } = require('./tools/utils/externalLink');
 
@@ -11,12 +10,11 @@ module.exports = {
     trailingSlash: false,
     organizationName: 'apify',
     projectName: 'apify-cli',
-    scripts: ['/js/custom.js'],
-    favicon: 'img/favicon.ico',
+    favicon: 'img/favicon.svg',
     onBrokenLinks:
-    /** @type {import('@docusaurus/types').ReportingSeverity} */ ('warn'),
+    /** @type {import('@docusaurus/types').ReportingSeverity} */ ('throw'),
     onBrokenMarkdownLinks:
-    /** @type {import('@docusaurus/types').ReportingSeverity} */ ('warn'),
+    /** @type {import('@docusaurus/types').ReportingSeverity} */ ('throw'),
     themes: [
         [
             '@apify/docs-theme',
@@ -65,6 +63,10 @@ module.exports = {
             /** @type {import('@docusaurus/preset-classic').Options} */
             ({
                 docs: {
+                    // Docusaurus shows the author and date of last commit to entire repo, which doesn't make sense,
+                    // so let's just disable showing author and last modification
+                    showLastUpdateAuthor: false,
+                    showLastUpdateTime: false,
                     path: '../docs',
                     sidebarPath: './sidebars.js',
                     rehypePlugins: [externalLinkProcessor],
