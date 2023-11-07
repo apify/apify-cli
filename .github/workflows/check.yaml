@@ -9,7 +9,6 @@ on:
         branches: [ master ]
 
 jobs:
-    # NPM install is done in a separate job and cached to speed up the following jobs.
     build_and_test:
         name: Build & Test
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
@@ -18,7 +17,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-latest]
+                os: [ ubuntu-latest, windows-latest ]
                 node-version: [ 16, 18, 20 ]
 
         steps:
@@ -26,35 +25,29 @@ jobs:
                 uses: styfle/cancel-workflow-action@0.12.0
                 with:
                     access_token: ${{ github.token }}
-            -
-                uses: actions/checkout@v4
-            -
-                name: Use Node.js ${{ matrix.node-version }}
-                uses: actions/setup-node@v3
+
+            -   uses: actions/checkout@v4
+
+            -   name: Use Node.js ${{ matrix.node-version }}
+                uses: actions/setup-node@v4
                 with:
                     node-version: ${{ matrix.node-version }}
-            -
-                name: Cache Node Modules
-                if: ${{ matrix.node-version == 16 }}
-                uses: actions/cache@v3
-                with:
-                    path: |
-                        node_modules
-                        build
-                    key: cache-${{ github.run_id }}
-            -
-                name: Install Dependencies
+                    cache: 'npm'
+                    cache-dependency-path: 'npm-shrinkwrap.json'
+
+            -   name: Install Dependencies
                 run: npm install
-            -
-                name: Remove $HOME\.apify directory on Windows
+
+            -   name: Remove $HOME\.apify directory on Windows
                 if: runner.os == 'Windows'
                 run: Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $HOME\.apify
-            -
-                name: Remove ~/.apify directory on Linux
+
+
+            -   name: Remove ~/.apify directory on Linux
                 if: runner.os != 'Windows'
                 run: rm -rf ~/.apify
-            -
-                name: Run Tests
+
+            -   name: Run Tests
                 env:
                     TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
                     APIFY_CLI_DISABLE_TELEMETRY: 1
@@ -62,36 +55,32 @@ jobs:
 
     test_python_support:
         name: Test Python template support
-        needs: [build_and_test]
         strategy:
+            fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-latest]
-                python-version: ["3.8", "3.9", "3.10", "3.11"]
+                os: [ ubuntu-latest, windows-latest ]
+                python-version: [ "3.8", "3.9", "3.10", "3.11" ]
         runs-on: ${{ matrix.os }}
 
         steps:
-            -
-                uses: actions/checkout@v4
-            -
-                name: Use Node.js 16
-                uses: actions/setup-node@v3
+            -   uses: actions/checkout@v4
+
+            -   name: Use Node.js 20
+                uses: actions/setup-node@v4
                 with:
-                    node-version: 16
-            -
-                name: Load cached node_modules
-                uses: actions/cache@v3
-                with:
-                    path: |
-                        node_modules
-                        build
-                    key: cache-${{ github.run_id }}
-            -
-                name: Set up Python ${{ matrix.python-version }}
+                    node-version: 20
+                    cache: 'npm'
+                    cache-dependency-path: 'npm-shrinkwrap.json'
+
+            -   name: Install Dependencies
+                run: npm ci --force
+
+            -   name: Set up Python ${{ matrix.python-version }}
                 uses: actions/setup-python@v4
                 with:
                     python-version: ${{ matrix.python-version }}
-            -
-                name: Run Python tests
+
+            -   name: Run Python tests
                 env:
                     TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
                     APIFY_CLI_DISABLE_TELEMETRY: 1
@@ -105,10 +94,10 @@ jobs:
             -   name: Checkout Source code
                 uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # v4
 
-            -   name: Use Node.js 18
+            -   name: Use Node.js 20
                 uses: actions/setup-node@v4
                 with:
-                    node-version: 18
+                    node-version: 20
                     cache: 'npm'
                     cache-dependency-path: 'npm-shrinkwrap.json'
 
@@ -123,24 +112,18 @@ jobs:
 
     lint:
         name: Lint
-        needs: [build_and_test, test_python_support]
         runs-on: ubuntu-latest
 
         steps:
-            -
-                uses: actions/checkout@v4
-            -
-                name: Use Node.js 16
-                uses: actions/setup-node@v3
+            -   uses: actions/checkout@v4
+
+            -   name: Use Node.js 20
+                uses: actions/setup-node@v4
                 with:
-                    node-version: 16
-            -
-                name: Load Cache
-                uses: actions/cache@v3
-                with:
-                    path: |
-                        node_modules
-                        build
-                    key: cache-${{ github.run_id }}
-            -
-                run: npm run lint
+                    node-version: 20
+                    cache: 'npm'
+                    cache-dependency-path: 'npm-shrinkwrap.json'
+
+            -   run: |
+                    npm ci
+                    npm run lint
