@@ -1,18 +1,34 @@
+const { flags: flagsHelper } = require('@oclif/command');
+const inquirer = require('inquirer');
 const path = require('path');
 
-const inquirer = require('inquirer');
-
 const { ApifyCommand } = require('../lib/apify_command');
-const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR, LOCAL_CONFIG_PATH } = require('../lib/consts');
-const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
 const outputs = require('../lib/outputs');
-const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow } = require('../lib/utils');
+const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, detectLocalActorLanguage } = require('../lib/utils');
+const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR, LOCAL_CONFIG_PATH, LANGUAGE } = require('../lib/consts');
+const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
+const { wrapScrapyProject } = require('../lib/scrapy-wrapper/src');
+const { ProjectAnalyzer } = require('../lib/scrapy-wrapper/src/ProjectAnalyzer');
 
 class InitCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(InitCommand);
+        const { args, flags } = this.parse(InitCommand);
         let { actorName } = args;
         const cwd = process.cwd();
+
+        if (flags?.wrap === 'scrapy' || ProjectAnalyzer.isScrapyProject(cwd)) {
+            if (flags?.wrap !== 'scrapy') {
+                outputs.info('The current directory looks like a Scrapy project. Using automatic project wrapping.');
+            }
+
+            return wrapScrapyProject({ p: cwd });
+        }
+
+        if (detectLocalActorLanguage(cwd) === LANGUAGE.UNKNOWN) {
+            outputs.warning('The current directory does not look like a Node.js or Python project.');
+            const { c } = await inquirer.prompt([{ name: 'c', message: 'Do you want to continue?', type: 'confirm' }]);
+            if (!c) return;
+        }
 
         if (getLocalConfig()) {
             outputs.warning(`Skipping creation of "${LOCAL_CONFIG_PATH}", the file already exists in the current directory.`);
@@ -44,5 +60,14 @@ InitCommand.args = [
         description: 'Name of the actor. If not provided, you will be prompted for it.',
     },
 ];
+
+InitCommand.flags = {
+    wrap: flagsHelper.string({
+        char: 'w',
+        required: false,
+        options: ['scrapy'],
+        description: 'Enhance an exisitng project with Apify middleware. Currently supports wrapping Scrapy projects only.',
+    }),
+};
 
 module.exports = InitCommand;
