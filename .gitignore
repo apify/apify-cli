@@ -11,3 +11,5 @@ package-lock.json
 .vscode
 .idea
 docs/changelog.md
+
+**/scrapy-wrapper/templates/*

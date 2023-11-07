@@ -4,7 +4,10 @@ const { walk } = require('@root/walk');
 const handlebars = require('handlebars');
 const inquirer = require('inquirer');
 const ConfigParser = require('configparser');
+const outputs = require('../../outputs');
 const { ProjectAnalyzer } = require('./ProjectAnalyzer');
+const { ensureFolderExistsSync } = require('../../files');
+const { downloadAndUnzip } = require('../../utils');
 
 /**
  * Files that should be concatenated instead of copied (and overwritten).
@@ -75,6 +78,7 @@ async function wrapScrapyProject({ p }) {
     ]);
 
     const templateBindings = {
+        botName: analyzer.settings.BOT_NAME,
         scrapy_settings_module: analyzer.configuration.get('settings', 'default'),
         apify_module_path: `${analyzer.settings.BOT_NAME}.apify`,
         spider_class_name: analyzer.getAvailableSpiders()[spiderIndex].class_name,
@@ -82,8 +86,20 @@ async function wrapScrapyProject({ p }) {
         projectFolder: analyzer.settings.BOT_NAME,
     };
 
+    outputs.info('Downloading the latest Scrapy wrapper template...');
+
+    const templatePath = path.join(__dirname, '..', 'templates', 'python-scrapy');
+
+    ensureFolderExistsSync(templatePath);
+    await downloadAndUnzip({
+        url: 'https://github.com/apify/actor-templates/blob/feat/wrappers/dist/wrappers/python-scrapy.zip?raw=true',
+        pathTo: templatePath,
+    });
+
+    outputs.info('Wrapping the Scrapy project...');
+
     merge(
-        `${__dirname}/../templates`,
+        path.join(__dirname, '..', 'templates', 'python-scrapy'),
         p,
         {
             bindings: templateBindings,
@@ -104,6 +120,8 @@ async function wrapScrapyProject({ p }) {
             });
         });
     });
+
+    outputs.success('The Scrapy project has been wrapped successfully.');
 }
 
 module.exports = { wrapScrapyProject };

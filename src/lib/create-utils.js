@@ -1,36 +1,15 @@
 const fs = require('fs');
-const https = require('https');
+const chalk = require('chalk');
+const inquirer = require('inquirer');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
 
-const chalk = require('chalk');
-const inquirer = require('inquirer');
-
+const { validateActorName, httpsGet } = require('./utils');
 const {
     warning,
 } = require('./outputs');
-const { validateActorName } = require('./utils');
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
-
-/**
- * @param {string} url
- * @returns {Promise<unknown>}
- */
-exports.httpsGet = async (url) => {
-    return new Promise((resolve, reject) => {
-        https.get(url, (response) => {
-            // Handle redirects
-            if (response.statusCode === 301 || response.statusCode === 302) {
-                resolve(exports.httpsGet(response.headers.location));
-                // Destroy the response to close the HTTP connection, otherwise this hangs for a long time with Node 19+ (due to HTTP keep-alive).
-                response.destroy();
-            } else {
-                resolve(response);
-            }
-        }).on('error', reject);
-    });
-};
 
 /**
  * @param {string} maybeActorName
@@ -78,7 +57,7 @@ exports.enhanceReadmeWithLocalSuffix = async (readmePath, manifestPromise) => {
     if (manifest instanceof Error) throw manifest;
 
     try {
-        const suffixStream = await this.httpsGet(manifest.localReadmeSuffixUrl);
+        const suffixStream = await httpsGet(manifest.localReadmeSuffixUrl);
         const readmeStream = fs.createWriteStream(readmePath, { flags: 'a' });
         readmeStream.write('\n\n');
         await promisify(pipeline)(suffixStream, readmeStream);

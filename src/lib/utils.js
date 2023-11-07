@@ -28,6 +28,9 @@ const semver = require('semver');
 const _ = require('underscore');
 const writeJson = require('write-json-file');
 
+const { promisify } = require('util');
+const { finished } = require('stream');
+const AdmZip = require('adm-zip');
 const {
     GLOBAL_CONFIGS_FOLDER,
     AUTH_FILE_PATH,
@@ -50,6 +53,25 @@ const {
     info,
 } = require('./outputs');
 const { ProjectAnalyzer } = require('./scrapy-wrapper/src/ProjectAnalyzer');
+
+/**
+ * @param {string} url
+ * @returns {Promise<unknown>}
+ */
+const httpsGet = async (url) => {
+    return new Promise((resolve, reject) => {
+        https.get(url, (response) => {
+            // Handle redirects
+            if (response.statusCode === 301 || response.statusCode === 302) {
+                resolve(httpsGet(response.headers.location));
+                // Destroy the response to close the HTTP connection, otherwise this hangs for a long time with Node 19+ (due to HTTP keep-alive).
+                response.destroy();
+            } else {
+                resolve(response);
+            }
+        }).on('error', reject);
+    });
+};
 
 // Properties from apify.json file that will me migrated to actor specs in .actor/actor.json
 const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
@@ -597,7 +619,17 @@ const detectLocalActorLanguage = () => {
     return result;
 };
 
+const downloadAndUnzip = async ({ url, pathTo }) => {
+    const zipStream = await httpsGet(url);
+    const chunks = [];
+    zipStream.on('data', (chunk) => chunks.push(chunk));
+    await promisify(finished)(zipStream);
+    const zip = new AdmZip(Buffer.concat(chunks));
+    zip.extractAllTo(pathTo, true);
+};
+
 module.exports = {
+    httpsGet,
     getLoggedClientOrThrow,
     getLocalConfig,
     setLocalConfig,
@@ -631,4 +663,5 @@ module.exports = {
     isNodeVersionSupported,
     detectNpmVersion,
     detectLocalActorLanguage,
+    downloadAndUnzip,
 };
