@@ -14,7 +14,7 @@ class ScrapyWrapCommand extends ApifyCommand {
 
 ScrapyWrapCommand.hidden = true;
 
-ScrapyWrapCommand.description = `Enhances your existing Scrapy project with Apify's Scrapy middleware.
+ScrapyWrapCommand.description = `Wraps your existing Scrapy project to work like an Apify Actor.
 
 It adds the following features:
 - Automatic retry of failed requests
