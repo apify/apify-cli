@@ -66,7 +66,7 @@ InitCommand.flags = {
         char: 'w',
         required: false,
         options: ['scrapy'],
-        description: 'Enhance an exisitng project with Apify middleware. Currently supports wrapping Scrapy projects only.',
+        description: 'Enhance an existing project with Apify middleware. Currently supports wrapping Scrapy projects only.',
     }),
 };
 
