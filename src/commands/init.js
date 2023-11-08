@@ -21,7 +21,7 @@ class InitCommand extends ApifyCommand {
                 outputs.info('The current directory looks like a Scrapy project. Using automatic project wrapping.');
             }
 
-            return wrapScrapyProject({ p: cwd });
+            return wrapScrapyProject({ projectPath: cwd });
         }
 
         if (detectLocalActorLanguage(cwd) === LANGUAGE.UNKNOWN) {

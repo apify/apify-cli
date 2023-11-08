@@ -8,6 +8,7 @@ const outputs = require('../../outputs');
 const { ProjectAnalyzer } = require('./ProjectAnalyzer');
 const { ensureFolderExistsSync } = require('../../files');
 const { downloadAndUnzip } = require('../../utils');
+const { cwd } = require('process');
 
 /**
  * Files that should be concatenated instead of copied (and overwritten).
@@ -54,10 +55,10 @@ async function merge(fromPath, toPath, options = { bindings: {} }) {
     });
 }
 
-async function wrapScrapyProject({ p }) {
-    if (!p) p = '.';
+async function wrapScrapyProject({ projectPath }) {
+    if (!projectPath) projectPath = '.';
 
-    const analyzer = new ProjectAnalyzer(p);
+    const analyzer = new ProjectAnalyzer(projectPath);
 
     if (analyzer.configuration.hasSection('apify')) {
         throw new Error(`The Scrapy project configuration already contains Apify settings. Are you sure you didn't already wrap this project?`);
@@ -100,7 +101,7 @@ async function wrapScrapyProject({ p }) {
 
     merge(
         path.join(__dirname, '..', 'templates', 'python-scrapy'),
-        p,
+        projectPath,
         {
             bindings: templateBindings,
         },
@@ -110,7 +111,7 @@ async function wrapScrapyProject({ p }) {
     apifyConf.addSection('apify');
     apifyConf.set('apify', 'mainpy_location', analyzer.settings.BOT_NAME);
 
-    const s = fs.createWriteStream(path.join(p, 'scrapy.cfg'), { flags: 'a' });
+    const s = fs.createWriteStream(path.join(projectPath, 'scrapy.cfg'), { flags: 'a' });
 
     await new Promise((r) => {
         s.on('open', (fd) => {

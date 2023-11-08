@@ -6,7 +6,7 @@ class ScrapyWrapCommand extends ApifyCommand {
     async run() {
         const { args } = this.parse(ScrapyWrapCommand);
 
-        await wrapScrapyProject({ p: args.path });
+        await wrapScrapyProject({ projectPath: args.path });
 
         info('Scrapy project wrapped successfully.');
     }
