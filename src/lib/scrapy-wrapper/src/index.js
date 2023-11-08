@@ -4,6 +4,7 @@ const { walk } = require('@root/walk');
 const handlebars = require('handlebars');
 const inquirer = require('inquirer');
 const ConfigParser = require('configparser');
+const { fetchManifest, wrapperManifestUrl } = require('@apify/actor-templates');
 const outputs = require('../../outputs');
 const { ScrapyProjectAnalyzer } = require('./ScrapyProjectAnalyzer');
 const { ensureFolderExistsSync } = require('../../files');
@@ -86,13 +87,16 @@ async function wrapScrapyProject({ projectPath }) {
         projectFolder: analyzer.settings.BOT_NAME,
     };
 
+    const manifest = await fetchManifest(wrapperManifestUrl);
+
     outputs.info('Downloading the latest Scrapy wrapper template...');
 
+    const { archiveUrl } = manifest.templates.find(({ id }) => id === 'python-scrapy');
     const templatePath = path.join(__dirname, '..', 'templates', 'python-scrapy');
 
     ensureFolderExistsSync(templatePath);
     await downloadAndUnzip({
-        url: 'https://github.com/apify/actor-templates/blob/feat/wrappers/dist/wrappers/python-scrapy.zip?raw=true',
+        url: archiveUrl,
         pathTo: templatePath,
     });
 
