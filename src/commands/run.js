@@ -6,9 +6,9 @@ const { flags: flagsHelper } = require('@oclif/command');
 const loadJson = require('load-json-file');
 const semver = require('semver');
 
-const { ApifyCommand } = require('../lib/apify_command');
-const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE } = require('../lib/consts');
 const execWithLog = require('../lib/exec');
+const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE, PROJECT_TYPES } = require('../lib/consts');
+const { ApifyCommand } = require('../lib/apify_command');
 const { error, info, warning } = require('../lib/outputs');
 const { replaceSecretsValue } = require('../lib/secrets');
 const {
@@ -16,7 +16,8 @@ const {
     purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty,
     detectLocalActorLanguage, isPythonVersionSupported, getPythonCommand, isNodeVersionSupported,
 } = require('../lib/utils');
-const { ProjectAnalyzer } = require('../lib/scrapy-wrapper/src/ProjectAnalyzer');
+const { ProjectAnalyzer } = require('../lib/project_analyzer');
+const { ScrapyProjectAnalyzer } = require('../lib/scrapy-wrapper/src/ScrapyProjectAnalyzer');
 
 class RunCommand extends ApifyCommand {
     async run() {
@@ -30,7 +31,7 @@ class RunCommand extends ApifyCommand {
 
         const packageJsonExists = fs.existsSync(packageJsonPath);
         const mainPyExists = fs.existsSync(mainPyPath);
-        const isScrapyProject = ProjectAnalyzer.isScrapyProject(cwd);
+        const isScrapyProject = ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY;
 
         if (!packageJsonExists && !mainPyExists && !isScrapyProject) {
             throw new Error(
@@ -125,12 +126,12 @@ class RunCommand extends ApifyCommand {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);
                     if (isScrapyProject) {
-                        const a = new ProjectAnalyzer(cwd);
-                        a.loadScrapyCfg();
-                        if (!a.configuration.hasKey('apify', 'mainpy_location')) {
+                        const project = new ScrapyProjectAnalyzer(cwd);
+                        project.loadScrapyCfg();
+                        if (!project.configuration.hasKey('apify', 'mainpy_location')) {
                             throw new Error(`This Scrapy project's configuration does not contain Apify settings. Did you forget to run "apify scrapy-wrap"?`);
                         }
-                        await execWithLog(pythonCommand, ['-m', a.configuration.get('apify', 'mainpy_location')], { env });
+                        await execWithLog(pythonCommand, ['-m', project.configuration.get('apify', 'mainpy_location')], { env });
                     } else {
                         await execWithLog(pythonCommand, ['-m', 'src'], { env });
                     }

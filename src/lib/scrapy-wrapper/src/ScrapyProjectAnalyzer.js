@@ -6,7 +6,7 @@ const fs = require('fs');
 const inquirer = require('inquirer');
 const { SpiderFileAnalyzer } = require('./SpiderFileAnalyzer');
 
-class ProjectAnalyzer {
+class ScrapyProjectAnalyzer {
     constructor(pathname) {
         this.pathname = pathname;
         this.configuration = null;
@@ -14,12 +14,12 @@ class ProjectAnalyzer {
         this.loadScrapyCfg();
     }
 
-    async init() {
-        await this.loadSettings();
+    static isApplicable(pathname) {
+        return fs.existsSync(path.join(pathname, 'scrapy.cfg'));
     }
 
-    static isScrapyProject(pathname) {
-        return fs.existsSync(path.join(pathname, 'scrapy.cfg'));
+    async init() {
+        await this.loadSettings();
     }
 
     loadScrapyCfg() {
@@ -88,4 +88,4 @@ Are you sure there is a Scrapy project there?`);
     }
 }
 
-module.exports = { ProjectAnalyzer };
+module.exports = { ScrapyProjectAnalyzer };

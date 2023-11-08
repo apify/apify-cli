@@ -5,10 +5,9 @@ const handlebars = require('handlebars');
 const inquirer = require('inquirer');
 const ConfigParser = require('configparser');
 const outputs = require('../../outputs');
-const { ProjectAnalyzer } = require('./ProjectAnalyzer');
+const { ScrapyProjectAnalyzer } = require('./ScrapyProjectAnalyzer');
 const { ensureFolderExistsSync } = require('../../files');
 const { downloadAndUnzip } = require('../../utils');
-const { cwd } = require('process');
 
 /**
  * Files that should be concatenated instead of copied (and overwritten).
@@ -58,7 +57,7 @@ async function merge(fromPath, toPath, options = { bindings: {} }) {
 async function wrapScrapyProject({ projectPath }) {
     if (!projectPath) projectPath = '.';
 
-    const analyzer = new ProjectAnalyzer(projectPath);
+    const analyzer = new ScrapyProjectAnalyzer(projectPath);
 
     if (analyzer.configuration.hasSection('apify')) {
         throw new Error(`The Scrapy project configuration already contains Apify settings. Are you sure you didn't already wrap this project?`);

@@ -43,6 +43,7 @@ const {
     SUPPORTED_NODEJS_VERSION,
     MINIMUM_SUPPORTED_PYTHON_VERSION,
     LANGUAGE,
+    PROJECT_TYPES,
 } = require('./consts');
 const {
     ensureFolderExistsSync,
@@ -52,7 +53,7 @@ const {
 const {
     info,
 } = require('./outputs');
-const { ProjectAnalyzer } = require('./scrapy-wrapper/src/ProjectAnalyzer');
+const { ProjectAnalyzer } = require('./project_analyzer');
 
 /**
  * @param {string} url
@@ -604,8 +605,8 @@ const detectNpmVersion = () => {
 
 const detectLocalActorLanguage = () => {
     const cwd = process.cwd();
-    const isActorInNode = fs.existsSync(path.join(process.cwd(), 'package.json'));
-    const isActorInPython = fs.existsSync(path.join(process.cwd(), 'src/__main__.py')) || ProjectAnalyzer.isScrapyProject(cwd);
+    const isActorInNode = fs.existsSync(path.join(cwd, 'package.json'));
+    const isActorInPython = fs.existsSync(path.join(cwd, 'src/__main__.py')) || ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY;
     const result = {};
     if (isActorInNode) {
         result.language = LANGUAGE.NODEJS;

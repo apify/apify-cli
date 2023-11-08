@@ -5,10 +5,10 @@ const path = require('path');
 const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
 const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, detectLocalActorLanguage } = require('../lib/utils');
-const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR, LOCAL_CONFIG_PATH, LANGUAGE } = require('../lib/consts');
+const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR, LOCAL_CONFIG_PATH, LANGUAGE, PROJECT_TYPES } = require('../lib/consts');
 const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
 const { wrapScrapyProject } = require('../lib/scrapy-wrapper/src');
-const { ProjectAnalyzer } = require('../lib/scrapy-wrapper/src/ProjectAnalyzer');
+const { ProjectAnalyzer } = require('../lib/project_analyzer');
 
 class InitCommand extends ApifyCommand {
     async run() {
@@ -16,7 +16,7 @@ class InitCommand extends ApifyCommand {
         let { actorName } = args;
         const cwd = process.cwd();
 
-        if (flags?.wrap === 'scrapy' || ProjectAnalyzer.isScrapyProject(cwd)) {
+        if (flags?.wrap === 'scrapy' || ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY) {
             if (flags?.wrap !== 'scrapy') {
                 outputs.info('The current directory looks like a Scrapy project. Using automatic project wrapping.');
             }
@@ -24,7 +24,7 @@ class InitCommand extends ApifyCommand {
             return wrapScrapyProject({ projectPath: cwd });
         }
 
-        if (detectLocalActorLanguage(cwd) === LANGUAGE.UNKNOWN) {
+        if (detectLocalActorLanguage(cwd).language === LANGUAGE.UNKNOWN) {
             outputs.warning('The current directory does not look like a Node.js or Python project.');
             const { c } = await inquirer.prompt([{ name: 'c', message: 'Do you want to continue?', type: 'confirm' }]);
             if (!c) return;
