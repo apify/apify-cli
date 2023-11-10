@@ -36,8 +36,8 @@ jobs:
                     npm ci --force
                     # install the latest theme version
                     npm update @apify/docs-theme
-                    # build and deploy the docs
-                    npm run deploy
+                    # build the docs
+                    npm run build
                 env:
                     GIT_USER: "apify-service-account:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
                     GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
