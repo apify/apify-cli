@@ -1,5 +1,6 @@
 const { expect } = require('chai');
 const sinon = require('sinon');
+
 const { replaceSecretsValue } = require('../src/lib/secrets');
 
 describe('Secrets', () => {

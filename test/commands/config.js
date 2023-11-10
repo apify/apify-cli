@@ -1,4 +1,5 @@
 const { ApifyClient } = require('apify-client');
+
 const { getApifyClientOptions } = require('../../src/lib/utils');
 
 const { TEST_USER_TOKEN } = process.env;

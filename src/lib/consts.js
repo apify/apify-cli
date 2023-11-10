@@ -1,5 +1,6 @@
 const os = require('os');
 const path = require('path');
+
 const { KEY_VALUE_STORE_KEYS, META_ORIGINS } = require('@apify/consts');
 
 exports.DEFAULT_LOCAL_STORAGE_DIR = 'storage';

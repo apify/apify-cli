@@ -1,11 +1,12 @@
-const { flags: flagsHelper } = require('@oclif/command');
 const { ACT_JOB_STATUSES } = require('@apify/consts');
+const { flags: flagsHelper } = require('@oclif/command');
 const mime = require('mime');
+
 const { ApifyCommand } = require('../lib/apify_command');
+const { LOCAL_CONFIG_PATH } = require('../lib/consts');
+const outputs = require('../lib/outputs');
 const { getLocalConfig, getLoggedClientOrThrow,
     getLocalUserInfo, getLocalInput, outputJobLog } = require('../lib/utils');
-const outputs = require('../lib/outputs');
-const { LOCAL_CONFIG_PATH } = require('../lib/consts');
 
 // TODO: Show full error messages and HTTP codes, this is not great:
 // jan:testx$ apify call help

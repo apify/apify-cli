@@ -1,5 +1,5 @@
-const { ApifyCommand } = require('../../lib/apify_command');
 const { getApifyStorageClient, getDefaultStorageId, APIFY_STORAGE_TYPES } = require('../../lib/actor');
+const { ApifyCommand } = require('../../lib/apify_command');
 
 class PushDataCommand extends ApifyCommand {
     async init() {

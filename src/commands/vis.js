@@ -1,5 +1,6 @@
 const { validateInputSchema } = require('@apify/input_schema');
 const Ajv = require('ajv');
+
 const { ApifyCommand } = require('../lib/apify_command');
 const { LOCAL_CONFIG_PATH } = require('../lib/consts');
 const { readInputSchema } = require('../lib/input_schema');

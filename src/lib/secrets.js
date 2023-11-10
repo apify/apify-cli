@@ -1,6 +1,7 @@
 const loadJson = require('load-json-file');
-const writeJson = require('write-json-file');
 const _ = require('underscore');
+const writeJson = require('write-json-file');
+
 const { SECRETS_FILE_PATH } = require('./consts');
 const { warning } = require('./outputs');
 
@@ -62,7 +63,6 @@ const replaceSecretsValue = (env, secrets) => {
             if (secrets[secretKey]) {
                 updatedEnv[key] = secrets[secretKey];
             } else {
-                // eslint-disable-next-line max-len
                 warning(`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets:add ${secretKey} [SECRET_VALUE]"`);
             }
         } else {

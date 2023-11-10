@@ -1,5 +1,5 @@
-const { expect } = require('chai');
 const actorTemplates = require('@apify/actor-templates');
+const { expect } = require('chai');
 
 describe('templates', () => {
     it('can be fetched', async () => {

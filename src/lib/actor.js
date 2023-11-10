@@ -1,9 +1,11 @@
-const { ApifyClient } = require('apify-client');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
-const { default: ow } = require('ow');
-const { MemoryStorage } = require('@crawlee/memory-storage');
+
 const { ACTOR_ENV_VARS, LOCAL_ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const { MemoryStorage } = require('@crawlee/memory-storage');
+const { ApifyClient } = require('apify-client');
+const { default: ow } = require('ow');
+
 const { getLocalUserInfo, getLocalStorageDir, getApifyClientOptions } = require('./utils');
 
 const pipelinePromise = promisify(pipeline);

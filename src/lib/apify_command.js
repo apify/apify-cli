@@ -1,11 +1,13 @@
-const { Command } = require('@oclif/command');
 const { finished } = require('stream');
 const { promisify } = require('util');
-const { argsToCamelCase } = require('./utils');
-const { maybeTrackTelemetry } = require('./telemetry');
-const { detectInstallationType } = require('./version_check');
-const { detectLocalActorLanguage } = require('./utils');
+
+const { Command } = require('@oclif/command');
+
 const { LANGUAGE, COMMANDS_WITHIN_ACTOR } = require('./consts');
+const { maybeTrackTelemetry } = require('./telemetry');
+const { argsToCamelCase } = require('./utils');
+const { detectLocalActorLanguage } = require('./utils');
+const { detectInstallationType } = require('./version_check');
 
 /**
  * Adding parsing flags to oclif Command class

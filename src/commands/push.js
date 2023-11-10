@@ -1,19 +1,21 @@
 const fs = require('fs');
-const { flags: flagsHelper } = require('@oclif/command');
+
 const actorTemplates = require('@apify/actor-templates');
 const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES,
     MAX_MULTIFILE_BYTES } = require('@apify/consts');
-const open = require('open');
+const { flags: flagsHelper } = require('@oclif/command');
 const inquirer = require('inquirer');
 const isCI = require('is-ci');
+const open = require('open');
+
 const { ApifyCommand } = require('../lib/apify_command');
+const { UPLOADS_STORE_NAME, LOCAL_CONFIG_PATH } = require('../lib/consts');
+const { sumFilesSizeInBytes } = require('../lib/files');
+const outputs = require('../lib/outputs');
+const { transformEnvToEnvVars } = require('../lib/secrets');
 const { createActZip, getLoggedClientOrThrow,
     outputJobLog, getLocalUserInfo, getActorLocalFilePaths,
     createSourceFiles, getLocalConfigOrThrow } = require('../lib/utils');
-const { sumFilesSizeInBytes } = require('../lib/files');
-const { UPLOADS_STORE_NAME, LOCAL_CONFIG_PATH } = require('../lib/consts');
-const { transformEnvToEnvVars } = require('../lib/secrets');
-const outputs = require('../lib/outputs');
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
 const DEFAULT_RUN_OPTIONS = {

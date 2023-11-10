@@ -1,8 +1,10 @@
-const Mixpanel = require('mixpanel');
 const { promisify } = require('util');
-const loadJson = require('load-json-file');
-const writeJson = require('write-json-file');
+
 const { cryptoRandomObjectId } = require('@apify/utilities');
+const loadJson = require('load-json-file');
+const Mixpanel = require('mixpanel');
+const writeJson = require('write-json-file');
+
 const { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } = require('./consts');
 const outputs = require('./outputs');
 const { getLocalUserInfo } = require('./utils');

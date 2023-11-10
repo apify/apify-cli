@@ -1,4 +1,5 @@
 const { flags: flagsHelper } = require('@oclif/command');
+
 const { ApifyCommand } = require('../lib/apify_command');
 const { checkLatestVersion } = require('../lib/version_check');
 

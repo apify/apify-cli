@@ -1,8 +1,9 @@
-const loadJson = require('load-json-file');
-const writeJson = require('write-json-file');
 const fs = require('fs');
 const path = require('path');
+
+const loadJson = require('load-json-file');
 const rimraf = require('rimraf');
+const writeJson = require('write-json-file');
 
 const updateLocalJson = async (jsonFilePath, updateAttrs = {}, nestedObjectAttr = null) => {
     const currentObject = await loadJson(jsonFilePath);

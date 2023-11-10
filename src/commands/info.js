@@ -1,4 +1,5 @@
 const chalk = require('chalk');
+
 const { ApifyCommand } = require('../lib/apify_command');
 const { getLoggedClientOrThrow, getLocalUserInfo } = require('../lib/utils');
 

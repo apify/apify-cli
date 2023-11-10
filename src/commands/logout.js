@@ -1,7 +1,7 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { AUTH_FILE_PATH } = require('../lib/consts');
-const { success } = require('../lib/outputs');
 const { rimrafPromised } = require('../lib/files');
+const { success } = require('../lib/outputs');
 const { regenerateLocalDistinctId } = require('../lib/telemetry');
 
 class LogoutCommand extends ApifyCommand {

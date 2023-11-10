@@ -1,14 +1,16 @@
-const { expect } = require('chai');
-const sinon = require('sinon');
 const fs = require('fs');
-const command = require('@oclif/command');
+
 const { ACT_SOURCE_TYPES, SOURCE_FILE_FORMATS } = require('@apify/consts');
+const command = require('@oclif/command');
+const { expect } = require('chai');
 const loadJson = require('load-json-file');
+const sinon = require('sinon');
 const writeJson = require('write-json-file');
+
+const { testUserClient, TEST_USER_TOKEN } = require('./config');
+const { UPLOADS_STORE_NAME, LOCAL_CONFIG_PATH, AUTH_FILE_PATH } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalUserInfo, getActorLocalFilePaths, createSourceFiles } = require('../../src/lib/utils');
-const { UPLOADS_STORE_NAME, LOCAL_CONFIG_PATH, AUTH_FILE_PATH } = require('../../src/lib/consts');
-const { testUserClient, TEST_USER_TOKEN } = require('./config');
 
 const ACTOR_NAME = `cli-test-${Date.now()}`;
 const TEST_ACTOR = {

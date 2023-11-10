@@ -1,13 +1,11 @@
-const path = require('path');
+const {
+    execSync,
+    spawnSync,
+} = require('child_process');
 const fs = require('fs');
-const mime = require('mime');
-const { getEncoding } = require('istextorbinary');
-const _ = require('underscore');
-const globby = require('globby');
-const archiver = require('archiver-promise');
-const loadJson = require('load-json-file');
-const writeJson = require('write-json-file');
-const inquirer = require('inquirer');
+const https = require('https');
+const path = require('path');
+
 const {
     ACT_JOB_TERMINAL_STATUSES,
     ACTOR_ENV_VARS,
@@ -18,14 +16,18 @@ const {
     LOCAL_STORAGE_SUBDIRS,
     SOURCE_FILE_FORMATS,
 } = require('@apify/consts');
-const https = require('https');
 const { ApifyClient } = require('apify-client');
-const {
-    execSync,
-    spawnSync,
-} = require('child_process');
-const semver = require('semver');
+const archiver = require('archiver-promise');
 const escapeStringRegexp = require('escape-string-regexp');
+const globby = require('globby');
+const inquirer = require('inquirer');
+const { getEncoding } = require('istextorbinary');
+const loadJson = require('load-json-file');
+const mime = require('mime');
+const semver = require('semver');
+const _ = require('underscore');
+const writeJson = require('write-json-file');
+
 const {
     GLOBAL_CONFIGS_FOLDER,
     AUTH_FILE_PATH,
@@ -175,7 +177,7 @@ const getLocalConfigOrThrow = async () => {
         const answer = await inquirer.prompt([{
             name: 'isConfirm',
             type: 'confirm',
-            // eslint-disable-next-line max-len
+
             message: `The new version of Apify CLI uses the "${LOCAL_CONFIG_PATH}" instead of the "apify.json" file. Since we have found both files in your actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use "${LOCAL_CONFIG_PATH}". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?`,
         }]);
         if (!answer.isConfirm) {
