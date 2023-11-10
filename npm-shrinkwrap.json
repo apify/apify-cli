@@ -29,7 +29,7 @@
                 "computer-name": "^0.1.0",
                 "cors": "^2.8.5",
                 "detect-indent": "^6.1.0",
-                "escape-string-regexp": "^4.0.0",
+                "escape-string-regexp": "^5.0.0",
                 "express": "^4.18.2",
                 "globby": "^11.1.0",
                 "inquirer": "^7.3.3",
@@ -1039,17 +1039,6 @@
                 "url": "https://github.com/sponsors/sindresorhus"
             }
         },
-        "node_modules/aggregate-error/node_modules/escape-string-regexp": {
-            "version": "5.0.0",
-            "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-5.0.0.tgz",
-            "integrity": "sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==",
-            "engines": {
-                "node": ">=12"
-            },
-            "funding": {
-                "url": "https://github.com/sponsors/sindresorhus"
-            }
-        },
         "node_modules/aggregate-error/node_modules/indent-string": {
             "version": "5.0.0",
             "resolved": "https://registry.npmjs.org/indent-string/-/indent-string-5.0.0.tgz",
@@ -1878,6 +1867,17 @@
                 "url": "https://github.com/sponsors/sindresorhus"
             }
         },
+        "node_modules/clean-stack/node_modules/escape-string-regexp": {
+            "version": "4.0.0",
+            "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz",
+            "integrity": "sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==",
+            "engines": {
+                "node": ">=10"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
         "node_modules/cli-cursor": {
             "version": "3.1.0",
             "resolved": "https://registry.npmjs.org/cli-cursor/-/cli-cursor-3.1.0.tgz",
@@ -2663,11 +2663,11 @@
             "integrity": "sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow=="
         },
         "node_modules/escape-string-regexp": {
-            "version": "4.0.0",
-            "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz",
-            "integrity": "sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==",
+            "version": "5.0.0",
+            "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-5.0.0.tgz",
+            "integrity": "sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==",
             "engines": {
-                "node": ">=10"
+                "node": ">=12"
             },
             "funding": {
                 "url": "https://github.com/sponsors/sindresorhus"
@@ -3099,6 +3099,18 @@
             "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
             "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
             "dev": true
+        },
+        "node_modules/eslint/node_modules/escape-string-regexp": {
+            "version": "4.0.0",
+            "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz",
+            "integrity": "sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==",
+            "dev": true,
+            "engines": {
+                "node": ">=10"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
         },
         "node_modules/eslint/node_modules/js-yaml": {
             "version": "4.1.0",
@@ -5513,6 +5525,18 @@
             "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
             "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
             "dev": true
+        },
+        "node_modules/mocha/node_modules/escape-string-regexp": {
+            "version": "4.0.0",
+            "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz",
+            "integrity": "sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==",
+            "dev": true,
+            "engines": {
+                "node": ">=10"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
         },
         "node_modules/mocha/node_modules/glob": {
             "version": "7.2.0",
@@ -8934,11 +8958,6 @@
                         "escape-string-regexp": "5.0.0"
                     }
                 },
-                "escape-string-regexp": {
-                    "version": "5.0.0",
-                    "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-5.0.0.tgz",
-                    "integrity": "sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw=="
-                },
                 "indent-string": {
                     "version": "5.0.0",
                     "resolved": "https://registry.npmjs.org/indent-string/-/indent-string-5.0.0.tgz",
@@ -9541,6 +9560,13 @@
             "integrity": "sha512-lR9wNiMRcVQjSB3a7xXGLuz4cr4wJuuXlaAEbRutGowQTmlp7R72/DOgN21e8jdwblMWl9UOJMJXarX94pzKdg==",
             "requires": {
                 "escape-string-regexp": "4.0.0"
+            },
+            "dependencies": {
+                "escape-string-regexp": {
+                    "version": "4.0.0",
+                    "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz",
+                    "integrity": "sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA=="
+                }
             }
         },
         "cli-cursor": {
@@ -10139,9 +10165,9 @@
             "integrity": "sha512-NiSupZ4OeuGwr68lGIeym/ksIZMJodUGOSCZ/FSnTxcrekbvqrgdUxlJOMpijaKZVjAJrWrGs/6Jy8OMuyj9ow=="
         },
         "escape-string-regexp": {
-            "version": "4.0.0",
-            "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz",
-            "integrity": "sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA=="
+            "version": "5.0.0",
+            "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-5.0.0.tgz",
+            "integrity": "sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw=="
         },
         "escaya": {
             "version": "0.0.61",
@@ -10211,6 +10237,12 @@
                     "version": "2.0.1",
                     "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
                     "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+                    "dev": true
+                },
+                "escape-string-regexp": {
+                    "version": "4.0.0",
+                    "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz",
+                    "integrity": "sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==",
                     "dev": true
                 },
                 "js-yaml": {
@@ -12240,6 +12272,12 @@
                     "version": "2.0.1",
                     "resolved": "https://registry.npmjs.org/argparse/-/argparse-2.0.1.tgz",
                     "integrity": "sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==",
+                    "dev": true
+                },
+                "escape-string-regexp": {
+                    "version": "4.0.0",
+                    "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz",
+                    "integrity": "sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==",
                     "dev": true
                 },
                 "glob": {
