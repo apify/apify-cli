@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { ACT_JOB_STATUSES } = require('@apify/consts');
-const command = require('@oclif/command');
+const command = require('@oclif/core');
 const { expect } = require('chai');
 
 const { testUserClient, TEST_USER_TOKEN } = require('./config');

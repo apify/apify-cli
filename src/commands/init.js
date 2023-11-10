@@ -1,6 +1,6 @@
 const path = require('path');
 
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 const inquirer = require('inquirer');
 
 const { ApifyCommand } = require('../lib/apify_command');
@@ -13,7 +13,7 @@ const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, dete
 
 class InitCommand extends ApifyCommand {
     async run() {
-        const { args, flags } = this.parse(InitCommand);
+        const { args, flags } = await this.parse(InitCommand);
         let { actorName } = args;
         const cwd = process.cwd();
 

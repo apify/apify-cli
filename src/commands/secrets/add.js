@@ -3,7 +3,7 @@ const { addSecret } = require('../../lib/secrets');
 
 class AddCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(AddCommand);
+        const { args } = await this.parse(AddCommand);
         const { name, value } = args;
 
         addSecret(name, value);

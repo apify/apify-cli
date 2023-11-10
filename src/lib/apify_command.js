@@ -1,7 +1,7 @@
 const { finished } = require('stream');
 const { promisify } = require('util');
 
-const { Command } = require('@oclif/command');
+const { Command } = require('@oclif/core');
 
 const { LANGUAGE, COMMANDS_WITHIN_ACTOR } = require('./consts');
 const { maybeTrackTelemetry } = require('./telemetry');
@@ -19,8 +19,8 @@ class ApifyCommand extends Command {
         this.telemetryData = {};
     }
 
-    parse(cmd) {
-        const { flags, args } = super.parse(cmd);
+    async parse(cmd) {
+        const { flags, args } = await super.parse(cmd);
         const parsedFlags = argsToCamelCase(flags);
         this.telemetryData.flagsUsed = Object.keys(parsedFlags);
         return { flags: parsedFlags, args };

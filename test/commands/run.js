@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { APIFY_ENV_VARS } = require('@apify/consts');
-const command = require('@oclif/command');
+const command = require('@oclif/core');
 const { expect } = require('chai');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');

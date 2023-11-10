@@ -1,13 +1,12 @@
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 
 const { ApifyCommand } = require('../lib/apify_command');
 const { checkLatestVersion } = require('../lib/version_check');
 
 class CheckVersionCommand extends ApifyCommand {
     async run() {
-        const { flags } = this.parse(CheckVersionCommand);
-
-        checkLatestVersion(flags.enforceUpdate);
+        const { flags } = await this.parse(CheckVersionCommand);
+        await checkLatestVersion(flags.enforceUpdate);
     }
 }
 

@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const actorTemplates = require('@apify/actor-templates');
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 const semver = require('semver');
 
 const { ApifyCommand } = require('../lib/apify_command');
@@ -32,7 +32,7 @@ const {
 
 class CreateCommand extends ApifyCommand {
     async run() {
-        const { flags, args } = this.parse(CreateCommand);
+        const { flags, args } = await this.parse(CreateCommand);
         let { actorName } = args;
         const {
             template: templateName,

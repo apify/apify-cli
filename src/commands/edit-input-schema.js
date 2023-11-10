@@ -20,7 +20,7 @@ const API_VERSION = 'v1';
 
 class EditInputSchemaCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(EditInputSchemaCommand);
+        const { args } = await this.parse(EditInputSchemaCommand);
 
         // This call fails if no input schema is found on any of the default locations
         const { inputSchema: existingSchema, inputSchemaPath } = await readInputSchema(args.path);

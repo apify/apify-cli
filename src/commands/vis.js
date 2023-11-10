@@ -1,4 +1,5 @@
 const { validateInputSchema } = require('@apify/input_schema');
+// const { Command } = require('@oclif/core');
 const Ajv = require('ajv');
 
 const { ApifyCommand } = require('../lib/apify_command');
@@ -8,7 +9,9 @@ const outputs = require('../lib/outputs');
 
 class ValidateInputSchemaCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(ValidateInputSchemaCommand);
+        console.log(123);
+        const { args } = await this.parse(ValidateInputSchemaCommand);
+        console.log(args);
 
         const { inputSchema, inputSchemaPath } = await readInputSchema(args.path);
 

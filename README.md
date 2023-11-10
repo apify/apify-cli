@@ -278,6 +278,8 @@ This section contains printouts of `apify help` for all commands.
 * [`apify actor:set-value KEY [VALUE]`](#apify-actorset-value-key-value)
 * [`apify call [ACTID]`](#apify-call-actid)
 * [`apify create [ACTORNAME]`](#apify-create-actorname)
+* [`apify cv`](#apify-cv)
+* [`apify eis [PATH]`](#apify-eis-path)
 * [`apify info`](#apify-info)
 * [`apify init [ACTORNAME]`](#apify-init-actorname)
 * [`apify login`](#apify-login)
@@ -297,6 +299,9 @@ Commands are designed to be used in actor runs. All commands are in PoC state, d
 ```
 USAGE
   $ apify actor
+
+DESCRIPTION
+  Commands are designed to be used in actor runs. All commands are in PoC state, do not use in production environments.
 ```
 
 _See code: [src/commands/actor/index.js](https://github.com/apify/apify-cli/blob/v0.18.2/src/commands/actor/index.js)_
@@ -308,6 +313,9 @@ Gets the actor input value from the default key-value store associated with the 
 ```
 USAGE
   $ apify actor:get-input
+
+DESCRIPTION
+  Gets the actor input value from the default key-value store associated with the actor run.
 ```
 
 _See code: [src/commands/actor/get-input.js](https://github.com/apify/apify-cli/blob/v0.18.2/src/commands/actor/get-input.js)_
@@ -322,6 +330,9 @@ USAGE
 
 ARGUMENTS
   KEY  Key of the record in key-value store
+
+DESCRIPTION
+  Gets a value from the default key-value store associated with the actor run.
 ```
 
 _See code: [src/commands/actor/get-value.js](https://github.com/apify/apify-cli/blob/v0.18.2/src/commands/actor/get-value.js)_
@@ -338,6 +349,7 @@ ARGUMENTS
   ITEM  JSON string with one object or array of objects containing data to be stored in the default dataset.
 
 DESCRIPTION
+  Stores an object or an array of objects to the default dataset of the actor run.
   It is possible to pass data using item argument or stdin.
   Passing data using argument:
   $ apify actor:push-data {"foo": "bar"}
@@ -353,21 +365,20 @@ Sets or removes record into the default KeyValueStore associated with the actor 
 
 ```
 USAGE
-  $ apify actor:set-value KEY [VALUE]
+  $ apify actor:set-value KEY [VALUE] [-c <value>]
 
 ARGUMENTS
   KEY    Key of the record in key-value store.
-
   VALUE  Record data, which can be one of the following values:
          - If empty, the record in the key-value store is deleted.
          - If no `contentType` flag is specified, value is expected to be any JSON string value.
          - If options.contentType is set, value is taken as is.
 
-OPTIONS
-  -c, --contentType=contentType  Specifies a custom MIME content type of the record. By default "application/json" is
-                                 used.
+FLAGS
+  -c, --contentType=<value>  Specifies a custom MIME content type of the record. By default "application/json" is used.
 
 DESCRIPTION
+  Sets or removes record into the default KeyValueStore associated with the actor run.
   It is possible to pass data using argument or stdin.
   Passing data using argument:
   $ apify actor:set-value KEY my-value
@@ -383,20 +394,21 @@ Runs a specific actor remotely on the Apify cloud platform.
 
 ```
 USAGE
-  $ apify call [ACTID]
+  $ apify call [ACTID] [-b <value>] [-t <value>] [-m <value>] [-w <value>]
 
 ARGUMENTS
   ACTID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command
          runs the remote actor specified in the ".actor/actor.json" file.
 
-OPTIONS
-  -b, --build=build                      Tag or number of the build to run (e.g. "latest" or "1.2.34").
-  -m, --memory=memory                    Amount of memory allocated for the actor run, in megabytes.
-  -t, --timeout=timeout                  Timeout for the actor run in seconds. Zero value means there is no timeout.
-  -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
+FLAGS
+  -b, --build=<value>            Tag or number of the build to run (e.g. "latest" or "1.2.34").
+  -m, --memory=<value>           Amount of memory allocated for the actor run, in megabytes.
+  -t, --timeout=<value>          Timeout for the actor run in seconds. Zero value means there is no timeout.
+  -w, --wait-for-finish=<value>  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It 
+  Runs a specific actor remotely on the Apify cloud platform.
+  The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It
   takes input for the Actor from the default local key-value store by default.
 ```
 
@@ -408,21 +420,60 @@ Creates a new actor project directory from a selected boilerplate template.
 
 ```
 USAGE
-  $ apify create [ACTORNAME]
+  $ apify create [ACTORNAME] [-t <value>] [--skip-dependency-install]
 
 ARGUMENTS
   ACTORNAME  Name of the actor and its directory
 
-OPTIONS
-  -t, --template=template    Template for the actor. If not provided, the command will prompt for it.
+FLAGS
+  -t, --template=<value>     Template for the actor. If not provided, the command will prompt for it.
                              Visit
                              https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json to
                              find available template names.
-
   --skip-dependency-install  Skip installing actor dependencies.
+
+DESCRIPTION
+  Creates a new actor project directory from a selected boilerplate template.
 ```
 
 _See code: [src/commands/create.js](https://github.com/apify/apify-cli/blob/v0.18.2/src/commands/create.js)_
+
+## `apify cv`
+
+Checks that installed Apify CLI version is up to date.
+
+```
+USAGE
+  $ apify cv [-e]
+
+FLAGS
+  -e, --enforce-update  [Optional] Enforce version update from NPM
+
+DESCRIPTION
+  Checks that installed Apify CLI version is up to date.
+
+ALIASES
+  $ apify cv
+```
+
+## `apify eis [PATH]`
+
+Lets you edit your input schema that would be used on the platform in a visual input schema editor.
+
+```
+USAGE
+  $ apify eis [PATH]
+
+ARGUMENTS
+  PATH  Optional path to your INPUT_SCHEMA.json file. If not provided default platform location for input schema is
+        used.
+
+DESCRIPTION
+  Lets you edit your input schema that would be used on the platform in a visual input schema editor.
+
+ALIASES
+  $ apify eis
+```
 
 ## `apify info`
 
@@ -433,6 +484,7 @@ USAGE
   $ apify info
 
 DESCRIPTION
+  Displays information about the currently active Apify account.
   The information is printed to the console.
 ```
 
@@ -450,7 +502,8 @@ ARGUMENTS
   ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will 
+  Initializes a new actor project in an existing directory.
+  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will
   not touch anything else.
 
   WARNING: The directory at "storage" will be overwritten if it already exists.
@@ -464,13 +517,14 @@ Logs in to your Apify account using a provided API token.
 
 ```
 USAGE
-  $ apify login
+  $ apify login [-t <value>]
 
-OPTIONS
-  -t, --token=token  [Optional] Apify API token
+FLAGS
+  -t, --token=<value>  [Optional] Apify API token
 
 DESCRIPTION
-  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other 
+  Logs in to your Apify account using a provided API token.
+  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other
   "apify" commands. To log out, call "apify logout".
 ```
 
@@ -485,8 +539,9 @@ USAGE
   $ apify logout
 
 DESCRIPTION
+  Logs out of your Apify account.
   The command deletes the API token and all other account information stored in the ~/.apify directory. To log in again,
-   call "apify login".
+  call "apify login".
 ```
 
 _See code: [src/commands/logout.js](https://github.com/apify/apify-cli/blob/v0.18.2/src/commands/logout.js)_
@@ -497,14 +552,18 @@ Pulls an Actor from the Apify platform to the current directory. If it is define
 
 ```
 USAGE
-  $ apify pull [ACTORID]
+  $ apify pull [ACTORID] [-v <value>]
 
 ARGUMENTS
   ACTORID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
            command will update the Actor in the current directory based on its name in ".actor/actor.json" file.
 
-OPTIONS
-  -v, --version=version  Actor version number which will be pulled, e.g. 1.2. Default: the highest version
+FLAGS
+  -v, --version=<value>  Actor version number which will be pulled, e.g. 1.2. Default: the highest version
+
+DESCRIPTION
+  Pulls an Actor from the Apify platform to the current directory. If it is defined as Git repository, it will be
+  cloned. If it is defined as Web IDE, it will fetch the files.
 ```
 
 _See code: [src/commands/pull.js](https://github.com/apify/apify-cli/blob/v0.18.2/src/commands/pull.js)_
@@ -515,31 +574,28 @@ Uploads the actor to the Apify platform and builds it there.
 
 ```
 USAGE
-  $ apify push [ACTORID]
+  $ apify push [ACTORID] [--version-number <value>] [-v <value>] [-b <value>] [-w <value>] [--no-prompt]
 
 ARGUMENTS
   ACTORID  Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
            command will create or modify the actor with the name specified in ".actor/actor.json" file.
 
-OPTIONS
-  -b, --build-tag=build-tag              Build tag to be applied to the successful Actor build. By default, it is taken
-                                         from the ".actor/actor.json" file
-
-  -v, --version=version                  Actor version number to which the files should be pushed. By default, it is
-                                         taken from the ".actor/actor.json" file.
-
-  -w, --wait-for-finish=wait-for-finish  Seconds for waiting to build to finish, if no value passed, it waits forever.
-
-  --no-prompt                            Do not prompt for opening the actor details in a browser. This will also not
-                                         open the browser automatically.
-
-  --version-number=version-number        DEPRECATED: Use flag version instead. Actor version number to which the files
-                                         should be pushed. By default, it is taken from the ".actor/actor.json" file.
+FLAGS
+  -b, --build-tag=<value>        Build tag to be applied to the successful Actor build. By default, it is taken from the
+                                 ".actor/actor.json" file
+  -v, --version=<value>          Actor version number to which the files should be pushed. By default, it is taken from
+                                 the ".actor/actor.json" file.
+  -w, --wait-for-finish=<value>  Seconds for waiting to build to finish, if no value passed, it waits forever.
+  --no-prompt                    Do not prompt for opening the actor details in a browser. This will also not open the
+                                 browser automatically.
+  --version-number=<value>       DEPRECATED: Use flag version instead. Actor version number to which the files should be
+                                 pushed. By default, it is taken from the ".actor/actor.json" file.
 
 DESCRIPTION
-  The Actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden 
+  Uploads the actor to the Apify platform and builds it there.
+  The Actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden
   using command-line options.
-  NOTE: If the source files are smaller than 3 MB then they are uploaded as 
+  NOTE: If the source files are smaller than 3 MB then they are uploaded as
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target Actor already exists in your Apify account, it will be overwritten!
@@ -553,25 +609,23 @@ Runs the actor locally in the current directory.
 
 ```
 USAGE
-  $ apify run
+  $ apify run [-p] [--purge-queue] [--purge-dataset] [--purge-key-value-store]
 
-OPTIONS
+FLAGS
   -p, --purge              Shortcut that combines the --purge-queue, --purge-dataset and --purge-key-value-store
                            options.
-
   --purge-dataset          Deletes the local directory containing the default dataset before the run starts.
-
   --purge-key-value-store  Deletes all records from the default key-value store in the local directory before the run
                            starts, except for the "INPUT" key.
-
   --purge-queue            Deletes the local directory containing the default request queue before the run starts.
 
 DESCRIPTION
+  Runs the actor locally in the current directory.
   It sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For
-   example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
-   stored in the "storage" directory, rather than on the Apify platform.
+  example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
+  stored in the "storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the command's default behavior for Node.js actors by overriding the "start" script in the 
+  NOTE: You can override the command's default behavior for Node.js actors by overriding the "start" script in the
   package.json file. You can set up your own main file or environment variables by changing it.
 ```
 
@@ -586,21 +640,23 @@ USAGE
   $ apify secrets
 
 DESCRIPTION
+  Manages secret values for actor environment variables.
+
   Example:
   $ apify secrets:add mySecret TopSecretValue123
 
-  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@" 
+  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@"
   prefix:
 
   {
-    "actorSpecification": 1,
-    "name": "my_actor",
-    "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" },
-    "version": "0.1
+  "actorSpecification": 1,
+  "name": "my_actor",
+  "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" },
+  "version": "0.1
   }
 
   When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable
-   of the actor.
+  of the actor.
 ```
 
 _See code: [src/commands/secrets/index.js](https://github.com/apify/apify-cli/blob/v0.18.2/src/commands/secrets/index.js)_
@@ -618,6 +674,7 @@ ARGUMENTS
   VALUE  Value of the secret
 
 DESCRIPTION
+  Adds a new secret value.
   The secrets are stored to a file at ~/.apify
 ```
 
@@ -633,6 +690,9 @@ USAGE
 
 ARGUMENTS
   NAME  Name of the secret
+
+DESCRIPTION
+  Removes the secret.
 ```
 
 _See code: [src/commands/secrets/rm.js](https://github.com/apify/apify-cli/blob/v0.18.2/src/commands/secrets/rm.js)_
@@ -649,6 +709,7 @@ ARGUMENTS
   PATH  Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.
 
 DESCRIPTION
+  Validates input schema and prints errors found.
   The input schema for the actor is used from these locations in order of preference.
   The first one found is validated as it would be the one used on the Apify platform.
   1. Directly embedded object in ".actor/actor.json" under 'input' key

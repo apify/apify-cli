@@ -3,7 +3,7 @@ const fs = require('fs');
 const actorTemplates = require('@apify/actor-templates');
 const { ACT_JOB_STATUSES, ACT_SOURCE_TYPES,
     MAX_MULTIFILE_BYTES } = require('@apify/consts');
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 const inquirer = require('inquirer');
 const isCI = require('is-ci');
 const open = require('open');
@@ -33,7 +33,7 @@ const DEFAULT_BUILD_TAG = 'latest';
 
 class PushCommand extends ApifyCommand {
     async run() {
-        const { args, flags } = this.parse(PushCommand);
+        const { args, flags } = await this.parse(PushCommand);
         const apifyClient = await getLoggedClientOrThrow();
         const localConfig = await getLocalConfigOrThrow();
         const userInfo = await getLocalUserInfo();

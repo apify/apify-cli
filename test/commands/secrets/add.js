@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const command = require('@oclif/command');
+const command = require('@oclif/core');
 const { expect } = require('chai');
 
 const { AUTH_FILE_PATH } = require('../../../src/lib/consts');

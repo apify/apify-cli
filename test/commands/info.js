@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-const command = require('@oclif/command');
+const command = require('@oclif/core');
 const { expect } = require('chai');
 const loadJson = require('load-json-file');
 const sinon = require('sinon');

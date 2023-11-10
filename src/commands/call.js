@@ -1,5 +1,5 @@
 const { ACT_JOB_STATUSES } = require('@apify/consts');
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 const mime = require('mime');
 
 const { ApifyCommand } = require('../lib/apify_command');
@@ -15,7 +15,7 @@ const { getLocalConfig, getLoggedClientOrThrow,
 
 class CallCommand extends ApifyCommand {
     async run() {
-        const { args, flags } = this.parse(CallCommand);
+        const { args, flags } = await this.parse(CallCommand);
         const localConfig = getLocalConfig() || {};
         const apifyClient = await getLoggedClientOrThrow();
         const userInfo = await getLocalUserInfo();

@@ -8,10 +8,10 @@
         "test-python": "npm run test -- --grep '\\[python\\]'",
         "lint": "eslint src test",
         "lint:fix": "eslint src test --fix",
-        "commands-md": "npm run manifest && oclif-dev readme",
+        "commands-md": "npm run manifest && oclif readme",
         "prepare-release": "npm run commands-md && npm run prod-shrinkwrap",
         "prod-shrinkwrap": "rm -rf node_modules && npm install --production && npm shrinkwrap",
-        "manifest": "rm -f oclif.manifest.json && oclif-dev manifest",
+        "manifest": "rm -f oclif.manifest.json && oclif manifest",
         "postinstall": "node \"./src/bin/run\" check-version && node ./src/lib/community"
     },
     "files": [
@@ -58,11 +58,10 @@
         "@apify/input_schema": "^3.5.8",
         "@apify/utilities": "^2.9.3",
         "@crawlee/memory-storage": "^3.5.8",
-        "@oclif/command": "^1.8.36",
-        "@oclif/config": "^1.18.17",
-        "@oclif/errors": "^1.3.6",
-        "@oclif/plugin-commands": "^2.1.0",
-        "@oclif/plugin-help": "^5.1.12",
+        "@oclif/core": "^3.10.8",
+        "@oclif/plugin-commands": "^3.0.6",
+        "@oclif/plugin-help": "^6.0.5",
+        "@oclif/plugin-plugins": "^4.1.2",
         "@root/walk": "^1.1.0",
         "adm-zip": "^0.5.10",
         "ajv": "^8.12.0",
@@ -96,18 +95,24 @@
     },
     "devDependencies": {
         "@apify/eslint-config": "^0.4.0",
-        "@oclif/dev-cli": "^1.26.0",
-        "@oclif/test": "^2.1.0",
+        "@oclif/test": "^3.1.1",
         "chai": "^4.3.4",
         "chai-match": "^1.1.1",
         "cross-env": "^7.0.3",
         "eslint": "^8.53.0",
         "mocha": "^10.0.0",
+        "oclif": "^4.0.3",
         "sinon": "^17.0.0"
     },
     "oclif": {
         "bin": "apify",
         "commands": "./src/commands",
+        "plugins": [
+            "@oclif/plugin-help",
+            "@oclif/plugin-commands",
+            "@oclif/plugin-plugins"
+        ],
+        "topicSeparator": " ",
         "hooks": {
             "init": [
                 "./src/hooks/init"

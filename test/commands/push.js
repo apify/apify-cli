@@ -1,7 +1,7 @@
 const fs = require('fs');
 
 const { ACT_SOURCE_TYPES, SOURCE_FILE_FORMATS } = require('@apify/consts');
-const command = require('@oclif/command');
+const command = require('@oclif/core');
 const { expect } = require('chai');
 const loadJson = require('load-json-file');
 const sinon = require('sinon');

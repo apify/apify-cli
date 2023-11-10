@@ -9,7 +9,7 @@ class PushDataCommand extends ApifyCommand {
     }
 
     async run() {
-        const { args } = this.parse(PushDataCommand);
+        const { args } = await this.parse(PushDataCommand);
         const { item } = args;
 
         const apifyClient = getApifyStorageClient();

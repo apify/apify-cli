@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { APIFY_ENV_VARS } = require('@apify/consts');
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 const loadJson = require('load-json-file');
 const semver = require('semver');
 
@@ -21,7 +21,7 @@ const {
 
 class RunCommand extends ApifyCommand {
     async run() {
-        const { flags } = this.parse(RunCommand);
+        const { flags } = await this.parse(RunCommand);
         const { proxy, id: userId, token } = getLocalUserInfo();
         const localConfig = await getLocalConfigOrThrow();
         const cwd = process.cwd();

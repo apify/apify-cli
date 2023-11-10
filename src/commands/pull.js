@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 const AdmZip = require('adm-zip');
 const { get } = require('axios');
 const jju = require('jju');
@@ -23,7 +23,7 @@ const extractGitHubZip = async (url, directoryPath) => {
 
 class PullCommand extends ApifyCommand {
     async run() {
-        const { args, flags } = this.parse(PullCommand);
+        const { args, flags } = await this.parse(PullCommand);
         const localConfig = await getLocalConfigOrThrow();
         const userInfo = await getLocalUserInfo();
         const apifyClient = await getLoggedClientOrThrow();

@@ -3,7 +3,7 @@ const { ApifyCommand } = require('../../lib/apify_command');
 
 class GetValueCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(GetValueCommand);
+        const { args } = await this.parse(GetValueCommand);
         const { key } = args;
 
         await outputRecordFromDefaultStore(key);

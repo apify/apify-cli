@@ -3,7 +3,7 @@ const { removeSecret } = require('../../lib/secrets');
 
 class RmCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(RmCommand);
+        const { args } = await this.parse(RmCommand);
         const { name } = args;
 
         removeSecret(name);

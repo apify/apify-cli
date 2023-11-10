@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { KEY_VALUE_STORE_KEYS } = require('@apify/consts');
-const command = require('@oclif/command');
+const command = require('@oclif/core');
 const { expect } = require('chai');
 const loadJson = require('load-json-file');
 const sinon = require('sinon');

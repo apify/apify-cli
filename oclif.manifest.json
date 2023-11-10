@@ -1,1 +1,723 @@
-{"version":"0.18.2","commands":{"call":{"id":"call","description":"Runs a specific actor remotely on the Apify cloud platform.\nThe Actor is run under your current Apify account. Therefore you need to be logged in by calling \"apify login\". It takes input for the Actor from the default local key-value store by default.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{"build":{"name":"build","type":"option","char":"b","description":"Tag or number of the build to run (e.g. \"latest\" or \"1.2.34\").","required":false},"timeout":{"name":"timeout","type":"option","char":"t","description":"Timeout for the actor run in seconds. Zero value means there is no timeout.","required":false},"memory":{"name":"memory","type":"option","char":"m","description":"Amount of memory allocated for the actor run, in megabytes.","required":false},"wait-for-finish":{"name":"wait-for-finish","type":"option","char":"w","description":"Seconds for waiting to run to finish, if no value passed, it waits forever.","required":false}},"args":[{"name":"actId","description":"Name or ID of the actor to run (e.g. \"apify/hello-world\" or \"E2jjCZBezvAZnX8Rb\"). If not provided, the command runs the remote actor specified in the \".actor/actor.json\" file.","required":false}]},"check-version":{"id":"check-version","description":"Checks that installed Apify CLI version is up to date.","pluginName":"apify-cli","pluginType":"core","hidden":true,"aliases":["cv"],"flags":{"enforce-update":{"name":"enforce-update","type":"boolean","char":"e","description":"[Optional] Enforce version update from NPM","required":false,"allowNo":false}},"args":[]},"create":{"id":"create","description":"Creates a new actor project directory from a selected boilerplate template.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{"template":{"name":"template","type":"option","char":"t","description":"Template for the actor. If not provided, the command will prompt for it.\nVisit https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json to find available template names.","required":false},"skip-dependency-install":{"name":"skip-dependency-install","type":"boolean","description":"Skip installing actor dependencies.","required":false,"allowNo":false},"template-archive-url":{"name":"template-archive-url","type":"option","description":"Actor template archive url. Useful for developing new templates.","hidden":true,"required":false}},"args":[{"name":"actorName","description":"Name of the actor and its directory","required":false}]},"edit-input-schema":{"id":"edit-input-schema","description":"Lets you edit your input schema that would be used on the platform in a visual input schema editor.","pluginName":"apify-cli","pluginType":"core","hidden":true,"aliases":["eis"],"flags":{},"args":[{"name":"path","description":"Optional path to your INPUT_SCHEMA.json file. If not provided default platform location for input schema is used.","required":false}]},"info":{"id":"info","description":"Displays information about the currently active Apify account.\nThe information is printed to the console.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[]},"init-wrap-scrapy":{"id":"init-wrap-scrapy","description":"Wraps your existing Scrapy project to work like an Apify Actor.\n\nIt adds the following features:\n- Automatic retry of failed requests\n- Automatic proxy rotation\n- Automatic user agent rotation\n...\n","pluginName":"apify-cli","pluginType":"core","hidden":true,"aliases":[],"flags":{},"args":[{"name":"path","description":"Optional path to your scrapy project. If not provided, the current directory is used.","required":false}]},"init":{"id":"init","description":"Initializes a new actor project in an existing directory.\nThe command only creates the \".actor/actor.json\" file and the \"storage\" directory in the current directory, but will not touch anything else.\n\nWARNING: The directory at \"storage\" will be overwritten if it already exists.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[{"name":"actorName","description":"Name of the actor. If not provided, you will be prompted for it.","required":false}]},"login-new":{"id":"login-new","description":"Logs in to your Apify account using your API token.\nThe API token and other account information is stored in the ~/.apify directory, from where it is read by all other \"apify\" commands. To log out, call \"apify logout\".","pluginName":"apify-cli","pluginType":"core","hidden":true,"aliases":[],"flags":{"token":{"name":"token","type":"option","char":"t","description":"[Optional] Apify API token","required":false}},"args":[]},"login":{"id":"login","description":"Logs in to your Apify account using a provided API token.\nThe API token and other account information is stored in the ~/.apify directory, from where it is read by all other \"apify\" commands. To log out, call \"apify logout\".","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{"token":{"name":"token","type":"option","char":"t","description":"[Optional] Apify API token","required":false}},"args":[]},"logout":{"id":"logout","description":"Logs out of your Apify account.\nThe command deletes the API token and all other account information stored in the ~/.apify directory. To log in again, call \"apify login\".","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[]},"pull":{"id":"pull","description":"Pulls an Actor from the Apify platform to the current directory. If it is defined as Git repository, it will be cloned. If it is defined as Web IDE, it will fetch the files.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{"version":{"name":"version","type":"option","char":"v","description":"Actor version number which will be pulled, e.g. 1.2. Default: the highest version","required":false}},"args":[{"name":"actorId","description":"Name or ID of the actor to run (e.g. \"apify/hello-world\" or \"E2jjCZBezvAZnX8Rb\"). If not provided, the command will update the Actor in the current directory based on its name in \".actor/actor.json\" file.","required":false}]},"push":{"id":"push","description":"Uploads the actor to the Apify platform and builds it there.\nThe Actor settings are read from the \".actor/actor.json\" file in the current directory, but they can be overridden using command-line options.\nNOTE: If the source files are smaller than 3 MB then they are uploaded as \n\"Multiple source files\", otherwise they are uploaded as \"Zip file\".\n\nWARNING: If the target Actor already exists in your Apify account, it will be overwritten!","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{"version-number":{"name":"version-number","type":"option","description":"DEPRECATED: Use flag version instead. Actor version number to which the files should be pushed. By default, it is taken from the \".actor/actor.json\" file.","required":false},"version":{"name":"version","type":"option","char":"v","description":"Actor version number to which the files should be pushed. By default, it is taken from the \".actor/actor.json\" file.","required":false},"build-tag":{"name":"build-tag","type":"option","char":"b","description":"Build tag to be applied to the successful Actor build. By default, it is taken from the \".actor/actor.json\" file","required":false},"wait-for-finish":{"name":"wait-for-finish","type":"option","char":"w","description":"Seconds for waiting to build to finish, if no value passed, it waits forever.","required":false},"no-prompt":{"name":"no-prompt","type":"boolean","description":"Do not prompt for opening the actor details in a browser. This will also not open the browser automatically.","required":false,"allowNo":false}},"args":[{"name":"actorId","description":"Name or ID of the Actor to push (e.g. \"apify/hello-world\" or \"E2jjCZBezvAZnX8Rb\"). If not provided, the command will create or modify the actor with the name specified in \".actor/actor.json\" file.","required":false}]},"run":{"id":"run","description":"Runs the actor locally in the current directory.\nIt sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be stored in the \"storage\" directory, rather than on the Apify platform.\n\nNOTE: You can override the command's default behavior for Node.js actors by overriding the \"start\" script in the package.json file. You can set up your own main file or environment variables by changing it.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{"purge":{"name":"purge","type":"boolean","char":"p","description":"Shortcut that combines the --purge-queue, --purge-dataset and --purge-key-value-store options.","required":false,"allowNo":false},"purge-queue":{"name":"purge-queue","type":"boolean","description":"Deletes the local directory containing the default request queue before the run starts.","required":false,"allowNo":false},"purge-dataset":{"name":"purge-dataset","type":"boolean","description":"Deletes the local directory containing the default dataset before the run starts.","required":false,"allowNo":false},"purge-key-value-store":{"name":"purge-key-value-store","type":"boolean","description":"Deletes all records from the default key-value store in the local directory before the run starts, except for the \"INPUT\" key.","required":false,"allowNo":false}},"args":[]},"vis":{"id":"vis","description":"Validates input schema and prints errors found.\nThe input schema for the actor is used from these locations in order of preference.\nThe first one found is validated as it would be the one used on the Apify platform.\n1. Directly embedded object in \".actor/actor.json\" under 'input' key\n2. Path to JSON file referenced in \".actor/actor.json\" under 'input' key\n3. JSON file at .actor/INPUT_SCHEMA.json\n4. JSON file at INPUT_SCHEMA.json\n\nYou can also pass any custom path to your input schema to have it validated instead.\n","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[{"name":"path","description":"Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.","required":false}]},"actor:get-input":{"id":"actor:get-input","description":"Gets the actor input value from the default key-value store associated with the actor run.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[]},"actor:get-value":{"id":"actor:get-value","description":"Gets a value from the default key-value store associated with the actor run.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[{"name":"key","description":"Key of the record in key-value store","required":true}]},"actor":{"id":"actor","description":"Commands are designed to be used in actor runs. All commands are in PoC state, do not use in production environments.\n","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[]},"actor:push-data":{"id":"actor:push-data","description":"Stores an object or an array of objects to the default dataset of the actor run.\nIt is possible to pass data using item argument or stdin.\nPassing data using argument:\n$ apify actor:push-data {\"foo\": \"bar\"}\nPassing data using stdin with pipe:\n$ cat ./test.json | apify actor:push-data\n","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[{"name":"item","description":"JSON string with one object or array of objects containing data to be stored in the default dataset.","required":false}]},"actor:set-value":{"id":"actor:set-value","description":"Sets or removes record into the default KeyValueStore associated with the actor run.\nIt is possible to pass data using argument or stdin.\nPassing data using argument:\n$ apify actor:set-value KEY my-value\nPassing data using stdin with pipe:\n$ cat ./my-text-file.txt | apify actor:set-value KEY --contentType text/plain\n","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{"contentType":{"name":"contentType","type":"option","char":"c","description":"Specifies a custom MIME content type of the record. By default \"application/json\" is used.","required":false}},"args":[{"name":"key","description":"Key of the record in key-value store.","required":true},{"name":"value","description":"Record data, which can be one of the following values:\n- If empty, the record in the key-value store is deleted.\n- If no `contentType` flag is specified, value is expected to be any JSON string value.\n- If options.contentType is set, value is taken as is.","required":false}]},"secrets:add":{"id":"secrets:add","description":"Adds a new secret value.\nThe secrets are stored to a file at ~/.apify","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[{"name":"name","description":"Name of the secret","required":true},{"name":"value","description":"Value of the secret","required":true}]},"secrets":{"id":"secrets","description":"Manages secret values for actor environment variables.\n\nExample:\n$ apify secrets:add mySecret TopSecretValue123\n\nNow the \"mySecret\" value can be used in an environment variable defined in \".actor/actor.json\" file by adding the \"@\" prefix:\n\n{\n  \"actorSpecification\": 1,\n  \"name\": \"my_actor\",\n  \"environmentVariables\": { \"SECRET_ENV_VAR\": \"@mySecret\" },\n  \"version\": \"0.1\n}\n\nWhen the actor is pushed to Apify cloud, the \"SECRET_ENV_VAR\" and its value is stored as a secret environment variable of the actor.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[]},"secrets:rm":{"id":"secrets:rm","description":"Removes the secret.","pluginName":"apify-cli","pluginType":"core","aliases":[],"flags":{},"args":[{"name":"name","description":"Name of the secret","required":true}]}}}
+{
+  "commands": {
+    "call": {
+      "aliases": [],
+      "args": {
+        "actId": {
+          "description": "Name or ID of the actor to run (e.g. \"apify/hello-world\" or \"E2jjCZBezvAZnX8Rb\"). If not provided, the command runs the remote actor specified in the \".actor/actor.json\" file.",
+          "name": "actId",
+          "required": false
+        }
+      },
+      "description": "Runs a specific actor remotely on the Apify cloud platform.\nThe Actor is run under your current Apify account. Therefore you need to be logged in by calling \"apify login\". It takes input for the Actor from the default local key-value store by default.",
+      "flags": {
+        "build": {
+          "char": "b",
+          "description": "Tag or number of the build to run (e.g. \"latest\" or \"1.2.34\").",
+          "name": "build",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "timeout": {
+          "char": "t",
+          "description": "Timeout for the actor run in seconds. Zero value means there is no timeout.",
+          "name": "timeout",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "memory": {
+          "char": "m",
+          "description": "Amount of memory allocated for the actor run, in megabytes.",
+          "name": "memory",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "wait-for-finish": {
+          "char": "w",
+          "description": "Seconds for waiting to run to finish, if no value passed, it waits forever.",
+          "name": "wait-for-finish",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "call",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "call.js"
+      ]
+    },
+    "check-version": {
+      "aliases": [
+        "cv"
+      ],
+      "args": {},
+      "description": "Checks that installed Apify CLI version is up to date.",
+      "flags": {
+        "enforce-update": {
+          "char": "e",
+          "description": "[Optional] Enforce version update from NPM",
+          "name": "enforce-update",
+          "required": false,
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hidden": true,
+      "hiddenAliases": [],
+      "id": "check-version",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "check-version.js"
+      ]
+    },
+    "create": {
+      "aliases": [],
+      "args": {
+        "actorName": {
+          "description": "Name of the actor and its directory",
+          "name": "actorName",
+          "required": false
+        }
+      },
+      "description": "Creates a new actor project directory from a selected boilerplate template.",
+      "flags": {
+        "template": {
+          "char": "t",
+          "description": "Template for the actor. If not provided, the command will prompt for it.\nVisit https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json to find available template names.",
+          "name": "template",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "skip-dependency-install": {
+          "description": "Skip installing actor dependencies.",
+          "name": "skip-dependency-install",
+          "required": false,
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "template-archive-url": {
+          "description": "Actor template archive url. Useful for developing new templates.",
+          "hidden": true,
+          "name": "template-archive-url",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "create",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "create.js"
+      ]
+    },
+    "edit-input-schema": {
+      "aliases": [
+        "eis"
+      ],
+      "args": {
+        "path": {
+          "description": "Optional path to your INPUT_SCHEMA.json file. If not provided default platform location for input schema is used.",
+          "name": "path",
+          "required": false
+        }
+      },
+      "description": "Lets you edit your input schema that would be used on the platform in a visual input schema editor.",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hidden": true,
+      "hiddenAliases": [],
+      "id": "edit-input-schema",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "edit-input-schema.js"
+      ]
+    },
+    "info": {
+      "aliases": [],
+      "args": {},
+      "description": "Displays information about the currently active Apify account.\nThe information is printed to the console.",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "info",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "info.js"
+      ]
+    },
+    "init-wrap-scrapy": {
+      "aliases": [],
+      "args": {
+        "path": {
+          "description": "Optional path to your scrapy project. If not provided, the current directory is used.",
+          "name": "path",
+          "required": false
+        }
+      },
+      "description": "Wraps your existing Scrapy project to work like an Apify Actor.\n\nIt adds the following features:\n- Automatic retry of failed requests\n- Automatic proxy rotation\n- Automatic user agent rotation\n...\n",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hidden": true,
+      "hiddenAliases": [],
+      "id": "init-wrap-scrapy",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "init-wrap-scrapy.js"
+      ]
+    },
+    "init": {
+      "aliases": [],
+      "args": {
+        "actorName": {
+          "description": "Name of the actor. If not provided, you will be prompted for it.",
+          "name": "actorName",
+          "required": false
+        }
+      },
+      "description": "Initializes a new actor project in an existing directory.\nThe command only creates the \".actor/actor.json\" file and the \"storage\" directory in the current directory, but will not touch anything else.\n\nWARNING: The directory at \"storage\" will be overwritten if it already exists.",
+      "flags": {
+        "yes": {
+          "char": "y",
+          "description": "Automatic yes to prompts; assume \"yes\" as answer to all prompts. Note that in some cases, the command may still ask for confirmation.",
+          "name": "yes",
+          "required": false,
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "init",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "init.js"
+      ]
+    },
+    "login-new": {
+      "aliases": [],
+      "args": {},
+      "description": "Logs in to your Apify account using your API token.\nThe API token and other account information is stored in the ~/.apify directory, from where it is read by all other \"apify\" commands. To log out, call \"apify logout\".",
+      "flags": {
+        "token": {
+          "char": "t",
+          "description": "[Optional] Apify API token",
+          "name": "token",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hidden": true,
+      "hiddenAliases": [],
+      "id": "login-new",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "login-new.js"
+      ]
+    },
+    "login": {
+      "aliases": [],
+      "args": {},
+      "description": "Logs in to your Apify account using a provided API token.\nThe API token and other account information is stored in the ~/.apify directory, from where it is read by all other \"apify\" commands. To log out, call \"apify logout\".",
+      "flags": {
+        "token": {
+          "char": "t",
+          "description": "[Optional] Apify API token",
+          "name": "token",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "login",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "login.js"
+      ]
+    },
+    "logout": {
+      "aliases": [],
+      "args": {},
+      "description": "Logs out of your Apify account.\nThe command deletes the API token and all other account information stored in the ~/.apify directory. To log in again, call \"apify login\".",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "logout",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "logout.js"
+      ]
+    },
+    "pull": {
+      "aliases": [],
+      "args": {
+        "actorId": {
+          "description": "Name or ID of the actor to run (e.g. \"apify/hello-world\" or \"E2jjCZBezvAZnX8Rb\"). If not provided, the command will update the Actor in the current directory based on its name in \".actor/actor.json\" file.",
+          "name": "actorId",
+          "required": false
+        }
+      },
+      "description": "Pulls an Actor from the Apify platform to the current directory. If it is defined as Git repository, it will be cloned. If it is defined as Web IDE, it will fetch the files.",
+      "flags": {
+        "version": {
+          "char": "v",
+          "description": "Actor version number which will be pulled, e.g. 1.2. Default: the highest version",
+          "name": "version",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "pull",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "pull.js"
+      ]
+    },
+    "push": {
+      "aliases": [],
+      "args": {
+        "actorId": {
+          "description": "Name or ID of the Actor to push (e.g. \"apify/hello-world\" or \"E2jjCZBezvAZnX8Rb\"). If not provided, the command will create or modify the actor with the name specified in \".actor/actor.json\" file.",
+          "name": "actorId",
+          "required": false
+        }
+      },
+      "description": "Uploads the actor to the Apify platform and builds it there.\nThe Actor settings are read from the \".actor/actor.json\" file in the current directory, but they can be overridden using command-line options.\nNOTE: If the source files are smaller than 3 MB then they are uploaded as \n\"Multiple source files\", otherwise they are uploaded as \"Zip file\".\n\nWARNING: If the target Actor already exists in your Apify account, it will be overwritten!",
+      "flags": {
+        "version-number": {
+          "description": "DEPRECATED: Use flag version instead. Actor version number to which the files should be pushed. By default, it is taken from the \".actor/actor.json\" file.",
+          "name": "version-number",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "version": {
+          "char": "v",
+          "description": "Actor version number to which the files should be pushed. By default, it is taken from the \".actor/actor.json\" file.",
+          "name": "version",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "build-tag": {
+          "char": "b",
+          "description": "Build tag to be applied to the successful Actor build. By default, it is taken from the \".actor/actor.json\" file",
+          "name": "build-tag",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "wait-for-finish": {
+          "char": "w",
+          "description": "Seconds for waiting to build to finish, if no value passed, it waits forever.",
+          "name": "wait-for-finish",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        },
+        "no-prompt": {
+          "description": "Do not prompt for opening the actor details in a browser. This will also not open the browser automatically.",
+          "name": "no-prompt",
+          "required": false,
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "push",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "push.js"
+      ]
+    },
+    "run": {
+      "aliases": [],
+      "args": {},
+      "description": "Runs the actor locally in the current directory.\nIt sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be stored in the \"storage\" directory, rather than on the Apify platform.\n\nNOTE: You can override the command's default behavior for Node.js actors by overriding the \"start\" script in the package.json file. You can set up your own main file or environment variables by changing it.",
+      "flags": {
+        "purge": {
+          "char": "p",
+          "description": "Shortcut that combines the --purge-queue, --purge-dataset and --purge-key-value-store options.",
+          "name": "purge",
+          "required": false,
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "purge-queue": {
+          "description": "Deletes the local directory containing the default request queue before the run starts.",
+          "name": "purge-queue",
+          "required": false,
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "purge-dataset": {
+          "description": "Deletes the local directory containing the default dataset before the run starts.",
+          "name": "purge-dataset",
+          "required": false,
+          "allowNo": false,
+          "type": "boolean"
+        },
+        "purge-key-value-store": {
+          "description": "Deletes all records from the default key-value store in the local directory before the run starts, except for the \"INPUT\" key.",
+          "name": "purge-key-value-store",
+          "required": false,
+          "allowNo": false,
+          "type": "boolean"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "run",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "run.js"
+      ]
+    },
+    "vis": {
+      "aliases": [],
+      "args": {
+        "path": {
+          "description": "Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.",
+          "name": "path",
+          "required": false
+        }
+      },
+      "description": "Validates input schema and prints errors found.\nThe input schema for the actor is used from these locations in order of preference.\nThe first one found is validated as it would be the one used on the Apify platform.\n1. Directly embedded object in \".actor/actor.json\" under 'input' key\n2. Path to JSON file referenced in \".actor/actor.json\" under 'input' key\n3. JSON file at .actor/INPUT_SCHEMA.json\n4. JSON file at INPUT_SCHEMA.json\n\nYou can also pass any custom path to your input schema to have it validated instead.\n",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "vis",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "vis.js"
+      ]
+    },
+    "actor:get-input": {
+      "aliases": [],
+      "args": {},
+      "description": "Gets the actor input value from the default key-value store associated with the actor run.",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "actor:get-input",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "actor",
+        "get-input.js"
+      ]
+    },
+    "actor:get-value": {
+      "aliases": [],
+      "args": {
+        "key": {
+          "description": "Key of the record in key-value store",
+          "name": "key",
+          "required": true
+        }
+      },
+      "description": "Gets a value from the default key-value store associated with the actor run.",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "actor:get-value",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "actor",
+        "get-value.js"
+      ]
+    },
+    "actor": {
+      "aliases": [],
+      "args": {},
+      "description": "Commands are designed to be used in actor runs. All commands are in PoC state, do not use in production environments.\n",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "actor",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "actor",
+        "index.js"
+      ]
+    },
+    "actor:push-data": {
+      "aliases": [],
+      "args": {
+        "item": {
+          "description": "JSON string with one object or array of objects containing data to be stored in the default dataset.",
+          "name": "item",
+          "required": false
+        }
+      },
+      "description": "Stores an object or an array of objects to the default dataset of the actor run.\nIt is possible to pass data using item argument or stdin.\nPassing data using argument:\n$ apify actor:push-data {\"foo\": \"bar\"}\nPassing data using stdin with pipe:\n$ cat ./test.json | apify actor:push-data\n",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "actor:push-data",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "actor",
+        "push-data.js"
+      ]
+    },
+    "actor:set-value": {
+      "aliases": [],
+      "args": {
+        "key": {
+          "description": "Key of the record in key-value store.",
+          "name": "key",
+          "required": true
+        },
+        "value": {
+          "description": "Record data, which can be one of the following values:\n- If empty, the record in the key-value store is deleted.\n- If no `contentType` flag is specified, value is expected to be any JSON string value.\n- If options.contentType is set, value is taken as is.",
+          "name": "value",
+          "required": false
+        }
+      },
+      "description": "Sets or removes record into the default KeyValueStore associated with the actor run.\nIt is possible to pass data using argument or stdin.\nPassing data using argument:\n$ apify actor:set-value KEY my-value\nPassing data using stdin with pipe:\n$ cat ./my-text-file.txt | apify actor:set-value KEY --contentType text/plain\n",
+      "flags": {
+        "contentType": {
+          "char": "c",
+          "description": "Specifies a custom MIME content type of the record. By default \"application/json\" is used.",
+          "name": "contentType",
+          "required": false,
+          "hasDynamicHelp": false,
+          "multiple": false,
+          "type": "option"
+        }
+      },
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "actor:set-value",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "actor",
+        "set-value.js"
+      ]
+    },
+    "secrets:add": {
+      "aliases": [],
+      "args": {
+        "name": {
+          "description": "Name of the secret",
+          "name": "name",
+          "required": true
+        },
+        "value": {
+          "description": "Value of the secret",
+          "name": "value",
+          "required": true
+        }
+      },
+      "description": "Adds a new secret value.\nThe secrets are stored to a file at ~/.apify",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "secrets:add",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "secrets",
+        "add.js"
+      ]
+    },
+    "secrets": {
+      "aliases": [],
+      "args": {},
+      "description": "Manages secret values for actor environment variables.\n\nExample:\n$ apify secrets:add mySecret TopSecretValue123\n\nNow the \"mySecret\" value can be used in an environment variable defined in \".actor/actor.json\" file by adding the \"@\" prefix:\n\n{\n  \"actorSpecification\": 1,\n  \"name\": \"my_actor\",\n  \"environmentVariables\": { \"SECRET_ENV_VAR\": \"@mySecret\" },\n  \"version\": \"0.1\n}\n\nWhen the actor is pushed to Apify cloud, the \"SECRET_ENV_VAR\" and its value is stored as a secret environment variable of the actor.",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "secrets",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "enableJsonFlag": false,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "secrets",
+        "index.js"
+      ]
+    },
+    "secrets:rm": {
+      "aliases": [],
+      "args": {
+        "name": {
+          "description": "Name of the secret",
+          "name": "name",
+          "required": true
+        }
+      },
+      "description": "Removes the secret.",
+      "flags": {},
+      "hasDynamicHelp": false,
+      "hiddenAliases": [],
+      "id": "secrets:rm",
+      "pluginAlias": "apify-cli",
+      "pluginName": "apify-cli",
+      "pluginType": "core",
+      "strict": true,
+      "isESM": false,
+      "relativePath": [
+        "src",
+        "commands",
+        "secrets",
+        "rm.js"
+      ]
+    }
+  },
+  "version": "0.18.2"
+}

@@ -1,4 +1,4 @@
-const { Command } = require('@oclif/command');
+const { Command } = require('@oclif/core');
 
 const { showHelpForCommand } = require('../../lib/utils');
 

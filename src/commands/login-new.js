@@ -1,5 +1,5 @@
 const { cryptoRandomObjectId } = require('@apify/utilities');
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 const computerName = require('computer-name');
 const cors = require('cors');
 const express = require('express');
@@ -37,7 +37,7 @@ class LoginNewCommand extends ApifyCommand {
     async run() {
         outputs.warning('This command is still experimental and might break at any time. Use at your own risk.\n');
 
-        const { flags } = this.parse(LoginNewCommand);
+        const { flags } = await this.parse(LoginNewCommand);
         const { token } = flags;
         if (token) {
             return tryToLogin(token);

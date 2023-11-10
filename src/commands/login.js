@@ -1,4 +1,4 @@
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 const inquirer = require('inquirer');
 
 const { ApifyCommand } = require('../lib/apify_command');
@@ -9,7 +9,7 @@ const { getLocalUserInfo } = require('../lib/utils');
 
 class LoginCommand extends ApifyCommand {
     async run() {
-        const { flags } = this.parse(LoginCommand);
+        const { flags } = await this.parse(LoginCommand);
         let { token } = flags;
         if (!token) {
             console.log('Enter your Apify API token. You can find it at https://console.apify.com/account#/integrations');

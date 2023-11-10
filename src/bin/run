@@ -4,7 +4,7 @@ const outputs = require('../lib/outputs');
 
 (async () => {
     try {
-        await require('@oclif/command').run()
+        await require('@oclif/core').run()
     } catch (err) {
         const exitCode = (err.oclif && err.oclif.exit !== undefined) ? err.oclif.exit : 1;
         if (exitCode !== 0) {

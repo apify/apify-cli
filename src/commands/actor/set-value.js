@@ -1,4 +1,4 @@
-const { flags: flagsHelper } = require('@oclif/command');
+const { Flags: flagsHelper } = require('@oclif/core');
 
 const { getApifyStorageClient, getDefaultStorageId, APIFY_STORAGE_TYPES } = require('../../lib/actor');
 const { ApifyCommand } = require('../../lib/apify_command');
@@ -11,7 +11,7 @@ class SetValueCommand extends ApifyCommand {
     }
 
     async run() {
-        const { args, flags } = this.parse(SetValueCommand);
+        const { args, flags } = await this.parse(SetValueCommand);
         const { stdin } = this;
         const { key, value } = args;
         const { contentType = 'application/json; charset=utf-8' } = flags;
