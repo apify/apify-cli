@@ -11,7 +11,10 @@ const analyzers = [
 class ProjectAnalyzer {
     static getProjectType(pathname) {
         const analyzer = analyzers.find((a) => {
-            if (!a.analyzer.isApplicable) throw new Error(`Analyzer ${a.analyzer} does not have isApplicable method.`);
+            if (!a.analyzer.isApplicable) {
+                throw new Error(`Analyzer ${a.analyzer} does not have isApplicable method.`);
+            }
+
             return a.analyzer.isApplicable(pathname);
         });
         return analyzer?.type || PROJECT_TYPES.UNKNOWN;
