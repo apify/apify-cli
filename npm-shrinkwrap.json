@@ -52,7 +52,7 @@
                 "apify": "src/bin/run"
             },
             "devDependencies": {
-                "@apify/eslint-config": "^0.2.3",
+                "@apify/eslint-config": "^0.4.0",
                 "@oclif/dev-cli": "^1.26.0",
                 "@oclif/test": "^2.1.0",
                 "chai": "^4.3.4",
@@ -77,9 +77,9 @@
             "integrity": "sha512-1vvMsSN2WG7b4zMLMj/LI6PIT94XH4Nr15mizEe+qi8xob5Y+g5LxOBR4qQQ1GlunsGBlrXo0v3dWMcVd4lRLQ=="
         },
         "node_modules/@apify/eslint-config": {
-            "version": "0.2.4",
-            "resolved": "https://registry.npmjs.org/@apify/eslint-config/-/eslint-config-0.2.4.tgz",
-            "integrity": "sha512-DhxAsrvoe76yKFzmJiEw7I4tr4b9fjSTcz8mS0mOytj6BCwbM57s7VRf5WQoTcilmL96/Qf9jxbTUhBmmUS/iA==",
+            "version": "0.4.0",
+            "resolved": "https://registry.npmjs.org/@apify/eslint-config/-/eslint-config-0.4.0.tgz",
+            "integrity": "sha512-cXYQUstZ5wjIQMX9HM9GOg8+s0lWp9xF7Zee8bCl5QAkNJs5gKtCsKStv7v6A2hexUZ+N5HAEN2MFex9IIw2/g==",
             "dev": true,
             "dependencies": {
                 "eslint-config-airbnb": "^19.0.0",
@@ -8156,9 +8156,9 @@
             "integrity": "sha512-1vvMsSN2WG7b4zMLMj/LI6PIT94XH4Nr15mizEe+qi8xob5Y+g5LxOBR4qQQ1GlunsGBlrXo0v3dWMcVd4lRLQ=="
         },
         "@apify/eslint-config": {
-            "version": "0.2.4",
-            "resolved": "https://registry.npmjs.org/@apify/eslint-config/-/eslint-config-0.2.4.tgz",
-            "integrity": "sha512-DhxAsrvoe76yKFzmJiEw7I4tr4b9fjSTcz8mS0mOytj6BCwbM57s7VRf5WQoTcilmL96/Qf9jxbTUhBmmUS/iA==",
+            "version": "0.4.0",
+            "resolved": "https://registry.npmjs.org/@apify/eslint-config/-/eslint-config-0.4.0.tgz",
+            "integrity": "sha512-cXYQUstZ5wjIQMX9HM9GOg8+s0lWp9xF7Zee8bCl5QAkNJs5gKtCsKStv7v6A2hexUZ+N5HAEN2MFex9IIw2/g==",
             "dev": true,
             "requires": {
                 "eslint-config-airbnb": "^19.0.0",

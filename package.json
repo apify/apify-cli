@@ -92,7 +92,7 @@
         "write-json-file": "^4.3.0"
     },
     "devDependencies": {
-        "@apify/eslint-config": "^0.2.3",
+        "@apify/eslint-config": "^0.4.0",
         "@oclif/dev-cli": "^1.26.0",
         "@oclif/test": "^2.1.0",
         "chai": "^4.3.4",
