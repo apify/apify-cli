@@ -1,13 +1,15 @@
-const { expect } = require('chai');
 const fs = require('fs');
-const sinon = require('sinon');
-const command = require('@oclif/command');
 const path = require('path');
-const loadJson = require('load-json-file');
+
 const { KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const command = require('@oclif/command');
+const { expect } = require('chai');
+const loadJson = require('load-json-file');
+const sinon = require('sinon');
+
+const { LOCAL_CONFIG_PATH } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
-const { LOCAL_CONFIG_PATH } = require('../../src/lib/consts');
 
 const actName = 'my-act';
 

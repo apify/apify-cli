@@ -1,10 +1,11 @@
 const { flags: flagsHelper } = require('@oclif/command');
 const inquirer = require('inquirer');
+
 const { ApifyCommand } = require('../lib/apify_command');
 const { success, error } = require('../lib/outputs');
+const { useApifyIdentity } = require('../lib/telemetry');
 const { getLoggedClient } = require('../lib/utils');
 const { getLocalUserInfo } = require('../lib/utils');
-const { useApifyIdentity } = require('../lib/telemetry');
 
 class LoginCommand extends ApifyCommand {
     async run() {

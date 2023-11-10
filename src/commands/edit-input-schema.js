@@ -1,17 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 
+const { cryptoRandomObjectId } = require('@apify/utilities');
 const cors = require('cors');
 const detectIndent = require('detect-indent');
 const express = require('express');
 const open = require('open');
 
-const { cryptoRandomObjectId } = require('@apify/utilities');
-
 const { ApifyCommand } = require('../lib/apify_command');
-const outputs = require('../lib/outputs');
-const { readInputSchema } = require('../lib/input_schema');
 const { LOCAL_CONFIG_PATH } = require('../lib/consts');
+const { readInputSchema } = require('../lib/input_schema');
+const outputs = require('../lib/outputs');
 
 const INPUT_SCHEMA_EDITOR_BASE_URL = 'https://apify.github.io/input-schema-editor-react/';
 const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;

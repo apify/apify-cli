@@ -1,4 +1,5 @@
 const { expect } = require('chai');
+
 const { INPUT_FILE_REG_EXP } = require('../src/lib/consts');
 
 describe('Consts', () => {

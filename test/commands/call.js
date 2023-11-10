@@ -1,11 +1,13 @@
-const { expect } = require('chai');
-const path = require('path');
 const fs = require('fs');
-const command = require('@oclif/command');
+const path = require('path');
+
 const { ACT_JOB_STATUSES } = require('@apify/consts');
-const { rimrafPromised } = require('../../src/lib/files');
-const { AUTH_FILE_PATH } = require('../../src/lib/consts');
+const command = require('@oclif/command');
+const { expect } = require('chai');
+
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
+const { AUTH_FILE_PATH } = require('../../src/lib/consts');
+const { rimrafPromised } = require('../../src/lib/files');
 const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 
 const ACTOR_NAME = `my-act-${Date.now()}`;

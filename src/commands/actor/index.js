@@ -1,4 +1,5 @@
 const { Command } = require('@oclif/command');
+
 const { showHelpForCommand } = require('../../lib/utils');
 
 class ActorIndexCommand extends Command {

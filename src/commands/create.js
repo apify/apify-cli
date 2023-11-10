@@ -1,15 +1,25 @@
-const { flags: flagsHelper } = require('@oclif/command');
 const fs = require('fs');
 const path = require('path');
 const { finished } = require('stream');
 const { promisify } = require('util');
+
 const actorTemplates = require('@apify/actor-templates');
+const { flags: flagsHelper } = require('@oclif/command');
 const AdmZip = require('adm-zip');
 const semver = require('semver');
+
 const { ApifyCommand } = require('../lib/apify_command');
+const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
+const {
+    httpsGet,
+    ensureValidActorName,
+    getTemplateDefinition,
+    enhanceReadmeWithLocalSuffix,
+} = require('../lib/create-utils');
 const execWithLog = require('../lib/exec');
-const outputs = require('../lib/outputs');
 const { updateLocalJson } = require('../lib/files');
+const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
+const outputs = require('../lib/outputs');
 const {
     setLocalConfig,
     setLocalEnv,
@@ -22,14 +32,6 @@ const {
     isNodeVersionSupported,
     detectNpmVersion,
 } = require('../lib/utils');
-const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
-const {
-    httpsGet,
-    ensureValidActorName,
-    getTemplateDefinition,
-    enhanceReadmeWithLocalSuffix,
-} = require('../lib/create-utils');
-const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
 
 class CreateCommand extends ApifyCommand {
     async run() {

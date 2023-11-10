@@ -1,14 +1,15 @@
-const chalk = require('chalk');
-const inquirer = require('inquirer');
+const fs = require('fs');
 const https = require('https');
 const { pipeline } = require('stream');
 const { promisify } = require('util');
-const fs = require('fs');
 
-const { validateActorName } = require('./utils');
+const chalk = require('chalk');
+const inquirer = require('inquirer');
+
 const {
     warning,
 } = require('./outputs');
+const { validateActorName } = require('./utils');
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 

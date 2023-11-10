@@ -1,15 +1,17 @@
 const fs = require('fs');
 const path = require('path');
-const tiged = require('tiged');
-const AdmZip = require('adm-zip');
-const semverGt = require('semver/functions/gt');
-const { get } = require('axios');
+
 const { flags: flagsHelper } = require('@oclif/command');
+const AdmZip = require('adm-zip');
+const { get } = require('axios');
 const jju = require('jju');
+const semverGt = require('semver/functions/gt');
+const tiged = require('tiged');
+
 const { ApifyCommand } = require('../lib/apify_command');
+const { LOCAL_CONFIG_PATH } = require('../lib/consts');
 const { success, error } = require('../lib/outputs');
 const { getLoggedClientOrThrow, getLocalConfigOrThrow, getLocalUserInfo } = require('../lib/utils');
-const { LOCAL_CONFIG_PATH } = require('../lib/consts');
 
 const extractGitHubZip = async (url, directoryPath) => {
     const { data } = await get(url, { responseType: 'arraybuffer' });

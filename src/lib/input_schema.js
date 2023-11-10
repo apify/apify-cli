@@ -1,13 +1,15 @@
 const fs = require('fs');
 const path = require('path');
-const Ajv = require('ajv');
-const { validateInputSchema } = require('@apify/input_schema');
-const _ = require('underscore');
+
 const { KEY_VALUE_STORE_KEYS } = require('@apify/consts');
+const { validateInputSchema } = require('@apify/input_schema');
+const Ajv = require('ajv');
+const _ = require('underscore');
 const writeJsonFile = require('write-json-file');
+
 const { ACTOR_SPECIFICATION_FOLDER } = require('./consts');
-const { getLocalConfig, getJsonFileContent, getLocalKeyValueStorePath } = require('./utils');
 const { warning } = require('./outputs');
+const { getLocalConfig, getJsonFileContent, getLocalKeyValueStorePath } = require('./utils');
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
     '.actor/INPUT_SCHEMA.json',

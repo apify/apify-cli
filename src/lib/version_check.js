@@ -1,19 +1,14 @@
 const fs = require('fs');
 const process = require('process');
+
 const axios = require('axios');
 const chalk = require('chalk');
 const semver = require('semver');
-const {
-    CHECK_VERSION_EVERY_MILLIS,
-} = require('./consts');
-const {
-    warning,
-    info,
-} = require('./outputs');
-const {
-    getLocalState,
-    extendLocalState,
-} = require('./local_state');
+
+const { CHECK_VERSION_EVERY_MILLIS } = require('./consts');
+const { getLocalState, extendLocalState } = require('./local_state');
+const { warning, info } = require('./outputs');
+const { version: CURRENT_APIFY_CLI_VERSION } = require('../../package.json');
 
 const INSTALLATION_TYPE = {
     HOMEBREW: 'HOMEBREW',
@@ -29,8 +24,6 @@ const SKIP_UPDATE_CHECK = (
     process.env.APIFY_CLI_SKIP_UPDATE_CHECK
     && !['0', 'false'].includes(process.env.APIFY_CLI_SKIP_UPDATE_CHECK.toLowerCase())
 );
-
-const CURRENT_APIFY_CLI_VERSION = require('../../package.json').version;
 
 /**
  * Detect through which package manager the Apify CLI was installed.

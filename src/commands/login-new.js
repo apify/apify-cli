@@ -1,17 +1,16 @@
+const { cryptoRandomObjectId } = require('@apify/utilities');
 const { flags: flagsHelper } = require('@oclif/command');
 const computerName = require('computer-name');
 const cors = require('cors');
 const express = require('express');
+const inquirer = require('inquirer');
 const open = require('open');
 
-const { cryptoRandomObjectId } = require('@apify/utilities');
-
-const inquirer = require('inquirer');
 const { ApifyCommand } = require('../lib/apify_command');
 const outputs = require('../lib/outputs');
+const { useApifyIdentity } = require('../lib/telemetry');
 const { getLoggedClient } = require('../lib/utils');
 const { getLocalUserInfo } = require('../lib/utils');
-const { useApifyIdentity } = require('../lib/telemetry');
 
 const CONSOLE_BASE_URL = 'https://console.apify.com/account?tab=integrations';
 // const CONSOLE_BASE_URL = 'http://localhost:3000/account?tab=integrations';

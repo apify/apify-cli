@@ -1,6 +1,8 @@
-const { expect } = require('chai');
-const command = require('@oclif/command');
 const fs = require('fs');
+
+const command = require('@oclif/command');
+const { expect } = require('chai');
+
 const { AUTH_FILE_PATH } = require('../../../src/lib/consts');
 const { getSecretsFile } = require('../../../src/lib/secrets');
 const { TEST_USER_TOKEN } = require('../config');

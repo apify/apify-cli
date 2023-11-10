@@ -1,10 +1,12 @@
-const loadJson = require('load-json-file');
-const command = require('@oclif/command');
-const sinon = require('sinon');
-const path = require('path');
-const { expect } = require('chai');
-const writeJsonFile = require('write-json-file');
 const fs = require('fs');
+const path = require('path');
+
+const command = require('@oclif/command');
+const { expect } = require('chai');
+const loadJson = require('load-json-file');
+const sinon = require('sinon');
+const writeJsonFile = require('write-json-file');
+
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
 const { LOCAL_CONFIG_PATH, DEPRECATED_LOCAL_CONFIG_NAME, AUTH_FILE_PATH } = require('../../src/lib/consts');
 

@@ -1,8 +1,10 @@
-const { expect } = require('chai');
 const fs = require('fs');
-const command = require('@oclif/command');
 const path = require('path');
+
+const command = require('@oclif/command');
+const { expect } = require('chai');
 const loadJson = require('load-json-file');
+
 const { rimrafPromised } = require('../src/lib/files');
 const { getLocalKeyValueStorePath, detectPythonVersion } = require('../src/lib/utils');
 

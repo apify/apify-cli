@@ -1,5 +1,5 @@
-const { ApifyCommand } = require('../../lib/apify_command');
 const { outputRecordFromDefaultStore } = require('../../lib/actor');
+const { ApifyCommand } = require('../../lib/apify_command');
 
 class GetValueCommand extends ApifyCommand {
     async run() {

@@ -1,13 +1,15 @@
-const { expect } = require('chai');
 const fs = require('fs');
-const command = require('@oclif/command');
 const path = require('path');
-const writeJson = require('write-json-file');
-const loadJson = require('load-json-file');
+
 const { APIFY_ENV_VARS } = require('@apify/consts');
+const command = require('@oclif/command');
+const { expect } = require('chai');
+const loadJson = require('load-json-file');
+const writeJson = require('write-json-file');
+
+const { TEST_USER_TOKEN } = require('./config');
 const { AUTH_FILE_PATH, LOCAL_CONFIG_PATH, EMPTY_LOCAL_CONFIG } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
-const { TEST_USER_TOKEN } = require('./config');
 const { getLocalKeyValueStorePath, getLocalDatasetPath, getLocalRequestQueuePath, getLocalStorageDir } = require('../../src/lib/utils');
 
 const actName = 'my-act';

@@ -1,10 +1,12 @@
-const { expect } = require('chai');
-const sinon = require('sinon');
 const fs = require('fs');
-const loadJson = require('load-json-file');
+
 const command = require('@oclif/command');
-const { AUTH_FILE_PATH } = require('../../src/lib/consts');
+const { expect } = require('chai');
+const loadJson = require('load-json-file');
+const sinon = require('sinon');
+
 const { TEST_USER_TOKEN } = require('./config');
+const { AUTH_FILE_PATH } = require('../../src/lib/consts');
 
 describe('apify info', () => {
     let skipAfterHook = false;

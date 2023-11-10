@@ -1,9 +1,11 @@
-const { expect } = require('chai');
 const fs = require('fs');
 const path = require('path');
+
+const { expect } = require('chai');
+
+const exec = require('../src/lib/exec');
 const { ensureFolderExistsSync, rimrafPromised } = require('../src/lib/files');
 const { argsToCamelCase, createActZip, getActorLocalFilePaths } = require('../src/lib/utils');
-const exec = require('../src/lib/exec');
 
 const TEST_DIR = 'my-test-dir';
 const FOLDERS = ['my_test', 'my_test/test_in_test', 'my_next_test', '.dot_test'];

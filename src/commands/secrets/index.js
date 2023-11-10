@@ -1,4 +1,5 @@
 const { Command } = require('@oclif/command');
+
 const { LOCAL_CONFIG_PATH } = require('../../lib/consts');
 const { showHelpForCommand } = require('../../lib/utils');
 

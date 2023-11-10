@@ -1,5 +1,6 @@
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
+
 const {
     STATE_FILE_PATH,
 } = require('./consts');
