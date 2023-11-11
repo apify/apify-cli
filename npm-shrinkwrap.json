@@ -38,7 +38,7 @@
                 "istextorbinary": "^6.0.0",
                 "jju": "^1.4.0",
                 "load-json-file": "^6.2.0",
-                "mime": "^2.6.0",
+                "mime": "^3.0.0",
                 "mixpanel": "^0.17.0",
                 "open": "^8.4.0",
                 "ow": "^0.28.2",
@@ -5018,14 +5018,14 @@
             }
         },
         "node_modules/mime": {
-            "version": "2.6.0",
-            "resolved": "https://registry.npmjs.org/mime/-/mime-2.6.0.tgz",
-            "integrity": "sha512-USPkMeET31rOMiarsBNIHZKLGgvKc/LrjofAnBlOttf5ajRvqiRA8QsenbcooctK6d6Ts6aqZXBA+XbkKthiQg==",
+            "version": "3.0.0",
+            "resolved": "https://registry.npmjs.org/mime/-/mime-3.0.0.tgz",
+            "integrity": "sha512-jSCU7/VB1loIWBZe14aEYHU/+1UMEHoaO7qxCOVJOw9GgH72VAWppxNcjU+x9a2k3GSIBXNKxXQFqRvvZ7vr3A==",
             "bin": {
                 "mime": "cli.js"
             },
             "engines": {
-                "node": ">=4.0.0"
+                "node": ">=10.0.0"
             }
         },
         "node_modules/mime-db": {
@@ -11418,9 +11418,9 @@
             }
         },
         "mime": {
-            "version": "2.6.0",
-            "resolved": "https://registry.npmjs.org/mime/-/mime-2.6.0.tgz",
-            "integrity": "sha512-USPkMeET31rOMiarsBNIHZKLGgvKc/LrjofAnBlOttf5ajRvqiRA8QsenbcooctK6d6Ts6aqZXBA+XbkKthiQg=="
+            "version": "3.0.0",
+            "resolved": "https://registry.npmjs.org/mime/-/mime-3.0.0.tgz",
+            "integrity": "sha512-jSCU7/VB1loIWBZe14aEYHU/+1UMEHoaO7qxCOVJOw9GgH72VAWppxNcjU+x9a2k3GSIBXNKxXQFqRvvZ7vr3A=="
         },
         "mime-db": {
             "version": "1.52.0",
