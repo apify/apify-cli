@@ -2,9 +2,9 @@ const { ApifyCommand } = require('../lib/apify_command');
 const { info } = require('../lib/outputs');
 const { wrapScrapyProject } = require('../lib/scrapy-wrapper/src/index');
 
-class ScrapyWrapCommand extends ApifyCommand {
+class WrapScrapyCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(ScrapyWrapCommand);
+        const { args } = this.parse(WrapScrapyCommand);
 
         await wrapScrapyProject({ projectPath: args.path });
 
@@ -12,9 +12,9 @@ class ScrapyWrapCommand extends ApifyCommand {
     }
 }
 
-ScrapyWrapCommand.hidden = true;
+WrapScrapyCommand.hidden = true;
 
-ScrapyWrapCommand.description = `Wraps your existing Scrapy project to work like an Apify Actor.
+WrapScrapyCommand.description = `Wraps your existing Scrapy project to work like an Apify Actor.
 
 It adds the following features:
 - Automatic retry of failed requests
@@ -23,7 +23,7 @@ It adds the following features:
 ...
 `;
 
-ScrapyWrapCommand.args = [
+WrapScrapyCommand.args = [
     {
         name: 'path',
         required: false,
@@ -31,4 +31,4 @@ ScrapyWrapCommand.args = [
     },
 ];
 
-module.exports = ScrapyWrapCommand;
+module.exports = WrapScrapyCommand;

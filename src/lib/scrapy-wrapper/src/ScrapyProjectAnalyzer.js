@@ -72,14 +72,12 @@ Are you sure there is a Scrapy project there?`);
         const spiders = [];
 
         for (const spiderPath of spiderPaths) {
-            const files = readdirSync(path.join(this.pathname, spiderPath.replace('.', '/')), { withFileTypes: true });
+            const spidersDir = path.join(this.pathname, spiderPath.replace('.', '/'));
+
+            const files = readdirSync(spidersDir, { withFileTypes: true });
             for (const file of files) {
                 if (file.isFile() && file.name.endsWith('.py') && file.name !== '__init__.py') {
-                    spiders.push(...(
-                        new SpiderFileAnalyzer(
-                            path.join(this.pathname, spiderPath.replace('.', '/'), file.name)).getSpiders()
-                    ),
-                    );
+                    spiders.push(...(new SpiderFileAnalyzer(path.join(spidersDir, file.name)).getSpiders()));
                 }
             }
         }
