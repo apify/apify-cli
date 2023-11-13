@@ -1,13 +1,15 @@
 const fs = require('fs');
 const path = require('path');
+
+const { fetchManifest, wrapperManifestUrl } = require('@apify/actor-templates');
 const { walk } = require('@root/walk');
+const ConfigParser = require('configparser');
 const handlebars = require('handlebars');
 const inquirer = require('inquirer');
-const ConfigParser = require('configparser');
-const { fetchManifest, wrapperManifestUrl } = require('@apify/actor-templates');
-const outputs = require('../outputs');
+
 const { ScrapyProjectAnalyzer } = require('./ScrapyProjectAnalyzer');
 const { ensureFolderExistsSync } = require('../files');
+const outputs = require('../outputs');
 const { downloadAndUnzip } = require('../utils');
 
 /**

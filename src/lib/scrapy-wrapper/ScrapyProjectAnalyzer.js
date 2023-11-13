@@ -1,9 +1,10 @@
-const ConfigParser = require('configparser');
 const { readdirSync } = require('fs');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
+const ConfigParser = require('configparser');
 const inquirer = require('inquirer');
+
 const { SpiderFileAnalyzer } = require('./SpiderFileAnalyzer');
 
 class ScrapyProjectAnalyzer {

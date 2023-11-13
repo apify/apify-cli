@@ -5,6 +5,8 @@ const {
 const fs = require('fs');
 const https = require('https');
 const path = require('path');
+const { finished } = require('stream');
+const { promisify } = require('util');
 
 const {
     ACT_JOB_TERMINAL_STATUSES,
@@ -16,6 +18,7 @@ const {
     LOCAL_STORAGE_SUBDIRS,
     SOURCE_FILE_FORMATS,
 } = require('@apify/consts');
+const AdmZip = require('adm-zip');
 const { ApifyClient } = require('apify-client');
 const archiver = require('archiver-promise');
 const escapeStringRegexp = require('escape-string-regexp');
@@ -28,9 +31,6 @@ const semver = require('semver');
 const _ = require('underscore');
 const writeJson = require('write-json-file');
 
-const { promisify } = require('util');
-const { finished } = require('stream');
-const AdmZip = require('adm-zip');
 const {
     GLOBAL_CONFIGS_FOLDER,
     AUTH_FILE_PATH,

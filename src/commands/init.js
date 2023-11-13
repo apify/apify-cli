@@ -1,14 +1,15 @@
-const { flags: flagsHelper } = require('@oclif/command');
-const inquirer = require('inquirer');
 const path = require('path');
 
+const { flags: flagsHelper } = require('@oclif/command');
+const inquirer = require('inquirer');
+
 const { ApifyCommand } = require('../lib/apify_command');
-const outputs = require('../lib/outputs');
-const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, detectLocalActorLanguage } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR, LOCAL_CONFIG_PATH, LANGUAGE, PROJECT_TYPES } = require('../lib/consts');
 const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
-const { wrapScrapyProject } = require('../lib/scrapy-wrapper');
+const outputs = require('../lib/outputs');
 const { ProjectAnalyzer } = require('../lib/project_analyzer');
+const { wrapScrapyProject } = require('../lib/scrapy-wrapper');
+const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, detectLocalActorLanguage } = require('../lib/utils');
 
 class InitCommand extends ApifyCommand {
     async run() {

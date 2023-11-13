@@ -817,6 +817,11 @@
                 "node": ">=12.0.0"
             }
         },
+        "node_modules/@root/walk": {
+            "version": "1.1.0",
+            "resolved": "https://registry.npmjs.org/@root/walk/-/walk-1.1.0.tgz",
+            "integrity": "sha512-FfXPAta9u2dBuaXhPRawBcijNC9rmKVApmbi6lIZyg36VR/7L02ytxoY5K/14PJlHqiBUoYII73cTlekdKTUOw=="
+        },
         "node_modules/@sapphire/async-queue": {
             "version": "1.5.0",
             "resolved": "https://registry.npmjs.org/@sapphire/async-queue/-/async-queue-1.5.0.tgz",
@@ -825,11 +830,6 @@
                 "node": ">=v14.0.0",
                 "npm": ">=7.0.0"
             }
-        },
-        "node_modules/@root/walk": {
-            "version": "1.1.0",
-            "resolved": "https://registry.npmjs.org/@root/walk/-/walk-1.1.0.tgz",
-            "integrity": "sha512-FfXPAta9u2dBuaXhPRawBcijNC9rmKVApmbi6lIZyg36VR/7L02ytxoY5K/14PJlHqiBUoYII73cTlekdKTUOw=="
         },
         "node_modules/@sapphire/shapeshift": {
             "version": "3.8.1",
@@ -8350,15 +8350,15 @@
                 "fancy-test": "^2.0.12"
             }
         },
-        "@sapphire/async-queue": {
-            "version": "1.5.0",
-            "resolved": "https://registry.npmjs.org/@sapphire/async-queue/-/async-queue-1.5.0.tgz",
-            "integrity": "sha512-JkLdIsP8fPAdh9ZZjrbHWR/+mZj0wvKS5ICibcLrRI1j84UmLMshx5n9QmL8b95d4onJ2xxiyugTgSAX7AalmA=="
-        },
         "@root/walk": {
             "version": "1.1.0",
             "resolved": "https://registry.npmjs.org/@root/walk/-/walk-1.1.0.tgz",
             "integrity": "sha512-FfXPAta9u2dBuaXhPRawBcijNC9rmKVApmbi6lIZyg36VR/7L02ytxoY5K/14PJlHqiBUoYII73cTlekdKTUOw=="
+        },
+        "@sapphire/async-queue": {
+            "version": "1.5.0",
+            "resolved": "https://registry.npmjs.org/@sapphire/async-queue/-/async-queue-1.5.0.tgz",
+            "integrity": "sha512-JkLdIsP8fPAdh9ZZjrbHWR/+mZj0wvKS5ICibcLrRI1j84UmLMshx5n9QmL8b95d4onJ2xxiyugTgSAX7AalmA=="
         },
         "@sapphire/shapeshift": {
             "version": "3.8.1",

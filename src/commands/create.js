@@ -7,6 +7,11 @@ const semver = require('semver');
 
 const { ApifyCommand } = require('../lib/apify_command');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
+const {
+    ensureValidActorName,
+    getTemplateDefinition,
+    enhanceReadmeWithLocalSuffix,
+} = require('../lib/create-utils');
 const execWithLog = require('../lib/exec');
 const { updateLocalJson } = require('../lib/files');
 const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
@@ -24,11 +29,6 @@ const {
     detectNpmVersion,
     downloadAndUnzip,
 } = require('../lib/utils');
-const {
-    ensureValidActorName,
-    getTemplateDefinition,
-    enhanceReadmeWithLocalSuffix,
-} = require('../lib/create-utils');
 
 class CreateCommand extends ApifyCommand {
     async run() {

@@ -1,4 +1,5 @@
 const fs = require('fs');
+
 const { Spider } = require('./Spider');
 
 class SpiderFileAnalyzer {

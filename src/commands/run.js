@@ -6,18 +6,18 @@ const { flags: flagsHelper } = require('@oclif/command');
 const loadJson = require('load-json-file');
 const semver = require('semver');
 
-const execWithLog = require('../lib/exec');
-const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE, PROJECT_TYPES } = require('../lib/consts');
 const { ApifyCommand } = require('../lib/apify_command');
+const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE, PROJECT_TYPES } = require('../lib/consts');
+const execWithLog = require('../lib/exec');
 const { error, info, warning } = require('../lib/outputs');
+const { ProjectAnalyzer } = require('../lib/project_analyzer');
+const { ScrapyProjectAnalyzer } = require('../lib/scrapy-wrapper/ScrapyProjectAnalyzer');
 const { replaceSecretsValue } = require('../lib/secrets');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
     purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty,
     detectLocalActorLanguage, isPythonVersionSupported, getPythonCommand, isNodeVersionSupported,
 } = require('../lib/utils');
-const { ProjectAnalyzer } = require('../lib/project_analyzer');
-const { ScrapyProjectAnalyzer } = require('../lib/scrapy-wrapper/ScrapyProjectAnalyzer');
 
 class RunCommand extends ApifyCommand {
     async run() {
