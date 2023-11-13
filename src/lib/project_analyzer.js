@@ -1,5 +1,5 @@
 const { PROJECT_TYPES } = require('./consts');
-const { ScrapyProjectAnalyzer } = require('./scrapy-wrapper/src/ScrapyProjectAnalyzer');
+const { ScrapyProjectAnalyzer } = require('./scrapy-wrapper/ScrapyProjectAnalyzer');
 
 const analyzers = [
     {

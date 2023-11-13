@@ -7,7 +7,7 @@ const outputs = require('../lib/outputs');
 const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, detectLocalActorLanguage } = require('../lib/utils');
 const { EMPTY_LOCAL_CONFIG, DEFAULT_LOCAL_STORAGE_DIR, LOCAL_CONFIG_PATH, LANGUAGE, PROJECT_TYPES } = require('../lib/consts');
 const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema');
-const { wrapScrapyProject } = require('../lib/scrapy-wrapper/src');
+const { wrapScrapyProject } = require('../lib/scrapy-wrapper');
 const { ProjectAnalyzer } = require('../lib/project_analyzer');
 
 class InitCommand extends ApifyCommand {

@@ -1,6 +1,6 @@
 const { ApifyCommand } = require('../lib/apify_command');
 const { info } = require('../lib/outputs');
-const { wrapScrapyProject } = require('../lib/scrapy-wrapper/src/index');
+const { wrapScrapyProject } = require('../lib/scrapy-wrapper/index');
 
 class WrapScrapyCommand extends ApifyCommand {
     async run() {

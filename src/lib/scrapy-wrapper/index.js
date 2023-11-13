@@ -5,10 +5,10 @@ const handlebars = require('handlebars');
 const inquirer = require('inquirer');
 const ConfigParser = require('configparser');
 const { fetchManifest, wrapperManifestUrl } = require('@apify/actor-templates');
-const outputs = require('../../outputs');
+const outputs = require('../outputs');
 const { ScrapyProjectAnalyzer } = require('./ScrapyProjectAnalyzer');
-const { ensureFolderExistsSync } = require('../../files');
-const { downloadAndUnzip } = require('../../utils');
+const { ensureFolderExistsSync } = require('../files');
+const { downloadAndUnzip } = require('../utils');
 
 /**
  * Files that should be concatenated instead of copied (and overwritten).
@@ -92,7 +92,7 @@ async function wrapScrapyProject({ projectPath }) {
     outputs.info('Downloading the latest Scrapy wrapper template...');
 
     const { archiveUrl } = manifest.templates.find(({ id }) => id === 'python-scrapy');
-    const templatePath = path.join(__dirname, '..', 'templates', 'python-scrapy');
+    const templatePath = path.join(__dirname, 'templates', 'python-scrapy');
 
     ensureFolderExistsSync(templatePath);
     await downloadAndUnzip({
@@ -103,7 +103,7 @@ async function wrapScrapyProject({ projectPath }) {
     outputs.info('Wrapping the Scrapy project...');
 
     merge(
-        path.join(__dirname, '..', 'templates', 'python-scrapy'),
+        path.join(__dirname, 'templates', 'python-scrapy'),
         projectPath,
         {
             bindings: templateBindings,

@@ -17,7 +17,7 @@ const {
     detectLocalActorLanguage, isPythonVersionSupported, getPythonCommand, isNodeVersionSupported,
 } = require('../lib/utils');
 const { ProjectAnalyzer } = require('../lib/project_analyzer');
-const { ScrapyProjectAnalyzer } = require('../lib/scrapy-wrapper/src/ScrapyProjectAnalyzer');
+const { ScrapyProjectAnalyzer } = require('../lib/scrapy-wrapper/ScrapyProjectAnalyzer');
 
 class RunCommand extends ApifyCommand {
     async run() {
