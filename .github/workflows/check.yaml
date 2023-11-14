@@ -112,7 +112,7 @@ jobs:
                 run: |
                     cd website
                     npm ci
-                    npm run build
+                    npm run prepare-release
 
     lint:
         name: Lint
@@ -153,7 +153,7 @@ jobs:
 
             -   run: |
                     npm ci
-                    npm run build
+                    npm run prepare-release
 
             # Determine if this is a beta or latest release
             -   name: Set Release Tag
