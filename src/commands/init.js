@@ -1,6 +1,5 @@
 const path = require('path');
 
-const { flags: flagsHelper } = require('@oclif/command');
 const inquirer = require('inquirer');
 
 const { ApifyCommand } = require('../lib/apify_command');
@@ -13,14 +12,12 @@ const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, dete
 
 class InitCommand extends ApifyCommand {
     async run() {
-        const { args, flags } = this.parse(InitCommand);
+        const { args } = this.parse(InitCommand);
         let { actorName } = args;
         const cwd = process.cwd();
 
-        if (flags?.wrap === 'scrapy' || ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY) {
-            if (flags?.wrap !== 'scrapy') {
-                outputs.info('The current directory looks like a Scrapy project. Using automatic project wrapping.');
-            }
+        if (ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY) {
+            outputs.info('The current directory looks like a Scrapy project. Using automatic project wrapping.');
 
             return wrapScrapyProject({ projectPath: cwd });
         }
@@ -61,14 +58,5 @@ InitCommand.args = [
         description: 'Name of the actor. If not provided, you will be prompted for it.',
     },
 ];
-
-InitCommand.flags = {
-    wrap: flagsHelper.string({
-        char: 'w',
-        required: false,
-        options: ['scrapy'],
-        description: 'Enhance an existing project with Apify middleware. Currently supports wrapping Scrapy projects only.',
-    }),
-};
 
 module.exports = InitCommand;
