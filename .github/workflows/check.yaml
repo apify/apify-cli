@@ -112,8 +112,7 @@ jobs:
                 run: |
                     cd website
                     npm ci
-                    npm run prepare-release
-
+                    npm run build
     lint:
         name: Lint
         runs-on: ubuntu-latest
