@@ -73,7 +73,7 @@ Are you sure there is a Scrapy project there?`);
         const spiders = [];
 
         for (const spiderPath of spiderPaths) {
-            const spidersDir = path.join(this.pathname, spiderPath.replace('.', '/'));
+            const spidersDir = path.join(this.pathname, spiderPath.replaceAll('.', '/'));
 
             const files = readdirSync(spidersDir, { withFileTypes: true });
             for (const file of files) {

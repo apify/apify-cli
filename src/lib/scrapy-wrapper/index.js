@@ -80,12 +80,18 @@ async function wrapScrapyProject({ projectPath }) {
         },
     ]);
 
+    function translatePathToRelativeModuleName(pathname) {
+        const relPath = path.relative(projectPath, pathname);
+
+        return `..${relPath.split(path.sep).slice(1).join('.').replace('.py', '')}`;
+    }
+
     const templateBindings = {
         botName: analyzer.settings.BOT_NAME,
         scrapy_settings_module: analyzer.configuration.get('settings', 'default'),
         apify_module_path: `${analyzer.settings.BOT_NAME}.apify`,
         spider_class_name: analyzer.getAvailableSpiders()[spiderIndex].class_name,
-        spider_module_name: `..spiders.${analyzer.getAvailableSpiders()[spiderIndex].pathname.split(path.sep).slice(-1)[0].replace('.py', '')}`,
+        spider_module_name: `${translatePathToRelativeModuleName(analyzer.getAvailableSpiders()[spiderIndex].pathname)}`,
         projectFolder: analyzer.settings.BOT_NAME,
     };
 
@@ -96,7 +102,7 @@ async function wrapScrapyProject({ projectPath }) {
     const { archiveUrl } = manifest.templates.find(({ id }) => id === 'python-scrapy');
     const templatePath = path.join(__dirname, 'templates', 'python-scrapy');
 
-    ensureFolderExistsSync(templatePath);
+    ensureFolderExistsSync('/', templatePath);
     await downloadAndUnzip({
         url: archiveUrl,
         pathTo: templatePath,
