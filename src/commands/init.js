@@ -1,5 +1,6 @@
 const path = require('path');
 
+const { flags: flagsHelper } = require('@oclif/command');
 const inquirer = require('inquirer');
 
 const { ApifyCommand } = require('../lib/apify_command');
@@ -12,7 +13,7 @@ const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, dete
 
 class InitCommand extends ApifyCommand {
     async run() {
-        const { args } = this.parse(InitCommand);
+        const { args, flags } = this.parse(InitCommand);
         let { actorName } = args;
         const cwd = process.cwd();
 
@@ -22,7 +23,7 @@ class InitCommand extends ApifyCommand {
             return wrapScrapyProject({ projectPath: cwd });
         }
 
-        if (detectLocalActorLanguage(cwd).language === LANGUAGE.UNKNOWN) {
+        if (!flags.yes && detectLocalActorLanguage(cwd).language === LANGUAGE.UNKNOWN) {
             outputs.warning('The current directory does not look like a Node.js or Python project.');
             const { c } = await inquirer.prompt([{ name: 'c', message: 'Do you want to continue?', type: 'confirm' }]);
             if (!c) return;
@@ -58,5 +59,13 @@ InitCommand.args = [
         description: 'Name of the actor. If not provided, you will be prompted for it.',
     },
 ];
+
+InitCommand.flags = {
+    yes: flagsHelper.boolean({
+        char: 'y',
+        description: 'Automatic yes to prompts; assume "yes" as answer to all prompts. Note that in some cases, the command may still ask for confirmation.',
+        required: false,
+    }),
+};
 
 module.exports = InitCommand;
