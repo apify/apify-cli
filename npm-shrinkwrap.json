@@ -28,7 +28,7 @@
                 "chalk": "^4.1.2",
                 "computer-name": "^0.1.0",
                 "cors": "^2.8.5",
-                "detect-indent": "^6.1.0",
+                "detect-indent": "^7.0.0",
                 "escape-string-regexp": "^4.0.0",
                 "express": "^4.18.2",
                 "globby": "^11.1.0",
@@ -2220,11 +2220,11 @@
             }
         },
         "node_modules/detect-indent": {
-            "version": "6.1.0",
-            "resolved": "https://registry.npmjs.org/detect-indent/-/detect-indent-6.1.0.tgz",
-            "integrity": "sha512-reYkTUJAZb9gUuZ2RvVCNhVHdg62RHnJ7WJl8ftMi4diZ6NWlciOzQN88pUhSELEwflJht4oQDv0F0BMlwaYtA==",
+            "version": "7.0.1",
+            "resolved": "https://registry.npmjs.org/detect-indent/-/detect-indent-7.0.1.tgz",
+            "integrity": "sha512-Mc7QhQ8s+cLrnUfU/Ji94vG/r8M26m8f++vyres4ZoojaRDpZ1eSIh/EpzLNwlWuvzSZ3UbDFspjFvTDXe6e/g==",
             "engines": {
-                "node": ">=8"
+                "node": ">=12.20"
             }
         },
         "node_modules/diff": {
@@ -7587,6 +7587,14 @@
                 "url": "https://github.com/sponsors/sindresorhus"
             }
         },
+        "node_modules/write-json-file/node_modules/detect-indent": {
+            "version": "6.1.0",
+            "resolved": "https://registry.npmjs.org/detect-indent/-/detect-indent-6.1.0.tgz",
+            "integrity": "sha512-reYkTUJAZb9gUuZ2RvVCNhVHdg62RHnJ7WJl8ftMi4diZ6NWlciOzQN88pUhSELEwflJht4oQDv0F0BMlwaYtA==",
+            "engines": {
+                "node": ">=8"
+            }
+        },
         "node_modules/xtend": {
             "version": "4.0.2",
             "resolved": "https://registry.npmjs.org/xtend/-/xtend-4.0.2.tgz",
@@ -9347,9 +9355,9 @@
             "integrity": "sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg=="
         },
         "detect-indent": {
-            "version": "6.1.0",
-            "resolved": "https://registry.npmjs.org/detect-indent/-/detect-indent-6.1.0.tgz",
-            "integrity": "sha512-reYkTUJAZb9gUuZ2RvVCNhVHdg62RHnJ7WJl8ftMi4diZ6NWlciOzQN88pUhSELEwflJht4oQDv0F0BMlwaYtA=="
+            "version": "7.0.1",
+            "resolved": "https://registry.npmjs.org/detect-indent/-/detect-indent-7.0.1.tgz",
+            "integrity": "sha512-Mc7QhQ8s+cLrnUfU/Ji94vG/r8M26m8f++vyres4ZoojaRDpZ1eSIh/EpzLNwlWuvzSZ3UbDFspjFvTDXe6e/g=="
         },
         "diff": {
             "version": "5.0.0",
@@ -13356,6 +13364,13 @@
                 "make-dir": "^3.0.0",
                 "sort-keys": "^4.0.0",
                 "write-file-atomic": "^3.0.0"
+            },
+            "dependencies": {
+                "detect-indent": {
+                    "version": "6.1.0",
+                    "resolved": "https://registry.npmjs.org/detect-indent/-/detect-indent-6.1.0.tgz",
+                    "integrity": "sha512-reYkTUJAZb9gUuZ2RvVCNhVHdg62RHnJ7WJl8ftMi4diZ6NWlciOzQN88pUhSELEwflJht4oQDv0F0BMlwaYtA=="
+                }
             }
         },
         "xtend": {
