@@ -83,7 +83,7 @@ async function wrapScrapyProject({ projectPath }) {
     function translatePathToRelativeModuleName(pathname) {
         const relPath = path.relative(projectPath, pathname);
 
-        return `..${relPath.split(path.sep).slice(1).join('.').replace('.py', '')}`;
+        return `.${relPath.split(path.sep).slice(1).join('.').replace('.py', '')}`;
     }
 
     const templateBindings = {
@@ -102,7 +102,8 @@ async function wrapScrapyProject({ projectPath }) {
     const { archiveUrl } = manifest.templates.find(({ id }) => id === 'python-scrapy');
     const templatePath = path.join(__dirname, 'templates', 'python-scrapy');
 
-    ensureFolderExistsSync('/', templatePath);
+    if (fs.existsSync(templatePath)) fs.rmSync(templatePath, { recursive: true });
+
     await downloadAndUnzip({
         url: archiveUrl,
         pathTo: templatePath,
