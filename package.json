@@ -94,7 +94,7 @@
     "devDependencies": {
         "@apify/eslint-config": "^0.4.0",
         "@oclif/dev-cli": "^1.26.0",
-        "@oclif/test": "^2.1.0",
+        "@oclif/test": "^3.0.0",
         "chai": "^4.3.4",
         "chai-match": "^1.1.1",
         "cross-env": "^7.0.3",
