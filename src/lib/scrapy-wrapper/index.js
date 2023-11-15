@@ -8,7 +8,6 @@ const handlebars = require('handlebars');
 const inquirer = require('inquirer');
 
 const { ScrapyProjectAnalyzer } = require('./ScrapyProjectAnalyzer');
-const { ensureFolderExistsSync } = require('../files');
 const outputs = require('../outputs');
 const { downloadAndUnzip } = require('../utils');
 

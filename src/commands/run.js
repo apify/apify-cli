@@ -129,7 +129,6 @@ class RunCommand extends ApifyCommand {
                         const project = new ScrapyProjectAnalyzer(cwd);
                         project.loadScrapyCfg();
                         if (!project.configuration.hasKey('apify', 'mainpy_location')) {
-                            // eslint-disable-next-line max-len
                             throw new Error(`This Scrapy project's configuration does not contain Apify settings. Did you forget to run "apify init"?`);
                         }
                         await execWithLog(pythonCommand, ['-m', project.configuration.get('apify', 'mainpy_location')], { env });
