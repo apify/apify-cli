@@ -113,7 +113,6 @@ jobs:
                     cd website
                     npm ci
                     npm run build
-
     lint:
         name: Lint
         runs-on: ubuntu-latest
@@ -153,7 +152,7 @@ jobs:
 
             -   run: |
                     npm ci
-                    npm run build
+                    npm run prepare-release
 
             # Determine if this is a beta or latest release
             -   name: Set Release Tag
