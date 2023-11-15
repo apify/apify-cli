@@ -31,7 +31,7 @@
                 "detect-indent": "^6.1.0",
                 "escape-string-regexp": "^4.0.0",
                 "express": "^4.18.2",
-                "globby": "^11.1.0",
+                "globby": "^14.0.0",
                 "inquirer": "^7.3.3",
                 "is-ci": "^3.0.1",
                 "is-online": "^10.0.0",
@@ -574,6 +574,25 @@
                 "node": ">=8.0.0"
             }
         },
+        "node_modules/@oclif/config/node_modules/globby": {
+            "version": "11.1.0",
+            "resolved": "https://registry.npmjs.org/globby/-/globby-11.1.0.tgz",
+            "integrity": "sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==",
+            "dependencies": {
+                "array-union": "^2.1.0",
+                "dir-glob": "^3.0.1",
+                "fast-glob": "^3.2.9",
+                "ignore": "^5.2.0",
+                "merge2": "^1.4.1",
+                "slash": "^3.0.0"
+            },
+            "engines": {
+                "node": ">=10"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
         "node_modules/@oclif/core": {
             "version": "2.15.0",
             "resolved": "https://registry.npmjs.org/@oclif/core/-/core-2.15.0.tgz",
@@ -610,6 +629,25 @@
             },
             "engines": {
                 "node": ">=14.0.0"
+            }
+        },
+        "node_modules/@oclif/core/node_modules/globby": {
+            "version": "11.1.0",
+            "resolved": "https://registry.npmjs.org/globby/-/globby-11.1.0.tgz",
+            "integrity": "sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==",
+            "dependencies": {
+                "array-union": "^2.1.0",
+                "dir-glob": "^3.0.1",
+                "fast-glob": "^3.2.9",
+                "ignore": "^5.2.0",
+                "merge2": "^1.4.1",
+                "slash": "^3.0.0"
+            },
+            "engines": {
+                "node": ">=10"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
             }
         },
         "node_modules/@oclif/dev-cli": {
@@ -725,6 +763,26 @@
                 "node": ">=6 <7 || >=8"
             }
         },
+        "node_modules/@oclif/dev-cli/node_modules/globby": {
+            "version": "11.1.0",
+            "resolved": "https://registry.npmjs.org/globby/-/globby-11.1.0.tgz",
+            "integrity": "sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==",
+            "dev": true,
+            "dependencies": {
+                "array-union": "^2.1.0",
+                "dir-glob": "^3.0.1",
+                "fast-glob": "^3.2.9",
+                "ignore": "^5.2.0",
+                "merge2": "^1.4.1",
+                "slash": "^3.0.0"
+            },
+            "engines": {
+                "node": ">=10"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
         "node_modules/@oclif/dev-cli/node_modules/jsonfile": {
             "version": "4.0.0",
             "resolved": "https://registry.npmjs.org/jsonfile/-/jsonfile-4.0.0.tgz",
@@ -823,6 +881,25 @@
             },
             "engines": {
                 "node": ">=8.0.0"
+            }
+        },
+        "node_modules/@oclif/help/node_modules/globby": {
+            "version": "11.1.0",
+            "resolved": "https://registry.npmjs.org/globby/-/globby-11.1.0.tgz",
+            "integrity": "sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==",
+            "dependencies": {
+                "array-union": "^2.1.0",
+                "dir-glob": "^3.0.1",
+                "fast-glob": "^3.2.9",
+                "ignore": "^5.2.0",
+                "merge2": "^1.4.1",
+                "slash": "^3.0.0"
+            },
+            "engines": {
+                "node": ">=10"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
             }
         },
         "node_modules/@oclif/help/node_modules/wrap-ansi": {
@@ -935,6 +1012,17 @@
             },
             "funding": {
                 "url": "https://github.com/sindresorhus/is?sponsor=1"
+            }
+        },
+        "node_modules/@sindresorhus/merge-streams": {
+            "version": "1.0.0",
+            "resolved": "https://registry.npmjs.org/@sindresorhus/merge-streams/-/merge-streams-1.0.0.tgz",
+            "integrity": "sha512-rUV5WyJrJLoloD4NDN1V1+LDMDWOa4OTsT4yYJwQNpTU6FWxkxHpL7eu4w+DmiH8x/EAM1otkPE1+LaspIbplw==",
+            "engines": {
+                "node": ">=18"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
             }
         },
         "node_modules/@sinonjs/commons": {
@@ -3944,19 +4032,41 @@
             "integrity": "sha512-40oNTM9UfG6aBmuKxk/giHn5nQ8RVz/SS4Ir6zgzOv9/qC3kKZ9v4etGTcJbEl/NyVQH7FGU7d+X1egr57Md2Q=="
         },
         "node_modules/globby": {
-            "version": "11.1.0",
-            "resolved": "https://registry.npmjs.org/globby/-/globby-11.1.0.tgz",
-            "integrity": "sha512-jhIXaOzy1sb8IyocaruWSn1TjmnBVs8Ayhcy83rmxNJ8q2uWKCAj3CnJY+KpGSXCueAPc0i05kVvVKtP1t9S3g==",
+            "version": "14.0.0",
+            "resolved": "https://registry.npmjs.org/globby/-/globby-14.0.0.tgz",
+            "integrity": "sha512-/1WM/LNHRAOH9lZta77uGbq0dAEQM+XjNesWwhlERDVenqothRbnzTrL3/LrIoEPPjeUHC3vrS6TwoyxeHs7MQ==",
             "dependencies": {
-                "array-union": "^2.1.0",
-                "dir-glob": "^3.0.1",
-                "fast-glob": "^3.2.9",
-                "ignore": "^5.2.0",
-                "merge2": "^1.4.1",
-                "slash": "^3.0.0"
+                "@sindresorhus/merge-streams": "^1.0.0",
+                "fast-glob": "^3.3.2",
+                "ignore": "^5.2.4",
+                "path-type": "^5.0.0",
+                "slash": "^5.1.0",
+                "unicorn-magic": "^0.1.0"
             },
             "engines": {
-                "node": ">=10"
+                "node": ">=18"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
+        "node_modules/globby/node_modules/path-type": {
+            "version": "5.0.0",
+            "resolved": "https://registry.npmjs.org/path-type/-/path-type-5.0.0.tgz",
+            "integrity": "sha512-5HviZNaZcfqP95rwpv+1HDgUamezbqdSYTyzjTvwtJSnIH+3vnbmWsItli8OFEndS984VT55M3jduxZbX351gg==",
+            "engines": {
+                "node": ">=12"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
+        "node_modules/globby/node_modules/slash": {
+            "version": "5.1.0",
+            "resolved": "https://registry.npmjs.org/slash/-/slash-5.1.0.tgz",
+            "integrity": "sha512-ZA6oR3T/pEyuqwMgAKT0/hAv8oAXckzbkmR0UkUosQ+Mc4RxGoJkRmwHgHufaenlyAgE1Mxgpdcrf75y6XcnDg==",
+            "engines": {
+                "node": ">=14.16"
             },
             "funding": {
                 "url": "https://github.com/sponsors/sindresorhus"
@@ -7712,6 +7822,17 @@
             "version": "5.26.5",
             "resolved": "https://registry.npmjs.org/undici-types/-/undici-types-5.26.5.tgz",
             "integrity": "sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA=="
+        },
+        "node_modules/unicorn-magic": {
+            "version": "0.1.0",
+            "resolved": "https://registry.npmjs.org/unicorn-magic/-/unicorn-magic-0.1.0.tgz",
+            "integrity": "sha512-lRfVq8fE8gz6QMBuDM6a+LO3IAzTi05H6gCVaUpir2E1Rwpo4ZUog45KpNXKC/Mn3Yb9UDuHumeFTo9iV/D9FQ==",
+            "engines": {
+                "node": ">=18"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
         },
         "node_modules/universalify": {
             "version": "2.0.1",
