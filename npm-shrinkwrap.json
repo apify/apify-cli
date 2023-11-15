@@ -2189,6 +2189,17 @@
                 "mkdirp": "^0.5.1"
             }
         },
+        "node_modules/configparser/node_modules/mkdirp": {
+            "version": "0.5.6",
+            "resolved": "https://registry.npmjs.org/mkdirp/-/mkdirp-0.5.6.tgz",
+            "integrity": "sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==",
+            "dependencies": {
+                "minimist": "^1.2.6"
+            },
+            "bin": {
+                "mkdirp": "bin/cmd.js"
+            }
+        },
         "node_modules/confusing-browser-globals": {
             "version": "1.0.11",
             "resolved": "https://registry.npmjs.org/confusing-browser-globals/-/confusing-browser-globals-1.0.11.tgz",
@@ -4029,6 +4040,26 @@
             "integrity": "sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==",
             "dev": true
         },
+        "node_modules/handlebars": {
+            "version": "4.7.8",
+            "resolved": "https://registry.npmjs.org/handlebars/-/handlebars-4.7.8.tgz",
+            "integrity": "sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==",
+            "dependencies": {
+                "minimist": "^1.2.5",
+                "neo-async": "^2.6.2",
+                "source-map": "^0.6.1",
+                "wordwrap": "^1.0.0"
+            },
+            "bin": {
+                "handlebars": "bin/handlebars"
+            },
+            "engines": {
+                "node": ">=0.4.7"
+            },
+            "optionalDependencies": {
+                "uglify-js": "^3.1.4"
+            }
+        },
         "node_modules/has-bigints": {
             "version": "1.0.2",
             "resolved": "https://registry.npmjs.org/has-bigints/-/has-bigints-1.0.2.tgz",
@@ -5280,7 +5311,6 @@
             "version": "1.2.8",
             "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz",
             "integrity": "sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==",
-            "dev": true,
             "funding": {
                 "url": "https://github.com/sponsors/ljharb"
             }
@@ -7715,6 +7745,18 @@
             },
             "engines": {
                 "node": ">=14.17"
+            }
+        },
+        "node_modules/uglify-js": {
+            "version": "3.17.4",
+            "resolved": "https://registry.npmjs.org/uglify-js/-/uglify-js-3.17.4.tgz",
+            "integrity": "sha512-T9q82TJI9e/C1TAxYvfb16xO120tMVFZrGA3f9/P4424DNu6ypK103y0GPFVa17yotwSyZW5iYXgjYHkGrJW/g==",
+            "optional": true,
+            "bin": {
+                "uglifyjs": "bin/uglifyjs"
+            },
+            "engines": {
+                "node": ">=0.8.0"
             }
         },
         "node_modules/unbox-primitive": {
