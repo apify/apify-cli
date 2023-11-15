@@ -39,7 +39,7 @@
                 "jju": "^1.4.0",
                 "load-json-file": "^6.2.0",
                 "mime": "^3.0.0",
-                "mixpanel": "^0.17.0",
+                "mixpanel": "^0.18.0",
                 "open": "^8.4.0",
                 "ow": "^0.28.2",
                 "rimraf": "^3.0.2",
@@ -5310,9 +5310,9 @@
             }
         },
         "node_modules/mixpanel": {
-            "version": "0.17.0",
-            "resolved": "https://registry.npmjs.org/mixpanel/-/mixpanel-0.17.0.tgz",
-            "integrity": "sha512-DY5WeOy/hmkPrNiiZugJpWR0iMuOwuj1a3u0bgwB2eUFRV6oIew/pIahhpawdbNjb+Bye4a8ID3gefeNPvL81g==",
+            "version": "0.18.0",
+            "resolved": "https://registry.npmjs.org/mixpanel/-/mixpanel-0.18.0.tgz",
+            "integrity": "sha512-VyUoiLB/S/7abYYHGD5x0LijeuJCUabG8Hb+FvYU3Y99xHf1Qh+s4/pH9lt50fRitAHncWbU1FE01EknUfVVjQ==",
             "dependencies": {
                 "https-proxy-agent": "5.0.0"
             },
