@@ -35,7 +35,7 @@
                 "inquirer": "^7.3.3",
                 "is-ci": "^3.0.1",
                 "is-online": "^10.0.0",
-                "istextorbinary": "^6.0.0",
+                "istextorbinary": "^8.0.0",
                 "jju": "^1.4.0",
                 "load-json-file": "^6.2.0",
                 "mime": "^3.0.0",
@@ -1648,11 +1648,11 @@
             }
         },
         "node_modules/binaryextensions": {
-            "version": "4.19.0",
-            "resolved": "https://registry.npmjs.org/binaryextensions/-/binaryextensions-4.19.0.tgz",
-            "integrity": "sha512-DRxnVbOi/1OgA5pA9EDiRT8gvVYeqfuN7TmPfLyt6cyho3KbHCi3EtDQf39TTmGDrR5dZ9CspdXhPkL/j/WGbg==",
+            "version": "6.3.0",
+            "resolved": "https://registry.npmjs.org/binaryextensions/-/binaryextensions-6.3.0.tgz",
+            "integrity": "sha512-OXQuzgGfBFlPkoHhemfSfGHv/qmIDcs28yEp1Zr5FOLS5aERbjBpuQxcuHdhjF15+GdOjB+ryp4flHlZiIDYCQ==",
             "engines": {
-                "node": ">=0.8"
+                "node": ">=10"
             },
             "funding": {
                 "url": "https://bevry.me/fund"
@@ -2520,6 +2520,20 @@
             },
             "funding": {
                 "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
+        "node_modules/editions": {
+            "version": "6.13.0",
+            "resolved": "https://registry.npmjs.org/editions/-/editions-6.13.0.tgz",
+            "integrity": "sha512-wAQCrco6+HLunD8Zv2VTZxJqAv90kQbhSkD5hH80o1D2TvM0V5tbwHRFL1OnYg0BZRKOcWaGuBh8WCwjfz/eGw==",
+            "dependencies": {
+                "version-range": "^3.2.0"
+            },
+            "engines": {
+                "node": ">=4"
+            },
+            "funding": {
+                "url": "https://bevry.me/fund"
             }
         },
         "node_modules/ee-first": {
@@ -4797,12 +4811,13 @@
             "integrity": "sha512-RHxMLp9lnKHGHRng9QFhRCMbYAcVpn69smSGcq3f36xjgVVWThj4qqLbTLlq7Ssj8B+fIQ1EuCEGI2lKsyQeIw=="
         },
         "node_modules/istextorbinary": {
-            "version": "6.0.0",
-            "resolved": "https://registry.npmjs.org/istextorbinary/-/istextorbinary-6.0.0.tgz",
-            "integrity": "sha512-4j3UqQCa06GAf6QHlN3giz2EeFU7qc6Q5uB/aY7Gmb3xmLDLepDOtsZqkb4sCfJgFvTbLUinNw0kHgHs8XOHoQ==",
+            "version": "8.1.0",
+            "resolved": "https://registry.npmjs.org/istextorbinary/-/istextorbinary-8.1.0.tgz",
+            "integrity": "sha512-VymOdtSRPRD/ceF3xdhB4P3gb6HjcubJAibme+r6sETitsZ+pNEAXBtfuMoBkr3Do6cMwf5t33BvF7LIvPdLZg==",
             "dependencies": {
-                "binaryextensions": "^4.18.0",
-                "textextensions": "^5.14.0"
+                "binaryextensions": "^6.3.0",
+                "editions": "^6.13.0",
+                "textextensions": "^6.2.0"
             },
             "engines": {
                 "node": ">=10"
@@ -7348,11 +7363,11 @@
             "dev": true
         },
         "node_modules/textextensions": {
-            "version": "5.16.0",
-            "resolved": "https://registry.npmjs.org/textextensions/-/textextensions-5.16.0.tgz",
-            "integrity": "sha512-7D/r3s6uPZyU//MCYrX6I14nzauDwJ5CxazouuRGNuvSCihW87ufN6VLoROLCrHg6FblLuJrT6N2BVaPVzqElw==",
+            "version": "6.2.0",
+            "resolved": "https://registry.npmjs.org/textextensions/-/textextensions-6.2.0.tgz",
+            "integrity": "sha512-id1u+d3pLB18j1y5QJSBeKX29k9pL2at26sI7KZ/Fgrfbph9HeE66TkLiCv4gMqOwYOmG1p9kwIGbf2+NubgLA==",
             "engines": {
-                "node": ">=0.8"
+                "node": ">=10"
             },
             "funding": {
                 "url": "https://bevry.me/fund"
@@ -7764,6 +7779,31 @@
             "integrity": "sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==",
             "engines": {
                 "node": ">= 0.8"
+            }
+        },
+        "node_modules/version-compare": {
+            "version": "3.2.0",
+            "resolved": "https://registry.npmjs.org/version-compare/-/version-compare-3.2.0.tgz",
+            "integrity": "sha512-cSIEcfQ2OuSqOC+SIjHXMoldXuXavr/M5GLtQYpQG6mn+tlKYK1DNJ/pllsGGnogM81ekhcHdLJmdEQmwA0hQA==",
+            "engines": {
+                "node": ">=4"
+            },
+            "funding": {
+                "url": "https://bevry.me/fund"
+            }
+        },
+        "node_modules/version-range": {
+            "version": "3.2.0",
+            "resolved": "https://registry.npmjs.org/version-range/-/version-range-3.2.0.tgz",
+            "integrity": "sha512-aP/XwEG9q+mTjyGUR2FDrIfLMAylJ4k4/eSCxXBAeDUeHWWtzFeWE37YlTrPA5lEXwA2A7A0N+YDPEPAkuEcJg==",
+            "dependencies": {
+                "version-compare": "^3.2.0"
+            },
+            "engines": {
+                "node": ">=4"
+            },
+            "funding": {
+                "url": "https://bevry.me/fund"
             }
         },
         "node_modules/walkdir": {
