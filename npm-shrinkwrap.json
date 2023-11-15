@@ -49,7 +49,7 @@
                 "semver": "^7.5.4",
                 "tiged": "^2.12.5",
                 "underscore": "^1.13.6",
-                "write-json-file": "^4.3.0"
+                "write-json-file": "^5.0.0"
             },
             "bin": {
                 "apify": "src/bin/run"
@@ -4690,6 +4690,7 @@
             "version": "2.1.0",
             "resolved": "https://registry.npmjs.org/is-plain-obj/-/is-plain-obj-2.1.0.tgz",
             "integrity": "sha512-YWnfyRwxL/+SsrWYfOpUtz5b3YD+nyfkHvjbcanzk8zgyO4ASD67uVMRt8k5bM4lLMDnXfriRhOpemw+NfT1eA==",
+            "dev": true,
             "engines": {
                 "node": ">=8"
             }
@@ -5192,6 +5193,7 @@
             "version": "3.1.0",
             "resolved": "https://registry.npmjs.org/make-dir/-/make-dir-3.1.0.tgz",
             "integrity": "sha512-g3FeP20LNwhALb/6Cz6Dd4F2ngze0jz7tbzrD2wAV+o9FeNHe4rL+yK2md0J/fiSf1sa1ADhXqi5+oVwOM/eGw==",
+            "dev": true,
             "dependencies": {
                 "semver": "^6.0.0"
             },
@@ -5206,6 +5208,7 @@
             "version": "6.3.1",
             "resolved": "https://registry.npmjs.org/semver/-/semver-6.3.1.tgz",
             "integrity": "sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==",
+            "dev": true,
             "bin": {
                 "semver": "bin/semver.js"
             }
@@ -6461,6 +6464,26 @@
                 "node": ">= 4.0.0"
             }
         },
+        "node_modules/qqjs/node_modules/write-json-file": {
+            "version": "4.3.0",
+            "resolved": "https://registry.npmjs.org/write-json-file/-/write-json-file-4.3.0.tgz",
+            "integrity": "sha512-PxiShnxf0IlnQuMYOPPhPkhExoCQuTUNPOa/2JWCYTmBquU9njyyDuwRKN26IZBlp4yn1nt+Agh2HOOBl+55HQ==",
+            "dev": true,
+            "dependencies": {
+                "detect-indent": "^6.0.0",
+                "graceful-fs": "^4.1.15",
+                "is-plain-obj": "^2.0.0",
+                "make-dir": "^3.0.0",
+                "sort-keys": "^4.0.0",
+                "write-file-atomic": "^3.0.0"
+            },
+            "engines": {
+                "node": ">=8.3"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
         "node_modules/qs": {
             "version": "6.11.0",
             "resolved": "https://registry.npmjs.org/qs/-/qs-6.11.0.tgz",
@@ -7086,6 +7109,7 @@
             "version": "4.2.0",
             "resolved": "https://registry.npmjs.org/sort-keys/-/sort-keys-4.2.0.tgz",
             "integrity": "sha512-aUYIEU/UviqPgc8mHR6IW1EGxkAXpeRETYcrzg8cLAvUPZcpAlleSXHV2mY7G12GphSH6Gzv+4MMVSSkbdteHg==",
+            "dev": true,
             "dependencies": {
                 "is-plain-obj": "^2.0.0"
             },
@@ -8062,19 +8086,50 @@
             }
         },
         "node_modules/write-json-file": {
-            "version": "4.3.0",
-            "resolved": "https://registry.npmjs.org/write-json-file/-/write-json-file-4.3.0.tgz",
-            "integrity": "sha512-PxiShnxf0IlnQuMYOPPhPkhExoCQuTUNPOa/2JWCYTmBquU9njyyDuwRKN26IZBlp4yn1nt+Agh2HOOBl+55HQ==",
+            "version": "5.0.0",
+            "resolved": "https://registry.npmjs.org/write-json-file/-/write-json-file-5.0.0.tgz",
+            "integrity": "sha512-ddSsCLa4aQ3kI21BthINo4q905/wfhvQ3JL3774AcRjBaiQmfn5v4rw77jQ7T6CmAit9VOQO+FsLyPkwxoB1fw==",
             "dependencies": {
-                "detect-indent": "^6.0.0",
-                "graceful-fs": "^4.1.15",
-                "is-plain-obj": "^2.0.0",
-                "make-dir": "^3.0.0",
-                "sort-keys": "^4.0.0",
-                "write-file-atomic": "^3.0.0"
+                "detect-indent": "^7.0.0",
+                "is-plain-obj": "^4.0.0",
+                "sort-keys": "^5.0.0",
+                "write-file-atomic": "^3.0.3"
             },
             "engines": {
-                "node": ">=8.3"
+                "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
+        "node_modules/write-json-file/node_modules/detect-indent": {
+            "version": "7.0.1",
+            "resolved": "https://registry.npmjs.org/detect-indent/-/detect-indent-7.0.1.tgz",
+            "integrity": "sha512-Mc7QhQ8s+cLrnUfU/Ji94vG/r8M26m8f++vyres4ZoojaRDpZ1eSIh/EpzLNwlWuvzSZ3UbDFspjFvTDXe6e/g==",
+            "engines": {
+                "node": ">=12.20"
+            }
+        },
+        "node_modules/write-json-file/node_modules/is-plain-obj": {
+            "version": "4.1.0",
+            "resolved": "https://registry.npmjs.org/is-plain-obj/-/is-plain-obj-4.1.0.tgz",
+            "integrity": "sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==",
+            "engines": {
+                "node": ">=12"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
+        "node_modules/write-json-file/node_modules/sort-keys": {
+            "version": "5.0.0",
+            "resolved": "https://registry.npmjs.org/sort-keys/-/sort-keys-5.0.0.tgz",
+            "integrity": "sha512-Pdz01AvCAottHTPQGzndktFNdbRA75BgOfeT1hH+AMnJFv8lynkPi42rfeEhpx1saTEI3YNMWxfqu0sFD1G8pw==",
+            "dependencies": {
+                "is-plain-obj": "^4.0.0"
+            },
+            "engines": {
+                "node": ">=12"
             },
             "funding": {
                 "url": "https://github.com/sponsors/sindresorhus"

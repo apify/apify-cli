@@ -92,7 +92,7 @@
         "semver": "^7.5.4",
         "tiged": "^2.12.5",
         "underscore": "^1.13.6",
-        "write-json-file": "^4.3.0"
+        "write-json-file": "^5.0.0"
     },
     "devDependencies": {
         "@apify/eslint-config": "^0.4.0",
