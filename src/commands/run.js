@@ -7,9 +7,11 @@ const loadJson = require('load-json-file');
 const semver = require('semver');
 
 const { ApifyCommand } = require('../lib/apify_command');
-const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE } = require('../lib/consts');
+const { LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR, SUPPORTED_NODEJS_VERSION, LANGUAGE, PROJECT_TYPES } = require('../lib/consts');
 const execWithLog = require('../lib/exec');
 const { error, info, warning } = require('../lib/outputs');
+const { ProjectAnalyzer } = require('../lib/project_analyzer');
+const { ScrapyProjectAnalyzer } = require('../lib/scrapy-wrapper/ScrapyProjectAnalyzer');
 const { replaceSecretsValue } = require('../lib/secrets');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
@@ -29,11 +31,12 @@ class RunCommand extends ApifyCommand {
 
         const packageJsonExists = fs.existsSync(packageJsonPath);
         const mainPyExists = fs.existsSync(mainPyPath);
+        const isScrapyProject = ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY;
 
-        if (!packageJsonExists && !mainPyExists) {
+        if (!packageJsonExists && !mainPyExists && !isScrapyProject) {
             throw new Error(
                 'Actor is of an unknown format.'
-                + ` Make sure either the 'package.json' file or 'src/__main__.py' file exists.`,
+                + ` Make sure either the 'package.json' file or 'src/__main__.py' file exists or you are in a migrated Scrapy project.`,
             );
         }
 
@@ -122,7 +125,16 @@ class RunCommand extends ApifyCommand {
             if (pythonVersion) {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);
-                    await execWithLog(pythonCommand, ['-m', 'src'], { env });
+                    if (isScrapyProject) {
+                        const project = new ScrapyProjectAnalyzer(cwd);
+                        project.loadScrapyCfg();
+                        if (!project.configuration.hasKey('apify', 'mainpy_location')) {
+                            throw new Error(`This Scrapy project's configuration does not contain Apify settings. Did you forget to run "apify init"?`);
+                        }
+                        await execWithLog(pythonCommand, ['-m', project.configuration.get('apify', 'mainpy_location')], { env });
+                    } else {
+                        await execWithLog(pythonCommand, ['-m', 'src'], { env });
+                    }
                 } else {
                     error(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
                     error('Please install Python 3.8 or higher to be able to run Python actors locally.');

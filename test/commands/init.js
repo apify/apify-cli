@@ -21,7 +21,7 @@ describe('apify init', () => {
     });
 
     it('correctly creates basic structure with empty INPUT.json', async () => {
-        await command.run(['init', actName]);
+        await command.run(['init', '-y', actName]);
 
         // Check that it won't create deprecated config
         // TODO: We can remove this later
@@ -51,7 +51,7 @@ describe('apify init', () => {
         const defaultActorJson = Object.assign(EMPTY_LOCAL_CONFIG, { name: actName, input });
 
         await writeJsonFile('.actor/actor.json', defaultActorJson);
-        await command.run(['init', actName]);
+        await command.run(['init', '-y', actName]);
 
         // Check that it won't create deprecated config
         // TODO: We can remove this later

@@ -5,6 +5,8 @@ const {
 const fs = require('fs');
 const https = require('https');
 const path = require('path');
+const { finished } = require('stream');
+const { promisify } = require('util');
 
 const {
     ACT_JOB_TERMINAL_STATUSES,
@@ -16,6 +18,7 @@ const {
     LOCAL_STORAGE_SUBDIRS,
     SOURCE_FILE_FORMATS,
 } = require('@apify/consts');
+const AdmZip = require('adm-zip');
 const { ApifyClient } = require('apify-client');
 const archiver = require('archiver-promise');
 const escapeStringRegexp = require('escape-string-regexp');
@@ -40,6 +43,7 @@ const {
     SUPPORTED_NODEJS_VERSION,
     MINIMUM_SUPPORTED_PYTHON_VERSION,
     LANGUAGE,
+    PROJECT_TYPES,
 } = require('./consts');
 const {
     ensureFolderExistsSync,
@@ -49,6 +53,26 @@ const {
 const {
     info,
 } = require('./outputs');
+const { ProjectAnalyzer } = require('./project_analyzer');
+
+/**
+ * @param {string} url
+ * @returns {Promise<unknown>}
+ */
+const httpsGet = async (url) => {
+    return new Promise((resolve, reject) => {
+        https.get(url, (response) => {
+            // Handle redirects
+            if (response.statusCode === 301 || response.statusCode === 302) {
+                resolve(httpsGet(response.headers.location));
+                // Destroy the response to close the HTTP connection, otherwise this hangs for a long time with Node 19+ (due to HTTP keep-alive).
+                response.destroy();
+            } else {
+                resolve(response);
+            }
+        }).on('error', reject);
+    });
+};
 
 // Properties from apify.json file that will me migrated to actor specs in .actor/actor.json
 const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
@@ -581,8 +605,8 @@ const detectNpmVersion = () => {
 
 const detectLocalActorLanguage = () => {
     const cwd = process.cwd();
-    const isActorInNode = fs.existsSync(path.join(process.cwd(), 'package.json'));
-    const isActorInPython = fs.existsSync(path.join(process.cwd(), 'src/__main__.py'));
+    const isActorInNode = fs.existsSync(path.join(cwd, 'package.json'));
+    const isActorInPython = fs.existsSync(path.join(cwd, 'src/__main__.py')) || ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY;
     const result = {};
     if (isActorInNode) {
         result.language = LANGUAGE.NODEJS;
@@ -596,7 +620,17 @@ const detectLocalActorLanguage = () => {
     return result;
 };
 
+const downloadAndUnzip = async ({ url, pathTo }) => {
+    const zipStream = await httpsGet(url);
+    const chunks = [];
+    zipStream.on('data', (chunk) => chunks.push(chunk));
+    await promisify(finished)(zipStream);
+    const zip = new AdmZip(Buffer.concat(chunks));
+    zip.extractAllTo(pathTo, true);
+};
+
 module.exports = {
+    httpsGet,
     getLoggedClientOrThrow,
     getLocalConfig,
     setLocalConfig,
@@ -630,4 +664,5 @@ module.exports = {
     isNodeVersionSupported,
     detectNpmVersion,
     detectLocalActorLanguage,
+    downloadAndUnzip,
 };

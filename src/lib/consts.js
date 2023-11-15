@@ -23,6 +23,11 @@ exports.LANGUAGE = {
     UNKNOWN: 'n/a',
 };
 
+exports.PROJECT_TYPES = {
+    SCRAPY: 'scrapy',
+    UNKNOWN: 'unknown',
+};
+
 exports.COMMANDS_WITHIN_ACTOR = ['init', 'run', 'push', 'pull', 'call'];
 
 exports.CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day

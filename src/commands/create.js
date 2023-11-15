@@ -1,17 +1,13 @@
 const fs = require('fs');
 const path = require('path');
-const { finished } = require('stream');
-const { promisify } = require('util');
 
 const actorTemplates = require('@apify/actor-templates');
 const { flags: flagsHelper } = require('@oclif/command');
-const AdmZip = require('adm-zip');
 const semver = require('semver');
 
 const { ApifyCommand } = require('../lib/apify_command');
 const { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } = require('../lib/consts');
 const {
-    httpsGet,
     ensureValidActorName,
     getTemplateDefinition,
     enhanceReadmeWithLocalSuffix,
@@ -31,6 +27,7 @@ const {
     detectNodeVersion,
     isNodeVersionSupported,
     detectNpmVersion,
+    downloadAndUnzip,
 } = require('../lib/utils');
 
 class CreateCommand extends ApifyCommand {
@@ -81,12 +78,7 @@ class CreateCommand extends ApifyCommand {
             throw err;
         }
 
-        const zipStream = await httpsGet(templateArchiveUrl);
-        const chunks = [];
-        zipStream.on('data', (chunk) => chunks.push(chunk));
-        await promisify(finished)(zipStream);
-        const zip = new AdmZip(Buffer.concat(chunks));
-        zip.extractAllTo(actFolderDir, true);
+        await downloadAndUnzip({ url: templateArchiveUrl, pathTo: actFolderDir });
 
         // There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
         const localConfig = await getJsonFileContent(path.join(actFolderDir, LOCAL_CONFIG_PATH));

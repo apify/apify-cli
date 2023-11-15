@@ -20,6 +20,7 @@
                 "@oclif/errors": "^1.3.6",
                 "@oclif/plugin-commands": "^2.1.0",
                 "@oclif/plugin-help": "^5.1.12",
+                "@root/walk": "^1.1.0",
                 "adm-zip": "^0.5.10",
                 "ajv": "^8.12.0",
                 "apify-client": "^2.8.2",
@@ -27,11 +28,13 @@
                 "axios": "^1.6.1",
                 "chalk": "^4.1.2",
                 "computer-name": "^0.1.0",
+                "configparser": "^0.3.10",
                 "cors": "^2.8.5",
                 "detect-indent": "^6.1.0",
                 "escape-string-regexp": "^4.0.0",
                 "express": "^4.18.2",
                 "globby": "^11.1.0",
+                "handlebars": "^4.7.8",
                 "inquirer": "^7.3.3",
                 "is-ci": "^3.0.1",
                 "is-online": "^10.0.0",
@@ -903,6 +906,11 @@
             "engines": {
                 "node": ">=12.0.0"
             }
+        },
+        "node_modules/@root/walk": {
+            "version": "1.1.0",
+            "resolved": "https://registry.npmjs.org/@root/walk/-/walk-1.1.0.tgz",
+            "integrity": "sha512-FfXPAta9u2dBuaXhPRawBcijNC9rmKVApmbi6lIZyg36VR/7L02ytxoY5K/14PJlHqiBUoYII73cTlekdKTUOw=="
         },
         "node_modules/@sapphire/async-queue": {
             "version": "1.5.0",
@@ -2181,6 +2189,25 @@
             "version": "0.0.1",
             "resolved": "https://registry.npmjs.org/concat-map/-/concat-map-0.0.1.tgz",
             "integrity": "sha512-/Srv4dswyQNBfohGpz9o6Yb3Gz3SrUDqBH5rTuhGR7ahtlbYKnVxw2bCFMRljaA7EXHaXZ8wsHdodFvbkhKmqg=="
+        },
+        "node_modules/configparser": {
+            "version": "0.3.10",
+            "resolved": "https://registry.npmjs.org/configparser/-/configparser-0.3.10.tgz",
+            "integrity": "sha512-wTMIO5ZMA83xLataWsILTX4JV0IinnHXoWK0ib+DeqQvurUJf8ew+iwS9b4Ol5DfMUiY1UvfGkvrA60DJIIR6A==",
+            "dependencies": {
+                "mkdirp": "^0.5.1"
+            }
+        },
+        "node_modules/configparser/node_modules/mkdirp": {
+            "version": "0.5.6",
+            "resolved": "https://registry.npmjs.org/mkdirp/-/mkdirp-0.5.6.tgz",
+            "integrity": "sha512-FP+p8RB8OWpF3YZBCrP5gtADmtXApB5AMLn+vdyA+PyxCjrCs00mjyUozssO33cwDeT3wNGdLxJ5M//YqtHAJw==",
+            "dependencies": {
+                "minimist": "^1.2.6"
+            },
+            "bin": {
+                "mkdirp": "bin/cmd.js"
+            }
         },
         "node_modules/confusing-browser-globals": {
             "version": "1.0.11",
@@ -4022,6 +4049,26 @@
             "integrity": "sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==",
             "dev": true
         },
+        "node_modules/handlebars": {
+            "version": "4.7.8",
+            "resolved": "https://registry.npmjs.org/handlebars/-/handlebars-4.7.8.tgz",
+            "integrity": "sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==",
+            "dependencies": {
+                "minimist": "^1.2.5",
+                "neo-async": "^2.6.2",
+                "source-map": "^0.6.1",
+                "wordwrap": "^1.0.0"
+            },
+            "bin": {
+                "handlebars": "bin/handlebars"
+            },
+            "engines": {
+                "node": ">=0.4.7"
+            },
+            "optionalDependencies": {
+                "uglify-js": "^3.1.4"
+            }
+        },
         "node_modules/has-bigints": {
             "version": "1.0.2",
             "resolved": "https://registry.npmjs.org/has-bigints/-/has-bigints-1.0.2.tgz",
@@ -5273,7 +5320,6 @@
             "version": "1.2.8",
             "resolved": "https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz",
             "integrity": "sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==",
-            "dev": true,
             "funding": {
                 "url": "https://github.com/sponsors/ljharb"
             }
@@ -5520,6 +5566,11 @@
             "engines": {
                 "node": ">= 0.6"
             }
+        },
+        "node_modules/neo-async": {
+            "version": "2.6.2",
+            "resolved": "https://registry.npmjs.org/neo-async/-/neo-async-2.6.2.tgz",
+            "integrity": "sha512-Yd3UES5mWCSqR+qNT93S3UoYUkqAZ9lLg8a7g9rimsWmYGK8cVToA4/sF3RrshdyV3sAGMXVUmpMYOw+dLpOuw=="
         },
         "node_modules/nice-try": {
             "version": "1.0.5",
@@ -7045,6 +7096,14 @@
                 "url": "https://github.com/sponsors/sindresorhus"
             }
         },
+        "node_modules/source-map": {
+            "version": "0.6.1",
+            "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz",
+            "integrity": "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==",
+            "engines": {
+                "node": ">=0.10.0"
+            }
+        },
         "node_modules/spdx-correct": {
             "version": "3.2.0",
             "resolved": "https://registry.npmjs.org/spdx-correct/-/spdx-correct-3.2.0.tgz",
@@ -7712,6 +7771,18 @@
             },
             "engines": {
                 "node": ">=14.17"
+            }
+        },
+        "node_modules/uglify-js": {
+            "version": "3.17.4",
+            "resolved": "https://registry.npmjs.org/uglify-js/-/uglify-js-3.17.4.tgz",
+            "integrity": "sha512-T9q82TJI9e/C1TAxYvfb16xO120tMVFZrGA3f9/P4424DNu6ypK103y0GPFVa17yotwSyZW5iYXgjYHkGrJW/g==",
+            "optional": true,
+            "bin": {
+                "uglifyjs": "bin/uglifyjs"
+            },
+            "engines": {
+                "node": ">=0.8.0"
             }
         },
         "node_modules/unbox-primitive": {
