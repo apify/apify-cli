@@ -41,7 +41,7 @@
                 "mime": "^3.0.0",
                 "mixpanel": "^0.17.0",
                 "open": "^8.4.0",
-                "ow": "^0.28.2",
+                "ow": "^1.0.0",
                 "rimraf": "^3.0.2",
                 "semver": "^7.5.4",
                 "tiged": "^2.12.5",
@@ -1303,12 +1303,41 @@
                 "type-fest": "^4.0.0"
             }
         },
+        "node_modules/apify-client/node_modules/@sindresorhus/is": {
+            "version": "4.6.0",
+            "resolved": "https://registry.npmjs.org/@sindresorhus/is/-/is-4.6.0.tgz",
+            "integrity": "sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==",
+            "engines": {
+                "node": ">=10"
+            },
+            "funding": {
+                "url": "https://github.com/sindresorhus/is?sponsor=1"
+            }
+        },
         "node_modules/apify-client/node_modules/axios": {
             "version": "0.21.4",
             "resolved": "https://registry.npmjs.org/axios/-/axios-0.21.4.tgz",
             "integrity": "sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==",
             "dependencies": {
                 "follow-redirects": "^1.14.0"
+            }
+        },
+        "node_modules/apify-client/node_modules/ow": {
+            "version": "0.28.2",
+            "resolved": "https://registry.npmjs.org/ow/-/ow-0.28.2.tgz",
+            "integrity": "sha512-dD4UpyBh/9m4X2NVjA+73/ZPBRF+uF4zIMFvvQsabMiEK8x41L3rQ8EENOi35kyyoaJwNxEeJcP6Fj1H4U409Q==",
+            "dependencies": {
+                "@sindresorhus/is": "^4.2.0",
+                "callsites": "^3.1.0",
+                "dot-prop": "^6.0.1",
+                "lodash.isequal": "^4.5.0",
+                "vali-date": "^1.0.0"
+            },
+            "engines": {
+                "node": ">=12"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
             }
         },
         "node_modules/apify-client/node_modules/type-fest": {
@@ -5817,32 +5846,57 @@
             }
         },
         "node_modules/ow": {
-            "version": "0.28.2",
-            "resolved": "https://registry.npmjs.org/ow/-/ow-0.28.2.tgz",
-            "integrity": "sha512-dD4UpyBh/9m4X2NVjA+73/ZPBRF+uF4zIMFvvQsabMiEK8x41L3rQ8EENOi35kyyoaJwNxEeJcP6Fj1H4U409Q==",
+            "version": "1.1.1",
+            "resolved": "https://registry.npmjs.org/ow/-/ow-1.1.1.tgz",
+            "integrity": "sha512-sJBRCbS5vh1Jp9EOgwp1Ws3c16lJrUkJYlvWTYC03oyiYVwS/ns7lKRWow4w4XjDyTrA2pplQv4B2naWSR6yDA==",
             "dependencies": {
-                "@sindresorhus/is": "^4.2.0",
-                "callsites": "^3.1.0",
-                "dot-prop": "^6.0.1",
+                "@sindresorhus/is": "^5.3.0",
+                "callsites": "^4.0.0",
+                "dot-prop": "^7.2.0",
                 "lodash.isequal": "^4.5.0",
                 "vali-date": "^1.0.0"
             },
             "engines": {
-                "node": ">=12"
+                "node": ">=14.16"
             },
             "funding": {
                 "url": "https://github.com/sponsors/sindresorhus"
             }
         },
-        "node_modules/ow/node_modules/@sindresorhus/is": {
-            "version": "4.6.0",
-            "resolved": "https://registry.npmjs.org/@sindresorhus/is/-/is-4.6.0.tgz",
-            "integrity": "sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==",
+        "node_modules/ow/node_modules/callsites": {
+            "version": "4.1.0",
+            "resolved": "https://registry.npmjs.org/callsites/-/callsites-4.1.0.tgz",
+            "integrity": "sha512-aBMbD1Xxay75ViYezwT40aQONfr+pSXTHwNKvIXhXD6+LY3F1dLIcceoC5OZKBVHbXcysz1hL9D2w0JJIMXpUw==",
             "engines": {
-                "node": ">=10"
+                "node": ">=12.20"
             },
             "funding": {
-                "url": "https://github.com/sindresorhus/is?sponsor=1"
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
+        "node_modules/ow/node_modules/dot-prop": {
+            "version": "7.2.0",
+            "resolved": "https://registry.npmjs.org/dot-prop/-/dot-prop-7.2.0.tgz",
+            "integrity": "sha512-Ol/IPXUARn9CSbkrdV4VJo7uCy1I3VuSiWCaFSg+8BdUOzF9n3jefIpcgAydvUZbTdEBZs2vEiTiS9m61ssiDA==",
+            "dependencies": {
+                "type-fest": "^2.11.2"
+            },
+            "engines": {
+                "node": "^12.20.0 || ^14.13.1 || >=16.0.0"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
+            }
+        },
+        "node_modules/ow/node_modules/type-fest": {
+            "version": "2.19.0",
+            "resolved": "https://registry.npmjs.org/type-fest/-/type-fest-2.19.0.tgz",
+            "integrity": "sha512-RAH822pAdBgcNMAfWnCBU3CFZcfZ/i1eZjwFU/dsLKumyuuP3niueg2UAukXYF0E2AAoc82ZSSf9J0WQBinzHA==",
+            "engines": {
+                "node": ">=12.20"
+            },
+            "funding": {
+                "url": "https://github.com/sponsors/sindresorhus"
             }
         },
         "node_modules/p-any": {
