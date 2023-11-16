@@ -27,9 +27,9 @@
     },
     "dependencies": {
         "@apify/docs-theme": "^1.0.99",
-        "@docusaurus/core": "^2.4.3",
-        "@docusaurus/plugin-client-redirects": "^2.4.3",
-        "@docusaurus/preset-classic": "^2.4.3",
+        "@docusaurus/core": "^3.0.0",
+        "@docusaurus/plugin-client-redirects": "^3.0.0",
+        "@docusaurus/preset-classic": "^3.0.0",
         "clsx": "^1.2.1",
         "docusaurus-gtm-plugin": "^0.0.2",
         "prop-types": "^15.8.1",
