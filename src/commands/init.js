@@ -19,6 +19,7 @@ class InitCommand extends ApifyCommand {
 
         if (ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY) {
             outputs.info('The current directory looks like a Scrapy project. Using automatic project wrapping.');
+            this.telemetryData.actorWrapper = PROJECT_TYPES.SCRAPY;
 
             return wrapScrapyProject({ projectPath: cwd });
         }
