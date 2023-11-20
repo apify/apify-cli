@@ -109,6 +109,11 @@ Before you can run your project locally using `apify run`, you have to set up th
 ```
 You can find more information about by running `apify help run`.
 
+> [!NOTE]  
+> **Running a Scrapy project on Apify platform**
+>
+> If you want to run a Scrapy project on Apify platform, follow the Scrapy integration guide [here](https://docs.apify.com/integrations/scrapy).
+
 ### Run the actor locally
 
 ```bash

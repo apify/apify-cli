@@ -22,6 +22,11 @@ module.exports = [
         },
         {
             type: 'doc',
+            id: 'integrating-scrapy',
+            label: 'Integrating Scrapy',
+        },
+        {
+            type: 'doc',
             id: 'changelog',
             label: 'Changelog',
         },
