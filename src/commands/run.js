@@ -125,16 +125,17 @@ class RunCommand extends ApifyCommand {
             if (pythonVersion) {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);
+                    let executableLocation = 'src';
+
                     if (isScrapyProject) {
                         const project = new ScrapyProjectAnalyzer(cwd);
                         project.loadScrapyCfg();
-                        if (!project.configuration.hasKey('apify', 'mainpy_location')) {
-                            throw new Error(`This Scrapy project's configuration does not contain Apify settings. Did you forget to run "apify init"?`);
+                        if (project.configuration.hasKey('apify', 'mainpy_location')) {
+                            executableLocation = project.configuration.get('apify', 'mainpy_location');
                         }
-                        await execWithLog(pythonCommand, ['-m', project.configuration.get('apify', 'mainpy_location')], { env });
-                    } else {
-                        await execWithLog(pythonCommand, ['-m', 'src'], { env });
                     }
+
+                    await execWithLog(pythonCommand, ['-m', executableLocation], { env });
                 } else {
                     error(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
                     error('Please install Python 3.8 or higher to be able to run Python actors locally.');
