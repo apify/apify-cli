@@ -3,7 +3,7 @@ sidebar_label: Integrating Scrapy projects
 title: Integrating Scrapy projects
 ---
 
-This part of the documentation describes how to integrate Scrapy projects with Apify platform.
+This part of the documentation describes how to integrate Scrapy projects with the Apify platform.
 
 Scrapy, a widely-used open-source web scraping framework, can now be effortlessly migrated to the Apify platform using our dedicated migration tool. This tool empowers users to transform their Scrapy projects into [Apify Actors](https://docs.apify.com/platform/actors) with a single command. To initiate this transformation, execute the following initialization command in the root of your Scrapy project. The command will automatically detect the presence of the `scrapy.cfg` file in your project.
 
