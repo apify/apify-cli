@@ -109,10 +109,9 @@ Before you can run your project locally using `apify run`, you have to set up th
 ```
 You can find more information about by running `apify help run`.
 
-> [!NOTE]  
-> **Running a Scrapy project on Apify platform**
->
-> If you want to run a Scrapy project on Apify platform, follow the Scrapy integration guide [here](https://docs.apify.com/integrations/scrapy).
+### Create a new Actor from Scrapy project
+
+If you want to run a Scrapy project on Apify platform, follow the Scrapy integration guide [here](https://docs.apify.com/cli/docs/integrating-scrapy).
 
 ### Run the actor locally
 
@@ -401,7 +400,7 @@ OPTIONS
   -w, --wait-for-finish=wait-for-finish  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
-  The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It 
+  The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". It
   takes input for the Actor from the default local key-value store by default.
 ```
 
@@ -455,7 +454,7 @@ ARGUMENTS
   ACTORNAME  Name of the actor. If not provided, you will be prompted for it.
 
 DESCRIPTION
-  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will 
+  The command only creates the ".actor/actor.json" file and the "storage" directory in the current directory, but will
   not touch anything else.
 
   WARNING: The directory at "storage" will be overwritten if it already exists.
@@ -475,7 +474,7 @@ OPTIONS
   -t, --token=token  [Optional] Apify API token
 
 DESCRIPTION
-  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other 
+  The API token and other account information is stored in the ~/.apify directory, from where it is read by all other
   "apify" commands. To log out, call "apify logout".
 ```
 
@@ -542,9 +541,9 @@ OPTIONS
                                          should be pushed. By default, it is taken from the ".actor/actor.json" file.
 
 DESCRIPTION
-  The Actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden 
+  The Actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden
   using command-line options.
-  NOTE: If the source files are smaller than 3 MB then they are uploaded as 
+  NOTE: If the source files are smaller than 3 MB then they are uploaded as
   "Multiple source files", otherwise they are uploaded as "Zip file".
 
   WARNING: If the target Actor already exists in your Apify account, it will be overwritten!
@@ -576,7 +575,7 @@ DESCRIPTION
    example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
    stored in the "storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the command's default behavior for Node.js actors by overriding the "start" script in the 
+  NOTE: You can override the command's default behavior for Node.js actors by overriding the "start" script in the
   package.json file. You can set up your own main file or environment variables by changing it.
 ```
 
@@ -594,7 +593,7 @@ DESCRIPTION
   Example:
   $ apify secrets:add mySecret TopSecretValue123
 
-  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@" 
+  Now the "mySecret" value can be used in an environment variable defined in ".actor/actor.json" file by adding the "@"
   prefix:
 
   {
