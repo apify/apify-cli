@@ -34,3 +34,5 @@ You can also build and push the Actor to the Apify platform and execute it there
 ```
 apify push
 ```
+
+> We welcome any feedback! Please feel free to contact us at python@apify.com. Thank you for your valuable input.
