@@ -9,7 +9,7 @@ const { createPrefilledInputFileFromInputSchema } = require('../lib/input_schema
 const outputs = require('../lib/outputs');
 const { ProjectAnalyzer } = require('../lib/project_analyzer');
 const { wrapScrapyProject } = require('../lib/scrapy-wrapper');
-const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, detectLocalActorLanguage } = require('../lib/utils');
+const { setLocalConfig, setLocalEnv, getLocalConfig, getLocalConfigOrThrow, detectLocalActorLanguage, validateActorName } = require('../lib/utils');
 
 class InitCommand extends ApifyCommand {
     async run() {
@@ -34,8 +34,19 @@ class InitCommand extends ApifyCommand {
             outputs.warning(`Skipping creation of "${LOCAL_CONFIG_PATH}", the file already exists in the current directory.`);
         } else {
             if (!actorName) {
-                const answer = await inquirer.prompt([{ name: 'actName', message: 'Actor name:', default: path.basename(cwd) }]);
-                ({ actName: actorName } = answer);
+                let response = null;
+
+                while (!response) {
+                    try {
+                        const answer = await inquirer.prompt([{ name: 'actName', message: 'Actor name:', default: path.basename(cwd) }]);
+                        validateActorName(answer.actName);
+                        response = answer;
+                    } catch (err) {
+                        outputs.error(err.message);
+                    }
+                }
+
+                ({ actName: actorName } = response);
             }
             // Migrate apify.json to .actor/actor.json
             const localConfig = { ...EMPTY_LOCAL_CONFIG, ...await getLocalConfigOrThrow() };
