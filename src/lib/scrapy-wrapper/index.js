@@ -9,7 +9,7 @@ const inquirer = require('inquirer');
 
 const { ScrapyProjectAnalyzer } = require('./ScrapyProjectAnalyzer');
 const outputs = require('../outputs');
-const { downloadAndUnzip } = require('../utils');
+const { downloadAndUnzip, sanitizeActorName } = require('../utils');
 
 /**
  * Files that should be concatenated instead of copied (and overwritten).
@@ -86,6 +86,7 @@ async function wrapScrapyProject({ projectPath }) {
     }
 
     const templateBindings = {
+        actorName: sanitizeActorName(analyzer.settings.BOT_NAME),
         botName: analyzer.settings.BOT_NAME,
         scrapy_settings_module: analyzer.configuration.get('settings', 'default'),
         apify_module_path: `${analyzer.settings.BOT_NAME}.apify`,
