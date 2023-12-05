@@ -536,6 +536,19 @@ const validateActorName = (actorName) => {
     }
 };
 
+const sanitizeActorName = (actorName) => {
+    let sanitizedName = actorName
+        .replaceAll(/[^a-zA-Z0-9-]/g, '-');
+
+    if (sanitizedName.length < ACTOR_NAME.MIN_LENGTH) {
+        sanitizedName = `${sanitizedName}-apify-actor`;
+    }
+
+    sanitizedName = sanitizedName.replaceAll(/^-+/g, '').replaceAll(/-+$/g, '');
+
+    return sanitizedName.slice(0, ACTOR_NAME.MAX_LENGTH);
+};
+
 const getPythonCommand = (directory) => {
     const pythonVenvPath = /^win/.test(process.platform)
         ? 'Scripts/python.exe'
@@ -665,4 +678,5 @@ module.exports = {
     detectNpmVersion,
     detectLocalActorLanguage,
     downloadAndUnzip,
+    sanitizeActorName,
 };
