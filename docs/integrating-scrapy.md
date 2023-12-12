@@ -1,6 +1,7 @@
 ---
-sidebar_label: Integrating Scrapy projects
 title: Integrating Scrapy projects
+description: Learn how to run Scrapy projects as Apify Actors and deploy them on the Apify Platform.
+sidebar_label: Integrating Scrapy projects
 ---
 
 [Scrapy](https://scrapy.org/) is a widely used open-source web scraping framework for Python. Scrapy projects can now be executed on the Apify Platform using our dedicated wrapping tool. This tool allows users to transform their Scrapy projects into [Apify Actors](https://docs.apify.com/platform/actors) with just a few simple commands.

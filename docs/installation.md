@@ -1,6 +1,7 @@
 ---
-sidebar_label: Installation
 title: Installation
+description: Learn how to install Apify CLI, and how to create, run, and manage Actors through it.
+sidebar_label: Installation
 ---
 
 ## Installation
