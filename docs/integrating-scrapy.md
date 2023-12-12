@@ -69,7 +69,7 @@ Success: The Scrapy project has been wrapped successfully.
 Create a Python virtual environment by running:
 
 ```bash showLineNumbers
-python3.11 -m virtualenv .venv
+python -m virtualenv .venv
 ```
 
 Activate the virtual environment:
