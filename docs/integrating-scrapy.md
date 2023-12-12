@@ -64,7 +64,7 @@ Info: Wrapping the Scrapy project...
 Success: The Scrapy project has been wrapped successfully.
 ```
 
-For example, here is a [source code](https://github.com/apify/actor-scrapy-books-example) of an actorized Scrapy project, and [here](https://apify.com/vdusek/actor-scrapy-books-example) the corresponding Actor in Apify Store.
+For example, here is a [source code](https://github.com/apify/actor-scrapy-books-example) of an actorized Scrapy project, and [here](https://apify.com/vdusek/scrapy-books-example) the corresponding Actor in Apify Store.
 
 ### Run the Actor locally
 
