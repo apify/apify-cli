@@ -13,7 +13,7 @@ brew install apify-cli
 
 ## Via NPM
 
-First, make sure you have [Node.js](https://nodejs.org) version 16 or higher with NPM installed on your computer:
+First, make sure you have [Node.js](https://nodejs.org) version 18 or higher with NPM installed on your computer:
 
 ```bash
 node --version
@@ -26,17 +26,13 @@ Install or upgrade Apify CLI by running:
 npm -g install apify-cli
 ```
 
-If you receive an `EACCES` error, you might need to run the command as root:
-
-```bash
-sudo npm -g install apify-cli
-```
+If you receive a permission error, read npm's [official guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) on installing packages globally.
 
 Alternativaly, you can use [Node Version Manager (nvm)](https://github.com/nvm-sh/nvm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
 
 ```
-nvm install 16
-nvm use 16
+nvm install 18
+nvm use 18
 npm -g install apify-cli
 ```
 
@@ -48,7 +44,7 @@ apify --version
 
 which should print something like:
 ```
-apify-cli/0.10.0 darwin-x64 node-v16.14.2
+apify-cli/0.19.1 linux-x64 node-v18.17.0
 ```
 
 ## Basic usage
