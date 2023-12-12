@@ -1,81 +1,85 @@
 ---
-sidebar_label: Installation
 title: Installation
+description: Learn how to install Apify CLI, and how to create, run, and manage Actors through it.
+sidebar_label: Installation
 ---
 
-## Via Homebrew
+## Installation
 
-On macOS (or Linux), you can install the Apify CLI via the [Homebrew package manager](https://brew.sh).
+You can install Apify CLI either using [Homebrew package manager](https://brew.sh) on macOS or Linux or using NPM.
 
-```bash
+### Via Homebrew
+
+Run the following command:
+
+```bash showLineNumbers
 brew install apify-cli
 ```
 
-## Via NPM
+### Via NPM
 
-First, make sure you have [Node.js](https://nodejs.org) version 16 or higher with NPM installed on your computer:
+First, make sure you have [Node.js](https://nodejs.org) version 18 or higher with NPM installed on your computer:
 
-```bash
+```bash showLineNumbers
 node --version
 npm --version
 ```
 
 Install or upgrade Apify CLI by running:
 
-```bash
+```bash showLineNumbers
 npm -g install apify-cli
 ```
 
-If you receive an `EACCES` error, you might need to run the command as root:
+If you receive a permission error, read npm's [official guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) on installing packages globally.
 
-```bash
-sudo npm -g install apify-cli
-```
+Alternatively, you can use [Node Version Manager (nvm)](https://github.com/nvm-sh/nvm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
 
-Alternativaly, you can use [Node Version Manager (nvm)](https://github.com/nvm-sh/nvm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
-
-```
-nvm install 16
-nvm use 16
+```bash showLineNumbers
+nvm install 18
+nvm use 18
 npm -g install apify-cli
 ```
 
-Finally, verify that Apify CLI was installed correctly by running:
+After using either of these methods , verify that Apify CLI was installed correctly by running:
 
-```bash
+```bash showLineNumbers
 apify --version
 ```
 
 which should print something like:
-```
-apify-cli/0.10.0 darwin-x64 node-v16.14.2
+
+```bash showLineNumbers
+apify-cli/0.19.1 linux-x64 node-v18.17.0
 ```
 
-## Basic usage
+## Basic Usage
 
 The following examples demonstrate the basic usage of Apify CLI.
 
-### Create a new actor from scratch
+### Create a New Actor from Scratch
 
-```bash
+```bash showLineNumbers
 apify create my-hello-world
 ```
 
-First, you will be prompted to select a template with the boilerplate for the actor, to help you get started quickly.
+First, you will be prompted to select a template with the boilerplate for the Actor, to help you get started quickly.
 The command will create a directory called `my-hello-world` that contains a Node.js project
-for the actor and a few configuration files.
+for the Actor and a few configuration files.
 
-### Create a new actor from existing project
+### Create a New Actor from Existing Project
 
-```bash
+```bash showLineNumbers
 cd ./my/awesome/project
 apify init
 ```
-This command will only set up local actor development environment in an existing directory,
+
+This command will only set up local Actor development environment in an existing directory,
 i.e. it will create the `.actor/actor.json` file and `apify_storage` directory.
 
 Before you can run your project locally using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
-```text
+
+```json showLineNumbers
 {
     ...
     "scripts": {
@@ -84,62 +88,64 @@ Before you can run your project locally using `apify run`, you have to set up th
     ...
 }
 ```
+
 You can find more information about by running `apify help run`.
 
-### Run the actor locally
+### Run the Actor Locally
 
-```bash
+```bash showLineNumbers
 cd my-hello-world
 apify run
 ```
 
-This command runs the actor on your local machine.
+This command runs the Actor on your local machine.
 Now's your chance to develop the logic - or magic :smirk:
 
 ### Login with your Apify account
 
-```bash
+```bash showLineNumbers
 apify login
 ```
 
 Before you can interact with the Apify cloud, you need to [create an Apify account](https://console.apify.com/)
 and log in to it using the above command. You will be prompted for
 your [Apify API token](https://console.apify.com/account#/integrations).
-Note that the command will store the API token and other sensitive information to `~/.apify`.
 
+:::note API token save directory
+The command will store the API token and other sensitive information to `~/.apify`.
+:::
 
-### Push the actor to the Apify cloud
+### Push the Actor to the Apify Cloud
 
-```bash
+```bash showLineNumbers
 apify push
 ```
 
-This command uploads your project to the Apify cloud and builds an actor from it. On the platform, actor needs to be built before it can be run.
+This command uploads your project to the Apify cloud and builds an Actor from it. On the platform, Actor needs to be built before it can be run.
 
-### Run an actor on the Apify cloud
+### Run an Actor on the Apify Cloud
 
-```bash
+```bash showLineNumbers
 apify call
 ```
 
-Runs the actor corresponding to the current directory on the Apify platform.
+Runs the Actor corresponding to the current directory on the Apify Platform.
 
-This command can also be used to run other actors, for example:
+This command can also be used to run other Actors, for example:
 
-```bash
+```bash showLineNumbers
 apify call apify/hello-world
 ```
 
-### So what's in this `.actor/actor.json` file?
+### So what's in this `.actor/actor.json` File?
 
-This file associates your local development project with an actor on the Apify platform.
-It contains information such as actor name, version, build tag and environment variables.
+This file associates your local development project with an Actor on the Apify Platform.
+It contains information such as Actor name, version, build tag and environment variables.
 Make sure you commit this file to the Git repository.
 
 For example, `.actor/actor.json` file can look as follows:
 
-
-```json
+```json showLineNumbers
 {
   "actorSpecification": 1,
   "name": "name-of-my-scraper",
@@ -174,6 +180,6 @@ You can embed your [input schema](https://docs.apify.com/actors/development/inpu
 
 You can define the schema of the items in your dataset under the `storages.dataset` field. This can be either an embedded object or a path to a JSON schema file. You can read more about the schema of your actor output [here](https://docs.apify.com/actors/development/output-schema#specification-version-1).
 
-**Note on migration from deprecated config "apify.json"**
-
-*Note that previously, actor config was stored in the `apify.json` file that has been deprecated. You can find the (very slight) differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).*
+:::note Migration from deprecated config "apify.json"
+Note that previously, actor config was stored in the `apify.json` file that has been deprecated. You can find the (very slight) differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).
+:::

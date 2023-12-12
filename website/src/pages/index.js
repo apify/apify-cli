@@ -42,7 +42,7 @@ function Hero() {
                     </div>
                     <div className={styles.codeBlock}>
                         <CodeBlock className="language-bash">
-                            npx apify-cli create
+                            npm i -g apify-cli
                         </CodeBlock>
                     </div>
                 </div>
@@ -75,17 +75,17 @@ export default function Home() {
                         </div>
                         <div className="col col--6">
                             <CodeBlock language='bash'>{`# Create your first actor
-npx apify-cli create my-actor
+apify create my-actor
 
 # Go into the project directory
 cd my-actor
 
 # Run it locally
-npx apify-cli run
+apify run
 
 # Log into your Apify account and deploy it to Apify Platform
-npx apify-cli login
-npx apify-cli push`}</CodeBlock>
+apify login
+apify push`}</CodeBlock>
                         </div>
                     </div>
                 </div>

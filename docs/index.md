@@ -20,5 +20,3 @@ This is where the Apify CLI comes in.
 Note that actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
 you can build your actors in any programming language.
 However, we recommend using JavaScript / Node.js, for which we provide most libraries and support.
-
-
