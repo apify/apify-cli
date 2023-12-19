@@ -11,7 +11,7 @@ export default defineConfig({
         testTimeout: 60_000,
         hookTimeout: 60_000,
         include: [
-            // '**/*.{test,spec}.?(c|m)[jt]s?(x)',
+            '**/*.{test,spec}.?(c|m)[jt]s?(x)',
             'test/**/*.js',
         ],
         // Needed because of chdir
