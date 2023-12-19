@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 
 const command = require('@oclif/command');
-const { expect } = require('chai');
 const loadJson = require('load-json-file');
 
 const { rimrafPromised } = require('../src/lib/files');
@@ -14,7 +13,7 @@ const PYTHON_START_TEMPLATE_ID = 'python-start';
 describe('Python support [python]', () => {
     let currentDirectory;
 
-    before(async () => {
+    beforeAll(async () => {
         currentDirectory = process.cwd();
     });
 
@@ -55,7 +54,7 @@ async def main():
         expect(actorOutput).to.be.eql(actorOutput);
     });
 
-    after(async () => {
+    afterAll(async () => {
         process.chdir(currentDirectory);
         if (fs.existsSync(actorName)) await rimrafPromised(actorName);
     });

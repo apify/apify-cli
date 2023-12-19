@@ -1,0 +1,8 @@
+{
+	"compilerOptions": {
+		"types": ["vitest/globals"],
+		"allowJs": true,
+		"checkJs": false
+	},
+	"include": ["./**/*.ts", "./**/*.js"],
+}
