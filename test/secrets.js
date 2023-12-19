@@ -3,7 +3,6 @@ const { replaceSecretsValue } = require('../src/lib/secrets');
 describe('Secrets', () => {
     describe('replaceSecretsValue()', () => {
         it('should work', () => {
-            // eslint-disable-next-line no-undef
             const spy = vitest.spyOn(console, 'log');
 
             const secrets = {

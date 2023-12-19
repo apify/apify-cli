@@ -3,9 +3,7 @@ const path = require('path');
 
 const { KEY_VALUE_STORE_KEYS } = require('@apify/consts');
 const command = require('@oclif/command');
-const { expect } = require('chai');
 const loadJson = require('load-json-file');
-const sinon = require('sinon');
 
 const { LOCAL_CONFIG_PATH } = require('../../src/lib/consts');
 const { rimrafPromised } = require('../../src/lib/files');
@@ -14,10 +12,6 @@ const { getLocalKeyValueStorePath } = require('../../src/lib/utils');
 const actName = 'my-act';
 
 describe('apify create', () => {
-    beforeEach(() => {
-        sinon.spy(console, 'log');
-    });
-
     ['a'.repeat(151), 'sh', 'bad_escaped'].forEach((badActorName) => {
         it(`returns error with bad actor name ${badActorName}`, async () => {
             try {
@@ -73,7 +67,6 @@ describe('apify create', () => {
     });
 
     afterEach(async () => {
-        console.log.restore();
         if (fs.existsSync(actName)) await rimrafPromised(actName);
     });
 });

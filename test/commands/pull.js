@@ -2,9 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const command = require('@oclif/command');
-const { expect } = require('chai');
 const loadJson = require('load-json-file');
-const sinon = require('sinon');
 const writeJsonFile = require('write-json-file');
 
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
@@ -91,16 +89,12 @@ const TEST_ACTOR_GIT_REPO = {
 describe('apify pull', () => {
     let skipAfterHook = false;
     const actorsForCleanup = new Set();
-    before(async () => {
+    beforeAll(async () => {
         if (fs.existsSync(AUTH_FILE_PATH)) {
             skipAfterHook = true;
             throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
         }
         await command.run(['login', '--token', TEST_USER_TOKEN]);
-    });
-
-    beforeEach(() => {
-        sinon.spy(console, 'log');
     });
 
     it('should fail outside actor folder without actorId defined', async () => {
@@ -162,11 +156,7 @@ describe('apify pull', () => {
         expect(fs.existsSync('src/__init__.py')).to.be.eql(true);
     });
 
-    afterEach(() => {
-        console.log.restore();
-    });
-
-    after(async () => {
+    afterAll(async () => {
         if (skipAfterHook) return;
         process.chdir('../');
         for (const id of actorsForCleanup) {

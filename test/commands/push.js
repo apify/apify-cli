@@ -2,9 +2,7 @@ const fs = require('fs');
 
 const { ACT_SOURCE_TYPES, SOURCE_FILE_FORMATS } = require('@apify/consts');
 const command = require('@oclif/command');
-const { expect } = require('chai');
 const loadJson = require('load-json-file');
-const sinon = require('sinon');
 const writeJson = require('write-json-file');
 
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
@@ -30,7 +28,7 @@ const ACT_TEMPLATE = 'project_empty';
 describe('apify push', () => {
     let skipAfterHook = false;
     const actorsForCleanup = new Set();
-    before(async () => {
+    beforeAll(async () => {
         if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
@@ -40,10 +38,6 @@ describe('apify push', () => {
         await command.run(['login', '--token', TEST_USER_TOKEN]);
         await command.run(['create', ACTOR_NAME, '--template', ACT_TEMPLATE]);
         process.chdir(ACTOR_NAME);
-    });
-
-    beforeEach(() => {
-        sinon.spy(console, 'log');
     });
 
     it('should work without actorId', async () => {
@@ -207,11 +201,7 @@ describe('apify push', () => {
             .to.be.equal(SOURCE_FILE_FORMATS.TEXT);
     });
 
-    afterEach(() => {
-        console.log.restore();
-    });
-
-    after(async () => {
+    afterAll(async () => {
         if (skipAfterHook) return;
         process.chdir('../');
         if (fs.existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
