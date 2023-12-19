@@ -16,5 +16,6 @@ export default defineConfig({
         ],
         // Needed because of chdir
         pool: 'forks',
+        passWithNoTests: true,
     },
 });
