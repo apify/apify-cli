@@ -6,6 +6,7 @@ test-acts
 test-actors
 local_test.sh
 my-act-*
+my-python-*
 _mytests
 package-lock.json
 .vscode

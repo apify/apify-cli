@@ -1,8 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 
-const { expect } = require('chai');
-
 const exec = require('../src/lib/exec');
 const { ensureFolderExistsSync, rimrafPromised } = require('../src/lib/files');
 const { argsToCamelCase, createActZip, getActorLocalFilePaths } = require('../src/lib/utils');
@@ -36,7 +34,7 @@ describe('Utils', () => {
         });
     });
     describe('createActZip()', () => {
-        before(async () => {
+        beforeAll(async () => {
             // Create folder structure
             if (!fs.existsSync(TEST_DIR)) ensureFolderExistsSync(TEST_DIR);
             process.chdir(TEST_DIR);
@@ -63,7 +61,7 @@ describe('Utils', () => {
             FILES.forEach((file) => expect(fs.existsSync(path.join(tempFolder, file))).to.be.true);
             FILES_IN_INGRONED_DIR.concat(FILES_TO_IGNORE).forEach((file) => expect(fs.existsSync(path.join(tempFolder, file))).to.be.false);
         });
-        after(async () => {
+        afterAll(async () => {
             process.chdir('../');
             if (fs.existsSync(TEST_DIR)) await rimrafPromised(TEST_DIR);
         });

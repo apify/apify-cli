@@ -1,25 +1,19 @@
 const fs = require('fs');
 
 const command = require('@oclif/command');
-const { expect } = require('chai');
 const loadJson = require('load-json-file');
-const sinon = require('sinon');
 
 const { TEST_USER_TOKEN } = require('./config');
 const { AUTH_FILE_PATH } = require('../../src/lib/consts');
 
 describe('apify info', () => {
     let skipAfterHook = false;
-    before(() => {
+    beforeAll(() => {
         if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
             throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
         }
-    });
-
-    beforeEach(() => {
-        sinon.spy(console, 'log');
     });
 
     it('should end with Error when not logged in', async () => {
@@ -31,20 +25,18 @@ describe('apify info', () => {
     });
 
     it('should work when logged in', async () => {
+        const spy = vitest.spyOn(console, 'log');
+
         await command.run(['login', '--token', TEST_USER_TOKEN]);
         await command.run(['info']);
 
         const userInfoFromConfig = loadJson.sync(AUTH_FILE_PATH);
 
-        expect(console.log.callCount).to.eql(3);
-        expect(console.log.args[2][0]).to.include(userInfoFromConfig.id);
+        expect(spy).toHaveBeenCalledTimes(3);
+        expect(spy.mock.calls[2][0]).to.include(userInfoFromConfig.id);
     });
 
-    afterEach(() => {
-        console.log.restore();
-    });
-
-    after(async () => {
+    afterAll(async () => {
         if (skipAfterHook) return;
         await command.run(['logout']);
     });

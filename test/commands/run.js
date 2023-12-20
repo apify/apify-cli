@@ -3,7 +3,6 @@ const path = require('path');
 
 const { APIFY_ENV_VARS } = require('@apify/consts');
 const command = require('@oclif/command');
-const { expect } = require('chai');
 const loadJson = require('load-json-file');
 const writeJson = require('write-json-file');
 
@@ -16,7 +15,7 @@ const actName = 'my-act';
 
 describe('apify run', () => {
     let skipAfterHook = false;
-    before(async () => {
+    beforeAll(async () => {
         if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
@@ -139,7 +138,7 @@ describe('apify run', () => {
         }
     });
 
-    after(async () => {
+    afterAll(async () => {
         if (skipAfterHook) return;
         process.chdir('../');
         if (fs.existsSync(actName)) await rimrafPromised(actName);

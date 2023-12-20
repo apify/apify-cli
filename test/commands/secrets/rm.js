@@ -1,7 +1,6 @@
 const fs = require('fs');
 
 const command = require('@oclif/command');
-const { expect } = require('chai');
 
 const { AUTH_FILE_PATH } = require('../../../src/lib/consts');
 const { getSecretsFile } = require('../../../src/lib/secrets');
@@ -11,7 +10,7 @@ const SECRET_KEY = 'mySecret';
 
 describe('apify secrets:rm', () => {
     let skipAfterHook = false;
-    before(async () => {
+    beforeAll(async () => {
         if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
@@ -31,7 +30,7 @@ describe('apify secrets:rm', () => {
         expect(secrets[SECRET_KEY]).to.eql(undefined);
     });
 
-    after(async () => {
+    afterAll(async () => {
         if (skipAfterHook) return;
         await command.run(['logout']);
     });

@@ -3,7 +3,6 @@ const path = require('path');
 
 const { ACT_JOB_STATUSES } = require('@apify/consts');
 const command = require('@oclif/command');
-const { expect } = require('chai');
 
 const { testUserClient, TEST_USER_TOKEN } = require('./config');
 const { AUTH_FILE_PATH } = require('../../src/lib/consts');
@@ -51,7 +50,7 @@ const waitForBuildToFinishWithTimeout = async (client, buildId, timeoutSecs = 60
 let actorId;
 describe('apify call', () => {
     let skipAfterHook = false;
-    before(async () => {
+    beforeAll(async () => {
         if (fs.existsSync(AUTH_FILE_PATH)) {
             // Tests could break local environment if user is already logged in
             skipAfterHook = true;
@@ -100,7 +99,7 @@ describe('apify call', () => {
         expect(EXPECTED_INPUT_CONTENT_TYPE).to.be.eql(input.contentType);
     });
 
-    after(async () => {
+    afterAll(async () => {
         if (skipAfterHook) return;
         await testUserClient.actor(actorId).delete();
         process.chdir('../');

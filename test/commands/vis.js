@@ -1,7 +1,6 @@
 const path = require('path');
 
 const command = require('@oclif/command');
-const { expect } = require('chai');
 
 describe('apify vis', () => {
     it('should correctly validate schema 1', async () => {
