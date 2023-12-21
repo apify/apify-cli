@@ -70,7 +70,7 @@ class CreateCommand extends ApifyCommand {
         try {
             fs.mkdirSync(actFolderDir);
         } catch (err) {
-            if (err.code && err.code === 'EEXIST') {
+            if (err?.code === 'EEXIST') {
                 outputs.error(`Cannot create new actor, directory '${actorName}' already exists. `
                     + 'You can use "apify init" to create a local actor environment inside an existing directory.');
                 return;
@@ -162,6 +162,7 @@ class CreateCommand extends ApifyCommand {
 
         if (dependenciesInstalled) {
             outputs.success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
+            outputs.success('To push your actor to the Apify platform, run "apify push".');
             if (messages?.postCreate) {
                 outputs.info(messages?.postCreate);
             }
