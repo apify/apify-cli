@@ -162,7 +162,7 @@ class CreateCommand extends ApifyCommand {
 
         if (dependenciesInstalled) {
             outputs.success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
-            outputs.success('To push your actor to the Apify platform, run "apify push".');
+            outputs.success('To run your code in the cloud, run "apify push" and deploy your code to Apify Console.');
             if (messages?.postCreate) {
                 outputs.info(messages?.postCreate);
             }
