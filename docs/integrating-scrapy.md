@@ -92,7 +92,7 @@ Finally execute the Apify Actor.
 apify run [--purge]
 ```
 
-If [ActorDatasetPushPipeline](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/pipelines.py) is configured, the output of the Actor should be located on the location `storage/datasets/default/`.
+If [ActorDatasetPushPipeline](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/pipelines.py) is configured, the Actor's output will be stored in the `storage/datasets/default/` directory.
 
 ### Run the scraper as Scrapy project
 
