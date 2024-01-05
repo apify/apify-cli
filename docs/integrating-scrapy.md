@@ -86,6 +86,14 @@ Install Python dependencies using the provided requirements file named `requirem
 pip install -r requirements-apify.txt [-r requirements.txt]
 ```
 
+Finally execute the Apify Actor.
+
+```bash showLineNumbers
+apify run [--purge]
+```
+
+If [ActorDatasetPushPipeline](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/pipelines.py) is configured, the Actor's output will be stored in the `storage/datasets/default/` directory.
+
 ### Run the scraper as Scrapy project
 
 The project remains executable as a Scrapy project.
@@ -114,11 +122,23 @@ apify push
 
 ## What the wrapping process does
 
-Within our [Python SDK](https://github.com/apify/apify-sdk-python/tree/master/src/apify/scrapy), specific Scrapy components are prepared. These include a custom [scheduler](https://docs.scrapy.org/en/latest/topics/scheduler.html) for interacting with the [Apify request queue](https://docs.apify.com/platform/storage/request-queue), an [item pipeline](https://docs.scrapy.org/en/latest/topics/item-pipeline.html) for pushing data to the [Apify dataset](https://docs.apify.com/platform/storage/dataset), and a custom [retry middleware](https://docs.scrapy.org/en/latest/_modules/scrapy/downloadermiddlewares/retry.html) for handling HTTP request retries. These components facilitate interaction between your Scrapy project and the Apify platform.
+The initialization command enhances your project by adding necessary files and updating some of them while preserving its functionality as a typical Scrapy project. The additional requirements file, named `requirements_apify.txt`, includes the Apify Python SDK and other essential requirements. The `.actor/` directory contains basic configuration of your Actor. We provide two new Python files [main.py](https://github.com/apify/actor-templates/blob/master/templates/python-scrapy/src/main.py) and [__main__.py](https://github.com/apify/actor-templates/blob/master/templates/python-scrapy/src/__main__.py), where we encapsulate the Scrapy project within an Actor. We also import and use there a few Scrapy components from our [Python SDK](https://github.com/apify/apify-sdk-python/tree/master/src/apify/scrapy). These components facilitate the integration of the Scrapy projects with the Apify platform. Further details about these components are provided in the following subsections.
 
-The initialization command enhances your project by adding necessary files and updating configurations while preserving its functionality as a typical Scrapy project. The extra requirements file, named `requirements_apify.txt`, includes the Apify Python SDK and other essential requirements.
+### Scheduler
 
-<!-- TODO: we also add .actor/ and update .dockerignore, .gitignore and scrapy.cfg -->
+The [scheduler](https://docs.scrapy.org/en/latest/topics/scheduler.html) is a core component of Scrapy responsible for receiving and providing requests to be processed. To leverage the [Apify request queue](https://docs.apify.com/platform/storage/request-queue) for storing requests, a custom scheduler becomes necessary. Fortunately, Scrapy is a modular framework, allowing the creation of custom components. As a result, we have implemented the [ApifyScheduler](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/scheduler.py). When using the Apify CLI wrapping tool, the scheduler is configured in the [src/main.py](https://github.com/apify/actor-templates/blob/master/templates/python-scrapy/src/main.py) file of your Actor.
+
+### Dataset push pipeline
+
+[Item pipelines](https://docs.scrapy.org/en/latest/topics/item-pipeline.html) are used for the processing of the results produced by your spiders. To handle the transmission of result data to the [Apify dataset](https://docs.apify.com/platform/storage/dataset), we have implemented the [ActorDatasetPushPipeline](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/pipelines.py). When using the Apify CLI wrapping tool, the pipeline is configured in the [src/main.py](https://github.com/apify/actor-templates/blob/master/templates/python-scrapy/src/main.py) file of your Actor. It is assigned the highest integer value (1000), ensuring its execution as the final step in the pipeline sequence.
+
+### Retry middleware
+
+[Downloader middlewares](https://docs.scrapy.org/en/latest/topics/downloader-middleware.html) are a way how to hook into Scrapy's request/response processing. Scrapy comes with various default middlewares, including the [RetryMiddleware](https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.retry), designed to handle retries for requests that may have failed due to temporary issues. When integrating with the [Apify request queue](https://docs.apify.com/platform/storage/request-queue), it becomes necessary to enhance this middleware to facilitate communication with the request queue marking the requests either as handled or ready for a retry. When using the Apify CLI wrapping tool, the default `RetryMiddleware` is disabled, and [ApifyRetryMiddleware](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/middlewares/apify_retry.py) takes its place. Configuration for the middlewares is established in the [src/main.py](https://github.com/apify/actor-templates/blob/master/templates/python-scrapy/src/main.py) file of your Actor.
+
+### HTTP proxy middleware
+
+Another default Scrapy [downloader middleware](https://docs.scrapy.org/en/latest/topics/downloader-middleware.html) that requires replacement is [HttpProxyMiddleware](https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpproxy). To utilize the use of proxies managed through the Apify [ProxyConfiguration](https://github.com/apify/apify-sdk-python/blob/master/src/apify/proxy_configuration.py), we provide [ApifyHttpProxyMiddleware](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/middlewares/apify_proxy.py). When using the Apify CLI wrapping tool, the default `HttpProxyMiddleware` is disabled, and [ApifyHttpProxyMiddleware](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/middlewares/apify_proxy.py) takes its place. Additionally, inspect the [.actor/input_schema.json](https://github.com/apify/actor-templates/blob/master/templates/python-scrapy/.actor/input_schema.json) file, where proxy configuration is specified as an input property for your Actor. The processing of this input is carried out together with the middleware configuration in [src/main.py](https://github.com/apify/actor-templates/blob/master/templates/python-scrapy/src/main.py).
 
 ## Additional links
 
