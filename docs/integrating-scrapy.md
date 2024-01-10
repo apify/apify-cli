@@ -140,6 +140,44 @@ The [scheduler](https://docs.scrapy.org/en/latest/topics/scheduler.html) is a co
 
 Another default Scrapy [downloader middleware](https://docs.scrapy.org/en/latest/topics/downloader-middleware.html) that requires replacement is [HttpProxyMiddleware](https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#module-scrapy.downloadermiddlewares.httpproxy). To utilize the use of proxies managed through the Apify [ProxyConfiguration](https://github.com/apify/apify-sdk-python/blob/master/src/apify/proxy_configuration.py), we provide [ApifyHttpProxyMiddleware](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/middlewares/apify_proxy.py). When using the Apify CLI wrapping tool, the default `HttpProxyMiddleware` is disabled, and [ApifyHttpProxyMiddleware](https://github.com/apify/apify-sdk-python/blob/master/src/apify/scrapy/middlewares/apify_proxy.py) takes its place. Additionally, inspect the [.actor/input_schema.json](https://github.com/apify/actor-templates/blob/master/templates/python-scrapy/.actor/input_schema.json) file, where proxy configuration is specified as an input property for your Actor. The processing of this input is carried out together with the middleware configuration in [src/main.py](https://github.com/apify/actor-templates/blob/master/templates/python-scrapy/src/main.py).
 
+## Known limitations
+
+There are some known limitations of running the Scrapy projects on Apify platform we are aware of.
+
+### Asynchronous code in spiders and other components
+
+Scrapy asynchronous execution is based on the [Twisted](https://twisted.org/) library, not the
+[AsyncIO](https://docs.python.org/3/library/asyncio.html), which brings some complications on the table.
+
+Due to the asynchronous nature of the Actors, all of their code is executed as a coroutine inside the `asyncio.run`.
+In order to execute Scrapy code inside an Actor, following the section
+[Run Scrapy from a script](https://docs.scrapy.org/en/latest/topics/practices.html?highlight=CrawlerProcess#run-scrapy-from-a-script)
+from the official Scrapy documentation, we need to invoke a
+[CrawlProcess.start](https://github.com/scrapy/scrapy/blob/2.11.0/scrapy/crawler.py#L393:L427)
+method. This method triggers Twisted's event loop, also known as a reactor.
+Consequently, Twisted's event loop is executed within AsyncIO's event loop.
+On top of that, when employing AsyncIO code in Spiders or other components, it necessitates the creation of a new
+AsyncIO event loop, within which the coroutines from these components are executed.
+This means there is an execution of AsyncIO event loop inside Twisted event loop inside AsyncIO event loop.
+
+To address this intricacy, we have resolved the issue by leveraging the [nest-asyncio](https://pypi.org/project/nest-asyncio/) library, enabling the execution of nested AsyncIO event loops. For executing a coroutine within a Spider or other component, it is recommended to use Apify's instance of the nested event loop. Refer to the code example below or derive inspiration from Apify's Scrapy components, such as the [ApifyScheduler](https://github.com/apify/apify-sdk-python/blob/v1.5.0/src/apify/scrapy/scheduler.py#L114).
+
+We have resolved this issue by leveraging the [nest-asyncio](https://pypi.org/project/nest-asyncio/) library,
+enabling the execution of nested AsyncIO event loops. For executing a coroutine within a Spider or other component,
+it is recommended to use Apify's instance of the nested event loop. Refer to the code example below or derive
+inspiration from Apify's Scrapy components, such as the
+[ApifyScheduler](https://github.com/apify/apify-sdk-python/blob/v1.5.0/src/apify/scrapy/scheduler.py#L114).
+
+```python showLineNumbers
+from apify.scrapy.utils import nested_event_loop
+
+nested_event_loop.run_until_complete(my_coroutine())
+```
+
+### More spiders per Actor
+
+todo
+
 ## Additional links
 
 - [Actor Scrapy Books Example](https://apify.com/vdusek/actor-scrapy-books-example)
