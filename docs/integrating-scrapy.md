@@ -157,10 +157,8 @@ from the official Scrapy documentation, we need to invoke a
 method. This method triggers Twisted's event loop, also known as a reactor.
 Consequently, Twisted's event loop is executed within AsyncIO's event loop.
 On top of that, when employing AsyncIO code in Spiders or other components, it necessitates the creation of a new
-AsyncIO event loop, within which the coroutines from these components are executed.
-This means there is an execution of AsyncIO event loop inside Twisted event loop inside AsyncIO event loop.
-
-To address this intricacy, we have resolved the issue by leveraging the [nest-asyncio](https://pypi.org/project/nest-asyncio/) library, enabling the execution of nested AsyncIO event loops. For executing a coroutine within a Spider or other component, it is recommended to use Apify's instance of the nested event loop. Refer to the code example below or derive inspiration from Apify's Scrapy components, such as the [ApifyScheduler](https://github.com/apify/apify-sdk-python/blob/v1.5.0/src/apify/scrapy/scheduler.py#L114).
+AsyncIO event loop, within which the coroutines from these components are executed. This means there is
+an execution of the AsyncIO event loop inside the Twisted event loop inside the AsyncIO event loop.
 
 We have resolved this issue by leveraging the [nest-asyncio](https://pypi.org/project/nest-asyncio/) library,
 enabling the execution of nested AsyncIO event loops. For executing a coroutine within a Spider or other component,
@@ -171,12 +169,28 @@ inspiration from Apify's Scrapy components, such as the
 ```python showLineNumbers
 from apify.scrapy.utils import nested_event_loop
 
+...
+
+# Coroutine execution inside a spider
 nested_event_loop.run_until_complete(my_coroutine())
 ```
 
 ### More spiders per Actor
 
-todo
+It is recommended to execute only one Scrapy spider per Apify Actor.
+
+Mapping more Scrapy spiders to a single Apify Actor does not make much sense. We would have to create a separate
+instace of the [request queue](https://docs.apify.com/platform/storage/request-queue) for every spider.
+Also, every spider can produce a different output resulting in a mess in an output
+[dataset](https://docs.apify.com/platform/storage/dataset). A solution for this could be to store an output
+of every spider to a different [key-value store](https://docs.apify.com/platform/storage/key-value-store). However,
+a much more simple solution to this problem would be to just have a single spider per Actor.
+
+If you want to share common Scrapy components (middlewares, item pipelines, ...) among more spiders (Actors), you
+can use a dedicated Python package containing your components and install it to your Actors environment. The
+other solution to this problem could be to have more spiders per Actor, but keep only one spider run per Actor.
+What spider is going to be executed in an Actor run can be specified in the
+[input schema](https://docs.apify.com/academy/deploying-your-code/input-schema).
 
 ## Additional links
 
