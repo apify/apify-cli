@@ -153,7 +153,7 @@ Due to the asynchronous nature of the Actors, all of their code is executed as a
 In order to execute Scrapy code inside an Actor, following the section
 [Run Scrapy from a script](https://docs.scrapy.org/en/latest/topics/practices.html?highlight=CrawlerProcess#run-scrapy-from-a-script)
 from the official Scrapy documentation, we need to invoke a
-[CrawlProcess.start](https://github.com/scrapy/scrapy/blob/2.11.0/scrapy/crawler.py#L393:L427)
+[`CrawlProcess.start`](https://github.com/scrapy/scrapy/blob/2.11.0/scrapy/crawler.py#L393:L427)
 method. This method triggers Twisted's event loop, also known as a reactor.
 Consequently, Twisted's event loop is executed within AsyncIO's event loop.
 On top of that, when employing AsyncIO code in Spiders or other components, it necessitates the creation of a new
