@@ -156,12 +156,12 @@ from the official Scrapy documentation, we need to invoke a
 [`CrawlProcess.start`](https://github.com/scrapy/scrapy/blob/2.11.0/scrapy/crawler.py#L393:L427)
 method. This method triggers Twisted's event loop, also known as a reactor.
 Consequently, Twisted's event loop is executed within AsyncIO's event loop.
-On top of that, when employing AsyncIO code in Spiders or other components, it necessitates the creation of a new
+On top of that, when employing AsyncIO code in spiders or other components, it necessitates the creation of a new
 AsyncIO event loop, within which the coroutines from these components are executed. This means there is
 an execution of the AsyncIO event loop inside the Twisted event loop inside the AsyncIO event loop.
 
 We have resolved this issue by leveraging the [nest-asyncio](https://pypi.org/project/nest-asyncio/) library,
-enabling the execution of nested AsyncIO event loops. For executing a coroutine within a Spider or other component,
+enabling the execution of nested AsyncIO event loops. For executing a coroutine within a spider or other component,
 it is recommended to use Apify's instance of the nested event loop. Refer to the code example below or derive
 inspiration from Apify's Scrapy components, such as the
 [ApifyScheduler](https://github.com/apify/apify-sdk-python/blob/v1.5.0/src/apify/scrapy/scheduler.py#L114).
