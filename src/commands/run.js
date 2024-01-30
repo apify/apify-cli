@@ -29,9 +29,12 @@ class RunCommand extends ApifyCommand {
         const packageJsonPath = path.join(cwd, 'package.json');
         const mainPyPath = path.join(cwd, 'src/__main__.py');
 
+        const projectType = ProjectAnalyzer.getProjectType(cwd);
+        const actualStoragePath = process.env.APIFY_LOCAL_STORAGE_DIR || process.env.CRAWLEE_STORAGE_DIR || DEFAULT_LOCAL_STORAGE_DIR;
+
         const packageJsonExists = fs.existsSync(packageJsonPath);
         const mainPyExists = fs.existsSync(mainPyPath);
-        const isScrapyProject = ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY;
+        const isScrapyProject = projectType === PROJECT_TYPES.SCRAPY;
 
         if (!packageJsonExists && !mainPyExists && !isScrapyProject) {
             throw new Error(
@@ -40,25 +43,43 @@ class RunCommand extends ApifyCommand {
             );
         }
 
-        if (fs.existsSync(LEGACY_LOCAL_STORAGE_DIR) && !fs.existsSync(DEFAULT_LOCAL_STORAGE_DIR)) {
-            fs.renameSync(LEGACY_LOCAL_STORAGE_DIR, DEFAULT_LOCAL_STORAGE_DIR);
-            warning("The legacy 'apify_storage' directory was renamed to 'storage' to align it with Apify SDK v3."
+        if (fs.existsSync(LEGACY_LOCAL_STORAGE_DIR) && !fs.existsSync(actualStoragePath)) {
+            fs.renameSync(LEGACY_LOCAL_STORAGE_DIR, actualStoragePath);
+            warning(`The legacy 'apify_storage' directory was renamed to '${actualStoragePath}' to align it with Apify SDK v3.`
                 + ' Contents were left intact.');
         }
 
+        let CRAWLEE_PURGE_ON_START = '0';
+
         // Purge stores
         if (flags.purge) {
-            await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
-            info('All default local stores were purged.');
+            switch (projectType) {
+                case PROJECT_TYPES.CRAWLEE: {
+                    CRAWLEE_PURGE_ON_START = '1';
+                    break;
+                }
+                case PROJECT_TYPES.PRE_CRAWLEE_APIFY_SDK: {
+                    await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
+                    info('All default local stores were purged.');
+                    break;
+                }
+                default: {
+                    // TODO: Python SDK too
+                }
+            }
         }
+
+        // TODO: deprecate these flags
         if (flags.purgeQueue) {
             await purgeDefaultQueue();
             info('Default local request queue was purged.');
         }
+
         if (flags.purgeDataset) {
             await purgeDefaultDataset();
             info('Default local dataset was purged.');
         }
+
         if (flags.purgeKeyValueStore) {
             await purgeDefaultKeyValueStore();
             info('Default local key-value store was purged.');
@@ -74,7 +95,9 @@ class RunCommand extends ApifyCommand {
 
         // Attach env vars from local config files
         const localEnvVars = {
-            [APIFY_ENV_VARS.LOCAL_STORAGE_DIR]: DEFAULT_LOCAL_STORAGE_DIR,
+            [APIFY_ENV_VARS.LOCAL_STORAGE_DIR]: actualStoragePath,
+            CRAWLEE_STORAGE_DIR: actualStoragePath,
+            CRAWLEE_PURGE_ON_START,
         };
         if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
         if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;

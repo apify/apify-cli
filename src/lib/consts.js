@@ -25,6 +25,8 @@ exports.LANGUAGE = {
 
 exports.PROJECT_TYPES = {
     SCRAPY: 'scrapy',
+    CRAWLEE: 'crawlee',
+    PRE_CRAWLEE_APIFY_SDK: 'apify',
     UNKNOWN: 'unknown',
 };
 
