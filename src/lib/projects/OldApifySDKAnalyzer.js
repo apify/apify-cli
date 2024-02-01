@@ -4,6 +4,18 @@ const { join } = require('path');
 const { lt } = require('semver');
 
 const VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE = '3.0.0';
+const CRAWLEE_PACKAGES = [
+    'crawlee',
+    '@crawlee/core',
+    '@crawlee/puppeteer',
+    '@crawlee/playwright',
+    '@crawlee/cheerio',
+    '@crawlee/jsdom',
+    '@crawlee/linkedom',
+    '@crawlee/http',
+    '@crawlee/browser',
+    '@crawlee/basic',
+];
 
 class OldApifySDKAnalyzer {
     static isApplicable(pathname) {
@@ -19,7 +31,7 @@ class OldApifySDKAnalyzer {
             const packageJsonParsed = JSON.parse(packageJson);
 
             // If they have crawlee as a dependency, likely to use crawlee
-            if (packageJsonParsed?.dependencies?.crawlee !== undefined) {
+            if (CRAWLEE_PACKAGES.some((pkg) => packageJsonParsed?.dependencies?.[pkg] !== undefined)) {
                 return false;
             }
 
