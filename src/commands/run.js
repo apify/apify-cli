@@ -16,7 +16,7 @@ const { replaceSecretsValue } = require('../lib/secrets');
 const {
     getLocalUserInfo, purgeDefaultQueue, purgeDefaultKeyValueStore,
     purgeDefaultDataset, getLocalConfigOrThrow, getNpmCmd, checkIfStorageIsEmpty,
-    detectLocalActorLanguage, isPythonVersionSupported, getPythonCommand, isNodeVersionSupported,
+    detectLocalActorLanguage, isPythonVersionSupported, getPythonCommand, isNodeVersionSupported, getLocalStorageDir,
 } = require('../lib/utils');
 
 class RunCommand extends ApifyCommand {
@@ -30,7 +30,7 @@ class RunCommand extends ApifyCommand {
         const mainPyPath = path.join(cwd, 'src/__main__.py');
 
         const projectType = ProjectAnalyzer.getProjectType(cwd);
-        const actualStoragePath = process.env.APIFY_LOCAL_STORAGE_DIR || process.env.CRAWLEE_STORAGE_DIR || DEFAULT_LOCAL_STORAGE_DIR;
+        const actualStoragePath = getLocalStorageDir();
 
         const packageJsonExists = fs.existsSync(packageJsonPath);
         const mainPyExists = fs.existsSync(mainPyPath);
