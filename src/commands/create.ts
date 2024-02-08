@@ -1,0 +1,201 @@
+import { existsSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { fetchManifest, manifestUrl } from '@apify/actor-templates';
+import { Args, Flags } from '@oclif/core';
+import { gte, minVersion } from 'semver';
+
+import { ApifyCommand } from '../lib/apify_command.js';
+import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
+import { enhanceReadmeWithLocalSuffix, ensureValidActorName, getTemplateDefinition } from '../lib/create-utils.js';
+import { execWithLog } from '../lib/exec.js';
+import { updateLocalJson } from '../lib/files.js';
+import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
+import { error, info, success, warning } from '../lib/outputs.js';
+import {
+    detectNodeVersion,
+    detectNpmVersion,
+    detectPythonVersion,
+    downloadAndUnzip,
+    getJsonFileContent,
+    getNpmCmd,
+    getPythonCommand,
+    isNodeVersionSupported,
+    isPythonVersionSupported,
+    setLocalConfig,
+    setLocalEnv,
+} from '../lib/utils.js';
+
+export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
+    static override description = 'Creates a new actor project directory from a selected boilerplate template.';
+
+    static override flags = {
+        template: Flags.string({
+            char: 't',
+            description: 'Template for the actor. If not provided, the command will prompt for it.\n'
+            + `Visit ${manifestUrl} to find available template names.`,
+            required: false,
+        }),
+        'skip-dependency-install': Flags.boolean({
+            description: 'Skip installing actor dependencies.',
+            required: false,
+        }),
+        'template-archive-url': Flags.string({
+            description: 'Actor template archive url. Useful for developing new templates.',
+            required: false,
+            hidden: true,
+        }),
+    };
+
+    static override args = {
+        actorName: Args.string({
+            required: false,
+            description: 'Name of the actor and its directory',
+        }),
+    };
+
+    async run() {
+        let { actorName } = this.args;
+        const {
+            template: templateName,
+            skipDependencyInstall,
+        } = this.flags;
+
+        // --template-archive-url is an internal, undocumented flag that's used
+        // for testing of templates that are not yet published in the manifest
+        let { templateArchiveUrl } = this.flags;
+        let skipOptionalDeps = false;
+
+        // Start fetching manifest immediately to prevent
+        // annoying delays that sometimes happen on CLI startup.
+        const manifestPromise = fetchManifest().catch((err) => {
+            return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
+        });
+
+        actorName = await ensureValidActorName(actorName);
+        let messages = null;
+
+        this.telemetryData.fromArchiveUrl = !!templateArchiveUrl;
+
+        if (!templateArchiveUrl) {
+            const templateDefinition = await getTemplateDefinition(templateName, manifestPromise);
+            ({ archiveUrl: templateArchiveUrl, messages } = templateDefinition);
+            this.telemetryData.templateId = templateDefinition.id;
+            this.telemetryData.templateName = templateDefinition.name;
+            this.telemetryData.templateLanguage = templateDefinition.category;
+
+            // This "exists"
+            if ('skipOptionalDeps' in templateDefinition) {
+                skipOptionalDeps = templateDefinition.skipOptionalDeps as boolean;
+            }
+        }
+
+        const cwd = process.cwd();
+        const actFolderDir = join(cwd, actorName);
+
+        // Create actor directory structure
+        try {
+            mkdirSync(actFolderDir);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } catch (err: any) {
+            if (err?.code === 'EEXIST') {
+                error(`Cannot create new actor, directory '${actorName}' already exists. `
+                    + 'You can use "apify init" to create a local actor environment inside an existing directory.');
+                return;
+            }
+            throw err;
+        }
+
+        await downloadAndUnzip({ url: templateArchiveUrl, pathTo: actFolderDir });
+
+        // There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
+        const localConfig = getJsonFileContent(join(actFolderDir, LOCAL_CONFIG_PATH));
+        await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), actFolderDir);
+        await setLocalEnv(actFolderDir);
+
+        // Create prefilled INPUT.json file from the input schema prefills
+        await createPrefilledInputFileFromInputSchema(actFolderDir);
+
+        const packageJsonPath = join(actFolderDir, 'package.json');
+        const requirementsTxtPath = join(actFolderDir, 'requirements.txt');
+        const readmePath = join(actFolderDir, 'README.md');
+
+        // Add localReadmeSuffix which is fetched from manifest to README.md
+        // The suffix contains local development instructions
+        await enhanceReadmeWithLocalSuffix(readmePath, manifestPromise);
+
+        let dependenciesInstalled = false;
+        if (!skipDependencyInstall) {
+            if (existsSync(packageJsonPath)) {
+                const currentNodeVersion = detectNodeVersion();
+                const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
+                if (currentNodeVersion) {
+                    if (!isNodeVersionSupported(currentNodeVersion)) {
+                        warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
+                            + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
+                    }
+                    // If the actor is a Node.js actor (has package.json), run `npm install`
+                    await updateLocalJson(packageJsonPath, { name: actorName });
+                    // Run npm install in actor dir.
+                    // For efficiency, don't install Puppeteer for templates that don't use it
+                    const cmdArgs = ['install'];
+                    if (skipOptionalDeps) {
+                        const currentNpmVersion = detectNpmVersion();
+                        if (gte(currentNpmVersion!, '7.0.0')) {
+                            cmdArgs.push('--omit=optional');
+                        } else {
+                            cmdArgs.push('--no-optional');
+                        }
+                    }
+                    await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
+                    dependenciesInstalled = true;
+                } else {
+                    error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher`
+                        + ' to be able to run Node.js actors locally.');
+                }
+            } else if (existsSync(requirementsTxtPath)) {
+                const pythonVersion = detectPythonVersion(actFolderDir);
+                if (pythonVersion) {
+                    if (isPythonVersionSupported(pythonVersion)) {
+                        const venvPath = join(actFolderDir, '.venv');
+                        info(`Python version ${pythonVersion} detected.`);
+                        info(`Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...`);
+                        let pythonCommand = getPythonCommand(actFolderDir);
+                        if (!process.env.VIRTUAL_ENV) {
+                            // If Python is not running in a virtual environment, create a new one
+                            await execWithLog(pythonCommand, ['-m', 'venv', '--prompt', '.', PYTHON_VENV_PATH], { cwd: actFolderDir });
+                            // regenerate the `pythonCommand` after we create the virtual environment
+                            pythonCommand = getPythonCommand(actFolderDir);
+                        }
+                        await execWithLog(
+                            pythonCommand,
+                            ['-m', 'pip', 'install', '--no-cache-dir', '--no-warn-script-location', '--upgrade', 'pip', 'setuptools', 'wheel'],
+                            { cwd: actFolderDir },
+                        );
+                        await execWithLog(
+                            pythonCommand,
+                            ['-m', 'pip', 'install', '--no-cache-dir', '--no-warn-script-location', '-r', 'requirements.txt'],
+                            { cwd: actFolderDir },
+                        );
+                        dependenciesInstalled = true;
+                    } else {
+                        warning(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
+                        warning('Please install Python 3.8 or higher to be able to run Python actors locally.');
+                    }
+                } else {
+                    warning('No Python detected! Please install Python 3.8 or higher to be able to run Python actors locally.');
+                }
+            }
+        }
+
+        if (dependenciesInstalled) {
+            success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
+            success('To run your code in the cloud, run "apify push" and deploy your code to Apify Console.');
+            if (messages?.postCreate) {
+                info(messages?.postCreate);
+            }
+        } else {
+            success(`Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`);
+        }
+    }
+}

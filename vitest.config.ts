@@ -22,5 +22,6 @@ export default defineConfig({
             },
         },
         passWithNoTests: true,
+        silent: !process.env.NO_SILENT_TESTS,
     },
 });

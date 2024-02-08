@@ -1,0 +1,704 @@
+import { execSync, spawnSync } from 'node:child_process';
+import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
+import { IncomingMessage } from 'node:http';
+import { get } from 'node:https';
+import { join } from 'node:path';
+import { finished } from 'node:stream/promises';
+
+import {
+    ACTOR_ENV_VARS,
+    ACTOR_JOB_TERMINAL_STATUSES,
+    ACTOR_NAME,
+    APIFY_ENV_VARS,
+    KEY_VALUE_STORE_KEYS,
+    LOCAL_ACTOR_ENV_VARS,
+    LOCAL_STORAGE_SUBDIRS,
+    SOURCE_FILE_FORMATS,
+} from '@apify/consts';
+import AdmZip from 'adm-zip';
+import _Ajv from 'ajv';
+import { ActorRun, ApifyClient, ApifyClientOptions, Build } from 'apify-client';
+import archiver from 'archiver';
+import { AxiosHeaders } from 'axios';
+import escapeStringRegexp from 'escape-string-regexp';
+import { globby } from 'globby';
+import inquirer from 'inquirer';
+import { getEncoding } from 'istextorbinary';
+import { loadJsonFile, loadJsonFileSync } from 'load-json-file';
+import { Mime } from 'mime';
+import otherMimes from 'mime/types/other.js';
+import standardMimes from 'mime/types/standard.js';
+import { gte, minVersion, satisfies } from 'semver';
+import _ from 'underscore';
+import { writeJsonFile, writeJsonFileSync } from 'write-json-file';
+
+import {
+    ACTOR_SPECIFICATION_VERSION,
+    APIFY_CLIENT_DEFAULT_HEADERS,
+    AUTH_FILE_PATH,
+    DEFAULT_LOCAL_STORAGE_DIR,
+    DEPRECATED_LOCAL_CONFIG_NAME,
+    GLOBAL_CONFIGS_FOLDER,
+    INPUT_FILE_REG_EXP,
+    LANGUAGE,
+    LOCAL_CONFIG_PATH,
+    Language,
+    MINIMUM_SUPPORTED_PYTHON_VERSION,
+    PROJECT_TYPES,
+    SUPPORTED_NODEJS_VERSION,
+} from './consts.js';
+import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { info } from './outputs.js';
+import { ProjectAnalyzer } from './project_analyzer.js';
+import { AuthJSON } from './types.js';
+
+// Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
+// Welcome to the state of JavaScript/TypeScript and CJS/ESM interop.
+export const Ajv = _Ajv as unknown as typeof import('ajv').default;
+
+export const httpsGet = async (url: string) => {
+    return new Promise<IncomingMessage>((resolve, reject) => {
+        get(url, (response) => {
+            // Handle redirects
+            if (response.statusCode === 301 || response.statusCode === 302) {
+                resolve(httpsGet(response.headers.location!));
+                // Destroy the response to close the HTTP connection, otherwise this hangs for a long time with Node 19+ (due to HTTP keep-alive).
+                response.destroy();
+            } else {
+                resolve(response);
+            }
+        }).on('error', reject);
+    });
+};
+
+// Properties from apify.json file that will me migrated to actor specs in .actor/actor.json
+const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
+
+export const getLocalStorageDir = () => {
+    const envVar = APIFY_ENV_VARS.LOCAL_STORAGE_DIR;
+
+    return process.env[envVar] || process.env.CRAWLEE_STORAGE_DIR || DEFAULT_LOCAL_STORAGE_DIR;
+};
+
+export const getLocalKeyValueStorePath = (storeId?: string) => {
+    const envVar = ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
+    const storeDir = storeId || process.env[envVar] || LOCAL_ACTOR_ENV_VARS[envVar];
+
+    return join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.keyValueStores, storeDir);
+};
+
+export const getLocalDatasetPath = (storeId?: string) => {
+    const envVar = ACTOR_ENV_VARS.DEFAULT_DATASET_ID;
+    const storeDir = storeId || process.env[envVar] || LOCAL_ACTOR_ENV_VARS[envVar];
+
+    return join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.datasets, storeDir);
+};
+
+export const getLocalRequestQueuePath = (storeId?: string) => {
+    const envVar = ACTOR_ENV_VARS.DEFAULT_REQUEST_QUEUE_ID;
+    const storeDir = storeId || process.env[envVar] || LOCAL_ACTOR_ENV_VARS[envVar];
+
+    return join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.requestQueues, storeDir);
+};
+
+/**
+ * Returns object from auth file or empty object.
+ */
+export const getLocalUserInfo = async (): Promise<AuthJSON> => {
+    try {
+        const result = await loadJsonFile<AuthJSON>(AUTH_FILE_PATH);
+        return (result || {});
+    } catch {
+        return {};
+    }
+};
+
+/**
+ * Gets instance of ApifyClient for user otherwise throws error
+ */
+export const getLoggedClientOrThrow = async () => {
+    const loggedClient = await getLoggedClient();
+
+    if (!loggedClient) {
+        throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
+    }
+
+    return loggedClient;
+};
+
+/**
+ * Returns options for ApifyClient
+ */
+export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): ApifyClientOptions => {
+    if (!token && existsSync(GLOBAL_CONFIGS_FOLDER) && existsSync(AUTH_FILE_PATH)) {
+        ({ token } = loadJsonFileSync(AUTH_FILE_PATH));
+    }
+
+    return {
+        token,
+        baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
+        requestInterceptors: [(config) => {
+            // @ts-expect-error CLI is ESM, client is CJS, the types "differ"
+            config.headers ??= new AxiosHeaders();
+
+            for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
+                config.headers![key] = value;
+            }
+
+            return config;
+        }],
+    };
+};
+
+/**
+ * Gets instance of ApifyClient for token or for params from global auth file.
+ * NOTE: It refreshes global auth file each run
+ * @param [token]
+ */
+export const getLoggedClient = async (token?: string, apiBaseUrl?: string) => {
+    if (!token && existsSync(GLOBAL_CONFIGS_FOLDER) && existsSync(AUTH_FILE_PATH)) {
+        ({ token } = await loadJsonFile<AuthJSON>(AUTH_FILE_PATH));
+    }
+
+    const apifyClient = new ApifyClient(getApifyClientOptions(token, apiBaseUrl));
+
+    let userInfo;
+    try {
+        userInfo = await apifyClient.user('me').get();
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
+
+    // Always refresh Auth file
+    if (!existsSync(GLOBAL_CONFIGS_FOLDER)) {
+        mkdirSync(GLOBAL_CONFIGS_FOLDER);
+    }
+
+    await writeJsonFile(AUTH_FILE_PATH, { token: apifyClient.token, ...userInfo });
+
+    return apifyClient;
+};
+
+const getLocalConfigPath = () => join(process.cwd(), LOCAL_CONFIG_PATH);
+
+/**
+ * @deprecated Use getLocalConfigPath
+ */
+const getDeprecatedLocalConfigPath = () => join(process.cwd(), DEPRECATED_LOCAL_CONFIG_NAME);
+
+export const getJsonFileContent = <T = Record<string, unknown>>(filePath: string) => {
+    if (!existsSync(filePath)) {
+        return;
+    }
+
+    return loadJsonFileSync<T>(filePath);
+};
+
+export const getLocalConfig = () => getJsonFileContent(getLocalConfigPath());
+
+/**
+ * @deprecated Use getLocalConfig
+ */
+const getDeprecatedLocalConfig = () => getJsonFileContent(getDeprecatedLocalConfigPath());
+
+export const getLocalConfigOrThrow = async () => {
+    let localConfig = getLocalConfig();
+    let deprecatedLocalConfig = getDeprecatedLocalConfig();
+
+    if (localConfig && deprecatedLocalConfig) {
+        const answer = await inquirer.prompt([{
+            name: 'isConfirm',
+            type: 'confirm',
+
+            message: `The new version of Apify CLI uses the "${LOCAL_CONFIG_PATH}" instead of the "apify.json" file. Since we have found both files in your actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use "${LOCAL_CONFIG_PATH}". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?`,
+        }]);
+
+        if (!answer.isConfirm) {
+            throw new Error('Command can not run with old "apify.json" file present in your actor directory., Please, either rename or remove it.');
+        }
+        try {
+            renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
+            // eslint-disable-next-line max-len
+            info(`The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.`);
+        } catch (e) {
+            throw new Error('Failed to rename deprecated "apify.json".');
+        }
+    }
+
+    if (!localConfig && !deprecatedLocalConfig) {
+        return {};
+    }
+
+    // If apify.json exists migrate it to .actor/actor.json
+    if (!localConfig && deprecatedLocalConfig) {
+        const answer = await inquirer.prompt([{
+            name: 'isConfirm',
+            type: 'confirm',
+            // eslint-disable-next-line max-len
+            message: `The new version of Apify CLI uses the "${LOCAL_CONFIG_PATH}" instead of the "apify.json" file. Your "apify.json" file will be automatically updated to the new format under "${LOCAL_CONFIG_PATH}". The original file will be renamed by adding the ".deprecated" suffix. Do you want to continue?`,
+        }]);
+        if (!answer.isConfirm) {
+            throw new Error('Command can not run with old apify.json structure. Either let the CLI auto-update it or follow the guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.');
+        }
+        try {
+            // Check if apify.json contains old deprecated structure. If so, updates it.
+            if (_.isObject(deprecatedLocalConfig.version)) {
+                deprecatedLocalConfig = updateLocalConfigStructure(deprecatedLocalConfig);
+            }
+
+            localConfig = {
+                actorSpecification: ACTOR_SPECIFICATION_VERSION,
+                environmentVariables: deprecatedLocalConfig?.env || undefined,
+                ..._.pick(deprecatedLocalConfig, MIGRATED_APIFY_JSON_PROPERTIES),
+            };
+
+            await writeJsonFile(getLocalConfigPath(), localConfig);
+            renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
+            // eslint-disable-next-line max-len
+            info(`The "apify.json" file has been migrated to "${LOCAL_CONFIG_PATH}" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`);
+        } catch (e) {
+            throw new Error(`Can not update "${LOCAL_CONFIG_PATH}" structure. Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.`);
+        }
+    }
+
+    return localConfig;
+};
+
+export const setLocalConfig = async (localConfig: Record<string, unknown>, actDir?: string) => {
+    actDir = actDir || process.cwd();
+    writeJsonFileSync(join(actDir, LOCAL_CONFIG_PATH), localConfig);
+};
+
+const GITIGNORE_REQUIRED_CONTENTS = [getLocalStorageDir(), 'node_modules', '.venv'];
+
+export const setLocalEnv = async (actDir: string) => {
+    // Create folders for emulation Apify stores
+    const keyValueStorePath = getLocalKeyValueStorePath();
+    ensureFolderExistsSync(actDir, getLocalDatasetPath());
+    ensureFolderExistsSync(actDir, getLocalRequestQueuePath());
+    ensureFolderExistsSync(actDir, keyValueStorePath);
+
+    // Create or update gitignore
+    const gitignorePath = join(actDir, '.gitignore');
+    let gitignoreContents = '';
+    if (existsSync(gitignorePath)) {
+        gitignoreContents = readFileSync(gitignorePath, { encoding: 'utf-8' });
+    }
+
+    const gitignoreAdditions = [];
+    for (const gitignoreRequirement of GITIGNORE_REQUIRED_CONTENTS) {
+        if (!RegExp(`^${escapeStringRegexp(gitignoreRequirement)}$`, 'mg').test(gitignoreContents)) {
+            gitignoreAdditions.push(gitignoreRequirement);
+        }
+    }
+
+    if (gitignoreAdditions.length > 0) {
+        if (gitignoreContents.length > 0) {
+            gitignoreAdditions.unshift('# Added by Apify CLI');
+            writeFileSync(gitignorePath, `\n${gitignoreAdditions.join('\n')}\n`, { flag: 'a' });
+        } else {
+            writeFileSync(gitignorePath, `${gitignoreAdditions.join('\n')}\n`, { flag: 'w' });
+        }
+    }
+};
+
+// Adapted from https://gist.github.com/kuroski/9a7ae8e5e5c9e22985364d1ddbf3389d to support kebab-case
+type CamelCase<S extends string> = S extends `${infer P1}-${infer P2}${infer P3}` | `${infer P1}_${infer P2}${infer P3}` ?
+    `${Lowercase<P1>}${Uppercase<P2>}${CamelCase<Lowercase<P3>>}`
+: S;
+
+export type KeysToCamelCase<T> = {
+  [K in keyof T as CamelCase<string & K>]: T[K]
+}
+
+/**
+ * Convert Object with kebab-case keys to camelCased keys
+ */
+export const argsToCamelCase = <T extends object>(object: T): KeysToCamelCase<T> => {
+    const camelCasedObject = {} as KeysToCamelCase<T>;
+
+    Object.keys(object).forEach((arg) => {
+        const camelCasedArg = arg.replace(/-(.)/g, ($1) => $1.toUpperCase()).replace(/-/g, '');
+        // @ts-expect-error This is very hard to make stricter than it already will be at the top level
+        camelCasedObject[camelCasedArg] = object[arg];
+    });
+
+    return camelCasedObject;
+};
+
+const mime = new Mime(standardMimes, otherMimes).define({
+    // .tgz files don't have a MIME type defined, this fixes it
+    'application/gzip': ['tgz'],
+    // Default mime-type for .ts(x) files is video/mp2t. But in our usecases they're almost always TypeScript, which we want to treat as text
+    'text/typescript': ['ts', 'tsx', 'mts'],
+}, true);
+
+// Detect whether file is binary from its MIME type, or if not available, contents
+const getSourceFileFormat = (filePath: string, fileContent: Buffer) => {
+    // Try to detect the MIME type from the file path
+    const contentType = mime.getType(filePath);
+    if (contentType) {
+        const format = (
+            contentType.startsWith('text/')
+            || contentType.includes('javascript')
+            || contentType.includes('json')
+            || contentType.includes('xml')
+            || contentType.includes('application/node') // .cjs files
+            || contentType.includes('application/toml') // for example pyproject.toml files
+            || contentType.includes('application/x-httpd-php') // .php files
+        )
+            ? SOURCE_FILE_FORMATS.TEXT
+            : SOURCE_FILE_FORMATS.BASE64;
+
+        return format;
+    }
+
+    // If the MIME type detection failed, try to detect the file encoding from the file content
+    const encoding = getEncoding(fileContent);
+    return encoding === 'binary' ? SOURCE_FILE_FORMATS.BASE64 : SOURCE_FILE_FORMATS.TEXT;
+};
+
+export const createSourceFiles = async (paths: string[]) => {
+    return paths.map((filePath) => {
+        const file = readFileSync(filePath);
+        const format = getSourceFileFormat(filePath, file);
+        return {
+            name: filePath,
+            format,
+            content: format === SOURCE_FILE_FORMATS.TEXT
+                ? file.toString('utf8')
+                : file.toString('base64'),
+        };
+    });
+};
+
+/**
+ * Get actor local files, omit files defined in .gitignore and .git folder
+ * All dot files(.file) and folders(.folder/) are included.
+ */
+export const getActorLocalFilePaths = async () => globby(['*', '**/**'], {
+    ignore: ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'],
+    gitignore: true,
+    dot: true,
+});
+
+/**
+ * Create zip file with all actor files specified with pathsToZip
+ */
+export const createActZip = async (zipName: string, pathsToZip: string[]) => {
+    // NOTE: There can be a zip from a previous unfinished operation.
+    if (existsSync(zipName)) {
+        await deleteFile(zipName);
+    }
+
+    const writeStream = createWriteStream(zipName);
+    const archive = archiver('zip');
+    archive.pipe(writeStream);
+
+    pathsToZip.forEach((globPath) => archive.glob(globPath));
+
+    await archive.finalize();
+};
+
+/**
+ * Get actor input from local store
+ */
+export const getLocalInput = () => {
+    const defaultLocalStorePath = getLocalKeyValueStorePath();
+    const files = readdirSync(defaultLocalStorePath);
+    const inputName = files.find((file) => !!file.match(INPUT_FILE_REG_EXP));
+
+    // No input file
+    if (!inputName) return;
+
+    const input = readFileSync(join(defaultLocalStorePath, inputName));
+    const contentType = mime.getType(inputName);
+    return { body: input, contentType };
+};
+
+export const purgeDefaultQueue = async () => {
+    const defaultQueuesPath = getLocalRequestQueuePath();
+    if (existsSync(getLocalStorageDir()) && existsSync(defaultQueuesPath)) {
+        await rimrafPromised(defaultQueuesPath);
+    }
+};
+
+export const purgeDefaultDataset = async () => {
+    const defaultDatasetPath = getLocalDatasetPath();
+    if (existsSync(getLocalStorageDir()) && existsSync(defaultDatasetPath)) {
+        await rimrafPromised(defaultDatasetPath);
+    }
+};
+
+export const purgeDefaultKeyValueStore = async () => {
+    const defaultKeyValueStorePath = getLocalKeyValueStorePath();
+    if (!existsSync(getLocalStorageDir()) || !existsSync(defaultKeyValueStorePath)) {
+        return;
+    }
+    const filesToDelete = readdirSync(defaultKeyValueStorePath);
+
+    const deletePromises: Promise<void>[] = [];
+    filesToDelete.forEach((file) => {
+        if (!file.match(INPUT_FILE_REG_EXP)) {
+            deletePromises.push(deleteFile(join(defaultKeyValueStorePath, file)));
+        }
+    });
+
+    await Promise.all(deletePromises);
+};
+
+export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
+    const { id: logId, status } = job;
+    const apifyClient = new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
+
+    // In case job was already done just output log
+    if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
+        const log = await apifyClient.log(logId).get();
+        process.stdout.write(log!);
+        return;
+    }
+
+    // In other case stream it to stdout
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve) => {
+        const stream = await apifyClient.log(logId).stream();
+
+        if (!stream) {
+            resolve('no-logs');
+            return;
+        }
+
+        if (timeout) {
+            setTimeout(() => {
+                stream.destroy();
+                resolve('timeouts');
+            }, timeout);
+        }
+
+        for await (const chunk of stream) {
+            process.stdout.write(chunk.toString());
+        }
+
+        resolve('finished');
+    });
+
+    // return new Promise((resolve, reject) => {
+    //     const req = get(`https://api.apify.com/v2/logs/${logId}?stream=1`);
+    //     let res: IncomingMessage;
+
+    //     req.on('response', (response) => {
+    //         res = response;
+    //         response.on('data', (chunk) => process.stdout.write(chunk.toString()));
+    //         response.on('error', (err) => {
+    //             reject(err);
+    //         });
+    //     });
+    //     req.on('error', (err) => {
+    //         reject(err);
+    //     });
+    //     req.on('close', () => {
+    //         resolve('finished');
+    //     });
+
+    //     if (timeout) {
+    //         setTimeout(() => {
+    //             if (res) res.removeAllListeners();
+    //             if (req) {
+    //                 req.removeAllListeners();
+    //                 req.destroy();
+    //             }
+    //             resolve('timeouts');
+    //         }, timeout);
+    //     }
+    // });
+};
+
+/**
+ * Returns npm command for current os
+ * NOTE: For window we have to returns npm.cmd instead of npm, otherwise it doesn't work
+ * @return {string}
+ */
+export const getNpmCmd = () => {
+    return /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
+};
+
+/**
+ * Returns true if apify storage is empty (expect INPUT.*)
+ */
+export const checkIfStorageIsEmpty = async () => {
+    const filesWithoutInput = await globby([
+        `${getLocalStorageDir()}/**`,
+        // Omit INPUT.* file
+        `!${getLocalKeyValueStorePath()}/${KEY_VALUE_STORE_KEYS.INPUT}.*`,
+    ]);
+
+    return filesWithoutInput.length === 0;
+};
+
+/**
+ * Show help for command
+ * NOTE: This is not nice, but I can not find other way..
+ */
+export const showHelpForCommand = (command: string) => {
+    execSync(`apify ${command} --help`, { stdio: [0, 1, 2] });
+};
+
+/**
+ * Migration for deprecated structure of apify.json to latest.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const updateLocalConfigStructure = (localConfig: any) => {
+    const updatedLocalConfig: Record<string, unknown> = {
+        name: localConfig.name,
+        template: localConfig.template,
+        version: localConfig.version.versionNumber,
+        buildTag: localConfig.version.buildTag,
+        env: null,
+    };
+
+    if (localConfig.version.envVars && localConfig.version.envVars.length) {
+        const env = {} as Record<string, string>;
+        localConfig.version.envVars.forEach((envVar: { name: string; value: string }) => {
+            if (envVar.name && envVar.value) env[envVar.name] = envVar.value;
+        });
+
+        updatedLocalConfig.env = env;
+    }
+    return updatedLocalConfig;
+};
+
+/**
+ * Validates actor name, if finds issue throws error.
+ * @param actorName
+ */
+export const validateActorName = (actorName: string) => {
+    if (!ACTOR_NAME.REGEX.test(actorName)) {
+        throw new Error('The Actor name must be a DNS hostname-friendly string (e.g. my-newest-actor).');
+    }
+    if (actorName.length < ACTOR_NAME.MIN_LENGTH) {
+        throw new Error('The Actor name must be at least 3 characters long.');
+    }
+    if (actorName.length > ACTOR_NAME.MAX_LENGTH) {
+        throw new Error('The Actor name must be a maximum of 30 characters long.');
+    }
+};
+
+export const sanitizeActorName = (actorName: string) => {
+    let sanitizedName = actorName
+        .replaceAll(/[^a-zA-Z0-9-]/g, '-');
+
+    if (sanitizedName.length < ACTOR_NAME.MIN_LENGTH) {
+        sanitizedName = `${sanitizedName}-apify-actor`;
+    }
+
+    sanitizedName = sanitizedName.replaceAll(/^-+/g, '').replaceAll(/-+$/g, '');
+
+    return sanitizedName.slice(0, ACTOR_NAME.MAX_LENGTH);
+};
+
+export const getPythonCommand = (directory: string) => {
+    const pythonVenvPath = /^win/.test(process.platform)
+        ? 'Scripts/python.exe'
+        : 'bin/python3';
+
+    let fullPythonVenvPath;
+    if (process.env.VIRTUAL_ENV) {
+        fullPythonVenvPath = join(process.env.VIRTUAL_ENV, pythonVenvPath);
+    } else {
+        fullPythonVenvPath = join(directory, '.venv', pythonVenvPath);
+    }
+
+    if (existsSync(fullPythonVenvPath)) {
+        return fullPythonVenvPath;
+    }
+
+    return /^win/.test(process.platform)
+        ? 'python'
+        : 'python3';
+};
+
+export const detectPythonVersion = (directory: string) => {
+    const pythonCommand = getPythonCommand(directory);
+    try {
+        const spawnResult = spawnSync(pythonCommand, ['-c', 'import platform; print(platform.python_version())'], { encoding: 'utf-8' });
+        if (!spawnResult.error && spawnResult.stdout) {
+            return spawnResult.stdout.trim();
+        }
+
+        return undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+export const isPythonVersionSupported = (installedPythonVersion: string) => {
+    return satisfies(installedPythonVersion, `^${MINIMUM_SUPPORTED_PYTHON_VERSION}`);
+};
+
+export const detectNodeVersion = () => {
+    try {
+        const spawnResult = spawnSync('node', ['--version'], { encoding: 'utf-8' });
+        if (!spawnResult.error && spawnResult.stdout) {
+            return spawnResult.stdout.trim().replace(/^v/, '');
+        }
+
+        return undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+export const isNodeVersionSupported = (installedNodeVersion: string) => {
+    // SUPPORTED_NODEJS_VERSION can be a version range,
+    // we need to get the minimum supported version from that range to be able to compare them
+    const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION)!;
+    return gte(installedNodeVersion, minimumSupportedNodeVersion);
+};
+
+export const detectNpmVersion = () => {
+    const npmCommand = getNpmCmd();
+    try {
+        const spawnResult = spawnSync(npmCommand, ['--version'], { encoding: 'utf-8' });
+        if (!spawnResult.error && spawnResult.stdout) {
+            return spawnResult.stdout.trim().replace(/^v/, '');
+        }
+
+        return undefined;
+    } catch {
+        return undefined;
+    }
+};
+
+export interface ActorLanguage {
+    language: Language;
+    languageVersion?: string;
+}
+
+export const detectLocalActorLanguage = () => {
+    const cwd = process.cwd();
+    const isActorInNode = existsSync(join(cwd, 'package.json'));
+    const isActorInPython = existsSync(join(cwd, 'src/__main__.py')) || ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY;
+    const result = {} as ActorLanguage;
+
+    if (isActorInNode) {
+        result.language = LANGUAGE.NODEJS;
+        result.languageVersion = detectNodeVersion();
+    } else if (isActorInPython) {
+        result.language = LANGUAGE.PYTHON;
+        result.languageVersion = detectPythonVersion(cwd);
+    } else {
+        result.language = LANGUAGE.UNKNOWN;
+    }
+
+    return result;
+};
+
+export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: string }) => {
+    const zipStream = await httpsGet(url);
+    const chunks: Buffer[] = [];
+    zipStream.on('data', (chunk) => chunks.push(chunk));
+    await finished(zipStream);
+    const zip = new AdmZip(Buffer.concat(chunks));
+    zip.extractAllTo(pathTo, true);
+};
