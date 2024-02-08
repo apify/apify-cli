@@ -80,7 +80,7 @@ const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
 const getLocalStorageDir = () => {
     const envVar = APIFY_ENV_VARS.LOCAL_STORAGE_DIR;
 
-    return process.env[envVar] || DEFAULT_LOCAL_STORAGE_DIR;
+    return process.env[envVar] || process.env.CRAWLEE_STORAGE_DIR || DEFAULT_LOCAL_STORAGE_DIR;
 };
 const getLocalKeyValueStorePath = (storeId) => {
     const envVar = ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID;
