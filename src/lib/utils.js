@@ -21,6 +21,7 @@ const {
 const AdmZip = require('adm-zip');
 const { ApifyClient } = require('apify-client');
 const archiver = require('archiver-promise');
+const axios = require('axios');
 const escapeStringRegexp = require('escape-string-regexp');
 const globby = require('globby');
 const inquirer = require('inquirer');
@@ -139,7 +140,14 @@ const getApifyClientOptions = (token, apiBaseUrl) => {
         token,
         baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
         requestInterceptors: [(config) => {
-            config.headers = { ...APIFY_CLIENT_DEFAULT_HEADERS, ...config.headers };
+            if (!config.headers) {
+                config.headers = new axios.AxiosHeaders();
+            }
+
+            for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
+                config.headers[key] = value;
+            }
+
             return config;
         }],
     };
