@@ -23,9 +23,9 @@
                 "@root/walk": "^1.1.0",
                 "adm-zip": "^0.5.10",
                 "ajv": "^8.12.0",
-                "apify-client": "^2.8.2",
+                "apify-client": "^2.9.0",
                 "archiver-promise": "^1.0.0",
-                "axios": "^1.6.1",
+                "axios": "^1.6.7",
                 "chalk": "^4.1.2",
                 "computer-name": "^0.1.0",
                 "configparser": "^0.3.10",
@@ -1891,28 +1891,20 @@
             "integrity": "sha512-QXu7BPrP29VllRxH8GwB7x5iX5qWKAAMLqKQGWTeLWVlNHNOpVMJ91dsxQAIWXpjuW5wqvxu3Jd/nRjrJ+0pqg=="
         },
         "node_modules/apify-client": {
-            "version": "2.8.6",
-            "resolved": "https://registry.npmjs.org/apify-client/-/apify-client-2.8.6.tgz",
-            "integrity": "sha512-Oz+plFC6l28EAMF/Uof+Q/ZXBDX+hAA3Pj38NNhm/UQnhakEnW3zpgySSF0a7txYpegtfoO2tiyi7DSr74K32g==",
+            "version": "2.9.0",
+            "resolved": "https://registry.npmjs.org/apify-client/-/apify-client-2.9.0.tgz",
+            "integrity": "sha512-QyTyDjGXQV5Aey3Jbs5pxDIaJmzTSkByYGf6JambHkKHuO/qR+3zXH6ENABzcleeGAkc73PCg24F3nYFXqhNHw==",
             "dependencies": {
                 "@apify/consts": "^2.25.0",
                 "@apify/log": "^2.2.6",
                 "@crawlee/types": "^3.3.0",
                 "agentkeepalive": "^4.2.1",
                 "async-retry": "^1.3.3",
-                "axios": "^0.21.1",
+                "axios": "^1.6.7",
                 "content-type": "^1.0.5",
                 "ow": "^0.28.2",
                 "tslib": "^2.5.0",
                 "type-fest": "^4.0.0"
-            }
-        },
-        "node_modules/apify-client/node_modules/axios": {
-            "version": "0.21.4",
-            "resolved": "https://registry.npmjs.org/axios/-/axios-0.21.4.tgz",
-            "integrity": "sha512-ut5vewkiu8jjGBdqpM44XxjuCjq9LAKeHVmoVfHVzy8eHgxxq8SbAVQNovDA8mVi05kP0Ea/n/UzcSHcTJQfNg==",
-            "dependencies": {
-                "follow-redirects": "^1.14.0"
             }
         },
         "node_modules/apify-client/node_modules/type-fest": {
