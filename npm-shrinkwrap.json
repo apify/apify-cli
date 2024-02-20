@@ -1,12 +1,12 @@
 {
     "name": "apify-cli",
-    "version": "0.19.2",
+    "version": "0.19.3",
     "lockfileVersion": 3,
     "requires": true,
     "packages": {
         "": {
             "name": "apify-cli",
-            "version": "0.19.2",
+            "version": "0.19.3",
             "hasInstallScript": true,
             "license": "Apache-2.0",
             "dependencies": {
@@ -2194,10 +2194,13 @@
             "integrity": "sha512-Oei9OH4tRh0YqU3GxhX79dM/mwVgvbZJaSNaRk+bshkj0S5cfHcgYakreBjrHwatXKbz+IoIdYLxrKim2MjW0Q=="
         },
         "node_modules/available-typed-arrays": {
-            "version": "1.0.6",
-            "resolved": "https://registry.npmjs.org/available-typed-arrays/-/available-typed-arrays-1.0.6.tgz",
-            "integrity": "sha512-j1QzY8iPNPG4o4xmO3ptzpRxTciqD3MgEHtifP/YnJpIo58Xu+ne4BejlbkuaLfXn/nz6HFiw29bLpj2PNMdGg==",
+            "version": "1.0.7",
+            "resolved": "https://registry.npmjs.org/available-typed-arrays/-/available-typed-arrays-1.0.7.tgz",
+            "integrity": "sha512-wvUjBtSGN7+7SjNpq/9M2Tg350UZD3q62IFZLbRAR1bSMlCo1ZaeW+BJ+D090e4hIIZLBcTDWe4Mh4jvUDajzQ==",
             "dev": true,
+            "dependencies": {
+                "possible-typed-array-names": "^1.0.0"
+            },
             "engines": {
                 "node": ">= 0.4"
             },
@@ -4669,9 +4672,9 @@
             }
         },
         "node_modules/has-proto": {
-            "version": "1.0.1",
-            "resolved": "https://registry.npmjs.org/has-proto/-/has-proto-1.0.1.tgz",
-            "integrity": "sha512-7qE+iP+O+bgF9clE5+UoBFzE65mlBiVj3tKCrlNQ0Ogwm0BjpT/gK4SlLYDMybDh5I3TCTKnPPa0oMG7JDYrhg==",
+            "version": "1.0.3",
+            "resolved": "https://registry.npmjs.org/has-proto/-/has-proto-1.0.3.tgz",
+            "integrity": "sha512-SJ1amZAJUiZS+PhsVLf5tGydlaVB8EdFpaSO4gmiUKUOxk8qzn5AIy4ZeJUmh22znIdk/uMAUT2pl3FxzVUH+Q==",
             "engines": {
                 "node": ">= 0.4"
             },
@@ -5179,9 +5182,9 @@
             }
         },
         "node_modules/is-negative-zero": {
-            "version": "2.0.2",
-            "resolved": "https://registry.npmjs.org/is-negative-zero/-/is-negative-zero-2.0.2.tgz",
-            "integrity": "sha512-dqJvarLawXsFbNDeJW7zAz8ItJ9cd28YufuuFzh0G8pNHjJMnY08Dv7sYX2uF5UpQOwieAeOExEYAWWfu7ZZUA==",
+            "version": "2.0.3",
+            "resolved": "https://registry.npmjs.org/is-negative-zero/-/is-negative-zero-2.0.3.tgz",
+            "integrity": "sha512-5KoIu2Ngpyek75jXodFvnafB6DJgr3u8uuK0LEZJjrU19DrMD3EVERaR8sjz8CCGgpZvxPl9SuE1GMVPFHx1mw==",
             "dev": true,
             "engines": {
                 "node": ">= 0.4"
@@ -6623,6 +6626,15 @@
                 "jsonc-parser": "^3.2.0",
                 "mlly": "^1.2.0",
                 "pathe": "^1.1.0"
+            }
+        },
+        "node_modules/possible-typed-array-names": {
+            "version": "1.0.0",
+            "resolved": "https://registry.npmjs.org/possible-typed-array-names/-/possible-typed-array-names-1.0.0.tgz",
+            "integrity": "sha512-d7Uw+eZoloe0EHDIYoe+bQ5WXnGMOpmiZFTuMWCwpjzzkL2nTjcKiAk4hh8TjnGye2TwWOk3UXucZ+3rbmBa8Q==",
+            "dev": true,
+            "engines": {
+                "node": ">= 0.4"
             }
         },
         "node_modules/postcss": {
@@ -8263,16 +8275,17 @@
             }
         },
         "node_modules/typed-array-byte-offset": {
-            "version": "1.0.0",
-            "resolved": "https://registry.npmjs.org/typed-array-byte-offset/-/typed-array-byte-offset-1.0.0.tgz",
-            "integrity": "sha512-RD97prjEt9EL8YgAgpOkf3O4IF9lhJFr9g0htQkm0rchFp/Vx7LW5Q8fSXXub7BXAODyUQohRMyOc3faCPd0hg==",
+            "version": "1.0.1",
+            "resolved": "https://registry.npmjs.org/typed-array-byte-offset/-/typed-array-byte-offset-1.0.1.tgz",
+            "integrity": "sha512-tcqKMrTRXjqvHN9S3553NPCaGL0VPgFI92lXszmrE8DMhiDPLBYLlvo8Uu4WZAAX/aGqp/T1sbA4ph8EWjDF9Q==",
             "dev": true,
             "dependencies": {
-                "available-typed-arrays": "^1.0.5",
-                "call-bind": "^1.0.2",
+                "available-typed-arrays": "^1.0.6",
+                "call-bind": "^1.0.7",
                 "for-each": "^0.3.3",
+                "gopd": "^1.0.1",
                 "has-proto": "^1.0.1",
-                "is-typed-array": "^1.1.10"
+                "is-typed-array": "^1.1.13"
             },
             "engines": {
                 "node": ">= 0.4"
