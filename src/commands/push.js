@@ -60,7 +60,7 @@ class PushCommand extends ApifyCommand {
         const forceActorId = args.actorId;
         if (forceActorId) {
             actor = await apifyClient.actor(forceActorId).get();
-            if (!actor) throw new Error(`Cannot find actor with ID '${forceActorId}' in your account.`);
+            if (!actor) throw new Error(`Cannot find Actor with ID '${forceActorId}' in your account.`);
             actorId = actor.id;
         } else {
             const usernameOrId = userInfo.username || userInfo.id;

@@ -210,10 +210,10 @@ const getLocalConfigOrThrow = async () => {
             name: 'isConfirm',
             type: 'confirm',
 
-            message: `The new version of Apify CLI uses the "${LOCAL_CONFIG_PATH}" instead of the "apify.json" file. Since we have found both files in your actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use "${LOCAL_CONFIG_PATH}". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?`,
+            message: `The new version of Apify CLI uses the "${LOCAL_CONFIG_PATH}" instead of the "apify.json" file. Since we have found both files in your Actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use "${LOCAL_CONFIG_PATH}". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?`,
         }]);
         if (!answer.isConfirm) {
-            throw new Error('Command can not run with old "apify.json" file present in your actor directory., Please, either rename or remove it.');
+            throw new Error('Command can not run with old "apify.json" file present in your Actor directory., Please, either rename or remove it.');
         }
         try {
             fs.renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);

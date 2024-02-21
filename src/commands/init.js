@@ -55,11 +55,11 @@ class InitCommand extends ApifyCommand {
         await setLocalEnv(cwd);
         // Create prefilled INPUT.json file from the input schema prefills
         await createPrefilledInputFileFromInputSchema(cwd);
-        outputs.success('The Apify actor has been initialized in the current directory.');
+        outputs.success('The Actor has been initialized in the current directory.');
     }
 }
 
-InitCommand.description = 'Initializes a new actor project in an existing directory.\n'
+InitCommand.description = 'Initializes a new Actor project in an existing directory.\n'
     + `The command only creates the "${LOCAL_CONFIG_PATH}" file and the "${DEFAULT_LOCAL_STORAGE_DIR}" directory in the current directory, `
     + 'but will not touch anything else.\n\n'
     + `WARNING: The directory at "${DEFAULT_LOCAL_STORAGE_DIR}" will be overwritten if it already exists.`;
@@ -68,7 +68,7 @@ InitCommand.args = [
     {
         name: 'actorName',
         required: false,
-        description: 'Name of the actor. If not provided, you will be prompted for it.',
+        description: 'Name of the Actor. If not provided, you will be prompted for it.',
     },
 ];
 
