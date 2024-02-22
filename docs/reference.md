@@ -10,7 +10,7 @@ This section contains printouts of `apify help` for all commands.
 * [`apify actor:get-value KEY`](#apify-actorget-value-key)
 * [`apify actor:push-data [ITEM]`](#apify-actorpush-data-item)
 * [`apify actor:set-value KEY [VALUE]`](#apify-actorset-value-key-value)
-* [`apify call [ACTID]`](#apify-call-actid)
+* [`apify call [ACTORID]`](#apify-call-actid)
 * [`apify create [ACTORNAME]`](#apify-create-actorname)
 * [`apify info`](#apify-info)
 * [`apify init [ACTORNAME]`](#apify-init-actorname)
@@ -111,16 +111,16 @@ DESCRIPTION
 
 _See code: [src/commands/actor/set-value.js](https://github.com/apify/apify-cli/blob/v0.17.0/src/commands/actor/set-value.js)_
 
-## `apify call [ACTID]`
+## `apify call [ACTORID]`
 
 Runs a specific actor remotely on the Apify cloud platform.
 
 ```
 USAGE
-  $ apify call [ACTID]
+  $ apify call [ACTORID]
 
 ARGUMENTS
-  ACTID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command
+  ACTORID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command
          runs the remote actor specified in the ".actor/actor.json" file.
 
 OPTIONS

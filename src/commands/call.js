@@ -21,7 +21,7 @@ class CallCommand extends ApifyCommand {
         const userInfo = await getLocalUserInfo();
         const usernameOrId = userInfo.username || userInfo.id;
 
-        const forceActorId = args.actId;
+        const forceActorId = args.actorId;
         let actorId;
         if (forceActorId) {
             const actor = await apifyClient.actor(forceActorId).get();
@@ -65,7 +65,7 @@ class CallCommand extends ApifyCommand {
             }
         } catch (err) {
             // TODO: Better error message in apify-client-js
-            if (err.type === 'record-not-found') throw new Error(`Actor ${runOpts.actId} not found!`);
+            if (err.type === 'record-not-found') throw new Error(`Actor ${args.actorId} not found!`);
             else throw err;
         }
 
@@ -121,7 +121,7 @@ CallCommand.flags = {
 
 CallCommand.args = [
     {
-        name: 'actId',
+        name: 'actorId',
         required: false,
         description: 'Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
             + `If not provided, the command runs the remote actor specified in the "${LOCAL_CONFIG_PATH}" file.`,
