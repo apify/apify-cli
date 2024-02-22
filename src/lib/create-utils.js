@@ -94,7 +94,7 @@ async function executePrompts(manifest) {
 async function promptActorName() {
     const answer = await inquirer.prompt([{
         name: 'actorName',
-        message: 'Name of your new actor:',
+        message: 'Name of your new Actor:',
         type: 'input',
         validate: (promptText) => {
             try {
@@ -115,7 +115,7 @@ async function promptProgrammingLanguage() {
     const answer = await inquirer.prompt([{
         type: 'list',
         name: 'programmingLanguage',
-        message: 'Choose the programming language of your new actor:',
+        message: 'Choose the programming language of your new Actor:',
         default: PROGRAMMING_LANGUAGES[0],
         choices: PROGRAMMING_LANGUAGES,
         loop: false,
@@ -149,7 +149,7 @@ async function promptTemplateDefinition(manifest, programmingLanguage) {
     const answer = await inquirer.prompt([{
         type: 'list',
         name: 'templateDefinition',
-        message: 'Choose a template for your new actor. Detailed information about the template will be shown in the next step.',
+        message: 'Choose a template for your new Actor. Detailed information about the template will be shown in the next step.',
         default: choices[0],
         choices,
         loop: false,

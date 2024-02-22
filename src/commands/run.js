@@ -88,7 +88,7 @@ class RunCommand extends ApifyCommand {
         if (!flags.purge) {
             const isStorageEmpty = await checkIfStorageIsEmpty();
             if (!isStorageEmpty) {
-                warning('The storage directory contains a previous state, the actor will continue where it left off. '
+                warning('The storage directory contains a previous state, the Actor will continue where it left off. '
                     + 'To start from the initial state, use --purge parameter to clean the storage directory.');
             }
         }
@@ -172,10 +172,10 @@ class RunCommand extends ApifyCommand {
 
 // TODO: we should describe which env vars are set here:
 
-RunCommand.description = 'Runs the actor locally in the current directory.\n'
+RunCommand.description = 'Runs the Actor locally in the current directory.\n'
     + 'It sets various APIFY_XYZ environment variables '
-    + 'in order to provide a working execution environment for the actor. For example, this causes '
-    + 'the actor input, as well as all other data in key-value stores, '
+    + 'in order to provide a working execution environment for the Actor. For example, this causes '
+    + 'the Actor input, as well as all other data in key-value stores, '
     + `datasets or request queues to be stored in the "${DEFAULT_LOCAL_STORAGE_DIR}" directory, `
     + 'rather than on the Apify platform.\n\n'
     + 'NOTE: You can override the command\'s default behavior for Node.js actors by overriding the "start" script in the package.json file. '
