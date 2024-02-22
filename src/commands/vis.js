@@ -29,7 +29,7 @@ class ValidateInputSchemaCommand extends ApifyCommand {
 }
 
 ValidateInputSchemaCommand.description = `Validates input schema and prints errors found.
-The input schema for the actor is used from these locations in order of preference.
+The input schema for the Actor is used from these locations in order of preference.
 The first one found is validated as it would be the one used on the Apify platform.
 1. Directly embedded object in "${LOCAL_CONFIG_PATH}" under 'input' key
 2. Path to JSON file referenced in "${LOCAL_CONFIG_PATH}" under 'input' key

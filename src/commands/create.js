@@ -71,8 +71,8 @@ class CreateCommand extends ApifyCommand {
             fs.mkdirSync(actFolderDir);
         } catch (err) {
             if (err?.code === 'EEXIST') {
-                outputs.error(`Cannot create new actor, directory '${actorName}' already exists. `
-                    + 'You can use "apify init" to create a local actor environment inside an existing directory.');
+                outputs.error(`Cannot create new Actor, directory '${actorName}' already exists. `
+                    + 'You can use "apify init" to create a local Actor environment inside an existing directory.');
                 return;
             }
             throw err;
@@ -172,17 +172,17 @@ class CreateCommand extends ApifyCommand {
     }
 }
 
-CreateCommand.description = 'Creates a new actor project directory from a selected boilerplate template.';
+CreateCommand.description = 'Creates a new Actor project directory from a selected boilerplate template.';
 
 CreateCommand.flags = {
     template: flagsHelper.string({
         char: 't',
-        description: 'Template for the actor. If not provided, the command will prompt for it.\n'
+        description: 'Template for the Actor. If not provided, the command will prompt for it.\n'
             + `Visit ${actorTemplates.manifestUrl} to find available template names.`,
         required: false,
     }),
     'skip-dependency-install': flagsHelper.boolean({
-        description: 'Skip installing actor dependencies.',
+        description: 'Skip installing Actor dependencies.',
         required: false,
     }),
     'template-archive-url': flagsHelper.string({
@@ -196,7 +196,7 @@ CreateCommand.args = [
     {
         name: 'actorName',
         required: false,
-        description: 'Name of the actor and its directory',
+        description: 'Name of the Actor and its directory',
     },
 ];
 

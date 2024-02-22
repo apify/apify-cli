@@ -28,7 +28,7 @@ class SetValueCommand extends ApifyCommand {
     }
 }
 
-SetValueCommand.description = 'Sets or removes record into the default KeyValueStore associated with the actor run.\n'
+SetValueCommand.description = 'Sets or removes record into the default key-value store associated with the Actor run.\n'
     + 'It is possible to pass data using argument or stdin.\n'
     + 'Passing data using argument:\n'
     + '$ apify actor:set-value KEY my-value\n'

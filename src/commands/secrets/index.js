@@ -9,7 +9,7 @@ class SecretsIndexCommand extends Command {
     }
 }
 
-SecretsIndexCommand.description = 'Manages secret values for actor environment variables.\n\n'
+SecretsIndexCommand.description = 'Manages secret values for Actor environment variables.\n\n'
     + 'Example:\n'
     + '$ apify secrets:add mySecret TopSecretValue123\n\n'
     + `Now the "mySecret" value can be used in an environment variable defined in "${LOCAL_CONFIG_PATH}" file by adding the "@" prefix:\n\n`
