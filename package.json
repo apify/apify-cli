@@ -1,7 +1,7 @@
 {
     "name": "apify-cli",
     "version": "0.19.3",
-    "description": "Apify command-line interface helps you create, develop, build and run Apify actors, and manage the Apify cloud platform.",
+    "description": "Apify command-line interface (CLI) helps you manage the Apify cloud platform and develop, build, and deploy Apify Actors.",
     "main": "index.js",
     "scripts": {
         "test": "cross-env APIFY_CLI_SKIP_UPDATE_CHECK=1 vitest run",

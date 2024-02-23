@@ -6,7 +6,7 @@ title: Apify CLI
 <a href="https://travis-ci.com/apify/apify-cli?branch=master"><img src="https://travis-ci.com/apify/apify-cli.svg?branch=master" loading="lazy" alt="Build Status" /></a>
 
 Apify command-line interface (Apify CLI) helps you create, develop, build and run
-[Apify actors](https://www.apify.com/actors),
+[Apify Actors](https://apify.com/actors),
 and manage the Apify cloud platform from any computer.
 
 Apify actors are cloud programs that can perform arbitrary web scraping, automation or data processing job.

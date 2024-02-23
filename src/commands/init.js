@@ -60,8 +60,9 @@ class InitCommand extends ApifyCommand {
 }
 
 InitCommand.description = 'Initializes a new Actor project in an existing directory.\n'
-    + `The command only creates the "${LOCAL_CONFIG_PATH}" file and the "${DEFAULT_LOCAL_STORAGE_DIR}" directory in the current directory, `
-    + 'but will not touch anything else.\n\n'
+    + `If the directory contains a Scrapy project in Python, the command automatically creates wrappers so that you can run your scrapers without changes.\n\n`
+    + `The command creates the "${LOCAL_CONFIG_PATH}" file and the "${DEFAULT_LOCAL_STORAGE_DIR}" directory in the current directory, `
+    + 'but does not touch any other existing files or directories.\n\n'
     + `WARNING: The directory at "${DEFAULT_LOCAL_STORAGE_DIR}" will be overwritten if it already exists.`;
 
 InitCommand.args = [
