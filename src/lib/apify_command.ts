@@ -1,6 +1,6 @@
 import { finished } from 'node:stream/promises';
 
-import { Command, Interfaces } from '@oclif/core';
+import { Command, Interfaces, loadHelpClass } from '@oclif/core';
 
 import { COMMANDS_WITHIN_ACTOR, LANGUAGE } from './consts.js';
 import { maybeTrackTelemetry } from './telemetry.js';
@@ -88,5 +88,11 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
 
         await finished(stdinStream);
         return Buffer.concat(bufferChunks).toString('utf-8');
+    }
+
+    async printHelp(customCommand?: string) {
+        const HelpCommand = await loadHelpClass(this.config);
+        const help = new HelpCommand(this.config);
+        await help.showHelp([customCommand ?? this.id!]);
     }
 }

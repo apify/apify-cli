@@ -1,4 +1,4 @@
-import { execSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
@@ -542,14 +542,6 @@ export const checkIfStorageIsEmpty = async () => {
     ]);
 
     return filesWithoutInput.length === 0;
-};
-
-/**
- * Show help for command
- * NOTE: This is not nice, but I can not find other way..
- */
-export const showHelpForCommand = (command: string) => {
-    execSync(`apify ${command} --help`, { stdio: [0, 1, 2] });
 };
 
 /**

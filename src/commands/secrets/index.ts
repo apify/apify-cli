@@ -1,9 +1,7 @@
-import { Command } from '@oclif/core';
-
+import { ApifyCommand } from '../../lib/apify_command.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { showHelpForCommand } from '../../lib/utils.js';
 
-export class SecretsIndexCommand extends Command {
+export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand> {
     static override description = 'Manages secret values for actor environment variables.\n\n'
     + 'Example:\n'
     + '$ apify secrets:add mySecret TopSecretValue123\n\n'
@@ -17,6 +15,6 @@ export class SecretsIndexCommand extends Command {
     + 'When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable of the actor.';
 
     async run() {
-        showHelpForCommand('secrets');
+        await this.printHelp();
     }
 }
