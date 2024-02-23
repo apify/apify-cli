@@ -469,18 +469,26 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
             return;
         }
 
+        let nodeTimeout: NodeJS.Timeout | null = null;
+
+        stream.on('data', (chunk) => {
+            process.stdout.write(chunk.toString());
+        });
+
+        stream.once('end', () => {
+            resolve('finished');
+
+            if (nodeTimeout) {
+                clearTimeout(nodeTimeout);
+            }
+        });
+
         if (timeout) {
-            setTimeout(() => {
+            nodeTimeout = setTimeout(() => {
                 stream.destroy();
                 resolve('timeouts');
             }, timeout);
         }
-
-        for await (const chunk of stream) {
-            process.stdout.write(chunk.toString());
-        }
-
-        resolve('finished');
     });
 
     // return new Promise((resolve, reject) => {
