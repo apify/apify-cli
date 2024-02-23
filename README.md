@@ -4,19 +4,19 @@
 <a href="https://travis-ci.com/apify/apify-cli?branch=master"><img src="https://travis-ci.com/apify/apify-cli.svg?branch=master" loading="lazy" alt="Build Status" style="display:inherit;" /></a>
 
 Apify command-line interface (Apify CLI) helps you create, develop, build and run
-[Apify actors](https://www.apify.com/actors),
+[Apify Actors](https://www.apify.com/actors),
 and manage the Apify cloud platform from any computer.
 
-Apify actors are cloud programs that can perform arbitrary web scraping, automation or data processing job.
+Apify Actors are cloud programs that can perform arbitrary web scraping, automation or data processing job.
 They accept input, perform their job and generate output.
-While you can develop actors in an online IDE directly in the [Apify web application](https://console.apify.com/),
-for complex projects it is more convenient to develop actors locally on your computer
+While you can develop Actors in an online IDE directly in the [Apify web application](https://console.apify.com/),
+for complex projects it is more convenient to develop Actors locally on your computer
 using <a href="https://github.com/apify/apify-sdk-js">Apify SDK</a>
-and only push the actors to the Apify cloud during deployment.
+and only push the Actors to the Apify cloud during deployment.
 This is where the Apify CLI comes in.
 
-Note that actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
-you can build your actors in any programming language.
+Note that Actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
+you can build your Actors in any programming language.
 However, we recommend using JavaScript / Node.js, for which we provide most libraries and support.
 
 
@@ -151,7 +151,7 @@ apify call
 
 Runs the actor corresponding to the current directory on the Apify platform.
 
-This command can also be used to run other actors, for example:
+This command can also be used to run other Actors, for example:
 
 ```bash
 apify call apify/hello-world
@@ -202,7 +202,7 @@ You can define the schema of the items in your dataset under the `storages.datas
 
 ## Environment variables
 
-There are two options how you can set up environment variables for actors.
+There are two options how you can set up environment variables for Actors.
 
 ### Set up environment variables in .actor/actor.json
 All keys from `env` will be set as environment variables into Apify platform after you push actor to Apify. Current values on Apify will be overridden.
@@ -575,7 +575,7 @@ DESCRIPTION
    example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
    stored in the "storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the command's default behavior for Node.js actors by overriding the "start" script in the
+  NOTE: You can override the command's default behavior for Node.js Actors by overriding the "start" script in the
   package.json file. You can set up your own main file or environment variables by changing it.
 ```
 
