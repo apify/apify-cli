@@ -194,7 +194,7 @@ What spider is going to be executed in an Actor run can be specified in the
 
 ## Additional links
 
-- [Actor Scrapy Books Example](https://apify.com/vdusek/actor-scrapy-books-example)
+- [Scrapy Books Example Actor](https://apify.com/vdusek/scrapy-books-example)
 - [Python Actor Scrapy template](https://apify.com/templates/python-scrapy)
 - [Apify SDK for Python](https://docs.apify.com/sdk/python)
 - [Apify platform](https://docs.apify.com/platform)
