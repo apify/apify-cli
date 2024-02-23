@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
+import { platform } from 'node:os';
 
 import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS } from '@apify/consts';
 import { ActorCollectionCreateOptions } from 'apify-client';
@@ -18,7 +19,7 @@ import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 const ACTOR_NAME = `cli-test-${Date.now()}`;
 const TEST_ACTOR: ActorCollectionCreateOptions = {
     // Less likely to encounter a name conflict when multiple node versions are running tests
-    name: `my-cli-test-${Date.now()}-${process.version.split('.')[0]}`,
+    name: `my-cli-test-${Date.now()}-${process.version.split('.')[0]}-${platform()}`,
     isPublic: false,
     versions: [
         {
