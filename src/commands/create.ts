@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { join } from 'node:path';
+import process from 'node:process';
 
 import { fetchManifest, manifestUrl } from '@apify/actor-templates';
 import { Args, Flags } from '@oclif/core';

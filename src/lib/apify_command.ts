@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { finished } from 'node:stream/promises';
 
 import { Command, Interfaces, loadHelpClass } from '@oclif/core';
@@ -53,7 +54,7 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
         try {
             eventData.installationType = detectInstallationType();
             if (!this.telemetryData.actorLanguage && command && COMMANDS_WITHIN_ACTOR.includes(command)) {
-                const { language, languageVersion } = detectLocalActorLanguage();
+                const { language, languageVersion } = detectLocalActorLanguage(process.cwd());
                 eventData.actorLanguage = language;
                 if (language === LANGUAGE.NODEJS) {
                     eventData.actorNodejsVersion = languageVersion;

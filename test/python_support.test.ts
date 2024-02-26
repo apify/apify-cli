@@ -1,21 +1,30 @@
 import { existsSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 
 import { loadJsonFileSync } from 'load-json-file';
 
-import { CreateCommand } from '../src/commands/create.js';
-import { RunCommand } from '../src/commands/run.js';
-import { rimrafPromised } from '../src/lib/files.js';
+import { useTempPath } from './__setup__/hooks/useTempPath.js';
 import { detectPythonVersion, getLocalKeyValueStorePath } from '../src/lib/utils.js';
 
 const actorName = 'my-python-actor';
 const PYTHON_START_TEMPLATE_ID = 'python-start';
+const {
+    beforeAllCalls,
+    afterAllCalls,
+    joinPath,
+    tmpPath,
+    toggleCwdBetweenFullAndParentPath,
+} = useTempPath(actorName, { create: true, remove: true, cwd: true, cwdParent: true });
+
+const { CreateCommand } = await import('../src/commands/create.js');
+const { RunCommand } = await import('../src/commands/run.js');
 
 describe('Python support [python]', () => {
-    let currentDirectory: string;
-
     beforeAll(async () => {
-        currentDirectory = process.cwd();
+        await beforeAllCalls();
+    });
+
+    afterAll(async () => {
+        await afterAllCalls();
     });
 
     it('Python templates work [python]', async () => {
@@ -29,12 +38,10 @@ describe('Python support [python]', () => {
         await CreateCommand.run([actorName, '--template', PYTHON_START_TEMPLATE_ID], import.meta.url);
 
         // Check file structure
-        /* eslint-disable no-unused-expressions */
-        expect(existsSync(actorName)).to.be.true;
-        process.chdir(actorName);
+        expect(existsSync(tmpPath)).toBeTruthy();
 
-        expect(existsSync('.venv')).to.be.true;
-        expect(existsSync('requirements.txt')).to.be.true;
+        expect(existsSync(joinPath('.venv'))).toBeTruthy();
+        expect(existsSync(joinPath('requirements.txt'))).toBeTruthy();
 
         const expectedOutput = {
             hello: 'world',
@@ -45,18 +52,14 @@ async def main():
     async with Actor:
         await Actor.set_value('OUTPUT', ${JSON.stringify(expectedOutput)})
 `;
-        writeFileSync(join('src', 'main.py'), actorCode, { flag: 'w' });
+        writeFileSync(joinPath('src', 'main.py'), actorCode, { flag: 'w' });
 
+        toggleCwdBetweenFullAndParentPath();
         await RunCommand.run([], import.meta.url);
 
         // Check actor output
-        const actorOutputPath = join(getLocalKeyValueStorePath(), 'OUTPUT.json');
+        const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
         const actorOutput = loadJsonFileSync(actorOutputPath);
-        expect(actorOutput).to.be.eql(actorOutput);
-    });
-
-    afterAll(async () => {
-        process.chdir(currentDirectory);
-        if (existsSync(actorName)) await rimrafPromised(actorName);
+        expect(actorOutput).toStrictEqual(actorOutput);
     });
 });

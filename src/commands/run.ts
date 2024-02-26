@@ -1,5 +1,6 @@
-import { existsSync, renameSync } from 'fs';
-import { join } from 'path';
+import { existsSync, renameSync } from 'node:fs';
+import { join } from 'node:path';
+import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { Flags } from '@oclif/core';
@@ -150,7 +151,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
         }
 
-        const { language, languageVersion } = detectLocalActorLanguage();
+        const { language, languageVersion } = detectLocalActorLanguage(cwd);
         if (language === LANGUAGE.NODEJS) { // Actor is written in Node.js
             const currentNodeVersion = languageVersion;
             const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
@@ -174,7 +175,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                 }
                 this.telemetryData.actorNodejsVersion = currentNodeVersion;
                 this.telemetryData.actorLanguage = LANGUAGE.NODEJS;
-                await execWithLog(getNpmCmd(), ['start'], { env });
+                await execWithLog(getNpmCmd(), ['start'], { env, cwd });
             } else {
                 error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js actors locally.`);
             }
@@ -195,7 +196,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                         }
                     }
 
-                    await execWithLog(pythonCommand, ['-m', executableLocation], { env });
+                    await execWithLog(pythonCommand, ['-m', executableLocation], { env, cwd });
                 } else {
                     error(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
                     error('Please install Python 3.8 or higher to be able to run Python actors locally.');

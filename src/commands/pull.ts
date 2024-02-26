@@ -1,5 +1,6 @@
-import { mkdirSync, readdirSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import process from 'node:process';
 
 import { Args, Flags } from '@oclif/core';
 import AdmZip from 'adm-zip';

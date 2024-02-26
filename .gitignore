@@ -13,3 +13,5 @@ _mytests
 docs/changelog.md
 
 **/scrapy-wrapper/templates/*
+
+test/tmp

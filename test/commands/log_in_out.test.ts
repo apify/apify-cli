@@ -52,9 +52,9 @@ describe('apify login and logout', () => {
         expect(isGlobalConfig).to.be.eql(false);
     });
 
-    afterEach(() => {
-        spy.mockRestore();
-    });
+    // afterEach(() => {
+    //     spy.mockRestore();
+    // });
 
     afterAll(() => {
         if (skipAfterHook) return;

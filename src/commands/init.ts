@@ -1,4 +1,5 @@
 import { basename } from 'node:path';
+import process from 'node:process';
 
 import { Args, Flags } from '@oclif/core';
 import inquirer from 'inquirer';
@@ -45,7 +46,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
             return wrapScrapyProject({ projectPath: cwd });
         }
 
-        if (!this.flags.yes && detectLocalActorLanguage().language === LANGUAGE.UNKNOWN) {
+        if (!this.flags.yes && detectLocalActorLanguage(cwd).language === LANGUAGE.UNKNOWN) {
             warning('The current directory does not look like a Node.js or Python project.');
             const { c } = await inquirer.prompt([{ name: 'c', message: 'Do you want to continue?', type: 'confirm' }]);
             if (!c) return;

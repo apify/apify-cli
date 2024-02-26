@@ -377,16 +377,17 @@ export const createSourceFiles = async (paths: string[]) => {
  * Get actor local files, omit files defined in .gitignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
-export const getActorLocalFilePaths = async () => globby(['*', '**/**'], {
+export const getActorLocalFilePaths = async (cwd?: string) => globby(['*', '**/**'], {
     ignore: ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'],
     gitignore: true,
     dot: true,
+    cwd,
 });
 
 /**
  * Create zip file with all actor files specified with pathsToZip
  */
-export const createActZip = async (zipName: string, pathsToZip: string[]) => {
+export const createActZip = async (zipName: string, pathsToZip: string[], cwd?: string) => {
     // NOTE: There can be a zip from a previous unfinished operation.
     if (existsSync(zipName)) {
         await deleteFile(zipName);
@@ -396,7 +397,7 @@ export const createActZip = async (zipName: string, pathsToZip: string[]) => {
     const archive = archiver('zip');
     archive.pipe(writeStream);
 
-    pathsToZip.forEach((globPath) => archive.glob(globPath));
+    pathsToZip.forEach((globPath) => archive.glob(globPath, { cwd }));
 
     await archive.finalize();
 };
@@ -675,8 +676,7 @@ export interface ActorLanguage {
     languageVersion?: string;
 }
 
-export const detectLocalActorLanguage = () => {
-    const cwd = process.cwd();
+export const detectLocalActorLanguage = (cwd: string) => {
     const isActorInNode = existsSync(join(cwd, 'package.json'));
     const isActorInPython = existsSync(join(cwd, 'src/__main__.py')) || ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY;
     const result = {} as ActorLanguage;
