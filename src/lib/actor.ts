@@ -1,3 +1,4 @@
+import process from 'node:process';
 import { pipeline } from 'node:stream/promises';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';

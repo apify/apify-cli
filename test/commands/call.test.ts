@@ -1,21 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { existsSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { writeFileSync } from 'node:fs';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { ApifyClient } from 'apify-client';
 
-import { CallCommand } from '../../src/commands/call.js';
-import { CreateCommand } from '../../src/commands/create.js';
-import { LoginCommand } from '../../src/commands/login.js';
-import { LogoutCommand } from '../../src/commands/logout.js';
-import { PushCommand } from '../../src/commands/push.js';
-import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
-import { rimrafPromised } from '../../src/lib/files.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
+import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
-const ACTOR_NAME = `my-act-${Date.now()}`;
+const ACTOR_NAME = `call-my-actor-${Date.now()}`;
 const EXPECTED_OUTPUT = {
     test: Math.random(),
 };
@@ -45,23 +39,31 @@ const waitForBuildToFinishWithTimeout = async (client: ApifyClient, buildId: str
     if (!result) throw new Error(`Timed out after ${timeoutSecs} seconds`);
 };
 
+useAuthSetup({ perTest: false });
+
+const {
+    beforeAllCalls,
+    afterAllCalls,
+    joinPath,
+    toggleCwdBetweenFullAndParentPath,
+} = useTempPath(ACTOR_NAME, { cwd: true, cwdParent: true, create: true, remove: false });
+
+const { LoginCommand } = await import('../../src/commands/login.js');
+const { CreateCommand } = await import('../../src/commands/create.js');
+const { PushCommand } = await import('../../src/commands/push.js');
+const { CallCommand } = await import('../../src/commands/call.js');
+
 describe('apify call', () => {
     let actorId: string;
 
-    let skipAfterHook = false;
     beforeAll(async () => {
-        if (existsSync(AUTH_FILE_PATH)) {
-            // Tests could break local environment if user is already logged in
-            skipAfterHook = true;
-            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
-        }
+        await beforeAllCalls();
 
         const { username } = await testUserClient.user('me').get();
 
         await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
         await CreateCommand.run([ACTOR_NAME, '--template', 'project_empty', '--skip-dependency-install'], import.meta.url);
 
-        process.chdir(ACTOR_NAME);
         const actCode = `
         import { Actor } from 'apify';
 
@@ -70,11 +72,13 @@ describe('apify call', () => {
             console.log('Done.');
         });
         `;
-        writeFileSync('src/main.js', actCode, { flag: 'w' });
+        writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
-        const inputFile = join(getLocalKeyValueStorePath(), 'INPUT.json');
+        const inputFile = joinPath(getLocalKeyValueStorePath(), 'INPUT.json');
 
         writeFileSync(inputFile, JSON.stringify(EXPECTED_INPUT), { flag: 'w' });
+
+        toggleCwdBetweenFullAndParentPath();
 
         await PushCommand.run(['--no-prompt'], import.meta.url);
 
@@ -86,6 +90,11 @@ describe('apify call', () => {
         await waitForBuildToFinishWithTimeout(testUserClient, lastBuild!.id);
     });
 
+    afterAll(async () => {
+        await testUserClient.actor(actorId).delete();
+        await afterAllCalls();
+    });
+
     it('without actId', async () => {
         await CallCommand.run([], import.meta.url);
         const actorClient = testUserClient.actor(actorId);
@@ -95,16 +104,8 @@ describe('apify call', () => {
         const output = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('OUTPUT');
         const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
 
-        expect(EXPECTED_OUTPUT).to.be.eql(output!.value);
-        expect(EXPECTED_INPUT).to.be.eql(input!.value);
-        expect(EXPECTED_INPUT_CONTENT_TYPE).to.be.eql(input!.contentType);
-    });
-
-    afterAll(async () => {
-        if (skipAfterHook) return;
-        await testUserClient.actor(actorId).delete();
-        process.chdir('../');
-        if (existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
-        await LogoutCommand.run([], import.meta.url);
+        expect(EXPECTED_OUTPUT).toStrictEqual(output!.value);
+        expect(EXPECTED_INPUT).toStrictEqual(input!.value);
+        expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
     });
 });

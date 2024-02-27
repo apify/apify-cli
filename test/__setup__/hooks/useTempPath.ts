@@ -9,26 +9,26 @@ export interface UseTempPathOptions {
      * If true, the temp path will be created if it does not exist.
      * @default true
      */
-    create?: boolean;
+    create: boolean;
 
     /**
      * If true, the temp path will be removed after the test.
      * @default true
      */
-    remove?: boolean;
+    remove: boolean;
 
     /**
      * If true, process.cwd() will be set to the temp path.
      * @default false
      */
-    cwd?: boolean;
+    cwd: boolean;
 
     /**
      * If true, the mocked process.cwd will point to the parent folder of the temp path.
      * This will also change how the temp path is created: it will only create the parent folder, not the nested folder!
      * @default false
      */
-    cwdParent?: boolean;
+    cwdParent: boolean;
 }
 
 export function useTempPath(

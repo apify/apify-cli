@@ -8,12 +8,12 @@ import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
-const actName = 'my-act-init';
+const actName = 'init-my-actor';
 const {
     beforeAllCalls,
     afterAllCalls,
     joinPath,
-} = useTempPath(actName, { create: true, remove: true, cwd: true });
+} = useTempPath(actName, { create: true, remove: true, cwd: true, cwdParent: false });
 
 const { InitCommand } = await import('../../src/commands/init.js');
 

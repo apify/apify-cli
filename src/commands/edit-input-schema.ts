@@ -37,7 +37,7 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 
     async run() {
         // This call fails if no input schema is found on any of the default locations
-        const { inputSchema: existingSchema, inputSchemaPath } = await readInputSchema(this.args.path);
+        const { inputSchema: existingSchema, inputSchemaPath } = await readInputSchema({ forcePath: this.args.path, cwd: process.cwd() });
 
         if (existingSchema && !inputSchemaPath) {
             // If path is not returned, it means the input schema must be directly embedded as object in actor.json

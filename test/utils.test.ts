@@ -39,7 +39,7 @@ describe('Utils', () => {
     });
 
     describe('createActZip()', () => {
-        const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(TEST_DIR, { create: true, remove: true });
+        const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(TEST_DIR, { create: true, remove: true, cwd: false, cwdParent: false });
 
         beforeAll(async () => {
             await beforeAllCalls();

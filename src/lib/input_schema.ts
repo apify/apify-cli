@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
+import process from 'node:process';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
@@ -19,10 +20,10 @@ const DEFAULT_INPUT_SCHEMA_PATHS = [
  * Return the input schema from the default location.
  *
  * When the input schema does not exist, null is returned for schema.
- * In such a acase, path would be set to the location
+ * In such a case, path would be set to the location
  * where the input schema would be expected to be found (and e.g. can be created there).
  */
-export const readInputSchema = async (forcePath?: string) => {
+export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; cwd: string } = { cwd: process.cwd() }) => {
     if (forcePath) {
         return {
             inputSchema: getJsonFileContent(forcePath),
@@ -30,7 +31,7 @@ export const readInputSchema = async (forcePath?: string) => {
         };
     }
 
-    const localConfig = getLocalConfig();
+    const localConfig = getLocalConfig(cwd);
 
     if (typeof localConfig?.input === 'object') {
         return {
@@ -40,24 +41,24 @@ export const readInputSchema = async (forcePath?: string) => {
     }
 
     if (typeof localConfig?.input === 'string') {
-        const fullPath = join(ACTOR_SPECIFICATION_FOLDER, localConfig.input);
+        const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, localConfig.input);
         return {
             inputSchema: getJsonFileContent(fullPath),
             inputSchemaPath: fullPath,
         };
     }
 
-    if (existsSync(DEFAULT_INPUT_SCHEMA_PATHS[0])) {
+    if (existsSync(join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0]))) {
         return {
-            inputSchema: getJsonFileContent(DEFAULT_INPUT_SCHEMA_PATHS[0]),
-            inputSchemaPath: DEFAULT_INPUT_SCHEMA_PATHS[0],
+            inputSchema: getJsonFileContent(join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0])),
+            inputSchemaPath: join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0]),
         };
     }
 
-    if (existsSync(DEFAULT_INPUT_SCHEMA_PATHS[1])) {
+    if (existsSync(join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[1]))) {
         return {
-            inputSchema: getJsonFileContent(DEFAULT_INPUT_SCHEMA_PATHS[1]),
-            inputSchemaPath: DEFAULT_INPUT_SCHEMA_PATHS[1],
+            inputSchema: getJsonFileContent(join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[1])),
+            inputSchemaPath: join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[1]),
         };
     }
 
@@ -65,7 +66,7 @@ export const readInputSchema = async (forcePath?: string) => {
     // where the input schema would be expected.
     return {
         inputSchema: null,
-        inputSchemaPath: DEFAULT_INPUT_SCHEMA_PATHS[0],
+        inputSchemaPath: join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0]),
     };
 };
 
@@ -74,11 +75,9 @@ export const readInputSchema = async (forcePath?: string) => {
 
  */
 export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: string) => {
-    const currentDir = process.cwd();
     let inputFile = {};
     try {
-        process.chdir(actorFolderDir);
-        const { inputSchema } = await readInputSchema();
+        const { inputSchema } = await readInputSchema({ cwd: actorFolderDir });
 
         if (inputSchema) {
             /**
@@ -101,6 +100,5 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
         const keyValueStorePath = getLocalKeyValueStorePath();
         const inputJsonPath = join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
         await writeJsonFile(inputJsonPath, inputFile);
-        process.chdir(currentDir);
     }
 };

@@ -9,7 +9,7 @@ export class LogoutCommand extends ApifyCommand<typeof LogoutCommand> {
     + 'account information stored in the ~/.apify directory. To log in again, call "apify login".';
 
     async run() {
-        await rimrafPromised(AUTH_FILE_PATH);
+        await rimrafPromised(AUTH_FILE_PATH());
         regenerateLocalDistinctId();
         success('You are logged out from your Apify account.');
     }

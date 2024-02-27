@@ -3,6 +3,8 @@
 // Run: Calling act help...
 // Error: [record-not-found]
 
+import process from 'node:process';
+
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
 import { ActorRun, ActorStartOptions } from 'apify-client';
@@ -50,7 +52,8 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
     };
 
     async run() {
-        const localConfig = getLocalConfig() || {};
+        const cwd = process.cwd();
+        const localConfig = getLocalConfig(cwd) || {};
         const apifyClient = await getLoggedClientOrThrow();
         const userInfo = await getLocalUserInfo();
         const usernameOrId = userInfo.username || userInfo.id;
@@ -91,7 +94,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         }
 
         // Get input for act
-        const localInput = getLocalInput();
+        const localInput = getLocalInput(cwd);
 
         runLog(`Calling actor ${actorId}`);
 

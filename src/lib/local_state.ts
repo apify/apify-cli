@@ -11,7 +11,7 @@ import {
  */
 export const getLocalState = () => {
     try {
-        return loadJsonFileSync<Record<string, unknown>>(STATE_FILE_PATH) || {};
+        return loadJsonFileSync<Record<string, unknown>>(STATE_FILE_PATH()) || {};
     } catch (e) {
         return {};
     }
@@ -23,7 +23,7 @@ export const getLocalState = () => {
  */
 export const extendLocalState = (data: Record<string, unknown>) => {
     const state = getLocalState();
-    writeJsonFileSync(STATE_FILE_PATH, {
+    writeJsonFileSync(STATE_FILE_PATH(), {
         ...state,
         ...data,
     });

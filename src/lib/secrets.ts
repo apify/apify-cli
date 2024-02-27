@@ -4,6 +4,7 @@ import { writeJsonFileSync } from 'write-json-file';
 
 import { SECRETS_FILE_PATH } from './consts.js';
 import { warning } from './outputs.js';
+import { ensureApifyDirectory } from './utils.js';
 
 const SECRET_KEY_PREFIX = '@';
 // TODO: Moved to shared
@@ -12,14 +13,15 @@ const MAX_ENV_VAR_VALUE_LENGTH = 50000;
 
 export const getSecretsFile = () => {
     try {
-        return loadJsonFileSync<Record<string, string>>(SECRETS_FILE_PATH) || {};
+        return loadJsonFileSync<Record<string, string>>(SECRETS_FILE_PATH()) || {};
     } catch (e) {
         return {};
     }
 };
 
 const writeSecretsFile = (secrets: Record<string, string>) => {
-    writeJsonFileSync(SECRETS_FILE_PATH, secrets);
+    ensureApifyDirectory(SECRETS_FILE_PATH());
+    writeJsonFileSync(SECRETS_FILE_PATH(), secrets);
     return secrets;
 };
 

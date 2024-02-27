@@ -1,4 +1,5 @@
-import { readFileSync, unlinkSync } from 'fs';
+import { readFileSync, unlinkSync } from 'node:fs';
+import process from 'node:process';
 
 import { fetchManifest } from '@apify/actor-templates';
 import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
@@ -81,8 +82,10 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
     };
 
     async run() {
+        const cwd = process.cwd();
+
         const apifyClient = await getLoggedClientOrThrow();
-        const localConfig = await getLocalConfigOrThrow();
+        const localConfig = await getLocalConfigOrThrow(cwd);
         const userInfo = await getLocalUserInfo();
         const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
         const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
@@ -137,20 +140,20 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
 
         info(`Deploying actor '${localConfig!.name}' to Apify.`);
 
-        const filePathsToPush = await getActorLocalFilePaths();
-        const filesSize = await sumFilesSizeInBytes(filePathsToPush);
+        const filePathsToPush = await getActorLocalFilePaths(cwd);
+        const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
         const actorClient = apifyClient.actor(actorId);
 
         let sourceType;
         let sourceFiles;
         let tarballUrl;
         if (filesSize < MAX_MULTIFILE_BYTES) {
-            sourceFiles = await createSourceFiles(filePathsToPush);
+            sourceFiles = await createSourceFiles(filePathsToPush, cwd);
             sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
         } else {
             // Create zip
             run('Zipping actor files');
-            await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush);
+            await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush, cwd);
 
             // Upload it to Apify.keyValueStores
             const store = await apifyClient.keyValueStores().getOrCreate(UPLOADS_STORE_NAME);

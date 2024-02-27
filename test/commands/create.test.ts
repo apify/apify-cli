@@ -8,7 +8,7 @@ import { LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
-const actName = 'my-act';
+const actName = 'create-my-actor';
 const {
     beforeAllCalls,
     afterAllCalls,

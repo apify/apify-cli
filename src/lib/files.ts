@@ -58,8 +58,8 @@ export const deleteFile = async (filePath: string) => {
     }
 };
 
-export const sumFilesSizeInBytes = async (pathToFiles: string[]) => {
-    const filesStats = await Promise.all(pathToFiles.map(async (filePath) => stat(filePath)));
+export const sumFilesSizeInBytes = async (pathToFiles: string[], cwd: string) => {
+    const filesStats = await Promise.all(pathToFiles.map(async (filePath) => stat(join(cwd, filePath))));
 
     const filesSizeBytes = filesStats
         .map((stats) => stats.size)

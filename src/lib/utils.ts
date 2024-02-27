@@ -2,7 +2,8 @@ import { spawnSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import process from 'node:process';
 import { finished } from 'node:stream/promises';
 
 import {
@@ -106,7 +107,7 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
  */
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
     try {
-        const result = await loadJsonFile<AuthJSON>(AUTH_FILE_PATH);
+        const result = await loadJsonFile<AuthJSON>(AUTH_FILE_PATH());
         return (result || {});
     } catch {
         return {};
@@ -126,13 +127,19 @@ export const getLoggedClientOrThrow = async () => {
     return loggedClient;
 };
 
+const getTokenWithAuthFileFallback = (existingToken?: string) => {
+    if (!existingToken && existsSync(GLOBAL_CONFIGS_FOLDER()) && existsSync(AUTH_FILE_PATH())) {
+        return loadJsonFileSync<AuthJSON>(AUTH_FILE_PATH()).token;
+    }
+
+    return existingToken;
+};
+
 /**
  * Returns options for ApifyClient
  */
 export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): ApifyClientOptions => {
-    if (!token && existsSync(GLOBAL_CONFIGS_FOLDER) && existsSync(AUTH_FILE_PATH)) {
-        ({ token } = loadJsonFileSync(AUTH_FILE_PATH));
-    }
+    token = getTokenWithAuthFileFallback(token);
 
     return {
         token,
@@ -156,9 +163,7 @@ export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): Apif
  * @param [token]
  */
 export const getLoggedClient = async (token?: string, apiBaseUrl?: string) => {
-    if (!token && existsSync(GLOBAL_CONFIGS_FOLDER) && existsSync(AUTH_FILE_PATH)) {
-        ({ token } = await loadJsonFile<AuthJSON>(AUTH_FILE_PATH));
-    }
+    token = getTokenWithAuthFileFallback(token);
 
     const apifyClient = new ApifyClient(getApifyClientOptions(token, apiBaseUrl));
 
@@ -171,21 +176,19 @@ export const getLoggedClient = async (token?: string, apiBaseUrl?: string) => {
     }
 
     // Always refresh Auth file
-    if (!existsSync(GLOBAL_CONFIGS_FOLDER)) {
-        mkdirSync(GLOBAL_CONFIGS_FOLDER);
-    }
+    ensureApifyDirectory(AUTH_FILE_PATH());
 
-    await writeJsonFile(AUTH_FILE_PATH, { token: apifyClient.token, ...userInfo });
+    await writeJsonFile(AUTH_FILE_PATH(), { token: apifyClient.token, ...userInfo });
 
     return apifyClient;
 };
 
-const getLocalConfigPath = () => join(process.cwd(), LOCAL_CONFIG_PATH);
+const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);
 
 /**
  * @deprecated Use getLocalConfigPath
  */
-const getDeprecatedLocalConfigPath = () => join(process.cwd(), DEPRECATED_LOCAL_CONFIG_NAME);
+const getDeprecatedLocalConfigPath = (cwd: string) => join(cwd, DEPRECATED_LOCAL_CONFIG_NAME);
 
 export const getJsonFileContent = <T = Record<string, unknown>>(filePath: string) => {
     if (!existsSync(filePath)) {
@@ -195,16 +198,16 @@ export const getJsonFileContent = <T = Record<string, unknown>>(filePath: string
     return loadJsonFileSync<T>(filePath);
 };
 
-export const getLocalConfig = () => getJsonFileContent(getLocalConfigPath());
+export const getLocalConfig = (cwd: string) => getJsonFileContent(getLocalConfigPath(cwd));
 
 /**
  * @deprecated Use getLocalConfig
  */
-const getDeprecatedLocalConfig = () => getJsonFileContent(getDeprecatedLocalConfigPath());
+const getDeprecatedLocalConfig = (cwd: string) => getJsonFileContent(getDeprecatedLocalConfigPath(cwd));
 
-export const getLocalConfigOrThrow = async () => {
-    let localConfig = getLocalConfig();
-    let deprecatedLocalConfig = getDeprecatedLocalConfig();
+export const getLocalConfigOrThrow = async (cwd: string) => {
+    let localConfig = getLocalConfig(cwd);
+    let deprecatedLocalConfig = getDeprecatedLocalConfig(cwd);
 
     if (localConfig && deprecatedLocalConfig) {
         const answer = await inquirer.prompt([{
@@ -218,7 +221,7 @@ export const getLocalConfigOrThrow = async () => {
             throw new Error('Command can not run with old "apify.json" file present in your actor directory., Please, either rename or remove it.');
         }
         try {
-            renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
+            renameSync(getDeprecatedLocalConfigPath(cwd), `${getDeprecatedLocalConfigPath(cwd)}.deprecated`);
             // eslint-disable-next-line max-len
             info(`The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.`);
         } catch (e) {
@@ -253,8 +256,8 @@ export const getLocalConfigOrThrow = async () => {
                 ..._.pick(deprecatedLocalConfig, MIGRATED_APIFY_JSON_PROPERTIES),
             };
 
-            await writeJsonFile(getLocalConfigPath(), localConfig);
-            renameSync(getDeprecatedLocalConfigPath(), `${getDeprecatedLocalConfigPath()}.deprecated`);
+            await writeJsonFile(getLocalConfigPath(cwd), localConfig);
+            renameSync(getDeprecatedLocalConfigPath(cwd), `${getDeprecatedLocalConfigPath(cwd)}.deprecated`);
             // eslint-disable-next-line max-len
             info(`The "apify.json" file has been migrated to "${LOCAL_CONFIG_PATH}" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`);
         } catch (e) {
@@ -359,9 +362,9 @@ const getSourceFileFormat = (filePath: string, fileContent: Buffer) => {
     return encoding === 'binary' ? SOURCE_FILE_FORMATS.BASE64 : SOURCE_FILE_FORMATS.TEXT;
 };
 
-export const createSourceFiles = async (paths: string[]) => {
+export const createSourceFiles = async (paths: string[], cwd: string) => {
     return paths.map((filePath) => {
-        const file = readFileSync(filePath);
+        const file = readFileSync(join(cwd, filePath));
         const format = getSourceFileFormat(filePath, file);
         return {
             name: filePath,
@@ -387,7 +390,7 @@ export const getActorLocalFilePaths = async (cwd?: string) => globby(['*', '**/*
 /**
  * Create zip file with all actor files specified with pathsToZip
  */
-export const createActZip = async (zipName: string, pathsToZip: string[], cwd?: string) => {
+export const createActZip = async (zipName: string, pathsToZip: string[], cwd: string) => {
     // NOTE: There can be a zip from a previous unfinished operation.
     if (existsSync(zipName)) {
         await deleteFile(zipName);
@@ -405,15 +408,15 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd?: 
 /**
  * Get actor input from local store
  */
-export const getLocalInput = () => {
+export const getLocalInput = (cwd: string) => {
     const defaultLocalStorePath = getLocalKeyValueStorePath();
-    const files = readdirSync(defaultLocalStorePath);
+    const files = readdirSync(join(cwd, defaultLocalStorePath));
     const inputName = files.find((file) => !!file.match(INPUT_FILE_REG_EXP));
 
     // No input file
     if (!inputName) return;
 
-    const input = readFileSync(join(defaultLocalStorePath, inputName));
+    const input = readFileSync(join(cwd, defaultLocalStorePath, inputName));
     const contentType = mime.getType(inputName);
     return { body: input, contentType };
 };
@@ -701,4 +704,13 @@ export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: s
     await finished(zipStream);
     const zip = new AdmZip(Buffer.concat(chunks));
     zip.extractAllTo(pathTo, true);
+};
+
+/**
+ * Ensures the Apify directory exists, as well as nested folders (for tests)
+ */
+export const ensureApifyDirectory = (file: string) => {
+    const path = dirname(file);
+
+    mkdirSync(path, { recursive: true });
 };

@@ -1,27 +1,19 @@
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 
 import { loadJsonFileSync } from 'load-json-file';
 import _ from 'underscore';
 
 import { LoginCommand } from '../../src/commands/login.js';
 import { LogoutCommand } from '../../src/commands/logout.js';
-import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../src/lib/consts.js';
+import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
+import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 
 vitest.setConfig({ restoreMocks: false });
+useAuthSetup();
 
 describe('apify login and logout', () => {
-    let skipAfterHook = false;
-
-    let spy: import('vitest').MockInstance<[message?: unknown, ...optionalParameters: unknown[]], void>;
-
-    beforeAll(() => {
-        if (existsSync(AUTH_FILE_PATH)) {
-            // Tests could break local environment if user is already logged in
-            skipAfterHook = true;
-            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
-        }
-    });
+    let spy: import('vitest').MockInstance<Parameters<typeof console['log']>, void>;
 
     beforeEach(() => {
         spy = vitest.spyOn(console, 'log');
@@ -38,7 +30,7 @@ describe('apify login and logout', () => {
         await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
 
         const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), { token: TEST_USER_TOKEN });
-        const userInfoFromConfig = loadJsonFileSync(AUTH_FILE_PATH);
+        const userInfoFromConfig = loadJsonFileSync(AUTH_FILE_PATH());
 
         expect(spy).toHaveBeenCalledTimes(1);
         expect(spy.mock.calls[0][0]).to.include('Success:');
@@ -47,17 +39,8 @@ describe('apify login and logout', () => {
         expect(_.omit(expectedUserInfo, floatFields)).to.eql(_.omit(userInfoFromConfig, floatFields));
 
         await LogoutCommand.run([], import.meta.url);
-        const isGlobalConfig = existsSync(AUTH_FILE_PATH);
+        const isGlobalConfig = existsSync(AUTH_FILE_PATH());
 
         expect(isGlobalConfig).to.be.eql(false);
-    });
-
-    // afterEach(() => {
-    //     spy.mockRestore();
-    // });
-
-    afterAll(() => {
-        if (skipAfterHook) return;
-        rmSync(GLOBAL_CONFIGS_FOLDER, { recursive: true, force: true });
     });
 });

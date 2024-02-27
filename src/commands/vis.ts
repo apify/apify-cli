@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import { validateInputSchema } from '@apify/input_schema';
 import { Args } from '@oclif/core';
 
@@ -27,7 +29,7 @@ You can also pass any custom path to your input schema to have it validated inst
     };
 
     async run() {
-        const { inputSchema, inputSchemaPath } = await readInputSchema(this.args.path);
+        const { inputSchema, inputSchemaPath } = await readInputSchema({ forcePath: this.args.path, cwd: process.cwd() });
 
         if (!inputSchema) {
             throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);

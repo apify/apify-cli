@@ -1,3 +1,5 @@
+/* eslint-disable no-underscore-dangle */
+
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -37,15 +39,23 @@ export const COMMANDS_WITHIN_ACTOR = ['init', 'run', 'push', 'pull', 'call'];
 
 export const CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
 
-export const GLOBAL_CONFIGS_FOLDER = join(homedir(), '.apify');
+export const GLOBAL_CONFIGS_FOLDER = () => {
+    const base = join(homedir(), '.apify');
 
-export const AUTH_FILE_PATH = join(GLOBAL_CONFIGS_FOLDER, 'auth.json');
+    if (process.env.__APIFY_INTERNAL_TEST_AUTH_PATH__) {
+        return join(base, process.env.__APIFY_INTERNAL_TEST_AUTH_PATH__);
+    }
 
-export const SECRETS_FILE_PATH = join(GLOBAL_CONFIGS_FOLDER, 'secrets.json');
+    return base;
+};
 
-export const STATE_FILE_PATH = join(GLOBAL_CONFIGS_FOLDER, 'state.json');
+export const AUTH_FILE_PATH = () => join(GLOBAL_CONFIGS_FOLDER(), 'auth.json');
 
-export const TELEMETRY_FILE_PATH = join(GLOBAL_CONFIGS_FOLDER, 'telemetry.json');
+export const SECRETS_FILE_PATH = () => join(GLOBAL_CONFIGS_FOLDER(), 'secrets.json');
+
+export const STATE_FILE_PATH = () => join(GLOBAL_CONFIGS_FOLDER(), 'state.json');
+
+export const TELEMETRY_FILE_PATH = () => join(GLOBAL_CONFIGS_FOLDER(), 'telemetry.json');
 
 export const DEPRECATED_LOCAL_CONFIG_NAME = 'apify.json';
 

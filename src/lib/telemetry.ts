@@ -7,7 +7,7 @@ import { writeJsonFile, writeJsonFileSync } from 'write-json-file';
 
 import { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } from './consts.js';
 import { info } from './outputs.js';
-import { getLocalUserInfo } from './utils.js';
+import { ensureApifyDirectory, getLocalUserInfo } from './utils.js';
 
 export const mixpanel = Mixpanel.init(MIXPANEL_TOKEN, { keepAlive: false });
 const TELEMETRY_WARNING_TEXT = 'Apify collects telemetry data about general usage of Apify CLI to help us improve the product. '
@@ -28,22 +28,27 @@ const createLocalDistinctId = () => `CLI:${cryptoRandomObjectId()}`;
  */
 export const getOrCreateLocalDistinctId = async () => {
     try {
-        const telemetry = await loadJsonFile<{ distinctId: string }>(TELEMETRY_FILE_PATH);
+        const telemetry = await loadJsonFile<{ distinctId: string }>(TELEMETRY_FILE_PATH());
         return telemetry.distinctId;
     } catch (e) {
         const userInfo = await getLocalUserInfo();
         const distinctId = userInfo.id || createLocalDistinctId();
+
         // This first time we are tracking telemetry, so we want to notify user about it.
         info(TELEMETRY_WARNING_TEXT);
-        await writeJsonFile(TELEMETRY_FILE_PATH, { distinctId });
+
+        ensureApifyDirectory(TELEMETRY_FILE_PATH());
+        await writeJsonFile(TELEMETRY_FILE_PATH(), { distinctId });
+
         return distinctId;
     }
 };
 
 export const regenerateLocalDistinctId = () => {
     try {
-        writeJsonFileSync(TELEMETRY_FILE_PATH, { distinctId: createLocalDistinctId() });
-    } catch (e) {
+        ensureApifyDirectory(TELEMETRY_FILE_PATH());
+        writeJsonFileSync(TELEMETRY_FILE_PATH(), { distinctId: createLocalDistinctId() });
+    } catch {
         // Ignore errors
     }
 };
@@ -76,7 +81,8 @@ export const useApifyIdentity = async (userId: string) => {
 
     try {
         const distinctId = getOrCreateLocalDistinctId();
-        await writeJsonFile(TELEMETRY_FILE_PATH, { distinctId: userId });
+        ensureApifyDirectory(TELEMETRY_FILE_PATH());
+        await writeJsonFile(TELEMETRY_FILE_PATH(), { distinctId: userId });
         await maybeTrackTelemetry({
             eventName: '$create_alias',
             eventData: {

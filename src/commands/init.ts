@@ -52,7 +52,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
             if (!c) return;
         }
 
-        if (getLocalConfig()) {
+        if (getLocalConfig(cwd)) {
             warning(`Skipping creation of "${LOCAL_CONFIG_PATH}", the file already exists in the current directory.`);
         } else {
             if (!actorName) {
@@ -71,7 +71,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
                 ({ actName: actorName } = response);
             }
             // Migrate apify.json to .actor/actor.json
-            const localConfig = { ...EMPTY_LOCAL_CONFIG, ...await getLocalConfigOrThrow() };
+            const localConfig = { ...EMPTY_LOCAL_CONFIG, ...await getLocalConfigOrThrow(cwd) };
             await setLocalConfig(Object.assign(localConfig, { name: actorName }), cwd);
         }
 

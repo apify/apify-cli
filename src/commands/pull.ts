@@ -43,10 +43,10 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
     };
 
     async run() {
-        const localConfig = await getLocalConfigOrThrow();
+        const cwd = process.cwd();
+        const localConfig = await getLocalConfigOrThrow(cwd);
         const userInfo = await getLocalUserInfo();
         const apifyClient = await getLoggedClientOrThrow();
-        const cwd = process.cwd();
 
         const isActorAutomaticallyDetected = !this.args?.actorId;
         const usernameOrId = userInfo.username || userInfo.id;
