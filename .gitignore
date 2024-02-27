@@ -16,3 +16,4 @@ docs/changelog.md
 **/scrapy-wrapper/templates/*
 
 test/tmp
+oclif.manifest.json

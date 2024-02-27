@@ -16,7 +16,7 @@ export class CheckVersionCommand extends ApifyCommand<typeof CheckVersionCommand
 
     static override hidden = true;
 
-    static override aliases = ['cv'];
+    static override hiddenAliases = ['cv'];
 
     async run() {
         await checkLatestVersion(this.flags.enforceUpdate);

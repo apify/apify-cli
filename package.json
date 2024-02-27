@@ -1,6 +1,6 @@
 {
     "name": "apify-cli",
-    "version": "0.19.3",
+    "version": "0.20.0",
     "description": "Apify command-line interface (CLI) helps you manage the Apify cloud platform and develop, build, and deploy Apify Actors.",
     "exports": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -10,7 +10,6 @@
         "test-python": "cross-env APIFY_CLI_SKIP_UPDATE_CHECK=1 vitest run -t '.*\\[python\\]'",
         "lint": "eslint src test",
         "lint:fix": "eslint src test --fix",
-        "prepare-release": "npm run commands-md && npm run prod-shrinkwrap",
         "clean": "rimraf dist",
         "build": "npm run clean && tsc",
         "postpack": "rimraf oclif.manifest.json",

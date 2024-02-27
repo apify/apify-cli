@@ -33,7 +33,7 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 
     static override hidden = true;
 
-    static override aliases = ['eis'];
+    static override hiddenAliases = ['eis'];
 
     async run() {
         // This call fails if no input schema is found on any of the default locations
