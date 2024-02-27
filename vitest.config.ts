@@ -13,14 +13,8 @@ export default defineConfig({
         include: [
             '**/*.{test,spec}.?(c|m)[jt]s?(x)',
         ],
-        // Needed because of chdir
-        // BUT NOT ANYMORE
-        // pool: 'forks',
-        // poolOptions: {
-        //     forks: {
-        //         singleFork: true,
-        //     },
-        // },
+        minWorkers: 1,
+        maxWorkers: 1,
         passWithNoTests: true,
         silent: !process.env.NO_SILENT_TESTS,
         env: {
