@@ -60,9 +60,9 @@ describe('Utils', () => {
         });
 
         it('should create zip without files in .gitignore', async () => {
-            const zipName = 'test.zip';
+            const zipName = joinPath('test.zip');
             const tempFolder = joinPath('unzip_temp');
-            ensureFolderExistsSync(tempFolder);
+            ensureFolderExistsSync(tmpPath, 'unzip_temp');
             const pathsToZip = await getActorLocalFilePaths(tmpPath);
             await createActZip(zipName, pathsToZip, tmpPath);
 

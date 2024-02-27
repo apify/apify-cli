@@ -29,16 +29,18 @@ export function useAuthSetup({
 }: UseAuthSetupOptions = { cleanup: true, perTest: true }) {
     const random = cryptoRandomObjectId(12);
 
+    const envValue = () => (perTest ? cryptoRandomObjectId(12) : random);
+
     const before = perTest ? beforeEach : beforeAll;
     const after = perTest ? afterEach : afterAll;
 
     before(() => {
-        vitest.stubEnv(envVariable, random);
+        vitest.stubEnv(envVariable, envValue());
     });
 
     after(async () => {
         if (cleanup) {
-            await rm(GLOBAL_CONFIGS_FOLDER(), { recursive: true });
+            await rm(GLOBAL_CONFIGS_FOLDER(), { recursive: true, force: true });
         }
 
         vitest.unstubAllEnvs();
