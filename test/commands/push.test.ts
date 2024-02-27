@@ -3,6 +3,7 @@ import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
 import { platform } from 'node:os';
 
 import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS } from '@apify/consts';
+import { cryptoRandomObjectId } from '@apify/utilities';
 import { ActorCollectionCreateOptions } from 'apify-client';
 import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFileSync } from 'write-json-file';
@@ -13,10 +14,10 @@ import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
-const ACTOR_NAME = `push-cli-test-${Date.now()}`;
+const ACTOR_NAME = `push-cli-test-${cryptoRandomObjectId(6)}`;
 const TEST_ACTOR: ActorCollectionCreateOptions = {
     // Less likely to encounter a name conflict when multiple node versions are running tests
-    name: `push-my-cli-test-${Date.now()}-${process.version.split('.')[0]}-${platform()}`,
+    name: `push-my-cli-test-${cryptoRandomObjectId(6)}-${process.version.split('.')[0]}-${platform()}`,
     isPublic: false,
     versions: [
         {

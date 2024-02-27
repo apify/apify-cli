@@ -13,8 +13,6 @@ export default defineConfig({
         include: [
             '**/*.{test,spec}.?(c|m)[jt]s?(x)',
         ],
-        minWorkers: 1,
-        maxWorkers: 1,
         passWithNoTests: true,
         silent: !process.env.NO_SILENT_TESTS,
         env: {

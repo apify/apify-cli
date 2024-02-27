@@ -77,11 +77,7 @@ export function useTempPath(
         },
         afterAllCalls: async () => {
             if (remove) {
-                if (cwdParent) {
-                    await rimrafPromised(cwdPath);
-                } else {
-                    await rimrafPromised(tmpPath);
-                }
+                await rimrafPromised(tmpPath);
             }
         },
 
