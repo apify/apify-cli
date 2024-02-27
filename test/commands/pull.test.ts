@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { existsSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { test } from '@oclif/test';
@@ -8,10 +9,9 @@ import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFile } from 'write-json-file';
 
 import { LoginCommand } from '../../src/commands/login.js';
-import { LogoutCommand } from '../../src/commands/logout.js';
-import { PullCommand } from '../../src/commands/pull.js';
-import { AUTH_FILE_PATH, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
+import { DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
+import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 
 const TEST_ACTOR_SOURCE_FILES: ActorCollectionCreateOptions = {
     isPublic: false,
@@ -93,21 +93,51 @@ const TEST_ACTOR_GIT_REPO: ActorCollectionCreateOptions = {
     ],
 };
 
+useAuthSetup({ perTest: false });
+
+let cwd: string = process.cwd();
+
+vitest.mock('node:process', async (importActual) => {
+    const actual = await importActual<typeof import('node:process')>();
+    return {
+        ...actual,
+        cwd: () => cwd,
+        default: {
+            ...actual,
+            cwd: () => cwd,
+
+        },
+    };
+});
+
+function setProcessCwd(newCwd: string) {
+    cwd = newCwd;
+}
+
+const { PullCommand } = await import('../../src/commands/pull.js');
+
 describe('apify pull', () => {
-    let skipAfterHook = false;
     const actorsForCleanup = new Set<string>();
+    const actorNamesForCleanup = new Set<string>();
+
     beforeAll(async () => {
-        if (existsSync(AUTH_FILE_PATH)) {
-            skipAfterHook = true;
-            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
+        await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+    });
+
+    afterAll(async () => {
+        for (const id of actorsForCleanup) {
+            await testUserClient.actor(id).delete();
         }
 
-        await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+        for (const name of actorNamesForCleanup) {
+            await rm(name, { recursive: true, force: true });
+        }
     });
 
     test
         .command(['pull'])
         .catch((ctx) => {
+            console.log(ctx);
             expect(ctx.message).to.be.eql('Cannot find Actor in this directory.');
         })
         .it('should fail outside actor folder without actorId defined');
@@ -115,6 +145,7 @@ describe('apify pull', () => {
     it('should work with actor SOURCE_FILES', async () => {
         const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_SOURCE_FILES });
         actorsForCleanup.add(testActor.id);
+        actorNamesForCleanup.add(testActor.name);
 
         const testActorClient = testUserClient.actor(testActor.id);
         const actorFromServer = await testActorClient.get();
@@ -129,6 +160,7 @@ describe('apify pull', () => {
     it('should work with GITHUB_GIST', async () => {
         const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_GITHUB_GIST });
         actorsForCleanup.add(testActor.id);
+        actorNamesForCleanup.add(testActor.name);
 
         await PullCommand.run([testActor.id], import.meta.url);
 
@@ -140,6 +172,7 @@ describe('apify pull', () => {
     it('should work with GIT_REPO', async () => {
         const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_GIT_REPO });
         actorsForCleanup.add(testActor.id);
+        actorNamesForCleanup.add(testActor.name);
 
         await PullCommand.run([testActor.id], import.meta.url);
 
@@ -151,25 +184,17 @@ describe('apify pull', () => {
     it('should work without actor name', async () => {
         const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_SOURCE_FILES });
         actorsForCleanup.add(testActor.id);
+        actorNamesForCleanup.add('pull-test-no-name');
 
         const contentBeforeEdit = JSON.parse((TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content);
         contentBeforeEdit.name = testActor.name;
         (TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content = contentBeforeEdit;
 
-        await writeJsonFile(LOCAL_CONFIG_PATH, (TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content);
+        await writeJsonFile(join('pull-test-no-name', LOCAL_CONFIG_PATH), (TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content);
 
+        setProcessCwd(join(cwd, 'pull-test-no-name'));
         await PullCommand.run([], import.meta.url);
 
-        expect(existsSync('src/__init__.py')).to.be.eql(true);
-    });
-
-    afterAll(async () => {
-        if (skipAfterHook) return;
-        process.chdir('../');
-        for (const id of actorsForCleanup) {
-            await testUserClient.actor(id).delete();
-        }
-
-        await LogoutCommand.run([], import.meta.url);
+        expect(existsSync(join('pull-test-no-name', 'src/__init__.py'))).to.be.eql(true);
     });
 });

@@ -7,19 +7,16 @@ import { ActorCollectionCreateOptions } from 'apify-client';
 import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFileSync } from 'write-json-file';
 
-import { CreateCommand } from '../../src/commands/create.js';
-import { LoginCommand } from '../../src/commands/login.js';
-import { LogoutCommand } from '../../src/commands/logout.js';
-import { PushCommand } from '../../src/commands/push.js';
-import { AUTH_FILE_PATH, LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../../src/lib/consts.js';
-import { rimrafPromised } from '../../src/lib/files.js';
+import { LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../../src/lib/consts.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../src/lib/utils.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
+import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
-const ACTOR_NAME = `cli-test-${Date.now()}`;
+const ACTOR_NAME = `push-cli-test-${Date.now()}`;
 const TEST_ACTOR: ActorCollectionCreateOptions = {
     // Less likely to encounter a name conflict when multiple node versions are running tests
-    name: `my-cli-test-${Date.now()}-${process.version.split('.')[0]}-${platform()}`,
+    name: `push-my-cli-test-${Date.now()}-${process.version.split('.')[0]}-${platform()}`,
     isPublic: false,
     versions: [
         {
@@ -32,27 +29,49 @@ const TEST_ACTOR: ActorCollectionCreateOptions = {
 };
 const ACT_TEMPLATE = 'project_empty';
 
+useAuthSetup({ perTest: false });
+
+const {
+    beforeAllCalls,
+    afterAllCalls,
+    joinPath,
+    tmpPath,
+    toggleCwdBetweenFullAndParentPath,
+} = useTempPath(ACTOR_NAME, { create: true, remove: true, cwd: true, cwdParent: true });
+
+const { LoginCommand } = await import('../../src/commands/login.js');
+const { CreateCommand } = await import('../../src/commands/create.js');
+const { PushCommand } = await import('../../src/commands/push.js');
+
 describe('apify push', () => {
-    let skipAfterHook = false;
     const actorsForCleanup = new Set<string>();
+
     beforeAll(async () => {
-        if (existsSync(AUTH_FILE_PATH)) {
-            // Tests could break local environment if user is already logged in
-            skipAfterHook = true;
-            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
-        }
+        await beforeAllCalls();
 
         await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
-        await CreateCommand.run([ACTOR_NAME, '--template', ACT_TEMPLATE], import.meta.url);
-        process.chdir(ACTOR_NAME);
+        await CreateCommand.run([ACTOR_NAME, '--template', ACT_TEMPLATE, '--skip-dependency-install'], import.meta.url);
+
+        toggleCwdBetweenFullAndParentPath();
+    });
+
+    afterAll(async () => {
+        await afterAllCalls();
+
+        for (const actorId of actorsForCleanup) {
+            const actorClient = testUserClient.actor(actorId);
+            await actorClient.delete();
+        }
     });
 
     it('should work without actorId', async () => {
-        const actorJson = loadJsonFileSync<{ environmentVariables: Record<string, string>; name: string; version: string }>(LOCAL_CONFIG_PATH);
+        const actorJson = loadJsonFileSync<{ environmentVariables: Record<string, string>; name: string; version: string }>(
+            joinPath(LOCAL_CONFIG_PATH),
+        );
         actorJson.environmentVariables = {
             MY_ENV_VAR: 'envVarValue',
         };
-        writeJsonFileSync(LOCAL_CONFIG_PATH, actorJson);
+        writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
 
         await PushCommand.run(['--no-prompt'], import.meta.url);
 
@@ -64,8 +83,8 @@ describe('apify push', () => {
         const createdActor = await createdActorClient.get();
         const createdActorVersion = await createdActorClient.version(actorJson.version).get();
 
-        const filePathsToPush = await getActorLocalFilePaths();
-        const sourceFiles = await createSourceFiles(filePathsToPush);
+        const filePathsToPush = await getActorLocalFilePaths(tmpPath);
+        const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
 
         if (createdActor) await createdActorClient.delete();
 
@@ -83,7 +102,7 @@ describe('apify push', () => {
     it('should work with actorId', async () => {
         let testActor = await testUserClient.actors().create(TEST_ACTOR);
         const testActorClient = testUserClient.actor(testActor.id);
-        const actorJson = loadJsonFileSync<{ version: string }>(LOCAL_CONFIG_PATH);
+        const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
 
         await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
 
@@ -92,8 +111,8 @@ describe('apify push', () => {
         testActor = (await testActorClient.get())!;
         const testActorVersion = await testActorClient.version(actorJson!.version).get();
 
-        const filePathsToPush = await getActorLocalFilePaths();
-        const sourceFiles = await createSourceFiles(filePathsToPush);
+        const filePathsToPush = await getActorLocalFilePaths(tmpPath);
+        const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
 
         if (testActor) await testActorClient.delete();
 
@@ -123,17 +142,17 @@ describe('apify push', () => {
         actorsForCleanup.add(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
 
-        const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(LOCAL_CONFIG_PATH);
+        const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(joinPath(LOCAL_CONFIG_PATH));
         delete actorJson.environmentVariables;
-        writeJsonFileSync(LOCAL_CONFIG_PATH, actorJson);
+        writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
 
         await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
 
         testActor = (await testActorClient.get())!;
         const testActorVersion = await testActorClient.version(actorJson.version).get();
 
-        const filePathsToPush = await getActorLocalFilePaths();
-        const sourceFiles = await createSourceFiles(filePathsToPush);
+        const filePathsToPush = await getActorLocalFilePaths(tmpPath);
+        const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
 
         if (testActor) await testActorClient.delete();
 
@@ -158,18 +177,18 @@ describe('apify push', () => {
         let testActor = await testUserClient.actors().create(testActorWithEnvVars);
         actorsForCleanup.add(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
-        const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(LOCAL_CONFIG_PATH);
+        const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(joinPath(LOCAL_CONFIG_PATH));
 
         delete actorJson.environmentVariables;
-        writeJsonFileSync(LOCAL_CONFIG_PATH, actorJson);
+        writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
 
         // Create large file to ensure actor will be uploaded as zip
-        writeFileSync('3mb-file.txt', Buffer.alloc(1024 * 1024 * 3));
+        writeFileSync(joinPath('3mb-file.txt'), Buffer.alloc(1024 * 1024 * 3));
 
         await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
 
         // Remove the big file so sources in following tests are not zipped
-        unlinkSync('3mb-file.txt');
+        unlinkSync(joinPath('3mb-file.txt'));
 
         testActor = (await testActorClient.get())!;
         const testActorVersion = await testActorClient.version(actorJson.version).get();
@@ -188,13 +207,15 @@ describe('apify push', () => {
     });
 
     it('typescript files should be treated as text', async () => {
-        const { name, version } = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string; name: string }>(LOCAL_CONFIG_PATH);
+        const { name, version } = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string; name: string }>(
+            joinPath(LOCAL_CONFIG_PATH),
+        );
 
-        writeFileSync('some-typescript-file.ts', `console.log('ok');`);
+        writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
 
         await PushCommand.run(['--no-prompt'], import.meta.url);
 
-        if (existsSync('some-typescript-file.ts')) unlinkSync('some-typescript-file.ts');
+        if (existsSync(joinPath('some-typescript-file.ts'))) unlinkSync(joinPath('some-typescript-file.ts'));
 
         const userInfo = await getLocalUserInfo();
         const actorId = `${userInfo.username}/${name}`;
@@ -207,18 +228,5 @@ describe('apify push', () => {
 
         expect((createdActorVersion as any).sourceFiles.find((file: any) => file.name === 'some-typescript-file.ts').format)
             .to.be.equal(SOURCE_FILE_FORMATS.TEXT);
-    });
-
-    afterAll(async () => {
-        if (skipAfterHook) return;
-        process.chdir('../');
-        if (existsSync(ACTOR_NAME)) await rimrafPromised(ACTOR_NAME);
-
-        for (const actorId of actorsForCleanup) {
-            const actorClient = testUserClient.actor(actorId);
-            await actorClient.delete();
-        }
-
-        await LogoutCommand.run([], import.meta.url);
     });
 });

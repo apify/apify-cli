@@ -7,6 +7,7 @@ test-actors
 local_test.sh
 my-act-*
 my-python-*
+pull-test-*
 _mytests
 .vscode
 .idea

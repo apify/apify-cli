@@ -1,32 +1,41 @@
 import { existsSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFileSync } from 'write-json-file';
 
-import { CreateCommand } from '../../src/commands/create.js';
-import { LoginCommand } from '../../src/commands/login.js';
-import { LogoutCommand } from '../../src/commands/logout.js';
-import { RunCommand } from '../../src/commands/run.js';
 import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { rimrafPromised } from '../../src/lib/files.js';
 import { getLocalDatasetPath, getLocalKeyValueStorePath, getLocalRequestQueuePath, getLocalStorageDir } from '../../src/lib/utils.js';
 import { TEST_USER_TOKEN } from '../__setup__/config.js';
+import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
-const actName = 'my-act';
+const actName = 'run-my-actor';
+
+useAuthSetup({ perTest: true });
+
+const {
+    beforeAllCalls,
+    afterAllCalls,
+    joinPath,
+    toggleCwdBetweenFullAndParentPath,
+} = useTempPath(actName, { create: true, remove: true, cwd: true, cwdParent: true });
+
+const { CreateCommand } = await import('../../src/commands/create.js');
+const { RunCommand } = await import('../../src/commands/run.js');
+const { LoginCommand } = await import('../../src/commands/login.js');
 
 describe('apify run', () => {
-    let skipAfterHook = false;
     beforeAll(async () => {
-        if (existsSync(AUTH_FILE_PATH)) {
-            // Tests could break local environment if user is already logged in
-            skipAfterHook = true;
-            throw new Error(`Cannot run tests, file ${AUTH_FILE_PATH} exists! Run "apify logout" to fix this.`);
-        }
+        await beforeAllCalls();
 
         await CreateCommand.run([actName, '--template', 'project_empty'], import.meta.url);
-        process.chdir(actName);
+        toggleCwdBetweenFullAndParentPath();
+    });
+
+    afterAll(async () => {
+        await afterAllCalls();
     });
 
     it('run act with output', async () => {
@@ -44,14 +53,14 @@ describe('apify run', () => {
             console.log('Done.');
         });
         `;
-        writeFileSync('src/main.js', actCode, { flag: 'w' });
+        writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
         await RunCommand.run([], import.meta.url);
 
         // check act output
-        const actOutputPath = join(getLocalKeyValueStorePath(), 'OUTPUT.json');
+        const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
         const actOutput = loadJsonFileSync(actOutputPath);
-        expect(actOutput).to.be.eql(expectOutput);
+        expect(actOutput).toStrictEqual(expectOutput);
     });
 
     it(`run with env vars from "${LOCAL_CONFIG_PATH}"`, async () => {
@@ -69,33 +78,31 @@ describe('apify run', () => {
             console.log('Done.');
         });
         `;
-        writeFileSync('src/main.js', actCode, { flag: 'w' });
+        writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
         const apifyJson = EMPTY_LOCAL_CONFIG;
         apifyJson.environmentVariables = testEnvVars;
-        writeJsonFileSync(LOCAL_CONFIG_PATH, apifyJson);
+        writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), apifyJson);
 
         await RunCommand.run([], import.meta.url);
 
-        const actOutputPath = join(getLocalKeyValueStorePath(), 'OUTPUT.json');
+        const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
         const localEnvVars = loadJsonFileSync<Record<typeof APIFY_ENV_VARS[keyof typeof APIFY_ENV_VARS] | 'TEST_LOCAL', string>>(actOutputPath);
-        const auth = loadJsonFileSync<{ proxy: { password: string }; id: string; token: string }>(AUTH_FILE_PATH);
+        const auth = loadJsonFileSync<{ proxy: { password: string }; id: string; token: string }>(AUTH_FILE_PATH());
 
-        expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).to.be.eql(auth.proxy.password);
-        expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).to.be.eql(auth.id);
-        expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).to.be.eql(auth.token);
-        expect(localEnvVars.TEST_LOCAL).to.be.eql(testEnvVars.TEST_LOCAL);
-
-        await LogoutCommand.run([], import.meta.url);
+        expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
+        expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(auth.id);
+        expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(auth.token);
+        expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
     });
 
     it('run purge stores', async () => {
         const input = {
             myInput: 'value',
         };
-        const actInputPath = join(getLocalKeyValueStorePath(), 'INPUT.json');
-        const testJsonPath = join(getLocalKeyValueStorePath(), 'TEST.json');
+        const actInputPath = joinPath(getLocalKeyValueStorePath(), 'INPUT.json');
+        const testJsonPath = joinPath(getLocalKeyValueStorePath(), 'TEST.json');
 
         writeJsonFileSync(actInputPath, input);
 
@@ -109,28 +116,28 @@ describe('apify run', () => {
             await requestQueue.addRequest({ url: 'http://example.com/' });
         });
         `;
-        writeFileSync('src/main.js', actCode, { flag: 'w' });
+        writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
         await RunCommand.run([], import.meta.url);
 
-        expect(existsSync(actInputPath)).to.be.eql(true);
-        expect(existsSync(testJsonPath)).to.be.eql(true);
-        expect(existsSync(getLocalDatasetPath())).to.be.eql(true);
-        expect(existsSync(getLocalRequestQueuePath())).to.be.eql(true);
+        expect(existsSync(actInputPath)).toStrictEqual(true);
+        expect(existsSync(testJsonPath)).toStrictEqual(true);
+        expect(existsSync(joinPath(getLocalDatasetPath()))).toStrictEqual(true);
+        expect(existsSync(joinPath(getLocalRequestQueuePath()))).toStrictEqual(true);
 
         actCode = `
         import { Actor } from 'apify';
 
         Actor.main(async () => {});
         `;
-        writeFileSync('src/main.js', actCode, { flag: 'w' });
+        writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
         await RunCommand.run(['--purge'], import.meta.url);
 
-        expect(existsSync(actInputPath)).to.be.eql(true);
-        expect(existsSync(testJsonPath)).to.be.eql(false);
-        expect(existsSync(getLocalDatasetPath())).to.be.eql(false);
-        expect(existsSync(getLocalRequestQueuePath())).to.be.eql(false);
+        expect(existsSync(actInputPath)).toStrictEqual(true);
+        expect(existsSync(testJsonPath)).toStrictEqual(false);
+        expect(existsSync(joinPath(getLocalDatasetPath()))).toStrictEqual(false);
+        expect(existsSync(joinPath(getLocalRequestQueuePath()))).toStrictEqual(false);
     });
 
     it('run with purge works without storage folder', async () => {
@@ -140,12 +147,5 @@ describe('apify run', () => {
         } catch (err) {
             throw new Error('Can not run actor without storage folder!');
         }
-    });
-
-    afterAll(async () => {
-        if (skipAfterHook) return;
-        process.chdir('../');
-        if (existsSync(actName)) await rimrafPromised(actName);
-        await LogoutCommand.run([], import.meta.url);
     });
 });
