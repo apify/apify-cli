@@ -2,7 +2,7 @@
 
 import { execute } from '@oclif/core';
 
-import { error } from '../src/lib/outputs.js';
+import { error } from '../src/lib/outputs.ts';
 
 try {
     await execute({ development: true, dir: import.meta.url });
