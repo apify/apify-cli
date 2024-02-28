@@ -4,7 +4,7 @@ import { outputRecordFromDefaultStore } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/apify_command.js';
 
 export class GetValueCommand extends ApifyCommand<typeof GetValueCommand> {
-    static override description = 'Gets a value from the default key-value store associated with the actor run.';
+    static override description = 'Gets a value from the default key-value store associated with the Actor run.';
 
     static override args = {
         key: Args.string({

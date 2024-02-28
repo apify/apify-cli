@@ -37,7 +37,7 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
     static override args = {
         actorId: Args.string({
             required: false,
-            description: 'Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
+            description: 'Name or ID of the Actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
             + 'If not provided, the command will update the Actor in the current directory based on its name in ".actor/actor.json" file.',
         }),
     };

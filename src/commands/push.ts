@@ -39,7 +39,7 @@ const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 const DEFAULT_BUILD_TAG = 'latest';
 
 export class PushCommand extends ApifyCommand<typeof PushCommand> {
-    static override description = 'Uploads the actor to the Apify platform and builds it there.\n'
+    static override description = 'Uploads the Actor to the Apify platform and builds it there.\n'
     + `The Actor settings are read from the "${LOCAL_CONFIG_PATH}" file in the current directory, but they can be overridden using command-line options.\n`
     + `NOTE: If the source files are smaller than ${MAX_MULTIFILE_BYTES / (1024 ** 2)} MB then they are uploaded as \n`
     + '"Multiple source files", otherwise they are uploaded as "Zip file".\n\n'
@@ -50,6 +50,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
             description: 'DEPRECATED: Use flag version instead. Actor version number to which the files should be pushed. '
             + `By default, it is taken from the "${LOCAL_CONFIG_PATH}" file.`,
             required: false,
+            deprecated: true,
         }),
         version: Flags.string({
             char: 'v',
@@ -67,7 +68,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
             required: false,
         }),
         'no-prompt': Flags.boolean({
-            description: 'Do not prompt for opening the actor details in a browser. This will also not open the browser automatically.',
+            description: 'Do not prompt for opening the Actor details in a browser. This will also not open the browser automatically.',
             default: false,
             required: false,
         }),
@@ -77,7 +78,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         actorId: Args.string({
             required: false,
             description: 'Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
-                + `If not provided, the command will create or modify the actor with the name specified in "${LOCAL_CONFIG_PATH}" file.`,
+                + `If not provided, the command will create or modify the Actor with the name specified in "${LOCAL_CONFIG_PATH}" file.`,
         }),
     };
 
@@ -134,11 +135,11 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
                 };
                 actor = await apifyClient.actors().create(newActor);
                 actorId = actor.id;
-                info(`Created actor with name ${localConfig!.name} on Apify.`);
+                info(`Created Actor with name ${localConfig!.name} on Apify.`);
             }
         }
 
-        info(`Deploying actor '${localConfig!.name}' to Apify.`);
+        info(`Deploying Actor '${localConfig!.name}' to Apify.`);
 
         const filePathsToPush = await getActorLocalFilePaths(cwd);
         const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
@@ -152,7 +153,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
             sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
         } else {
             // Create zip
-            run('Zipping actor files');
+            run('Zipping Actor files');
             await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush, cwd);
 
             // Upload it to Apify.keyValueStores
@@ -179,7 +180,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
             const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
             // TODO: fix this type too -.-
             await actorClient.version(version).update(actorVersionModifier as never);
-            run(`Updated version ${version} for ${actor.name} actor.`);
+            run(`Updated version ${version} for Actor ${actor.name}.`);
         } else {
             const actorNewVersion = {
                 versionNumber: version,
@@ -194,11 +195,11 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
                 ...actorNewVersion,
             } as never);
 
-            run(`Created version ${version} for ${actor.name} actor.`);
+            run(`Created version ${version} for Actor ${actor.name}.`);
         }
 
         // Build actor on Apify and wait for build to finish
-        run(`Building actor ${actor.name}`);
+        run(`Building Actor ${actor.name}`);
         let build = await actorClient.build(version, {
             useCache: true,
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
@@ -218,7 +219,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         // Disable open browser on CI, or if user passed --no-prompt flag
         if (!isCI && !this.flags.noPrompt) {
             const shouldOpenBrowser = await inquirer.prompt([
-                { type: 'confirm', name: 'continue', message: 'Do you want to open the actor detail in your browser?', default: true },
+                { type: 'confirm', name: 'continue', message: 'Do you want to open the Actor detail in your browser?', default: true },
             ]);
 
             if (shouldOpenBrowser.continue) {

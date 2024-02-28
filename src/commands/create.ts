@@ -33,12 +33,12 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
     static override flags = {
         template: Flags.string({
             char: 't',
-            description: 'Template for the actor. If not provided, the command will prompt for it.\n'
+            description: 'Template for the Actor. If not provided, the command will prompt for it.\n'
             + `Visit ${manifestUrl} to find available template names.`,
             required: false,
         }),
         'skip-dependency-install': Flags.boolean({
-            description: 'Skip installing actor dependencies.',
+            description: 'Skip installing Actor dependencies.',
             required: false,
         }),
         'template-archive-url': Flags.string({
@@ -51,7 +51,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
     static override args = {
         actorName: Args.string({
             required: false,
-            description: 'Name of the actor and its directory',
+            description: 'Name of the Actor and its directory',
         }),
     };
 
@@ -100,8 +100,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             if (err?.code === 'EEXIST') {
-                error(`Cannot create new actor, directory '${actorName}' already exists. `
-                    + 'You can use "apify init" to create a local actor environment inside an existing directory.');
+                error(`Cannot create new Actor, directory '${actorName}' already exists. `
+                    + 'You can use "apify init" to create a local Actor environment inside an existing directory.');
                 return;
             }
             throw err;

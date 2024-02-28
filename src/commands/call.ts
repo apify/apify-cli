@@ -28,12 +28,12 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         }),
         timeout: Flags.integer({
             char: 't',
-            description: 'Timeout for the actor run in seconds. Zero value means there is no timeout.',
+            description: 'Timeout for the Actor run in seconds. Zero value means there is no timeout.',
             required: false,
         }),
         memory: Flags.integer({
             char: 'm',
-            description: 'Amount of memory allocated for the actor run, in megabytes.',
+            description: 'Amount of memory allocated for the Actor run, in megabytes.',
             required: false,
         }),
         'wait-for-finish': Flags.string({
@@ -68,8 +68,8 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             actorId = `${usernameOrId}/${localConfig.name}`;
             const actor = await apifyClient.actor(actorId).get();
             if (!actor) {
-                throw new Error(`Cannot find actor with ID '${actorId}' `
-                    + 'in your account. Call "apify push" to push this actor to Apify platform.');
+                throw new Error(`Cannot find Actor with ID '${actorId}' `
+                    + 'in your account. Call "apify push" to push this Actor to Apify platform.');
             }
         }
 
@@ -96,7 +96,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         // Get input for act
         const localInput = getLocalInput(cwd);
 
-        runLog(`Calling actor ${actorId}`);
+        runLog(`Calling Actor ${actorId}`);
 
         let run: ActorRun;
         try {
