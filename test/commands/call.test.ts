@@ -46,7 +46,7 @@ const {
     afterAllCalls,
     joinPath,
     toggleCwdBetweenFullAndParentPath,
-} = useTempPath(ACTOR_NAME, { cwd: true, cwdParent: true, create: true, remove: false });
+} = useTempPath(ACTOR_NAME, { cwd: true, cwdParent: true, create: true, remove: true });
 
 const { LoginCommand } = await import('../../src/commands/login.js');
 const { CreateCommand } = await import('../../src/commands/create.js');
