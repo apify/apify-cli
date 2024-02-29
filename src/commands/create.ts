@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync } from 'node:fs';
+import { readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
@@ -74,6 +75,32 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
         });
 
         actorName = await ensureValidActorName(actorName);
+
+        const cwd = process.cwd();
+        let actFolderDir = join(cwd, actorName);
+
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            const folderExists = await stat(actFolderDir).catch(() => null);
+            const folderHasFiles = folderExists && await readdir(actFolderDir).then((files) => files.length > 0).catch(() => false);
+
+            if (folderExists?.isDirectory() && folderHasFiles) {
+                error(`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.`
+                    + ' You can use "apify init" to create a local Actor environment inside an existing directory.');
+
+                actorName = await ensureValidActorName();
+                actFolderDir = join(cwd, actorName);
+
+                continue;
+            }
+
+            // Create actor directory structure
+            if (!folderExists) {
+                mkdirSync(actFolderDir);
+            }
+            break;
+        }
+
         let messages = null;
 
         this.telemetryData.fromArchiveUrl = !!templateArchiveUrl;
@@ -89,22 +116,6 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
             if ('skipOptionalDeps' in templateDefinition) {
                 skipOptionalDeps = templateDefinition.skipOptionalDeps as boolean;
             }
-        }
-
-        const cwd = process.cwd();
-        const actFolderDir = join(cwd, actorName);
-
-        // Create actor directory structure
-        try {
-            mkdirSync(actFolderDir);
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-            if (err?.code === 'EEXIST') {
-                error(`Cannot create new Actor, directory '${actorName}' already exists. `
-                    + 'You can use "apify init" to create a local Actor environment inside an existing directory.');
-                return;
-            }
-            throw err;
         }
 
         await downloadAndUnzip({ url: templateArchiveUrl, pathTo: actFolderDir });
