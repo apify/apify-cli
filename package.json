@@ -59,7 +59,7 @@
         "@apify/input_schema": "~3.5.15",
         "@apify/utilities": "~2.10.0",
         "@crawlee/memory-storage": "~3.8.1",
-        "@oclif/core": "~3.19.6",
+        "@oclif/core": "~3.20.0",
         "@oclif/plugin-help": "~6.0.14",
         "@root/walk": "~1.1.0",
         "adm-zip": "~0.5.10",
@@ -134,7 +134,7 @@
         "helpClass": "./dist/lib/apify-oclif-help"
     },
     "volta": {
-        "node": "20.11.0",
-        "npm": "10.4.0"
+        "node": "20.11.1",
+        "npm": "10.5.0"
     }
 }
