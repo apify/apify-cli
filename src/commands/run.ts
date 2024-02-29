@@ -36,7 +36,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         + 'the Actor input, as well as all other data in key-value stores, '
         + `datasets or request queues to be stored in the "${DEFAULT_LOCAL_STORAGE_DIR}" directory, `
         + 'rather than on the Apify platform.\n\n'
-        + 'NOTE: You can override the command\'s default behavior for Node.js actors by overriding the "start" script in the package.json file. '
+        + 'NOTE: You can override the command\'s default behavior for Node.js Actors by overriding the "start" script in the package.json file. '
         + 'You can set up your own main file or environment variables by changing it.';
 
     static override flags = {
@@ -177,7 +177,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                 this.telemetryData.actorLanguage = LANGUAGE.NODEJS;
                 await execWithLog(getNpmCmd(), ['start'], { env, cwd });
             } else {
-                error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js actors locally.`);
+                error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`);
             }
         } else if (language === LANGUAGE.PYTHON) {
             const pythonVersion = languageVersion;
@@ -198,11 +198,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
                     await execWithLog(pythonCommand, ['-m', executableLocation], { env, cwd });
                 } else {
-                    error(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
-                    error('Please install Python 3.8 or higher to be able to run Python actors locally.');
+                    error(`Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
+                    error('Please install Python 3.8 or higher to be able to run Python Actors locally.');
                 }
             } else {
-                error('No Python detected! Please install Python 3.8 or higher to be able to run Python actors locally.');
+                error('No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.');
             }
         }
     }

@@ -28,7 +28,7 @@ import {
 } from '../lib/utils.js';
 
 export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
-    static override description = 'Creates a new actor project directory from a selected boilerplate template.';
+    static override description = 'Creates a new Actor project directory from a selected boilerplate template.';
 
     static override flags = {
         template: Flags.string({
@@ -152,7 +152,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                     dependenciesInstalled = true;
                 } else {
                     error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher`
-                        + ' to be able to run Node.js actors locally.');
+                        + ' to be able to run Node.js Actors locally.');
                 }
             } else if (existsSync(requirementsTxtPath)) {
                 const pythonVersion = detectPythonVersion(actFolderDir);
@@ -180,11 +180,11 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                         );
                         dependenciesInstalled = true;
                     } else {
-                        warning(`Python actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
-                        warning('Please install Python 3.8 or higher to be able to run Python actors locally.');
+                        warning(`Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
+                        warning('Please install Python 3.8 or higher to be able to run Python Actors locally.');
                     }
                 } else {
-                    warning('No Python detected! Please install Python 3.8 or higher to be able to run Python actors locally.');
+                    warning('No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.');
                 }
             }
         }

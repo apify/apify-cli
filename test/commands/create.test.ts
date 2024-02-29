@@ -33,7 +33,7 @@ describe('apify create', () => {
             .command(['create', badActorName])
             // We want to ensure any error is thrown, we don't care about the error message (but maybe we should)
             .catch(/./, { raiseIfNotThrown: true })
-            .it(`returns error with bad actor name ${badActorName}`);
+            .it(`returns error with bad Actor name ${badActorName}`);
     });
 
     it('basic template structure with empty INPUT.json', async () => {

@@ -307,25 +307,25 @@ DESCRIPTION
   Commands are designed to be used in Actor runs. All commands are in PoC state, do not use in production environments.
 ```
 
-_See code: [src/commands/actor/index.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/actor/index.ts)_
+_See code: [src/commands/actor/index.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/actor/index.ts)_
 
 ## `apify actor:get-input`
 
-Gets the actor input value from the default key-value store associated with the actor run.
+Gets the Actor input value from the default key-value store associated with the Actor run.
 
 ```
 USAGE
   $ apify actor:get-input
 
 DESCRIPTION
-  Gets the actor input value from the default key-value store associated with the actor run.
+  Gets the Actor input value from the default key-value store associated with the Actor run.
 ```
 
-_See code: [src/commands/actor/get-input.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/actor/get-input.ts)_
+_See code: [src/commands/actor/get-input.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/actor/get-input.ts)_
 
 ## `apify actor:get-value KEY`
 
-Gets a value from the default key-value store associated with the actor run.
+Gets a value from the default key-value store associated with the Actor run.
 
 ```
 USAGE
@@ -335,14 +335,14 @@ ARGUMENTS
   KEY  Key of the record in key-value store
 
 DESCRIPTION
-  Gets a value from the default key-value store associated with the actor run.
+  Gets a value from the default key-value store associated with the Actor run.
 ```
 
-_See code: [src/commands/actor/get-value.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/actor/get-value.ts)_
+_See code: [src/commands/actor/get-value.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/actor/get-value.ts)_
 
 ## `apify actor:push-data [ITEM]`
 
-Stores an object or an array of objects to the default dataset of the actor run.
+Stores an object or an array of objects to the default dataset of the Actor run.
 
 ```
 USAGE
@@ -352,7 +352,7 @@ ARGUMENTS
   ITEM  JSON string with one object or array of objects containing data to be stored in the default dataset.
 
 DESCRIPTION
-  Stores an object or an array of objects to the default dataset of the actor run.
+  Stores an object or an array of objects to the default dataset of the Actor run.
   It is possible to pass data using item argument or stdin.
   Passing data using argument:
   $ apify actor:push-data {"foo": "bar"}
@@ -360,11 +360,11 @@ DESCRIPTION
   $ cat ./test.json | apify actor:push-data
 ```
 
-_See code: [src/commands/actor/push-data.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/actor/push-data.ts)_
+_See code: [src/commands/actor/push-data.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/actor/push-data.ts)_
 
 ## `apify actor:set-value KEY [VALUE]`
 
-Sets or removes record into the default KeyValueStore associated with the actor run.
+Sets or removes record into the default KeyValueStore associated with the Actor run.
 
 ```
 USAGE
@@ -381,7 +381,7 @@ FLAGS
   -c, --contentType=<value>  Specifies a custom MIME content type of the record. By default "application/json" is used.
 
 DESCRIPTION
-  Sets or removes record into the default KeyValueStore associated with the actor run.
+  Sets or removes record into the default KeyValueStore associated with the Actor run.
   It is possible to pass data using argument or stdin.
   Passing data using argument:
   $ apify actor:set-value KEY my-value
@@ -389,7 +389,7 @@ DESCRIPTION
   $ cat ./my-text-file.txt | apify actor:set-value KEY --contentType text/plain
 ```
 
-_See code: [src/commands/actor/set-value.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/actor/set-value.ts)_
+_See code: [src/commands/actor/set-value.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/actor/set-value.ts)_
 
 ## `apify call [ACTORID]`
 
@@ -405,8 +405,8 @@ ARGUMENTS
 
 FLAGS
   -b, --build=<value>            Tag or number of the build to run (e.g. "latest" or "1.2.34").
-  -m, --memory=<value>           Amount of memory allocated for the actor run, in megabytes.
-  -t, --timeout=<value>          Timeout for the actor run in seconds. Zero value means there is no timeout.
+  -m, --memory=<value>           Amount of memory allocated for the Actor run, in megabytes.
+  -t, --timeout=<value>          Timeout for the Actor run in seconds. Zero value means there is no timeout.
   -w, --wait-for-finish=<value>  Seconds for waiting to run to finish, if no value passed, it waits forever.
 
 DESCRIPTION
@@ -415,7 +415,7 @@ DESCRIPTION
   takes input for the Actor from the default local key-value store by default.
 ```
 
-_See code: [src/commands/call.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/call.ts)_
+_See code: [src/commands/call.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/call.ts)_
 
 ## `apify create [ACTORNAME]`
 
@@ -426,20 +426,20 @@ USAGE
   $ apify create [ACTORNAME] [-t <value>] [--skip-dependency-install]
 
 ARGUMENTS
-  ACTORNAME  Name of the actor and its directory
+  ACTORNAME  Name of the Actor and its directory
 
 FLAGS
-  -t, --template=<value>         Template for the actor. If not provided, the command will prompt for it.
+  -t, --template=<value>         Template for the Actor. If not provided, the command will prompt for it.
                                  Visit
                                  https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json
                                  to find available template names.
-      --skip-dependency-install  Skip installing actor dependencies.
+      --skip-dependency-install  Skip installing Actor dependencies.
 
 DESCRIPTION
   Creates a new actor project directory from a selected boilerplate template.
 ```
 
-_See code: [src/commands/create.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/create.ts)_
+_See code: [src/commands/create.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/create.ts)_
 
 ## `apify help [COMMANDS]`
 
@@ -474,7 +474,7 @@ DESCRIPTION
   The information is printed to the console.
 ```
 
-_See code: [src/commands/info.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/info.ts)_
+_See code: [src/commands/info.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/info.ts)_
 
 ## `apify init [ACTORNAME]`
 
@@ -502,7 +502,7 @@ DESCRIPTION
   WARNING: The directory at "storage" will be overwritten if it already exists.
 ```
 
-_See code: [src/commands/init.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/init.ts)_
 
 ## `apify login`
 
@@ -521,7 +521,7 @@ DESCRIPTION
   "apify" commands. To log out, call "apify logout".
 ```
 
-_See code: [src/commands/login.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/login.ts)_
+_See code: [src/commands/login.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/login.ts)_
 
 ## `apify logout`
 
@@ -537,7 +537,7 @@ DESCRIPTION
   call "apify login".
 ```
 
-_See code: [src/commands/logout.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/logout.ts)_
+_See code: [src/commands/logout.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/logout.ts)_
 
 ## `apify pull [ACTORID]`
 
@@ -548,7 +548,7 @@ USAGE
   $ apify pull [ACTORID] [-v <value>]
 
 ARGUMENTS
-  ACTORID  Name or ID of the actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
+  ACTORID  Name or ID of the Actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
            command will update the Actor in the current directory based on its name in ".actor/actor.json" file.
 
 FLAGS
@@ -559,11 +559,11 @@ DESCRIPTION
   cloned. If it is defined as Web IDE, it will fetch the files.
 ```
 
-_See code: [src/commands/pull.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/pull.ts)_
+_See code: [src/commands/pull.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/pull.ts)_
 
 ## `apify push [ACTORID]`
 
-Uploads the actor to the Apify platform and builds it there.
+Uploads the Actor to the Apify platform and builds it there.
 
 ```
 USAGE
@@ -571,7 +571,7 @@ USAGE
 
 ARGUMENTS
   ACTORID  Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
-           command will create or modify the actor with the name specified in ".actor/actor.json" file.
+           command will create or modify the Actor with the name specified in ".actor/actor.json" file.
 
 FLAGS
   -b, --build-tag=<value>        Build tag to be applied to the successful Actor build. By default, it is taken from the
@@ -579,13 +579,13 @@ FLAGS
   -v, --version=<value>          Actor version number to which the files should be pushed. By default, it is taken from
                                  the ".actor/actor.json" file.
   -w, --wait-for-finish=<value>  Seconds for waiting to build to finish, if no value passed, it waits forever.
-      --no-prompt                Do not prompt for opening the actor details in a browser. This will also not open the
+      --no-prompt                Do not prompt for opening the Actor details in a browser. This will also not open the
                                  browser automatically.
       --version-number=<value>   DEPRECATED: Use flag version instead. Actor version number to which the files should be
                                  pushed. By default, it is taken from the ".actor/actor.json" file.
 
 DESCRIPTION
-  Uploads the actor to the Apify platform and builds it there.
+  Uploads the Actor to the Apify platform and builds it there.
   The Actor settings are read from the ".actor/actor.json" file in the current directory, but they can be overridden
   using command-line options.
   NOTE: If the source files are smaller than 3 MB then they are uploaded as
@@ -594,11 +594,11 @@ DESCRIPTION
   WARNING: If the target Actor already exists in your Apify account, it will be overwritten!
 ```
 
-_See code: [src/commands/push.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/push.ts)_
+_See code: [src/commands/push.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/push.ts)_
 
 ## `apify run`
 
-Runs the actor locally in the current directory.
+Runs the Actor locally in the current directory.
 
 ```
 USAGE
@@ -613,27 +613,27 @@ FLAGS
       --purge-queue            Deletes the local directory containing the default request queue before the run starts.
 
 DESCRIPTION
-  Runs the actor locally in the current directory.
-  It sets various APIFY_XYZ environment variables in order to provide a working execution environment for the actor. For
-  example, this causes the actor input, as well as all other data in key-value stores, datasets or request queues to be
+  Runs the Actor locally in the current directory.
+  It sets various APIFY_XYZ environment variables in order to provide a working execution environment for the Actor. For
+  example, this causes the Actor input, as well as all other data in key-value stores, datasets or request queues to be
   stored in the "storage" directory, rather than on the Apify platform.
 
   NOTE: You can override the command's default behavior for Node.js actors by overriding the "start" script in the
   package.json file. You can set up your own main file or environment variables by changing it.
 ```
 
-_See code: [src/commands/run.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/run.ts)_
+_See code: [src/commands/run.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/run.ts)_
 
 ## `apify secrets`
 
-Manages secret values for actor environment variables.
+Manages secret values for Actor environment variables.
 
 ```
 USAGE
   $ apify secrets
 
 DESCRIPTION
-  Manages secret values for actor environment variables.
+  Manages secret values for Actor environment variables.
 
   Example:
   $ apify secrets:add mySecret TopSecretValue123
@@ -648,11 +648,11 @@ DESCRIPTION
   "version": "0.1
   }
 
-  When the actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable
-  of the actor.
+  When the Actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable
+  of the Actor.
 ```
 
-_See code: [src/commands/secrets/index.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/secrets/index.ts)_
+_See code: [src/commands/secrets/index.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/secrets/index.ts)_
 
 ## `apify secrets:add NAME VALUE`
 
@@ -671,7 +671,7 @@ DESCRIPTION
   The secrets are stored to a file at ~/.apify
 ```
 
-_See code: [src/commands/secrets/add.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/secrets/add.ts)_
+_See code: [src/commands/secrets/add.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/secrets/add.ts)_
 
 ## `apify secrets:rm NAME`
 
@@ -688,7 +688,7 @@ DESCRIPTION
   Removes the secret.
 ```
 
-_See code: [src/commands/secrets/rm.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/secrets/rm.ts)_
+_See code: [src/commands/secrets/rm.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/secrets/rm.ts)_
 
 ## `apify vis [PATH]`
 
@@ -713,5 +713,5 @@ DESCRIPTION
   You can also pass any custom path to your input schema to have it validated instead.
 ```
 
-_See code: [src/commands/vis.ts](https://github.com/apify/apify-cli/blob/v0.19.3/src/commands/vis.ts)_
+_See code: [src/commands/vis.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/vis.ts)_
 <!-- commandsstop -->

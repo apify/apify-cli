@@ -47,7 +47,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         actorId: Args.string({
             required: false,
             description: 'Name or ID of the Actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
-            + `If not provided, the command runs the remote actor specified in the "${LOCAL_CONFIG_PATH}" file.`,
+            + `If not provided, the command runs the remote Actor specified in the "${LOCAL_CONFIG_PATH}" file.`,
         }),
     };
 
