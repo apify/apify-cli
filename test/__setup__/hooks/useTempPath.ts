@@ -2,6 +2,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { useProcessCwdMock } from './useProcessCwdMock.js';
 import { rimrafPromised } from '../../../src/lib/files.js';
 
 export interface UseTempPathOptions {
@@ -42,22 +43,7 @@ export function useTempPath(
 
     if (cwd) {
         const cwdMock = () => usedCwd;
-
-        vitest.doMock('node:process', async (importActual) => {
-            const actual = await importActual<typeof import('node:process')>();
-
-            return {
-                ...actual,
-                cwd: cwdMock,
-                default: {
-                    ...actual,
-                    cwd: cwdMock,
-                },
-            };
-        });
-
-        const processCwdSpy = vitest.spyOn(process, 'cwd');
-        processCwdSpy.mockImplementation(cwdMock);
+        useProcessCwdMock(cwdMock);
     }
 
     return {

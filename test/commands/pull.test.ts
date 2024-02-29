@@ -12,6 +12,7 @@ import { LoginCommand } from '../../src/commands/login.js';
 import { DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useProcessCwdMock } from '../__setup__/hooks/useProcessCwdMock.js';
 
 const TEST_ACTOR_SOURCE_FILES: ActorCollectionCreateOptions = {
     isPublic: false,
@@ -97,22 +98,11 @@ useAuthSetup({ perTest: false });
 
 let cwd: string = process.cwd();
 
-vitest.mock('node:process', async (importActual) => {
-    const actual = await importActual<typeof import('node:process')>();
-    return {
-        ...actual,
-        cwd: () => cwd,
-        default: {
-            ...actual,
-            cwd: () => cwd,
-
-        },
-    };
-});
-
 function setProcessCwd(newCwd: string) {
     cwd = newCwd;
 }
+
+useProcessCwdMock(() => cwd);
 
 const { PullCommand } = await import('../../src/commands/pull.js');
 
