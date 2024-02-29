@@ -160,7 +160,7 @@ jobs:
             # Check version consistency and increment pre-release version number for beta only.
             - name: Bump pre-release version
               if: env.RELEASE_TAG == 'beta'
-              run: npx tsx ./.github/scripts/before-beta-release.js
+              run: npx tsx ./.github/scripts/before-beta-release.ts
 
             - name: Publish to NPM
               run: npm publish --tag ${{ env.RELEASE_TAG }} --access public
