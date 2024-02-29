@@ -17,6 +17,7 @@ export default defineConfig({
         silent: !process.env.NO_SILENT_TESTS,
         env: {
             APIFY_CLI_DISABLE_TELEMETRY: '1',
+            APIFY_CLI_SKIP_UPDATE_CHECK: '1',
         },
     },
 });

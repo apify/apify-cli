@@ -6,8 +6,8 @@
     "types": "./dist/index.d.ts",
     "type": "module",
     "scripts": {
-        "test": "cross-env APIFY_CLI_SKIP_UPDATE_CHECK=1 vitest run",
-        "test-python": "cross-env APIFY_CLI_SKIP_UPDATE_CHECK=1 vitest run -t '.*\\[python\\]'",
+        "test": "vitest run",
+        "test-python": "vitest run -t '.*\\[python\\]'",
         "lint": "eslint src test",
         "lint:fix": "eslint src test --fix",
         "clean": "rimraf dist",
@@ -113,7 +113,6 @@
         "@typescript-eslint/eslint-plugin": "^7.0.2",
         "@typescript-eslint/parser": "^7.0.2",
         "chai": "^4.4.1",
-        "cross-env": "^7.0.3",
         "eslint": "^8.57.0",
         "oclif": "^4.4.18",
         "tsx": "^4.7.1",
