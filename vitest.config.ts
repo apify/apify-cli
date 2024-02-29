@@ -19,5 +19,6 @@ export default defineConfig({
             APIFY_CLI_DISABLE_TELEMETRY: '1',
             APIFY_CLI_SKIP_UPDATE_CHECK: '1',
         },
+        retry: 2,
     },
 });
