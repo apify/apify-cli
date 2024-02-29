@@ -2,9 +2,12 @@ import { test } from '@oclif/test';
 
 import { SecretRmCommand } from '../../../src/commands/secrets/rm.js';
 import { getSecretsFile } from '../../../src/lib/secrets.js';
+import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 
 const SECRET_KEY = 'mySecret';
 const SECRET_VALUE = 'mySecretValue';
+
+useAuthSetup({ perTest: false });
 
 describe('apify secrets:add', () => {
     beforeAll(async () => {
