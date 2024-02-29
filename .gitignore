@@ -7,10 +7,13 @@ test-actors
 local_test.sh
 my-act-*
 my-python-*
+pull-test-*
 _mytests
-package-lock.json
 .vscode
 .idea
 docs/changelog.md
 
 **/scrapy-wrapper/templates/*
+
+test/tmp
+oclif.manifest.json

@@ -12,15 +12,12 @@ export default defineConfig({
         hookTimeout: 60_000,
         include: [
             '**/*.{test,spec}.?(c|m)[jt]s?(x)',
-            'test/**/*.js',
         ],
-        // Needed because of chdir
-        pool: 'forks',
-        poolOptions: {
-            forks: {
-                singleFork: true,
-            },
-        },
         passWithNoTests: true,
+        silent: !process.env.NO_SILENT_TESTS,
+        env: {
+            APIFY_CLI_DISABLE_TELEMETRY: '1',
+            APIFY_CLI_SKIP_UPDATE_CHECK: '1',
+        },
     },
 });
