@@ -131,7 +131,13 @@
                 "./dist/hooks/init"
             ]
         },
-        "helpClass": "./dist/lib/apify-oclif-help"
+        "helpClass": "./dist/lib/apify-oclif-help",
+        "additionalHelpFlags": [
+            "-h"
+        ],
+        "additionalVersionFlags": [
+            "-v"
+        ]
     },
     "volta": {
         "node": "20.11.1",
