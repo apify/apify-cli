@@ -2,7 +2,7 @@
 
 ## Tests
 
-Tests are implemented using the [Mocha](https://mochajs.org/) framework.
+Tests are implemented using the [Vitest](https://vitest.dev/) framework.
 You need to have Apify account to test all apify-cli features.
 
 Then you can run tests with commands in repository root directory:
