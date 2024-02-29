@@ -137,7 +137,6 @@ describe('apify pull', () => {
     test
         .command(['pull'])
         .catch((ctx) => {
-            console.log(ctx);
             expect(ctx.message).to.be.eql('Cannot find Actor in this directory.');
         })
         .it('should fail outside actor folder without actorId defined');

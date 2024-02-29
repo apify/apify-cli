@@ -4,6 +4,7 @@ import { writeFileSync } from 'node:fs';
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { ApifyClient } from 'apify-client';
 
+import { LoginCommand } from '../../src/commands/login.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
@@ -48,7 +49,6 @@ const {
     toggleCwdBetweenFullAndParentPath,
 } = useTempPath(ACTOR_NAME, { cwd: true, cwdParent: true, create: true, remove: true });
 
-const { LoginCommand } = await import('../../src/commands/login.js');
 const { CreateCommand } = await import('../../src/commands/create.js');
 const { PushCommand } = await import('../../src/commands/push.js');
 const { CallCommand } = await import('../../src/commands/call.js');
