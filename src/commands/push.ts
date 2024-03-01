@@ -1,3 +1,4 @@
+import * as fs from 'fs';
 import { readFileSync, unlinkSync } from 'node:fs';
 import process from 'node:process';
 
@@ -72,6 +73,11 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
             default: false,
             required: false,
         }),
+        force: Flags.boolean({
+            description: 'Push an Actor even when the local files are older than the Actor on the platform.',
+            default: false,
+            required: false,
+        }),
     };
 
     static override args = {
@@ -92,7 +98,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
 
         let actorId: string;
-        let actor: Actor;
+        let actor: Actor | undefined;
         // User can override actor version and build tag, attributes in localConfig will remain same.
         const version = this.flags.version || this.flags.versionNumber || localConfig?.version as string | undefined || DEFAULT_ACTOR_VERSION_NUMBER;
         let buildTag = this.flags.buildTag || localConfig!.buildTag as string | undefined;
@@ -110,12 +116,12 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         // It causes that we push actor to this id but attributes in localConfig will remain same.
         const forceActorId = this.args.actorId;
         if (forceActorId) {
-            actor = (await apifyClient.actor(forceActorId).get())!;
+            actor = await apifyClient.actor(forceActorId).get();
             if (!actor) throw new Error(`Cannot find Actor with ID '${forceActorId}' in your account.`);
             actorId = actor.id;
         } else {
             const usernameOrId = userInfo.username || userInfo.id;
-            actor = (await apifyClient.actor(`${usernameOrId}/${localConfig!.name}`).get())!;
+            actor = await apifyClient.actor(`${usernameOrId}/${localConfig!.name}`).get();
             if (actor) {
                 actorId = actor.id;
             } else {
@@ -149,6 +155,20 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         let sourceFiles;
         let tarballUrl;
         if (filesSize < MAX_MULTIFILE_BYTES) {
+            const client = await actorClient.get();
+
+            // Check when was files modified last
+            const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
+                const fileModifiedMs = fs.statSync(filePath).mtimeMs;
+                return modifiedMs > fileModifiedMs ? modifiedMs : fileModifiedMs;
+            }, 0);
+            const actorModifiedMs = client?.modifiedAt.valueOf();
+
+            if (!this.flags.force && actorModifiedMs && mostRecentModifiedFileMs < actorModifiedMs) {
+                error('Actor seems to be modified on the platform since modified locally. Skipping push.');
+                return;
+            }
+
             sourceFiles = await createSourceFiles(filePathsToPush, cwd);
             sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
         } else {
