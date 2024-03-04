@@ -238,7 +238,7 @@ describe('apify push', () => {
         const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
 
         // @ts-expect-error Wrong typing of update method
-        await testActorClient.version(actorJson.version).update({ sourceType: 'GITHUB_GIST' });
+        await testActorClient.version(actorJson.version).update({ buildTag: 'latest' });
 
         await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
 
