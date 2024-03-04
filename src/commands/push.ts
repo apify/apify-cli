@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import { readFileSync, unlinkSync } from 'node:fs';
+import { readFileSync, unlinkSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import process from 'node:process';
 
 import { fetchManifest } from '@apify/actor-templates';
@@ -159,7 +159,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
 
             // Check when was files modified last
             const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
-                const fileModifiedMs = fs.statSync(filePath).mtimeMs;
+                const fileModifiedMs = statSync(join(cwd, filePath)).mtimeMs;
                 return modifiedMs > fileModifiedMs ? modifiedMs : fileModifiedMs;
             }, 0);
             const actorModifiedMs = client?.modifiedAt.valueOf();

@@ -230,4 +230,22 @@ describe('apify push', () => {
         expect((createdActorVersion as any).sourceFiles.find((file: any) => file.name === 'some-typescript-file.ts').format)
             .to.be.equal(SOURCE_FILE_FORMATS.TEXT);
     });
+
+    it('should not push Actor when there is newer version on platform', async () => {
+        const testActor = await testUserClient.actors().create(TEST_ACTOR);
+        actorsForCleanup.add(testActor.id);
+        const testActorClient = testUserClient.actor(testActor.id);
+        const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
+
+        // @ts-expect-error Wrong typing of update method
+        await testActorClient.version(actorJson.version).update({ sourceType: 'GITHUB_GIST' });
+
+        await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
+
+        const testActorVersion = await testActorClient.version(actorJson.version).get();
+
+        if (testActor) await testActorClient.delete();
+
+        expect(testActorVersion!.buildTag).to.be.eql('latest');
+    });
 });
