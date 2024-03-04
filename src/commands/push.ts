@@ -1,5 +1,4 @@
-import { readFileSync, unlinkSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, unlinkSync } from 'node:fs';
 import process from 'node:process';
 
 import { fetchManifest } from '@apify/actor-templates';
@@ -155,19 +154,19 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         let sourceFiles;
         let tarballUrl;
         if (filesSize < MAX_MULTIFILE_BYTES) {
-            const client = await actorClient.get();
+            // const client = await actorClient.get();
 
             // Check when was files modified last
-            const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
-                const fileModifiedMs = statSync(join(cwd, filePath)).mtimeMs;
-                return modifiedMs > fileModifiedMs ? modifiedMs : fileModifiedMs;
-            }, 0);
-            const actorModifiedMs = client?.modifiedAt.valueOf();
-
-            if (!this.flags.force && actorModifiedMs && mostRecentModifiedFileMs < actorModifiedMs) {
-                error('Actor seems to be modified on the platform since modified locally. Skipping push.');
-                return;
-            }
+            // const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
+            //     const fileModifiedMs = statSync(join(cwd, filePath)).mtimeMs;
+            //     return modifiedMs > fileModifiedMs ? modifiedMs : fileModifiedMs;
+            // }, 0);
+            // const actorModifiedMs = client?.modifiedAt.valueOf();
+            //
+            // if (!this.flags.force && actorModifiedMs && mostRecentModifiedFileMs < actorModifiedMs) {
+            //     error('Actor seems to be modified on the platform since modified locally. Skipping push.');
+            //     return;
+            // }
 
             sourceFiles = await createSourceFiles(filePathsToPush, cwd);
             sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
