@@ -166,6 +166,8 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
             // Check when was files modified last
             const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
                 const { mtimeMs, ctimeMs } = statSync(join(cwd, filePath));
+
+                // Sometimes it's possible mtimeMs is some messed up value (like 2000/01/01 midnight), then we want to check created if it's newer
                 const fileModifiedMs = mtimeMs > ctimeMs ? mtimeMs : ctimeMs;
 
                 return modifiedMs > fileModifiedMs ? modifiedMs : fileModifiedMs;
