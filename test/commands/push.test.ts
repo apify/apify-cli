@@ -74,7 +74,7 @@ describe('apify push', () => {
         };
         writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
 
-        await PushCommand.run(['--no-prompt'], import.meta.url);
+        await PushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
         const userInfo = await getLocalUserInfo();
         const { name } = actorJson;
@@ -105,7 +105,7 @@ describe('apify push', () => {
         const testActorClient = testUserClient.actor(testActor.id);
         const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
 
-        await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
+        await PushCommand.run(['--no-prompt', '--force', testActor.id], import.meta.url);
 
         actorsForCleanup.add(testActor.id);
 
