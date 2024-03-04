@@ -214,7 +214,7 @@ describe('apify push', () => {
 
         writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
 
-        await PushCommand.run(['--no-prompt'], import.meta.url);
+        await PushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
         if (existsSync(joinPath('some-typescript-file.ts'))) unlinkSync(joinPath('some-typescript-file.ts'));
 
