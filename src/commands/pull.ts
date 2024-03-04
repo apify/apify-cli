@@ -108,7 +108,6 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
                         if (file.name === LOCAL_CONFIG_PATH) {
                             const actorJson = jju.parse(fileContent);
                             actorJson.name = actor.name;
-                            actorJson.modifiedAtWhenPulled = actor.modifiedAt;
                             writeFileSync(`${dirpath}/${file.name}`, jju.update(fileContent, actorJson));
                         } else {
                             writeFileSync(`${dirpath}/${file.name}`, fileContent);
