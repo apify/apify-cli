@@ -88,6 +88,12 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         }),
     };
 
+    // TODO: Global handler in ApifyCommand
+    override async catch(caughtError:Error) {
+        error(caughtError.message);
+        throw caughtError;
+    }
+
     async run() {
         const cwd = process.cwd();
 
@@ -167,8 +173,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
             const actorModifiedMs = client?.modifiedAt.valueOf();
 
             if (!this.flags.force && actorModifiedMs && mostRecentModifiedFileMs < actorModifiedMs) {
-                error('Actor was modified on the platform since modified locally. Skipping push. Use --force to override.');
-                return;
+                throw new Error('Actor was modified on the platform since modified locally. Skipping push. Use --force to override.');
             }
 
             sourceFiles = await createSourceFiles(filePathsToPush, cwd);

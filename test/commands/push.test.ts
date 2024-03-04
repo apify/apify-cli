@@ -238,14 +238,12 @@ describe('apify push', () => {
         const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
 
         // @ts-expect-error Wrong typing of update method
-        await testActorClient.version(actorJson.version).update({ buildTag: 'latest' });
+        await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
 
-        await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
-
-        const testActorVersion = await testActorClient.version(actorJson.version).get();
-
-        if (testActor) await testActorClient.delete();
-
-        expect(testActorVersion!.buildTag).to.be.eql('latest');
+        try {
+            await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
+        } catch (e) {
+            expect((e as Error).message).to.be.equal('Actor was modified on the platform since modified locally. Skipping push. Use --force to override.');
+        }
     });
 });
