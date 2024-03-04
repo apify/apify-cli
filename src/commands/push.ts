@@ -98,7 +98,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
 
         let actorId: string;
-        let actor: Actor | undefined;
+        let actor: Actor;
         // User can override actor version and build tag, attributes in localConfig will remain same.
         const version = this.flags.version || this.flags.versionNumber || localConfig?.version as string | undefined || DEFAULT_ACTOR_VERSION_NUMBER;
         let buildTag = this.flags.buildTag || localConfig!.buildTag as string | undefined;
@@ -116,12 +116,12 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         // It causes that we push actor to this id but attributes in localConfig will remain same.
         const forceActorId = this.args.actorId;
         if (forceActorId) {
-            actor = await apifyClient.actor(forceActorId).get();
+            actor = (await apifyClient.actor(forceActorId).get())!;
             if (!actor) throw new Error(`Cannot find Actor with ID '${forceActorId}' in your account.`);
             actorId = actor.id;
         } else {
             const usernameOrId = userInfo.username || userInfo.id;
-            actor = await apifyClient.actor(`${usernameOrId}/${localConfig!.name}`).get();
+            actor = (await apifyClient.actor(`${usernameOrId}/${localConfig!.name}`).get())!;
             if (actor) {
                 actorId = actor.id;
             } else {
