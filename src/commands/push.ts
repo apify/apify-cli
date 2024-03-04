@@ -44,7 +44,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
     + `The Actor settings are read from the "${LOCAL_CONFIG_PATH}" file in the current directory, but they can be overridden using command-line options.\n`
     + `NOTE: If the source files are smaller than ${MAX_MULTIFILE_BYTES / (1024 ** 2)} MB then they are uploaded as \n`
     + '"Multiple source files", otherwise they are uploaded as "Zip file".\n\n'
-    + 'WARNING: If the target Actor already exists in your Apify account, it will be overwritten!';
+    + 'When there\'s an attempt to push files that are older than the Actor on the platform, the command will fail. Can be overwritten with --force flag.';
 
     static override flags = {
         'version-number': Flags.string({
