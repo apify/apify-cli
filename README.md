@@ -51,7 +51,7 @@ If you receive an `EACCES` error, you might need to run the command as root:
 sudo npm -g install apify-cli
 ```
 
-Alternativaly, you can use [Node Version Manager (nvm)](https://github.com/nvm-sh/nvm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
+Alternatively, you can use [Node Version Manager (nvm)](https://github.com/nvm-sh/nvm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
 
 ```
 nvm install 16

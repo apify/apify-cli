@@ -1,5 +1,9 @@
 # Contributing to apify-cli
 
+## Dev mode
+
+You can call `./bin/run` to run the CLI in development mode. This will use the local version of the CLI instead of the one installed globally.
+
 ## Tests
 
 Tests are implemented using the [Vitest](https://vitest.dev/) framework.
