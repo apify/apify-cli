@@ -174,7 +174,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
             }, 0);
             const actorModifiedMs = client?.modifiedAt.valueOf();
 
-            if (!this.flags.force && actorModifiedMs && mostRecentModifiedFileMs < actorModifiedMs) {
+            if (!this.flags.force && actorModifiedMs && mostRecentModifiedFileMs < actorModifiedMs && forceActorId) {
                 throw new Error('Actor was modified on the platform since modified locally. Skipping push. Use --force to override.');
             }
 
