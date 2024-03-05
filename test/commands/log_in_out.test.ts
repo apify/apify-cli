@@ -43,4 +43,8 @@ describe('apify login and logout', () => {
 
         expect(isGlobalConfig).to.be.eql(false);
     });
+
+    it('should open browser with interactive login', async () => {
+        await LoginCommand.run(['-m', 'console'], import.meta.url);
+    });
 });
