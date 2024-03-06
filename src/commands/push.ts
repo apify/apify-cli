@@ -1,4 +1,5 @@
-import { readFileSync, unlinkSync } from 'node:fs';
+import { readFileSync, unlinkSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import process from 'node:process';
 
 import { fetchManifest } from '@apify/actor-templates';
@@ -43,7 +44,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
     + `The Actor settings are read from the "${LOCAL_CONFIG_PATH}" file in the current directory, but they can be overridden using command-line options.\n`
     + `NOTE: If the source files are smaller than ${MAX_MULTIFILE_BYTES / (1024 ** 2)} MB then they are uploaded as \n`
     + '"Multiple source files", otherwise they are uploaded as "Zip file".\n\n'
-    + 'WARNING: If the target Actor already exists in your Apify account, it will be overwritten!';
+    + 'When there\'s an attempt to push files that are older than the Actor on the platform, the command will fail. Can be overwritten with --force flag.';
 
     static override flags = {
         'version-number': Flags.string({
@@ -72,6 +73,11 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
             default: false,
             required: false,
         }),
+        force: Flags.boolean({
+            description: 'Push an Actor even when the local files are older than the Actor on the platform.',
+            default: false,
+            required: false,
+        }),
     };
 
     static override args = {
@@ -81,6 +87,11 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
                 + `If not provided, the command will create or modify the Actor with the name specified in "${LOCAL_CONFIG_PATH}" file.`,
         }),
     };
+
+    // TODO: Global handler in ApifyCommand
+    override async catch(caughtError: Error) {
+        throw caughtError;
+    }
 
     async run() {
         const cwd = process.cwd();
@@ -93,6 +104,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
 
         let actorId: string;
         let actor: Actor;
+        let isActorCreatedNow = false;
         // User can override actor version and build tag, attributes in localConfig will remain same.
         const version = this.flags.version || this.flags.versionNumber || localConfig?.version as string | undefined || DEFAULT_ACTOR_VERSION_NUMBER;
         let buildTag = this.flags.buildTag || localConfig!.buildTag as string | undefined;
@@ -109,6 +121,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         // User can override actorId of pushing actor.
         // It causes that we push actor to this id but attributes in localConfig will remain same.
         const forceActorId = this.args.actorId;
+
         if (forceActorId) {
             actor = (await apifyClient.actor(forceActorId).get())!;
             if (!actor) throw new Error(`Cannot find Actor with ID '${forceActorId}' in your account.`);
@@ -135,6 +148,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
                 };
                 actor = await apifyClient.actors().create(newActor);
                 actorId = actor.id;
+                isActorCreatedNow = true;
                 info(`Created Actor with name ${localConfig!.name} on Apify.`);
             }
         }
@@ -149,6 +163,28 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         let sourceFiles;
         let tarballUrl;
         if (filesSize < MAX_MULTIFILE_BYTES) {
+            const client = await actorClient.get();
+
+            if (!isActorCreatedNow) {
+                // Check when was files modified last
+                const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
+                    const { mtimeMs, ctimeMs } = statSync(join(cwd, filePath));
+
+                    // Sometimes it's possible mtimeMs is some messed up value (like 2000/01/01 midnight), then we want to check created if it's newer
+                    const fileModifiedMs = mtimeMs > ctimeMs ? mtimeMs : ctimeMs;
+
+                    return modifiedMs > fileModifiedMs ? modifiedMs : fileModifiedMs;
+                }, 0);
+                const actorModifiedMs = client?.modifiedAt.valueOf();
+
+                if (!this.flags.force && actorModifiedMs && mostRecentModifiedFileMs < actorModifiedMs && (localConfig?.name || forceActorId)) {
+                    throw new Error(
+                        `Actor with identifier "${localConfig?.name || forceActorId}" is already on the platform and was modified there since modified locally.
+Skipping push. Use --force to override.`,
+                    );
+                }
+            }
+
             sourceFiles = await createSourceFiles(filePathsToPush, cwd);
             sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
         } else {

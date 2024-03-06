@@ -202,7 +202,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
         if (dependenciesInstalled) {
             success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
-            success('To run your code in the cloud, run "apify push" and deploy your code to Apify Console.');
+            info('To run your code in the cloud, run "apify push" and deploy your code to Apify Console.');
             if (messages?.postCreate) {
                 info(messages?.postCreate);
             }

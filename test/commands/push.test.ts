@@ -74,7 +74,7 @@ describe('apify push', () => {
         };
         writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
 
-        await PushCommand.run(['--no-prompt'], import.meta.url);
+        await PushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
         const userInfo = await getLocalUserInfo();
         const { name } = actorJson;
@@ -105,7 +105,7 @@ describe('apify push', () => {
         const testActorClient = testUserClient.actor(testActor.id);
         const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
 
-        await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
+        await PushCommand.run(['--no-prompt', '--force', testActor.id], import.meta.url);
 
         actorsForCleanup.add(testActor.id);
 
@@ -214,7 +214,7 @@ describe('apify push', () => {
 
         writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
 
-        await PushCommand.run(['--no-prompt'], import.meta.url);
+        await PushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
         if (existsSync(joinPath('some-typescript-file.ts'))) unlinkSync(joinPath('some-typescript-file.ts'));
 
@@ -229,5 +229,21 @@ describe('apify push', () => {
 
         expect((createdActorVersion as any).sourceFiles.find((file: any) => file.name === 'some-typescript-file.ts').format)
             .to.be.equal(SOURCE_FILE_FORMATS.TEXT);
+    });
+
+    it('should not push Actor when there is newer version on platform', async () => {
+        const testActor = await testUserClient.actors().create(TEST_ACTOR);
+        actorsForCleanup.add(testActor.id);
+        const testActorClient = testUserClient.actor(testActor.id);
+        const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
+
+        // @ts-expect-error Wrong typing of update method
+        await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
+
+        try {
+            await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
+        } catch (e) {
+            expect((e as Error).message).to.includes('is already on the platform');
+        }
     });
 });
