@@ -44,7 +44,23 @@ describe('apify login and logout', () => {
         expect(isGlobalConfig).to.be.eql(false);
     });
 
-    it('should open browser with interactive login', async () => {
+    it('have correctly setup server for interactive login', async () => {
         await LoginCommand.run(['-m', 'console'], import.meta.url);
+
+        const consoleInfo = spy.mock.calls[0][0];
+        const consoleUrl = /"(http[s]?:\/\/[^"]*)"/.exec(consoleInfo)?.[1];
+
+        const consoleUrlParams = new URL(consoleUrl!).searchParams;
+
+        const localCliPort = consoleUrlParams.get('localCliPort');
+        const localCliToken = consoleUrlParams.get('localCliToken');
+
+        const response = await fetch(`http://localhost:${localCliPort}/api/v1/login-token?token=${localCliToken}`, {
+            method: 'POST',
+            body: JSON.stringify({ apiToken: TEST_USER_TOKEN }),
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        expect(response.status).to.be.eql(200);
     });
 });
