@@ -80,7 +80,7 @@ describe('apify call', () => {
 
         toggleCwdBetweenFullAndParentPath();
 
-        await PushCommand.run(['--no-prompt'], import.meta.url);
+        await PushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
         actorId = `${username}/${ACTOR_NAME}`;
 
