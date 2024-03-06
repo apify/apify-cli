@@ -9,7 +9,7 @@ const spawnPromised = async (cmd: string, args: string[], opts: SpawnOptionsWith
     // NOTE: Pipes stderr, stdout to main process
     const childProcess = spawn(cmd, args, {
         ...opts,
-        stdio: 'inherit',
+        stdio: process.env.APIFY_NO_LOGS_IN_TESTS ? 'ignore' : 'inherit',
     });
 
     // Catch ctrl-c (SIGINT) and kills child process

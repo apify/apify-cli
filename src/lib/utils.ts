@@ -452,6 +452,11 @@ export const purgeDefaultKeyValueStore = async () => {
 };
 
 export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
+    // In tests, writing to process.stdout directly messes with vitest's output
+    if (process.env.APIFY_NO_LOGS_IN_TESTS) {
+        return;
+    }
+
     const { id: logId, status } = job;
     const apifyClient = new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
 
