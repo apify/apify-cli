@@ -3,15 +3,21 @@ import { existsSync } from 'node:fs';
 import axios from 'axios';
 import { loadJsonFileSync } from 'load-json-file';
 import _ from 'underscore';
+import { vitest } from 'vitest';
 
-import { LoginCommand } from '../../src/commands/login.js';
-import { LogoutCommand } from '../../src/commands/logout.js';
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 
 vitest.setConfig({ restoreMocks: false });
 useAuthSetup();
+
+vitest.mock('open', () => ({
+    default: (url: string) => console.log(`Open URL: ${url}`),
+}));
+
+const { LoginCommand } = await import('../../src/commands/login.js');
+const { LogoutCommand } = await import('../../src/commands/logout.js');
 
 describe('apify login and logout', () => {
     let spy: import('vitest').MockInstance<Parameters<typeof console['log']>, void>;
