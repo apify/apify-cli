@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 
+import axios from 'axios';
 import { loadJsonFileSync } from 'load-json-file';
 import _ from 'underscore';
 
@@ -55,11 +56,10 @@ describe('apify login and logout', () => {
         const localCliPort = consoleUrlParams.get('localCliPort');
         const localCliToken = consoleUrlParams.get('localCliToken');
 
-        const response = await fetch(`http://localhost:${localCliPort}/api/v1/login-token?token=${localCliToken}`, {
-            method: 'POST',
-            body: JSON.stringify({ apiToken: TEST_USER_TOKEN }),
-            headers: { 'Content-Type': 'application/json' },
-        });
+        const response = await axios.post(`http://localhost:${localCliPort}/api/v1/login-token?token=${localCliToken}`,
+            { apiToken: TEST_USER_TOKEN },
+            { headers: { 'Content-Type': 'application/json' } },
+        );
 
         expect(response.status).to.be.eql(200);
     });
