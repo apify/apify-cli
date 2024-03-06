@@ -452,11 +452,6 @@ export const purgeDefaultKeyValueStore = async () => {
 };
 
 export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
-    // In tests, writing to process.stdout directly messes with vitest's output
-    if (process.env.APIFY_NO_LOGS_IN_TESTS) {
-        return;
-    }
-
     const { id: logId, status } = job;
     const apifyClient = new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
 
@@ -480,6 +475,12 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
         let nodeTimeout: NodeJS.Timeout | null = null;
 
         stream.on('data', (chunk) => {
+            // In tests, writing to process.stdout directly messes with vitest's output
+            // With that said, we still NEED to wait for this stream to end, as otherwise tests become flaky.
+            if (process.env.APIFY_NO_LOGS_IN_TESTS) {
+                return;
+            }
+
             process.stdout.write(chunk.toString());
         });
 
