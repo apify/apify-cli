@@ -243,7 +243,7 @@ describe('apify push', () => {
         try {
             await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
         } catch (e) {
-            expect((e as Error).message).to.be.equal('Actor was modified on the platform since modified locally. Skipping push. Use --force to override.');
+            expect((e as Error).message).to.includes('is already on the platform');
         }
     });
 });

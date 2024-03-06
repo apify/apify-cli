@@ -180,7 +180,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
                 if (!this.flags.force && actorModifiedMs && mostRecentModifiedFileMs < actorModifiedMs && (forceActorId || localConfig?.name)) {
                     throw new Error(
                         `Actor with name "${localConfig?.name}" is already on the platform and was modified there since modified locally.
-                    Skipping push. Use --force to override.`,
+Skipping push. Use --force to override.`,
                     );
                 }
             }
