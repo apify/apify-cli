@@ -1,5 +1,3 @@
-#!/usr/bin/env node_modules/.bin/tsx
-
 import { execute } from '@oclif/core';
 
 import { error } from '../src/lib/outputs.ts';
