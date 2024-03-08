@@ -11,6 +11,8 @@ on:
     # A release via GitHub releases will deploy a latest version
     release:
         types: [published]
+    schedule:
+        - cron: "0 */12 * * *"
 
 jobs:
     build_and_test:
@@ -136,7 +138,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
               with:
-                token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Use Node.js 20
               uses: actions/setup-node@v4
@@ -178,9 +180,9 @@ jobs:
             - name: Update readme
               if: env.RELEASE_TAG == 'latest'
               run: |
-                git add .
-                git diff-index --quiet HEAD || git commit -m "[skip ci] update README with latest command reference"
-                git push
+                  git add .
+                  git diff-index --quiet HEAD || git commit -m "[skip ci] update README with latest command reference"
+                  git push
 
     update_homebrew_formula:
         name: Update Homebrew Formula
