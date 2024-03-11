@@ -29,11 +29,11 @@ jobs:
             -   name: Build docs
                 run: |
                     # install project deps
-                    npm ci --force
+                    npm ci
                     # go to website dir
                     cd website
                     # install website deps
-                    npm ci --force
+                    npm ci
                     # install the latest theme version
                     npm update @apify/docs-theme
                     # build the docs
