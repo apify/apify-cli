@@ -457,6 +457,10 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
 
     // In case job was already done just output log
     if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
+        if (process.env.APIFY_NO_LOGS_IN_TESTS) {
+            return;
+        }
+
         const log = await apifyClient.log(logId).get();
         process.stdout.write(log!);
         return;
