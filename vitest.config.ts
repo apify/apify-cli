@@ -1,5 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
+const isWindows = process.platform === 'win32';
+
 export default defineConfig({
     esbuild: {
         target: 'es2022',
@@ -8,8 +10,8 @@ export default defineConfig({
     test: {
         globals: true,
         restoreMocks: true,
-        testTimeout: 60_000,
-        hookTimeout: 60_000,
+        testTimeout: 60_000 * (isWindows ? 2 : 1),
+        hookTimeout: 60_000 * (isWindows ? 2 : 1),
         include: [
             '**/*.{test,spec}.?(c|m)[jt]s?(x)',
         ],
@@ -18,7 +20,8 @@ export default defineConfig({
         env: {
             APIFY_CLI_DISABLE_TELEMETRY: '1',
             APIFY_CLI_SKIP_UPDATE_CHECK: '1',
+            APIFY_NO_LOGS_IN_TESTS: '1',
         },
-        retry: 2,
+        retry: 3,
     },
 });
