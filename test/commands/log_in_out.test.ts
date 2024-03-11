@@ -67,5 +67,14 @@ describe('apify login and logout', () => {
         );
 
         expect(response.status).to.be.eql(200);
+
+        const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), { token: TEST_USER_TOKEN });
+        const userInfoFromConfig = loadJsonFileSync(AUTH_FILE_PATH());
+
+        expect(spy).toHaveBeenCalledTimes(1);
+        expect(spy.mock.calls[0][0]).to.include('Success:');
+        // Omit currentBillingPeriod, It can change during tests
+        const floatFields = ['currentBillingPeriod', 'plan', 'createdAt'];
+        expect(_.omit(expectedUserInfo, floatFields)).to.eql(_.omit(userInfoFromConfig, floatFields));
     });
 });
