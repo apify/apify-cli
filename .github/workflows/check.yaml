@@ -39,7 +39,7 @@ jobs:
                   cache: "npm"
 
             - name: Install Dependencies
-              run: npm install
+              run: npm ci
 
             - name: Remove $HOME\.apify directory on Windows
               if: runner.os == 'Windows'
@@ -74,7 +74,7 @@ jobs:
                   cache: "npm"
 
             - name: Install Dependencies
-              run: npm ci --force
+              run: npm ci
 
             - name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v5
@@ -102,7 +102,7 @@ jobs:
                   cache: "npm"
 
             - name: Install Dependencies
-              run: npm ci --force
+              run: npm ci
 
             - name: Build & deploy docs
               run: |
@@ -122,9 +122,11 @@ jobs:
                   node-version: 20
                   cache: "npm"
 
-            - run: |
-                  npm ci
-                  npm run lint
+            - name: Install Dependencies
+              run: npm ci
+
+            - name: Run lint checks
+              run: npm run lint
 
     # The deploy job is long but there are only 2 important parts. NPM publish
     # and triggering of docker image builds in the apify-actor-docker repo.
@@ -136,7 +138,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
               with:
-                token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Use Node.js 20
               uses: actions/setup-node@v4
@@ -150,8 +152,8 @@ jobs:
                   git config --global user.name 'Apify Service Account'
                   git config --global user.email 'apify-service-account@users.noreply.github.com'
 
-            - run: |
-                  npm ci
+            - name: Install Dependencies
+              run: npm ci
 
             # Determine if this is a beta or latest release
             - name: Set Release Tag
@@ -178,9 +180,9 @@ jobs:
             - name: Update readme
               if: env.RELEASE_TAG == 'latest'
               run: |
-                git add .
-                git diff-index --quiet HEAD || git commit -m "[skip ci] update README with latest command reference"
-                git push
+                  git add .
+                  git diff-index --quiet HEAD || git commit -m "[skip ci] update README with latest command reference"
+                  git push
 
     update_homebrew_formula:
         name: Update Homebrew Formula
