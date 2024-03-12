@@ -2,7 +2,7 @@
 
 ## Dev mode
 
-You can call `./bin/dev.js` to run the CLI in development mode. This will use the local version of the CLI instead of the one installed globally.
+You can call `./bin/dev.sh` to run the CLI in development mode. This will use the local version of the CLI instead of the one installed globally.
 
 ## Tests
 
