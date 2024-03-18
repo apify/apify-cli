@@ -1,6 +1,13 @@
 import { execute } from '@oclif/core';
+import { satisfies } from 'semver';
 
+import { SUPPORTED_NODEJS_VERSION } from '../src/lib/consts.js';
 import { error } from '../src/lib/outputs.ts';
+
+if (!satisfies(process.version, SUPPORTED_NODEJS_VERSION)) {
+    error(`Apify CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.`);
+    process.exit(1);
+}
 
 try {
     await execute({ development: true, dir: import.meta.url });
