@@ -47,6 +47,11 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
             required: false,
             hidden: true,
         }),
+        'omit-optional-deps': Flags.boolean({
+            aliases: ['no-optional'],
+            description: 'Skip installing optional dependencies.',
+            required: false,
+        }),
     };
 
     static override args = {
@@ -116,6 +121,11 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
             if ('skipOptionalDeps' in templateDefinition) {
                 skipOptionalDeps = templateDefinition.skipOptionalDeps as boolean;
             }
+        }
+
+        // Set this _after_ the template is resolved, so that the flag takes precedence
+        if (this.flags.omitOptionalDeps) {
+            skipOptionalDeps = true;
         }
 
         await downloadAndUnzip({ url: templateArchiveUrl, pathTo: actFolderDir });
