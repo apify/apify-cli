@@ -28,7 +28,7 @@ const writeSecretsFile = (secrets: Record<string, string>) => {
 export const addSecret = (name: string, value: string) => {
     const secrets = getSecretsFile();
 
-    if (secrets[name]) throw new Error(`Secret with name ${name} already exists. Call "apify secrets:rm ${name}" to remove it.`);
+    if (secrets[name]) throw new Error(`Secret with name ${name} already exists. Call "apify secrets rm ${name}" to remove it.`);
     if (!_.isString(name) || name.length > MAX_ENV_VAR_NAME_LENGTH) {
         throw new Error(`Secret name has to be string with maximum length ${MAX_ENV_VAR_NAME_LENGTH}.`);
     }
@@ -66,7 +66,7 @@ export const replaceSecretsValue = (env: Record<string, string>, secrets?: Recor
                 // @ts-expect-error - we are replacing the value
                 updatedEnv[key] = secrets[secretKey];
             } else {
-                warning(`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets:add ${secretKey} [SECRET_VALUE]"`);
+                warning(`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`);
             }
         } else {
             // @ts-expect-error - we are replacing the value
@@ -100,7 +100,7 @@ export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Rec
                     isSecret: true,
                 });
             } else {
-                warning(`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets:add ${secretKey} [SECRET_VALUE]"`);
+                warning(`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`);
             }
         } else {
             envVars.push({
