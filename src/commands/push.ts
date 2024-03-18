@@ -11,7 +11,7 @@ import isCI from 'is-ci';
 import open from 'open';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../lib/consts.js';
+import { CommandExitCodes, LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../lib/consts.js';
 import { sumFilesSizeInBytes } from '../lib/files.js';
 import { error, info, link, run, success, warning } from '../lib/outputs.js';
 import { transformEnvToEnvVars } from '../lib/secrets.js';
@@ -274,11 +274,14 @@ Skipping push. Use --force to override.`,
             // @ts-expect-error FIX THESE TYPES 😢
         } else if (build.status === ACTOR_JOB_STATUSES.ABORTED || build.status === ACTOR_JOB_STATUSES.ABORTING) {
             warning('Build was aborted!');
+            process.exitCode = CommandExitCodes.BuildAborted;
             // @ts-expect-error FIX THESE TYPES 😢
         } else if (build.status === ACTOR_JOB_STATUSES.TIMED_OUT || build.status === ACTOR_JOB_STATUSES.TIMING_OUT) {
             warning('Build timed out!');
+            process.exitCode = CommandExitCodes.BuildTimedOut;
         } else {
             error('Build failed!');
+            process.exitCode = CommandExitCodes.BuildFailed;
         }
     }
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
 /* eslint-disable no-underscore-dangle */
 
 import { readFileSync } from 'node:fs';
@@ -84,3 +85,11 @@ export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.8.0';
 export const PYTHON_VENV_PATH = '.venv';
 
 export const MIXPANEL_TOKEN = 'ea75e434d4b4d2405d79ed9d14bfc93b';
+
+export enum CommandExitCodes {
+    BuildFailed = 1,
+    RunFailed = 1,
+    BuildTimedOut = 2,
+    BuildAborted = 3,
+    RunAborted = 3,
+}
