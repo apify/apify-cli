@@ -138,7 +138,8 @@
         ],
         "additionalVersionFlags": [
             "-v"
-        ]
+        ],
+        "topicSeparator": " "
     },
     "volta": {
         "node": "20.11.1",
