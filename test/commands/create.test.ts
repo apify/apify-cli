@@ -80,4 +80,19 @@ describe('apify create', () => {
         expect(loadJsonFileSync<{ name: string }>(actorJsonPath)!.name).to.be.eql(actName);
         expect(loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql(expectedInput);
     });
+
+    it('should skip installing optional dependencies', async () => {
+        const ACT_TEMPLATE = 'project_cheerio_crawler_js';
+        await CreateCommand.run([actName, '--template', ACT_TEMPLATE, '--no-optional'], import.meta.url);
+
+        // check files structure
+        expect(existsSync(tmpPath)).toBeTruthy();
+
+        toggleCwdBetweenFullAndParentPath();
+
+        expect(existsSync(joinPath('package.json'))).toBeTruthy();
+        expect(existsSync(joinPath('node_modules'))).toBeTruthy();
+        expect(existsSync(joinPath('node_modules', 'cheerio'))).toBeTruthy();
+        expect(existsSync(joinPath('node_modules', 'playwright'))).toBeFalsy();
+    });
 });
