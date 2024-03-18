@@ -36,7 +36,7 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: ${{ matrix.node-version }}
-                  cache: ${{ matrix.os == 'ubuntu-latest' && 'npm' }}
+                  cache: ${{ (matrix.os == 'ubuntu-latest' && 'npm') || '' }}
 
             - name: Install Dependencies
               run: npm ci
@@ -71,7 +71,7 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 20
-                  cache: ${{ matrix.os == 'ubuntu-latest' && 'npm' }}
+                  cache: ${{ (matrix.os == 'ubuntu-latest' && 'npm') || '' }}
 
             - name: Install Dependencies
               run: npm ci
