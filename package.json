@@ -60,7 +60,7 @@
         "@apify/input_schema": "~3.5.15",
         "@apify/utilities": "~2.10.0",
         "@crawlee/memory-storage": "~3.8.1",
-        "@oclif/core": "~3.24.0",
+        "@oclif/core": "~3.25.0",
         "@oclif/plugin-help": "~6.0.14",
         "@root/walk": "~1.1.0",
         "adm-zip": "~0.5.10",
