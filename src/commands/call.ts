@@ -11,7 +11,7 @@ import { ActorRun, ActorStartOptions } from 'apify-client';
 import mime from 'mime';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
+import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { error, link, run as runLog, success, warning } from '../lib/outputs.js';
 import { getLocalConfig, getLocalInput, getLocalUserInfo, getLoggedClientOrThrow, outputJobLog } from '../lib/utils.js';
 
@@ -131,8 +131,12 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             success('Actor finished.');
         } else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
             warning('Actor is still running!');
+        } else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
+            warning('Actor was aborted!');
+            process.exitCode = CommandExitCodes.RunAborted;
         } else {
             error('Actor failed!');
+            process.exitCode = CommandExitCodes.RunFailed;
         }
     }
 }

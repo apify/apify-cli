@@ -52,7 +52,7 @@
     },
     "homepage": "https://github.com/apify/apify-cli#readme",
     "engines": {
-        "node": ">=16.0.0"
+        "node": ">=18"
     },
     "dependencies": {
         "@apify/actor-templates": "~0.1.5",
