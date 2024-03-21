@@ -42,6 +42,8 @@ jobs:
               if: matrix.os == 'windows-latest'
               run: npm install -g npm@latest
 
+            - run: Get-ChildItem -Path C:\\npm -Recurse -ErrorAction SilentlyContinue
+
             - name: Debug step for issue reporting
               if: matrix.os == 'windows-latest'
               run: npm --version && npm config ls
