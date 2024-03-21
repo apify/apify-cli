@@ -42,6 +42,10 @@ jobs:
               if: matrix.os == 'windows-latest'
               run: npm install -g npm@latest
 
+            - name: Debug step for issue reporting
+              if: matrix.os == 'windows-latest'
+              run: npm --version && npm config ls
+
             - name: Install Dependencies
               run: npm ci ${{ (matrix.os == 'windows-latest' && '--force') || '' }}
 
