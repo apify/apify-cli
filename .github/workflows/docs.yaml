@@ -23,7 +23,9 @@ jobs:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Enable corepack
-              run: corepack enable
+              run: |
+                  corepack enable
+                  corepack prepare yarn --activate
 
             - name: Use Node.js 20
               uses: actions/setup-node@v4
