@@ -46,7 +46,7 @@ jobs:
                   # install website deps
                   yarn
                   # install the latest theme version
-                  yarn install @apify/docs-theme@latest
+                  yarn add @apify/docs-theme@latest
                   # build the docs
                   yarn build
               env:
