@@ -35,7 +35,7 @@ jobs:
             - name: Enable corepack
               run: |
                   corepack enable
-                  corepack prepare yarn --activate
+                  corepack prepare yarn@latest --activate
 
             - name: Use Node.js ${{ matrix.node-version }}
               uses: actions/setup-node@v4
@@ -67,7 +67,7 @@ jobs:
             - name: Enable corepack
               run: |
                   corepack enable
-                  corepack prepare yarn --activate
+                  corepack prepare yarn@latest --activate
 
             - name: Use Node.js 20
               uses: actions/setup-node@v4
@@ -100,7 +100,7 @@ jobs:
             - name: Enable corepack
               run: |
                   corepack enable
-                  corepack prepare yarn --activate
+                  corepack prepare yarn@latest --activate
 
             - name: Use Node.js 20
               uses: actions/setup-node@v4
@@ -126,7 +126,7 @@ jobs:
             - name: Enable corepack
               run: |
                   corepack enable
-                  corepack prepare yarn --activate
+                  corepack prepare yarn@latest --activate
 
             - name: Use Node.js 20
               uses: actions/setup-node@v4
@@ -155,7 +155,7 @@ jobs:
             - name: Enable corepack
               run: |
                   corepack enable
-                  corepack prepare yarn --activate
+                  corepack prepare yarn@latest --activate
 
             - name: Use Node.js 20
               uses: actions/setup-node@v4
