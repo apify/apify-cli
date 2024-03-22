@@ -15,7 +15,7 @@
         "build": "yarn clean && tsc",
         "postpack": "rimraf oclif.manifest.json",
         "prepack": "yarn build && oclif manifest && oclif readme && oclif readme --readme-path=docs/reference.md",
-        "prepare": "yarn build && node ./bin/run.js check-version && node ./dist/lib/community.js"
+        "postinstallDev": "yarn build && node ./bin/run.js check-version && node ./dist/lib/community.js"
     },
     "files": [
         "dist",
