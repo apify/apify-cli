@@ -202,7 +202,9 @@ jobs:
               run: yarn tsx ./.github/scripts/before-beta-release.ts
 
             - name: Publish to NPM
-              run: yarn npm publish --tag ${{ env.RELEASE_TAG }} --access public
+              run: |
+                  yarn config set npmAuthToken ${NODE_AUTH_TOKEN}
+                  yarn npm publish --tag ${{ env.RELEASE_TAG }} --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
 
