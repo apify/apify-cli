@@ -12,10 +12,10 @@
         "lint": "eslint src test",
         "lint:fix": "eslint src test --fix",
         "clean": "rimraf dist",
-        "build": "npm run clean && tsc",
+        "build": "yarn clean && tsc",
         "postpack": "rimraf oclif.manifest.json",
-        "prepack": "npm run build && oclif manifest && oclif readme && oclif readme --readme-path=docs/reference.md",
-        "prepare": "npm run build && node ./bin/run.js check-version && node ./dist/lib/community.js"
+        "prepack": "yarn build && oclif manifest && oclif readme && oclif readme --readme-path=docs/reference.md",
+        "postinstallDev": "yarn build && node ./bin/run.js check-version && node ./dist/lib/community.js"
     },
     "files": [
         "dist",
@@ -143,6 +143,7 @@
     },
     "volta": {
         "node": "20.11.1",
-        "npm": "10.5.0"
-    }
+        "yarn": "4.1.1"
+    },
+    "packageManager": "yarn@4.1.1"
 }

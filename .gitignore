@@ -13,6 +13,10 @@ _mytests
 .idea
 docs/changelog.md
 
+# Yarn files
+.yarn/install-state.gz
+.yarn/build-state.yml
+
 **/scrapy-wrapper/templates/*
 
 test/tmp

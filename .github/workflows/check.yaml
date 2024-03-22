@@ -36,24 +36,25 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: ${{ matrix.node-version }}
-                  cache: npm
+
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
+
+            - name: Activate cache for Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  cache: yarn
 
             - name: Install Dependencies
-              run: npm ci ${{ (matrix.os == 'windows-latest' && '--force') || '' }}
-
-            - name: Remove $HOME\.apify directory on Windows
-              if: runner.os == 'Windows'
-              run: Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $HOME\.apify
-
-            - name: Remove ~/.apify directory on Linux
-              if: runner.os != 'Windows'
-              run: rm -rf ~/.apify
+              run: yarn
 
             - name: Run Tests
               env:
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
                   APIFY_CLI_DISABLE_TELEMETRY: 1
-              run: npm test
+              run: yarn test
 
     test_python_support:
         name: Test Python template support
@@ -71,10 +72,19 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 20
-                  cache: npm
+
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
+
+            - name: Activate cache for Node.js 20
+              uses: actions/setup-node@v4
+              with:
+                  cache: yarn
 
             - name: Install Dependencies
-              run: npm ci ${{ (matrix.os == 'windows-latest' && '--force') || '' }}
+              run: yarn
 
             - name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v5
@@ -85,7 +95,7 @@ jobs:
               env:
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
                   APIFY_CLI_DISABLE_TELEMETRY: 1
-              run: npm run test-python
+              run: yarn test-python
 
     docs:
         name: Docs build
@@ -99,16 +109,25 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 20
-                  cache: "npm"
+
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
+
+            - name: Activate cache for Node.js 20
+              uses: actions/setup-node@v4
+              with:
+                  cache: yarn
 
             - name: Install Dependencies
-              run: npm ci
+              run: yarn
 
             - name: Build & deploy docs
               run: |
                   cd website
-                  npm ci
-                  npm run build
+                  yarn
+                  yarn build
     lint:
         name: Lint
         runs-on: ubuntu-latest
@@ -120,13 +139,22 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 20
-                  cache: "npm"
+
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
+
+            - name: Activate cache for Node.js 20
+              uses: actions/setup-node@v4
+              with:
+                  cache: yarn
 
             - name: Install Dependencies
-              run: npm ci
+              run: yarn
 
             - name: Run lint checks
-              run: npm run lint
+              run: yarn lint
 
     # The deploy job is long but there are only 2 important parts. NPM publish
     # and triggering of docker image builds in the apify-actor-docker repo.
@@ -144,8 +172,17 @@ jobs:
               uses: actions/setup-node@v4
               with:
                   node-version: 20
-                  registry-url: https://registry.npmjs.org/
-                  cache: "npm"
+                  registry-url: https://registry.npmjs.org
+
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
+
+            - name: Activate cache for Node.js 20
+              uses: actions/setup-node@v4
+              with:
+                  cache: yarn
 
             - name: Set git identity
               run: |
@@ -153,7 +190,7 @@ jobs:
                   git config --global user.email 'apify-service-account@users.noreply.github.com'
 
             - name: Install Dependencies
-              run: npm ci
+              run: yarn
 
             # Determine if this is a beta or latest release
             - name: Set Release Tag
@@ -162,10 +199,10 @@ jobs:
             # Check version consistency and increment pre-release version number for beta only.
             - name: Bump pre-release version
               if: env.RELEASE_TAG == 'beta'
-              run: npx tsx ./.github/scripts/before-beta-release.ts
+              run: yarn tsx ./.github/scripts/before-beta-release.ts
 
             - name: Publish to NPM
-              run: npm publish --tag ${{ env.RELEASE_TAG }} --access public
+              run: yarn npm publish --tag ${{ env.RELEASE_TAG }} --access public
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
 
