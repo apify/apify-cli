@@ -9,7 +9,6 @@ logs
 pids
 .idea
 .vscode
-yarn.lock
 tmp
 jsconfig.json
 types
@@ -22,3 +21,7 @@ apify_storage
 crawlee_storage
 storage
 .turbo
+
+# Yarn files
+.yarn/install-state.gz
+.yarn/build-state.yml
