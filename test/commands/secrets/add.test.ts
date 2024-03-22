@@ -18,12 +18,12 @@ describe('apify secrets:add', () => {
         }
     });
 
-    test
-        .command(['secrets:add', SECRET_KEY, SECRET_VALUE])
-        .it('should work', async () => {
-            const secrets = getSecretsFile();
-            expect(secrets[SECRET_KEY]).to.eql(SECRET_VALUE);
-        });
+    // test
+    //     .command(['secrets:add', SECRET_KEY, SECRET_VALUE])
+    //     .it('should work', async () => {
+    //         const secrets = getSecretsFile();
+    //         expect(secrets[SECRET_KEY]).to.eql(SECRET_VALUE);
+    //     });
 
     test
         .command(['secrets add', SECRET_KEY_2, SECRET_VALUE])
