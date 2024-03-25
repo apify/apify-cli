@@ -1,4 +1,14 @@
 {
     "extends": "./tsconfig.json",
-    "include": ["src", "scripts", "bin", "vitest.config.ts", "test"]
+    "compilerOptions": {
+        "allowJs": true
+    },
+    "include": [
+        "src",
+        "scripts",
+        "bin",
+        "vitest.config.ts",
+        "test",
+        ".yarn/plugins/postinstallDev.cjs"
+    ]
 }
