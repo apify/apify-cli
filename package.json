@@ -143,7 +143,7 @@
         "topicSeparator": " "
     },
     "volta": {
-        "node": "20.11.1",
+        "node": "20.12.0",
         "yarn": "4.1.1"
     },
     "packageManager": "yarn@4.1.1"
