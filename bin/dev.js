@@ -1,7 +1,7 @@
 import { execute } from '@oclif/core';
 import { satisfies } from 'semver';
 
-import { SUPPORTED_NODEJS_VERSION } from '../src/lib/consts.js';
+import { SUPPORTED_NODEJS_VERSION } from '../src/lib/consts.ts';
 import { error } from '../src/lib/outputs.ts';
 
 if (!satisfies(process.version, SUPPORTED_NODEJS_VERSION)) {
