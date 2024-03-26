@@ -148,7 +148,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             const actor = allActors.items.find((a) => a.name.toLowerCase() === actorId.toLowerCase());
 
             if (!actor) {
-                throw new Error(`Cannot find Actor with name '${actorId}' in your account.`);
+                throw new Error(`Cannot find Actor with name '${actorId}' in your account. Valid actors are: ${allActors.items.map((a) => a.name).join(', ')}`);
             }
 
             return {
