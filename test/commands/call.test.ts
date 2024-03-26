@@ -108,4 +108,23 @@ describe('apify call', () => {
         expect(EXPECTED_INPUT).toStrictEqual(input!.value);
         expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
     });
+
+    it('should work with just the actor name', async () => {
+        try {
+            await CallCommand.run([ACTOR_NAME], import.meta.url);
+        } catch (err) {
+            expect(err).toBeFalsy();
+        }
+
+        const actorClient = testUserClient.actor(actorId);
+        const runs = await actorClient.runs().list();
+        const lastRun = runs.items.pop();
+        const lastRunDetail = await testUserClient.run(lastRun!.id).get();
+        const output = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('OUTPUT');
+        const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
+
+        expect(EXPECTED_OUTPUT).toStrictEqual(output!.value);
+        expect(EXPECTED_INPUT).toStrictEqual(input!.value);
+        expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
+    });
 });
