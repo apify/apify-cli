@@ -288,9 +288,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.111":
-  version: 1.0.111
-  resolution: "@apify/docs-theme@npm:1.0.111"
+"@apify/docs-theme@npm:^1.0.113":
+  version: 1.0.113
+  resolution: "@apify/docs-theme@npm:1.0.113"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.0.25"
     "@docusaurus/theme-common": "npm:^2.4.1"
@@ -298,13 +298,14 @@ __metadata:
     axios: "npm:^1.4.0"
     babel-loader: "npm:^9.1.3"
     docusaurus-gtm-plugin: "npm:^0.0.2"
+    docusaurus-plugin-smartlook: "npm:^1.0.2"
     postcss-preset-env: "npm:^9.3.0"
     prism-react-renderer: "npm:^2.0.6"
   peerDependencies:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/dfb6d635b2b9d019088f98b7a33b8b75919f76470d2810459fad3827adccaddeec9d816da082f65aa7060394fa249d74b73e5f10206bd1e8294e9ff165757ed8
+  checksum: 10c0/94c5cc9551882a0f6de0c2894c19951d1be777df397081dc55b4fa65291244cc83f2ba5926ecf154f13f6b24e9716d0972856bae97609aed994eed0134b36658
   languageName: node
   linkType: hard
 
@@ -6090,6 +6091,13 @@ __metadata:
   version: 0.0.2
   resolution: "docusaurus-gtm-plugin@npm:0.0.2"
   checksum: 10c0/2c0aee22aa398e8dafa17ec549b0284698ce27cacc353fe1c052121cb503e17b26745309e43277474bc9f56f0d15e4d1f73cb03a79b4bd42c86c72f55ef553fd
+  languageName: node
+  linkType: hard
+
+"docusaurus-plugin-smartlook@npm:^1.0.2":
+  version: 1.0.2
+  resolution: "docusaurus-plugin-smartlook@npm:1.0.2"
+  checksum: 10c0/d7a968e13bcec93e378e4801a97a118cd085f80ede5e1b6b7aad3ffcdb106e9f1fc729cf9fac2d7e87abbde4000c65f68cec465bc46edbb7593c836520652b5a
   languageName: node
   linkType: hard
 
@@ -12054,7 +12062,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.111"
+    "@apify/docs-theme": "npm:^1.0.113"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^2.4.3"
