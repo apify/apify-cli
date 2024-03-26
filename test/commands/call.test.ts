@@ -93,7 +93,7 @@ describe('apify call', () => {
     });
 
     afterAll(async () => {
-        await testUserClient.actor(actorId).delete();
+        // await testUserClient.actor(actorId).delete();
         await afterAllCalls();
     });
 
