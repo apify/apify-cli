@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { writeFileSync } from 'node:fs';
+import { platform } from 'node:os';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
+import { cryptoRandomObjectId } from '@apify/utilities';
 import { ApifyClient } from 'apify-client';
 
 import { LoginCommand } from '../../src/commands/login.js';
@@ -10,7 +12,7 @@ import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
-const ACTOR_NAME = `call-my-actor-${Date.now()}`;
+const ACTOR_NAME = `call-my-actor-${cryptoRandomObjectId(6)}-${process.version.split('.')[0]}-${platform()}`;
 const EXPECTED_OUTPUT = {
     test: Math.random(),
 };
