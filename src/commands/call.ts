@@ -7,7 +7,7 @@ import process from 'node:process';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
-import { ActorCollectionListItem, ActorRun, ActorStartOptions, ApifyClient } from 'apify-client';
+import { ActorRun, ActorStartOptions, ApifyClient } from 'apify-client';
 import mime from 'mime';
 
 import { ApifyCommand } from '../lib/apify_command.js';
@@ -141,11 +141,9 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             };
         }
 
-        // Fetch all actors the user has, and see if any of them match the name
+        // Try fetching actor directly by name
         if (actorId) {
-            const allActors = await this.fetchAllActors(client);
-
-            const actor = allActors.find((a) => a.name.toLowerCase() === actorId.toLowerCase());
+            const actor = await client.actor(`${usernameOrId}/${actorId.toLowerCase()}`).get();
 
             if (!actor) {
                 throw new Error(`Cannot find Actor with name '${actorId}' in your account.`);
@@ -172,27 +170,5 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         }
 
         throw new Error('Please provide an Actor ID or name, or run this command from a directory with a valid Apify actor.');
-    }
-
-    private async fetchAllActors(client: ApifyClient) {
-        let offset = 0;
-
-        const actors: ActorCollectionListItem[] = [];
-
-        do {
-            const { items } = await client.actors().list({ limit: 1000, offset, my: true });
-
-            actors.push(...items);
-
-            if (items.length < 1000) {
-                break;
-            }
-
-            offset += 1000;
-
-        // eslint-disable-next-line no-constant-condition
-        } while (true);
-
-        return actors;
     }
 }
