@@ -11,6 +11,8 @@ on:
     # A release via GitHub releases will deploy a latest version
     release:
         types: [published]
+    schedule:
+        - cron: "0 */12 * * *"
 
 jobs:
     build_and_test:
