@@ -11,7 +11,7 @@ import isCI from 'is-ci';
 import open from 'open';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { CommandExitCodes, LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../lib/consts.js';
+import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../lib/consts.js';
 import { sumFilesSizeInBytes } from '../lib/files.js';
 import { error, info, link, run, success, warning } from '../lib/outputs.js';
 import { transformEnvToEnvVars } from '../lib/secrets.js';
@@ -108,14 +108,10 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         if (
             // Check that some of these files exist, cuz otherwise we cannot do much
             ![
-                // node project that will probably work with the default template
-                'package.json',
                 // old apify project
+                DEPRECATED_LOCAL_CONFIG_NAME,
+                // new apify project
                 'actor.json',
-                // Any project with a Dockerfile, be it custom or default
-                'Dockerfile',
-                // New apify project
-                '.actor/Dockerfile',
                 '.actor/actor.json',
                 // The .actor folder existing in general
                 '.actor',
