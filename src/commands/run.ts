@@ -57,6 +57,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             description: 'Deletes all records from the default key-value store in the local directory before the run starts, except for the "INPUT" key.',
             required: false,
         }),
+        'npm-script': Flags.string({
+            default: 'start',
+            description: 'The NPM script to run. Default is "start".',
+            char: 's',
+        }),
     };
 
     async run() {
@@ -175,7 +180,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                 }
                 this.telemetryData.actorNodejsVersion = currentNodeVersion;
                 this.telemetryData.actorLanguage = LANGUAGE.NODEJS;
-                await execWithLog(getNpmCmd(), ['start'], { env, cwd });
+                await execWithLog(getNpmCmd(), ['run', this.flags.npmScript], { env, cwd });
             } else {
                 error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`);
             }
