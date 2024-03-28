@@ -89,7 +89,11 @@ export const MIXPANEL_TOKEN = 'ea75e434d4b4d2405d79ed9d14bfc93b';
 export enum CommandExitCodes {
     BuildFailed = 1,
     RunFailed = 1,
+
     BuildTimedOut = 2,
+
     BuildAborted = 3,
     RunAborted = 3,
+
+    NoFilesToPush = 4,
 }

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { platform } from 'node:os';
 
 import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS } from '@apify/consts';
@@ -12,6 +13,7 @@ import { LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../../src/lib/consts.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../src/lib/utils.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useConsoleSpy } from '../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
 const ACTOR_NAME = `push-cli-test-${cryptoRandomObjectId(6)}`;
@@ -38,6 +40,8 @@ const {
     joinPath,
     tmpPath,
     toggleCwdBetweenFullAndParentPath,
+    joinCwdPath,
+    forceNewCwd,
 } = useTempPath(ACTOR_NAME, { create: true, remove: true, cwd: true, cwdParent: true });
 
 const { LoginCommand } = await import('../../src/commands/login.js');
@@ -46,6 +50,8 @@ const { PushCommand } = await import('../../src/commands/push.js');
 
 describe('apify push', () => {
     const actorsForCleanup = new Set<string>();
+
+    const consoleSpy = useConsoleSpy();
 
     beforeAll(async () => {
         await beforeAllCalls();
@@ -245,5 +251,37 @@ describe('apify push', () => {
         } catch (e) {
             expect((e as Error).message).to.includes('is already on the platform');
         }
+    });
+
+    it('should not push Actor when there are no files to push', async () => {
+        toggleCwdBetweenFullAndParentPath();
+
+        await mkdir(joinCwdPath('empty-dir'), { recursive: true });
+
+        forceNewCwd('empty-dir');
+
+        await PushCommand.run(['--no-prompt'], import.meta.url);
+
+        expect(consoleSpy.logSpy).toHaveBeenCalled();
+
+        const lastCall = consoleSpy.logSpy.mock.calls.at(-1)!;
+        expect(lastCall[0]).to.include('You need to call this command from a folder that has an actor in it');
+    });
+
+    it('should not push when the folder does not seem to have a valid Actor', async () => {
+        toggleCwdBetweenFullAndParentPath();
+
+        await mkdir(joinCwdPath('not-an-actor-i-promise'), { recursive: true });
+
+        forceNewCwd('not-an-actor-i-promise');
+
+        await writeFile(joinCwdPath('owo.txt'), 'Lorem ipsum');
+
+        await PushCommand.run(['--no-prompt'], import.meta.url);
+
+        expect(consoleSpy.logSpy).toHaveBeenCalled();
+
+        const lastCall = consoleSpy.logSpy.mock.calls.at(-1)!;
+        expect(lastCall[0]).to.include('A valid actor could not be found in the current directory.');
     });
 });

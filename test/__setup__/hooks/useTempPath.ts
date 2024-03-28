@@ -49,6 +49,7 @@ export function useTempPath(
     return {
         tmpPath,
         joinPath: (...paths: string[]) => join(tmpPath, ...paths),
+        joinCwdPath: (...paths: string[]) => join(usedCwd, ...paths),
         beforeAllCalls: async () => {
             if (create) {
                 if (cwdParent) {
@@ -69,6 +70,10 @@ export function useTempPath(
 
         toggleCwdBetweenFullAndParentPath: () => {
             usedCwd = usedCwd === cwdPath ? tmpPath : cwdPath;
+        },
+
+        forceNewCwd: (newCwd: string) => {
+            usedCwd = join(cwdPath, newCwd);
         },
     };
 }

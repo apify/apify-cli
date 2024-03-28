@@ -96,6 +96,42 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
     async run() {
         const cwd = process.cwd();
 
+        // Validate there are files before rest of the logic
+        const filePathsToPush = await getActorLocalFilePaths(cwd);
+
+        if (!filePathsToPush.length) {
+            error('You need to call this command from a folder that has an actor in it!');
+            process.exitCode = CommandExitCodes.NoFilesToPush;
+            return;
+        }
+
+        if (
+            // Check that some of these files exist, cuz otherwise we cannot do much
+            ![
+                // node project that will probably work with the default template
+                'package.json',
+                // old apify project
+                'actor.json',
+                // Any project with a Dockerfile, be it custom or default
+                'Dockerfile',
+                // New apify project
+                '.actor/Dockerfile',
+                '.actor/actor.json',
+                // The .actor folder existing in general
+                '.actor',
+            ].some((filePath) => filePathsToPush.some((fp) => fp === filePath || fp.startsWith(filePath)))
+        ) {
+            error(
+                [
+                    'A valid actor could not be found in the current directory. Please make sure you are in the correct directory.',
+                    'You can also turn this directory into an actor by running `apify init`.',
+                ].join('\n'),
+            );
+
+            process.exitCode = CommandExitCodes.NoFilesToPush;
+            return;
+        }
+
         const apifyClient = await getLoggedClientOrThrow();
         const localConfig = await getLocalConfigOrThrow(cwd);
         const userInfo = await getLocalUserInfo();
@@ -155,7 +191,6 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
 
         info(`Deploying Actor '${localConfig!.name}' to Apify.`);
 
-        const filePathsToPush = await getActorLocalFilePaths(cwd);
         const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
         const actorClient = apifyClient.actor(actorId);
 
