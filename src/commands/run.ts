@@ -243,7 +243,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                         }
                     }
 
-                    await execWithLog(pythonCommand, ['-m', entrypoint], { env, cwd });
+                    if (runType === RunType.Module) {
+                        await execWithLog(pythonCommand, ['-m', entrypoint], { env, cwd });
+                    } else {
+                        await execWithLog(pythonCommand, [entrypoint], { env, cwd });
+                    }
                 } else {
                     error(`Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
                     error('Please install Python 3.8 or higher to be able to run Python Actors locally.');
