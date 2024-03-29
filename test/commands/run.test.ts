@@ -125,7 +125,7 @@ describe('apify run', () => {
         parsedPkgJson.scripts.other = 'node src/other.js';
         writeFileSync(joinPath('package.json'), JSON.stringify(parsedPkgJson, null, 2), { flag: 'w' });
 
-        await RunCommand.run(['-s', 'other'], import.meta.url);
+        await RunCommand.run(['-e', 'other'], import.meta.url);
 
         const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
@@ -140,6 +140,46 @@ describe('apify run', () => {
         const actOutputPath2 = joinPath(getLocalKeyValueStorePath(), 'owo.json');
         const actOutput2 = loadJsonFileSync(actOutputPath2);
         expect(actOutput2).toStrictEqual('uwu');
+    });
+
+    it(`run with env vars from "${LOCAL_CONFIG_PATH}" and direct path to script`, async () => {
+        const testEnvVars = {
+            TEST_LOCAL: 'testValue',
+        };
+
+        await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+
+        const actCode = `
+        import { Actor } from 'apify';
+
+        Actor.main(async () => {
+            await Actor.setValue('OUTPUT', process.env);
+            await Actor.setValue('two', 'can play');
+            console.log('Done.');
+        });
+        `;
+
+        writeFileSync(joinPath('src/other.js'), actCode, { flag: 'w' });
+
+        const apifyJson = EMPTY_LOCAL_CONFIG;
+        apifyJson.environmentVariables = testEnvVars;
+        writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), apifyJson);
+
+        await RunCommand.run(['-e', 'src/other.js'], import.meta.url);
+
+        const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
+
+        const localEnvVars = loadJsonFileSync<Record<typeof APIFY_ENV_VARS[keyof typeof APIFY_ENV_VARS] | 'TEST_LOCAL', string>>(actOutputPath);
+        const auth = loadJsonFileSync<{ proxy: { password: string }; id: string; token: string }>(AUTH_FILE_PATH());
+
+        expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
+        expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(auth.id);
+        expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(auth.token);
+        expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
+
+        const actOutputPath2 = joinPath(getLocalKeyValueStorePath(), 'two.json');
+        const actOutput2 = loadJsonFileSync(actOutputPath2);
+        expect(actOutput2).toStrictEqual('can play');
     });
 
     it('run purge stores', async () => {
