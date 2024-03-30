@@ -1288,22 +1288,22 @@ __metadata:
   linkType: hard
 
 "@inquirer/confirm@npm:^3.0.0":
-  version: 3.1.0
-  resolution: "@inquirer/confirm@npm:3.1.0"
+  version: 3.1.1
+  resolution: "@inquirer/confirm@npm:3.1.1"
   dependencies:
-    "@inquirer/core": "npm:^7.1.0"
+    "@inquirer/core": "npm:^7.1.1"
     "@inquirer/type": "npm:^1.2.1"
-  checksum: 10c0/db618a3b3df6a25b2a719c2100af383aca84e12eb4185baf21790c394e3f2c402d2aeb6246dd3b7bd3a70ad860e5b8f4e592f4272d56bdf498533bc5bdebe4b8
+  checksum: 10c0/12f19bae745e93d7cb5aa30f71fcb3d4e9983ef91bd9aa5c861e496c093283342fb6465fd035e5f359f568b21daae524641f6a388af755037ed01b28bee03696
   languageName: node
   linkType: hard
 
-"@inquirer/core@npm:^7.1.0":
-  version: 7.1.0
-  resolution: "@inquirer/core@npm:7.1.0"
+"@inquirer/core@npm:^7.1.1":
+  version: 7.1.1
+  resolution: "@inquirer/core@npm:7.1.1"
   dependencies:
     "@inquirer/type": "npm:^1.2.1"
     "@types/mute-stream": "npm:^0.0.4"
-    "@types/node": "npm:^20.11.26"
+    "@types/node": "npm:^20.11.30"
     "@types/wrap-ansi": "npm:^3.0.0"
     ansi-escapes: "npm:^4.3.2"
     chalk: "npm:^4.1.2"
@@ -1311,34 +1311,33 @@ __metadata:
     cli-width: "npm:^4.1.0"
     figures: "npm:^3.2.0"
     mute-stream: "npm:^1.0.0"
-    run-async: "npm:^3.0.0"
     signal-exit: "npm:^4.1.0"
     strip-ansi: "npm:^6.0.1"
     wrap-ansi: "npm:^6.2.0"
-  checksum: 10c0/b20e1a995b67ce1d80f635405c13ee452198b9cbc003fc6ab6a41e78e8dca7505b02578399fc6f74e6d05ae1078d962647a96f31329fff140996ea7120d65b4c
+  checksum: 10c0/e7eb1331f015a3e6a31d20953d3a87477e9b751d26d392d61029d6facab1256a83e289caed60522701ec4cb01c4e38c264480551d9ea27da4db8ba5938104b20
   languageName: node
   linkType: hard
 
 "@inquirer/input@npm:^2.1.0":
-  version: 2.1.0
-  resolution: "@inquirer/input@npm:2.1.0"
+  version: 2.1.1
+  resolution: "@inquirer/input@npm:2.1.1"
   dependencies:
-    "@inquirer/core": "npm:^7.1.0"
+    "@inquirer/core": "npm:^7.1.1"
     "@inquirer/type": "npm:^1.2.1"
-  checksum: 10c0/df72048e2a81ae31fbc1b8ae93a03f7330a6cf13e42c4861d60ab539e33382f7d5b6e0c5149e2ed3a670c34c2edb1102aa8b4f9855f84bd17f0fc6f381acdadc
+  checksum: 10c0/df57aac7c525b6af7be30db34b7cfc67a410c58ebbfb3e4e6f26976e2f27a4c4befab18f13f0d57cfa2af68889da2c243bb9289eb2df9e22eaa0a956cecc2d17
   languageName: node
   linkType: hard
 
 "@inquirer/select@npm:^2.0.0":
-  version: 2.2.0
-  resolution: "@inquirer/select@npm:2.2.0"
+  version: 2.2.1
+  resolution: "@inquirer/select@npm:2.2.1"
   dependencies:
-    "@inquirer/core": "npm:^7.1.0"
+    "@inquirer/core": "npm:^7.1.1"
     "@inquirer/type": "npm:^1.2.1"
     ansi-escapes: "npm:^4.3.2"
     chalk: "npm:^4.1.2"
     figures: "npm:^3.2.0"
-  checksum: 10c0/38ff483e4fd19f1883e55780b9d950a29df1a4e61074fa418158cd37b4c88c2b1775457dd2db52b492d5234897aa4d72007dcb2101deaabaa70cbeb2a73afe9d
+  checksum: 10c0/aa765649864f8bdc938818ef0d5eba67ae1f2f8c7020fb715daf5e2c1044031972359c66c104291c83e80a6633964f123689466fc9d9bf2b265fd78af7b0391a
   languageName: node
   linkType: hard
 
@@ -1786,18 +1785,18 @@ __metadata:
   linkType: hard
 
 "@smithy/core@npm:^1.4.0":
-  version: 1.4.0
-  resolution: "@smithy/core@npm:1.4.0"
+  version: 1.4.1
+  resolution: "@smithy/core@npm:1.4.1"
   dependencies:
     "@smithy/middleware-endpoint": "npm:^2.5.0"
-    "@smithy/middleware-retry": "npm:^2.2.0"
+    "@smithy/middleware-retry": "npm:^2.3.0"
     "@smithy/middleware-serde": "npm:^2.3.0"
     "@smithy/protocol-http": "npm:^3.3.0"
     "@smithy/smithy-client": "npm:^2.5.0"
     "@smithy/types": "npm:^2.12.0"
     "@smithy/util-middleware": "npm:^2.2.0"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/a5ece1a4751be0778754cdff7484fd8930068c1ea858c696836ecd9c60fdd7944aef27590d35b95f6a4c499427c7b653ffddc452ad3ee6f8906e2a57e06e39ad
+  checksum: 10c0/b90f253ab5d110de2f30e5f049284e7956fd06aefd670956ddd38142981a55616c5466443674b623003f7005c93d54eb4a184e623a7fec6c91a27e8a091db045
   languageName: node
   linkType: hard
 
@@ -1973,9 +1972,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@smithy/middleware-retry@npm:^2.2.0":
-  version: 2.2.0
-  resolution: "@smithy/middleware-retry@npm:2.2.0"
+"@smithy/middleware-retry@npm:^2.2.0, @smithy/middleware-retry@npm:^2.3.0":
+  version: 2.3.0
+  resolution: "@smithy/middleware-retry@npm:2.3.0"
   dependencies:
     "@smithy/node-config-provider": "npm:^2.3.0"
     "@smithy/protocol-http": "npm:^3.3.0"
@@ -1985,8 +1984,8 @@ __metadata:
     "@smithy/util-middleware": "npm:^2.2.0"
     "@smithy/util-retry": "npm:^2.2.0"
     tslib: "npm:^2.6.2"
-    uuid: "npm:^8.3.2"
-  checksum: 10c0/6b4b0913b729b2f56e30cb9cef42cdd3e41a2ad570e1e6b60f8662326e1f1063ff2335176c5308f99153c13c3a3e8d30f5adacb2cd744d0fbb10192ebb021ad9
+    uuid: "npm:^9.0.1"
+  checksum: 10c0/ea4be0c81565ced078767e0d149ccd65f8e54114b9ce7ecea39df73e88f800079b9a246940dd2761d452ac46da52f62cf6d80ba3a4febd09324a520cdb6830b3
   languageName: node
   linkType: hard
 
@@ -2531,7 +2530,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*, @types/node@npm:^20.11.20, @types/node@npm:^20.11.26":
+"@types/node@npm:*, @types/node@npm:^20.11.20, @types/node@npm:^20.11.30":
   version: 20.11.30
   resolution: "@types/node@npm:20.11.30"
   dependencies:
@@ -2981,12 +2980,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"agent-base@npm:^7.0.2, agent-base@npm:^7.1.0":
-  version: 7.1.0
-  resolution: "agent-base@npm:7.1.0"
+"agent-base@npm:^7.0.2, agent-base@npm:^7.1.0, agent-base@npm:^7.1.1":
+  version: 7.1.1
+  resolution: "agent-base@npm:7.1.1"
   dependencies:
     debug: "npm:^4.3.4"
-  checksum: 10c0/fc974ab57ffdd8421a2bc339644d312a9cca320c20c3393c9d8b1fd91731b9bbabdb985df5fc860f5b79d81c3e350daa3fcb31c5c07c0bb385aafc817df004ce
+  checksum: 10c0/e59ce7bed9c63bf071a30cc471f2933862044c97fd9958967bfe22521d7a0f601ce4ed5a8c011799d0c726ca70312142ae193bbebb60f576b52be19d4a363b50
   languageName: node
   linkType: hard
 
@@ -4527,8 +4526,8 @@ __metadata:
   linkType: hard
 
 "es-abstract@npm:^1.22.1, es-abstract@npm:^1.22.3, es-abstract@npm:^1.23.0, es-abstract@npm:^1.23.1, es-abstract@npm:^1.23.2":
-  version: 1.23.2
-  resolution: "es-abstract@npm:1.23.2"
+  version: 1.23.3
+  resolution: "es-abstract@npm:1.23.3"
   dependencies:
     array-buffer-byte-length: "npm:^1.0.1"
     arraybuffer.prototype.slice: "npm:^1.0.3"
@@ -4569,14 +4568,14 @@ __metadata:
     safe-regex-test: "npm:^1.0.3"
     string.prototype.trim: "npm:^1.2.9"
     string.prototype.trimend: "npm:^1.0.8"
-    string.prototype.trimstart: "npm:^1.0.7"
+    string.prototype.trimstart: "npm:^1.0.8"
     typed-array-buffer: "npm:^1.0.2"
     typed-array-byte-length: "npm:^1.0.1"
     typed-array-byte-offset: "npm:^1.0.2"
-    typed-array-length: "npm:^1.0.5"
+    typed-array-length: "npm:^1.0.6"
     unbox-primitive: "npm:^1.0.2"
     which-typed-array: "npm:^1.1.15"
-  checksum: 10c0/1262ebb7cdb79f255fc7d1f4505c0de2d88d117a0b21d0c984c28a0126efa717ef011f07d502353987cbade39f12c0a5ae59aef0b1231a51ce1b991e4e87c8bb
+  checksum: 10c0/d27e9afafb225c6924bee9971a7f25f20c314f2d6cb93a63cada4ac11dcf42040896a6c22e5fb8f2a10767055ed4ddf400be3b1eb12297d281726de470b75666
   languageName: node
   linkType: hard
 
@@ -6185,8 +6184,8 @@ __metadata:
   linkType: hard
 
 "inquirer@npm:~9.2.15":
-  version: 9.2.16
-  resolution: "inquirer@npm:9.2.16"
+  version: 9.2.17
+  resolution: "inquirer@npm:9.2.17"
   dependencies:
     "@ljharb/through": "npm:^2.3.13"
     ansi-escapes: "npm:^4.3.2"
@@ -6203,7 +6202,7 @@ __metadata:
     string-width: "npm:^4.2.3"
     strip-ansi: "npm:^6.0.1"
     wrap-ansi: "npm:^6.2.0"
-  checksum: 10c0/85b67a6c035e601f5f72803353ad8400a1eb738762137b092f06bc84fd480cb1faba5161e0b514a00935f73c9b46869af1d4f3cad08138f1c5d37388b01111dd
+  checksum: 10c0/713ec2fe2d6fd9943576bfa4dd724449095b014feacc57c6b675512bc255cd04fdd22df60e9f5d38df58651e8a0ac681f19d59a31e9d4d3c8c8a14b51e8287cc
   languageName: node
   linkType: hard
 
@@ -6720,10 +6719,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-tokens@npm:^8.0.2":
-  version: 8.0.3
-  resolution: "js-tokens@npm:8.0.3"
-  checksum: 10c0/b50ba7d926b087ad31949d8155c7bc84374e0785019b17bdddeb2c4f98f5dea04ba464651fe23a8be4f7d15f50d06ce8bb536087b24ce3ebfbaea4a1dc5869f0
+"js-tokens@npm:^9.0.0":
+  version: 9.0.0
+  resolution: "js-tokens@npm:9.0.0"
+  checksum: 10c0/4ad1c12f47b8c8b2a3a99e29ef338c1385c7b7442198a425f3463f3537384dab6032012791bfc2f056ea5ecdb06b1ed4f70e11a3ab3f388d3dcebfe16a52b27d
   languageName: node
   linkType: hard
 
@@ -8078,7 +8077,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:^8.4.36":
+"postcss@npm:^8.4.38":
   version: 8.4.38
   resolution: "postcss@npm:8.4.38"
   dependencies:
@@ -8872,13 +8871,13 @@ __metadata:
   linkType: hard
 
 "socks-proxy-agent@npm:^8.0.1":
-  version: 8.0.2
-  resolution: "socks-proxy-agent@npm:8.0.2"
+  version: 8.0.3
+  resolution: "socks-proxy-agent@npm:8.0.3"
   dependencies:
-    agent-base: "npm:^7.0.2"
+    agent-base: "npm:^7.1.1"
     debug: "npm:^4.3.4"
     socks: "npm:^2.7.1"
-  checksum: 10c0/a842402fc9b8848a31367f2811ca3cd14c4106588b39a0901cd7a69029998adfc6456b0203617c18ed090542ad0c24ee4e9d4c75a0c4b75071e214227c177eb7
+  checksum: 10c0/4950529affd8ccd6951575e21c1b7be8531b24d924aa4df3ee32df506af34b618c4e50d261f4cc603f1bfd8d426915b7d629966c8ce45b05fb5ad8c8b9a6459d
   languageName: node
   linkType: hard
 
@@ -8909,8 +8908,8 @@ __metadata:
   linkType: hard
 
 "sort-package-json@npm:^2.8.0":
-  version: 2.9.0
-  resolution: "sort-package-json@npm:2.9.0"
+  version: 2.10.0
+  resolution: "sort-package-json@npm:2.10.0"
   dependencies:
     detect-indent: "npm:^7.0.1"
     detect-newline: "npm:^4.0.0"
@@ -8918,10 +8917,11 @@ __metadata:
     git-hooks-list: "npm:^3.0.0"
     globby: "npm:^13.1.2"
     is-plain-obj: "npm:^4.1.0"
+    semver: "npm:^7.6.0"
     sort-object-keys: "npm:^1.1.3"
   bin:
     sort-package-json: cli.js
-  checksum: 10c0/1d5bc2f2f57d8bc4cd951106c97bf9ada7e9239c8124ff0911f2f9545a0f494fdda1a8c9325349708c733c7de0b66282d6fb91b4f0370ba3209d3921703d972f
+  checksum: 10c0/f3325c402cd63fa42947e3861fde0ed26c742bb1db9011d4a4111f2a27427ec778ce8223af5c5dd8fcdb1cf49a1ff55d7e5323fb187d29811cd99e503a80fe26
   languageName: node
   linkType: hard
 
@@ -9106,7 +9106,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"string.prototype.trimstart@npm:^1.0.7":
+"string.prototype.trimstart@npm:^1.0.8":
   version: 1.0.8
   resolution: "string.prototype.trimstart@npm:1.0.8"
   dependencies:
@@ -9175,11 +9175,11 @@ __metadata:
   linkType: hard
 
 "strip-literal@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "strip-literal@npm:2.0.0"
+  version: 2.1.0
+  resolution: "strip-literal@npm:2.1.0"
   dependencies:
-    js-tokens: "npm:^8.0.2"
-  checksum: 10c0/63a6e4224ac7088ff93fd19fc0f6882705020da2f0767dbbecb929cbf9d49022e72350420f47be635866823608da9b9a5caf34f518004721895b6031199fc3c8
+    js-tokens: "npm:^9.0.0"
+  checksum: 10c0/bc8b8c8346125ae3c20fcdaf12e10a498ff85baf6f69597b4ab2b5fbf2e58cfd2827f1a44f83606b852da99a5f6c8279770046ddea974c510c17c98934c9cc24
   languageName: node
   linkType: hard
 
@@ -9529,7 +9529,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typed-array-length@npm:^1.0.5":
+"typed-array-length@npm:^1.0.6":
   version: 1.0.6
   resolution: "typed-array-length@npm:1.0.6"
   dependencies:
@@ -9701,12 +9701,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"uuid@npm:^8.3.2":
-  version: 8.3.2
-  resolution: "uuid@npm:8.3.2"
+"uuid@npm:^9.0.1":
+  version: 9.0.1
+  resolution: "uuid@npm:9.0.1"
   bin:
     uuid: dist/bin/uuid
-  checksum: 10c0/bcbb807a917d374a49f475fae2e87fdca7da5e5530820ef53f65ba1d12131bd81a92ecf259cc7ce317cbe0f289e7d79fdfebcef9bfa3087c8c8a2fa304c9be54
+  checksum: 10c0/1607dd32ac7fc22f2d8f77051e6a64845c9bce5cd3dd8aa0070c074ec73e666a1f63c7b4e0f4bf2bc8b9d59dc85a15e17807446d9d2b17c8485fbc2147b27f9b
   languageName: node
   linkType: hard
 
@@ -9766,12 +9766,12 @@ __metadata:
   linkType: hard
 
 "vite@npm:^5.0.0":
-  version: 5.2.6
-  resolution: "vite@npm:5.2.6"
+  version: 5.2.7
+  resolution: "vite@npm:5.2.7"
   dependencies:
     esbuild: "npm:^0.20.1"
     fsevents: "npm:~2.3.3"
-    postcss: "npm:^8.4.36"
+    postcss: "npm:^8.4.38"
     rollup: "npm:^4.13.0"
   peerDependencies:
     "@types/node": ^18.0.0 || >=20.0.0
@@ -9801,7 +9801,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 10c0/9ccaa65521b738ed5d6ad9cd118584a833191d29649eaa77ccb8096a60ded2ca9014193b8b866ad76054d0c89443f7b68b578686e4e2ef83147273e7788408c2
+  checksum: 10c0/ca927a8df388f75df194d5a5ba2be4ee46dc1d99d5be277f13c6d1ed4a4df833cc953741ef8e984061ea38b531df84e15e2a9f5deea1626317bcbec63c8ca01c
   languageName: node
   linkType: hard
 
