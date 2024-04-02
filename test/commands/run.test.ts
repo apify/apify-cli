@@ -125,7 +125,7 @@ describe('apify run', () => {
         parsedPkgJson.scripts.other = 'node src/other.js';
         writeFileSync(joinPath('package.json'), JSON.stringify(parsedPkgJson, null, 2), { flag: 'w' });
 
-        await RunCommand.run(['-e', 'other'], import.meta.url);
+        await RunCommand.run(['--entrypoint', 'other'], import.meta.url);
 
         const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
@@ -165,7 +165,7 @@ describe('apify run', () => {
         apifyJson.environmentVariables = testEnvVars;
         writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), apifyJson);
 
-        await RunCommand.run(['-e', 'src/other.js'], import.meta.url);
+        await RunCommand.run(['--entrypoint', 'src/other.js'], import.meta.url);
 
         const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
