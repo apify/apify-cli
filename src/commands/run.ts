@@ -1,4 +1,5 @@
 import { existsSync, renameSync } from 'node:fs';
+import { stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
@@ -57,6 +58,17 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             description: 'Deletes all records from the default key-value store in the local directory before the run starts, except for the "INPUT" key.',
             required: false,
         }),
+        entrypoint: Flags.string({
+            description: [
+                'Optional entrypoint for running with injected environment variables.',
+                '\n',
+                'For Python, it is the module name, or a path to a file.',
+                '\n',
+                'For node.js, it is the npm script name, or a path to a JS/MJS file.',
+                'You can also pass in a directory name, provided that directory contains an "index.js" file.',
+            ].join(' '),
+            required: false,
+        }),
     };
 
     async run() {
@@ -73,12 +85,36 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         const packageJsonExists = existsSync(packageJsonPath);
         const mainPyExists = existsSync(mainPyPath);
         const isScrapyProject = projectType === PROJECT_TYPES.SCRAPY;
+        const { language, languageVersion } = detectLocalActorLanguage(cwd);
 
         if (!packageJsonExists && !mainPyExists && !isScrapyProject) {
             throw new Error(
                 'Actor is of an unknown format.'
                 + ` Make sure either the 'package.json' file or 'src/__main__.py' file exists or you are in a migrated Scrapy project.`,
             );
+        }
+
+        // Defaults (for node, the start script, for python, the src module)
+        let runType: RunType = language === LANGUAGE.NODEJS ? RunType.Script : RunType.Module;
+        let entrypoint: string = language === LANGUAGE.NODEJS ? 'start' : 'src';
+
+        if (this.flags.entrypoint) {
+            entrypoint = this.flags.entrypoint;
+
+            const entrypointPath = join(cwd, this.flags.entrypoint);
+
+            const entrypointStat = await stat(entrypointPath).catch(() => null);
+
+            // Directory -> We just try to run it as a module (in python, it needs to have a main.py file, in node.js, an index.(m)js file)
+            if (entrypointStat?.isDirectory()) {
+                runType = RunType.Module;
+            // entrypoint -> ./src/file for example (running custom scripts)
+            } else if (entrypointStat?.isFile()) {
+                runType = RunType.DirectFile;
+            // If it's not a file, or a directory, we just let it be a script
+            } else {
+                runType = RunType.Script;
+            }
         }
 
         if (existsSync(LEGACY_LOCAL_STORAGE_DIR) && !existsSync(actualStoragePath)) {
@@ -151,18 +187,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
         }
 
-        const { language, languageVersion } = detectLocalActorLanguage(cwd);
         if (language === LANGUAGE.NODEJS) { // Actor is written in Node.js
             const currentNodeVersion = languageVersion;
             const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
             if (currentNodeVersion) {
-                const serverJsFile = join(cwd, 'server.js');
-                const packageJson = await loadJsonFile<{ scripts: Record<string, string > }>(packageJsonPath);
-                if ((!packageJson.scripts || !packageJson.scripts.start) && !existsSync(serverJsFile)) {
-                    throw new Error('The "npm start" script was not found in package.json. Please set it up for your project. '
-                        + 'For more information about that call "apify help run".');
-                }
-
                 // --max-http-header-size=80000
                 // Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
                 // However they did not think about all the sites there with large headers,
@@ -173,9 +201,31 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                     warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
                         + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
                 }
+
                 this.telemetryData.actorNodejsVersion = currentNodeVersion;
                 this.telemetryData.actorLanguage = LANGUAGE.NODEJS;
-                await execWithLog(getNpmCmd(), ['start'], { env, cwd });
+
+                // We allow "module" type directly in node too (it will work for a folder that has an `index.js` file)
+                if (runType === RunType.DirectFile || runType === RunType.Module) {
+                    await execWithLog('node', [entrypoint], { env, cwd });
+                } else {
+                    // TODO(vladfrangu): what is this for? Some old template maybe?
+                    // && !existsSync(serverJsFile)
+                    // const serverJsFile = join(cwd, 'server.js');
+                    const packageJson = await loadJsonFile<{ scripts: Record<string, string > }>(packageJsonPath);
+
+                    if (!packageJson.scripts) {
+                        throw new Error('No scripts were found in package.json. Please set it up for your project. '
+                            + 'For more information about that call "apify help run".');
+                    }
+
+                    if (!packageJson.scripts[entrypoint]) {
+                        throw new Error(`The script "${entrypoint}" was not found in package.json. Please set it up for your project. `
+                            + 'For more information about that call "apify help run".');
+                    }
+
+                    await execWithLog(getNpmCmd(), ['run', entrypoint], { env, cwd });
+                }
             } else {
                 error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`);
             }
@@ -186,17 +236,20 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             if (pythonVersion) {
                 if (isPythonVersionSupported(pythonVersion)) {
                     const pythonCommand = getPythonCommand(cwd);
-                    let executableLocation = 'src';
 
-                    if (isScrapyProject) {
+                    if (isScrapyProject && !this.flags.entrypoint) {
                         const project = new ScrapyProjectAnalyzer(cwd);
                         project.loadScrapyCfg();
                         if (project.configuration.hasKey('apify', 'mainpy_location')) {
-                            executableLocation = project.configuration.get('apify', 'mainpy_location')!;
+                            entrypoint = project.configuration.get('apify', 'mainpy_location')!;
                         }
                     }
 
-                    await execWithLog(pythonCommand, ['-m', executableLocation], { env, cwd });
+                    if (runType === RunType.Module) {
+                        await execWithLog(pythonCommand, ['-m', entrypoint], { env, cwd });
+                    } else {
+                        await execWithLog(pythonCommand, [entrypoint], { env, cwd });
+                    }
                 } else {
                     error(`Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
                     error('Please install Python 3.8 or higher to be able to run Python Actors locally.');
@@ -206,4 +259,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             }
         }
     }
+}
+
+enum RunType {
+    DirectFile,
+    Module,
+    Script,
 }
