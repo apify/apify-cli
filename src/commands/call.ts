@@ -58,7 +58,11 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         const userInfo = await getLocalUserInfo();
         const usernameOrId = userInfo.username || userInfo.id;
 
-        const { id: actorId, userFriendlyId } = await this.resolveActorId(apifyClient, localConfig.name as string | undefined, usernameOrId!);
+        if (!usernameOrId) {
+            throw new Error('Corrupted local user info was found. Please run "apify login" to fix it, then re-run this command.');
+        }
+
+        const { id: actorId, userFriendlyId } = await this.resolveActorId(apifyClient, localConfig.name as string | undefined, usernameOrId);
 
         const runOpts: ActorStartOptions = {
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
@@ -127,7 +131,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         }
     }
 
-    private async resolveActorId(client: ApifyClient, localConfigName: string | undefined, usernameOrId: string) {
+    private async resolveActorId(client: ApifyClient, localActorName: string | undefined, usernameOrId: string) {
         const { actorId } = this.args;
 
         // Full ID
@@ -136,7 +140,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             if (!actor) throw new Error(`Cannot find Actor with ID '${actorId}' in your account.`);
 
             return {
-                userFriendlyId: actor.username ? `${actor.username}/${actor.name}` : actor.id,
+                userFriendlyId: `${actor.username}/${actor.name}`,
                 id: actor.id,
             };
         }
@@ -150,16 +154,16 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             }
 
             return {
-                userFriendlyId: actor.username ? `${actor.username}/${actor.name}` : actor.id,
+                userFriendlyId: `${actor.username}/${actor.name}`,
                 id: actor.id,
             };
         }
 
-        if (localConfigName) {
-            const actor = await client.actor(`${usernameOrId}/${localConfigName}`).get();
+        if (localActorName) {
+            const actor = await client.actor(`${usernameOrId}/${localActorName}`).get();
 
             if (!actor) {
-                throw new Error(`Cannot find Actor with ID '${usernameOrId}/${localConfigName}' `
+                throw new Error(`Cannot find Actor with ID '${usernameOrId}/${localActorName}' `
                     + 'in your account. Call "apify push" to push this Actor to Apify platform.');
             }
 

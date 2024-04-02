@@ -409,6 +409,11 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
  */
 export const getLocalInput = (cwd: string) => {
     const defaultLocalStorePath = getLocalKeyValueStorePath();
+
+    const folderExists = existsSync(join(cwd, defaultLocalStorePath));
+
+    if (!folderExists) return;
+
     const files = readdirSync(join(cwd, defaultLocalStorePath));
     const inputName = files.find((file) => !!file.match(INPUT_FILE_REG_EXP));
 
