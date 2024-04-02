@@ -128,17 +128,14 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         // Purge stores
         if (this.flags.purge) {
             switch (projectType) {
-                case PROJECT_TYPES.CRAWLEE: {
-                    CRAWLEE_PURGE_ON_START = '1';
-                    break;
-                }
                 case PROJECT_TYPES.PRE_CRAWLEE_APIFY_SDK: {
                     await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
                     info('All default local stores were purged.');
                     break;
                 }
+                case PROJECT_TYPES.CRAWLEE:
                 default: {
-                    // TODO: Python SDK too
+                    CRAWLEE_PURGE_ON_START = '1';
                 }
             }
         }
