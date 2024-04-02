@@ -107,7 +107,7 @@
         "@types/inquirer": "^9.0.7",
         "@types/is-ci": "^3.0.4",
         "@types/jju": "^1.4.5",
-        "@types/mime": "^3.0.4",
+        "@types/mime": "^4.0.0",
         "@types/node": "^20.11.20",
         "@types/semver": "^7.5.8",
         "@types/underscore": "^1.11.15",
@@ -143,7 +143,7 @@
         "topicSeparator": " "
     },
     "volta": {
-        "node": "20.11.1",
+        "node": "20.12.0",
         "yarn": "4.1.1"
     },
     "packageManager": "yarn@4.1.1"
