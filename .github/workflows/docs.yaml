@@ -50,6 +50,7 @@ jobs:
                   # build the docs
                   yarn build
               env:
+                  SMARTLOOK_PROJECT_KEY: ${{ secrets.SMARTLOOK_DOCS_PROJECT_KEY }}
                   GIT_USER: "apify-service-account:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
                   GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
                   APIFY_SIGNING_TOKEN: ${{ secrets.APIFY_SIGNING_TOKEN }}
