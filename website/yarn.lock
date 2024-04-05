@@ -307,9 +307,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.113":
-  version: 1.0.113
-  resolution: "@apify/docs-theme@npm:1.0.113"
+"@apify/docs-theme@npm:^1.0.114":
+  version: 1.0.114
+  resolution: "@apify/docs-theme@npm:1.0.114"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.0.25"
     "@docusaurus/theme-common": "npm:^2.4.1"
@@ -324,7 +324,7 @@ __metadata:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/94c5cc9551882a0f6de0c2894c19951d1be777df397081dc55b4fa65291244cc83f2ba5926ecf154f13f6b24e9716d0972856bae97609aed994eed0134b36658
+  checksum: 10c0/d58d560685b54bcff3d20e254a81e5800c58d9aa21197b681ccec624d0850e28d66111cfcf59c67957e91eef5a568125712cefdc6914c85f00ab67796a026753
   languageName: node
   linkType: hard
 
@@ -3510,14 +3510,14 @@ __metadata:
   linkType: hard
 
 "@types/express-serve-static-core@npm:*, @types/express-serve-static-core@npm:^4.17.33":
-  version: 4.17.43
-  resolution: "@types/express-serve-static-core@npm:4.17.43"
+  version: 4.19.0
+  resolution: "@types/express-serve-static-core@npm:4.19.0"
   dependencies:
     "@types/node": "npm:*"
     "@types/qs": "npm:*"
     "@types/range-parser": "npm:*"
     "@types/send": "npm:*"
-  checksum: 10c0/12480527eef86ad9f748d785811c88e6bb89f4a76e531cf2e18f1f4f0743e46783cf4d27a939dec96aec8770c54c060d9e697bb8544ecd202098140688c3b222
+  checksum: 10c0/38a13dfbb38d18526276e68dae1097eb0ebef296e76bff2a9bf6831c052c2f87797e910c87bd3f0dd1a1b4136241c9d7c841779a00b22576d12aa9b483a63349
   languageName: node
   linkType: hard
 
@@ -5018,9 +5018,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.0, caniuse-lite@npm:^1.0.30001587, caniuse-lite@npm:^1.0.30001599":
-  version: 1.0.30001605
-  resolution: "caniuse-lite@npm:1.0.30001605"
-  checksum: 10c0/ceb96a0ecfdaee6510c00aebaaa63db20aaeafab03450d4e3b214e009cb632f87385a70c299cdd1ca4c17e1473883d8fa2051c5b2d083a454338c0c779b25cbc
+  version: 1.0.30001606
+  resolution: "caniuse-lite@npm:1.0.30001606"
+  checksum: 10c0/fc9816f7d073e4f655c00acf9d6625f923e722430545b0aabefb9dc01347f3093608eb18841cf981acbd464fcac918a708908549738a8cd9517a14ac005bf8fc
   languageName: node
   linkType: hard
 
@@ -6252,9 +6252,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.4.668":
-  version: 1.4.725
-  resolution: "electron-to-chromium@npm:1.4.725"
-  checksum: 10c0/fc6756b408e5df6ba5d6b8a5f5a5fb44e4000aeb0d18073d0d6130dc4049855a5aee8966e91cfeeb8799d6ba50f53ccc52f15585482bcacaa60543a415af040d
+  version: 1.4.728
+  resolution: "electron-to-chromium@npm:1.4.728"
+  checksum: 10c0/c1de9df997d84a7e41f2228a4a570ff8470c976c23b0c5701309624da59a9b81d930b8c73d35b4092181bde75a7833ffad70a8507558d4e8c3990b42058673f8
   languageName: node
   linkType: hard
 
@@ -12096,7 +12096,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.113"
+    "@apify/docs-theme": "npm:^1.0.114"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^2.4.3"
