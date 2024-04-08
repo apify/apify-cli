@@ -11,7 +11,7 @@ import isCI from 'is-ci';
 import open from 'open';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { CommandExitCodes, LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../lib/consts.js';
+import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../lib/consts.js';
 import { sumFilesSizeInBytes } from '../lib/files.js';
 import { error, info, link, run, success, warning } from '../lib/outputs.js';
 import { transformEnvToEnvVars } from '../lib/secrets.js';
@@ -96,6 +96,38 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
     async run() {
         const cwd = process.cwd();
 
+        // Validate there are files before rest of the logic
+        const filePathsToPush = await getActorLocalFilePaths(cwd);
+
+        if (!filePathsToPush.length) {
+            error('You need to call this command from a folder that has an actor in it!');
+            process.exitCode = CommandExitCodes.NoFilesToPush;
+            return;
+        }
+
+        if (
+            // Check that some of these files exist, cuz otherwise we cannot do much
+            ![
+                // old apify project
+                DEPRECATED_LOCAL_CONFIG_NAME,
+                // new apify project
+                'actor.json',
+                '.actor/actor.json',
+                // The .actor folder existing in general
+                '.actor',
+            ].some((filePath) => filePathsToPush.some((fp) => fp === filePath || fp.startsWith(filePath)))
+        ) {
+            error(
+                [
+                    'A valid actor could not be found in the current directory. Please make sure you are in the correct directory.',
+                    'You can also turn this directory into an actor by running `apify init`.',
+                ].join('\n'),
+            );
+
+            process.exitCode = CommandExitCodes.NoFilesToPush;
+            return;
+        }
+
         const apifyClient = await getLoggedClientOrThrow();
         const localConfig = await getLocalConfigOrThrow(cwd);
         const userInfo = await getLocalUserInfo();
@@ -155,7 +187,6 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
 
         info(`Deploying Actor '${localConfig!.name}' to Apify.`);
 
-        const filePathsToPush = await getActorLocalFilePaths(cwd);
         const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
         const actorClient = apifyClient.actor(actorId);
 
