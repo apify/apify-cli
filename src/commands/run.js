@@ -35,6 +35,7 @@ class RunCommand extends ApifyCommand {
         const packageJsonExists = fs.existsSync(packageJsonPath);
         const mainPyExists = fs.existsSync(mainPyPath);
         const isScrapyProject = projectType === PROJECT_TYPES.SCRAPY;
+        const { language, languageVersion } = detectLocalActorLanguage();
 
         if (!packageJsonExists && !mainPyExists && !isScrapyProject) {
             throw new Error(
@@ -64,20 +65,25 @@ class RunCommand extends ApifyCommand {
                     CRAWLEE_PURGE_ON_START = '1';
                 }
             }
+
+            if (language === LANGUAGE.PYTHON) {
+                await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
+                info('All default local stores were purged.');
+            }
         }
 
         // TODO: deprecate these flags
-        if (flags.purgeQueue) {
+        if (flags.purgeQueue && !flags.purge) {
             await purgeDefaultQueue();
             info('Default local request queue was purged.');
         }
 
-        if (flags.purgeDataset) {
+        if (flags.purgeDataset && !flags.purge) {
             await purgeDefaultDataset();
             info('Default local dataset was purged.');
         }
 
-        if (flags.purgeKeyValueStore) {
+        if (flags.purgeKeyValueStore && !flags.purge) {
             await purgeDefaultKeyValueStore();
             info('Default local key-value store was purged.');
         }
@@ -110,7 +116,6 @@ class RunCommand extends ApifyCommand {
             warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
         }
 
-        const { language, languageVersion } = detectLocalActorLanguage();
         if (language === LANGUAGE.NODEJS) { // Actor is written in Node.js
             const currentNodeVersion = languageVersion;
             const minimumSupportedNodeVersion = semver.minVersion(SUPPORTED_NODEJS_VERSION);
