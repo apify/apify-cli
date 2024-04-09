@@ -126,6 +126,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         let CRAWLEE_PURGE_ON_START = '0';
 
         // Purge stores
+        // TODO: this needs to be cleaned up heavily - ideally logic should be in the project analyzers
         if (this.flags.purge) {
             switch (projectType) {
                 case PROJECT_TYPES.PRE_CRAWLEE_APIFY_SDK: {
@@ -138,20 +139,25 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                     CRAWLEE_PURGE_ON_START = '1';
                 }
             }
+
+            if (language === LANGUAGE.PYTHON) {
+                await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
+                info('All default local stores were purged.');
+            }
         }
 
         // TODO: deprecate these flags
-        if (this.flags.purgeQueue) {
+        if (this.flags.purgeQueue && !this.flags.purge) {
             await purgeDefaultQueue();
             info('Default local request queue was purged.');
         }
 
-        if (this.flags.purgeDataset) {
+        if (this.flags.purgeDataset && !this.flags.purge) {
             await purgeDefaultDataset();
             info('Default local dataset was purged.');
         }
 
-        if (this.flags.purgeKeyValueStore) {
+        if (this.flags.purgeKeyValueStore && !this.flags.purge) {
             await purgeDefaultKeyValueStore();
             info('Default local key-value store was purged.');
         }
