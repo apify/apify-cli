@@ -59,7 +59,7 @@
         "@apify/consts": "~2.26.0",
         "@apify/input_schema": "~3.5.15",
         "@apify/utilities": "~2.10.0",
-        "@crawlee/memory-storage": "~3.8.1",
+        "@crawlee/memory-storage": "~3.9.0",
         "@oclif/core": "~3.26.0",
         "@oclif/plugin-help": "~6.0.14",
         "@root/walk": "~1.1.0",
@@ -143,7 +143,7 @@
         "topicSeparator": " "
     },
     "volta": {
-        "node": "20.12.1",
+        "node": "20.12.2",
         "yarn": "4.1.1"
     },
     "packageManager": "yarn@4.1.1"
