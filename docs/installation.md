@@ -69,7 +69,7 @@ for the Actor and a few configuration files.
 
 ### Create a New Actor from Existing Project
 
-:::note Don't use this after `apify create`
+:::note Automatic Actor directory initialization
 When you create an Actor using the `apify create` command, the directory will already be initialized.
 :::
 
