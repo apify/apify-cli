@@ -69,6 +69,10 @@ for the Actor and a few configuration files.
 
 ### Create a New Actor from Existing Project
 
+:::tip Automatic Actor directory initialization
+When you create an Actor using the `apify create` command, the directory will already be initialized.
+:::
+
 ```bash showLineNumbers
 cd ./my/awesome/project
 apify init
