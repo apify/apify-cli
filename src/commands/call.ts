@@ -1,47 +1,19 @@
-// TODO: Show full error messages and HTTP codes, this is not great:
-// jan:testx$ apify call help
-// Run: Calling act help...
-// Error: [record-not-found]
-
 import process from 'node:process';
 
-import { ACTOR_JOB_STATUSES } from '@apify/consts';
-import { Args, Flags } from '@oclif/core';
-import { ActorRun, ActorStartOptions, ApifyClient } from 'apify-client';
-import mime from 'mime';
+import { Args } from '@oclif/core';
+import { ActorStartOptions, ApifyClient } from 'apify-client';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../lib/consts.js';
-import { error, link, run as runLog, success, warning } from '../lib/outputs.js';
-import { getLocalConfig, getLocalInput, getLocalUserInfo, getLoggedClientOrThrow, outputJobLog } from '../lib/utils.js';
+import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../lib/commands/run-on-cloud.js';
+import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
+import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 
 export class CallCommand extends ApifyCommand<typeof CallCommand> {
     static override description = 'Runs a specific Actor remotely on the Apify cloud platform.\n'
     + 'The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". '
     + 'It takes input for the Actor from the default local key-value store by default.';
 
-    static override flags = {
-        build: Flags.string({
-            char: 'b',
-            description: 'Tag or number of the build to run (e.g. "latest" or "1.2.34").',
-            required: false,
-        }),
-        timeout: Flags.integer({
-            char: 't',
-            description: 'Timeout for the Actor run in seconds. Zero value means there is no timeout.',
-            required: false,
-        }),
-        memory: Flags.integer({
-            char: 'm',
-            description: 'Amount of memory allocated for the Actor run, in megabytes.',
-            required: false,
-        }),
-        'wait-for-finish': Flags.string({
-            char: 'w',
-            description: 'Seconds for waiting to run to finish, if no value passed, it waits forever.',
-            required: false,
-        }),
-    };
+    static override flags = SharedRunOnCloudFlags;
 
     static override args = {
         actorId: Args.string({
@@ -56,11 +28,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         const localConfig = getLocalConfig(cwd) || {};
         const apifyClient = await getLoggedClientOrThrow();
         const userInfo = await getLocalUserInfo();
-        const usernameOrId = userInfo.username || userInfo.id;
-
-        if (!usernameOrId) {
-            throw new Error('Corrupted local user info was found. Please run "apify login" to fix it, then re-run this command.');
-        }
+        const usernameOrId = userInfo.username || userInfo.id as string;
 
         const { id: actorId, userFriendlyId } = await this.resolveActorId(apifyClient, localConfig.name as string | undefined, usernameOrId);
 
@@ -84,51 +52,15 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             runOpts.memory = this.flags.memory;
         }
 
-        // Get input for act
-        const localInput = getLocalInput(cwd);
-
-        runLog(`Calling Actor ${userFriendlyId} (${actorId})`);
-
-        let run: ActorRun;
-        try {
-            if (localInput) {
-                // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
-                // It will save malformed JSON which looks like buffer as INPUT.
-                // We need to fix this in v1 during removing call under actor namespace.
-                const input = mime.getExtension(localInput.contentType!) === 'json' ? JSON.parse(localInput.body.toString('utf-8')) : localInput.body;
-                run = await apifyClient.actor(actorId).start(input, { ...runOpts, contentType: localInput.contentType! });
-            } else {
-                run = await apifyClient.actor(actorId).start(null, runOpts);
-            }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        } catch (err: any) {
-            // TODO: Better error message in apify-client-js
-            if (err.type === 'record-not-found') throw new Error(`Actor ${userFriendlyId} (${actorId}) not found!`);
-            else throw err;
-        }
-
-        try {
-            await outputJobLog(run, waitForFinishMillis);
-        } catch (err) {
-            warning('Can not get log:');
-            console.error(err);
-        }
-
-        run = (await apifyClient.run(run.id).get())!;
-
-        link('Actor run detail', `https://console.apify.com/actors/${run.actId}#/runs/${run.id}`);
-
-        if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-            success('Actor finished.');
-        } else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
-            warning('Actor is still running!');
-        } else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
-            warning('Actor was aborted!');
-            process.exitCode = CommandExitCodes.RunAborted;
-        } else {
-            error('Actor failed!');
-            process.exitCode = CommandExitCodes.RunFailed;
-        }
+        await runActorOrTaskOnCloud(apifyClient, {
+            actorOrTaskData: {
+                id: actorId,
+                userFriendlyId,
+            },
+            runOptions: runOpts,
+            type: 'Actor',
+            waitForFinishMillis,
+        });
     }
 
     private async resolveActorId(client: ApifyClient, localActorName: string | undefined, usernameOrId: string) {
@@ -137,7 +69,9 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         // Full ID
         if (actorId?.includes('/')) {
             const actor = await client.actor(actorId).get();
-            if (!actor) throw new Error(`Cannot find Actor with ID '${actorId}' in your account.`);
+            if (!actor) {
+                throw new Error(`Cannot find Actor with ID '${actorId}' in your account.`);
+            }
 
             return {
                 userFriendlyId: `${actor.username}/${actor.name}`,
