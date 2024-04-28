@@ -635,13 +635,13 @@ export const getPythonCommand = (directory: string) => {
         : 'python3';
 };
 
-const windowsOptions: SpawnSyncOptions = process.platform === 'win32' ? { shell: true, windowsHide: true } : {};
+const spawnOptions: SpawnSyncOptions = { shell: true, windowsHide: true };
 
 export const detectPythonVersion = (directory: string) => {
     const pythonCommand = getPythonCommand(directory);
     try {
         const spawnResult = spawnSync(pythonCommand, ['-c', '"import platform; print(platform.python_version())"'], {
-            ...windowsOptions,
+            ...spawnOptions,
             encoding: 'utf-8',
         });
 
@@ -662,7 +662,7 @@ export const isPythonVersionSupported = (installedPythonVersion: string) => {
 export const detectNodeVersion = () => {
     try {
         const spawnResult = spawnSync('node', ['--version'], {
-            ...windowsOptions,
+            ...spawnOptions,
             encoding: 'utf-8',
         });
 
@@ -687,7 +687,7 @@ export const detectNpmVersion = () => {
     const npmCommand = getNpmCmd();
     try {
         const spawnResult = spawnSync(npmCommand, ['--version'], {
-            ...windowsOptions,
+            ...spawnOptions,
             encoding: 'utf-8',
         });
 
