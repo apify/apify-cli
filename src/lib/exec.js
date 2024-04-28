@@ -2,12 +2,17 @@ const { spawn } = require('child_process');
 
 const outputs = require('./outputs');
 
+const windowsOptions = {
+    shell: true,
+    windowsHide: true,
+};
+
 /**
  * Run child process and returns stdout and stderr to user stout
  */
 const spawnPromised = (cmd, args, opts) => {
     // NOTE: Pipes stderr, stdout to main process
-    Object.assign(opts, { stdio: 'inherit' });
+    Object.assign(opts, { ...windowsOptions, stdio: 'inherit' });
 
     const childProcess = spawn(cmd, args, opts);
 

@@ -557,6 +557,11 @@ const sanitizeActorName = (actorName) => {
     return sanitizedName.slice(0, ACTOR_NAME.MAX_LENGTH);
 };
 
+const windowsOptions = {
+    shell: true,
+    windowsHide: true,
+};
+
 const getPythonCommand = (directory) => {
     const pythonVenvPath = /^win/.test(process.platform)
         ? 'Scripts/python.exe'
@@ -581,7 +586,11 @@ const getPythonCommand = (directory) => {
 const detectPythonVersion = (directory) => {
     const pythonCommand = getPythonCommand(directory);
     try {
-        const spawnResult = spawnSync(pythonCommand, ['-c', 'import platform; print(platform.python_version())'], { encoding: 'utf-8' });
+        const spawnResult = spawnSync(pythonCommand, ['-c', 'import platform; print(platform.python_version())'], {
+            ...windowsOptions,
+            encoding: 'utf-8',
+        });
+
         if (!spawnResult.error && spawnResult.stdout) {
             return spawnResult.stdout.trim();
         }
@@ -596,7 +605,11 @@ const isPythonVersionSupported = (installedPythonVersion) => {
 
 const detectNodeVersion = () => {
     try {
-        const spawnResult = spawnSync('node', ['--version'], { encoding: 'utf-8' });
+        const spawnResult = spawnSync('node', ['--version'], {
+            ...windowsOptions,
+            encoding: 'utf-8',
+        });
+
         if (!spawnResult.error && spawnResult.stdout) {
             return spawnResult.stdout.trim().replace(/^v/, '');
         }
@@ -615,7 +628,11 @@ const isNodeVersionSupported = (installedNodeVersion) => {
 const detectNpmVersion = () => {
     const npmCommand = getNpmCmd();
     try {
-        const spawnResult = spawnSync(npmCommand, ['--version'], { encoding: 'utf-8' });
+        const spawnResult = spawnSync(npmCommand, ['--version'], {
+            ...windowsOptions,
+            encoding: 'utf-8',
+        });
+
         if (!spawnResult.error && spawnResult.stdout) {
             return spawnResult.stdout.trim().replace(/^v/, '');
         }
