@@ -16,4 +16,8 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
             description: 'Name or ID of the Task to run (e.g. "my-task" or "E2jjCZBezvAZnX8Rb").',
         }),
     };
+
+    async run() {
+        throw new Error('Method not implemented.');
+    }
 }
