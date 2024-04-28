@@ -640,7 +640,7 @@ const windowsOptions: SpawnSyncOptions = process.platform === 'win32' ? { shell:
 export const detectPythonVersion = (directory: string) => {
     const pythonCommand = getPythonCommand(directory);
     try {
-        const spawnResult = spawnSync(pythonCommand, ['-c', 'import platform; print(platform.python_version())'], {
+        const spawnResult = spawnSync(pythonCommand, ['-c', '"import platform; print(platform.python_version())"'], {
             ...windowsOptions,
             encoding: 'utf-8',
         });
