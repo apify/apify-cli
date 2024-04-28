@@ -586,7 +586,7 @@ const getPythonCommand = (directory) => {
 const detectPythonVersion = (directory) => {
     const pythonCommand = getPythonCommand(directory);
     try {
-        const spawnResult = spawnSync(pythonCommand, ['-c', 'import platform; print(platform.python_version())'], {
+        const spawnResult = spawnSync(pythonCommand, ['-c', '"import platform; print(platform.python_version())"'], {
             ...windowsOptions,
             encoding: 'utf-8',
         });
