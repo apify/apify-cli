@@ -13,6 +13,7 @@ export interface RunOnCloudOptions {
     actorOrTaskData: {
         id: string;
         userFriendlyId: string;
+        title?: string;
     };
     runOptions: TaskStartOptions;
     type: 'Actor' | 'Task';
@@ -33,7 +34,13 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     // Get input for act
     const localInput = getLocalInput(cwd);
 
-    runLog(`Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})`);
+    if (type === 'Actor') {
+        runLog(`Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})`);
+    } else if (actorOrTaskData.title) {
+        runLog(`Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${actorOrTaskData.id})`);
+    } else {
+        runLog(`Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})`);
+    }
 
     let run: ActorRun;
 
