@@ -131,6 +131,9 @@
         "hooks": {
             "init": [
                 "./dist/hooks/init"
+            ],
+            "prerun": [
+                "./dist/hooks/deprecations"
             ]
         },
         "helpClass": "./dist/lib/apify-oclif-help",
