@@ -1,4 +1,4 @@
-import { spawnSync } from 'node:child_process';
+import { SpawnSyncOptions, spawnSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from 'node:fs';
 import { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
@@ -549,9 +549,8 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
 /**
  * Returns npm command for current os
  * NOTE: For window we have to returns npm.cmd instead of npm, otherwise it doesn't work
- * @return {string}
  */
-export const getNpmCmd = () => {
+export const getNpmCmd = (): string => {
     return /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
 };
 
@@ -642,10 +641,16 @@ export const getPythonCommand = (directory: string) => {
         : 'python3';
 };
 
+const spawnOptions: SpawnSyncOptions = { shell: true, windowsHide: true };
+
 export const detectPythonVersion = (directory: string) => {
     const pythonCommand = getPythonCommand(directory);
     try {
-        const spawnResult = spawnSync(pythonCommand, ['-c', 'import platform; print(platform.python_version())'], { encoding: 'utf-8' });
+        const spawnResult = spawnSync(pythonCommand, ['-c', '"import platform; print(platform.python_version())"'], {
+            ...spawnOptions,
+            encoding: 'utf-8',
+        });
+
         if (!spawnResult.error && spawnResult.stdout) {
             return spawnResult.stdout.trim();
         }
@@ -662,7 +667,11 @@ export const isPythonVersionSupported = (installedPythonVersion: string) => {
 
 export const detectNodeVersion = () => {
     try {
-        const spawnResult = spawnSync('node', ['--version'], { encoding: 'utf-8' });
+        const spawnResult = spawnSync('node', ['--version'], {
+            ...spawnOptions,
+            encoding: 'utf-8',
+        });
+
         if (!spawnResult.error && spawnResult.stdout) {
             return spawnResult.stdout.trim().replace(/^v/, '');
         }
@@ -683,7 +692,11 @@ export const isNodeVersionSupported = (installedNodeVersion: string) => {
 export const detectNpmVersion = () => {
     const npmCommand = getNpmCmd();
     try {
-        const spawnResult = spawnSync(npmCommand, ['--version'], { encoding: 'utf-8' });
+        const spawnResult = spawnSync(npmCommand, ['--version'], {
+            ...spawnOptions,
+            encoding: 'utf-8',
+        });
+
         if (!spawnResult.error && spawnResult.stdout) {
             return spawnResult.stdout.trim().replace(/^v/, '');
         }

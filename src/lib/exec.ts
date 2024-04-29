@@ -1,6 +1,11 @@
-import { SpawnOptionsWithoutStdio, spawn } from 'node:child_process';
+import { SpawnOptions, SpawnOptionsWithoutStdio, spawn } from 'node:child_process';
 
 import { run } from './outputs.js';
+
+const windowsOptions: SpawnOptions = {
+    shell: true,
+    windowsHide: true,
+};
 
 /**
  * Run child process and returns stdout and stderr to user stout
@@ -10,6 +15,7 @@ const spawnPromised = async (cmd: string, args: string[], opts: SpawnOptionsWith
     const childProcess = spawn(cmd, args, {
         ...opts,
         stdio: process.env.APIFY_NO_LOGS_IN_TESTS ? 'ignore' : 'inherit',
+        ...(process.platform === 'win32' ? windowsOptions : {}),
     });
 
     // Catch ctrl-c (SIGINT) and kills child process
