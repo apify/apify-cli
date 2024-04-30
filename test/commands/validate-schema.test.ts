@@ -23,4 +23,8 @@ describe('apify validate-schema', () => {
             expect(error.message).to.contain.oneOf(['Unexpected token }', "Expected ',' or ']' after array element"]);
         })
         .it('should correctly validate schema 3');
+
+    test
+        .command(['vis', join(basePath, 'valid.json')])
+        .it('should correctly validate schema 1 with alias');
 });
