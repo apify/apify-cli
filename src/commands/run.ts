@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
-import { validateInputSchema } from '@apify/input_schema';
+import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 import { Flags } from '@oclif/core';
 import { loadJsonFile } from 'load-json-file';
 import mime from 'mime';
@@ -290,7 +290,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         }
 
         // Step 1: validate the input schema
-        const validator = new Ajv({ strict: false });
+        const validator = new Ajv({ strict: false, unicodeRegExp: false });
         validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
 
         // Step 2: get the input from local store
@@ -304,7 +304,18 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
         if (mime.getExtension(input.contentType!) === 'json') {
             // Step 3: validate the input
-            const _inputJson = JSON.parse(input.body.toString('utf-8'));
+            const inputJson = JSON.parse(input.body.toString('utf-8'));
+
+            const clonedInputSchema = JSON.parse(JSON.stringify(inputSchema));
+            Reflect.deleteProperty(clonedInputSchema, '$schema');
+
+            const compiledInputSchema = validator.compile(clonedInputSchema);
+
+            const errors = validateInputUsingValidator(compiledInputSchema, inputSchema, inputJson);
+
+            if (errors.length > 0) {
+                throw new Error(`The input in your storage is invalid. Please fix the following errors:\n${errors.map((e) => `  - ${e.message}`).join('\n')}`);
+            }
         }
     }
 }
