@@ -4,21 +4,26 @@ import { join } from 'node:path';
 import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
+import { validateInputSchema } from '@apify/input_schema';
 import { Flags } from '@oclif/core';
 import { loadJsonFile } from 'load-json-file';
+import mime from 'mime';
 import { minVersion } from 'semver';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import { DEFAULT_LOCAL_STORAGE_DIR, LANGUAGE, LEGACY_LOCAL_STORAGE_DIR, PROJECT_TYPES, SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { execWithLog } from '../lib/exec.js';
+import { readInputSchema } from '../lib/input_schema.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { ProjectAnalyzer } from '../lib/project_analyzer.js';
 import { ScrapyProjectAnalyzer } from '../lib/projects/scrapy/ScrapyProjectAnalyzer.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
+    Ajv,
     checkIfStorageIsEmpty,
     detectLocalActorLanguage,
     getLocalConfigOrThrow,
+    getLocalInput,
     getLocalStorageDir,
     getLocalUserInfo,
     getNpmCmd,
@@ -174,6 +179,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             }
         }
 
+        // Validate input
+        await this.validateInput();
+
         // Attach env vars from local config files
         const localEnvVars: Record<string, string> = {
             [APIFY_ENV_VARS.LOCAL_STORAGE_DIR]: actualStoragePath,
@@ -270,6 +278,33 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             } else {
                 error({ message: 'No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.' });
             }
+        }
+    }
+
+    private async validateInput() {
+        const { inputSchema } = await readInputSchema({ forcePath: this.args.path, cwd: process.cwd() });
+
+        if (!inputSchema) {
+            // We cannot validate input schema if it is not found.
+            return;
+        }
+
+        // Step 1: validate the input schema
+        const validator = new Ajv({ strict: false });
+        validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
+
+        // Step 2: get the input from local store
+        const input = getLocalInput(process.cwd());
+
+        if (!input) {
+            // No input -> nothing to do
+            // TODO: but maybe prefill?
+            return;
+        }
+
+        if (mime.getExtension(input.contentType!) === 'json') {
+            // Step 3: validate the input
+            const _inputJson = JSON.parse(input.body.toString('utf-8'));
         }
     }
 }
