@@ -5011,9 +5011,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.0, caniuse-lite@npm:^1.0.30001587, caniuse-lite@npm:^1.0.30001599":
-  version: 1.0.30001614
-  resolution: "caniuse-lite@npm:1.0.30001614"
-  checksum: 10c0/54873ef47f5f04448f1dafe371dece0129f1f2e4644c377956e66ebfa4bfa16dd3529062b7b4d95d9e3a80129907558c19200532669c6dcd5733eff724fdf2b6
+  version: 1.0.30001615
+  resolution: "caniuse-lite@npm:1.0.30001615"
+  checksum: 10c0/49029ff6cdbb35cf84cc9d9d4782dff3a8fb6afb547a83f3e43f13addcb0c4ac6015dc528a42f0f78846dc06261b3fab16555e3979114ad20e15cf7a91e64c33
   languageName: node
   linkType: hard
 
@@ -6245,9 +6245,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.4.668":
-  version: 1.4.753
-  resolution: "electron-to-chromium@npm:1.4.753"
-  checksum: 10c0/b5e6f5014259efbbdde9cd6d8ad54e05f2338c729e7b462516b66c4d5904c0bcd423494d286baffad3cc18774afae993b1069e8535fcd4e75a4f094f14314197
+  version: 1.4.754
+  resolution: "electron-to-chromium@npm:1.4.754"
+  checksum: 10c0/ff9da4f2915e314b0922a24dbc789d566b89bbf0555618a919e9aba073efb1e13696b3c220ab90b34a952df05605cc785793432dea14589b3c411ddabefe6ba0
   languageName: node
   linkType: hard
 
@@ -8837,15 +8837,15 @@ __metadata:
   linkType: hard
 
 "joi@npm:^17.6.0":
-  version: 17.13.0
-  resolution: "joi@npm:17.13.0"
+  version: 17.13.1
+  resolution: "joi@npm:17.13.1"
   dependencies:
     "@hapi/hoek": "npm:^9.3.0"
     "@hapi/topo": "npm:^5.1.0"
     "@sideway/address": "npm:^4.1.5"
     "@sideway/formula": "npm:^3.0.1"
     "@sideway/pinpoint": "npm:^2.0.0"
-  checksum: 10c0/27fab026a76f199fbaa5f4cf96b40539da30fdc9e1274989d8fc7b15d52e51b46b911628c924a05e061ae5c3aa00168114fb8b22fb58ca4adca3617c65620006
+  checksum: 10c0/485627809c5e424fc4af4310e06bc31a34fe10635b0bdbfcc425336db5e06b1da3ff8b35101878ffcbcd94c0187e7134c935fb2d1aeba641c92d7f505e6ffd8d
   languageName: node
   linkType: hard
 
