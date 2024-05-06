@@ -249,7 +249,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-s3@npm:^3.565.0":
+"@aws-sdk/client-s3@npm:^3.569.0":
   version: 3.569.0
   resolution: "@aws-sdk/client-s3@npm:3.569.0"
   dependencies:
@@ -1286,7 +1286,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oclif/core@npm:^3.26.0, @oclif/core@npm:^3.26.2, @oclif/core@npm:^3.26.4, @oclif/core@npm:~3.26.0":
+"@oclif/core@npm:^3.26.0, @oclif/core@npm:^3.26.2, @oclif/core@npm:^3.26.5, @oclif/core@npm:~3.26.0":
   version: 3.26.5
   resolution: "@oclif/core@npm:3.26.5"
   dependencies:
@@ -1332,14 +1332,14 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-not-found@npm:^3.0.14":
-  version: 3.1.7
-  resolution: "@oclif/plugin-not-found@npm:3.1.7"
+  version: 3.1.8
+  resolution: "@oclif/plugin-not-found@npm:3.1.8"
   dependencies:
     "@inquirer/confirm": "npm:^3.1.6"
-    "@oclif/core": "npm:^3.26.4"
+    "@oclif/core": "npm:^3.26.5"
     chalk: "npm:^5.3.0"
     fast-levenshtein: "npm:^3.0.0"
-  checksum: 10c0/682a764223d9b993b2359a2e09e6d2a67a780d03b34d0934d05956aacf5b19d268e23191427bc7938f07a6af78d4e3c704c81e99ec82d54a0fc0622393a03fbf
+  checksum: 10c0/12239811e0a3d9c8000ca3177bb8639939bf43329498d2bd78742c53f367c271ba0c5677f2f34eeca062fd71bf13e2f7ca34df504d7db73ddd128d686c313808
   languageName: node
   linkType: hard
 
@@ -1357,13 +1357,13 @@ __metadata:
   linkType: hard
 
 "@oclif/test@npm:^3.2.1":
-  version: 3.2.12
-  resolution: "@oclif/test@npm:3.2.12"
+  version: 3.2.13
+  resolution: "@oclif/test@npm:3.2.13"
   dependencies:
-    "@oclif/core": "npm:^3.26.4"
+    "@oclif/core": "npm:^3.26.5"
     chai: "npm:^4.4.1"
     fancy-test: "npm:^3.0.14"
-  checksum: 10c0/aa7057ad53fe37fd16ec6def1f89e93d5724b88395c49e70c3d3fe94c2a7688530678016d091020c0ace402ad41edbbf04cc338a2ac7ec7d0919eb55a5d20a6e
+  checksum: 10c0/5a036428aca54865f204ffff62121731592a58588360a64a186b56a2774a8d78dab3a9be6c88aa9740366371622353f46c142f5adc1c5ab348fa377bbd9fec31
   languageName: node
   linkType: hard
 
@@ -5025,8 +5025,8 @@ __metadata:
   linkType: hard
 
 "fancy-test@npm:^3.0.14":
-  version: 3.0.14
-  resolution: "fancy-test@npm:3.0.14"
+  version: 3.0.15
+  resolution: "fancy-test@npm:3.0.15"
   dependencies:
     "@types/chai": "npm:*"
     "@types/lodash": "npm:*"
@@ -5037,7 +5037,7 @@ __metadata:
     nock: "npm:^13.5.4"
     sinon: "npm:^16.1.3"
     stdout-stderr: "npm:^0.1.9"
-  checksum: 10c0/08849dcdd07c018fdd3f7ffb5f877cf2a08182ebdb546a05e8c073b2a020d887247a9d739151825f6d8074aa231f6dd67c19297160bb2433f8b616cb52feaf4b
+  checksum: 10c0/3cee0ec858f5f7ccf1ce1326c55993b1ef455145ce62a5a2bc2cf46f7cfce599b04395cbefbeb955e15c5237da83db2f7d2ce890825c5f50fbf58f0b065b92d0
   languageName: node
   linkType: hard
 
@@ -7403,15 +7403,15 @@ __metadata:
   linkType: hard
 
 "oclif@npm:^4.4.18":
-  version: 4.10.1
-  resolution: "oclif@npm:4.10.1"
+  version: 4.10.3
+  resolution: "oclif@npm:4.10.3"
   dependencies:
     "@aws-sdk/client-cloudfront": "npm:^3.535.0"
-    "@aws-sdk/client-s3": "npm:^3.565.0"
+    "@aws-sdk/client-s3": "npm:^3.569.0"
     "@inquirer/confirm": "npm:^3.1.6"
     "@inquirer/input": "npm:^2.1.1"
     "@inquirer/select": "npm:^2.3.2"
-    "@oclif/core": "npm:^3.26.4"
+    "@oclif/core": "npm:^3.26.5"
     "@oclif/plugin-help": "npm:^6.0.21"
     "@oclif/plugin-not-found": "npm:^3.0.14"
     "@oclif/plugin-warn-if-update-available": "npm:^3.0.14"
@@ -7431,7 +7431,7 @@ __metadata:
     validate-npm-package-name: "npm:^5.0.0"
   bin:
     oclif: bin/run.js
-  checksum: 10c0/4f6404b9a0b1608cd7dd6b59ddd7f774d749ffd0d81ab63727d7a61c20fce73d1cdbdca32739c48ef174612ea4dae37c79a80f38259cdbfeaf9f3c277c689240
+  checksum: 10c0/5c6f2fb7a5ae8e37f6b8b58eb39bce092d6ea5484b9d322630bc0091d8019c6d66241b189b727bb5d8ad1d3772e352d8be25c873164ff740be230301ac24852e
   languageName: node
   linkType: hard
 
