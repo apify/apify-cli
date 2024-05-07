@@ -72,7 +72,7 @@ export const httpsGet = async (url: string) => {
     });
 };
 
-// Properties from apify.json file that will me migrated to actor specs in .actor/actor.json
+// Properties from apify.json file that will me migrated to Actor specs in .actor/actor.json
 const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
 
 export const getLocalStorageDir = () => {
@@ -376,7 +376,7 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 };
 
 /**
- * Get actor local files, omit files defined in .gitignore and .git folder
+ * Get Actor local files, omit files defined in .gitignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
 export const getActorLocalFilePaths = async (cwd?: string) => globby(['*', '**/**'], {
@@ -387,7 +387,7 @@ export const getActorLocalFilePaths = async (cwd?: string) => globby(['*', '**/*
 });
 
 /**
- * Create zip file with all actor files specified with pathsToZip
+ * Create zip file with all Actor files specified with pathsToZip
  */
 export const createActZip = async (zipName: string, pathsToZip: string[], cwd: string) => {
     // NOTE: There can be a zip from a previous unfinished operation.
@@ -405,7 +405,7 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 };
 
 /**
- * Get actor input from local store
+ * Get Actor input from local store
  */
 export const getLocalInput = (cwd: string) => {
     const defaultLocalStorePath = getLocalKeyValueStorePath();
@@ -586,7 +586,7 @@ const updateLocalConfigStructure = (localConfig: any) => {
 };
 
 /**
- * Validates actor name, if finds issue throws error.
+ * Validates Actor name, if finds issue throws error.
  * @param actorName
  */
 export const validateActorName = (actorName: string) => {

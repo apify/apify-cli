@@ -35,7 +35,7 @@ const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 
 // It would be better to use `version-0.0` or similar,
 // or even have no default tag, but the platform complains when
-// actor does not have a build with a `latest` tag, so until
+// Actor does not have a build with a `latest` tag, so until
 // that changes, we have to add it.
 const DEFAULT_BUILD_TAG = 'latest';
 
@@ -100,7 +100,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         const filePathsToPush = await getActorLocalFilePaths(cwd);
 
         if (!filePathsToPush.length) {
-            error('You need to call this command from a folder that has an actor in it!');
+            error('You need to call this command from a folder that has an Actor in it!');
             process.exitCode = CommandExitCodes.NoFilesToPush;
             return;
         }
@@ -119,8 +119,8 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         ) {
             error(
                 [
-                    'A valid actor could not be found in the current directory. Please make sure you are in the correct directory.',
-                    'You can also turn this directory into an actor by running `apify init`.',
+                    'A valid Actor could not be found in the current directory. Please make sure you are in the correct directory.',
+                    'You can also turn this directory into an Actor by running `apify init`.',
                 ].join('\n'),
             );
 
@@ -137,7 +137,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         let actorId: string;
         let actor: Actor;
         let isActorCreatedNow = false;
-        // User can override actor version and build tag, attributes in localConfig will remain same.
+        // User can override Actor version and build tag, attributes in localConfig will remain same.
         const version = this.flags.version || this.flags.versionNumber || localConfig?.version as string | undefined || DEFAULT_ACTOR_VERSION_NUMBER;
         let buildTag = this.flags.buildTag || localConfig!.buildTag as string | undefined;
         // We can't add the default build tag to everything. If a user creates a new
@@ -150,8 +150,8 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         const waitForFinishMillis = Number.isNaN(this.flags.waitForFinish)
             ? undefined
             : Number.parseInt(this.flags.waitForFinish!, 10) * 1000;
-        // User can override actorId of pushing actor.
-        // It causes that we push actor to this id but attributes in localConfig will remain same.
+        // User can override actorId of pushing Actor.
+        // It causes that we push Actor to this id but attributes in localConfig will remain same.
         const forceActorId = this.args.actorId;
 
         if (forceActorId) {
@@ -238,7 +238,7 @@ Skipping push. Use --force to override.`,
             sourceType = ACTOR_SOURCE_TYPES.TARBALL;
         }
 
-        // Update actor version
+        // Update Actor version
         const actorCurrentVersion = await actorClient.version(version).get();
         const envVars = localConfig!.environmentVariables
             ? transformEnvToEnvVars(localConfig!.environmentVariables as Record<string, string>)
@@ -265,7 +265,7 @@ Skipping push. Use --force to override.`,
             run(`Created version ${version} for Actor ${actor.name}.`);
         }
 
-        // Build actor on Apify and wait for build to finish
+        // Build Actor on Apify and wait for build to finish
         run(`Building Actor ${actor.name}`);
         let build = await actorClient.build(version, {
             useCache: true,

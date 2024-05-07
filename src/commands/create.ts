@@ -99,7 +99,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                 continue;
             }
 
-            // Create actor directory structure
+            // Create Actor directory structure
             if (!folderExists) {
                 mkdirSync(actFolderDir);
             }
@@ -156,9 +156,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                         warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
                             + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
                     }
-                    // If the actor is a Node.js actor (has package.json), run `npm install`
+                    // If the Actor is a Node.js Actor (has package.json), run `npm install`
                     await updateLocalJson(packageJsonPath, { name: actorName });
-                    // Run npm install in actor dir.
+                    // Run npm install in Actor dir.
                     // For efficiency, don't install Puppeteer for templates that don't use it
                     const cmdArgs = ['install'];
                     if (skipOptionalDeps) {

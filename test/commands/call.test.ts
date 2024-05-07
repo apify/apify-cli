@@ -111,7 +111,7 @@ describe('apify call', () => {
         expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
     });
 
-    it('should work with just the actor name', async () => {
+    it('should work with just the Actor name', async () => {
         expect(CallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
 
         const actorClient = testUserClient.actor(actorId);

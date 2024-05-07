@@ -94,7 +94,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             if (localInput) {
                 // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
                 // It will save malformed JSON which looks like buffer as INPUT.
-                // We need to fix this in v1 during removing call under actor namespace.
+                // We need to fix this in v1 during removing call under Actor namespace.
                 const input = mime.getExtension(localInput.contentType!) === 'json' ? JSON.parse(localInput.body.toString('utf-8')) : localInput.body;
                 run = await apifyClient.actor(actorId).start(input, { ...runOpts, contentType: localInput.contentType! });
             } else {
@@ -145,7 +145,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             };
         }
 
-        // Try fetching actor directly by name
+        // Try fetching Actor directly by name
         if (actorId) {
             const actor = await client.actor(`${usernameOrId}/${actorId.toLowerCase()}`).get();
 
@@ -173,6 +173,6 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             };
         }
 
-        throw new Error('Please provide an Actor ID or name, or run this command from a directory with a valid Apify actor.');
+        throw new Error('Please provide an Actor ID or name, or run this command from a directory with a valid Apify Actor.');
     }
 }

@@ -230,7 +230,7 @@ describe('apify run', () => {
         try {
             await RunCommand.run(['--purge'], import.meta.url);
         } catch (err) {
-            throw new Error('Can not run actor without storage folder!');
+            throw new Error('Can not run Actor without storage folder!');
         }
     });
 });

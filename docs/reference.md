@@ -26,7 +26,7 @@ This section contains printouts of `apify help` for all commands.
 
 ## `apify actor`
 
-Commands are designed to be used in actor runs. All commands are in PoC state, do not use in production environments.
+Commands are designed to be used in Actor runs. All commands are in PoC state, do not use in production environments.
 
 ```
 USAGE
@@ -37,7 +37,7 @@ _See code: [src/commands/actor/index.js](https://github.com/apify/apify-cli/blob
 
 ## `apify actor:get-input`
 
-Gets the actor input value from the default key-value store associated with the actor run.
+Gets the Actor input value from the default key-value store associated with the Actor run.
 
 ```
 USAGE
@@ -48,7 +48,7 @@ _See code: [src/commands/actor/get-input.js](https://github.com/apify/apify-cli/
 
 ## `apify actor:get-value KEY`
 
-Gets a value from the default key-value store associated with the actor run.
+Gets a value from the default key-value store associated with the Actor run.
 
 ```
 USAGE
@@ -62,7 +62,7 @@ _See code: [src/commands/actor/get-value.js](https://github.com/apify/apify-cli/
 
 ## `apify actor:push-data [ITEM]`
 
-Stores an object or an array of objects to the default dataset of the actor run.
+Stores an object or an array of objects to the default dataset of the Actor run.
 
 ```
 USAGE
