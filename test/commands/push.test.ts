@@ -265,7 +265,7 @@ describe('apify push', () => {
         expect(consoleSpy.logSpy).toHaveBeenCalled();
 
         const lastCall = consoleSpy.logSpy.mock.calls.at(-1)!;
-        expect(lastCall[0]).to.include('You need to call this command from a folder that has an actor in it');
+        expect(lastCall[0]).to.include('You need to call this command from a folder that has an Actor in it');
     });
 
     it('should not push when the folder does not seem to have a valid Actor', async () => {
