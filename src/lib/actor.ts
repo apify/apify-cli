@@ -53,7 +53,7 @@ export const getApifyStorageClient = async (
 
 /**
  * Returns default storage id based on environment variables.
- * Throws error if not set and actor running on platform.
+ * Throws error if not set and Actor running on platform.
  * @param storeType
  */
 export const getDefaultStorageId = (storeType: typeof APIFY_STORAGE_TYPES[keyof typeof APIFY_STORAGE_TYPES]) => {

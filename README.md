@@ -76,25 +76,25 @@ apify-cli/0.10.0 darwin-x64 node-v16.14.2
 
 The following examples demonstrate the basic usage of Apify CLI.
 
-### Create a new actor from scratch
+### Create a new Actor from scratch
 
 ```bash
 apify create my-hello-world
 ```
 
-First, you will be prompted to select a template with the boilerplate for the actor, to help you get started quickly.
+First, you will be prompted to select a template with the boilerplate for the Actor, to help you get started quickly.
 The command will create a directory called `my-hello-world` that contains a Node.js project
-for the actor and a few configuration files.
+for the Actor and a few configuration files.
 
 > If you decided to skip the installation and go with `npx`, the command will be `npx apify-cli create my-hello-world`.
 
-### Create a new actor from existing project
+### Create a new Actor from existing project
 
 ```bash
 cd ./my/awesome/project
 apify init
 ```
-This command will only set up local actor development environment in an existing directory,
+This command will only set up local Actor development environment in an existing directory,
 i.e. it will create the `.actor/actor.json` file and `apify_storage` directory.
 
 Before you can run your project locally using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
@@ -113,14 +113,14 @@ You can find more information about by running `apify help run`.
 
 If you want to run a Scrapy project on Apify platform, follow the Scrapy integration guide [here](https://docs.apify.com/cli/docs/integrating-scrapy).
 
-### Run the actor locally
+### Run the Actor locally
 
 ```bash
 cd my-hello-world
 apify run
 ```
 
-This command runs the actor on your local machine.
+This command runs the Actor on your local machine.
 Now's your chance to develop the logic - or magic :smirk:
 
 ### Login with your Apify account
@@ -135,21 +135,21 @@ your [Apify API token](https://console.apify.com/account#/integrations).
 Note that the command will store the API token and other sensitive information to `~/.apify`.
 
 
-### Push the actor to the Apify cloud
+### Push the Actor to the Apify cloud
 
 ```bash
 apify push
 ```
 
-This command uploads your project to the Apify cloud and builds an actor from it. On the platform, actor needs to be built before it can be run.
+This command uploads your project to the Apify cloud and builds an Actor from it. On the platform, Actor needs to be built before it can be run.
 
-### Run an actor on the Apify cloud
+### Run an Actor on the Apify cloud
 
 ```bash
 apify call
 ```
 
-Runs the actor corresponding to the current directory on the Apify platform.
+Runs the Actor corresponding to the current directory on the Apify platform.
 
 This command can also be used to run other Actors, for example:
 
@@ -159,8 +159,8 @@ apify call apify/hello-world
 
 ### So what's in this .actor/actor.json file?
 
-This file associates your local development project with an actor on the Apify platform.
-It contains information such as actor name, version, build tag and environment variables.
+This file associates your local development project with an Actor on the Apify platform.
+It contains information such as Actor name, version, build tag and environment variables.
 Make sure you commit this file to the Git repository.
 
 For example, `.actor/actor.json` file can look as follows:
@@ -186,7 +186,7 @@ For example, `.actor/actor.json` file can look as follows:
 ```
 
 **`Dockerfile` field**\
-If you specify the path to your Docker file under the `dockerfile` field, this file will be used for actor builds on the platform. If not specified, the system will look for Docker files at `.actor/Dockerfile` and `Dockerfile` in this order of preference.
+If you specify the path to your Docker file under the `dockerfile` field, this file will be used for Actor builds on the platform. If not specified, the system will look for Docker files at `.actor/Dockerfile` and `Dockerfile` in this order of preference.
 
 **`Readme` field** \
 If you specify the path to your readme file under the `readme` field, the readme at this path will be used on the platform. If not specified, readme at `.actor/README.md` and `README.md` will be used in this order of preference.
@@ -195,17 +195,17 @@ If you specify the path to your readme file under the `readme` field, the readme
 You can embed your [input schema](https://docs.apify.com/actors/development/input-schema#specification-version-1) object directly in `actor.json` under `input` field. Alternatively, you can provide a path to a custom input schema. If not provided, the input schema at `.actor/INPUT_SCHEMA.json` and `INPUT_SCHEMA.json` is used in this order of preference.
 
 **`Storages.dataset` field**\
-You can define the schema of the items in your dataset under the `storages.dataset` field. This can be either an embedded object or a path to a JSON schema file. You can read more about the schema of your actor output [here](https://docs.apify.com/actors/development/output-schema#specification-version-1).
+You can define the schema of the items in your dataset under the `storages.dataset` field. This can be either an embedded object or a path to a JSON schema file. You can read more about the schema of your Actor output [here](https://docs.apify.com/actors/development/output-schema#specification-version-1).
 
 **Note on migration from deprecated config "apify.json"**\
-*Note that previously, actor config was stored in the `apify.json` file that has been deprecated. You can find the (very slight) differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).*
+*Note that previously, Actor config was stored in the `apify.json` file that has been deprecated. You can find the (very slight) differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).*
 
 ## Environment variables
 
 There are two options how you can set up environment variables for Actors.
 
 ### Set up environment variables in .actor/actor.json
-All keys from `env` will be set as environment variables into Apify platform after you push actor to Apify. Current values on Apify will be overridden.
+All keys from `env` will be set as environment variables into Apify platform after you push Actor to Apify. Current values on Apify will be overridden.
 ```json
 {
     "actorSpecification": 1,
@@ -220,7 +220,7 @@ All keys from `env` will be set as environment variables into Apify platform aft
 ```
 
 ### Set up environment variables in Apify Console
-In [Apify Console](https://console.apify.com/actors) select your actor, you can set up variables into Source tab.
+In [Apify Console](https://console.apify.com/actors) select your Actor, you can set up variables into Source tab.
 After setting up variables in the app, remove the `environmentVariables` from `.actor/actor.json`. Otherwise, variables from `.actor/actor.json` will override variables in the app.
 ```json
 {
@@ -401,7 +401,7 @@ USAGE
 
 ARGUMENTS
   ACTORID  Name or ID of the Actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
-           command runs the remote actor specified in the ".actor/actor.json" file.
+           command runs the remote Actor specified in the ".actor/actor.json" file.
 
 FLAGS
   -b, --build=<value>            Tag or number of the build to run (e.g. "latest" or "1.2.34").
@@ -419,7 +419,7 @@ _See code: [src/commands/call.ts](https://github.com/apify/apify-cli/blob/v1.0.0
 
 ## `apify create [ACTORNAME]`
 
-Creates a new actor project directory from a selected boilerplate template.
+Creates a new Actor project directory from a selected boilerplate template.
 
 ```
 USAGE
@@ -436,7 +436,7 @@ FLAGS
       --skip-dependency-install  Skip installing Actor dependencies.
 
 DESCRIPTION
-  Creates a new actor project directory from a selected boilerplate template.
+  Creates a new Actor project directory from a selected boilerplate template.
 ```
 
 _See code: [src/commands/create.ts](https://github.com/apify/apify-cli/blob/v1.0.0/src/commands/create.ts)_
@@ -618,7 +618,7 @@ DESCRIPTION
   example, this causes the Actor input, as well as all other data in key-value stores, datasets or request queues to be
   stored in the "storage" directory, rather than on the Apify platform.
 
-  NOTE: You can override the command's default behavior for Node.js actors by overriding the "start" script in the
+  NOTE: You can override the command's default behavior for Node.js Actors by overriding the "start" script in the
   package.json file. You can set up your own main file or environment variables by changing it.
 ```
 
