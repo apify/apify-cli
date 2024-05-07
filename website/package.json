@@ -26,7 +26,7 @@
         "rimraf": "^5.0.0"
     },
     "dependencies": {
-        "@apify/docs-theme": "^1.0.114",
+        "@apify/docs-theme": "^1.0.115",
         "@docusaurus/core": "^2.4.3",
         "@docusaurus/plugin-client-redirects": "^2.4.3",
         "@docusaurus/preset-classic": "^2.4.3",
