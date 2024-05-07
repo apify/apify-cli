@@ -133,7 +133,7 @@ describe('apify push', () => {
         expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
     });
 
-    it('should not rewrite current actor envVars', async () => {
+    it('should not rewrite current Actor envVars', async () => {
         const testActorWithEnvVars = { ...TEST_ACTOR };
         testActorWithEnvVars.versions = [{
             versionNumber: '0.0',
@@ -282,6 +282,6 @@ describe('apify push', () => {
         expect(consoleSpy.logSpy).toHaveBeenCalled();
 
         const lastCall = consoleSpy.logSpy.mock.calls.at(-1)!;
-        expect(lastCall[0]).to.include('A valid actor could not be found in the current directory.');
+        expect(lastCall[0]).to.include('A valid Actor could not be found in the current directory.');
     });
 });

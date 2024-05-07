@@ -55,7 +55,7 @@
             "description": "If checked then HTML of Google search results page will be stored in results.",
             "default": false,
             "groupCaption": "Options",
-            "groupDescription": "Various options for this actor"
+            "groupDescription": "Various options for this Actor"
         }
     },
     "required": ["queries"]
