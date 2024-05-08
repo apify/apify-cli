@@ -12,14 +12,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/consts@npm:^2.25.0, @apify/consts@npm:^2.26.0":
-  version: 2.26.0
-  resolution: "@apify/consts@npm:2.26.0"
-  checksum: 10c0/34fea5e981432b98192f52e2d03b3322966ea0e6b136513079cad8dbbbea85b1a80ed07f3cacc7386dd17ef971dd1772758983087a58643d4d2a69ff26e4a6db
-  languageName: node
-  linkType: hard
-
-"@apify/consts@npm:~2.27.0":
+"@apify/consts@npm:^2.25.0, @apify/consts@npm:^2.27.0, @apify/consts@npm:~2.27.0":
   version: 2.27.0
   resolution: "@apify/consts@npm:2.27.0"
   checksum: 10c0/66f300e9e93d3bb7c4976e38f41327e10e2e6091d053fe22c7cc0986715a4d47db0df0ebca2c40a94ddd4b0ee138b527d400fdb93ba7fb85dfacbdaf1e2926f7
@@ -63,25 +56,25 @@ __metadata:
   linkType: hard
 
 "@apify/input_schema@npm:~3.5.15":
-  version: 3.5.15
-  resolution: "@apify/input_schema@npm:3.5.15"
+  version: 3.5.16
+  resolution: "@apify/input_schema@npm:3.5.16"
   dependencies:
-    "@apify/consts": "npm:^2.26.0"
+    "@apify/consts": "npm:^2.27.0"
     countries-list: "npm:^3.0.0"
     escaya: "npm:^0.0.61"
   peerDependencies:
     ajv: ^8.0.0
-  checksum: 10c0/c3ae5a7359c5dc6ab514eea09d9ca25f2ca39d7d552d813696ad30ac5b0b3d6caec349b73c10b25aecbc40af7f46720837bc3cc778d656e743f36a10bd76e561
+  checksum: 10c0/51380426c8a2fbcbd232d7ec52d7f7da9f3087f248119789246352ae1cec36e0291520f039f573d961caa48c042cd35f8244b7c7023dfad08cc757a3ffe63e7d
   languageName: node
   linkType: hard
 
-"@apify/log@npm:^2.2.6, @apify/log@npm:^2.4.0, @apify/log@npm:^2.5.0":
-  version: 2.5.0
-  resolution: "@apify/log@npm:2.5.0"
+"@apify/log@npm:^2.2.6, @apify/log@npm:^2.4.0, @apify/log@npm:^2.5.1":
+  version: 2.5.1
+  resolution: "@apify/log@npm:2.5.1"
   dependencies:
-    "@apify/consts": "npm:^2.26.0"
+    "@apify/consts": "npm:^2.27.0"
     ansi-colors: "npm:^4.1.1"
-  checksum: 10c0/f63d6ff0ba69f3c944a3f9c7c125dcc61bfbc71a4674cc93549179d2810ca2f31883f6bdc5edc7146048b9e9a2439c478948ba63a51910b3e8f811c8f74df6a4
+  checksum: 10c0/c465fc1a2c3a7fda11490ea07463cf17c6646c5763f4b67dc3e3f8e69cc965f36aa839fe5bd26cad416ae4e4b333887f184135e9bcdf9d57b2c3f7f6401f895e
   languageName: node
   linkType: hard
 
@@ -93,12 +86,12 @@ __metadata:
   linkType: hard
 
 "@apify/utilities@npm:~2.10.0":
-  version: 2.10.1
-  resolution: "@apify/utilities@npm:2.10.1"
+  version: 2.10.2
+  resolution: "@apify/utilities@npm:2.10.2"
   dependencies:
-    "@apify/consts": "npm:^2.26.0"
-    "@apify/log": "npm:^2.5.0"
-  checksum: 10c0/8b319bdeff6136dbeb8300a7002fd25124a8f283c23980c5a4f950c83432d2c23ed391a8832dc5923f490e1c35fca86e9328b9882a452da5bb95c5acd4d71f9b
+    "@apify/consts": "npm:^2.27.0"
+    "@apify/log": "npm:^2.5.1"
+  checksum: 10c0/dbc641f0aa14795bdc85b345a06d3507b3ac80fc088e74d551cdc568c83c5106e5dc68a51c2382005409d4ca3c31140012e1605e8f3a2186966aadebdaee5013
   languageName: node
   linkType: hard
 
@@ -204,7 +197,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-cloudfront@npm:^3.535.0":
+"@aws-sdk/client-cloudfront@npm:^3.569.0":
   version: 3.569.0
   resolution: "@aws-sdk/client-cloudfront@npm:3.569.0"
   dependencies:
@@ -1285,17 +1278,17 @@ __metadata:
   linkType: hard
 
 "@npmcli/fs@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "@npmcli/fs@npm:3.1.0"
+  version: 3.1.1
+  resolution: "@npmcli/fs@npm:3.1.1"
   dependencies:
     semver: "npm:^7.3.5"
-  checksum: 10c0/162b4a0b8705cd6f5c2470b851d1dc6cd228c86d2170e1769d738c1fbb69a87160901411c3c035331e9e99db72f1f1099a8b734bf1637cc32b9a5be1660e4e1e
+  checksum: 10c0/c37a5b4842bfdece3d14dfdb054f73fe15ed2d3da61b34ff76629fb5b1731647c49166fd2a8bf8b56fcfa51200382385ea8909a3cbecdad612310c114d3f6c99
   languageName: node
   linkType: hard
 
 "@oclif/core@npm:^3.26.0, @oclif/core@npm:^3.26.2, @oclif/core@npm:^3.26.5, @oclif/core@npm:~3.26.0":
-  version: 3.26.5
-  resolution: "@oclif/core@npm:3.26.5"
+  version: 3.26.6
+  resolution: "@oclif/core@npm:3.26.6"
   dependencies:
     "@types/cli-progress": "npm:^3.11.5"
     ansi-escapes: "npm:^4.3.2"
@@ -1325,7 +1318,7 @@ __metadata:
     widest-line: "npm:^3.1.0"
     wordwrap: "npm:^1.0.0"
     wrap-ansi: "npm:^7.0.0"
-  checksum: 10c0/8e62caeaacec29fed637ef32a206cbc68ce7dbffa3899aaf154817605e29ea8b9bb6a19029884473cdcabc26ab230995e57d1ee4fe41924e0cd644a4184124a9
+  checksum: 10c0/43f93c4b44a81f922b56666cbd88e5eae10820fdba36211e26ef1572aaea229ea6800f138c50aa2ebd65603904d425cc64cd5fe76b0cec20515728173d7e0463
   languageName: node
   linkType: hard
 
@@ -2396,11 +2389,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*, @types/node@npm:^20.11.20, @types/node@npm:^20.12.7":
-  version: 20.12.8
-  resolution: "@types/node@npm:20.12.8"
+  version: 20.12.10
+  resolution: "@types/node@npm:20.12.10"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 10c0/840002d20654e38a9af8cdffa215598fdb28ac4f96c5701ed672ec365ed6ccc66da299edddaa409baf13cd71bbf1128901f633b5e44e070fc236e26415805b78
+  checksum: 10c0/2cc3b6ea09894ed1a3cf39f6491ec539281580f4ff83216e7d26ce85c83237fe0543c0ca49e25b2515ccdb6c8814b488d17a64a05f536dcaea94f9d32a60c7d7
   languageName: node
   linkType: hard
 
@@ -3453,15 +3446,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"builtins@npm:^5.0.0":
-  version: 5.1.0
-  resolution: "builtins@npm:5.1.0"
-  dependencies:
-    semver: "npm:^7.0.0"
-  checksum: 10c0/3c32fe5bd7ed4ff7dbd6fb14bcb9d7eaa7e967327f1899cd336f8625d3f46fceead0a53528f1e332aeaee757034ebb307cb2f1a37af2b86a3c5ad4845d01c0c8
-  languageName: node
-  linkType: hard
-
 "bundle-name@npm:^4.1.0":
   version: 4.1.0
   resolution: "bundle-name@npm:4.1.0"
@@ -4363,12 +4347,12 @@ __metadata:
   linkType: hard
 
 "enhanced-resolve@npm:^5.12.0":
-  version: 5.16.0
-  resolution: "enhanced-resolve@npm:5.16.0"
+  version: 5.16.1
+  resolution: "enhanced-resolve@npm:5.16.1"
   dependencies:
     graceful-fs: "npm:^4.2.4"
     tapable: "npm:^2.2.0"
-  checksum: 10c0/dd69669cbb638ccacefd03e04d5e195ee6a99b7f5f8012f86d2df7781834de357923e06064ea621137c4ce0b37cc12b872b4e6d1ac6ab15fe98e7f1dfbbb08c4
+  checksum: 10c0/57d52625b978f18b32351a03006699de1e3695ce27af936ab4f1f98d3a4c825b219b445910bb4eef398303bbb5f37d7e382f842513d0f3a32614b78f6fd07ab7
   languageName: node
   linkType: hard
 
@@ -5479,11 +5463,11 @@ __metadata:
   linkType: hard
 
 "get-tsconfig@npm:^4.5.0, get-tsconfig@npm:^4.7.3":
-  version: 4.7.3
-  resolution: "get-tsconfig@npm:4.7.3"
+  version: 4.7.4
+  resolution: "get-tsconfig@npm:4.7.4"
   dependencies:
     resolve-pkg-maps: "npm:^1.0.0"
-  checksum: 10c0/b15ca9d5d0887ebfccadc9fe88b6ff3827a5691ec90e7608a5e9c74bef959c14aba62f6bb88ac7f50322395731789a2cf654244f00e10f4f76349911b6846d6f
+  checksum: 10c0/4bd9ca36aa8b117d7d2ddd57d18fce94444cda9225c8444b2ffa9f19490a1ac77d99089deaf03012945a86e8daed73ec910b33f8830e66df64b44f6f0ebccff1
   languageName: node
   linkType: hard
 
@@ -7464,10 +7448,10 @@ __metadata:
   linkType: hard
 
 "oclif@npm:^4.4.18":
-  version: 4.10.3
-  resolution: "oclif@npm:4.10.3"
+  version: 4.10.4
+  resolution: "oclif@npm:4.10.4"
   dependencies:
-    "@aws-sdk/client-cloudfront": "npm:^3.535.0"
+    "@aws-sdk/client-cloudfront": "npm:^3.569.0"
     "@aws-sdk/client-s3": "npm:^3.569.0"
     "@inquirer/confirm": "npm:^3.1.6"
     "@inquirer/input": "npm:^2.1.1"
@@ -7492,7 +7476,7 @@ __metadata:
     validate-npm-package-name: "npm:^5.0.0"
   bin:
     oclif: bin/run.js
-  checksum: 10c0/5c6f2fb7a5ae8e37f6b8b58eb39bce092d6ea5484b9d322630bc0091d8019c6d66241b189b727bb5d8ad1d3772e352d8be25c873164ff740be230301ac24852e
+  checksum: 10c0/da9ba5d1dc9a31066783724bd9b206dcbdf7b00656c01c8b839bb574b0bab1dd67d21dc2facbc685b2f75dbef8da101a92496546e1fd41968aa84931fb76a448
   languageName: node
   linkType: hard
 
@@ -8488,14 +8472,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:^7.0.0, semver@npm:^7.1.2, semver@npm:^7.3.4, semver@npm:^7.3.5, semver@npm:^7.6.0, semver@npm:~7.6.0":
-  version: 7.6.0
-  resolution: "semver@npm:7.6.0"
-  dependencies:
-    lru-cache: "npm:^6.0.0"
+"semver@npm:^7.1.2, semver@npm:^7.3.4, semver@npm:^7.3.5, semver@npm:^7.6.0, semver@npm:~7.6.0":
+  version: 7.6.1
+  resolution: "semver@npm:7.6.1"
   bin:
     semver: bin/semver.js
-  checksum: 10c0/fbfe717094ace0aa8d6332d7ef5ce727259815bd8d8815700853f4faf23aacbd7192522f0dc5af6df52ef4fa85a355ebd2f5d39f554bd028200d6cf481ab9b53
+  checksum: 10c0/fd28315954ffc80204df0cb5c62355160ebf54059f5ffe386e9903162ddf687ed14004c30f6e5347fa695fc77bafa242798af8d351f1d260207f007cfbeccb82
   languageName: node
   linkType: hard
 
@@ -9245,8 +9227,8 @@ __metadata:
   linkType: hard
 
 "tsx@npm:^4.7.1":
-  version: 4.9.1
-  resolution: "tsx@npm:4.9.1"
+  version: 4.9.3
+  resolution: "tsx@npm:4.9.3"
   dependencies:
     esbuild: "npm:~0.20.2"
     fsevents: "npm:~2.3.3"
@@ -9256,7 +9238,7 @@ __metadata:
       optional: true
   bin:
     tsx: dist/cli.mjs
-  checksum: 10c0/83723016e0681519280b04e8b9aeaa47b48cffdc60606f20097b815a13f851eaa83f2b51c23f939b882a3ab14010f18ab9f3d555a6e44e59968cf9acd370d38d
+  checksum: 10c0/abc0d461885ef227959274de5e2f80961e860cc1524d090fc9161bf6450b732f9c3e88ec770ea8cbe49880c9fed7c65aa7853d060b83d9c56f70d935e9162d18
   languageName: node
   linkType: hard
 
@@ -9321,9 +9303,9 @@ __metadata:
   linkType: hard
 
 "type-fest@npm:^4.0.0":
-  version: 4.18.1
-  resolution: "type-fest@npm:4.18.1"
-  checksum: 10c0/f81c82548a1f8c107fb286661c4d0caf5ed9c9842050dc5d417326a6208ddc67e04fa30faa9f948308a7eb164497f138fe5035e3f305c87a3ba8e7e0ce2e38c6
+  version: 4.18.2
+  resolution: "type-fest@npm:4.18.2"
+  checksum: 10c0/5e669128bf7cbc9f9cea4e4862c974517a1d9f77652589c2ac0908a8be5d852d4e52593ed14f4d8a44a604fb5e8a8ec1b658e461acd8bb7592f5e5265a04cbab
   languageName: node
   linkType: hard
 
@@ -9574,11 +9556,9 @@ __metadata:
   linkType: hard
 
 "validate-npm-package-name@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "validate-npm-package-name@npm:5.0.0"
-  dependencies:
-    builtins: "npm:^5.0.0"
-  checksum: 10c0/36a9067650f5b90c573a0d394b89ddffb08fe58a60507d7938ad7c38f25055cc5c6bf4a10fbd604abe1f4a31062cbe0dfa8e7ccad37b249da32e7b71889c079e
+  version: 5.0.1
+  resolution: "validate-npm-package-name@npm:5.0.1"
+  checksum: 10c0/903e738f7387404bb72f7ac34e45d7010c877abd2803dc2d614612527927a40a6d024420033132e667b1bade94544b8a1f65c9431a4eb30d0ce0d80093cd1f74
   languageName: node
   linkType: hard
 
