@@ -23,7 +23,7 @@ export const APIFY_STORAGE_TYPES = {
  */
 export const getApifyStorageClient = async (
     options: MemoryStorageOptions | ApifyClientOptions = {},
-    forceCloud = false,
+    forceCloud = Reflect.has(process.env, APIFY_ENV_VARS.IS_AT_HOME),
 ): Promise<StorageClient> => {
     const storageDir = getLocalStorageDir();
 
@@ -53,7 +53,7 @@ export const getApifyStorageClient = async (
 
 /**
  * Returns default storage id based on environment variables.
- * Throws error if not set and actor running on platform.
+ * Throws error if not set and Actor running on platform.
  * @param storeType
  */
 export const getDefaultStorageId = (storeType: typeof APIFY_STORAGE_TYPES[keyof typeof APIFY_STORAGE_TYPES]) => {

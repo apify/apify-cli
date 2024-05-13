@@ -31,7 +31,7 @@ const TEST_ACTOR_SOURCE_FILES: ActorCollectionCreateOptions = {
                 {
                     name: '.actor/Dockerfile',
                     format: 'TEXT',
-                    content: '# First, specify the base Docker image.\n# You can see the Docker images from Apify at https://hub.docker.com/r/apify/.\n# You can also use any other image from Docker Hub.\nFROM apify/actor-python:3.11\n\n# Second, copy just requirements.txt into the actor image,\n# since it should be the only file that affects the dependency install in the next step,\n# in order to speed up the build\nCOPY requirements.txt ./\n\n# Install the packages specified in requirements.txt,\n# Print the installed Python version, pip version\n# and all installed packages with their versions for debugging\nRUN echo "Python version:" \\\n && python --version \\\n && echo "Pip version:" \\\n && pip --version \\\n && echo "Installing dependencies:" \\\n && pip install -r requirements.txt \\\n && echo "All installed Python packages:" \\\n && pip freeze\n\n# Next, copy the remaining files and directories with the source code.\n# Since we do this after installing the dependencies, quick build will be really fast\n# for most source file changes.\nCOPY . ./\n\n# Specify how to launch the source code of your actor.\n# By default, the "python3 -m src" command is run\nCMD ["python3", "-m", "src"]\n',
+                    content: '# First, specify the base Docker image.\n# You can see the Docker images from Apify at https://hub.docker.com/r/apify/.\n# You can also use any other image from Docker Hub.\nFROM apify/actor-python:3.11\n\n# Second, copy just requirements.txt into the Actor image,\n# since it should be the only file that affects the dependency install in the next step,\n# in order to speed up the build\nCOPY requirements.txt ./\n\n# Install the packages specified in requirements.txt,\n# Print the installed Python version, pip version\n# and all installed packages with their versions for debugging\nRUN echo "Python version:" \\\n && python --version \\\n && echo "Pip version:" \\\n && pip --version \\\n && echo "Installing dependencies:" \\\n && pip install -r requirements.txt \\\n && echo "All installed Python packages:" \\\n && pip freeze\n\n# Next, copy the remaining files and directories with the source code.\n# Since we do this after installing the dependencies, quick build will be really fast\n# for most source file changes.\nCOPY . ./\n\n# Specify how to launch the source code of your Actor.\n# By default, the "python3 -m src" command is run\nCMD ["python3", "-m", "src"]\n',
                 },
                 {
                     name: '.actor/actor.json',
@@ -129,9 +129,9 @@ describe('apify pull', () => {
         .catch((ctx) => {
             expect(ctx.message).to.be.eql('Cannot find Actor in this directory.');
         })
-        .it('should fail outside actor folder without actorId defined');
+        .it('should fail outside Actor folder without actorId defined');
 
-    it('should work with actor SOURCE_FILES', async () => {
+    it('should work with Actor SOURCE_FILES', async () => {
         const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_SOURCE_FILES });
         actorsForCleanup.add(testActor.id);
         actorNamesForCleanup.add(testActor.name);
