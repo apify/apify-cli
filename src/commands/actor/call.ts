@@ -115,6 +115,6 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
             };
         }
 
-        throw new Error('Please provide an Actor ID or name, or run this command from a directory with a valid Apify actor.');
+        throw new Error('Please provide an Actor ID or name, or run this command from a directory with a valid Apify Actor.');
     }
 }
