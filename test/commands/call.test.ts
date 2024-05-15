@@ -3,12 +3,12 @@ import { platform } from 'node:os';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
-import { LoginCommand } from '../../../src/commands/login.js';
-import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
-import { waitForBuildToFinishWithTimeout } from '../../__setup__/build-utils.js';
-import { TEST_USER_TOKEN, testUserClient } from '../../__setup__/config.js';
-import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
-import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+import { LoginCommand } from '../../src/commands/login.js';
+import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
+import { waitForBuildToFinishWithTimeout } from '../__setup__/build-utils.js';
+import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
+import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
 const ACTOR_NAME = `call-my-actor-${cryptoRandomObjectId(6)}-${process.version.split('.')[0]}-${platform()}`;
 const EXPECTED_OUTPUT = {
@@ -28,12 +28,11 @@ const {
     toggleCwdBetweenFullAndParentPath,
 } = useTempPath(ACTOR_NAME, { cwd: true, cwdParent: true, create: true, remove: true });
 
-const { CreateCommand } = await import('../../../src/commands/create.js');
-const { PushCommand } = await import('../../../src/commands/push.js');
-const { CallCommand } = await import('../../../src/commands/call.js');
-const { ActorCallCommand } = await import('../../../src/commands/actor/call.js');
+const { CreateCommand } = await import('../../src/commands/create.js');
+const { PushCommand } = await import('../../src/commands/push.js');
+const { ActorCallCommand } = await import('../../src/commands/call.js');
 
-describe('apify actor call', () => {
+describe('apify call', () => {
     let actorId: string;
 
     beforeAll(async () => {
@@ -102,36 +101,5 @@ describe('apify actor call', () => {
         expect(EXPECTED_OUTPUT).toStrictEqual(output!.value);
         expect(EXPECTED_INPUT).toStrictEqual(input!.value);
         expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
-    });
-
-    describe('apify call works still', () => {
-        it('without actId', async () => {
-            await CallCommand.run([], import.meta.url);
-            const actorClient = testUserClient.actor(actorId);
-            const runs = await actorClient.runs().list();
-            const lastRun = runs.items.pop();
-            const lastRunDetail = await testUserClient.run(lastRun!.id).get();
-            const output = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('OUTPUT');
-            const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
-
-            expect(EXPECTED_OUTPUT).toStrictEqual(output!.value);
-            expect(EXPECTED_INPUT).toStrictEqual(input!.value);
-            expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
-        });
-
-        it('should work with just the Actor name', async () => {
-            await expect(CallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
-
-            const actorClient = testUserClient.actor(actorId);
-            const runs = await actorClient.runs().list();
-            const lastRun = runs.items.pop();
-            const lastRunDetail = await testUserClient.run(lastRun!.id).get();
-            const output = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('OUTPUT');
-            const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
-
-            expect(EXPECTED_OUTPUT).toStrictEqual(output!.value);
-            expect(EXPECTED_INPUT).toStrictEqual(input!.value);
-            expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
-        });
     });
 });
