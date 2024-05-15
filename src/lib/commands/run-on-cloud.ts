@@ -45,7 +45,7 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     let run: ActorRun;
 
     try {
-        if (localInput) {
+        if (localInput && type === 'Actor') {
             // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
             // It will save malformed JSON which looks like buffer as INPUT.
             // We need to fix this in v1 during removing call under actor namespace.
@@ -73,19 +73,19 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     link(`${type} run detail`, `https://console.apify.com/actors/${run.actId}#/runs/${run.id}`);
 
     if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-        success('Actor finished.');
+        success(`${type} finished.`);
     } else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
-        warning('Actor is still running!');
+        warning(`${type} is still running!`);
     } else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
-        warning('Actor was aborted!');
+        warning(`${type} was aborted!`);
         process.exitCode = CommandExitCodes.RunAborted;
     } else {
-        error('Actor failed!');
+        error(`${type} failed!`);
         process.exitCode = CommandExitCodes.RunFailed;
     }
 }
 
-export const SharedRunOnCloudFlags = {
+export const SharedRunOnCloudFlags = (type: 'Actor' | 'Task') => ({
     build: Flags.string({
         char: 'b',
         description: 'Tag or number of the build to run (e.g. "latest" or "1.2.34").',
@@ -93,12 +93,12 @@ export const SharedRunOnCloudFlags = {
     }),
     timeout: Flags.integer({
         char: 't',
-        description: 'Timeout for the Actor run in seconds. Zero value means there is no timeout.',
+        description: `Timeout for the ${type} run in seconds. Zero value means there is no timeout.`,
         required: false,
     }),
     memory: Flags.integer({
         char: 'm',
-        description: 'Amount of memory allocated for the Actor run, in megabytes.',
+        description: `Amount of memory allocated for the ${type} run, in megabytes.`,
         required: false,
     }),
     'wait-for-finish': Flags.string({
@@ -106,4 +106,4 @@ export const SharedRunOnCloudFlags = {
         description: 'Seconds for waiting to run to finish, if no value passed, it waits forever.',
         required: false,
     }),
-};
+});

@@ -1,16 +1,14 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { writeFileSync } from 'node:fs';
 import { platform } from 'node:os';
 
-import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { cryptoRandomObjectId } from '@apify/utilities';
-import { ApifyClient } from 'apify-client';
 
-import { LoginCommand } from '../../src/commands/login.js';
-import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
-import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
-import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
-import { useTempPath } from '../__setup__/hooks/useTempPath.js';
+import { LoginCommand } from '../../../src/commands/login.js';
+import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
+import { waitForBuildToFinishWithTimeout } from '../../__setup__/build-utils.js';
+import { TEST_USER_TOKEN, testUserClient } from '../../__setup__/config.js';
+import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
+import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 const ACTOR_NAME = `call-my-actor-${cryptoRandomObjectId(6)}-${process.version.split('.')[0]}-${platform()}`;
 const EXPECTED_OUTPUT = {
@@ -21,27 +19,6 @@ const EXPECTED_INPUT = {
 };
 const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
 
-/**
- * Waits for the build to finish
- */
-const waitForBuildToFinish = async (client: ApifyClient, buildId: string) => {
-    while (true) { // eslint-disable-line
-        const build = await client.build(buildId).get();
-        if (build!.status !== ACTOR_JOB_STATUSES.RUNNING as any) return build;
-        await new Promise((resolve) => setTimeout(resolve, 2500));
-    }
-};
-
-/**
- * Waits for build to finish with timeout, throws an error on timeout
- */
-const waitForBuildToFinishWithTimeout = async (client: ApifyClient, buildId: string, timeoutSecs = 60) => {
-    const buildPromise = waitForBuildToFinish(client, buildId);
-    const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(false), timeoutSecs * 1000));
-    const result = await Promise.race([buildPromise, timeoutPromise]);
-    if (!result) throw new Error(`Timed out after ${timeoutSecs} seconds`);
-};
-
 useAuthSetup({ perTest: false });
 
 const {
@@ -51,11 +28,11 @@ const {
     toggleCwdBetweenFullAndParentPath,
 } = useTempPath(ACTOR_NAME, { cwd: true, cwdParent: true, create: true, remove: true });
 
-const { CreateCommand } = await import('../../src/commands/create.js');
-const { PushCommand } = await import('../../src/commands/push.js');
-const { CallCommand } = await import('../../src/commands/call.js');
+const { CreateCommand } = await import('../../../src/commands/create.js');
+const { PushCommand } = await import('../../../src/commands/push.js');
+const { ActorCallCommand } = await import('../../../src/commands/actor/call.js');
 
-describe('apify call', () => {
+describe('apify actor call', () => {
     let actorId: string;
 
     beforeAll(async () => {
@@ -98,7 +75,7 @@ describe('apify call', () => {
     });
 
     it('without actId', async () => {
-        await CallCommand.run([], import.meta.url);
+        await ActorCallCommand.run([], import.meta.url);
         const actorClient = testUserClient.actor(actorId);
         const runs = await actorClient.runs().list();
         const lastRun = runs.items.pop();
@@ -112,7 +89,7 @@ describe('apify call', () => {
     });
 
     it('should work with just the Actor name', async () => {
-        expect(CallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
+        expect(ActorCallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
 
         const actorClient = testUserClient.actor(actorId);
         const runs = await actorClient.runs().list();

@@ -10,7 +10,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
     + 'The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". '
     + 'It takes input for the Actor from the default local key-value store by default.';
 
-    static override flags = SharedRunOnCloudFlags;
+    static override flags = SharedRunOnCloudFlags('Task');
 
     static override args = {
         taskId: Args.string({
