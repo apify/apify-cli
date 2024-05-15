@@ -90,7 +90,7 @@ describe('apify actor call', () => {
     });
 
     it('should work with just the Actor name', async () => {
-        expect(ActorCallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
+        await expect(ActorCallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
 
         const actorClient = testUserClient.actor(actorId);
         const runs = await actorClient.runs().list();
@@ -120,7 +120,7 @@ describe('apify actor call', () => {
         });
 
         it('should work with just the Actor name', async () => {
-            expect(CallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
+            await expect(CallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
 
             const actorClient = testUserClient.actor(actorId);
             const runs = await actorClient.runs().list();
