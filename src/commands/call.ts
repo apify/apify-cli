@@ -87,7 +87,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
             };
         }
 
-        // Try fetching actor directly by name
+        // Try fetching Actor directly by name
         if (actorId) {
             const actor = await client.actor(`${usernameOrId}/${actorId.toLowerCase()}`).get();
 

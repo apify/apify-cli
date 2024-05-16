@@ -48,7 +48,7 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
         if (localInput && type === 'Actor') {
             // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
             // It will save malformed JSON which looks like buffer as INPUT.
-            // We need to fix this in v1 during removing call under actor namespace.
+            // We need to fix this in v1 during removing call under Actor namespace.
             const input = mime.getExtension(localInput.contentType!) === 'json' ? JSON.parse(localInput.body.toString('utf-8')) : localInput.body;
             run = await apifyClient[clientMethod](actorOrTaskData.id).start(input, { ...runOptions, contentType: localInput.contentType! });
         } else {
