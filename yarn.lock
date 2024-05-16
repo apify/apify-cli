@@ -868,12 +868,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@crawlee/memory-storage@npm:~3.9.0":
-  version: 3.9.2
-  resolution: "@crawlee/memory-storage@npm:3.9.2"
+"@crawlee/memory-storage@npm:~3.10.0":
+  version: 3.10.0
+  resolution: "@crawlee/memory-storage@npm:3.10.0"
   dependencies:
     "@apify/log": "npm:^2.4.0"
-    "@crawlee/types": "npm:3.9.2"
+    "@crawlee/types": "npm:3.10.0"
     "@sapphire/async-queue": "npm:^1.5.0"
     "@sapphire/shapeshift": "npm:^3.0.0"
     content-type: "npm:^1.0.4"
@@ -882,11 +882,20 @@ __metadata:
     mime-types: "npm:^2.1.35"
     proper-lockfile: "npm:^4.1.2"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/340c62c2d859d7d457de87107fbe91861544f8dfae6ce6cfde2418c17ef873af1beb354a96bdef7ffab804ea275f60d40af89118abea2660b7b71da8f6b72456
+  checksum: 10c0/752b728d2e897e6cb82787e3779b83a79eb2169a0681bb867265391734ca55f7031f828fa3937451a1995e4e49434ec6dee599c990d477b65e12726f2e7e4b54
   languageName: node
   linkType: hard
 
-"@crawlee/types@npm:3.9.2, @crawlee/types@npm:^3.3.0, @crawlee/types@npm:^3.8.1":
+"@crawlee/types@npm:3.10.0":
+  version: 3.10.0
+  resolution: "@crawlee/types@npm:3.10.0"
+  dependencies:
+    tslib: "npm:^2.4.0"
+  checksum: 10c0/86e81751da9d982df389bd467e4a4669f5955d0a96feabd475aa30abd03a69bcd57e15a5af988f6ae67589139058f892b35dfe747de1f840c2b02d39faef7bf5
+  languageName: node
+  linkType: hard
+
+"@crawlee/types@npm:^3.3.0, @crawlee/types@npm:^3.8.1":
   version: 3.9.2
   resolution: "@crawlee/types@npm:3.9.2"
   dependencies:
@@ -2959,7 +2968,7 @@ __metadata:
     "@apify/input_schema": "npm:~3.5.15"
     "@apify/tsconfig": "npm:^0.1.0"
     "@apify/utilities": "npm:~2.10.0"
-    "@crawlee/memory-storage": "npm:~3.9.0"
+    "@crawlee/memory-storage": "npm:~3.10.0"
     "@crawlee/types": "npm:^3.8.1"
     "@oclif/core": "npm:~3.26.0"
     "@oclif/plugin-help": "npm:~6.0.14"

@@ -59,7 +59,7 @@
         "@apify/consts": "~2.27.0",
         "@apify/input_schema": "~3.5.15",
         "@apify/utilities": "~2.10.0",
-        "@crawlee/memory-storage": "~3.9.0",
+        "@crawlee/memory-storage": "~3.10.0",
         "@oclif/core": "~3.26.0",
         "@oclif/plugin-help": "~6.0.14",
         "@root/walk": "~1.1.0",
