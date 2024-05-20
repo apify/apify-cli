@@ -6,7 +6,7 @@ import { gt } from 'semver';
 
 import { CHECK_VERSION_EVERY_MILLIS, CURRENT_APIFY_CLI_VERSION } from './consts.js';
 import { extendLocalState, getLocalState } from './local_state.js';
-import { info, warning } from './outputs.js';
+import { info, simpleLog, warning } from './outputs.js';
 
 const INSTALLATION_TYPE = {
     HOMEBREW: 'HOMEBREW',
@@ -58,7 +58,7 @@ export const getLatestNpmVersion = async () => {
  */
 const getAndCacheLatestNpmVersion = async (): Promise<string | undefined> => {
     try {
-        info('Making sure that Apify CLI is up to date...');
+        info({ message: 'Making sure that Apify CLI is up to date...' });
 
         const latestNpmVersion = await getLatestNpmVersion();
 
@@ -70,7 +70,7 @@ const getAndCacheLatestNpmVersion = async (): Promise<string | undefined> => {
         return latestNpmVersion;
     } catch (err) {
         console.error(err);
-        warning('Cannot fetch the latest Apify CLI version from NPM, using the cached version instead.');
+        warning({ message: 'Cannot fetch the latest Apify CLI version from NPM, using the cached version instead.' });
 
         return undefined;
     }
@@ -99,12 +99,12 @@ export const checkLatestVersion = async (enforceUpdate = false) => {
     if (latestNpmVersion && gt(latestNpmVersion as string, CURRENT_APIFY_CLI_VERSION)) {
         const installationType = detectInstallationType();
         const updateCommand = `' ${UPDATE_COMMAND[installationType]} '`;
-        console.log('');
-        warning('You are using an old version of Apify CLI. We strongly recommend you always use the latest available version.');
-        console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(updateCommand))} to update! 👍 \n`);
+        simpleLog({ message: '' });
+        warning({ message: 'You are using an old version of Apify CLI. We strongly recommend you always use the latest available version.' });
+        simpleLog({ message: `       ↪ Run ${chalk.bgWhite(chalk.black(updateCommand))} to update! 👍 \n` });
     } else if (shouldGetCurrentVersion) {
         // In this case the version was refreshed from the NPM which took a while and "Info: Making sure that Apify ..." was printed
         // so also print the state.
-        info('Apify CLI is up to date 👍 \n');
+        info({ message: 'Apify CLI is up to date 👍 \n' });
     }
 };

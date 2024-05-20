@@ -38,13 +38,13 @@ You can also pass any custom path to your input schema to have it validated inst
         }
 
         if (inputSchemaPath) {
-            info(`Validating input schema stored at ${inputSchemaPath}`);
+            info({ message: `Validating input schema stored at ${inputSchemaPath}` });
         } else {
-            info(`Validating input schema embedded in "${LOCAL_CONFIG_PATH}"`);
+            info({ message: `Validating input schema embedded in "${LOCAL_CONFIG_PATH}"` });
         }
 
         const validator = new Ajv({ strict: false });
         validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
-        success('Input schema is valid.');
+        success({ message: 'Input schema is valid.' });
     }
 }

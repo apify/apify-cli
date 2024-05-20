@@ -222,7 +222,7 @@ export const getLocalConfigOrThrow = async (cwd: string) => {
         try {
             renameSync(getDeprecatedLocalConfigPath(cwd), `${getDeprecatedLocalConfigPath(cwd)}.deprecated`);
             // eslint-disable-next-line max-len
-            info(`The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.`);
+            info({ message: `The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.` });
         } catch (e) {
             throw new Error('Failed to rename deprecated "apify.json".');
         }
@@ -258,7 +258,7 @@ export const getLocalConfigOrThrow = async (cwd: string) => {
             await writeJsonFile(getLocalConfigPath(cwd), localConfig);
             renameSync(getDeprecatedLocalConfigPath(cwd), `${getDeprecatedLocalConfigPath(cwd)}.deprecated`);
             // eslint-disable-next-line max-len
-            info(`The "apify.json" file has been migrated to "${LOCAL_CONFIG_PATH}" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`);
+            info({ message: `The "apify.json" file has been migrated to "${LOCAL_CONFIG_PATH}" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.` });
         } catch (e) {
             throw new Error(`Can not update "${LOCAL_CONFIG_PATH}" structure. Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.`);
         }
@@ -467,11 +467,11 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
         }
 
         const log = await apifyClient.log(logId).get();
-        process.stdout.write(log!);
+        process.stderr.write(log!);
         return;
     }
 
-    // In other case stream it to stdout
+    // In other case stream it to stderr
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve) => {
         const stream = await apifyClient.log(logId).stream();
@@ -484,13 +484,13 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
         let nodeTimeout: NodeJS.Timeout | null = null;
 
         stream.on('data', (chunk) => {
-            // In tests, writing to process.stdout directly messes with vitest's output
+            // In tests, writing to process.stderr directly messes with vitest's output
             // With that said, we still NEED to wait for this stream to end, as otherwise tests become flaky.
             if (process.env.APIFY_NO_LOGS_IN_TESTS) {
                 return;
             }
 
-            process.stdout.write(chunk.toString());
+            process.stderr.write(chunk.toString());
         });
 
         stream.once('end', () => {
@@ -508,36 +508,6 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
             }, timeout);
         }
     });
-
-    // return new Promise((resolve, reject) => {
-    //     const req = get(`https://api.apify.com/v2/logs/${logId}?stream=1`);
-    //     let res: IncomingMessage;
-
-    //     req.on('response', (response) => {
-    //         res = response;
-    //         response.on('data', (chunk) => process.stdout.write(chunk.toString()));
-    //         response.on('error', (err) => {
-    //             reject(err);
-    //         });
-    //     });
-    //     req.on('error', (err) => {
-    //         reject(err);
-    //     });
-    //     req.on('close', () => {
-    //         resolve('finished');
-    //     });
-
-    //     if (timeout) {
-    //         setTimeout(() => {
-    //             if (res) res.removeAllListeners();
-    //             if (req) {
-    //                 req.removeAllListeners();
-    //                 req.destroy();
-    //             }
-    //             resolve('timeouts');
-    //         }, timeout);
-    //     }
-    // });
 };
 
 /**

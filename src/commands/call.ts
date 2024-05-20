@@ -17,8 +17,8 @@ import { getLocalConfig, getLocalInput, getLocalUserInfo, getLoggedClientOrThrow
 
 export class CallCommand extends ApifyCommand<typeof CallCommand> {
     static override description = 'Runs a specific Actor remotely on the Apify cloud platform.\n'
-    + 'The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". '
-    + 'It takes input for the Actor from the default local key-value store by default.';
+        + 'The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". '
+        + 'It takes input for the Actor from the default local key-value store by default.';
 
     static override flags = {
         build: Flags.string({
@@ -47,7 +47,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         actorId: Args.string({
             required: false,
             description: 'Name or ID of the Actor to run (e.g. "my-actor", "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
-            + `If not provided, the command runs the remote Actor specified in the "${LOCAL_CONFIG_PATH}" file.`,
+                + `If not provided, the command runs the remote Actor specified in the "${LOCAL_CONFIG_PATH}" file.`,
         }),
     };
 
@@ -87,7 +87,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         // Get input for act
         const localInput = getLocalInput(cwd);
 
-        runLog(`Calling Actor ${userFriendlyId} (${actorId})`);
+        runLog({ message: `Calling Actor ${userFriendlyId} (${actorId})` });
 
         let run: ActorRun;
         try {
@@ -100,7 +100,7 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
             } else {
                 run = await apifyClient.actor(actorId).start(null, runOpts);
             }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             // TODO: Better error message in apify-client-js
             if (err.type === 'record-not-found') throw new Error(`Actor ${userFriendlyId} (${actorId}) not found!`);
@@ -110,23 +110,23 @@ export class CallCommand extends ApifyCommand<typeof CallCommand> {
         try {
             await outputJobLog(run, waitForFinishMillis);
         } catch (err) {
-            warning('Can not get log:');
+            warning({ message: 'Can not get log:' });
             console.error(err);
         }
 
         run = (await apifyClient.run(run.id).get())!;
 
-        link('Actor run detail', `https://console.apify.com/actors/${run.actId}#/runs/${run.id}`);
+        link({ message: 'Actor run detail', url: `https://console.apify.com/actors/${run.actId}#/runs/${run.id}` });
 
         if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-            success('Actor finished.');
+            success({ message: 'Actor finished.' });
         } else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
-            warning('Actor is still running!');
+            warning({ message: 'Actor is still running!' });
         } else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
-            warning('Actor was aborted!');
+            warning({ message: 'Actor was aborted!' });
             process.exitCode = CommandExitCodes.RunAborted;
         } else {
-            error('Actor failed!');
+            error({ message: 'Actor failed!' });
             process.exitCode = CommandExitCodes.RunFailed;
         }
     }

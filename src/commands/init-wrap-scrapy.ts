@@ -26,6 +26,6 @@ It adds the following features:
     async run() {
         await wrapScrapyProject({ projectPath: this.args.path });
 
-        info('Scrapy project wrapped successfully.');
+        info({ message: 'Scrapy project wrapped successfully.' });
     }
 }

@@ -119,8 +119,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
         if (existsSync(LEGACY_LOCAL_STORAGE_DIR) && !existsSync(actualStoragePath)) {
             renameSync(LEGACY_LOCAL_STORAGE_DIR, actualStoragePath);
-            warning(`The legacy 'apify_storage' directory was renamed to '${actualStoragePath}' to align it with Apify SDK v3.`
-                + ' Contents were left intact.');
+            warning({
+                message: `The legacy 'apify_storage' directory was renamed to '${actualStoragePath}' to align it with Apify SDK v3.`
+                + ' Contents were left intact.',
+            });
         }
 
         let CRAWLEE_PURGE_ON_START = '0';
@@ -131,7 +133,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             switch (projectType) {
                 case PROJECT_TYPES.PRE_CRAWLEE_APIFY_SDK: {
                     await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
-                    info('All default local stores were purged.');
+                    info({ message: 'All default local stores were purged.' });
                     break;
                 }
                 case PROJECT_TYPES.CRAWLEE:
@@ -142,31 +144,33 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
             if (language === LANGUAGE.PYTHON) {
                 await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
-                info('All default local stores were purged.');
+                info({ message: 'All default local stores were purged.' });
             }
         }
 
         // TODO: deprecate these flags
         if (this.flags.purgeQueue && !this.flags.purge) {
             await purgeDefaultQueue();
-            info('Default local request queue was purged.');
+            info({ message: 'Default local request queue was purged.' });
         }
 
         if (this.flags.purgeDataset && !this.flags.purge) {
             await purgeDefaultDataset();
-            info('Default local dataset was purged.');
+            info({ message: 'Default local dataset was purged.' });
         }
 
         if (this.flags.purgeKeyValueStore && !this.flags.purge) {
             await purgeDefaultKeyValueStore();
-            info('Default local key-value store was purged.');
+            info({ message: 'Default local key-value store was purged.' });
         }
 
         if (!this.flags.purge) {
             const isStorageEmpty = await checkIfStorageIsEmpty();
             if (!isStorageEmpty) {
-                warning('The storage directory contains a previous state, the Actor will continue where it left off. '
-                    + 'To start from the initial state, use --purge parameter to clean the storage directory.');
+                warning({
+                    message: 'The storage directory contains a previous state, the Actor will continue where it left off. '
+                    + 'To start from the initial state, use --purge parameter to clean the storage directory.',
+                });
             }
         }
 
@@ -187,7 +191,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         const env = Object.assign(localEnvVars, process.env);
 
         if (!userId) {
-            warning('You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.');
+            warning({
+                message: 'You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.',
+            });
         }
 
         if (language === LANGUAGE.NODEJS) { // Actor is written in Node.js
@@ -201,8 +207,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                 if (isNodeVersionSupported(currentNodeVersion)) {
                     env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
                 } else {
-                    warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
-                        + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
+                    warning({
+                        message: `You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
+                        + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
+                    });
                 }
 
                 this.telemetryData.actorNodejsVersion = currentNodeVersion;
@@ -230,7 +238,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                     await execWithLog(getNpmCmd(), ['run', entrypoint], { env, cwd });
                 }
             } else {
-                error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`);
+                error({
+                    message: `No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`,
+                });
             }
         } else if (language === LANGUAGE.PYTHON) {
             const pythonVersion = languageVersion;
@@ -254,11 +264,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                         await execWithLog(pythonCommand, [entrypoint], { env, cwd });
                     }
                 } else {
-                    error(`Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
-                    error('Please install Python 3.8 or higher to be able to run Python Actors locally.');
+                    error({ message: `Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!` });
+                    error({ message: 'Please install Python 3.8 or higher to be able to run Python Actors locally.' });
                 }
             } else {
-                error('No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.');
+                error({ message: 'No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.' });
             }
         }
     }

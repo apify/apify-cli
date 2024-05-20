@@ -12,17 +12,17 @@ vitest.setConfig({ restoreMocks: false });
 useAuthSetup();
 
 vitest.mock('open', () => ({
-    default: (url: string) => console.log(`Open URL: ${url}`),
+    default: (url: string) => console.error(`Open URL: ${url}`),
 }));
 
 const { LoginCommand } = await import('../../src/commands/login.js');
 const { LogoutCommand } = await import('../../src/commands/logout.js');
 
 describe('apify login and logout', () => {
-    let spy: import('vitest').MockInstance<Parameters<typeof console['log']>, void>;
+    let spy: import('vitest').MockInstance<Parameters<typeof console['error']>, void>;
 
     beforeEach(() => {
-        spy = vitest.spyOn(console, 'log');
+        spy = vitest.spyOn(console, 'error');
     });
 
     it('should end with Error with bad token', async () => {
@@ -53,7 +53,7 @@ describe('apify login and logout', () => {
     it('have correctly setup server for interactive login', async () => {
         await LoginCommand.run(['-m', 'console'], import.meta.url);
 
-        const consoleInfo = spy.mock.calls[0][0];
+        const consoleInfo = spy.mock.calls[0][1];
         const consoleUrl = /"(http[s]?:\/\/[^"]*)"/.exec(consoleInfo)?.[1];
 
         const consoleUrlParams = new URL(consoleUrl!).searchParams;

@@ -38,6 +38,6 @@ const spawnPromised = async (cmd: string, args: string[], opts: SpawnOptionsWith
 };
 
 export async function execWithLog(cmd: string, args: string[] = [], opts: SpawnOptionsWithoutStdio = {}) {
-    run(`${cmd} ${args.join(' ')}`);
+    run({ message: `${cmd} ${args.join(' ')}` });
     await spawnPromised(cmd, args, opts);
 }

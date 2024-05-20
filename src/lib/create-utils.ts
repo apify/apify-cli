@@ -52,7 +52,7 @@ export const enhanceReadmeWithLocalSuffix = async (readmePath: string, manifestP
         readmeStream.write('\n\n');
         await pipeline(suffixStream, readmeStream);
     } catch (err) {
-        warning(`Could not append local development instructions to README.md. Cause: ${(err as Error).message}`);
+        warning({ message: `Could not append local development instructions to README.md. Cause: ${(err as Error).message}` });
     }
 };
 

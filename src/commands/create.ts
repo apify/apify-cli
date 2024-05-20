@@ -90,8 +90,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
             const folderHasFiles = folderExists && await readdir(actFolderDir).then((files) => files.length > 0).catch(() => false);
 
             if (folderExists?.isDirectory() && folderHasFiles) {
-                error(`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.`
-                    + ' You can use "apify init" to create a local Actor environment inside an existing directory.');
+                error({
+                    message: `Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.`
+                    + ' You can use "apify init" to create a local Actor environment inside an existing directory.',
+                });
 
                 actorName = await ensureValidActorName();
                 actFolderDir = join(cwd, actorName);
@@ -153,8 +155,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                 const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
                 if (currentNodeVersion) {
                     if (!isNodeVersionSupported(currentNodeVersion)) {
-                        warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
-                            + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
+                        warning({
+                            message: `You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
+                            + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
+                        });
                     }
                     // If the Actor is a Node.js Actor (has package.json), run `npm install`
                     await updateLocalJson(packageJsonPath, { name: actorName });
@@ -172,16 +176,18 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                     await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
                     dependenciesInstalled = true;
                 } else {
-                    error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher`
-                        + ' to be able to run Node.js Actors locally.');
+                    error({
+                        message: `No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher`
+                        + ' to be able to run Node.js Actors locally.',
+                    });
                 }
             } else if (existsSync(requirementsTxtPath)) {
                 const pythonVersion = detectPythonVersion(actFolderDir);
                 if (pythonVersion) {
                     if (isPythonVersionSupported(pythonVersion)) {
                         const venvPath = join(actFolderDir, '.venv');
-                        info(`Python version ${pythonVersion} detected.`);
-                        info(`Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...`);
+                        info({ message: `Python version ${pythonVersion} detected.` });
+                        info({ message: `Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...` });
                         let pythonCommand = getPythonCommand(actFolderDir);
                         if (!process.env.VIRTUAL_ENV) {
                             // If Python is not running in a virtual environment, create a new one
@@ -201,23 +207,23 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                         );
                         dependenciesInstalled = true;
                     } else {
-                        warning(`Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
-                        warning('Please install Python 3.8 or higher to be able to run Python Actors locally.');
+                        warning({ message: `Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!` });
+                        warning({ message: 'Please install Python 3.8 or higher to be able to run Python Actors locally.' });
                     }
                 } else {
-                    warning('No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.');
+                    warning({ message: 'No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.' });
                 }
             }
         }
 
         if (dependenciesInstalled) {
-            success(`Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".`);
-            info('To run your code in the cloud, run "apify push" and deploy your code to Apify Console.');
+            success({ message: `Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".` });
+            info({ message: 'To run your code in the cloud, run "apify push" and deploy your code to Apify Console.' });
             if (messages?.postCreate) {
-                info(messages?.postCreate);
+                info({ message: messages?.postCreate });
             }
         } else {
-            success(`Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`);
+            success({ message: `Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".` });
         }
     }
 }

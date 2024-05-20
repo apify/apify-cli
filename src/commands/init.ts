@@ -40,20 +40,20 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
         const cwd = process.cwd();
 
         if (ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY) {
-            info('The current directory looks like a Scrapy project. Using automatic project wrapping.');
+            info({ message: 'The current directory looks like a Scrapy project. Using automatic project wrapping.' });
             this.telemetryData.actorWrapper = PROJECT_TYPES.SCRAPY;
 
             return wrapScrapyProject({ projectPath: cwd });
         }
 
         if (!this.flags.yes && detectLocalActorLanguage(cwd).language === LANGUAGE.UNKNOWN) {
-            warning('The current directory does not look like a Node.js or Python project.');
+            warning({ message: 'The current directory does not look like a Node.js or Python project.' });
             const { c } = await inquirer.prompt([{ name: 'c', message: 'Do you want to continue?', type: 'confirm' }]);
             if (!c) return;
         }
 
         if (getLocalConfig(cwd)) {
-            warning(`Skipping creation of "${LOCAL_CONFIG_PATH}", the file already exists in the current directory.`);
+            warning({ message: `Skipping creation of "${LOCAL_CONFIG_PATH}", the file already exists in the current directory.` });
         } else {
             if (!actorName) {
                 let response = null;
@@ -64,7 +64,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
                         validateActorName(answer.actName);
                         response = answer;
                     } catch (err) {
-                        error((err as Error).message);
+                        error({ message: (err as Error).message });
                     }
                 }
 
@@ -80,6 +80,6 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
         // Create prefilled INPUT.json file from the input schema prefills
         await createPrefilledInputFileFromInputSchema(cwd);
 
-        success('The Actor has been initialized in the current directory.');
+        success({ message: 'The Actor has been initialized in the current directory.' });
     }
 }

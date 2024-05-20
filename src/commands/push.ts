@@ -100,7 +100,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
         const filePathsToPush = await getActorLocalFilePaths(cwd);
 
         if (!filePathsToPush.length) {
-            error('You need to call this command from a folder that has an Actor in it!');
+            error({ message: 'You need to call this command from a folder that has an Actor in it!' });
             process.exitCode = CommandExitCodes.NoFilesToPush;
             return;
         }
@@ -117,12 +117,12 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
                 '.actor',
             ].some((filePath) => filePathsToPush.some((fp) => fp === filePath || fp.startsWith(filePath)))
         ) {
-            error(
-                [
+            error({
+                message: [
                     'A valid Actor could not be found in the current directory. Please make sure you are in the correct directory.',
                     'You can also turn this directory into an Actor by running `apify init`.',
                 ].join('\n'),
-            );
+            });
 
             process.exitCode = CommandExitCodes.NoFilesToPush;
             return;
@@ -181,11 +181,11 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
                 actor = await apifyClient.actors().create(newActor);
                 actorId = actor.id;
                 isActorCreatedNow = true;
-                info(`Created Actor with name ${localConfig!.name} on Apify.`);
+                info({ message: `Created Actor with name ${localConfig!.name} on Apify.` });
             }
         }
 
-        info(`Deploying Actor '${localConfig!.name}' to Apify.`);
+        info({ message: `Deploying Actor '${localConfig!.name}' to Apify.` });
 
         const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
         const actorClient = apifyClient.actor(actorId);
@@ -220,7 +220,7 @@ Skipping push. Use --force to override.`,
             sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
         } else {
             // Create zip
-            run('Zipping Actor files');
+            run({ message: 'Zipping Actor files' });
             await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush, cwd);
 
             // Upload it to Apify.keyValueStores
@@ -247,7 +247,7 @@ Skipping push. Use --force to override.`,
             const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
             // TODO: fix this type too -.-
             await actorClient.version(version).update(actorVersionModifier as never);
-            run(`Updated version ${version} for Actor ${actor.name}.`);
+            run({ message: `Updated version ${version} for Actor ${actor.name}.` });
         } else {
             const actorNewVersion = {
                 versionNumber: version,
@@ -262,11 +262,11 @@ Skipping push. Use --force to override.`,
                 ...actorNewVersion,
             } as never);
 
-            run(`Created version ${version} for Actor ${actor.name}.`);
+            run({ message: `Created version ${version} for Actor ${actor.name}.` });
         }
 
         // Build Actor on Apify and wait for build to finish
-        run(`Building Actor ${actor.name}`);
+        run({ message: `Building Actor ${actor.name}` });
         let build = await actorClient.build(version, {
             useCache: true,
             waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
@@ -275,13 +275,13 @@ Skipping push. Use --force to override.`,
         try {
             await outputJobLog(build, waitForFinishMillis);
         } catch (err) {
-            warning('Can not get log:');
+            warning({ message: 'Can not get log:' });
             console.error(err);
         }
 
         build = (await apifyClient.build(build.id).get())!;
 
-        link('Actor build detail', `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`);
+        link({ message: 'Actor build detail', url: `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}` });
 
         // Disable open browser on CI, or if user passed --no-prompt flag
         if (!isCI && !this.flags.noPrompt) {
@@ -295,23 +295,23 @@ Skipping push. Use --force to override.`,
         }
 
         if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-            success('Actor was deployed to Apify cloud and built there.');
+            success({ message: 'Actor was deployed to Apify cloud and built there.' });
             // @ts-expect-error FIX THESE TYPES 😢
         } else if (build.status === ACTOR_JOB_STATUSES.READY) {
-            warning('Build is waiting for allocation.');
+            warning({ message: 'Build is waiting for allocation.' });
             // @ts-expect-error FIX THESE TYPES 😢
         } else if (build.status === ACTOR_JOB_STATUSES.RUNNING) {
-            warning('Build is still running.');
+            warning({ message: 'Build is still running.' });
             // @ts-expect-error FIX THESE TYPES 😢
         } else if (build.status === ACTOR_JOB_STATUSES.ABORTED || build.status === ACTOR_JOB_STATUSES.ABORTING) {
-            warning('Build was aborted!');
+            warning({ message: 'Build was aborted!' });
             process.exitCode = CommandExitCodes.BuildAborted;
             // @ts-expect-error FIX THESE TYPES 😢
         } else if (build.status === ACTOR_JOB_STATUSES.TIMED_OUT || build.status === ACTOR_JOB_STATUSES.TIMING_OUT) {
-            warning('Build timed out!');
+            warning({ message: 'Build timed out!' });
             process.exitCode = CommandExitCodes.BuildTimedOut;
         } else {
-            error('Build failed!');
+            error({ message: 'Build failed!' });
             process.exitCode = CommandExitCodes.BuildFailed;
         }
     }

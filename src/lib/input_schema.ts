@@ -95,7 +95,7 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
             ));
         }
     } catch (err) {
-        warning(`Could not create default input based on input schema, creating empty input instead. Cause: ${(err as Error).message}`);
+        warning({ message: `Could not create default input based on input schema, creating empty input instead. Cause: ${(err as Error).message}` });
     } finally {
         const keyValueStorePath = getLocalKeyValueStorePath();
         const inputJsonPath = join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);

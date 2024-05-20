@@ -262,10 +262,10 @@ describe('apify push', () => {
 
         await PushCommand.run(['--no-prompt'], import.meta.url);
 
-        expect(consoleSpy.logSpy).toHaveBeenCalled();
+        expect(consoleSpy.errorSpy).toHaveBeenCalled();
 
-        const lastCall = consoleSpy.logSpy.mock.calls.at(-1)!;
-        expect(lastCall[0]).to.include('You need to call this command from a folder that has an Actor in it');
+        const lastCall = consoleSpy.errorSpy.mock.calls.at(-1)!;
+        expect(lastCall[1]).to.include('You need to call this command from a folder that has an Actor in it');
     });
 
     it('should not push when the folder does not seem to have a valid Actor', async () => {
@@ -279,9 +279,9 @@ describe('apify push', () => {
 
         await PushCommand.run(['--no-prompt'], import.meta.url);
 
-        expect(consoleSpy.logSpy).toHaveBeenCalled();
+        expect(consoleSpy.errorSpy).toHaveBeenCalled();
 
-        const lastCall = consoleSpy.logSpy.mock.calls.at(-1)!;
-        expect(lastCall[0]).to.include('A valid Actor could not be found in the current directory.');
+        const lastCall = consoleSpy.errorSpy.mock.calls.at(-1)!;
+        expect(lastCall[1]).to.include('A valid Actor could not be found in the current directory.');
     });
 });
