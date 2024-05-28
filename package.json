@@ -64,7 +64,7 @@
         "@oclif/plugin-help": "~6.0.14",
         "@root/walk": "~1.1.0",
         "adm-zip": "~0.5.10",
-        "ajv": "~8.13.0",
+        "ajv": "~8.14.0",
         "apify-client": "~2.9.3",
         "archiver": "~7.0.0",
         "axios": "~1.7.0",
@@ -146,7 +146,7 @@
         "topicSeparator": " "
     },
     "volta": {
-        "node": "20.13.1",
+        "node": "20.14.0",
         "yarn": "4.2.2"
     },
     "packageManager": "yarn@4.2.2"
