@@ -2270,14 +2270,14 @@ __metadata:
   linkType: hard
 
 "@types/express-serve-static-core@npm:^4.17.33":
-  version: 4.19.1
-  resolution: "@types/express-serve-static-core@npm:4.19.1"
+  version: 4.19.2
+  resolution: "@types/express-serve-static-core@npm:4.19.2"
   dependencies:
     "@types/node": "npm:*"
     "@types/qs": "npm:*"
     "@types/range-parser": "npm:*"
     "@types/send": "npm:*"
-  checksum: 10c0/8e202374a7013fbbc5a3abd5111dd7ab73c4a6e9da4ffc1808d6e68be7a1dbd37e013b74e47aa6febc8efa459120058a1cbde6f2d509b2ad28fac301e1ee353a
+  checksum: 10c0/471060bbab7be4bbf2c24f5628e1fa2edbfd29fb47a99ba77984e9c0ac33b105a660cfc384ddd1e6fb6f45d9515e70422eefc9a7ba317565919ebcd5db251107
   languageName: node
   linkType: hard
 
@@ -2382,11 +2382,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*, @types/node@npm:^20.11.20, @types/node@npm:^20.12.12":
-  version: 20.12.12
-  resolution: "@types/node@npm:20.12.12"
+  version: 20.12.13
+  resolution: "@types/node@npm:20.12.13"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 10c0/f374b763c744e8f16e4f38cf6e2c0eef31781ec9228c9e43a6f267880fea420fab0a238b59f10a7cb3444e49547c5e3785787e371fc242307310995b21988812
+  checksum: 10c0/2ac92bb631dbddfb560eb3ba4eedbb1c688044a0130bc1ef032f5c0f20148ac7c9aa3c5aaa5a9787b6c4c6299847d754b96ee8c9def951481ba6628c46b683f5
   languageName: node
   linkType: hard
 
@@ -3319,9 +3319,9 @@ __metadata:
   linkType: hard
 
 "bare-events@npm:^2.2.0":
-  version: 2.2.2
-  resolution: "bare-events@npm:2.2.2"
-  checksum: 10c0/bacdaaf072f87ab5d2ed0c2fc519ef0fa8f6acd834fee50710a05f416a1b73ed99c9c6dfbefdd462ec4eb726d8f74e4a8476c2f8c3ae8812919c67eacb1f807f
+  version: 2.3.1
+  resolution: "bare-events@npm:2.3.1"
+  checksum: 10c0/f12f1d91c058f01fd74b920545343eae633d3eeefad6e4f93c392b54a62fe667b397430e004caa7636240d371d301ec5d8888371cec8a3bfe2808f7edd0d3ff1
   languageName: node
   linkType: hard
 
