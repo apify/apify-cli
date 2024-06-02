@@ -1,4 +1,4 @@
-import { test } from '@oclif/test';
+import { runCommand } from '@oclif/test';
 import { loadJsonFileSync } from 'load-json-file';
 
 import { InfoCommand } from '../../src/commands/info.js';
@@ -10,10 +10,11 @@ import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 useAuthSetup();
 
 describe('apify info', () => {
-    test
-        .command(['info'])
-        .catch(/./, { raiseIfNotThrown: true })
-        .it('should end with Error when not logged in');
+    it('should end with Error when not logged in', async () => {
+        const { error } = await runCommand(['info'], import.meta.url);
+
+        expect(error).toBeTruthy();
+    });
 
     it('should work when logged in', async () => {
         const spy = vitest.spyOn(console, 'log');

@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
-import { test } from '@oclif/test';
+import { runCommand } from '@oclif/test';
 import { loadJsonFileSync } from 'load-json-file';
 
 import { LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
@@ -29,11 +29,11 @@ describe('apify create', () => {
     });
 
     ['a'.repeat(151), 'sh', 'bad_escaped'].forEach((badActorName) => {
-        test
-            .command(['create', badActorName])
-            // We want to ensure any error is thrown, we don't care about the error message (but maybe we should)
-            .catch(/./, { raiseIfNotThrown: true })
-            .it(`returns error with bad Actor name ${badActorName}`);
+        it(`returns error with bad Actor name ${badActorName}`, async () => {
+            const { error } = await runCommand(['create', badActorName], import.meta.url);
+
+            expect(error).toBeTruthy();
+        });
     });
 
     it('basic template structure with empty INPUT.json', async () => {
