@@ -11,9 +11,9 @@ import ow from 'ow';
 import { getApifyClientOptions, getLocalStorageDir, getLocalUserInfo } from './utils.js';
 
 export const APIFY_STORAGE_TYPES = {
-    KEY_VALUE_STORE: 'KEY_VALUE_STORE',
-    DATASET: 'DATASET',
-    REQUEST_QUEUE: 'REQUEST_QUEUE',
+	KEY_VALUE_STORE: 'KEY_VALUE_STORE',
+	DATASET: 'DATASET',
+	REQUEST_QUEUE: 'REQUEST_QUEUE',
 } as const;
 
 /**
@@ -22,33 +22,35 @@ export const APIFY_STORAGE_TYPES = {
  * @param forceCloud - If true then ApifyClient will be returned.
  */
 export const getApifyStorageClient = async (
-    options: MemoryStorageOptions | ApifyClientOptions = {},
-    forceCloud = Reflect.has(process.env, APIFY_ENV_VARS.IS_AT_HOME),
+	options: MemoryStorageOptions | ApifyClientOptions = {},
+	forceCloud = Reflect.has(process.env, APIFY_ENV_VARS.IS_AT_HOME),
 ): Promise<StorageClient> => {
-    const storageDir = getLocalStorageDir();
+	const storageDir = getLocalStorageDir();
 
-    if (storageDir && !forceCloud) {
-        return new MemoryStorage({
-            localDataDirectory: storageDir,
-            ...options,
-        });
-    }
+	if (storageDir && !forceCloud) {
+		return new MemoryStorage({
+			localDataDirectory: storageDir,
+			...options,
+		});
+	}
 
-    // NOTE: Token in env var overrides token in local auth file.
-    let apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
-    if (!apifyToken) {
-        const localUserInfo = await getLocalUserInfo();
-        if (!localUserInfo || !localUserInfo.token) {
-            throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.');
-        }
+	// NOTE: Token in env var overrides token in local auth file.
+	let apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
+	if (!apifyToken) {
+		const localUserInfo = await getLocalUserInfo();
+		if (!localUserInfo || !localUserInfo.token) {
+			throw new Error(
+				'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
+			);
+		}
 
-        apifyToken = localUserInfo.token;
-    }
+		apifyToken = localUserInfo.token;
+	}
 
-    return new ApifyClient({
-        ...getApifyClientOptions(apifyToken),
-        ...options,
-    });
+	return new ApifyClient({
+		...getApifyClientOptions(apifyToken),
+		...options,
+	});
 };
 
 /**
@@ -56,10 +58,10 @@ export const getApifyStorageClient = async (
  * Throws error if not set and Actor running on platform.
  * @param storeType
  */
-export const getDefaultStorageId = (storeType: typeof APIFY_STORAGE_TYPES[keyof typeof APIFY_STORAGE_TYPES]) => {
-    const envVarName = ACTOR_ENV_VARS[`DEFAULT_${storeType}_ID`];
+export const getDefaultStorageId = (storeType: (typeof APIFY_STORAGE_TYPES)[keyof typeof APIFY_STORAGE_TYPES]) => {
+	const envVarName = ACTOR_ENV_VARS[`DEFAULT_${storeType}_ID`];
 
-    return process.env[envVarName] || LOCAL_ACTOR_ENV_VARS[envVarName];
+	return process.env[envVarName] || LOCAL_ACTOR_ENV_VARS[envVarName];
 };
 
 /**
@@ -67,17 +69,17 @@ export const getDefaultStorageId = (storeType: typeof APIFY_STORAGE_TYPES[keyof 
  * @param key - Record key
  */
 export const outputRecordFromDefaultStore = async (key: string) => {
-    ow(key, ow.string);
+	ow(key, ow.string);
 
-    const apifyClient = await getApifyStorageClient();
-    const defaultStoreId = getDefaultStorageId(APIFY_STORAGE_TYPES.KEY_VALUE_STORE);
-    const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key, { stream: true });
-    // If record does not exist return empty string.
-    if (!record) return;
+	const apifyClient = await getApifyStorageClient();
+	const defaultStoreId = getDefaultStorageId(APIFY_STORAGE_TYPES.KEY_VALUE_STORE);
+	const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key, { stream: true });
+	// If record does not exist return empty string.
+	if (!record) return;
 
-    await pipeline(record.value, process.stdout, { end: false });
+	await pipeline(record.value, process.stdout, { end: false });
 };
 
 export const outputInputFromDefaultStore = async () => {
-    return outputRecordFromDefaultStore(process.env[ACTOR_ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT);
+	return outputRecordFromDefaultStore(process.env[ACTOR_ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT);
 };

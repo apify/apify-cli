@@ -5,7 +5,7 @@ import { info } from '../lib/outputs.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
 
 export class WrapScrapyCommand extends ApifyCommand<typeof WrapScrapyCommand> {
-    static override description = `Wraps your existing Scrapy project to work like an Apify Actor.
+	static override description = `Wraps your existing Scrapy project to work like an Apify Actor.
 
 It adds the following features:
 - Automatic retry of failed requests
@@ -14,18 +14,18 @@ It adds the following features:
 ...
 `;
 
-    static override args = {
-        path: Args.string({
-            required: false,
-            description: 'Optional path to your scrapy project. If not provided, the current directory is used.',
-        }),
-    };
+	static override args = {
+		path: Args.string({
+			required: false,
+			description: 'Optional path to your scrapy project. If not provided, the current directory is used.',
+		}),
+	};
 
-    static override hidden = true;
+	static override hidden = true;
 
-    async run() {
-        await wrapScrapyProject({ projectPath: this.args.path });
+	async run() {
+		await wrapScrapyProject({ projectPath: this.args.path });
 
-        info({ message: 'Scrapy project wrapped successfully.' });
-    }
+		info({ message: 'Scrapy project wrapped successfully.' });
+	}
 }

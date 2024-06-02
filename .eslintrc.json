@@ -1,10 +1,10 @@
 {
-    "extends": "@apify/ts",
-    "parserOptions": {
-        "project": "./tsconfig.eslint.json",
-        "ecmaVersion": 2022
-    },
-    "rules": {
-        "no-console": "off"
-    }
+	"extends": ["@apify/ts", "prettier"],
+	"parserOptions": {
+		"project": "./tsconfig.eslint.json",
+		"ecmaVersion": 2022
+	},
+	"rules": {
+		"no-console": "off"
+	}
 }

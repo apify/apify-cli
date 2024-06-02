@@ -4,22 +4,23 @@ import { ApifyCommand } from '../lib/apify_command.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 
 export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
-    static override description = 'Displays information about the currently active Apify account.\n'
-    + 'The information is printed to the console.';
+	static override description =
+		'Displays information about the currently active Apify account.\n' +
+		'The information is printed to the console.';
 
-    async run() {
-        await getLoggedClientOrThrow();
-        const info = await getLocalUserInfo();
+	async run() {
+		await getLoggedClientOrThrow();
+		const info = await getLocalUserInfo();
 
-        if (info) {
-            const niceInfo = {
-                username: info.username,
-                userId: info.id,
-            } as const;
+		if (info) {
+			const niceInfo = {
+				username: info.username,
+				userId: info.id,
+			} as const;
 
-            for (const key of Object.keys(niceInfo) as (keyof typeof niceInfo)[]) {
-                console.log(`${chalk.gray(key)}: ${chalk.bold(niceInfo[key])}`);
-            }
-        }
-    }
+			for (const key of Object.keys(niceInfo) as (keyof typeof niceInfo)[]) {
+				console.log(`${chalk.gray(key)}: ${chalk.bold(niceInfo[key])}`);
+			}
+		}
+	}
 }
