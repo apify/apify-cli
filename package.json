@@ -19,7 +19,11 @@
 		"prepack": "yarn build && oclif manifest && oclif readme && oclif readme --readme-path=docs/reference.md",
 		"postinstallDev": "yarn build && node ./bin/run.js check-version && node ./dist/lib/community.js"
 	},
-	"files": ["dist", "oclif.manifest.json", "bin"],
+	"files": [
+		"dist",
+		"oclif.manifest.json",
+		"bin"
+	],
 	"bin": {
 		"apify": "./bin/run.js"
 	},
@@ -31,7 +35,14 @@
 		"type": "git",
 		"url": "git+https://github.com/apify/apify-cli.git"
 	},
-	"keywords": ["apify", "client", "node", "command", "line", "bash"],
+	"keywords": [
+		"apify",
+		"client",
+		"node",
+		"command",
+		"line",
+		"bash"
+	],
 	"author": {
 		"name": "Apify",
 		"email": "support@apify.com",
@@ -119,14 +130,24 @@
 		"bin": "apify",
 		"dirname": "apify",
 		"commands": "./dist/commands",
-		"plugins": ["@oclif/plugin-help"],
+		"plugins": [
+			"@oclif/plugin-help"
+		],
 		"hooks": {
-			"init": ["./dist/hooks/init"],
-			"prerun": ["./dist/hooks/deprecations"]
+			"init": [
+				"./dist/hooks/init"
+			],
+			"prerun": [
+				"./dist/hooks/deprecations"
+			]
 		},
 		"helpClass": "./dist/lib/apify-oclif-help",
-		"additionalHelpFlags": ["-h"],
-		"additionalVersionFlags": ["-v"],
+		"additionalHelpFlags": [
+			"-h"
+		],
+		"additionalVersionFlags": [
+			"-v"
+		],
 		"topicSeparator": " "
 	},
 	"volta": {

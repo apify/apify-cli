@@ -1,6 +1,11 @@
 {
 	"formatter": {
-		"ignore": ["website/**", "dist/**", "test/__setup__/input-schemas/*.json"],
+		"ignore": [
+			"website/**",
+			"dist/**",
+			"test/__setup__/input-schemas/*.json",
+			"package.json"
+		],
 		"formatWithErrors": true
 	},
 	"javascript": {
