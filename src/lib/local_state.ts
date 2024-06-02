@@ -8,11 +8,11 @@ import { STATE_FILE_PATH } from './consts.js';
  * This method is synchronous/blocking to avoid different race conditions.
  */
 export const getLocalState = () => {
-    try {
-        return loadJsonFileSync<Record<string, unknown>>(STATE_FILE_PATH()) || {};
-    } catch (e) {
-        return {};
-    }
+	try {
+		return loadJsonFileSync<Record<string, unknown>>(STATE_FILE_PATH()) || {};
+	} catch (e) {
+		return {};
+	}
 };
 
 /**
@@ -20,9 +20,9 @@ export const getLocalState = () => {
  * This method is synchronous/blocking to avoid different race conditions.
  */
 export const extendLocalState = (data: Record<string, unknown>) => {
-    const state = getLocalState();
-    writeJsonFileSync(STATE_FILE_PATH(), {
-        ...state,
-        ...data,
-    });
+	const state = getLocalState();
+	writeJsonFileSync(STATE_FILE_PATH(), {
+		...state,
+		...data,
+	});
 };

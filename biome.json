@@ -9,7 +9,7 @@
 			"semicolons": "always",
 			"trailingComma": "all",
 			"lineWidth": 120,
-			"indentStyle": "space",
+			"indentStyle": "tab",
 			"indentWidth": 4,
 			"quoteProperties": "preserve",
 			"lineEnding": "lf"
