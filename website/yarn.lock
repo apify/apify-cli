@@ -300,7 +300,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.119":
+"@apify/docs-theme@npm:^1.0.121":
   version: 1.0.121
   resolution: "@apify/docs-theme@npm:1.0.121"
   dependencies:
@@ -12059,7 +12059,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.119"
+    "@apify/docs-theme": "npm:^1.0.121"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^2.4.3"
