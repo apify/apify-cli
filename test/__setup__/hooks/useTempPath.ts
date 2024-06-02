@@ -34,7 +34,12 @@ export interface UseTempPathOptions {
 
 export function useTempPath(
     path: string,
-    { create, remove, cwd, cwdParent }: UseTempPathOptions = { create: true, remove: true, cwd: false, cwdParent: false },
+    { create, remove, cwd, cwdParent }: UseTempPathOptions = {
+        create: true,
+        remove: true,
+        cwd: false,
+        cwdParent: false,
+    },
 ) {
     const tmpPath = join(fileURLToPath(import.meta.url), '..', '..', '..', 'tmp', path);
     const cwdPath = cwdParent ? join(fileURLToPath(import.meta.url), '..', '..', '..', 'tmp') : tmpPath;

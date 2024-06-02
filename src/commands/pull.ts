@@ -23,8 +23,9 @@ const extractGitHubZip = async (url: string, directoryPath: string) => {
 };
 
 export class PullCommand extends ApifyCommand<typeof PullCommand> {
-    static override description = 'Pulls an Actor from the Apify platform to the current directory. '
-    + 'If it is defined as Git repository, it will be cloned. If it is defined as Web IDE, it will fetch the files.';
+    static override description =
+        'Pulls an Actor from the Apify platform to the current directory. ' +
+        'If it is defined as Git repository, it will be cloned. If it is defined as Web IDE, it will fetch the files.';
 
     static override flags = {
         version: Flags.string({
@@ -37,8 +38,9 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
     static override args = {
         actorId: Args.string({
             required: false,
-            description: 'Name or ID of the Actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
-            + 'If not provided, the command will update the Actor in the current directory based on its name in ".actor/actor.json" file.',
+            description:
+                'Name or ID of the Actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). ' +
+                'If not provided, the command will update the Actor in the current directory based on its name in ".actor/actor.json" file.',
         }),
     };
 
@@ -51,7 +53,10 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
         const isActorAutomaticallyDetected = !this.args?.actorId;
         const usernameOrId = userInfo.username || userInfo.id;
 
-        const actorId = this.args?.actorId || localConfig?.id as string | undefined || (localConfig?.name ? `${usernameOrId}/${localConfig.name}` : undefined);
+        const actorId =
+            this.args?.actorId ||
+            (localConfig?.id as string | undefined) ||
+            (localConfig?.name ? `${usernameOrId}/${localConfig.name}` : undefined);
 
         if (!actorId) throw new Error('Cannot find Actor in this directory.');
 
@@ -103,7 +108,8 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
 
                     // @ts-expect-error TODO: is this an actual field?
                     if (!file.folder) {
-                        const fileContent = file.format === 'BASE64' ? Buffer.from(file.content, 'base64').toString() : file.content;
+                        const fileContent =
+                            file.format === 'BASE64' ? Buffer.from(file.content, 'base64').toString() : file.content;
 
                         if (file.name === LOCAL_CONFIG_PATH) {
                             const actorJson = jju.parse(fileContent);

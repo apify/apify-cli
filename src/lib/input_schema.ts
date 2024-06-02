@@ -11,10 +11,7 @@ import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
 import { warning } from './outputs.js';
 import { Ajv, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
-const DEFAULT_INPUT_SCHEMA_PATHS = [
-    '.actor/INPUT_SCHEMA.json',
-    './INPUT_SCHEMA.json',
-];
+const DEFAULT_INPUT_SCHEMA_PATHS = ['.actor/INPUT_SCHEMA.json', './INPUT_SCHEMA.json'];
 
 /**
  * Return the input schema from the default location.
@@ -23,7 +20,9 @@ const DEFAULT_INPUT_SCHEMA_PATHS = [
  * In such a case, path would be set to the location
  * where the input schema would be expected to be found (and e.g. can be created there).
  */
-export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; cwd: string } = { cwd: process.cwd() }) => {
+export const readInputSchema = async (
+    { forcePath, cwd }: { forcePath?: string; cwd: string } = { cwd: process.cwd() },
+) => {
     if (forcePath) {
         return {
             inputSchema: getJsonFileContent(forcePath),
@@ -89,13 +88,18 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
             validateInputSchema(validator, inputSchema);
 
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            inputFile = _.mapObject(inputSchema.properties as any, (fieldSchema) => ((fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden')
-                ? fieldSchema.default
-                : fieldSchema.prefill
-            ));
+            inputFile = _.mapObject(inputSchema.properties as any, (fieldSchema) =>
+                fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden'
+                    ? fieldSchema.default
+                    : fieldSchema.prefill,
+            );
         }
     } catch (err) {
-        warning(`Could not create default input based on input schema, creating empty input instead. Cause: ${(err as Error).message}`);
+        warning(
+            `Could not create default input based on input schema, creating empty input instead. Cause: ${
+                (err as Error).message
+            }`,
+        );
     } finally {
         const keyValueStorePath = getLocalKeyValueStorePath();
         const inputJsonPath = join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);

@@ -1,0 +1,21 @@
+{
+	"formatter": {
+		"ignore": ["website/**", "dist/**", "test/__setup__/input-schemas/*.json"],
+		"formatWithErrors": true
+	},
+	"javascript": {
+		"formatter": {
+			"quoteStyle": "single",
+			"semicolons": "always",
+			"trailingComma": "all",
+			"lineWidth": 120,
+			"indentStyle": "space",
+			"indentWidth": 4,
+			"quoteProperties": "preserve",
+			"lineEnding": "lf"
+		}
+	},
+	"linter": {
+		"enabled": false
+	}
+}

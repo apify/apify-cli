@@ -1,16 +1,16 @@
 {
-    "title": "Google SERP crawler input",
-    "description": "Invalid schema - nonexisting editor.",
-    "type": "object",
-    "schemaVersion": 1,
-    "properties": {
-        "queries": {
-            "title": "Queries or search URLs",
-            "type": "string",
-            "description": "Enter here your queries or search URLs, one item per line.",
-            "prefill": "Hotels in Prague\nRestaurants in Prague\nhttps://www.google.com/search?q=acoomodation&oq=acoomodation&aqs=chrome..69i57j0l5.1637j0j1&sourceid=chrome&ie=UTF-8",
-            "editor": "spaceEditor"
-        }
-    },
-    "required": ["queries"]
+	"title": "Google SERP crawler input",
+	"description": "Invalid schema - nonexisting editor.",
+	"type": "object",
+	"schemaVersion": 1,
+	"properties": {
+		"queries": {
+			"title": "Queries or search URLs",
+			"type": "string",
+			"description": "Enter here your queries or search URLs, one item per line.",
+			"prefill": "Hotels in Prague\nRestaurants in Prague\nhttps://www.google.com/search?q=acoomodation&oq=acoomodation&aqs=chrome..69i57j0l5.1637j0j1&sourceid=chrome&ie=UTF-8",
+			"editor": "spaceEditor"
+		}
+	},
+	"required": ["queries"]
 }

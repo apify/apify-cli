@@ -4,7 +4,7 @@ import { OldApifySDKAnalyzer } from './projects/OldApifySDKAnalyzer.js';
 import { ScrapyProjectAnalyzer } from './projects/scrapy/ScrapyProjectAnalyzer.js';
 
 interface ProjectAnalyzerType {
-    type: typeof PROJECT_TYPES[keyof typeof PROJECT_TYPES];
+    type: (typeof PROJECT_TYPES)[keyof typeof PROJECT_TYPES];
     // At minimum, this is what an analyzer should have.
     analyzer: {
         isApplicable(pathname: string): boolean;

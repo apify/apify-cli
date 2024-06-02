@@ -39,7 +39,9 @@ export const getApifyStorageClient = async (
     if (!apifyToken) {
         const localUserInfo = await getLocalUserInfo();
         if (!localUserInfo || !localUserInfo.token) {
-            throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.');
+            throw new Error(
+                'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
+            );
         }
 
         apifyToken = localUserInfo.token;
@@ -56,7 +58,7 @@ export const getApifyStorageClient = async (
  * Throws error if not set and Actor running on platform.
  * @param storeType
  */
-export const getDefaultStorageId = (storeType: typeof APIFY_STORAGE_TYPES[keyof typeof APIFY_STORAGE_TYPES]) => {
+export const getDefaultStorageId = (storeType: (typeof APIFY_STORAGE_TYPES)[keyof typeof APIFY_STORAGE_TYPES]) => {
     const envVarName = ACTOR_ENV_VARS[`DEFAULT_${storeType}_ID`];
 
     return process.env[envVarName] || LOCAL_ACTOR_ENV_VARS[envVarName];

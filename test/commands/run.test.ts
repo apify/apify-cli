@@ -6,7 +6,12 @@ import { writeJsonFileSync } from 'write-json-file';
 
 import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { rimrafPromised } from '../../src/lib/files.js';
-import { getLocalDatasetPath, getLocalKeyValueStorePath, getLocalRequestQueuePath, getLocalStorageDir } from '../../src/lib/utils.js';
+import {
+    getLocalDatasetPath,
+    getLocalKeyValueStorePath,
+    getLocalRequestQueuePath,
+    getLocalStorageDir,
+} from '../../src/lib/utils.js';
 import { TEST_USER_TOKEN } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
@@ -15,12 +20,12 @@ const actName = 'run-my-actor';
 
 useAuthSetup({ perTest: true });
 
-const {
-    beforeAllCalls,
-    afterAllCalls,
-    joinPath,
-    toggleCwdBetweenFullAndParentPath,
-} = useTempPath(actName, { create: true, remove: true, cwd: true, cwdParent: true });
+const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPath } = useTempPath(actName, {
+    create: true,
+    remove: true,
+    cwd: true,
+    cwdParent: true,
+});
 
 const { CreateCommand } = await import('../../src/commands/create.js');
 const { RunCommand } = await import('../../src/commands/run.js');
@@ -88,7 +93,10 @@ describe('apify run', () => {
 
         const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
-        const localEnvVars = loadJsonFileSync<Record<typeof APIFY_ENV_VARS[keyof typeof APIFY_ENV_VARS] | 'TEST_LOCAL', string>>(actOutputPath);
+        const localEnvVars =
+            loadJsonFileSync<Record<(typeof APIFY_ENV_VARS)[keyof typeof APIFY_ENV_VARS] | 'TEST_LOCAL', string>>(
+                actOutputPath,
+            );
         const auth = loadJsonFileSync<{ proxy: { password: string }; id: string; token: string }>(AUTH_FILE_PATH());
 
         expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
@@ -129,7 +137,10 @@ describe('apify run', () => {
 
         const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
-        const localEnvVars = loadJsonFileSync<Record<typeof APIFY_ENV_VARS[keyof typeof APIFY_ENV_VARS] | 'TEST_LOCAL', string>>(actOutputPath);
+        const localEnvVars =
+            loadJsonFileSync<Record<(typeof APIFY_ENV_VARS)[keyof typeof APIFY_ENV_VARS] | 'TEST_LOCAL', string>>(
+                actOutputPath,
+            );
         const auth = loadJsonFileSync<{ proxy: { password: string }; id: string; token: string }>(AUTH_FILE_PATH());
 
         expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
@@ -169,7 +180,10 @@ describe('apify run', () => {
 
         const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
-        const localEnvVars = loadJsonFileSync<Record<typeof APIFY_ENV_VARS[keyof typeof APIFY_ENV_VARS] | 'TEST_LOCAL', string>>(actOutputPath);
+        const localEnvVars =
+            loadJsonFileSync<Record<(typeof APIFY_ENV_VARS)[keyof typeof APIFY_ENV_VARS] | 'TEST_LOCAL', string>>(
+                actOutputPath,
+            );
         const auth = loadJsonFileSync<{ proxy: { password: string }; id: string; token: string }>(AUTH_FILE_PATH());
 
         expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);

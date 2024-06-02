@@ -34,8 +34,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
     static override flags = {
         template: Flags.string({
             char: 't',
-            description: 'Template for the Actor. If not provided, the command will prompt for it.\n'
-            + `Visit ${manifestUrl} to find available template names.`,
+            description:
+                'Template for the Actor. If not provided, the command will prompt for it.\n' +
+                `Visit ${manifestUrl} to find available template names.`,
             required: false,
         }),
         'skip-dependency-install': Flags.boolean({
@@ -63,10 +64,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
     async run() {
         let { actorName } = this.args;
-        const {
-            template: templateName,
-            skipDependencyInstall,
-        } = this.flags;
+        const { template: templateName, skipDependencyInstall } = this.flags;
 
         // --template-archive-url is an internal, undocumented flag that's used
         // for testing of templates that are not yet published in the manifest
@@ -87,11 +85,17 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
         // eslint-disable-next-line no-constant-condition
         while (true) {
             const folderExists = await stat(actFolderDir).catch(() => null);
-            const folderHasFiles = folderExists && await readdir(actFolderDir).then((files) => files.length > 0).catch(() => false);
+            const folderHasFiles =
+                folderExists &&
+                (await readdir(actFolderDir)
+                    .then((files) => files.length > 0)
+                    .catch(() => false));
 
             if (folderExists?.isDirectory() && folderHasFiles) {
-                error(`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.`
-                    + ' You can use "apify init" to create a local Actor environment inside an existing directory.');
+                error(
+                    `Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.` +
+                        ' You can use "apify init" to create a local Actor environment inside an existing directory.',
+                );
 
                 actorName = await ensureValidActorName();
                 actFolderDir = join(cwd, actorName);
@@ -153,8 +157,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                 const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
                 if (currentNodeVersion) {
                     if (!isNodeVersionSupported(currentNodeVersion)) {
-                        warning(`You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
-                            + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`);
+                        warning(
+                            `You are running Node.js version ${currentNodeVersion}, which is no longer supported. ` +
+                                `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
+                        );
                     }
                     // If the Actor is a Node.js Actor (has package.json), run `npm install`
                     await updateLocalJson(packageJsonPath, { name: actorName });
@@ -172,8 +178,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                     await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
                     dependenciesInstalled = true;
                 } else {
-                    error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher`
-                        + ' to be able to run Node.js Actors locally.');
+                    error(
+                        `No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher` +
+                            ' to be able to run Node.js Actors locally.',
+                    );
                 }
             } else if (existsSync(requirementsTxtPath)) {
                 const pythonVersion = detectPythonVersion(actFolderDir);
@@ -181,22 +189,44 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                     if (isPythonVersionSupported(pythonVersion)) {
                         const venvPath = join(actFolderDir, '.venv');
                         info(`Python version ${pythonVersion} detected.`);
-                        info(`Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...`);
+                        info(
+                            `Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...`,
+                        );
                         let pythonCommand = getPythonCommand(actFolderDir);
                         if (!process.env.VIRTUAL_ENV) {
                             // If Python is not running in a virtual environment, create a new one
-                            await execWithLog(pythonCommand, ['-m', 'venv', '--prompt', '.', PYTHON_VENV_PATH], { cwd: actFolderDir });
+                            await execWithLog(pythonCommand, ['-m', 'venv', '--prompt', '.', PYTHON_VENV_PATH], {
+                                cwd: actFolderDir,
+                            });
                             // regenerate the `pythonCommand` after we create the virtual environment
                             pythonCommand = getPythonCommand(actFolderDir);
                         }
                         await execWithLog(
                             pythonCommand,
-                            ['-m', 'pip', 'install', '--no-cache-dir', '--no-warn-script-location', '--upgrade', 'pip', 'setuptools', 'wheel'],
+                            [
+                                '-m',
+                                'pip',
+                                'install',
+                                '--no-cache-dir',
+                                '--no-warn-script-location',
+                                '--upgrade',
+                                'pip',
+                                'setuptools',
+                                'wheel',
+                            ],
                             { cwd: actFolderDir },
                         );
                         await execWithLog(
                             pythonCommand,
-                            ['-m', 'pip', 'install', '--no-cache-dir', '--no-warn-script-location', '-r', 'requirements.txt'],
+                            [
+                                '-m',
+                                'pip',
+                                'install',
+                                '--no-cache-dir',
+                                '--no-warn-script-location',
+                                '-r',
+                                'requirements.txt',
+                            ],
                             { cwd: actFolderDir },
                         );
                         dependenciesInstalled = true;
@@ -205,7 +235,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                         warning('Please install Python 3.8 or higher to be able to run Python Actors locally.');
                     }
                 } else {
-                    warning('No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.');
+                    warning(
+                        'No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.',
+                    );
                 }
             }
         }
@@ -217,7 +249,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
                 info(messages?.postCreate);
             }
         } else {
-            success(`Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`);
+            success(
+                `Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`,
+            );
         }
     }
 }

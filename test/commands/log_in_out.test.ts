@@ -19,7 +19,7 @@ const { LoginCommand } = await import('../../src/commands/login.js');
 const { LogoutCommand } = await import('../../src/commands/logout.js');
 
 describe('apify login and logout', () => {
-    let spy: import('vitest').MockInstance<Parameters<typeof console['log']>, void>;
+    let spy: import('vitest').MockInstance<Parameters<(typeof console)['log']>, void>;
 
     beforeEach(() => {
         spy = vitest.spyOn(console, 'log');
@@ -61,7 +61,8 @@ describe('apify login and logout', () => {
         const localCliPort = consoleUrlParams.get('localCliPort');
         const localCliToken = consoleUrlParams.get('localCliToken');
 
-        const response = await axios.post(`http://localhost:${localCliPort}/api/v1/login-token?token=${localCliToken}`,
+        const response = await axios.post(
+            `http://localhost:${localCliPort}/api/v1/login-token?token=${localCliToken}`,
             { apiToken: TEST_USER_TOKEN },
             { headers: { 'Content-Type': 'application/json' } },
         );

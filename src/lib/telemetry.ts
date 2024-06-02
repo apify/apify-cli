@@ -10,9 +10,10 @@ import { info } from './outputs.js';
 import { ensureApifyDirectory, getLocalUserInfo } from './utils.js';
 
 export const mixpanel = Mixpanel.init(MIXPANEL_TOKEN, { keepAlive: false });
-const TELEMETRY_WARNING_TEXT = 'Apify collects telemetry data about general usage of Apify CLI to help us improve the product. '
-    + 'This feature is enabled by default, and you can disable it by setting the "APIFY_CLI_DISABLE_TELEMETRY" environment variable to "1". '
-    + 'You can find more information about our telemetry in https://docs.apify.com/cli/docs/telemetry.';
+const TELEMETRY_WARNING_TEXT =
+    'Apify collects telemetry data about general usage of Apify CLI to help us improve the product. ' +
+    'This feature is enabled by default, and you can disable it by setting the "APIFY_CLI_DISABLE_TELEMETRY" environment variable to "1". ' +
+    'You can find more information about our telemetry in https://docs.apify.com/cli/docs/telemetry.';
 
 const promisifiedTrack = promisify<string, PropertyDict, void>(mixpanel.track.bind(mixpanel));
 
@@ -53,13 +54,16 @@ export const regenerateLocalDistinctId = () => {
     }
 };
 
-export const isTelemetryEnabled = !process.env.APIFY_CLI_DISABLE_TELEMETRY
-    || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY);
+export const isTelemetryEnabled =
+    !process.env.APIFY_CLI_DISABLE_TELEMETRY || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY);
 
 /**
  * Tracks telemetry event if telemetry is enabled.
  */
-export const maybeTrackTelemetry = async ({ eventName, eventData }: { eventName: string, eventData: Record<string, unknown> }) => {
+export const maybeTrackTelemetry = async ({
+    eventName,
+    eventData,
+}: { eventName: string; eventData: Record<string, unknown> }) => {
     if (!isTelemetryEnabled) return;
 
     try {

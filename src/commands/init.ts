@@ -5,19 +5,33 @@ import { Args, Flags } from '@oclif/core';
 import inquirer from 'inquirer';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { DEFAULT_LOCAL_STORAGE_DIR, EMPTY_LOCAL_CONFIG, LANGUAGE, LOCAL_CONFIG_PATH, PROJECT_TYPES } from '../lib/consts.js';
+import {
+    DEFAULT_LOCAL_STORAGE_DIR,
+    EMPTY_LOCAL_CONFIG,
+    LANGUAGE,
+    LOCAL_CONFIG_PATH,
+    PROJECT_TYPES,
+} from '../lib/consts.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
 import { ProjectAnalyzer } from '../lib/project_analyzer.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
-import { detectLocalActorLanguage, getLocalConfig, getLocalConfigOrThrow, setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
+import {
+    detectLocalActorLanguage,
+    getLocalConfig,
+    getLocalConfigOrThrow,
+    setLocalConfig,
+    setLocalEnv,
+    validateActorName,
+} from '../lib/utils.js';
 
 export class InitCommand extends ApifyCommand<typeof InitCommand> {
-    static override description = 'Initializes a new Actor project in an existing directory.\n'
-    + `If the directory contains a Scrapy project in Python, the command automatically creates wrappers so that you can run your scrapers without changes.\n\n`
-    + `The command creates the "${LOCAL_CONFIG_PATH}" file and the "${DEFAULT_LOCAL_STORAGE_DIR}" directory in the current directory, `
-    + 'but does not touch any other existing files or directories.\n\n'
-    + `WARNING: The directory at "${DEFAULT_LOCAL_STORAGE_DIR}" will be overwritten if it already exists.`;
+    static override description =
+        'Initializes a new Actor project in an existing directory.\n' +
+        `If the directory contains a Scrapy project in Python, the command automatically creates wrappers so that you can run your scrapers without changes.\n\n` +
+        `The command creates the "${LOCAL_CONFIG_PATH}" file and the "${DEFAULT_LOCAL_STORAGE_DIR}" directory in the current directory, ` +
+        'but does not touch any other existing files or directories.\n\n' +
+        `WARNING: The directory at "${DEFAULT_LOCAL_STORAGE_DIR}" will be overwritten if it already exists.`;
 
     static override args = {
         actorName: Args.string({
@@ -60,7 +74,9 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
                 while (!response) {
                     try {
-                        const answer = await inquirer.prompt([{ name: 'actName', message: 'Actor name:', default: basename(cwd) }]);
+                        const answer = await inquirer.prompt([
+                            { name: 'actName', message: 'Actor name:', default: basename(cwd) },
+                        ]);
                         validateActorName(answer.actName);
                         response = answer;
                     } catch (err) {
@@ -71,7 +87,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
                 ({ actName: actorName } = response);
             }
             // Migrate apify.json to .actor/actor.json
-            const localConfig = { ...EMPTY_LOCAL_CONFIG, ...await getLocalConfigOrThrow(cwd) };
+            const localConfig = { ...EMPTY_LOCAL_CONFIG, ...(await getLocalConfigOrThrow(cwd)) };
             await setLocalConfig(Object.assign(localConfig, { name: actorName }), cwd);
         }
 

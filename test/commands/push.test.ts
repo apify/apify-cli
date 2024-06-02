@@ -72,9 +72,11 @@ describe('apify push', () => {
     });
 
     it('should work without actorId', async () => {
-        const actorJson = loadJsonFileSync<{ environmentVariables: Record<string, string>; name: string; version: string }>(
-            joinPath(LOCAL_CONFIG_PATH),
-        );
+        const actorJson = loadJsonFileSync<{
+            environmentVariables: Record<string, string>;
+            name: string;
+            version: string;
+        }>(joinPath(LOCAL_CONFIG_PATH));
         actorJson.environmentVariables = {
             MY_ENV_VAR: 'envVarValue',
         };
@@ -97,10 +99,12 @@ describe('apify push', () => {
 
         expect(createdActorVersion!.versionNumber).to.be.eql(actorJson.version);
         expect(createdActorVersion!.buildTag).to.be.eql('latest');
-        expect(createdActorVersion!.envVars).to.be.eql([{
-            name: 'MY_ENV_VAR',
-            value: 'envVarValue',
-        }]);
+        expect(createdActorVersion!.envVars).to.be.eql([
+            {
+                name: 'MY_ENV_VAR',
+                value: 'envVarValue',
+            },
+        ]);
         // TODO: vlad, fix this too
         expect((createdActorVersion as any)!.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
         expect(createdActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
@@ -125,31 +129,39 @@ describe('apify push', () => {
 
         expect(testActorVersion!.versionNumber).to.be.eql(actorJson.version);
         expect(testActorVersion!.buildTag).to.be.eql('latest');
-        expect(testActorVersion!.envVars).to.be.eql([{
-            name: 'MY_ENV_VAR',
-            value: 'envVarValue',
-        }]);
+        expect(testActorVersion!.envVars).to.be.eql([
+            {
+                name: 'MY_ENV_VAR',
+                value: 'envVarValue',
+            },
+        ]);
         expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
         expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
     });
 
     it('should not rewrite current Actor envVars', async () => {
         const testActorWithEnvVars = { ...TEST_ACTOR };
-        testActorWithEnvVars.versions = [{
-            versionNumber: '0.0',
-            sourceType: 'SOURCE_FILES' as never,
-            buildTag: 'latest',
-            sourceFiles: [],
-            envVars: [{
-                name: 'MY_TEST',
-                value: 'myValue',
-            }],
-        }];
+        testActorWithEnvVars.versions = [
+            {
+                versionNumber: '0.0',
+                sourceType: 'SOURCE_FILES' as never,
+                buildTag: 'latest',
+                sourceFiles: [],
+                envVars: [
+                    {
+                        name: 'MY_TEST',
+                        value: 'myValue',
+                    },
+                ],
+            },
+        ];
         let testActor = await testUserClient.actors().create(testActorWithEnvVars);
         actorsForCleanup.add(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
 
-        const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(joinPath(LOCAL_CONFIG_PATH));
+        const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(
+            joinPath(LOCAL_CONFIG_PATH),
+        );
         delete actorJson.environmentVariables;
         writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
 
@@ -171,20 +183,26 @@ describe('apify push', () => {
 
     it('should upload zip for source files larger that 3MB', async () => {
         const testActorWithEnvVars = { ...TEST_ACTOR };
-        testActorWithEnvVars.versions = [{
-            versionNumber: '0.0',
-            sourceType: 'TARBALL' as any,
-            buildTag: 'latest',
-            tarballUrl: 'http://example.com/my_test.zip',
-            envVars: [{
-                name: 'MY_TEST',
-                value: 'myValue',
-            }],
-        }];
+        testActorWithEnvVars.versions = [
+            {
+                versionNumber: '0.0',
+                sourceType: 'TARBALL' as any,
+                buildTag: 'latest',
+                tarballUrl: 'http://example.com/my_test.zip',
+                envVars: [
+                    {
+                        name: 'MY_TEST',
+                        value: 'myValue',
+                    },
+                ],
+            },
+        ];
         let testActor = await testUserClient.actors().create(testActorWithEnvVars);
         actorsForCleanup.add(testActor.id);
         const testActorClient = testUserClient.actor(testActor.id);
-        const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(joinPath(LOCAL_CONFIG_PATH));
+        const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(
+            joinPath(LOCAL_CONFIG_PATH),
+        );
 
         delete actorJson.environmentVariables;
         writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
@@ -206,17 +224,20 @@ describe('apify push', () => {
         expect(testActorVersion).to.be.eql({
             versionNumber: actorJson.version,
             buildTag: 'latest',
-            tarballUrl: `${testActorClient.baseUrl}/key-value-stores/${store.id}`
-                + `/records/${testActor.name}-${actorJson.version}.zip?disableRedirect=true`,
+            tarballUrl:
+                `${testActorClient.baseUrl}/key-value-stores/${store.id}` +
+                `/records/${testActor.name}-${actorJson.version}.zip?disableRedirect=true`,
             envVars: testActorWithEnvVars.versions[0].envVars,
             sourceType: ACTOR_SOURCE_TYPES.TARBALL,
         });
     });
 
     it('typescript files should be treated as text', async () => {
-        const { name, version } = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string; name: string }>(
-            joinPath(LOCAL_CONFIG_PATH),
-        );
+        const { name, version } = loadJsonFileSync<{
+            environmentVariables?: Record<string, string>;
+            version: string;
+            name: string;
+        }>(joinPath(LOCAL_CONFIG_PATH));
 
         writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
 
@@ -233,8 +254,10 @@ describe('apify push', () => {
 
         if (createdActor) await createdActorClient.delete();
 
-        expect((createdActorVersion as any).sourceFiles.find((file: any) => file.name === 'some-typescript-file.ts').format)
-            .to.be.equal(SOURCE_FILE_FORMATS.TEXT);
+        expect(
+            (createdActorVersion as any).sourceFiles.find((file: any) => file.name === 'some-typescript-file.ts')
+                .format,
+        ).to.be.equal(SOURCE_FILE_FORMATS.TEXT);
     });
 
     it('should not push Actor when there is newer version on platform', async () => {

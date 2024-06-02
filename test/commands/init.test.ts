@@ -9,11 +9,12 @@ import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
 const actName = 'init-my-actor';
-const {
-    beforeAllCalls,
-    afterAllCalls,
-    joinPath,
-} = useTempPath(actName, { create: true, remove: true, cwd: true, cwdParent: false });
+const { beforeAllCalls, afterAllCalls, joinPath } = useTempPath(actName, {
+    create: true,
+    remove: true,
+    cwd: true,
+    cwdParent: false,
+});
 
 const { InitCommand } = await import('../../src/commands/init.js');
 
@@ -34,8 +35,12 @@ describe('apify init', () => {
         const apifyJsonPath = 'apify.json';
         expect(existsSync(joinPath(apifyJsonPath))).toBeFalsy();
 
-        expect(loadJsonFileSync(joinPath(LOCAL_CONFIG_PATH))).toStrictEqual(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
-        expect(loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).toStrictEqual({});
+        expect(loadJsonFileSync(joinPath(LOCAL_CONFIG_PATH))).toStrictEqual(
+            Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }),
+        );
+        expect(
+            loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`)),
+        ).toStrictEqual({});
     });
 
     it('correctly creates structure with prefilled INPUT.json', async () => {
@@ -64,6 +69,8 @@ describe('apify init', () => {
         const apifyJsonPath = 'apify.json';
         expect(existsSync(joinPath(apifyJsonPath))).toBeFalsy();
         expect(loadJsonFileSync(joinPath(LOCAL_CONFIG_PATH))).toStrictEqual(defaultActorJson);
-        expect(loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).toStrictEqual({ url: 'https://www.apify.com/' });
+        expect(
+            loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`)),
+        ).toStrictEqual({ url: 'https://www.apify.com/' });
     });
 });

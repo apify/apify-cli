@@ -80,7 +80,7 @@ Are you sure there is a Scrapy project there?`);
             const files = readdirSync(spidersDir, { withFileTypes: true });
             for (const file of files) {
                 if (file.isFile() && file.name.endsWith('.py') && file.name !== '__init__.py') {
-                    spiders.push(...(new SpiderFileAnalyzer(join(spidersDir, file.name)).getSpiders()));
+                    spiders.push(...new SpiderFileAnalyzer(join(spidersDir, file.name)).getSpiders());
                 }
             }
         }

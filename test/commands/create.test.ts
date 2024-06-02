@@ -9,13 +9,12 @@ import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
 const actName = 'create-my-actor';
-const {
-    beforeAllCalls,
-    afterAllCalls,
-    joinPath,
-    toggleCwdBetweenFullAndParentPath,
-    tmpPath,
-} = useTempPath(actName, { create: true, remove: true, cwd: true, cwdParent: true });
+const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPath, tmpPath } = useTempPath(actName, {
+    create: true,
+    remove: true,
+    cwd: true,
+    cwdParent: true,
+});
 
 const { CreateCommand } = await import('../../src/commands/create.js');
 
@@ -55,7 +54,9 @@ describe('apify create', () => {
         expect(existsSync(apifyJsonPath)).toBeFalsy();
         expect(existsSync(actorJsonPath)).toBeTruthy();
         expect(loadJsonFileSync<{ name: string }>(actorJsonPath).name).to.be.eql(actName);
-        expect(loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql(expectedInput);
+        expect(loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql(
+            expectedInput,
+        );
     });
 
     it('basic template structure with prefilled INPUT.json', async () => {
@@ -78,7 +79,9 @@ describe('apify create', () => {
         expect(existsSync(apifyJsonPath)).toBeFalsy();
         expect(existsSync(actorJsonPath)).toBeTruthy();
         expect(loadJsonFileSync<{ name: string }>(actorJsonPath)!.name).to.be.eql(actName);
-        expect(loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql(expectedInput);
+        expect(loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql(
+            expectedInput,
+        );
     });
 
     it('should skip installing optional dependencies', async () => {

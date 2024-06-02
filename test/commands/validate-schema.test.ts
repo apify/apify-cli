@@ -16,7 +16,9 @@ describe('apify validate-schema', () => {
         const { error } = await runCommand(['validate-schema', join(basePath, 'invalid.json')], import.meta.url);
 
         expect(error).toBeTruthy();
-        expect(error?.message).to.contain('Field schema.properties.queries.editor must be equal to one of the allowed values');
+        expect(error?.message).to.contain(
+            'Field schema.properties.queries.editor must be equal to one of the allowed values',
+        );
     });
 
     it('should correctly validate schema 3', async () => {

@@ -36,9 +36,10 @@ const tryToLogin = async (token: string) => {
 };
 
 export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
-    static override description = 'Logs in to your Apify account.\nThe API token and other account '
-    + 'information is stored in the ~/.apify directory, from where it is read by all other "apify" commands. '
-    + 'To log out, call "apify logout".';
+    static override description =
+        'Logs in to your Apify account.\nThe API token and other account ' +
+        'information is stored in the ~/.apify directory, from where it is read by all other "apify" commands. ' +
+        'To log out, call "apify logout".';
 
     static override flags = {
         token: Flags.string({
@@ -64,20 +65,22 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
         let selectedMethod = method;
 
         if (!method) {
-            const answer = await inquirer.prompt([{
-                type: 'list',
-                name: 'loginMethod',
-                message: 'Choose how you want to log in to Apify',
-                choices: [
-                    {
-                        value: 'console',
-                        name: 'Through Apify Console in your default browser',
-                        short: 'Through Apify Console',
-                    },
-                    { value: 'manual', name: 'Enter API token manually', short: 'Manually' },
-                ],
-                loop: true,
-            }]);
+            const answer = await inquirer.prompt([
+                {
+                    type: 'list',
+                    name: 'loginMethod',
+                    message: 'Choose how you want to log in to Apify',
+                    choices: [
+                        {
+                            value: 'console',
+                            name: 'Through Apify Console in your default browser',
+                            short: 'Through Apify Console',
+                        },
+                        { value: 'manual', name: 'Enter API token manually', short: 'Manually' },
+                    ],
+                    loop: true,
+                },
+            ]);
 
             selectedMethod = answer.loginMethod;
         }
@@ -87,10 +90,12 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
             const app = express();
 
             // To send requests from browser to localhost, CORS has to be configured properly
-            app.use(cors({
-                origin: CONSOLE_URL_ORIGIN,
-                allowedHeaders: ['Content-Type', 'Authorization'],
-            }));
+            app.use(
+                cors({
+                    origin: CONSOLE_URL_ORIGIN,
+                    allowedHeaders: ['Content-Type', 'Authorization'],
+                }),
+            );
 
             // Turn off keepalive, otherwise closing the server when command is finished is lagging
             app.use((_, res, next) => {
@@ -174,8 +179,12 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
             info(`Opening Apify Console at "${consoleUrl.href}"...`);
             await open(consoleUrl.href);
         } else {
-            console.log('Enter your Apify API token. You can find it at https://console.apify.com/account#/integrations');
-            const tokenAnswer = await inquirer.prompt<{ token: string }>([{ name: 'token', message: 'token:', type: 'password' }]);
+            console.log(
+                'Enter your Apify API token. You can find it at https://console.apify.com/account#/integrations',
+            );
+            const tokenAnswer = await inquirer.prompt<{ token: string }>([
+                { name: 'token', message: 'token:', type: 'password' },
+            ]);
             await tryToLogin(tokenAnswer.token);
         }
     }

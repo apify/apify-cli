@@ -6,9 +6,13 @@ import { loadJsonFile } from 'load-json-file';
 import { rimraf } from 'rimraf';
 import { writeJsonFile } from 'write-json-file';
 
-export const updateLocalJson = async (jsonFilePath: string, updateAttrs: Record<string, unknown> = {}, nestedObjectAttr = null) => {
+export const updateLocalJson = async (
+    jsonFilePath: string,
+    updateAttrs: Record<string, unknown> = {},
+    nestedObjectAttr = null,
+) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const currentObject = await loadJsonFile(jsonFilePath) as Record<string, any>;
+    const currentObject = (await loadJsonFile(jsonFilePath)) as Record<string, any>;
     let newObject: Record<string, unknown>;
 
     if (nestedObjectAttr) {
@@ -61,9 +65,7 @@ export const deleteFile = async (filePath: string) => {
 export const sumFilesSizeInBytes = async (pathToFiles: string[], cwd: string) => {
     const filesStats = await Promise.all(pathToFiles.map(async (filePath) => stat(join(cwd, filePath))));
 
-    const filesSizeBytes = filesStats
-        .map((stats) => stats.size)
-        .reduce((sum, fileSize) => sum + fileSize, 0);
+    const filesSizeBytes = filesStats.map((stats) => stats.size).reduce((sum, fileSize) => sum + fileSize, 0);
 
     return filesSizeBytes;
 };

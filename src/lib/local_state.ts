@@ -1,9 +1,7 @@
 import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFileSync } from 'write-json-file';
 
-import {
-    STATE_FILE_PATH,
-} from './consts.js';
+import { STATE_FILE_PATH } from './consts.js';
 
 /**
  * Returns state object from auth file or empty object.

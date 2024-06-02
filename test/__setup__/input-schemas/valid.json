@@ -1,62 +1,62 @@
 {
-    "title": "Google SERP crawler input",
-    "description": "Define the Google search query using parameters below. You can scrape the data using specific language, country and location UUID.",
-    "type": "object",
-    "schemaVersion": 1,
-    "properties": {
-        "queries": {
-            "title": "Queries or search URLs",
-            "type": "string",
-            "description": "Enter here your queries or search URLs, one item per line.",
-            "prefill": "Hotels in Prague\nRestaurants in Prague\nhttps://www.google.com/search?q=acoomodation&oq=acoomodation&aqs=chrome..69i57j0l5.1637j0j1&sourceid=chrome&ie=UTF-8",
-            "editor": "textarea"
-        },
-        "locationUule": {
-            "title": "Uule location code",
-            "type": "string",
-            "description": "Enter [UULE](https://moz.com/ugc/geolocation-the-ultimate-tip-to-emulate-local-search) location code you want to use for geo spacious search results. This setting is not applied to search URLs entered above but only to text queries.",
-            "editor": "textfield"
-        },
-        "resultsNum": {
-            "title": "Results number per page",
-            "type": "integer",
-            "description": "Enter how many results per page you want to query. Maximum is 100.",
-            "default": 10,
-            "maximum": 100,
-            "minimum": 1
-        },
-        "maxPagesPerQuery": {
-            "title": "Max pages per query",
-            "type": "integer",
-            "description": "Enter up to how many results pages you want to get for one query.",
-            "default": 1,
-            "minimum": 1
-        },
-        "maxConcurrency": {
-            "title": "Max concurrency",
-            "type": "integer",
-            "description": "Enter the maximum concurrency for this crawler. Higher number will give you results faster but will burn your available proxies faster on the other hand.",
-            "default": 10,
-            "maximum": 100,
-            "minimum": 1
-        },
-        "deviceType": {
-            "title": "Device type",
-            "type": "string",
-            "description": "Select device type you want to use.",
-            "editor": "select",
-            "default": "DESKTOP",
-            "enum": ["DESKTOP", "MOBILE"],
-            "enumTitles": ["Desktop", "Mobile"]
-        },
-        "saveHtml": {
-            "title": "Save HTML",
-            "type": "boolean",
-            "description": "If checked then HTML of Google search results page will be stored in results.",
-            "default": false,
-            "groupCaption": "Options",
-            "groupDescription": "Various options for this Actor"
-        }
-    },
-    "required": ["queries"]
+	"title": "Google SERP crawler input",
+	"description": "Define the Google search query using parameters below. You can scrape the data using specific language, country and location UUID.",
+	"type": "object",
+	"schemaVersion": 1,
+	"properties": {
+		"queries": {
+			"title": "Queries or search URLs",
+			"type": "string",
+			"description": "Enter here your queries or search URLs, one item per line.",
+			"prefill": "Hotels in Prague\nRestaurants in Prague\nhttps://www.google.com/search?q=acoomodation&oq=acoomodation&aqs=chrome..69i57j0l5.1637j0j1&sourceid=chrome&ie=UTF-8",
+			"editor": "textarea"
+		},
+		"locationUule": {
+			"title": "Uule location code",
+			"type": "string",
+			"description": "Enter [UULE](https://moz.com/ugc/geolocation-the-ultimate-tip-to-emulate-local-search) location code you want to use for geo spacious search results. This setting is not applied to search URLs entered above but only to text queries.",
+			"editor": "textfield"
+		},
+		"resultsNum": {
+			"title": "Results number per page",
+			"type": "integer",
+			"description": "Enter how many results per page you want to query. Maximum is 100.",
+			"default": 10,
+			"maximum": 100,
+			"minimum": 1
+		},
+		"maxPagesPerQuery": {
+			"title": "Max pages per query",
+			"type": "integer",
+			"description": "Enter up to how many results pages you want to get for one query.",
+			"default": 1,
+			"minimum": 1
+		},
+		"maxConcurrency": {
+			"title": "Max concurrency",
+			"type": "integer",
+			"description": "Enter the maximum concurrency for this crawler. Higher number will give you results faster but will burn your available proxies faster on the other hand.",
+			"default": 10,
+			"maximum": 100,
+			"minimum": 1
+		},
+		"deviceType": {
+			"title": "Device type",
+			"type": "string",
+			"description": "Select device type you want to use.",
+			"editor": "select",
+			"default": "DESKTOP",
+			"enum": ["DESKTOP", "MOBILE"],
+			"enumTitles": ["Desktop", "Mobile"]
+		},
+		"saveHtml": {
+			"title": "Save HTML",
+			"type": "boolean",
+			"description": "If checked then HTML of Google search results page will be stored in results.",
+			"default": false,
+			"groupCaption": "Options",
+			"groupDescription": "Various options for this Actor"
+		}
+	},
+	"required": ["queries"]
 }

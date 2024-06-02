@@ -22,12 +22,14 @@ const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
 const API_VERSION = 'v1';
 
 export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaCommand> {
-    static override description = 'Lets you edit your input schema that would be used on the platform in a visual input schema editor.';
+    static override description =
+        'Lets you edit your input schema that would be used on the platform in a visual input schema editor.';
 
     static override args = {
         path: Args.string({
             required: false,
-            description: 'Optional path to your INPUT_SCHEMA.json file. If not provided default platform location for input schema is used.',
+            description:
+                'Optional path to your INPUT_SCHEMA.json file. If not provided default platform location for input schema is used.',
         }),
     };
 
@@ -37,12 +39,17 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 
     async run() {
         // This call fails if no input schema is found on any of the default locations
-        const { inputSchema: existingSchema, inputSchemaPath } = await readInputSchema({ forcePath: this.args.path, cwd: process.cwd() });
+        const { inputSchema: existingSchema, inputSchemaPath } = await readInputSchema({
+            forcePath: this.args.path,
+            cwd: process.cwd(),
+        });
 
         if (existingSchema && !inputSchemaPath) {
             // If path is not returned, it means the input schema must be directly embedded as object in actor.json
             // TODO - allow editing input schema embedded in actor.json
-            throw new Error(`Editing an input schema directly embedded in "${LOCAL_CONFIG_PATH}" is not yet supported.`);
+            throw new Error(
+                `Editing an input schema directly embedded in "${LOCAL_CONFIG_PATH}" is not yet supported.`,
+            );
         }
 
         warning('This command is still experimental and might break at any time. Use at your own risk.\n');
@@ -52,10 +59,12 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
         const app = express();
 
         // To send requests from browser to localhost, CORS has to be configured properly
-        app.use(cors({
-            origin: INPUT_SCHEMA_EDITOR_ORIGIN,
-            allowedHeaders: ['Content-Type', 'Authorization'],
-        }));
+        app.use(
+            cors({
+                origin: INPUT_SCHEMA_EDITOR_ORIGIN,
+                allowedHeaders: ['Content-Type', 'Authorization'],
+            }),
+        );
 
         // Turn off keepalive, otherwise closing the server when command is finished is lagging
         app.use((_, res, next) => {
@@ -98,7 +107,9 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
         apiRouter.get('/input-schema', (_, res) => {
             let inputSchemaStr;
             try {
-                inputSchemaStr = existsSync(inputSchemaPath) ? readFileSync(inputSchemaPath, { encoding: 'utf-8' }) : '{}\n';
+                inputSchemaStr = existsSync(inputSchemaPath)
+                    ? readFileSync(inputSchemaPath, { encoding: 'utf-8' })
+                    : '{}\n';
                 if (inputSchemaStr.length > 3) {
                     jsonIndentation = detectIndent(inputSchemaStr).indent || jsonIndentation;
                 }

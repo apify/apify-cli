@@ -31,7 +31,10 @@ You can also pass any custom path to your input schema to have it validated inst
     static override hiddenAliases = ['vis'];
 
     async run() {
-        const { inputSchema, inputSchemaPath } = await readInputSchema({ forcePath: this.args.path, cwd: process.cwd() });
+        const { inputSchema, inputSchemaPath } = await readInputSchema({
+            forcePath: this.args.path,
+            cwd: process.cwd(),
+        });
 
         if (!inputSchema) {
             throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);

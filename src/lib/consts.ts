@@ -27,7 +27,7 @@ export const LANGUAGE = {
     UNKNOWN: 'n/a',
 };
 
-export type Language = typeof LANGUAGE[keyof typeof LANGUAGE];
+export type Language = (typeof LANGUAGE)[keyof typeof LANGUAGE];
 
 export const PROJECT_TYPES = {
     SCRAPY: 'scrapy',

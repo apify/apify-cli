@@ -7,13 +7,12 @@ import { detectPythonVersion, getLocalKeyValueStorePath } from '../src/lib/utils
 
 const actorName = 'my-python-actor';
 const PYTHON_START_TEMPLATE_ID = 'python-start';
-const {
-    beforeAllCalls,
-    afterAllCalls,
-    joinPath,
-    tmpPath,
-    toggleCwdBetweenFullAndParentPath,
-} = useTempPath(actorName, { create: true, remove: true, cwd: true, cwdParent: true });
+const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, toggleCwdBetweenFullAndParentPath } = useTempPath(actorName, {
+    create: true,
+    remove: true,
+    cwd: true,
+    cwdParent: true,
+});
 
 const { CreateCommand } = await import('../src/commands/create.js');
 const { RunCommand } = await import('../src/commands/run.js');

@@ -25,9 +25,9 @@ const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
  * Waits for the build to finish
  */
 const waitForBuildToFinish = async (client: ApifyClient, buildId: string) => {
-    while (true) { // eslint-disable-line
+    while (true) {
         const build = await client.build(buildId).get();
-        if (build!.status !== ACTOR_JOB_STATUSES.RUNNING as any) return build;
+        if (build!.status !== (ACTOR_JOB_STATUSES.RUNNING as any)) return build;
         await new Promise((resolve) => setTimeout(resolve, 2500));
     }
 };
@@ -44,12 +44,12 @@ const waitForBuildToFinishWithTimeout = async (client: ApifyClient, buildId: str
 
 useAuthSetup({ perTest: false });
 
-const {
-    beforeAllCalls,
-    afterAllCalls,
-    joinPath,
-    toggleCwdBetweenFullAndParentPath,
-} = useTempPath(ACTOR_NAME, { cwd: true, cwdParent: true, create: true, remove: true });
+const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPath } = useTempPath(ACTOR_NAME, {
+    cwd: true,
+    cwdParent: true,
+    create: true,
+    remove: true,
+});
 
 const { CreateCommand } = await import('../../src/commands/create.js');
 const { PushCommand } = await import('../../src/commands/push.js');
@@ -64,7 +64,10 @@ describe('apify call', () => {
         const { username } = await testUserClient.user('me').get();
 
         await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
-        await CreateCommand.run([ACTOR_NAME, '--template', 'project_empty', '--skip-dependency-install'], import.meta.url);
+        await CreateCommand.run(
+            [ACTOR_NAME, '--template', 'project_empty', '--skip-dependency-install'],
+            import.meta.url,
+        );
 
         const actCode = `
         import { Actor } from 'apify';

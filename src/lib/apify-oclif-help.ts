@@ -18,8 +18,9 @@ export default class ApifyOclifHelp extends Help {
             this.section(
                 'TROUBLESHOOTING',
                 this.wrap(
-                    'For general support, reach out to us at https://apify.com/contact\n\n'
-                        + 'If you believe you are encountering a bug, file it at https://github.com/apify/apify-cli/issues/new'),
+                    'For general support, reach out to us at https://apify.com/contact\n\n' +
+                        'If you believe you are encountering a bug, file it at https://github.com/apify/apify-cli/issues/new',
+                ),
             ),
         );
     }

@@ -18,10 +18,9 @@ const UPDATE_COMMAND = {
     [INSTALLATION_TYPE.NPM]: 'npm install -g apify-cli@latest',
 } as const;
 
-export const SKIP_UPDATE_CHECK = (
-    process.env.APIFY_CLI_SKIP_UPDATE_CHECK
-    && !['0', 'false'].includes(process.env.APIFY_CLI_SKIP_UPDATE_CHECK.toLowerCase())
-);
+export const SKIP_UPDATE_CHECK =
+    process.env.APIFY_CLI_SKIP_UPDATE_CHECK &&
+    !['0', 'false'].includes(process.env.APIFY_CLI_SKIP_UPDATE_CHECK.toLowerCase());
 
 /**
  * Detect through which package manager the Apify CLI was installed.
@@ -82,25 +81,26 @@ const getAndCacheLatestNpmVersion = async (): Promise<string | undefined> => {
  * Check results will be cached for 24 hours
  */
 export const checkLatestVersion = async (enforceUpdate = false) => {
-    const {
-        latestNpmVersion: cachedLatestNpmVersion,
-        latestNpmVersionCheckedAt,
-    } = getLocalState();
+    const { latestNpmVersion: cachedLatestNpmVersion, latestNpmVersionCheckedAt } = getLocalState();
 
-    const isCheckOutdated = !latestNpmVersionCheckedAt || Date.now() - new Date(latestNpmVersionCheckedAt as string).getTime() > CHECK_VERSION_EVERY_MILLIS;
+    const isCheckOutdated =
+        !latestNpmVersionCheckedAt ||
+        Date.now() - new Date(latestNpmVersionCheckedAt as string).getTime() > CHECK_VERSION_EVERY_MILLIS;
     const isOnline = await import('is-online');
 
     // If check is outdated and we are online then update the current NPM version.
-    const shouldGetCurrentVersion = enforceUpdate || (isCheckOutdated && await isOnline.default({ timeout: 500 }));
+    const shouldGetCurrentVersion = enforceUpdate || (isCheckOutdated && (await isOnline.default({ timeout: 500 })));
     const latestNpmVersion = shouldGetCurrentVersion
         ? await getAndCacheLatestNpmVersion()
-        : cachedLatestNpmVersion as string;
+        : (cachedLatestNpmVersion as string);
 
     if (latestNpmVersion && gt(latestNpmVersion as string, CURRENT_APIFY_CLI_VERSION)) {
         const installationType = detectInstallationType();
         const updateCommand = `' ${UPDATE_COMMAND[installationType]} '`;
         console.log('');
-        warning('You are using an old version of Apify CLI. We strongly recommend you always use the latest available version.');
+        warning(
+            'You are using an old version of Apify CLI. We strongly recommend you always use the latest available version.',
+        );
         console.log(`       ↪ Run ${chalk.bgWhite(chalk.black(updateCommand))} to update! 👍 \n`);
     } else if (shouldGetCurrentVersion) {
         // In this case the version was refreshed from the NPM which took a while and "Info: Making sure that Apify ..." was printed

@@ -19,7 +19,10 @@ export const ensureValidActorName = async (maybeActorName?: string) => {
 };
 
 // TODO: this isn't even used anymore
-export const getTemplateDefinition = async (maybeTemplateName: string | undefined, manifestPromise: Promise<Manifest | Error>) => {
+export const getTemplateDefinition = async (
+    maybeTemplateName: string | undefined,
+    manifestPromise: Promise<Manifest | Error>,
+) => {
     const manifest = await manifestPromise;
     // If the fetch failed earlier, the resolve value of
     // the promise will be the error from fetching the manifest.
@@ -78,19 +81,21 @@ async function executePrompts(manifest: Manifest) {
 async function promptActorName() {
     const answer = await inquirer.prompt<{
         actorName: string;
-    }>([{
-        name: 'actorName',
-        message: 'Name of your new Actor:',
-        type: 'input',
-        validate: (promptText) => {
-            try {
-                validateActorName(promptText);
-            } catch (err) {
-                return (err as Error).message;
-            }
-            return true;
+    }>([
+        {
+            name: 'actorName',
+            message: 'Name of your new Actor:',
+            type: 'input',
+            validate: (promptText) => {
+                try {
+                    validateActorName(promptText);
+                } catch (err) {
+                    return (err as Error).message;
+                }
+                return true;
+            },
         },
-    }]);
+    ]);
 
     return answer.actorName;
 }
@@ -98,14 +103,16 @@ async function promptActorName() {
 async function promptProgrammingLanguage() {
     const answer = await inquirer.prompt<{
         programmingLanguage: string;
-    }>([{
-        type: 'list',
-        name: 'programmingLanguage',
-        message: 'Choose the programming language of your new Actor:',
-        default: PROGRAMMING_LANGUAGES[0],
-        choices: PROGRAMMING_LANGUAGES,
-        loop: false,
-    }]);
+    }>([
+        {
+            type: 'list',
+            name: 'programmingLanguage',
+            message: 'Choose the programming language of your new Actor:',
+            default: PROGRAMMING_LANGUAGES[0],
+            choices: PROGRAMMING_LANGUAGES,
+            loop: false,
+        },
+    ]);
     return answer.programmingLanguage;
 }
 
@@ -130,15 +137,18 @@ async function promptTemplateDefinition(manifest: Manifest, programmingLanguage:
         },
     ];
 
-    const answer = await inquirer.prompt([{
-        type: 'list',
-        name: 'templateDefinition',
-        message: 'Choose a template for your new Actor. Detailed information about the template will be shown in the next step.',
-        default: choices[0],
-        choices,
-        loop: false,
-        pageSize: 8,
-    }]);
+    const answer = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'templateDefinition',
+            message:
+                'Choose a template for your new Actor. Detailed information about the template will be shown in the next step.',
+            default: choices[0],
+            choices,
+            loop: false,
+            pageSize: 8,
+        },
+    ]);
 
     return answer.templateDefinition;
 }
@@ -155,15 +165,17 @@ async function promptTemplateInstallation(templateDefinition: Template) {
     const description = chalk.dim(templateDefinition.description);
     const suffix = `\n ${label}:\n ${description}`;
 
-    const answer = await inquirer.prompt([{
-        type: 'list',
-        name: 'shouldInstall',
-        message,
-        suffix,
-        default: choices[0],
-        choices,
-        loop: false,
-    }]);
+    const answer = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'shouldInstall',
+            message,
+            suffix,
+            default: choices[0],
+            choices,
+            loop: false,
+        },
+    ]);
 
     return answer.shouldInstall as boolean;
 }

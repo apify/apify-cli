@@ -4,17 +4,19 @@ import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from 
 import { ApifyCommand } from '../../lib/apify_command.js';
 
 export class PushDataCommand extends ApifyCommand<typeof PushDataCommand> {
-    static override description = 'Stores an object or an array of objects to the default dataset of the Actor run.\n'
-        + 'It is possible to pass data using item argument or stdin.\n'
-        + 'Passing data using argument:\n'
-        + '$ apify actor push-data {"foo": "bar"}\n'
-        + 'Passing data using stdin with pipe:\n'
-        + '$ cat ./test.json | apify actor push-data\n';
+    static override description =
+        'Stores an object or an array of objects to the default dataset of the Actor run.\n' +
+        'It is possible to pass data using item argument or stdin.\n' +
+        'Passing data using argument:\n' +
+        '$ apify actor push-data {"foo": "bar"}\n' +
+        'Passing data using stdin with pipe:\n' +
+        '$ cat ./test.json | apify actor push-data\n';
 
     static override args = {
         item: Args.string({
             required: false,
-            description: 'JSON string with one object or array of objects containing data to be stored in the default dataset.',
+            description:
+                'JSON string with one object or array of objects containing data to be stored in the default dataset.',
         }),
     };
 
