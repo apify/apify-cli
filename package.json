@@ -98,7 +98,7 @@
         "@apify/eslint-config-ts": "^0.4.1",
         "@apify/tsconfig": "^0.1.0",
         "@crawlee/types": "^3.8.1",
-        "@oclif/test": "^3.2.1",
+        "@oclif/test": "^4.0.0",
         "@types/adm-zip": "^0.5.5",
         "@types/archiver": "^6.0.2",
         "@types/chai": "^4.3.12",
