@@ -1316,7 +1316,32 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oclif/core@npm:^3.26.6, @oclif/core@npm:~3.26.0":
+"@oclif/core@npm:^4.0.0-beat.13, @oclif/core@npm:^4.0.0-beta.12, @oclif/core@npm:^4.0.0-beta.13":
+  version: 4.0.0-beta.13
+  resolution: "@oclif/core@npm:4.0.0-beta.13"
+  dependencies:
+    ansi-escapes: "npm:^4.3.2"
+    ansis: "npm:^3.0.1"
+    clean-stack: "npm:^3.0.1"
+    cli-spinners: "npm:^2.9.2"
+    cosmiconfig: "npm:^9.0.0"
+    debug: "npm:^4.3.4"
+    ejs: "npm:^3.1.10"
+    get-package-type: "npm:^0.1.0"
+    globby: "npm:^11.1.0"
+    indent-string: "npm:^4.0.0"
+    is-wsl: "npm:^2.2.0"
+    minimatch: "npm:^9.0.4"
+    string-width: "npm:^4.2.3"
+    supports-color: "npm:^9.4.0"
+    widest-line: "npm:^3.1.0"
+    wordwrap: "npm:^1.0.0"
+    wrap-ansi: "npm:^7.0.0"
+  checksum: 10c0/888c23460233f7f563f08f0a338267c3337217ff34f3fb8be5b3d16aa1139b42b5837cd09e89c4e1b1655863bb80b3c5b60f4f0a7c514323bf09589fbcbd458a
+  languageName: node
+  linkType: hard
+
+"@oclif/core@npm:~3.26.0":
   version: 3.26.6
   resolution: "@oclif/core@npm:3.26.6"
   dependencies:
@@ -1352,46 +1377,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oclif/core@npm:^4.0.0-beat.13, @oclif/core@npm:^4.0.0-beta.12, @oclif/core@npm:^4.0.0-beta.13":
-  version: 4.0.0-beta.13
-  resolution: "@oclif/core@npm:4.0.0-beta.13"
-  dependencies:
-    ansi-escapes: "npm:^4.3.2"
-    ansis: "npm:^3.0.1"
-    clean-stack: "npm:^3.0.1"
-    cli-spinners: "npm:^2.9.2"
-    cosmiconfig: "npm:^9.0.0"
-    debug: "npm:^4.3.4"
-    ejs: "npm:^3.1.10"
-    get-package-type: "npm:^0.1.0"
-    globby: "npm:^11.1.0"
-    indent-string: "npm:^4.0.0"
-    is-wsl: "npm:^2.2.0"
-    minimatch: "npm:^9.0.4"
-    string-width: "npm:^4.2.3"
-    supports-color: "npm:^9.4.0"
-    widest-line: "npm:^3.1.0"
-    wordwrap: "npm:^1.0.0"
-    wrap-ansi: "npm:^7.0.0"
-  checksum: 10c0/888c23460233f7f563f08f0a338267c3337217ff34f3fb8be5b3d16aa1139b42b5837cd09e89c4e1b1655863bb80b3c5b60f4f0a7c514323bf09589fbcbd458a
-  languageName: node
-  linkType: hard
-
-"@oclif/plugin-help@npm:^6.0.21":
+"@oclif/plugin-help@npm:^6.0.21, @oclif/plugin-help@npm:~6.1.0":
   version: 6.1.0
   resolution: "@oclif/plugin-help@npm:6.1.0"
   dependencies:
     "@oclif/core": "npm:^4.0.0-beta.13"
   checksum: 10c0/24b340e8bf1541aab6ec1ab0874936124e333775a4faba633377c56b5078956e5ea4378f4765cda45b09b303ff3408ad90c49b7323f652f6e2addf92ccf419de
-  languageName: node
-  linkType: hard
-
-"@oclif/plugin-help@npm:~6.0.14":
-  version: 6.0.22
-  resolution: "@oclif/plugin-help@npm:6.0.22"
-  dependencies:
-    "@oclif/core": "npm:^3.26.6"
-  checksum: 10c0/693d437d1022e9302f186e87a1cb371354a16c2ccbe1f2e5d1610ec152a7edd4fdee687f647663fdd5ab2a3b3afec616a3881b4e0f32d1dc95d483d05ae6bf34
   languageName: node
   linkType: hard
 
@@ -2966,7 +2957,7 @@ __metadata:
     "@crawlee/memory-storage": "npm:~3.10.0"
     "@crawlee/types": "npm:^3.8.1"
     "@oclif/core": "npm:~3.26.0"
-    "@oclif/plugin-help": "npm:~6.0.14"
+    "@oclif/plugin-help": "npm:~6.1.0"
     "@oclif/test": "npm:^4.0.0"
     "@root/walk": "npm:~1.1.0"
     "@types/adm-zip": "npm:^0.5.5"
