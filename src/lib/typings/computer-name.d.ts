@@ -1,5 +1,5 @@
 declare module 'computer-name' {
-    function computerName(): string;
+	function computerName(): string;
 
-    export = computerName;
+	export = computerName;
 }
