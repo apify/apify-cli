@@ -61,7 +61,7 @@
         "@apify/utilities": "~2.10.0",
         "@crawlee/memory-storage": "~3.10.0",
         "@oclif/core": "~3.26.0",
-        "@oclif/plugin-help": "~6.1.0",
+        "@oclif/plugin-help": "~6.2.0",
         "@root/walk": "~1.1.0",
         "adm-zip": "~0.5.10",
         "ajv": "~8.16.0",
