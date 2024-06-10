@@ -18,6 +18,7 @@ export interface RunOnCloudOptions {
     runOptions: TaskStartOptions;
     type: 'Actor' | 'Task';
     waitForFinishMillis?: number;
+    inputOverride?: Record<string, unknown>;
 }
 
 export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: RunOnCloudOptions) {
@@ -27,6 +28,7 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
         runOptions,
         type,
         waitForFinishMillis,
+        inputOverride,
     } = options;
 
     const clientMethod = type === 'Actor' ? 'actor' : 'task';
@@ -45,12 +47,31 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     let run: ActorRun;
 
     try {
-        if (localInput && type === 'Actor') {
+        if ((localInput || inputOverride) && type === 'Actor') {
+            let inputToUse: Record<string, unknown> | undefined;
+            let contentType: string;
+
+            if (inputOverride) {
+                inputToUse = inputOverride;
+                contentType = 'application/json';
+            } else if (localInput) {
+                const ext = mime.getExtension(localInput.contentType!);
+
+                if (ext === 'json') {
+                    inputToUse = JSON.parse(localInput.body.toString('utf8'));
+                    contentType = 'application/json';
+                } else {
+                    inputToUse = localInput.body as never;
+                    contentType = localInput.contentType!;
+                }
+            } else {
+                throw new Error('Unreachable');
+            }
+
             // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
             // It will save malformed JSON which looks like buffer as INPUT.
             // We need to fix this in v1 during removing call under Actor namespace.
-            const input = mime.getExtension(localInput.contentType!) === 'json' ? JSON.parse(localInput.body.toString('utf-8')) : localInput.body;
-            run = await apifyClient[clientMethod](actorOrTaskData.id).start(input, { ...runOptions, contentType: localInput.contentType! });
+            run = await apifyClient[clientMethod](actorOrTaskData.id).start(inputToUse, { ...runOptions, contentType });
         } else {
             run = await apifyClient[clientMethod](actorOrTaskData.id).start(undefined, runOptions);
         }

@@ -96,4 +96,5 @@ export enum CommandExitCodes {
     RunAborted = 3,
 
     NoFilesToPush = 4,
+    InvalidInput = 5,
 }
