@@ -102,4 +102,23 @@ describe('apify call', () => {
         expect(EXPECTED_INPUT).toStrictEqual(input!.value);
         expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
     });
+
+    it('should work with passed in input', async () => {
+        const expectedInput = {
+            hello: 'from cli',
+        };
+
+        const string = JSON.stringify(expectedInput);
+
+        await expect(ActorCallCommand.run([ACTOR_NAME, '--input', string], import.meta.url)).resolves.toBeUndefined();
+
+        const actorClient = testUserClient.actor(actorId);
+        const runs = await actorClient.runs().list();
+        const lastRun = runs.items.pop();
+        const lastRunDetail = await testUserClient.run(lastRun!.id).get();
+        const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
+
+        expect(expectedInput).toStrictEqual(input!.value);
+        expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
+    });
 });
