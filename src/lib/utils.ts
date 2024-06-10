@@ -106,12 +106,18 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
  * Returns object from auth file or empty object.
  */
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
+    let result: AuthJSON = {};
     try {
-        const result = await loadJsonFile<AuthJSON>(AUTH_FILE_PATH());
-        return (result || {});
+        result = await loadJsonFile<AuthJSON>(AUTH_FILE_PATH());
     } catch {
         return {};
     }
+
+    if (!result.username && !result.id) {
+        throw new Error('Corrupted local user info was found. Please run "apify login" to fix it.');
+    }
+
+    return result;
 };
 
 /**
