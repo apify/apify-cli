@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { resolve } from 'node:path';
 import process from 'node:process';
 
 import { Args, Flags } from '@oclif/core';
@@ -75,7 +75,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
             switch (this.flags.input[0]) {
                 case '@': {
                     const fromCwd = this.flags.input.slice(1);
-                    const fullPath = join(cwd, fromCwd);
+                    const fullPath = resolve(cwd, fromCwd);
 
                     try {
                         const fileContent = await readFile(fullPath, 'utf8');
