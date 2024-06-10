@@ -1,4 +1,4 @@
-import { test } from '@oclif/test';
+import { runCommand } from '@oclif/test';
 
 import { SecretRmCommand } from '../../../src/commands/secrets/rm.js';
 import { getSecretsFile } from '../../../src/lib/secrets.js';
@@ -18,19 +18,23 @@ describe('apify secrets:add', () => {
         }
     });
 
-    test
-        .command(['secrets:add', SECRET_KEY, SECRET_VALUE])
-        .it('should work', async () => {
-            const secrets = getSecretsFile();
-            expect(secrets[SECRET_KEY]).to.eql(SECRET_VALUE);
-        });
+    it('should work', async () => {
+        const { error } = await runCommand(['secrets:add', SECRET_KEY, SECRET_VALUE], import.meta.url);
 
-    test
-        .command(['secrets add', SECRET_KEY_2, SECRET_VALUE])
-        .it('should work with alias', async () => {
-            const secrets = getSecretsFile();
-            expect(secrets[SECRET_KEY_2]).to.eql(SECRET_VALUE);
-        });
+        expect(error).toBeFalsy();
+
+        const secrets = getSecretsFile();
+        expect(secrets[SECRET_KEY]).to.eql(SECRET_VALUE);
+    });
+
+    it('should work with alias', async () => {
+        const { error } = await runCommand(['secrets add', SECRET_KEY_2, SECRET_VALUE], import.meta.url);
+
+        expect(error).toBeFalsy();
+
+        const secrets = getSecretsFile();
+        expect(secrets[SECRET_KEY_2]).to.eql(SECRET_VALUE);
+    });
 
     afterAll(async () => {
         const secrets = getSecretsFile();

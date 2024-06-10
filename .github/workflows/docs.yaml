@@ -59,7 +59,7 @@ jobs:
               uses: stefanzweifel/git-auto-commit-action@v5
               with:
                   commit_message: "chore: Automatic theme updating workflow [skip ci]"
-                  file_pattern: "website/package*.json"
+                  file_pattern: "website/package*.json website/yarn.lock"
                   commit_user_name: Apify Bot
                   commit_user_email: my-github-actions-bot@example.org
                   commit_author: Apify Bot <apify@apify.com>

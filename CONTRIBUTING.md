@@ -139,4 +139,4 @@ afterAll(async () => {
 Running commands in tests can be done in two ways:
 
 -   Importing the command class and calling `Command.run([], import.meta.url);`, where the array is the argv of the commands (think of it like the arguments you'd pass to the command in the terminal).
--   By importing `test` from `@oclif/test` and using that helper to run the command.
+-   By importing `runCommand` from `@oclif/test` and using that helper to run the command.

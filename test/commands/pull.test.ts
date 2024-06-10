@@ -3,7 +3,7 @@ import { existsSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { test } from '@oclif/test';
+import { runCommand } from '@oclif/test';
 import { ActorCollectionCreateOptions } from 'apify-client';
 import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFile } from 'write-json-file';
@@ -124,12 +124,12 @@ describe('apify pull', () => {
         }
     });
 
-    test
-        .command(['pull'])
-        .catch((ctx) => {
-            expect(ctx.message).to.be.eql('Cannot find Actor in this directory.');
-        })
-        .it('should fail outside Actor folder without actorId defined');
+    it('should fail outside Actor folder without actorId defined', async () => {
+        const { error } = await runCommand(['pull'], import.meta.url);
+
+        expect(error).toBeTruthy();
+        expect(error?.message).toEqual('Cannot find Actor in this directory.');
+    });
 
     it('should work with Actor SOURCE_FILES', async () => {
         const testActor = await testUserClient.actors().create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_SOURCE_FILES });

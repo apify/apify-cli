@@ -1,4 +1,4 @@
-import { test } from '@oclif/test';
+import { runCommand } from '@oclif/test';
 
 import { SecretsAddCommand } from '../../../src/commands/secrets/add.js';
 import { getSecretsFile } from '../../../src/lib/secrets.js';
@@ -16,10 +16,12 @@ describe('apify secrets:rm', () => {
         }
     });
 
-    test
-        .command(['secrets:rm', SECRET_KEY])
-        .it('should work', async () => {
-            const secrets = getSecretsFile();
-            expect(secrets[SECRET_KEY]).to.eql(undefined);
-        });
+    it('should work', async () => {
+        const { error } = await runCommand(['secrets:rm', SECRET_KEY], import.meta.url);
+
+        expect(error).toBeFalsy();
+
+        const secrets = getSecretsFile();
+        expect(secrets[SECRET_KEY]).to.eql(undefined);
+    });
 });
