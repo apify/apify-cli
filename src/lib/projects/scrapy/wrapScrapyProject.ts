@@ -99,7 +99,7 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string;
 
     const manifest = await fetchManifest(wrapperManifestUrl);
 
-    info('Downloading the latest Scrapy wrapper template...');
+    info({ message: 'Downloading the latest Scrapy wrapper template...' });
 
     const { archiveUrl } = manifest.templates.find(({ id }) => id === 'python-scrapy')!;
     const templatePath = join(__dirname, 'templates', 'python-scrapy');
@@ -111,7 +111,7 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string;
         pathTo: templatePath,
     });
 
-    info('Wrapping the Scrapy project...');
+    info({ message: 'Wrapping the Scrapy project...' });
 
     await merge(
         join(__dirname, 'templates', 'python-scrapy'),
@@ -136,5 +136,5 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string;
         });
     });
 
-    success('The Scrapy project has been wrapped successfully.');
+    success({ message: 'The Scrapy project has been wrapped successfully.' });
 }

@@ -35,11 +35,11 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     const localInput = getLocalInput(cwd);
 
     if (type === 'Actor') {
-        runLog(`Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})`);
+        runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
     } else if (actorOrTaskData.title) {
-        runLog(`Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${actorOrTaskData.id})`);
+        runLog({ message: `Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${actorOrTaskData.id})` });
     } else {
-        runLog(`Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})`);
+        runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
     }
 
     let run: ActorRun;
@@ -64,23 +64,23 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     try {
         await outputJobLog(run, waitForFinishMillis);
     } catch (err) {
-        warning('Can not get log:');
+        warning({ message: 'Can not get log:' });
         console.error(err);
     }
 
     run = (await apifyClient.run(run.id).get())!;
 
-    link(`${type} run detail`, `https://console.apify.com/actors/${run.actId}#/runs/${run.id}`);
+    link({ message: `${type} run detail`, url: `https://console.apify.com/actors/${run.actId}#/runs/${run.id}` });
 
     if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-        success(`${type} finished.`);
+        success({ message: `${type} finished.` });
     } else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
-        warning(`${type} is still running!`);
+        warning({ message: `${type} is still running!` });
     } else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
-        warning(`${type} was aborted!`);
+        warning({ message: `${type} was aborted!` });
         process.exitCode = CommandExitCodes.RunAborted;
     } else {
-        error(`${type} failed!`);
+        error({ message: `${type} failed!` });
         process.exitCode = CommandExitCodes.RunFailed;
     }
 }

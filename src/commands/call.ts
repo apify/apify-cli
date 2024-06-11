@@ -10,8 +10,8 @@ import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow } from '../lib
 
 export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
     static override description = 'Runs a specific Actor remotely on the Apify cloud platform.\n'
-    + 'The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". '
-    + 'It takes input for the Actor from the default local key-value store by default.';
+        + 'The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". '
+        + 'It takes input for the Actor from the default local key-value store by default.';
 
     static override flags = SharedRunOnCloudFlags('Actor');
 
@@ -19,7 +19,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
         actorId: Args.string({
             required: false,
             description: 'Name or ID of the Actor to run (e.g. "my-actor", "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). '
-            + `If not provided, the command runs the remote Actor specified in the "${LOCAL_CONFIG_PATH}" file.`,
+                + `If not provided, the command runs the remote Actor specified in the "${LOCAL_CONFIG_PATH}" file.`,
         }),
     };
 

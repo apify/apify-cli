@@ -28,9 +28,9 @@ const tryToLogin = async (token: string) => {
     const userInfo = await getLocalUserInfo();
     if (isUserLogged) {
         await useApifyIdentity(userInfo.id!);
-        success(`You are logged in to Apify as ${userInfo.username || userInfo.id}!`);
+        success({ message: `You are logged in to Apify as ${userInfo.username || userInfo.id}!` });
     } else {
-        error('Login to Apify failed, the provided API token is not valid.');
+        error({ message: 'Login to Apify failed, the provided API token is not valid.' });
     }
     return isUserLogged;
 };
@@ -136,7 +136,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
                     res.end();
                 } catch (err) {
                     const errorMessage = `Login to Apify failed with error: ${(err as Error).message}`;
-                    error(errorMessage);
+                    error({ message: errorMessage });
                     res.status(500);
                     res.send(errorMessage);
                 }
@@ -145,11 +145,11 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 
             apiRouter.post('/exit', (req, res) => {
                 if (req.body.isWindowClosed) {
-                    error('Login to Apify failed, the console window was closed.');
+                    error({ message: 'Login to Apify failed, the console window was closed.' });
                 } else if (req.body.actionCanceled) {
-                    error('Login to Apify failed, the action was canceled in the Apify Console.');
+                    error({ message: 'Login to Apify failed, the action was canceled in the Apify Console.' });
                 } else {
-                    error('Login to Apify failed.');
+                    error({ message: 'Login to Apify failed.' });
                 }
 
                 res.end();
@@ -171,7 +171,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
                 // Ignore errors from fetching computer name as it's not critical
             }
 
-            info(`Opening Apify Console at "${consoleUrl.href}"...`);
+            info({ message: `Opening Apify Console at "${consoleUrl.href}"...` });
             await open(consoleUrl.href);
         } else {
             console.log('Enter your Apify API token. You can find it at https://console.apify.com/account#/integrations');
