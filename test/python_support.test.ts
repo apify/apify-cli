@@ -57,7 +57,7 @@ async def main():
         toggleCwdBetweenFullAndParentPath();
         await RunCommand.run([], import.meta.url);
 
-        // Check actor output
+        // Check Actor output
         const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
         const actorOutput = loadJsonFileSync(actorOutputPath);
         expect(actorOutput).toStrictEqual(actorOutput);

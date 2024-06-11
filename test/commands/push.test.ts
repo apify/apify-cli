@@ -189,7 +189,7 @@ describe('apify push', () => {
         delete actorJson.environmentVariables;
         writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
 
-        // Create large file to ensure actor will be uploaded as zip
+        // Create large file to ensure Actor will be uploaded as zip
         writeFileSync(joinPath('3mb-file.txt'), Buffer.alloc(1024 * 1024 * 3));
 
         await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
