@@ -14,8 +14,8 @@ import { error, info, success } from '../lib/outputs.js';
 import { useApifyIdentity } from '../lib/telemetry.js';
 import { getLocalUserInfo, getLoggedClient } from '../lib/utils.js';
 
-const CONSOLE_BASE_URL = 'https://console.apify.com/account?tab=integrations';
-// const CONSOLE_BASE_URL = 'http://localhost:3000/account?tab=integrations';
+const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
+// const CONSOLE_BASE_URL = 'http://localhost:3000/settings/integrations';
 const CONSOLE_URL_ORIGIN = new URL(CONSOLE_BASE_URL).origin;
 
 const API_BASE_URL = CONSOLE_BASE_URL.includes('localhost') ? 'http://localhost:3333' : undefined;
@@ -174,7 +174,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
             info({ message: `Opening Apify Console at "${consoleUrl.href}"...` });
             await open(consoleUrl.href);
         } else {
-            console.log('Enter your Apify API token. You can find it at https://console.apify.com/account#/integrations');
+            console.log('Enter your Apify API token. You can find it at https://console.apify.com/settings/integrations');
             const tokenAnswer = await inquirer.prompt<{ token: string }>([{ name: 'token', message: 'token:', type: 'password' }]);
             await tryToLogin(tokenAnswer.token);
         }
