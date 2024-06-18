@@ -106,7 +106,7 @@ scrapy crawl your_spider -o books.json
 
 ### Log in to Apify
 
-You will need to provide your [Apify API Token](https://console.apify.com/account/integrations) to complete this action.
+You will need to provide your [Apify API Token](https://console.apify.com/settings/integrations) to complete this action.
 
 ```bash showLineNumbers
 apify login
