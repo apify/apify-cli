@@ -81,7 +81,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
         if (this.flags.input) {
             switch (this.flags.input[0]) {
                 case '-': {
-                    error('You need to pipe something into standard input when you specify the `-` value to `--input`.');
+                    error({ message: 'You need to pipe something into standard input when you specify the `-` value to `--input`.' });
                     process.exitCode = CommandExitCodes.InvalidInput;
                     return;
                 }
@@ -89,7 +89,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
                     try {
                         input = JSON.parse(this.flags.input);
                     } catch (err) {
-                        error(`Cannot parse JSON input.\n  ${(err as Error).message}`);
+                        error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
                         process.exitCode = CommandExitCodes.InvalidInput;
                         return;
                     }
@@ -102,7 +102,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
                 const fileContent = await readFile(fullPath, 'utf8');
                 input = JSON.parse(fileContent);
             } catch (err) {
-                error(`Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}`);
+                error({ message: `Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}` });
                 process.exitCode = CommandExitCodes.InvalidInput;
                 return;
             }
