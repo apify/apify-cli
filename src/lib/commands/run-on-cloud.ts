@@ -3,11 +3,11 @@ import process from 'node:process';
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Flags } from '@oclif/core';
 import { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
-import mime from 'mime';
 
+import { resolveInput } from './resolve-input.js';
 import { CommandExitCodes } from '../consts.js';
 import { error, link, run as runLog, success, warning } from '../outputs.js';
-import { getLocalInput, outputJobLog } from '../utils.js';
+import { outputJobLog } from '../utils.js';
 
 export interface RunOnCloudOptions {
     actorOrTaskData: {
@@ -34,7 +34,7 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     const clientMethod = type === 'Actor' ? 'actor' : 'task';
 
     // Get input for act
-    const localInput = getLocalInput(cwd);
+    const actInput = resolveInput(cwd, inputOverride);
 
     if (type === 'Actor') {
         runLog(`Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})`);
@@ -47,31 +47,11 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     let run: ActorRun;
 
     try {
-        if ((localInput || inputOverride) && type === 'Actor') {
-            let inputToUse: Record<string, unknown> | undefined;
-            let contentType: string;
-
-            if (inputOverride) {
-                inputToUse = inputOverride;
-                contentType = 'application/json';
-            } else if (localInput) {
-                const ext = mime.getExtension(localInput.contentType!);
-
-                if (ext === 'json') {
-                    inputToUse = JSON.parse(localInput.body.toString('utf8'));
-                    contentType = 'application/json';
-                } else {
-                    inputToUse = localInput.body as never;
-                    contentType = localInput.contentType!;
-                }
-            } else {
-                throw new Error('Unreachable');
-            }
-
+        if (actInput && type === 'Actor') {
             // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
             // It will save malformed JSON which looks like buffer as INPUT.
             // We need to fix this in v1 during removing call under Actor namespace.
-            run = await apifyClient[clientMethod](actorOrTaskData.id).start(inputToUse, { ...runOptions, contentType });
+            run = await apifyClient[clientMethod](actorOrTaskData.id).start(actInput.inputToUse, { ...runOptions, contentType: actInput.contentType });
         } else {
             run = await apifyClient[clientMethod](actorOrTaskData.id).start(undefined, runOptions);
         }
