@@ -21,9 +21,16 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
         input: Flags.string({
             char: 'i',
             // eslint-disable-next-line max-len
-            description: 'Optional JSON input to be given to the Actor. You can either provide the JSON string as a value to this, a string of the format `@path/to/file.json`, or `-` to read from standard input.',
+            description: 'Optional JSON input to be given to the Actor. You can either provide the JSON string as a value to this, or `-` to read from standard input.',
             required: false,
             allowStdin: true,
+            exclusive: ['input-file'],
+        }),
+        'input-file': Flags.string({
+            aliases: ['if'],
+            description: 'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file.',
+            required: false,
+            exclusive: ['input'],
         }),
     };
 
@@ -73,21 +80,6 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 
         if (this.flags.input) {
             switch (this.flags.input[0]) {
-                case '@': {
-                    const fromCwd = this.flags.input.slice(1);
-                    const fullPath = resolve(cwd, fromCwd);
-
-                    try {
-                        const fileContent = await readFile(fullPath, 'utf8');
-                        input = JSON.parse(fileContent);
-                    } catch (err) {
-                        error(`Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}`);
-                        process.exitCode = CommandExitCodes.InvalidInput;
-                        return;
-                    }
-
-                    break;
-                }
                 case '-': {
                     error('You need to pipe something into standard input when you specify the `-` value to `--input`.');
                     process.exitCode = CommandExitCodes.InvalidInput;
@@ -102,6 +94,17 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
                         return;
                     }
                 }
+            }
+        } else if (this.flags.inputFile) {
+            const fullPath = resolve(cwd, this.flags.inputFile);
+
+            try {
+                const fileContent = await readFile(fullPath, 'utf8');
+                input = JSON.parse(fileContent);
+            } catch (err) {
+                error(`Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}`);
+                process.exitCode = CommandExitCodes.InvalidInput;
+                return;
             }
         }
 

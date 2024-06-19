@@ -1,5 +1,6 @@
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { platform } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
@@ -18,6 +19,9 @@ const EXPECTED_INPUT = {
     myTestInput: Math.random(),
 };
 const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
+
+const pathToInputJson = fileURLToPath(new URL('../__setup__/test-data/input-file.json', import.meta.url));
+const expectedInputFile = JSON.parse(readFileSync(pathToInputJson, 'utf-8'));
 
 useAuthSetup({ perTest: false });
 
@@ -119,6 +123,19 @@ describe('apify call', () => {
         const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
 
         expect(expectedInput).toStrictEqual(input!.value);
+        expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
+    });
+
+    it('should work with passed in input file', async () => {
+        await expect(ActorCallCommand.run([ACTOR_NAME, '--input-file', pathToInputJson], import.meta.url)).resolves.toBeUndefined();
+
+        const actorClient = testUserClient.actor(actorId);
+        const runs = await actorClient.runs().list();
+        const lastRun = runs.items.pop();
+        const lastRunDetail = await testUserClient.run(lastRun!.id).get();
+        const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
+
+        expect(expectedInputFile).toStrictEqual(input!.value);
         expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
     });
 });
