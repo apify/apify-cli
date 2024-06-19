@@ -18,7 +18,7 @@ const hook: Hook<'prerun'> = async (params) => {
         const validCommand = deprecations[usedCommand];
 
         if (validCommand) {
-            warning(`The command "${usedCommand}" is deprecated. Please use "${validCommand}" instead.`);
+            warning({ message: `The command "${usedCommand}" is deprecated. Please use "${validCommand}" instead.` });
         }
     }
 };

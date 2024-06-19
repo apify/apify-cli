@@ -66,7 +66,7 @@ export const replaceSecretsValue = (env: Record<string, string>, secrets?: Recor
                 // @ts-expect-error - we are replacing the value
                 updatedEnv[key] = secrets[secretKey];
             } else {
-                warning(`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`);
+                warning({ message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"` });
             }
         } else {
             // @ts-expect-error - we are replacing the value
@@ -100,7 +100,7 @@ export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Rec
                     isSecret: true,
                 });
             } else {
-                warning(`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`);
+                warning({ message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"` });
             }
         } else {
             envVars.push({

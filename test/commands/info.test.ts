@@ -24,7 +24,7 @@ describe('apify info', () => {
 
         const userInfoFromConfig = loadJsonFileSync<{ id: string }>(AUTH_FILE_PATH());
 
-        expect(spy).toHaveBeenCalledTimes(3);
-        expect(spy.mock.calls[2][0]).to.include(userInfoFromConfig.id);
+        expect(spy).toHaveBeenCalledTimes(2);
+        expect(spy.mock.calls[1][0]).to.include(userInfoFromConfig.id);
     });
 });

@@ -113,7 +113,7 @@ apify login
 
 Before you can interact with the Apify cloud, you need to [create an Apify account](https://console.apify.com/)
 and log in to it using the above command. You will be prompted for
-your [Apify API token](https://console.apify.com/account#/integrations).
+your [Apify API token](https://console.apify.com/settings/integrations).
 
 :::note API token save directory
 The command will store the API token and other sensitive information to `~/.apify`.

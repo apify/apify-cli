@@ -3,7 +3,7 @@ import { replaceSecretsValue } from '../src/lib/secrets.js';
 describe('Secrets', () => {
     describe('replaceSecretsValue()', () => {
         it('should work', () => {
-            const spy = vitest.spyOn(console, 'log');
+            const spy = vitest.spyOn(console, 'error');
 
             const secrets = {
                 myProdToken: 'mySecretToken',

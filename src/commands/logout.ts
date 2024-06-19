@@ -11,6 +11,6 @@ export class LogoutCommand extends ApifyCommand<typeof LogoutCommand> {
     async run() {
         await rimrafPromised(AUTH_FILE_PATH());
         regenerateLocalDistinctId();
-        success('You are logged out from your Apify account.');
+        success({ message: 'You are logged out from your Apify account.' });
     }
 }

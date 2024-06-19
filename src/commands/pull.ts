@@ -85,7 +85,7 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
         mkdirSync(dirpath, { recursive: true });
 
         if (!isActorAutomaticallyDetected && !(readdirSync(dirpath).length === 0)) {
-            error(`Directory ${dirpath} is not empty. Please empty it or choose another directory.`);
+            error({ message: `Directory ${dirpath} is not empty. Please empty it or choose another directory.` });
             return;
         }
 
@@ -147,6 +147,6 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
                 throw new Error(`Unknown source type: ${correctVersion.sourceType}`);
         }
 
-        success(isActorAutomaticallyDetected ? `Actor ${name} updated at ${dirpath}/` : `Pulled to ${dirpath}/`);
+        success({ message: isActorAutomaticallyDetected ? `Actor ${name} updated at ${dirpath}/` : `Pulled to ${dirpath}/` });
     }
 }

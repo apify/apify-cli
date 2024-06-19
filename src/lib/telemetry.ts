@@ -35,7 +35,7 @@ export const getOrCreateLocalDistinctId = async () => {
         const distinctId = userInfo.id || createLocalDistinctId();
 
         // This first time we are tracking telemetry, so we want to notify user about it.
-        info(TELEMETRY_WARNING_TEXT);
+        info({ message: TELEMETRY_WARNING_TEXT });
 
         ensureApifyDirectory(TELEMETRY_FILE_PATH());
         await writeJsonFile(TELEMETRY_FILE_PATH(), { distinctId });
