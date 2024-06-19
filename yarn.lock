@@ -55,16 +55,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/input_schema@npm:~3.5.15":
-  version: 3.5.17
-  resolution: "@apify/input_schema@npm:3.5.17"
+"@apify/input_schema@npm:~3.6.0":
+  version: 3.6.0
+  resolution: "@apify/input_schema@npm:3.6.0"
   dependencies:
     "@apify/consts": "npm:^2.28.0"
     countries-list: "npm:^3.0.0"
     escaya: "npm:^0.0.61"
   peerDependencies:
     ajv: ^8.0.0
-  checksum: 10c0/7e29a9223c539741d88d2e003664571a55bdd6d774cdc205d68f0e28ead48cdc83511959bd1c34bf37df339e0271b846a740c3c50bd9e1007d9239d4eb1035aa
+  checksum: 10c0/71f28a81322252964214c9b9300f4c68fe0a3e175e1c13e944d0e73ec003136b4751081107b478a29422e42d9d5c770010723d0b7fe67e1aea483d31775c2e57
   languageName: node
   linkType: hard
 
@@ -2924,7 +2924,7 @@ __metadata:
     "@apify/consts": "npm:~2.28.0"
     "@apify/eslint-config": "npm:^0.4.0"
     "@apify/eslint-config-ts": "npm:^0.4.1"
-    "@apify/input_schema": "npm:~3.5.15"
+    "@apify/input_schema": "npm:~3.6.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@apify/utilities": "npm:~2.10.0"
     "@crawlee/memory-storage": "npm:~3.10.0"
