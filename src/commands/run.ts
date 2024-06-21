@@ -383,7 +383,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             const errors = validateInputUsingValidator(compiledInputSchema, inputSchema, fullInputOverride);
 
             if (errors.length > 0) {
-                throw new Error(`The input provided is invalid. Please fix the following errors:\n${errors.map((e) => `  - ${e.message}`).join('\n')}`);
+                throw new Error(`The input provided is invalid. Please fix the following errors:\n${
+                    errors.map((e) => `  - ${
+                        e.message.replace('Field input.', 'Field ')
+                    }`).join('\n')}`);
             }
 
             await writeFile(inputFilePath, JSON.stringify(fullInputOverride, null, 2));

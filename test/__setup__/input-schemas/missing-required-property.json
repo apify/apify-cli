@@ -1,0 +1,17 @@
+{
+  "title": "required",
+  "description": "Ensures cli throws when required fields are missing",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "awesome": {
+      "title": "Are you awesome",
+      "type": "boolean",
+      "description": "yesnt",
+      "editor": "checkbox"
+    }
+  },
+  "required": [
+    "awesome"
+  ]
+}
