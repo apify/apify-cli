@@ -146,8 +146,8 @@
         "topicSeparator": " "
     },
     "volta": {
-        "node": "20.14.0",
-        "yarn": "4.3.0"
+        "node": "20.15.0",
+        "yarn": "4.3.1"
     },
-    "packageManager": "yarn@4.3.0"
+    "packageManager": "yarn@4.3.1"
 }
