@@ -279,14 +279,14 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                 // Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
                 // However they did not think about all the sites there with large headers,
                 // so we put back the old limit of 80kb, which seems to work just fine.
-                if (isNodeVersionSupported(currentNodeVersion)) {
-                    env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
-                } else {
-                    warning({
-                        message: `You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
+                    if (isNodeVersionSupported(currentNodeVersion)) {
+                        env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
+                    } else {
+                        warning({
+                            message: `You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
                         + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
-                    });
-                }
+                        });
+                    }
 
                     this.telemetryData.actorNodejsVersion = currentNodeVersion;
                     this.telemetryData.actorLanguage = LANGUAGE.NODEJS;
@@ -310,18 +310,21 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                             + 'For more information about that call "apify help run".');
                         }
 
-                    await execWithLog(getNpmCmd(), ['run', entrypoint], { env, cwd });
+                        await execWithLog(getNpmCmd(), ['run', entrypoint], { env, cwd });
+                    }
+                } else {
+                    error({
+                        message:
+                            `No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`,
+                    });
                 }
-            } else {
-                error(`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`);
-            }
-        } else if (language === LANGUAGE.PYTHON) {
-            const pythonVersion = languageVersion;
-            this.telemetryData.actorPythonVersion = pythonVersion;
-            this.telemetryData.actorLanguage = LANGUAGE.PYTHON;
-            if (pythonVersion) {
-                if (isPythonVersionSupported(pythonVersion)) {
-                    const pythonCommand = getPythonCommand(cwd);
+            } else if (language === LANGUAGE.PYTHON) {
+                const pythonVersion = languageVersion;
+                this.telemetryData.actorPythonVersion = pythonVersion;
+                this.telemetryData.actorLanguage = LANGUAGE.PYTHON;
+                if (pythonVersion) {
+                    if (isPythonVersionSupported(pythonVersion)) {
+                        const pythonCommand = getPythonCommand(cwd);
 
                         if (isScrapyProject && !this.flags.entrypoint) {
                             const project = new ScrapyProjectAnalyzer(cwd);
@@ -331,17 +334,23 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                             }
                         }
 
-                    if (runType === RunType.Module) {
-                        await execWithLog(pythonCommand, ['-m', entrypoint], { env, cwd });
+                        if (runType === RunType.Module) {
+                            await execWithLog(pythonCommand, ['-m', entrypoint], { env, cwd });
+                        } else {
+                            await execWithLog(pythonCommand, [entrypoint], { env, cwd });
+                        }
                     } else {
-                        await execWithLog(pythonCommand, [entrypoint], { env, cwd });
+                        error({ message: `Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!` });
+                        error({ message: 'Please install Python 3.8 or higher to be able to run Python Actors locally.' });
                     }
                 } else {
-                    error(`Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`);
-                    error('Please install Python 3.8 or higher to be able to run Python Actors locally.');
+                    error({ message: 'No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.' });
                 }
-            } else {
-                error('No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.');
+            }
+        } finally {
+            // Delete the temporary input file (but maybe we should keep it?)
+            if (envVariableOverride) {
+                await deleteFile(join(process.cwd(), getLocalKeyValueStorePath(), `${envVariableOverride}.json`));
             }
         }
     }
