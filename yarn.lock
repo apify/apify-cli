@@ -2322,6 +2322,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/lodash.clonedeep@npm:^4":
+  version: 4.5.9
+  resolution: "@types/lodash.clonedeep@npm:4.5.9"
+  dependencies:
+    "@types/lodash": "npm:*"
+  checksum: 10c0/2f224ce9578046bccd1cd9594fb73540600ebd3d59a45695166a6123e2c376b84ab106b005a00453f357907f25bc8bfd2271b822be76e8f5527eadb4690b5e96
+  languageName: node
+  linkType: hard
+
+"@types/lodash@npm:*":
+  version: 4.17.5
+  resolution: "@types/lodash@npm:4.17.5"
+  checksum: 10c0/55924803ed853e72261512bd3eaf2c5b16558c3817feb0a3125ef757afe46e54b86f33d1960e40b7606c0ddab91a96f47966bf5e6006b7abfd8994c13b04b19b
+  languageName: node
+  linkType: hard
+
 "@types/mime@npm:^1":
   version: 1.3.5
   resolution: "@types/mime@npm:1.3.5"
@@ -2941,6 +2957,7 @@ __metadata:
     "@types/inquirer": "npm:^9.0.7"
     "@types/is-ci": "npm:^3.0.4"
     "@types/jju": "npm:^1.4.5"
+    "@types/lodash.clonedeep": "npm:^4"
     "@types/mime": "npm:^4.0.0"
     "@types/node": "npm:^20.11.20"
     "@types/semver": "npm:^7.5.8"
@@ -2970,6 +2987,7 @@ __metadata:
     istextorbinary: "npm:~9.5.0"
     jju: "npm:~1.4.0"
     load-json-file: "npm:~7.0.1"
+    lodash.clonedeep: "npm:^4.5.0"
     mime: "npm:~4.0.1"
     mixpanel: "npm:~0.18.0"
     oclif: "npm:^4.4.18"
@@ -6709,6 +6727,13 @@ __metadata:
   dependencies:
     p-locate: "npm:^5.0.0"
   checksum: 10c0/d3972ab70dfe58ce620e64265f90162d247e87159b6126b01314dd67be43d50e96a50b517bce2d9452a79409c7614054c277b5232377de50416564a77ac7aad3
+  languageName: node
+  linkType: hard
+
+"lodash.clonedeep@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "lodash.clonedeep@npm:4.5.0"
+  checksum: 10c0/2caf0e4808f319d761d2939ee0642fa6867a4bbf2cfce43276698828380756b99d4c4fa226d881655e6ac298dd453fe12a5ec8ba49861777759494c534936985
   languageName: node
   linkType: hard
 
