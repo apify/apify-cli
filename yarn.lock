@@ -2938,6 +2938,7 @@ __metadata:
     lodash.clonedeep: "npm:^4.5.0"
     mime: "npm:~4.0.1"
     mixpanel: "npm:~0.18.0"
+    mock-stdin: "npm:^1.0.0"
     oclif: "npm:^4.4.18"
     open: "npm:~10.1.0"
     ow: "npm:~2.0.0"
@@ -7003,6 +7004,13 @@ __metadata:
     pkg-types: "npm:^1.1.1"
     ufo: "npm:^1.5.3"
   checksum: 10c0/d836a7b0adff4d118af41fb93ad4d9e57f80e694a681185280ba220a4607603c19e86c80f9a6c57512b04280567f2599e3386081705c5b5fd74c9ddfd571d0fa
+  languageName: node
+  linkType: hard
+
+"mock-stdin@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "mock-stdin@npm:1.0.0"
+  checksum: 10c0/0e1cb6c355bb12307434cedbe73e891d95ea24357e5e0d29e426a7ba46d1efdfdaf6575bdfdc39247f47d16b84e2f77234e4be2bcd9ae2d2c0c96552858aae5e
   languageName: node
   linkType: hard
 

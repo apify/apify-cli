@@ -12,7 +12,7 @@ import { LoginCommand } from '../../src/commands/login.js';
 import { DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
-import { useProcessCwdMock } from '../__setup__/hooks/useProcessCwdMock.js';
+import { useProcessMock } from '../__setup__/hooks/useProcessMock.js';
 
 const TEST_ACTOR_SOURCE_FILES: ActorCollectionCreateOptions = {
     isPublic: false,
@@ -102,7 +102,7 @@ function setProcessCwd(newCwd: string) {
     cwd = newCwd;
 }
 
-useProcessCwdMock(() => cwd);
+useProcessMock({ cwdMock: () => cwd });
 
 const { PullCommand } = await import('../../src/commands/pull.js');
 

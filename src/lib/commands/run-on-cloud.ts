@@ -3,11 +3,11 @@ import process from 'node:process';
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Flags } from '@oclif/core';
 import { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
-import mime from 'mime';
 
+import { resolveInput } from './resolve-input.js';
 import { CommandExitCodes } from '../consts.js';
 import { error, link, run as runLog, success, warning } from '../outputs.js';
-import { getLocalInput, outputJobLog } from '../utils.js';
+import { outputJobLog } from '../utils.js';
 
 export interface RunOnCloudOptions {
     actorOrTaskData: {
@@ -18,6 +18,7 @@ export interface RunOnCloudOptions {
     runOptions: TaskStartOptions;
     type: 'Actor' | 'Task';
     waitForFinishMillis?: number;
+    inputOverride?: Record<string, unknown>;
 }
 
 export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: RunOnCloudOptions) {
@@ -27,12 +28,13 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
         runOptions,
         type,
         waitForFinishMillis,
+        inputOverride,
     } = options;
 
     const clientMethod = type === 'Actor' ? 'actor' : 'task';
 
-    // Get input for act
-    const localInput = getLocalInput(cwd);
+    // Get input for actor
+    const actorInput = resolveInput(cwd, inputOverride);
 
     if (type === 'Actor') {
         runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
@@ -45,12 +47,11 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     let run: ActorRun;
 
     try {
-        if (localInput && type === 'Actor') {
+        if (actorInput && type === 'Actor') {
             // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
             // It will save malformed JSON which looks like buffer as INPUT.
             // We need to fix this in v1 during removing call under Actor namespace.
-            const input = mime.getExtension(localInput.contentType!) === 'json' ? JSON.parse(localInput.body.toString('utf-8')) : localInput.body;
-            run = await apifyClient[clientMethod](actorOrTaskData.id).start(input, { ...runOptions, contentType: localInput.contentType! });
+            run = await apifyClient[clientMethod](actorOrTaskData.id).start(actorInput.inputToUse, { ...runOptions, contentType: actorInput.contentType });
         } else {
             run = await apifyClient[clientMethod](actorOrTaskData.id).start(undefined, runOptions);
         }

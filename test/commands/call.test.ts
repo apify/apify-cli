@@ -1,7 +1,9 @@
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { platform } from 'node:os';
+import { fileURLToPath } from 'node:url';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
+import { captureOutput } from '@oclif/test';
 
 import { LoginCommand } from '../../src/commands/login.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
@@ -19,6 +21,9 @@ const EXPECTED_INPUT = {
 };
 const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
 
+const pathToInputJson = fileURLToPath(new URL('../__setup__/test-data/input-file.json', import.meta.url));
+const expectedInputFile = JSON.parse(readFileSync(pathToInputJson, 'utf-8'));
+
 useAuthSetup({ perTest: false });
 
 const {
@@ -26,7 +31,8 @@ const {
     afterAllCalls,
     joinPath,
     toggleCwdBetweenFullAndParentPath,
-} = useTempPath(ACTOR_NAME, { cwd: true, cwdParent: true, create: true, remove: true });
+    stdin,
+} = useTempPath(ACTOR_NAME, { cwd: true, cwdParent: true, create: true, remove: true, withStdinMock: true });
 
 const { CreateCommand } = await import('../../src/commands/create.js');
 const { PushCommand } = await import('../../src/commands/push.js');
@@ -67,6 +73,8 @@ describe('apify call', () => {
         const builds = await testUserClient.actor(actorId).builds().list();
         const lastBuild = builds.items.pop();
         await waitForBuildToFinishWithTimeout(testUserClient, lastBuild!.id);
+
+        stdin.end();
     });
 
     afterAll(async () => {
@@ -100,6 +108,70 @@ describe('apify call', () => {
 
         expect(EXPECTED_OUTPUT).toStrictEqual(output!.value);
         expect(EXPECTED_INPUT).toStrictEqual(input!.value);
+        expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
+    });
+
+    it('should work with passed in input', async () => {
+        const expectedInput = {
+            hello: 'from cli',
+        };
+
+        const string = JSON.stringify(expectedInput);
+
+        await expect(ActorCallCommand.run([ACTOR_NAME, '--input', string], import.meta.url)).resolves.toBeUndefined();
+
+        const actorClient = testUserClient.actor(actorId);
+        const runs = await actorClient.runs().list();
+        const lastRun = runs.items.pop();
+        const lastRunDetail = await testUserClient.run(lastRun!.id).get();
+        const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
+
+        expect(expectedInput).toStrictEqual(input!.value);
+        expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
+    });
+
+    it('should work with passed in input file', async () => {
+        await expect(ActorCallCommand.run([ACTOR_NAME, '--input-file', pathToInputJson], import.meta.url)).resolves.toBeUndefined();
+
+        const actorClient = testUserClient.actor(actorId);
+        const runs = await actorClient.runs().list();
+        const lastRun = runs.items.pop();
+        const lastRunDetail = await testUserClient.run(lastRun!.id).get();
+        const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
+
+        expect(expectedInputFile).toStrictEqual(input!.value);
+        expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
+    });
+
+    it('should work with stdin input without --input or --input-file', async () => {
+        const expectedInput = {
+            hello: 'from cli',
+        };
+
+        const string = JSON.stringify(expectedInput);
+
+        const { error } = await captureOutput(async () => {
+            stdin.reset();
+            setTimeout(() => {
+                stdin.send(`${string}\n`);
+
+                setTimeout(() => {
+                    stdin.end();
+                }, 50);
+            }, 1000);
+
+            return ActorCallCommand.run([ACTOR_NAME], import.meta.url);
+        });
+
+        expect(error).toBeUndefined();
+
+        const actorClient = testUserClient.actor(actorId);
+        const runs = await actorClient.runs().list();
+        const lastRun = runs.items.pop();
+        const lastRunDetail = await testUserClient.run(lastRun!.id).get();
+        const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
+
+        expect(expectedInput).toStrictEqual(input!.value);
         expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
     });
 });

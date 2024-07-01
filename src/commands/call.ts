@@ -1,11 +1,14 @@
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 import process from 'node:process';
 
-import { Args } from '@oclif/core';
+import { Args, Flags } from '@oclif/core';
 import { ActorStartOptions, ApifyClient } from 'apify-client';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../lib/commands/run-on-cloud.js';
-import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
+import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../lib/consts.js';
+import { error } from '../lib/outputs.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 
 export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
@@ -13,7 +16,24 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
         + 'The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". '
         + 'It takes input for the Actor from the default local key-value store by default.';
 
-    static override flags = SharedRunOnCloudFlags('Actor');
+    static override flags = {
+        ...SharedRunOnCloudFlags('Actor'),
+        input: Flags.string({
+            char: 'i',
+            description: 'Optional JSON input to be given to the Actor.',
+            required: false,
+            allowStdin: true,
+            exclusive: ['input-file'],
+        }),
+        'input-file': Flags.string({
+            aliases: ['if'],
+            // eslint-disable-next-line max-len
+            description: 'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file. You can also specify `-` to read from standard input.',
+            required: false,
+            allowStdin: true,
+            exclusive: ['input'],
+        }),
+    };
 
     static override args = {
         actorId: Args.string({
@@ -57,6 +77,13 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
             runOpts.memory = this.flags.memory;
         }
 
+        const inputOverride = await this.resolveInputOverride(cwd);
+
+        // Means we couldn't resolve input, so we should exit
+        if (inputOverride === false) {
+            return;
+        }
+
         await runActorOrTaskOnCloud(apifyClient, {
             actorOrTaskData: {
                 id: actorId,
@@ -65,6 +92,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
             runOptions: runOpts,
             type: 'Actor',
             waitForFinishMillis,
+            inputOverride,
         });
     }
 
@@ -116,5 +144,67 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
         }
 
         throw new Error('Please provide an Actor ID or name, or run this command from a directory with a valid Apify Actor.');
+    }
+
+    private async resolveInputOverride(cwd: string) {
+        let input: Record<string, unknown> | undefined;
+
+        if (!this.flags.input && !this.flags.inputFile) {
+            // Try reading stdin
+            const stdin = await this.readStdin(process.stdin);
+
+            if (stdin) {
+                try {
+                    input = JSON.parse(stdin);
+                } catch (err) {
+                    error({ message: `Cannot parse JSON input from standard input.\n  ${(err as Error).message}` });
+                    process.exitCode = CommandExitCodes.InvalidInput;
+                    return false;
+                }
+            }
+
+            return input;
+        }
+
+        if (this.flags.input) {
+            switch (this.flags.input[0]) {
+                case '-': {
+                    error({ message: 'You need to pipe something into standard input when you specify the `-` value to `--input`.' });
+                    process.exitCode = CommandExitCodes.InvalidInput;
+                    return false;
+                }
+                default: {
+                    try {
+                        input = JSON.parse(this.flags.input);
+                    } catch (err) {
+                        error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
+                        process.exitCode = CommandExitCodes.InvalidInput;
+                        return false;
+                    }
+                }
+            }
+        } else if (this.flags.inputFile) {
+            switch (this.flags.inputFile[0]) {
+                case '-': {
+                    error({ message: 'You need to pipe something into standard input when you specify the `-` value to `--input-file`.' });
+                    process.exitCode = CommandExitCodes.InvalidInput;
+                    return false;
+                }
+                default: {
+                    const fullPath = resolve(cwd, this.flags.inputFile);
+
+                    try {
+                        const fileContent = await readFile(fullPath, 'utf8');
+                        input = JSON.parse(fileContent);
+                    } catch (err) {
+                        error({ message: `Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}` });
+                        process.exitCode = CommandExitCodes.InvalidInput;
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return input;
     }
 }
