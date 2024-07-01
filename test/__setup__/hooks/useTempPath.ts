@@ -2,7 +2,9 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { useProcessCwdMock } from './useProcessCwdMock.js';
+import { MockSTDIN } from 'mock-stdin';
+
+import { useProcessMock } from './useProcessMock.js';
 import { rimrafPromised } from '../../../src/lib/files.js';
 
 export interface UseTempPathOptions {
@@ -30,20 +32,29 @@ export interface UseTempPathOptions {
      * @default false
      */
     cwdParent: boolean;
+
+    /**
+     * If true, the stdin will also be mocked.
+     */
+    withStdinMock?: boolean;
 }
 
 export function useTempPath(
     path: string,
-    { create, remove, cwd, cwdParent }: UseTempPathOptions = { create: true, remove: true, cwd: false, cwdParent: false },
+    { create, remove, cwd, cwdParent, withStdinMock }: UseTempPathOptions = { create: true, remove: true, cwd: false, cwdParent: false, withStdinMock: false },
 ) {
     const tmpPath = join(fileURLToPath(import.meta.url), '..', '..', '..', 'tmp', path);
     const cwdPath = cwdParent ? join(fileURLToPath(import.meta.url), '..', '..', '..', 'tmp') : tmpPath;
 
     let usedCwd = cwdPath;
 
+    let mockedStdin = process.stdin as unknown as MockSTDIN;
+
     if (cwd) {
         const cwdMock = () => usedCwd;
-        useProcessCwdMock(cwdMock);
+
+        const { stdin } = useProcessMock({ cwdMock, mockStdin: withStdinMock });
+        mockedStdin = stdin;
     }
 
     return {
@@ -75,5 +86,7 @@ export function useTempPath(
         forceNewCwd: (newCwd: string) => {
             usedCwd = join(cwdPath, newCwd);
         },
+
+        stdin: mockedStdin,
     };
 }

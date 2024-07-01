@@ -1,5 +1,5 @@
+import { once } from 'node:events';
 import process from 'node:process';
-import { finished } from 'node:stream/promises';
 
 import { Command, Interfaces, loadHelpClass } from '@oclif/core';
 
@@ -80,14 +80,16 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
         // The isTTY params says if TTY is connected to the process, if so the stdout is
         // synchronous and the stdout steam is empty.
         // See https://nodejs.org/docs/latest-v12.x/api/process.html#process_a_note_on_process_i_o
-        if (stdinStream.isTTY) return;
+        if (stdinStream.isTTY || stdinStream.readableEnded) {
+            return;
+        }
 
         const bufferChunks: Buffer[] = [];
         stdinStream.on('data', (chunk) => {
             bufferChunks.push(chunk);
         });
 
-        await finished(stdinStream);
+        await once(stdinStream, 'end');
         return Buffer.concat(bufferChunks).toString('utf-8');
     }
 
