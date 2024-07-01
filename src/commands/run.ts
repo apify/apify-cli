@@ -1,24 +1,31 @@
 import { existsSync, renameSync } from 'node:fs';
-import { stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { readFile, stat, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
+import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 import { Flags } from '@oclif/core';
 import { loadJsonFile } from 'load-json-file';
+import mime from 'mime';
 import { minVersion } from 'semver';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { DEFAULT_LOCAL_STORAGE_DIR, LANGUAGE, LEGACY_LOCAL_STORAGE_DIR, PROJECT_TYPES, SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
+import { CommandExitCodes, DEFAULT_LOCAL_STORAGE_DIR, LANGUAGE, LEGACY_LOCAL_STORAGE_DIR, PROJECT_TYPES, SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { execWithLog } from '../lib/exec.js';
+import { deleteFile } from '../lib/files.js';
+import { getAjvValidator, getDefaultsAndPrefillsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { ProjectAnalyzer } from '../lib/project_analyzer.js';
 import { ScrapyProjectAnalyzer } from '../lib/projects/scrapy/ScrapyProjectAnalyzer.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
+    Ajv,
     checkIfStorageIsEmpty,
     detectLocalActorLanguage,
     getLocalConfigOrThrow,
+    getLocalInput,
+    getLocalKeyValueStorePath,
     getLocalStorageDir,
     getLocalUserInfo,
     getNpmCmd,
@@ -68,6 +75,20 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                 'You can also pass in a directory name, provided that directory contains an "index.js" file.',
             ].join(' '),
             required: false,
+        }),
+        input: Flags.string({
+            char: 'i',
+            // eslint-disable-next-line max-len
+            description: 'Optional JSON input to be given to the Actor. You can either provide the JSON string as a value to this, or `-` to read from standard input.',
+            required: false,
+            allowStdin: true,
+            exclusive: ['input-file'],
+        }),
+        'input-file': Flags.string({
+            aliases: ['if'],
+            description: 'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file.',
+            required: false,
+            exclusive: ['input'],
         }),
     };
 
@@ -174,12 +195,60 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             }
         }
 
+        // Select correct input and validate it
+        let input: Record<string, unknown> | undefined;
+
+        if (this.flags.input) {
+            switch (this.flags.input[0]) {
+                case '-': {
+                    error({ message: 'You need to pipe something into standard input when you specify the `-` value to `--input`.' });
+                    process.exitCode = CommandExitCodes.InvalidInput;
+                    return;
+                }
+                default: {
+                    try {
+                        input = JSON.parse(this.flags.input);
+
+                        if (Array.isArray(input)) {
+                            error({ message: 'The input must be an object, not an array.' });
+                            process.exitCode = CommandExitCodes.InvalidInput;
+                            return;
+                        }
+                    } catch (err) {
+                        error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
+                        process.exitCode = CommandExitCodes.InvalidInput;
+                        return;
+                    }
+                }
+            }
+        } else if (this.flags.inputFile) {
+            const fullPath = resolve(cwd, this.flags.inputFile);
+
+            try {
+                const fileContent = await readFile(fullPath, 'utf8');
+                input = JSON.parse(fileContent);
+
+                if (Array.isArray(input)) {
+                    error({ message: 'The input file must contain an object, not an array.' });
+                    process.exitCode = CommandExitCodes.InvalidInput;
+                    return;
+                }
+            } catch (err) {
+                error({ message: `Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}` });
+                process.exitCode = CommandExitCodes.InvalidInput;
+                return;
+            }
+        }
+
+        const envVariableOverride = await this.validateAndStoreInput(input);
+
         // Attach env vars from local config files
         const localEnvVars: Record<string, string> = {
             [APIFY_ENV_VARS.LOCAL_STORAGE_DIR]: actualStoragePath,
             CRAWLEE_STORAGE_DIR: actualStoragePath,
             CRAWLEE_PURGE_ON_START,
         };
+
         if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
         if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
         if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
@@ -187,8 +256,13 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>);
             Object.assign(localEnvVars, updatedEnv);
         }
+
         // NOTE: User can overwrite env vars
         const env = Object.assign(localEnvVars, process.env);
+
+        if (envVariableOverride) {
+            env[APIFY_ENV_VARS.INPUT_KEY] = envVariableOverride;
+        }
 
         if (!userId) {
             warning({
@@ -196,81 +270,169 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             });
         }
 
-        if (language === LANGUAGE.NODEJS) { // Actor is written in Node.js
-            const currentNodeVersion = languageVersion;
-            const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
-            if (currentNodeVersion) {
+        try {
+            if (language === LANGUAGE.NODEJS) { // Actor is written in Node.js
+                const currentNodeVersion = languageVersion;
+                const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
+                if (currentNodeVersion) {
                 // --max-http-header-size=80000
                 // Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
                 // However they did not think about all the sites there with large headers,
                 // so we put back the old limit of 80kb, which seems to work just fine.
-                if (isNodeVersionSupported(currentNodeVersion)) {
-                    env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
-                } else {
-                    warning({
-                        message: `You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
+                    if (isNodeVersionSupported(currentNodeVersion)) {
+                        env.NODE_OPTIONS = env.NODE_OPTIONS ? `${env.NODE_OPTIONS} --max-http-header-size=80000` : '--max-http-header-size=80000';
+                    } else {
+                        warning({
+                            message: `You are running Node.js version ${currentNodeVersion}, which is no longer supported. `
                         + `Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
-                    });
-                }
+                        });
+                    }
 
-                this.telemetryData.actorNodejsVersion = currentNodeVersion;
-                this.telemetryData.actorLanguage = LANGUAGE.NODEJS;
+                    this.telemetryData.actorNodejsVersion = currentNodeVersion;
+                    this.telemetryData.actorLanguage = LANGUAGE.NODEJS;
 
-                // We allow "module" type directly in node too (it will work for a folder that has an `index.js` file)
-                if (runType === RunType.DirectFile || runType === RunType.Module) {
-                    await execWithLog('node', [entrypoint], { env, cwd });
-                } else {
+                    // We allow "module" type directly in node too (it will work for a folder that has an `index.js` file)
+                    if (runType === RunType.DirectFile || runType === RunType.Module) {
+                        await execWithLog('node', [entrypoint], { env, cwd });
+                    } else {
                     // TODO(vladfrangu): what is this for? Some old template maybe?
                     // && !existsSync(serverJsFile)
                     // const serverJsFile = join(cwd, 'server.js');
-                    const packageJson = await loadJsonFile<{ scripts: Record<string, string > }>(packageJsonPath);
+                        const packageJson = await loadJsonFile<{ scripts: Record<string, string > }>(packageJsonPath);
 
-                    if (!packageJson.scripts) {
-                        throw new Error('No scripts were found in package.json. Please set it up for your project. '
+                        if (!packageJson.scripts) {
+                            throw new Error('No scripts were found in package.json. Please set it up for your project. '
                             + 'For more information about that call "apify help run".');
-                    }
-
-                    if (!packageJson.scripts[entrypoint]) {
-                        throw new Error(`The script "${entrypoint}" was not found in package.json. Please set it up for your project. `
-                            + 'For more information about that call "apify help run".');
-                    }
-
-                    await execWithLog(getNpmCmd(), ['run', entrypoint], { env, cwd });
-                }
-            } else {
-                error({
-                    message: `No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`,
-                });
-            }
-        } else if (language === LANGUAGE.PYTHON) {
-            const pythonVersion = languageVersion;
-            this.telemetryData.actorPythonVersion = pythonVersion;
-            this.telemetryData.actorLanguage = LANGUAGE.PYTHON;
-            if (pythonVersion) {
-                if (isPythonVersionSupported(pythonVersion)) {
-                    const pythonCommand = getPythonCommand(cwd);
-
-                    if (isScrapyProject && !this.flags.entrypoint) {
-                        const project = new ScrapyProjectAnalyzer(cwd);
-                        project.loadScrapyCfg();
-                        if (project.configuration.hasKey('apify', 'mainpy_location')) {
-                            entrypoint = project.configuration.get('apify', 'mainpy_location')!;
                         }
-                    }
 
-                    if (runType === RunType.Module) {
-                        await execWithLog(pythonCommand, ['-m', entrypoint], { env, cwd });
-                    } else {
-                        await execWithLog(pythonCommand, [entrypoint], { env, cwd });
+                        if (!packageJson.scripts[entrypoint]) {
+                            throw new Error(`The script "${entrypoint}" was not found in package.json. Please set it up for your project. `
+                            + 'For more information about that call "apify help run".');
+                        }
+
+                        await execWithLog(getNpmCmd(), ['run', entrypoint], { env, cwd });
                     }
                 } else {
-                    error({ message: `Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!` });
-                    error({ message: 'Please install Python 3.8 or higher to be able to run Python Actors locally.' });
+                    error({
+                        message:
+                            `No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`,
+                    });
                 }
-            } else {
-                error({ message: 'No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.' });
+            } else if (language === LANGUAGE.PYTHON) {
+                const pythonVersion = languageVersion;
+                this.telemetryData.actorPythonVersion = pythonVersion;
+                this.telemetryData.actorLanguage = LANGUAGE.PYTHON;
+                if (pythonVersion) {
+                    if (isPythonVersionSupported(pythonVersion)) {
+                        const pythonCommand = getPythonCommand(cwd);
+
+                        if (isScrapyProject && !this.flags.entrypoint) {
+                            const project = new ScrapyProjectAnalyzer(cwd);
+                            project.loadScrapyCfg();
+                            if (project.configuration.hasKey('apify', 'mainpy_location')) {
+                                entrypoint = project.configuration.get('apify', 'mainpy_location')!;
+                            }
+                        }
+
+                        if (runType === RunType.Module) {
+                            await execWithLog(pythonCommand, ['-m', entrypoint], { env, cwd });
+                        } else {
+                            await execWithLog(pythonCommand, [entrypoint], { env, cwd });
+                        }
+                    } else {
+                        error({ message: `Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!` });
+                        error({ message: 'Please install Python 3.8 or higher to be able to run Python Actors locally.' });
+                    }
+                } else {
+                    error({ message: 'No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.' });
+                }
+            }
+        } finally {
+            // Delete the temporary input file (but maybe we should keep it?)
+            if (envVariableOverride) {
+                await deleteFile(join(process.cwd(), getLocalKeyValueStorePath(), `${envVariableOverride}.json`));
             }
         }
+    }
+
+    private async validateAndStoreInput(inputOverride?: Record<string, unknown>) {
+        const { inputSchema } = await readInputSchema({ forcePath: this.args.path, cwd: process.cwd() });
+
+        if (!inputSchema) {
+            // We cannot validate input schema if it is not found.
+            return null;
+        }
+
+        // Step 1: validate the input schema
+        const validator = new Ajv({ strict: false, unicodeRegExp: false });
+        validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
+
+        const defaults = getDefaultsAndPrefillsFromInputSchema(inputSchema);
+        const compiledInputSchema = getAjvValidator(inputSchema, validator);
+
+        const inputKey = `INPUT_CLI-${Date.now()}`;
+        const inputFilePath = join(process.cwd(), getLocalKeyValueStorePath(), `${inputKey}.json`);
+
+        // Step 2. If there is an input override, we validate it and store it
+        if (inputOverride) {
+            const fullInputOverride = {
+                ...defaults,
+                ...inputOverride,
+            };
+
+            const errors = validateInputUsingValidator(compiledInputSchema, inputSchema, fullInputOverride);
+
+            if (errors.length > 0) {
+                throw new Error(`The input provided is invalid. Please fix the following errors:\n${
+                    errors.map((e) => `  - ${
+                        e.message.replace('Field input.', 'Field ')
+                    }`).join('\n')}`);
+            }
+
+            await writeFile(inputFilePath, JSON.stringify(fullInputOverride, null, 2));
+
+            return inputKey;
+        }
+
+        // Step 3: get the input from local store
+        const input = getLocalInput(process.cwd());
+
+        if (!input) {
+            // No input -> use defaults for this run
+            await writeFile(inputFilePath, JSON.stringify(defaults, null, 2));
+
+            return inputKey;
+        }
+
+        if (mime.getExtension(input.contentType!) === 'json') {
+            // Step 4: validate the input
+            const inputJson = JSON.parse(input.body.toString('utf-8'));
+
+            if (Array.isArray(inputJson)) {
+                throw new Error('The input in your storage is invalid. It should be an object, not an array.');
+            }
+
+            const fullInput = {
+                ...defaults,
+                ...inputJson,
+            };
+
+            const errors = validateInputUsingValidator(compiledInputSchema, inputSchema, fullInput);
+
+            if (errors.length > 0) {
+                throw new Error(`The input in your storage is invalid. Please fix the following errors:\n${
+                    errors.map((e) => `  - ${
+                        e.message.replace('Field input.', 'Field ')
+                    }`).join('\n')}`);
+            }
+
+            // Step 4: store the input
+            await writeFile(inputFilePath, JSON.stringify(fullInput, null, 2));
+
+            return inputKey;
+        }
+
+        return null;
     }
 }
 

@@ -1,6 +1,8 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
+import { captureOutput } from '@oclif/test';
 import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFileSync } from 'write-json-file';
 
@@ -12,6 +14,21 @@ import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
 const actName = 'run-my-actor';
+const pathToDefaultsInputSchema = fileURLToPath(new URL('../__setup__/input-schemas/defaults.json', import.meta.url));
+const pathToMissingRequiredInputSchema = fileURLToPath(new URL('../__setup__/input-schemas/missing-required-property.json', import.meta.url));
+const pathToPrefillsInputSchema = fileURLToPath(new URL('../__setup__/input-schemas/prefills.json', import.meta.url));
+
+const INPUT_SCHEMA_ACTOR_SRC = `
+import { Actor } from 'apify';
+
+Actor.main(async () => {
+    const input = await Actor.getInput();
+
+    await Actor.setValue('OUTPUT', input);
+
+    console.log('Done.');
+});
+`;
 
 useAuthSetup({ perTest: true });
 
@@ -232,5 +249,87 @@ describe('apify run', () => {
         } catch (err) {
             throw new Error('Can not run Actor without storage folder!');
         }
+    });
+
+    describe('input tests', () => {
+        const actPath = joinPath('src/main.js');
+        const inputSchemaPath = joinPath('INPUT_SCHEMA.json');
+        const inputPath = joinPath(getLocalKeyValueStorePath(), 'INPUT.json');
+        const outputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
+        const handPassedInput = JSON.stringify({ awesome: null });
+
+        beforeAll(() => {
+            writeFileSync(actPath, INPUT_SCHEMA_ACTOR_SRC, { flag: 'w' });
+        });
+
+        it('throws when required field is not provided', async () => {
+            writeFileSync(inputPath, '{}', { flag: 'w' });
+            copyFileSync(pathToMissingRequiredInputSchema, inputSchemaPath);
+
+            const { error } = await captureOutput(async () => RunCommand.run([], import.meta.url));
+
+            expect(error).toBeDefined();
+            expect(error!.message).toMatch(/Field awesome is required/i);
+        });
+
+        it('throws when required field has wrong type', async () => {
+            writeFileSync(inputPath, '{"awesome": 42}', { flag: 'w' });
+            copyFileSync(pathToDefaultsInputSchema, inputSchemaPath);
+
+            const { error } = await captureOutput(async () => RunCommand.run([], import.meta.url));
+
+            expect(error).toBeDefined();
+            expect(error!.message).toMatch(/Field awesome must be boolean/i);
+        });
+
+        it('throws when passing manual input, but local file has correct input', async () => {
+            writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
+            copyFileSync(pathToDefaultsInputSchema, inputSchemaPath);
+
+            const { error } = await captureOutput(async () => RunCommand.run(['--input', handPassedInput], import.meta.url));
+
+            expect(error).toBeDefined();
+            expect(error!.message).toMatch(/Field awesome must be boolean/i);
+        });
+
+        it('throws when input has default field of wrong type', async () => {
+            writeFileSync(inputPath, '{"awesome": true, "help": 123}', { flag: 'w' });
+            copyFileSync(pathToDefaultsInputSchema, inputSchemaPath);
+
+            const { error } = await captureOutput(async () => RunCommand.run([], import.meta.url));
+
+            expect(error).toBeDefined();
+            expect(error!.message).toMatch(/Field help must be string/i);
+        });
+
+        it('throws when input has prefilled field of wrong type', async () => {
+            writeFileSync(inputPath, '{"awesome": true, "help": 123}', { flag: 'w' });
+            copyFileSync(pathToPrefillsInputSchema, inputSchemaPath);
+
+            const { error } = await captureOutput(async () => RunCommand.run([], import.meta.url));
+
+            expect(error).toBeDefined();
+            expect(error!.message).toMatch(/Field help must be string/i);
+        });
+
+        it('automatically inserts missing defaulted fields', async () => {
+            writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
+            copyFileSync(pathToDefaultsInputSchema, inputSchemaPath);
+
+            await RunCommand.run([], import.meta.url);
+
+            const output = loadJsonFileSync(outputPath);
+            expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
+        });
+
+        it('automatically inserts missing prefilled fields', async () => {
+            writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
+            copyFileSync(pathToPrefillsInputSchema, inputSchemaPath);
+
+            await RunCommand.run([], import.meta.url);
+
+            const output = loadJsonFileSync(outputPath);
+            expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
+        });
     });
 });

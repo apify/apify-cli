@@ -12,6 +12,19 @@ export function useProcessCwdMock(cwdMock: () => string) {
         };
     });
 
+    vitest.doMock('process', async (importActual) => {
+        const actual = await importActual<typeof import('process')>();
+
+        return {
+            ...actual,
+            cwd: cwdMock,
+            default: {
+                ...actual,
+                cwd: cwdMock,
+            },
+        };
+    });
+
     const processCwdSpy = vitest.spyOn(process, 'cwd');
     processCwdSpy.mockImplementation(cwdMock);
 }

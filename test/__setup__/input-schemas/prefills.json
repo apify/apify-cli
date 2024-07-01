@@ -1,0 +1,24 @@
+{
+  "title": "Defaults",
+  "description": "Ensures defaults also get filled into the input",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "awesome": {
+      "title": "Are you awesome",
+      "type": "boolean",
+      "description": "yesnt",
+      "editor": "checkbox"
+    },
+    "help": {
+      "title": "optional",
+      "type": "string",
+      "description": "A message, stop looking in these files",
+      "prefill": "this_maze_is_not_meant_for_you",
+      "editor": "textfield"
+    }
+  },
+  "required": [
+    "awesome"
+  ]
+}

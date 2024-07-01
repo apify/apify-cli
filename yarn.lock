@@ -238,7 +238,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-s3@npm:^3.583.0":
+"@aws-sdk/client-s3@npm:^3.600.0":
   version: 3.600.0
   resolution: "@aws-sdk/client-s3@npm:3.600.0"
   dependencies:
@@ -1095,7 +1095,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@inquirer/confirm@npm:^3.1.6, @inquirer/confirm@npm:^3.1.9":
+"@inquirer/confirm@npm:^3.1.10":
   version: 3.1.10
   resolution: "@inquirer/confirm@npm:3.1.10"
   dependencies:
@@ -1293,14 +1293,14 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-not-found@npm:^3.2.3":
-  version: 3.2.5
-  resolution: "@oclif/plugin-not-found@npm:3.2.5"
+  version: 3.2.6
+  resolution: "@oclif/plugin-not-found@npm:3.2.6"
   dependencies:
-    "@inquirer/confirm": "npm:^3.1.9"
+    "@inquirer/confirm": "npm:^3.1.10"
     "@oclif/core": "npm:^4"
     ansis: "npm:^3.2.0"
     fast-levenshtein: "npm:^3.0.0"
-  checksum: 10c0/f314aa33e99d212d35ea87e04d985874b9bf163e3ae2c36e8d97b6b5850a77ff7d5759915f8559de76440b4ae5b8313563ae5a3eb56530f23b46408b5ccade0f
+  checksum: 10c0/84e9bb6107ed67677ab47afe826b075d060b8705b8a153b20d94a6ed6f9c6b1551a8efbc0ce870a01cccd56c3f95d7c3d4ec1087c294d34f489fe5f97540da2e
   languageName: node
   linkType: hard
 
@@ -2277,6 +2277,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/lodash.clonedeep@npm:^4":
+  version: 4.5.9
+  resolution: "@types/lodash.clonedeep@npm:4.5.9"
+  dependencies:
+    "@types/lodash": "npm:*"
+  checksum: 10c0/2f224ce9578046bccd1cd9594fb73540600ebd3d59a45695166a6123e2c376b84ab106b005a00453f357907f25bc8bfd2271b822be76e8f5527eadb4690b5e96
+  languageName: node
+  linkType: hard
+
+"@types/lodash@npm:*":
+  version: 4.17.5
+  resolution: "@types/lodash@npm:4.17.5"
+  checksum: 10c0/55924803ed853e72261512bd3eaf2c5b16558c3817feb0a3125ef757afe46e54b86f33d1960e40b7606c0ddab91a96f47966bf5e6006b7abfd8994c13b04b19b
+  languageName: node
+  linkType: hard
+
 "@types/mime@npm:^1":
   version: 1.3.5
   resolution: "@types/mime@npm:1.3.5"
@@ -2303,11 +2319,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*, @types/node@npm:^20.11.20, @types/node@npm:^20.14.6":
-  version: 20.14.7
-  resolution: "@types/node@npm:20.14.7"
+  version: 20.14.8
+  resolution: "@types/node@npm:20.14.8"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 10c0/6211ffe86f769a58617e3bdca58610256021ef54bd99d2c442ee6109196cd6ee8e0bcd1cfac0e39bf4bb353f8900fa5fae540485a03816bd91ad1f86a0e18512
+  checksum: 10c0/06d4643fa3b179b41fe19f9c75c240278ca1f7a313b3b837bc36ea119499c7ad77f06bbe72694ac04aa91ec77fe747baa09b889f4c435450c1724a26bd55f160
   languageName: node
   linkType: hard
 
@@ -2889,6 +2905,7 @@ __metadata:
     "@types/inquirer": "npm:^9.0.7"
     "@types/is-ci": "npm:^3.0.4"
     "@types/jju": "npm:^1.4.5"
+    "@types/lodash.clonedeep": "npm:^4"
     "@types/mime": "npm:^4.0.0"
     "@types/node": "npm:^20.11.20"
     "@types/semver": "npm:^7.5.8"
@@ -2918,6 +2935,7 @@ __metadata:
     istextorbinary: "npm:~9.5.0"
     jju: "npm:~1.4.0"
     load-json-file: "npm:~7.0.1"
+    lodash.clonedeep: "npm:^4.5.0"
     mime: "npm:~4.0.1"
     mixpanel: "npm:~0.18.0"
     oclif: "npm:^4.4.18"
@@ -6598,6 +6616,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"lodash.clonedeep@npm:^4.5.0":
+  version: 4.5.0
+  resolution: "lodash.clonedeep@npm:4.5.0"
+  checksum: 10c0/2caf0e4808f319d761d2939ee0642fa6867a4bbf2cfce43276698828380756b99d4c4fa226d881655e6ac298dd453fe12a5ec8ba49861777759494c534936985
+  languageName: node
+  linkType: hard
+
 "lodash.isequal@npm:^4.5.0":
   version: 4.5.0
   resolution: "lodash.isequal@npm:4.5.0"
@@ -7137,9 +7162,9 @@ __metadata:
   linkType: hard
 
 "object-inspect@npm:^1.13.1":
-  version: 1.13.1
-  resolution: "object-inspect@npm:1.13.1"
-  checksum: 10c0/fad603f408e345c82e946abdf4bfd774260a5ed3e5997a0b057c44153ac32c7271ff19e3a5ae39c858da683ba045ccac2f65245c12763ce4e8594f818f4a648d
+  version: 1.13.2
+  resolution: "object-inspect@npm:1.13.2"
+  checksum: 10c0/b97835b4c91ec37b5fd71add84f21c3f1047d1d155d00c0fcd6699516c256d4fcc6ff17a1aced873197fe447f91a3964178fd2a67a1ee2120cdaf60e81a050b4
   languageName: node
   linkType: hard
 
@@ -7229,12 +7254,12 @@ __metadata:
   linkType: hard
 
 "oclif@npm:^4.4.18":
-  version: 4.13.8
-  resolution: "oclif@npm:4.13.8"
+  version: 4.13.10
+  resolution: "oclif@npm:4.13.10"
   dependencies:
     "@aws-sdk/client-cloudfront": "npm:^3.592.0"
-    "@aws-sdk/client-s3": "npm:^3.583.0"
-    "@inquirer/confirm": "npm:^3.1.6"
+    "@aws-sdk/client-s3": "npm:^3.600.0"
+    "@inquirer/confirm": "npm:^3.1.10"
     "@inquirer/input": "npm:^2.1.9"
     "@inquirer/select": "npm:^2.3.5"
     "@oclif/core": "npm:^4"
@@ -7258,7 +7283,7 @@ __metadata:
     validate-npm-package-name: "npm:^5.0.0"
   bin:
     oclif: bin/run.js
-  checksum: 10c0/2e24750e0c51d470698158de60073878cbb771e1601858af81b43ff0554ea614465b86ea61bfd88d1977f7b9c54fe435fa3af25532df6cfcbf26082ae40b6e84
+  checksum: 10c0/44609ab70f47b1a343bc4823f676b53ac041bee040a19c61116252fbe08e42273888df2fdd4901584cf2bf64dda11f5642b80cff271d12ea8911a43854fbd8c6
   languageName: node
   linkType: hard
 
