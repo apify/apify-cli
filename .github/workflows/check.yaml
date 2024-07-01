@@ -222,7 +222,7 @@ jobs:
               run: |
                   git add .
                   git diff-index --quiet HEAD || git commit -m "[skip ci] update README with latest command reference"
-                  git push
+                  git push origin master
 
     update_homebrew_formula:
         name: Update Homebrew Formula
