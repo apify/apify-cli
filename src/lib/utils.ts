@@ -532,6 +532,8 @@ export const checkIfStorageIsEmpty = async () => {
         `${getLocalStorageDir()}/**`,
         // Omit INPUT.* file
         `!${getLocalKeyValueStorePath()}/${KEY_VALUE_STORE_KEYS.INPUT}.*`,
+        // Omit INPUT_CLI-* files
+        `!${getLocalKeyValueStorePath()}/${KEY_VALUE_STORE_KEYS.INPUT}_CLI-*`,
     ]);
 
     return filesWithoutInput.length === 0;

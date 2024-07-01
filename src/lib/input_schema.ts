@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
+import deepClone from 'lodash.clonedeep';
 import _ from 'underscore';
 import { writeJsonFile } from 'write-json-file';
 
@@ -88,7 +90,6 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
             const validator = new Ajv({ strict: false });
             validateInputSchema(validator, inputSchema);
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             inputFile = _.mapObject(inputSchema.properties as any, (fieldSchema) => ((fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden')
                 ? fieldSchema.default
                 : fieldSchema.prefill
@@ -101,4 +102,43 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
         const inputJsonPath = join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
         await writeJsonFile(inputJsonPath, inputFile);
     }
+};
+
+export const getDefaultsAndPrefillsFromInputSchema = (inputSchema: any) => {
+    const defaults: Record<string, unknown> = {};
+
+    for (const [key, fieldSchema] of Object.entries<any>(inputSchema.properties)) {
+        if (fieldSchema.default !== undefined) {
+            defaults[key] = fieldSchema.default;
+        } else if (fieldSchema.prefill !== undefined) {
+            defaults[key] = fieldSchema.prefill;
+        }
+    }
+
+    return defaults;
+};
+
+// Lots of code copied from @apify-packages/actor, this really should be moved to the shared input_schema package
+export const getAjvValidator = (inputSchema: any, ajvInstance: import('ajv').Ajv) => {
+    const copyOfSchema = deepClone(inputSchema);
+    copyOfSchema.required = [];
+
+    for (const [inputSchemaFieldKey, inputSchemaField] of Object.entries<any>(inputSchema.properties)) {
+        // `required` field doesn't need to be present in input schema
+        const isRequired = inputSchema.required?.includes(inputSchemaFieldKey);
+        const hasDefault = inputSchemaField.default !== undefined;
+
+        if (isRequired && !hasDefault) {
+            // If field is required but has default, we act like it's optional because we always have value to use
+            copyOfSchema.required.push(inputSchemaFieldKey);
+            if (inputSchemaField.type === 'array') {
+                // If array is required, it has to have at least 1 item.
+                inputSchemaField.minItems = Math.max(1, inputSchemaField.minItems || 0);
+            }
+        }
+    }
+
+    delete copyOfSchema.$schema;
+
+    return ajvInstance.compile(copyOfSchema);
 };
