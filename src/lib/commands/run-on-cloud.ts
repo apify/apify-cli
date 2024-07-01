@@ -33,8 +33,8 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
 
     const clientMethod = type === 'Actor' ? 'actor' : 'task';
 
-    // Get input for act
-    const actInput = resolveInput(cwd, inputOverride);
+    // Get input for actor
+    const actorInput = resolveInput(cwd, inputOverride);
 
     if (type === 'Actor') {
         runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
@@ -47,11 +47,11 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
     let run: ActorRun;
 
     try {
-        if (actInput && type === 'Actor') {
+        if (actorInput && type === 'Actor') {
             // TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
             // It will save malformed JSON which looks like buffer as INPUT.
             // We need to fix this in v1 during removing call under Actor namespace.
-            run = await apifyClient[clientMethod](actorOrTaskData.id).start(actInput.inputToUse, { ...runOptions, contentType: actInput.contentType });
+            run = await apifyClient[clientMethod](actorOrTaskData.id).start(actorInput.inputToUse, { ...runOptions, contentType: actorInput.contentType });
         } else {
             run = await apifyClient[clientMethod](actorOrTaskData.id).start(undefined, runOptions);
         }
