@@ -12,7 +12,7 @@
         "lint": "eslint src test .yarn/plugins --ext .ts,.cjs,.mjs",
         "lint:fix": "eslint src test .yarn/plugins --fix --ext .ts,.cjs,.mjs",
         "clean": "rimraf dist",
-        "build": "yarn clean && tsc",
+        "build": "yarn clean && tsc && tsc -p tsconfig.typechecking.json",
         "postpack": "rimraf oclif.manifest.json",
         "prepack": "yarn build && oclif manifest && oclif readme && oclif readme --readme-path=docs/reference.md",
         "postinstallDev": "yarn build && node ./bin/run.js check-version && node ./dist/lib/community.js"

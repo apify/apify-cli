@@ -1,0 +1,18 @@
+{
+    "extends": "@apify/tsconfig",
+    "compilerOptions": {
+        "target": "ES2020",
+        "module": "Node16",
+        "moduleResolution": "Node16",
+        "allowJs": true,
+        "checkJs": true,
+        // For now we need this :(
+        "skipLibCheck": true,
+        "noImplicitOverride": true,
+        "noEmit": true,
+        "allowImportingTsExtensions": true,
+        "useUnknownInCatchVariables": false,
+        "tsBuildInfoFile": "dist/typechecking.tsbuildinfo"
+    },
+    "include": ["src", "bin"],
+}
