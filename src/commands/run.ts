@@ -78,16 +78,17 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         }),
         input: Flags.string({
             char: 'i',
-            // eslint-disable-next-line max-len
-            description: 'Optional JSON input to be given to the Actor. You can either provide the JSON string as a value to this, or `-` to read from standard input.',
+            description: 'Optional JSON input to be given to the Actor.',
             required: false,
             allowStdin: true,
             exclusive: ['input-file'],
         }),
         'input-file': Flags.string({
             aliases: ['if'],
-            description: 'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file.',
+            // eslint-disable-next-line max-len
+            description: 'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file. You can also specify `-` to read from standard input.',
             required: false,
+            allowStdin: true,
             exclusive: ['input'],
         }),
     };
@@ -196,51 +197,14 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         }
 
         // Select correct input and validate it
-        let input: Record<string, unknown> | undefined;
+        const inputOverride = await this.resolveInputOverride(cwd);
 
-        if (this.flags.input) {
-            switch (this.flags.input[0]) {
-                case '-': {
-                    error({ message: 'You need to pipe something into standard input when you specify the `-` value to `--input`.' });
-                    process.exitCode = CommandExitCodes.InvalidInput;
-                    return;
-                }
-                default: {
-                    try {
-                        input = JSON.parse(this.flags.input);
-
-                        if (Array.isArray(input)) {
-                            error({ message: 'The input must be an object, not an array.' });
-                            process.exitCode = CommandExitCodes.InvalidInput;
-                            return;
-                        }
-                    } catch (err) {
-                        error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
-                        process.exitCode = CommandExitCodes.InvalidInput;
-                        return;
-                    }
-                }
-            }
-        } else if (this.flags.inputFile) {
-            const fullPath = resolve(cwd, this.flags.inputFile);
-
-            try {
-                const fileContent = await readFile(fullPath, 'utf8');
-                input = JSON.parse(fileContent);
-
-                if (Array.isArray(input)) {
-                    error({ message: 'The input file must contain an object, not an array.' });
-                    process.exitCode = CommandExitCodes.InvalidInput;
-                    return;
-                }
-            } catch (err) {
-                error({ message: `Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}` });
-                process.exitCode = CommandExitCodes.InvalidInput;
-                return;
-            }
+        // Means we couldn't resolve input, so we should exit
+        if (inputOverride === false) {
+            return;
         }
 
-        const envVariableOverride = await this.validateAndStoreInput(input);
+        const storedInputResults = await this.validateAndStoreInput(inputOverride);
 
         // Attach env vars from local config files
         const localEnvVars: Record<string, string> = {
@@ -259,10 +223,6 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
         // NOTE: User can overwrite env vars
         const env = Object.assign(localEnvVars, process.env);
-
-        if (envVariableOverride) {
-            env[APIFY_ENV_VARS.INPUT_KEY] = envVariableOverride;
-        }
 
         if (!userId) {
             warning({
@@ -348,13 +308,22 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                 }
             }
         } finally {
-            // Delete the temporary input file (but maybe we should keep it?)
-            if (envVariableOverride) {
-                await deleteFile(join(process.cwd(), getLocalKeyValueStorePath(), `${envVariableOverride}.json`));
+            if (storedInputResults) {
+                if (storedInputResults.existingInput) {
+                    // Overwrite with the original input
+                    await writeFile(storedInputResults.inputFilePath, storedInputResults.existingInput.body);
+                } else {
+                    // No file -> we made it -> we delete it
+                    await deleteFile(storedInputResults.inputFilePath);
+                }
             }
         }
     }
 
+    /**
+     * Ensures the input that the actor will be ran with locally matches the input schema (and prefills default values if missing)
+     * @param inputOverride Optional input received through command flags
+     */
     private async validateAndStoreInput(inputOverride?: Record<string, unknown>) {
         const { inputSchema } = await readInputSchema({ forcePath: this.args.path, cwd: process.cwd() });
 
@@ -370,8 +339,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         const defaults = getDefaultsAndPrefillsFromInputSchema(inputSchema);
         const compiledInputSchema = getAjvValidator(inputSchema, validator);
 
-        const inputKey = `INPUT_CLI-${Date.now()}`;
-        const inputFilePath = join(process.cwd(), getLocalKeyValueStorePath(), `${inputKey}.json`);
+        // Step 2: try to fetch the existing INPUT from the local storage
+        const existingInput = getLocalInput(process.cwd());
+
+        // Prepare the file path for where we'll temporarily store the validated input
+        const inputFilePath = join(process.cwd(), getLocalKeyValueStorePath(), existingInput?.fileName ?? 'INPUT.json');
 
         // Step 2. If there is an input override, we validate it and store it
         if (inputOverride) {
@@ -391,22 +363,25 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
             await writeFile(inputFilePath, JSON.stringify(fullInputOverride, null, 2));
 
-            return inputKey;
+            return {
+                existingInput,
+                inputFilePath,
+            };
         }
 
-        // Step 3: get the input from local store
-        const input = getLocalInput(process.cwd());
-
-        if (!input) {
+        if (!existingInput) {
             // No input -> use defaults for this run
             await writeFile(inputFilePath, JSON.stringify(defaults, null, 2));
 
-            return inputKey;
+            return {
+                existingInput,
+                inputFilePath,
+            };
         }
 
-        if (mime.getExtension(input.contentType!) === 'json') {
+        if (mime.getExtension(existingInput.contentType!) === 'json') {
             // Step 4: validate the input
-            const inputJson = JSON.parse(input.body.toString('utf-8'));
+            const inputJson = JSON.parse(existingInput.body.toString('utf-8'));
 
             if (Array.isArray(inputJson)) {
                 throw new Error('The input in your storage is invalid. It should be an object, not an array.');
@@ -429,10 +404,93 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             // Step 4: store the input
             await writeFile(inputFilePath, JSON.stringify(fullInput, null, 2));
 
-            return inputKey;
+            return {
+                existingInput,
+                inputFilePath,
+            };
         }
 
         return null;
+    }
+
+    private async resolveInputOverride(cwd: string) {
+        let input: Record<string, unknown> | undefined;
+
+        if (!this.flags.input && !this.flags.inputFile) {
+            // Try reading stdin
+            const stdin = await this.readStdin(process.stdin);
+
+            if (stdin) {
+                try {
+                    const parsed = JSON.parse(stdin);
+
+                    if (Array.isArray(parsed)) {
+                        throw new Error('The input provided is invalid. It should be an object, not an array.');
+                    }
+
+                    input = parsed;
+                } catch (err) {
+                    error({ message: `Cannot parse JSON input from standard input.\n  ${(err as Error).message}` });
+                    process.exitCode = CommandExitCodes.InvalidInput;
+                    return false;
+                }
+            }
+
+            return input;
+        }
+
+        if (this.flags.input) {
+            switch (this.flags.input[0]) {
+                case '-': {
+                    error({ message: 'You need to pipe something into standard input when you specify the `-` value to `--input`.' });
+                    process.exitCode = CommandExitCodes.InvalidInput;
+                    return false;
+                }
+                default: {
+                    try {
+                        const parsed = JSON.parse(this.flags.input);
+
+                        if (Array.isArray(parsed)) {
+                            throw new Error('The input provided is invalid. It should be an object, not an array.');
+                        }
+
+                        input = parsed;
+                    } catch (err) {
+                        error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
+                        process.exitCode = CommandExitCodes.InvalidInput;
+                        return false;
+                    }
+                }
+            }
+        } else if (this.flags.inputFile) {
+            switch (this.flags.inputFile[0]) {
+                case '-': {
+                    error({ message: 'You need to pipe something into standard input when you specify the `-` value to `--input-file`.' });
+                    process.exitCode = CommandExitCodes.InvalidInput;
+                    return false;
+                }
+                default: {
+                    const fullPath = resolve(cwd, this.flags.inputFile);
+
+                    try {
+                        const fileContent = await readFile(fullPath, 'utf8');
+                        const parsed = JSON.parse(fileContent);
+
+                        if (Array.isArray(parsed)) {
+                            throw new Error('The input provided is invalid. It should be an object, not an array.');
+                        }
+
+                        input = parsed;
+                    } catch (err) {
+                        error({ message: `Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}` });
+                        process.exitCode = CommandExitCodes.InvalidInput;
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return input;
     }
 }
 

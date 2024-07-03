@@ -155,7 +155,13 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 
             if (stdin) {
                 try {
-                    input = JSON.parse(stdin);
+                    const parsed = JSON.parse(stdin);
+
+                    if (Array.isArray(parsed)) {
+                        throw new Error('The input provided is invalid. It should be an object, not an array.');
+                    }
+
+                    input = parsed;
                 } catch (err) {
                     error({ message: `Cannot parse JSON input from standard input.\n  ${(err as Error).message}` });
                     process.exitCode = CommandExitCodes.InvalidInput;
@@ -175,7 +181,13 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
                 }
                 default: {
                     try {
-                        input = JSON.parse(this.flags.input);
+                        const parsed = JSON.parse(this.flags.input);
+
+                        if (Array.isArray(parsed)) {
+                            throw new Error('The input provided is invalid. It should be an object, not an array.');
+                        }
+
+                        input = parsed;
                     } catch (err) {
                         error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
                         process.exitCode = CommandExitCodes.InvalidInput;
@@ -195,7 +207,13 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 
                     try {
                         const fileContent = await readFile(fullPath, 'utf8');
-                        input = JSON.parse(fileContent);
+                        const parsed = JSON.parse(fileContent);
+
+                        if (Array.isArray(parsed)) {
+                            throw new Error('The input provided is invalid. It should be an object, not an array.');
+                        }
+
+                        input = parsed;
                     } catch (err) {
                         error({ message: `Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}` });
                         process.exitCode = CommandExitCodes.InvalidInput;
