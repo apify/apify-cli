@@ -324,8 +324,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
      * Ensures the input that the actor will be ran with locally matches the input schema (and prefills default values if missing)
      * @param inputOverride Optional input received through command flags
      */
-    private async validateAndStoreInput(inputOverride?: Record<string, unknown>) {
-        const { inputSchema } = await readInputSchema({ forcePath: this.args.path, cwd: process.cwd() });
+    private async validateAndStoreInput(inputOverride?: { input: Record<string, unknown>; source: string }) {
+        const { inputSchema } = await readInputSchema({ cwd: process.cwd() });
 
         if (!inputSchema) {
             // We cannot validate input schema if it is not found.
@@ -345,17 +345,35 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         // Prepare the file path for where we'll temporarily store the validated input
         const inputFilePath = join(process.cwd(), getLocalKeyValueStorePath(), existingInput?.fileName ?? 'INPUT.json');
 
+        let errorHeader: string;
+
+        switch (inputOverride?.source) {
+            case 'stdin':
+                errorHeader = 'The input provided through standard input is invalid. Please fix the following errors:\n';
+                break;
+            case 'input':
+                errorHeader = 'The input provided through the --input flag is invalid. Please fix the following errors:\n';
+                break;
+            default:
+                if (inputOverride) {
+                    errorHeader = `The input provided through the ${inputOverride.source} file is invalid. Please fix the following errors:\n`;
+                } else {
+                    errorHeader = 'The input in your storage is invalid. Please fix the following errors:\n';
+                }
+                break;
+        }
+
         // Step 2. If there is an input override, we validate it and store it
         if (inputOverride) {
             const fullInputOverride = {
                 ...defaults,
-                ...inputOverride,
+                ...inputOverride.input,
             };
 
             const errors = validateInputUsingValidator(compiledInputSchema, inputSchema, fullInputOverride);
 
             if (errors.length > 0) {
-                throw new Error(`The input provided is invalid. Please fix the following errors:\n${
+                throw new Error(`${errorHeader}${
                     errors.map((e) => `  - ${
                         e.message.replace('Field input.', 'Field ')
                     }`).join('\n')}`);
@@ -395,7 +413,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             const errors = validateInputUsingValidator(compiledInputSchema, inputSchema, fullInput);
 
             if (errors.length > 0) {
-                throw new Error(`The input in your storage is invalid. Please fix the following errors:\n${
+                throw new Error(`${errorHeader}${
                     errors.map((e) => `  - ${
                         e.message.replace('Field input.', 'Field ')
                     }`).join('\n')}`);
@@ -415,6 +433,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
     private async resolveInputOverride(cwd: string) {
         let input: Record<string, unknown> | undefined;
+        let source: 'stdin' | 'input' | string;
 
         if (!this.flags.input && !this.flags.inputFile) {
             // Try reading stdin
@@ -429,14 +448,13 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                     }
 
                     input = parsed;
+                    source = 'stdin';
                 } catch (err) {
                     error({ message: `Cannot parse JSON input from standard input.\n  ${(err as Error).message}` });
                     process.exitCode = CommandExitCodes.InvalidInput;
                     return false;
                 }
             }
-
-            return input;
         }
 
         if (this.flags.input) {
@@ -455,6 +473,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                         }
 
                         input = parsed;
+                        source = 'input';
                     } catch (err) {
                         error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
                         process.exitCode = CommandExitCodes.InvalidInput;
@@ -481,6 +500,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
                         }
 
                         input = parsed;
+                        source = this.flags.inputFile;
                     } catch (err) {
                         error({ message: `Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}` });
                         process.exitCode = CommandExitCodes.InvalidInput;
@@ -490,7 +510,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
             }
         }
 
-        return input;
+        return input ? { input, source: source! } : undefined;
     }
 }
 
