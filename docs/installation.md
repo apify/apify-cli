@@ -6,7 +6,7 @@ sidebar_label: Installation
 
 ## Installation
 
-You can install Apify CLI either using [Homebrew package manager](https://brew.sh) on macOS or Linux or using NPM.
+You can install Apify CLI either using [Homebrew package manager](https://brew.sh) on macOS or Linux or using NPM on all platforms including Windows.
 
 ### Via Homebrew
 
