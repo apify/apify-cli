@@ -5,7 +5,8 @@
         "noEmit": true,
         "allowImportingTsExtensions": true,
         "useUnknownInCatchVariables": false,
-        "tsBuildInfoFile": "dist/typechecking.tsbuildinfo"
+        "tsBuildInfoFile": "dist/typechecking.tsbuildinfo",
+        "checkJs": true
     },
     "include": ["src", "bin"],
 }
