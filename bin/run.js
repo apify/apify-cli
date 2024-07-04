@@ -7,7 +7,7 @@ import { SUPPORTED_NODEJS_VERSION } from '../dist/lib/consts.js';
 import { error } from '../dist/lib/outputs.js';
 
 if (!satisfies(process.version, SUPPORTED_NODEJS_VERSION)) {
-    error(`Apify CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.`);
+    error({ message: `Apify CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.` });
     process.exit(1);
 }
 

@@ -12,8 +12,5 @@
         "tsBuildInfoFile": "dist/.tsbuildinfo",
         "noImplicitOverride": true
     },
-    "include": ["src"],
-    "ts-node": {
-        "esm": true
-    }
+    "include": ["src"]
 }
