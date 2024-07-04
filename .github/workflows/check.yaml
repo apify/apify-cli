@@ -163,7 +163,7 @@ jobs:
     # and triggering of docker image builds in the apify-actor-docker repo.
     deploy:
         name: Publish to NPM
-        if: (github.ref == 'refs/heads/master' || github.event_name == 'release') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'docs:')
+        if: github.repository_owner == 'apify' && (github.ref == 'refs/heads/master' || github.event_name == 'release') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'docs:')
         needs: [build_and_test, test_python_support, lint]
         runs-on: ubuntu-latest
         steps:
@@ -225,13 +225,13 @@ jobs:
               run: |
                   git add .
                   git diff-index --quiet HEAD || git commit -m "[skip ci] update README with latest command reference"
-                  git push origin master
+                  git push origin HEAD:master
 
     update_homebrew_formula:
         name: Update Homebrew Formula
         needs: [deploy]
         runs-on: ubuntu-latest
-        if: ${{ github.event_name == 'release' && github.event.action == 'published' }}
+        if: github.repository_owner == 'apify' && github.event_name == 'release' && github.event.action == 'published'
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
