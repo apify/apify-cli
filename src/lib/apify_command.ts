@@ -1,8 +1,8 @@
-import { once } from 'node:events';
 import process from 'node:process';
 
 import { Command, Interfaces, loadHelpClass } from '@oclif/core';
 
+import { readStdin } from './commands/read-stdin.js';
 import { COMMANDS_WITHIN_ACTOR, LANGUAGE } from './consts.js';
 import { maybeTrackTelemetry } from './telemetry.js';
 import { KeysToCamelCase, argsToCamelCase, detectLocalActorLanguage } from './utils.js';
@@ -77,20 +77,7 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
      * Reads data on standard input as a string.
      */
     async readStdin(stdinStream: typeof process.stdin) {
-        // The isTTY params says if TTY is connected to the process, if so the stdout is
-        // synchronous and the stdout steam is empty.
-        // See https://nodejs.org/docs/latest-v12.x/api/process.html#process_a_note_on_process_i_o
-        if (stdinStream.isTTY || stdinStream.readableEnded) {
-            return;
-        }
-
-        const bufferChunks: Buffer[] = [];
-        stdinStream.on('data', (chunk) => {
-            bufferChunks.push(chunk);
-        });
-
-        await once(stdinStream, 'end');
-        return Buffer.concat(bufferChunks).toString('utf-8');
+        return readStdin(stdinStream);
     }
 
     async printHelp(customCommand?: string) {

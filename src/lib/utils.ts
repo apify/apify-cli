@@ -428,7 +428,7 @@ export const getLocalInput = (cwd: string) => {
 
     const input = readFileSync(join(cwd, defaultLocalStorePath, inputName));
     const contentType = mime.getType(inputName);
-    return { body: input, contentType };
+    return { body: input, contentType, fileName: inputName };
 };
 
 export const purgeDefaultQueue = async () => {
