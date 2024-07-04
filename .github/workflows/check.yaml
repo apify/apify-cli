@@ -223,6 +223,7 @@ jobs:
             - name: Update readme
               if: env.RELEASE_TAG == 'latest'
               run: |
+                  git update-index --assume-unchanged .yarnrc.yml
                   git add .
                   git diff-index --quiet HEAD || git commit -m "[skip ci] update README with latest command reference"
                   git push origin HEAD:master
