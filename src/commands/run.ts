@@ -1,6 +1,6 @@
 import { existsSync, renameSync } from 'node:fs';
-import { readFile, stat, writeFile } from 'node:fs/promises';
-import { join, resolve } from 'node:path';
+import { stat, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
@@ -11,7 +11,8 @@ import mime from 'mime';
 import { minVersion } from 'semver';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { CommandExitCodes, DEFAULT_LOCAL_STORAGE_DIR, LANGUAGE, LEGACY_LOCAL_STORAGE_DIR, PROJECT_TYPES, SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
+import { getInputOverride } from '../lib/commands/resolve-input.js';
+import { DEFAULT_LOCAL_STORAGE_DIR, LANGUAGE, LEGACY_LOCAL_STORAGE_DIR, PROJECT_TYPES, SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { execWithLog } from '../lib/exec.js';
 import { deleteFile } from '../lib/files.js';
 import { getAjvValidator, getDefaultsAndPrefillsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
@@ -197,7 +198,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         }
 
         // Select correct input and validate it
-        const inputOverride = await this.resolveInputOverride(cwd);
+        const inputOverride = await getInputOverride(cwd, this.flags.input, this.flags.inputFile);
 
         // Means we couldn't resolve input, so we should exit
         if (inputOverride === false) {
@@ -429,88 +430,6 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
         }
 
         return null;
-    }
-
-    private async resolveInputOverride(cwd: string) {
-        let input: Record<string, unknown> | undefined;
-        let source: 'stdin' | 'input' | string;
-
-        if (!this.flags.input && !this.flags.inputFile) {
-            // Try reading stdin
-            const stdin = await this.readStdin(process.stdin);
-
-            if (stdin) {
-                try {
-                    const parsed = JSON.parse(stdin);
-
-                    if (Array.isArray(parsed)) {
-                        throw new Error('The input provided is invalid. It should be an object, not an array.');
-                    }
-
-                    input = parsed;
-                    source = 'stdin';
-                } catch (err) {
-                    error({ message: `Cannot parse JSON input from standard input.\n  ${(err as Error).message}` });
-                    process.exitCode = CommandExitCodes.InvalidInput;
-                    return false;
-                }
-            }
-        }
-
-        if (this.flags.input) {
-            switch (this.flags.input[0]) {
-                case '-': {
-                    error({ message: 'You need to pipe something into standard input when you specify the `-` value to `--input`.' });
-                    process.exitCode = CommandExitCodes.InvalidInput;
-                    return false;
-                }
-                default: {
-                    try {
-                        const parsed = JSON.parse(this.flags.input);
-
-                        if (Array.isArray(parsed)) {
-                            throw new Error('The input provided is invalid. It should be an object, not an array.');
-                        }
-
-                        input = parsed;
-                        source = 'input';
-                    } catch (err) {
-                        error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
-                        process.exitCode = CommandExitCodes.InvalidInput;
-                        return false;
-                    }
-                }
-            }
-        } else if (this.flags.inputFile) {
-            switch (this.flags.inputFile[0]) {
-                case '-': {
-                    error({ message: 'You need to pipe something into standard input when you specify the `-` value to `--input-file`.' });
-                    process.exitCode = CommandExitCodes.InvalidInput;
-                    return false;
-                }
-                default: {
-                    const fullPath = resolve(cwd, this.flags.inputFile);
-
-                    try {
-                        const fileContent = await readFile(fullPath, 'utf8');
-                        const parsed = JSON.parse(fileContent);
-
-                        if (Array.isArray(parsed)) {
-                            throw new Error('The input provided is invalid. It should be an object, not an array.');
-                        }
-
-                        input = parsed;
-                        source = this.flags.inputFile;
-                    } catch (err) {
-                        error({ message: `Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}` });
-                        process.exitCode = CommandExitCodes.InvalidInput;
-                        return false;
-                    }
-                }
-            }
-        }
-
-        return input ? { input, source: source! } : undefined;
     }
 }
 
