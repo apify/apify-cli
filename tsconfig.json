@@ -1,16 +1,16 @@
 {
-    "extends": "@apify/tsconfig",
-    "compilerOptions": {
-        "target": "ES2020",
-        "module": "Node16",
-        "moduleResolution": "Node16",
-        "allowJs": true,
-        "rootDir": "src",
-        "outDir": "dist",
-        // For now we need this :(
-        "skipLibCheck": true,
-        "tsBuildInfoFile": "dist/.tsbuildinfo",
-        "noImplicitOverride": true
-    },
-    "include": ["src"]
+	"extends": "@apify/tsconfig",
+	"compilerOptions": {
+		"target": "ES2020",
+		"module": "Node16",
+		"moduleResolution": "Node16",
+		"allowJs": true,
+		"rootDir": "src",
+		"outDir": "dist",
+		// For now we need this :(
+		"skipLibCheck": true,
+		"tsBuildInfoFile": "dist/.tsbuildinfo",
+		"noImplicitOverride": true
+	},
+	"include": ["src"]
 }

@@ -1,12 +1,12 @@
 {
-    "extends": "../tsconfig.json",
-    "compilerOptions": {
-        "types": ["vitest/globals"],
-        "allowJs": true,
-        "checkJs": false,
-        "noEmit": true,
-        "rootDir": "."
-    },
-    "include": ["./**/*.ts", "./**/*.js", "../src"],
-    "references": [{ "path": ".." }]
+	"extends": "../tsconfig.json",
+	"compilerOptions": {
+		"types": ["vitest/globals"],
+		"allowJs": true,
+		"checkJs": false,
+		"noEmit": true,
+		"rootDir": "."
+	},
+	"include": ["./**/*.ts", "./**/*.js", "../src"],
+	"references": [{ "path": ".." }]
 }

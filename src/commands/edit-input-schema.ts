@@ -22,157 +22,168 @@ const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
 const API_VERSION = 'v1';
 
 export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaCommand> {
-    static override description = 'Lets you edit your input schema that would be used on the platform in a visual input schema editor.';
+	static override description =
+		'Lets you edit your input schema that would be used on the platform in a visual input schema editor.';
 
-    static override args = {
-        path: Args.string({
-            required: false,
-            description: 'Optional path to your INPUT_SCHEMA.json file. If not provided default platform location for input schema is used.',
-        }),
-    };
+	static override args = {
+		path: Args.string({
+			required: false,
+			description:
+				'Optional path to your INPUT_SCHEMA.json file. If not provided default platform location for input schema is used.',
+		}),
+	};
 
-    static override hidden = true;
+	static override hidden = true;
 
-    static override hiddenAliases = ['eis'];
+	static override hiddenAliases = ['eis'];
 
-    async run() {
-        // This call fails if no input schema is found on any of the default locations
-        const { inputSchema: existingSchema, inputSchemaPath } = await readInputSchema({ forcePath: this.args.path, cwd: process.cwd() });
+	async run() {
+		// This call fails if no input schema is found on any of the default locations
+		const { inputSchema: existingSchema, inputSchemaPath } = await readInputSchema({
+			forcePath: this.args.path,
+			cwd: process.cwd(),
+		});
 
-        if (existingSchema && !inputSchemaPath) {
-            // If path is not returned, it means the input schema must be directly embedded as object in actor.json
-            // TODO - allow editing input schema embedded in actor.json
-            throw new Error(`Editing an input schema directly embedded in "${LOCAL_CONFIG_PATH}" is not yet supported.`);
-        }
+		if (existingSchema && !inputSchemaPath) {
+			// If path is not returned, it means the input schema must be directly embedded as object in actor.json
+			// TODO - allow editing input schema embedded in actor.json
+			throw new Error(
+				`Editing an input schema directly embedded in "${LOCAL_CONFIG_PATH}" is not yet supported.`,
+			);
+		}
 
-        warning({ message: 'This command is still experimental and might break at any time. Use at your own risk.\n' });
-        info({ message: `Editing input schema at "${inputSchemaPath}"...` });
+		warning({ message: 'This command is still experimental and might break at any time. Use at your own risk.\n' });
+		info({ message: `Editing input schema at "${inputSchemaPath}"...` });
 
-        let server: Server;
-        const app = express();
+		let server: Server;
+		const app = express();
 
-        // To send requests from browser to localhost, CORS has to be configured properly
-        app.use(cors({
-            origin: INPUT_SCHEMA_EDITOR_ORIGIN,
-            allowedHeaders: ['Content-Type', 'Authorization'],
-        }));
+		// To send requests from browser to localhost, CORS has to be configured properly
+		app.use(
+			cors({
+				origin: INPUT_SCHEMA_EDITOR_ORIGIN,
+				allowedHeaders: ['Content-Type', 'Authorization'],
+			}),
+		);
 
-        // Turn off keepalive, otherwise closing the server when command is finished is lagging
-        app.use((_, res, next) => {
-            res.set('Connection', 'close');
-            next();
-        });
+		// Turn off keepalive, otherwise closing the server when command is finished is lagging
+		app.use((_, res, next) => {
+			res.set('Connection', 'close');
+			next();
+		});
 
-        app.use(express.json());
+		app.use(express.json());
 
-        // Basic authorization via a random token, which is passed to the input schema editor,
-        // and that sends it back via the `token` query param, or `Authorization` header
-        const authToken = cryptoRandomObjectId();
-        app.use((req, res, next) => {
-            let { token } = req.query;
-            if (!token) {
-                const authorizationHeader = req.get('Authorization');
-                if (authorizationHeader) {
-                    const [schema, tokenFromHeader, ...extra] = authorizationHeader.trim().split(/\s+/);
-                    if (schema.toLowerCase() === 'bearer' && tokenFromHeader && extra.length === 0) {
-                        token = tokenFromHeader;
-                    }
-                }
-            }
+		// Basic authorization via a random token, which is passed to the input schema editor,
+		// and that sends it back via the `token` query param, or `Authorization` header
+		const authToken = cryptoRandomObjectId();
+		app.use((req, res, next) => {
+			let { token } = req.query;
+			if (!token) {
+				const authorizationHeader = req.get('Authorization');
+				if (authorizationHeader) {
+					const [schema, tokenFromHeader, ...extra] = authorizationHeader.trim().split(/\s+/);
+					if (schema.toLowerCase() === 'bearer' && tokenFromHeader && extra.length === 0) {
+						token = tokenFromHeader;
+					}
+				}
+			}
 
-            if (token !== authToken) {
-                res.status(401);
-                res.send('Authorization failed');
-            } else {
-                next();
-            }
-        });
+			if (token !== authToken) {
+				res.status(401);
+				res.send('Authorization failed');
+			} else {
+				next();
+			}
+		});
 
-        const apiRouter = express.Router();
-        app.use(`/api/${API_VERSION}`, apiRouter);
+		const apiRouter = express.Router();
+		app.use(`/api/${API_VERSION}`, apiRouter);
 
-        // We detect the format of the input schema JSON, so that updating it does not cause too many changes
-        let jsonIndentation = '    ';
-        let appendFinalNewline = true;
+		// We detect the format of the input schema JSON, so that updating it does not cause too many changes
+		let jsonIndentation = '    ';
+		let appendFinalNewline = true;
 
-        apiRouter.get('/input-schema', (_, res) => {
-            let inputSchemaStr;
-            try {
-                inputSchemaStr = existsSync(inputSchemaPath) ? readFileSync(inputSchemaPath, { encoding: 'utf-8' }) : '{}\n';
-                if (inputSchemaStr.length > 3) {
-                    jsonIndentation = detectIndent(inputSchemaStr).indent || jsonIndentation;
-                }
-                if (inputSchemaStr) {
-                    appendFinalNewline = inputSchemaStr[inputSchemaStr.length - 1] === '\n';
-                }
-                if (existsSync(inputSchemaPath)) {
-                    info({ message: `Input schema loaded from "${inputSchemaPath}"` });
-                } else {
-                    info({ message: `Empty input schema initialized.` });
-                }
-            } catch (err) {
-                const errorMessage = `Reading input schema from disk failed with: ${(err as Error).message}`;
-                error({ message: errorMessage });
-                res.status(500);
-                res.send(errorMessage);
-                return;
-            }
+		apiRouter.get('/input-schema', (_, res) => {
+			let inputSchemaStr;
+			try {
+				inputSchemaStr = existsSync(inputSchemaPath)
+					? readFileSync(inputSchemaPath, { encoding: 'utf-8' })
+					: '{}\n';
+				if (inputSchemaStr.length > 3) {
+					jsonIndentation = detectIndent(inputSchemaStr).indent || jsonIndentation;
+				}
+				if (inputSchemaStr) {
+					appendFinalNewline = inputSchemaStr[inputSchemaStr.length - 1] === '\n';
+				}
+				if (existsSync(inputSchemaPath)) {
+					info({ message: `Input schema loaded from "${inputSchemaPath}"` });
+				} else {
+					info({ message: `Empty input schema initialized.` });
+				}
+			} catch (err) {
+				const errorMessage = `Reading input schema from disk failed with: ${(err as Error).message}`;
+				error({ message: errorMessage });
+				res.status(500);
+				res.send(errorMessage);
+				return;
+			}
 
-            let inputSchemaObj;
-            try {
-                inputSchemaObj = JSON.parse(inputSchemaStr || '{}');
-            } catch (err) {
-                const errorMessage = `Parsing input schema failed with error: ${(err as Error).message}`;
-                error({ message: errorMessage });
-                res.status(500);
-                res.send(errorMessage);
-                return;
-            }
+			let inputSchemaObj;
+			try {
+				inputSchemaObj = JSON.parse(inputSchemaStr || '{}');
+			} catch (err) {
+				const errorMessage = `Parsing input schema failed with error: ${(err as Error).message}`;
+				error({ message: errorMessage });
+				res.status(500);
+				res.send(errorMessage);
+				return;
+			}
 
-            res.send(inputSchemaObj);
-            info({ message: 'Input schema sent to editor.' });
-        });
+			res.send(inputSchemaObj);
+			info({ message: 'Input schema sent to editor.' });
+		});
 
-        apiRouter.post('/input-schema', (req, res) => {
-            try {
-                info({ message: 'Got input schema from editor...' });
-                const inputSchemaObj = req.body;
-                let inputSchemaStr = JSON.stringify(inputSchemaObj, null, jsonIndentation);
-                if (appendFinalNewline) inputSchemaStr += '\n';
+		apiRouter.post('/input-schema', (req, res) => {
+			try {
+				info({ message: 'Got input schema from editor...' });
+				const inputSchemaObj = req.body;
+				let inputSchemaStr = JSON.stringify(inputSchemaObj, null, jsonIndentation);
+				if (appendFinalNewline) inputSchemaStr += '\n';
 
-                const inputSchemaDir = dirname(inputSchemaPath);
-                if (!existsSync(inputSchemaDir)) {
-                    mkdirSync(inputSchemaDir, { recursive: true });
-                }
+				const inputSchemaDir = dirname(inputSchemaPath);
+				if (!existsSync(inputSchemaDir)) {
+					mkdirSync(inputSchemaDir, { recursive: true });
+				}
 
-                writeFileSync(inputSchemaPath, inputSchemaStr, { encoding: 'utf-8', flag: 'w+' });
-                res.end();
-                info({ message: 'Input schema saved to disk.' });
-            } catch (err) {
-                const errorMessage = `Saving input schema failed with error: ${(err as Error).message}`;
-                error({ message: errorMessage });
-                res.status(500);
-                res.send(errorMessage);
-            }
-        });
+				writeFileSync(inputSchemaPath, inputSchemaStr, { encoding: 'utf-8', flag: 'w+' });
+				res.end();
+				info({ message: 'Input schema saved to disk.' });
+			} catch (err) {
+				const errorMessage = `Saving input schema failed with error: ${(err as Error).message}`;
+				error({ message: errorMessage });
+				res.status(500);
+				res.send(errorMessage);
+			}
+		});
 
-        apiRouter.post('/exit', (req, res) => {
-            if (req.body.isWindowClosed) {
-                info({ message: 'Editor closed, finishing...' });
-            } else {
-                info({ message: 'Editing finished, you can close the editor.' });
-            }
-            res.end();
-            server.close(() => success({ message: 'Done.' }));
-        });
+		apiRouter.post('/exit', (req, res) => {
+			if (req.body.isWindowClosed) {
+				info({ message: 'Editor closed, finishing...' });
+			} else {
+				info({ message: 'Editing finished, you can close the editor.' });
+			}
+			res.end();
+			server.close(() => success({ message: 'Done.' }));
+		});
 
-        // Listening on port 0 will assign a random available port
-        server = app.listen(0);
-        const { port } = server.address() as AddressInfo;
-        info({ message: `Listening for messages from input schema editor on port ${port}...` });
+		// Listening on port 0 will assign a random available port
+		server = app.listen(0);
+		const { port } = server.address() as AddressInfo;
+		info({ message: `Listening for messages from input schema editor on port ${port}...` });
 
-        const editorUrl = `${INPUT_SCHEMA_EDITOR_BASE_URL}?localCliPort=${port}&localCliToken=${authToken}&localCliApiVersion=${API_VERSION}`;
-        info({ message: `Opening input schema editor at "${editorUrl}"...` });
-        await open(editorUrl);
-    }
+		const editorUrl = `${INPUT_SCHEMA_EDITOR_BASE_URL}?localCliPort=${port}&localCliToken=${authToken}&localCliApiVersion=${API_VERSION}`;
+		info({ message: `Opening input schema editor at "${editorUrl}"...` });
+		await open(editorUrl);
+	}
 }

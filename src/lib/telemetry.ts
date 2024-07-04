@@ -2,7 +2,7 @@ import { promisify } from 'node:util';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 import { loadJsonFile } from 'load-json-file';
-import Mixpanel, { PropertyDict } from 'mixpanel';
+import Mixpanel, { type PropertyDict } from 'mixpanel';
 import { writeJsonFile, writeJsonFileSync } from 'write-json-file';
 
 import { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } from './consts.js';
@@ -10,9 +10,10 @@ import { info } from './outputs.js';
 import { ensureApifyDirectory, getLocalUserInfo } from './utils.js';
 
 export const mixpanel = Mixpanel.init(MIXPANEL_TOKEN, { keepAlive: false });
-const TELEMETRY_WARNING_TEXT = 'Apify collects telemetry data about general usage of Apify CLI to help us improve the product. '
-    + 'This feature is enabled by default, and you can disable it by setting the "APIFY_CLI_DISABLE_TELEMETRY" environment variable to "1". '
-    + 'You can find more information about our telemetry in https://docs.apify.com/cli/docs/telemetry.';
+const TELEMETRY_WARNING_TEXT =
+	'Apify collects telemetry data about general usage of Apify CLI to help us improve the product. ' +
+	'This feature is enabled by default, and you can disable it by setting the "APIFY_CLI_DISABLE_TELEMETRY" environment variable to "1". ' +
+	'You can find more information about our telemetry in https://docs.apify.com/cli/docs/telemetry.';
 
 const promisifiedTrack = promisify<string, PropertyDict, void>(mixpanel.track.bind(mixpanel));
 
@@ -27,69 +28,74 @@ const createLocalDistinctId = () => `CLI:${cryptoRandomObjectId()}`;
  *
  */
 export const getOrCreateLocalDistinctId = async () => {
-    try {
-        const telemetry = await loadJsonFile<{ distinctId: string }>(TELEMETRY_FILE_PATH());
-        return telemetry.distinctId;
-    } catch (e) {
-        const userInfo = await getLocalUserInfo();
-        const distinctId = userInfo.id || createLocalDistinctId();
+	try {
+		const telemetry = await loadJsonFile<{ distinctId: string }>(TELEMETRY_FILE_PATH());
+		return telemetry.distinctId;
+	} catch (e) {
+		const userInfo = await getLocalUserInfo();
+		const distinctId = userInfo.id || createLocalDistinctId();
 
-        // This first time we are tracking telemetry, so we want to notify user about it.
-        info({ message: TELEMETRY_WARNING_TEXT });
+		// This first time we are tracking telemetry, so we want to notify user about it.
+		info({ message: TELEMETRY_WARNING_TEXT });
 
-        ensureApifyDirectory(TELEMETRY_FILE_PATH());
-        await writeJsonFile(TELEMETRY_FILE_PATH(), { distinctId });
+		ensureApifyDirectory(TELEMETRY_FILE_PATH());
+		await writeJsonFile(TELEMETRY_FILE_PATH(), { distinctId });
 
-        return distinctId;
-    }
+		return distinctId;
+	}
 };
 
 export const regenerateLocalDistinctId = () => {
-    try {
-        ensureApifyDirectory(TELEMETRY_FILE_PATH());
-        writeJsonFileSync(TELEMETRY_FILE_PATH(), { distinctId: createLocalDistinctId() });
-    } catch {
-        // Ignore errors
-    }
+	try {
+		ensureApifyDirectory(TELEMETRY_FILE_PATH());
+		writeJsonFileSync(TELEMETRY_FILE_PATH(), {
+			distinctId: createLocalDistinctId(),
+		});
+	} catch {
+		// Ignore errors
+	}
 };
 
-export const isTelemetryEnabled = !process.env.APIFY_CLI_DISABLE_TELEMETRY
-    || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY);
+export const isTelemetryEnabled =
+	!process.env.APIFY_CLI_DISABLE_TELEMETRY || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY);
 
 /**
  * Tracks telemetry event if telemetry is enabled.
  */
-export const maybeTrackTelemetry = async ({ eventName, eventData }: { eventName: string, eventData: Record<string, unknown> }) => {
-    if (!isTelemetryEnabled) return;
+export const maybeTrackTelemetry = async ({
+	eventName,
+	eventData,
+}: { eventName: string; eventData: Record<string, unknown> }) => {
+	if (!isTelemetryEnabled) return;
 
-    try {
-        const distinctId = getOrCreateLocalDistinctId();
-        await promisifiedTrack(eventName, {
-            distinct_id: distinctId,
-            ...eventData,
-        });
-    } catch (e) {
-        // Ignore errors
-    }
+	try {
+		const distinctId = getOrCreateLocalDistinctId();
+		await promisifiedTrack(eventName, {
+			distinct_id: distinctId,
+			...eventData,
+		});
+	} catch (e) {
+		// Ignore errors
+	}
 };
 
 /**
  * Uses Apify identity with local distinctId.
  */
 export const useApifyIdentity = async (userId: string) => {
-    if (!isTelemetryEnabled) return;
+	if (!isTelemetryEnabled) return;
 
-    try {
-        const distinctId = getOrCreateLocalDistinctId();
-        ensureApifyDirectory(TELEMETRY_FILE_PATH());
-        await writeJsonFile(TELEMETRY_FILE_PATH(), { distinctId: userId });
-        await maybeTrackTelemetry({
-            eventName: '$create_alias',
-            eventData: {
-                alias: distinctId,
-            },
-        });
-    } catch (e) {
-        // Ignore errors
-    }
+	try {
+		const distinctId = getOrCreateLocalDistinctId();
+		ensureApifyDirectory(TELEMETRY_FILE_PATH());
+		await writeJsonFile(TELEMETRY_FILE_PATH(), { distinctId: userId });
+		await maybeTrackTelemetry({
+			eventName: '$create_alias',
+			eventData: {
+				alias: distinctId,
+			},
+		});
+	} catch (e) {
+		// Ignore errors
+	}
 };
