@@ -1953,9 +1953,9 @@ __metadata:
   linkType: hard
 
 "@csstools/css-tokenizer@npm:^2.3.2":
-  version: 2.3.3
-  resolution: "@csstools/css-tokenizer@npm:2.3.3"
-  checksum: 10c0/a090b4d139ee0399cf4d31c38a16dcfd739dfb4477ea79230917372bbf2f8cce31cb9f02ac2f6800ad7a005b5331ef97a6df426bd814d2e580a53e1257c253c9
+  version: 2.4.1
+  resolution: "@csstools/css-tokenizer@npm:2.4.1"
+  checksum: 10c0/fe71cee85ec7372da07083d088b6a704f43e5d3d2d8071c4b8a86fae60408b559a218a43f8625bf2f0be5c7f90c8f3ad20a1aae1921119a1c02b51c310cc2b6b
   languageName: node
   linkType: hard
 
@@ -3646,11 +3646,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 20.14.9
-  resolution: "@types/node@npm:20.14.9"
+  version: 20.14.10
+  resolution: "@types/node@npm:20.14.10"
   dependencies:
     undici-types: "npm:~5.26.4"
-  checksum: 10c0/911ffa444dc032897f4a23ed580c67903bd38ea1c5ec99b1d00fa10b83537a3adddef8e1f29710cbdd8e556a61407ed008e06537d834e48caf449ce59f87d387
+  checksum: 10c0/0b06cff14365c2d0085dc16cc8cbea5c40ec09cfc1fea966be9eeecf35562760bfde8f88e86de6edfaf394501236e229d9c1084fad04fb4dec472ae245d8ae69
   languageName: node
   linkType: hard
 
@@ -6261,9 +6261,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.4.796":
-  version: 1.4.816
-  resolution: "electron-to-chromium@npm:1.4.816"
-  checksum: 10c0/1a84bc42234484cbc5e8b521de57fd3ab9984a2111d8605eab26b3525f382c0c7b83b45bf8b34e5fa4a730cd183fef5dffa4a0627754c7f4fb0aae9cb3c16b37
+  version: 1.4.817
+  resolution: "electron-to-chromium@npm:1.4.817"
+  checksum: 10c0/5bba9ac8ef5b891a5adb3344a250f5caceef19d705e5e1865d3e86e8290cdaac5ec55ca9afc6ecf853535ef61af95a1ed023a7f677333ff3c0f7529b74bb1a87
   languageName: node
   linkType: hard
 
