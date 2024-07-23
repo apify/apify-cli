@@ -55,16 +55,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/input_schema@npm:~3.6.0":
-  version: 3.6.3
-  resolution: "@apify/input_schema@npm:3.6.3"
+"@apify/input_schema@npm:~3.7.0":
+  version: 3.7.0
+  resolution: "@apify/input_schema@npm:3.7.0"
   dependencies:
     "@apify/consts": "npm:^2.29.0"
     acorn-loose: "npm:^8.4.0"
     countries-list: "npm:^3.0.0"
   peerDependencies:
     ajv: ^8.0.0
-  checksum: 10c0/8ed967296c62918fda67bc1e16a6f197fc4288d85c132f88ac1695bf671e3fc39e52ea47b136b2b013beb5cc598776d493580d1b5480e4bcb0f2973add0e2bdd
+  checksum: 10c0/eb97dac3ba3e6eb30175bc542ea3b6a61e5749436c1bb9df4dd4948f0d74631a8fa8f1ccb1a7d9f1c14b193d8f8c4a97b53e08257389590e7e9959d4ea5d97db
   languageName: node
   linkType: hard
 
@@ -2980,7 +2980,7 @@ __metadata:
     "@apify/consts": "npm:~2.29.0"
     "@apify/eslint-config": "npm:^0.4.0"
     "@apify/eslint-config-ts": "npm:^0.4.1"
-    "@apify/input_schema": "npm:~3.6.0"
+    "@apify/input_schema": "npm:~3.7.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@apify/utilities": "npm:~2.10.0"
     "@biomejs/biome": "npm:^1.7.3"
