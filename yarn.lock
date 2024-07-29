@@ -3061,7 +3061,7 @@ __metadata:
     handlebars: "npm:~4.7.8"
     inquirer: "npm:~9.3.0"
     is-ci: "npm:~3.0.1"
-    is-online: "npm:~10.0.0"
+    is-online: "npm:~11.0.0"
     istextorbinary: "npm:~9.5.0"
     jju: "npm:~1.4.0"
     lint-staged: "npm:^15.2.5"
@@ -3817,6 +3817,15 @@ __metadata:
   peerDependencies:
     typanion: "*"
   checksum: 10c0/5171fd04539b39b5483bd097d5f828da165fa47b4718378cb0bc3c2f70dfa11736f01727cfa4b9566fc8eabad03473e62ae98470c4c8d15c618ee1294e07169f
+  languageName: node
+  linkType: hard
+
+"clone-regexp@npm:^3.0.0":
+  version: 3.0.0
+  resolution: "clone-regexp@npm:3.0.0"
+  dependencies:
+    is-regexp: "npm:^3.0.0"
+  checksum: 10c0/892b6103ae9319d0283f9bb125e07cba7c043cbcc516ecc135be817769257c659eae42749d450ed3041af63fb79505e4c5b90105cf9c97cadbff712e2f72726b
   languageName: node
   linkType: hard
 
@@ -5452,6 +5461,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"function-timeout@npm:^0.1.0":
+  version: 0.1.1
+  resolution: "function-timeout@npm:0.1.1"
+  checksum: 10c0/45f0517907e541b7ea8238500429ac9ace50e596295c01931cbe61e176150aa2ad50d05dcfeeee9377ae48eb99a6fd0759e4ebc97cde8f4c38492d1c99db8f14
+  languageName: node
+  linkType: hard
+
 "function-timeout@npm:^1.0.1":
   version: 1.0.2
   resolution: "function-timeout@npm:1.0.2"
@@ -5749,26 +5765,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"got@npm:^12.0.0, got@npm:^12.1.0":
-  version: 12.6.1
-  resolution: "got@npm:12.6.1"
-  dependencies:
-    "@sindresorhus/is": "npm:^5.2.0"
-    "@szmarczak/http-timer": "npm:^5.0.1"
-    cacheable-lookup: "npm:^7.0.0"
-    cacheable-request: "npm:^10.2.8"
-    decompress-response: "npm:^6.0.0"
-    form-data-encoder: "npm:^2.1.2"
-    get-stream: "npm:^6.0.1"
-    http2-wrapper: "npm:^2.1.10"
-    lowercase-keys: "npm:^3.0.0"
-    p-cancelable: "npm:^3.0.0"
-    responselike: "npm:^3.0.0"
-  checksum: 10c0/2fe97fcbd7a9ffc7c2d0ecf59aca0a0562e73a7749cadada9770eeb18efbdca3086262625fb65590594edc220a1eca58fab0d26b0c93c2f9a008234da71ca66b
-  languageName: node
-  linkType: hard
-
-"got@npm:^13":
+"got@npm:^13, got@npm:^13.0.0":
   version: 13.0.0
   resolution: "got@npm:13.0.0"
   dependencies:
@@ -6130,10 +6127,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ip-regex@npm:^4.0.0":
-  version: 4.3.0
-  resolution: "ip-regex@npm:4.3.0"
-  checksum: 10c0/f9ef1f5d0df05b9133a882974e572ae525ccd205260cb103dae337f1fc7451ed783391acc6ad688e56dd2598f769e8e72ecbb650ec34763396af822a91768562
+"ip-regex@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "ip-regex@npm:5.0.0"
+  checksum: 10c0/23f07cf393436627b3a91f7121eee5bc831522d07c95ddd13f5a6f7757698b08551480f12e5dbb3bf248724da135d54405c9687733dba7314f74efae593bdf06
   languageName: node
   linkType: hard
 
@@ -6347,12 +6344,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-ip@npm:^3.1.0":
-  version: 3.1.0
-  resolution: "is-ip@npm:3.1.0"
+"is-ip@npm:^5.0.1":
+  version: 5.0.1
+  resolution: "is-ip@npm:5.0.1"
   dependencies:
-    ip-regex: "npm:^4.0.0"
-  checksum: 10c0/4cb643c831314b8fc72770c93a795c0d3dde339f36c8430544c36727956027e2cb329641ace73c5951085ecf93ac608c898859d3d4f7b117d405e1e13c703c76
+    ip-regex: "npm:^5.0.0"
+    super-regex: "npm:^0.2.0"
+  checksum: 10c0/ec7d833acaca68b5a11b7ee1d605ff26e6864f83cae6c1413aaf5be19975c4c8a9d0c2d4b339f3b9dd94f26851fc80c6942e4b02c2b42f5e42b40ecd900b7a5c
   languageName: node
   linkType: hard
 
@@ -6400,15 +6398,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-online@npm:~10.0.0":
-  version: 10.0.0
-  resolution: "is-online@npm:10.0.0"
+"is-online@npm:~11.0.0":
+  version: 11.0.0
+  resolution: "is-online@npm:11.0.0"
   dependencies:
-    got: "npm:^12.1.0"
+    got: "npm:^13.0.0"
     p-any: "npm:^4.0.0"
-    p-timeout: "npm:^5.1.0"
-    public-ip: "npm:^5.0.0"
-  checksum: 10c0/33eec2c9994b989186f2a7b49a77d7f386528a8ac109e291278eb038efa5e4f900b45ff0a279412642ab751161ed014e13594b421f31084f931e172e7c9cd8a9
+    p-timeout: "npm:^6.1.2"
+    public-ip: "npm:^7.0.1"
+  checksum: 10c0/a8522f64b1b010fca06ddbf445845280ef5d32b972aa5b47936758b11d1ce18b113ab754c8bc69491b29350f7c3a4187bcfbce24cd776c20497ae7389a242ff2
   languageName: node
   linkType: hard
 
@@ -6433,6 +6431,13 @@ __metadata:
     call-bind: "npm:^1.0.2"
     has-tostringtag: "npm:^1.0.0"
   checksum: 10c0/bb72aae604a69eafd4a82a93002058c416ace8cde95873589a97fc5dac96a6c6c78a9977d487b7b95426a8f5073969124dd228f043f9f604f041f32fcc465fc1
+  languageName: node
+  linkType: hard
+
+"is-regexp@npm:^3.0.0":
+  version: 3.1.0
+  resolution: "is-regexp@npm:3.1.0"
+  checksum: 10c0/99dbaea41bddee2205db468c0946f5fee25cc4ae486333cb4d2b8095ab4b0a500e74ba61afd9e6e4f63ececcd55b4df5ae2a555b1c3e26308e516ff53c9533cd
   languageName: node
   linkType: hard
 
@@ -7771,10 +7776,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"p-timeout@npm:^5.1.0":
-  version: 5.1.0
-  resolution: "p-timeout@npm:5.1.0"
-  checksum: 10c0/1b026cf9d5878c64bec4341ca9cda8ec6b8b3aea8a57885ca0fe2b35753a20d767fb6f9d3aa41e1252f42bc95432c05ea33b6b18f271fb10bfb0789591850a41
+"p-timeout@npm:^6.1.2":
+  version: 6.1.2
+  resolution: "p-timeout@npm:6.1.2"
+  checksum: 10c0/d46b90a9a5fb7c650a5c56dd5cf7102ea9ab6ce998defa2b3d4672789aaec4e2f45b3b0b5a4a3e17a0fb94301ad5dd26da7d8728402e48db2022ad1847594d19
   languageName: node
   linkType: hard
 
@@ -8063,14 +8068,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"public-ip@npm:^5.0.0":
-  version: 5.0.0
-  resolution: "public-ip@npm:5.0.0"
+"public-ip@npm:^7.0.1":
+  version: 7.0.1
+  resolution: "public-ip@npm:7.0.1"
   dependencies:
     dns-socket: "npm:^4.2.2"
-    got: "npm:^12.0.0"
-    is-ip: "npm:^3.1.0"
-  checksum: 10c0/08d63d048b4acc0c42e0395bbd776c27377c3ef5cad4b46c0e952afc8052141085f51dce5d77f66893cf1fd4996c687ca7641efb76d11eb03b64fa4b4309b42c
+    got: "npm:^13.0.0"
+    is-ip: "npm:^5.0.1"
+  checksum: 10c0/08626cc83cc0af30dbb936900a1de8b471b65232c18800f732fd01234704d91291916d5cfe3eda222278a621852da7acbb884d70c9264cb5910c2c333e438b44
   languageName: node
   linkType: hard
 
@@ -9085,6 +9090,17 @@ __metadata:
   version: 1.0.5
   resolution: "strnum@npm:1.0.5"
   checksum: 10c0/64fb8cc2effbd585a6821faa73ad97d4b553c8927e49086a162ffd2cc818787643390b89d567460a8e74300148d11ac052e21c921ef2049f2987f4b1b89a7ff1
+  languageName: node
+  linkType: hard
+
+"super-regex@npm:^0.2.0":
+  version: 0.2.0
+  resolution: "super-regex@npm:0.2.0"
+  dependencies:
+    clone-regexp: "npm:^3.0.0"
+    function-timeout: "npm:^0.1.0"
+    time-span: "npm:^5.1.0"
+  checksum: 10c0/a8ff56aa521530df098433692c0a4c92353dd2fa3f7187785d654268031cc2876c8acc91e90bbd7b6b1ebabd68fb306f4fa61fc46f9fe0db04ed5f960fc2afc8
   languageName: node
   linkType: hard
 
