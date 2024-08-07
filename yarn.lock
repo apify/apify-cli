@@ -65,7 +65,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/input_schema@npm:~3.7.0":
+"@apify/input_schema@npm:~3.7.1":
   version: 3.7.1
   resolution: "@apify/input_schema@npm:3.7.1"
   dependencies:
@@ -95,7 +95,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/utilities@npm:~2.10.0":
+"@apify/utilities@npm:~2.10.6":
   version: 2.10.6
   resolution: "@apify/utilities@npm:2.10.6"
   dependencies:
@@ -843,7 +843,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@biomejs/biome@npm:^1.7.3":
+"@biomejs/biome@npm:^1.8.3":
   version: 1.8.3
   resolution: "@biomejs/biome@npm:1.8.3"
   dependencies:
@@ -934,7 +934,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@crawlee/memory-storage@npm:~3.11.0":
+"@crawlee/memory-storage@npm:~3.11.1":
   version: 3.11.1
   resolution: "@crawlee/memory-storage@npm:3.11.1"
   dependencies:
@@ -952,7 +952,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@crawlee/types@npm:3.11.1, @crawlee/types@npm:^3.3.0, @crawlee/types@npm:^3.8.1":
+"@crawlee/types@npm:3.11.1, @crawlee/types@npm:^3.11.1, @crawlee/types@npm:^3.3.0":
   version: 3.11.1
   resolution: "@crawlee/types@npm:3.11.1"
   dependencies:
@@ -1371,7 +1371,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oclif/core@npm:^4, @oclif/core@npm:~4.0.0":
+"@oclif/core@npm:^4, @oclif/core@npm:~4.0.17":
   version: 4.0.17
   resolution: "@oclif/core@npm:4.0.17"
   dependencies:
@@ -1396,7 +1396,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oclif/plugin-help@npm:^6.2.7, @oclif/plugin-help@npm:~6.2.0":
+"@oclif/plugin-help@npm:^6.2.7, @oclif/plugin-help@npm:~6.2.8":
   version: 6.2.8
   resolution: "@oclif/plugin-help@npm:6.2.8"
   dependencies:
@@ -1430,7 +1430,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oclif/test@npm:^4.0.0":
+"@oclif/test@npm:^4.0.8":
   version: 4.0.8
   resolution: "@oclif/test@npm:4.0.8"
   dependencies:
@@ -2265,7 +2265,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/chai@npm:^4.3.12":
+"@types/chai@npm:^4.3.17":
   version: 4.3.17
   resolution: "@types/chai@npm:4.3.17"
   checksum: 10c0/322a74489cdfde9c301b593d086c539584924c4c92689a858e0930708895a5ab229c31c64ac26b137615ef3ffbff1866851c280c093e07b3d3de05983d3793e0
@@ -2721,7 +2721,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@yarnpkg/core@npm:^4.0.3":
+"@yarnpkg/core@npm:^4.1.2":
   version: 4.1.2
   resolution: "@yarnpkg/core@npm:4.1.2"
   dependencies:
@@ -2858,7 +2858,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"adm-zip@npm:~0.5.10":
+"adm-zip@npm:~0.5.15":
   version: 0.5.15
   resolution: "adm-zip@npm:0.5.15"
   checksum: 10c0/40ad504176c4b7f41983d11f7ff28acd3ce5b9bd51a09356be2447cb1799de4a4d93f8b0f65f75814add17687445cc807bbcb5ec8f73f44af1aefe4509894a8c
@@ -2924,7 +2924,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ajv@npm:~8.17.0":
+"ajv@npm:~8.17.1":
   version: 8.17.1
   resolution: "ajv@npm:8.17.1"
   dependencies:
@@ -3006,19 +3006,19 @@ __metadata:
     "@apify/consts": "npm:~2.29.0"
     "@apify/eslint-config": "npm:^0.4.0"
     "@apify/eslint-config-ts": "npm:^0.4.1"
-    "@apify/input_schema": "npm:~3.7.0"
+    "@apify/input_schema": "npm:~3.7.1"
     "@apify/tsconfig": "npm:^0.1.0"
-    "@apify/utilities": "npm:~2.10.0"
-    "@biomejs/biome": "npm:^1.7.3"
-    "@crawlee/memory-storage": "npm:~3.11.0"
-    "@crawlee/types": "npm:^3.8.1"
-    "@oclif/core": "npm:~4.0.0"
-    "@oclif/plugin-help": "npm:~6.2.0"
-    "@oclif/test": "npm:^4.0.0"
+    "@apify/utilities": "npm:~2.10.6"
+    "@biomejs/biome": "npm:^1.8.3"
+    "@crawlee/memory-storage": "npm:~3.11.1"
+    "@crawlee/types": "npm:^3.11.1"
+    "@oclif/core": "npm:~4.0.17"
+    "@oclif/plugin-help": "npm:~6.2.8"
+    "@oclif/test": "npm:^4.0.8"
     "@root/walk": "npm:~1.1.0"
     "@types/adm-zip": "npm:^0.5.5"
     "@types/archiver": "npm:^6.0.2"
-    "@types/chai": "npm:^4.3.12"
+    "@types/chai": "npm:^4.3.17"
     "@types/cors": "npm:^2.8.17"
     "@types/express": "npm:^4.17.21"
     "@types/inquirer": "npm:^9.0.7"
@@ -3031,12 +3031,12 @@ __metadata:
     "@types/underscore": "npm:^1.11.15"
     "@typescript-eslint/eslint-plugin": "npm:^7.0.2"
     "@typescript-eslint/parser": "npm:^7.0.2"
-    "@yarnpkg/core": "npm:^4.0.3"
-    adm-zip: "npm:~0.5.10"
-    ajv: "npm:~8.17.0"
-    apify-client: "npm:~2.9.3"
-    archiver: "npm:~7.0.0"
-    axios: "npm:~1.7.0"
+    "@yarnpkg/core": "npm:^4.1.2"
+    adm-zip: "npm:~0.5.15"
+    ajv: "npm:~8.17.1"
+    apify-client: "npm:~2.9.4"
+    archiver: "npm:~7.0.1"
+    axios: "npm:~1.7.3"
     chai: "npm:^4.4.1"
     chalk: "npm:~5.3.0"
     computer-name: "npm:~0.1.0"
@@ -3046,37 +3046,37 @@ __metadata:
     escape-string-regexp: "npm:~5.0.0"
     eslint: "npm:^8.57.0"
     eslint-config-prettier: "npm:^9.1.0"
-    express: "npm:~4.19.0"
-    globby: "npm:~14.0.1"
+    express: "npm:~4.19.2"
+    globby: "npm:~14.0.2"
     handlebars: "npm:~4.7.8"
     inquirer: "npm:~9.3.0"
     is-ci: "npm:~3.0.1"
     is-online: "npm:~11.0.0"
     istextorbinary: "npm:~9.5.0"
     jju: "npm:~1.4.0"
-    lint-staged: "npm:^15.2.5"
+    lint-staged: "npm:^15.2.8"
     load-json-file: "npm:~7.0.1"
     lodash.clonedeep: "npm:^4.5.0"
-    mime: "npm:~4.0.1"
+    mime: "npm:~4.0.4"
     mixpanel: "npm:~0.18.0"
     mock-stdin: "npm:^1.0.0"
-    oclif: "npm:^4.4.18"
+    oclif: "npm:^4.14.15"
     open: "npm:~10.1.0"
     ow: "npm:~2.0.0"
-    rimraf: "npm:~6.0.0"
-    semver: "npm:~7.6.0"
+    rimraf: "npm:~6.0.1"
+    semver: "npm:~7.6.3"
     tiged: "npm:~2.12.7"
-    tsx: "npm:^4.7.1"
-    typescript: "npm:^5.3.3"
-    underscore: "npm:~1.13.6"
-    vitest: "npm:^2.0.0"
+    tsx: "npm:^4.16.5"
+    typescript: "npm:^5.5.4"
+    underscore: "npm:~1.13.7"
+    vitest: "npm:^2.0.5"
     write-json-file: "npm:~6.0.0"
   bin:
     apify: ./bin/run.js
   languageName: unknown
   linkType: soft
 
-"apify-client@npm:~2.9.3":
+"apify-client@npm:~2.9.4":
   version: 2.9.4
   resolution: "apify-client@npm:2.9.4"
   dependencies:
@@ -3109,7 +3109,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"archiver@npm:~7.0.0":
+"archiver@npm:~7.0.1":
   version: 7.0.1
   resolution: "archiver@npm:7.0.1"
   dependencies:
@@ -3328,7 +3328,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.6.7, axios@npm:~1.7.0":
+"axios@npm:^1.6.7, axios@npm:~1.7.3":
   version: 1.7.3
   resolution: "axios@npm:1.7.3"
   dependencies:
@@ -5093,7 +5093,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"express@npm:~4.19.0":
+"express@npm:~4.19.2":
   version: 4.19.2
   resolution: "express@npm:4.19.2"
   dependencies:
@@ -5713,7 +5713,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"globby@npm:~14.0.1":
+"globby@npm:~14.0.2":
   version: 14.0.2
   resolution: "globby@npm:14.0.2"
   dependencies:
@@ -6832,7 +6832,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"lint-staged@npm:^15.2.5":
+"lint-staged@npm:^15.2.8":
   version: 15.2.8
   resolution: "lint-staged@npm:15.2.8"
   dependencies:
@@ -7089,7 +7089,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mime@npm:*, mime@npm:~4.0.1":
+"mime@npm:*, mime@npm:~4.0.4":
   version: 4.0.4
   resolution: "mime@npm:4.0.4"
   bin:
@@ -7547,7 +7547,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"oclif@npm:^4.4.18":
+"oclif@npm:^4.14.15":
   version: 4.14.15
   resolution: "oclif@npm:4.14.15"
   dependencies:
@@ -8388,7 +8388,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"rimraf@npm:~6.0.0":
+"rimraf@npm:~6.0.1":
   version: 6.0.1
   resolution: "rimraf@npm:6.0.1"
   dependencies:
@@ -8548,7 +8548,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"semver@npm:^7.1.2, semver@npm:^7.3.5, semver@npm:^7.6.0, semver@npm:^7.6.3, semver@npm:~7.6.0":
+"semver@npm:^7.1.2, semver@npm:^7.3.5, semver@npm:^7.6.0, semver@npm:^7.6.3, semver@npm:~7.6.3":
   version: 7.6.3
   resolution: "semver@npm:7.6.3"
   bin:
@@ -9334,7 +9334,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tsx@npm:^4.7.1":
+"tsx@npm:^4.16.5":
   version: 4.16.5
   resolution: "tsx@npm:4.16.5"
   dependencies:
@@ -9479,7 +9479,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@npm:^5.3.3":
+"typescript@npm:^5.5.4":
   version: 5.5.4
   resolution: "typescript@npm:5.5.4"
   bin:
@@ -9489,7 +9489,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript@patch:typescript@npm%3A^5.3.3#optional!builtin<compat/typescript>":
+"typescript@patch:typescript@npm%3A^5.5.4#optional!builtin<compat/typescript>":
   version: 5.5.4
   resolution: "typescript@patch:typescript@npm%3A5.5.4#optional!builtin<compat/typescript>::version=5.5.4&hash=379a07"
   bin:
@@ -9520,7 +9520,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"underscore@npm:~1.13.6":
+"underscore@npm:~1.13.7":
   version: 1.13.7
   resolution: "underscore@npm:1.13.7"
   checksum: 10c0/fad2b4aac48847674aaf3c30558f383399d4fdafad6dd02dd60e4e1b8103b52c5a9e5937e0cc05dacfd26d6a0132ed0410ab4258241240757e4a4424507471cd
@@ -9730,7 +9730,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vitest@npm:^2.0.0":
+"vitest@npm:^2.0.5":
   version: 2.0.5
   resolution: "vitest@npm:2.0.5"
   dependencies:

@@ -70,8 +70,6 @@ export const INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..
 
 export const MAIN_FILE = 'main.js';
 
-export const UPLOADS_STORE_NAME = 'apify-cli-deployments';
-
 const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 
 export const SUPPORTED_NODEJS_VERSION = pkg.engines.node;

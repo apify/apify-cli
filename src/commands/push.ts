@@ -11,12 +11,7 @@ import isCI from 'is-ci';
 import open from 'open';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import {
-	CommandExitCodes,
-	DEPRECATED_LOCAL_CONFIG_NAME,
-	LOCAL_CONFIG_PATH,
-	UPLOADS_STORE_NAME,
-} from '../lib/consts.js';
+import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { sumFilesSizeInBytes } from '../lib/files.js';
 import { error, info, link, run, success, warning } from '../lib/outputs.js';
 import { transformEnvToEnvVars } from '../lib/secrets.js';
@@ -247,8 +242,8 @@ Skipping push. Use --force to override.`,
 			await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush, cwd);
 
 			// Upload it to Apify.keyValueStores
-			const store = await apifyClient.keyValueStores().getOrCreate(UPLOADS_STORE_NAME);
-			const key = `${actor.name}-${version}.zip`;
+			const store = await apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
+			const key = `version-${version}.zip`;
 			const buffer = readFileSync(TEMP_ZIP_FILE_NAME);
 			await apifyClient.keyValueStore(store.id).setRecord({
 				key,

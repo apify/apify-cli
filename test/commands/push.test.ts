@@ -9,7 +9,7 @@ import { ActorCollectionCreateOptions } from 'apify-client';
 import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFileSync } from 'write-json-file';
 
-import { LOCAL_CONFIG_PATH, UPLOADS_STORE_NAME } from '../../src/lib/consts.js';
+import { LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../src/lib/utils.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
@@ -217,7 +217,8 @@ describe('apify push', () => {
 
 		testActor = (await testActorClient.get())!;
 		const testActorVersion = await testActorClient.version(actorJson.version).get();
-		const store = await testUserClient.keyValueStores().getOrCreate(UPLOADS_STORE_NAME);
+		const store = await testUserClient.keyValueStores().getOrCreate(`actor-${testActor.id}-source`);
+		await testUserClient.keyValueStore(store.id).delete(); // We just needed the store ID, we can clean up now
 
 		if (testActor) await testActorClient.delete();
 
@@ -226,7 +227,7 @@ describe('apify push', () => {
 			buildTag: 'latest',
 			tarballUrl:
 				`${testActorClient.baseUrl}/key-value-stores/${store.id}` +
-				`/records/${testActor.name}-${actorJson.version}.zip?disableRedirect=true`,
+				`/records/version-${actorJson.version}.zip?disableRedirect=true`,
 			envVars: testActorWithEnvVars.versions[0].envVars,
 			sourceType: ACTOR_SOURCE_TYPES.TARBALL,
 		});
