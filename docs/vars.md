@@ -11,14 +11,14 @@ All keys from `env` will be set as environment variables into Apify platform aft
 
 ```json
 {
-    "actorSpecification": 1,
-    "name": "dataset-to-mysql",
-    "version": "0.1",
-    "buildTag": "latest",
-    "environmentVariables": {
-        "MYSQL_USER": "my_username",
-        "MYSQL_PASSWORD": "@mySecretPassword"
-    }
+  "actorSpecification": 1,
+  "name": "dataset-to-mysql",
+  "version": "0.1",
+  "buildTag": "latest",
+  "environmentVariables": {
+    "MYSQL_USER": "my_username",
+    "MYSQL_PASSWORD": "@mySecretPassword"
+  }
 }
 ```
 
@@ -29,10 +29,10 @@ After setting up variables in the app, remove the `environmentVariables` from `.
 
 ```json
 {
-    "actorSpecification": 1,
-    "name": "dataset-to-mysql",
-    "version": "0.1",
-    "buildTag": "latest"
+  "actorSpecification": 1,
+  "name": "dataset-to-mysql",
+  "version": "0.1",
+  "buildTag": "latest"
 }
 ```
 

@@ -4,6 +4,7 @@ title: Command reference
 
 This section contains printouts of `apify help` for all commands.
 
+<!-- prettier-ignore-start -->
 <!-- commands -->
 * [`apify actor`](#apify-actor)
 * [`apify actor get-input`](#apify-actor-get-input)
@@ -504,3 +505,4 @@ DESCRIPTION
 
 _See code: [src/commands/validate-schema.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/validate-schema.ts)_
 <!-- commandsstop -->
+<!-- prettier-ignore-end -->

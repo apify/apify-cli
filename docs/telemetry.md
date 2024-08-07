@@ -12,6 +12,7 @@ All telemetry data is collected and stored securely on [Mixpanel](https://mixpan
 ### Metrics Collected
 
 Before a user connects to the Apify platform, we collect anonymous information about CLI usage including:
+
 - Usage of all commands
 - Internal attributes of the local environment (OS, shell, Node.js version, Python version, Apify CLI version)
 - For the `actor create` command, we identify which template was used to create the Actor (language, template name, template ID)
@@ -21,5 +22,3 @@ After a user connects to the Apify platform (successful `apify login`), we colle
 ## How to opt out
 
 You can disable telemetry by setting the "APIFY_CLI_DISABLE_TELEMETRY" environment variable to "1". After setting this variable, the CLI will not send any telemetry data whether you are connected with Apify or not.
-
-

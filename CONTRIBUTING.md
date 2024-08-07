@@ -51,29 +51,29 @@ useAuthSetup({ perTest: false });
 
 This hook should always be used when working with commands that alter the file system. This hook:
 
--   creates your temporary directory with the name you provided
--   provides calls for before and after all tests to setup and clean up the temporary directory
--   supports mocking the process cwd to the temporary directory so you can run commands and test their behavior.
+- creates your temporary directory with the name you provided
+- provides calls for before and after all tests to setup and clean up the temporary directory
+- supports mocking the process cwd to the temporary directory so you can run commands and test their behavior.
 
 **Important note about the cwd mocking**: when you use this hook and tell it to mock the cwd, you need to ensure these following things **always** happen:
 
--   You import `process` from `node:process` in your command or file you want to test with the mocked cwd. You do not use `globalThis.process` at all!
--   You import the files that may rely on the mocked cwd AFTER you call `useTempPath` in your test file, by using `await import()` instead of `import x from '..';`
+- You import `process` from `node:process` in your command or file you want to test with the mocked cwd. You do not use `globalThis.process` at all!
+- You import the files that may rely on the mocked cwd AFTER you call `useTempPath` in your test file, by using `await import()` instead of `import x from '..';`
 
 It also comes with several options:
 
--   `create`: defaulted to `true`, it decides if the temporary directory should be created or not in the beforeAll hook.
--   `remove`: defaulted to `true`, it decides if the temporary directory should be removed or not in the afterAll hook.
--   `cwd`: defaulted to `false`, it decides if the process.cwd should be mocked to the temporary directory or not.
--   `cwdParent`: defaulted to `false`, it decides whether the initial value of the mocked process.cwd will point to the parent directory of the temporary directory or the actual temporary directory.
+- `create`: defaulted to `true`, it decides if the temporary directory should be created or not in the beforeAll hook.
+- `remove`: defaulted to `true`, it decides if the temporary directory should be removed or not in the afterAll hook.
+- `cwd`: defaulted to `false`, it decides if the process.cwd should be mocked to the temporary directory or not.
+- `cwdParent`: defaulted to `false`, it decides whether the initial value of the mocked process.cwd will point to the parent directory of the temporary directory or the actual temporary directory.
 
 This hook also returns several values in an object:
 
--   `tmpPath`: the full path to the temporary directory that was requested
--   `joinPath`: a utility function similar to `path.join` that lets you work with paths in the temporary directory
--   `beforeAllCalls`: a function you should manually call in your `beforeAll` hook to set up the temporary directory as well as the used cwd mock
--   `afterAllCalls`: a function you should manually call in your `afterAll` hook to clean up the temporary directory
--   `toggleCwdBetweenFullAndParentPath`: a function you can call to toggle the cwd mock between the full path to the temporary directory and the parent directory of the temporary directory
+- `tmpPath`: the full path to the temporary directory that was requested
+- `joinPath`: a utility function similar to `path.join` that lets you work with paths in the temporary directory
+- `beforeAllCalls`: a function you should manually call in your `beforeAll` hook to set up the temporary directory as well as the used cwd mock
+- `afterAllCalls`: a function you should manually call in your `afterAll` hook to clean up the temporary directory
+- `toggleCwdBetweenFullAndParentPath`: a function you can call to toggle the cwd mock between the full path to the temporary directory and the parent directory of the temporary directory
 
 #### Example usage (creates an actor, then pushes it, then calls it)
 
@@ -86,15 +86,15 @@ import { writeFile } from "node:fs/promises";
 const ACTOR_NAME = "owo";
 
 const {
-    beforeAllCalls,
-    afterAllCalls,
-    joinPath,
-    toggleCwdBetweenFullAndParentPath,
+  beforeAllCalls,
+  afterAllCalls,
+  joinPath,
+  toggleCwdBetweenFullAndParentPath,
 } = useTempPath(ACTOR_NAME, {
-    cwd: true,
-    cwdParent: true,
-    create: true,
-    remove: true,
+  cwd: true,
+  cwdParent: true,
+  create: true,
+  remove: true,
 });
 
 const { CreateCommand } = await import("../../src/commands/create.js");
@@ -102,19 +102,14 @@ const { PushCommand } = await import("../../src/commands/push.js");
 const { CallCommand } = await import("../../src/commands/call.js");
 
 beforeAll(async () => {
-    await beforeAllCalls();
+  await beforeAllCalls();
 
-    await CreateCommand.run(
-        [
-            ACTOR_NAME,
-            "--template",
-            "project_empty",
-            "--skip-dependency-install",
-        ],
-        import.meta.url
-    );
+  await CreateCommand.run(
+    [ACTOR_NAME, "--template", "project_empty", "--skip-dependency-install"],
+    import.meta.url,
+  );
 
-    const code = `
+  const code = `
 import { Actor } from 'apify';
 
 Actor.main(async () => {
@@ -122,15 +117,15 @@ Actor.main(async () => {
     console.log('Done!');
 });`;
 
-    await writeFile(joinPath("main.js"), code);
+  await writeFile(joinPath("main.js"), code);
 
-    toggleCwdBetweenFullAndParentPath();
+  toggleCwdBetweenFullAndParentPath();
 
-    await PushCommand.run(["--no-prompt"], import.meta.url);
+  await PushCommand.run(["--no-prompt"], import.meta.url);
 });
 
 afterAll(async () => {
-    await afterAllCalls();
+  await afterAllCalls();
 });
 ```
 
@@ -138,5 +133,5 @@ afterAll(async () => {
 
 Running commands in tests can be done in two ways:
 
--   Importing the command class and calling `Command.run([], import.meta.url);`, where the array is the argv of the commands (think of it like the arguments you'd pass to the command in the terminal).
--   By importing `runCommand` from `@oclif/test` and using that helper to run the command.
+- Importing the command class and calling `Command.run([], import.meta.url);`, where the array is the argv of the commands (think of it like the arguments you'd pass to the command in the terminal).
+- By importing `runCommand` from `@oclif/test` and using that helper to run the command.
