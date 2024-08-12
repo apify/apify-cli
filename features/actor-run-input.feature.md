@@ -97,7 +97,7 @@
   ```
 - When I run:
   ```
-  $ apify actor run --input-file=-
+  $ apify run --input-file=-
   ```
 - Then the local Run has an input JSON:
   ```
@@ -114,7 +114,7 @@
   ```
 - When I run:
   ```
-  $ apify actor run'
+  $ apify actor run
   ```
 - Then the local Run has an input JSON:
   ```
