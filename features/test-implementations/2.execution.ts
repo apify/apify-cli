@@ -15,7 +15,7 @@ When<TestWorld>(/i run/i, async function (commandBlock: string) {
 		stdin: this.testActor.stdinInput,
 	});
 
-	const runResults = await getActorRunResults(this);
+	const runResults = await getActorRunResults(this).catch(() => null);
 
 	if (result.isOk()) {
 		const value = result.unwrap();

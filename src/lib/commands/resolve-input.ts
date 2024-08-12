@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { access, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import process from 'node:process';
 
@@ -76,11 +76,40 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 				return false;
 			}
 			default: {
+				const fileExists = await access(resolve(cwd, inputFlag))
+					.then(() => true)
+					.catch(() => false);
+
+				const inputLooksLikePath =
+					// JSON file
+					inputFlag.endsWith('.json') ||
+					inputFlag.endsWith('.json5') ||
+					// UNIX-style path access
+					inputFlag.startsWith('/') ||
+					inputFlag.startsWith('./') ||
+					inputFlag.startsWith('../') ||
+					// Home directory access
+					inputFlag.includes('~') ||
+					// Windows-style path access
+					inputFlag.startsWith('.\\') ||
+					inputFlag.startsWith('..\\') ||
+					inputFlag.includes('\\');
+
+				if (fileExists || inputLooksLikePath) {
+					error({
+						message: `Providing a JSON file path in the --input flag is not supported. Use the "--input-file=" flag instead`,
+					});
+					process.exitCode = CommandExitCodes.InvalidInput;
+					return false;
+				}
+
 				try {
 					const parsed = JSON.parse(inputFlag);
 
 					if (Array.isArray(parsed)) {
-						throw new Error('The provided input is invalid. It should be an object, not an array.');
+						error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+						process.exitCode = CommandExitCodes.InvalidInput;
+						return false;
 					}
 
 					input = parsed;
@@ -110,7 +139,9 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					const parsed = JSON.parse(fileContent);
 
 					if (Array.isArray(parsed)) {
-						throw new Error('The provided input is invalid. It should be an object, not an array.');
+						error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+						process.exitCode = CommandExitCodes.InvalidInput;
+						return false;
 					}
 
 					input = parsed;

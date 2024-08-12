@@ -83,7 +83,7 @@ Given<TestWorld>(/the actor implementation doesn't throw itself/i, { timeout: 12
 	await rm(new URL('./storage/key_value_stores/default/RECEIVED_INPUT.json', this.testActor.pwd), { force: true });
 });
 
-Given<TestWorld>(/the following input provided via standard input/i, function (jsonValue: string) {
+Given<TestWorld>(/the following input provided via (?:standard input|stdin)/i, function (jsonValue: string) {
 	assertWorldIsValid(this);
 
 	if (typeof jsonValue !== 'string') {
@@ -112,3 +112,34 @@ Given<TestWorld>(/the following input provided via standard input/i, function (j
 
 	this.testActor.stdinInput = jsonValue;
 });
+
+Given<TestWorld>(
+	/the following input provided via file `?(.+)`/i,
+	async function (filePath: string, jsonValue: string) {
+		assertWorldIsValid(this);
+
+		if (typeof jsonValue !== 'string') {
+			throw new TypeError(
+				'When using the `the following input provided via a file` step, you must provide a text block containing a JSON object',
+			);
+		}
+
+		const parsed = JSON.parse(jsonValue);
+
+		if (typeof parsed !== 'object' || !parsed) {
+			throw new TypeError(
+				'When using the `the following input provided via a file` step, you must provide a JSON object',
+			);
+		}
+
+		if (Array.isArray(parsed)) {
+			throw new TypeError(
+				'When using the `the following input provided via a file` step, you must provide a JSON object, not an array',
+			);
+		}
+
+		const file = new URL(`./${filePath}`, this.testActor.pwd);
+
+		await writeFile(file, jsonValue);
+	},
+);

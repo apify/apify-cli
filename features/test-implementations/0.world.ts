@@ -18,7 +18,7 @@ export interface TestWorld<Parameters = unknown[]> extends IWorld<Parameters> {
 		exitCode: number;
 		stdout: string;
 		stderr: string;
-		runResults: Awaited<ReturnType<typeof getActorRunResults>>;
+		runResults: Awaited<ReturnType<typeof getActorRunResults>> | null;
 	};
 	testActor?: {
 		/**
@@ -154,6 +154,19 @@ export function assertWorldHasRanCommand(
 ): asserts world is TestWorld & { testResults: { exitCode: number; stdout: string; stderr: string } } {
 	if (!world.testResults) {
 		throw new RangeError('A command must be ran before this assertion can be checked');
+	}
+}
+
+export function assertWorldHasRunResult(world: TestWorld): asserts world is TestWorld & {
+	testResults: {
+		exitCode: number;
+		stdout: string;
+		stderr: string;
+		runResults: Awaited<ReturnType<typeof getActorRunResults>>;
+	};
+} {
+	if (!world.testResults || !world.testResults.runResults) {
+		throw new RangeError('A command must be ran successfully before this assertion can be checked');
 	}
 }
 

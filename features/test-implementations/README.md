@@ -36,6 +36,15 @@ Currently, the following phrases are implemented:
   """
   ```
   - This step supports providing input to the CLI via stdin. This is useful for testing CLI commands that can optionally accept standard input.
+- `given the following input provided via file \`<filename>\``
+  - Example:
+  ```
+  Given the following input provided via file `input.json`
+  """
+  {"foo":"bar"}
+  """
+  ```
+  - This step supports providing input to the CLI via a file.
 
 Certain phrases may require a specific order to be executed in. Errors will be thrown accordingly if the order is not followed.
 
@@ -62,10 +71,10 @@ This file is intended to check the results of the execution. This is where you c
 
 Currently, the following phrases are implemented:
 
-- `then the local run has input JSON:` followed by a code block consisting of a JSON object
+- `then the local run has an input JSON:` followed by a code block consisting of a JSON object
   - Example:
   ```
-  Then the local run has input JSON:
+  Then the local run has an input JSON:
   `​`​`
   {"foo":"bar"}
   `​`​`
@@ -73,19 +82,28 @@ Currently, the following phrases are implemented:
   - This step checks the input of the actor run. It expects the input to be a JSON object. If the input is not a JSON object, an error will be thrown. This will ensure the overridden input is correctly passed to the actor run.
 - `then the local actor run has started`
   - This step checks if the actor run has actually started.
+- `then the local actor run hasn't even started`
+  - This step checks if the actor run hasn't started. If the actor run has started, an error will be thrown.
 - ``then the exit status code is `<number>`​``
   - Example:
   ```
   Then the exit status code is `0`
   ```
   - This step checks the exit status code of the CLI. If the exit status code is not the same as the one provided, an error will be thrown.
-- `then I don't see any Node.js exception`
-  - This step checks if there are any Node.js exceptions in the output. If there are any, an error will be thrown.
-- `then the local actor run hasn't even started`
-  - This step checks if the actor run hasn't started. If the actor run has started, an error will be thrown.
-- `then I can read text on stderr : "<text>"`
+- ``then the exit status code is not `<number>`​``
   - Example:
   ```
-  Then I can read text on stderr : "use `--input-file=` flag instead"
+  Then the exit status code is not `0`
+  ```
+  - This step checks the exit status code of the CLI. If the exit status code is the same as the one provided, an error will be thrown.
+- `then I don't see any Node.js exception`
+  - This step checks if there are any Node.js exceptions in the output. If there are any, an error will be thrown.
+- `then I can read text on stderr:` followed by a code block consisting of a string
+  - Example:
+  ```
+  Then I can read text on stderr:
+  `​`​`
+  use "--input-file=" flag instead
+  `​`​`
   ```
   - This step checks if the text provided is in the stderr output. If the text is not in the stderr output, an error will be thrown.
