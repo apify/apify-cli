@@ -168,7 +168,9 @@ export function assertWorldHasRunResult(world: TestWorld): asserts world is Test
 	};
 } {
 	if (!world.testResults || !world.testResults.runResults) {
-		throw new RangeError('A command must be ran successfully before this assertion can be checked');
+		throw new RangeError(
+			`A command must be ran successfully before this assertion can be checked. The current test results are: ${JSON.stringify(world.testResults, null, 2)}`,
+		);
 	}
 }
 
