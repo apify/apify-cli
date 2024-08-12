@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
@@ -44,6 +44,8 @@ export const ProjectRoot = new URL('../../', import.meta.url);
 export const DevRunFile = new URL('./bin/dev.js', ProjectRoot);
 
 export const TestTmpRoot = new URL('./test/tmp/', ProjectRoot);
+
+await mkdir(TestTmpRoot, { recursive: true });
 
 const require = createRequire(import.meta.url);
 
