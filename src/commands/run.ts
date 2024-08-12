@@ -105,6 +105,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 	async run() {
 		const cwd = process.cwd();
+
 		const { proxy, id: userId, token } = await getLocalUserInfo();
 		const localConfig = await getLocalConfigOrThrow(cwd);
 
@@ -363,8 +364,26 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const { inputSchema } = await readInputSchema({ cwd: process.cwd() });
 
 		if (!inputSchema) {
-			// We cannot validate input schema if it is not found.
-			return null;
+			if (!inputOverride) {
+				return null;
+			}
+
+			// We cannot validate input schema if it is not found -> default to no validation and overriding if flags are given
+			const existingInput = getLocalInput(process.cwd());
+
+			// Prepare the file path for where we'll temporarily store the validated input
+			const inputFilePath = join(
+				process.cwd(),
+				getLocalKeyValueStorePath(),
+				existingInput?.fileName ?? 'INPUT.json',
+			);
+
+			await writeFile(inputFilePath, JSON.stringify(inputOverride.input, null, 2));
+
+			return {
+				existingInput,
+				inputFilePath,
+			};
 		}
 
 		// Step 1: validate the input schema
