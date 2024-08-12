@@ -52,7 +52,9 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 				const parsed = JSON.parse(stdin);
 
 				if (Array.isArray(parsed)) {
-					throw new Error('The provided input is invalid. It should be an object, not an array.');
+					error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+					process.exitCode = CommandExitCodes.InvalidInput;
+					return false;
 				}
 
 				input = parsed;
@@ -134,6 +136,10 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 			default: {
 				const fullPath = resolve(cwd, inputFileFlag);
 
+				// Try reading the file, and if that fails, try reading it as JSON
+
+				let fsError: unknown;
+
 				try {
 					const fileContent = await readFile(fullPath, 'utf8');
 					const parsed = JSON.parse(fileContent);
@@ -147,9 +153,28 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					input = parsed;
 					source = inputFileFlag;
 				} catch (err) {
-					error({ message: `Cannot read input file at path "${fullPath}".\n  ${(err as Error).message}` });
-					process.exitCode = CommandExitCodes.InvalidInput;
-					return false;
+					fsError = err;
+				}
+
+				if (fsError) {
+					try {
+						const parsed = JSON.parse(inputFileFlag);
+
+						if (Array.isArray(parsed)) {
+							error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+							process.exitCode = CommandExitCodes.InvalidInput;
+							return false;
+						}
+
+						input = parsed;
+						source = inputFileFlag;
+					} catch {
+						error({
+							message: `Cannot read input file at path "${fullPath}".\n  ${(fsError as Error).message}`,
+						});
+						process.exitCode = CommandExitCodes.InvalidInput;
+						return false;
+					}
 				}
 			}
 		}

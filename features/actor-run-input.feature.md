@@ -114,7 +114,7 @@
   ```
 - When I run:
   ```
-  $ apify actor run
+  $ apify run
   ```
 - Then the local Run has an input JSON:
   ```

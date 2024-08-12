@@ -168,9 +168,23 @@ export function assertWorldHasRunResult(world: TestWorld): asserts world is Test
 	};
 } {
 	if (!world.testResults || !world.testResults.runResults) {
-		throw new RangeError(
-			`A command must be ran successfully before this assertion can be checked. The current test results are: ${JSON.stringify(world.testResults, null, 2)}`,
-		);
+		const message = ['A command must be ran successfully before this assertion can be checked.'];
+
+		if (world.testResults) {
+			message.push(`The command exited with code ${world.testResults.exitCode}`);
+
+			if (world.testResults.stdout) {
+				message.push(`stdout: ${world.testResults.stdout}`);
+			}
+
+			if (world.testResults.stderr) {
+				message.push(`stderr: ${world.testResults.stderr}`);
+			}
+		} else {
+			message.push('No command has been ran yet');
+		}
+
+		throw new RangeError(message.join('\n'));
 	}
 }
 
