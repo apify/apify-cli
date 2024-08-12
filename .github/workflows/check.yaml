@@ -159,6 +159,44 @@ jobs:
             - name: Run format checks
               run: yarn format
 
+
+    cucumber:
+      name: Cucumber tests
+      strategy:
+        fail-fast: false
+        matrix:
+          os: [ubuntu-latest, windows-latest]
+          # We only test LTS for now
+          node-version: [20]
+
+      runs-on: ${{ matrix.os }}
+
+      steps:
+        - uses: actions/checkout@v4
+
+        - name: Use Node.js ${{ matrix.node-version }}
+          uses: actions/setup-node@v4
+          with:
+            node-version: ${{ matrix.node-version }}
+
+        - name: Enable corepack
+          run: |
+            corepack enable
+            corepack prepare yarn@stable --activate
+
+        - name: Activate cache for Node.js ${{ matrix.node-version }}
+          uses: actions/setup-node@v4
+          with:
+            cache: yarn
+
+        - name: Install Dependencies
+          run: yarn
+
+        - name: Run Cucumber tests
+          env:
+            APIFY_CLI_DISABLE_TELEMETRY: 1
+          run: yarn test:cucumber
+
     # The deploy job is long but there are only 2 important parts. NPM publish
     # and triggering of docker image builds in the apify-actor-docker repo.
     deploy:

@@ -54,7 +54,7 @@ Given<TestWorld>(/my `?pwd`? is a fully initialized actor project directory/i, {
 	}
 });
 
-Given<TestWorld>(/the `actor.json` is valid/i, async function () {
+Given<TestWorld>(/the `actor.json` is valid/i, function () {
 	assertWorldIsValid(this);
 
 	// Well we have no code right now to validate the actor.json file, so we'll just assume it's valid. 🤷
@@ -67,7 +67,6 @@ Given<TestWorld>(/the actor implementation doesn't throw itself/i, { timeout: 12
 	const result = await executeCommand({
 		rawCommand: 'apify run',
 		cwd: this.testActor.pwd,
-		stdin: '{"wow": true}',
 	});
 
 	if (!result.isOk()) {
@@ -76,6 +75,40 @@ Given<TestWorld>(/the actor implementation doesn't throw itself/i, { timeout: 12
 		throw new Error(`Failed to run actor: ${error.message}`);
 	}
 
-	// This throws, which is plenty for this given step
+	// This throws if actor didn't work, which is plenty for this given step
 	getActorRunResults(this);
+
+	// Clean up after ourselves
+	await rm(new URL('./storage/key_value_stores/default/STARTED.json', this.testActor.pwd), { force: true });
+	await rm(new URL('./storage/key_value_stores/default/RECEIVED_INPUT.json', this.testActor.pwd), { force: true });
+});
+
+Given<TestWorld>(/the following input provided via standard input/i, function (jsonValue: string) {
+	assertWorldIsValid(this);
+
+	if (typeof jsonValue !== 'string') {
+		throw new TypeError(
+			'When using the `the following input provided via standard input` step, you must provide a text block containing a JSON object',
+		);
+	}
+
+	const parsed = JSON.parse(jsonValue);
+
+	if (typeof parsed !== 'object' || !parsed) {
+		throw new TypeError(
+			'When using the `the following input provided via standard input` step, you must provide a JSON object',
+		);
+	}
+
+	if (Array.isArray(parsed)) {
+		throw new TypeError(
+			'When using the `the following input provided via standard input` step, you must provide a JSON object, not an array',
+		);
+	}
+
+	if (this.testActor.stdinInput) {
+		console.warn(`\n  Warning: Overwriting existing stdin input: ${this.testActor.stdinInput}`);
+	}
+
+	this.testActor.stdinInput = jsonValue;
 });

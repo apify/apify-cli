@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { IWorld } from '@cucumber/cucumber';
 import { Result } from '@sapphire/result';
-import { execa, type Options, type ExecaError, type Result as ExecaResult } from 'execa';
+import { type Options, type ExecaError, type Result as ExecaResult, execaNode } from 'execa';
 
 type DynamicOptions = {
 	-readonly [P in keyof Options]: Options[P];
@@ -18,6 +18,7 @@ export interface TestWorld<Parameters = unknown[]> extends IWorld<Parameters> {
 		exitCode: number;
 		stdout: string;
 		stderr: string;
+		runResults: Awaited<ReturnType<typeof getActorRunResults>>;
 	};
 	testActor?: {
 		/**
@@ -28,6 +29,10 @@ export interface TestWorld<Parameters = unknown[]> extends IWorld<Parameters> {
 		 * Whether the actor is ready to execute `When` steps. This is only used to ensure order in certain `Given` requirements
 		 */
 		initialized?: boolean;
+		/**
+		 * Input that should be provided to the command via stdin
+		 */
+		stdinInput?: string;
 	};
 }
 
@@ -65,7 +70,8 @@ export async function executeCommand({
 	const [command] = commandToRun;
 
 	if (!command.startsWith('apify')) {
-		if (command.startsWith('echo')) {
+		// TODO: maybe try to parse these commands out and provide stdin that way, but for now, its better to get the writer to use the existing rules
+		if (command.startsWith('echo') || command.startsWith('jo')) {
 			throw new RangeError(
 				`When writing a test case, please use the "given the following input provided via standard input" rule for providing standard input to the command you're testing.\nReceived: ${command}`,
 			);
@@ -88,14 +94,41 @@ export async function executeCommand({
 		options.input = stdin;
 	}
 
+	function stripQuotes(str: string) {
+		return str.replace(/^['"]/, '').replace(/['"]$/, '');
+	}
+
+	// Who knows if this will be stable!
+	const commandArguments = cleanCommand.split(' ').flatMap((val) => {
+		const split = val.split('=');
+
+		// --input, --run
+		if (split.length === 1) {
+			return stripQuotes(val);
+		}
+
+		// --xxx=yyy[=zzz...]
+		const [key, ...value] = split;
+
+		// technically this shouldn't happen, but sanity insanity
+		if (value.length === 0) {
+			return stripQuotes(key);
+		}
+
+		// Join it back together, as we split it apart, hopefully keeping it 1:1 with what the user wrote
+		return [stripQuotes(key), stripQuotes(value.join('='))].join('=');
+	});
+
 	// Step 2: execute the command
 	return Result.fromAsync<
 		ExecaResult<{ cwd: typeof cwd; input: typeof stdin }>,
 		ExecaError<{ cwd: typeof cwd; input: typeof stdin }>
 	>(async () => {
-		const process = execa(
+		const process = execaNode(
+			tsxCli,
+			[fileURLToPath(DevRunFile), ...commandArguments],
 			options as { cwd: typeof cwd; input: typeof stdin },
-		)`node ${tsxCli} ${fileURLToPath(DevRunFile)} ${cleanCommand.split(' ')}`;
+		);
 
 		// This is needed as otherwise the process just hangs and never resolves when running certain cli commands that may try to read from stdin
 		if (!stdin) {
@@ -113,6 +146,14 @@ export function assertWorldIsValid(
 		throw new RangeError(
 			'Test actor must be initialized before running any subsequent background requirements. You may have the order of your steps wrong. The "Given my `pwd` is a fully initialized Actor project directory" step needs to run before this step',
 		);
+	}
+}
+
+export function assertWorldHasRanCommand(
+	world: TestWorld,
+): asserts world is TestWorld & { testResults: { exitCode: number; stdout: string; stderr: string } } {
+	if (!world.testResults) {
+		throw new RangeError('A command must be ran before this assertion can be checked');
 	}
 }
 
@@ -134,7 +175,7 @@ export async function getActorRunResults(world: TestWorld & { testActor: { pwd: 
 	}
 
 	return {
-		started: result,
-		receivedInput,
+		started: parsed,
+		receivedInput: receivedInput ? JSON.parse(receivedInput) : null,
 	};
 }
