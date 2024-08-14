@@ -3,316 +3,278 @@
 name: Check & Release
 
 on:
-    # Push to master will deploy a beta version
-    push:
-        branches: [master, renovate/**]
-    pull_request:
-        branches: [master]
-    # A release via GitHub releases will deploy a latest version
-    release:
-        types: [published]
+  # Push to master will deploy a beta version
+  push:
+    branches: [master, renovate/**]
+  pull_request:
+    branches: [master]
+  # A release via GitHub releases will deploy a latest version
+  release:
+    types: [published]
 
 jobs:
-    build_and_test:
-        name: Build & Test
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
-        runs-on: ${{ matrix.os }}
+  build_and_test:
+    name: Build & Test
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ${{ matrix.os }}
 
-        strategy:
-            fail-fast: false
-            matrix:
-                os: [ubuntu-latest, windows-latest]
-                node-version: [18, 20, 22]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node-version: [18, 20, 22]
 
-        steps:
-            - name: Cancel Workflow Action
-              uses: styfle/cancel-workflow-action@0.12.1
-              with:
-                  access_token: ${{ github.token }}
+    steps:
+      - name: Cancel Workflow Action
+        uses: styfle/cancel-workflow-action@0.12.1
+        with:
+          access_token: ${{ github.token }}
 
-            - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-            - name: Use Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v4
-              with:
-                  node-version: ${{ matrix.node-version }}
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
+      - name: Enable corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js ${{ matrix.node-version }}
-              uses: actions/setup-node@v4
-              with:
-                  cache: yarn
+      - name: Activate cache for Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
 
-            - name: Install Dependencies
-              run: yarn
+      - name: Install Dependencies
+        run: yarn
 
-            - name: Run Tests
-              env:
-                  TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
-                  APIFY_CLI_DISABLE_TELEMETRY: 1
-              run: yarn test
+      - name: Run Tests
+        env:
+          TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
+          APIFY_CLI_DISABLE_TELEMETRY: 1
+        run: yarn test
 
-    test_python_support:
-        name: Test Python template support
-        strategy:
-            fail-fast: false
-            matrix:
-                os: [ubuntu-latest, windows-latest]
-                python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
-        runs-on: ${{ matrix.os }}
+  test_python_support:
+    name: Test Python template support
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    runs-on: ${{ matrix.os }}
 
-        steps:
-            - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Use Node.js 20
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
+      - name: Enable corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 20
-              uses: actions/setup-node@v4
-              with:
-                  cache: yarn
+      - name: Activate cache for Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
 
-            - name: Install Dependencies
-              run: yarn
+      - name: Install Dependencies
+        run: yarn
 
-            - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v5
-              with:
-                  python-version: ${{ matrix.python-version }}
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
-            - name: Run Python tests
-              env:
-                  TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
-                  APIFY_CLI_DISABLE_TELEMETRY: 1
-              run: yarn test-python
+      - name: Run Python tests
+        env:
+          TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
+          APIFY_CLI_DISABLE_TELEMETRY: 1
+        run: yarn test-python
 
-    docs:
-        name: Docs build
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
-        runs-on: ubuntu-latest
-        steps:
-            - name: Checkout Source code
-              uses: actions/checkout@v4
+  docs:
+    name: Docs build
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source code
+        uses: actions/checkout@v4
 
-            - name: Use Node.js 20
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
+      - name: Enable corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 20
-              uses: actions/setup-node@v4
-              with:
-                  cache: yarn
+      - name: Activate cache for Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
 
-            - name: Install Dependencies
-              run: yarn
+      - name: Install Dependencies
+        run: yarn
 
-            - name: Build & deploy docs
-              run: |
-                  cd website
-                  yarn
-                  yarn build
-    lint:
-        name: Lint
-        runs-on: ubuntu-latest
+      - name: Build & deploy docs
+        run: |
+          cd website
+          yarn
+          yarn build
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
 
-        steps:
-            - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-            - name: Use Node.js 20
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
+      - name: Enable corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 20
-              uses: actions/setup-node@v4
-              with:
-                  cache: yarn
+      - name: Activate cache for Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
 
-            - name: Install Dependencies
-              run: yarn
+      - name: Install Dependencies
+        run: yarn
 
-            - name: Run lint checks
-              run: yarn lint
+      - name: Run lint checks
+        run: yarn lint
 
-            - name: Run format checks
-              run: yarn format
+      - name: Run format checks
+        run: yarn format
 
+  # The deploy job is long but there are only 2 important parts. NPM publish
+  # and triggering of docker image builds in the apify-actor-docker repo.
+  deploy:
+    name: Publish to NPM
+    if: github.repository_owner == 'apify' && (github.ref == 'refs/heads/master' || github.event_name == 'release') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'docs:')
+    needs: [build_and_test, test_python_support, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+          fetch-depth: 0
 
-    cucumber:
-      name: Cucumber tests
-      strategy:
-        fail-fast: false
-        matrix:
-          os: [ubuntu-latest, windows-latest]
-          # We only test LTS for now
-          node-version: [20]
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
 
-      runs-on: ${{ matrix.os }}
+      - name: Enable corepack
+        run: |
+          corepack enable
+          corepack prepare yarn@stable --activate
 
-      steps:
-        - uses: actions/checkout@v4
+      - name: Activate cache for Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          cache: yarn
 
-        - name: Use Node.js ${{ matrix.node-version }}
-          uses: actions/setup-node@v4
-          with:
-            node-version: ${{ matrix.node-version }}
+      - name: Set git identity
+        run: |
+          git config --global user.name 'Apify Service Account'
+          git config --global user.email 'apify-service-account@users.noreply.github.com'
 
-        - name: Enable corepack
-          run: |
-            corepack enable
-            corepack prepare yarn@stable --activate
+      - name: Install Dependencies
+        run: yarn
 
-        - name: Activate cache for Node.js ${{ matrix.node-version }}
-          uses: actions/setup-node@v4
-          with:
-            cache: yarn
+      # Determine if this is a beta or latest release
+      - name: Set Release Tag
+        run: echo "RELEASE_TAG=$(if [ ${{ github.event_name }} = release ]; then echo latest; else echo beta; fi)" >> $GITHUB_ENV
 
-        - name: Install Dependencies
-          run: yarn
+      # Check version consistency and increment pre-release version number for beta only.
+      - name: Bump pre-release version
+        if: env.RELEASE_TAG == 'beta'
+        run: yarn tsx ./.github/scripts/before-beta-release.ts
 
-        - name: Run Cucumber tests
-          env:
-            APIFY_CLI_DISABLE_TELEMETRY: 1
-          run: yarn test:cucumber
+      - name: Publish to NPM
+        run: |
+          yarn config set npmAuthToken ${NODE_AUTH_TOKEN}
+          yarn npm publish --tag ${{ env.RELEASE_TAG }} --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
 
-    # The deploy job is long but there are only 2 important parts. NPM publish
-    # and triggering of docker image builds in the apify-actor-docker repo.
-    deploy:
-        name: Publish to NPM
-        if: github.repository_owner == 'apify' && (github.ref == 'refs/heads/master' || github.event_name == 'release') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'docs:')
-        needs: [build_and_test, test_python_support, lint]
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-              with:
-                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
-                  fetch-depth: 0
+      # Latest version is tagged by the release process so we only tag beta here.
+      - name: Tag Version
+        if: env.RELEASE_TAG == 'beta'
+        run: |
+          git_tag=v`node -p "require('./package.json').version"`
+          git tag $git_tag
+          git push origin $git_tag
 
-            - name: Use Node.js 20
-              uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  registry-url: https://registry.npmjs.org
+      - name: Update readme
+        if: env.RELEASE_TAG == 'latest'
+        run: |
+          git update-index --assume-unchanged .yarnrc.yml
+          git add .
+          git diff-index --quiet HEAD || git commit -m "[skip ci] update README with latest command reference"
+          git push origin HEAD:master
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
+  update_homebrew_formula:
+    name: Update Homebrew Formula
+    needs: [deploy]
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'apify' && github.event_name == 'release' && github.event.action == 'published'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-            - name: Activate cache for Node.js 20
-              uses: actions/setup-node@v4
-              with:
-                  cache: yarn
+      - name: Set git identity
+        run: |
+          git config --global user.name 'Apify Service Account'
+          git config --global user.email 'apify-service-account@users.noreply.github.com'
 
-            - name: Set git identity
-              run: |
-                  git config --global user.name 'Apify Service Account'
-                  git config --global user.email 'apify-service-account@users.noreply.github.com'
+      - name: Set up Homebrew
+        uses: Homebrew/actions/setup-homebrew@master
 
-            - name: Install Dependencies
-              run: yarn
+      # It can happen that the updated package version is not available right after the `npm publish` command finishes
+      # Try waiting 3 minutes until the updated package version is available
+      - name: Wait for updated package to be available on NPM
+        run: |
+          PACKAGE_VERSION=`node -p "require('./package.json').version"`
+          PACKAGE_DEFINITION_URL="https://registry.npmjs.org/apify-cli/${PACKAGE_VERSION}"
 
-            # Determine if this is a beta or latest release
-            - name: Set Release Tag
-              run: echo "RELEASE_TAG=$(if [ ${{ github.event_name }} = release ]; then echo latest; else echo beta; fi)" >> $GITHUB_ENV
+          for _i in {1..30}; do
+              curl -sf "${PACKAGE_DEFINITION_URL}" &> /dev/null && exit 0;
+              echo "Package 'apify-cli' version '${PACKAGE_VERSION}' is not available yet, will retry in 10 seconds."
+              sleep 10;
+          done
+          curl -sf "${PACKAGE_DEFINITION_URL}" &> /dev/null || exit 1;
 
-            # Check version consistency and increment pre-release version number for beta only.
-            - name: Bump pre-release version
-              if: env.RELEASE_TAG == 'beta'
-              run: yarn tsx ./.github/scripts/before-beta-release.ts
+      - name: Update Homebrew formula in apify/homebrew-tap repo
+        run: |
+          PACKAGE_VERSION=`node -p "require('./package.json').version"`
+          gh workflow run update_formula.yaml --repo apify/homebrew-tap --field package=apify-cli --field version=$PACKAGE_VERSION
+        env:
+          GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
-            - name: Publish to NPM
-              run: |
-                  yarn config set npmAuthToken ${NODE_AUTH_TOKEN}
-                  yarn npm publish --tag ${{ env.RELEASE_TAG }} --access public
-              env:
-                  NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+      - name: Send PR with formula update to homebrew/homebrew-core repo
+        run: |
+          PACKAGE_VERSION=`node -p "require('./package.json').version"`
+          brew tap --force homebrew/core
+          brew bump-formula-pr apify-cli \
+            --version ${PACKAGE_VERSION} \
+            --no-browse \
+            --message "Automatic update of the \`apify-cli\` formula.
 
-            # Latest version is tagged by the release process so we only tag beta here.
-            - name: Tag Version
-              if: env.RELEASE_TAG == 'beta'
-              run: |
-                  git_tag=v`node -p "require('./package.json').version"`
-                  git tag $git_tag
-                  git push origin $git_tag
-
-            - name: Update readme
-              if: env.RELEASE_TAG == 'latest'
-              run: |
-                  git update-index --assume-unchanged .yarnrc.yml
-                  git add .
-                  git diff-index --quiet HEAD || git commit -m "[skip ci] update README with latest command reference"
-                  git push origin HEAD:master
-
-    update_homebrew_formula:
-        name: Update Homebrew Formula
-        needs: [deploy]
-        runs-on: ubuntu-latest
-        if: github.repository_owner == 'apify' && github.event_name == 'release' && github.event.action == 'published'
-        steps:
-            - name: Checkout repository
-              uses: actions/checkout@v4
-
-            - name: Set git identity
-              run: |
-                  git config --global user.name 'Apify Service Account'
-                  git config --global user.email 'apify-service-account@users.noreply.github.com'
-
-            - name: Set up Homebrew
-              uses: Homebrew/actions/setup-homebrew@master
-
-            # It can happen that the updated package version is not available right after the `npm publish` command finishes
-            # Try waiting 3 minutes until the updated package version is available
-            - name: Wait for updated package to be available on NPM
-              run: |
-                  PACKAGE_VERSION=`node -p "require('./package.json').version"`
-                  PACKAGE_DEFINITION_URL="https://registry.npmjs.org/apify-cli/${PACKAGE_VERSION}"
-
-                  for _i in {1..30}; do
-                      curl -sf "${PACKAGE_DEFINITION_URL}" &> /dev/null && exit 0;
-                      echo "Package 'apify-cli' version '${PACKAGE_VERSION}' is not available yet, will retry in 10 seconds."
-                      sleep 10;
-                  done
-                  curl -sf "${PACKAGE_DEFINITION_URL}" &> /dev/null || exit 1;
-
-            - name: Update Homebrew formula in apify/homebrew-tap repo
-              run: |
-                  PACKAGE_VERSION=`node -p "require('./package.json').version"`
-                  gh workflow run update_formula.yaml --repo apify/homebrew-tap --field package=apify-cli --field version=$PACKAGE_VERSION
-              env:
-                  GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
-
-            - name: Send PR with formula update to homebrew/homebrew-core repo
-              run: |
-                  PACKAGE_VERSION=`node -p "require('./package.json').version"`
-                  brew tap --force homebrew/core
-                  brew bump-formula-pr apify-cli \
-                    --version ${PACKAGE_VERSION} \
-                    --no-browse \
-                    --message "Automatic update of the \`apify-cli\` formula.
-
-                    CC @fnesveda @B4nan @vladfrangu"
-              env:
-                  HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+            CC @fnesveda @B4nan @vladfrangu"
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
