@@ -1,7 +1,7 @@
 import process from 'node:process';
 
 import { Args, Flags } from '@oclif/core';
-import { ActorStartOptions, ApifyClient } from 'apify-client';
+import type { ActorStartOptions, ApifyClient } from 'apify-client';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
@@ -54,7 +54,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 			client: apifyClient,
 			localActorName: localConfig.name as string | undefined,
 			usernameOrId,
-			actorId: this.args.actorId,
+			providedActorNameOrId: this.args.actorId,
 		});
 
 		const runOpts: ActorStartOptions = {
@@ -100,13 +100,18 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 		client,
 		localActorName,
 		usernameOrId,
-		actorId,
-	}: { client: ApifyClient; localActorName: string | undefined; usernameOrId: string; actorId?: string }) {
+		providedActorNameOrId,
+	}: {
+		client: ApifyClient;
+		localActorName: string | undefined;
+		usernameOrId: string;
+		providedActorNameOrId?: string;
+	}) {
 		// Full ID
-		if (actorId?.includes('/')) {
-			const actor = await client.actor(actorId).get();
+		if (providedActorNameOrId?.includes('/')) {
+			const actor = await client.actor(providedActorNameOrId).get();
 			if (!actor) {
-				throw new Error(`Cannot find Actor with ID '${actorId}' in your account.`);
+				throw new Error(`Cannot find Actor with ID '${providedActorNameOrId}' in your account.`);
 			}
 
 			return {
@@ -115,18 +120,27 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 			};
 		}
 
-		// Try fetching Actor directly by name
-		if (actorId) {
-			const actor = await client.actor(`${usernameOrId}/${actorId.toLowerCase()}`).get();
+		// Try fetching Actor directly by name/id
+		if (providedActorNameOrId) {
+			const actorById = await client.actor(providedActorNameOrId).get();
 
-			if (!actor) {
-				throw new Error(`Cannot find Actor with name '${actorId}' in your account.`);
+			if (actorById) {
+				return {
+					userFriendlyId: `${actorById.username}/${actorById.name}`,
+					id: actorById.id,
+				};
 			}
 
-			return {
-				userFriendlyId: `${actor.username}/${actor.name}`,
-				id: actor.id,
-			};
+			const actorByName = await client.actor(`${usernameOrId}/${providedActorNameOrId.toLowerCase()}`).get();
+
+			if (actorByName) {
+				return {
+					userFriendlyId: `${actorByName.username}/${actorByName.name}`,
+					id: actorByName.id,
+				};
+			}
+
+			throw new Error(`Cannot find Actor with name or ID '${providedActorNameOrId}' in your account.`);
 		}
 
 		if (localActorName) {
