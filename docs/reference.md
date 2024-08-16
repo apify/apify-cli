@@ -40,7 +40,7 @@ DESCRIPTION
   Commands are designed to be used in Actor runs. All commands are in PoC state, do not use in production environments.
 ```
 
-_See code: [src/commands/actor/index.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/actor/index.ts)_
+_See code: [src/commands/actor/index.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/actor/index.ts)_
 
 ## `apify actor get-input`
 
@@ -54,7 +54,7 @@ DESCRIPTION
   Gets the Actor input value from the default key-value store associated with the Actor run.
 ```
 
-_See code: [src/commands/actor/get-input.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/actor/get-input.ts)_
+_See code: [src/commands/actor/get-input.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/actor/get-input.ts)_
 
 ## `apify actor get-value KEY`
 
@@ -71,7 +71,7 @@ DESCRIPTION
   Gets a value from the default key-value store associated with the Actor run.
 ```
 
-_See code: [src/commands/actor/get-value.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/actor/get-value.ts)_
+_See code: [src/commands/actor/get-value.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/actor/get-value.ts)_
 
 ## `apify actor push-data [ITEM]`
 
@@ -93,7 +93,7 @@ DESCRIPTION
   $ cat ./test.json | apify actor push-data
 ```
 
-_See code: [src/commands/actor/push-data.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/actor/push-data.ts)_
+_See code: [src/commands/actor/push-data.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/actor/push-data.ts)_
 
 ## `apify actor set-value KEY [VALUE]`
 
@@ -122,7 +122,7 @@ DESCRIPTION
   $ cat ./my-text-file.txt | apify actor set-value KEY --contentType text/plain
 ```
 
-_See code: [src/commands/actor/set-value.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/actor/set-value.ts)_
+_See code: [src/commands/actor/set-value.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/actor/set-value.ts)_
 
 ## `apify call [ACTORID]`
 
@@ -152,7 +152,7 @@ DESCRIPTION
   takes input for the Actor from the default local key-value store by default.
 ```
 
-_See code: [src/commands/call.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/call.ts)_
+_See code: [src/commands/call.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/call.ts)_
 
 ## `apify create [ACTORNAME]`
 
@@ -177,7 +177,7 @@ DESCRIPTION
   Creates a new Actor project directory from a selected boilerplate template.
 ```
 
-_See code: [src/commands/create.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/create.ts)_
+_See code: [src/commands/create.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/create.ts)_
 
 ## `apify help [COMMAND]`
 
@@ -212,7 +212,7 @@ DESCRIPTION
   The information is printed to the console.
 ```
 
-_See code: [src/commands/info.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/info.ts)_
+_See code: [src/commands/info.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/info.ts)_
 
 ## `apify init [ACTORNAME]`
 
@@ -240,7 +240,7 @@ DESCRIPTION
   WARNING: The directory at "storage" will be overwritten if it already exists.
 ```
 
-_See code: [src/commands/init.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/init.ts)_
 
 ## `apify login`
 
@@ -261,7 +261,7 @@ DESCRIPTION
   "apify" commands. To log out, call "apify logout".
 ```
 
-_See code: [src/commands/login.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/login.ts)_
+_See code: [src/commands/login.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/login.ts)_
 
 ## `apify logout`
 
@@ -277,7 +277,7 @@ DESCRIPTION
   call "apify login".
 ```
 
-_See code: [src/commands/logout.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/logout.ts)_
+_See code: [src/commands/logout.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/logout.ts)_
 
 ## `apify pull [ACTORID]`
 
@@ -299,7 +299,7 @@ DESCRIPTION
   cloned. If it is defined as Web IDE, it will fetch the files.
 ```
 
-_See code: [src/commands/pull.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/pull.ts)_
+_See code: [src/commands/pull.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/pull.ts)_
 
 ## `apify push [ACTORID]`
 
@@ -337,7 +337,7 @@ DESCRIPTION
   overwritten with --force flag.
 ```
 
-_See code: [src/commands/push.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/push.ts)_
+_See code: [src/commands/push.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/push.ts)_
 
 ## `apify run`
 
@@ -373,7 +373,7 @@ DESCRIPTION
   package.json file. You can set up your own main file or environment variables by changing it.
 ```
 
-_See code: [src/commands/run.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/run.ts)_
+_See code: [src/commands/run.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/run.ts)_
 
 ## `apify secrets`
 
@@ -403,7 +403,7 @@ DESCRIPTION
   of the Actor.
 ```
 
-_See code: [src/commands/secrets/index.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/secrets/index.ts)_
+_See code: [src/commands/secrets/index.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/secrets/index.ts)_
 
 ## `apify secrets add NAME VALUE`
 
@@ -422,7 +422,7 @@ DESCRIPTION
   The secrets are stored to a file at ~/.apify
 ```
 
-_See code: [src/commands/secrets/add.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/secrets/add.ts)_
+_See code: [src/commands/secrets/add.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/secrets/add.ts)_
 
 ## `apify secrets rm NAME`
 
@@ -439,7 +439,7 @@ DESCRIPTION
   Removes the secret.
 ```
 
-_See code: [src/commands/secrets/rm.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/secrets/rm.ts)_
+_See code: [src/commands/secrets/rm.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/secrets/rm.ts)_
 
 ## `apify task`
 
@@ -453,7 +453,7 @@ DESCRIPTION
   Commands are designed to be used to interact with Tasks.
 ```
 
-_See code: [src/commands/task/index.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/task/index.ts)_
+_See code: [src/commands/task/index.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/task/index.ts)_
 
 ## `apify task run TASKID`
 
@@ -478,7 +478,7 @@ DESCRIPTION
   takes input for the Actor from the default local key-value store by default.
 ```
 
-_See code: [src/commands/task/run.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/task/run.ts)_
+_See code: [src/commands/task/run.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/task/run.ts)_
 
 ## `apify validate-schema [PATH]`
 
@@ -503,6 +503,6 @@ DESCRIPTION
   You can also pass any custom path to your input schema to have it validated instead.
 ```
 
-_See code: [src/commands/validate-schema.ts](https://github.com/apify/apify-cli/blob/v0.20.2/src/commands/validate-schema.ts)_
+_See code: [src/commands/validate-schema.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/validate-schema.ts)_
 <!-- commandsstop -->
 <!-- prettier-ignore-end -->

@@ -40,6 +40,7 @@ const { ActorCallCommand } = await import('../../src/commands/call.js');
 
 describe('apify call', () => {
 	let actorId: string;
+	let apifyId: string;
 
 	beforeAll(async () => {
 		await beforeAllCalls();
@@ -77,6 +78,11 @@ describe('apify call', () => {
 		const lastBuild = builds.items.pop();
 		await waitForBuildToFinishWithTimeout(testUserClient, lastBuild!.id);
 
+		apifyId = await testUserClient
+			.actor(actorId)
+			.get()
+			.then((actor) => actor!.id);
+
 		stdin.end();
 	});
 
@@ -101,6 +107,21 @@ describe('apify call', () => {
 
 	it('should work with just the Actor name', async () => {
 		await expect(ActorCallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
+
+		const actorClient = testUserClient.actor(actorId);
+		const runs = await actorClient.runs().list();
+		const lastRun = runs.items.pop();
+		const lastRunDetail = await testUserClient.run(lastRun!.id).get();
+		const output = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('OUTPUT');
+		const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
+
+		expect(EXPECTED_OUTPUT).toStrictEqual(output!.value);
+		expect(EXPECTED_INPUT).toStrictEqual(input!.value);
+		expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
+	});
+
+	it('should work with just the Actor ID', async () => {
+		await expect(ActorCallCommand.run([apifyId], import.meta.url)).resolves.toBeUndefined();
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
