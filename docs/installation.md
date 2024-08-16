@@ -156,14 +156,14 @@ For example, `.actor/actor.json` file can look as follows:
   "version": "0.0",
   "buildTag": "latest",
   "environmentVariables": {
-      "MYSQL_USER": "my_username",
-      "MYSQL_PASSWORD": "@mySecretPassword"
+    "MYSQL_USER": "my_username",
+    "MYSQL_PASSWORD": "@mySecretPassword"
   },
   "dockerfile": "./Dockerfile",
   "readme": "./ACTOR.md",
   "input": "./input_schema.json",
   "storages": {
-    "dataset": "./dataset_schema.json",
+    "dataset": "./dataset_schema.json"
   }
 }
 ```

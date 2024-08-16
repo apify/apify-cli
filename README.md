@@ -19,7 +19,6 @@ Note that Actors running on the Apify platform are executed in Docker containers
 you can build your Actors in any programming language.
 However, we recommend using JavaScript / Node.js, for which we provide most libraries and support.
 
-
 ## Installation
 
 ### Via Homebrew
@@ -66,6 +65,7 @@ apify --version
 ```
 
 which should print something like:
+
 ```
 apify-cli/0.10.0 darwin-x64 node-v16.14.2
 ```
@@ -94,10 +94,12 @@ for the Actor and a few configuration files.
 cd ./my/awesome/project
 apify init
 ```
+
 This command will only set up local Actor development environment in an existing directory,
 i.e. it will create the `.actor/actor.json` file and `apify_storage` directory.
 
 Before you can run your project locally using `apify run`, you have to set up the right start command in `package.json` under scripts.start. For example:
+
 ```text
 {
     ...
@@ -107,6 +109,7 @@ Before you can run your project locally using `apify run`, you have to set up th
     ...
 }
 ```
+
 You can find more information about by running `apify help run`.
 
 ### Create a new Actor from Scrapy project
@@ -133,7 +136,6 @@ Before you can interact with the Apify cloud, you need to [create an Apify accou
 and log in to it using the above command. You will be prompted for
 your [Apify API token](https://console.apify.com/settings/integrations).
 Note that the command will store the API token and other sensitive information to `~/.apify`.
-
 
 ### Push the Actor to the Apify cloud
 
@@ -165,7 +167,6 @@ Make sure you commit this file to the Git repository.
 
 For example, `.actor/actor.json` file can look as follows:
 
-
 ```json
 {
   "actorSpecification": 1,
@@ -173,8 +174,8 @@ For example, `.actor/actor.json` file can look as follows:
   "version": "0.0",
   "buildTag": "latest",
   "environmentVariables": {
-      "MYSQL_USER": "my_username",
-      "MYSQL_PASSWORD": "@mySecretPassword"
+    "MYSQL_USER": "my_username",
+    "MYSQL_PASSWORD": "@mySecretPassword"
   },
   "dockerfile": "./Dockerfile",
   "readme": "./ACTOR.md",
@@ -198,48 +199,54 @@ You can embed your [input schema](https://docs.apify.com/actors/development/inpu
 You can define the schema of the items in your dataset under the `storages.dataset` field. This can be either an embedded object or a path to a JSON schema file. You can read more about the schema of your Actor output [here](https://docs.apify.com/actors/development/output-schema#specification-version-1).
 
 **Note on migration from deprecated config "apify.json"**\
-*Note that previously, Actor config was stored in the `apify.json` file that has been deprecated. You can find the (very slight) differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).*
+_Note that previously, Actor config was stored in the `apify.json` file that has been deprecated. You can find the (very slight) differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md)._
 
 ## Environment variables
 
 There are two options how you can set up environment variables for Actors.
 
 ### Set up environment variables in .actor/actor.json
+
 All keys from `env` will be set as environment variables into Apify platform after you push Actor to Apify. Current values on Apify will be overridden.
+
 ```json
 {
-    "actorSpecification": 1,
-    "name": "dataset-to-mysql",
-    "version": "0.1",
-    "buildTag": "latest",
-    "environmentVariables": {
-      "MYSQL_USER": "my_username",
-      "MYSQL_PASSWORD": "@mySecretPassword"
-    }
+  "actorSpecification": 1,
+  "name": "dataset-to-mysql",
+  "version": "0.1",
+  "buildTag": "latest",
+  "environmentVariables": {
+    "MYSQL_USER": "my_username",
+    "MYSQL_PASSWORD": "@mySecretPassword"
+  }
 }
 ```
 
 ### Set up environment variables in Apify Console
+
 In [Apify Console](https://console.apify.com/actors) select your Actor, you can set up variables into Source tab.
 After setting up variables in the app, remove the `environmentVariables` from `.actor/actor.json`. Otherwise, variables from `.actor/actor.json` will override variables in the app.
+
 ```json
 {
-    "actorSpecification": 1,
-    "name": "dataset-to-mysql",
-    "version": "0.1",
-    "buildTag": "latest"
+  "actorSpecification": 1,
+  "name": "dataset-to-mysql",
+  "version": "0.1",
+  "buildTag": "latest"
 }
 ```
-
 
 #### How to set secret environment variables in .actor/actor.json
 
 CLI provides commands to manage secrets environment variables. Secrets are stored to the `~/.apify` directory.
 You can add a new secret using the command:
+
 ```bash
 apify secrets:add mySecretPassword pwd1234
 ```
+
 After adding a new secret you can use the secret in `.actor/actor.json`.
+
 ```text
 {
     "actorSpecification": 1,
@@ -269,11 +276,11 @@ apify help COMMAND
 Still haven't found what you were looking for? Please go to [Apify Help center](https://www.apify.com/help)
 or [contact us](https://www.apify.com/contact).
 
-
 ## Command reference
 
 This section contains printouts of `apify help` for all commands.
 
+<!-- prettier-ignore-start -->
 <!-- commands -->
 * [`apify actor`](#apify-actor)
 * [`apify actor get-input`](#apify-actor-get-input)
@@ -774,3 +781,4 @@ DESCRIPTION
 
 _See code: [src/commands/validate-schema.ts](https://github.com/apify/apify-cli/blob/v0.20.3/src/commands/validate-schema.ts)_
 <!-- commandsstop -->
+<!-- prettier-ignore-end -->

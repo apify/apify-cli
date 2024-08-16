@@ -1,6 +1,6 @@
 {
     "name": "apify-cli",
-    "version": "0.20.3",
+    "version": "0.20.4",
     "description": "Apify command-line interface (CLI) helps you manage the Apify cloud platform and develop, build, and deploy Apify Actors.",
     "exports": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -9,10 +9,11 @@
         "dev": "tsx ./bin/dev.js",
         "test": "vitest run",
         "test-python": "vitest run -t '.*\\[python\\]'",
+        "test:cucumber": "cross-env NODE_OPTIONS=\"--import tsx\" cucumber-js",
         "lint": "eslint src test .yarn/plugins --ext .ts,.cjs,.mjs",
         "lint:fix": "eslint src test .yarn/plugins --fix --ext .ts,.cjs,.mjs",
-        "format": "biome format .",
-        "format:fix": "biome format --write .",
+        "format": "biome format . && prettier --check ./**/*.md",
+        "format:fix": "biome format --write . && prettier --write ./**/*.md",
         "clean": "rimraf dist",
         "build": "yarn clean && tsc && tsc -p tsconfig.typechecking.json",
         "postpack": "rimraf oclif.manifest.json",
@@ -102,7 +103,9 @@
         "@apify/tsconfig": "^0.1.0",
         "@biomejs/biome": "^1.8.3",
         "@crawlee/types": "^3.11.1",
+        "@cucumber/cucumber": "^10.8.0",
         "@oclif/test": "^4.0.8",
+        "@sapphire/result": "^2.6.6",
         "@types/adm-zip": "^0.5.5",
         "@types/archiver": "^6.0.2",
         "@types/chai": "^4.3.17",
@@ -119,12 +122,16 @@
         "@typescript-eslint/eslint-plugin": "^7.0.2",
         "@typescript-eslint/parser": "^7.0.2",
         "@yarnpkg/core": "^4.1.2",
+        "apify": "^3.2.4",
         "chai": "^4.4.1",
+        "cross-env": "^7.0.3",
         "eslint": "^8.57.0",
         "eslint-config-prettier": "^9.1.0",
+        "execa": "^9.3.0",
         "lint-staged": "^15.2.8",
         "mock-stdin": "^1.0.0",
         "oclif": "^4.14.15",
+        "prettier": "^3.3.3",
         "tsx": "^4.16.5",
         "typescript": "^5.5.4",
         "vitest": "^2.0.5"
@@ -160,6 +167,7 @@
     "packageManager": "yarn@4.4.0",
     "lint-staged": {
         "*": "biome format --write --no-errors-on-unmatched",
-        "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts"
+        "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts",
+        "*.md": "prettier --write"
     }
 }
