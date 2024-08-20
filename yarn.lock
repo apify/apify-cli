@@ -293,7 +293,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-s3@npm:^3.614.0":
+"@aws-sdk/client-s3@npm:^3.633.0":
   version: 3.633.0
   resolution: "@aws-sdk/client-s3@npm:3.633.0"
   dependencies:
@@ -2917,20 +2917,20 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*, @types/node@npm:^22.1.0":
-  version: 22.4.0
-  resolution: "@types/node@npm:22.4.0"
+  version: 22.4.1
+  resolution: "@types/node@npm:22.4.1"
   dependencies:
     undici-types: "npm:~6.19.2"
-  checksum: 10c0/84cd094b19a27e0db425f1d02614e4f7ac59b5eb3b21e288c8f8d4d0a4c9ad370107bc1a649d4c2b4e810cd133feea26e0bbf7e7c617f93e9e139d6d2568cf50
+  checksum: 10c0/e42607438fcbd3a6aebd09084868fa0b22a4b0daf9eda79ed615df7ff8ae95e35ea56e090e1f3140ebae76b640abe42d4a6d5b60c0819eadf499adca737305b6
   languageName: node
   linkType: hard
 
 "@types/node@npm:^20.11.20":
-  version: 20.16.0
-  resolution: "@types/node@npm:20.16.0"
+  version: 20.16.1
+  resolution: "@types/node@npm:20.16.1"
   dependencies:
     undici-types: "npm:~6.19.2"
-  checksum: 10c0/ad8e11e654af99b3556397c87a495cf3cf5d3e8e8bfa1f60e14d255763e9cde7e703d7309fb7c39e89c1191281f2759cb8314f36dee2ae0bf8779123fc85d90c
+  checksum: 10c0/cac13c0f42467df3254805a671ca9e74a6eb7c41568de972e26b10dcc448a45743aaf00e9e5fce4a9214da5bc8444fe902918e105dac5a224e24e83fd9989a97
   languageName: node
   linkType: hard
 
@@ -3889,9 +3889,9 @@ __metadata:
   linkType: hard
 
 "async@npm:^3.2.3, async@npm:^3.2.4":
-  version: 3.2.5
-  resolution: "async@npm:3.2.5"
-  checksum: 10c0/1408287b26c6db67d45cb346e34892cee555b8b59e6c68e6f8c3e495cad5ca13b4f218180e871f3c2ca30df4ab52693b66f2f6ff43644760cab0b2198bda79c1
+  version: 3.2.6
+  resolution: "async@npm:3.2.6"
+  checksum: 10c0/36484bb15ceddf07078688d95e27076379cc2f87b10c03b6dd8a83e89475a3c8df5848859dd06a4c95af1e4c16fc973de0171a77f18ea00be899aca2a4f85e70
   languageName: node
   linkType: hard
 
@@ -8875,11 +8875,11 @@ __metadata:
   linkType: hard
 
 "oclif@npm:^4.14.15":
-  version: 4.14.21
-  resolution: "oclif@npm:4.14.21"
+  version: 4.14.22
+  resolution: "oclif@npm:4.14.22"
   dependencies:
     "@aws-sdk/client-cloudfront": "npm:^3.624.0"
-    "@aws-sdk/client-s3": "npm:^3.614.0"
+    "@aws-sdk/client-s3": "npm:^3.633.0"
     "@inquirer/confirm": "npm:^3.1.22"
     "@inquirer/input": "npm:^2.2.4"
     "@inquirer/select": "npm:^2.3.10"
@@ -8904,7 +8904,7 @@ __metadata:
     validate-npm-package-name: "npm:^5.0.1"
   bin:
     oclif: bin/run.js
-  checksum: 10c0/023faafa159dea11f48130d6b68970dd965278d832cdb199f955867cf5ec2bd9e453df45741b20687d90a344367317bdb390f88619ca709843ca43a8010d94f6
+  checksum: 10c0/a2d4203a89e45dfc86c184a7d27e818a834aec17100d8056c6baa7e1eb908df73d3f2abe2c808ee892d2d2e48465bc26f3b07ee7e48a6cd975d9ddf1c35cc51d
   languageName: node
   linkType: hard
 
@@ -10970,9 +10970,9 @@ __metadata:
   linkType: hard
 
 "tinypool@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "tinypool@npm:1.0.0"
-  checksum: 10c0/71b20b9c54366393831c286a0772380c20f8cad9546d724c484edb47aea3228f274c58e98cf51d28c40869b39f5273209ef3ea94a9d2a23f8b292f4731cd3e4e
+  version: 1.0.1
+  resolution: "tinypool@npm:1.0.1"
+  checksum: 10c0/90939d6a03f1519c61007bf416632dc1f0b9c1a9dd673c179ccd9e36a408437384f984fc86555a5d040d45b595abc299c3bb39d354439e98a090766b5952e73d
   languageName: node
   linkType: hard
 
@@ -10990,21 +10990,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tldts-core@npm:^6.1.39":
-  version: 6.1.39
-  resolution: "tldts-core@npm:6.1.39"
-  checksum: 10c0/404a5b3b1633d67455bb97b7ffb4da011d0652c27ddf0c8881e253b65def46c7a9aef8910ad0bbd6f5e55ce107a2ac09c516ebe218443f25014c57d7ae1c7d33
+"tldts-core@npm:^6.1.40":
+  version: 6.1.40
+  resolution: "tldts-core@npm:6.1.40"
+  checksum: 10c0/44dc3962874a87425ae66d341debdd9a2d781a306be42dddb7eefa3315f4e98a3f4226f5e42cfb4682f116670e63b21ce25691871d9a63c8e416653465e2a829
   languageName: node
   linkType: hard
 
 "tldts@npm:^6.0.0":
-  version: 6.1.39
-  resolution: "tldts@npm:6.1.39"
+  version: 6.1.40
+  resolution: "tldts@npm:6.1.40"
   dependencies:
-    tldts-core: "npm:^6.1.39"
+    tldts-core: "npm:^6.1.40"
   bin:
     tldts: bin/cli.js
-  checksum: 10c0/b60e5d747883c366bf56f7b971b8b17f1adbe809f0cf3ac53bb6c2300507992818ebee1ad76799e4f07c020c170bcf58be592430797606fca3412e1aba4d7869
+  checksum: 10c0/10da36878ead3282fb71215b6829589ccc08b94abcc3866a2d675304fc2d0d4f3c46144bd30d89c358a47fb6c286e2702d0db08679858e53e6371671ef35c254
   languageName: node
   linkType: hard
 
@@ -11326,16 +11326,16 @@ __metadata:
   linkType: hard
 
 "undici-types@npm:~6.19.2":
-  version: 6.19.6
-  resolution: "undici-types@npm:6.19.6"
-  checksum: 10c0/9b2264c5700e7169c6c62c643aac56cd8984c5fd7e18ed31ff11780260e137f6340dee8317a2e6e0ae3c49f5e5ef6fa577ea07193cbaa535265cba76a267cae9
+  version: 6.19.8
+  resolution: "undici-types@npm:6.19.8"
+  checksum: 10c0/078afa5990fba110f6824823ace86073b4638f1d5112ee26e790155f481f2a868cc3e0615505b6f4282bdf74a3d8caad715fd809e870c2bb0704e3ea6082f344
   languageName: node
   linkType: hard
 
 "undici@npm:^6.19.5":
-  version: 6.19.7
-  resolution: "undici@npm:6.19.7"
-  checksum: 10c0/801d1e66d5bccdd3fcc9ecf1c95b83a593e4867b89e21ed725e35bd4d572b3d3ce1d7feab2a4f2046f65923de70bfafb69ac148c633d1ab30a948d6fec24475a
+  version: 6.19.8
+  resolution: "undici@npm:6.19.8"
+  checksum: 10c0/07fd8520bce7e34ea29c07ef0de27b734183042cdb4e2f1262cd1fb9b755a6b04ff2471040395dfb1770fb7786069a97c5178bcf706b80a34075994f46feb37c
   languageName: node
   linkType: hard
 
