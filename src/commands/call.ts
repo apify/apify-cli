@@ -1,13 +1,22 @@
 import process from 'node:process';
 
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
-import type { ActorStartOptions, ApifyClient } from 'apify-client';
+import { type ActorStartOptions, type ApifyClient, type Dataset, DownloadItemsFormat } from 'apify-client';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
 import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
+import { warning } from '../lib/outputs.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
+
+const TerminalStatuses = [
+	ACTOR_JOB_STATUSES.SUCCEEDED,
+	ACTOR_JOB_STATUSES.ABORTED,
+	ACTOR_JOB_STATUSES.FAILED,
+	ACTOR_JOB_STATUSES.TIMED_OUT,
+];
 
 export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 	static override description =
@@ -31,6 +40,19 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 			required: false,
 			allowStdin: true,
 			exclusive: ['input'],
+		}),
+		silent: Flags.boolean({
+			char: 's',
+			description: 'Prevents printing the logs of the Actor run to the console.',
+			default: false,
+		}),
+		'output-dataset': Flags.boolean({
+			char: 'o',
+			description: 'Prints out the entire default dataset on successful run of the Actor.',
+		}),
+		view: Flags.string({
+			char: 'v',
+			description: 'The dataset view to use when printing the dataset.',
 		}),
 	};
 
@@ -84,7 +106,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 			return;
 		}
 
-		await runActorOrTaskOnCloud(apifyClient, {
+		let run = await runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
 				id: actorId,
 				userFriendlyId,
@@ -93,7 +115,65 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 			type: 'Actor',
 			waitForFinishMillis,
 			inputOverride: inputOverride?.input,
+			silent: this.flags.silent,
 		});
+
+		if (this.flags.outputDataset) {
+			// TODO: cleaner way to do this
+			while (!TerminalStatuses.includes(run.status as never)) {
+				run = (await apifyClient.run(run.id).get())!;
+
+				if (TerminalStatuses.includes(run.status as never)) {
+					break;
+				}
+
+				// Wait a second before checking again
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			}
+
+			const datasetId = run.defaultDatasetId;
+
+			let info: Dataset;
+			let retries = 3;
+
+			do {
+				info = (await apifyClient.dataset(datasetId).get())!;
+
+				if (info?.itemCount) {
+					break;
+				}
+
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			} while (retries--);
+
+			let actualView = this.flags.view;
+
+			// TODO: apify-client doesn't have this field yet
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any
+			const schema = (info as any)?.schema;
+
+			if (schema?.views) {
+				// Ensure the view provided matches
+				if (actualView && !Reflect.has(schema.views, actualView)) {
+					if (!this.flags.silent) {
+						warning({
+							message: `View "${actualView}" does not exist in the dataset schema. Available views are: ${Object.keys(
+								schema.views,
+							).join(', ')}. Will print the dataset in the default view.`,
+						});
+					}
+
+					actualView = undefined;
+				}
+			}
+
+			const dataset = await apifyClient.dataset(datasetId).downloadItems(DownloadItemsFormat.JSON, {
+				clean: true,
+				view: actualView,
+			});
+
+			console.log(dataset.toString());
+		}
 	}
 
 	private static async resolveActorId({
