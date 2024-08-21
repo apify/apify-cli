@@ -2,7 +2,7 @@ import process from 'node:process';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Flags } from '@oclif/core';
-import { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
+import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
 
 import { resolveInput } from './resolve-input.js';
 import { CommandExitCodes } from '../consts.js';
@@ -19,25 +19,28 @@ export interface RunOnCloudOptions {
 	type: 'Actor' | 'Task';
 	waitForFinishMillis?: number;
 	inputOverride?: Record<string, unknown>;
+	silent?: boolean;
 }
 
 export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: RunOnCloudOptions) {
 	const cwd = process.cwd();
-	const { actorOrTaskData, runOptions, type, waitForFinishMillis, inputOverride } = options;
+	const { actorOrTaskData, runOptions, type, waitForFinishMillis, inputOverride, silent } = options;
 
 	const clientMethod = type === 'Actor' ? 'actor' : 'task';
 
 	// Get input for actor
 	const actorInput = resolveInput(cwd, inputOverride);
 
-	if (type === 'Actor') {
-		runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
-	} else if (actorOrTaskData.title) {
-		runLog({
-			message: `Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${actorOrTaskData.id})`,
-		});
-	} else {
-		runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
+	if (!silent) {
+		if (type === 'Actor') {
+			runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
+		} else if (actorOrTaskData.title) {
+			runLog({
+				message: `Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${actorOrTaskData.id})`,
+			});
+		} else {
+			runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
+		}
 	}
 
 	let run: ActorRun;
@@ -62,28 +65,34 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
 		else throw err;
 	}
 
-	try {
-		await outputJobLog(run, waitForFinishMillis);
-	} catch (err) {
-		warning({ message: 'Can not get log:' });
-		console.error(err);
+	if (!silent) {
+		try {
+			await outputJobLog(run, waitForFinishMillis);
+		} catch (err) {
+			warning({ message: 'Can not get log:' });
+			console.error(err);
+		}
 	}
 
 	run = (await apifyClient.run(run.id).get())!;
 
-	link({ message: `${type} run detail`, url: `https://console.apify.com/actors/${run.actId}#/runs/${run.id}` });
+	if (!silent) {
+		link({ message: `${type} run detail`, url: `https://console.apify.com/actors/${run.actId}#/runs/${run.id}` });
 
-	if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-		success({ message: `${type} finished.` });
-	} else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
-		warning({ message: `${type} is still running!` });
-	} else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
-		warning({ message: `${type} was aborted!` });
-		process.exitCode = CommandExitCodes.RunAborted;
-	} else {
-		error({ message: `${type} failed!` });
-		process.exitCode = CommandExitCodes.RunFailed;
+		if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
+			success({ message: `${type} finished.` });
+		} else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
+			warning({ message: `${type} is still running!` });
+		} else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
+			warning({ message: `${type} was aborted!` });
+			process.exitCode = CommandExitCodes.RunAborted;
+		} else {
+			error({ message: `${type} failed!` });
+			process.exitCode = CommandExitCodes.RunFailed;
+		}
 	}
+
+	return run;
 }
 
 export const SharedRunOnCloudFlags = (type: 'Actor' | 'Task') => ({

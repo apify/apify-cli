@@ -1,13 +1,21 @@
 import process from 'node:process';
 
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
-import type { ActorStartOptions, ApifyClient } from 'apify-client';
+import { type ActorStartOptions, type ApifyClient, type Dataset, DownloadItemsFormat } from 'apify-client';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
 import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
+
+const TerminalStatuses = [
+	ACTOR_JOB_STATUSES.SUCCEEDED,
+	ACTOR_JOB_STATUSES.ABORTED,
+	ACTOR_JOB_STATUSES.FAILED,
+	ACTOR_JOB_STATUSES.TIMED_OUT,
+];
 
 export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 	static override description =
@@ -31,6 +39,15 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 			required: false,
 			allowStdin: true,
 			exclusive: ['input'],
+		}),
+		silent: Flags.boolean({
+			char: 's',
+			description: 'Prevents printing the logs of the Actor run to the console.',
+			default: false,
+		}),
+		'output-dataset': Flags.boolean({
+			char: 'o',
+			description: 'Prints out the entire default dataset on successful run of the Actor.',
 		}),
 	};
 
@@ -84,7 +101,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 			return;
 		}
 
-		await runActorOrTaskOnCloud(apifyClient, {
+		let run = await runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
 				id: actorId,
 				userFriendlyId,
@@ -93,7 +110,45 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 			type: 'Actor',
 			waitForFinishMillis,
 			inputOverride: inputOverride?.input,
+			silent: this.flags.silent,
 		});
+
+		if (this.flags.outputDataset) {
+			// TODO: cleaner way to do this (aka move it to a util function, or integrate it into runActorOrTaskOnCloud)
+			while (!TerminalStatuses.includes(run.status as never)) {
+				run = (await apifyClient.run(run.id).get())!;
+
+				if (TerminalStatuses.includes(run.status as never)) {
+					break;
+				}
+
+				// Wait a second before checking again
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			}
+
+			const datasetId = run.defaultDatasetId;
+
+			let info: Dataset;
+			let retries = 5;
+
+			// Why is this needed? Sometimes, when fetching the dataset info right after the run ends, the object doesn't have the stats up-to-date.
+			// But sometimes it does!
+			do {
+				info = (await apifyClient.dataset(datasetId).get())!;
+
+				if (info?.itemCount) {
+					break;
+				}
+
+				await new Promise((resolve) => setTimeout(resolve, 250));
+			} while (retries--);
+
+			const dataset = await apifyClient.dataset(datasetId).downloadItems(DownloadItemsFormat.JSON, {
+				clean: true,
+			});
+
+			console.log(dataset.toString());
+		}
 	}
 
 	private static async resolveActorId({
