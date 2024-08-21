@@ -8,7 +8,6 @@ import { ApifyCommand } from '../lib/apify_command.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
 import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
-import { warning } from '../lib/outputs.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 
 const TerminalStatuses = [
@@ -49,10 +48,6 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 		'output-dataset': Flags.boolean({
 			char: 'o',
 			description: 'Prints out the entire default dataset on successful run of the Actor.',
-		}),
-		view: Flags.string({
-			char: 'v',
-			description: 'The dataset view to use when printing the dataset.',
 		}),
 	};
 
@@ -119,7 +114,7 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 		});
 
 		if (this.flags.outputDataset) {
-			// TODO: cleaner way to do this
+			// TODO: cleaner way to do this (aka move it to a util function, or integrate it into runActorOrTaskOnCloud)
 			while (!TerminalStatuses.includes(run.status as never)) {
 				run = (await apifyClient.run(run.id).get())!;
 
@@ -134,8 +129,10 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 			const datasetId = run.defaultDatasetId;
 
 			let info: Dataset;
-			let retries = 3;
+			let retries = 5;
 
+			// Why is this needed? Sometimes, when fetching the dataset info right after the run ends, the object doesn't have the stats up-to-date.
+			// But sometimes it does!
 			do {
 				info = (await apifyClient.dataset(datasetId).get())!;
 
@@ -143,33 +140,11 @@ export class ActorCallCommand extends ApifyCommand<typeof ActorCallCommand> {
 					break;
 				}
 
-				await new Promise((resolve) => setTimeout(resolve, 1000));
+				await new Promise((resolve) => setTimeout(resolve, 250));
 			} while (retries--);
-
-			let actualView = this.flags.view;
-
-			// TODO: apify-client doesn't have this field yet
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
-			const schema = (info as any)?.schema;
-
-			if (schema?.views) {
-				// Ensure the view provided matches
-				if (actualView && !Reflect.has(schema.views, actualView)) {
-					if (!this.flags.silent) {
-						warning({
-							message: `View "${actualView}" does not exist in the dataset schema. Available views are: ${Object.keys(
-								schema.views,
-							).join(', ')}. Will print the dataset in the default view.`,
-						});
-					}
-
-					actualView = undefined;
-				}
-			}
 
 			const dataset = await apifyClient.dataset(datasetId).downloadItems(DownloadItemsFormat.JSON, {
 				clean: true,
-				view: actualView,
 			});
 
 			console.log(dataset.toString());
