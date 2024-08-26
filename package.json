@@ -66,6 +66,8 @@
         "@oclif/core": "~4.0.17",
         "@oclif/plugin-help": "~6.2.8",
         "@root/walk": "~1.1.0",
+        "@sapphire/duration": "^1.1.2",
+        "@sapphire/timestamp": "^1.0.3",
         "adm-zip": "~0.5.15",
         "ajv": "~8.17.1",
         "apify-client": "~2.9.4",

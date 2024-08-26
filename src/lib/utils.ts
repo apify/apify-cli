@@ -24,6 +24,8 @@ import {
 	LOCAL_STORAGE_SUBDIRS,
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
+import { DurationFormatter as SapphireDurationFormatter } from '@sapphire/duration';
+import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv from 'ajv';
 import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
@@ -740,3 +742,6 @@ export const ensureApifyDirectory = (file: string) => {
 
 	mkdirSync(path, { recursive: true });
 };
+
+export const TimestampFormatter = new Timestamp('YYYY-MM-DD [at] HH:mm:ss');
+export const DurationFormatter = new SapphireDurationFormatter();
