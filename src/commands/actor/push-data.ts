@@ -20,24 +20,15 @@ export class PushDataCommand extends ApifyCommand<typeof PushDataCommand> {
 		}),
 	};
 
-	private stdin?: string;
-
-	override async init() {
-		await super.init();
-		// Read data from stdin of the command
-		this.stdin = await this.readStdin(process.stdin);
-	}
-
 	async run() {
 		const { item } = this.args;
 
 		const apifyClient = await getApifyStorageClient();
 		const defaultStoreId = getDefaultStorageId(APIFY_STORAGE_TYPES.DATASET);
-		const data = item || this.stdin;
 
 		let parsedData: Record<string, unknown> | Record<string, unknown>[];
 		try {
-			parsedData = JSON.parse(data!);
+			parsedData = JSON.parse(item!);
 		} catch (err) {
 			throw new Error(`Failed to parse data as JSON string: ${(err as Error).message}`);
 		}
