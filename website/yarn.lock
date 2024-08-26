@@ -300,14 +300,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.128":
-  version: 1.0.128
-  resolution: "@apify/docs-theme@npm:1.0.128"
+"@apify/docs-theme@npm:^1.0.129":
+  version: 1.0.129
+  resolution: "@apify/docs-theme@npm:1.0.129"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.0.26"
     "@docusaurus/theme-common": "npm:^2.4.1"
     "@stackql/docusaurus-plugin-hubspot": "npm:^1.1.0"
-    axios: "npm:^1.4.0"
+    axios: "npm:^1.7.4"
     babel-loader: "npm:^9.1.3"
     docusaurus-gtm-plugin: "npm:^0.0.2"
     docusaurus-plugin-smartlook: "npm:^1.0.2"
@@ -317,7 +317,7 @@ __metadata:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/882d6f9ca6801363724b2bb007c33acd2d62d6c7cd7e5903a8c076081bfcbcb2e8dd95cff5e153e04ca0ffb3781d0650df09e672f51c9ceca344d0b0ff89d549
+  checksum: 10c0/f9f1cb499fba877cbace33e28ce2e3e67d108ac4876f6ee6b4d5eb6fd9071168052ad3dbd538bf603ac17c768ff2b7058c6a4afff76d02b7e301c6aa0fad81a1
   languageName: node
   linkType: hard
 
@@ -4592,7 +4592,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.4.0":
+"axios@npm:^1.7.4":
   version: 1.7.5
   resolution: "axios@npm:1.7.5"
   dependencies:
@@ -12173,7 +12173,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.128"
+    "@apify/docs-theme": "npm:^1.0.129"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^2.4.3"
