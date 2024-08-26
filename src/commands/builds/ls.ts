@@ -57,9 +57,8 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 
 		const builds = await client.actor(ctx.id).builds().list({ desc, limit, offset });
 
-		// TODO: maybe return the full response object instead of just a list of builds?
 		if (json) {
-			return builds.items;
+			return builds;
 		}
 
 		const actorInfo = (await client.actor(ctx.id).get())!;
