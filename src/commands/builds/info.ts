@@ -17,6 +17,8 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 		}),
 	};
 
+	static override enableJsonFlag = true;
+
 	async run() {
 		const { buildId } = this.args;
 

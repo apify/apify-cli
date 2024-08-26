@@ -38,6 +38,8 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 		}),
 	};
 
+	static override enableJsonFlag = true;
+
 	async run() {
 		const { actor, desc, limit, offset, json } = this.flags;
 
