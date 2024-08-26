@@ -53,7 +53,7 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 
 		const message: string[] = [
 			//
-			`${chalk.yellow('Actor')}: ${actor?.name ?? 'Unknown Actor'} (${chalk.gray(build.actId)})`,
+			`${chalk.yellow('Actor')}: ${actor?.username ? `${actor.username}/` : ''}${actor?.name ?? 'unknown-actor'} (${chalk.gray(build.actId)})`,
 			'',
 			`${chalk.yellow('Build Information')} (ID: ${chalk.gray(build.id)})`,
 			`  ${chalk.yellow('Build Number')}: ${build.buildNumber}${buildTag ? ` (tagged as ${chalk.yellow(buildTag)})` : ''}`,
