@@ -88,8 +88,21 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 				({ actName: actorName } = response);
 			}
+
+			let existingLocalConfig: Record<string, unknown> | undefined;
+
+			try {
+				existingLocalConfig = await getLocalConfigOrThrow(cwd);
+			} catch (_error) {
+				const casted = _error as Error;
+				const cause = casted.cause as Error;
+
+				error({ message: `${casted.message}\n  ${cause.message}` });
+				return;
+			}
+
 			// Migrate apify.json to .actor/actor.json
-			const localConfig = { ...EMPTY_LOCAL_CONFIG, ...(await getLocalConfigOrThrow(cwd)) };
+			const localConfig = { ...EMPTY_LOCAL_CONFIG, ...existingLocalConfig };
 			await setLocalConfig(Object.assign(localConfig, { name: actorName }), cwd);
 		}
 

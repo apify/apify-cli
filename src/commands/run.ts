@@ -107,7 +107,18 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const cwd = process.cwd();
 
 		const { proxy, id: userId, token } = await getLocalUserInfo();
-		const localConfig = await getLocalConfigOrThrow(cwd);
+
+		let localConfig: Record<string, unknown>;
+
+		try {
+			localConfig = (await getLocalConfigOrThrow(cwd))!;
+		} catch (_error) {
+			const casted = _error as Error;
+			const cause = casted.cause as Error;
+
+			error({ message: `${casted.message}\n  ${cause.message}` });
+			return;
+		}
 
 		const packageJsonPath = join(cwd, 'package.json');
 		const mainPyPath = join(cwd, 'src/__main__.py');

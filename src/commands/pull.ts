@@ -46,7 +46,19 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
 
 	async run() {
 		const cwd = process.cwd();
-		const localConfig = await getLocalConfigOrThrow(cwd);
+
+		let localConfig: Record<string, unknown>;
+
+		try {
+			localConfig = (await getLocalConfigOrThrow(cwd))!;
+		} catch (_error) {
+			const casted = _error as Error;
+			const cause = casted.cause as Error;
+
+			error({ message: `${casted.message}\n  ${cause.message}` });
+			return;
+		}
+
 		const userInfo = await getLocalUserInfo();
 		const apifyClient = await getLoggedClientOrThrow();
 
