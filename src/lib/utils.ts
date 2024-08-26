@@ -745,3 +745,30 @@ export const ensureApifyDirectory = (file: string) => {
 
 export const TimestampFormatter = new Timestamp('YYYY-MM-DD [at] HH:mm:ss');
 export const DurationFormatter = new SapphireDurationFormatter();
+
+/**
+ * A "polyfill" for Object.groupBy
+ */
+export function objectGroupBy<K extends PropertyKey, T>(
+	items: Iterable<T>,
+	keySelector: (item: T, index: number) => K,
+): Partial<Record<K, T[]>> {
+	if ('groupBy' in Object) {
+		return Object.groupBy(items, keySelector);
+	}
+
+	const result: Partial<Record<K, T[]>> = {};
+
+	let i = 0;
+
+	for (const item of items) {
+		const key = keySelector(item, i++);
+		if (!result[key]) {
+			result[key] = [];
+		}
+
+		result[key].push(item);
+	}
+
+	return result;
+}

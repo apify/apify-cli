@@ -15,6 +15,8 @@ export type ApifyArgs<T extends typeof Command> = Interfaces.InferredArgs<T['arg
  * Adding parsing flags to oclif Command class
  */
 export abstract class ApifyCommand<T extends typeof Command> extends Command {
+	static override enableJsonFlag = true;
+
 	protected telemetryData!: Record<string, unknown>;
 
 	protected flags!: ApifyFlags<T>;
@@ -27,6 +29,7 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
 			flags: this.ctor.flags,
 			args: this.ctor.args,
 			strict: this.ctor.strict,
+			enableJsonFlag: this.ctor.enableJsonFlag,
 		});
 
 		this.flags = argsToCamelCase(flags) as ApifyFlags<T>;

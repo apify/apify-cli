@@ -29,6 +29,11 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 			return;
 		}
 
+		// JSON output -> return the object (which is handled by oclif)
+		if (this.flags.json) {
+			return build;
+		}
+
 		const actor = await apifyClient.actor(build.actId).get();
 
 		let buildTag: string | undefined;
@@ -87,5 +92,7 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 
 		simpleLog({ message: message.join('\n') });
+
+		return undefined;
 	}
 }
