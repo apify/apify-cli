@@ -11,7 +11,7 @@ const createdActors: URL[] = [];
 
 if (!process.env.DO_NOT_DELETE_CUCUMBER_TEST_ACTORS) {
 	AfterAll(async () => {
-		console.log('\n  Cleaning up actors...');
+		console.log(`\n  Cleaning up actors for worker ${process.env.CUCUMBER_WORKER_ID}...`);
 
 		for (const path of createdActors) {
 			await rm(path, { recursive: true, force: true });
