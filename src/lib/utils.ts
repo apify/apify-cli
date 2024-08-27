@@ -24,7 +24,7 @@ import {
 	LOCAL_STORAGE_SUBDIRS,
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
-import { DurationFormatter as SapphireDurationFormatter } from '@sapphire/duration';
+import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv from 'ajv';
@@ -745,6 +745,30 @@ export const ensureApifyDirectory = (file: string) => {
 
 export const TimestampFormatter = new Timestamp('YYYY-MM-DD [at] HH:mm:ss');
 export const DurationFormatter = new SapphireDurationFormatter();
+
+export const ShortDurationFormatter = new SapphireDurationFormatter({
+	[TimeTypes.Day]: {
+		DEFAULT: 'd',
+	},
+	[TimeTypes.Hour]: {
+		DEFAULT: 'h',
+	},
+	[TimeTypes.Minute]: {
+		DEFAULT: 'm',
+	},
+	[TimeTypes.Month]: {
+		DEFAULT: 'M',
+	},
+	[TimeTypes.Second]: {
+		DEFAULT: 's',
+	},
+	[TimeTypes.Week]: {
+		DEFAULT: 'w',
+	},
+	[TimeTypes.Year]: {
+		DEFAULT: 'y',
+	},
+});
 
 /**
  * A "polyfill" for Object.groupBy
