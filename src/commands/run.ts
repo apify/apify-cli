@@ -13,6 +13,7 @@ import { minVersion } from 'semver';
 import { ApifyCommand } from '../lib/apify_command.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
 import {
+	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
 	LANGUAGE,
 	LEGACY_LOCAL_STORAGE_DIR,
@@ -117,6 +118,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			const cause = casted.cause as Error;
 
 			error({ message: `${casted.message}\n  ${cause.message}` });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
 

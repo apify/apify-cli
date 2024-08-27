@@ -145,6 +145,7 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
 			const cause = casted.cause as Error;
 
 			error({ message: `${casted.message}\n  ${cause.message}` });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
 

@@ -10,7 +10,7 @@ import { gt } from 'semver';
 import tiged from 'tiged';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
+import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { error, success } from '../lib/outputs.js';
 import { getLocalConfigOrThrow, getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 
@@ -56,6 +56,7 @@ export class PullCommand extends ApifyCommand<typeof PullCommand> {
 			const cause = casted.cause as Error;
 
 			error({ message: `${casted.message}\n  ${cause.message}` });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
 

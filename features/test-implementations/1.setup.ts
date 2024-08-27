@@ -61,6 +61,15 @@ Given<TestWorld>(/the `actor.json` is valid/i, function () {
 	// Maybe this is something we want to implement >:3
 });
 
+Given<TestWorld>(/the `actor.json` is invalid/i, async function () {
+	assertWorldIsValid(this);
+
+	const actorJsonFile = new URL('./.actor/actor.json', this.testActor.pwd);
+
+	// We'll just overwrite the file with some invalid JSON
+	await writeFile(actorJsonFile, `{ wow "name": "my-invalid-actor" }`);
+});
+
 Given<TestWorld>(/the actor implementation doesn't throw itself/i, { timeout: 120_000 }, async function () {
 	assertWorldIsValid(this);
 

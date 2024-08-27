@@ -6,6 +6,7 @@ import inquirer from 'inquirer';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import {
+	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
 	EMPTY_LOCAL_CONFIG,
 	LANGUAGE,
@@ -98,6 +99,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 				const cause = casted.cause as Error;
 
 				error({ message: `${casted.message}\n  ${cause.message}` });
+				process.exitCode = CommandExitCodes.InvalidActorJson;
 				return;
 			}
 
