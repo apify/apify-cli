@@ -221,8 +221,21 @@ export const getLocalConfig = (cwd: string) => getJsonFileContent(getLocalConfig
 const getDeprecatedLocalConfig = (cwd: string) => getJsonFileContent(getDeprecatedLocalConfigPath(cwd));
 
 export const getLocalConfigOrThrow = async (cwd: string) => {
-	let localConfig = getLocalConfig(cwd);
-	let deprecatedLocalConfig = getDeprecatedLocalConfig(cwd);
+	let localConfig: Record<string, unknown> | undefined;
+
+	try {
+		localConfig = getLocalConfig(cwd);
+	} catch (error) {
+		throw new Error(`Failed to read local config at path: '${LOCAL_CONFIG_PATH}':`, { cause: error });
+	}
+
+	let deprecatedLocalConfig: Record<string, unknown> | undefined;
+
+	try {
+		deprecatedLocalConfig = getDeprecatedLocalConfig(cwd);
+	} catch (error) {
+		throw new Error(`Failed to read local config at path: '${DEPRECATED_LOCAL_CONFIG_NAME}':`, { cause: error });
+	}
 
 	if (localConfig && deprecatedLocalConfig) {
 		const answer = await inquirer.prompt([
