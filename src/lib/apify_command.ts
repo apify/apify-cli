@@ -2,7 +2,6 @@ import process from 'node:process';
 
 import { Command, type Interfaces, loadHelpClass } from '@oclif/core';
 
-import { readStdin } from './commands/read-stdin.js';
 import { COMMANDS_WITHIN_ACTOR, LANGUAGE } from './consts.js';
 import { maybeTrackTelemetry } from './telemetry.js';
 import { type KeysToCamelCase, argsToCamelCase, detectLocalActorLanguage } from './utils.js';
@@ -71,13 +70,6 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
 		}
 
 		return super.finally(err);
-	}
-
-	/**
-	 * Reads data on standard input as a string.
-	 */
-	async readStdin(stdinStream: typeof process.stdin) {
-		return readStdin(stdinStream);
 	}
 
 	async printHelp(customCommand?: string) {
