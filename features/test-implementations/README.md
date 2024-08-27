@@ -26,6 +26,7 @@ Currently, the following phrases are implemented:
 
 - ``given my `pwd` is a fully initialized actor project directory``
 - ``given the `actor.json` is valid``
+- ``given the `actor.json` is invalid``
 - `given the actor implementation doesn't throw itself`
 - `given the following input provided via standard input`
   - Example:

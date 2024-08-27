@@ -96,4 +96,5 @@ export enum CommandExitCodes {
 	NoFilesToPush = 4,
 
 	InvalidInput = 5,
+	InvalidActorJson = 5,
 }

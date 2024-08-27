@@ -1,5 +1,6 @@
 {
 	"default": {
-		"import": ["features/**/*.ts"]
+		"import": ["features/**/*.ts"],
+		"parallel": 4
 	}
 }
