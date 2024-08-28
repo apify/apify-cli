@@ -2764,9 +2764,9 @@ __metadata:
   linkType: hard
 
 "@types/chai@npm:^4.3.17":
-  version: 4.3.18
-  resolution: "@types/chai@npm:4.3.18"
-  checksum: 10c0/e6b86d8c32b1d2bce1e62b8c22a29182c4e5866ede4a93cc862386d881e11bfd2ef20b12fc4ef5fa1202fe21f15a11b43738e14691779c3dcb493bd40494b232
+  version: 4.3.19
+  resolution: "@types/chai@npm:4.3.19"
+  checksum: 10c0/8fd573192e486803c4d04185f2b0fab554660d9a1300dbed5bde9747ab8bef15f462a226f560ed5ca48827eecaf8d71eed64aa653ff9aec72fb2eae272e43a84
   languageName: node
   linkType: hard
 
@@ -11128,8 +11128,8 @@ __metadata:
   linkType: hard
 
 "tsx@npm:^4.16.5":
-  version: 4.18.0
-  resolution: "tsx@npm:4.18.0"
+  version: 4.19.0
+  resolution: "tsx@npm:4.19.0"
   dependencies:
     esbuild: "npm:~0.23.0"
     fsevents: "npm:~2.3.3"
@@ -11139,7 +11139,7 @@ __metadata:
       optional: true
   bin:
     tsx: dist/cli.mjs
-  checksum: 10c0/887b43cc3eed0706955b535ecfe13f76be5753ed888064d103aafdae728952355d1ecabdf9824385d852939c85f16ee0262660cf0ccf6824f7aac658e4abfcdb
+  checksum: 10c0/d14463a78067c6db84c677b79b14861de6d7f6fb0ffa5727cc500c4552459e936395a3854ad0112af0fd7b263bcedd62ce3929b036188eb10cd9902a607ffe34
   languageName: node
   linkType: hard
 
