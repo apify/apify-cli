@@ -11,7 +11,7 @@ const createdActors: URL[] = [];
 
 if (!process.env.DO_NOT_DELETE_CUCUMBER_TEST_ACTORS) {
 	AfterAll(async () => {
-		console.log('\n  Cleaning up actors...');
+		console.log(`\n  Cleaning up actors for worker ${process.env.CUCUMBER_WORKER_ID}...`);
 
 		for (const path of createdActors) {
 			await rm(path, { recursive: true, force: true });
@@ -59,6 +59,15 @@ Given<TestWorld>(/the `actor.json` is valid/i, function () {
 
 	// Well we have no code right now to validate the actor.json file, so we'll just assume it's valid. 🤷
 	// Maybe this is something we want to implement >:3
+});
+
+Given<TestWorld>(/the `actor.json` is invalid/i, async function () {
+	assertWorldIsValid(this);
+
+	const actorJsonFile = new URL('./.actor/actor.json', this.testActor.pwd);
+
+	// We'll just overwrite the file with some invalid JSON
+	await writeFile(actorJsonFile, `{ wow "name": "my-invalid-actor" }`);
 });
 
 Given<TestWorld>(/the actor implementation doesn't throw itself/i, { timeout: 120_000 }, async function () {

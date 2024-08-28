@@ -5,7 +5,7 @@ import process from 'node:process';
 import { fetchManifest } from '@apify/actor-templates';
 import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
-import { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
+import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
 import inquirer from 'inquirer';
 import isCI from 'is-ci';
 import open from 'open';
@@ -135,7 +135,20 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
 		}
 
 		const apifyClient = await getLoggedClientOrThrow();
-		const localConfig = await getLocalConfigOrThrow(cwd);
+
+		let localConfig: Record<string, unknown>;
+
+		try {
+			localConfig = (await getLocalConfigOrThrow(cwd))!;
+		} catch (_error) {
+			const casted = _error as Error;
+			const cause = casted.cause as Error;
+
+			error({ message: `${casted.message}\n  ${cause.message}` });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
+			return;
+		}
+
 		const userInfo = await getLocalUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
