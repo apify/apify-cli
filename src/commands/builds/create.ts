@@ -120,8 +120,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		];
 
 		const url = `https://console.apify.com/actors/${build.actId}/builds/${build.buildNumber}`;
-
-		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
+		const viewMessage = `${chalk.blue('View in Apify Console')}: ${url}`;
 
 		simpleLog({
 			message: message.join('\n'),
@@ -134,7 +133,16 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				// This should never happen...
 				error({ message: `Failed to print log for build with ID "${build.id}": ${(err as Error).message}` });
 			}
+
+			// Print out an empty line
+			simpleLog({
+				message: '',
+			});
 		}
+
+		simpleLog({
+			message: viewMessage,
+		});
 
 		return undefined;
 	}
