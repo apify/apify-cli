@@ -4,7 +4,7 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, objectGroupBy, TimestampFormatter } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, objectGroupBy, outputJobLog, TimestampFormatter } from '../../lib/utils.js';
 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
 	static override description = 'Creates a new build of the Actor.';
@@ -22,12 +22,15 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				'Optional Actor Version to build. By default, this will be inferred from the tag, but this flag is required when multiple versions have the same tag.',
 			required: false,
 		}),
+		log: Flags.boolean({
+			description: 'Whether to print out the build log after the build is triggered.',
+		}),
 	};
 
 	static override enableJsonFlag = true;
 
 	async run() {
-		const { actor, tag, version, json } = this.flags;
+		const { actor, tag, version, json, log } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
 
@@ -123,6 +126,15 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		simpleLog({
 			message: message.join('\n'),
 		});
+
+		if (log) {
+			try {
+				await outputJobLog(build);
+			} catch (err) {
+				// This should never happen...
+				error({ message: `Failed to print log for build with ID "${build.id}": ${(err as Error).message}` });
+			}
+		}
 
 		return undefined;
 	}
