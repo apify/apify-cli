@@ -118,9 +118,9 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 			message: `${chalk.reset('Showing')} ${chalk.yellow(builds.items.length)} out of ${chalk.yellow(builds.total)} builds for Actor ${chalk.yellow(ctx.userFriendlyId)} (${chalk.gray(ctx.id)})\n`,
 		});
 
-		for (const [actorVersion, buildsForVersion] of Object.entries(result).sort((a, b) =>
-			a[0].localeCompare(b[0]),
-		)) {
+		const sortedActorVersions = Object.entries(result).sort((a, b) => a[0].localeCompare(b[0]));
+
+		for (const [actorVersion, buildsForVersion] of sortedActorVersions) {
 			if (!buildsForVersion?.length) {
 				simpleLog({
 					message: `No builds for version ${actorVersion}`,

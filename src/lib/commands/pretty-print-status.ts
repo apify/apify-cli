@@ -1,8 +1,7 @@
-// TIMED-OUT -> Timed Out
-
 import type { ACTOR_JOB_STATUSES, ACTOR_JOB_TERMINAL_STATUSES } from '@apify/consts';
 import chalk from 'chalk';
 
+// TIMED-OUT -> Timed Out
 // ABORTED -> Aborted
 export function prettyPrintStatus(
 	status: (typeof ACTOR_JOB_STATUSES)[keyof typeof ACTOR_JOB_STATUSES] | (typeof ACTOR_JOB_TERMINAL_STATUSES)[number],
