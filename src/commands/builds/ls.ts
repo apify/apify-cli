@@ -69,10 +69,9 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 		// TODO: technically speaking, we don't *need* an actor id to list builds. But it makes more sense to have a table of builds for a specific actor.
 		const ctx = await resolveActorContext({ providedActorNameOrId: actor, client });
 
-		if (!ctx) {
+		if (!ctx.valid) {
 			error({
-				message:
-					'Unable to detect what Actor to list the builds for. Please run this command in an Actor directory, or specify the Actor ID by running this command with "--actor=<id>"',
+				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID by running this command with "--actor=<id>"`,
 			});
 
 			return;

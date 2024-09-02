@@ -18,6 +18,21 @@ This file also includes methods that are shared across all layers of the test ca
 
 Contains the basic source code actors run in the tests. If this file requires more specific logic, newer versions can be created and referenced in the [Setup](#setup-1setupts) file.
 
+## Utilities (`0.utils.ts`)
+
+Contains random utilities that can be used across all stages of a test case.
+
+### Replacers
+
+Certain tests may want to reference values from the test actor (for instance checking that the actor name is mentioned in the output). To make this easier, we have a replacer system that can replace certain strings with values from the test actor.
+
+The syntax to use is `{{<replacer>}}`, where `replacer` is the name of the replacer as listed below. You can add in whitespaces between the braces and the replacer name if you wish.
+
+The following replacers are implemented:
+
+- `testActorName`: the name of the test actor (same as `name` in `.actor/actor.json`)
+- `buildId`: the ID of the build that was created, when the `I capture the build ID` step is ran
+
 ## Setup (`1.setup.ts`)
 
 This file is intended to setup the world: gather any arguments, prepare an actor to test, setup the input, prepare the stdin input, etc. This is where you configure all `Given` steps.
@@ -46,6 +61,10 @@ Currently, the following phrases are implemented:
   """
   ```
   - This step supports providing input to the CLI via a file.
+- `given a logged in apify console user`
+  - This step ensures the test is ran assuming a logged in user on the Apify console.
+- `given the local actor is pushed to the apify platform`
+  - This step ensures the test is ran assuming the actor is pushed to the Apify platform.
 
 Certain phrases may require a specific order to be executed in. Errors will be thrown accordingly if the order is not followed.
 
@@ -65,6 +84,16 @@ Currently, the following phrases are implemented:
   ```
   - This step supports running only CLI commands. It also expects only **one** command to be ran. Any more than one command will result in an error (this is done for simplicity sake)
   - When referring to the CLI, you should mention the `apify` binary (as if you'd write this in a terminal). For testing sake, when we actually run the command, it will instead call the `tsx ./bin/dev.js` script, meaning changes that you do to the CLI will be reflected in the tests without needing a rebuild.
+- `when i capture the <type> id`
+  - Example:
+  ```
+  When I capture the build ID
+  ```
+  - This step captures the ID of the specified type and stores it in the world. This is useful for checking the output of the CLI, as some variables may be needed to check the output of the actor run.
+  - Currently, the following types are implemented:
+    - `build`: captures the ID of the build that was created
+- `when i run with captured data`
+  - Identical to `when I run`, with the only difference being that you can use it in conjunction with `when i capture the <type> id` to run the CLI with the captured data.
 
 ## Results (`3.results.ts`)
 
@@ -108,3 +137,5 @@ Currently, the following phrases are implemented:
   `​`​`
   ```
   - This step checks if the text provided is in the stderr output. If the text is not in the stderr output, an error will be thrown.
+- `then i can read valid json on stdout`
+  - This step checks if the stdout output is valid JSON. If the stdout output is not valid JSON, an error will be thrown.

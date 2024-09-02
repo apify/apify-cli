@@ -22,10 +22,14 @@ export async function resolveActorContext({
 	if (providedActorNameOrId?.includes('/')) {
 		const actor = await client.actor(providedActorNameOrId).get();
 		if (!actor) {
-			return null;
+			return {
+				valid: false as const,
+				reason: `Actor with ID "${providedActorNameOrId}" was not found`,
+			};
 		}
 
 		return {
+			valid: true as const,
 			userFriendlyId: `${actor.username}/${actor.name}`,
 			id: actor.id,
 		};
@@ -37,6 +41,7 @@ export async function resolveActorContext({
 
 		if (actorById) {
 			return {
+				valid: true as const,
 				userFriendlyId: `${actorById.username}/${actorById.name}`,
 				id: actorById.id,
 			};
@@ -46,26 +51,37 @@ export async function resolveActorContext({
 
 		if (actorByName) {
 			return {
+				valid: true as const,
 				userFriendlyId: `${actorByName.username}/${actorByName.name}`,
 				id: actorByName.id,
 			};
 		}
 
-		return null;
+		return {
+			valid: false as const,
+			reason: `Actor with name or ID "${providedActorNameOrId}" was not found`,
+		};
 	}
 
 	if (localConfig.name) {
 		const actor = await client.actor(`${usernameOrId}/${localConfig.name}`).get();
 
 		if (!actor) {
-			return null;
+			return {
+				valid: false as const,
+				reason: `Actor with name "${localConfig.name}" was not found`,
+			};
 		}
 
 		return {
+			valid: true as const,
 			userFriendlyId: `${actor.username}/${actor.name}`,
 			id: actor.id,
 		};
 	}
 
-	return null;
+	return {
+		valid: false as const,
+		reason: 'Unable to detect what Actor to create a build for',
+	};
 }
