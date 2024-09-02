@@ -275,6 +275,6 @@ jobs:
             --no-browse \
             --message "Automatic update of the \`apify-cli\` formula.
 
-            CC @fnesveda @B4nan @vladfrangu"
+            CC @B4nan @vladfrangu"
         env:
           HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
