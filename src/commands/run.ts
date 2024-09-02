@@ -1,11 +1,12 @@
 import { existsSync, renameSync } from 'node:fs';
 import { stat, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 import { Flags } from '@oclif/core';
+import { ensureDir } from 'fs-extra';
 import { loadJsonFile } from 'load-json-file';
 import mime from 'mime';
 import { minVersion } from 'semver';
@@ -391,6 +392,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				existingInput?.fileName ?? 'INPUT.json',
 			);
 
+			await ensureDir(dirname(inputFilePath));
 			await writeFile(inputFilePath, JSON.stringify(inputOverride.input, null, 2));
 
 			return {
@@ -449,6 +451,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				);
 			}
 
+			await ensureDir(dirname(inputFilePath));
 			await writeFile(inputFilePath, JSON.stringify(fullInputOverride, null, 2));
 
 			return {
@@ -458,6 +461,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		}
 
 		if (!existingInput) {
+			await ensureDir(dirname(inputFilePath));
 			// No input -> use defaults for this run
 			await writeFile(inputFilePath, JSON.stringify(defaults, null, 2));
 
@@ -491,6 +495,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			}
 
 			// Step 4: store the input
+			await ensureDir(dirname(inputFilePath));
 			await writeFile(inputFilePath, JSON.stringify(fullInput, null, 2));
 
 			return {
