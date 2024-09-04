@@ -26,16 +26,16 @@
         "rimraf": "^6.0.0"
     },
     "dependencies": {
-        "@apify/docs-theme": "^1.0.130",
-        "@docusaurus/core": "^2.4.3",
-        "@docusaurus/plugin-client-redirects": "^2.4.3",
-        "@docusaurus/preset-classic": "^2.4.3",
+        "@apify/docs-theme": "^1.0.131",
+        "@docusaurus/core": "^3.5.2",
+        "@docusaurus/plugin-client-redirects": "^3.5.2",
+        "@docusaurus/preset-classic": "^3.5.2",
         "clsx": "^1.2.1",
         "docusaurus-gtm-plugin": "^0.0.2",
         "prop-types": "^15.8.1",
         "raw-loader": "^4.0.2",
-        "react": "^17.0.2",
-        "react-dom": "^17.0.2",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
         "unist-util-visit": "^5.0.0"
     },
     "volta": {
