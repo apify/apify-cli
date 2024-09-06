@@ -38,7 +38,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 	static override flags = {
 		actor: Flags.string({
 			description:
-				'Optional Actor ID or Name to list builds for. By default, it will use the Actor from the current directory',
+				'Optional Actor ID or Name to list builds for. By default, it will use the Actor from the current directory.',
 		}),
 		offset: Flags.integer({
 			description: 'Number of builds that will be skipped.',
@@ -71,7 +71,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID by running this command with "--actor=<id>"`,
+				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID by running this command with "--actor=<id>".`,
 			});
 
 			return;

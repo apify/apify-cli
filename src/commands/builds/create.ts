@@ -12,10 +12,10 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 	static override flags = {
 		actor: Flags.string({
 			description:
-				'Optional Actor ID or Name to trigger a build for. By default, it will use the Actor from the current directory',
+				'Optional Actor ID or Name to trigger a build for. By default, it will use the Actor from the current directory.',
 		}),
 		tag: Flags.string({
-			description: 'Build tag to be applied to the successful Actor build. By default, this is "latest"',
+			description: 'Build tag to be applied to the successful Actor build. By default, this is "latest".',
 		}),
 		version: Flags.string({
 			description:
@@ -96,7 +96,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		if (!selectedVersion) {
 			error({
-				message: `No Actor versions with the tag "${tag}" found. You can push a new version with this tag by using "apify push --build-tag=${tag}"`,
+				message: `No Actor versions with the tag "${tag}" found. You can push a new version with this tag by using "apify push --build-tag=${tag}".`,
 			});
 
 			return;

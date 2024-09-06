@@ -8,12 +8,12 @@ import { error, simpleLog } from '../../lib/outputs.js';
 import { DurationFormatter, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
-	static override description = 'Prints information about a specific build';
+	static override description = 'Prints information about a specific build.';
 
 	static override args = {
 		buildId: Args.string({
 			required: true,
-			description: 'The build id to get information about',
+			description: 'The build ID to get information about.',
 		}),
 	};
 
@@ -27,7 +27,7 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			error({ message: `Build with ID "${buildId}" was not found on your account` });
+			error({ message: `Build with ID "${buildId}" was not found on your account.` });
 			return;
 		}
 

@@ -5,12 +5,12 @@ import { error, info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, outputJobLog } from '../../lib/utils.js';
 
 export class BuildLogCommand extends ApifyCommand<typeof BuildLogCommand> {
-	static override description = 'Prints the log of a specific build';
+	static override description = 'Prints the log of a specific build.';
 
 	static override args = {
 		buildId: Args.string({
 			required: true,
-			description: 'The build id to get the log from',
+			description: 'The build ID to get the log from.',
 		}),
 	};
 
@@ -22,7 +22,7 @@ export class BuildLogCommand extends ApifyCommand<typeof BuildLogCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			error({ message: `Build with ID "${buildId}" was not found on your account` });
+			error({ message: `Build with ID "${buildId}" was not found on your account.` });
 			return;
 		}
 
