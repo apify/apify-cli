@@ -108,14 +108,12 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
 	}
 };
 
-export const getDefaultsAndPrefillsFromInputSchema = (inputSchema: any) => {
+export const getDefaultsFromInputSchema = (inputSchema: any) => {
 	const defaults: Record<string, unknown> = {};
 
 	for (const [key, fieldSchema] of Object.entries<any>(inputSchema.properties)) {
 		if (fieldSchema.default !== undefined) {
 			defaults[key] = fieldSchema.default;
-		} else if (fieldSchema.prefill !== undefined) {
-			defaults[key] = fieldSchema.prefill;
 		}
 	}
 
