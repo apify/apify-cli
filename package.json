@@ -107,7 +107,7 @@
         "@apify/tsconfig": "^0.1.0",
         "@biomejs/biome": "^1.8.3",
         "@crawlee/types": "^3.11.1",
-        "@cucumber/cucumber": "^10.8.0",
+        "@cucumber/cucumber": "^11.0.0",
         "@oclif/test": "^4.0.8",
         "@sapphire/result": "^2.6.6",
         "@types/adm-zip": "^0.5.5",
