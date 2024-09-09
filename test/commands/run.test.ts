@@ -340,14 +340,14 @@ describe('apify run', () => {
 			expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
 		});
 
-		it('automatically inserts missing prefilled fields', async () => {
+		it('does not insert missing prefilled fields', async () => {
 			writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
 			copyFileSync(pathToPrefillsInputSchema, inputSchemaPath);
 
 			await RunCommand.run([], import.meta.url);
 
 			const output = loadJsonFileSync(outputPath);
-			expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
+			expect(output).toStrictEqual({ awesome: true });
 		});
 	});
 });

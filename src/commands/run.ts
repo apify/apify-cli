@@ -23,7 +23,7 @@ import {
 } from '../lib/consts.js';
 import { execWithLog } from '../lib/exec.js';
 import { deleteFile } from '../lib/files.js';
-import { getAjvValidator, getDefaultsAndPrefillsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
+import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { ProjectAnalyzer } from '../lib/project_analyzer.js';
 import { ScrapyProjectAnalyzer } from '../lib/projects/scrapy/ScrapyProjectAnalyzer.js';
@@ -405,7 +405,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const validator = new Ajv({ strict: false, unicodeRegExp: false });
 		validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
 
-		const defaults = getDefaultsAndPrefillsFromInputSchema(inputSchema);
+		const defaults = getDefaultsFromInputSchema(inputSchema);
 		const compiledInputSchema = getAjvValidator(inputSchema, validator);
 
 		// Step 2: try to fetch the existing INPUT from the local storage

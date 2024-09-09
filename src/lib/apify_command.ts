@@ -26,6 +26,7 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
 			flags: this.ctor.flags,
 			args: this.ctor.args,
 			strict: this.ctor.strict,
+			enableJsonFlag: this.ctor.enableJsonFlag,
 		});
 
 		this.flags = argsToCamelCase(flags) as ApifyFlags<T>;

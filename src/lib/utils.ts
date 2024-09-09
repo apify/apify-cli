@@ -24,6 +24,8 @@ import {
 	LOCAL_STORAGE_SUBDIRS,
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
+import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
+import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv from 'ajv';
 import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
@@ -753,3 +755,57 @@ export const ensureApifyDirectory = (file: string) => {
 
 	mkdirSync(path, { recursive: true });
 };
+
+export const TimestampFormatter = new Timestamp('YYYY-MM-DD [at] HH:mm:ss');
+export const DurationFormatter = new SapphireDurationFormatter();
+
+export const ShortDurationFormatter = new SapphireDurationFormatter({
+	[TimeTypes.Day]: {
+		DEFAULT: 'd',
+	},
+	[TimeTypes.Hour]: {
+		DEFAULT: 'h',
+	},
+	[TimeTypes.Minute]: {
+		DEFAULT: 'm',
+	},
+	[TimeTypes.Month]: {
+		DEFAULT: 'M',
+	},
+	[TimeTypes.Second]: {
+		DEFAULT: 's',
+	},
+	[TimeTypes.Week]: {
+		DEFAULT: 'w',
+	},
+	[TimeTypes.Year]: {
+		DEFAULT: 'y',
+	},
+});
+
+/**
+ * A "polyfill" for Object.groupBy
+ */
+export function objectGroupBy<K extends PropertyKey, T>(
+	items: Iterable<T>,
+	keySelector: (item: T, index: number) => K,
+): Partial<Record<K, T[]>> {
+	if ('groupBy' in Object) {
+		return Object.groupBy(items, keySelector);
+	}
+
+	const result: Partial<Record<K, T[]>> = {};
+
+	let i = 0;
+
+	for (const item of items) {
+		const key = keySelector(item, i++);
+		if (!result[key]) {
+			result[key] = [];
+		}
+
+		result[key].push(item);
+	}
+
+	return result;
+}

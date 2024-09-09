@@ -2,6 +2,7 @@ import { deepStrictEqual, notStrictEqual, strictEqual } from 'node:assert';
 
 import { Then } from '@cucumber/cucumber';
 
+import { replaceMatchersInString } from './0.utils';
 import { assertWorldHasRanCommand, assertWorldHasRunResult, assertWorldIsValid, type TestWorld } from './0.world';
 
 Then<TestWorld>(/the local run has an input json/i, function (jsonBlock: string) {
@@ -86,11 +87,24 @@ Then<TestWorld>(/i can read text on stderr/i, function (expectedStdout: string) 
 	}
 
 	const lowercasedResult = this.testResults.stderr.toLowerCase();
-	const lowercasedExpected = expectedStdout.toLowerCase();
+	const lowercasedExpected = replaceMatchersInString(expectedStdout, {
+		testActorName: this.testActor.name,
+	}).toLowerCase();
 
 	strictEqual(
 		lowercasedResult.includes(lowercasedExpected),
 		true,
 		`Expected to find "${lowercasedExpected}" in "${lowercasedResult}"`,
 	);
+});
+
+Then<TestWorld>(/I can read valid JSON on stdout/i, function () {
+	assertWorldIsValid(this);
+	assertWorldHasRanCommand(this);
+
+	try {
+		JSON.parse(this.testResults.stdout);
+	} catch {
+		throw new Error(`Expected valid JSON on stdout, but got: ${this.testResults.stdout}`);
+	}
 });
