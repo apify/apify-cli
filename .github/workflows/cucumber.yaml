@@ -6,9 +6,9 @@ on:
     paths:
       - "features/**"
   # risky... but we trust our developers :finger_crossed:
-  pull_request:
-    paths:
-      - "features/**"
+  # pull_request:
+  #   paths:
+  #     - "features/**"
 
 jobs:
   make_salad:
