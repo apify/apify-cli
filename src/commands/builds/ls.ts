@@ -34,7 +34,7 @@ const tableFactory = (compact = false) => {
 };
 
 export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
-	static override description = 'Lists all builds of the actor.';
+	static override description = 'Lists all builds of the Actor.';
 
 	static override flags = {
 		actor: Flags.string({
