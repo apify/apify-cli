@@ -18,13 +18,18 @@ const tableFactory = (compact = false) => {
 				['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took']
 			: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'];
 
+	const colAligns =
+		terminalColumns < 100
+			? ['left', 'left', 'right', 'right', 'left', 'right']
+			: ['left', 'left', 'right', 'right', 'left', 'right', 'left', 'left'];
+
 	const options: Record<string, unknown> = {
 		head,
 		style: {
 			head: ['cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan'],
 			compact,
 		},
-		colAligns: ['middle', 'middle', 'middle', 'middle', 'middle', 'middle', 'middle', 'middle'],
+		colAligns,
 	};
 
 	if (compact) {
