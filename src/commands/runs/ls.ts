@@ -140,9 +140,16 @@ const ShortDurationFormatter = new SapphireDurationFormatter({
 // END of TODO
 
 const multilineTimestampFormatter = new Timestamp(`YYYY-MM-DD[\n]HH:mm:ss`);
+const terminalColumns = process.stdout.columns ?? 100;
 const tableFactory = (compact = false) => {
+	const head =
+		terminalColumns < 100
+			? // Smaller terminals should show less data
+				['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took']
+			: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'];
+
 	const options: Record<string, unknown> = {
-		head: ['ID', 'Status', 'Results', 'Usage', 'Start Date', 'Took', 'Build Number', 'Origin'],
+		head,
 		style: {
 			head: ['cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan'],
 			compact,
@@ -162,7 +169,12 @@ const tableFactory = (compact = false) => {
 		};
 	}
 
-	return new Table<[string, string, string, string, string, string, string, string]>(options);
+	return new Table<
+		// Small terminal (drop origin and build number)
+		| [string, string, string, string, string, string]
+		// large enough terminal
+		| [string, string, string, string, string, string, string, string]
+	>(options);
 };
 
 export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
@@ -246,15 +258,15 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 		for (const run of allRuns.items) {
 			// 'ID', 'Status', 'Results', 'Usage', 'Took', 'Build Number', 'Origin'
-			const tableRow: [string, string, string, string, string, string, string, string] = [
+			const tableRow:
+				| [string, string, string, string, string, string]
+				| [string, string, string, string, string, string, string, string] = [
 				chalk.gray(run.id),
 				prettyPrintStatus(run.status),
 				chalk.gray('N/A'),
 				chalk.cyan(`$${(run.usageTotalUsd ?? 0).toFixed(3)}`),
 				multilineTimestampFormatter.display(run.startedAt),
 				'',
-				run.buildNumber,
-				run.meta.origin ?? 'UNKNOWN',
 			];
 
 			if (run.finishedAt) {
@@ -268,6 +280,10 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 			}
 
 			tableRow[2] = datasetInfos.get(run.id) || chalk.gray('N/A');
+
+			if (terminalColumns >= 100) {
+				tableRow.push(run.buildNumber, run.meta.origin ?? 'UNKNOWN');
+			}
 
 			table.push(tableRow);
 		}
