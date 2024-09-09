@@ -2,6 +2,13 @@ name: Cucumber E2E tests
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "features/**"
+  # risky... but we trust our developers :finger_crossed:
+  # pull_request:
+  #   paths:
+  #     - "features/**"
 
 jobs:
   make_salad:
@@ -39,6 +46,5 @@ jobs:
       - name: Run Cucumber tests
         env:
           APIFY_CLI_DISABLE_TELEMETRY: 1
-          # TODO: once we start writing tests that interact with Apify platform, just uncomment this line :salute:
-          # TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
+          TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
         run: yarn test:cucumber

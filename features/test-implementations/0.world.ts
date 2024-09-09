@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { IWorld } from '@cucumber/cucumber';
 import { Result } from '@sapphire/result';
+import type { ApifyClient } from 'apify-client';
 import { type Options, type ExecaError, type Result as ExecaResult, execaNode } from 'execa';
 
 type DynamicOptions = {
@@ -33,7 +34,14 @@ export interface TestWorld<Parameters = unknown[]> extends IWorld<Parameters> {
 		 * Input that should be provided to the command via stdin
 		 */
 		stdinInput?: string;
+		/**
+		 * The name of the actor, used for matchers
+		 */
+		name?: string;
 	};
+	apifyClient?: ApifyClient;
+	authStatePath?: string;
+	capturedData?: Record<string, string>;
 }
 
 /**
@@ -59,7 +67,8 @@ export async function executeCommand({
 	rawCommand,
 	stdin,
 	cwd = TestTmpRoot,
-}: { rawCommand: string; stdin?: string; cwd?: string | URL }) {
+	env,
+}: { rawCommand: string; stdin?: string; cwd?: string | URL; env?: Record<string, string> }) {
 	// Step 0: ensure the command is executable -> strip out $, trim spaces
 	const commandToRun = rawCommand.split('\n').map((str) => str.replace(/^\$/, '').trim());
 
@@ -86,6 +95,7 @@ export async function executeCommand({
 
 	const options: DynamicOptions = {
 		cwd,
+		env,
 	};
 
 	if (process.env.CUCUMBER_PRINT_EXEC) {
@@ -143,7 +153,7 @@ export async function executeCommand({
 
 export function assertWorldIsValid(
 	world: TestWorld,
-): asserts world is TestWorld & { testActor: { pwd: URL; initialized: true } } {
+): asserts world is TestWorld & { testActor: { pwd: URL; initialized: true; name: string } } {
 	if (!world.testActor || !world.testActor.initialized) {
 		throw new RangeError(
 			'Test actor must be initialized before running any subsequent background requirements. You may have the order of your steps wrong. The "Given my `pwd` is a fully initialized Actor project directory" step needs to run before this step',
@@ -188,6 +198,20 @@ export function assertWorldHasRunResult(world: TestWorld): asserts world is Test
 	}
 }
 
+export function assertWorldIsLoggedIn(world: TestWorld): asserts world is TestWorld & { apifyClient: ApifyClient } {
+	if (!world.apifyClient) {
+		throw new RangeError('You must run the "Given a logged in Apify Console user" step before running this step');
+	}
+}
+
+export function assertWorldHasCapturedData(world: TestWorld): asserts world is TestWorld & {
+	capturedData: Record<string, string>;
+} {
+	if (!world.capturedData) {
+		throw new RangeError(`You must run the "I capture the <type> ID" step before running this step`);
+	}
+}
+
 export async function getActorRunResults(world: TestWorld & { testActor: { pwd: URL; initialized: true } }) {
 	const startedPath = new URL('./storage/key_value_stores/default/STARTED.json', world.testActor.pwd);
 	const inputPath = new URL('./storage/key_value_stores/default/RECEIVED_INPUT.json', world.testActor.pwd);
@@ -206,7 +230,7 @@ export async function getActorRunResults(world: TestWorld & { testActor: { pwd: 
 	}
 
 	return {
-		started: parsed,
+		started: parsed as 'works',
 		receivedInput: receivedInput ? JSON.parse(receivedInput) : null,
 	};
 }
