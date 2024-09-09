@@ -49,16 +49,20 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 			}
 		}
 
+		// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
 		const exitCode = Reflect.get(build, 'exitCode') as number | undefined;
+
+		const fullActorName = actor?.username ? `${actor.username}/${actor.name}` : actor?.name ?? 'unknown-actor';
+		const versionTaggedAs = buildTag ? ` (tagged as ${chalk.yellow(buildTag)})` : '';
+		const exitCodeStatus = typeof exitCode !== 'undefined' ? ` (exit code: ${chalk.gray(exitCode)})` : '';
 
 		const message: string[] = [
 			//
-			`${chalk.yellow('Actor')}: ${actor?.username ? `${actor.username}/` : ''}${actor?.name ?? 'unknown-actor'} (${chalk.gray(build.actId)})`,
+			`${chalk.yellow('Actor')}: ${fullActorName} (${chalk.gray(build.actId)})`,
 			'',
 			`${chalk.yellow('Build Information')} (ID: ${chalk.gray(build.id)})`,
-			`  ${chalk.yellow('Build Number')}: ${build.buildNumber}${buildTag ? ` (tagged as ${chalk.yellow(buildTag)})` : ''}`,
-			// exitCode is also not typed...
-			`  ${chalk.yellow('Status')}: ${prettyPrintStatus(build.status)}${typeof exitCode !== 'undefined' ? ` (exit code: ${chalk.gray(exitCode)})` : ''}`,
+			`  ${chalk.yellow('Build Number')}: ${build.buildNumber}${versionTaggedAs}`,
+			`  ${chalk.yellow('Status')}: ${prettyPrintStatus(build.status)}${exitCodeStatus}`,
 			`  ${chalk.yellow('Started')}: ${TimestampFormatter.display(build.startedAt)}`,
 		];
 
@@ -78,7 +82,7 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 			message.push(`  ${chalk.yellow('Compute Units')}: ${build.stats.computeUnits.toFixed(3)}`);
 		}
 
-		// Untyped field again 😢
+		// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
 		const dockerImageSize = Reflect.get(build.stats ?? {}, 'imageSizeBytes') as number | undefined;
 
 		if (dockerImageSize) {

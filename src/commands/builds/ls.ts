@@ -1,4 +1,5 @@
 import { Flags } from '@oclif/core';
+import type { BuildCollectionClientListItem } from 'apify-client';
 import chalk from 'chalk';
 import Table from 'cli-table';
 
@@ -77,9 +78,10 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 			return;
 		}
 
-		const builds = await client.actor(ctx.id).builds().list({ desc, limit, offset });
+		const allBuilds = await client.actor(ctx.id).builds().list({ desc, limit, offset });
+		const actorInfo = (await client.actor(ctx.id).get())!;
 
-		const result = objectGroupBy(builds.items, (item) => {
+		const buildsByActorVersion = objectGroupBy(allBuilds.items, (item) => {
 			const versionNumber = Reflect.get(item, 'buildNumber') as string;
 
 			const [major, minor] = versionNumber.split('.');
@@ -87,9 +89,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 			return `${major}.${minor}`;
 		});
 
-		const actorInfo = (await client.actor(ctx.id).get())!;
-
-		const versionToTag = Object.entries(actorInfo.taggedBuilds ?? {}).reduce(
+		const buildTagToActorVersion = Object.entries(actorInfo.taggedBuilds ?? {}).reduce(
 			(acc, [tag, data]) => {
 				acc[data.buildNumber] = tag;
 
@@ -100,24 +100,25 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 
 		if (json) {
 			// Hydrate the builds with their tags
-			for (const build of builds.items) {
+			for (const build of allBuilds.items) {
+				// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
 				const buildNumber = Reflect.get(build, 'buildNumber') as string;
 
-				const hasTag = versionToTag[buildNumber];
+				const hasTag = buildTagToActorVersion[buildNumber];
 
 				if (hasTag) {
 					Reflect.set(build, 'buildTag', hasTag);
 				}
 			}
 
-			return builds;
+			return allBuilds;
 		}
 
 		simpleLog({
-			message: `${chalk.reset('Showing')} ${chalk.yellow(builds.items.length)} out of ${chalk.yellow(builds.total)} builds for Actor ${chalk.yellow(ctx.userFriendlyId)} (${chalk.gray(ctx.id)})\n`,
+			message: `${chalk.reset('Showing')} ${chalk.yellow(allBuilds.items.length)} out of ${chalk.yellow(allBuilds.total)} builds for Actor ${chalk.yellow(ctx.userFriendlyId)} (${chalk.gray(ctx.id)})\n`,
 		});
 
-		const sortedActorVersions = Object.entries(result).sort((a, b) => a[0].localeCompare(b[0]));
+		const sortedActorVersions = Object.entries(buildsByActorVersion).sort((a, b) => a[0].localeCompare(b[0]));
 
 		for (const [actorVersion, buildsForVersion] of sortedActorVersions) {
 			if (!buildsForVersion?.length) {
@@ -128,52 +129,69 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 				continue;
 			}
 
-			const latestBuildGetsTaggedAs = actorInfo.versions.find((v) => v.versionNumber === actorVersion)?.buildTag;
-
-			const table = tableFactory(compact);
-
-			for (const build of buildsForVersion) {
-				const buildNumber = Reflect.get(build, 'buildNumber') as string;
-
-				const hasTag = versionToTag[buildNumber];
-
-				const tableRow: [string, string, string, string] = [
-					`${buildNumber}${hasTag ? ` (${chalk.yellow(hasTag)})` : ''}`,
-					chalk.gray(build.id),
-					prettyPrintStatus(build.status),
-					'',
-				];
-
-				if (build.finishedAt) {
-					const diff = build.finishedAt.getTime() - build.startedAt.getTime();
-
-					tableRow[3] = chalk.gray(`${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
-				} else {
-					const diff = Date.now() - build.startedAt.getTime();
-					tableRow[3] = chalk.gray(
-						`Running for ${ShortDurationFormatter.format(diff, undefined, { left: '' })}`,
-					);
-				}
-
-				table.push(tableRow);
-			}
-
-			simpleLog({
-				message: chalk.reset(
-					`Builds for Actor Version ${chalk.yellow(actorVersion)}${latestBuildGetsTaggedAs ? ` (latest build gets tagged with ${chalk.yellow(latestBuildGetsTaggedAs)})` : ''}`,
-				),
+			const latestBuildTag = actorInfo.versions.find((v) => v.versionNumber === actorVersion)?.buildTag;
+			const table = this.generateTableForActorVersion({
+				buildsForVersion,
+				compact,
+				buildTagToActorVersion,
 			});
 
-			simpleLog({
-				message: table.toString(),
-				stdout: true,
-			});
+			const latestBuildTagMessage = latestBuildTag
+				? ` (latest build gets tagged with ${chalk.yellow(latestBuildTag)})`
+				: '';
+
+			const message = [
+				chalk.reset(`Builds for Actor Version ${chalk.yellow(actorVersion)}${latestBuildTagMessage}`),
+				table.toString(),
+				'',
+			];
 
 			simpleLog({
-				message: '',
+				message: message.join('\n'),
 			});
 		}
 
 		return undefined;
+	}
+
+	private generateTableForActorVersion({
+		compact,
+		buildsForVersion,
+		buildTagToActorVersion,
+	}: {
+		compact: boolean;
+		buildsForVersion: BuildCollectionClientListItem[];
+		buildTagToActorVersion: Record<string, string>;
+	}) {
+		const table = tableFactory(compact);
+
+		for (const build of buildsForVersion) {
+			// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
+			const buildNumber = Reflect.get(build, 'buildNumber') as string;
+
+			const hasTag = buildTagToActorVersion[buildNumber]
+				? ` (${chalk.yellow(buildTagToActorVersion[buildNumber])})`
+				: '';
+
+			const tableRow: [string, string, string, string] = [
+				`${buildNumber}${hasTag}`,
+				chalk.gray(build.id),
+				prettyPrintStatus(build.status),
+				'',
+			];
+
+			if (build.finishedAt) {
+				const diff = build.finishedAt.getTime() - build.startedAt.getTime();
+
+				tableRow[3] = chalk.gray(`${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
+			} else {
+				const diff = Date.now() - build.startedAt.getTime();
+				tableRow[3] = chalk.gray(`Running for ${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
+			}
+
+			table.push(tableRow);
+		}
+
+		return table;
 	}
 }
