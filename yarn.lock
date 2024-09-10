@@ -2791,13 +2791,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/cli-table@npm:^0":
-  version: 0.3.4
-  resolution: "@types/cli-table@npm:0.3.4"
-  checksum: 10c0/dc266f9b8daae5efab0741546f6edccb96ece167a80ebf0c389d811969ea42f3f340575cc38923abdebae8fed1eec322c6769db1e0e4280bd5360daee7cef0ca
-  languageName: node
-  linkType: hard
-
 "@types/connect@npm:*":
   version: 3.4.38
   resolution: "@types/connect@npm:3.4.38"
@@ -3628,7 +3621,6 @@ __metadata:
     "@types/adm-zip": "npm:^0.5.5"
     "@types/archiver": "npm:^6.0.2"
     "@types/chai": "npm:^4.3.17"
-    "@types/cli-table": "npm:^0"
     "@types/cors": "npm:^2.8.17"
     "@types/express": "npm:^4.17.21"
     "@types/fs-extra": "npm:^11"
@@ -3651,7 +3643,7 @@ __metadata:
     axios: "npm:~1.7.3"
     chai: "npm:^4.4.1"
     chalk: "npm:~5.3.0"
-    cli-table: "npm:^0.3.11"
+    cli-table3: "npm:^0.6.5"
     computer-name: "npm:~0.1.0"
     configparser: "npm:~0.3.10"
     cors: "npm:~2.8.5"
@@ -4547,12 +4539,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"cli-table@npm:^0.3.11":
-  version: 0.3.11
-  resolution: "cli-table@npm:0.3.11"
+"cli-table3@npm:^0.6.5":
+  version: 0.6.5
+  resolution: "cli-table3@npm:0.6.5"
   dependencies:
-    colors: "npm:1.0.3"
-  checksum: 10c0/6e31da4e19e942bf01749ff78d7988b01e0101955ce2b1e413eecdc115d4bb9271396464761491256a7d3feeedb5f37ae505f4314c4f8044b5d0f4b579c18f29
+    "@colors/colors": "npm:1.5.0"
+    string-width: "npm:^4.2.0"
+  dependenciesMeta:
+    "@colors/colors":
+      optional: true
+  checksum: 10c0/d7cc9ed12212ae68241cc7a3133c52b844113b17856e11f4f81308acc3febcea7cc9fd298e70933e294dd642866b29fd5d113c2c098948701d0c35f09455de78
   languageName: node
   linkType: hard
 
@@ -4652,13 +4648,6 @@ __metadata:
   version: 2.0.20
   resolution: "colorette@npm:2.0.20"
   checksum: 10c0/e94116ff33b0ff56f3b83b9ace895e5bf87c2a7a47b3401b8c3f3226e050d5ef76cf4072fb3325f9dc24d1698f9b730baf4e05eeaf861d74a1883073f4c98a40
-  languageName: node
-  linkType: hard
-
-"colors@npm:1.0.3":
-  version: 1.0.3
-  resolution: "colors@npm:1.0.3"
-  checksum: 10c0/f9e40dd8b3e1a65378a7ced3fced15ddfd60aaf38e99a7521a7fdb25056b15e092f651cd0f5aa1e9b04fa8ce3616d094e07fc6c2bb261e24098db1ddd3d09a1d
   languageName: node
   linkType: hard
 

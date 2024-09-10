@@ -1,56 +1,25 @@
 import { Flags } from '@oclif/core';
 import { Timestamp } from '@sapphire/timestamp';
 import chalk from 'chalk';
-import Table from 'cli-table';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
+import { ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, ShortDurationFormatter } from '../../lib/utils.js';
 
 const multilineTimestampFormatter = new Timestamp(`YYYY-MM-DD[\n]HH:mm:ss`);
-const terminalColumns = process.stdout.columns ?? 100;
-const tableFactory = (compact = false) => {
-	const head =
-		terminalColumns < 100
-			? // Smaller terminals should show less data
-				['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took']
-			: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'];
 
-	const colAligns =
-		terminalColumns < 100
-			? ['left', 'left', 'right', 'right', 'left', 'right']
-			: ['left', 'left', 'right', 'right', 'left', 'right', 'left', 'left'];
-
-	const options: Record<string, unknown> = {
-		head,
-		style: {
-			head: ['cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan', 'cyan'],
-			compact,
-		},
-		colAligns,
-	};
-
-	if (compact) {
-		options.chars = {
-			'mid': '',
-			'left-mid': '',
-			'mid-mid': '',
-			'right-mid': '',
-			middle: ' ',
-			'top-mid': '─',
-			'bottom-mid': '─',
-		};
-	}
-
-	return new Table<
-		// Small terminal (drop origin and build number)
-		| [string, string, string, string, string, string]
-		// large enough terminal
-		| [string, string, string, string, string, string, string, string]
-	>(options);
-};
+const table = new ResponsiveTable({
+	allColumns: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'],
+	mandatoryColumns: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took'],
+	columnAlignments: {
+		Results: 'right',
+		Usage: 'right',
+		Took: 'right',
+	},
+});
 
 export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 	static override description = 'Lists all runs of the Actor.';
@@ -111,10 +80,8 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 			return;
 		}
 
-		const table = tableFactory(compact);
-
 		const message = [
-			`${chalk.reset('Showing')} ${chalk.yellow(allRuns.items.length)} out of ${chalk.yellow(allRuns.total)} runs for Actor ${chalk.yellow(ctx.userFriendlyId)} (${chalk.gray(ctx.id)})\n`,
+			`${chalk.reset('Showing')} ${chalk.yellow(allRuns.items.length)} out of ${chalk.yellow(allRuns.total)} runs for Actor ${chalk.yellow(ctx.userFriendlyId)} (${chalk.gray(ctx.id)})`,
 		];
 
 		const datasetInfos = new Map(
@@ -132,38 +99,31 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		);
 
 		for (const run of allRuns.items) {
-			// 'ID', 'Status', 'Results', 'Usage', 'Took', 'Build Number', 'Origin'
-			const tableRow:
-				| [string, string, string, string, string, string]
-				| [string, string, string, string, string, string, string, string] = [
-				chalk.gray(run.id),
-				prettyPrintStatus(run.status),
-				chalk.gray('N/A'),
-				chalk.cyan(`$${(run.usageTotalUsd ?? 0).toFixed(3)}`),
-				multilineTimestampFormatter.display(run.startedAt),
-				'',
-			];
+			let tookString: string;
 
 			if (run.finishedAt) {
 				const diff = run.finishedAt.getTime() - run.startedAt.getTime();
 
-				tableRow[5] = chalk.gray(`${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
+				tookString = chalk.gray(`${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
 			} else {
 				const diff = Date.now() - run.startedAt.getTime();
 
-				tableRow[5] = chalk.gray(`Running for ${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
+				tookString = chalk.gray(`Running for ${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
 			}
 
-			tableRow[2] = datasetInfos.get(run.id) || chalk.gray('N/A');
-
-			if (terminalColumns >= 100) {
-				tableRow.push(run.buildNumber, run.meta.origin ?? 'UNKNOWN');
-			}
-
-			table.push(tableRow);
+			table.pushRow({
+				ID: chalk.gray(run.id),
+				Status: prettyPrintStatus(run.status),
+				Results: datasetInfos.get(run.id) || chalk.gray('N/A'),
+				Usage: chalk.cyan(`$${(run.usageTotalUsd ?? 0).toFixed(3)}`),
+				'Started At': multilineTimestampFormatter.display(run.startedAt),
+				Took: tookString,
+				'Build No.': run.buildNumber,
+				Origin: run.meta.origin ?? 'UNKNOWN',
+			});
 		}
 
-		message.push(table.toString());
+		message.push(table.render(compact));
 
 		simpleLog({
 			message: message.join('\n'),

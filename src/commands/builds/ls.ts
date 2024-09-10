@@ -1,37 +1,19 @@
 import { Flags } from '@oclif/core';
 import type { BuildCollectionClientListItem } from 'apify-client';
 import chalk from 'chalk';
-import Table from 'cli-table';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
+import { ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, objectGroupBy, ShortDurationFormatter } from '../../lib/utils.js';
 
-const tableFactory = (compact = false) => {
-	const options: Record<string, unknown> = {
-		head: ['Number', 'ID', 'Status', 'Took'],
-		style: {
-			head: ['cyan', 'cyan', 'cyan', 'cyan'],
-			compact,
-		},
-	};
-
-	if (compact) {
-		options.chars = {
-			'mid': '',
-			'left-mid': '',
-			'mid-mid': '',
-			'right-mid': '',
-			middle: ' ',
-			'top-mid': '─',
-			'bottom-mid': '─',
-		};
-	}
-
-	return new Table<[string, string, string, string]>(options);
-};
+const tableFactory = () =>
+	new ResponsiveTable({
+		allColumns: ['Number', 'ID', 'Status', 'Took'],
+		mandatoryColumns: ['Number', 'ID', 'Status', 'Took'],
+	});
 
 export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 	static override description = 'Lists all builds of the Actor.';
@@ -132,7 +114,6 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 			const latestBuildTag = actorInfo.versions.find((v) => v.versionNumber === actorVersion)?.buildTag;
 			const table = this.generateTableForActorVersion({
 				buildsForVersion,
-				compact,
 				buildTagToActorVersion,
 			});
 
@@ -142,7 +123,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 
 			const message = [
 				chalk.reset(`Builds for Actor Version ${chalk.yellow(actorVersion)}${latestBuildTagMessage}`),
-				table.toString(),
+				table.render(compact),
 				'',
 			];
 
@@ -155,15 +136,13 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 	}
 
 	private generateTableForActorVersion({
-		compact,
 		buildsForVersion,
 		buildTagToActorVersion,
 	}: {
-		compact: boolean;
 		buildsForVersion: BuildCollectionClientListItem[];
 		buildTagToActorVersion: Record<string, string>;
 	}) {
-		const table = tableFactory(compact);
+		const table = tableFactory();
 
 		for (const build of buildsForVersion) {
 			// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
@@ -173,23 +152,23 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 				? ` (${chalk.yellow(buildTagToActorVersion[buildNumber])})`
 				: '';
 
-			const tableRow: [string, string, string, string] = [
-				`${buildNumber}${hasTag}`,
-				chalk.gray(build.id),
-				prettyPrintStatus(build.status),
-				'',
-			];
+			let finishedAt: string;
 
 			if (build.finishedAt) {
 				const diff = build.finishedAt.getTime() - build.startedAt.getTime();
 
-				tableRow[3] = chalk.gray(`${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
+				finishedAt = chalk.gray(`${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
 			} else {
 				const diff = Date.now() - build.startedAt.getTime();
-				tableRow[3] = chalk.gray(`Running for ${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
+				finishedAt = chalk.gray(`Running for ${ShortDurationFormatter.format(diff, undefined, { left: '' })}`);
 			}
 
-			table.push(tableRow);
+			table.pushRow({
+				Number: `${buildNumber}${hasTag}`,
+				ID: chalk.gray(build.id),
+				Status: prettyPrintStatus(build.status),
+				Took: finishedAt,
+			});
 		}
 
 		return table;
