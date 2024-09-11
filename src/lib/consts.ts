@@ -78,7 +78,7 @@ export const CURRENT_APIFY_CLI_VERSION = pkg.version;
 
 export const APIFY_CLIENT_DEFAULT_HEADERS = { 'X-Apify-Request-Origin': META_ORIGINS.CLI };
 
-export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.8.0';
+export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.9.0';
 
 export const PYTHON_VENV_PATH = '.venv';
 

@@ -341,16 +341,16 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 						}
 					} else {
 						error({
-							message: `Python Actors require Python 3.8 or higher, but you have Python ${pythonVersion}!`,
+							message: `Python Actors require Python 3.9 or higher, but you have Python ${pythonVersion}!`,
 						});
 						error({
-							message: 'Please install Python 3.8 or higher to be able to run Python Actors locally.',
+							message: 'Please install Python 3.9 or higher to be able to run Python Actors locally.',
 						});
 					}
 				} else {
 					error({
 						message:
-							'No Python detected! Please install Python 3.8 or higher to be able to run Python Actors locally.',
+							'No Python detected! Please install Python 3.9 or higher to be able to run Python Actors locally.',
 					});
 				}
 			}
