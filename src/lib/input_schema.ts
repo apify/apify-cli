@@ -13,7 +13,7 @@ import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
 import { warning } from './outputs.js';
 import { Ajv, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
-const DEFAULT_INPUT_SCHEMA_PATHS = ['.actor/INPUT_SCHEMA.json', './INPUT_SCHEMA.json'];
+const DEFAULT_INPUT_SCHEMA_PATHS = ['.actor/INPUT_SCHEMA.json', './INPUT_SCHEMA.json', '.actor/input_schema.json', './input_schema.json'];
 
 /**
  * Return the input schema from the default location.
@@ -49,18 +49,14 @@ export const readInputSchema = async (
 		};
 	}
 
-	if (existsSync(join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0]))) {
-		return {
-			inputSchema: getJsonFileContent(join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0])),
-			inputSchemaPath: join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0]),
-		};
-	}
-
-	if (existsSync(join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[1]))) {
-		return {
-			inputSchema: getJsonFileContent(join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[1])),
-			inputSchemaPath: join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[1]),
-		};
+	for (let i = 0; i < DEFAULT_INPUT_SCHEMA_PATHS.length; i++) {
+		const fullPath = join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[i]);
+		if (existsSync(fullPath)) {
+			return {
+				inputSchema: getJsonFileContent(fullPath),
+				inputSchemaPath: fullPath,
+			};
+		}
 	}
 
 	// If not input schema has been found so far, return the first default path
