@@ -18,6 +18,7 @@ const table = new ResponsiveTable({
 		Results: 'right',
 		Usage: 'right',
 		Took: 'right',
+		'Build No.': 'right',
 	},
 });
 
