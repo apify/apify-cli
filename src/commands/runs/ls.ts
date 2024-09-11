@@ -56,7 +56,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 		const client = await getLoggedClientOrThrow();
 
-		// TODO: technically speaking, we don't *need* an actor id to list builds. But it makes more sense to have a table of builds for a specific actor.
+		// Should we allow users to list any runs, not just actor-specific runs? Right now it works like `builds ls`, requiring an actor
 		const ctx = await resolveActorContext({ providedActorNameOrId: actor, client });
 
 		if (!ctx.valid) {
