@@ -63,7 +63,7 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 				success({ message: `Triggered the immediate abort of run "${runId}".` });
 			} else {
 				success({
-					message: `Triggered the abort of run "${runId}", it should be aborted in around 30 seconds.`,
+					message: `Triggered the abort of run "${runId}", it should finish aborting in up to 30 seconds.`,
 				});
 			}
 		} catch (err) {
