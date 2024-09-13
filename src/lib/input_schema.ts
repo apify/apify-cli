@@ -13,7 +13,12 @@ import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
 import { warning } from './outputs.js';
 import { Ajv, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
-const DEFAULT_INPUT_SCHEMA_PATHS = ['.actor/INPUT_SCHEMA.json', './INPUT_SCHEMA.json', '.actor/input_schema.json', './input_schema.json'];
+const DEFAULT_INPUT_SCHEMA_PATHS = [
+	'.actor/INPUT_SCHEMA.json',
+	'./INPUT_SCHEMA.json',
+	'.actor/input_schema.json',
+	'./input_schema.json',
+];
 
 /**
  * Return the input schema from the default location.
