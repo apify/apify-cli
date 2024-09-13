@@ -54,8 +54,8 @@ export const readInputSchema = async (
 		};
 	}
 
-	for (let i = 0; i < DEFAULT_INPUT_SCHEMA_PATHS.length; i++) {
-		const fullPath = join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[i]);
+	for (const path of DEFAULT_INPUT_SCHEMA_PATHS) {
+		const fullPath = join(cwd, path);
 		if (existsSync(fullPath)) {
 			return {
 				inputSchema: getJsonFileContent(fullPath),
