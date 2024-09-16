@@ -60,7 +60,7 @@
     "dependencies": {
         "@apify/actor-templates": "~0.1.5",
         "@apify/consts": "~2.29.0",
-        "@apify/input_schema": "~3.7.1",
+        "@apify/input_schema": "~3.8.0",
         "@apify/utilities": "~2.10.6",
         "@crawlee/memory-storage": "~3.11.1",
         "@oclif/core": "~4.0.17",
@@ -167,9 +167,9 @@
     },
     "volta": {
         "node": "20.17.0",
-        "yarn": "4.4.1"
+        "yarn": "4.5.0"
     },
-    "packageManager": "yarn@4.4.1",
+    "packageManager": "yarn@4.5.0",
     "lint-staged": {
         "*": "biome format --write --no-errors-on-unmatched",
         "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts",
