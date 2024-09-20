@@ -193,6 +193,8 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 			if (runVersionTaggedAs) {
 				messageParts.push(`(${chalk.yellow(runVersionTaggedAs)})`);
+			} else {
+				messageParts.push(`(${chalk.gray('N/A')})`);
 			}
 
 			if (actorVersion) {
