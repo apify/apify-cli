@@ -1,8 +1,12 @@
-export function prettyPrintBytes(bytes: number): string {
-	const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+export function prettyPrintBytes(bytes: number, shortBytes = false): string {
+	const sizes = [shortBytes ? 'B' : 'Bytes', 'KB', 'MB', 'GB', 'TB'];
 
 	if (bytes === 0) {
-		return '0 Byte';
+		if (shortBytes) {
+			return '0.00 B';
+		}
+
+		return '0.00 Byte';
 	}
 
 	const i = Math.floor(Math.log(bytes) / Math.log(1024));
