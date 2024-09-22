@@ -173,7 +173,9 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		}
 
 		// container
-		message.push(`${chalk.yellow('Container URL')}: ${chalk.blue(run.containerUrl)}`);
+		if (run.containerUrl) {
+			message.push(`${chalk.yellow('Container URL')}: ${chalk.blue(run.containerUrl)}`);
+		}
 
 		// origin
 		message.push(`${chalk.yellow('Origin')}: ${run.meta.origin}`);
@@ -181,11 +183,11 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		// build
 		if (actor && build) {
 			// Compute detailed view
-			const expectedVersion = run.buildNumber.split('.').slice(0, 2).join('.');
+			const expectedActorVersion = run.buildNumber.split('.').slice(0, 2).join('.');
 
-			const actorVersion = actor.versions.find((item) => item.versionNumber === expectedVersion);
+			const actorVersion = actor.versions.find((item) => item.versionNumber === expectedActorVersion);
 
-			const runVersionTaggedAs = Object.entries<ActorTaggedBuild>(
+			const runVersionTaggedAs = Object.entries(
 				(actor.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>,
 			).find(([, data]) => data.buildNumber === run.buildNumber)?.[0];
 
