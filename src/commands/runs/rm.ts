@@ -46,7 +46,7 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 
 		const confirmedDelete = await confirmAction({
 			type: 'Actor Run',
-			failureMessage: `Run with ID "${runId}" cannot be deleted.`,
+			failureMessage: `Your provided value does not match the run ID.`,
 		});
 
 		if (!confirmedDelete) {
