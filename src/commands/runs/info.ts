@@ -89,10 +89,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 		const fullActorName = actor?.username ? `${actor.username}/${actor.name}` : (actor?.name ?? 'unknown-actor');
 
-		const message: string[] = [
-			//
-			`${chalk.yellow('Actor')}: ${fullActorName} (${chalk.grey(run.actId)})`,
-		];
+		const message: string[] = [`${chalk.yellow('Actor')}: ${fullActorName} (${chalk.grey(run.actId)})`];
 
 		// Handle task
 		if (task) {
@@ -230,6 +227,14 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		message.push(
 			`${chalk.yellow('Memory')}: ${chalk.gray('Average:')} ${prettyPrintBytes(run.stats.memAvgBytes, true)} | ${chalk.gray('Maximum:')} ${prettyPrintBytes(run.stats.memMaxBytes, true)}`,
 		);
+
+		// url
+
+		message.push('');
+
+		const url = `https://console.apify.com/actors/${run.actId}/runs/${run.id}`;
+
+		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 
 		simpleLog({ message: message.join('\n') });
 
