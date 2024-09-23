@@ -52,7 +52,7 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 		// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
 		const exitCode = Reflect.get(build, 'exitCode') as number | undefined;
 
-		const fullActorName = actor?.username ? `${actor.username}/${actor.name}` : actor?.name ?? 'unknown-actor';
+		const fullActorName = actor?.username ? `${actor.username}/${actor.name}` : (actor?.name ?? 'unknown-actor');
 		const versionTaggedAs = buildTag ? ` (tagged as ${chalk.yellow(buildTag)})` : '';
 		const exitCodeStatus = typeof exitCode !== 'undefined' ? ` (exit code: ${chalk.gray(exitCode)})` : '';
 
