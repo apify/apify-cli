@@ -1675,7 +1675,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@inquirer/select@npm:^2.3.10":
+"@inquirer/select@npm:^2.5.0":
   version: 2.5.0
   resolution: "@inquirer/select@npm:2.5.0"
   dependencies:
@@ -1816,11 +1816,11 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-help@npm:^6.2.10, @oclif/plugin-help@npm:~6.2.8":
-  version: 6.2.11
-  resolution: "@oclif/plugin-help@npm:6.2.11"
+  version: 6.2.12
+  resolution: "@oclif/plugin-help@npm:6.2.12"
   dependencies:
     "@oclif/core": "npm:^4"
-  checksum: 10c0/81a100d20334455bf3bf92b35113a6432777de16bd5210241e7a7ea6de993605c7f2217b6234ed50ee3df33cd8e2eadabce5143d5f18c55fdb13bec2eb741741
+  checksum: 10c0/e9cfd118720bff9ae1ffee39638606bb664ecf98bb21441a68ee8621906d71491261709cfd64ae6f2fde0064d25e51806e6e427260ec339f45d5f4e430f06112
   languageName: node
   linkType: hard
 
@@ -1837,8 +1837,8 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-warn-if-update-available@npm:^3.1.11":
-  version: 3.1.16
-  resolution: "@oclif/plugin-warn-if-update-available@npm:3.1.16"
+  version: 3.1.17
+  resolution: "@oclif/plugin-warn-if-update-available@npm:3.1.17"
   dependencies:
     "@oclif/core": "npm:^4"
     ansis: "npm:^3.3.1"
@@ -1846,7 +1846,7 @@ __metadata:
     http-call: "npm:^5.2.2"
     lodash: "npm:^4.17.21"
     registry-auth-token: "npm:^5.0.2"
-  checksum: 10c0/7bd3d56753cfbb3fc16a78a9029226c03f5262e8348f43c4be74d6845778ce0a92f8b91b7b594a154bc4daeb77132b1b9f9610b41350f6aa233e99b624cb6f2a
+  checksum: 10c0/b7bcc05c2f0a956f2f33f7cc80fbae46aad8af47e42570beb128805e4e133ce40561eb726bf89e2e930166b73f05e1c2225951a31f27a4498faf376bf9a2a60b
   languageName: node
   linkType: hard
 
@@ -8994,14 +8994,14 @@ __metadata:
   linkType: hard
 
 "oclif@npm:^4.14.15":
-  version: 4.14.34
-  resolution: "oclif@npm:4.14.34"
+  version: 4.14.35
+  resolution: "oclif@npm:4.14.35"
   dependencies:
     "@aws-sdk/client-cloudfront": "npm:^3.645.0"
     "@aws-sdk/client-s3": "npm:^3.651.1"
     "@inquirer/confirm": "npm:^3.1.22"
     "@inquirer/input": "npm:^2.2.4"
-    "@inquirer/select": "npm:^2.3.10"
+    "@inquirer/select": "npm:^2.5.0"
     "@oclif/core": "npm:^4"
     "@oclif/plugin-help": "npm:^6.2.10"
     "@oclif/plugin-not-found": "npm:^3.2.21"
@@ -9023,7 +9023,7 @@ __metadata:
     validate-npm-package-name: "npm:^5.0.1"
   bin:
     oclif: bin/run.js
-  checksum: 10c0/c3359923c3a03891ba50618c268b3713e740fb0a9b613befa71ae1fb0263768f1b3a88f86d290bb8a5a4aa98f92d12da4ed5f9ae02311b9fd28ac7b2968a3a06
+  checksum: 10c0/ac6f50b3cce6728c352afad0440ade62288dfd961ce2ef78f5ce35e3f17aa26a17de886bbbb8c35cc208d866378419907df2e224468315942ffd3780995347c4
   languageName: node
   linkType: hard
 
