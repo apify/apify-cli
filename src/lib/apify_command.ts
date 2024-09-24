@@ -78,4 +78,8 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
 		const help = new HelpCommand(this.config);
 		await help.showHelp([customCommand ?? this.id!]);
 	}
+
+	protected pluralString(amount: number, singular: string, plural: string): string {
+		return amount === 1 ? singular : plural;
+	}
 }
