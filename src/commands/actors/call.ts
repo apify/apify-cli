@@ -1,21 +1,22 @@
 import process from 'node:process';
 
-import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
-import { type ActorStartOptions, type ApifyClient, type Dataset, DownloadItemsFormat } from 'apify-client';
+import {
+	type ActorRun,
+	type ActorStartOptions,
+	type ActorTaggedBuild,
+	type ApifyClient,
+	type Dataset,
+	DownloadItemsFormat,
+} from 'apify-client';
+import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../../lib/commands/run-on-cloud.js';
-import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
-
-const TerminalStatuses = [
-	ACTOR_JOB_STATUSES.SUCCEEDED,
-	ACTOR_JOB_STATUSES.ABORTED,
-	ACTOR_JOB_STATUSES.FAILED,
-	ACTOR_JOB_STATUSES.TIMED_OUT,
-];
+import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { error, simpleLog } from '../../lib/outputs.js';
+import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override description =
@@ -49,7 +50,10 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			char: 'o',
 			description: 'Prints out the entire default dataset on successful run of the Actor.',
 		}),
+		// TODO: do we want to do the --stream-x flags? Can we even do them?
 	};
+
+	static override enableJsonFlag = true;
 
 	static override args = {
 		actorId: Args.string({
@@ -67,7 +71,18 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		const userInfo = await getLocalUserInfo();
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
-		const { id: actorId, userFriendlyId } = await ActorsCallCommand.resolveActorId({
+		if (this.flags.json && this.flags.outputDataset) {
+			error({ message: 'You cannot use both the --json and --output-dataset flags when running this command.' });
+			process.exitCode = CommandExitCodes.InvalidInput;
+
+			return;
+		}
+
+		const {
+			id: actorId,
+			userFriendlyId,
+			actorData,
+		} = await ActorsCallCommand.resolveActorId({
 			client: apifyClient,
 			localActorName: localConfig.name as string | undefined,
 			usernameOrId,
@@ -101,7 +116,10 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			return;
 		}
 
-		let run = await runActorOrTaskOnCloud(apifyClient, {
+		let runStarted = false;
+		let run: ActorRun;
+
+		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
 				id: actorId,
 				userFriendlyId,
@@ -111,25 +129,80 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			waitForFinishMillis,
 			inputOverride: inputOverride?.input,
 			silent: this.flags.silent,
+			waitForRunToFinish: true,
+			printRunLogs: true,
 		});
 
-		if (this.flags.outputDataset) {
-			// TODO: cleaner way to do this (aka move it to a util function, or integrate it into runActorOrTaskOnCloud)
-			while (!TerminalStatuses.includes(run.status as never)) {
-				run = (await apifyClient.run(run.id).get())!;
+		for await (const yieldedRun of iterator) {
+			run = yieldedRun;
 
-				if (TerminalStatuses.includes(run.status as never)) {
-					break;
+			if (!runStarted) {
+				runStarted = true;
+
+				// A *lot* is copied from `runs info`
+				if (!this.flags.silent) {
+					const url = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
+
+					const message: string[] = [
+						`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`,
+					];
+
+					// container url
+					if (yieldedRun.containerUrl) {
+						message.push(`${chalk.yellow('Container URL')}: ${chalk.blue(yieldedRun.containerUrl)}`);
+					}
+
+					// basic version info
+
+					const expectedActorVersion = run.buildNumber.split('.').slice(0, 2).join('.');
+
+					const actorVersion = actorData.versions.find((item) => item.versionNumber === expectedActorVersion);
+
+					const runVersionTaggedAs = Object.entries(
+						(actorData.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>,
+					).find(([, data]) => data.buildNumber === yieldedRun.buildNumber)?.[0];
+
+					const messageParts = [`${chalk.yellow('Build')}:`, chalk.cyan(run.buildNumber)];
+
+					if (runVersionTaggedAs) {
+						messageParts.push(`(${chalk.yellow(runVersionTaggedAs)})`);
+					} else {
+						messageParts.push(`(${chalk.gray('N/A')})`);
+					}
+
+					if (actorVersion) {
+						messageParts.push(
+							`| ${chalk.gray('Actor version:')} ${chalk.cyan(actorVersion.versionNumber)} (${chalk.yellow(actorVersion.buildTag)})`,
+						);
+					}
+
+					message.push(messageParts.join(' '));
+
+					// timeout
+					message.push(
+						`${chalk.yellow('Timeout')}: ${run.options.timeoutSecs.toLocaleString('en-US')} seconds`,
+					);
+
+					// memory limit
+					message.push(`${chalk.yellow('Memory')}: ${run.options.memoryMbytes} MB`);
+
+					// url
+					message.push('', `${chalk.blue('View on Apify Console')}: ${url}`, '');
+
+					simpleLog({ message: message.join('\n') });
 				}
-
-				// Wait a second before checking again
-				await new Promise((resolve) => setTimeout(resolve, 1000));
 			}
+		}
 
-			const datasetId = run.defaultDatasetId;
+		if (this.flags.json) {
+			return run!;
+		}
+
+		if (this.flags.outputDataset) {
+			const datasetId = run!.defaultDatasetId;
 
 			let info: Dataset;
-			let retries = 5;
+			let retries = 4;
 
 			// Why is this needed? Sometimes, when fetching the dataset info right after the run ends, the object doesn't have the stats up-to-date.
 			// But sometimes it does!
@@ -149,6 +222,8 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 			console.log(dataset.toString());
 		}
+
+		return undefined;
 	}
 
 	private static async resolveActorId({
@@ -172,6 +247,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			return {
 				userFriendlyId: `${actor.username}/${actor.name}`,
 				id: actor.id,
+				actorData: actor,
 			};
 		}
 
@@ -183,6 +259,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 				return {
 					userFriendlyId: `${actorById.username}/${actorById.name}`,
 					id: actorById.id,
+					actorData: actorById,
 				};
 			}
 
@@ -192,6 +269,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 				return {
 					userFriendlyId: `${actorByName.username}/${actorByName.name}`,
 					id: actorByName.id,
+					actorData: actorByName,
 				};
 			}
 
@@ -211,6 +289,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			return {
 				userFriendlyId: `${actor.username}/${actor.name}`,
 				id: actor.id,
+				actorData: actor,
 			};
 		}
 

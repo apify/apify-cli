@@ -179,7 +179,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		message.push(`${chalk.yellow('Origin')}: ${run.meta.origin}`);
 
 		// build
-		if (actor && build) {
+		if (actor) {
 			// Compute detailed view
 			const expectedActorVersion = run.buildNumber.split('.').slice(0, 2).join('.');
 

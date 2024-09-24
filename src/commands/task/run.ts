@@ -1,5 +1,5 @@
 import { Args } from '@oclif/core';
-import { ApifyClient, TaskStartOptions } from 'apify-client';
+import type { ApifyClient, TaskStartOptions } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../../lib/commands/run-on-cloud.js';
@@ -47,7 +47,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			runOpts.memory = this.flags.memory;
 		}
 
-		await runActorOrTaskOnCloud(apifyClient, {
+		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
 				id: taskId,
 				userFriendlyId,
@@ -56,7 +56,14 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			runOptions: runOpts,
 			type: 'Task',
 			waitForFinishMillis,
+			printRunLogs: true,
 		});
+
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		for await (const _ of iterator) {
+			// Do nothing
+			// TODO: give this the same love `actors call` got
+		}
 	}
 
 	private async resolveTaskId(client: ApifyClient, usernameOrId: string) {
@@ -73,6 +80,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 				id: task.id,
 				userFriendlyId: `${usernameOrId}/${task.name}`,
 				title: task.title,
+				task,
 			};
 		}
 
@@ -88,6 +96,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 				id: task.id,
 				userFriendlyId: `${usernameOrId}/${task.name}`,
 				title: task.title,
+				task,
 			};
 		}
 
