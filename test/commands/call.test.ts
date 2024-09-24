@@ -36,7 +36,7 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 
 const { CreateCommand } = await import('../../src/commands/create.js');
 const { PushCommand } = await import('../../src/commands/push.js');
-const { ActorCallCommand } = await import('../../src/commands/call.js');
+const { ActorsCallCommand } = await import('../../src/commands/actors/call.js');
 
 describe('apify call', () => {
 	let actorId: string;
@@ -92,7 +92,7 @@ describe('apify call', () => {
 	});
 
 	it('without actId', async () => {
-		await ActorCallCommand.run([], import.meta.url);
+		await ActorsCallCommand.run([], import.meta.url);
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
 		const lastRun = runs.items.pop();
@@ -106,7 +106,7 @@ describe('apify call', () => {
 	});
 
 	it('should work with just the Actor name', async () => {
-		await expect(ActorCallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
+		await expect(ActorsCallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -121,7 +121,7 @@ describe('apify call', () => {
 	});
 
 	it('should work with just the Actor ID', async () => {
-		await expect(ActorCallCommand.run([apifyId], import.meta.url)).resolves.toBeUndefined();
+		await expect(ActorsCallCommand.run([apifyId], import.meta.url)).resolves.toBeUndefined();
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -142,7 +142,7 @@ describe('apify call', () => {
 
 		const string = JSON.stringify(expectedInput);
 
-		await expect(ActorCallCommand.run([ACTOR_NAME, '--input', string], import.meta.url)).resolves.toBeUndefined();
+		await expect(ActorsCallCommand.run([ACTOR_NAME, '--input', string], import.meta.url)).resolves.toBeUndefined();
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -156,7 +156,7 @@ describe('apify call', () => {
 
 	it('should work with passed in input file', async () => {
 		await expect(
-			ActorCallCommand.run([ACTOR_NAME, '--input-file', pathToInputJson], import.meta.url),
+			ActorsCallCommand.run([ACTOR_NAME, '--input-file', pathToInputJson], import.meta.url),
 		).resolves.toBeUndefined();
 
 		const actorClient = testUserClient.actor(actorId);
@@ -186,7 +186,7 @@ describe('apify call', () => {
 				}, 50);
 			}, 1000);
 
-			return ActorCallCommand.run([ACTOR_NAME], import.meta.url);
+			return ActorsCallCommand.run([ACTOR_NAME], import.meta.url);
 		});
 
 		expect(error).toBeUndefined();
