@@ -127,6 +127,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		const renderedTip = this.flags.verbose
 			? ''
 			: chalk.gray(` (run with ${chalk.yellow('--verbose')} for a detailed breakdown)`);
+
 		if (run.usageTotalUsd) {
 			message.push(`${chalk.yellow('Usage')}: ${chalk.cyan(this.formatUsd(run.usageTotalUsd))}${renderedTip}`);
 		} else {
@@ -233,7 +234,11 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		message.push('');
 
 		const url = `https://console.apify.com/actors/${run.actId}/runs/${run.id}`;
+		const datasetUrl = `https://console.apify.com/storage/datasets/${run.defaultDatasetId}`;
+		const keyValueStoreUrl = `https://console.apify.com/storage/key-value-stores/${run.defaultKeyValueStoreId}`;
 
+		message.push(`${chalk.blue('Export results')}: ${datasetUrl}`);
+		message.push(`${chalk.blue('View saved items')}: ${keyValueStoreUrl}`);
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 
 		simpleLog({ message: message.join('\n') });
