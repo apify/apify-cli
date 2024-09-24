@@ -4,7 +4,7 @@ import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { runCommand } from '@oclif/test';
-import { ActorCollectionCreateOptions } from 'apify-client';
+import type { ActorCollectionCreateOptions } from 'apify-client';
 import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFile } from 'write-json-file';
 
@@ -107,7 +107,7 @@ function setProcessCwd(newCwd: string) {
 
 useProcessMock({ cwdMock: () => cwd });
 
-const { PullCommand } = await import('../../src/commands/pull.js');
+const { ActorsPullCommand } = await import('../../src/commands/actors/pull.js');
 
 describe('apify pull', () => {
 	const actorsForCleanup = new Set<string>();
@@ -144,7 +144,7 @@ describe('apify pull', () => {
 		const testActorClient = testUserClient.actor(testActor.id);
 		const actorFromServer = await testActorClient.get();
 
-		await PullCommand.run([testActor.id], import.meta.url);
+		await ActorsPullCommand.run([testActor.id], import.meta.url);
 
 		const actorJson = loadJsonFileSync<{ name: string }>(join(testActor.name, LOCAL_CONFIG_PATH));
 
@@ -158,7 +158,7 @@ describe('apify pull', () => {
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add(testActor.name);
 
-		await PullCommand.run([testActor.id], import.meta.url);
+		await ActorsPullCommand.run([testActor.id], import.meta.url);
 
 		const actorPackageJson = loadJsonFileSync<{ name: string }>(join(testActor.name, 'package.json'));
 
@@ -172,7 +172,7 @@ describe('apify pull', () => {
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add(testActor.name);
 
-		await PullCommand.run([testActor.id], import.meta.url);
+		await ActorsPullCommand.run([testActor.id], import.meta.url);
 
 		const actorJson = loadJsonFileSync<{ name: string }>(join(testActor.name, DEPRECATED_LOCAL_CONFIG_NAME));
 
@@ -196,7 +196,7 @@ describe('apify pull', () => {
 		);
 
 		setProcessCwd(join(cwd, 'pull-test-no-name'));
-		await PullCommand.run([], import.meta.url);
+		await ActorsPullCommand.run([], import.meta.url);
 
 		expect(existsSync(join('pull-test-no-name', 'src/__init__.py'))).to.be.eql(true);
 	});
