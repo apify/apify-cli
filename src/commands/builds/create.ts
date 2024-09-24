@@ -1,4 +1,4 @@
-import { Flags } from '@oclif/core';
+import { Args, Flags } from '@oclif/core';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
@@ -10,10 +10,6 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 	static override description = 'Creates a new build of the Actor.';
 
 	static override flags = {
-		actor: Flags.string({
-			description:
-				'Optional Actor ID or Name to trigger a build for. By default, it will use the Actor from the current directory.',
-		}),
 		tag: Flags.string({
 			description: 'Build tag to be applied to the successful Actor build. By default, this is "latest".',
 		}),
@@ -27,10 +23,18 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		}),
 	};
 
+	static override args = {
+		actor: Args.string({
+			description:
+				'Optional Actor ID or Name to trigger a build for. By default, it will use the Actor from the current directory.',
+		}),
+	};
+
 	static override enableJsonFlag = true;
 
 	async run() {
-		const { actor, tag, version, json, log } = this.flags;
+		const { tag, version, json, log } = this.flags;
+		const { actor } = this.args;
 
 		const client = await getLoggedClientOrThrow();
 
@@ -38,7 +42,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID by running this command with "--actor=<id>"`,
+				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
 			});
 
 			return;
@@ -130,7 +134,9 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				await outputJobLog(build);
 			} catch (err) {
 				// This should never happen...
-				error({ message: `Failed to print log for build with ID "${build.id}": ${(err as Error).message}` });
+				error({
+					message: `Failed to print log for build with ID "${build.id}": ${(err as Error).message}`,
+				});
 			}
 
 			// Print out an empty line
