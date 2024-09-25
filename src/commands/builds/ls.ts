@@ -1,4 +1,4 @@
-import { Flags } from '@oclif/core';
+import { Args, Flags } from '@oclif/core';
 import type { BuildCollectionClientListItem } from 'apify-client';
 import chalk from 'chalk';
 
@@ -19,10 +19,6 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 	static override description = 'Lists all builds of the Actor.';
 
 	static override flags = {
-		actor: Flags.string({
-			description:
-				'Optional Actor ID or Name to list builds for. By default, it will use the Actor from the current directory.',
-		}),
 		offset: Flags.integer({
 			description: 'Number of builds that will be skipped.',
 			default: 0,
@@ -42,15 +38,23 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 		}),
 	};
 
+	static override args = {
+		actorId: Args.string({
+			description:
+				'Optional Actor ID or Name to list runs for. By default, it will use the Actor from the current directory.',
+		}),
+	};
+
 	static override enableJsonFlag = true;
 
 	async run() {
-		const { actor, desc, limit, offset, compact, json } = this.flags;
+		const { desc, limit, offset, compact, json } = this.flags;
+		const { actorId } = this.args;
 
 		const client = await getLoggedClientOrThrow();
 
 		// TODO: technically speaking, we don't *need* an actor id to list builds. But it makes more sense to have a table of builds for a specific actor.
-		const ctx = await resolveActorContext({ providedActorNameOrId: actor, client });
+		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
 			error({
