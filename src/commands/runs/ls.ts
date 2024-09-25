@@ -128,6 +128,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 		simpleLog({
 			message: message.join('\n'),
+			stdout: true,
 		});
 
 		return undefined;

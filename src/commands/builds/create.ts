@@ -24,7 +24,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 	};
 
 	static override args = {
-		actor: Args.string({
+		actorId: Args.string({
 			description:
 				'Optional Actor ID or Name to trigger a build for. By default, it will use the Actor from the current directory.',
 		}),
@@ -34,11 +34,11 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 	async run() {
 		const { tag, version, json, log } = this.flags;
-		const { actor } = this.args;
+		const { actorId } = this.args;
 
 		const client = await getLoggedClientOrThrow();
 
-		const ctx = await resolveActorContext({ providedActorNameOrId: actor, client });
+		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
 			error({
@@ -74,6 +74,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			if (tag && (!taggedVersions || !taggedVersions.some((v) => v.versionNumber === version))) {
 				error({
 					message: `The Actor Version "${version}" does not have the tag "${tag}".`,
+					stdout: true,
 				});
 
 				return;
@@ -89,6 +90,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				if (!version) {
 					error({
 						message: `Multiple Actor versions with the tag "${tag}" found. Please specify the version number using the "--version" flag.\n  Available versions for this tag: ${taggedVersions.map((v) => chalk.yellow(v.versionNumber)).join(', ')}`,
+						stdout: true,
 					});
 
 					return;
@@ -101,6 +103,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		if (!selectedVersion) {
 			error({
 				message: `No Actor versions with the tag "${tag}" found. You can push a new version with this tag by using "apify push --build-tag=${tag}".`,
+				stdout: true,
 			});
 
 			return;
@@ -127,6 +130,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		simpleLog({
 			message: message.join('\n'),
+			stdout: true,
 		});
 
 		if (log) {
@@ -142,11 +146,13 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			// Print out an empty line
 			simpleLog({
 				message: '',
+				stdout: true,
 			});
 		}
 
 		simpleLog({
 			message: viewMessage,
+			stdout: true,
 		});
 
 		return undefined;

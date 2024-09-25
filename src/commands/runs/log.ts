@@ -22,11 +22,11 @@ export class RunsLogCommand extends ApifyCommand<typeof RunsLogCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			error({ message: `Run with ID "${runId}" was not found on your account.` });
+			error({ message: `Run with ID "${runId}" was not found on your account.`, stdout: true });
 			return;
 		}
 
-		info({ message: `Log for run with ID "${runId}":\n` });
+		info({ message: `Log for run with ID "${runId}":\n`, stdout: true });
 
 		try {
 			await outputJobLog(run);

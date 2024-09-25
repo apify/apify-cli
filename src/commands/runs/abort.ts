@@ -38,15 +38,15 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			error({ message: `Run with ID "${runId}" was not found on your account.` });
+			error({ message: `Run with ID "${runId}" was not found on your account.`, stdout: true });
 			return;
 		}
 
 		if (!runningStatuses.includes(run.status as never)) {
 			if (abortingStatuses.includes(run.status as never)) {
-				error({ message: `Run with ID "${runId}" is already aborting.` });
+				error({ message: `Run with ID "${runId}" is already aborting.`, stdout: true });
 			} else {
-				error({ message: `Run with ID "${runId}" is already aborted.` });
+				error({ message: `Run with ID "${runId}" is already aborted.`, stdout: true });
 			}
 
 			return;
@@ -60,10 +60,11 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 			}
 
 			if (this.flags.force) {
-				success({ message: `Triggered the immediate abort of run "${runId}".` });
+				success({ message: `Triggered the immediate abort of run "${runId}".`, stdout: true });
 			} else {
 				success({
 					message: `Triggered the abort of run "${runId}", it should finish aborting in up to 30 seconds.`,
+					stdout: true,
 				});
 			}
 		} catch (err) {
@@ -71,6 +72,7 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 
 			error({
 				message: `Failed to abort run "${runId}".\n  ${casted.message || casted}`,
+				stdout: true,
 			});
 		}
 
