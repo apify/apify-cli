@@ -33,10 +33,6 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
 		};
 
-		const waitForFinishMillis = Number.isNaN(this.flags.waitForFinish)
-			? undefined
-			: Number.parseInt(this.flags.waitForFinish!, 10) * 1000;
-
 		if (this.flags.build) {
 			runOpts.build = this.flags.build;
 		}
@@ -60,7 +56,6 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			},
 			runOptions: runOpts,
 			type: 'Task',
-			waitForFinishMillis,
 			printRunLogs: true,
 		});
 
