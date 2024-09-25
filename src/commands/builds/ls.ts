@@ -59,6 +59,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 		if (!ctx.valid) {
 			error({
 				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID by running this command with "--actor=<id>".`,
+				stdout: true,
 			});
 
 			return;
@@ -102,6 +103,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 
 		simpleLog({
 			message: `${chalk.reset('Showing')} ${chalk.yellow(allBuilds.items.length)} out of ${chalk.yellow(allBuilds.total)} builds for Actor ${chalk.yellow(ctx.userFriendlyId)} (${chalk.gray(ctx.id)})\n`,
+			stdout: true,
 		});
 
 		const sortedActorVersions = Object.entries(buildsByActorVersion).sort((a, b) => a[0].localeCompare(b[0]));
@@ -110,6 +112,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 			if (!buildsForVersion?.length) {
 				simpleLog({
 					message: `No builds for version ${actorVersion}`,
+					stdout: true,
 				});
 
 				continue;
@@ -133,6 +136,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 
 			simpleLog({
 				message: message.join('\n'),
+				stdout: true,
 			});
 		}
 
