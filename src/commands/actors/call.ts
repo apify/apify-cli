@@ -93,10 +93,6 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
 		};
 
-		const waitForFinishMillis = Number.isNaN(this.flags.waitForFinish)
-			? undefined
-			: Number.parseInt(this.flags.waitForFinish!, 10) * 1000;
-
 		if (this.flags.build) {
 			runOpts.build = this.flags.build;
 		}
@@ -129,7 +125,6 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			},
 			runOptions: runOpts,
 			type: 'Actor',
-			waitForFinishMillis,
 			inputOverride: inputOverride?.input,
 			silent: this.flags.silent,
 			waitForRunToFinish: true,

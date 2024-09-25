@@ -65,7 +65,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID by running this command with "--actor=<id>".`,
+				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
 			});
 
 			return;
