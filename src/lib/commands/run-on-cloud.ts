@@ -157,9 +157,4 @@ export const SharedRunOnCloudFlags = (type: 'Actor' | 'Task') => ({
 		description: `Amount of memory allocated for the ${type} run, in megabytes.`,
 		required: false,
 	}),
-	'wait-for-finish': Flags.string({
-		char: 'w',
-		description: 'Seconds for waiting to run to finish, if no value passed, it waits forever.',
-		required: false,
-	}),
 });
