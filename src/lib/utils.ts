@@ -519,7 +519,7 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
 
 	// In other case stream it to stderr
 	// eslint-disable-next-line no-async-promise-executor
-	return new Promise(async (resolve) => {
+	return new Promise<'no-logs' | 'finished' | 'timeouts'>(async (resolve) => {
 		const stream = await apifyClient.log(logId).stream();
 
 		if (!stream) {

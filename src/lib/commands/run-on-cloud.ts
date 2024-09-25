@@ -3,11 +3,19 @@ import process from 'node:process';
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Flags } from '@oclif/core';
 import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
+import chalk from 'chalk';
 
 import { resolveInput } from './resolve-input.js';
 import { CommandExitCodes } from '../consts.js';
-import { error, link, run as runLog, success, warning } from '../outputs.js';
+import { error, run as runLog, success, warning } from '../outputs.js';
 import { outputJobLog } from '../utils.js';
+
+const TerminalStatuses = [
+	ACTOR_JOB_STATUSES.SUCCEEDED,
+	ACTOR_JOB_STATUSES.ABORTED,
+	ACTOR_JOB_STATUSES.FAILED,
+	ACTOR_JOB_STATUSES.TIMED_OUT,
+];
 
 export interface RunOnCloudOptions {
 	actorOrTaskData: {
@@ -20,11 +28,22 @@ export interface RunOnCloudOptions {
 	waitForFinishMillis?: number;
 	inputOverride?: Record<string, unknown>;
 	silent?: boolean;
+	waitForRunToFinish?: boolean;
+	printRunLogs?: boolean;
 }
 
-export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: RunOnCloudOptions) {
+export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: RunOnCloudOptions) {
 	const cwd = process.cwd();
-	const { actorOrTaskData, runOptions, type, waitForFinishMillis, inputOverride, silent } = options;
+	const {
+		actorOrTaskData,
+		runOptions,
+		type,
+		waitForFinishMillis,
+		inputOverride,
+		silent,
+		waitForRunToFinish,
+		printRunLogs,
+	} = options;
 
 	const clientMethod = type === 'Actor' ? 'actor' : 'task';
 
@@ -33,13 +52,17 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
 
 	if (!silent) {
 		if (type === 'Actor') {
-			runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
+			runLog({
+				message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${chalk.gray(actorOrTaskData.id)})\n`,
+			});
 		} else if (actorOrTaskData.title) {
 			runLog({
-				message: `Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${actorOrTaskData.id})`,
+				message: `Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${chalk.gray(actorOrTaskData.id)})\n`,
 			});
 		} else {
-			runLog({ message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id})` });
+			runLog({
+				message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${chalk.gray(actorOrTaskData.id)})\n`,
+			});
 		}
 	}
 
@@ -60,14 +83,25 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (err: any) {
 		// TODO: Better error message in apify-client-js
-		if (err.type === 'record-not-found')
+		if (err.type === 'record-not-found') {
 			throw new Error(`${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id}) not found!`);
-		else throw err;
+		}
+
+		throw err;
 	}
 
-	if (!silent) {
+	// Return the started run right away
+	yield run;
+
+	if (!silent && printRunLogs) {
 		try {
-			await outputJobLog(run, waitForFinishMillis);
+			const res = await outputJobLog(run, waitForFinishMillis);
+
+			if (res === 'timeouts') {
+				console.error(`\n${chalk.gray('Timeout for printing logs was hit, there may be future logs.')}\n`);
+			} else {
+				console.error();
+			}
 		} catch (err) {
 			warning({ message: 'Can not get log:' });
 			console.error(err);
@@ -76,9 +110,20 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
 
 	run = (await apifyClient.run(run.id).get())!;
 
-	if (!silent) {
-		link({ message: `${type} run detail`, url: `https://console.apify.com/actors/${run.actId}#/runs/${run.id}` });
+	if (waitForRunToFinish) {
+		while (!TerminalStatuses.includes(run.status as never)) {
+			run = (await apifyClient.run(run.id).get())!;
 
+			if (TerminalStatuses.includes(run.status as never)) {
+				break;
+			}
+
+			// Wait a second before checking again
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+		}
+	}
+
+	if (!silent) {
 		if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
 			success({ message: `${type} finished.` });
 		} else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
@@ -92,7 +137,8 @@ export async function runActorOrTaskOnCloud(apifyClient: ApifyClient, options: R
 		}
 	}
 
-	return run;
+	// Return the finished run
+	yield run;
 }
 
 export const SharedRunOnCloudFlags = (type: 'Actor' | 'Task') => ({
