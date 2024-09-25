@@ -119,6 +119,9 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		let runStarted = false;
 		let run: ActorRun;
 
+		let url: string;
+		let datasetUrl: string;
+
 		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
 				id: actorId,
@@ -141,7 +144,8 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 				// A *lot* is copied from `runs info`
 				if (!this.flags.silent) {
-					const url = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
+					url = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
+					datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
 
 					const message: string[] = [
 						`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`,
@@ -187,15 +191,26 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					message.push(`${chalk.yellow('Memory')}: ${run.options.memoryMbytes} MB`);
 
 					// url
-					message.push('', `${chalk.blue('View on Apify Console')}: ${url}`, '');
+					message.push(`${chalk.blue('View on Apify Console')}: ${url}`, '');
 
-					simpleLog({ message: message.join('\n') });
+					simpleLog({ message: message.join('\n'), stdout: true });
 				}
 			}
 		}
 
 		if (this.flags.json) {
 			return run!;
+		}
+
+		if (!this.flags.silent) {
+			simpleLog({
+				message: [
+					'',
+					`${chalk.blue('Export results')}: ${datasetUrl!}`,
+					`${chalk.blue('View on Apify Console')}: ${url!}`,
+				].join('\n'),
+				stdout: true,
+			});
 		}
 
 		if (this.flags.outputDataset) {
