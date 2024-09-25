@@ -36,7 +36,21 @@ export const PROJECT_TYPES = {
 	UNKNOWN: 'unknown',
 };
 
-export const COMMANDS_WITHIN_ACTOR = ['init', 'run', 'push', 'pull', 'call'];
+export const COMMANDS_WITHIN_ACTOR = [
+	'init',
+	'run',
+
+	'push',
+	'actors:push',
+
+	'pull',
+	'actors:pull',
+
+	'call',
+	'actors:call',
+
+	'actors:start',
+];
 
 export const CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
 

@@ -40,6 +40,7 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
 
 	override async finally(err?: Error) {
 		const command = this.id;
+
 		const eventData: Record<string, unknown> = {
 			command,
 			$os: this.config.platform,
