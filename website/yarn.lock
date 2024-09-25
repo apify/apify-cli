@@ -3671,11 +3671,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 22.5.5
-  resolution: "@types/node@npm:22.5.5"
+  version: 22.7.0
+  resolution: "@types/node@npm:22.7.0"
   dependencies:
     undici-types: "npm:~6.19.2"
-  checksum: 10c0/ead9495cfc6b1da5e7025856dcce2591e9bae635357410c0d2dd619fce797d2a1d402887580ca4b336cb78168b195224869967de370a23f61663cf1e4836121c
+  checksum: 10c0/127b1ac3eebe8c2b09e3d2de277ee906710c4908b4573cde23b9c7cec1cb1aaf1af8bdabbccdac08d005f820b770e7447b22c8eb56ca63344f4d2e26bcdc29fb
   languageName: node
   linkType: hard
 
@@ -3754,12 +3754,12 @@ __metadata:
   linkType: hard
 
 "@types/react@npm:*":
-  version: 18.3.8
-  resolution: "@types/react@npm:18.3.8"
+  version: 18.3.9
+  resolution: "@types/react@npm:18.3.9"
   dependencies:
     "@types/prop-types": "npm:*"
     csstype: "npm:^3.0.2"
-  checksum: 10c0/367312c9fe276639ecb142265e090a4dd04bb39f8d718cbab546de3f1ddcfddeff415e1147d0fc40f734badaa7420b7b109d511bd4304b2c4c9c36164612fdf8
+  checksum: 10c0/a92b8e061d0c833e096254782c56a802316593f4a907fb834b557cabe848a0829b9eb6056404ea239eb4d5ec5ac7b7724309761516c0a7a277916fa04dd4f805
   languageName: node
   linkType: hard
 
@@ -4827,16 +4827,16 @@ __metadata:
   linkType: hard
 
 "browserslist@npm:^4.0.0, browserslist@npm:^4.18.1, browserslist@npm:^4.21.10, browserslist@npm:^4.23.0, browserslist@npm:^4.23.1, browserslist@npm:^4.23.3":
-  version: 4.23.3
-  resolution: "browserslist@npm:4.23.3"
+  version: 4.24.0
+  resolution: "browserslist@npm:4.24.0"
   dependencies:
-    caniuse-lite: "npm:^1.0.30001646"
-    electron-to-chromium: "npm:^1.5.4"
+    caniuse-lite: "npm:^1.0.30001663"
+    electron-to-chromium: "npm:^1.5.28"
     node-releases: "npm:^2.0.18"
     update-browserslist-db: "npm:^1.1.0"
   bin:
     browserslist: cli.js
-  checksum: 10c0/3063bfdf812815346447f4796c8f04601bf5d62003374305fd323c2a463e42776475bcc5309264e39bcf9a8605851e53560695991a623be988138b3ff8c66642
+  checksum: 10c0/95e76ad522753c4c470427f6e3c8a4bb5478ff448841e22b3d3e53f89ecaf17b6984666d6c7e715c370f1e7fa0cf684f42e34e554236a8b2fab38ea76b9e4c52
   languageName: node
   linkType: hard
 
@@ -4959,10 +4959,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"caniuse-lite@npm:^1.0.0, caniuse-lite@npm:^1.0.30001646":
-  version: 1.0.30001662
-  resolution: "caniuse-lite@npm:1.0.30001662"
-  checksum: 10c0/4af44610db30b9e63443d984be9d48ab93eef584609b3e87201c10972b9daff0b52674e3ed01f7b7b240460763428a3aa8ef7328d14b76ed31ed464203677007
+"caniuse-lite@npm:^1.0.0, caniuse-lite@npm:^1.0.30001646, caniuse-lite@npm:^1.0.30001663":
+  version: 1.0.30001663
+  resolution: "caniuse-lite@npm:1.0.30001663"
+  checksum: 10c0/6508e27bf7fdec657f26f318b1ab64ace6e1208ef9fedaf0975bc89046e0c683bfba837f108840ada1686ff09b8ffd01e05ac791dcf598b8f16eefb636875cf2
   languageName: node
   linkType: hard
 
@@ -6233,10 +6233,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"electron-to-chromium@npm:^1.5.4":
-  version: 1.5.27
-  resolution: "electron-to-chromium@npm:1.5.27"
-  checksum: 10c0/4a057f469a01829884f2a51f3fc60af7e6a718b15009e4875df122fcdf13babea475ba029af1652a6875b4acfca730c48b13caac5d477d648e622699d3b662bf
+"electron-to-chromium@npm:^1.5.28":
+  version: 1.5.28
+  resolution: "electron-to-chromium@npm:1.5.28"
+  checksum: 10c0/6e2f4150ba03ce53ca128955c7d2da071d3774362a10c68848a85b71c29857915e2256cb53cd2de17fdbf0f56bf76ec174d24965abef7430d8c414ec733030b2
   languageName: node
   linkType: hard
 
@@ -6628,14 +6628,14 @@ __metadata:
   linkType: hard
 
 "eslint-module-utils@npm:^2.8.1, eslint-module-utils@npm:^2.9.0":
-  version: 2.11.0
-  resolution: "eslint-module-utils@npm:2.11.0"
+  version: 2.11.1
+  resolution: "eslint-module-utils@npm:2.11.1"
   dependencies:
     debug: "npm:^3.2.7"
   peerDependenciesMeta:
     eslint:
       optional: true
-  checksum: 10c0/c1b02e83429878ab22596f17a5ac138e51a520e96a5ef89a5a6698769a2d174ab28302d45eb563c0fc418d21a5842e328c37a6e8f294bf2e64e675ba55203dd7
+  checksum: 10c0/d1c23397eddc42a7824de08348095483bc270a4a3222bc0d54a76382c6411111c33e44a0a1819489e1e209d9e4721de2a8438e7ca4e6fe6be32ff818af9b11b4
   languageName: node
   linkType: hard
 
@@ -8991,15 +8991,11 @@ __metadata:
   linkType: hard
 
 "jackspeak@npm:^4.0.1":
-  version: 4.0.1
-  resolution: "jackspeak@npm:4.0.1"
+  version: 4.0.2
+  resolution: "jackspeak@npm:4.0.2"
   dependencies:
     "@isaacs/cliui": "npm:^8.0.2"
-    "@pkgjs/parseargs": "npm:^0.11.0"
-  dependenciesMeta:
-    "@pkgjs/parseargs":
-      optional: true
-  checksum: 10c0/c87997d9c9c5b7366259b1f2a444ef148692f8eedad5307caca939babbb60af2b47d306e5c63bf9d5fefbab2ab48d4da275188c3de525d0e716cc21b784bbccb
+  checksum: 10c0/b26039d11c0163a95b1e58851b9ac453cce64ad6d1eb98a00b303ad5eeb761b29d33c9419d1e16c016d3f7151c8edf7df223e6cf93a1907655fd95d6ce85c0de
   languageName: node
   linkType: hard
 
@@ -12021,9 +12017,9 @@ __metadata:
   linkType: hard
 
 "preact@npm:^10.13.2":
-  version: 10.24.0
-  resolution: "preact@npm:10.24.0"
-  checksum: 10c0/09d490d2326c511e205a96f81db0adf05f1b42dbe2a39be6fc494662c7476575494e96140252f351a0e3b3d15aee5b079bf963865bb01287f69c45c6755ed22e
+  version: 10.24.1
+  resolution: "preact@npm:10.24.1"
+  checksum: 10c0/f9bc8b2f88d340f1b8f854208889244059c46916449b8f8f2174fcacbc0904c445c5870896fb0cfeaf442eeade975857e8e03f0785135c41d63cd32d9414c9c6
   languageName: node
   linkType: hard
 
