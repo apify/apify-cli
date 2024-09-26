@@ -1,4 +1,4 @@
-import { Flags } from '@oclif/core';
+import { Args, Flags } from '@oclif/core';
 import { Timestamp } from '@sapphire/timestamp';
 import chalk from 'chalk';
 
@@ -26,10 +26,6 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 	static override description = 'Lists all runs of the Actor.';
 
 	static override flags = {
-		actor: Flags.string({
-			description:
-				'Optional Actor ID or Name to list runs for. By default, it will use the Actor from the current directory.',
-		}),
 		offset: Flags.integer({
 			description: 'Number of runs that will be skipped.',
 			default: 0,
@@ -49,19 +45,27 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		}),
 	};
 
+	static override args = {
+		actorId: Args.string({
+			description:
+				'Optional Actor ID or Name to list runs for. By default, it will use the Actor from the current directory.',
+		}),
+	};
+
 	static override enableJsonFlag = true;
 
 	async run() {
-		const { actor, desc, limit, offset, compact, json } = this.flags;
+		const { desc, limit, offset, compact, json } = this.flags;
+		const { actorId } = this.args;
 
 		const client = await getLoggedClientOrThrow();
 
 		// Should we allow users to list any runs, not just actor-specific runs? Right now it works like `builds ls`, requiring an actor
-		const ctx = await resolveActorContext({ providedActorNameOrId: actor, client });
+		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID by running this command with "--actor=<id>".`,
+				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
 			});
 
 			return;
@@ -128,6 +132,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 		simpleLog({
 			message: message.join('\n'),
+			stdout: true,
 		});
 
 		return undefined;

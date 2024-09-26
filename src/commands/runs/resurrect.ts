@@ -33,13 +33,14 @@ export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectComma
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			error({ message: `Run with ID "${runId}" was not found on your account.` });
+			error({ message: `Run with ID "${runId}" was not found on your account.`, stdout: true });
 			return;
 		}
 
 		if (!resurrectStatuses.includes(run.status as never)) {
 			error({
 				message: `Run with ID "${runId}" cannot be resurrected, as it is still running or in the process of aborting.`,
+				stdout: true,
 			});
 
 			return;
@@ -52,12 +53,13 @@ export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectComma
 				return result;
 			}
 
-			success({ message: `Run with ID "${runId}" was resurrected successfully.` });
+			success({ message: `Run with ID "${runId}" was resurrected successfully.`, stdout: true });
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
 			error({
 				message: `Failed to resurrect run "${runId}".\n  ${casted.message || casted}`,
+				stdout: true,
 			});
 		}
 

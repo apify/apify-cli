@@ -241,7 +241,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		message.push(`${chalk.blue('View saved items')}: ${keyValueStoreUrl}`);
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 
-		simpleLog({ message: message.join('\n') });
+		simpleLog({ message: message.join('\n'), stdout: true });
 
 		return undefined;
 	}

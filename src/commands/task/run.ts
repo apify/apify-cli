@@ -1,8 +1,10 @@
 import { Args } from '@oclif/core';
 import type { ApifyClient, TaskStartOptions } from 'apify-client';
+import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../../lib/commands/run-on-cloud.js';
+import { simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
@@ -31,10 +33,6 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
 		};
 
-		const waitForFinishMillis = Number.isNaN(this.flags.waitForFinish)
-			? undefined
-			: Number.parseInt(this.flags.waitForFinish!, 10) * 1000;
-
 		if (this.flags.build) {
 			runOpts.build = this.flags.build;
 		}
@@ -47,6 +45,9 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			runOpts.memory = this.flags.memory;
 		}
 
+		let url: string;
+		let datasetUrl: string;
+
 		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
 				id: taskId,
@@ -55,15 +56,22 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			},
 			runOptions: runOpts,
 			type: 'Task',
-			waitForFinishMillis,
 			printRunLogs: true,
 		});
 
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		for await (const _ of iterator) {
-			// Do nothing
-			// TODO: give this the same love `actors call` got
+		for await (const yieldedRun of iterator) {
+			url = `https://console.apify.com/actors/${yieldedRun.actId}/runs/${yieldedRun.id}`;
+			datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
 		}
+
+		simpleLog({
+			message: [
+				'',
+				`${chalk.blue('Export results')}: ${datasetUrl!}`,
+				`${chalk.blue('View on Apify Console')}: ${url!}`,
+			].join('\n'),
+			stdout: true,
+		});
 	}
 
 	private async resolveTaskId(client: ApifyClient, usernameOrId: string) {

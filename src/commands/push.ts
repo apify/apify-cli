@@ -156,13 +156,16 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
 		let actorId: string;
 		let actor: Actor;
 		let isActorCreatedNow = false;
+
 		// User can override Actor version and build tag, attributes in localConfig will remain same.
 		const version =
 			this.flags.version ||
 			this.flags.versionNumber ||
 			(localConfig?.version as string | undefined) ||
 			DEFAULT_ACTOR_VERSION_NUMBER;
+
 		let buildTag = this.flags.buildTag || (localConfig!.buildTag as string | undefined);
+
 		// We can't add the default build tag to everything. If a user creates a new
 		// version, e.g. for testing, but forgets to add a tag, it would use the default
 		// tag and their production runs might be affected ❌
@@ -170,9 +173,11 @@ export class PushCommand extends ApifyCommand<typeof PushCommand> {
 		if (!buildTag && version === DEFAULT_ACTOR_VERSION_NUMBER) {
 			buildTag = DEFAULT_BUILD_TAG;
 		}
+
 		const waitForFinishMillis = Number.isNaN(this.flags.waitForFinish)
 			? undefined
 			: Number.parseInt(this.flags.waitForFinish!, 10) * 1000;
+
 		// User can override actorId of pushing Actor.
 		// It causes that we push Actor to this id but attributes in localConfig will remain same.
 		const forceActorId = this.args.actorId;
@@ -274,6 +279,7 @@ Skipping push. Use --force to override.`,
 		const envVars = localConfig!.environmentVariables
 			? transformEnvToEnvVars(localConfig!.environmentVariables as Record<string, string>)
 			: undefined;
+
 		if (actorCurrentVersion) {
 			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
 			// TODO: fix this type too -.-
