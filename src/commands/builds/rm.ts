@@ -24,7 +24,7 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			error({ message: `Build with ID "${buildId}" was not found on your account.` });
+			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
 			return;
 		}
 
@@ -51,6 +51,7 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		if (!confirmed) {
 			info({
 				message: `Deletion of build "${buildId}" was canceled.`,
+				stdout: true,
 			});
 
 			return;
@@ -61,10 +62,11 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 
 			success({
 				message: `Build with ID "${buildId}" was deleted.`,
+				stdout: true,
 			});
 		} catch (err) {
 			const casted = err as ApifyApiError;
-			error({ message: `Failed to delete build "${buildId}".\n  ${casted.message || casted}` });
+			error({ message: `Failed to delete build "${buildId}".\n  ${casted.message || casted}`, stdout: true });
 		}
 	}
 }
