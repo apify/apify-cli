@@ -16,9 +16,9 @@
 
 - When I run:
   ```
-  $ apify builds create --actor=invalid-id
+  $ apify builds create invalid-id
   ```
-- Then I can read text on stderr:
+- Then I can read text on stdout:
   ```
   Actor with name or ID "invalid-id" was not found
   ```
@@ -29,7 +29,7 @@
   ```
   $ apify builds create
   ```
-- Then I can read text on stderr:
+- Then I can read text on stdout:
   ```
   Actor with name "{{ testActorName }}" was not found
   ```
@@ -41,11 +41,11 @@
   ```
   $ apify builds create
   ```
-- Then I can read text on stderr:
+- Then I can read text on stdout:
   ```
   Build Started
   ```
-- And I can read text on stderr:
+- And I can read text on stdout:
   ```
   {{ testActorName}}
   ```
@@ -67,7 +67,7 @@
   ```
   $ apify builds info invalid-id
   ```
-- Then I can read text on stderr:
+- Then I can read text on stdout:
   ```
   Build with ID "invalid-id" was not found
   ```
@@ -84,7 +84,7 @@
   ```
   $ apify builds info {{ buildId }}
   ```
-- Then I can read text on stderr:
+- Then I can read text on stdout:
   ```
   {{ testActorName }}
   ```

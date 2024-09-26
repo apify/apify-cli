@@ -43,6 +43,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		if (!ctx.valid) {
 			error({
 				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
+				stdout: true,
 			});
 
 			return;
@@ -140,6 +141,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				// This should never happen...
 				error({
 					message: `Failed to print log for build with ID "${build.id}": ${(err as Error).message}`,
+					stdout: true,
 				});
 			}
 

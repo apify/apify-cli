@@ -98,6 +98,28 @@ Then<TestWorld>(/i can read text on stderr/i, function (expectedStdout: string) 
 	);
 });
 
+Then<TestWorld>(/i can read text on stdout/i, function (expectedStdout: string) {
+	assertWorldIsValid(this);
+	assertWorldHasRanCommand(this);
+
+	if (typeof expectedStdout !== 'string') {
+		throw new TypeError(
+			'When using the `i can read text on stdout` step, you must provide a string block with the expected text',
+		);
+	}
+
+	const lowercasedResult = this.testResults.stdout.toLowerCase();
+	const lowercasedExpected = replaceMatchersInString(expectedStdout, {
+		testActorName: this.testActor.name,
+	}).toLowerCase();
+
+	strictEqual(
+		lowercasedResult.includes(lowercasedExpected),
+		true,
+		`Expected to find "${lowercasedExpected}" in "${lowercasedResult}"`,
+	);
+});
+
 Then<TestWorld>(/I can read valid JSON on stdout/i, function () {
 	assertWorldIsValid(this);
 	assertWorldHasRanCommand(this);

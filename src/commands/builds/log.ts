@@ -22,7 +22,7 @@ export class BuildLogCommand extends ApifyCommand<typeof BuildLogCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			error({ message: `Build with ID "${buildId}" was not found on your account.` });
+			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
 			return;
 		}
 
@@ -32,7 +32,10 @@ export class BuildLogCommand extends ApifyCommand<typeof BuildLogCommand> {
 			await outputJobLog(build);
 		} catch (err) {
 			// This should never happen...
-			error({ message: `Failed to get log for build with ID "${buildId}": ${(err as Error).message}` });
+			error({
+				message: `Failed to get log for build with ID "${buildId}": ${(err as Error).message}`,
+				stdout: true,
+			});
 		}
 	}
 }

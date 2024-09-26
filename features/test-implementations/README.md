@@ -137,5 +137,13 @@ Currently, the following phrases are implemented:
   `​`​`
   ```
   - This step checks if the text provided is in the stderr output. If the text is not in the stderr output, an error will be thrown.
+- `then i can read text on stdout:` followed by a code block consisting of a string
+  - Example:
+  ```
+  Then I can read text on stdout:
+  `​`​`
+  use "--input-file=" flag instead
+  `​`​`
+  ```
 - `then i can read valid json on stdout`
   - This step checks if the stdout output is valid JSON. If the stdout output is not valid JSON, an error will be thrown.

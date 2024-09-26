@@ -27,7 +27,7 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			error({ message: `Build with ID "${buildId}" was not found on your account.` });
+			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
 			return;
 		}
 
@@ -97,7 +97,7 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 
-		simpleLog({ message: message.join('\n') });
+		simpleLog({ message: message.join('\n'), stdout: true });
 
 		return undefined;
 	}
