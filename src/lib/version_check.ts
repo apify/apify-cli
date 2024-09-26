@@ -33,7 +33,7 @@ export const detectInstallationType = () => {
 	const commandPath = process.argv[1];
 
 	// volta installed CLI
-	if (process.env.VOLTA_HOME && commandPath.toLowerCase().includes(process.env.VOLTA_HOME.toLowerCase())) {
+	if (process.env.VOLTA_HOME && commandPath?.toLowerCase().includes(process.env.VOLTA_HOME.toLowerCase())) {
 		return INSTALLATION_TYPE.VOLTA;
 	}
 
