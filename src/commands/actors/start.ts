@@ -159,7 +159,6 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			'',
 			`${chalk.blue('Export results')}: ${datasetUrl!}`,
 			`${chalk.blue('View on Apify Console')}: ${url}`,
-			'',
 		);
 
 		simpleLog({
