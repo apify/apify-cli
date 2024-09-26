@@ -236,7 +236,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		return undefined;
 	}
 
-	private static async resolveActorId({
+	public static async resolveActorId({
 		client,
 		localActorName,
 		usernameOrId,
