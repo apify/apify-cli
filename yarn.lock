@@ -1826,14 +1826,14 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-not-found@npm:^3.2.21":
-  version: 3.2.21
-  resolution: "@oclif/plugin-not-found@npm:3.2.21"
+  version: 3.2.22
+  resolution: "@oclif/plugin-not-found@npm:3.2.22"
   dependencies:
     "@inquirer/confirm": "npm:^3.2.0"
     "@oclif/core": "npm:^4"
     ansis: "npm:^3.3.1"
     fast-levenshtein: "npm:^3.0.0"
-  checksum: 10c0/d6abb7a898f02bd3acf9b8964632384bce271e6694a22461926982b285908fc28baf5b4c8767b9d0ca564ebb43edc4364b2daf2acc9deb2725b6d8028af7877f
+  checksum: 10c0/851621d24a09e31cf1210e2b1d94a08cf6f75bea0865ef63301578a9d65b5dfbb72173f6929b4e4dcda82ad36a1a2bd50a9d1b4c5bcfe8fed091f14444fa207e
   languageName: node
   linkType: hard
 
@@ -10647,9 +10647,9 @@ __metadata:
   linkType: hard
 
 "stream-chain@npm:^3.0.0":
-  version: 3.2.0
-  resolution: "stream-chain@npm:3.2.0"
-  checksum: 10c0/03c71fbed685e17d3b1b98f8316e5a441155dcbc44ae7eb31100a8944133e7f6e9452be77cef2c18d9ad0f361830ea32deaf382346b59ac7f1aa45eeeabedaec
+  version: 3.3.0
+  resolution: "stream-chain@npm:3.3.0"
+  checksum: 10c0/cc6a1506189b249d50c7e29728c56ba5e482dcfc8a6c3fa549b8f0165e808271dd5178d7048074e4e2302da8317d0132cbd2b2ed9a25a0be509facb7f650ab23
   languageName: node
   linkType: hard
 
