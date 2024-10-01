@@ -360,7 +360,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 					// Check if the input file was modified since we modified it. If it was, we abort the re-overwrite and warn the user
 					const stats = await stat(storedInputResults.inputFilePath);
 
-					if (stats.mtimeMs > storedInputResults.writtenAt) {
+					const mtime = Math.trunc(stats.mtimeMs);
+
+					// If its in a 5ms range, we assume the file was modified (realistically impossible)
+					if (mtime - storedInputResults.writtenAt >= 5) {
 						warning({
 							message: `The "${storedInputResults.inputFilePath}" file was overwritten during the run. The CLI will not undo the setting of missing default fields from your input schema.`,
 						});
