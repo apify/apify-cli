@@ -22,7 +22,7 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 
 const { LoginCommand } = await import('../../../src/commands/login.js');
 const { CreateCommand } = await import('../../../src/commands/create.js');
-const { PushCommand } = await import('../../../src/commands/push.js');
+const { ActorsPushCommand } = await import('../../../src/commands/actors/push.js');
 const { TaskRunCommand } = await import('../../../src/commands/task/run.js');
 
 const expectedOutput = {
@@ -53,7 +53,7 @@ describe('apify task run', () => {
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
 		toggleCwdBetweenFullAndParentPath();
-		await PushCommand.run(['--no-prompt', '--force'], import.meta.url);
+		await ActorsPushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
 		actorId = `${username}/${actName}`;
 

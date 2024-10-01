@@ -35,7 +35,7 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 });
 
 const { CreateCommand } = await import('../../src/commands/create.js');
-const { PushCommand } = await import('../../src/commands/push.js');
+const { ActorsPushCommand } = await import('../../src/commands/actors/push.js');
 const { ActorsCallCommand } = await import('../../src/commands/actors/call.js');
 
 describe('apify call', () => {
@@ -69,7 +69,7 @@ describe('apify call', () => {
 
 		toggleCwdBetweenFullAndParentPath();
 
-		await PushCommand.run(['--no-prompt', '--force'], import.meta.url);
+		await ActorsPushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
 		actorId = `${username}/${ACTOR_NAME}`;
 

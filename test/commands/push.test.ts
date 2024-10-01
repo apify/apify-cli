@@ -5,7 +5,7 @@ import { platform } from 'node:os';
 
 import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS } from '@apify/consts';
 import { cryptoRandomObjectId } from '@apify/utilities';
-import { ActorCollectionCreateOptions } from 'apify-client';
+import type { ActorCollectionCreateOptions } from 'apify-client';
 import { loadJsonFileSync } from 'load-json-file';
 import { writeJsonFileSync } from 'write-json-file';
 
@@ -46,7 +46,7 @@ const {
 
 const { LoginCommand } = await import('../../src/commands/login.js');
 const { CreateCommand } = await import('../../src/commands/create.js');
-const { PushCommand } = await import('../../src/commands/push.js');
+const { ActorsPushCommand } = await import('../../src/commands/actors/push.js');
 
 describe('apify push', () => {
 	const actorsForCleanup = new Set<string>();
@@ -82,7 +82,7 @@ describe('apify push', () => {
 		};
 		writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
 
-		await PushCommand.run(['--no-prompt', '--force'], import.meta.url);
+		await ActorsPushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
 		const userInfo = await getLocalUserInfo();
 		const { name } = actorJson;
@@ -115,7 +115,7 @@ describe('apify push', () => {
 		const testActorClient = testUserClient.actor(testActor.id);
 		const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
 
-		await PushCommand.run(['--no-prompt', '--force', testActor.id], import.meta.url);
+		await ActorsPushCommand.run(['--no-prompt', '--force', testActor.id], import.meta.url);
 
 		actorsForCleanup.add(testActor.id);
 
@@ -165,7 +165,7 @@ describe('apify push', () => {
 		delete actorJson.environmentVariables;
 		writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
 
-		await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
+		await ActorsPushCommand.run(['--no-prompt', testActor.id], import.meta.url);
 
 		testActor = (await testActorClient.get())!;
 		const testActorVersion = await testActorClient.version(actorJson.version).get();
@@ -210,7 +210,7 @@ describe('apify push', () => {
 		// Create large file to ensure Actor will be uploaded as zip
 		writeFileSync(joinPath('3mb-file.txt'), Buffer.alloc(1024 * 1024 * 3));
 
-		await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
+		await ActorsPushCommand.run(['--no-prompt', testActor.id], import.meta.url);
 
 		// Remove the big file so sources in following tests are not zipped
 		unlinkSync(joinPath('3mb-file.txt'));
@@ -242,7 +242,7 @@ describe('apify push', () => {
 
 		writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
 
-		await PushCommand.run(['--no-prompt', '--force'], import.meta.url);
+		await ActorsPushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
 		if (existsSync(joinPath('some-typescript-file.ts'))) unlinkSync(joinPath('some-typescript-file.ts'));
 
@@ -271,7 +271,7 @@ describe('apify push', () => {
 		await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
 
 		try {
-			await PushCommand.run(['--no-prompt', testActor.id], import.meta.url);
+			await ActorsPushCommand.run(['--no-prompt', testActor.id], import.meta.url);
 		} catch (e) {
 			expect((e as Error).message).to.includes('is already on the platform');
 		}
@@ -284,7 +284,7 @@ describe('apify push', () => {
 
 		forceNewCwd('empty-dir');
 
-		await PushCommand.run(['--no-prompt'], import.meta.url);
+		await ActorsPushCommand.run(['--no-prompt'], import.meta.url);
 
 		expect(consoleSpy.errorSpy).toHaveBeenCalled();
 
@@ -301,7 +301,7 @@ describe('apify push', () => {
 
 		await writeFile(joinCwdPath('owo.txt'), 'Lorem ipsum');
 
-		await PushCommand.run(['--no-prompt'], import.meta.url);
+		await ActorsPushCommand.run(['--no-prompt'], import.meta.url);
 
 		expect(consoleSpy.errorSpy).toHaveBeenCalled();
 
