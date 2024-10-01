@@ -357,6 +357,18 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		} finally {
 			if (storedInputResults) {
 				if (storedInputResults.existingInput) {
+					// Check if the input file was modified since we modified it. If it was, we abort the re-overwrite and warn the user
+					const stats = await stat(storedInputResults.inputFilePath);
+
+					if (stats.mtimeMs > storedInputResults.writtenAt) {
+						warning({
+							message: `The "${storedInputResults.inputFilePath}" file was overwritten during the run. The CLI will not undo the setting of missing default fields from your input schema.`,
+						});
+
+						// eslint-disable-next-line no-unsafe-finally -- we do not return anything in the commands anyways
+						return;
+					}
+
 					// Overwrite with the original input
 					await writeFile(storedInputResults.inputFilePath, storedInputResults.existingInput.body);
 				} else {
@@ -398,6 +410,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			return {
 				existingInput,
 				inputFilePath,
+				writtenAt: Date.now(),
 			};
 		}
 
@@ -457,6 +470,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			return {
 				existingInput,
 				inputFilePath,
+				writtenAt: Date.now(),
 			};
 		}
 
@@ -468,6 +482,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			return {
 				existingInput,
 				inputFilePath,
+				writtenAt: Date.now(),
 			};
 		}
 
@@ -501,6 +516,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			return {
 				existingInput,
 				inputFilePath,
+				writtenAt: Date.now(),
 			};
 		}
 
