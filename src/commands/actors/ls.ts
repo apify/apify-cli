@@ -151,7 +151,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 		for (const item of actorList.items) {
 			const lastRunDisplayedTimestamp = item.stats.lastRunStartedAt
 				? TimestampFormatter.display(item.stats.lastRunStartedAt)
-				: chalk.gray('Unknown');
+				: '';
 
 			const lastRunDuration = item.lastRun
 				? (() => {
@@ -167,7 +167,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 
 						return chalk.gray(`${ShortDurationFormatter.format(duration)} ...`);
 					})()
-				: chalk.gray('Unknown');
+				: '';
 
 			const defaultBuild = item.actor
 				? (() => {
@@ -192,7 +192,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 				Runs: chalk.cyan(`${item.stats?.totalRuns ?? 0}`),
 				'Last run started at': lastRunDisplayedTimestamp,
 				'Last run': lastRunDisplayedTimestamp,
-				'Last run status': item.lastRun ? prettyPrintStatus(item.lastRun.status) : chalk.gray('Unknown'),
+				'Last run status': item.lastRun ? prettyPrintStatus(item.lastRun.status) : '',
 				'Modified at': TimestampFormatter.display(item.modifiedAt),
 				Builds: item.actor ? chalk.cyan(item.actor.stats.totalBuilds) : chalk.gray('Unknown'),
 				'Last run duration': lastRunDuration,
