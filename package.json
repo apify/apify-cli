@@ -166,7 +166,7 @@
         "topicSeparator": " "
     },
     "volta": {
-        "node": "20.17.0",
+        "node": "20.18.0",
         "yarn": "4.5.0"
     },
     "packageManager": "yarn@4.5.0",
