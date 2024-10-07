@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
-import { ResponsiveTable } from '../../lib/commands/responsive-table.js';
+import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, ShortDurationFormatter } from '../../lib/utils.js';
 
@@ -128,7 +128,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 			});
 		}
 
-		message.push(table.render(compact));
+		message.push(table.render(compact ? CompactMode.VeryCompact : CompactMode.None));
 
 		simpleLog({
 			message: message.join('\n'),

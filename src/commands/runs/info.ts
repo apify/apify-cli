@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
-import { ResponsiveTable } from '../../lib/commands/responsive-table.js';
+import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, ShortDurationFormatter, TimestampFormatter } from '../../lib/utils.js';
 
@@ -138,7 +138,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		// Verbose breakdown of costs
 		if (this.flags.verbose) {
 			// Always shown as compact because it looks much better
-			message.push(usageTable.render(true));
+			message.push(usageTable.render(CompactMode.VeryCompact));
 		}
 
 		// Separator

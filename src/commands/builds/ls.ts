@@ -5,7 +5,7 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
-import { ResponsiveTable } from '../../lib/commands/responsive-table.js';
+import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, objectGroupBy, ShortDurationFormatter } from '../../lib/utils.js';
 
@@ -13,6 +13,9 @@ const tableFactory = () =>
 	new ResponsiveTable({
 		allColumns: ['Number', 'ID', 'Status', 'Took'],
 		mandatoryColumns: ['Number', 'ID', 'Status', 'Took'],
+		columnAlignments: {
+			'Took': 'right',
+		},
 	});
 
 export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
@@ -130,7 +133,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 
 			const message = [
 				chalk.reset(`Builds for Actor Version ${chalk.yellow(actorVersion)}${latestBuildTagMessage}`),
-				table.render(compact),
+				table.render(compact ? CompactMode.VeryCompact : CompactMode.None),
 				'',
 			];
 
