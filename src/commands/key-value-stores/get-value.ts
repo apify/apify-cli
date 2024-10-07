@@ -8,6 +8,8 @@ import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueStoresGetValueCommand> {
 	static override description = 'Gets a value by key in the given key-value store.';
 
+	static override hiddenAliases = ['kvs:get-value'];
+
 	static override flags = {
 		'only-content-type': Flags.boolean({
 			description: 'Only return the content type of the specified key',
