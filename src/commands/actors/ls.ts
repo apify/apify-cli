@@ -14,7 +14,7 @@ const recentlyUsedTable = new ResponsiveTable({
 	columnAlignments: {
 		'Runs': 'right',
 		'Last run duration': 'right',
-		Name: 'center',
+		Name: 'left',
 		'Last run status': 'center',
 	},
 });
@@ -44,7 +44,7 @@ const myRecentlyUsedTable = new ResponsiveTable({
 		'Builds': 'right',
 		'Runs': 'right',
 		'Last run duration': 'right',
-		Name: 'center',
+		Name: 'left',
 		'Last run status': 'center',
 	},
 });
