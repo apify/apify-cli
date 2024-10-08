@@ -1,6 +1,6 @@
-import Table from 'cli-table3';
+import Table, { type CharName } from 'cli-table3';
 
-const compactModeChars = {
+const compactModeChars: Partial<Record<CharName, string>> = {
 	'mid': '',
 	'left-mid': '',
 	'mid-mid': '',
@@ -9,6 +9,40 @@ const compactModeChars = {
 	'top-mid': '─',
 	'bottom-mid': '─',
 };
+
+const compactModeCharsWithLineSeparator: Partial<Record<CharName, string>> = {
+	middle: ' ',
+	'top-mid': '─',
+	'bottom-mid': '─',
+	top: '─',
+	bottom: '─',
+
+	'left-mid': '├',
+	mid: '─',
+	'mid-mid': '─',
+	'right-mid': '┤',
+};
+
+export enum CompactMode {
+	/**
+	 * Print the table as is
+	 */
+	None = -1,
+	/**
+	 * Minimized version of the table, with no separators between rows
+	 */
+	VeryCompact = 0,
+	/**
+	 * A version of the compact table that looks akin to the web console (fewer separators, but with lines between rows)
+	 */
+	WebLikeCompact = 1,
+}
+
+const charMap = {
+	[CompactMode.None]: undefined,
+	[CompactMode.VeryCompact]: compactModeChars,
+	[CompactMode.WebLikeCompact]: compactModeCharsWithLineSeparator,
+} satisfies Record<CompactMode, Partial<Record<CharName, string>> | undefined>;
 
 function generateHeaderColors(length: number): string[] {
 	return Array.from({ length }, () => 'cyan');
@@ -48,10 +82,12 @@ export class ResponsiveTable<AllColumns extends string, MandatoryColumns extends
 		this.rows.push(item);
 	}
 
-	render(compact = false): string {
+	render(compactMode: CompactMode): string {
 		const head = terminalColumns < 100 ? this.options.mandatoryColumns : this.options.allColumns;
 		const headColors = generateHeaderColors(head.length);
-		const chars = compact ? compactModeChars : undefined;
+
+		const compact = compactMode === CompactMode.VeryCompact;
+		const chars = charMap[compactMode];
 
 		const colAligns: ('left' | 'right' | 'center')[] = [];
 
