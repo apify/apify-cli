@@ -57,6 +57,29 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 			return;
 		}
 
+		// Try to pretty-print JSON
+		if (itemRecord.contentType?.includes('application/json')) {
+			const { value: stream } = itemRecord;
+
+			const chunks: Buffer[] = [];
+
+			for await (const chunk of stream) {
+				chunks.push(chunk);
+			}
+
+			const concatenated = Buffer.concat(chunks).toString();
+
+			try {
+				const parsed = JSON.parse(concatenated);
+				simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
+			} catch {
+				// Print out as is directly to stdout
+				simpleLog({ message: concatenated, stdout: true });
+			}
+
+			return;
+		}
+
 		// pipe the output to stdout
 		itemRecord.value.pipe(process.stdout);
 	}
