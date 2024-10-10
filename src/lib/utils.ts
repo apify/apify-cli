@@ -791,7 +791,7 @@ export function objectGroupBy<K extends PropertyKey, T>(
 	keySelector: (item: T, index: number) => K,
 ): Partial<Record<K, T[]>> {
 	if ('groupBy' in Object) {
-		return Object.groupBy(items, keySelector);
+		return (Object.groupBy as typeof objectGroupBy)(items, keySelector);
 	}
 
 	const result: Partial<Record<K, T[]>> = {};
