@@ -72,7 +72,7 @@ export const maybeTrackTelemetry = async ({
 		const distinctId = getOrCreateLocalDistinctId();
 		await promisifiedTrack(eventName, {
 			distinct_id: distinctId,
-            app: 'cli',
+			app: 'cli',
 			...eventData,
 		});
 	} catch (e) {
