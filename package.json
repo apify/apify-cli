@@ -59,7 +59,7 @@
     },
     "dependencies": {
         "@apify/actor-templates": "~0.1.5",
-        "@apify/consts": "~2.31.0",
+        "@apify/consts": "~2.32.0",
         "@apify/input_schema": "~3.9.0",
         "@apify/utilities": "~2.10.6",
         "@crawlee/memory-storage": "~3.11.1",

@@ -12,10 +12,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.31.0, @apify/consts@npm:~2.31.0":
+"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.31.0":
   version: 2.31.0
   resolution: "@apify/consts@npm:2.31.0"
   checksum: 10c0/20d23cc44c2c5cf9598066efabffb30a38f60a8c4ff7d64edfda032ac2f814df143826da7499ba0047d9f85c8941f9a820b4322ed520165bca83909c3504d529
+  languageName: node
+  linkType: hard
+
+"@apify/consts@npm:~2.32.0":
+  version: 2.32.0
+  resolution: "@apify/consts@npm:2.32.0"
+  checksum: 10c0/c6a14e8679e79ae45ce087daa76cff79a04da0a0f4fc91e86c596605f0ed92b20c98b5aafc34e94ba5e3116eed36c36d945bee42d898cbcf5614bbff95969e97
   languageName: node
   linkType: hard
 
@@ -3616,7 +3623,7 @@ __metadata:
   resolution: "apify-cli@workspace:."
   dependencies:
     "@apify/actor-templates": "npm:~0.1.5"
-    "@apify/consts": "npm:~2.31.0"
+    "@apify/consts": "npm:~2.32.0"
     "@apify/eslint-config": "npm:^0.4.0"
     "@apify/eslint-config-ts": "npm:^0.4.1"
     "@apify/input_schema": "npm:~3.9.0"
