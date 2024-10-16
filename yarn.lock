@@ -12,14 +12,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.31.0":
-  version: 2.31.0
-  resolution: "@apify/consts@npm:2.31.0"
-  checksum: 10c0/20d23cc44c2c5cf9598066efabffb30a38f60a8c4ff7d64edfda032ac2f814df143826da7499ba0047d9f85c8941f9a820b4322ed520165bca83909c3504d529
-  languageName: node
-  linkType: hard
-
-"@apify/consts@npm:~2.32.0":
+"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.32.0, @apify/consts@npm:~2.32.0":
   version: 2.32.0
   resolution: "@apify/consts@npm:2.32.0"
   checksum: 10c0/c6a14e8679e79ae45ce087daa76cff79a04da0a0f4fc91e86c596605f0ed92b20c98b5aafc34e94ba5e3116eed36c36d945bee42d898cbcf5614bbff95969e97
@@ -70,36 +63,36 @@ __metadata:
   linkType: hard
 
 "@apify/input_schema@npm:~3.9.0":
-  version: 3.9.2
-  resolution: "@apify/input_schema@npm:3.9.2"
+  version: 3.9.3
+  resolution: "@apify/input_schema@npm:3.9.3"
   dependencies:
-    "@apify/consts": "npm:^2.31.0"
+    "@apify/consts": "npm:^2.32.0"
     acorn-loose: "npm:^8.4.0"
     countries-list: "npm:^3.0.0"
   peerDependencies:
     ajv: ^8.0.0
-  checksum: 10c0/20de6ac8201804953214c0c45279eeb973bf68f96238e868a408a43513a90272bfa8eb5812db4c582bd2865244a1cd019c37777354e300ba7caaa1bf76988a5c
+  checksum: 10c0/7d05b1873a905ae07b3af1b960d3eb8eaf22c28846f468fb90779f3328d90a835529d1544cb049fc8662444a3b98332b5a7b409d460263feeb1e1c5a531a426a
   languageName: node
   linkType: hard
 
 "@apify/input_secrets@npm:^1.1.40":
-  version: 1.1.55
-  resolution: "@apify/input_secrets@npm:1.1.55"
+  version: 1.1.56
+  resolution: "@apify/input_secrets@npm:1.1.56"
   dependencies:
-    "@apify/log": "npm:^2.5.7"
-    "@apify/utilities": "npm:^2.10.8"
+    "@apify/log": "npm:^2.5.8"
+    "@apify/utilities": "npm:^2.10.9"
     ow: "npm:^0.28.2"
-  checksum: 10c0/36bcb579e336b7d8f9dd335e764eaec0c5bdbe99b2e12b6e27a46e5bf411e9d62a014713ba99cae5b51e326a55848346b148b357e63ef85d5021add163e19998
+  checksum: 10c0/f8354832ec274a1067cccf017e43d189004949458e5397c0f1b02175d1e59ae94ec75c5930dbf02b4b138e888efcf63e6707523cc743e3a97172df2085563733
   languageName: node
   linkType: hard
 
-"@apify/log@npm:^2.2.6, @apify/log@npm:^2.4.0, @apify/log@npm:^2.4.3, @apify/log@npm:^2.5.7":
-  version: 2.5.7
-  resolution: "@apify/log@npm:2.5.7"
+"@apify/log@npm:^2.2.6, @apify/log@npm:^2.4.0, @apify/log@npm:^2.4.3, @apify/log@npm:^2.5.8":
+  version: 2.5.8
+  resolution: "@apify/log@npm:2.5.8"
   dependencies:
-    "@apify/consts": "npm:^2.31.0"
+    "@apify/consts": "npm:^2.32.0"
     ansi-colors: "npm:^4.1.1"
-  checksum: 10c0/5cd01632efd5498aa43c57a3d195791a04ce05162dce4f1f303a87efa4c518d5f0db85429b3538bb0fa66ac8e43b53bba47eb51a34b63070267d344ed0b26148
+  checksum: 10c0/cba0078a7f117711364436f506a2a2a9f2571d79f150b0ace22166b9ddb296bc5b0eb7bd8d9e44de96677d204b4c4f85d5ef7cbe475822f9fde0b655ad0d8e36
   languageName: node
   linkType: hard
 
@@ -115,11 +108,11 @@ __metadata:
   linkType: hard
 
 "@apify/pseudo_url@npm:^2.0.30":
-  version: 2.0.48
-  resolution: "@apify/pseudo_url@npm:2.0.48"
+  version: 2.0.49
+  resolution: "@apify/pseudo_url@npm:2.0.49"
   dependencies:
-    "@apify/log": "npm:^2.5.7"
-  checksum: 10c0/3b0d98d77ead19c400c6ffbab3e664342f96d48d542ba5d1272f1dcf54367487265f36f68425fab7a5e32cd0431f26e273137b49f65a85f2eb69782c986c92fa
+    "@apify/log": "npm:^2.5.8"
+  checksum: 10c0/16b804e035866afe934f6372a12080035ac7c0339e510f8075f490c2a52ac33128a0011aaea6a61c82a9778fbec6891de06b7341c263d26b65daf6c98a69e478
   languageName: node
   linkType: hard
 
@@ -137,13 +130,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/utilities@npm:^2.10.8, @apify/utilities@npm:^2.7.10, @apify/utilities@npm:^2.9.3, @apify/utilities@npm:~2.10.6":
-  version: 2.10.8
-  resolution: "@apify/utilities@npm:2.10.8"
+"@apify/utilities@npm:^2.10.9, @apify/utilities@npm:^2.7.10, @apify/utilities@npm:^2.9.3, @apify/utilities@npm:~2.10.6":
+  version: 2.10.9
+  resolution: "@apify/utilities@npm:2.10.9"
   dependencies:
-    "@apify/consts": "npm:^2.31.0"
-    "@apify/log": "npm:^2.5.7"
-  checksum: 10c0/92a58e081f0a092cebdfd4ba1dec11df2acf979307be40155a383fe0a8277a79741a9941236cdc21233611fcc6e3f9269edfcf30c9c04932d7c8f2679c7ef128
+    "@apify/consts": "npm:^2.32.0"
+    "@apify/log": "npm:^2.5.8"
+  checksum: 10c0/add3a1bd1a1145c6ea84a3441f85a65eb5f42df553ac77fedc6900e7cc710d79e72e9aaf9a1bbfe5c99b2a616174f0ae30db1b1d530b4f7584880f20d7b28f8b
   languageName: node
   linkType: hard
 
@@ -1807,8 +1800,8 @@ __metadata:
   linkType: hard
 
 "@oclif/core@npm:^4, @oclif/core@npm:^4.0.28, @oclif/core@npm:~4.0.17":
-  version: 4.0.28
-  resolution: "@oclif/core@npm:4.0.28"
+  version: 4.0.29
+  resolution: "@oclif/core@npm:4.0.29"
   dependencies:
     ansi-escapes: "npm:^4.3.2"
     ansis: "npm:^3.3.2"
@@ -1828,7 +1821,7 @@ __metadata:
     widest-line: "npm:^3.1.0"
     wordwrap: "npm:^1.0.0"
     wrap-ansi: "npm:^7.0.0"
-  checksum: 10c0/3151b92e6bf17b8d3806652b15870123669e8d2b141ac71f8c6ef169b067cf8c8c85b2c70a257707ae2ecd66769d1cf8652fe07ce7825b4416a32727e07b8649
+  checksum: 10c0/7153c12c6d19ed98bdaf6fbb2ab91ce2cd4242bf03ce4af961fdd7eae343c2278594c43fa2ee841958bdeb8764521983afc02707afb4a25f0fbc16437ea86234
   languageName: node
   linkType: hard
 
@@ -5312,9 +5305,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.28":
-  version: 1.5.37
-  resolution: "electron-to-chromium@npm:1.5.37"
-  checksum: 10c0/c71746968afd150aaf073478975f40712b18d4d6f6717d520bf1839b1f28464397d9a50ff81a1bb5109d6be75b4506c6a425baa9225a3475afe1d02f4ba1ffe1
+  version: 1.5.38
+  resolution: "electron-to-chromium@npm:1.5.38"
+  checksum: 10c0/f44715632fce33ac2444e5f0ac54684640b95bbfcdde47153e727645c33f5d18110d5af5348120a8345707c6c219d6109573b6acba56d819ca607010b75931ef
   languageName: node
   linkType: hard
 
@@ -6304,9 +6297,9 @@ __metadata:
   linkType: hard
 
 "fast-uri@npm:^3.0.1":
-  version: 3.0.2
-  resolution: "fast-uri@npm:3.0.2"
-  checksum: 10c0/8cdd3da7b4022a037d348d587d55caff74b7e4f862bbdd2cc35c1e6e3f97d0aedb567894d44c57ee8798d3192cceb97dcf41dbdabfa07dd2842a0474a6c6eeef
+  version: 3.0.3
+  resolution: "fast-uri@npm:3.0.3"
+  checksum: 10c0/4b2c5ce681a062425eae4f15cdc8fc151fd310b2f69b1f96680677820a8b49c3cd6e80661a406e19d50f0c40a3f8bffdd458791baf66f4a879d80be28e10a320
   languageName: node
   linkType: hard
 
@@ -8974,8 +8967,8 @@ __metadata:
   linkType: hard
 
 "oclif@npm:^4.14.15":
-  version: 4.15.8
-  resolution: "oclif@npm:4.15.8"
+  version: 4.15.9
+  resolution: "oclif@npm:4.15.9"
   dependencies:
     "@aws-sdk/client-cloudfront": "npm:^3.665.0"
     "@aws-sdk/client-s3": "npm:^3.670.0"
@@ -9003,7 +8996,7 @@ __metadata:
     validate-npm-package-name: "npm:^5.0.1"
   bin:
     oclif: bin/run.js
-  checksum: 10c0/612d99d6dbd05981c30cf5855b7ba5f14e670edab8ff75890275d7207d8cac72583b025d1dcd3d514ce3559db8edf2c160e92a2d2b3f5ccc75be085219c16e19
+  checksum: 10c0/d5ea790581db0353c4ab62d007f0aa82f6f5e79a22745f62c8eefc995052f13985fe93f71324cf6a92f06660adbb176f85ecac769f6518279f02f56a51e97703
   languageName: node
   linkType: hard
 
@@ -10696,12 +10689,13 @@ __metadata:
   linkType: hard
 
 "string.prototype.includes@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "string.prototype.includes@npm:2.0.0"
+  version: 2.0.1
+  resolution: "string.prototype.includes@npm:2.0.1"
   dependencies:
-    define-properties: "npm:^1.1.3"
-    es-abstract: "npm:^1.17.5"
-  checksum: 10c0/32dff118c9e9dcc87e240b05462fa8ee7248d9e335c0015c1442fe18152261508a2146d9bb87ddae56abab69148a83c61dfaea33f53853812a6a2db737689ed2
+    call-bind: "npm:^1.0.7"
+    define-properties: "npm:^1.2.1"
+    es-abstract: "npm:^1.23.3"
+  checksum: 10c0/25ce9c9b49128352a2618fbe8758b46f945817a58a4420f4799419e40a8d28f116e176c7590d767d5327a61e75c8f32c86171063f48e389b9fdd325f1bd04ee5
   languageName: node
   linkType: hard
 
@@ -11187,9 +11181,9 @@ __metadata:
   linkType: hard
 
 "tslib@npm:^2.0.3, tslib@npm:^2.1.0, tslib@npm:^2.4.0, tslib@npm:^2.5.0, tslib@npm:^2.6.2":
-  version: 2.7.0
-  resolution: "tslib@npm:2.7.0"
-  checksum: 10c0/469e1d5bf1af585742128827000711efa61010b699cb040ab1800bcd3ccdd37f63ec30642c9e07c4439c1db6e46345582614275daca3e0f4abae29b0083f04a6
+  version: 2.8.0
+  resolution: "tslib@npm:2.8.0"
+  checksum: 10c0/31e4d14dc1355e9b89e4d3c893a18abb7f90b6886b089c2da91224d0a7752c79f3ddc41bc1aa0a588ac895bd97bb99c5bc2bfdb2f86de849f31caeb3ba79bbe5
   languageName: node
   linkType: hard
 
