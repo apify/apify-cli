@@ -1826,11 +1826,11 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-help@npm:^6.2.14, @oclif/plugin-help@npm:~6.2.8":
-  version: 6.2.15
-  resolution: "@oclif/plugin-help@npm:6.2.15"
+  version: 6.2.16
+  resolution: "@oclif/plugin-help@npm:6.2.16"
   dependencies:
     "@oclif/core": "npm:^4"
-  checksum: 10c0/ec46ab7f1959d22883271e4c34c3053802c47f998a0bd30b35898d4c617ffee9ccba953ddb2e76fecdea726927e728dd5f3c1b0a3865e11ed324c15c146b3e02
+  checksum: 10c0/5e9f8aa09e0d75b4402213dc4d1bfb42a06f0c3c686709ece69c2a5c3c83707ae6f489568fe95fc8a9feea206852fdb4e9b6eea874532d81c6082145a71496bb
   languageName: node
   linkType: hard
 
@@ -1847,8 +1847,8 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-warn-if-update-available@npm:^3.1.11":
-  version: 3.1.19
-  resolution: "@oclif/plugin-warn-if-update-available@npm:3.1.19"
+  version: 3.1.20
+  resolution: "@oclif/plugin-warn-if-update-available@npm:3.1.20"
   dependencies:
     "@oclif/core": "npm:^4"
     ansis: "npm:^3.3.1"
@@ -1856,7 +1856,7 @@ __metadata:
     http-call: "npm:^5.2.2"
     lodash: "npm:^4.17.21"
     registry-auth-token: "npm:^5.0.2"
-  checksum: 10c0/c475b3b6170f2149a3d7370e3ac88134562f2069b3f60f3dcbde3f5abee5220f0a48974f267cc5c4424edfdc9d9d27e6ba11371032a139f039f260c166ce6f01
+  checksum: 10c0/9a28d96b26262f42bdaf8c82a91eedd8ba9df2f191914c6af3f6c1ae85a972b522997772678610a5cb79160d144f9578540e8449a9a6ea9882772fe8217c43d8
   languageName: node
   linkType: hard
 
