@@ -45,13 +45,13 @@ async function tryToGetStorage<T extends 'dataset' | 'keyValueStore'>(
 export async function tryToGetDataset(
 	client: ApifyClient,
 	datasetId: string,
-): Promise<{ dataset: Dataset | undefined; datasetClient: DatasetClient } | null> {
+): Promise<{ dataset: Dataset; datasetClient: DatasetClient } | null> {
 	return tryToGetStorage(client, datasetId, 'dataset');
 }
 
 export async function tryToGetKeyValueStore(
 	client: ApifyClient,
 	keyValueStoreId: string,
-): Promise<{ keyValueStore: KeyValueStore | undefined; keyValueStoreClient: KeyValueStoreClient } | null> {
+): Promise<{ keyValueStore: KeyValueStore; keyValueStoreClient: KeyValueStoreClient } | null> {
 	return tryToGetStorage(client, keyValueStoreId, 'keyValueStore');
 }
