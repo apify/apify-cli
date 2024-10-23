@@ -10,8 +10,8 @@ const yesNoConfirmation = ({ type }: { type: string }): DistinctQuestion => ({
 const inputValidation = ({
 	type,
 	expectedValue,
-	failureMessage,
-}: { type: string; expectedValue: string; failureMessage: string }): DistinctQuestion => ({
+	failureMessage = 'That is not the correct input!',
+}: { type: string; expectedValue: string; failureMessage?: string }): DistinctQuestion => ({
 	name: 'confirmed',
 	type: 'input',
 	message: `Are you sure you want to delete this ${type}? If so, please type in "${expectedValue}":`,
@@ -28,7 +28,7 @@ export async function confirmAction({
 	expectedValue,
 	type,
 	failureMessage,
-}: { expectedValue?: string; type: string; failureMessage: string }): Promise<boolean> {
+}: { type: string; expectedValue?: string; failureMessage?: string }): Promise<boolean> {
 	const result = await inquirer.prompt<{ confirmed: boolean | string }>(
 		expectedValue ? inputValidation({ type, expectedValue, failureMessage }) : yesNoConfirmation({ type }),
 	);
