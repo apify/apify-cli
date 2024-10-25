@@ -9,6 +9,7 @@ import {
 	writeFileSync,
 } from 'node:fs';
 import { basename, join, relative, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { fetchManifest, wrapperManifestUrl } from '@apify/actor-templates';
 import rootWalk from '@root/walk';
@@ -24,6 +25,8 @@ import { downloadAndUnzip, sanitizeActorName } from '../../utils.js';
  * Files that should be concatenated instead of copied (and overwritten).
  */
 const concatenableFiles = ['.dockerignore', '.gitignore'];
+
+const templatePath = fileURLToPath(new URL('./templates/python-scrapy', import.meta.url));
 
 async function merge(
 	fromPath: string,
@@ -120,7 +123,6 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 	info({ message: 'Downloading the latest Scrapy wrapper template...' });
 
 	const { archiveUrl } = manifest.templates.find(({ id }) => id === 'python-scrapy')!;
-	const templatePath = join(__dirname, 'templates', 'python-scrapy');
 
 	if (existsSync(templatePath)) rmSync(templatePath, { recursive: true });
 
@@ -131,7 +133,7 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 
 	info({ message: 'Wrapping the Scrapy project...' });
 
-	await merge(join(__dirname, 'templates', 'python-scrapy'), projectPath, {
+	await merge(templatePath, projectPath, {
 		bindings: templateBindings,
 	});
 
