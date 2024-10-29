@@ -2699,9 +2699,9 @@ __metadata:
   linkType: hard
 
 "@eslint-community/regexpp@npm:^4.10.0, @eslint-community/regexpp@npm:^4.6.1":
-  version: 4.12.0
-  resolution: "@eslint-community/regexpp@npm:4.12.0"
-  checksum: 10c0/168b4062544b220cd547f14a4d4d131f25a19098e0716832fa2fea1d1aa3894ec3014ed6f42a9638b0693490dd0d583c974064e0e621cbe146e61e20bab55f75
+  version: 4.12.1
+  resolution: "@eslint-community/regexpp@npm:4.12.1"
+  checksum: 10c0/a03d98c246bcb9109aec2c08e4d10c8d010256538dcb3f56610191607214523d4fb1b00aa81df830b6dffb74c5fa0be03642513a289c567949d3e550ca11cdf6
   languageName: node
   linkType: hard
 
@@ -3509,11 +3509,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 22.8.1
-  resolution: "@types/node@npm:22.8.1"
+  version: 22.8.2
+  resolution: "@types/node@npm:22.8.2"
   dependencies:
     undici-types: "npm:~6.19.8"
-  checksum: 10c0/83550fdf72a7db5b55eceac3f4fb038844eaee20202bdd2297a8248370cfa08317bda1605b781a8043eda4f173b75e73632e652fc85509eb14dfef78fa17337f
+  checksum: 10c0/c6fa6c54c23e61015cace1517c4101602cae0ff3c4f6604f6cdb89875143921830e5602cabe8b4f90f90363451687a0497f1d07d30be8104fee758d6d44c90ac
   languageName: node
   linkType: hard
 
@@ -6008,9 +6008,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.41":
-  version: 1.5.47
-  resolution: "electron-to-chromium@npm:1.5.47"
-  checksum: 10c0/5f8c4a9f0698695960f7bef5242d52b1043020ce50b51fb534409a768847f9bdc9672cb4a6a560eeb8f8b47a04327ae9b31b2cee376cb637b3eb04a4daeaa3b8
+  version: 1.5.48
+  resolution: "electron-to-chromium@npm:1.5.48"
+  checksum: 10c0/dccf6871ed30c476852a8914846bacbe9c6007e3ce1eb9cd7e53b7dcae62f8bba9df34f9093e82460c3307c7d762fb650a4cc520d9f02d6511a7a9737260ece3
   languageName: node
   linkType: hard
 
@@ -10774,11 +10774,11 @@ __metadata:
   linkType: hard
 
 "parse5@npm:^7.0.0":
-  version: 7.2.0
-  resolution: "parse5@npm:7.2.0"
+  version: 7.2.1
+  resolution: "parse5@npm:7.2.1"
   dependencies:
     entities: "npm:^4.5.0"
-  checksum: 10c0/76d68684708befb41ff1d5e0e9835f566afb3950807d340941afc9dbe4c9c28db2414bda0c8503d459de863463869b8540c6abf8c9742cffa0b9b31eecd37951
+  checksum: 10c0/829d37a0c709215a887e410a7118d754f8e1afd7edb529db95bc7bbf8045fb0266a7b67801331d8e8d9d073ea75793624ec27ce9ff3b96862c3b9008f4d68e80
   languageName: node
   linkType: hard
 
