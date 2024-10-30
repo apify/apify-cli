@@ -60,7 +60,7 @@
     "dependencies": {
         "@apify/actor-templates": "~0.1.5",
         "@apify/consts": "~2.32.0",
-        "@apify/input_schema": "~3.9.0",
+        "@apify/input_schema": "~3.10.0",
         "@apify/utilities": "~2.10.6",
         "@crawlee/memory-storage": "~3.11.1",
         "@oclif/core": "~4.0.17",
@@ -121,7 +121,7 @@
         "@types/jju": "^1.4.5",
         "@types/lodash.clonedeep": "^4",
         "@types/mime": "^4.0.0",
-        "@types/node": "^20.11.20",
+        "@types/node": "^22.0.0",
         "@types/semver": "^7.5.8",
         "@types/underscore": "^1.11.15",
         "@typescript-eslint/eslint-plugin": "^7.0.2",
