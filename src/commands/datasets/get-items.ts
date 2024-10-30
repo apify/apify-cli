@@ -6,6 +6,16 @@ import { ApifyCommand } from '../../lib/apify_command.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
+const downloadFormatToContentType: Record<DownloadItemsFormat, string> = {
+	[DownloadItemsFormat.JSON]: 'application/json',
+	[DownloadItemsFormat.JSONL]: 'application/jsonl',
+	[DownloadItemsFormat.CSV]: 'text/csv',
+	[DownloadItemsFormat.HTML]: 'text/html',
+	[DownloadItemsFormat.RSS]: 'application/rss+xml',
+	[DownloadItemsFormat.XML]: 'application/xml',
+	[DownloadItemsFormat.XLSX]: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+};
+
 export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 	static override description = 'Exports the items present in a Dataset.';
 
@@ -17,28 +27,23 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 		offset: Flags.integer({
 			description: 'The offset in the dataset where to start getting items.',
 		}),
-		format: (
-			Flags.string as FlagDefinition<
-				DownloadItemsFormat,
-				CustomOptions,
-				{
-					multiple: false;
-					requiredOrDefaulted: false;
-				}
-			>
-		)({
-			description: "The format of the returned output. By default, it is set to 'json'",
-			options: [
-				DownloadItemsFormat.JSON,
-				DownloadItemsFormat.JSONL,
-				DownloadItemsFormat.XML,
-				DownloadItemsFormat.HTML,
-				DownloadItemsFormat.CSV,
-				DownloadItemsFormat.XLSX,
-				DownloadItemsFormat.RSS,
-			] as const satisfies DownloadItemsFormat[],
-			default: DownloadItemsFormat.JSON,
-		}),
+		format:
+			// This cast is used to turn the `format` field into a strictly typed value when using it in the run function,
+			// giving it the DownloadItemsFormat type
+			(
+				Flags.string as FlagDefinition<
+					DownloadItemsFormat,
+					CustomOptions,
+					{
+						multiple: false;
+						requiredOrDefaulted: false;
+					}
+				>
+			)({
+				description: "The format of the returned output. By default, it is set to 'json'",
+				options: Object.keys(downloadFormatToContentType),
+				default: DownloadItemsFormat.JSON,
+			}),
 	};
 
 	static override args = {
@@ -56,6 +61,8 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 		const maybeDataset = await this.tryToGetDataset(apifyClient, datasetId);
 
 		if (!maybeDataset) {
+			error({ message: `Dataset with ID "${datasetId}" not found.` });
+
 			return;
 		}
 
@@ -66,43 +73,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 			offset,
 		});
 
-		let contentType: string;
-
-		switch (format) {
-			case DownloadItemsFormat.JSON: {
-				contentType = 'application/json';
-				break;
-			}
-			case DownloadItemsFormat.JSONL: {
-				// Unofficial https://github.com/wardi/jsonlines/issues/19
-				contentType = 'application/jsonl';
-				break;
-			}
-			case DownloadItemsFormat.CSV: {
-				contentType = 'text/csv';
-				break;
-			}
-			case DownloadItemsFormat.HTML: {
-				contentType = 'text/html';
-				break;
-			}
-			case DownloadItemsFormat.RSS: {
-				contentType = 'application/rss+xml';
-				break;
-			}
-			case DownloadItemsFormat.XML: {
-				// Per MDN, application/xml is recommended over text/xml.
-				contentType = 'application/xml';
-				break;
-			}
-			case DownloadItemsFormat.XLSX: {
-				contentType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-				break;
-			}
-			default: {
-				contentType = 'application/octet-stream';
-			}
-		}
+		const contentType = downloadFormatToContentType[format] ?? 'application/octet-stream';
 
 		simpleLog({ message: contentType });
 
@@ -138,8 +109,6 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 				datasetClient: client.dataset(byName.id),
 			};
 		}
-
-		error({ message: `Dataset with ID "${datasetId}" not found.` });
 
 		return null;
 	}
