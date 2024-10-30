@@ -226,7 +226,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		// memory avg/max
 
 		message.push(
-			`${chalk.yellow('Memory')}: ${chalk.gray('Average:')} ${prettyPrintBytes(run.stats.memAvgBytes, true)} | ${chalk.gray('Maximum:')} ${prettyPrintBytes(run.stats.memMaxBytes, true)}`,
+			`${chalk.yellow('Memory')}: ${chalk.gray('Average:')} ${prettyPrintBytes({ bytes: run.stats.memAvgBytes, shortBytes: true })} | ${chalk.gray('Maximum:')} ${prettyPrintBytes({ bytes: run.stats.memMaxBytes, shortBytes: true })}`,
 		);
 
 		// url
@@ -282,7 +282,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 					usageTable.pushRow({
 						'': userFriendlyString,
 						// Convert from GB to B (more verbose than console)
-						Unit: prettyPrintBytes(usageNumber * 1024 * 1024 * 1024, true),
+						Unit: prettyPrintBytes({ bytes: usageNumber * 1024 * 1024 * 1024, shortBytes: true }),
 						'USD Amount': this.formatUsd(usdAmount),
 					});
 
