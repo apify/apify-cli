@@ -27,7 +27,7 @@ export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCom
 			const existing = await tryToGetDataset(client, datasetName);
 
 			if (existing) {
-				error({ message: 'Cannot create a Dataset with the same name!' });
+				error({ message: 'A Dataset with this name already exists!' });
 				return;
 			}
 		}

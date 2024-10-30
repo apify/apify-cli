@@ -9,13 +9,13 @@ import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresRmCommand> {
-	static override description = 'Deletes a Key-value Store';
+	static override description = 'Deletes a Key-value store';
 
 	static override hiddenAliases = ['kvs:rm'];
 
 	static override args = {
 		keyValueStoreNameOrId: Args.string({
-			description: 'The Key-value Store ID or name to delete',
+			description: 'The Key-value store ID or name to delete',
 			required: true,
 		}),
 	};
@@ -29,16 +29,16 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 
 		if (!existingKvs) {
 			error({
-				message: `Key-value Store with ID or name "${keyValueStoreNameOrId}" not found.`,
+				message: `Key-value store with ID or name "${keyValueStoreNameOrId}" not found.`,
 			});
 
 			return;
 		}
 
-		const confirmed = await confirmAction({ type: 'Key-value Store' });
+		const confirmed = await confirmAction({ type: 'Key-value store' });
 
 		if (!confirmed) {
-			info({ message: 'Key-value Store deletion has been aborted.' });
+			info({ message: 'Key-value store deletion has been aborted.' });
 			return;
 		}
 
@@ -48,14 +48,14 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 			await existingKvs.keyValueStoreClient.delete();
 
 			success({
-				message: `Key-value Store with ID ${chalk.yellow(id)}${name ? ` (called ${chalk.yellow(name)})` : ''} has been deleted.`,
+				message: `Key-value store with ID ${chalk.yellow(id)}${name ? ` (called ${chalk.yellow(name)})` : ''} has been deleted.`,
 				stdout: true,
 			});
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
 			error({
-				message: `Failed to delete Key-value Store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+				message: `Failed to delete Key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
 			});
 		}
 	}
