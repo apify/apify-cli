@@ -3828,7 +3828,7 @@ __metadata:
     adm-zip: "npm:~0.5.15"
     ajv: "npm:~8.17.1"
     apify: "npm:^3.2.4"
-    apify-client: "npm:~2.9.4"
+    apify-client: "npm:~2.10.0"
     archiver: "npm:~7.0.1"
     axios: "npm:~1.7.3"
     chai: "npm:^4.4.1"
@@ -3875,7 +3875,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"apify-client@npm:^2.9.0, apify-client@npm:~2.9.4":
+"apify-client@npm:^2.9.0":
   version: 2.9.7
   resolution: "apify-client@npm:2.9.7"
   dependencies:
@@ -3890,6 +3890,24 @@ __metadata:
     tslib: "npm:^2.5.0"
     type-fest: "npm:^4.0.0"
   checksum: 10c0/921545a6a414b2449c6621d76f584b79460e4307db33504aac97f03869ce6a86e4c8a9471b52ce95b08eb62c6bc708dd2fce957b776a1ee3b17be1b54dc94209
+  languageName: node
+  linkType: hard
+
+"apify-client@npm:~2.10.0":
+  version: 2.10.0
+  resolution: "apify-client@npm:2.10.0"
+  dependencies:
+    "@apify/consts": "npm:^2.25.0"
+    "@apify/log": "npm:^2.2.6"
+    "@crawlee/types": "npm:^3.3.0"
+    agentkeepalive: "npm:^4.2.1"
+    async-retry: "npm:^1.3.3"
+    axios: "npm:^1.6.7"
+    content-type: "npm:^1.0.5"
+    ow: "npm:^0.28.2"
+    tslib: "npm:^2.5.0"
+    type-fest: "npm:^4.0.0"
+  checksum: 10c0/df4dad1b9c4216d953b0f36f5a70273163c266a35fdba2e2d7f7d2d7353735791401c730bfef5a1587c07c1524315f9b1cc63389a9eb27350be404c6c44f4f38
   languageName: node
   linkType: hard
 
