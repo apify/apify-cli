@@ -1038,7 +1038,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@crawlee/memory-storage@npm:3.11.5, @crawlee/memory-storage@npm:~3.11.1":
+"@crawlee/memory-storage@npm:3.11.5":
   version: 3.11.5
   resolution: "@crawlee/memory-storage@npm:3.11.5"
   dependencies:
@@ -1056,12 +1056,39 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@crawlee/memory-storage@npm:~3.12.0":
+  version: 3.12.0
+  resolution: "@crawlee/memory-storage@npm:3.12.0"
+  dependencies:
+    "@apify/log": "npm:^2.4.0"
+    "@crawlee/types": "npm:3.12.0"
+    "@sapphire/async-queue": "npm:^1.5.0"
+    "@sapphire/shapeshift": "npm:^3.0.0"
+    content-type: "npm:^1.0.4"
+    fs-extra: "npm:^11.0.0"
+    json5: "npm:^2.2.3"
+    mime-types: "npm:^2.1.35"
+    proper-lockfile: "npm:^4.1.2"
+    tslib: "npm:^2.4.0"
+  checksum: 10c0/53a084655d06370a9383b74930f95dc7736b5496bc12c6a6b7fa03309650ebaf2e63a3fceb0d417f22ed6c80d5604864553e0ed1b12c13c8d12166a6d387498a
+  languageName: node
+  linkType: hard
+
 "@crawlee/types@npm:3.11.5, @crawlee/types@npm:^3.11.1, @crawlee/types@npm:^3.3.0, @crawlee/types@npm:^3.9.0":
   version: 3.11.5
   resolution: "@crawlee/types@npm:3.11.5"
   dependencies:
     tslib: "npm:^2.4.0"
   checksum: 10c0/70374806e00049b93d932dafb91559ee97318787b2788601e488d177476a5fcb78ea00e985caaaf7417ef2d7f0374fdea1cb71c299503fb56d39f8e78912dac9
+  languageName: node
+  linkType: hard
+
+"@crawlee/types@npm:3.12.0":
+  version: 3.12.0
+  resolution: "@crawlee/types@npm:3.12.0"
+  dependencies:
+    tslib: "npm:^2.4.0"
+  checksum: 10c0/1859e16b448874e9d22bf5d2f76620b4e706fe438321c5ce14e29c9d2dd07ee26c909a386228eedd1a388e603930edb47fea99d383ba7df8c563a458d2977846
   languageName: node
   linkType: hard
 
@@ -3798,7 +3825,7 @@ __metadata:
     "@apify/tsconfig": "npm:^0.1.0"
     "@apify/utilities": "npm:~2.10.6"
     "@biomejs/biome": "npm:^1.8.3"
-    "@crawlee/memory-storage": "npm:~3.11.1"
+    "@crawlee/memory-storage": "npm:~3.12.0"
     "@crawlee/types": "npm:^3.11.1"
     "@cucumber/cucumber": "npm:^11.0.0"
     "@oclif/core": "npm:~4.0.17"
