@@ -1,0 +1,135 @@
+name: Create a pre-release
+
+on:
+    # Push to master will deploy a beta version
+    push:
+        branches:
+            -   master
+        tags-ignore:
+            -   "**" # Ignore all tags to prevent duplicate builds when tags are pushed.
+
+concurrency:
+    group: release
+    cancel-in-progress: false
+
+jobs:
+    release_metadata:
+        if: "!startsWith(github.event.head_commit.message, 'docs') && !startsWith(github.event.head_commit.message, 'ci') && startsWith(github.repository, 'apify/')"
+        name: Prepare release metadata
+        runs-on: ubuntu-latest
+        outputs:
+            version_number: ${{ steps.release_metadata.outputs.version_number }}
+            changelog: ${{ steps.release_metadata.outputs.changelog }}
+        steps:
+            -   uses: apify/workflows/git-cliff-release@main
+                name: Prepare release metadata
+                id: release_metadata
+                with:
+                    release_type: prerelease
+                    existing_changelog_path: CHANGELOG.md
+
+    wait_for_checks:
+        name: Wait for code checks to pass
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: lewagon/wait-on-check-action@v1.3.4
+                with:
+                    ref: ${{ github.ref }}
+                    repo-token: ${{ secrets.GITHUB_TOKEN }}
+                    check-regexp: (Build & Test .*|Test Python template support|Lint|Docs build)
+                    wait-interval: 5
+
+    update_changelog:
+        needs: [release_metadata, wait_for_checks]
+        name: Update changelog
+        runs-on: ubuntu-latest
+        outputs:
+            changelog_commitish: ${{ steps.commit.outputs.commit_long_sha || github.sha }}
+        steps:
+            -   name: Checkout repository
+                uses: actions/checkout@v4
+                with:
+                    token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+            -   name: Use Node.js 20
+                uses: actions/setup-node@v4
+                with:
+                    node-version: 20
+                    registry-url: https://registry.npmjs.org
+
+            -   name: Enable corepack
+                run: |
+                    corepack enable
+                    corepack prepare yarn@stable --activate
+                    git update-index --assume-unchanged .yarnrc.yml
+
+            -   name: Activate cache for Node.js 20
+                uses: actions/setup-node@v4
+                with:
+                    cache: yarn
+
+            -   name: Update README
+                run: |
+                    yarn npm pack
+
+            -   name: Update package version in package.json
+                run: yarn npm version --no-git-tag-version --allow-same-version ${{ needs.release_metadata.outputs.version_number }}
+
+            -   name: Update CHANGELOG.md
+                uses: DamianReeves/write-file-action@master
+                with:
+                    path: CHANGELOG.md
+                    write-mode: overwrite
+                    contents: ${{ needs.release_metadata.outputs.changelog }}
+
+            -   name: Commit changes
+                id: commit
+                uses: EndBug/add-and-commit@v9
+                with:
+                    author_name: Apify Release Bot
+                    author_email: noreply@apify.com
+                    message: "chore(release): Update changelog and package version [skip ci]"
+
+    publish_to_npm:
+        name: Publish to NPM
+        needs: [update_changelog]
+        runs-on: ubuntu-latest
+        steps:
+            -   uses: actions/checkout@v4
+                with:
+                    ref: ${{ needs.update_changelog.changelog_commitish }}
+
+            -   name: Use Node.js 20
+                uses: actions/setup-node@v4
+                with:
+                    node-version: 20
+                    registry-url: https://registry.npmjs.org
+
+            -   name: Enable corepack
+                run: |
+                    corepack enable
+                    corepack prepare yarn@stable --activate
+
+            -   name: Activate cache for Node.js 20
+                uses: actions/setup-node@v4
+                with:
+                    cache: yarn
+
+            -   name: Install dependencies
+                run: yarn
+
+            # Check version consistency and increment pre-release version number for beta only.
+            -   name: Bump pre-release version
+                run: yarn tsx ./.github/scripts/before-beta-release.ts
+
+            -   name: Build module
+                run: npm run build
+
+            -   name: Publish to NPM
+                run: |
+                    yarn config set npmAuthToken ${NODE_AUTH_TOKEN}
+                    yarn npm publish --tag beta --access public
+
+env:
+    NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
