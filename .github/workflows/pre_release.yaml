@@ -123,7 +123,7 @@ jobs:
                 run: yarn tsx ./.github/scripts/before-beta-release.ts
 
             -   name: Build module
-                run: npm run build
+                run: yarn build
 
             -   name: Publish to NPM
                 run: |

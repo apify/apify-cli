@@ -144,17 +144,16 @@ jobs:
             -   name: Install dependencies
                 run: yarn
 
-            # Check version consistency and increment pre-release version number for beta only.
-            -   name: Bump pre-release version
-                run: yarn tsx ./.github/scripts/before-beta-release.ts
-
             -   name: Build module
-                run: npm run build
+                run: yarn build
 
             -   name: Publish to NPM
                 run: |
                     yarn config set npmAuthToken ${NODE_AUTH_TOKEN}
                     yarn npm publish --tag latest --access public
+                env:
+                    NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+                    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
 
     update_homebrew_formula:
         name: Update Homebrew Formula
@@ -205,7 +204,3 @@ jobs:
                         CC @B4nan @vladfrangu"
                 env:
                     HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
-
-env:
-    NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
-    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
