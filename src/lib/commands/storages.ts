@@ -14,8 +14,7 @@ async function tryToGetStorage<T extends 'dataset' | 'keyValueStore'>(
 	id: string,
 	storageType: T,
 ): Promise<ReturnTypeForStorage<T> | null> {
-	const byIdOrName = await client
-		.dataset(id)
+	const byIdOrName = await client[storageType](id)
 		.get()
 		.catch(() => undefined);
 
