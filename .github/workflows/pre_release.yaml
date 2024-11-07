@@ -51,10 +51,10 @@ jobs:
                 with:
                     token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
-            -   name: Use Node.js 20
+            -   name: Use Node.js 22
                 uses: actions/setup-node@v4
                 with:
-                    node-version: 20
+                    node-version: 22
                     registry-url: https://registry.npmjs.org
 
             -   name: Enable corepack
@@ -63,7 +63,7 @@ jobs:
                     corepack prepare yarn@stable --activate
                     git update-index --assume-unchanged .yarnrc.yml
 
-            -   name: Activate cache for Node.js 20
+            -   name: Activate cache for Node.js 22
                 uses: actions/setup-node@v4
                 with:
                     cache: yarn
@@ -129,7 +129,5 @@ jobs:
                 run: |
                     yarn config set npmAuthToken ${NODE_AUTH_TOKEN}
                     yarn npm publish --tag beta --access public
-
-env:
-    NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
-    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+                env:
+                    NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}

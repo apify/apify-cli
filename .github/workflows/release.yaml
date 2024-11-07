@@ -125,10 +125,10 @@ jobs:
                 with:
                     ref: ${{ needs.update_changelog.changelog_commitish }}
 
-            -   name: Use Node.js 20
+            -   name: Use Node.js 22
                 uses: actions/setup-node@v4
                 with:
-                    node-version: 20
+                    node-version: 22
                     registry-url: https://registry.npmjs.org
 
             -   name: Enable corepack
@@ -136,7 +136,7 @@ jobs:
                     corepack enable
                     corepack prepare yarn@stable --activate
 
-            -   name: Activate cache for Node.js 20
+            -   name: Activate cache for Node.js 22
                 uses: actions/setup-node@v4
                 with:
                     cache: yarn
@@ -153,7 +153,6 @@ jobs:
                     yarn npm publish --tag latest --access public
                 env:
                     NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
-                    NPM_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
 
     update_homebrew_formula:
         name: Update Homebrew Formula
