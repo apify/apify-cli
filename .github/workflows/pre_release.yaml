@@ -99,10 +99,10 @@ jobs:
                 with:
                     ref: ${{ needs.update_changelog.changelog_commitish }}
 
-            -   name: Use Node.js 20
+            -   name: Use Node.js 22
                 uses: actions/setup-node@v4
                 with:
-                    node-version: 20
+                    node-version: 22
                     registry-url: https://registry.npmjs.org
 
             -   name: Enable corepack
@@ -110,7 +110,7 @@ jobs:
                     corepack enable
                     corepack prepare yarn@stable --activate
 
-            -   name: Activate cache for Node.js 20
+            -   name: Activate cache for Node.js 22
                 uses: actions/setup-node@v4
                 with:
                     cache: yarn
