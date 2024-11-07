@@ -15,12 +15,12 @@
     "devDependencies": {
         "@apify/eslint-config-ts": "^0.4.0",
         "@apify/tsconfig": "^0.1.0",
-        "@types/react": "^17.0.70",
+        "@types/react": "^18.0.0",
         "@typescript-eslint/eslint-plugin": "^7.0.0",
         "@typescript-eslint/parser": "^7.0.0",
         "eslint": "^8.53.0",
         "eslint-plugin-react": "^7.33.2",
-        "eslint-plugin-react-hooks": "^4.6.0",
+        "eslint-plugin-react-hooks": "^5.0.0",
         "path-browserify": "^1.0.1",
         "prettier": "^3.0.3",
         "rimraf": "^6.0.0"
