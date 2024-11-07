@@ -17,7 +17,7 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 	};
 
 	static override args = {
-		datasetNameOrId: Args.string({
+		nameOrId: Args.string({
 			description: 'The Dataset ID or name to delete',
 			required: true,
 		}),
@@ -28,7 +28,7 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 
 	async run() {
 		const { unname } = this.flags;
-		const { newName, datasetNameOrId } = this.args;
+		const { newName, nameOrId } = this.args;
 
 		if (!newName && !unname) {
 			error({ message: 'You must provide either a new name or the --unname flag.' });
@@ -43,11 +43,11 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 		}
 
 		const client = await getLoggedClientOrThrow();
-		const existingDataset = await tryToGetDataset(client, datasetNameOrId);
+		const existingDataset = await tryToGetDataset(client, nameOrId);
 
 		if (!existingDataset) {
 			error({
-				message: `Dataset with ID or name "${datasetNameOrId}" not found.`,
+				message: `Dataset with ID or name "${nameOrId}" not found.`,
 			});
 
 			return;
