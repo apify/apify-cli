@@ -1,5 +1,7 @@
 # Documentation codeowner
 
+* @B4nan @vladfrangu
+
 /docs/*.md @TC-MO
 /docs/*.mdx @TC-MO
 /docs/changelog.md
