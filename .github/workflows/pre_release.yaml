@@ -68,10 +68,6 @@ jobs:
               with:
                   cache: yarn
 
-            - name: Update README
-              run: |
-                  yarn pack
-
             - name: Update package version in package.json
               run: yarn version ${{ needs.release_metadata.outputs.version_number }}
 
@@ -136,6 +132,6 @@ jobs:
             - name: Publish to NPM
               run: |
                   # `yarn npm publish` does not currently support --provenance: https://github.com/yarnpkg/berry/issues/5430
-                  npm publish package.tgz --provenance --access public
+                  npm publish package.tgz --provenance --access public --tag beta
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
