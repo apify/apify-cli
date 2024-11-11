@@ -16,6 +16,7 @@ docs/changelog.md
 # Yarn files
 .yarn/install-state.gz
 .yarn/build-state.yml
+package.tgz
 
 **/scrapy-wrapper/templates/*
 

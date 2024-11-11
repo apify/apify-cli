@@ -1,50 +1,50 @@
 name: Cucumber E2E tests
 
 on:
-  workflow_dispatch:
-  push:
-    paths:
-      - "features/**"
-  # risky... but we trust our developers :finger_crossed:
-  # pull_request:
-  #   paths:
-  #     - "features/**"
+    workflow_dispatch:
+    push:
+        paths:
+            - "features/**"
+    # risky... but we trust our developers :finger_crossed:
+    # pull_request:
+    #   paths:
+    #     - "features/**"
 
 jobs:
-  make_salad:
-    name: Cucumber tests
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, windows-latest]
-        # We only test LTS for now
-        node-version: [20]
+    make_salad:
+        name: Cucumber tests
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest, windows-latest]
+                # We only test LTS for now
+                node-version: [20]
 
-    runs-on: ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ matrix.node-version }}
+            - name: Use Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node-version }}
 
-      - name: Enable corepack
-        run: |
-          corepack enable
-          corepack prepare yarn@stable --activate
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
 
-      - name: Activate cache for Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
-        with:
-          cache: yarn
+            - name: Activate cache for Node.js ${{ matrix.node-version }}
+              uses: actions/setup-node@v4
+              with:
+                  cache: yarn
 
-      - name: Install Dependencies
-        run: yarn
+            - name: Install Dependencies
+              run: yarn
 
-      - name: Run Cucumber tests
-        env:
-          APIFY_CLI_DISABLE_TELEMETRY: 1
-          TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
-        run: yarn test:cucumber
+            - name: Run Cucumber tests
+              env:
+                  APIFY_CLI_DISABLE_TELEMETRY: 1
+                  TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
+              run: yarn test:cucumber
