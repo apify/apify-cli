@@ -3,6 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-start -->
+
 ## 0.20.8 - **not yet released**
 
 ### 🚀 Features
@@ -29,11 +30,9 @@ All notable changes to this project will be documented in this file.
 - Look for lowercase input schema in default paths ([#647](https://github.com/apify/apify-cli/pull/647)) ([68456e6](https://github.com/apify/apify-cli/commit/68456e63eee3c28e7c0ee7464a2cbc1a00ba9dfa)) by [@mvolfik](https://github.com/mvolfik)
 - Emit warning if input.json is modified during run and prefilled with defaults ([#672](https://github.com/apify/apify-cli/pull/672)) ([8a6fd3f](https://github.com/apify/apify-cli/commit/8a6fd3f60523380041309db830a62f52cc60e4d4)) by [@vladfrangu](https://github.com/vladfrangu), closes [#670](https://github.com/apify/apify-cli/issues/670)
 - Scrapy wrapping being broken due to ESM migration ([#686](https://github.com/apify/apify-cli/pull/686)) ([e2a7591](https://github.com/apify/apify-cli/commit/e2a7591070a284394643e8dbb03bc020939ff61f)) by [@vladfrangu](https://github.com/vladfrangu)
-- *(ci)* Make it work + publish with provenances ([#694](https://github.com/apify/apify-cli/pull/694)) ([e41ea72](https://github.com/apify/apify-cli/commit/e41ea728a9177dcec4ea73c25128cddebc00dd79)) by [@vladfrangu](https://github.com/vladfrangu)
-
+- _(ci)_ Make it work + publish with provenances ([#694](https://github.com/apify/apify-cli/pull/694)) ([e41ea72](https://github.com/apify/apify-cli/commit/e41ea728a9177dcec4ea73c25128cddebc00dd79)) by [@vladfrangu](https://github.com/vladfrangu)
 
 <!-- git-cliff-unreleased-end -->
-**Changelog file is no longer maintained, you can check all changes in [GitHub Releases](https://github.com/apify/apify-cli/releases).**
 
 # 0.6.1 / 2020-05-18
 
