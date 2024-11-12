@@ -41,7 +41,7 @@ Are you sure there is a Scrapy project there?`);
 	async loadSettings() {
 		const assumedBotName = this.configuration.get('settings', 'default')!.split('.')[0];
 
-		const settings = await inquirer.prompt([
+		const settings = await inquirer.prompt<{ BOT_NAME: string; SPIDER_MODULES: string }>([
 			{
 				type: 'input',
 				name: 'BOT_NAME',
@@ -52,13 +52,15 @@ Are you sure there is a Scrapy project there?`);
 				type: 'input',
 				name: 'SPIDER_MODULES',
 				message: 'What folder are the Scrapy spider modules stored in? (see SPIDER_MODULES in settings.py):',
-				default: [`${assumedBotName}.spiders`],
+				default: `${assumedBotName}.spiders`,
 			},
 		]);
 
-		if (typeof settings.SPIDER_MODULES === 'string') settings.SPIDER_MODULES = [settings.SPIDER_MODULES];
-
-		this.settings = settings;
+		this.settings = {
+			BOT_NAME: settings.BOT_NAME,
+			SPIDER_MODULES:
+				typeof settings.SPIDER_MODULES === 'string' ? [settings.SPIDER_MODULES] : settings.SPIDER_MODULES,
+		};
 	}
 
 	getName() {

@@ -1,7 +1,7 @@
 import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 
-import { Manifest, Template } from '@apify/actor-templates';
+import type { Manifest, Template } from '@apify/actor-templates';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
 
@@ -162,22 +162,21 @@ async function promptTemplateInstallation(templateDefinition: Template) {
 		{ name: 'Go back', value: false },
 	];
 
-	const message = 'Do you want to install the following template?';
 	const label = chalk.underline(templateDefinition.label);
 	const description = chalk.dim(templateDefinition.description);
 	const suffix = `\n ${label}:\n ${description}`;
+	const message = `Do you want to install the following template?${suffix}`;
 
-	const answer = await inquirer.prompt([
+	const answer = await inquirer.prompt<{ shouldInstall: boolean }>([
 		{
 			type: 'list',
 			name: 'shouldInstall',
 			message,
-			suffix,
 			default: choices[0],
 			choices,
 			loop: false,
 		},
 	]);
 
-	return answer.shouldInstall as boolean;
+	return answer.shouldInstall;
 }

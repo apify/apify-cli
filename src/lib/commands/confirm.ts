@@ -1,28 +1,30 @@
 import inquirer, { type DistinctQuestion } from 'inquirer';
 
-const yesNoConfirmation = ({ type }: { type: string }): DistinctQuestion => ({
-	name: 'confirmed',
-	type: 'confirm',
-	message: `Are you sure you want to delete this ${type}?`,
-	default: false,
-});
+const yesNoConfirmation = ({ type }: { type: string }) =>
+	({
+		name: 'confirmed',
+		type: 'confirm',
+		message: `Are you sure you want to delete this ${type}?`,
+		default: false,
+	}) as const satisfies DistinctQuestion;
 
 const inputValidation = ({
 	type,
 	expectedValue,
 	failureMessage,
-}: { type: string; expectedValue: string; failureMessage: string }): DistinctQuestion => ({
-	name: 'confirmed',
-	type: 'input',
-	message: `Are you sure you want to delete this ${type}? If so, please type in "${expectedValue}":`,
-	validate(value) {
-		if (value === expectedValue) {
-			return true;
-		}
+}: { type: string; expectedValue: string; failureMessage: string }) =>
+	({
+		name: 'confirmed',
+		type: 'input',
+		message: `Are you sure you want to delete this ${type}? If so, please type in "${expectedValue}":`,
+		validate(value) {
+			if (value === expectedValue) {
+				return true;
+			}
 
-		return failureMessage;
-	},
-});
+			return failureMessage;
+		},
+	}) as const satisfies DistinctQuestion;
 
 export async function confirmAction({
 	expectedValue,
