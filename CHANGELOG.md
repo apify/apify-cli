@@ -34,8 +34,6 @@ All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-end -->
 
-**Changelog file is no longer maintained, you can check all changes in [GitHub Releases](https://github.com/apify/apify-cli/releases).**
-
 # 0.6.1 / 2020-05-18
 
 - **BREAKING:** Templates are now fully decoupled from this project and
