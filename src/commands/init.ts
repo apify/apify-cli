@@ -78,7 +78,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 				while (!response) {
 					try {
 						const answer = await inquirer.prompt([
-							{ name: 'actName', message: 'Actor name:', default: basename(cwd) },
+							{ name: 'actName', message: 'Actor name:', default: basename(cwd), type: 'input' },
 						]);
 						validateActorName(answer.actName);
 						response = answer;
