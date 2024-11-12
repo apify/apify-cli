@@ -78,6 +78,9 @@ jobs:
                   write-mode: overwrite
                   contents: ${{ needs.release_metadata.outputs.changelog }}
 
+            - name: Format
+              run: yarn format:fix
+
             - name: Commit changes
               id: commit
               uses: EndBug/add-and-commit@v9
