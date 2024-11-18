@@ -54,7 +54,7 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 		});
 
 		if (!confirm) {
-			info({ message: 'key-value store record deletion aborted.', stdout: true });
+			info({ message: 'Key-value store record deletion aborted.', stdout: true });
 			return;
 		}
 
