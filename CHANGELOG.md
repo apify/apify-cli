@@ -25,6 +25,7 @@ All notable changes to this project will be documented in this file.
 - `key-value-stores get-value` ([#678](https://github.com/apify/apify-cli/pull/678)) ([67cfefe](https://github.com/apify/apify-cli/commit/67cfefef88fac220a1c959aaaecf3d051e482236)) by [@vladfrangu](https://github.com/vladfrangu)
 - `datasets get-items` ([#679](https://github.com/apify/apify-cli/pull/679)) ([b521546](https://github.com/apify/apify-cli/commit/b521546df195bab7bedf5534167b6edae6a5e69e)) by [@vladfrangu](https://github.com/vladfrangu)
 - `datasets` / `key-value-stores` commands ([#685](https://github.com/apify/apify-cli/pull/685)) ([c7d77e1](https://github.com/apify/apify-cli/commit/c7d77e1cec711edd9996cbb1249e489fbf3db547)) by [@vladfrangu](https://github.com/vladfrangu)
+- Key-value-store commands ([#700](https://github.com/apify/apify-cli/pull/700)) ([eb8ff3b](https://github.com/apify/apify-cli/commit/eb8ff3b9c7f1319d0937543f7b0b97cb25d6390a)) by [@vladfrangu](https://github.com/vladfrangu)
 
 ### 🐛 Bug Fixes
 
