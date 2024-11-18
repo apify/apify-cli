@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file.
 - `actors ls` ([#675](https://github.com/apify/apify-cli/pull/675)) ([de258cb](https://github.com/apify/apify-cli/commit/de258cb8872857aa559afb4b16ed5a52f4fb2094)) by [@vladfrangu](https://github.com/vladfrangu)
 - `key-value-stores get-value` ([#678](https://github.com/apify/apify-cli/pull/678)) ([67cfefe](https://github.com/apify/apify-cli/commit/67cfefef88fac220a1c959aaaecf3d051e482236)) by [@vladfrangu](https://github.com/vladfrangu)
 - `datasets get-items` ([#679](https://github.com/apify/apify-cli/pull/679)) ([b521546](https://github.com/apify/apify-cli/commit/b521546df195bab7bedf5534167b6edae6a5e69e)) by [@vladfrangu](https://github.com/vladfrangu)
+- `datasets` / `key-value-stores` commands ([#685](https://github.com/apify/apify-cli/pull/685)) ([c7d77e1](https://github.com/apify/apify-cli/commit/c7d77e1cec711edd9996cbb1249e489fbf3db547)) by [@vladfrangu](https://github.com/vladfrangu)
 
 ### 🐛 Bug Fixes
 
