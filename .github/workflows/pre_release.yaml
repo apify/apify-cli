@@ -79,7 +79,7 @@ jobs:
                   contents: ${{ needs.release_metadata.outputs.changelog }}
 
             - name: Format
-              run: yarn format:fix
+              run: yarn && yarn format:fix
 
             - name: Commit changes
               id: commit
