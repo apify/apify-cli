@@ -86,7 +86,7 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 		const dockerImageSize = Reflect.get(build.stats ?? {}, 'imageSizeBytes') as number | undefined;
 
 		if (dockerImageSize) {
-			message.push(`  ${chalk.yellow('Docker Image Size')}: ${prettyPrintBytes(dockerImageSize)}`);
+			message.push(`  ${chalk.yellow('Docker Image Size')}: ${prettyPrintBytes({ bytes: dockerImageSize })}`);
 		}
 
 		message.push(`  ${chalk.yellow('Origin')}: ${build.meta.origin ?? 'UNKNOWN'}`);
