@@ -22,7 +22,7 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 			description: 'The maximum number of keys to return.',
 			default: 20,
 		}),
-		exclusiveStartKey: Flags.string({
+		'exclusive-start-key': Flags.string({
 			description: 'The key to start the list from.',
 		}),
 	};
