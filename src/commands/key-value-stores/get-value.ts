@@ -1,9 +1,9 @@
 import { Args, Flags } from '@oclif/core';
-import type { ApifyClient, KeyValueStore, KeyValueStoreClient } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
+import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueStoresGetValueCommand> {
 	static override description = 'Gets a value by key in the given key-value store.';
@@ -33,13 +33,14 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 		const { keyValueStoreId, itemKey } = this.args;
 
 		const apifyClient = await getLoggedClientOrThrow();
-		const maybeStore = await this.tryToGetKeyValueStore(apifyClient, keyValueStoreId);
+		const maybeStore = await tryToGetKeyValueStore(apifyClient, keyValueStoreId);
 
 		if (!maybeStore) {
+			error({ message: `Key-value store with ID "${keyValueStoreId}" not found.` });
 			return;
 		}
 
-		const { storeClient } = maybeStore;
+		const { keyValueStoreClient: storeClient } = maybeStore;
 
 		const itemRecord = await storeClient.getRecord(itemKey, { stream: true });
 
@@ -82,40 +83,5 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 
 		// pipe the output to stdout
 		itemRecord.value.pipe(process.stdout);
-	}
-
-	private async tryToGetKeyValueStore(
-		client: ApifyClient,
-		keyValueStoreId: string,
-	): Promise<{ store: KeyValueStore | undefined; storeClient: KeyValueStoreClient } | null> {
-		const byIdOrName = await client
-			.keyValueStore(keyValueStoreId)
-			.get()
-			.catch(() => undefined);
-
-		if (byIdOrName) {
-			return {
-				store: byIdOrName,
-				storeClient: client.keyValueStore(byIdOrName.id),
-			};
-		}
-
-		const info = await getLocalUserInfo();
-
-		const byName = await client
-			.keyValueStore(`${info.username!}/${keyValueStoreId}`)
-			.get()
-			.catch(() => undefined);
-
-		if (byName) {
-			return {
-				store: byName,
-				storeClient: client.keyValueStore(byName.id),
-			};
-		}
-
-		error({ message: `Key-value store with ID "${keyValueStoreId}" not found.` });
-
-		return null;
 	}
 }
