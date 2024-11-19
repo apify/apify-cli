@@ -41,6 +41,8 @@ jobs:
               run: |
                   # install project deps
                   yarn
+                  # update next docs reference
+                  yarn update-docs
                   # go to website dir
                   cd website
                   # install website deps
