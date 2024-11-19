@@ -1,5 +1,7 @@
 const { config } = require('@apify/docs-theme');
+
 const { externalLinkProcessor } = require('./tools/utils/externalLink');
+const versions = require('./versions.json');
 
 const { absoluteUrl } = config;
 /** @type {Partial<import('@docusaurus/types').DocusaurusConfig>} */
@@ -23,35 +25,38 @@ module.exports = {
                     title: 'Apify CLI',
                     items: [
                         {
-                            to: 'docs',
+                            type: 'doc',
+                            docId: 'index',
                             label: 'Docs',
                             position: 'left',
                             activeBaseRegex: 'docs(?!/changelog|/reference)',
                         },
                         {
-                            to: 'docs/reference',
+                            type: 'doc',
+                            docId: 'reference',
                             label: 'Reference',
                             position: 'left',
-                            activeBaseRegex: 'docs/reference',
+                            activeBaseRegex: 'reference',
                         },
                         {
-                            to: 'docs/changelog',
+                            type: 'doc',
+                            docId: 'changelog',
                             label: 'Changelog',
                             position: 'left',
-                            activeBaseRegex: 'docs/changelog',
+                            activeBaseRegex: 'changelog',
                         },
                         {
                             href: 'https://github.com/apify/apify-cli',
                             label: 'GitHub',
                             position: 'left',
                         },
-                        // {
-                        //     type: 'docsVersionDropdown',
-                        //     position: 'left',
-                        //     className: 'navbar__item', // fixes margin around dropdown - hackish, should be fixed in theme
-                        //     dropdownItemsBefore: [],
-                        //     dropdownItemsAfter: [],
-                        // },
+                        {
+                            type: 'docsVersionDropdown',
+                            position: 'left',
+                            className: 'navbar__item', // fixes margin around dropdown - hackish, should be fixed in theme
+                            dropdownItemsBefore: [],
+                            dropdownItemsAfter: [],
+                        },
                     ],
                 },
             },
@@ -78,6 +83,6 @@ module.exports = {
     plugins: [
         ...config.plugins,
     ],
-    themeConfig: config.themeConfig,
+    themeConfig: { ...config.themeConfig, versions },
     staticDirectories: ['node_modules/@apify/docs-theme/static', 'static'],
 };
