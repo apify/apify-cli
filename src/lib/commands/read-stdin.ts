@@ -8,11 +8,15 @@ export async function readStdin(stdinStream: typeof process.stdin) {
 		return;
 	}
 
+	// This is required for some reason when piping from a previous oclif run
+	stdinStream.resume();
+
 	const bufferChunks: Buffer[] = [];
 	stdinStream.on('data', (chunk) => {
 		bufferChunks.push(chunk);
 	});
 
 	await once(stdinStream, 'end');
-	return Buffer.concat(bufferChunks).toString('utf-8');
+
+	return Buffer.concat(bufferChunks);
 }

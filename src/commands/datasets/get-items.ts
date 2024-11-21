@@ -78,6 +78,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 		simpleLog({ message: contentType });
 
 		process.stdout.write(result);
+		process.stdout.write('\n');
 	}
 
 	private async tryToGetDataset(
