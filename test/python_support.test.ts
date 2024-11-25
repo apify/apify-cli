@@ -1,4 +1,5 @@
 import { existsSync, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
 
 import { loadJsonFileSync } from 'load-json-file';
 
@@ -26,12 +27,17 @@ describe('Python support [python]', () => {
 		await afterAllCalls();
 	});
 
-	it('Python templates work [python]', async () => {
+	it('Python templates work [python]', { timeout: 120_000 }, async () => {
 		const pythonVersion = detectPythonVersion('.');
 		// Don't fail this test when Python is not installed (it will be installed in the right CI workflow)
 		if (!pythonVersion && !process.env.CI) {
 			console.log('Skipping Python template test since Python is not installed');
 			return;
+		}
+
+		if (existsSync(tmpPath)) {
+			// Remove the tmp path if it exists
+			await rm(tmpPath, { recursive: true, force: true });
 		}
 
 		await CreateCommand.run([actorName, '--template', PYTHON_START_TEMPLATE_ID], import.meta.url);
@@ -54,7 +60,10 @@ async def main():
 		writeFileSync(joinPath('src', 'main.py'), actorCode, { flag: 'w' });
 
 		toggleCwdBetweenFullAndParentPath();
+
 		await RunCommand.run([], import.meta.url);
+
+		console.log('ran');
 
 		// Check Actor output
 		const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
