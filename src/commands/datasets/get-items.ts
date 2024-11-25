@@ -68,6 +68,9 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 
 		const { datasetClient } = maybeDataset;
 
+		// Write something already to stdout
+		process.stdout.write('');
+
 		const result = await datasetClient.downloadItems(format, {
 			limit,
 			offset,
@@ -78,6 +81,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 		simpleLog({ message: contentType });
 
 		process.stdout.write(result);
+		process.stdout.write('\n');
 	}
 
 	private async tryToGetDataset(

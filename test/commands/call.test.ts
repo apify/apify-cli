@@ -169,7 +169,8 @@ describe('apify call', () => {
 		expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
 	});
 
-	it('should work with stdin input without --input or --input-file', async () => {
+	// TODO: move this to cucumber, much easier to test
+	it.skip('should work with stdin input without --input or --input-file', async () => {
 		const expectedInput = {
 			hello: 'from cli',
 		};

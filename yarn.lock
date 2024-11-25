@@ -3857,7 +3857,7 @@ __metadata:
     tsx: "npm:^4.16.5"
     typescript: "npm:^5.5.4"
     underscore: "npm:~1.13.7"
-    vitest: "npm:^2.0.5"
+    vitest: "npm:^2.1.5"
     write-json-file: "npm:~6.0.0"
   bin:
     apify: ./bin/run.js
@@ -11037,9 +11037,9 @@ __metadata:
   linkType: hard
 
 "tinypool@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "tinypool@npm:1.0.1"
-  checksum: 10c0/90939d6a03f1519c61007bf416632dc1f0b9c1a9dd673c179ccd9e36a408437384f984fc86555a5d040d45b595abc299c3bb39d354439e98a090766b5952e73d
+  version: 1.0.2
+  resolution: "tinypool@npm:1.0.2"
+  checksum: 10c0/31ac184c0ff1cf9a074741254fe9ea6de95026749eb2b8ec6fd2b9d8ca94abdccda731f8e102e7f32e72ed3b36d32c6975fd5f5523df3f1b6de6c3d8dfd95e63
   languageName: node
   linkType: hard
 
@@ -11616,7 +11616,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vitest@npm:^2.0.5":
+"vitest@npm:^2.1.5":
   version: 2.1.5
   resolution: "vitest@npm:2.1.5"
   dependencies:

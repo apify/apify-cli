@@ -3,6 +3,7 @@ import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
+import { readStdin } from '../../lib/commands/read-stdin.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
@@ -17,13 +18,12 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 			ignoreStdin: true,
 		}),
 		item: Args.string({
-			required: true,
 			description: 'The object or array of objects to be pushed.',
 		}),
 	};
 
 	async run() {
-		const { nameOrId, item } = this.args;
+		const { nameOrId, item: _item } = this.args;
 
 		const client = await getLoggedClientOrThrow();
 		const existingDataset = await tryToGetDataset(client, nameOrId);
@@ -40,8 +40,15 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 
 		let parsedData: Record<string, unknown> | Array<Record<string, unknown>>;
 
+		const item = _item || (await readStdin(process.stdin));
+
+		if (!item) {
+			error({ message: 'No items were provided.' });
+			return;
+		}
+
 		try {
-			parsedData = JSON.parse(item);
+			parsedData = JSON.parse(item.toString('utf8'));
 		} catch (err) {
 			error({
 				message: `Failed to parse data as JSON string: ${(err as Error).message}`,

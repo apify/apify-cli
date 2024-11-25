@@ -49,7 +49,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 
 		if (stdin) {
 			try {
-				const parsed = JSON.parse(stdin);
+				const parsed = JSON.parse(stdin.toString('utf8'));
 
 				if (Array.isArray(parsed)) {
 					error({ message: 'The provided input is invalid. It should be an object, not an array.' });
