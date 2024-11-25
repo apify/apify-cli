@@ -63,8 +63,6 @@ async def main():
 
 		await RunCommand.run([], import.meta.url);
 
-		console.log('ran');
-
 		// Check Actor output
 		const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 		const actorOutput = loadJsonFileSync(actorOutputPath);

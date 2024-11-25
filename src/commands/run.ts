@@ -106,7 +106,6 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	};
 
 	async run() {
-		console.log('running');
 		const cwd = process.cwd();
 
 		const { proxy, id: userId, token } = await getLocalUserInfo();
