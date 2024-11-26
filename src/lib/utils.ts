@@ -162,7 +162,6 @@ export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): Apif
 		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
 		requestInterceptors: [
 			(config) => {
-				// @ts-expect-error CLI is ESM, client is CJS, the types "differ"
 				config.headers ??= new AxiosHeaders();
 
 				for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
