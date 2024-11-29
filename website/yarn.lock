@@ -399,12 +399,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.143":
-  version: 1.0.143
-  resolution: "@apify/docs-theme@npm:1.0.143"
+"@apify/docs-theme@npm:^1.0.144":
+  version: 1.0.144
+  resolution: "@apify/docs-theme@npm:1.0.144"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.1.1"
-    "@docusaurus/theme-common": "npm:^3.5.2"
+    "@docusaurus/theme-common": "npm:3.6.3"
     "@stackql/docusaurus-plugin-hubspot": "npm:^1.1.0"
     axios: "npm:^1.7.4"
     babel-loader: "npm:^9.1.3"
@@ -415,7 +415,7 @@ __metadata:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/9e0979c64392cc031a650bd4f25cba6a3ca39739dcb5ada0acfd8c30e6f0af5f3cb14596961ef1d97603af4b69037588b588a97c89e8928184fa88b90afb046e
+  checksum: 10c0/ac52ef3117680e14f72d3e27a706d2efbd8f39525e7225afe22cb6f85b78dbe23391348c5e096438322f0b5f131a99350ebb2e3e4d0a46bb257bf3c80b7ea425
   languageName: node
   linkType: hard
 
@@ -3169,7 +3169,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@docusaurus/theme-common@npm:3.6.3, @docusaurus/theme-common@npm:^3.5.2":
+"@docusaurus/theme-common@npm:3.6.3":
   version: 3.6.3
   resolution: "@docusaurus/theme-common@npm:3.6.3"
   dependencies:
@@ -13816,7 +13816,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.143"
+    "@apify/docs-theme": "npm:^1.0.144"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^3.5.2"
