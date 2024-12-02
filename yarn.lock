@@ -283,7 +283,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/client-s3@npm:^3.699.0":
+"@aws-sdk/client-s3@npm:^3.701.0":
   version: 3.701.0
   resolution: "@aws-sdk/client-s3@npm:3.701.0"
   dependencies:
@@ -2047,16 +2047,16 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-warn-if-update-available@npm:^3.1.21":
-  version: 3.1.23
-  resolution: "@oclif/plugin-warn-if-update-available@npm:3.1.23"
+  version: 3.1.24
+  resolution: "@oclif/plugin-warn-if-update-available@npm:3.1.24"
   dependencies:
     "@oclif/core": "npm:^4"
     ansis: "npm:^3.3.1"
     debug: "npm:^4.3.5"
     http-call: "npm:^5.2.2"
     lodash: "npm:^4.17.21"
-    registry-auth-token: "npm:^5.0.2"
-  checksum: 10c0/43a8a3e3d06238813630bec7504affe9d86b4f26b9b1d1c60babdb9d3bfb9676a97c2f84c6dce9bf0ac863483abec87b8413a2783e86e07c6306974fdfe0cc59
+    registry-auth-token: "npm:^5.0.3"
+  checksum: 10c0/eb70dd83563e854bd98edb43116459a899240d600a52204e80839ff089d8c87ffd67c1538874f4076b29b39f2f69ee394830ed955b3359cd2648564629b28421
   languageName: node
   linkType: hard
 
@@ -7179,9 +7179,11 @@ __metadata:
   linkType: hard
 
 "has-proto@npm:^1.0.1, has-proto@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "has-proto@npm:1.0.3"
-  checksum: 10c0/35a6989f81e9f8022c2f4027f8b48a552de714938765d019dbea6bb547bd49ce5010a3c7c32ec6ddac6e48fc546166a3583b128f5a7add8b058a6d8b4afec205
+  version: 1.1.0
+  resolution: "has-proto@npm:1.1.0"
+  dependencies:
+    call-bind: "npm:^1.0.7"
+  checksum: 10c0/d0aeb83ca76aa265a7629bf973d6338c310b8307cb7fa8b85f8f01a7d95fc3d6ede54eaedeb538a6c1ee4fc8961abfbe89ea88d9a78244fa03097fe5b506c10d
   languageName: node
   linkType: hard
 
@@ -9076,11 +9078,11 @@ __metadata:
   linkType: hard
 
 "oclif@npm:^4.14.15":
-  version: 4.15.29
-  resolution: "oclif@npm:4.15.29"
+  version: 4.15.30
+  resolution: "oclif@npm:4.15.30"
   dependencies:
     "@aws-sdk/client-cloudfront": "npm:^3.687.0"
-    "@aws-sdk/client-s3": "npm:^3.699.0"
+    "@aws-sdk/client-s3": "npm:^3.701.0"
     "@inquirer/confirm": "npm:^3.1.22"
     "@inquirer/input": "npm:^2.2.4"
     "@inquirer/select": "npm:^2.5.0"
@@ -9105,7 +9107,7 @@ __metadata:
     validate-npm-package-name: "npm:^5.0.1"
   bin:
     oclif: bin/run.js
-  checksum: 10c0/e14e857c6d676ecd2790e544ccc1026d4048abe8b64dc26ca7d12c7b19ed0e24552faaeff3d8a1f74c583caca431ab6fa290217eb862511f86e137dd826021da
+  checksum: 10c0/a1cf27a7180c6b2b2fe50c589e2e41bb698fe9cb7741d29b7c02111d55408156f4d4989ba1da79ac3935fb6ec96ed386e76cade675ed29c133583605d0e6b240
   languageName: node
   linkType: hard
 
@@ -9908,7 +9910,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"registry-auth-token@npm:^5.0.2":
+"registry-auth-token@npm:^5.0.3":
   version: 5.0.3
   resolution: "registry-auth-token@npm:5.0.3"
   dependencies:
@@ -11343,9 +11345,9 @@ __metadata:
   linkType: hard
 
 "type-fest@npm:^4.0.0, type-fest@npm:^4.26.1, type-fest@npm:^4.8.3":
-  version: 4.29.0
-  resolution: "type-fest@npm:4.29.0"
-  checksum: 10c0/de11f04e141e4dd2caf8ba9cb4894955f73d60c06303f93836feea66f162166a2d66e81e7aca270721627cdc7fef2d248b21917fe1346598a66c3d6b856d2d7f
+  version: 4.29.1
+  resolution: "type-fest@npm:4.29.1"
+  checksum: 10c0/93019c35cedec6dc12a324edcf6bd71719881c944f70e6bf029fd2deb4132589439510f4043f82d7afa6238c0850becfe64fa299a0bca351bed9d839b65463e2
   languageName: node
   linkType: hard
 
