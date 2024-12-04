@@ -62,7 +62,7 @@
         "@apify/actor-templates": "~0.1.5",
         "@apify/consts": "~2.34.0",
         "@apify/input_schema": "~3.12.0",
-        "@apify/utilities": "~2.10.6",
+        "@apify/utilities": "~2.11.0",
         "@crawlee/memory-storage": "~3.12.0",
         "@oclif/core": "~4.0.17",
         "@oclif/plugin-help": "~6.2.8",
