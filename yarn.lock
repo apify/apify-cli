@@ -130,13 +130,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/utilities@npm:^2.10.11, @apify/utilities@npm:^2.7.10, @apify/utilities@npm:^2.9.3, @apify/utilities@npm:~2.10.6":
+"@apify/utilities@npm:^2.10.11, @apify/utilities@npm:^2.7.10, @apify/utilities@npm:^2.9.3":
   version: 2.10.11
   resolution: "@apify/utilities@npm:2.10.11"
   dependencies:
     "@apify/consts": "npm:^2.34.0"
     "@apify/log": "npm:^2.5.10"
   checksum: 10c0/7abd9c134b9a19b3e5d77b2ba3a029cf118f420e9ae58ac7658bd1787bd76d8b04216db9d5eb84d409e214e3035468788d865ade3cb533c8acd69e25feb861f4
+  languageName: node
+  linkType: hard
+
+"@apify/utilities@npm:~2.11.0":
+  version: 2.11.0
+  resolution: "@apify/utilities@npm:2.11.0"
+  dependencies:
+    "@apify/consts": "npm:^2.34.0"
+    "@apify/log": "npm:^2.5.10"
+  checksum: 10c0/c79a79216a0ba0d5725e238e512fe309cb5e7629e50b65c1ab49c7e26080a9b21c50a0674375006a9a9a76bfdcaf6ecd7958ef185c6bb91f1acb6b34ae12cd61
   languageName: node
   linkType: hard
 
@@ -3809,7 +3819,7 @@ __metadata:
     "@apify/eslint-config-ts": "npm:^0.4.1"
     "@apify/input_schema": "npm:~3.12.0"
     "@apify/tsconfig": "npm:^0.1.0"
-    "@apify/utilities": "npm:~2.10.6"
+    "@apify/utilities": "npm:~2.11.0"
     "@biomejs/biome": "npm:^1.8.3"
     "@crawlee/memory-storage": "npm:~3.12.0"
     "@crawlee/types": "npm:^3.11.1"
