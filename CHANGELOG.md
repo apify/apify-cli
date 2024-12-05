@@ -13,7 +13,7 @@ All notable changes to this project will be documented in this file.
 - `runs abort` ([#643](https://github.com/apify/apify-cli/pull/643)) ([96e5a34](https://github.com/apify/apify-cli/commit/96e5a3435cca08d87dc8d39659a7a6524f18be0e)) by [@vladfrangu](https://github.com/vladfrangu)
 - `runs resurrect` ([#644](https://github.com/apify/apify-cli/pull/644)) ([7dbf4fb](https://github.com/apify/apify-cli/commit/7dbf4fb06c657246563c1c64e76ad83f283ea275)) by [@vladfrangu](https://github.com/vladfrangu)
 - `runs log` ([#645](https://github.com/apify/apify-cli/pull/645)) ([dd6af5e](https://github.com/apify/apify-cli/commit/dd6af5ece79f4399fc5065483b650c71c61114cf)) by [@vladfrangu](https://github.com/vladfrangu)
-- `runs rm` & `builds rm` & `actors rm` ([#648](https://github.com/apify/apify-cli/pull/648)) ([566f8c5](https://github.com/apify/apify-cli/commit/566f8c5d1482f150f4d61229524c7672c2af666d)) by [@vladfrangu](https://github.com/vladfrangu)
+- `runs rm` &amp; `builds rm` &amp; `actors rm` ([#648](https://github.com/apify/apify-cli/pull/648)) ([566f8c5](https://github.com/apify/apify-cli/commit/566f8c5d1482f150f4d61229524c7672c2af666d)) by [@vladfrangu](https://github.com/vladfrangu)
 - `runs info` ([#657](https://github.com/apify/apify-cli/pull/657)) ([827767c](https://github.com/apify/apify-cli/commit/827767cfc988b7d587adceb825765e553deeed77)) by [@vladfrangu](https://github.com/vladfrangu)
 - `actors build` ([#661](https://github.com/apify/apify-cli/pull/661)) ([4605cda](https://github.com/apify/apify-cli/commit/4605cda7f3a4f5a35160ba69bf4a454c889dd813)) by [@vladfrangu](https://github.com/vladfrangu)
 - `actors pull` ([#662](https://github.com/apify/apify-cli/pull/662)) ([26d5cb3](https://github.com/apify/apify-cli/commit/26d5cb356fbb38a789e9b88f4d4b01468e38bd26)) by [@vladfrangu](https://github.com/vladfrangu)
@@ -24,7 +24,7 @@ All notable changes to this project will be documented in this file.
 - `actors ls` ([#675](https://github.com/apify/apify-cli/pull/675)) ([de258cb](https://github.com/apify/apify-cli/commit/de258cb8872857aa559afb4b16ed5a52f4fb2094)) by [@vladfrangu](https://github.com/vladfrangu)
 - `key-value-stores get-value` ([#678](https://github.com/apify/apify-cli/pull/678)) ([67cfefe](https://github.com/apify/apify-cli/commit/67cfefef88fac220a1c959aaaecf3d051e482236)) by [@vladfrangu](https://github.com/vladfrangu)
 - `datasets get-items` ([#679](https://github.com/apify/apify-cli/pull/679)) ([b521546](https://github.com/apify/apify-cli/commit/b521546df195bab7bedf5534167b6edae6a5e69e)) by [@vladfrangu](https://github.com/vladfrangu)
-- `datasets` / `key-value-stores` commands ([#685](https://github.com/apify/apify-cli/pull/685)) ([c7d77e1](https://github.com/apify/apify-cli/commit/c7d77e1cec711edd9996cbb1249e489fbf3db547)) by [@vladfrangu](https://github.com/vladfrangu)
+- `datasets` &#x2F; `key-value-stores` commands ([#685](https://github.com/apify/apify-cli/pull/685)) ([c7d77e1](https://github.com/apify/apify-cli/commit/c7d77e1cec711edd9996cbb1249e489fbf3db547)) by [@vladfrangu](https://github.com/vladfrangu)
 - Key-value-store commands ([#700](https://github.com/apify/apify-cli/pull/700)) ([eb8ff3b](https://github.com/apify/apify-cli/commit/eb8ff3b9c7f1319d0937543f7b0b97cb25d6390a)) by [@vladfrangu](https://github.com/vladfrangu)
 - `actors info` ([#701](https://github.com/apify/apify-cli/pull/701)) ([0f4b3f0](https://github.com/apify/apify-cli/commit/0f4b3f08dd5937ca6664342c2510a9f4f3fa52f6)) by [@vladfrangu](https://github.com/vladfrangu)
 
