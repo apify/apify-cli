@@ -399,9 +399,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.147":
-  version: 1.0.147
-  resolution: "@apify/docs-theme@npm:1.0.147"
+"@apify/docs-theme@npm:^1.0.148":
+  version: 1.0.148
+  resolution: "@apify/docs-theme@npm:1.0.148"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.1.1"
     "@docusaurus/theme-common": "npm:3.6.3"
@@ -411,11 +411,15 @@ __metadata:
     docusaurus-gtm-plugin: "npm:^0.0.2"
     postcss-preset-env: "npm:^9.3.0"
     prism-react-renderer: "npm:^2.0.6"
+    remark-parse: "npm:^11.0.0"
+    remark-stringify: "npm:^11.0.0"
+    unified: "npm:^11.0.5"
+    unist-util-visit-parents: "npm:^3.1.1"
   peerDependencies:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/4244738d113f46848eadaa8ad1431b8deaae8a46c9ffdb64f6c814063af9257ad504976e6a948527cfb15376c6a80d1c1e058090955ab3f9dfdc164e9233e4cf
+  checksum: 10c0/73fa98d0447ccf64e5138102ff9da5c54b85df8497f67cc223021f7abd7ea82ce464f2f7ca9cb75637e58c19fdacbb1086bc4729bfdc6c4a0f3097c40fa872f8
   languageName: node
   linkType: hard
 
@@ -13824,7 +13828,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.147"
+    "@apify/docs-theme": "npm:^1.0.148"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^3.5.2"
@@ -15049,7 +15053,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unified@npm:^11.0.0, unified@npm:^11.0.3, unified@npm:^11.0.4":
+"unified@npm:^11.0.0, unified@npm:^11.0.3, unified@npm:^11.0.4, unified@npm:^11.0.5":
   version: 11.0.5
   resolution: "unified@npm:11.0.5"
   dependencies:
@@ -15091,6 +15095,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"unist-util-is@npm:^4.0.0":
+  version: 4.1.0
+  resolution: "unist-util-is@npm:4.1.0"
+  checksum: 10c0/21ca3d7bacc88853b880b19cb1b133a056c501617d7f9b8cce969cd8b430ed7e1bc416a3a11b02540d5de6fb86807e169d00596108a459d034cf5faec97c055e
+  languageName: node
+  linkType: hard
+
 "unist-util-is@npm:^6.0.0":
   version: 6.0.0
   resolution: "unist-util-is@npm:6.0.0"
@@ -15124,6 +15135,16 @@ __metadata:
   dependencies:
     "@types/unist": "npm:^3.0.0"
   checksum: 10c0/dfe1dbe79ba31f589108cb35e523f14029b6675d741a79dea7e5f3d098785045d556d5650ec6a8338af11e9e78d2a30df12b1ee86529cded1098da3f17ee999e
+  languageName: node
+  linkType: hard
+
+"unist-util-visit-parents@npm:^3.1.1":
+  version: 3.1.1
+  resolution: "unist-util-visit-parents@npm:3.1.1"
+  dependencies:
+    "@types/unist": "npm:^2.0.0"
+    unist-util-is: "npm:^4.0.0"
+  checksum: 10c0/231c80c5ba8e79263956fcaa25ed2a11ad7fe77ac5ba0d322e9d51bbc4238501e3bb52f405e518bcdc5471e27b33eff520db0aa4a3b1feb9fb6e2de6ae385d49
   languageName: node
   linkType: hard
 
