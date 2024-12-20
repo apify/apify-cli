@@ -5,7 +5,7 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@apify/actor-templates@npm:~0.1.5":
+"@apify/actor-templates@npm:^0.1.5":
   version: 0.1.5
   resolution: "@apify/actor-templates@npm:0.1.5"
   checksum: 10c0/69b8fb70da078a5373316c6478bb56739876d11ca4d92fa5fe1cbbcad6b88ad1e02097c90b934f3817ea502530699a076106894b80b4c886ca8887730a7b3177
@@ -19,7 +19,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/consts@npm:^2.36.0, @apify/consts@npm:~2.36.0":
+"@apify/consts@npm:^2.36.0":
   version: 2.36.0
   resolution: "@apify/consts@npm:2.36.0"
   checksum: 10c0/49004de665590ca14e0115b38333c7141f43e45e696379535291f3bfecc448a088785810b4e9d037625ecaffe2ecebbcfb7adb3a3bfd2707533042bbb895d3ee
@@ -69,7 +69,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/input_schema@npm:~3.12.0":
+"@apify/input_schema@npm:^3.12.0":
   version: 3.12.3
   resolution: "@apify/input_schema@npm:3.12.3"
   dependencies:
@@ -157,7 +157,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/utilities@npm:~2.12.0":
+"@apify/utilities@npm:^2.12.0":
   version: 2.12.1
   resolution: "@apify/utilities@npm:2.12.1"
   dependencies:
@@ -1067,7 +1067,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@crawlee/memory-storage@npm:3.12.1, @crawlee/memory-storage@npm:~3.12.0":
+"@crawlee/memory-storage@npm:3.12.1, @crawlee/memory-storage@npm:^3.12.0":
   version: 3.12.1
   resolution: "@crawlee/memory-storage@npm:3.12.1"
   dependencies:
@@ -3833,15 +3833,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "apify-cli@workspace:."
   dependencies:
-    "@apify/actor-templates": "npm:~0.1.5"
-    "@apify/consts": "npm:~2.36.0"
+    "@apify/actor-templates": "npm:^0.1.5"
+    "@apify/consts": "npm:^2.36.0"
     "@apify/eslint-config": "npm:^0.4.0"
     "@apify/eslint-config-ts": "npm:^0.4.1"
-    "@apify/input_schema": "npm:~3.12.0"
+    "@apify/input_schema": "npm:^3.12.0"
     "@apify/tsconfig": "npm:^0.1.0"
-    "@apify/utilities": "npm:~2.12.0"
+    "@apify/utilities": "npm:^2.12.0"
     "@biomejs/biome": "npm:^1.8.3"
-    "@crawlee/memory-storage": "npm:~3.12.0"
+    "@crawlee/memory-storage": "npm:^3.12.0"
     "@crawlee/types": "npm:^3.11.1"
     "@cucumber/cucumber": "npm:^11.0.0"
     "@oclif/core": "npm:~4.2.0"
@@ -3871,7 +3871,7 @@ __metadata:
     adm-zip: "npm:~0.5.15"
     ajv: "npm:~8.17.1"
     apify: "npm:^3.2.4"
-    apify-client: "npm:~2.11.0"
+    apify-client: "npm:^2.11.0"
     archiver: "npm:~7.0.1"
     axios: "npm:~1.7.3"
     chai: "npm:^4.4.1"
@@ -3918,7 +3918,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"apify-client@npm:^2.9.0, apify-client@npm:~2.11.0":
+"apify-client@npm:^2.11.0, apify-client@npm:^2.9.0":
   version: 2.11.0
   resolution: "apify-client@npm:2.11.0"
   dependencies:
@@ -7250,7 +7250,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"has-tostringtag@npm:^1.0.2":
+"has-tostringtag@npm:^1.0.0, has-tostringtag@npm:^1.0.2":
   version: 1.0.2
   resolution: "has-tostringtag@npm:1.0.2"
   dependencies:
@@ -7744,14 +7744,11 @@ __metadata:
   linkType: hard
 
 "is-generator-function@npm:^1.0.10":
-  version: 1.1.0
-  resolution: "is-generator-function@npm:1.1.0"
+  version: 1.0.10
+  resolution: "is-generator-function@npm:1.0.10"
   dependencies:
-    call-bound: "npm:^1.0.3"
-    get-proto: "npm:^1.0.0"
-    has-tostringtag: "npm:^1.0.2"
-    safe-regex-test: "npm:^1.1.0"
-  checksum: 10c0/fdfa96c8087bf36fc4cd514b474ba2ff404219a4dd4cfa6cf5426404a1eed259bdcdb98f082a71029a48d01f27733e3436ecc6690129a7ec09cb0434bee03a2a
+    has-tostringtag: "npm:^1.0.0"
+  checksum: 10c0/df03514df01a6098945b5a0cfa1abff715807c8e72f57c49a0686ad54b3b74d394e2d8714e6f709a71eb00c9630d48e73ca1796c1ccc84ac95092c1fecc0d98b
   languageName: node
   linkType: hard
 
@@ -12146,16 +12143,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yaml@npm:^2.2.2":
-  version: 2.7.0
-  resolution: "yaml@npm:2.7.0"
-  bin:
-    yaml: bin.mjs
-  checksum: 10c0/886a7d2abbd70704b79f1d2d05fe9fb0aa63aefb86e1cb9991837dced65193d300f5554747a872b4b10ae9a12bc5d5327e4d04205f70336e863e35e89d8f4ea9
-  languageName: node
-  linkType: hard
-
-"yaml@npm:~2.6.1":
+"yaml@npm:^2.2.2, yaml@npm:~2.6.1":
   version: 2.6.1
   resolution: "yaml@npm:2.6.1"
   bin:
