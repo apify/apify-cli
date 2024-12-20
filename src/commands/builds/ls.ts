@@ -81,7 +81,7 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 
 		const buildTagToActorVersion = Object.entries(actorInfo.taggedBuilds ?? {}).reduce(
 			(acc, [tag, data]) => {
-				acc[data.buildNumber] = tag;
+				acc[data.buildNumber!] = tag;
 
 				return acc;
 			},
