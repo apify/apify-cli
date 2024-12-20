@@ -5,14 +5,14 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@apify/actor-templates@npm:~0.1.5":
+"@apify/actor-templates@npm:^0.1.5":
   version: 0.1.5
   resolution: "@apify/actor-templates@npm:0.1.5"
   checksum: 10c0/69b8fb70da078a5373316c6478bb56739876d11ca4d92fa5fe1cbbcad6b88ad1e02097c90b934f3817ea502530699a076106894b80b4c886ca8887730a7b3177
   languageName: node
   linkType: hard
 
-"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.35.0, @apify/consts@npm:~2.35.0":
+"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.35.0":
   version: 2.35.0
   resolution: "@apify/consts@npm:2.35.0"
   checksum: 10c0/b4e8a0655bb33e183d2ac4cffb47c758e432d10ea067ff9f8c2bc4ed0efe5e2b5131c98d899f60563b1d0afe2e9d0d50d066ec0124a966a234f4be37d37ec35d
@@ -62,7 +62,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/input_schema@npm:~3.12.0":
+"@apify/input_schema@npm:^3.12.0":
   version: 3.12.3
   resolution: "@apify/input_schema@npm:3.12.3"
   dependencies:
@@ -130,7 +130,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/utilities@npm:^2.11.1, @apify/utilities@npm:^2.7.10, @apify/utilities@npm:^2.9.3, @apify/utilities@npm:~2.11.0":
+"@apify/utilities@npm:^2.11.0, @apify/utilities@npm:^2.11.1, @apify/utilities@npm:^2.7.10, @apify/utilities@npm:^2.9.3":
   version: 2.11.1
   resolution: "@apify/utilities@npm:2.11.1"
   dependencies:
@@ -1040,7 +1040,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@crawlee/memory-storage@npm:3.12.1, @crawlee/memory-storage@npm:~3.12.0":
+"@crawlee/memory-storage@npm:3.12.1, @crawlee/memory-storage@npm:^3.12.0":
   version: 3.12.1
   resolution: "@crawlee/memory-storage@npm:3.12.1"
   dependencies:
@@ -3807,15 +3807,15 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "apify-cli@workspace:."
   dependencies:
-    "@apify/actor-templates": "npm:~0.1.5"
-    "@apify/consts": "npm:~2.35.0"
+    "@apify/actor-templates": "npm:^0.1.5"
+    "@apify/consts": "npm:^2.35.0"
     "@apify/eslint-config": "npm:^0.4.0"
     "@apify/eslint-config-ts": "npm:^0.4.1"
-    "@apify/input_schema": "npm:~3.12.0"
+    "@apify/input_schema": "npm:^3.12.0"
     "@apify/tsconfig": "npm:^0.1.0"
-    "@apify/utilities": "npm:~2.11.0"
+    "@apify/utilities": "npm:^2.11.0"
     "@biomejs/biome": "npm:^1.8.3"
-    "@crawlee/memory-storage": "npm:~3.12.0"
+    "@crawlee/memory-storage": "npm:^3.12.0"
     "@crawlee/types": "npm:^3.11.1"
     "@cucumber/cucumber": "npm:^11.0.0"
     "@oclif/core": "npm:~4.1.0"
@@ -3845,7 +3845,7 @@ __metadata:
     adm-zip: "npm:~0.5.15"
     ajv: "npm:~8.17.1"
     apify: "npm:^3.2.4"
-    apify-client: "npm:~2.11.0"
+    apify-client: "npm:^2.11.0"
     archiver: "npm:~7.0.1"
     axios: "npm:~1.7.3"
     chai: "npm:^4.4.1"
@@ -3892,7 +3892,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"apify-client@npm:^2.9.0, apify-client@npm:~2.11.0":
+"apify-client@npm:^2.11.0, apify-client@npm:^2.9.0":
   version: 2.11.0
   resolution: "apify-client@npm:2.11.0"
   dependencies:
