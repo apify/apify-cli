@@ -151,6 +151,8 @@ const getTokenWithAuthFileFallback = (existingToken?: string) => {
 	return existingToken;
 };
 
+type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
+
 /**
  * Returns options for ApifyClient
  */
@@ -162,7 +164,7 @@ export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): Apif
 		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
 		requestInterceptors: [
 			(config) => {
-				config.headers ??= new AxiosHeaders();
+				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
 
 				for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
 					config.headers![key] = value;
