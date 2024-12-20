@@ -86,7 +86,7 @@
         "globby": "~14.0.2",
         "handlebars": "~4.7.8",
         "inquirer": "~12.2.0",
-        "is-ci": "~3.0.1",
+        "is-ci": "~4.1.0",
         "is-online": "~11.0.0",
         "istextorbinary": "~9.5.0",
         "jju": "~1.4.0",
