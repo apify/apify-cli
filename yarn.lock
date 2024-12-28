@@ -3789,9 +3789,9 @@ __metadata:
   linkType: hard
 
 "ansis@npm:^3.3.1, ansis@npm:^3.3.2, ansis@npm:^3.4.0":
-  version: 3.5.0
-  resolution: "ansis@npm:3.5.0"
-  checksum: 10c0/8b9da413e82933f136c4b97e1d9ee8103f84156afb12ce3deac4e86b4da3373f15679cf9773cd19518ef4a76736e74fe5b86317bc797d42e797fa3ed6114b590
+  version: 3.5.2
+  resolution: "ansis@npm:3.5.2"
+  checksum: 10c0/2433dec4298874b66480e435f11029da004f91ec953eb3076601f8140899c2b158d58a29ed77343006eedbb04459b150a01f1a5715e38d03fab1285bb6d21523
   languageName: node
   linkType: hard
 
@@ -5649,9 +5649,9 @@ __metadata:
   linkType: hard
 
 "es-module-lexer@npm:^1.5.4":
-  version: 1.5.4
-  resolution: "es-module-lexer@npm:1.5.4"
-  checksum: 10c0/300a469488c2f22081df1e4c8398c78db92358496e639b0df7f89ac6455462aaf5d8893939087c1a1cbcbf20eed4610c70e0bcb8f3e4b0d80a5d2611c539408c
+  version: 1.6.0
+  resolution: "es-module-lexer@npm:1.6.0"
+  checksum: 10c0/667309454411c0b95c476025929881e71400d74a746ffa1ff4cb450bd87f8e33e8eef7854d68e401895039ac0bac64e7809acbebb6253e055dd49ea9e3ea9212
   languageName: node
   linkType: hard
 
