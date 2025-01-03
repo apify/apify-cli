@@ -12,10 +12,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.35.0, @apify/consts@npm:~2.35.0":
+"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.35.0":
   version: 2.35.0
   resolution: "@apify/consts@npm:2.35.0"
   checksum: 10c0/b4e8a0655bb33e183d2ac4cffb47c758e432d10ea067ff9f8c2bc4ed0efe5e2b5131c98d899f60563b1d0afe2e9d0d50d066ec0124a966a234f4be37d37ec35d
+  languageName: node
+  linkType: hard
+
+"@apify/consts@npm:^2.36.0, @apify/consts@npm:~2.36.0":
+  version: 2.36.0
+  resolution: "@apify/consts@npm:2.36.0"
+  checksum: 10c0/49004de665590ca14e0115b38333c7141f43e45e696379535291f3bfecc448a088785810b4e9d037625ecaffe2ecebbcfb7adb3a3bfd2707533042bbb895d3ee
   languageName: node
   linkType: hard
 
@@ -96,6 +103,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@apify/log@npm:^2.5.12":
+  version: 2.5.12
+  resolution: "@apify/log@npm:2.5.12"
+  dependencies:
+    "@apify/consts": "npm:^2.36.0"
+    ansi-colors: "npm:^4.1.1"
+  checksum: 10c0/61a328a4c84062abe0de1ced1e36ca170c8dedd58c60d53f02e98690edc018f6b82edd50869bb73c524db6ed895f634367404928d838f98a60574da8bf53d73d
+  languageName: node
+  linkType: hard
+
 "@apify/ps-tree@npm:^1.2.0":
   version: 1.2.0
   resolution: "@apify/ps-tree@npm:1.2.0"
@@ -130,13 +147,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/utilities@npm:^2.11.1, @apify/utilities@npm:^2.7.10, @apify/utilities@npm:^2.9.3, @apify/utilities@npm:~2.11.0":
+"@apify/utilities@npm:^2.11.1, @apify/utilities@npm:^2.7.10, @apify/utilities@npm:^2.9.3":
   version: 2.11.1
   resolution: "@apify/utilities@npm:2.11.1"
   dependencies:
     "@apify/consts": "npm:^2.35.0"
     "@apify/log": "npm:^2.5.11"
   checksum: 10c0/319d1b222a64fa704370763adc37b2151e60b997dd8f8b345d0c5f4c397cd5e7893d8e89eeb6ff974875ff9fda760c4b2626a95efabf65b644894e1435a5c5f4
+  languageName: node
+  linkType: hard
+
+"@apify/utilities@npm:~2.12.0":
+  version: 2.12.1
+  resolution: "@apify/utilities@npm:2.12.1"
+  dependencies:
+    "@apify/consts": "npm:^2.36.0"
+    "@apify/log": "npm:^2.5.12"
+  checksum: 10c0/e76657df9f19ee1ad3c14a3d6a93d5662fc1aedb186e6a288c2d54ccc842161dfe8743a971af89a86d92c8f7379f90df9c89275305d3d06215c7beb17c22173c
   languageName: node
   linkType: hard
 
@@ -3807,12 +3834,12 @@ __metadata:
   resolution: "apify-cli@workspace:."
   dependencies:
     "@apify/actor-templates": "npm:~0.1.5"
-    "@apify/consts": "npm:~2.35.0"
+    "@apify/consts": "npm:~2.36.0"
     "@apify/eslint-config": "npm:^0.4.0"
     "@apify/eslint-config-ts": "npm:^0.4.1"
     "@apify/input_schema": "npm:~3.12.0"
     "@apify/tsconfig": "npm:^0.1.0"
-    "@apify/utilities": "npm:~2.11.0"
+    "@apify/utilities": "npm:~2.12.0"
     "@biomejs/biome": "npm:^1.8.3"
     "@crawlee/memory-storage": "npm:~3.12.0"
     "@crawlee/types": "npm:^3.11.1"
