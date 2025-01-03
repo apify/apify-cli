@@ -505,7 +505,7 @@ export const purgeDefaultKeyValueStore = async () => {
 
 export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
 	const { id: logId, status } = job;
-	const apifyClient = new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
+	const apifyClient = new ApifyClient(getApifyClientOptions());
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
