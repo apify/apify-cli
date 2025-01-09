@@ -1,3 +1,4 @@
+import type { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Flags } from '@oclif/core';
 import { Time } from '@sapphire/duration';
 import type { Actor, ActorRunListItem, ActorTaggedBuild, PaginatedList } from 'apify-client';
@@ -13,6 +14,17 @@ import {
 	MultilineTimestampFormatter,
 	ShortDurationFormatter,
 } from '../../lib/utils.js';
+
+const statusMap: Record<(typeof ACTOR_JOB_STATUSES)[keyof typeof ACTOR_JOB_STATUSES], string> = {
+	'TIMED-OUT': chalk.gray('after'),
+	'TIMING-OUT': chalk.gray('after'),
+	ABORTED: chalk.gray('after'),
+	ABORTING: chalk.gray('after'),
+	FAILED: chalk.gray('after'),
+	READY: chalk.gray('for'),
+	RUNNING: chalk.gray('for'),
+	SUCCEEDED: chalk.gray('after'),
+};
 
 const recentlyUsedTable = new ResponsiveTable({
 	allColumns: ['Name', 'Runs', 'Last run started at', 'Last run status', 'Last run duration', '_Small_LastRunText'],
@@ -223,7 +235,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 					const stringParts = [status];
 
 					if (lastRunDuration) {
-						stringParts.push(chalk.gray('in'), chalk.cyan(lastRunDuration));
+						stringParts.push(statusMap[item.lastRun.status], chalk.cyan(lastRunDuration));
 					}
 
 					if (item.lastRun.finishedAt) {
