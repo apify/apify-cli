@@ -194,7 +194,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 
 						const duration = Date.now() - item.lastRun.startedAt.getTime();
 
-						return `${ShortDurationFormatter.format(duration)} ...`;
+						return `${ShortDurationFormatter.format(duration)}…`;
 					})()
 				: '';
 
