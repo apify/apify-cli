@@ -28,7 +28,7 @@ const recentlyUsedTable = new ResponsiveTable({
 		small: {
 			'Last run status': {
 				label: 'Last run',
-				value: '_Small_LastRunText',
+				valueFrom: '_Small_LastRunText',
 			},
 		},
 	},
@@ -59,7 +59,7 @@ const myRecentlyUsedTable = new ResponsiveTable({
 		small: {
 			'Last run': {
 				label: 'Last run',
-				value: '_Small_LastRunText',
+				valueFrom: '_Small_LastRunText',
 			},
 		},
 	},

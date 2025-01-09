@@ -80,7 +80,7 @@ export interface ResponsiveTableOptions<AllColumns extends string> {
 				/**
 				 * The actual column to fetch the value from
 				 */
-				value?: NoInfer<AllColumns>;
+				valueFrom?: NoInfer<AllColumns>;
 			};
 		};
 	};
@@ -130,7 +130,7 @@ export class ResponsiveTable<AllColumns extends string> {
 				head.push(this.options.breakpointOverrides?.small?.[column]?.label ?? column);
 
 				// Actual key to get the value from
-				headKeys.push(this.options.breakpointOverrides?.small?.[column]?.value ?? column);
+				headKeys.push(this.options.breakpointOverrides?.small?.[column]?.valueFrom ?? column);
 			} else {
 				// Always use full values
 				head.push(column);
