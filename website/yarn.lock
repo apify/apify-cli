@@ -424,9 +424,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-search-modal@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "@apify/docs-search-modal@npm:1.1.1"
+"@apify/docs-search-modal@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "@apify/docs-search-modal@npm:1.2.0"
   dependencies:
     "@algolia/autocomplete-js": "npm:^1.10.0"
     "@algolia/autocomplete-theme-classic": "npm:^1.10.0"
@@ -438,31 +438,31 @@ __metadata:
   peerDependencies:
     react: "> 18.0.0"
     react-dom: "> 18.0.0"
-  checksum: 10c0/085759d0a28da7b0a0184d462d527153872cc8371068f6471c65364812294ea2e5a3837e66f006b89aed566da1a49f138d86da72592e30d5a209421599861420
+  checksum: 10c0/ff4022eeaae71d60a7359e953e656d2a8ab96b69fe533c228d143c14ef401143117e1c1809000ad2b3036e384a44654f02e0cc3288253a04bcb62b281c52f143
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.156":
-  version: 1.0.156
-  resolution: "@apify/docs-theme@npm:1.0.156"
+"@apify/docs-theme@npm:^1.0.157":
+  version: 1.0.157
+  resolution: "@apify/docs-theme@npm:1.0.157"
   dependencies:
-    "@apify/docs-search-modal": "npm:^1.1.1"
+    "@apify/docs-search-modal": "npm:^1.2.0"
     "@docusaurus/theme-common": "npm:3.7.0"
     "@stackql/docusaurus-plugin-hubspot": "npm:^1.1.0"
-    axios: "npm:^1.7.4"
-    babel-loader: "npm:^9.1.3"
+    axios: "npm:^1.7.9"
+    babel-loader: "npm:^9.2.1"
     docusaurus-gtm-plugin: "npm:^0.0.2"
-    postcss-preset-env: "npm:^10.0.0"
-    prism-react-renderer: "npm:^2.0.6"
+    postcss-preset-env: "npm:^10.1.3"
+    prism-react-renderer: "npm:^2.4.1"
     remark-parse: "npm:^11.0.0"
     remark-stringify: "npm:^11.0.0"
     unified: "npm:^11.0.5"
-    unist-util-visit-parents: "npm:^6.0.0"
+    unist-util-visit-parents: "npm:^6.0.1"
   peerDependencies:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/cf0bd8237c6e92f942cacb610a491b0c56f0734d4a5cad89d8a3516f051356df8b5007d13716058292703a7b4bdc0ac2c154977b2066a9c636a41f95665f0858
+  checksum: 10c0/43c7ab4825f737b21f8181a3f807e3dd353ec79f306295a142789cbeeba50ddceb244096c8aefc1009db09112a0fb827b12c828419bb4dbe1aacb4285621a42d
   languageName: node
   linkType: hard
 
@@ -4823,7 +4823,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.7.4":
+"axios@npm:^1.7.9":
   version: 1.7.9
   resolution: "axios@npm:1.7.9"
   dependencies:
@@ -4841,7 +4841,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"babel-loader@npm:^9.1.3, babel-loader@npm:^9.2.1":
+"babel-loader@npm:^9.2.1":
   version: 9.2.1
   resolution: "babel-loader@npm:9.2.1"
   dependencies:
@@ -12049,7 +12049,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-preset-env@npm:^10.0.0, postcss-preset-env@npm:^10.1.0":
+"postcss-preset-env@npm:^10.1.0, postcss-preset-env@npm:^10.1.3":
   version: 10.1.3
   resolution: "postcss-preset-env@npm:10.1.3"
   dependencies:
@@ -12308,7 +12308,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"prism-react-renderer@npm:^2.0.6, prism-react-renderer@npm:^2.3.0":
+"prism-react-renderer@npm:^2.3.0, prism-react-renderer@npm:^2.4.1":
   version: 2.4.1
   resolution: "prism-react-renderer@npm:2.4.1"
   dependencies:
@@ -13308,7 +13308,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.156"
+    "@apify/docs-theme": "npm:^1.0.157"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^3.5.2"
@@ -14674,7 +14674,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"unist-util-visit-parents@npm:^6.0.0":
+"unist-util-visit-parents@npm:^6.0.0, unist-util-visit-parents@npm:^6.0.1":
   version: 6.0.1
   resolution: "unist-util-visit-parents@npm:6.0.1"
   dependencies:
