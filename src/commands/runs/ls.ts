@@ -1,5 +1,4 @@
 import { Args, Flags } from '@oclif/core';
-import { Timestamp } from '@sapphire/timestamp';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
@@ -7,9 +6,7 @@ import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, ShortDurationFormatter } from '../../lib/utils.js';
-
-const multilineTimestampFormatter = new Timestamp(`YYYY-MM-DD[\n]HH:mm:ss`);
+import { getLoggedClientOrThrow, MultilineTimestampFormatter, ShortDurationFormatter } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'],
@@ -121,14 +118,14 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 				Status: prettyPrintStatus(run.status),
 				Results: datasetInfos.get(run.id) || chalk.gray('N/A'),
 				Usage: chalk.cyan(`$${(run.usageTotalUsd ?? 0).toFixed(3)}`),
-				'Started At': multilineTimestampFormatter.display(run.startedAt),
+				'Started At': MultilineTimestampFormatter.display(run.startedAt),
 				Took: tookString,
 				'Build No.': run.buildNumber,
 				Origin: run.meta.origin ?? 'UNKNOWN',
 			});
 		}
 
-		message.push(table.render(compact ? CompactMode.VeryCompact : CompactMode.None));
+		message.push(table.render(compact ? CompactMode.VeryCompact : CompactMode.WebLikeCompact));
 
 		simpleLog({
 			message: message.join('\n'),

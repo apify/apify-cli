@@ -1,21 +1,48 @@
+import type { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Flags } from '@oclif/core';
+import { Time } from '@sapphire/duration';
 import type { Actor, ActorRunListItem, ActorTaggedBuild, PaginatedList } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
-import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
+import { CompactMode, kSkipColumn, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { info, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, ShortDurationFormatter, TimestampFormatter } from '../../lib/utils.js';
+import {
+	DateOnlyTimestampFormatter,
+	getLoggedClientOrThrow,
+	MultilineTimestampFormatter,
+	ShortDurationFormatter,
+} from '../../lib/utils.js';
+
+const statusMap: Record<(typeof ACTOR_JOB_STATUSES)[keyof typeof ACTOR_JOB_STATUSES], string> = {
+	'TIMED-OUT': chalk.gray('after'),
+	'TIMING-OUT': chalk.gray('after'),
+	ABORTED: chalk.gray('after'),
+	ABORTING: chalk.gray('after'),
+	FAILED: chalk.gray('after'),
+	READY: chalk.gray('for'),
+	RUNNING: chalk.gray('for'),
+	SUCCEEDED: chalk.gray('after'),
+};
 
 const recentlyUsedTable = new ResponsiveTable({
-	allColumns: ['Name', 'Runs', 'Last run started at', 'Last run status', 'Last run duration'],
-	mandatoryColumns: ['Name', 'Runs', 'Last run started at', 'Last run status', 'Last run duration'],
+	allColumns: ['Name', 'Runs', 'Last run started at', 'Last run status', 'Last run duration', '_Small_LastRunText'],
+	mandatoryColumns: ['Name', 'Runs', 'Last run status', 'Last run duration'],
 	columnAlignments: {
 		'Runs': 'right',
 		'Last run duration': 'right',
 		Name: 'left',
 		'Last run status': 'center',
+	},
+	hiddenColumns: ['_Small_LastRunText'],
+	breakpointOverrides: {
+		small: {
+			'Last run status': {
+				label: 'Last run',
+				valueFrom: '_Small_LastRunText',
+			},
+		},
 	},
 });
 
@@ -29,23 +56,24 @@ const myRecentlyUsedTable = new ResponsiveTable({
 		'Last run',
 		'Last run status',
 		'Last run duration',
+		'_Small_LastRunText',
 	],
-	mandatoryColumns: [
-		'Name',
-		'Modified at',
-		'Builds',
-		'Default build',
-		'Runs',
-		'Last run',
-		'Last run status',
-		'Last run duration',
-	],
+	mandatoryColumns: ['Name', 'Runs', 'Last run', 'Last run duration'],
+	hiddenColumns: ['_Small_LastRunText'],
 	columnAlignments: {
 		'Builds': 'right',
 		'Runs': 'right',
 		'Last run duration': 'right',
 		Name: 'left',
 		'Last run status': 'center',
+	},
+	breakpointOverrides: {
+		small: {
+			'Last run': {
+				label: 'Last run',
+				valueFrom: '_Small_LastRunText',
+			},
+		},
 	},
 });
 
@@ -148,24 +176,37 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 
 		const table = my ? myRecentlyUsedTable : recentlyUsedTable;
 
+		const longestActorTitleLength =
+			actorList.items.reduce((acc, curr) => {
+				const title = `${curr.username}/${curr.name}`;
+
+				if (title.length > acc) {
+					return title.length;
+				}
+
+				return acc;
+			}, 0) +
+			// Padding left right of the name column
+			2 +
+			// Runs column minimum size with padding
+			6;
+
 		for (const item of actorList.items) {
 			const lastRunDisplayedTimestamp = item.stats.lastRunStartedAt
-				? TimestampFormatter.display(item.stats.lastRunStartedAt)
+				? MultilineTimestampFormatter.display(item.stats.lastRunStartedAt)
 				: '';
 
 			const lastRunDuration = item.lastRun
 				? (() => {
 						if (item.lastRun.finishedAt) {
-							return chalk.gray(
-								ShortDurationFormatter.format(
-									item.lastRun.finishedAt.getTime() - item.lastRun.startedAt.getTime(),
-								),
+							return ShortDurationFormatter.format(
+								item.lastRun.finishedAt.getTime() - item.lastRun.startedAt.getTime(),
 							);
 						}
 
 						const duration = Date.now() - item.lastRun.startedAt.getTime();
 
-						return chalk.gray(`${ShortDurationFormatter.format(duration)} ...`);
+						return `${ShortDurationFormatter.format(duration)}…`;
 					})()
 				: '';
 
@@ -187,16 +228,50 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 					})()
 				: chalk.gray('Unknown');
 
+			const runStatus = (() => {
+				if (item.lastRun) {
+					const status = prettyPrintStatus(item.lastRun.status);
+
+					const stringParts = [status];
+
+					if (lastRunDuration) {
+						stringParts.push(statusMap[item.lastRun.status], chalk.cyan(lastRunDuration));
+					}
+
+					if (item.lastRun.finishedAt) {
+						const diff = Date.now() - item.lastRun.finishedAt.getTime();
+
+						if (diff < Time.Week) {
+							stringParts.push('\n', chalk.gray(`${ShortDurationFormatter.format(diff)} ago`));
+						} else {
+							stringParts.push(
+								'\n',
+								chalk.gray('On', DateOnlyTimestampFormatter.display(item.lastRun.finishedAt)),
+							);
+						}
+					}
+
+					return stringParts.join(' ');
+				}
+
+				return '';
+			})();
+
 			table.pushRow({
 				Name: `${item.title}\n${chalk.gray(`${item.username}/${item.name}`)}`,
-				Runs: chalk.cyan(`${item.stats?.totalRuns ?? 0}`),
+				// Completely arbitrary number, but its enough for a very specific edge case where a full actor identifier could be very long, but only on small terminals
+				Runs:
+					ResponsiveTable.isSmallTerminal() && longestActorTitleLength >= 56
+						? kSkipColumn
+						: chalk.cyan(`${item.stats?.totalRuns ?? 0}`),
 				'Last run started at': lastRunDisplayedTimestamp,
 				'Last run': lastRunDisplayedTimestamp,
 				'Last run status': item.lastRun ? prettyPrintStatus(item.lastRun.status) : '',
-				'Modified at': TimestampFormatter.display(item.modifiedAt),
+				'Modified at': MultilineTimestampFormatter.display(item.modifiedAt),
 				Builds: item.actor ? chalk.cyan(item.actor.stats.totalBuilds) : chalk.gray('Unknown'),
-				'Last run duration': lastRunDuration,
+				'Last run duration': ResponsiveTable.isSmallTerminal() ? kSkipColumn : chalk.cyan(lastRunDuration),
 				'Default build': defaultBuild,
+				_Small_LastRunText: runStatus,
 			});
 		}
 

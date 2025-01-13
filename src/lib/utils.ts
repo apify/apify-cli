@@ -151,6 +151,7 @@ const getTokenWithAuthFileFallback = (existingToken?: string) => {
 	return existingToken;
 };
 
+// biome-ignore format: off
 type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
 
 /**
@@ -758,6 +759,11 @@ export const ensureApifyDirectory = (file: string) => {
 };
 
 export const TimestampFormatter = new Timestamp('YYYY-MM-DD [at] HH:mm:ss');
+
+export const MultilineTimestampFormatter = new Timestamp(`YYYY-MM-DD[\n]HH:mm:ss`);
+
+export const DateOnlyTimestampFormatter = new Timestamp('YYYY-MM-DD');
+
 export const DurationFormatter = new SapphireDurationFormatter();
 
 export const ShortDurationFormatter = new SapphireDurationFormatter({
