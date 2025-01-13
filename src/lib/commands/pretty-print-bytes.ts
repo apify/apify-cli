@@ -16,7 +16,7 @@ export function prettyPrintBytes({
 		return `${(0).toPrecision(precision)} Byte`;
 	}
 
-	const i = Math.floor(Math.log(bytes) / Math.log(1024));
+	const i = Math.floor(Math.log(bytes) / Math.log(1000));
 
-	return `${(bytes / 1024 ** i).toFixed(precision)} ${colorFunc(sizes[i])}`;
+	return `${(bytes / 1000 ** i).toFixed(precision)} ${colorFunc(sizes[i])}`;
 }

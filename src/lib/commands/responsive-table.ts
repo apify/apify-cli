@@ -23,6 +23,24 @@ const compactModeCharsWithLineSeparator: Partial<Record<CharName, string>> = {
 	'right-mid': '┤',
 };
 
+const noSeparators: Partial<Record<CharName, string>> = {
+	left: '',
+	right: '',
+	mid: '',
+	'bottom-left': '',
+	'bottom-mid': '',
+	'bottom-right': '',
+	top: '',
+	'top-left': '',
+	'top-mid': '',
+	'top-right': '',
+	'left-mid': '',
+	'mid-mid': '',
+	'right-mid': '',
+	bottom: '',
+	middle: '  ',
+};
+
 export enum CompactMode {
 	/**
 	 * Print the table as is
@@ -36,12 +54,17 @@ export enum CompactMode {
 	 * A version of the compact table that looks akin to the web console (fewer separators, but with lines between rows)
 	 */
 	WebLikeCompact = 1,
+	/**
+	 * Straight up no lines, just two spaces in the middle of columns
+	 */
+	NoLines = 2,
 }
 
 const charMap = {
 	[CompactMode.None]: undefined,
 	[CompactMode.VeryCompact]: compactModeChars,
 	[CompactMode.WebLikeCompact]: compactModeCharsWithLineSeparator,
+	[CompactMode.NoLines]: noSeparators,
 } satisfies Record<CompactMode, Partial<Record<CharName, string>> | undefined>;
 
 function generateHeaderColors(length: number): string[] {
@@ -104,7 +127,7 @@ export class ResponsiveTable<AllColumns extends string> {
 		const rawHead = ResponsiveTable.isSmallTerminal() ? this.options.mandatoryColumns : this.options.allColumns;
 		const headColors = generateHeaderColors(rawHead.length);
 
-		const compact = compactMode === CompactMode.VeryCompact;
+		const compact = compactMode === CompactMode.VeryCompact || compactMode === CompactMode.NoLines;
 		const chars = charMap[compactMode];
 
 		const colAligns: ('left' | 'right' | 'center')[] = [];
