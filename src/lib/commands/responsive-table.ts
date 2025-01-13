@@ -50,6 +50,7 @@ function generateHeaderColors(length: number): string[] {
 
 const terminalColumns = process.stdout.columns ?? 100;
 
+/** @internal */
 export const kSkipColumn = Symbol.for('@apify/cli:responsive-table:skip-column');
 
 export interface ResponsiveTableOptions<AllColumns extends string> {
