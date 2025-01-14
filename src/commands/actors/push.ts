@@ -41,13 +41,9 @@ const DEFAULT_BUILD_TAG = 'latest';
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	static override description =
-		'Uploads the Actor to the Apify platform and builds it there.\n' +
-		`The Actor settings are read from the "${LOCAL_CONFIG_PATH}" file in the current directory, but they can be overridden using command-line options.\n` +
-		`NOTE: If the source files are smaller than ${
-			MAX_MULTIFILE_BYTES / 1024 ** 2
-		} MB then they are uploaded as \n` +
-		'"Multiple source files", otherwise they are uploaded as "Zip file".\n\n' +
-		"When there's an attempt to push files that are older than the Actor on the platform, the command will fail. Can be overwritten with --force flag.";
+		'Deploys Actor to Apify platform using settings from actor.json.\n' +
+		'Files under 3MB upload as "Multiple source files"; larger projects upload as ZIP file.\n' +
+		'Use --force to override newer remote versions.\n';
 
 	static override flags = {
 		version: Flags.string({

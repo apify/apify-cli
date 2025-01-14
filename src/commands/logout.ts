@@ -6,8 +6,8 @@ import { regenerateLocalDistinctId } from '../lib/telemetry.js';
 
 export class LogoutCommand extends ApifyCommand<typeof LogoutCommand> {
 	static override description =
-		'Logs out of your Apify account.\nThe command deletes the API token and all other ' +
-		'account information stored in the ~/.apify directory. To log in again, call "apify login".';
+		'Removes authentiocation by deleting your API token and account information from ~/.apify.\n' +
+		'Run \'apify login\' to auethenticate again.';
 
 	async run() {
 		await rimrafPromised(AUTH_FILE_PATH());

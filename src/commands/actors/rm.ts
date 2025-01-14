@@ -7,7 +7,7 @@ import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class ActorRmCommand extends ApifyCommand<typeof ActorRmCommand> {
-	static override description = 'Deletes an Actor.';
+	static override description = 'Permanently removes an Actor from your account.';
 
 	static override args = {
 		actorId: Args.string({

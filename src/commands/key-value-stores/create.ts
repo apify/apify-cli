@@ -7,13 +7,13 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueStoresCreateCommand> {
-	static override description = 'Creates a new Key-value store on your account';
+	static override description = 'Creates a new key-value store on your account';
 
 	static override hiddenAliases = ['kvs:create'];
 
 	static override args = {
 		keyValueStoreName: Args.string({
-			description: 'Optional name for the Key-value store',
+			description: 'Optional name for the key-value store',
 			required: false,
 		}),
 	};
@@ -29,7 +29,7 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 			const existing = await tryToGetKeyValueStore(client, keyValueStoreName);
 
 			if (existing) {
-				error({ message: 'Cannot create a Key-value store with the same name!' });
+				error({ message: 'Cannot create a key-value store with the same name!' });
 				return;
 			}
 		}

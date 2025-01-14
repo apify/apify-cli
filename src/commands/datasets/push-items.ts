@@ -9,12 +9,12 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDataCommand> {
-	static override description = 'Pushes an object or an array of objects to the provided Dataset.';
+	static override description = 'Adds data items to specified dataset. Accepts single object or array of objects.';
 
 	static override args = {
 		nameOrId: Args.string({
 			required: true,
-			description: 'The Dataset ID or name to push the objects to',
+			description: 'The dataset ID or name to push the objects to',
 			ignoreStdin: true,
 		}),
 		item: Args.string({
@@ -30,7 +30,7 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 
 		if (!existingDataset) {
 			error({
-				message: `Dataset with ID or name "${nameOrId}" not found.`,
+				message: `dataset with ID or name "${nameOrId}" not found.`,
 			});
 
 			return;

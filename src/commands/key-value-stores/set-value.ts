@@ -7,7 +7,7 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueStoresSetValueCommand> {
-	static override description = 'Sets a value in a key-value store.';
+	static override description = 'Stores value with specified key. Set content-type with --content-type flag.';
 
 	static override hiddenAliases = ['kvs:set-value'];
 

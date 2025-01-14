@@ -16,23 +16,23 @@ const table = new ResponsiveTable({
 });
 
 export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
-	static override description = 'Lists all Datasets on your account.';
+	static override description = 'Prints all datasets on your account.';
 
 	static override flags = {
 		offset: Flags.integer({
-			description: 'Number of Datasets that will be skipped.',
+			description: 'Number of datasets that will be skipped.',
 			default: 0,
 		}),
 		limit: Flags.integer({
-			description: 'Number of Datasets that will be listed.',
+			description: 'Number of datasets that will be listed.',
 			default: 20,
 		}),
 		desc: Flags.boolean({
-			description: 'Sorts Datasets in descending order.',
+			description: 'Sorts datasets in descending order.',
 			default: false,
 		}),
 		unnamed: Flags.boolean({
-			description: "Lists Datasets that don't have a name set.",
+			description: "Lists datasets that don't have a name set.",
 			default: false,
 		}),
 	};

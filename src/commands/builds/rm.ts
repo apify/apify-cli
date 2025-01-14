@@ -7,7 +7,7 @@ import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
-	static override description = 'Deletes an Actor Build.';
+	static override description = 'Permanently removes an Actor build from the Apify platform';
 
 	static override args = {
 		buildId: Args.string({

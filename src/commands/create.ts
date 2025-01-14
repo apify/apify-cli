@@ -29,7 +29,7 @@ import {
 } from '../lib/utils.js';
 
 export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
-	static override description = 'Creates a new Actor project directory from a selected boilerplate template.';
+	static override description = 'Creates an Actor project from a template in a new directory.';
 
 	static override flags = {
 		template: Flags.string({
