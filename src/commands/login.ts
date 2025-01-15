@@ -43,7 +43,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 	static override description =
 		'Authenticates your Apify account and saves credentials to ~/.apify.\n' +
 		'All other commands use these stored credentials.\n\n' +
-		'Use \'apify logout\' to remove authentication.\n';
+		"Use 'apify logout' to remove authentication.\n";
 
 	static override flags = {
 		token: Flags.string({

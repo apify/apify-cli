@@ -10,10 +10,10 @@ import { info, success } from '../lib/outputs.js';
 import { Ajv } from '../lib/utils.js';
 
 export class ValidateInputSchemaCommand extends ApifyCommand<typeof ValidateInputSchemaCommand> {
-	static override description = 
+	static override description =
 		'Validates Actor input schema from one of these locations (in priority order):\n' +
-		'1. Object in actor.json under \'input\' key\n' +
-		'2. JSON file path in actor.json \'input\' key\n' +
+		"1. Object in actor.json under 'input' key\n" +
+		"2. JSON file path in actor.json 'input' key\n" +
 		'3. .actor/INPUT_SCHEMA.json\n' +
 		'4. INPUT_SCHEMA.json\n\n' +
 		'Optionally specify custom schema path to validate.\n';

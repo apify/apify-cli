@@ -4,8 +4,7 @@ import { ApifyCommand } from '../lib/apify_command.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 
 export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
-	static override description =
-		'Prints details about your currently authenticated Apify account.';
+	static override description = 'Prints details about your currently authenticated Apify account.';
 
 	async run() {
 		await getLoggedClientOrThrow();
