@@ -40,19 +40,19 @@ const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 const DEFAULT_BUILD_TAG = 'latest';
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
-	static override description = `Deploys Actor to Apify platform using settings from "${LOCAL_CONFIG_PATH}".
-		Files under "${MAX_MULTIFILE_BYTES / 1024 ** 2}" MB upload as "Multiple source files"; larger projects upload as ZIP file.
+	static override description = `Deploys Actor to Apify platform using settings from '${LOCAL_CONFIG_PATH}'.
+		Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files"; larger projects upload as ZIP file.
 		Use --force to override newer remote versions.`;
 
 	static override flags = {
 		version: Flags.string({
 			char: 'v',
-			description: `Actor version number to which the files should be pushed. By default, it is taken from the "${LOCAL_CONFIG_PATH}" file.`,
+			description: `Actor version number to which the files should be pushed. By default, it is taken from the '${LOCAL_CONFIG_PATH}' file.`,
 			required: false,
 		}),
 		'build-tag': Flags.string({
 			char: 'b',
-			description: `Build tag to be applied to the successful Actor build. By default, it is taken from the "${LOCAL_CONFIG_PATH}" file`,
+			description: `Build tag to be applied to the successful Actor build. By default, it is taken from the '${LOCAL_CONFIG_PATH}' file`,
 			required: false,
 		}),
 		'wait-for-finish': Flags.string({
@@ -82,7 +82,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			required: false,
 			description:
 				'Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). ' +
-				`If not provided, the command will create or modify the Actor with the name specified in "${LOCAL_CONFIG_PATH}" file.`,
+				`If not provided, the command will create or modify the Actor with the name specified in '${LOCAL_CONFIG_PATH}' file.`,
 		}),
 	};
 

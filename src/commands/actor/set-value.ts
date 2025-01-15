@@ -5,7 +5,7 @@ import { ApifyCommand } from '../../lib/apify_command.js';
 
 export class SetValueCommand extends ApifyCommand<typeof SetValueCommand> {
 	static override description =
-		'Sets or removes record into the default KeyValueStore associated with the Actor run.\n\n' +
+		'Sets or removes record into the default key-value store associated with the Actor run.\n\n' +
 		'It is possible to pass data using argument or stdin.\n\n' +
 		'Passing data using argument:\n' +
 		'$ apify actor set-value KEY my-value\n\n' +

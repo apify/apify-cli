@@ -9,7 +9,7 @@ import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override description =
-		'Requires prior login.\n' +
+		'Requires login.\n' +
 		'Executes predefined Actor task remotely using local key-value store for input.\n' +
 		'Customize with --memory and --timeout flags.\n';
 
