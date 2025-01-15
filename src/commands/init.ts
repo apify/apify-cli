@@ -28,10 +28,10 @@ import {
 
 export class InitCommand extends ApifyCommand<typeof InitCommand> {
 	static override description =
-		'Sets up an Actor project in your current directory by creating actor.json and storage files.\n' +
-		'If the directory contains a Scrapy project in Python, the command automatically creates wrappers so that you can run your scrapers without changes.\n' +
-		'Creates the "${LOCAL_CONFIG_PATH}" file and the "${DEFAULT_LOCAL_STORAGE_DIR}"directory in the current directory, but does not touch any other existing files or directories.\n\n' +
-		'WARNING: Overwrites existing "${LOCAL_CONFIG_PATH}" directory.\n';
+		`Sets up an Actor project in your current directory by creating actor.json and storage files.\n` +
+		`If the directory contains a Scrapy project in Python, the command automatically creates wrappers so that you can run your scrapers without changes.\n` +
+		`Creates the ${LOCAL_CONFIG_PATH} file and the ${DEFAULT_LOCAL_STORAGE_DIR} directory in the current directory, but does not touch any other existing files or directories.\n\n` +
+		`WARNING: Overwrites existing ${DEFAULT_LOCAL_STORAGE_DIR} directory.\n`;
 
 	static override args = {
 		actorName: Args.string({
