@@ -50,7 +50,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	static override description =
 		`Executes Actor locally with simulated Apify environment variables.\n` +
 		`Stores data in local '${DEFAULT_LOCAL_STORAGE_DIR}' directory.\n\n` +
-		`NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.\n`;
+		`NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.`;
 
 	static override flags = {
 		purge: Flags.boolean({

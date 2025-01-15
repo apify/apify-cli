@@ -41,9 +41,9 @@ const tryToLogin = async (token: string) => {
 
 export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 	static override description =
-		'Authenticates your Apify account and saves credentials to ~/.apify.\n' +
-		'All other commands use these stored credentials.\n\n' +
-		"Use 'apify logout' to remove authentication.\n";
+		`Authenticates your Apify account and saves credentials to '~/.apify'.\n` +
+		`All other commands use these stored credentials.\n\n` +
+		`Run 'apify logout' to remove authentication.`;
 
 	static override flags = {
 		token: Flags.string({

@@ -7,7 +7,7 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueStoresCreateCommand> {
-	static override description = 'Creates a new key-value store on your account';
+	static override description = 'Creates a new key-value store on your account.';
 
 	static override hiddenAliases = ['kvs:create'];
 

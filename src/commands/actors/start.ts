@@ -14,7 +14,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 	static override description =
 		'Requires login.\n' +
 		'Starts Actor remotely and returns run details immediately.\n' +
-		'Uses authenticated account and local key-value store for input.\n';
+		'Uses authenticated account and local key-value store for input.';
 
 	static override flags = {
 		...SharedRunOnCloudFlags('Actor'),

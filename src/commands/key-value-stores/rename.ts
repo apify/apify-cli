@@ -8,23 +8,23 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueStoresRenameCommand> {
-	static override description = 'Renames a Key-value store, or removes its unique name';
+	static override description = 'Renames a key-value store, or removes its unique name.';
 
 	static override hiddenAliases = ['kvs:rename'];
 
 	static override flags = {
 		unname: Flags.boolean({
-			description: 'Removes the unique name of the Key-value store',
+			description: 'Removes the unique name of the key-value store',
 		}),
 	};
 
 	static override args = {
 		keyValueStoreNameOrId: Args.string({
-			description: 'The Key-value store ID or name to delete',
+			description: 'The key-value store ID or name to delete',
 			required: true,
 		}),
 		newName: Args.string({
-			description: 'The new name for the Key-value store',
+			description: 'The new name for the key-value store',
 		}),
 	};
 
@@ -59,14 +59,14 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 
 		const successMessage = (() => {
 			if (!name) {
-				return `The name of the Key-value store with ID ${chalk.yellow(id)} has been set to: ${chalk.yellow(newName)}`;
+				return `The name of the key-value store with ID ${chalk.yellow(id)} has been set to: ${chalk.yellow(newName)}`;
 			}
 
 			if (unname) {
-				return `The name of the Key-value store with ID ${chalk.yellow(id)} has been removed (was ${chalk.yellow(name)} previously).`;
+				return `The name of the key-value store with ID ${chalk.yellow(id)} has been removed (was ${chalk.yellow(name)} previously).`;
 			}
 
-			return `The name of the Key-value store with ID ${chalk.yellow(id)} was changed from ${chalk.yellow(name)} to ${chalk.yellow(newName)}.`;
+			return `The name of the key-value store with ID ${chalk.yellow(id)} was changed from ${chalk.yellow(name)} to ${chalk.yellow(newName)}.`;
 		})();
 
 		try {
@@ -80,7 +80,7 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 			const casted = err as ApifyApiError;
 
 			error({
-				message: `Failed to rename Key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+				message: `Failed to rename key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
 			});
 		}
 	}

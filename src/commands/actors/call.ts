@@ -22,7 +22,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override description =
 		'Requires login.\n' +
 		'Executes Actor remotely using your authenticated account.\n' +
-		'Reads input from local key-value store by default.\n';
+		'Reads input from local key-value store by default.';
 
 	static override flags = {
 		...SharedRunOnCloudFlags('Actor'),

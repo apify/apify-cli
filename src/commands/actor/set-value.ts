@@ -10,7 +10,7 @@ export class SetValueCommand extends ApifyCommand<typeof SetValueCommand> {
 		'Passing data using argument:\n' +
 		'$ apify actor set-value KEY my-value\n\n' +
 		'Passing data using stdin with pipe:\n' +
-		'$ cat ./my-text-file.txt | apify actor set-value KEY --contentType text/plain\n';
+		'$ cat ./my-text-file.txt | apify actor set-value KEY --contentType text/plain';
 
 	static override args = {
 		key: Args.string({

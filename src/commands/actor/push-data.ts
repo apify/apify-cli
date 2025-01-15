@@ -12,7 +12,7 @@ export class PushDataCommand extends ApifyCommand<typeof PushDataCommand> {
 		'  - JSON argument:\n' +
 		'  $ apify actor push-data {"key": "value"}\n' +
 		'  - Piped stdin:\n' +
-		'  $ cat ./test.json | apify actor push-data\n';
+		'  $ cat ./test.json | apify actor push-data';
 
 	static override args = {
 		item: Args.string({

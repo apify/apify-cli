@@ -1,7 +1,7 @@
 import { ApifyCommand } from '../../lib/apify_command.js';
 
 export class ActorIndexCommand extends ApifyCommand<typeof ActorIndexCommand> {
-	static override description = 'Manages runtime data operations inside of a running Actor.\n';
+	static override description = 'Manages runtime data operations inside of a running Actor.';
 
 	async run() {
 		await this.printHelp();

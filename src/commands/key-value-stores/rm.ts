@@ -9,13 +9,13 @@ import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresRmCommand> {
-	static override description = 'Deletes a Key-value store';
+	static override description = 'Permanently removes a key-value store.';
 
 	static override hiddenAliases = ['kvs:rm'];
 
 	static override args = {
 		keyValueStoreNameOrId: Args.string({
-			description: 'The Key-value store ID or name to delete',
+			description: 'The key-value store ID or name to delete',
 			required: true,
 		}),
 	};
@@ -55,7 +55,7 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 			const casted = err as ApifyApiError;
 
 			error({
-				message: `Failed to delete Key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+				message: `Failed to delete key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
 			});
 		}
 	}

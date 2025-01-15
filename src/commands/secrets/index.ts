@@ -15,7 +15,7 @@ export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand
 		`  "version": "0.1"\n` +
 		`}\n\n` +
 		`When the Actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable\n` +
-		`of the Actor.\n`;
+		`of the Actor.`;
 
 	async run() {
 		await this.printHelp();
