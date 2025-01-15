@@ -12,7 +12,6 @@ import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampForm
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
 	static override description =
-		'Requires login.\n' +
 		'Starts Actor remotely and returns run details immediately.\n' +
 		'Uses authenticated account and local key-value store for input.';
 
