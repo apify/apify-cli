@@ -7,12 +7,12 @@ import { error } from '../../lib/outputs.js';
 
 export class PushDataCommand extends ApifyCommand<typeof PushDataCommand> {
 	static override description =
-		'Stores an object or an array of objects to the default dataset of the Actor run.\n' +
-		'It is possible to pass data using item argument or stdin.\n' +
-		'Passing data using argument:\n' +
-		'$ apify actor push-data {"foo": "bar"}\n' +
-		'Passing data using stdin with pipe:\n' +
-		'$ cat ./test.json | apify actor push-data\n';
+		"Saves data to Actor's run default dataset.\n\n" +
+		'Accept input as:\n' +
+		'  - JSON argument:\n' +
+		'  $ apify actor push-data {"key": "value"}\n' +
+		'  - Piped stdin:\n' +
+		'  $ cat ./test.json | apify actor push-data';
 
 	static override args = {
 		item: Args.string({

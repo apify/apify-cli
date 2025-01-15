@@ -93,7 +93,7 @@ interface HydratedListData {
 }
 
 export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
-	static override description = 'Lists all recently ran Actors or your own Actors.';
+	static override description = 'Prints a list of recently executed Actors or Actors you own.';
 
 	static override flags = {
 		my: Flags.boolean({

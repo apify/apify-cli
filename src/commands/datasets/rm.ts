@@ -9,11 +9,11 @@ import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
-	static override description = 'Deletes a Dataset';
+	static override description = 'Permanently removes a dataset.';
 
 	static override args = {
 		datasetNameOrId: Args.string({
-			description: 'The Dataset ID or name to delete',
+			description: 'The dataset ID or name to delete',
 			required: true,
 		}),
 	};
@@ -53,7 +53,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 			const casted = err as ApifyApiError;
 
 			error({
-				message: `Failed to delete Dataset with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+				message: `Failed to delete dataset with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
 			});
 		}
 	}

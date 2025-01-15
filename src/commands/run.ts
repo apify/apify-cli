@@ -48,14 +48,9 @@ import {
 
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	static override description =
-		'Runs the Actor locally in the current directory.\n' +
-		'It sets various APIFY_XYZ environment variables ' +
-		'in order to provide a working execution environment for the Actor. For example, this causes ' +
-		'the Actor input, as well as all other data in key-value stores, ' +
-		`datasets or request queues to be stored in the "${DEFAULT_LOCAL_STORAGE_DIR}" directory, ` +
-		'rather than on the Apify platform.\n\n' +
-		'NOTE: You can override the command\'s default behavior for Node.js Actors by overriding the "start" script in the package.json file. ' +
-		'You can set up your own main file or environment variables by changing it.';
+		`Executes Actor locally with simulated Apify environment variables.\n` +
+		`Stores data in local '${DEFAULT_LOCAL_STORAGE_DIR}' directory.\n\n` +
+		`NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.`;
 
 	static override flags = {
 		purge: Flags.boolean({

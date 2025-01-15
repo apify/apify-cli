@@ -24,8 +24,8 @@ const extractGitHubZip = async (url: string, directoryPath: string) => {
 
 export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 	static override description =
-		'Pulls an Actor from the Apify platform to the current directory. ' +
-		'If it is defined as Git repository, it will be cloned. If it is defined as Web IDE, it will fetch the files.';
+		'Download Actor code to current directory. ' +
+		'Clones Git repositories or fetches Actor files based on the source type.';
 
 	static override flags = {
 		version: Flags.string({

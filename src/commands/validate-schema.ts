@@ -10,16 +10,13 @@ import { info, success } from '../lib/outputs.js';
 import { Ajv } from '../lib/utils.js';
 
 export class ValidateInputSchemaCommand extends ApifyCommand<typeof ValidateInputSchemaCommand> {
-	static override description = `Validates input schema and prints errors found.
-The input schema for the Actor is used from these locations in order of preference.
-The first one found is validated as it would be the one used on the Apify platform.
-1. Directly embedded object in "${LOCAL_CONFIG_PATH}" under 'input' key
-2. Path to JSON file referenced in "${LOCAL_CONFIG_PATH}" under 'input' key
-3. JSON file at .actor/INPUT_SCHEMA.json
-4. JSON file at INPUT_SCHEMA.json
+	static override description = `Validates Actor input schema from one of these locations (in priority order):
+		1. Object in '${LOCAL_CONFIG_PATH}' under "input" key
+		2. JSON file path in '${LOCAL_CONFIG_PATH}' "input" key
+		3. .actor/INPUT_SCHEMA.json
+		4. INPUT_SCHEMA.json
 
-You can also pass any custom path to your input schema to have it validated instead.
-`;
+		Optionally specify custom schema path to validate.`;
 
 	static override args = {
 		path: Args.string({
@@ -43,7 +40,7 @@ You can also pass any custom path to your input schema to have it validated inst
 		if (inputSchemaPath) {
 			info({ message: `Validating input schema stored at ${inputSchemaPath}` });
 		} else {
-			info({ message: `Validating input schema embedded in "${LOCAL_CONFIG_PATH}"` });
+			info({ message: `Validating input schema embedded in '${LOCAL_CONFIG_PATH}'` });
 		}
 
 		const validator = new Ajv({ strict: false });

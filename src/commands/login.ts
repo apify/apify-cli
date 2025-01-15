@@ -41,9 +41,9 @@ const tryToLogin = async (token: string) => {
 
 export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 	static override description =
-		'Logs in to your Apify account.\nThe API token and other account ' +
-		'information is stored in the ~/.apify directory, from where it is read by all other "apify" commands. ' +
-		'To log out, call "apify logout".';
+		`Authenticates your Apify account and saves credentials to '~/.apify'.\n` +
+		`All other commands use these stored credentials.\n\n` +
+		`Run 'apify logout' to remove authentication.`;
 
 	static override flags = {
 		token: Flags.string({

@@ -4,7 +4,7 @@ import { ApifyCommand } from '../../lib/apify_command.js';
 import { removeSecret } from '../../lib/secrets.js';
 
 export class SecretRmCommand extends ApifyCommand<typeof SecretRmCommand> {
-	static override description = 'Removes the secret.';
+	static override description = 'Permanently deletes a secret from your stored credentials.';
 
 	static override args = {
 		name: Args.string({

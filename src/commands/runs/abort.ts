@@ -11,7 +11,7 @@ const runningStatuses = [ACTOR_JOB_STATUSES.READY, ACTOR_JOB_STATUSES.RUNNING];
 const abortingStatuses = [ACTOR_JOB_STATUSES.ABORTING, ACTOR_JOB_STATUSES.TIMING_OUT];
 
 export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
-	static override description = 'Aborts an Actor Run.';
+	static override description = 'Aborts an Actor run.';
 
 	static override args = {
 		runId: Args.string({

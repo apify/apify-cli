@@ -12,9 +12,8 @@ import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampForm
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
 	static override description =
-		'Runs a specific Actor remotely on the Apify cloud platform and immediately returns information about the run.\n' +
-		'The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". ' +
-		'It takes input for the Actor from the default local key-value store by default.';
+		'Starts Actor remotely and returns run details immediately.\n' +
+		'Uses authenticated account and local key-value store for input.';
 
 	static override flags = {
 		...SharedRunOnCloudFlags('Actor'),
@@ -42,7 +41,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			required: false,
 			description:
 				'Name or ID of the Actor to run (e.g. "my-actor", "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). ' +
-				`If not provided, the command runs the remote Actor specified in the "${LOCAL_CONFIG_PATH}" file.`,
+				`If not provided, the command runs the remote Actor specified in the '${LOCAL_CONFIG_PATH}' file.`,
 		}),
 	};
 

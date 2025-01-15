@@ -34,7 +34,7 @@ const usageMapping: Record<string, keyof ActorRunUsage> = {
 };
 
 export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
-	static override description = 'Prints information about an Actor Run.';
+	static override description = 'Prints information about an Actor run.';
 
 	static override args = {
 		runId: Args.string({
@@ -46,7 +46,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 	static override flags = {
 		verbose: Flags.boolean({
 			char: 'v',
-			description: 'Prints more in-depth information about the Actor Run.',
+			description: 'Prints more in-depth information about the Actor run.',
 			default: false,
 		}),
 	};

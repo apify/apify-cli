@@ -9,9 +9,8 @@ import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override description =
-		'Runs a specific Actor remotely on the Apify cloud platform.\n' +
-		'The Actor is run under your current Apify account. Therefore you need to be logged in by calling "apify login". ' +
-		'It takes input for the Actor from the default local key-value store by default.';
+		'Executes predefined Actor task remotely using local key-value store for input.\n' +
+		'Customize with --memory and --timeout flags.\n';
 
 	static override flags = SharedRunOnCloudFlags('Task');
 

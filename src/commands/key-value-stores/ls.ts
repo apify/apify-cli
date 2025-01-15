@@ -13,25 +13,25 @@ const table = new ResponsiveTable({
 });
 
 export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresLsCommand> {
-	static override description = 'Lists all Key-value stores on your account.';
+	static override description = 'Lists all key-value stores on your account.';
 
 	static override hiddenAliases = ['kvs:ls'];
 
 	static override flags = {
 		offset: Flags.integer({
-			description: 'Number of Key-value stores that will be skipped.',
+			description: 'Number of key-value stores that will be skipped.',
 			default: 0,
 		}),
 		limit: Flags.integer({
-			description: 'Number of Key-value stores that will be listed.',
+			description: 'Number of key-value stores that will be listed.',
 			default: 20,
 		}),
 		desc: Flags.boolean({
-			description: 'Sorts Key-value stores in descending order.',
+			description: 'Sorts key-value stores in descending order.',
 			default: false,
 		}),
 		unnamed: Flags.boolean({
-			description: "Lists Key-value stores that don't have a name set.",
+			description: "Lists key-value stores that don't have a name set.",
 			default: false,
 		}),
 	};
@@ -52,7 +52,7 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 
 		if (rawKvsList.count === 0) {
 			info({
-				message: "You don't have any Key-value stores on your account",
+				message: "You don't have any key-value stores on your account",
 				stdout: true,
 			});
 

@@ -8,21 +8,21 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCommand> {
-	static override description = 'Renames a Dataset, or removes its unique name';
+	static override description = 'Change dataset name or removes name with --unname flag.';
 
 	static override flags = {
 		unname: Flags.boolean({
-			description: 'Removes the unique name of the Dataset',
+			description: 'Removes the unique name of the dataset.',
 		}),
 	};
 
 	static override args = {
 		nameOrId: Args.string({
-			description: 'The Dataset ID or name to delete',
+			description: 'The dataset ID or name to delete.',
 			required: true,
 		}),
 		newName: Args.string({
-			description: 'The new name for the Dataset',
+			description: 'The new name for the dataset.',
 		}),
 	};
 
@@ -57,14 +57,14 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 
 		const successMessage = (() => {
 			if (!name) {
-				return `The name of the Dataset with ID ${chalk.yellow(id)} has been set to: ${chalk.yellow(newName)}`;
+				return `The name of the dataset with ID ${chalk.yellow(id)} has been set to: ${chalk.yellow(newName)}`;
 			}
 
 			if (unname) {
-				return `The name of the Dataset with ID ${chalk.yellow(id)} has been removed (was ${chalk.yellow(name)} previously).`;
+				return `The name of the dataset with ID ${chalk.yellow(id)} has been removed (was ${chalk.yellow(name)} previously).`;
 			}
 
-			return `The name of the Dataset with ID ${chalk.yellow(id)} was changed from ${chalk.yellow(name)} to ${chalk.yellow(newName)}.`;
+			return `The name of the dataset with ID ${chalk.yellow(id)} was changed from ${chalk.yellow(name)} to ${chalk.yellow(newName)}.`;
 		})();
 
 		try {
@@ -78,7 +78,7 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 			const casted = err as ApifyApiError;
 
 			error({
-				message: `Failed to rename Dataset with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+				message: `Failed to rename dataset with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
 			});
 		}
 	}
