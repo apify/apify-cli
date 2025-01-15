@@ -41,9 +41,9 @@ const DEFAULT_BUILD_TAG = 'latest';
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	static override description =
-		'Deploys Actor to Apify platform using settings from actor.json.\n' +
-		'Files under 3MB upload as "Multiple source files"; larger projects upload as ZIP file.\n' +
-		'Use --force to override newer remote versions.\n';
+		`Deploys Actor to Apify platform using settings from "${LOCAL_CONFIG_PATH}".
+		Files under "${MAX_MULTIFILE_BYTES / 1024 ** 2}"MB upload as "Multiple source files"; larger projects upload as ZIP file.
+		Use --force to override newer remote versions.`
 
 	static override flags = {
 		version: Flags.string({
