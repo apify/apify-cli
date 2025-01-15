@@ -46,6 +46,8 @@ import {
 	purgeDefaultQueue,
 } from '../lib/utils.js';
 
+let usedResurrectFlag = false;
+
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	static override description =
 		'Runs the Actor locally in the current directory.\n' +
@@ -61,21 +63,20 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		purge: Flags.boolean({
 			char: 'p',
 			description:
-				'Shortcut that combines the --purge-queue, --purge-dataset and --purge-key-value-store options.',
+				'Whether to purge the default request queue, dataset and key-value store before the run starts.',
 			required: false,
-		}),
-		'purge-queue': Flags.boolean({
-			description: 'Deletes the local directory containing the default request queue before the run starts.',
-			required: false,
-		}),
-		'purge-dataset': Flags.boolean({
-			description: 'Deletes the local directory containing the default dataset before the run starts.',
-			required: false,
-		}),
-		'purge-key-value-store': Flags.boolean({
-			description:
-				'Deletes all records from the default key-value store in the local directory before the run starts, except for the "INPUT" key.',
-			required: false,
+			default: true,
+			allowNo: true,
+			parse: async (input, context) => {
+				// Resurrect is a special case, akin to --no-purge
+				if (context.argv.some((arg) => arg === '--resurrect')) {
+					usedResurrectFlag = true;
+					return false;
+				}
+
+				return input;
+			},
+			aliases: ['resurrect'],
 		}),
 		entrypoint: Flags.string({
 			description: [
@@ -126,12 +127,12 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const packageJsonPath = join(cwd, 'package.json');
 		const mainPyPath = join(cwd, 'src/__main__.py');
 
-		const projectType = ProjectAnalyzer.getProjectType(cwd);
+		const projectTypes = ProjectAnalyzer.getProjectTypes(cwd);
 		const actualStoragePath = getLocalStorageDir();
 
 		const packageJsonExists = existsSync(packageJsonPath);
 		const mainPyExists = existsSync(mainPyPath);
-		const isScrapyProject = projectType === PROJECT_TYPES.SCRAPY;
+		const isScrapyProject = projectTypes.includes(PROJECT_TYPES.SCRAPY);
 		const { language, languageVersion } = detectLocalActorLanguage(cwd);
 
 		if (!packageJsonExists && !mainPyExists && !isScrapyProject) {
@@ -176,45 +177,26 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		let CRAWLEE_PURGE_ON_START = '0';
 
 		// Purge stores
-		// TODO: this needs to be cleaned up heavily - ideally logic should be in the project analyzers
 		if (this.flags.purge) {
-			switch (projectType) {
-				case PROJECT_TYPES.PRE_CRAWLEE_APIFY_SDK: {
-					await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
-					info({ message: 'All default local stores were purged.' });
-					break;
-				}
-				case PROJECT_TYPES.CRAWLEE:
-				default: {
-					CRAWLEE_PURGE_ON_START = '1';
-				}
+			// Crawlee does auto purging
+			if (projectTypes.includes(PROJECT_TYPES.CRAWLEE)) {
+				CRAWLEE_PURGE_ON_START = '1';
 			}
-
-			if (language === LANGUAGE.PYTHON) {
+			// Apify SDK that does not have automatic purging (thats in crawlee)
+			// Scrapy standalone does not have automatic purging
+			// Unknown projects are assumed to be anything
+			else if (
+				projectTypes.includes(PROJECT_TYPES.APIFY_SDK) ||
+				projectTypes.includes(PROJECT_TYPES.SCRAPY) ||
+				projectTypes.includes(PROJECT_TYPES.UNKNOWN)
+			) {
 				await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
 				info({ message: 'All default local stores were purged.' });
 			}
-		}
-
-		// TODO: deprecate these flags
-		if (this.flags.purgeQueue && !this.flags.purge) {
-			await purgeDefaultQueue();
-			info({ message: 'Default local request queue was purged.' });
-		}
-
-		if (this.flags.purgeDataset && !this.flags.purge) {
-			await purgeDefaultDataset();
-			info({ message: 'Default local dataset was purged.' });
-		}
-
-		if (this.flags.purgeKeyValueStore && !this.flags.purge) {
-			await purgeDefaultKeyValueStore();
-			info({ message: 'Default local key-value store was purged.' });
-		}
-
-		if (!this.flags.purge) {
+		} else {
 			const isStorageEmpty = await checkIfStorageIsEmpty();
-			if (!isStorageEmpty) {
+			// Do we want to warn when resurrecting too? Or is only when --no-purge is used enough?
+			if (!isStorageEmpty && !usedResurrectFlag) {
 				warning({
 					message:
 						'The storage directory contains a previous state, the Actor will continue where it left off. ' +
