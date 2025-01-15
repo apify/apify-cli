@@ -30,7 +30,7 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 
 		if (!existingDataset) {
 			error({
-				message: `dataset with ID or name "${nameOrId}" not found.`,
+				message: `Dataset with ID or name "${nameOrId}" not found.`,
 			});
 
 			return;
