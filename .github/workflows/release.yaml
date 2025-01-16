@@ -43,7 +43,7 @@ jobs:
                   custom_version: ${{ inputs.custom_version }}
                   existing_changelog_path: CHANGELOG.md
 
-    # If github.ref points to a [skip ci] commit, we assume that it was added by the pre_release workflow, 
+    # If github.ref points to a [skip ci] commit, we assume that it was added by the pre_release workflow,
     # which doesn't push the commit if code checks don't pass.
     # Otherwise, the checks will have been triggered by the `run_code_checks` workflow.
     wait_for_checks:
