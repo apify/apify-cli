@@ -140,6 +140,9 @@ jobs:
         name: Publish to NPM
         needs: [update_changelog]
         runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            id-token: write
         steps:
             - uses: actions/checkout@v4
               with:
