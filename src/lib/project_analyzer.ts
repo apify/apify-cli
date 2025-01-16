@@ -1,5 +1,5 @@
 import { PROJECT_TYPES } from './consts.js';
-import { ApifySDKAnalyzer } from './projects/ApifySDKAnalyzer.js';
+import { PreCrawleeApifySDKAnalyzer } from './projects/ApifySDKAnalyzer.js';
 import { CrawleeAnalyzer } from './projects/CrawleeAnalyzer.js';
 import { ScrapyProjectAnalyzer } from './projects/scrapy/ScrapyProjectAnalyzer.js';
 
@@ -22,7 +22,7 @@ const analyzers: ProjectAnalyzerType[] = [
 	},
 	{
 		type: PROJECT_TYPES.APIFY_SDK,
-		analyzer: ApifySDKAnalyzer,
+		analyzer: PreCrawleeApifySDKAnalyzer,
 	},
 ];
 

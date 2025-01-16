@@ -1,7 +1,9 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { CRAWLEE_PACKAGES } from './shared.js';
+import { gte } from 'semver';
+
+import { CRAWLEE_PACKAGES, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE_JS } from './shared.js';
 
 export class CrawleeAnalyzer {
 	static isApplicable(pathname: string) {
@@ -18,7 +20,23 @@ export class CrawleeAnalyzer {
 			try {
 				const packageJsonParsed = JSON.parse(packageJson);
 
-				return CRAWLEE_PACKAGES.some((pkg) => packageJsonParsed?.dependencies?.[pkg] !== undefined);
+				if (CRAWLEE_PACKAGES.some((pkg) => packageJsonParsed?.dependencies?.[pkg] !== undefined)) {
+					return true;
+				}
+
+				// Check if they have apify >= 3.0.0
+				const apifyVersion = packageJsonParsed?.dependencies?.apify;
+				if (!apifyVersion) {
+					return false;
+				}
+
+				let actualVersion = apifyVersion;
+
+				if (apifyVersion.startsWith('~') || apifyVersion.startsWith('^')) {
+					actualVersion = apifyVersion.slice(1);
+				}
+
+				return gte(actualVersion, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE_JS);
 			} catch {
 				return false;
 			}

@@ -3,11 +3,9 @@ import { join } from 'node:path';
 
 import { lt } from 'semver';
 
-import { CRAWLEE_PACKAGES } from './shared.js';
+import { CRAWLEE_PACKAGES, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE_JS } from './shared.js';
 
-const VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE = '3.0.0';
-
-export class ApifySDKAnalyzer {
+export class PreCrawleeApifySDKAnalyzer {
 	static isApplicable(pathname: string) {
 		const hasPackageJson = existsSync(join(pathname, 'package.json'));
 		const hasRequirementsTxt = existsSync(join(pathname, 'requirements.txt'));
@@ -43,7 +41,7 @@ export class ApifySDKAnalyzer {
 					actualVersion = apifyVersion.slice(1);
 				}
 
-				return lt(actualVersion, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE);
+				return lt(actualVersion, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE_JS);
 			} catch {
 				return false;
 			}

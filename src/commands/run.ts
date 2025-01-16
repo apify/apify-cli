@@ -82,7 +82,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				'\n',
 				'For Python, it is the module name, or a path to a file.',
 				'\n',
-				'For node.js, it is the npm script name, or a path to a JS/MJS file.',
+				'For Node.js, it is the npm script name, or a path to a JS/MJS file.',
 				'You can also pass in a directory name, provided that directory contains an "index.js" file.',
 			].join(' '),
 			required: false,
