@@ -46,8 +46,6 @@ import {
 	purgeDefaultQueue,
 } from '../lib/utils.js';
 
-let usedResurrectFlag = false;
-
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	static override description =
 		'Runs the Actor locally in the current directory.\n' +
@@ -67,16 +65,14 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			required: false,
 			default: true,
 			allowNo: true,
-			parse: async (input, context) => {
-				// Resurrect is a special case, akin to --no-purge
-				if (context.argv.some((arg) => arg === '--resurrect')) {
-					usedResurrectFlag = true;
-					return false;
-				}
-
-				return input;
-			},
-			aliases: ['resurrect'],
+		}),
+		resurrect: Flags.boolean({
+			char: 'r',
+			description:
+				'Whether to keep the default request queue, dataset and key-value store before the run starts.',
+			required: false,
+			default: false,
+			exclusive: ['purge'],
 		}),
 		entrypoint: Flags.string({
 			description: [
@@ -176,6 +172,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		let CRAWLEE_PURGE_ON_START = '0';
 
+		// Mark resurrect as a special case of --no-purge
+		if (this.flags.resurrect) {
+			this.flags.purge = false;
+		}
+
 		// Purge stores
 		if (this.flags.purge) {
 			// Crawlee does auto purging
@@ -196,7 +197,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		} else {
 			const isStorageEmpty = await checkIfStorageIsEmpty();
 			// Do we want to warn when resurrecting too? Or is only when --no-purge is used enough?
-			if (!isStorageEmpty && !usedResurrectFlag) {
+			if (!isStorageEmpty && !this.flags.resurrect) {
 				warning({
 					message:
 						'The storage directory contains a previous state, the Actor will continue where it left off. ' +
