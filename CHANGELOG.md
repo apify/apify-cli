@@ -37,6 +37,41 @@ All notable changes to this project will be documented in this file.
 - Handle stdin correctly from slower stdout emitting ([#704](https://github.com/apify/apify-cli/pull/704)) ([a5b53de](https://github.com/apify/apify-cli/commit/a5b53de480aad3caf80e1a9439cd5e64648fe312)) by [@vladfrangu](https://github.com/vladfrangu)
 - Running commands with spaces on windows ([#715](https://github.com/apify/apify-cli/pull/715)) ([d1c207a](https://github.com/apify/apify-cli/commit/d1c207a703a6948e7b3a6cfe82c5cfa6a3b9222d)) by [@vladfrangu](https://github.com/vladfrangu), closes [#692](https://github.com/apify/apify-cli/issues/692)
 
+## [0.21.0](https://github.com/apify/apify-cli/releases/tag/v0.21.0) (2025-01-16)
+
+### 🚀 Features
+
+- Builds namespace ([#620](https://github.com/apify/apify-cli/pull/620)) ([6345162](https://github.com/apify/apify-cli/commit/6345162e44a00b404b4f95c2c80c2e437eff1d62)) by [@vladfrangu](https://github.com/vladfrangu)
+- `runs ls` ([#640](https://github.com/apify/apify-cli/pull/640)) ([dd84d37](https://github.com/apify/apify-cli/commit/dd84d37c6ea89c64db712c7c94709f3181a7bd1f)) by [@vladfrangu](https://github.com/vladfrangu)
+- `runs abort` ([#643](https://github.com/apify/apify-cli/pull/643)) ([96e5a34](https://github.com/apify/apify-cli/commit/96e5a3435cca08d87dc8d39659a7a6524f18be0e)) by [@vladfrangu](https://github.com/vladfrangu)
+- `runs resurrect` ([#644](https://github.com/apify/apify-cli/pull/644)) ([7dbf4fb](https://github.com/apify/apify-cli/commit/7dbf4fb06c657246563c1c64e76ad83f283ea275)) by [@vladfrangu](https://github.com/vladfrangu)
+- `runs log` ([#645](https://github.com/apify/apify-cli/pull/645)) ([dd6af5e](https://github.com/apify/apify-cli/commit/dd6af5ece79f4399fc5065483b650c71c61114cf)) by [@vladfrangu](https://github.com/vladfrangu)
+- `runs rm` &amp; `builds rm` &amp; `actors rm` ([#648](https://github.com/apify/apify-cli/pull/648)) ([566f8c5](https://github.com/apify/apify-cli/commit/566f8c5d1482f150f4d61229524c7672c2af666d)) by [@vladfrangu](https://github.com/vladfrangu)
+- `runs info` ([#657](https://github.com/apify/apify-cli/pull/657)) ([827767c](https://github.com/apify/apify-cli/commit/827767cfc988b7d587adceb825765e553deeed77)) by [@vladfrangu](https://github.com/vladfrangu)
+- `actors build` ([#661](https://github.com/apify/apify-cli/pull/661)) ([4605cda](https://github.com/apify/apify-cli/commit/4605cda7f3a4f5a35160ba69bf4a454c889dd813)) by [@vladfrangu](https://github.com/vladfrangu)
+- `actors pull` ([#662](https://github.com/apify/apify-cli/pull/662)) ([26d5cb3](https://github.com/apify/apify-cli/commit/26d5cb356fbb38a789e9b88f4d4b01468e38bd26)) by [@vladfrangu](https://github.com/vladfrangu)
+- `actors call` ([#663](https://github.com/apify/apify-cli/pull/663)) ([a472300](https://github.com/apify/apify-cli/commit/a4723007e65bde8db6eb121a0dc38e2c7bc6caec)) by [@vladfrangu](https://github.com/vladfrangu)
+- Check if cli was installed using volta when checking for updates ([#667](https://github.com/apify/apify-cli/pull/667)) ([aee0233](https://github.com/apify/apify-cli/commit/aee023336768e59fd4ff8d6c957f804d315e7bf3)) by [@vladfrangu](https://github.com/vladfrangu)
+- `actors start` ([#669](https://github.com/apify/apify-cli/pull/669)) ([45956e2](https://github.com/apify/apify-cli/commit/45956e224305dd040b607d1fc3ff5cbbc8b28f32)) by [@vladfrangu](https://github.com/vladfrangu)
+- `actors push` ([#671](https://github.com/apify/apify-cli/pull/671)) ([d77c531](https://github.com/apify/apify-cli/commit/d77c5314d4252a6bbf30718436dd84467aa35d7f)) by [@vladfrangu](https://github.com/vladfrangu)
+- `actors ls` ([#675](https://github.com/apify/apify-cli/pull/675)) ([de258cb](https://github.com/apify/apify-cli/commit/de258cb8872857aa559afb4b16ed5a52f4fb2094)) by [@vladfrangu](https://github.com/vladfrangu)
+- `key-value-stores get-value` ([#678](https://github.com/apify/apify-cli/pull/678)) ([67cfefe](https://github.com/apify/apify-cli/commit/67cfefef88fac220a1c959aaaecf3d051e482236)) by [@vladfrangu](https://github.com/vladfrangu)
+- `datasets get-items` ([#679](https://github.com/apify/apify-cli/pull/679)) ([b521546](https://github.com/apify/apify-cli/commit/b521546df195bab7bedf5534167b6edae6a5e69e)) by [@vladfrangu](https://github.com/vladfrangu)
+- `datasets` &#x2F; `key-value-stores` commands ([#685](https://github.com/apify/apify-cli/pull/685)) ([c7d77e1](https://github.com/apify/apify-cli/commit/c7d77e1cec711edd9996cbb1249e489fbf3db547)) by [@vladfrangu](https://github.com/vladfrangu)
+- Key-value-store commands ([#700](https://github.com/apify/apify-cli/pull/700)) ([eb8ff3b](https://github.com/apify/apify-cli/commit/eb8ff3b9c7f1319d0937543f7b0b97cb25d6390a)) by [@vladfrangu](https://github.com/vladfrangu)
+- `actors info` ([#701](https://github.com/apify/apify-cli/pull/701)) ([0f4b3f0](https://github.com/apify/apify-cli/commit/0f4b3f08dd5937ca6664342c2510a9f4f3fa52f6)) by [@vladfrangu](https://github.com/vladfrangu)
+- `datasets info` &#x2F; `key-value-stores info` ([#726](https://github.com/apify/apify-cli/pull/726)) ([56e8ffa](https://github.com/apify/apify-cli/commit/56e8ffaf7a7e03dcdd73e4e5472b106b31b0f543)) by [@vladfrangu](https://github.com/vladfrangu)
+- Rewrite command descriptions ([#727](https://github.com/apify/apify-cli/pull/727)) ([3eb21d6](https://github.com/apify/apify-cli/commit/3eb21d6ab74ca66f59da2432aadcb40f7ea42440)) by [@TC-MO](https://github.com/TC-MO)
+
+### 🐛 Bug Fixes
+
+- Look for lowercase input schema in default paths ([#647](https://github.com/apify/apify-cli/pull/647)) ([68456e6](https://github.com/apify/apify-cli/commit/68456e63eee3c28e7c0ee7464a2cbc1a00ba9dfa)) by [@mvolfik](https://github.com/mvolfik)
+- Emit warning if input.json is modified during run and prefilled with defaults ([#672](https://github.com/apify/apify-cli/pull/672)) ([8a6fd3f](https://github.com/apify/apify-cli/commit/8a6fd3f60523380041309db830a62f52cc60e4d4)) by [@vladfrangu](https://github.com/vladfrangu), closes [#670](https://github.com/apify/apify-cli/issues/670)
+- Scrapy wrapping being broken due to ESM migration ([#686](https://github.com/apify/apify-cli/pull/686)) ([e2a7591](https://github.com/apify/apify-cli/commit/e2a7591070a284394643e8dbb03bc020939ff61f)) by [@vladfrangu](https://github.com/vladfrangu)
+- **ci:** Make it work + publish with provenances ([#694](https://github.com/apify/apify-cli/pull/694)) ([e41ea72](https://github.com/apify/apify-cli/commit/e41ea728a9177dcec4ea73c25128cddebc00dd79)) by [@vladfrangu](https://github.com/vladfrangu)
+- Handle stdin correctly from slower stdout emitting ([#704](https://github.com/apify/apify-cli/pull/704)) ([a5b53de](https://github.com/apify/apify-cli/commit/a5b53de480aad3caf80e1a9439cd5e64648fe312)) by [@vladfrangu](https://github.com/vladfrangu)
+- Running commands with spaces on windows ([#715](https://github.com/apify/apify-cli/pull/715)) ([d1c207a](https://github.com/apify/apify-cli/commit/d1c207a703a6948e7b3a6cfe82c5cfa6a3b9222d)) by [@vladfrangu](https://github.com/vladfrangu), closes [#692](https://github.com/apify/apify-cli/issues/692)
+
 # 0.6.1 / 2020-05-18
 
 - **BREAKING:** Templates are now fully decoupled from this project and
