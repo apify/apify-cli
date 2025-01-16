@@ -2,9 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 0.20.8 - **not yet released**
+## [0.21.0](https://github.com/apify/apify-cli/releases/tag/v0.21.0) (2025-01-16)
 
 ### 🚀 Features
 
@@ -38,8 +36,6 @@ All notable changes to this project will be documented in this file.
 - **ci:** Make it work + publish with provenances ([#694](https://github.com/apify/apify-cli/pull/694)) ([e41ea72](https://github.com/apify/apify-cli/commit/e41ea728a9177dcec4ea73c25128cddebc00dd79)) by [@vladfrangu](https://github.com/vladfrangu)
 - Handle stdin correctly from slower stdout emitting ([#704](https://github.com/apify/apify-cli/pull/704)) ([a5b53de](https://github.com/apify/apify-cli/commit/a5b53de480aad3caf80e1a9439cd5e64648fe312)) by [@vladfrangu](https://github.com/vladfrangu)
 - Running commands with spaces on windows ([#715](https://github.com/apify/apify-cli/pull/715)) ([d1c207a](https://github.com/apify/apify-cli/commit/d1c207a703a6948e7b3a6cfe82c5cfa6a3b9222d)) by [@vladfrangu](https://github.com/vladfrangu), closes [#692](https://github.com/apify/apify-cli/issues/692)
-
-<!-- git-cliff-unreleased-end -->
 
 # 0.6.1 / 2020-05-18
 
