@@ -52,7 +52,7 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
-            - name: Check if the head commit contains [ci skip]
+            - name: Check if the head commit contains [skip ci]
               id: check_skip
               run: |
                   if git log --format=%B -n 1 ${{ github.sha }} | head -n 1 | grep '\[skip ci\]$'; then
