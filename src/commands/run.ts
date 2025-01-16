@@ -61,10 +61,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		purge: Flags.boolean({
 			char: 'p',
 			description:
-				'Whether to purge the default request queue, dataset and key-value store before the run starts.',
+				'Whether to purge the default request queue, dataset and key-value store before the run starts.\nFor crawlee projects, this is the default behavior, and the flag is optional.\nUse `--no-purge` to keep the storage folder intact.',
 			required: false,
 			default: true,
 			allowNo: true,
+			helpGroup: 'storage',
 		}),
 		resurrect: Flags.boolean({
 			char: 'r',
@@ -73,6 +74,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			required: false,
 			default: false,
 			exclusive: ['purge'],
+			helpGroup: 'storage',
 		}),
 		entrypoint: Flags.string({
 			description: [
@@ -91,6 +93,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			required: false,
 			allowStdin: true,
 			exclusive: ['input-file'],
+			helpGroup: 'input',
 		}),
 		'input-file': Flags.string({
 			aliases: ['if'],
@@ -99,6 +102,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			required: false,
 			allowStdin: true,
 			exclusive: ['input'],
+			helpValue: '<file>',
+			helpGroup: 'input',
 		}),
 	};
 
