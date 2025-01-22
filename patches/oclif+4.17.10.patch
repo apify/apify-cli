@@ -1,0 +1,18 @@
+diff --git a/node_modules/oclif/lib/tarballs/build.js b/node_modules/oclif/lib/tarballs/build.js
+index f0c8d95..744c6ac 100644
+--- a/node_modules/oclif/lib/tarballs/build.js
++++ b/node_modules/oclif/lib/tarballs/build.js
+@@ -96,6 +96,13 @@ const copyCoreYarnFiles = async (yarnRootPath, workspacePath) => {
+     await copyYarnDirectory('./.yarn/releases/', yarnRootPath, workspacePath);
+     // copy yarn plugins if they exists
+     await copyYarnDirectory('./.yarn/plugins/', yarnRootPath, workspacePath);
++
++    // NETMILK ADDED
++    await(0, fs_extra_1.copy)(path.join(yarnRootPath, 'tsconfig.typechecking.json'), path.join(workspacePath, 'tsconfig.typechecking.json'));
++    await(0, fs_extra_1.copy)(path.join(yarnRootPath, 'tsconfig.json'), path.join(workspacePath, 'tsconfig.json'));
++    await copyYarnDirectory('./src', yarnRootPath, workspacePath);
++
++  
+ };
+ async function build(c, options = {}) {
+     (0, log_1.log)(`gathering workspace for ${c.config.bin} to ${c.workspace()}`);

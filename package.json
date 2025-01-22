@@ -19,7 +19,8 @@
         "postpack": "rimraf oclif.manifest.json",
         "prepack": "yarn build && oclif manifest && oclif readme && yarn update-docs",
         "update-docs": "oclif readme --readme-path=docs/reference.md",
-        "postinstallDev": "yarn build && node ./bin/run.js check-version && node ./dist/lib/community.js"
+        "postinstallDev": "yarn build && node ./bin/run.js check-version && node ./dist/lib/community.js",
+        "postinstall": "patch-package"
     },
     "files": [
         "dist",
