@@ -1,6 +1,6 @@
 import { PROJECT_TYPES } from './consts.js';
-import { PreCrawleeApifySDKAnalyzer } from './projects/ApifySDKAnalyzer.js';
 import { CrawleeAnalyzer } from './projects/CrawleeAnalyzer.js';
+import { PreCrawleeApifySDKAnalyzer } from './projects/PreCrawleeApifySDKAnalyzer.js';
 import { ScrapyProjectAnalyzer } from './projects/scrapy/ScrapyProjectAnalyzer.js';
 
 interface ProjectAnalyzerType {

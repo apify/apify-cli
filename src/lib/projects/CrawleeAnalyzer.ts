@@ -4,15 +4,11 @@ import { join } from 'node:path';
 import { gte } from 'semver';
 
 import { CRAWLEE_PACKAGES, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE_JS } from './shared.js';
+import { detectPythonModuleVersion, PYTHON_MODULE_VERSION_NOT_EXISTENT } from '../utils.js';
 
 export class CrawleeAnalyzer {
 	static isApplicable(pathname: string) {
 		const hasPackageJson = existsSync(join(pathname, 'package.json'));
-		const hasRequirementsTxt = existsSync(join(pathname, 'requirements.txt'));
-
-		if (!hasPackageJson && !hasRequirementsTxt) {
-			return false;
-		}
 
 		if (hasPackageJson) {
 			const packageJson = readFileSync(join(pathname, 'package.json'), 'utf8');
@@ -42,12 +38,12 @@ export class CrawleeAnalyzer {
 			}
 		}
 
-		if (hasRequirementsTxt) {
-			const requirementsTxt = readFileSync(join(pathname, 'requirements.txt'), 'utf8');
+		const maybePythonProject = existsSync(join(pathname, 'src/__main__.py'));
 
-			const lines = requirementsTxt.split('\n');
+		if (maybePythonProject) {
+			const crawleeVersion = detectPythonModuleVersion(pathname, 'crawlee');
 
-			return lines.some((line) => CRAWLEE_PACKAGES.some((pkg) => line.includes(pkg)));
+			return crawleeVersion !== PYTHON_MODULE_VERSION_NOT_EXISTENT;
 		}
 
 		return false;

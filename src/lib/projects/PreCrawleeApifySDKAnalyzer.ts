@@ -8,11 +8,6 @@ import { CRAWLEE_PACKAGES, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE_JS } from './shar
 export class PreCrawleeApifySDKAnalyzer {
 	static isApplicable(pathname: string) {
 		const hasPackageJson = existsSync(join(pathname, 'package.json'));
-		const hasRequirementsTxt = existsSync(join(pathname, 'requirements.txt'));
-
-		if (!hasPackageJson && !hasRequirementsTxt) {
-			return false;
-		}
 
 		if (hasPackageJson) {
 			const packageJson = readFileSync(join(pathname, 'package.json'), 'utf8');
@@ -47,18 +42,7 @@ export class PreCrawleeApifySDKAnalyzer {
 			}
 		}
 
-		if (hasRequirementsTxt) {
-			const requirementsTxt = readFileSync(join(pathname, 'requirements.txt'), 'utf8');
-
-			const lines = requirementsTxt.split('\n');
-
-			return (
-				// No crawlee present
-				lines.some((line) => !CRAWLEE_PACKAGES.some((pkg) => line.includes(pkg))) &&
-				// but has SDK
-				lines.some((line) => line.includes('apify'))
-			);
-		}
+		// We don't check python because python SDK always comes with crawlee
 
 		return false;
 	}
