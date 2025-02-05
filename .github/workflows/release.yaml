@@ -146,7 +146,7 @@ jobs:
         steps:
             - uses: actions/checkout@v4
               with:
-                  ref: ${{ needs.update_changelog.changelog_commitish }}
+                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
 
             - name: Use Node.js 22
               uses: actions/setup-node@v4
