@@ -187,7 +187,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					// url
 					message.push(`${chalk.blue('View on Apify Console')}: ${url}`, '');
 
-					simpleLog({ message: message.join('\n'), stdout: true });
+					simpleLog({ message: message.join('\n'), stdout: !this.flags.json });
 				}
 			}
 		}
