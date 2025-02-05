@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 0.21.1 - **not yet released**
+
+### 🐛 Bug Fixes
+
+- Emit logs to stderr when actors are started with `--json` flag ([#741](https://github.com/apify/apify-cli/pull/741)) ([a50b80e](https://github.com/apify/apify-cli/commit/a50b80e1e8f636b6878de8f8c30032c14daf8105)) by [@vladfrangu](https://github.com/vladfrangu), closes [#740](https://github.com/apify/apify-cli/issues/740)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [0.21.0](https://github.com/apify/apify-cli/releases/tag/v0.21.0) (2025-01-16)
 
 ### 🚀 Features
