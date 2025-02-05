@@ -182,11 +182,13 @@ jobs:
 
     update_homebrew_formula:
         name: Update Homebrew Formula
-        needs: [publish_to_npm]
+        needs: [update_changelog, publish_to_npm]
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
+              with:
+                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
 
             - name: Set git identity
               run: |
