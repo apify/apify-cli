@@ -83,7 +83,7 @@
         "escape-string-regexp": "~5.0.0",
         "express": "~4.21.0",
         "fs-extra": "^11.2.0",
-        "globby": "~14.0.2",
+        "globby": "~14.1.0",
         "handlebars": "~4.7.8",
         "inquirer": "~12.4.0",
         "is-ci": "~4.1.0",
