@@ -1,6 +1,7 @@
 ---
 title: Apify CLI Reference Documentation
 sidebar_label: Command reference
+toc_max_heading_level: 4
 ---
 
 The Apify CLI provides tools for managing your Apify projects and resources from the command line. Use these commands to develop Actors locally, deploy them to Apify platform, manage storage, orchestrate runs, and handle account configuration.
