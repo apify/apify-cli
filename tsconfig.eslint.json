@@ -10,6 +10,7 @@
 		"vitest.config.ts",
 		"test",
 		".yarn/plugins/postinstallDev.cjs",
-		"features/**/*.ts"
+		"features/**/*.ts",
+		"scripts"
 	]
 }

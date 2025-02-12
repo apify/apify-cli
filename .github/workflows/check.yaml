@@ -8,9 +8,6 @@ on:
         branches: [master, renovate/**]
     pull_request:
         branches: [master]
-    # A release via GitHub releases will deploy a latest version
-    release:
-        types: [published]
 
 jobs:
     build_and_test:
@@ -50,6 +47,9 @@ jobs:
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
                   APIFY_CLI_DISABLE_TELEMETRY: 1
               run: yarn test
+
+            - name: Ensure the reference documentation builds
+              run: yarn build-docs
 
     test_python_support:
         name: Test Python template support
