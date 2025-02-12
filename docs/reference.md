@@ -1,22 +1,19 @@
 ---
-title: Command reference
+title: Apify CLI Reference Documentation
+sidebar_label: Command reference
 ---
 
-# Reference
+The Apify CLI provides tools for managing your Apify projects and resources from the command line. Use these commands to develop Actors locally, deploy them to Apify platform, manage storage, orchestrate runs, and handle account configuration.
 
-# Apify CLI Reference Documentation
+This reference guide documents available commands, their options, and common usage patterns, to efficiently work with Apify platform.
 
-The Apify CLI provides tools for managing your Apify projects and resources from the command line. Use these commands to develop Actors locally, deploy them to the Apify platform, manage storage, orchestrate runs, and handle account configuration.
-
-This reference guide documents available commands, their options, and common usage patterns, to efficiently work with the Apify platform.
-
-## General
+### General
 
 The general commands provide basic functionality for getting help and information about the Apify CLI.
 
 <!-- prettier-ignore-start -->
 <!-- general-commands-start -->
-### `apify help [COMMAND]`
+##### `apify help [COMMAND]`
 
 Display help for apify.
 
@@ -36,13 +33,13 @@ DESCRIPTION
 <!-- general-commands-end -->
 <!-- prettier-ignore-end -->
 
-## Authentication & Account Management
+### Authentication & Account Management
 
-Use these commands to manage your Apify account authentication, access tokens, and configuration settings. These commands control how you interact with the Apify platform and manage sensitive information.
+Use these commands to manage your Apify account authentication, access tokens, and configuration settings. These commands control how you interact with Apify platform and manage sensitive information.
 
 <!-- prettier-ignore-start -->
 <!-- auth-commands-start -->
-### `apify login`
+##### `apify login`
 
 Authenticates your Apify account and saves credentials to '~/.apify'.
 
@@ -62,7 +59,7 @@ DESCRIPTION
   Run 'apify logout' to remove authentication.
 ```
 
-### `apify logout`
+##### `apify logout`
 
 Removes authentication by deleting your API token and account information from '~/.apify'.
 
@@ -75,7 +72,7 @@ DESCRIPTION
   Run 'apify login' to authenticate again.
 ```
 
-### `apify info`
+##### `apify info`
 
 Prints details about your currently authenticated Apify account.
 
@@ -87,7 +84,7 @@ DESCRIPTION
   Prints details about your currently authenticated Apify account.
 ```
 
-### `apify secrets`
+##### `apify secrets`
 
 Manages secure environment variables for Actors.
 
@@ -115,7 +112,7 @@ DESCRIPTION
   of the Actor.
 ```
 
-### `apify secrets add NAME VALUE`
+##### `apify secrets add NAME VALUE`
 
 Adds a new secret to '~/.apify' for use in Actor environment variables.
 
@@ -131,7 +128,7 @@ DESCRIPTION
   Adds a new secret to '~/.apify' for use in Actor environment variables.
 ```
 
-### `apify secrets rm NAME`
+##### `apify secrets rm NAME`
 
 Permanently deletes a secret from your stored credentials.
 
@@ -148,13 +145,13 @@ DESCRIPTION
 <!-- auth-commands-end -->
 <!-- prettier-ignore-end -->
 
-## Actor Development
+### Actor Development
 
-These commands help you develop actors locally. Use them to create new actor projects, initialize configurations, run actors in development mode, and validate input schemas.
+These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas.
 
 <!-- prettier-ignore-start -->
 <!-- actor-dev-commands-start -->
-### `apify create [ACTORNAME]`
+##### `apify create [ACTORNAME]`
 
 Creates an Actor project from a template in a new directory.
 
@@ -177,7 +174,7 @@ DESCRIPTION
   Creates an Actor project from a template in a new directory.
 ```
 
-### `apify init [ACTORNAME]`
+##### `apify init [ACTORNAME]`
 
 Sets up an Actor project in your current directory by creating actor.json and storage files.
 
@@ -202,7 +199,7 @@ DESCRIPTION
   WARNING: Overwrites existing 'storage' directory.
 ```
 
-### `apify run`
+##### `apify run`
 
 Executes Actor locally with simulated Apify environment variables.
 
@@ -233,7 +230,7 @@ DESCRIPTION
   NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.
 ```
 
-### `apify validate-schema [PATH]`
+##### `apify validate-schema [PATH]`
 
 Validates Actor input schema from one of these locations (in priority order):
 
@@ -256,17 +253,17 @@ DESCRIPTION
 <!-- actor-dev-commands-end -->
 <!-- prettier-ignore-end -->
 
-## Actor Management
+### Actor Management
 
-These commands let you manage actors on the Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your actors in the cloud environment.
+These commands let you manage Actors on Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your Actors in the cloud environment.
 
-### Basic Actor Operations
+#### Basic Actor Operations
 
-Use these commands to handle core actor operations like creation, listing, deletion, and basic runtime management. These are the essential commands for working with actors on the Apify platform.
+Use these commands to handle core Actor operations like creation, listing, deletion, and basic runtime management. These are the essential commands for working with Actors on Apify platform.
 
 <!-- prettier-ignore-start -->
 <!-- actor-basic-commands-start -->
-### `apify actors`
+##### `apify actors`
 
 Manages Actor creation, deployment, and execution on the Apify platform.
 
@@ -278,7 +275,7 @@ DESCRIPTION
   Manages Actor creation, deployment, and execution on the Apify platform.
 ```
 
-### `apify actors ls`
+##### `apify actors ls`
 
 Prints a list of recently executed Actors or Actors you own.
 
@@ -299,7 +296,7 @@ DESCRIPTION
   Prints a list of recently executed Actors or Actors you own.
 ```
 
-### `apify actors rm ACTORID`
+##### `apify actors rm ACTORID`
 
 Permanently removes an Actor from your account.
 
@@ -314,7 +311,7 @@ DESCRIPTION
   Permanently removes an Actor from your account.
 ```
 
-### `apify actor`
+##### `apify actor`
 
 Manages runtime data operations inside of a running Actor.
 
@@ -326,7 +323,7 @@ DESCRIPTION
   Manages runtime data operations inside of a running Actor.
 ```
 
-### `apify actor get-input`
+##### `apify actor get-input`
 
 Gets the Actor input value from the default key-value store associated with the Actor run.
 
@@ -338,7 +335,7 @@ DESCRIPTION
   Gets the Actor input value from the default key-value store associated with the Actor run.
 ```
 
-### `apify actor get-value KEY`
+##### `apify actor get-value KEY`
 
 Gets a value from the default key-value store associated with the Actor run.
 
@@ -353,7 +350,7 @@ DESCRIPTION
   Gets a value from the default key-value store associated with the Actor run.
 ```
 
-### `apify actor push-data [ITEM]`
+##### `apify actor push-data [ITEM]`
 
 Saves data to Actor's run default dataset.
 
@@ -374,7 +371,7 @@ DESCRIPTION
   $ cat ./test.json | apify actor push-data
 ```
 
-### `apify actor set-value KEY [VALUE]`
+##### `apify actor set-value KEY [VALUE]`
 
 Sets or removes record into the default key-value store associated with the Actor run.
 
@@ -406,15 +403,15 @@ DESCRIPTION
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Actor Deployment
+#### Actor Deployment
 
-These commands handle the deployment workflow of actors to the Apify platform. Use them to push local changes, pull remote actors, and manage actor versions and builds.
+These commands handle the deployment workflow of Actors to Apify platform. Use them to push local changes, pull remote Actors, and manage Actor versions and builds.
 
 <!-- prettier-ignore-start -->
 <!-- actor-deploy-commands-start -->
-### `apify push [ACTORID]`
+##### `apify push [ACTORID]`
 
-### `apify actors push [ACTORID]`
+##### `apify actors push [ACTORID]`
 
 Deploys Actor to Apify platform using settings from '.actor/actor.json'.
 
@@ -443,9 +440,9 @@ DESCRIPTION
   Use --force to override newer remote versions.
 ```
 
-### `apify pull [ACTORID]`
+##### `apify pull [ACTORID]`
 
-### `apify actors pull [ACTORID]`
+##### `apify actors pull [ACTORID]`
 
 Download Actor code to current directory. Clones Git repositories or fetches Actor files based on the source type.
 
@@ -465,9 +462,9 @@ DESCRIPTION
   Download Actor code to current directory. Clones Git repositories or fetches Actor files based on the source type.
 ```
 
-### `apify call [ACTORID]`
+##### `apify call [ACTORID]`
 
-### `apify actors call [ACTORID]`
+##### `apify actors call [ACTORID]`
 
 Executes Actor remotely using your authenticated account.
 
@@ -498,7 +495,7 @@ DESCRIPTION
   Reads input from local key-value store by default.
 ```
 
-### `apify actors start [ACTORID]`
+##### `apify actors start [ACTORID]`
 
 Starts Actor remotely and returns run details immediately.
 
@@ -527,7 +524,7 @@ DESCRIPTION
   Uses authenticated account and local key-value store for input.
 ```
 
-### `apify actors info ACTORID`
+##### `apify actors info ACTORID`
 
 Get information about an Actor.
 
@@ -551,13 +548,13 @@ DESCRIPTION
 <!-- actor-deploy-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Actor Builds
+#### Actor Builds
 
-Use these commands to manage actor build processes. They help you create, monitor, and maintain versioned snapshots of your actors that can be executed on the Apify platform.
+Use these commands to manage Actor build processes. They help you create, monitor, and maintain versioned snapshots of your Actors that can be executed on Apify platform.
 
 <!-- prettier-ignore-start -->
 <!-- actor-build-commands-start -->
-### `apify builds`
+##### `apify builds`
 
 Manages Actor build processes and versioning.
 
@@ -569,7 +566,7 @@ DESCRIPTION
   Manages Actor build processes and versioning.
 ```
 
-### `apify builds create [ACTORID]`
+##### `apify builds create [ACTORID]`
 
 Creates a new build of the Actor.
 
@@ -594,7 +591,7 @@ DESCRIPTION
   Creates a new build of the Actor.
 ```
 
-### `apify actors build [ACTORID]`
+##### `apify actors build [ACTORID]`
 
 Creates a new build of the Actor.
 
@@ -619,7 +616,7 @@ DESCRIPTION
   Creates a new build of the Actor.
 ```
 
-### `apify builds info BUILDID`
+##### `apify builds info BUILDID`
 
 Prints information about a specific build.
 
@@ -637,7 +634,7 @@ DESCRIPTION
   Prints information about a specific build.
 ```
 
-### `apify builds log BUILDID`
+##### `apify builds log BUILDID`
 
 Prints the log of a specific build.
 
@@ -652,7 +649,7 @@ DESCRIPTION
   Prints the log of a specific build.
 ```
 
-### `apify builds ls [ACTORID]`
+##### `apify builds ls [ACTORID]`
 
 Lists all builds of the Actor.
 
@@ -676,7 +673,7 @@ DESCRIPTION
   Lists all builds of the Actor.
 ```
 
-### `apify builds rm BUILDID`
+##### `apify builds rm BUILDID`
 
 Permanently removes an Actor build from the Apify platform.
 
@@ -693,13 +690,13 @@ DESCRIPTION
 <!-- actor-build-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Actor Runs
+#### Actor Runs
 
-These commands control actor execution on the Apify platform. Use them to start, monitor, and manage actor runs, including accessing logs and handling execution states.
+These commands control Actor execution on Apify platform. Use them to start, monitor, and manage Actor runs, including accessing logs and handling execution states.
 
 <!-- prettier-ignore-start -->
 <!-- actor-run-commands-start -->
-### `apify runs`
+##### `apify runs`
 
 Manages Actor run operations
 
@@ -711,7 +708,7 @@ DESCRIPTION
   Manages Actor run operations
 ```
 
-### `apify runs abort RUNID`
+##### `apify runs abort RUNID`
 
 Aborts an Actor run.
 
@@ -732,7 +729,7 @@ DESCRIPTION
   Aborts an Actor run.
 ```
 
-### `apify runs info RUNID`
+##### `apify runs info RUNID`
 
 Prints information about an Actor run.
 
@@ -753,7 +750,7 @@ DESCRIPTION
   Prints information about an Actor run.
 ```
 
-### `apify runs log RUNID`
+##### `apify runs log RUNID`
 
 Prints the log of a specific run.
 
@@ -768,7 +765,7 @@ DESCRIPTION
   Prints the log of a specific run.
 ```
 
-### `apify runs ls [ACTORID]`
+##### `apify runs ls [ACTORID]`
 
 Lists all runs of the Actor.
 
@@ -792,7 +789,7 @@ DESCRIPTION
   Lists all runs of the Actor.
 ```
 
-### `apify runs resurrect RUNID`
+##### `apify runs resurrect RUNID`
 
 Resurrects an aborted or finished Actor Run.
 
@@ -810,7 +807,7 @@ DESCRIPTION
   Resurrects an aborted or finished Actor Run.
 ```
 
-### `apify runs rm RUNID`
+##### `apify runs rm RUNID`
 
 Deletes an Actor Run.
 
@@ -827,17 +824,17 @@ DESCRIPTION
 <!-- actor-run-commands-end -->
 <!-- prettier-ignore-end -->
 
-## Storage
+### Storage
 
-These commands manage data storage on the Apify platform. Use them to work with datasets, key-value stores, and request queues for persistent data storage and retrieval.
+These commands manage data storage on Apify platform. Use them to work with datasets, key-value stores, and request queues for persistent data storage and retrieval.
 
-### Datasets
+#### Datasets
 
 Use these commands to manage datasets, which provide structured storage for tabular data. They enable creation, modification, and data manipulation within datasets.
 
 <!-- prettier-ignore-start -->
 <!-- dataset-commands-start -->
-### `apify datasets`
+##### `apify datasets`
 
 Manages structured data storage and retrieval.
 
@@ -849,7 +846,7 @@ DESCRIPTION
   Manages structured data storage and retrieval.
 ```
 
-### `apify datasets create [DATASETNAME]`
+##### `apify datasets create [DATASETNAME]`
 
 Creates a new dataset for storing structured data on your account.
 
@@ -867,7 +864,7 @@ DESCRIPTION
   Creates a new dataset for storing structured data on your account.
 ```
 
-### `apify datasets get-items DATASETID`
+##### `apify datasets get-items DATASETID`
 
 Retrieves dataset items in specified format (JSON, CSV, etc).
 
@@ -888,7 +885,7 @@ DESCRIPTION
   Retrieves dataset items in specified format (JSON, CSV, etc).
 ```
 
-### `apify datasets info STOREID`
+##### `apify datasets info STOREID`
 
 Prints information about a specific dataset.
 
@@ -906,7 +903,7 @@ DESCRIPTION
   Prints information about a specific dataset.
 ```
 
-### `apify datasets ls`
+##### `apify datasets ls`
 
 Prints all datasets on your account.
 
@@ -927,7 +924,7 @@ DESCRIPTION
   Prints all datasets on your account.
 ```
 
-### `apify datasets push-items NAMEORID [ITEM]`
+##### `apify datasets push-items NAMEORID [ITEM]`
 
 Adds data items to specified dataset. Accepts single object or array of objects.
 
@@ -943,7 +940,7 @@ DESCRIPTION
   Adds data items to specified dataset. Accepts single object or array of objects.
 ```
 
-### `apify datasets rename NAMEORID [NEWNAME]`
+##### `apify datasets rename NAMEORID [NEWNAME]`
 
 Change dataset name or removes name with --unname flag.
 
@@ -962,7 +959,7 @@ DESCRIPTION
   Change dataset name or removes name with --unname flag.
 ```
 
-### `apify datasets rm DATASETNAMEORID`
+##### `apify datasets rm DATASETNAMEORID`
 
 Permanently removes a dataset.
 
@@ -979,13 +976,13 @@ DESCRIPTION
 <!-- dataset-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Key-Value Stores
+#### Key-Value Stores
 
 These commands handle key-value store operations. Use them to create stores, manage key-value pairs, and handle persistent storage of arbitrary data types.
 
 <!-- prettier-ignore-start -->
 <!-- keyval-commands-start -->
-### `apify key-value-stores`
+##### `apify key-value-stores`
 
 Manages persistent key-value storage.
 
@@ -999,7 +996,7 @@ DESCRIPTION
   Alias: kvs
 ```
 
-### `apify key-value-stores create [KEYVALUESTORENAME]`
+##### `apify key-value-stores create [KEYVALUESTORENAME]`
 
 Creates a new key-value store on your account.
 
@@ -1017,7 +1014,7 @@ DESCRIPTION
   Creates a new key-value store on your account.
 ```
 
-### `apify key-value-stores delete-value STOREID ITEMKEY`
+##### `apify key-value-stores delete-value STOREID ITEMKEY`
 
 Delete a value from a key-value store.
 
@@ -1033,7 +1030,7 @@ DESCRIPTION
   Delete a value from a key-value store.
 ```
 
-### `apify key-value-stores get-value KEYVALUESTOREID ITEMKEY`
+##### `apify key-value-stores get-value KEYVALUESTOREID ITEMKEY`
 
 Retrieves stored value for specified key. Use --only-content-type to check MIME type.
 
@@ -1052,7 +1049,7 @@ DESCRIPTION
   Retrieves stored value for specified key. Use --only-content-type to check MIME type.
 ```
 
-### `apify key-value-stores info STOREID`
+##### `apify key-value-stores info STOREID`
 
 Shows information about a key-value store.
 
@@ -1070,7 +1067,7 @@ DESCRIPTION
   Shows information about a key-value store.
 ```
 
-### `apify key-value-stores keys STOREID`
+##### `apify key-value-stores keys STOREID`
 
 Lists all keys in a key-value store.
 
@@ -1092,7 +1089,7 @@ DESCRIPTION
   Lists all keys in a key-value store.
 ```
 
-### `apify key-value-stores ls`
+##### `apify key-value-stores ls`
 
 Lists all key-value stores on your account.
 
@@ -1113,7 +1110,7 @@ DESCRIPTION
   Lists all key-value stores on your account.
 ```
 
-### `apify key-value-stores rename KEYVALUESTORENAMEORID [NEWNAME]`
+##### `apify key-value-stores rename KEYVALUESTORENAMEORID [NEWNAME]`
 
 Renames a key-value store, or removes its unique name.
 
@@ -1132,7 +1129,7 @@ DESCRIPTION
   Renames a key-value store, or removes its unique name.
 ```
 
-### `apify key-value-stores rm KEYVALUESTORENAMEORID`
+##### `apify key-value-stores rm KEYVALUESTORENAMEORID`
 
 Permanently removes a key-value store.
 
@@ -1147,7 +1144,7 @@ DESCRIPTION
   Permanently removes a key-value store.
 ```
 
-### `apify key-value-stores set-value STOREID ITEMKEY [VALUE]`
+##### `apify key-value-stores set-value STOREID ITEMKEY [VALUE]`
 
 Stores value with specified key. Set content-type with --content-type flag.
 
@@ -1170,13 +1167,13 @@ DESCRIPTION
 <!-- keyval-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Request Queues
+#### Request Queues
 
 These commands manage request queues, which handle URL processing for web scraping and automation tasks. Use them to maintain lists of URLs with automatic retry mechanisms and state management.
 
 <!-- prettier-ignore-start -->
 <!-- reqqueue-commands-start -->
-### `apify request-queues`
+##### `apify request-queues`
 
 Manages URL queues for web scraping and automation tasks.
 
@@ -1192,11 +1189,11 @@ DESCRIPTION
 
 ### Tasks
 
-These commands help you manage scheduled and configured actor runs. Use them to create, modify, and execute predefined actor configurations as tasks.
+These commands help you manage scheduled and configured Actor runs. Use them to create, modify, and execute predefined Actor configurations as tasks.
 
 <!-- prettier-ignore-start -->
 <!-- task-commands-start -->
-### `apify task`
+##### `apify task`
 
 Manages scheduled and predefined Actor configurations.
 
@@ -1208,7 +1205,7 @@ DESCRIPTION
   Manages scheduled and predefined Actor configurations.
 ```
 
-### `apify task run TASKID`
+##### `apify task run TASKID`
 
 Executes predefined Actor task remotely using local key-value store for input.
 

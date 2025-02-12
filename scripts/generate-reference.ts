@@ -80,7 +80,7 @@ for (let idx = 0; idx < ast.length; idx++) {
 	const commandName = headingNodeContent.value;
 
 	const commandString = [
-		`### \`${commandName}\``,
+		`##### \`${commandName}\``,
 		'',
 		commandDescription.value,
 		'',
