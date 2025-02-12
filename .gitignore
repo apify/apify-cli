@@ -23,3 +23,5 @@ package.tgz
 test/tmp
 oclif.manifest.json
 tmp
+
+package-lock.json
