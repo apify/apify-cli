@@ -54,6 +54,30 @@ export const getApifyStorageClient = async (
 };
 
 /**
+ * Returns instance of ApifyClient.
+ * @param options - ApifyClient options
+ */
+export const getApifyClient = async (options: ApifyClientOptions = {}): Promise<ApifyClient> => {
+	// NOTE: Token in env var overrides token in local auth file.
+	let apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
+	if (!apifyToken) {
+		const localUserInfo = await getLocalUserInfo();
+		if (!localUserInfo || !localUserInfo.token) {
+			throw new Error(
+				'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
+			);
+		}
+
+		apifyToken = localUserInfo.token;
+	}
+
+	return new ApifyClient({
+		...getApifyClientOptions(apifyToken),
+		...options,
+	});
+};
+
+/**
  * Returns default storage id based on environment variables.
  * Throws error if not set and Actor running on platform.
  * @param storeType
