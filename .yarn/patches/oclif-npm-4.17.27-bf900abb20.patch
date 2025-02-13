@@ -1,0 +1,14 @@
+diff --git a/lib/readme-generator.js b/lib/readme-generator.js
+index 39ba5a2381e8f4e3cfc8d4c9c4575a3b0ed30584..dda40a86de97178f28e9c464e50a66b6b3d33ade 100644
+--- a/lib/readme-generator.js
++++ b/lib/readme-generator.js
+@@ -161,7 +161,8 @@ class ReadmeGenerator {
+         debug('rendering command', c.id);
+         const title = (0, ejs_1.render)(c.summary ?? c.description ?? '', { command: c, config: this.config })
+             .trim()
+-            .split('\n')[0];
++            .split('\n')
++            .join('{newline}');
+         const help = new HelpClass(this.config, { maxWidth: columns, respectNoCacheDefault: true, stripAnsi: true });
+         const wrapper = new help_compatibility_1.HelpCompatibilityWrapper(help);
+         const header = () => {
