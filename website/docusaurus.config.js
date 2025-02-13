@@ -85,7 +85,4 @@ module.exports = {
     ],
     themeConfig: { ...config.themeConfig, versions },
     staticDirectories: ['node_modules/@apify/docs-theme/static', 'static'],
-    markdown: {
-        format: 'detect',
-    },
 };
