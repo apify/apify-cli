@@ -137,7 +137,7 @@
         "lint-staged": "^15.2.8",
         "mdast-util-from-markdown": "^2.0.2",
         "mock-stdin": "^1.0.0",
-        "oclif": "patch:oclif@npm%3A4.17.27#~/.yarn/patches/oclif-npm-4.17.27-bf900abb20.patch",
+        "oclif": "^4.14.15",
         "prettier": "^3.3.3",
         "tsx": "^4.16.5",
         "typescript": "^5.5.4",

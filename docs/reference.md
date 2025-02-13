@@ -43,9 +43,6 @@ Use these commands to manage your Apify account authentication, access tokens, a
 ##### `apify login`
 
 Authenticates your Apify account and saves credentials to '~/.apify'.
-All other commands use these stored credentials.
-
-Run 'apify logout' to remove authentication.
 
 ```
 USAGE
@@ -66,7 +63,6 @@ DESCRIPTION
 ##### `apify logout`
 
 Removes authentication by deleting your API token and account information from '~/.apify'.
-Run 'apify login' to authenticate again.
 
 ```
 USAGE
@@ -92,22 +88,6 @@ DESCRIPTION
 ##### `apify secrets`
 
 Manages secure environment variables for Actors.
-
-Example:
-$ apify secrets add mySecret TopSecretValue123
-
-The "mySecret" value can be used in an environment variable defined in '.actor/actor.json' file by adding the "@"
-prefix:
-
-{
-  "actorSpecification": 1,
-  "name": "my_actor",
-  "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" },
-  "version": "0.1"
-}
-
-When the Actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable
-of the Actor.
 
 ```
 USAGE
@@ -198,10 +178,6 @@ DESCRIPTION
 ##### `apify init [ACTORNAME]`
 
 Sets up an Actor project in your current directory by creating actor.json and storage files.
-If the directory contains a Scrapy project in Python, the command automatically creates wrappers so that you can run your scrapers without changes.
-Creates the '.actor/actor.json' file and the 'storage' directory in the current directory, but does not touch any other existing files or directories.
-
-WARNING: Overwrites existing 'storage' directory.
 
 ```
 USAGE
@@ -227,9 +203,6 @@ DESCRIPTION
 ##### `apify run`
 
 Executes Actor locally with simulated Apify environment variables.
-Stores data in local 'storage' directory.
-
-NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.
 
 ```
 USAGE
@@ -261,12 +234,6 @@ DESCRIPTION
 ##### `apify validate-schema [PATH]`
 
 Validates Actor input schema from one of these locations (in priority order):
-		1. Object in '.actor/actor.json' under "input" key
-		2. JSON file path in '.actor/actor.json' "input" key
-		3. .actor/INPUT_SCHEMA.json
-		4. INPUT_SCHEMA.json
-
-		Optionally specify custom schema path to validate.
 
 ```
 USAGE
@@ -388,12 +355,6 @@ DESCRIPTION
 
 Saves data to Actor's run default dataset.
 
-Accept input as:
-  - JSON argument:
-  $ apify actor push-data {"key": "value"}
-  - Piped stdin:
-  $ cat ./test.json | apify actor push-data
-
 ```
 USAGE
   $ apify actor push-data [ITEM]
@@ -414,14 +375,6 @@ DESCRIPTION
 ##### `apify actor set-value KEY [VALUE]`
 
 Sets or removes record into the default key-value store associated with the Actor run.
-
-It is possible to pass data using argument or stdin.
-
-Passing data using argument:
-$ apify actor set-value KEY my-value
-
-Passing data using stdin with pipe:
-$ cat ./my-text-file.txt | apify actor set-value KEY --contentType text/plain
 
 ```
 USAGE
@@ -462,8 +415,6 @@ These commands handle the deployment workflow of Actors to Apify platform. Use t
 ##### `apify actors push [ACTORID]`
 
 Deploys Actor to Apify platform using settings from '.actor/actor.json'.
-Files under '3' MB upload as "Multiple source files"; larger projects upload as ZIP file.
-Use --force to override newer remote versions.
 
 ```
 USAGE
@@ -517,7 +468,6 @@ DESCRIPTION
 ##### `apify actors call [ACTORID]`
 
 Executes Actor remotely using your authenticated account.
-Reads input from local key-value store by default.
 
 ```
 USAGE
@@ -549,7 +499,6 @@ DESCRIPTION
 ##### `apify actors start [ACTORID]`
 
 Starts Actor remotely and returns run details immediately.
-Uses authenticated account and local key-value store for input.
 
 ```
 USAGE
@@ -1038,8 +987,6 @@ These commands handle key-value store operations. Use them to create stores, man
 
 Manages persistent key-value storage.
 
-Alias: kvs
-
 ```
 USAGE
   $ apify key-value-stores
@@ -1262,7 +1209,6 @@ DESCRIPTION
 ##### `apify task run TASKID`
 
 Executes predefined Actor task remotely using local key-value store for input.
-Customize with --memory and --timeout flags.
 
 ```
 USAGE

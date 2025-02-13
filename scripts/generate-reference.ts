@@ -82,7 +82,7 @@ for (let idx = 0; idx < ast.length; idx++) {
 	const commandString = [
 		`##### \`${commandName}\``,
 		'',
-		commandDescription.value.replaceAll('{newline}', '\n'),
+		commandDescription.value,
 		'',
 		`\`\`\`\n${code.value}\n\`\`\``,
 	].join('\n');
