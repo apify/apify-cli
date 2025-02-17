@@ -51,31 +51,32 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 			this.log(
 				`Would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
 			);
-		} else {
-			const apifyToken = await getApifyTokenFromEnvOrAuthFile();
-			const apifyClient = await getLoggedClient(apifyToken);
-			if (!apifyClient) {
-				throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN.');
-			}
-			const runId = process.env[APIFY_ENV_VARS.ACTOR_RUN_ID];
-
-			if (!runId) {
-				throw new Error('Charge command must be executed in a running Actor. Run ID not found.');
-			}
-
-			const run = await apifyClient.run(runId).get();
-			if (run?.pricingInfo?.pricingModel !== 'PAY_PER_EVENT') {
-				throw new Error('Charge command can only be used with pay-per-event pricing model.');
-			}
-
-			this.log(
-				`Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}" (runId: ${runId}).`,
-			);
-			await apifyClient.run(runId).charge({
-				eventName,
-				count,
-				idempotencyKey,
-			});
+			return;
 		}
+
+		const apifyToken = await getApifyTokenFromEnvOrAuthFile();
+		const apifyClient = await getLoggedClient(apifyToken);
+		if (!apifyClient) {
+			throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN.');
+		}
+		const runId = process.env[APIFY_ENV_VARS.ACTOR_RUN_ID];
+
+		if (!runId) {
+			throw new Error('Charge command must be executed in a running Actor. Run ID not found.');
+		}
+
+		const run = await apifyClient.run(runId).get();
+		if (run?.pricingInfo?.pricingModel !== 'PAY_PER_EVENT') {
+			throw new Error('Charge command can only be used with pay-per-event pricing model.');
+		}
+
+		this.log(
+			`Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}" (runId: ${runId}).`,
+		);
+		await apifyClient.run(runId).charge({
+			eventName,
+			count,
+			idempotencyKey,
+		});
 	}
 }

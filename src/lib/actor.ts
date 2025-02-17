@@ -21,19 +21,19 @@ export const APIFY_STORAGE_TYPES = {
  * @returns Apify token
  */
 export const getApifyTokenFromEnvOrAuthFile = async () => {
-	let apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
-	if (!apifyToken) {
-		const localUserInfo = await getLocalUserInfo();
-		if (!localUserInfo || !localUserInfo.token) {
-			throw new Error(
-				'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
-			);
-		}
-
-		apifyToken = localUserInfo.token;
+	const apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
+	if (apifyToken) {
+		return apifyToken;
 	}
 
-	return apifyToken;
+	const localUserInfo = await getLocalUserInfo();
+	if (!localUserInfo || !localUserInfo.token) {
+		throw new Error(
+			'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
+		);
+	}
+
+	return localUserInfo.token;
 };
 
 /**
