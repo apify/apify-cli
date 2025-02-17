@@ -1,8 +1,9 @@
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
 
-import { getApifyClient } from '../../lib/actor.js';
+import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/apify_command.js';
+import { getLoggedClient } from '../../lib/utils.js';
 
 /**
  * This command can be used to charge for a specific event in the pay-per-event Actor run.
@@ -51,7 +52,11 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 				`Would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
 			);
 		} else {
-			const apifyClient = await getApifyClient();
+			const apifyToken = await getApifyTokenFromEnvOrAuthFile();
+			const apifyClient = await getLoggedClient(apifyToken);
+			if (!apifyClient) {
+				throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN.');
+			}
 			const runId = process.env[APIFY_ENV_VARS.ACTOR_RUN_ID];
 
 			if (!runId) {

@@ -17,6 +17,26 @@ export const APIFY_STORAGE_TYPES = {
 } as const;
 
 /**
+ * Returns Apify token from environment variable or local auth file.
+ * @returns Apify token
+ */
+export const getApifyTokenFromEnvOrAuthFile = async () => {
+	let apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
+	if (!apifyToken) {
+		const localUserInfo = await getLocalUserInfo();
+		if (!localUserInfo || !localUserInfo.token) {
+			throw new Error(
+				'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
+			);
+		}
+
+		apifyToken = localUserInfo.token;
+	}
+
+	return apifyToken;
+};
+
+/**
  * Returns instance of ApifyClient or ApifyStorageLocal based on environment variables.
  * @param options - ApifyClient options
  * @param forceCloud - If true then ApifyClient will be returned.
@@ -33,43 +53,7 @@ export const getApifyStorageClient = async (
 			...options,
 		});
 	}
-
-	// NOTE: Token in env var overrides token in local auth file.
-	let apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
-	if (!apifyToken) {
-		const localUserInfo = await getLocalUserInfo();
-		if (!localUserInfo || !localUserInfo.token) {
-			throw new Error(
-				'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
-			);
-		}
-
-		apifyToken = localUserInfo.token;
-	}
-
-	return new ApifyClient({
-		...getApifyClientOptions(apifyToken),
-		...options,
-	});
-};
-
-/**
- * Returns instance of ApifyClient.
- * @param options - ApifyClient options
- */
-export const getApifyClient = async (options: ApifyClientOptions = {}): Promise<ApifyClient> => {
-	// NOTE: Token in env var overrides token in local auth file.
-	let apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
-	if (!apifyToken) {
-		const localUserInfo = await getLocalUserInfo();
-		if (!localUserInfo || !localUserInfo.token) {
-			throw new Error(
-				'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
-			);
-		}
-
-		apifyToken = localUserInfo.token;
-	}
+	const apifyToken = await getApifyTokenFromEnvOrAuthFile();
 
 	return new ApifyClient({
 		...getApifyClientOptions(apifyToken),
