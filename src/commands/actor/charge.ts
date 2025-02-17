@@ -51,7 +51,9 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 		const isAtHome = Boolean(process.env.APIFY_IS_AT_HOME);
 
 		if (!isAtHome || testPayPerEvent) {
-			this.log(`Would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey}".`);
+			this.log(
+				`Would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
+			);
 		} else {
 			const apifyClient = await getApifyClient();
 			const runId = process.env[APIFY_ENV_VARS.ACTOR_RUN_ID];
@@ -66,7 +68,7 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 			}
 
 			this.log(
-				`Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey}" (runId: ${runId}).`,
+				`Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}" (runId: ${runId}).`,
 			);
 			await apifyClient.run(runId).charge({
 				eventName,
