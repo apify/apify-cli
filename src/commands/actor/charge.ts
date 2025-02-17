@@ -41,12 +41,8 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 	};
 
 	async run() {
-		const { args, flags } = await this.parse(ChargeCommand);
-
-		const { eventName } = args;
-		const { count } = flags;
-		const testPayPerEvent = flags['test-pay-per-event'];
-		const idempotencyKey = flags['idempotency-key'];
+		const { eventName } = this.args;
+		const { count, testPayPerEvent, idempotencyKey } = this.flags;
 
 		const isAtHome = Boolean(process.env.APIFY_IS_AT_HOME);
 
