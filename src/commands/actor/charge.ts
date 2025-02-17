@@ -5,8 +5,13 @@ import { getApifyClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/apify_command.js';
 
 /**
- * TODO - add logic to work with the max charge USD to prevent
- * exceeding the charging limit.
+ * This command can be used to charge for a specific event in the pay-per-event Actor run.
+ * - If run locally or with the --test-pay-per-event flag, it will only log the charge request, without actually charging.
+ * - If run in the Actor run on Apify platform without the testing flag, it will charge the specified amount of events.
+ *
+ * Future TODOs:
+ * - Add logic to work with the max charge USD to prevent exceeding the charging limit.
+ * - Add logic to store events in the log dataset for later inspection to aid local development.
  */
 export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 	static override description = 'Charge for a specific event in the pay-per-event Actor run.\n';
@@ -43,12 +48,9 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 		const testPayPerEvent = flags['test-pay-per-event'];
 		const idempotencyKey = flags['idempotency-key'];
 
-		this.log('args', args);
-		this.log('flags', flags);
 		const isAtHome = Boolean(process.env.APIFY_IS_AT_HOME);
 
 		if (!isAtHome || testPayPerEvent) {
-			// TODO - add option to also add the data to a test named dataset
 			this.log(`Would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey}".`);
 		} else {
 			const apifyClient = await getApifyClient();
@@ -56,6 +58,11 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 
 			if (!runId) {
 				throw new Error('Charge command must be executed in a running Actor. Run ID not found.');
+			}
+
+			const run = await apifyClient.run(runId).get();
+			if (run?.pricingInfo?.pricingModel !== 'PAY_PER_EVENT') {
+				throw new Error('Charge command can only be used with pay-per-event pricing model.');
 			}
 
 			this.log(
