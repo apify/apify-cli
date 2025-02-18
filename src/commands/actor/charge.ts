@@ -47,9 +47,16 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 
 		const isAtHome = Boolean(process.env.APIFY_IS_AT_HOME);
 
-		if (!isAtHome || testPayPerEvent) {
+		if (!isAtHome) {
 			this.log(
-				`Would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
+				`No platform detected: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
+			);
+			return;
+		}
+
+		if (testPayPerEvent) {
+			this.log(
+				`PPE test mode: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
 			);
 			return;
 		}
