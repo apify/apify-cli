@@ -3,6 +3,7 @@ import { Args, Flags } from '@oclif/core';
 
 import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/apify_command.js';
+import { info } from '../../lib/outputs.js';
 import { getLoggedClient } from '../../lib/utils.js';
 
 /**
@@ -48,16 +49,18 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 		const isAtHome = Boolean(process.env.APIFY_IS_AT_HOME);
 
 		if (!isAtHome) {
-			this.log(
-				`No platform detected: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
-			);
+			info({
+				message: `No platform detected: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
+				stdout: true,
+			});
 			return;
 		}
 
 		if (testPayPerEvent) {
-			this.log(
-				`PPE test mode: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
-			);
+			info({
+				message: `PPE test mode: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
+				stdout: true,
+			});
 			return;
 		}
 
@@ -77,9 +80,10 @@ export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
 			throw new Error('Charge command can only be used with pay-per-event pricing model.');
 		}
 
-		this.log(
-			`Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}" (runId: ${runId}).`,
-		);
+		info({
+			message: `Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}" (runId: ${runId}).`,
+			stdout: true,
+		});
 		await apifyClient.run(runId).charge({
 			eventName,
 			count,
