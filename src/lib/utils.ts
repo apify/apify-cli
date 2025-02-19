@@ -670,6 +670,30 @@ export const detectPythonVersion = (directory: string) => {
 	}
 };
 
+export const PYTHON_MODULE_VERSION_NOT_EXISTENT = 'n/a';
+
+export const detectPythonModuleVersion = (directory: string, moduleName: string) => {
+	const pythonCommand = getPythonCommand(directory);
+
+	const commandString = `try: import ${moduleName}; print(${moduleName}.__version__);
+except: print('n/a')`;
+
+	try {
+		const spawnResult = spawnSync(pythonCommand, ['-c', `"${commandString}"`], {
+			...spawnOptions,
+			encoding: 'utf-8',
+		});
+
+		if (!spawnResult.error && spawnResult.stdout) {
+			return spawnResult.stdout.trim();
+		}
+
+		return undefined;
+	} catch {
+		return undefined;
+	}
+};
+
 export const isPythonVersionSupported = (installedPythonVersion: string) => {
 	return satisfies(installedPythonVersion, `^${MINIMUM_SUPPORTED_PYTHON_VERSION}`);
 };
