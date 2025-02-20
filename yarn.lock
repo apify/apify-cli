@@ -3984,8 +3984,8 @@ __metadata:
   linkType: hard
 
 "apify@npm:^3.2.4":
-  version: 3.3.0
-  resolution: "apify@npm:3.3.0"
+  version: 3.3.1
+  resolution: "apify@npm:3.3.1"
   dependencies:
     "@apify/consts": "npm:^2.23.0"
     "@apify/input_secrets": "npm:^1.1.40"
@@ -4001,7 +4001,7 @@ __metadata:
     semver: "npm:^7.5.4"
     tslib: "npm:^2.6.2"
     ws: "npm:^8.18.0"
-  checksum: 10c0/5abcbd6f0be5b6ad266d4a9e680a37f5af332d6ad4bb7fcf07efc8cb6f4d52bd45af0d7494c56d5044af11ab4edc602209e00f8f349e123efc4183c337e45573
+  checksum: 10c0/bf9579e7ca40e6bb5dd706b6c7903742a6304f6c4cf4bc50678f28b233cbb80e210454d7ad2c64a65bdad911b6dd34129056ee2c2a1085192980e5dcc52c9fee
   languageName: node
   linkType: hard
 
@@ -9976,13 +9976,13 @@ __metadata:
   linkType: hard
 
 "postcss@npm:^8.4.43":
-  version: 8.5.2
-  resolution: "postcss@npm:8.5.2"
+  version: 8.5.3
+  resolution: "postcss@npm:8.5.3"
   dependencies:
     nanoid: "npm:^3.3.8"
     picocolors: "npm:^1.1.1"
     source-map-js: "npm:^1.2.1"
-  checksum: 10c0/3044d49bc725029ab62292e8bf9849741251b95f3b754e191bf8b4025414d40ec3b4ac05c5a563d4b50060b5c8e96683eb4d783d8d8fa3867eb7b763cbe66127
+  checksum: 10c0/b75510d7b28c3ab728c8733dd01538314a18c52af426f199a3c9177e63eb08602a3938bfb66b62dc01350b9aed62087eabbf229af97a1659eb8d3513cec823b3
   languageName: node
   linkType: hard
 
@@ -11588,12 +11588,12 @@ __metadata:
   linkType: hard
 
 "tinyglobby@npm:^0.2.11, tinyglobby@npm:^0.2.9":
-  version: 0.2.11
-  resolution: "tinyglobby@npm:0.2.11"
+  version: 0.2.12
+  resolution: "tinyglobby@npm:0.2.12"
   dependencies:
     fdir: "npm:^6.4.3"
     picomatch: "npm:^4.0.2"
-  checksum: 10c0/16664aa782fa1350789e9253e0ec5f7c974876d83fe7edf7467246591ad2e2bed1660c0ff1ed14c00601623780c118918b1a5fdfaa487699c1d3aa598454566b
+  checksum: 10c0/7c9be4fd3625630e262dcb19015302aad3b4ba7fc620f269313e688f2161ea8724d6cb4444baab5ef2826eb6bed72647b169a33ec8eea37501832a2526ff540f
   languageName: node
   linkType: hard
 
