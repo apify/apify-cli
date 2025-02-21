@@ -16,7 +16,7 @@ import { getLoggedClient } from '../../lib/utils.js';
  * - Add logic to store events in the log dataset for later inspection to aid local development.
  */
 export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
-	static override description = 'Charge for a specific event in the pay-per-event Actor run.\n';
+	static override description = 'Charge for a specific event in the pay-per-event Actor run.';
 
 	static override args = {
 		eventName: Args.string({
