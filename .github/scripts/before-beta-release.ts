@@ -1,6 +1,6 @@
-import path from 'path';
-import { readFile, writeFile } from 'fs/promises';
-import { execSync } from 'child_process';
+import path from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
+import { execSync } from 'node:child_process';
 
 const PKG_JSON_PATH = path.join(import.meta.dirname, '..', '..', 'package.json');
 
