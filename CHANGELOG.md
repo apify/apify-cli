@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 0.21.2 - **not yet released**
+
+### 🚀 Features
+
+- Actor charge command ([#748](https://github.com/apify/apify-cli/pull/748)) ([766c647](https://github.com/apify/apify-cli/commit/766c6470fe8c84fa1be663ee3251b48830f3cc27)) by [@mhamas](https://github.com/mhamas)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [0.21.1](https://github.com/apify/apify-cli/releases/tag/v0.21.1) (2025-02-05)
 
 ### 🐛 Bug Fixes
