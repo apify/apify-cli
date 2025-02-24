@@ -2,7 +2,7 @@ import path from 'path';
 import { readFile, writeFile } from 'fs/promises';
 import { execSync } from 'child_process';
 
-const PKG_JSON_PATH = path.join(__dirname, '..', '..', 'package.json');
+const PKG_JSON_PATH = path.join(import.meta.dirname, '..', '..', 'package.json');
 
 const pkgJson = JSON.parse(await readFile(PKG_JSON_PATH, { encoding: 'utf8' }));
 
