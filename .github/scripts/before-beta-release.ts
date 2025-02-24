@@ -1,9 +1,10 @@
-import { execSync } from 'node:child_process';
+import path from 'node:path';
 import { readFile, writeFile } from 'node:fs/promises';
+import { execSync } from 'node:child_process';
 
-const PKG_JSON_PATH = new URL('../../package.json', import.meta.url);
+const PKG_JSON_PATH = path.join(import.meta.dirname, '..', '..', 'package.json');
 
-const pkgJson = JSON.parse(await readFile(PKG_JSON_PATH, 'utf8'));
+const pkgJson = JSON.parse(await readFile(PKG_JSON_PATH, { encoding: 'utf8' }));
 
 const PACKAGE_NAME = pkgJson.name;
 const VERSION = pkgJson.version;
