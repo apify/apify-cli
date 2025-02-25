@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - Actor charge command ([#748](https://github.com/apify/apify-cli/pull/748)) ([766c647](https://github.com/apify/apify-cli/commit/766c6470fe8c84fa1be663ee3251b48830f3cc27)) by [@mhamas](https://github.com/mhamas)
+- Add get-public-url command ([#756](https://github.com/apify/apify-cli/pull/756)) ([88aadee](https://github.com/apify/apify-cli/commit/88aadee4621438b5df180a27f0ffc2a6b6bee946)) by [@janbuchar](https://github.com/janbuchar)
 
 ### 🐛 Bug Fixes
 
