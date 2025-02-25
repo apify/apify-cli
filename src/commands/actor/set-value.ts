@@ -16,6 +16,7 @@ export class SetValueCommand extends ApifyCommand<typeof SetValueCommand> {
 		key: Args.string({
 			required: true,
 			description: 'Key of the record in key-value store.',
+			ignoreStdin: true,
 		}),
 		value: Args.string({
 			required: false,
@@ -24,6 +25,7 @@ export class SetValueCommand extends ApifyCommand<typeof SetValueCommand> {
 				'- If empty, the record in the key-value store is deleted.\n' +
 				'- If no `contentType` flag is specified, value is expected to be any JSON string value.\n' +
 				'- If options.contentType is set, value is taken as is.',
+			ignoreStdin: true,
 		}),
 	};
 
@@ -35,21 +37,12 @@ export class SetValueCommand extends ApifyCommand<typeof SetValueCommand> {
 		}),
 	};
 
-	private stdin?: typeof process.stdin;
-
-	override async init() {
-		await super.init();
-		// Read data from stdin of the command
-		this.stdin = process.stdin;
-	}
-
 	async run() {
-		const { stdin } = this;
 		const { key, value } = this.args;
 		const { contentType = 'application/json; charset=utf-8' } = this.flags;
 
 		// NOTE: If user pass value as argument and data on stdin same time. We use the value from argument.
-		const recordValue = value || stdin;
+		const recordValue = value || process.stdin;
 		const apifyClient = await getApifyStorageClient();
 		const storeClient = apifyClient.keyValueStore(getDefaultStorageId(APIFY_STORAGE_TYPES.KEY_VALUE_STORE));
 
