@@ -111,4 +111,6 @@ export enum CommandExitCodes {
 
 	InvalidInput = 5,
 	InvalidActorJson = 5,
+
+	NotImplemented = 255,
 }
