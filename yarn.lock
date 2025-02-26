@@ -3919,7 +3919,7 @@ __metadata:
     apify: "npm:^3.2.4"
     apify-client: "npm:^2.11.0"
     archiver: "npm:~7.0.1"
-    axios: "npm:~1.7.3"
+    axios: "npm:~1.8.0"
     chai: "npm:^4.4.1"
     chalk: "npm:~5.4.0"
     cli-table3: "npm:^0.6.5"
@@ -4254,7 +4254,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"axios@npm:^1.6.7, axios@npm:~1.7.3":
+"axios@npm:^1.6.7":
   version: 1.7.9
   resolution: "axios@npm:1.7.9"
   dependencies:
@@ -4262,6 +4262,17 @@ __metadata:
     form-data: "npm:^4.0.0"
     proxy-from-env: "npm:^1.1.0"
   checksum: 10c0/b7a41e24b59fee5f0f26c1fc844b45b17442832eb3a0fb42dd4f1430eb4abc571fe168e67913e8a1d91c993232bd1d1ab03e20e4d1fee8c6147649b576fc1b0b
+  languageName: node
+  linkType: hard
+
+"axios@npm:~1.8.0":
+  version: 1.8.0
+  resolution: "axios@npm:1.8.0"
+  dependencies:
+    follow-redirects: "npm:^1.15.6"
+    form-data: "npm:^4.0.0"
+    proxy-from-env: "npm:^1.1.0"
+  checksum: 10c0/e015663526ab4bd1aba1bc4a37750ca815cc2eb911401797ab9e5d3d13f66c482dcd95dcbb28e832f01e926c64ffa40ae5c2e86ce817fda7eb570f245b2524dd
   languageName: node
   linkType: hard
 
