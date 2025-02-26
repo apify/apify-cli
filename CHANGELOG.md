@@ -2,9 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 0.21.2 - **not yet released**
+## [0.21.2](https://github.com/apify/apify-cli/releases/tag/v0.21.2) (2025-02-26)
 
 ### 🚀 Features
 
@@ -14,8 +12,6 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - `actor set-value` with stdin input ([#755](https://github.com/apify/apify-cli/pull/755)) ([14bf6c5](https://github.com/apify/apify-cli/commit/14bf6c50a9e576700a60e1620a73b2e07c9b801e)) by [@vladfrangu](https://github.com/vladfrangu)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [0.21.1](https://github.com/apify/apify-cli/releases/tag/v0.21.1) (2025-02-05)
 

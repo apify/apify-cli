@@ -283,7 +283,9 @@ This section contains printouts of `apify help` for all commands.
 <!-- prettier-ignore-start -->
 <!-- commands -->
 * [`apify actor`](#apify-actor)
+* [`apify actor charge EVENTNAME`](#apify-actor-charge-eventname)
 * [`apify actor get-input`](#apify-actor-get-input)
+* [`apify actor get-public-url KEY`](#apify-actor-get-public-url-key)
 * [`apify actor get-value KEY`](#apify-actor-get-value-key)
 * [`apify actor push-data [ITEM]`](#apify-actor-push-data-item)
 * [`apify actor set-value KEY [VALUE]`](#apify-actor-set-value-key-value)
@@ -357,7 +359,29 @@ DESCRIPTION
   Manages runtime data operations inside of a running Actor.
 ```
 
-_See code: [src/commands/actor/index.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actor/index.ts)_
+_See code: [src/commands/actor/index.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actor/index.ts)_
+
+## `apify actor charge EVENTNAME`
+
+Charge for a specific event in the pay-per-event Actor run.
+
+```
+USAGE
+  $ apify actor charge EVENTNAME [--count <value>] [--idempotency-key <value>] [--test-pay-per-event]
+
+ARGUMENTS
+  EVENTNAME  Name of the event to charge for
+
+FLAGS
+  --count=<value>            [default: 1] Number of events to charge
+  --idempotency-key=<value>  Idempotency key for the charge request
+  --test-pay-per-event       Test pay-per-event charging without actually charging
+
+DESCRIPTION
+  Charge for a specific event in the pay-per-event Actor run.
+```
+
+_See code: [src/commands/actor/charge.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actor/charge.ts)_
 
 ## `apify actor get-input`
 
@@ -371,7 +395,24 @@ DESCRIPTION
   Gets the Actor input value from the default key-value store associated with the Actor run.
 ```
 
-_See code: [src/commands/actor/get-input.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actor/get-input.ts)_
+_See code: [src/commands/actor/get-input.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actor/get-input.ts)_
+
+## `apify actor get-public-url KEY`
+
+Get an HTTP URL that allows public access to a key-value store item.
+
+```
+USAGE
+  $ apify actor get-public-url KEY
+
+ARGUMENTS
+  KEY  Key of the record in key-value store
+
+DESCRIPTION
+  Get an HTTP URL that allows public access to a key-value store item.
+```
+
+_See code: [src/commands/actor/get-public-url.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actor/get-public-url.ts)_
 
 ## `apify actor get-value KEY`
 
@@ -388,7 +429,7 @@ DESCRIPTION
   Gets a value from the default key-value store associated with the Actor run.
 ```
 
-_See code: [src/commands/actor/get-value.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actor/get-value.ts)_
+_See code: [src/commands/actor/get-value.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actor/get-value.ts)_
 
 ## `apify actor push-data [ITEM]`
 
@@ -411,7 +452,7 @@ DESCRIPTION
   $ cat ./test.json | apify actor push-data
 ```
 
-_See code: [src/commands/actor/push-data.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actor/push-data.ts)_
+_See code: [src/commands/actor/push-data.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actor/push-data.ts)_
 
 ## `apify actor set-value KEY [VALUE]`
 
@@ -443,7 +484,7 @@ DESCRIPTION
   $ cat ./my-text-file.txt | apify actor set-value KEY --contentType text/plain
 ```
 
-_See code: [src/commands/actor/set-value.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actor/set-value.ts)_
+_See code: [src/commands/actor/set-value.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actor/set-value.ts)_
 
 ## `apify actors`
 
@@ -457,7 +498,7 @@ DESCRIPTION
   Manages Actor creation, deployment, and execution on the Apify platform.
 ```
 
-_See code: [src/commands/actors/index.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actors/index.ts)_
+_See code: [src/commands/actors/index.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actors/index.ts)_
 
 ## `apify actors build [ACTORID]`
 
@@ -484,7 +525,7 @@ DESCRIPTION
   Creates a new build of the Actor.
 ```
 
-_See code: [src/commands/actors/build.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actors/build.ts)_
+_See code: [src/commands/actors/build.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actors/build.ts)_
 
 ## `apify actors call [ACTORID]`
 
@@ -517,7 +558,7 @@ DESCRIPTION
   Reads input from local key-value store by default.
 ```
 
-_See code: [src/commands/actors/call.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actors/call.ts)_
+_See code: [src/commands/actors/call.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actors/call.ts)_
 
 ## `apify actors info ACTORID`
 
@@ -541,7 +582,7 @@ DESCRIPTION
   Get information about an Actor.
 ```
 
-_See code: [src/commands/actors/info.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actors/info.ts)_
+_See code: [src/commands/actors/info.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actors/info.ts)_
 
 ## `apify actors ls`
 
@@ -564,7 +605,7 @@ DESCRIPTION
   Prints a list of recently executed Actors or Actors you own.
 ```
 
-_See code: [src/commands/actors/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actors/ls.ts)_
+_See code: [src/commands/actors/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actors/ls.ts)_
 
 ## `apify actors pull [ACTORID]`
 
@@ -586,7 +627,7 @@ DESCRIPTION
   Download Actor code to current directory. Clones Git repositories or fetches Actor files based on the source type.
 ```
 
-_See code: [src/commands/actors/pull.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actors/pull.ts)_
+_See code: [src/commands/actors/pull.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actors/pull.ts)_
 
 ## `apify actors push [ACTORID]`
 
@@ -617,7 +658,7 @@ DESCRIPTION
   Use --force to override newer remote versions.
 ```
 
-_See code: [src/commands/actors/push.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actors/push.ts)_
+_See code: [src/commands/actors/push.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actors/push.ts)_
 
 ## `apify actors rm ACTORID`
 
@@ -634,7 +675,7 @@ DESCRIPTION
   Permanently removes an Actor from your account.
 ```
 
-_See code: [src/commands/actors/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actors/rm.ts)_
+_See code: [src/commands/actors/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actors/rm.ts)_
 
 ## `apify actors start [ACTORID]`
 
@@ -665,7 +706,7 @@ DESCRIPTION
   Uses authenticated account and local key-value store for input.
 ```
 
-_See code: [src/commands/actors/start.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/actors/start.ts)_
+_See code: [src/commands/actors/start.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/actors/start.ts)_
 
 ## `apify builds`
 
@@ -679,7 +720,7 @@ DESCRIPTION
   Manages Actor build processes and versioning.
 ```
 
-_See code: [src/commands/builds/index.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/builds/index.ts)_
+_See code: [src/commands/builds/index.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/builds/index.ts)_
 
 ## `apify builds create [ACTORID]`
 
@@ -706,7 +747,7 @@ DESCRIPTION
   Creates a new build of the Actor.
 ```
 
-_See code: [src/commands/builds/create.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/builds/create.ts)_
+_See code: [src/commands/builds/create.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/builds/create.ts)_
 
 ## `apify builds info BUILDID`
 
@@ -726,7 +767,7 @@ DESCRIPTION
   Prints information about a specific build.
 ```
 
-_See code: [src/commands/builds/info.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/builds/info.ts)_
+_See code: [src/commands/builds/info.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/builds/info.ts)_
 
 ## `apify builds log BUILDID`
 
@@ -743,7 +784,7 @@ DESCRIPTION
   Prints the log of a specific build.
 ```
 
-_See code: [src/commands/builds/log.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/builds/log.ts)_
+_See code: [src/commands/builds/log.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/builds/log.ts)_
 
 ## `apify builds ls [ACTORID]`
 
@@ -769,7 +810,7 @@ DESCRIPTION
   Lists all builds of the Actor.
 ```
 
-_See code: [src/commands/builds/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/builds/ls.ts)_
+_See code: [src/commands/builds/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/builds/ls.ts)_
 
 ## `apify builds rm BUILDID`
 
@@ -786,7 +827,7 @@ DESCRIPTION
   Permanently removes an Actor build from the Apify platform.
 ```
 
-_See code: [src/commands/builds/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/builds/rm.ts)_
+_See code: [src/commands/builds/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/builds/rm.ts)_
 
 ## `apify call [ACTORID]`
 
@@ -819,7 +860,7 @@ DESCRIPTION
   Reads input from local key-value store by default.
 ```
 
-_See code: [src/commands/call.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/call.ts)_
+_See code: [src/commands/call.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/call.ts)_
 
 ## `apify create [ACTORNAME]`
 
@@ -844,7 +885,7 @@ DESCRIPTION
   Creates an Actor project from a template in a new directory.
 ```
 
-_See code: [src/commands/create.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/create.ts)_
+_See code: [src/commands/create.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/create.ts)_
 
 ## `apify datasets`
 
@@ -858,7 +899,7 @@ DESCRIPTION
   Manages structured data storage and retrieval.
 ```
 
-_See code: [src/commands/datasets/index.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/datasets/index.ts)_
+_See code: [src/commands/datasets/index.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/datasets/index.ts)_
 
 ## `apify datasets create [DATASETNAME]`
 
@@ -878,7 +919,7 @@ DESCRIPTION
   Creates a new dataset for storing structured data on your account.
 ```
 
-_See code: [src/commands/datasets/create.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/datasets/create.ts)_
+_See code: [src/commands/datasets/create.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/datasets/create.ts)_
 
 ## `apify datasets get-items DATASETID`
 
@@ -901,7 +942,7 @@ DESCRIPTION
   Retrieves dataset items in specified format (JSON, CSV, etc).
 ```
 
-_See code: [src/commands/datasets/get-items.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/datasets/get-items.ts)_
+_See code: [src/commands/datasets/get-items.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/datasets/get-items.ts)_
 
 ## `apify datasets info STOREID`
 
@@ -921,7 +962,7 @@ DESCRIPTION
   Prints information about a specific dataset.
 ```
 
-_See code: [src/commands/datasets/info.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/datasets/info.ts)_
+_See code: [src/commands/datasets/info.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/datasets/info.ts)_
 
 ## `apify datasets ls`
 
@@ -944,7 +985,7 @@ DESCRIPTION
   Prints all datasets on your account.
 ```
 
-_See code: [src/commands/datasets/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/datasets/ls.ts)_
+_See code: [src/commands/datasets/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/datasets/ls.ts)_
 
 ## `apify datasets push-items NAMEORID [ITEM]`
 
@@ -962,7 +1003,7 @@ DESCRIPTION
   Adds data items to specified dataset. Accepts single object or array of objects.
 ```
 
-_See code: [src/commands/datasets/push-items.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/datasets/push-items.ts)_
+_See code: [src/commands/datasets/push-items.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/datasets/push-items.ts)_
 
 ## `apify datasets rename NAMEORID [NEWNAME]`
 
@@ -983,7 +1024,7 @@ DESCRIPTION
   Change dataset name or removes name with --unname flag.
 ```
 
-_See code: [src/commands/datasets/rename.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/datasets/rename.ts)_
+_See code: [src/commands/datasets/rename.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/datasets/rename.ts)_
 
 ## `apify datasets rm DATASETNAMEORID`
 
@@ -1000,7 +1041,7 @@ DESCRIPTION
   Permanently removes a dataset.
 ```
 
-_See code: [src/commands/datasets/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/datasets/rm.ts)_
+_See code: [src/commands/datasets/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/datasets/rm.ts)_
 
 ## `apify help [COMMAND]`
 
@@ -1020,7 +1061,7 @@ DESCRIPTION
   Display help for apify.
 ```
 
-_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.23/src/commands/help.ts)_
+_See code: [@oclif/plugin-help](https://github.com/oclif/plugin-help/blob/v6.2.26/src/commands/help.ts)_
 
 ## `apify info`
 
@@ -1034,7 +1075,7 @@ DESCRIPTION
   Prints details about your currently authenticated Apify account.
 ```
 
-_See code: [src/commands/info.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/info.ts)_
+_See code: [src/commands/info.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/info.ts)_
 
 ## `apify init [ACTORNAME]`
 
@@ -1061,7 +1102,7 @@ DESCRIPTION
   WARNING: Overwrites existing 'storage' directory.
 ```
 
-_See code: [src/commands/init.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/init.ts)_
+_See code: [src/commands/init.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/init.ts)_
 
 ## `apify key-value-stores`
 
@@ -1077,7 +1118,7 @@ DESCRIPTION
   Alias: kvs
 ```
 
-_See code: [src/commands/key-value-stores/index.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/index.ts)_
+_See code: [src/commands/key-value-stores/index.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/index.ts)_
 
 ## `apify key-value-stores create [KEYVALUESTORENAME]`
 
@@ -1097,7 +1138,7 @@ DESCRIPTION
   Creates a new key-value store on your account.
 ```
 
-_See code: [src/commands/key-value-stores/create.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/create.ts)_
+_See code: [src/commands/key-value-stores/create.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/create.ts)_
 
 ## `apify key-value-stores delete-value STOREID ITEMKEY`
 
@@ -1115,7 +1156,7 @@ DESCRIPTION
   Delete a value from a key-value store.
 ```
 
-_See code: [src/commands/key-value-stores/delete-value.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/delete-value.ts)_
+_See code: [src/commands/key-value-stores/delete-value.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/delete-value.ts)_
 
 ## `apify key-value-stores get-value KEYVALUESTOREID ITEMKEY`
 
@@ -1136,7 +1177,7 @@ DESCRIPTION
   Retrieves stored value for specified key. Use --only-content-type to check MIME type.
 ```
 
-_See code: [src/commands/key-value-stores/get-value.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/get-value.ts)_
+_See code: [src/commands/key-value-stores/get-value.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/get-value.ts)_
 
 ## `apify key-value-stores info STOREID`
 
@@ -1156,7 +1197,7 @@ DESCRIPTION
   Shows information about a key-value store.
 ```
 
-_See code: [src/commands/key-value-stores/info.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/info.ts)_
+_See code: [src/commands/key-value-stores/info.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/info.ts)_
 
 ## `apify key-value-stores keys STOREID`
 
@@ -1180,7 +1221,7 @@ DESCRIPTION
   Lists all keys in a key-value store.
 ```
 
-_See code: [src/commands/key-value-stores/keys.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/keys.ts)_
+_See code: [src/commands/key-value-stores/keys.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/keys.ts)_
 
 ## `apify key-value-stores ls`
 
@@ -1203,7 +1244,7 @@ DESCRIPTION
   Lists all key-value stores on your account.
 ```
 
-_See code: [src/commands/key-value-stores/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/ls.ts)_
+_See code: [src/commands/key-value-stores/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/ls.ts)_
 
 ## `apify key-value-stores rename KEYVALUESTORENAMEORID [NEWNAME]`
 
@@ -1224,7 +1265,7 @@ DESCRIPTION
   Renames a key-value store, or removes its unique name.
 ```
 
-_See code: [src/commands/key-value-stores/rename.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/rename.ts)_
+_See code: [src/commands/key-value-stores/rename.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/rename.ts)_
 
 ## `apify key-value-stores rm KEYVALUESTORENAMEORID`
 
@@ -1241,7 +1282,7 @@ DESCRIPTION
   Permanently removes a key-value store.
 ```
 
-_See code: [src/commands/key-value-stores/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/rm.ts)_
+_See code: [src/commands/key-value-stores/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/rm.ts)_
 
 ## `apify key-value-stores set-value STOREID ITEMKEY [VALUE]`
 
@@ -1264,7 +1305,7 @@ DESCRIPTION
   Stores value with specified key. Set content-type with --content-type flag.
 ```
 
-_See code: [src/commands/key-value-stores/set-value.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/key-value-stores/set-value.ts)_
+_See code: [src/commands/key-value-stores/set-value.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/key-value-stores/set-value.ts)_
 
 ## `apify login`
 
@@ -1286,7 +1327,7 @@ DESCRIPTION
   Run 'apify logout' to remove authentication.
 ```
 
-_See code: [src/commands/login.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/login.ts)_
+_See code: [src/commands/login.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/login.ts)_
 
 ## `apify logout`
 
@@ -1301,7 +1342,7 @@ DESCRIPTION
   Run 'apify login' to authenticate again.
 ```
 
-_See code: [src/commands/logout.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/logout.ts)_
+_See code: [src/commands/logout.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/logout.ts)_
 
 ## `apify pull [ACTORID]`
 
@@ -1323,7 +1364,7 @@ DESCRIPTION
   Download Actor code to current directory. Clones Git repositories or fetches Actor files based on the source type.
 ```
 
-_See code: [src/commands/pull.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/pull.ts)_
+_See code: [src/commands/pull.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/pull.ts)_
 
 ## `apify push [ACTORID]`
 
@@ -1354,7 +1395,7 @@ DESCRIPTION
   Use --force to override newer remote versions.
 ```
 
-_See code: [src/commands/push.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/push.ts)_
+_See code: [src/commands/push.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/push.ts)_
 
 ## `apify request-queues`
 
@@ -1368,7 +1409,7 @@ DESCRIPTION
   Manages URL queues for web scraping and automation tasks.
 ```
 
-_See code: [src/commands/request-queues/index.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/request-queues/index.ts)_
+_See code: [src/commands/request-queues/index.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/request-queues/index.ts)_
 
 ## `apify run`
 
@@ -1401,7 +1442,7 @@ DESCRIPTION
   NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.
 ```
 
-_See code: [src/commands/run.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/run.ts)_
+_See code: [src/commands/run.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/run.ts)_
 
 ## `apify runs`
 
@@ -1415,7 +1456,7 @@ DESCRIPTION
   Manages Actor run operations
 ```
 
-_See code: [src/commands/runs/index.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/runs/index.ts)_
+_See code: [src/commands/runs/index.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/runs/index.ts)_
 
 ## `apify runs abort RUNID`
 
@@ -1438,7 +1479,7 @@ DESCRIPTION
   Aborts an Actor run.
 ```
 
-_See code: [src/commands/runs/abort.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/runs/abort.ts)_
+_See code: [src/commands/runs/abort.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/runs/abort.ts)_
 
 ## `apify runs info RUNID`
 
@@ -1461,7 +1502,7 @@ DESCRIPTION
   Prints information about an Actor run.
 ```
 
-_See code: [src/commands/runs/info.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/runs/info.ts)_
+_See code: [src/commands/runs/info.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/runs/info.ts)_
 
 ## `apify runs log RUNID`
 
@@ -1478,7 +1519,7 @@ DESCRIPTION
   Prints the log of a specific run.
 ```
 
-_See code: [src/commands/runs/log.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/runs/log.ts)_
+_See code: [src/commands/runs/log.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/runs/log.ts)_
 
 ## `apify runs ls [ACTORID]`
 
@@ -1504,7 +1545,7 @@ DESCRIPTION
   Lists all runs of the Actor.
 ```
 
-_See code: [src/commands/runs/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/runs/ls.ts)_
+_See code: [src/commands/runs/ls.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/runs/ls.ts)_
 
 ## `apify runs resurrect RUNID`
 
@@ -1524,7 +1565,7 @@ DESCRIPTION
   Resurrects an aborted or finished Actor Run.
 ```
 
-_See code: [src/commands/runs/resurrect.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/runs/resurrect.ts)_
+_See code: [src/commands/runs/resurrect.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/runs/resurrect.ts)_
 
 ## `apify runs rm RUNID`
 
@@ -1541,7 +1582,7 @@ DESCRIPTION
   Deletes an Actor Run.
 ```
 
-_See code: [src/commands/runs/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/runs/rm.ts)_
+_See code: [src/commands/runs/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/runs/rm.ts)_
 
 ## `apify secrets`
 
@@ -1571,7 +1612,7 @@ DESCRIPTION
   of the Actor.
 ```
 
-_See code: [src/commands/secrets/index.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/secrets/index.ts)_
+_See code: [src/commands/secrets/index.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/secrets/index.ts)_
 
 ## `apify secrets add NAME VALUE`
 
@@ -1589,7 +1630,7 @@ DESCRIPTION
   Adds a new secret to '~/.apify' for use in Actor environment variables.
 ```
 
-_See code: [src/commands/secrets/add.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/secrets/add.ts)_
+_See code: [src/commands/secrets/add.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/secrets/add.ts)_
 
 ## `apify secrets rm NAME`
 
@@ -1606,7 +1647,7 @@ DESCRIPTION
   Permanently deletes a secret from your stored credentials.
 ```
 
-_See code: [src/commands/secrets/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/secrets/rm.ts)_
+_See code: [src/commands/secrets/rm.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/secrets/rm.ts)_
 
 ## `apify task`
 
@@ -1620,7 +1661,7 @@ DESCRIPTION
   Manages scheduled and predefined Actor configurations.
 ```
 
-_See code: [src/commands/task/index.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/task/index.ts)_
+_See code: [src/commands/task/index.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/task/index.ts)_
 
 ## `apify task run TASKID`
 
@@ -1643,7 +1684,7 @@ DESCRIPTION
   Customize with --memory and --timeout flags.
 ```
 
-_See code: [src/commands/task/run.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/task/run.ts)_
+_See code: [src/commands/task/run.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/task/run.ts)_
 
 ## `apify validate-schema [PATH]`
 
@@ -1666,6 +1707,6 @@ DESCRIPTION
   Optionally specify custom schema path to validate.
 ```
 
-_See code: [src/commands/validate-schema.ts](https://github.com/apify/apify-cli/blob/v0.21.1/src/commands/validate-schema.ts)_
+_See code: [src/commands/validate-schema.ts](https://github.com/apify/apify-cli/blob/v0.21.2/src/commands/validate-schema.ts)_
 <!-- commandsstop -->
 <!-- prettier-ignore-end -->

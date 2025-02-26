@@ -324,6 +324,26 @@ DESCRIPTION
   Manages runtime data operations inside of a running Actor.
 ```
 
+##### `apify actor charge EVENTNAME`
+
+Charge for a specific event in the pay-per-event Actor run.
+
+```
+USAGE
+  $ apify actor charge EVENTNAME [--count <value>] [--idempotency-key <value>] [--test-pay-per-event]
+
+ARGUMENTS
+  EVENTNAME  Name of the event to charge for
+
+FLAGS
+  --count=<value>            [default: 1] Number of events to charge
+  --idempotency-key=<value>  Idempotency key for the charge request
+  --test-pay-per-event       Test pay-per-event charging without actually charging
+
+DESCRIPTION
+  Charge for a specific event in the pay-per-event Actor run.
+```
+
 ##### `apify actor get-input`
 
 Gets the Actor input value from the default key-value store associated with the Actor run.
@@ -334,6 +354,21 @@ USAGE
 
 DESCRIPTION
   Gets the Actor input value from the default key-value store associated with the Actor run.
+```
+
+##### `apify actor get-public-url KEY`
+
+Get an HTTP URL that allows public access to a key-value store item.
+
+```
+USAGE
+  $ apify actor get-public-url KEY
+
+ARGUMENTS
+  KEY  Key of the record in key-value store
+
+DESCRIPTION
+  Get an HTTP URL that allows public access to a key-value store item.
 ```
 
 ##### `apify actor get-value KEY`
