@@ -1,12 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { gte } from 'semver';
+import { lt } from 'semver';
 
 import { CRAWLEE_PACKAGES, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE_JS } from './shared.js';
-import { detectPythonModuleVersion, PYTHON_MODULE_VERSION_NOT_EXISTENT } from '../utils.js';
 
-export class CrawleeAnalyzer {
+export class PreCrawleeApifySDKAnalyzer {
 	static isApplicable(pathname: string) {
 		const hasPackageJson = existsSync(join(pathname, 'package.json'));
 
@@ -16,13 +15,18 @@ export class CrawleeAnalyzer {
 			try {
 				const packageJsonParsed = JSON.parse(packageJson);
 
+				// If they have crawlee as a dependency, likely to use crawlee
 				if (CRAWLEE_PACKAGES.some((pkg) => packageJsonParsed?.dependencies?.[pkg] !== undefined)) {
-					return true;
+					return false;
 				}
 
-				// Check if they have apify >= 3.0.0
 				const apifyVersion = packageJsonParsed?.dependencies?.apify;
 				if (!apifyVersion) {
+					return false;
+				}
+
+				// We cannot infer/crawlee v3
+				if (apifyVersion === '*') {
 					return false;
 				}
 
@@ -32,19 +36,13 @@ export class CrawleeAnalyzer {
 					actualVersion = apifyVersion.slice(1);
 				}
 
-				return gte(actualVersion, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE_JS);
+				return lt(actualVersion, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE_JS);
 			} catch {
 				return false;
 			}
 		}
 
-		const maybePythonProject = existsSync(join(pathname, 'src/__main__.py'));
-
-		if (maybePythonProject) {
-			const crawleeVersion = detectPythonModuleVersion(pathname, 'crawlee');
-
-			return crawleeVersion !== PYTHON_MODULE_VERSION_NOT_EXISTENT;
-		}
+		// We don't check python because python SDK always comes with crawlee
 
 		return false;
 	}
