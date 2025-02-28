@@ -442,9 +442,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.167":
-  version: 1.0.167
-  resolution: "@apify/docs-theme@npm:1.0.167"
+"@apify/docs-theme@npm:^1.0.168":
+  version: 1.0.168
+  resolution: "@apify/docs-theme@npm:1.0.168"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.2.0"
     "@docusaurus/theme-common": "npm:3.7.0"
@@ -452,7 +452,7 @@ __metadata:
     algoliasearch: "npm:^5.19.0"
     algoliasearch-helper: "npm:^3.22.6"
     axios: "npm:^1.7.9"
-    babel-loader: "npm:^9.2.1"
+    babel-loader: "npm:^10.0.0"
     docusaurus-gtm-plugin: "npm:^0.0.2"
     postcss-preset-env: "npm:^10.1.3"
     prism-react-renderer: "npm:^2.4.1"
@@ -464,7 +464,7 @@ __metadata:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/86773aded71700ba3168670cd7a49121c218db33ef1807a9535578ef983890cd94a34533300686e3d191458ed2d10e9d81da8a75681b775c1e4d83061094d9c8
+  checksum: 10c0/cd1135bba2a803326f4208e5bd8ef96b4df31dd1556448d6b89e0823bc29cdff58ffbb43974899cfd2b1958063daa65f62b536078e7b1c19d926b429921356d7
   languageName: node
   linkType: hard
 
@@ -4704,6 +4704,18 @@ __metadata:
   version: 4.1.0
   resolution: "axobject-query@npm:4.1.0"
   checksum: 10c0/c470e4f95008f232eadd755b018cb55f16c03ccf39c027b941cd8820ac6b68707ce5d7368a46756db4256fbc91bb4ead368f84f7fb034b2b7932f082f6dc0775
+  languageName: node
+  linkType: hard
+
+"babel-loader@npm:^10.0.0":
+  version: 10.0.0
+  resolution: "babel-loader@npm:10.0.0"
+  dependencies:
+    find-up: "npm:^5.0.0"
+  peerDependencies:
+    "@babel/core": ^7.12.0
+    webpack: ">=5.61.0"
+  checksum: 10c0/882dfacde3ee24b432ad57e468832cd0821e2a410f6c5b75ff945f069a8956592b28c6c357df5bb03db73d2741ec3db5febb106ac0bb3591c3d4288f2cf4df0e
   languageName: node
   linkType: hard
 
@@ -13178,7 +13190,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.167"
+    "@apify/docs-theme": "npm:^1.0.168"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^3.5.2"
