@@ -953,8 +953,8 @@ __metadata:
   linkType: hard
 
 "@crawlee/core@npm:^3.9.0":
-  version: 3.12.2
-  resolution: "@crawlee/core@npm:3.12.2"
+  version: 3.13.0
+  resolution: "@crawlee/core@npm:3.13.0"
   dependencies:
     "@apify/consts": "npm:^2.20.0"
     "@apify/datastructures": "npm:^2.0.0"
@@ -962,9 +962,9 @@ __metadata:
     "@apify/pseudo_url": "npm:^2.0.30"
     "@apify/timeout": "npm:^0.3.0"
     "@apify/utilities": "npm:^2.7.10"
-    "@crawlee/memory-storage": "npm:3.12.2"
-    "@crawlee/types": "npm:3.12.2"
-    "@crawlee/utils": "npm:3.12.2"
+    "@crawlee/memory-storage": "npm:3.13.0"
+    "@crawlee/types": "npm:3.13.0"
+    "@crawlee/utils": "npm:3.13.0"
     "@sapphire/async-queue": "npm:^1.5.1"
     "@vladfrangu/async_event_emitter": "npm:^2.2.2"
     csv-stringify: "npm:^6.2.0"
@@ -978,16 +978,16 @@ __metadata:
     tough-cookie: "npm:^5.0.0"
     tslib: "npm:^2.4.0"
     type-fest: "npm:^4.0.0"
-  checksum: 10c0/79668a1920430549383f646f50f22b6df90acd48960e615737dadb14d576c5e72f3000558f765dc56eb0fbbc10292a5d1a771b9262103c6d2704d5104337f2e2
+  checksum: 10c0/aa993afda2a44aebd6d8cf6a5f2f160852d7239a6507deea0265fbdeeeaa25f2431c4c037f1be7fdf7c6be70667dda6d59349af13990ed001c1f33e893c374ae
   languageName: node
   linkType: hard
 
-"@crawlee/memory-storage@npm:3.12.2, @crawlee/memory-storage@npm:^3.12.0":
-  version: 3.12.2
-  resolution: "@crawlee/memory-storage@npm:3.12.2"
+"@crawlee/memory-storage@npm:3.13.0, @crawlee/memory-storage@npm:^3.12.0":
+  version: 3.13.0
+  resolution: "@crawlee/memory-storage@npm:3.13.0"
   dependencies:
     "@apify/log": "npm:^2.4.0"
-    "@crawlee/types": "npm:3.12.2"
+    "@crawlee/types": "npm:3.13.0"
     "@sapphire/async-queue": "npm:^1.5.0"
     "@sapphire/shapeshift": "npm:^3.0.0"
     content-type: "npm:^1.0.4"
@@ -996,26 +996,26 @@ __metadata:
     mime-types: "npm:^2.1.35"
     proper-lockfile: "npm:^4.1.2"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/e8a639fafd96fc48bc611aa70c7e78d942e3bb6e64967027fc068272a7c430a2d486b7e9e0f370d226a7d753490f8039efcbaaa7a2d0676888c92728634d8e25
+  checksum: 10c0/f133ddffd4f0fcfb53e54b66360b276da23626e248c14c55a033aba70e0dd3dced23a506247e9465dcf2e411ab18bb6d28300f87c349a1f2964c0b77b1df138c
   languageName: node
   linkType: hard
 
-"@crawlee/types@npm:3.12.2, @crawlee/types@npm:^3.11.1, @crawlee/types@npm:^3.3.0, @crawlee/types@npm:^3.9.0":
-  version: 3.12.2
-  resolution: "@crawlee/types@npm:3.12.2"
+"@crawlee/types@npm:3.13.0, @crawlee/types@npm:^3.11.1, @crawlee/types@npm:^3.3.0, @crawlee/types@npm:^3.9.0":
+  version: 3.13.0
+  resolution: "@crawlee/types@npm:3.13.0"
   dependencies:
     tslib: "npm:^2.4.0"
-  checksum: 10c0/4a45ebba46d01c734bc89b94d4865f1929d2e287cf10412219b7aa207267235779b78aa22bd4688954ca31028b3f4bc874ed13c1df174c39d2942d902c2774e4
+  checksum: 10c0/ea120017230a7d68d376e313ce9ed271f45733ed7103c5aa1a7778fa38eff118245ad3c4fa8b47ea1c19647177659f46520a0e1781927494c51d9dfcc192fb58
   languageName: node
   linkType: hard
 
-"@crawlee/utils@npm:3.12.2, @crawlee/utils@npm:^3.9.0":
-  version: 3.12.2
-  resolution: "@crawlee/utils@npm:3.12.2"
+"@crawlee/utils@npm:3.13.0, @crawlee/utils@npm:^3.9.0":
+  version: 3.13.0
+  resolution: "@crawlee/utils@npm:3.13.0"
   dependencies:
     "@apify/log": "npm:^2.4.0"
     "@apify/ps-tree": "npm:^1.2.0"
-    "@crawlee/types": "npm:3.12.2"
+    "@crawlee/types": "npm:3.13.0"
     "@types/sax": "npm:^1.2.7"
     cheerio: "npm:1.0.0-rc.12"
     file-type: "npm:^20.0.0"
@@ -1025,7 +1025,7 @@ __metadata:
     sax: "npm:^1.4.1"
     tslib: "npm:^2.4.0"
     whatwg-mimetype: "npm:^4.0.0"
-  checksum: 10c0/668197a2b08cda87744a28cb7d8673f0bb8cffa5371673b52565aa130b308a187d2699aebffabaff96859a552f125592aac7021d17beafea1d704e2a601898ef
+  checksum: 10c0/9d1f91c9f776419e4d0738782c12277e2e6de94d72a8bf7bfa88a280e084fbc93436375c541eee70cc915bc2aecb4ce09279c4d92c6a46972d020c5ad886b9fb
   languageName: node
   linkType: hard
 
@@ -4575,9 +4575,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.30001688":
-  version: 1.0.30001701
-  resolution: "caniuse-lite@npm:1.0.30001701"
-  checksum: 10c0/a814bd4dd8b49645ca51bc6ee42120660a36394bb54eb6084801d3f2bbb9471e5e1a9a8a25f44f83086a032d46e66b33031e2aa345f699b90a7e84a9836b819c
+  version: 1.0.30001702
+  resolution: "caniuse-lite@npm:1.0.30001702"
+  checksum: 10c0/52d46f41a96d179fd4e387bb6b26898148c31b626ff9aba105d207d2b0f869c7cb32ac67a6e8e0aeba3f03f33145ccfbee237250dfb58dba8b6526b4dd395ac6
   languageName: node
   linkType: hard
 
@@ -5537,9 +5537,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.73":
-  version: 1.5.111
-  resolution: "electron-to-chromium@npm:1.5.111"
-  checksum: 10c0/656bc6560dd208633a0a01e82109e43e7e3235da76f0df2fc48a42c828918f1ef9833972646ab725d4793f0b6734917b70d8806a0deb39447375d71458cc7a39
+  version: 1.5.112
+  resolution: "electron-to-chromium@npm:1.5.112"
+  checksum: 10c0/fc597268d6d3d7458b55141c436802a6c51078855f021823cdb380b80ad1a69e1c2899fdfc9cffa501d47feb3791ea6a75893fe802a608c7845e979a48f5ac25
   languageName: node
   linkType: hard
 
@@ -11820,9 +11820,9 @@ __metadata:
   linkType: hard
 
 "type-fest@npm:^4.0.0, type-fest@npm:^4.26.1, type-fest@npm:^4.6.0, type-fest@npm:^4.7.1, type-fest@npm:^4.8.3":
-  version: 4.36.0
-  resolution: "type-fest@npm:4.36.0"
-  checksum: 10c0/9257e309a61cfeaec754f45cee4892fe386233daabb3c3e4f990c9ca1a74d44e87166e5cdc12148ba87a350a54a7339b9168dcb478db591be297bf9882cf6634
+  version: 4.37.0
+  resolution: "type-fest@npm:4.37.0"
+  checksum: 10c0/5bad189f66fbe3431e5d36befa08cab6010e56be68b7467530b7ef94c3cf81ef775a8ac3047c8bbda4dd3159929285870357498d7bc1df062714f9c5c3a84926
   languageName: node
   linkType: hard
 
