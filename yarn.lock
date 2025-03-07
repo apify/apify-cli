@@ -5537,9 +5537,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.73":
-  version: 1.5.112
-  resolution: "electron-to-chromium@npm:1.5.112"
-  checksum: 10c0/fc597268d6d3d7458b55141c436802a6c51078855f021823cdb380b80ad1a69e1c2899fdfc9cffa501d47feb3791ea6a75893fe802a608c7845e979a48f5ac25
+  version: 1.5.113
+  resolution: "electron-to-chromium@npm:1.5.113"
+  checksum: 10c0/837fe2fd26adbc4f3ad8e758d14067a14f636f9c2923b5ded8adb93426bbe3fdc83b48ddf9f2cf03be31b5becb0c31144db19c823b696fd52a7bc4583f4bde00
   languageName: node
   linkType: hard
 
@@ -11625,21 +11625,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tldts-core@npm:^6.1.82":
-  version: 6.1.82
-  resolution: "tldts-core@npm:6.1.82"
-  checksum: 10c0/bdbefb17837d7d85b79a44824feafad3d12fbbfbe4f0a89d9618765b18e880d4c7ebe9e87258a2a0e85deec23adbcaaa5f4240129d8017f896b0cda0c32ae6e4
+"tldts-core@npm:^6.1.83":
+  version: 6.1.83
+  resolution: "tldts-core@npm:6.1.83"
+  checksum: 10c0/097be8b909eb86a420d11e74a17461407b517b7f1fa26434de6b5a3f43b1336065e4162024ef02404d1425b572fb6afdeff31c5d03e9d42d806166394bcbd588
   languageName: node
   linkType: hard
 
 "tldts@npm:^6.0.0, tldts@npm:^6.1.32":
-  version: 6.1.82
-  resolution: "tldts@npm:6.1.82"
+  version: 6.1.83
+  resolution: "tldts@npm:6.1.83"
   dependencies:
-    tldts-core: "npm:^6.1.82"
+    tldts-core: "npm:^6.1.83"
   bin:
     tldts: bin/cli.js
-  checksum: 10c0/e01dd47de5a1e5ca7ffe33d9e18cfd608e93ef45cf1f80f3fced1cea192d07a840664ded894b590551ebcaaf8a583a68a4b23bc0645b5885508b57010a9316af
+  checksum: 10c0/85186a9ae342e4d0eac34d0b1a645e8c35e62dbdcc5f0ee8ae11e7a8221eb9bce5a97e57723b12d76e3866c2467f232b6408c09d94c907ecc7998a507ca2c66b
   languageName: node
   linkType: hard
 
