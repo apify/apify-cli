@@ -1,6 +1,6 @@
 import { PROJECT_TYPES } from './consts.js';
 import { CrawleeAnalyzer } from './projects/CrawleeAnalyzer.js';
-import { OldApifySDKAnalyzer } from './projects/OldApifySDKAnalyzer.js';
+import { PreCrawleeApifySDKAnalyzer } from './projects/PreCrawleeApifySDKAnalyzer.js';
 import { ScrapyProjectAnalyzer } from './projects/scrapy/ScrapyProjectAnalyzer.js';
 
 interface ProjectAnalyzerType {
@@ -21,8 +21,8 @@ const analyzers: ProjectAnalyzerType[] = [
 		analyzer: CrawleeAnalyzer,
 	},
 	{
-		type: PROJECT_TYPES.PRE_CRAWLEE_APIFY_SDK,
-		analyzer: OldApifySDKAnalyzer,
+		type: PROJECT_TYPES.APIFY_SDK,
+		analyzer: PreCrawleeApifySDKAnalyzer,
 	},
 ];
 
@@ -37,5 +37,15 @@ export class ProjectAnalyzer {
 		});
 
 		return analyzer?.type || PROJECT_TYPES.UNKNOWN;
+	}
+
+	static getProjectTypes(pathname: string) {
+		const validAnalyzers = analyzers.filter((a) => a.analyzer.isApplicable(pathname));
+
+		if (validAnalyzers.length === 0) {
+			return [PROJECT_TYPES.UNKNOWN];
+		}
+
+		return validAnalyzers.map((a) => a.type);
 	}
 }
