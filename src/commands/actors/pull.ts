@@ -2,14 +2,15 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
-import { Args, Flags } from '@oclif/core';
 import AdmZip from 'adm-zip';
 import axios from 'axios';
 import jju from 'jju';
 import { gt } from 'semver';
 import tiged from 'tiged';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
@@ -24,6 +25,8 @@ const extractGitHubZip = async (url: string, directoryPath: string) => {
 };
 
 export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
+	static override name = 'pull';
+
 	static override description =
 		'Download Actor code to current directory. ' +
 		'Clones Git repositories or fetches Actor files based on the source type.';

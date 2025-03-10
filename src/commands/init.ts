@@ -1,10 +1,11 @@
 import { basename } from 'node:path';
 import process from 'node:process';
 
-import { Args, Flags } from '@oclif/core';
 import inquirer from 'inquirer';
 
-import { ApifyCommand } from '../lib/apify_command.js';
+import { ApifyCommand } from '../lib/command-framework/apify-command.js';
+import { Args } from '../lib/command-framework/args.js';
+import { Flags } from '../lib/command-framework/flags.js';
 import {
 	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
@@ -20,6 +21,8 @@ import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
 import { setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
 
 export class InitCommand extends ApifyCommand<typeof InitCommand> {
+	static override name = 'init';
+
 	static override description =
 		`Sets up an Actor project in your current directory by creating actor.json and storage files.\n` +
 		`If the directory contains a Scrapy project in Python, the command automatically creates wrappers so that you can run your scrapers without changes.\n` +

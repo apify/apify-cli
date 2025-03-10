@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-duplicate-enum-values */
 
 import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { homedir, arch, platform } from 'node:os';
 import { join } from 'node:path';
 
 import { KEY_VALUE_STORE_KEYS, META_ORIGINS } from '@apify/consts';
@@ -114,3 +114,26 @@ export enum CommandExitCodes {
 	NotFound = 250,
 	NotImplemented = 255,
 }
+
+// Yargs
+
+const runtimeName = (() => {
+	if (process.versions.bun) {
+		return 'bun';
+	}
+
+	if (process.versions.deno) {
+		return 'deno';
+	}
+
+	return 'node';
+})();
+
+const runtimeVersion = process.versions[runtimeName] || process.version;
+
+const nodeVersion = process.versions.node;
+
+const extraRuntimeData = runtimeName === 'node' ? '' : ` (emulating node ${nodeVersion})`;
+
+// apify-cli/0.21.2 darwin-arm64 node-v22.14.0
+export const version = `${pkg.name}/${pkg.version} ${platform()}-${arch()} ${runtimeName}-${runtimeVersion}${extraRuntimeData}`;

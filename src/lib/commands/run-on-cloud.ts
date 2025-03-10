@@ -1,10 +1,10 @@
 import process from 'node:process';
 
-import { Flags } from '@oclif/core';
 import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
+import { Flags } from '../command-framework/flags.js';
 
 import { CommandExitCodes } from '../consts.js';
 import { error, run as runLog, success, warning } from '../outputs.js';

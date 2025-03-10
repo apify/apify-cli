@@ -1,11 +1,11 @@
-import { Flags } from '@oclif/core';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { info, simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+import { getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Store ID', 'Name', 'Size', 'Created', 'Modified'],
@@ -13,6 +13,8 @@ const table = new ResponsiveTable({
 });
 
 export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresLsCommand> {
+	static override name = 'ls';
+
 	static override description = 'Lists all key-value stores on your account.';
 
 	static override hiddenAliases = ['kvs:ls'];
@@ -47,7 +49,8 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 		const rawKvsList = await client.keyValueStores().list({ desc, offset, limit, unnamed });
 
 		if (json) {
-			return rawKvsList;
+			printJsonToStdout(rawKvsList);
+			return;
 		}
 
 		if (rawKvsList.count === 0) {

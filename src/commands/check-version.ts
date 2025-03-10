@@ -1,6 +1,5 @@
-import { Flags } from '@oclif/core';
-
-import { ApifyCommand } from '../lib/apify_command.js';
+import { ApifyCommand } from '../lib/command-framework/apify-command.js';
+import { Flags } from '../lib/command-framework/flags.js';
 import { checkLatestVersion } from '../lib/version_check.js';
 
 export class CheckVersionCommand extends ApifyCommand<typeof CheckVersionCommand> {
@@ -16,7 +15,7 @@ export class CheckVersionCommand extends ApifyCommand<typeof CheckVersionCommand
 
 	static override hidden = true;
 
-	static override hiddenAliases = ['cv'];
+	static override aliases = ['cv'];
 
 	async run() {
 		await checkLatestVersion(this.flags.enforceUpdate);

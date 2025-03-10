@@ -1,13 +1,15 @@
-import { Args } from '@oclif/core';
 import type { ApifyClient, TaskStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
+	static override name = 'run';
+
 	static override description =
 		'Executes predefined Actor task remotely using local key-value store for input.\n' +
 		'Customize with --memory and --timeout flags.\n';

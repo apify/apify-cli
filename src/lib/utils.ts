@@ -586,3 +586,7 @@ export function objectGroupBy<K extends PropertyKey, T>(
 
 	return result;
 }
+
+export function printJsonToStdout(object: unknown) {
+	console.log(JSON.stringify(object, null, 2));
+}

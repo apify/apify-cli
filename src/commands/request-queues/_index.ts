@@ -1,6 +1,8 @@
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 
 export class RequestQueuesIndexCommand extends ApifyCommand<typeof RequestQueuesIndexCommand> {
+	static override name = 'request-queues';
+
 	static override description = 'Manages URL queues for web scraping and automation tasks.';
 
 	async run() {

@@ -1,10 +1,11 @@
-import { Args } from '@oclif/core';
-
-import { ApifyCommand } from '../lib/apify_command.js';
+import { ApifyCommand } from '../lib/command-framework/apify-command.js';
+import { Args } from '../lib/command-framework/args.js';
 import { info } from '../lib/outputs.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
 
 export class WrapScrapyCommand extends ApifyCommand<typeof WrapScrapyCommand> {
+	static override name = 'init-wrap-scrapy';
+
 	static override description = `Wraps your existing Scrapy project to work like an Apify Actor.
 
 It adds the following features:

@@ -3,7 +3,6 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
-import { Flags } from '@oclif/core';
 import type { ExecaError } from 'execa';
 import mime from 'mime';
 import { minVersion } from 'semver';
@@ -11,7 +10,11 @@ import { minVersion } from 'semver';
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 
-import { ApifyCommand } from '../lib/apify_command.js';
+import { APIFY_ENV_VARS } from '@apify/consts';
+import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
+
+import { ApifyCommand } from '../lib/command-framework/apify-command.js';
+import { Flags } from '../lib/command-framework/flags.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
 import {
 	CommandExitCodes,
@@ -49,6 +52,8 @@ enum RunType {
 }
 
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
+	static override name = 'run';
+
 	static override description =
 		`Executes Actor locally with simulated Apify environment variables.\n` +
 		`Stores data in local '${DEFAULT_LOCAL_STORAGE_DIR}' directory.\n\n` +

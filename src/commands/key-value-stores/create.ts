@@ -1,18 +1,18 @@
-import { Args } from '@oclif/core';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 
 export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueStoresCreateCommand> {
+	static override name = 'create';
+
 	static override description = 'Creates a new key-value store on your account.';
 
-	static override hiddenAliases = ['kvs:create'];
-
 	static override args = {
-		keyValueStoreName: Args.string({
+		'key-value store name': Args.string({
 			description: 'Optional name for the key-value store',
 			required: false,
 		}),
@@ -37,7 +37,8 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 		const newStore = await client.keyValueStores().getOrCreate(keyValueStoreName);
 
 		if (this.flags.json) {
-			return newStore;
+			printJsonToStdout(newStore);
+			return;
 		}
 
 		success({

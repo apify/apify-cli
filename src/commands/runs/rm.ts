@@ -1,9 +1,11 @@
-import { Args } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
+
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 import { confirmAction } from '../../lib/utils/confirm.js';
@@ -16,6 +18,8 @@ const deletableStatuses = [
 ];
 
 export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
+	static override name = 'rm';
+
 	static override description = 'Deletes an Actor Run.';
 
 	static override args = {

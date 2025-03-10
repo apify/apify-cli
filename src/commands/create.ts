@@ -2,12 +2,15 @@ import { mkdir, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { Args, Flags } from '@oclif/core';
 import { gte, minVersion } from 'semver';
 
 import { fetchManifest, manifestUrl } from '@apify/actor-templates';
 
-import { ApifyCommand } from '../lib/apify_command.js';
+import { fetchManifest, manifestUrl } from '@apify/actor-templates';
+
+import { ApifyCommand } from '../lib/command-framework/apify-command.js';
+import { Args } from '../lib/command-framework/args.js';
+import { Flags } from '../lib/command-framework/flags.js';
 import {
 	EMPTY_LOCAL_CONFIG,
 	LOCAL_CONFIG_PATH,
@@ -32,6 +35,8 @@ import {
 } from '../lib/utils.js';
 
 export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
+	static override name = 'create';
+
 	static override description = 'Creates an Actor project from a template in a new directory.';
 
 	static override flags = {

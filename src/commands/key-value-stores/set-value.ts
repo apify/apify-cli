@@ -1,15 +1,16 @@
-import { Args, Flags } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueStoresSetValueCommand> {
-	static override description = 'Stores value with specified key. Set content-type with --content-type flag.';
+	static override name = 'set-value';
 
-	static override hiddenAliases = ['kvs:set-value'];
+	static override description = 'Stores value with specified key. Set content-type with --content-type flag.';
 
 	static override flags = {
 		'content-type': Flags.string({
@@ -22,16 +23,13 @@ export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueS
 		storeId: Args.string({
 			description: 'The key-value store ID to set the value in.',
 			required: true,
-			ignoreStdin: true,
 		}),
 		itemKey: Args.string({
 			description: 'The key of the item in the key-value store.',
 			required: true,
-			ignoreStdin: true,
 		}),
 		value: Args.string({
 			description: 'The value to set.',
-			ignoreStdin: true,
 		}),
 	};
 
