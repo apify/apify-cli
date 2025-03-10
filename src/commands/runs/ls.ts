@@ -1,12 +1,18 @@
-import { Args, Flags } from '@oclif/core';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, MultilineTimestampFormatter, ShortDurationFormatter } from '../../lib/utils.js';
+import {
+	getLoggedClientOrThrow,
+	MultilineTimestampFormatter,
+	printJsonToStdout,
+	ShortDurationFormatter,
+} from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'],
@@ -20,6 +26,8 @@ const table = new ResponsiveTable({
 });
 
 export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
+	static override name = 'ls';
+
 	static override description = 'Lists all runs of the Actor.';
 
 	static override flags = {
@@ -71,7 +79,8 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		const allRuns = await client.actor(ctx.id).runs().list({ desc, limit, offset });
 
 		if (json) {
-			return allRuns;
+			printJsonToStdout(allRuns);
+			return;
 		}
 
 		if (!allRuns.items.length) {
