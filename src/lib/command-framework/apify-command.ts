@@ -218,10 +218,6 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 		}
 
-		if (this.ctor.subcommands?.length) {
-			baseDefinition += ' [subcommand]';
-		}
-
 		return [baseDefinition, ...(this.ctor.aliases ?? [])];
 	}
 

@@ -67,8 +67,6 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 			const statsObject = Reflect.get(store, 'stats') as { s3StorageBytes?: number };
 			const size = statsObject.s3StorageBytes;
 
-			console.log(size);
-
 			table.pushRow({
 				'Store ID': store.id,
 				Created: TimestampFormatter.display(store.createdAt),
