@@ -4,13 +4,14 @@ import process from 'node:process';
 
 import { fetchManifest } from '@apify/actor-templates';
 import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
-import { Args, Flags } from '@oclif/core';
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
 import inquirer from 'inquirer';
 import isCI from 'is-ci';
 import open from 'open';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
@@ -40,6 +41,8 @@ const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 const DEFAULT_BUILD_TAG = 'latest';
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
+	static override name = 'push';
+
 	static override description =
 		`Deploys Actor to Apify platform using settings from '${LOCAL_CONFIG_PATH}'.\n` +
 		`Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files"; ` +
@@ -87,11 +90,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				`If not provided, the command will create or modify the Actor with the name specified in '${LOCAL_CONFIG_PATH}' file.`,
 		}),
 	};
-
-	// TODO: Global handler in ApifyCommand
-	override async catch(caughtError: Error) {
-		throw caughtError;
-	}
 
 	async run() {
 		// Resolving with `.` will mean stay in the cwd folder, whereas anything else in dir will be resolved. If users pass in a full path (`/home/...`, it will correctly resolve to that)
