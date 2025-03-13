@@ -1,13 +1,14 @@
-import { Args, Flags } from '@oclif/core';
 import type { BuildCollectionClientListItem } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, objectGroupBy, ShortDurationFormatter } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, objectGroupBy, printJsonToStdout, ShortDurationFormatter } from '../../lib/utils.js';
 
 const tableFactory = () =>
 	new ResponsiveTable({
@@ -18,7 +19,9 @@ const tableFactory = () =>
 		},
 	});
 
-export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
+export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
+	static override name = 'ls';
+
 	static override description = 'Lists all builds of the Actor.';
 
 	static override flags = {
@@ -101,7 +104,8 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 				}
 			}
 
-			return allBuilds;
+			printJsonToStdout(allBuilds);
+			return;
 		}
 
 		simpleLog({
@@ -142,8 +146,6 @@ export class BuildLsCommand extends ApifyCommand<typeof BuildLsCommand> {
 				stdout: true,
 			});
 		}
-
-		return undefined;
 	}
 
 	private generateTableForActorVersion({
