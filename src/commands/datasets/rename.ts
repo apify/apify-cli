@@ -1,13 +1,16 @@
-import { Args, Flags } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCommand> {
+	static override name = 'rename';
+
 	static override description = 'Change dataset name or removes name with --unname flag.';
 
 	static override flags = {

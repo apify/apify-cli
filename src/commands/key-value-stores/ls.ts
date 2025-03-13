@@ -83,7 +83,5 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 			message: table.render(CompactMode.WebLikeCompact),
 			stdout: true,
 		});
-
-		return undefined;
 	}
 }
