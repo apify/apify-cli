@@ -45,7 +45,5 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 			message: `Key-value store with ID ${chalk.yellow(newStore.id)}${keyValueStoreName ? ` (called ${chalk.yellow(keyValueStoreName)})` : ''} was created.`,
 			stdout: true,
 		});
-
-		return undefined;
 	}
 }

@@ -1,13 +1,15 @@
-import { Args } from '@oclif/core';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { DurationFormatter, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
-export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
+export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
+	static override name = 'info';
+
 	static override description = 'Prints information about a specific build.';
 
 	static override args = {
@@ -33,7 +35,8 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 
 		// JSON output -> return the object (which is handled by oclif)
 		if (this.flags.json) {
-			return build;
+			printJsonToStdout(build);
+			return;
 		}
 
 		const actor = await apifyClient.actor(build.actId).get();
@@ -98,7 +101,5 @@ export class BuildInfoCommand extends ApifyCommand<typeof BuildInfoCommand> {
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 
 		simpleLog({ message: message.join('\n'), stdout: true });
-
-		return undefined;
 	}
 }

@@ -1,5 +1,10 @@
+import { ActorIndexCommand } from './actor/_index.js';
+import { ActorsIndexCommand } from './actors/_index.js';
+import { BuildsIndexCommand } from './builds/_index.js';
+import { TopLevelCallCommand } from './call.js';
 import { CheckVersionCommand } from './check-version.js';
 import { CreateCommand } from './create.js';
+import { DatasetsIndexCommand } from './datasets/_index.js';
 import { EditInputSchemaCommand } from './edit-input-schema.js';
 import { InfoCommand } from './info.js';
 import { WrapScrapyCommand } from './init-wrap-scrapy.js';
@@ -19,12 +24,17 @@ import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.j
 
 export const apifyCommands: (typeof BuiltApifyCommand)[] = [
 	// namespaces
+	ActorIndexCommand,
+	ActorsIndexCommand,
+	BuildsIndexCommand,
+	DatasetsIndexCommand,
 	KeyValueStoresIndexCommand,
 	RequestQueuesIndexCommand,
 	RunsIndexCommand,
 	SecretsIndexCommand,
 	TasksIndexCommand,
 	// top-level
+	TopLevelCallCommand,
 	CheckVersionCommand,
 	CreateCommand,
 	EditInputSchemaCommand,

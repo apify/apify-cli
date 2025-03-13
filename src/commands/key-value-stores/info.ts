@@ -159,7 +159,5 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 		].join('\n');
 
 		simpleLog({ message, stdout: true });
-
-		return undefined;
 	}
 }
