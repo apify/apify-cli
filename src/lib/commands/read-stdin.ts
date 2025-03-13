@@ -1,10 +1,11 @@
 import { once } from 'node:events';
 import { fstat as fstat_ } from 'node:fs';
+import process from 'node:process';
 import { promisify } from 'node:util';
 
 const fstat = promisify(fstat_);
 
-export async function readStdin(stdinStream: typeof process.stdin) {
+export async function readStdin(stdinStream: typeof process.stdin = process.stdin) {
 	// The isTTY params says if TTY is connected to the process, if so the stdout is
 	// synchronous and the stdout steam is empty.
 	// See https://nodejs.org/docs/latest-v12.x/api/process.html#process_a_note_on_process_i_o

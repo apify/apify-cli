@@ -1,10 +1,11 @@
-import { Args } from '@oclif/core';
-
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { error, info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, outputJobLog } from '../../lib/utils.js';
 
-export class BuildLogCommand extends ApifyCommand<typeof BuildLogCommand> {
+export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
+	static override name = 'log';
+
 	static override description = 'Prints the log of a specific build.';
 
 	static override args = {

@@ -14,9 +14,11 @@ yargonaut //
 export const cli = yargs()
 	.scriptName('apify')
 	.version(version)
-	.alias('v', 'version')
+	// This needs to be manually handled, as setting it here will override any `-v` flags used in commands (e.g: `apify runs info -v`)
+	// .alias('v', 'version')
 	// TODO: we can override the help message by disabling the built in help flag, then implementing it on the commands
 	// .help()
+	// TODO: if we set `h` here, no commands can use `h` as a char for a flag, unless we manually handle help messages ourselves
 	.alias('h', 'help')
 	.wrap(Math.max(80, process.stdout.columns || 80))
 	.parserConfiguration({
@@ -28,10 +30,15 @@ export const cli = yargs()
 		'parse-numbers': false,
 		'parse-positional-numbers': false,
 	})
-	.strict()
+	.strictCommands()
 	.updateStrings({
 		'Positionals:': 'Arguments:',
 	});
 
 // @ts-expect-error @types/yargs is outdated -.-
 cli.usageConfiguration({ 'hide-types': true });
+
+export function printCLIVersionAndExit(): never {
+	console.log(version);
+	process.exit(0);
+}

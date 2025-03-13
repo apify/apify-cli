@@ -1,6 +1,6 @@
 import { satisfies } from 'semver';
 
-import { cli } from './_shared.js';
+import { cli, printCLIVersionAndExit } from './_shared.js';
 import { actorCommands } from '../commands/_register.js';
 import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { error } from '../lib/outputs.js';
@@ -23,6 +23,10 @@ for (const CommandClass of actorCommands) {
 const parsed = await cli.parse(process.argv.slice(2));
 
 if (parsed._.length === 0) {
+	if (parsed.v === true) {
+		printCLIVersionAndExit();
+	}
+
 	// TODO: print help
 	// console.error('Unknown command, oh my');
 	// cli.showHelp();

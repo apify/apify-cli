@@ -1,14 +1,16 @@
-import { Args } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { readStdin } from '../../lib/commands/read-stdin.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDataCommand> {
+	static override name = 'push-items';
+
 	static override description = 'Adds data items to specified dataset. Accepts single object or array of objects.';
 
 	static override args = {
@@ -40,7 +42,7 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 
 		let parsedData: Record<string, unknown> | Record<string, unknown>[];
 
-		const item = _item || (await readStdin(process.stdin));
+		const item = _item || (await readStdin());
 
 		if (!item) {
 			error({ message: 'No items were provided.' });

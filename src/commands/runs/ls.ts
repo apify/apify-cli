@@ -140,7 +140,5 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 			message: message.join('\n'),
 			stdout: true,
 		});
-
-		return undefined;
 	}
 }

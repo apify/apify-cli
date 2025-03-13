@@ -68,7 +68,5 @@ export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectComma
 				stdout: true,
 			});
 		}
-
-		return undefined;
 	}
 }

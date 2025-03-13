@@ -1,9 +1,11 @@
-import { Args, Flags } from '@oclif/core';
-
 import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from '../../lib/actor.js';
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 
-export class SetValueCommand extends ApifyCommand<typeof SetValueCommand> {
+export class ActorSetValueCommand extends ApifyCommand<typeof ActorSetValueCommand> {
+	static override name = 'set-value';
+
 	static override description =
 		'Sets or removes record into the default key-value store associated with the Actor run.\n\n' +
 		'It is possible to pass data using argument or stdin.\n\n' +
@@ -16,7 +18,6 @@ export class SetValueCommand extends ApifyCommand<typeof SetValueCommand> {
 		key: Args.string({
 			required: true,
 			description: 'Key of the record in key-value store.',
-			ignoreStdin: true,
 		}),
 		value: Args.string({
 			required: false,
@@ -25,7 +26,6 @@ export class SetValueCommand extends ApifyCommand<typeof SetValueCommand> {
 				'- If empty, the record in the key-value store is deleted.\n' +
 				'- If no `contentType` flag is specified, value is expected to be any JSON string value.\n' +
 				'- If options.contentType is set, value is taken as is.',
-			ignoreStdin: true,
 		}),
 	};
 

@@ -71,7 +71,5 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 			message: table.render(CompactMode.WebLikeCompact),
 			stdout: true,
 		});
-
-		return undefined;
 	}
 }

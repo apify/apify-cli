@@ -1,12 +1,21 @@
-import { Args, Flags } from '@oclif/core';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, objectGroupBy, outputJobLog, TimestampFormatter } from '../../lib/utils.js';
+import {
+	getLoggedClientOrThrow,
+	objectGroupBy,
+	outputJobLog,
+	printJsonToStdout,
+	TimestampFormatter,
+} from '../../lib/utils.js';
 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
+	static override name = 'create';
+
 	static override description = 'Creates a new build of the Actor.';
 
 	static override flags = {
@@ -113,7 +122,8 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		const build = await client.actor(ctx.id).build(selectedVersion, { tag });
 
 		if (json) {
-			return build;
+			printJsonToStdout(build);
+			return;
 		}
 
 		const message: string[] = [
@@ -156,7 +166,5 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			message: viewMessage,
 			stdout: true,
 		});
-
-		return undefined;
 	}
 }
