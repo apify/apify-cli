@@ -24,8 +24,8 @@
         "dist"
     ],
     "bin": {
-        "apify": "./dist/entrypoints/apify.js",
-        "actor": "./dist/entrypoints/actor.js"
+        "actor": "./dist/entrypoints/actor.js",
+        "apify": "./dist/entrypoints/apify.js"
     },
     "contributors": [
         "Jakub Drobník <jakub.drobnik@apify.com>",
@@ -111,6 +111,7 @@
         "@sapphire/result": "^2.6.6",
         "@types/adm-zip": "^0.5.5",
         "@types/archiver": "^6.0.2",
+        "@types/bun": "^1.2.5",
         "@types/chai": "^4.3.17",
         "@types/cors": "^2.8.17",
         "@types/express": "^4.17.21",
