@@ -12,7 +12,8 @@
 		// For now we need this :(
 		"skipLibCheck": true,
 		"tsBuildInfoFile": "dist/.tsbuildinfo",
-		"noImplicitOverride": true
+		"noImplicitOverride": true,
+		"types": ["node"]
 	},
 	"include": ["src"]
 }

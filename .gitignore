@@ -21,8 +21,9 @@ package.tgz
 **/scrapy-wrapper/templates/*
 
 test/tmp
-oclif.manifest.json
 tmp
 
 package-lock.json
 scripts/temporary-reference.md
+
+bundles/*
