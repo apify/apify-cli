@@ -45,7 +45,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 
 	if (!inputFlag && !inputFileFlag) {
 		// Try reading stdin
-		const stdin = await readStdin(process.stdin);
+		const stdin = await readStdin();
 
 		if (stdin) {
 			try {
