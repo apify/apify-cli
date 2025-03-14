@@ -682,20 +682,17 @@ const getNodeExecutable = (): string => {
 	// Only apply Snap logic on Linux
 	if (currentPlatform === 'linux') {
 		try {
-			// Check where `node` resolves to using `which node`
 			const whichNode = spawnSync('which', ['node'], { encoding: 'utf8' }).stdout.trim();
 
-			// If it's in /snap/bin, it's a Snap installation
 			if (whichNode.startsWith('/snap/bin')) {
-				// Use /snap/node/current/bin/node and resolve the real path
 				const snapNodeSymlink = '/snap/node/current/bin/node';
 				const realPath = realpathSync(snapNodeSymlink);
-				return realPath; // e.g., /snap/node/6694/bin/node
+				return realPath;
 			}
 			// Not a Snap installation, return 'node' to use PATH resolution
 			return 'node';
 		} catch (error) {
-			return 'node'; // Fallback to 'node' if anything goes wrong
+			return 'node';
 		}
 	}
 	// For non-Linux platforms (Windows, macOS, etc.), just return 'node'
