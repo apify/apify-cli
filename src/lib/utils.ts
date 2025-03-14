@@ -1,5 +1,5 @@
 import { type SpawnSyncOptions, spawnSync } from 'node:child_process';
-import {
+import { realpathSync ,
 	createWriteStream,
 	existsSync,
 	mkdirSync,
@@ -10,6 +10,7 @@ import {
 } from 'node:fs';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
+import { platform } from 'node:os';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { finished } from 'node:stream/promises';
@@ -674,9 +675,37 @@ export const isPythonVersionSupported = (installedPythonVersion: string) => {
 	return satisfies(installedPythonVersion, `^${MINIMUM_SUPPORTED_PYTHON_VERSION}`);
 };
 
+const getNodeExecutable = (): string => {
+	// Check the platform first
+	const currentPlatform = platform();
+
+	// Only apply Snap logic on Linux
+	if (currentPlatform === 'linux') {
+		try {
+			// Check where `node` resolves to using `which node`
+			const whichNode = spawnSync('which', ['node'], { encoding: 'utf8' }).stdout.trim();
+
+			// If it's in /snap/bin, it's a Snap installation
+			if (whichNode.startsWith('/snap/bin')) {
+				// Use /snap/node/current/bin/node and resolve the real path
+				const snapNodeSymlink = '/snap/node/current/bin/node';
+				const realPath = realpathSync(snapNodeSymlink);
+				return realPath; // e.g., /snap/node/6694/bin/node
+			}
+			// Not a Snap installation, return 'node' to use PATH resolution
+			return 'node';
+		} catch (error) {
+			return 'node'; // Fallback to 'node' if anything goes wrong
+		}
+	}
+	// For non-Linux platforms (Windows, macOS, etc.), just return 'node'
+	return 'node';
+};
+
 export const detectNodeVersion = () => {
 	try {
-		const spawnResult = spawnSync('node', ['--version'], {
+		const nodePath = getNodeExecutable();
+		const spawnResult = spawnSync(nodePath, ['--version'], {
 			...spawnOptions,
 			encoding: 'utf-8',
 		});
