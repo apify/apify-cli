@@ -1,5 +1,6 @@
 import { type SpawnSyncOptions, spawnSync } from 'node:child_process';
-import { realpathSync ,
+import {
+	realpathSync,
 	createWriteStream,
 	existsSync,
 	mkdirSync,
