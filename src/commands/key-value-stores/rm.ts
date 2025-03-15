@@ -1,17 +1,17 @@
-import { Args } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { confirmAction } from '../../lib/commands/confirm.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresRmCommand> {
-	static override description = 'Permanently removes a key-value store.';
+	static override name = 'rm';
 
-	static override hiddenAliases = ['kvs:rm'];
+	static override description = 'Permanently removes a key-value store.';
 
 	static override args = {
 		keyValueStoreNameOrId: Args.string({

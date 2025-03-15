@@ -1,11 +1,13 @@
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
-import { Args } from '@oclif/core';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { error } from '../../lib/outputs.js';
 
-export class GetPublicUrlCommand extends ApifyCommand<typeof GetPublicUrlCommand> {
+export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublicUrlCommand> {
+	static override name = 'get-public-url';
+
 	static override description = 'Get an HTTP URL that allows public access to a key-value store item.';
 
 	static override args = {
