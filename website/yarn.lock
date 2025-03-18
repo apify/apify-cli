@@ -3868,11 +3868,11 @@ __metadata:
   linkType: hard
 
 "@types/react@npm:*":
-  version: 19.0.10
-  resolution: "@types/react@npm:19.0.10"
+  version: 19.0.11
+  resolution: "@types/react@npm:19.0.11"
   dependencies:
     csstype: "npm:^3.0.2"
-  checksum: 10c0/41884cca21850c8b2d6578b172ca0ca4fff6021251a68532b19f2031ac23dc5a9222470208065f8d9985d367376047df2f49ece8d927f7d04cdc94922b1eb34b
+  checksum: 10c0/386cdde579b60e22160d6894a985655742703346bdc71fed9809f8f90ca87e2dd0252e86b81f92621a2c1de8d0fbf35e3963996db8c451cc670570061ed62f29
   languageName: node
   linkType: hard
 
@@ -5584,9 +5584,9 @@ __metadata:
   linkType: hard
 
 "consola@npm:^3.2.3":
-  version: 3.4.0
-  resolution: "consola@npm:3.4.0"
-  checksum: 10c0/bc7f7ad46514375109a80f3ae8330097eb1e5d89232a24eb830f3ac383e22036a62c53d33561cd73d7cda4b3691fba85e3dcf35229ef7721b324aae291ceb40c
+  version: 3.4.1
+  resolution: "consola@npm:3.4.1"
+  checksum: 10c0/956003b5bb3d42ae0ab5c00b753e043e56c475861f31058af0c7c5741c80a95fab52d36eea5ea758212d8c52912cf9369536216fc35d1fe55396bfed67722a11
   languageName: node
   linkType: hard
 
@@ -6422,9 +6422,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.73":
-  version: 1.5.119
-  resolution: "electron-to-chromium@npm:1.5.119"
-  checksum: 10c0/f4ca0eb3af21d16d2c1fd480c5a43428ce4423ca887338d69bd3eadae818b6d6e799c62b1baac1bc4f76e4226f5fb15a6b0dc8965f601ac053e86508d3e8e41c
+  version: 1.5.120
+  resolution: "electron-to-chromium@npm:1.5.120"
+  checksum: 10c0/807c88e912748665a1eacd356672df88ce1ee4e6476c2bef084ee9e7ba184d7a94512a5f98218ab6deab920e78cbaec40f6cba75277c381fcc294e538a25d06d
   languageName: node
   linkType: hard
 
