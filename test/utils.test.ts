@@ -5,7 +5,7 @@ import { useTempPath } from './__setup__/hooks/useTempPath.js';
 import { withRetries } from './__setup__/hooks/withRetries.js';
 import { execWithLog } from '../src/lib/exec.js';
 import { ensureFolderExistsSync } from '../src/lib/files.js';
-import { argsToCamelCase, createActZip, getActorLocalFilePaths } from '../src/lib/utils.js';
+import { argsToCamelCase, createActZip, detectNodeVersion, getActorLocalFilePaths } from '../src/lib/utils.js';
 
 const TEST_DIR = 'my-test-dir';
 const FOLDERS = ['my_test', 'my_test/test_in_test', 'my_next_test', '.dot_test'];
@@ -92,6 +92,13 @@ describe('Utils', () => {
 			FILES_IN_IGNORED_DIR.concat(FILES_TO_IGNORE).forEach((file) =>
 				expect(existsSync(join(tempFolder, file))).toBeFalsy(),
 			);
+		});
+	});
+
+	describe('detectNodeVersion()', () => {
+		it('should detect the correct Node.js version', () => {
+			const nodeVersion = detectNodeVersion();
+			expect(nodeVersion).toMatch(/^\d+\.\d+\.\d+$/);
 		});
 	});
 });
