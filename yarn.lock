@@ -3556,81 +3556,81 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-darwin-arm64@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-darwin-arm64@npm:1.2.1"
+"@unrs/rspack-resolver-binding-darwin-arm64@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-darwin-arm64@npm:1.2.2"
   conditions: os=darwin & cpu=arm64
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-darwin-x64@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-darwin-x64@npm:1.2.1"
+"@unrs/rspack-resolver-binding-darwin-x64@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-darwin-x64@npm:1.2.2"
   conditions: os=darwin & cpu=x64
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-freebsd-x64@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-freebsd-x64@npm:1.2.1"
+"@unrs/rspack-resolver-binding-freebsd-x64@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-freebsd-x64@npm:1.2.2"
   conditions: os=freebsd & cpu=x64
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-linux-arm-gnueabihf@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-linux-arm-gnueabihf@npm:1.2.1"
+"@unrs/rspack-resolver-binding-linux-arm-gnueabihf@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-linux-arm-gnueabihf@npm:1.2.2"
   conditions: os=linux & cpu=arm
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-linux-arm64-gnu@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-linux-arm64-gnu@npm:1.2.1"
+"@unrs/rspack-resolver-binding-linux-arm64-gnu@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-linux-arm64-gnu@npm:1.2.2"
   conditions: os=linux & cpu=arm64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-linux-arm64-musl@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-linux-arm64-musl@npm:1.2.1"
+"@unrs/rspack-resolver-binding-linux-arm64-musl@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-linux-arm64-musl@npm:1.2.2"
   conditions: os=linux & cpu=arm64 & libc=musl
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-linux-x64-gnu@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-linux-x64-gnu@npm:1.2.1"
+"@unrs/rspack-resolver-binding-linux-x64-gnu@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-linux-x64-gnu@npm:1.2.2"
   conditions: os=linux & cpu=x64 & libc=glibc
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-linux-x64-musl@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-linux-x64-musl@npm:1.2.1"
+"@unrs/rspack-resolver-binding-linux-x64-musl@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-linux-x64-musl@npm:1.2.2"
   conditions: os=linux & cpu=x64 & libc=musl
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-wasm32-wasi@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-wasm32-wasi@npm:1.2.1"
+"@unrs/rspack-resolver-binding-wasm32-wasi@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-wasm32-wasi@npm:1.2.2"
   dependencies:
     "@napi-rs/wasm-runtime": "npm:^0.2.7"
   conditions: cpu=wasm32
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-win32-arm64-msvc@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-win32-arm64-msvc@npm:1.2.1"
+"@unrs/rspack-resolver-binding-win32-arm64-msvc@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-win32-arm64-msvc@npm:1.2.2"
   conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
-"@unrs/rspack-resolver-binding-win32-x64-msvc@npm:1.2.1":
-  version: 1.2.1
-  resolution: "@unrs/rspack-resolver-binding-win32-x64-msvc@npm:1.2.1"
+"@unrs/rspack-resolver-binding-win32-x64-msvc@npm:1.2.2":
+  version: 1.2.2
+  resolution: "@unrs/rspack-resolver-binding-win32-x64-msvc@npm:1.2.2"
   conditions: os=win32 & cpu=x64
   languageName: node
   linkType: hard
@@ -4383,13 +4383,13 @@ __metadata:
   linkType: hard
 
 "axios@npm:^1.6.7, axios@npm:~1.8.0":
-  version: 1.8.3
-  resolution: "axios@npm:1.8.3"
+  version: 1.8.4
+  resolution: "axios@npm:1.8.4"
   dependencies:
     follow-redirects: "npm:^1.15.6"
     form-data: "npm:^4.0.0"
     proxy-from-env: "npm:^1.1.0"
-  checksum: 10c0/de75da9859adf0a6481d4af2b687db357a054d20f0d69b99d502b71dae3578326b1fdc0951dabaef769827484941cda93d3f89150bf9e04f05f6615fb8316780
+  checksum: 10c0/450993c2ba975ffccaf0d480b68839a3b2435a5469a71fa2fb0b8a55cdb2c2ae47e609360b9c1e2b2534b73dfd69e2733a1cf9f8215bee0bcd729b72f801b0ce
   languageName: node
   linkType: hard
 
@@ -10717,20 +10717,20 @@ __metadata:
   linkType: hard
 
 "rspack-resolver@npm:^1.1.0":
-  version: 1.2.1
-  resolution: "rspack-resolver@npm:1.2.1"
+  version: 1.2.2
+  resolution: "rspack-resolver@npm:1.2.2"
   dependencies:
-    "@unrs/rspack-resolver-binding-darwin-arm64": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-darwin-x64": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-freebsd-x64": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-linux-arm-gnueabihf": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-linux-arm64-gnu": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-linux-arm64-musl": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-linux-x64-gnu": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-linux-x64-musl": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-wasm32-wasi": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-win32-arm64-msvc": "npm:1.2.1"
-    "@unrs/rspack-resolver-binding-win32-x64-msvc": "npm:1.2.1"
+    "@unrs/rspack-resolver-binding-darwin-arm64": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-darwin-x64": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-freebsd-x64": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-linux-arm-gnueabihf": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-linux-arm64-gnu": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-linux-arm64-musl": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-linux-x64-gnu": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-linux-x64-musl": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-wasm32-wasi": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-win32-arm64-msvc": "npm:1.2.2"
+    "@unrs/rspack-resolver-binding-win32-x64-msvc": "npm:1.2.2"
   dependenciesMeta:
     "@unrs/rspack-resolver-binding-darwin-arm64":
       optional: true
@@ -10754,7 +10754,7 @@ __metadata:
       optional: true
     "@unrs/rspack-resolver-binding-win32-x64-msvc":
       optional: true
-  checksum: 10c0/9889d8a05ab3fcd546c2356a76bb5076b26ccb154c73d5427d3e78512704b7804273bd54b8694b152ad40de92c3b6667d02ad798d1b8baf855497ac67ea777f1
+  checksum: 10c0/897343b6e0934b54570722f1d21ca0239eaf0bdbad9b3357cc636a9cfc775f2b28f5fea477caf800978c22efed0f312ef2893d71c7b5e84447ac1ef9c5d80f22
   languageName: node
   linkType: hard
 
