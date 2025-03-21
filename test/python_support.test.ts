@@ -1,6 +1,9 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
+import { useTempPath } from './__setup__/hooks/useTempPath.js';
+import { runCommand } from '../src/lib/command-framework/apify-command.js';
+import { resetCwdCaches } from './__setup__/reset-cwd-caches.js';
 import { usePythonRuntime } from '../src/lib/hooks/runtimes/python.js';
 import { getLocalKeyValueStorePath } from '../src/lib/utils.js';
 import { useTempPath } from './__setup__/hooks/useTempPath.js';
@@ -47,7 +50,10 @@ describe('Python support [python]', () => {
 			await rm(tmpPath, { recursive: true, force: true });
 		}
 
-		await CreateCommand.run([actorName, '--template', PYTHON_START_TEMPLATE_ID], import.meta.url);
+		await runCommand(CreateCommand, {
+			args_actorName: actorName,
+			flags_template: PYTHON_START_TEMPLATE_ID,
+		});
 
 		// Check file structure
 		expect(existsSync(tmpPath)).toBeTruthy();
@@ -68,7 +74,7 @@ async def main():
 
 		toggleCwdBetweenFullAndParentPath();
 
-		await RunCommand.run([], import.meta.url);
+		await runCommand(RunCommand, {});
 
 		// Check Actor output
 		const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');

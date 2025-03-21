@@ -39,7 +39,7 @@ for (const CommandClass of apifyCommands) {
 const parsed = await cli.parse(process.argv.slice(2));
 
 if (parsed._.length === 0) {
-	if (parsed.v === true) {
+	if (parsed.v === true || parsed.version === true) {
 		printCLIVersionAndExit();
 	}
 
