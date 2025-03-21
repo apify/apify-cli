@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 
+import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 const actName = 'create-my-spaced-actor';
@@ -23,7 +24,7 @@ describe.runIf(process.env.FORCE_WINDOWS_TESTS || process.platform === 'win32')(
 
 	it('works for creating an actor when the folder path contains spaces', async () => {
 		const ACT_TEMPLATE = 'python-playwright';
-		await CreateCommand.run([actName, '--template', ACT_TEMPLATE], import.meta.url);
+		await runCommand(CreateCommand, { args_actorName: actName, flags_template: ACT_TEMPLATE });
 
 		// check files structure
 		expect(existsSync(joinPath(actName))).toBeTruthy();
