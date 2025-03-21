@@ -264,11 +264,18 @@ describe('apify run', () => {
 	it('run with purge works without storage folder', async () => {
 		await rimrafPromised(getLocalStorageDir());
 
-		writeFileSync(joinPath('src/main.js'), 'console.log("hello world");', { flag: 'w' });
+		writeFileSync(
+			joinPath('src/main.js'),
+			`
+import { writeFileSync } from 'node:fs';
+writeFileSync('${joinPath('result.txt')}', 'hello world');
+`,
+			{ flag: 'w' },
+		);
 
 		await runCommand(RunCommand, { flags_purge: true });
 
-		expect(lastErrorMessage()).toMatch(/npm(?:\.cmd) run start/);
+		expect(existsSync(joinPath('result.txt'))).toBeTruthy();
 	});
 
 	describe('input tests', () => {
