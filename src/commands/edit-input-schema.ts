@@ -1,16 +1,16 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { Server } from 'http';
-import { AddressInfo } from 'net';
+import type { Server } from 'http';
+import type { AddressInfo } from 'net';
 import { dirname } from 'path';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
-import { Args } from '@oclif/core';
 import cors from 'cors';
 import detectIndent from 'detect-indent';
 import express from 'express';
 import open from 'open';
 
-import { ApifyCommand } from '../lib/apify_command.js';
+import { ApifyCommand } from '../lib/command-framework/apify-command.js';
+import { Args } from '../lib/command-framework/args.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { readInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
@@ -22,6 +22,8 @@ const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
 const API_VERSION = 'v1';
 
 export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaCommand> {
+	static override name = 'edit-input-schema';
+
 	static override description =
 		'Lets you edit your input schema that would be used on the platform in a visual input schema editor.';
 
@@ -35,7 +37,7 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 
 	static override hidden = true;
 
-	static override hiddenAliases = ['eis'];
+	static override aliases = ['eis'];
 
 	async run() {
 		// This call fails if no input schema is found on any of the default locations
