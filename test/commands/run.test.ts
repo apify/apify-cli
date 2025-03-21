@@ -269,7 +269,7 @@ describe('apify run', () => {
 
 		await runCommand(RunCommand, { flags_purge: true });
 
-		expect(lastErrorMessage()).toMatch(/npm run start/);
+		expect(lastErrorMessage()).toMatch(/npm(?:\.cmd) run start/);
 	});
 
 	describe('input tests', () => {
