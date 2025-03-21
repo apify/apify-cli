@@ -18,7 +18,7 @@
         "build": "yarn clean && tsc && tsc -p tsconfig.typechecking.json",
         "prepack": "yarn build && yarn update-docs",
         "update-docs": "tsx scripts/generate-reference.ts",
-        "postinstallDev": "yarn build && node ./bin/run.js check-version && node ./dist/lib/community.js"
+        "postinstallDev": "yarn build && node ./dist/entrypoints/apify.js check-version && node ./dist/lib/community.js"
     },
     "files": [
         "dist"
