@@ -1,9 +1,11 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path/win32';
 import { fileURLToPath } from 'node:url';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
-import { captureOutput } from '@oclif/test';
+import { ensureDirSync } from 'fs-extra';
 
+import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { rimrafPromised } from '../../src/lib/files.js';
 import {
@@ -14,6 +16,7 @@ import {
 } from '../../src/lib/utils.js';
 import { TEST_USER_TOKEN } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useConsoleSpy } from '../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../__setup__/reset-cwd-caches.js';
 
@@ -45,6 +48,8 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 	cwdParent: true,
 });
 
+const { lastErrorMessage } = useConsoleSpy();
+
 const { CreateCommand } = await import('../../src/commands/create.js');
 const { RunCommand } = await import('../../src/commands/run.js');
 const { LoginCommand } = await import('../../src/commands/login.js');
@@ -53,9 +58,13 @@ describe('apify run', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await CreateCommand.run([actName, '--template', 'project_empty'], import.meta.url);
+		await runCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+		});
+
 		toggleCwdBetweenFullAndParentPath();
-	});
+	}, 120_000);
 
 	afterAll(async () => {
 		await afterAllCalls();
@@ -82,7 +91,7 @@ describe('apify run', () => {
         `;
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
-		await RunCommand.run([], import.meta.url);
+		await runCommand(RunCommand, {});
 
 		// check act output
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
@@ -95,7 +104,7 @@ describe('apify run', () => {
 			TEST_LOCAL: 'testValue',
 		};
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await runCommand(LoginCommand, { flags_token: TEST_USER_TOKEN });
 
 		const actCode = `
         import { Actor } from 'apify';
@@ -112,7 +121,7 @@ describe('apify run', () => {
 		apifyJson.environmentVariables = testEnvVars;
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
 
-		await RunCommand.run([], import.meta.url);
+		await runCommand(RunCommand, {});
 
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
@@ -130,7 +139,7 @@ describe('apify run', () => {
 			TEST_LOCAL: 'testValue',
 		};
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await runCommand(LoginCommand, { flags_token: TEST_USER_TOKEN });
 
 		const actCode = `
         import { Actor } from 'apify';
@@ -153,7 +162,7 @@ describe('apify run', () => {
 		parsedPkgJson.scripts.other = 'node src/other.js';
 		writeFileSync(joinPath('package.json'), JSON.stringify(parsedPkgJson, null, 2), { flag: 'w' });
 
-		await RunCommand.run(['--entrypoint', 'other'], import.meta.url);
+		await runCommand(RunCommand, { flags_entrypoint: 'other' });
 
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
@@ -175,7 +184,7 @@ describe('apify run', () => {
 			TEST_LOCAL: 'testValue',
 		};
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await runCommand(LoginCommand, { flags_token: TEST_USER_TOKEN });
 
 		const actCode = `
         import { Actor } from 'apify';
@@ -193,7 +202,7 @@ describe('apify run', () => {
 		apifyJson.environmentVariables = testEnvVars;
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
 
-		await RunCommand.run(['--entrypoint', 'src/other.js'], import.meta.url);
+		await runCommand(RunCommand, { flags_entrypoint: 'src/other.js' });
 
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
@@ -231,7 +240,7 @@ describe('apify run', () => {
         `;
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
-		await RunCommand.run([], import.meta.url);
+		await runCommand(RunCommand, {});
 
 		expect(existsSync(actInputPath)).toStrictEqual(true);
 		expect(existsSync(testJsonPath)).toStrictEqual(true);
@@ -245,7 +254,7 @@ describe('apify run', () => {
         `;
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
-		await RunCommand.run(['--purge'], import.meta.url);
+		await runCommand(RunCommand, { flags_purge: true });
 
 		expect(existsSync(actInputPath)).toStrictEqual(true);
 		expect(existsSync(testJsonPath)).toStrictEqual(false);
@@ -255,11 +264,12 @@ describe('apify run', () => {
 
 	it('run with purge works without storage folder', async () => {
 		await rimrafPromised(getLocalStorageDir());
-		try {
-			await RunCommand.run(['--purge'], import.meta.url);
-		} catch (err) {
-			throw new Error('Can not run Actor without storage folder!');
-		}
+
+		writeFileSync(joinPath('src/main.js'), 'console.log("hello world");', { flag: 'w' });
+
+		await runCommand(RunCommand, { flags_purge: true });
+
+		expect(lastErrorMessage()).toMatch(/npm run start/);
 	});
 
 	describe('input tests', () => {
@@ -271,65 +281,59 @@ describe('apify run', () => {
 
 		beforeAll(() => {
 			writeFileSync(actPath, INPUT_SCHEMA_ACTOR_SRC, { flag: 'w' });
+			ensureDirSync(dirname(inputPath));
 		});
 
 		it('throws when required field is not provided', async () => {
 			writeFileSync(inputPath, '{}', { flag: 'w' });
 			copyFileSync(pathToMissingRequiredInputSchema, inputSchemaPath);
 
-			const { error } = await captureOutput(async () => RunCommand.run([], import.meta.url));
+			await runCommand(RunCommand, {});
 
-			expect(error).toBeDefined();
-			expect(error!.message).toMatch(/Field awesome is required/i);
+			expect(lastErrorMessage()).toMatch(/Field awesome is required/i);
 		});
 
 		it('throws when required field has wrong type', async () => {
 			writeFileSync(inputPath, '{"awesome": 42}', { flag: 'w' });
 			copyFileSync(pathToDefaultsInputSchema, inputSchemaPath);
 
-			const { error } = await captureOutput(async () => RunCommand.run([], import.meta.url));
+			await runCommand(RunCommand, {});
 
-			expect(error).toBeDefined();
-			expect(error!.message).toMatch(/Field awesome must be boolean/i);
+			expect(lastErrorMessage()).toMatch(/Field awesome must be boolean/i);
 		});
 
 		it('throws when passing manual input, but local file has correct input', async () => {
 			writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
 			copyFileSync(pathToDefaultsInputSchema, inputSchemaPath);
 
-			const { error } = await captureOutput(async () =>
-				RunCommand.run(['--input', handPassedInput], import.meta.url),
-			);
+			await runCommand(RunCommand, { flags_input: handPassedInput });
 
-			expect(error).toBeDefined();
-			expect(error!.message).toMatch(/Field awesome must be boolean/i);
+			expect(lastErrorMessage()).toMatch(/Field awesome must be boolean/i);
 		});
 
 		it('throws when input has default field of wrong type', async () => {
 			writeFileSync(inputPath, '{"awesome": true, "help": 123}', { flag: 'w' });
 			copyFileSync(pathToDefaultsInputSchema, inputSchemaPath);
 
-			const { error } = await captureOutput(async () => RunCommand.run([], import.meta.url));
+			await runCommand(RunCommand, {});
 
-			expect(error).toBeDefined();
-			expect(error!.message).toMatch(/Field help must be string/i);
+			expect(lastErrorMessage()).toMatch(/Field help must be string/i);
 		});
 
 		it('throws when input has prefilled field of wrong type', async () => {
 			writeFileSync(inputPath, '{"awesome": true, "help": 123}', { flag: 'w' });
 			copyFileSync(pathToPrefillsInputSchema, inputSchemaPath);
 
-			const { error } = await captureOutput(async () => RunCommand.run([], import.meta.url));
+			await runCommand(RunCommand, {});
 
-			expect(error).toBeDefined();
-			expect(error!.message).toMatch(/Field help must be string/i);
+			expect(lastErrorMessage()).toMatch(/Field help must be string/i);
 		});
 
 		it('automatically inserts missing defaulted fields', async () => {
 			writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
 			copyFileSync(pathToDefaultsInputSchema, inputSchemaPath);
 
-			await RunCommand.run([], import.meta.url);
+			await runCommand(RunCommand, {});
 
 			const output = JSON.parse(readFileSync(outputPath, 'utf8'));
 			expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
@@ -339,7 +343,7 @@ describe('apify run', () => {
 			writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
 			copyFileSync(pathToPrefillsInputSchema, inputSchemaPath);
 
-			await RunCommand.run([], import.meta.url);
+			await runCommand(RunCommand, {});
 
 			const output = JSON.parse(readFileSync(outputPath, 'utf8'));
 			expect(output).toStrictEqual({ awesome: true });

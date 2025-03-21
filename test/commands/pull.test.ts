@@ -3,13 +3,14 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { runCommand } from '@oclif/test';
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
 import { LoginCommand } from '../../src/commands/login.js';
+import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useConsoleSpy } from '../__setup__/hooks/useConsoleSpy.js';
 import { useProcessMock } from '../__setup__/hooks/useProcessMock.js';
 
 const TEST_ACTOR_SOURCE_FILES: ActorCollectionCreateOptions = {
@@ -105,6 +106,8 @@ function setProcessCwd(newCwd: string) {
 
 useProcessMock({ cwdMock: () => cwd });
 
+const { lastErrorMessage } = useConsoleSpy();
+
 const { ActorsPullCommand } = await import('../../src/commands/actors/pull.js');
 
 describe('apify pull', () => {
@@ -112,7 +115,7 @@ describe('apify pull', () => {
 	const actorNamesForCleanup = new Set<string>();
 
 	beforeAll(async () => {
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await runCommand(LoginCommand, { flags_token: TEST_USER_TOKEN });
 	});
 
 	afterAll(async () => {
@@ -126,10 +129,9 @@ describe('apify pull', () => {
 	});
 
 	it('should fail outside Actor folder without actorId defined', async () => {
-		const { error } = await runCommand(['pull'], import.meta.url);
+		await runCommand(ActorsPullCommand, {});
 
-		expect(error).toBeTruthy();
-		expect(error?.message).toEqual('Cannot find Actor in this directory.');
+		expect(lastErrorMessage()).toEqual('Cannot find Actor in this directory.');
 	});
 
 	it('should work with Actor SOURCE_FILES', async () => {
@@ -142,7 +144,7 @@ describe('apify pull', () => {
 		const testActorClient = testUserClient.actor(testActor.id);
 		const actorFromServer = await testActorClient.get();
 
-		await ActorsPullCommand.run([testActor.id], import.meta.url);
+		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
 		const actorJson = JSON.parse(readFileSync(join(testActor.name, LOCAL_CONFIG_PATH), 'utf8'));
 
@@ -156,7 +158,7 @@ describe('apify pull', () => {
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add(testActor.name);
 
-		await ActorsPullCommand.run([testActor.id], import.meta.url);
+		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
 		const actorPackageJson = JSON.parse(readFileSync(join(testActor.name, 'package.json'), 'utf8'));
 
@@ -171,7 +173,7 @@ describe('apify pull', () => {
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add(testActor.name);
 
-		await ActorsPullCommand.run([testActor.id], import.meta.url);
+		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
 		const actorJson = JSON.parse(readFileSync(join(testActor.name, DEPRECATED_LOCAL_CONFIG_NAME), 'utf8'));
 
@@ -202,7 +204,7 @@ describe('apify pull', () => {
 		);
 
 		setProcessCwd(join(cwd, 'pull-test-no-name'));
-		await ActorsPullCommand.run([], import.meta.url);
+		await runCommand(ActorsPullCommand, {});
 
 		expect(existsSync(join('pull-test-no-name', 'src/__init__.py'))).to.be.eql(true);
 	});
