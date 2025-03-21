@@ -1,6 +1,8 @@
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
+import { createHmacSignature } from '@apify/utilities';
 import { Args } from '@oclif/core';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { error } from '../../lib/outputs.js';
@@ -27,6 +29,20 @@ export class GetPublicUrlCommand extends ApifyCommand<typeof GetPublicUrlCommand
 		const apiBase = process.env[APIFY_ENV_VARS.API_PUBLIC_BASE_URL];
 		const storeId = process.env[ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID];
 
-		console.log(`${apiBase}/v2/key-value-stores/${storeId}/records/${key}`);
+		const apifyClient = await getApifyStorageClient();
+		const store = await apifyClient.keyValueStore(storeId!).get();
+
+		const publicUrl = new URL(`${apiBase}/v2/key-value-stores/${storeId}/records/${key}`);
+
+		if (store) {
+			// @ts-expect-error Add types to client
+			const { urlSigningSecretKey } = store;
+
+			if (urlSigningSecretKey) {
+				publicUrl.searchParams.append('signature', createHmacSignature(urlSigningSecretKey as string, key));
+			}
+		}
+
+		console.log(publicUrl.toString());
 	}
 }
