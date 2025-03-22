@@ -15,11 +15,8 @@ export async function readStdin(stdinStream: typeof process.stdin = process.stdi
 	// synchronous and the stdout steam is empty.
 	// See https://nodejs.org/docs/latest-v12.x/api/process.html#process_a_note_on_process_i_o
 	if (stdinStream.isTTY || (stdinStream.readableEnded && !pipedIn)) {
-		console.error('really', { isTTY: stdinStream.isTTY, readableEnded: stdinStream.readableEnded, pipedIn });
 		return;
 	}
-
-	console.log('not really', { isTTY: stdinStream.isTTY, readableEnded: stdinStream.readableEnded, pipedIn });
 
 	// This is required for some reason when piping from a previous oclif run
 	stdinStream.resume();
