@@ -1,5 +1,7 @@
 import type { Argv } from 'yargs';
 
+import { StdinMode } from './apify-command.js';
+
 export type FlagTag = 'string' | 'boolean' | 'integer';
 
 export interface BaseFlagOptions {
@@ -12,6 +14,11 @@ export interface BaseFlagOptions {
 	 * Maps to the `conflicts` option in yargs, ensures that if this flag is set, others in the array cannot be
 	 */
 	exclusive?: readonly string[];
+	/**
+	 * Whether the argument should be prefilled from stdin
+	 * @default false
+	 */
+	stdin?: StdinMode;
 }
 
 export interface StringFlagOptions<Choices extends readonly string[] = readonly string[]> extends BaseFlagOptions {
@@ -34,6 +41,7 @@ export type TaggedFlagBuilder<Tag extends FlagTag, ChoicesType = unknown, Requir
 	choicesType: ChoicesType;
 	required: Required;
 	hasDefault: HasDefault;
+	stdin: StdinMode;
 };
 
 export const Flags = {
@@ -65,13 +73,15 @@ function stringFlag<const Choices, const T extends StringFlagOptions<readonly st
 				default: options.default,
 				choices: options.choices,
 				string: true,
+				// we only require something be passed in if we don't have a default or read from stdin
 				nargs: 1,
-				requiresArg: true,
+				requiresArg: !(options.default ?? options.stdin),
 			});
 		},
 		choicesType: options.choices as Choices,
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
+		stdin: options.stdin ?? StdinMode.Raw,
 	};
 }
 
@@ -102,6 +112,7 @@ function booleanFlag<const T extends BooleanFlagOptions>(
 		choicesType: null as never,
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
+		stdin: options.stdin ?? StdinMode.Raw,
 	};
 }
 
@@ -134,5 +145,6 @@ function integerFlag<const T extends IntegerFlagOptions>(
 		choicesType: null as never,
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
+		stdin: options.stdin ?? StdinMode.Raw,
 	};
 }
