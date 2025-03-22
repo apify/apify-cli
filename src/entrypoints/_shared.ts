@@ -3,6 +3,7 @@ import process from 'node:process';
 import yargonaut from 'yargonaut';
 import yargs from 'yargs/yargs';
 
+import { readStdin } from '../lib/commands/read-stdin.js';
 import { version } from '../lib/consts.js';
 
 yargonaut //
@@ -33,3 +34,5 @@ export function printCLIVersionAndExit(): never {
 	console.log(version);
 	process.exit(0);
 }
+
+export const cachedStdinInput = await readStdin();

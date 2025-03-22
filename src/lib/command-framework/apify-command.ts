@@ -5,6 +5,7 @@ import type { ArgumentsCamelCase, Argv, CommandBuilder, CommandModule } from 'ya
 
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import type { FlagTag, TaggedFlagBuilder } from './flags.js';
+import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { error } from '../outputs.js';
 
 interface ArgTagToTSType {
@@ -185,6 +186,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 						case 'string':
 						default:
 							this.args[camelCasedName] = String(rawArgs[yargsArgName]);
+
+							if (rawArgs[yargsArgName] === '-' && builderData.stdin) {
+								this.args[camelCasedName] = this._handleStdin(builderData.stdin);
+							}
+
 							break;
 					}
 				}
@@ -224,6 +230,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 						case 'string':
 						default: {
 							this.flags[camelCasedName] = rawArgs[yargsFlagName];
+
+							if (rawArgs[yargsFlagName] === '-' && builderData.stdin) {
+								this.flags[camelCasedName] = this._handleStdin(builderData.stdin);
+							}
+
 							break;
 						}
 					}
@@ -240,6 +251,15 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		} catch (err: any) {
 			// TODO: handle errors gracefully with a logger
 			console.error(err.message);
+		}
+	}
+
+	private _handleStdin(mode: StdinMode) {
+		switch (mode) {
+			case StdinMode.Stringified:
+				return cachedStdinInput?.toString('utf8') ?? '';
+			default:
+				return cachedStdinInput;
 		}
 	}
 
@@ -447,4 +467,9 @@ export async function runCommand<Cmd extends typeof BuiltApifyCommand>(
 
 export declare class BuiltApifyCommand extends ApifyCommand {
 	override run(): Awaitable<void>;
+}
+
+export enum StdinMode {
+	Raw = 1,
+	Stringified = 2,
 }
