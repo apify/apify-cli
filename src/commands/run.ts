@@ -13,7 +13,13 @@ import { validateInputSchema, validateInputUsingValidator } from '@apify/input_s
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 
-import { ApifyCommand } from '../lib/command-framework/apify-command.js';
+import { APIFY_ENV_VARS } from '@apify/consts';
+import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
+
+import { APIFY_ENV_VARS } from '@apify/consts';
+import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
+
+import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
 import {
@@ -94,7 +100,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			char: 'i',
 			description: 'Optional JSON input to be given to the Actor.',
 			required: false,
-			allowStdin: true,
+			stdin: StdinMode.Stringified,
 			exclusive: ['input-file'],
 		}),
 		'input-file': Flags.string({
@@ -102,7 +108,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			description:
 				'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file. You can also specify `-` to read from standard input.',
 			required: false,
-			allowStdin: true,
+			stdin: StdinMode.Stringified,
 			exclusive: ['input'],
 		}),
 	};

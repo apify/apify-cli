@@ -10,7 +10,7 @@ import {
 } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
@@ -38,7 +38,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			char: 'i',
 			description: 'Optional JSON input to be given to the Actor.',
 			required: false,
-			allowStdin: true,
+			stdin: StdinMode.Stringified,
 			exclusive: ['input-file'],
 		}),
 		'input-file': Flags.string({
@@ -46,7 +46,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			description:
 				'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file. You can also specify `-` to read from standard input.',
 			required: false,
-			allowStdin: true,
+			stdin: StdinMode.Stringified,
 			exclusive: ['input'],
 		}),
 		silent: Flags.boolean({

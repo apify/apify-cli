@@ -8,6 +8,13 @@ import { execa } from 'execa';
 import type { Code, Link, Paragraph, PhrasingContentMap } from 'mdast';
 import { fromMarkdown } from 'mdast-util-from-markdown';
 
+console.error('!!! REMAKE THIS !!!');
+console.error('!!! REMAKE THIS !!!');
+console.error('!!! REMAKE THIS !!!');
+console.error('!!! REMAKE THIS !!!');
+
+process.exit(0);
+
 const finalOutputFile = new URL('../docs/reference.md', import.meta.url);
 const temporaryReferenceFile = fileURLToPath(new URL('./temporary-reference.md', import.meta.url));
 const referenceTemplateFile = new URL('./reference-template.md', import.meta.url);
