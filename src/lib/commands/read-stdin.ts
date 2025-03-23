@@ -9,11 +9,26 @@ export async function readStdin(stdinStream: typeof process.stdin = process.stdi
 	// The best showcase of what this does: https://stackoverflow.com/a/59024214
 	const pipedIn = await fstat(0)
 		.then((stat) => {
+			if (process.env.STDIN_DEBUG) {
+				console.error({
+					stat,
+					isFIFO: stat.isFIFO(),
+					isSocket: stat.isSocket(),
+					isCharDevice: stat.isCharacterDevice(),
+					isRegularFile: stat.isFile(),
+				});
+			}
+
 			// isFIFO -> `node a | node b`
 			// isFile -> `node a < file`
-			return stat.isFIFO() || stat.isFile();
+			// isSocket -> child processes (I think) [but we set a timeout of 50ms to avoid hanging]
+			return stat.isFIFO() || stat.isFile() || (stat.isSocket() ? 50 : false);
 		})
 		.catch(() => false);
+
+	if (process.env.STDIN_DEBUG) {
+		console.error({ isTTY: stdinStream.isTTY, pipedIn, readableEnd: stdinStream.readableEnded });
+	}
 
 	// The isTTY params will be true if there is no piping into stdin
 	// pipedIn is set if someone either runs `node a | node b`, or `node a < file`
@@ -25,11 +40,39 @@ export async function readStdin(stdinStream: typeof process.stdin = process.stdi
 
 	const bufferChunks: Buffer[] = [];
 
+	const controller = new AbortController();
+
+	let timeout: NodeJS.Timeout | null = null;
+
+	if (typeof pipedIn === 'number') {
+		timeout = setTimeout(() => {
+			controller.abort();
+		}, pipedIn).unref();
+	}
+
 	stdinStream.on('data', (chunk) => {
 		bufferChunks.push(chunk);
+
+		// If we got some data already, we can clear the timeout, as we will get more
+		if (timeout) {
+			clearTimeout(timeout);
+			timeout = null;
+		}
 	});
 
-	await once(stdinStream, 'end');
+	try {
+		await once(stdinStream, 'end', { signal: controller.signal });
+	} catch (error) {
+		const casted = error as Error;
+
+		if (casted.name === 'AbortError') {
+			return;
+		}
+	}
+
+	if (timeout) {
+		clearTimeout(timeout);
+	}
 
 	const concat = Buffer.concat(bufferChunks);
 
