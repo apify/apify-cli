@@ -8,18 +8,20 @@ const fstat = promisify(fstat_);
 export async function readStdin(stdinStream: typeof process.stdin = process.stdin) {
 	// The best showcase of what this does: https://stackoverflow.com/a/59024214
 	const pipedIn = await fstat(0)
-		.then((stat) => stat.isFIFO())
+		.then((stat) => {
+			// isFIFO -> `node a | node b`
+			// isFile -> `node a < file`
+			return stat.isFIFO() || stat.isFile();
+		})
 		.catch(() => false);
 
-	// The isTTY params says if TTY is connected to the process, if so the stdout is
-	// synchronous and the stdout steam is empty.
-	// See https://nodejs.org/docs/latest-v12.x/api/process.html#process_a_note_on_process_i_o
-	if (stdinStream.isTTY || (stdinStream.readableEnded && !pipedIn)) {
+	// The isTTY params will be true if there is no piping into stdin
+	// pipedIn is set if someone either runs `node a | node b`, or `node a < file`
+	// if that is the case, isTTY will be undefined (???)
+	// readableEnded is a catch all for when the stream is closed
+	if (stdinStream.isTTY || (!pipedIn && (stdinStream.isTTY === undefined || stdinStream.readableEnded))) {
 		return;
 	}
-
-	// This is required for some reason when piping from a previous oclif run
-	stdinStream.resume();
 
 	const bufferChunks: Buffer[] = [];
 
