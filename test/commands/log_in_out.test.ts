@@ -19,7 +19,7 @@ const { LoginCommand } = await import('../../src/commands/login.js');
 const { LogoutCommand } = await import('../../src/commands/logout.js');
 
 describe('apify login and logout', () => {
-	let spy: import('vitest').MockInstance<Parameters<(typeof console)['error']>, void>;
+	let spy: import('vitest').MockInstance<(typeof console)['error']>;
 
 	beforeEach(() => {
 		spy = vitest.spyOn(console, 'error');

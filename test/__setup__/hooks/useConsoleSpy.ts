@@ -1,8 +1,8 @@
-import { MockInstance } from 'vitest';
+import type { MockInstance } from 'vitest';
 
 export function useConsoleSpy() {
-	let logSpy!: MockInstance<Parameters<(typeof console)['log']>, void>;
-	let errorSpy!: MockInstance<Parameters<(typeof console)['error']>, void>;
+	let logSpy!: MockInstance<(typeof console)['log']>;
+	let errorSpy!: MockInstance<(typeof console)['error']>;
 
 	const logMessages = {
 		log: [] as string[],
