@@ -261,14 +261,14 @@ describe('apify run', () => {
 		expect(existsSync(joinPath(getLocalRequestQueuePath()))).toStrictEqual(false);
 	});
 
-	it('run with purge works without storage folder', async () => {
+	it.only('run with purge works without storage folder', async () => {
 		await rimrafPromised(getLocalStorageDir());
 
 		writeFileSync(
 			joinPath('src/main.js'),
 			`
 import { writeFileSync } from 'node:fs';
-writeFileSync('${joinPath('result.txt')}', 'hello world');
+writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 `,
 			{ flag: 'w' },
 		);
