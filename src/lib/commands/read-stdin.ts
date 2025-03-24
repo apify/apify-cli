@@ -12,10 +12,13 @@ export async function readStdin(stdinStream: typeof process.stdin = process.stdi
 			if (process.env.STDIN_DEBUG) {
 				console.error({
 					stat,
+					isRegularFile: stat.isFile(),
+					isDirectory: stat.isDirectory(),
+					isBlockDevice: stat.isBlockDevice(),
+					isCharDevice: stat.isCharacterDevice(),
+					isSymbolicLink: stat.isSymbolicLink(),
 					isFIFO: stat.isFIFO(),
 					isSocket: stat.isSocket(),
-					isCharDevice: stat.isCharacterDevice(),
-					isRegularFile: stat.isFile(),
 				});
 			}
 
