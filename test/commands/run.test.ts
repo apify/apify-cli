@@ -261,7 +261,7 @@ describe('apify run', () => {
 		expect(existsSync(joinPath(getLocalRequestQueuePath()))).toStrictEqual(false);
 	});
 
-	it.only('run with purge works without storage folder', async () => {
+	it('run with purge works without storage folder', async () => {
 		await rimrafPromised(getLocalStorageDir());
 
 		writeFileSync(
