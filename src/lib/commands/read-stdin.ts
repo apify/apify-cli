@@ -1,5 +1,5 @@
 import { once } from 'node:events';
-import { fstat as fstat_ } from 'node:fs';
+import { fstat as fstat_, constants } from 'node:fs';
 import process from 'node:process';
 import { promisify } from 'node:util';
 
@@ -17,6 +17,15 @@ export async function readStdin(stdinStream: typeof process.stdin = process.stdi
 					isCharDevice: stat.isCharacterDevice(),
 					isRegularFile: stat.isFile(),
 				});
+			}
+
+			// Right now, Windows always returns false for isFIFO, so we have to check for that manually
+			// TODO: https://github.com/nodejs/node/issues/57603
+			if (process.platform === 'win32') {
+				// eslint-disable-next-line no-bitwise
+				if ((stat.mode & constants.S_IFIFO) === constants.S_IFIFO) {
+					return true;
+				}
 			}
 
 			// isFIFO -> `node a | node b`
