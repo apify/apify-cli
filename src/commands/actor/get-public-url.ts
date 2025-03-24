@@ -29,6 +29,13 @@ export class GetPublicUrlCommand extends ApifyCommand<typeof GetPublicUrlCommand
 		const apiBase = process.env[APIFY_ENV_VARS.API_PUBLIC_BASE_URL];
 		const storeId = process.env[ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID];
 
+		// This should never happen, but handle it gracefully to prevent crashes.
+		if (!storeId) {
+			error({ message: 'Unexpected error: storeId is missing.' });
+			process.exitCode = CommandExitCodes.InvalidInput;
+			return;
+		}
+
 		const apifyClient = await getApifyStorageClient();
 		const store = await apifyClient.keyValueStore(storeId!).get();
 
