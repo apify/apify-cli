@@ -9,7 +9,6 @@ my-act-*
 my-python-*
 pull-test-*
 _mytests
-.vscode
 .idea
 docs/changelog.md
 

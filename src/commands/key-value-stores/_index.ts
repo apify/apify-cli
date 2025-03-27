@@ -29,6 +29,6 @@ export class KeyValueStoresIndexCommand extends ApifyCommand<typeof KeyValueStor
 	];
 
 	async run() {
-		await this.printHelp();
+		this.printHelp();
 	}
 }

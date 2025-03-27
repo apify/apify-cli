@@ -9,7 +9,6 @@ export class TasksIndexCommand extends ApifyCommand<typeof TasksIndexCommand> {
 	static override subcommands = [TaskRunCommand];
 
 	async run() {
-		// TODO: implement this properly
-		await this.printHelp();
+		this.printHelp();
 	}
 }

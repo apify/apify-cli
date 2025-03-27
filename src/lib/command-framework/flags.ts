@@ -42,6 +42,13 @@ export type TaggedFlagBuilder<Tag extends FlagTag, ChoicesType = unknown, Requir
 	required: Required;
 	hasDefault: HasDefault;
 	stdin: StdinMode;
+
+	// Fields from the options object
+	description: string | undefined;
+	aliases: readonly string[] | undefined;
+	char: string | undefined;
+	hidden: boolean | undefined;
+	exclusive: readonly string[] | undefined;
 };
 
 export const Flags = {
@@ -82,6 +89,12 @@ function stringFlag<const Choices, const T extends StringFlagOptions<readonly st
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
 		stdin: options.stdin ?? StdinMode.Raw,
+
+		description: options.description,
+		aliases: options.aliases,
+		char: options.char,
+		hidden: options.hidden,
+		exclusive: options.exclusive,
 	};
 }
 
@@ -113,6 +126,12 @@ function booleanFlag<const T extends BooleanFlagOptions>(
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
 		stdin: options.stdin ?? StdinMode.Raw,
+
+		description: options.description,
+		aliases: options.aliases,
+		char: options.char,
+		hidden: options.hidden,
+		exclusive: options.exclusive,
 	};
 }
 
@@ -146,5 +165,11 @@ function integerFlag<const T extends IntegerFlagOptions>(
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
 		stdin: options.stdin ?? StdinMode.Raw,
+
+		description: options.description,
+		aliases: options.aliases,
+		char: options.char,
+		hidden: options.hidden,
+		exclusive: options.exclusive,
 	};
 }
