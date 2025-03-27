@@ -2577,6 +2577,7 @@ __metadata:
     express: "npm:~4.21.0"
     globby: "npm:~14.1.0"
     handlebars: "npm:~4.7.8"
+    indent-string: "npm:^5.0.0"
     inquirer: "npm:~12.5.0"
     is-ci: "npm:~4.1.0"
     is-online: "npm:~11.0.0"
@@ -2593,11 +2594,15 @@ __metadata:
     prettier: "npm:^3.3.3"
     rimraf: "npm:~6.0.1"
     semver: "npm:~7.7.0"
+    string-width: "npm:^7.2.0"
+    strip-ansi: "npm:^7.1.0"
     tiged: "npm:~2.12.7"
     tsx: "npm:^4.16.5"
     typescript: "npm:^5.5.4"
     vitest: "npm:^3.0.0"
     which: "npm:^5.0.0"
+    widest-line: "npm:^5.0.0"
+    wrap-ansi: "npm:^9.0.0"
     yargonaut: "npm:^1.1.4"
     yargs: "npm:^17.7.2"
   bin:
@@ -9366,7 +9371,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"string-width@npm:^7.0.0":
+"string-width@npm:^7.0.0, string-width@npm:^7.2.0":
   version: 7.2.0
   resolution: "string-width@npm:7.2.0"
   dependencies:
@@ -10523,6 +10528,15 @@ __metadata:
   bin:
     why-is-node-running: cli.js
   checksum: 10c0/1cde0b01b827d2cf4cb11db962f3958b9175d5d9e7ac7361d1a7b0e2dc6069a263e69118bd974c4f6d0a890ef4eedfe34cf3d5167ec14203dbc9a18620537054
+  languageName: node
+  linkType: hard
+
+"widest-line@npm:^5.0.0":
+  version: 5.0.0
+  resolution: "widest-line@npm:5.0.0"
+  dependencies:
+    string-width: "npm:^7.0.0"
+  checksum: 10c0/6bd6cca8cda502ef50e05353fd25de0df8c704ffc43ada7e0a9cf9a5d4f4e12520485d80e0b77cec8a21f6c3909042fcf732aa9281e5dbb98cc9384a138b2578
   languageName: node
   linkType: hard
 

@@ -21,6 +21,6 @@ export class RunsIndexCommand extends ApifyCommand<typeof RunsIndexCommand> {
 	];
 
 	async run() {
-		await this.printHelp();
+		this.printHelp();
 	}
 }

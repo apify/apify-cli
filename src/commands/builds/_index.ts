@@ -20,6 +20,6 @@ export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> 
 	];
 
 	async run() {
-		await this.printHelp();
+		this.printHelp();
 	}
 }
