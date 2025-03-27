@@ -3,6 +3,8 @@ import { Flags } from '../lib/command-framework/flags.js';
 import { checkLatestVersion } from '../lib/version_check.js';
 
 export class CheckVersionCommand extends ApifyCommand<typeof CheckVersionCommand> {
+	static override name = 'check-version';
+
 	static override description = 'Checks that installed Apify CLI version is up to date.';
 
 	static override flags = {

@@ -22,6 +22,10 @@ export type TaggedArgBuilder<Tag extends ArgTag, Required = boolean> = {
 	builder: (args: Argv, objectName: string) => Argv;
 	required: Required;
 	stdin: StdinMode;
+
+	// Options from the object
+	description: string | undefined;
+	aliases: readonly string[] | undefined;
 };
 
 function stringArg<const T extends StringArgOptions>(option: T): TaggedArgBuilder<'string', T['required']> {
@@ -37,6 +41,9 @@ function stringArg<const T extends StringArgOptions>(option: T): TaggedArgBuilde
 		},
 		required: option.required ?? false,
 		stdin: option.stdin ?? StdinMode.Raw,
+
+		description: option.description,
+		aliases: option.aliases,
 	};
 }
 

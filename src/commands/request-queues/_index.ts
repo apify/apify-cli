@@ -6,6 +6,6 @@ export class RequestQueuesIndexCommand extends ApifyCommand<typeof RequestQueues
 	static override description = 'Manages URL queues for web scraping and automation tasks.';
 
 	async run() {
-		await this.printHelp();
+		this.printHelp();
 	}
 }

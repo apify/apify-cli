@@ -24,7 +24,6 @@ export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand
 	static override subcommands = [SecretsAddCommand, SecretsRmCommand];
 
 	async run() {
-		// TODO
-		await this.printHelp();
+		this.printHelp();
 	}
 }

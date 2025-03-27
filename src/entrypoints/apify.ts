@@ -33,7 +33,7 @@ cli.middleware(async (argv) => {
 
 // Register all commands
 for (const CommandClass of apifyCommands) {
-	CommandClass.registerCommand(cli);
+	CommandClass.registerCommand('apify', cli);
 }
 
 const parsed = await cli.parse(process.argv.slice(2));

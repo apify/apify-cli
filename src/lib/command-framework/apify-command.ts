@@ -7,6 +7,7 @@ import type { ArgTag, TaggedArgBuilder } from './args.js';
 import type { FlagTag, TaggedFlagBuilder } from './flags.js';
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { error } from '../outputs.js';
+import { registerCommandForHelpGeneration, renderHelpForCommand } from './help.js';
 
 interface ArgTagToTSType {
 	string: string;
@@ -99,17 +100,19 @@ type InferFlagsFromCommand<
 	OptionalIfHasDefault = false,
 > = (O extends undefined
 	? Record<string, unknown>
-	: _InferFlagsFromCommand<Exclude<O, undefined>, OptionalIfHasDefault>) & { json: boolean };
+	: _InferFlagsFromCommand<Exclude<O, undefined>, OptionalIfHasDefault>) & {
+	json: boolean;
+};
 
-function camelCaseString(str: string): string {
+export function camelCaseString(str: string): string {
 	return str.replace(/[-_\s](.)/g, (_, group1) => group1.toUpperCase());
 }
 
-function kebabCaseString(str: string): string {
+export function kebabCaseString(str: string): string {
 	return str.replace(/[\s_]+/g, '-');
 }
 
-function camelCaseToKebabCase(str: string): string {
+export function camelCaseToKebabCase(str: string): string {
 	return str.replace(/([A-Z])/g, '-$1').toLowerCase();
 }
 
@@ -126,9 +129,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	static enableJsonFlag = false;
 
-	static description?: string;
-
 	static name: string;
+
+	static shortDescription?: string;
+
+	static description?: string;
 
 	static aliases?: string[];
 
@@ -139,23 +144,30 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	protected telemetryData: Record<string, unknown> = {};
 
 	protected flags!: InferFlagsFromCommand<T['flags']>;
+
 	protected args!: InferArgsFromCommand<T['args']>;
 
 	abstract run(): Awaitable<void>;
 
-	protected get ctor(): typeof ApifyCommand {
-		return this.constructor as typeof ApifyCommand;
+	protected get ctor(): typeof BuiltApifyCommand {
+		return this.constructor as typeof BuiltApifyCommand;
 	}
 
 	protected pluralString(amount: number, singular: string, plural: string): string {
 		return amount === 1 ? singular : plural;
 	}
 
-	protected printHelp() {
-		console.log(`TODO!!! Command ${this.ctor.name} wants to print help manually`);
+	protected printHelp(): never {
+		console.log(renderHelpForCommand(this.ctor));
+
+		process.exit(0);
 	}
 
 	private async _run(rawArgs: ArgumentsCamelCase) {
+		if (rawArgs.help) {
+			this.printHelp();
+		}
+
 		// Cheating a bit here with the types, but its fine
 		// eslint-disable-next-line @typescript-eslint/no-explicit-any -- makes parsing easier
 		this.args = {} as any;
@@ -241,9 +253,6 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				}
 			}
 		}
-
-		// TODO: remove me
-		// console.log({ rawInput: rawArgs, args: this.args, flags: this.flags });
 
 		try {
 			await this.run();
@@ -334,8 +343,18 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			// Register --json
 			if (this.ctor.enableJsonFlag) {
-				finalYargs = finalYargs.option('json', { boolean: true, describe: 'Format output as json.' });
+				finalYargs = finalYargs.option('json', {
+					boolean: true,
+					describe: 'Format output as json.',
+				});
 			}
+
+			// Register the --help flag
+			finalYargs = finalYargs.option('help', {
+				boolean: true,
+				describe: 'Shows this help message.',
+				alias: 'h',
+			});
 
 			return finalYargs;
 		};
@@ -358,20 +377,26 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		if (this.ctor.hiddenAliases?.length) {
 			for (const alias of this.ctor.hiddenAliases) {
-				baseCommands.push({ ...baseCmd, command: this._buildCommandStrings(alias), describe: false });
+				baseCommands.push({
+					...baseCmd,
+					command: this._buildCommandStrings(alias),
+					describe: false,
+				});
 			}
 		}
 
 		return baseCommands;
 	}
 
-	static registerCommand(yargsInstance: Argv) {
+	static registerCommand(entrypoint: string, yargsInstance: Argv) {
 		const instance = new (this as typeof BuiltApifyCommand)();
 
 		// eslint-disable-next-line no-underscore-dangle -- We mark the function with `_` to semi-signal it should not be called outside internal code
 		const yargsObject = instance._toYargs();
 
 		yargsInstance.command(yargsObject);
+
+		registerCommandForHelpGeneration(entrypoint, this as typeof BuiltApifyCommand);
 	}
 }
 
