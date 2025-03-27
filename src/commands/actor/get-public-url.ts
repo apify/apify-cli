@@ -31,23 +31,31 @@ export class GetPublicUrlCommand extends ApifyCommand<typeof GetPublicUrlCommand
 
 		// This should never happen, but handle it gracefully to prevent crashes.
 		if (!storeId) {
-			error({ message: 'Unexpected error: storeId is missing.' });
+			error({
+				message: `Missing environment variable: ${ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID}. Please set it before running the command.`,
+			});
 			process.exitCode = CommandExitCodes.InvalidInput;
 			return;
 		}
 
 		const apifyClient = await getApifyStorageClient();
-		const store = await apifyClient.keyValueStore(storeId!).get();
+		const store = await apifyClient.keyValueStore(storeId).get();
 
 		const publicUrl = new URL(`${apiBase}/v2/key-value-stores/${storeId}/records/${key}`);
 
-		if (store) {
-			// @ts-expect-error Add types to client
-			const { urlSigningSecretKey } = store;
+		if (!store) {
+			error({
+				message: `Key-Value store with ID '${storeId}' was not found. Ensure the store exists and that the correct ID is set in ${ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID}.`,
+			});
+			process.exitCode = CommandExitCodes.NotFound;
+			return;
+		}
 
-			if (urlSigningSecretKey) {
-				publicUrl.searchParams.append('signature', createHmacSignature(urlSigningSecretKey as string, key));
-			}
+		// @ts-expect-error Add types to client
+		const { urlSigningSecretKey } = store;
+
+		if (urlSigningSecretKey) {
+			publicUrl.searchParams.append('signature', createHmacSignature(urlSigningSecretKey as string, key));
 		}
 
 		console.log(publicUrl.toString());

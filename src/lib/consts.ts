@@ -113,4 +113,5 @@ export enum CommandExitCodes {
 	InvalidActorJson = 5,
 
 	NotImplemented = 255,
+	NotFound = 404,
 }
