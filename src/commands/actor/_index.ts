@@ -22,6 +22,6 @@ export class ActorIndexCommand extends ApifyCommand<typeof ActorIndexCommand> {
 	];
 
 	async run() {
-		await this.printHelp();
+		this.printHelp();
 	}
 }

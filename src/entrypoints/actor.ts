@@ -9,7 +9,7 @@ cli.scriptName('actor');
 
 if (!satisfies(process.version, SUPPORTED_NODEJS_VERSION)) {
 	error({
-		message: `Apify CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.`,
+		message: `Actor CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.`,
 	});
 
 	process.exit(1);
@@ -17,7 +17,7 @@ if (!satisfies(process.version, SUPPORTED_NODEJS_VERSION)) {
 
 // Register all commands
 for (const CommandClass of actorCommands) {
-	CommandClass.registerCommand(cli);
+	CommandClass.registerCommand('actor', cli);
 }
 
 const parsed = await cli.parse(process.argv.slice(2));

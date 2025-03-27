@@ -23,6 +23,6 @@ export class DatasetsIndexCommand extends ApifyCommand<typeof DatasetsIndexComma
 	];
 
 	async run() {
-		await this.printHelp();
+		this.printHelp();
 	}
 }
