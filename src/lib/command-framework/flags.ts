@@ -37,7 +37,7 @@ export interface IntegerFlagOptions extends BaseFlagOptions {
 
 export type TaggedFlagBuilder<Tag extends FlagTag, ChoicesType = unknown, Required = boolean, HasDefault = false> = {
 	flagTag: Tag;
-	builder: (args: Argv, objectName: string, extraArgs?: string[]) => Argv;
+	builder: (args: Argv, objectName: string, extraArgs?: string[], invertDefaultIfSet?: boolean) => Argv;
 	choicesType: ChoicesType;
 	required: Required;
 	hasDefault: HasDefault;
@@ -62,7 +62,7 @@ function stringFlag<const Choices, const T extends StringFlagOptions<readonly st
 ): TaggedFlagBuilder<'string', Choices, T['default'] extends string ? true : T['required'], T['default']> {
 	return {
 		flagTag: 'string',
-		builder: (args, objectName, extraAliases) => {
+		builder: (args, objectName, extraAliases, invertDefaultIfSet = false) => {
 			const allAliases = new Set([...(options.aliases ?? []), ...(extraAliases ?? [])]);
 
 			if (options.char) {
@@ -77,7 +77,7 @@ function stringFlag<const Choices, const T extends StringFlagOptions<readonly st
 				alias: [...allAliases].map((alias) => kebabCaseString(camelCaseToKebabCase(alias))),
 				hidden: options.hidden ?? false,
 				conflicts: options.exclusive,
-				default: options.default,
+				default: invertDefaultIfSet ? !options.default : options.default,
 				choices: options.choices,
 				string: true,
 				// we only require something be passed in if we don't have a default or read from stdin
@@ -102,7 +102,7 @@ function booleanFlag<const T extends BooleanFlagOptions>(
 ): TaggedFlagBuilder<'boolean', never, T['default'] extends boolean ? true : T['required'], T['default']> {
 	return {
 		flagTag: 'boolean',
-		builder: (args, objectName, extraAliases) => {
+		builder: (args, objectName, extraAliases, invertDefaultIfSet = false) => {
 			const allAliases = new Set([...(options.aliases ?? []), ...(extraAliases ?? [])]);
 
 			if (options.char) {
@@ -117,7 +117,7 @@ function booleanFlag<const T extends BooleanFlagOptions>(
 				alias: [...allAliases].map((alias) => kebabCaseString(camelCaseToKebabCase(alias))),
 				hidden: options.hidden ?? false,
 				conflicts: options.exclusive,
-				default: options.default,
+				default: invertDefaultIfSet ? !options.default : options.default,
 				boolean: true,
 			});
 		},
@@ -139,7 +139,7 @@ function integerFlag<const T extends IntegerFlagOptions>(
 ): TaggedFlagBuilder<'integer', never, T['default'] extends number ? true : T['required'], T['default']> {
 	return {
 		flagTag: 'integer',
-		builder: (args, objectName, extraAliases) => {
+		builder: (args, objectName, extraAliases, invertDefaultIfSet = false) => {
 			const allAliases = new Set([...(options.aliases ?? []), ...(extraAliases ?? [])]);
 
 			if (options.char) {
@@ -154,7 +154,7 @@ function integerFlag<const T extends IntegerFlagOptions>(
 				alias: [...allAliases].map((alias) => kebabCaseString(camelCaseToKebabCase(alias))),
 				hidden: options.hidden ?? false,
 				conflicts: options.exclusive,
-				default: options.default,
+				default: invertDefaultIfSet ? !options.default : options.default,
 				choices: options.choices,
 				string: true,
 				nargs: 1,
