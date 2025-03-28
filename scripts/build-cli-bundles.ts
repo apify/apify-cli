@@ -1,5 +1,6 @@
 /// <reference types="@types/bun" />
 
+import { rm } from 'node:fs/promises';
 import { basename } from 'node:path';
 
 import { $, fileURLToPath } from 'bun';
@@ -12,6 +13,8 @@ const entryPoints = [
 	//
 	fileURLToPath(new URL('../src/entrypoints/apify.ts', import.meta.url)),
 ];
+
+await rm(new URL('../bundles/', import.meta.url), { recursive: true, force: true });
 
 for (const entryPoint of entryPoints) {
 	const cliName = basename(entryPoint, '.ts');
