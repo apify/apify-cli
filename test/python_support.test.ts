@@ -4,6 +4,7 @@ import { rm } from 'node:fs/promises';
 import { loadJsonFileSync } from 'load-json-file';
 
 import { useTempPath } from './__setup__/hooks/useTempPath.js';
+import { runCommand } from '../src/lib/command-framework/apify-command.js';
 import { detectPythonVersion, getLocalKeyValueStorePath } from '../src/lib/utils.js';
 
 const actorName = 'my-python-actor';
@@ -29,6 +30,7 @@ describe('Python support [python]', () => {
 
 	it('Python templates work [python]', { timeout: 120_000 }, async () => {
 		const pythonVersion = detectPythonVersion('.');
+
 		// Don't fail this test when Python is not installed (it will be installed in the right CI workflow)
 		if (!pythonVersion && !process.env.CI) {
 			console.log('Skipping Python template test since Python is not installed');
@@ -40,7 +42,10 @@ describe('Python support [python]', () => {
 			await rm(tmpPath, { recursive: true, force: true });
 		}
 
-		await CreateCommand.run([actorName, '--template', PYTHON_START_TEMPLATE_ID], import.meta.url);
+		await runCommand(CreateCommand, {
+			args_actorName: actorName,
+			flags_template: PYTHON_START_TEMPLATE_ID,
+		});
 
 		// Check file structure
 		expect(existsSync(tmpPath)).toBeTruthy();
@@ -61,7 +66,7 @@ async def main():
 
 		toggleCwdBetweenFullAndParentPath();
 
-		await RunCommand.run([], import.meta.url);
+		await runCommand(RunCommand, {});
 
 		// Check Actor output
 		const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');

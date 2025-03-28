@@ -1,9 +1,10 @@
-import { Args } from '@oclif/core';
-
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { removeSecret } from '../../lib/secrets.js';
 
-export class SecretRmCommand extends ApifyCommand<typeof SecretRmCommand> {
+export class SecretsRmCommand extends ApifyCommand<typeof SecretsRmCommand> {
+	static override name = 'rm';
+
 	static override description = 'Permanently deletes a secret from your stored credentials.';
 
 	static override args = {

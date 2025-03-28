@@ -1,11 +1,12 @@
 import { existsSync } from 'node:fs';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
-import { runCommand } from '@oclif/test';
 import { loadJsonFileSync } from 'load-json-file';
 
+import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
+import { useConsoleSpy } from '../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
 const actName = 'create-my-actor';
@@ -15,6 +16,8 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 	cwd: true,
 	cwdParent: true,
 });
+
+const { lastErrorMessage } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../src/commands/create.js');
 
@@ -29,16 +32,21 @@ describe('apify create', () => {
 
 	['a'.repeat(151), 'sh', 'bad_escaped'].forEach((badActorName) => {
 		it(`returns error with bad Actor name ${badActorName}`, async () => {
-			const { error } = await runCommand(['create', badActorName], import.meta.url);
+			await runCommand(CreateCommand, { args_actorName: badActorName });
 
-			expect(error).toBeTruthy();
+			expect(lastErrorMessage()).toMatch(/the actor name/i);
 		});
 	});
 
 	it('basic template structure with empty INPUT.json', async () => {
 		const ACT_TEMPLATE = 'project_empty';
 		const expectedInput = {};
-		await CreateCommand.run([actName, '--template', ACT_TEMPLATE, '--skip-dependency-install'], import.meta.url);
+
+		await runCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: ACT_TEMPLATE,
+			flags_skipDependencyInstall: true,
+		});
 
 		// check files structure
 		expect(existsSync(tmpPath)).toBeTruthy();
@@ -63,7 +71,11 @@ describe('apify create', () => {
 		const ACT_TEMPLATE = 'getting_started_typescript';
 		const expectedInput = { url: 'https://www.apify.com' };
 
-		await CreateCommand.run([actName, '--template', ACT_TEMPLATE, '--skip-dependency-install'], import.meta.url);
+		await runCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: ACT_TEMPLATE,
+			flags_skipDependencyInstall: true,
+		});
 
 		// check files structure
 		expect(existsSync(tmpPath)).toBeTruthy();
@@ -86,7 +98,12 @@ describe('apify create', () => {
 
 	it('should skip installing optional dependencies', async () => {
 		const ACT_TEMPLATE = 'project_cheerio_crawler_js';
-		await CreateCommand.run([actName, '--template', ACT_TEMPLATE, '--no-optional'], import.meta.url);
+
+		await runCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: ACT_TEMPLATE,
+			flags_omitOptionalDeps: true,
+		});
 
 		// check files structure
 		expect(existsSync(tmpPath)).toBeTruthy();
