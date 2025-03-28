@@ -135,4 +135,6 @@ const nodeVersion = process.versions.node;
 const extraRuntimeData = runtimeName === 'node' ? '' : ` (emulating node ${nodeVersion})`;
 
 // apify-cli/0.21.2 darwin-arm64 node-v22.14.0
-export const version = `${pkg.name}/${pkg.version} ${platform()}-${arch()} ${runtimeName}-${runtimeVersion}${extraRuntimeData}`;
+export const cliVersion = `${pkg.name}/${pkg.version} ${platform()}-${arch()} ${runtimeName}-${runtimeVersion}${extraRuntimeData}`;
+
+export const cliDescription = pkg.description;

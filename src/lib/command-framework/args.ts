@@ -33,8 +33,10 @@ function stringArg<const T extends StringArgOptions>(option: T): TaggedArgBuilde
 		argTag: 'string',
 		builder: (args, objectName) => {
 			args.positional(objectName, {
-				...option,
 				type: 'string',
+				alias: option.aliases,
+				description: option.description,
+				demandOption: false,
 			});
 
 			return args;

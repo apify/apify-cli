@@ -1,6 +1,6 @@
 import { satisfies } from 'semver';
 
-import { cli, printCLIVersionAndExit } from './_shared.js';
+import { cli, runCLI } from './_shared.js';
 import { apifyCommands } from '../commands/_register.js';
 import { CheckVersionCommand } from '../commands/check-version.js';
 import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
@@ -36,15 +36,4 @@ for (const CommandClass of apifyCommands) {
 	CommandClass.registerCommand('apify', cli);
 }
 
-const parsed = await cli.parse(process.argv.slice(2));
-
-if (parsed._.length === 0) {
-	if (parsed.v === true || parsed.version === true) {
-		printCLIVersionAndExit();
-	}
-
-	console.log({ parsed });
-	// TODO: print help
-	// console.error('Unknown command, oh my');
-	// cli.showHelp();
-}
+await runCLI('apify');

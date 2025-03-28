@@ -563,6 +563,27 @@ export function objectGroupBy<K extends PropertyKey, T>(
 	return result;
 }
 
+/**
+ * A "polyfill" for Map.groupBy
+ */
+export function mapGroupBy<K, T>(items: Iterable<T>, keySelector: (item: T, index: number) => K): Map<K, T[]> {
+	const map = new Map<K, T[]>();
+	let index = 0;
+
+	for (const value of items) {
+		const key = keySelector(value, index++);
+		const list = map.get(key);
+
+		if (list) {
+			list.push(value);
+		} else {
+			map.set(key, [value]);
+		}
+	}
+
+	return map;
+}
+
 export function printJsonToStdout(object: unknown) {
 	console.log(JSON.stringify(object, null, 2));
 }
