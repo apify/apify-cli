@@ -33,7 +33,8 @@ import indentString from 'indent-string';
 import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
-import { BaseCommandRenderer } from './_BaseCommandRenderer.js';
+import { BaseCommandRenderer, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
+import { getMaxLineWidth } from './consts.js';
 
 export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
 	public render() {
@@ -46,6 +47,24 @@ export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
 		}
 
 		this.pushSubcommands(result);
+
+		return result.join('\n').trim();
+	}
+
+	public selectiveRender(options: SelectiveRenderOptions): string {
+		const result: string[] = [];
+
+		if (options.showShortDescription) {
+			this.pushShortDescription(result);
+		}
+
+		if (options.showDescription && this.command.description) {
+			this.pushDescription(result);
+		}
+
+		if (options.showSubcommands) {
+			this.pushSubcommands(result);
+		}
 
 		return result.join('\n').trim();
 	}
@@ -66,7 +85,7 @@ export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
 
 			const fullString = `${this.command.name} ${subcommand.name.padEnd(widestSubcommandNameLength - this.command.name.length - 1)}  ${shortDescription}`;
 
-			const wrapped = wrapAnsi(fullString, this.maxLineWidth - widestSubcommandNameLength - 2);
+			const wrapped = wrapAnsi(fullString, getMaxLineWidth() - widestSubcommandNameLength - 2);
 
 			const indented = indentString(wrapped, widestSubcommandNameLength + 2 + 2).trim();
 
