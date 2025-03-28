@@ -1,13 +1,18 @@
 /* eslint-disable max-classes-per-file */
 
 import type { Awaitable } from '@crawlee/types';
+import chalk from 'chalk';
+import indentString from 'indent-string';
+import widestLine from 'widest-line';
+import wrapAnsi from 'wrap-ansi';
 import type { ArgumentsCamelCase, Argv, CommandBuilder, CommandModule } from 'yargs';
 
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import type { FlagTag, TaggedFlagBuilder } from './flags.js';
+import { getMaxLineWidth } from './help/consts.js';
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { error } from '../outputs.js';
-import { registerCommandForHelpGeneration, renderHelpForCommand } from './help.js';
+import { registerCommandForHelpGeneration, renderHelpForCommand, selectiveRenderHelpForCommand } from './help.js';
 
 interface ArgTagToTSType {
 	string: string;
@@ -116,6 +121,8 @@ export function camelCaseToKebabCase(str: string): string {
 	return str.replace(/([A-Z])/g, '-$1').toLowerCase();
 }
 
+export const commandRegistry = new Map<string, typeof BuiltApifyCommand>();
+
 export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof BuiltApifyCommand> {
 	static args?: Record<string, TaggedArgBuilder<ArgTag, unknown>> & {
 		json?: 'Do not use json as the key of an argument, as it will prevent the --json flag from working';
@@ -184,6 +191,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 		}
 
+		const missingRequiredArgs = new Map<string, TaggedArgBuilder<ArgTag, unknown>>();
+
 		if (this.ctor.args) {
 			for (const [userArgName, builderData] of Object.entries(this.ctor.args)) {
 				if (typeof builderData === 'string') {
@@ -205,8 +214,15 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 							break;
 					}
+				} else if (builderData.required) {
+					missingRequiredArgs.set(userArgName, builderData);
 				}
 			}
+		}
+
+		if (missingRequiredArgs.size) {
+			this._printMissingRequiredArgs(missingRequiredArgs);
+			return;
 		}
 
 		if (this.ctor.flags) {
@@ -219,6 +235,14 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				const camelCasedName = camelCaseString(yargsFlagName);
 
 				if (typeof rawArgs[yargsFlagName] !== 'undefined') {
+					if (Array.isArray(rawArgs[yargsFlagName])) {
+						error({
+							message: `Flag --${yargsFlagName} can only be specified once`,
+						});
+
+						return;
+					}
+
 					switch (builderData.flagTag) {
 						case 'boolean': {
 							this.flags[camelCasedName] = rawArgs[yargsFlagName];
@@ -247,9 +271,23 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 								this.flags[camelCasedName] = this._handleStdin(builderData.stdin);
 							}
 
+							if (!this.flags[camelCasedName]) {
+								error({
+									message: `Flag --${yargsFlagName} expects a value`,
+								});
+
+								return;
+							}
+
 							break;
 						}
 					}
+				} else if (builderData.required) {
+					error({
+						message: `Flag --${yargsFlagName} is required`,
+					});
+
+					return;
 				}
 			}
 		}
@@ -261,6 +299,36 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			// TODO: handle errors gracefully with a logger
 			console.error(err.message);
 		}
+	}
+
+	private _printMissingRequiredArgs(missingRequiredArgs: Map<string, TaggedArgBuilder<ArgTag, unknown>>) {
+		const help = selectiveRenderHelpForCommand(this.ctor, {
+			showUsageString: true,
+		});
+
+		const widestArgNameLength = widestLine([...missingRequiredArgs.keys()].join('\n'));
+
+		const missingArgsStrings: string[] = [];
+
+		for (const [argName, arg] of missingRequiredArgs) {
+			const fullString = `${argName.padEnd(widestArgNameLength)}  ${arg.description}`;
+
+			const wrapped = wrapAnsi(fullString, getMaxLineWidth() - widestArgNameLength - 2);
+
+			const indented = indentString(wrapped, widestArgNameLength + 2 + 2).trim();
+
+			missingArgsStrings.push(`  ${chalk.red('>')}  ${indented}`);
+		}
+
+		error({
+			message: [
+				`Missing ${missingRequiredArgs.size} required ${this.pluralString(missingRequiredArgs.size, 'argument', 'arguments')}:`,
+				...missingArgsStrings,
+				chalk.gray('  See more help with --help'),
+				'',
+				help,
+			].join('\n'),
+		});
 	}
 
 	private _handleStdin(mode: StdinMode) {
@@ -281,11 +349,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 					throw new RangeError('Do not provide the string for the json arg! It is a type level assertion!');
 				}
 
-				if (internalBuilderData.required) {
-					baseDefinition += ` <${key}>`;
-				} else {
-					baseDefinition += ` [${key}]`;
-				}
+				// We mark all args as optional, even if they are not, to pretty-print a help message ourselves
+				baseDefinition += ` [${key}]`;
 			}
 		}
 
@@ -349,13 +414,6 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				});
 			}
 
-			// Register the --help flag
-			finalYargs = finalYargs.option('help', {
-				boolean: true,
-				describe: 'Shows this help message.',
-				alias: 'h',
-			});
-
 			return finalYargs;
 		};
 	}
@@ -397,6 +455,13 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		yargsInstance.command(yargsObject);
 
 		registerCommandForHelpGeneration(entrypoint, this as typeof BuiltApifyCommand);
+		commandRegistry.set(this.name, this as typeof BuiltApifyCommand);
+
+		if (this.subcommands?.length) {
+			for (const subcommand of this.subcommands) {
+				commandRegistry.set(`${this.name} ${subcommand.name}`, subcommand as typeof BuiltApifyCommand);
+			}
+		}
 	}
 }
 

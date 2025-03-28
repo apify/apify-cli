@@ -5,37 +5,28 @@ import wrap from 'wrap-ansi';
 
 import { type BuiltApifyCommand, camelCaseToKebabCase, kebabCaseString } from '../apify-command.js';
 import type { FlagTag, TaggedFlagBuilder } from '../flags.js';
+import { getMaxLineWidth } from './consts.js';
+
+export interface SelectiveRenderOptions {
+	showShortDescription?: boolean;
+	showDescription?: boolean;
+	showUsageString?: boolean;
+	showSubcommands?: boolean;
+}
 
 export abstract class BaseCommandRenderer {
 	protected readonly command: typeof BuiltApifyCommand;
 
-	protected maxLineWidth: number;
-
-	protected entrypoint: string;
+	public readonly entrypoint: string;
 
 	public constructor(entrypoint: string, command: typeof BuiltApifyCommand) {
 		this.entrypoint = entrypoint;
 		this.command = command;
-		const override = Number(process.env.APIFY_CLI_MAX_LINE_WIDTH);
-
-		if (!Number.isNaN(override)) {
-			this.maxLineWidth = override;
-		} else if (!process.stdout.isTTY) {
-			this.maxLineWidth = 80;
-		} else {
-			const windowWidth = process.stdout.getWindowSize?.()[0] ?? -1;
-
-			if (windowWidth < 1) {
-				this.maxLineWidth = 80;
-			} else if (windowWidth < 40) {
-				this.maxLineWidth = 40;
-			} else {
-				this.maxLineWidth = windowWidth;
-			}
-		}
 	}
 
 	public abstract render(): string;
+
+	public abstract selectiveRender(options: SelectiveRenderOptions): string;
 
 	protected pushShortDescription(result: string[]) {
 		if (this.command.shortDescription) {
@@ -53,7 +44,7 @@ export abstract class BaseCommandRenderer {
 
 		result.push(chalk.bold('DESCRIPTION'));
 
-		const wrapped = wrap(this.command.description, this.maxLineWidth - 2, { trim: false });
+		const wrapped = wrap(this.command.description, getMaxLineWidth() - 2, { trim: false });
 
 		const indented = indent(wrapped, 2);
 
@@ -71,7 +62,7 @@ export abstract class BaseCommandRenderer {
 
 		const sizeOfItemToAdd = width(itemToAdd);
 
-		if (currentLength + sizeOfItemToAdd > this.maxLineWidth) {
+		if (currentLength + sizeOfItemToAdd > getMaxLineWidth()) {
 			state.push('\n');
 		}
 
