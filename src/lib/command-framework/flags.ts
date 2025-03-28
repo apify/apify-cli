@@ -1,6 +1,6 @@
 import type { Argv } from 'yargs';
 
-import { StdinMode } from './apify-command.js';
+import { camelCaseToKebabCase, kebabCaseString, StdinMode } from './apify-command.js';
 
 export type FlagTag = 'string' | 'boolean' | 'integer';
 
@@ -72,9 +72,9 @@ function stringFlag<const Choices, const T extends StringFlagOptions<readonly st
 			allAliases.delete(objectName);
 
 			return args.option(objectName, {
-				demandOption: options.required ?? false,
+				demandOption: false,
 				describe: options.description,
-				alias: [...allAliases],
+				alias: [...allAliases].map((alias) => kebabCaseString(camelCaseToKebabCase(alias))),
 				hidden: options.hidden ?? false,
 				conflicts: options.exclusive,
 				default: options.default,
@@ -82,7 +82,6 @@ function stringFlag<const Choices, const T extends StringFlagOptions<readonly st
 				string: true,
 				// we only require something be passed in if we don't have a default or read from stdin
 				nargs: 1,
-				requiresArg: !(options.default ?? options.stdin),
 			});
 		},
 		choicesType: options.choices as Choices,
@@ -113,9 +112,9 @@ function booleanFlag<const T extends BooleanFlagOptions>(
 			allAliases.delete(objectName);
 
 			return args.option(objectName, {
-				demandOption: options.required ?? false,
+				demandOption: false,
 				describe: options.description,
-				alias: [...allAliases],
+				alias: [...allAliases].map((alias) => kebabCaseString(camelCaseToKebabCase(alias))),
 				hidden: options.hidden ?? false,
 				conflicts: options.exclusive,
 				default: options.default,
@@ -150,9 +149,9 @@ function integerFlag<const T extends IntegerFlagOptions>(
 			allAliases.delete(objectName);
 
 			return args.option(objectName, {
-				demandOption: options.required ?? false,
+				demandOption: false,
 				describe: options.description,
-				alias: [...allAliases],
+				alias: [...allAliases].map((alias) => kebabCaseString(camelCaseToKebabCase(alias))),
 				hidden: options.hidden ?? false,
 				conflicts: options.exclusive,
 				default: options.default,

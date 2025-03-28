@@ -5,9 +5,10 @@ import stripAnsi from 'strip-ansi';
 import widestLine from 'widest-line';
 import wrap from 'wrap-ansi';
 
-import { BaseCommandRenderer } from './_BaseCommandRenderer.js';
+import { BaseCommandRenderer, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
 import type { ArgTag, TaggedArgBuilder } from '../args.js';
 import type { FlagTag, TaggedFlagBuilder } from '../flags.js';
+import { getMaxLineWidth } from './consts.js';
 
 /*
 Executes Actor remotely using your authenticated account.
@@ -44,6 +45,24 @@ export class CommandHelp extends BaseCommandRenderer {
 		this.pushUsageString(result);
 
 		if (this.command.description) {
+			this.pushDescription(result);
+		}
+
+		return result.join('\n').trim();
+	}
+
+	public selectiveRender(options: SelectiveRenderOptions): string {
+		const result: string[] = [];
+
+		if (options.showShortDescription) {
+			this.pushShortDescription(result);
+		}
+
+		if (options.showUsageString) {
+			this.pushUsageString(result);
+		}
+
+		if (options.showDescription && this.command.description) {
 			this.pushDescription(result);
 		}
 
@@ -158,7 +177,7 @@ export class CommandHelp extends BaseCommandRenderer {
 			}
 		}
 
-		const wrapped = wrap(finalString.join(' '), this.maxLineWidth - indentLevel);
+		const wrapped = wrap(finalString.join(' '), getMaxLineWidth() - indentLevel);
 
 		// + 1 here is to align everything properly
 		const indented = indent(wrapped, indentLevel + 1).trim();
@@ -187,7 +206,7 @@ export class CommandHelp extends BaseCommandRenderer {
 			const fullString = `${argName.padEnd(widestArgNameLength)}  ${arg.description}`;
 
 			// -2 for the space between the name and the description
-			const wrapped = wrap(fullString, this.maxLineWidth - widestArgNameLength - 2);
+			const wrapped = wrap(fullString, getMaxLineWidth() - widestArgNameLength - 2);
 
 			// +2 for the space between the name and the description
 			// +2 for the indent
@@ -238,7 +257,7 @@ export class CommandHelp extends BaseCommandRenderer {
 			const paddingToAdd = widestFlagNameLength - stripAnsi(flagString).length;
 			const fullString = `${flagString}${' '.repeat(paddingToAdd)}  ${flag.description ?? ''}`;
 
-			const wrapped = wrap(fullString, this.maxLineWidth - widestFlagNameLength);
+			const wrapped = wrap(fullString, getMaxLineWidth() - widestFlagNameLength);
 
 			const indented = indent(wrapped, widestFlagNameLength)
 				.trim()
