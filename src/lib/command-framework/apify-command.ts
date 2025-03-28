@@ -231,8 +231,14 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 					throw new RangeError('Do not provide the string for the json arg! It is a type level assertion!');
 				}
 
-				const yargsFlagName = kebabCaseString(camelCaseToKebabCase(userFlagName)).toLowerCase();
-				const camelCasedName = camelCaseString(yargsFlagName);
+				const rawYargsFlagName = kebabCaseString(camelCaseToKebabCase(userFlagName)).toLowerCase();
+				const camelCasedName = camelCaseString(rawYargsFlagName);
+
+				let yargsFlagName = rawYargsFlagName;
+
+				if (rawYargsFlagName.startsWith('no-')) {
+					yargsFlagName = rawYargsFlagName.slice(3);
+				}
 
 				if (typeof rawArgs[yargsFlagName] !== 'undefined') {
 					if (Array.isArray(rawArgs[yargsFlagName])) {
@@ -245,7 +251,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 					switch (builderData.flagTag) {
 						case 'boolean': {
-							this.flags[camelCasedName] = rawArgs[yargsFlagName];
+							this.flags[camelCasedName] = rawYargsFlagName.startsWith('no-')
+								? !rawArgs[yargsFlagName]
+								: rawArgs[yargsFlagName];
+
 							break;
 						}
 						case 'integer': {
@@ -395,7 +404,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 					// yargs handles "no-" flags by negating the flag, so we need to handle that differently if we register a flag with a "no-" prefix
 					if (flagKey.startsWith('no-')) {
-						finalYargs = internalBuilderData.builder(finalYargs, flagKey.slice(3));
+						finalYargs = internalBuilderData.builder(finalYargs, flagKey.slice(3), [], true);
 					} else {
 						finalYargs = internalBuilderData.builder(finalYargs, flagKey);
 					}
