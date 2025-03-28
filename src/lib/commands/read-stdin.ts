@@ -23,11 +23,12 @@ export async function readStdin(stdinStream: typeof process.stdin = process.stdi
 			}
 
 			// Right now, Windows always returns false for isFIFO, so we have to check for that manually
+			// Windows might also wrongly return the mode for this, who knows!
 			// TODO: https://github.com/nodejs/node/issues/57603
 			if (process.platform === 'win32') {
 				// eslint-disable-next-line no-bitwise
 				if ((stat.mode & constants.S_IFIFO) === constants.S_IFIFO) {
-					return true;
+					return 100;
 				}
 			}
 
