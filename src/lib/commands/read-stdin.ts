@@ -30,6 +30,11 @@ export async function readStdin(stdinStream: typeof process.stdin = process.stdi
 				if ((stat.mode & constants.S_IFIFO) === constants.S_IFIFO) {
 					return 100;
 				}
+
+				// In node 18, for some reason this returns true for vitest, and thus always hangs.
+				if (stat.isFile()) {
+					return 50;
+				}
 			}
 
 			// isFIFO -> `node a | node b`
