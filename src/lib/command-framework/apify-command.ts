@@ -393,7 +393,12 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 					const flagKey = kebabCaseString(camelCaseToKebabCase(key)).toLowerCase();
 
-					finalYargs = internalBuilderData.builder(finalYargs, flagKey);
+					// yargs handles "no-" flags by negating the flag, so we need to handle that differently if we register a flag with a "no-" prefix
+					if (flagKey.startsWith('no-')) {
+						finalYargs = internalBuilderData.builder(finalYargs, flagKey.slice(3));
+					} else {
+						finalYargs = internalBuilderData.builder(finalYargs, flagKey);
+					}
 				}
 			}
 
