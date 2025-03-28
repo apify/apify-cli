@@ -56,21 +56,20 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		purge: Flags.boolean({
 			char: 'p',
 			description:
-				'Shortcut that combines the --purge-queue, --purge-dataset and --purge-key-value-store options.',
+				'Whether to purge the default request queue, dataset and key-value store before the run starts.\nFor crawlee projects, this is the default behavior, and the flag is optional.\nUse `--no-purge` to keep the storage folder intact.',
 			required: false,
+			default: true,
+			allowNo: true,
+			helpGroup: 'storage',
 		}),
-		'purge-queue': Flags.boolean({
-			description: 'Deletes the local directory containing the default request queue before the run starts.',
-			required: false,
-		}),
-		'purge-dataset': Flags.boolean({
-			description: 'Deletes the local directory containing the default dataset before the run starts.',
-			required: false,
-		}),
-		'purge-key-value-store': Flags.boolean({
+		resurrect: Flags.boolean({
+			char: 'r',
 			description:
-				'Deletes all records from the default key-value store in the local directory before the run starts, except for the "INPUT" key.',
+				'Whether to keep the default request queue, dataset and key-value store before the run starts.',
 			required: false,
+			default: false,
+			exclusive: ['purge'],
+			helpGroup: 'storage',
 		}),
 		entrypoint: Flags.string({
 			description: [
@@ -78,7 +77,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				'\n',
 				'For Python, it is the module name, or a path to a file.',
 				'\n',
-				'For node.js, it is the npm script name, or a path to a JS/MJS file.',
+				'For Node.js, it is the npm script name, or a path to a JS/MJS file.',
 				'You can also pass in a directory name, provided that directory contains an "index.js" file.',
 			].join(' '),
 			required: false,
@@ -89,6 +88,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			required: false,
 			allowStdin: true,
 			exclusive: ['input-file'],
+			helpGroup: 'input',
 		}),
 		'input-file': Flags.string({
 			aliases: ['if'],
@@ -97,6 +97,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			required: false,
 			allowStdin: true,
 			exclusive: ['input'],
+			helpValue: '<file>',
+			helpGroup: 'input',
 		}),
 	};
 
@@ -121,12 +123,12 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const packageJsonPath = join(cwd, 'package.json');
 		const mainPyPath = join(cwd, 'src/__main__.py');
 
-		const projectType = ProjectAnalyzer.getProjectType(cwd);
+		const projectTypes = ProjectAnalyzer.getProjectTypes(cwd);
 		const actualStoragePath = getLocalStorageDir();
 
 		const packageJsonExists = existsSync(packageJsonPath);
 		const mainPyExists = existsSync(mainPyPath);
-		const isScrapyProject = projectType === PROJECT_TYPES.SCRAPY;
+		const isScrapyProject = projectTypes.includes(PROJECT_TYPES.SCRAPY);
 		const { language, languageVersion } = detectLocalActorLanguage(cwd);
 
 		if (!packageJsonExists && !mainPyExists && !isScrapyProject) {
@@ -170,46 +172,32 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		let CRAWLEE_PURGE_ON_START = '0';
 
-		// Purge stores
-		// TODO: this needs to be cleaned up heavily - ideally logic should be in the project analyzers
-		if (this.flags.purge) {
-			switch (projectType) {
-				case PROJECT_TYPES.PRE_CRAWLEE_APIFY_SDK: {
-					await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
-					info({ message: 'All default local stores were purged.' });
-					break;
-				}
-				case PROJECT_TYPES.CRAWLEE:
-				default: {
-					CRAWLEE_PURGE_ON_START = '1';
-				}
-			}
+		// Mark resurrect as a special case of --no-purge
+		if (this.flags.resurrect) {
+			this.flags.purge = false;
+		}
 
-			if (language === LANGUAGE.PYTHON) {
+		// Purge stores
+		if (this.flags.purge) {
+			// Crawlee does auto purging
+			if (projectTypes.includes(PROJECT_TYPES.CRAWLEE)) {
+				CRAWLEE_PURGE_ON_START = '1';
+			}
+			// Apify SDK that does not have automatic purging (thats in crawlee)
+			// Scrapy standalone does not have automatic purging
+			// Unknown projects are assumed to be anything
+			else if (
+				projectTypes.includes(PROJECT_TYPES.APIFY_SDK) ||
+				projectTypes.includes(PROJECT_TYPES.SCRAPY) ||
+				projectTypes.includes(PROJECT_TYPES.UNKNOWN)
+			) {
 				await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
 				info({ message: 'All default local stores were purged.' });
 			}
-		}
-
-		// TODO: deprecate these flags
-		if (this.flags.purgeQueue && !this.flags.purge) {
-			await purgeDefaultQueue();
-			info({ message: 'Default local request queue was purged.' });
-		}
-
-		if (this.flags.purgeDataset && !this.flags.purge) {
-			await purgeDefaultDataset();
-			info({ message: 'Default local dataset was purged.' });
-		}
-
-		if (this.flags.purgeKeyValueStore && !this.flags.purge) {
-			await purgeDefaultKeyValueStore();
-			info({ message: 'Default local key-value store was purged.' });
-		}
-
-		if (!this.flags.purge) {
+		} else {
 			const isStorageEmpty = await checkIfStorageIsEmpty();
-			if (!isStorageEmpty) {
+			// Do we want to warn when resurrecting too? Or is only when --no-purge is used enough?
+			if (!isStorageEmpty && !this.flags.resurrect) {
 				warning({
 					message:
 						'The storage directory contains a previous state, the Actor will continue where it left off. ' +
