@@ -2,15 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 0.21.3 - **not yet released**
+## [0.21.3](https://github.com/apify/apify-cli/releases/tag/v0.21.3) (2025-03-31)
 
 ### 🚀 Features
 
 - Add signature to actor get-public-url ([#767](https://github.com/apify/apify-cli/pull/767)) ([4641053](https://github.com/apify/apify-cli/commit/464105310d52bb78dbf979cc6d7d31c3ee30003d)) by [@danpoletaev](https://github.com/danpoletaev)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [0.21.2](https://github.com/apify/apify-cli/releases/tag/v0.21.2) (2025-02-26)
 
