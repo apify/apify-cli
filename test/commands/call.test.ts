@@ -3,9 +3,9 @@ import { platform } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
-import { captureOutput } from '@oclif/test';
 
 import { LoginCommand } from '../../src/commands/login.js';
+import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { waitForBuildToFinishWithTimeout } from '../__setup__/build-utils.js';
 import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
@@ -47,11 +47,12 @@ describe('apify call', () => {
 
 		const { username } = await testUserClient.user('me').get();
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
-		await CreateCommand.run(
-			[ACTOR_NAME, '--template', 'project_empty', '--skip-dependency-install'],
-			import.meta.url,
-		);
+		await runCommand(LoginCommand, { flags_token: TEST_USER_TOKEN });
+		await runCommand(CreateCommand, {
+			args_actorName: ACTOR_NAME,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+		});
 
 		const actCode = `
         import { Actor } from 'apify';
@@ -69,7 +70,7 @@ describe('apify call', () => {
 
 		toggleCwdBetweenFullAndParentPath();
 
-		await ActorsPushCommand.run(['--no-prompt', '--force'], import.meta.url);
+		await runCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
 
 		actorId = `${username}/${ACTOR_NAME}`;
 
@@ -92,7 +93,7 @@ describe('apify call', () => {
 	});
 
 	it('without actId', async () => {
-		await ActorsCallCommand.run([], import.meta.url);
+		await runCommand(ActorsCallCommand, {});
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
 		const lastRun = runs.items.pop();
@@ -106,7 +107,7 @@ describe('apify call', () => {
 	});
 
 	it('should work with just the Actor name', async () => {
-		await expect(ActorsCallCommand.run([ACTOR_NAME], import.meta.url)).resolves.toBeUndefined();
+		await runCommand(ActorsCallCommand, { args_actorId: ACTOR_NAME });
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -121,7 +122,7 @@ describe('apify call', () => {
 	});
 
 	it('should work with just the Actor ID', async () => {
-		await expect(ActorsCallCommand.run([apifyId], import.meta.url)).resolves.toBeUndefined();
+		await runCommand(ActorsCallCommand, { args_actorId: apifyId });
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -142,7 +143,7 @@ describe('apify call', () => {
 
 		const string = JSON.stringify(expectedInput);
 
-		await expect(ActorsCallCommand.run([ACTOR_NAME, '--input', string], import.meta.url)).resolves.toBeUndefined();
+		await runCommand(ActorsCallCommand, { args_actorId: ACTOR_NAME, flags_input: string });
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -155,9 +156,10 @@ describe('apify call', () => {
 	});
 
 	it('should work with passed in input file', async () => {
-		await expect(
-			ActorsCallCommand.run([ACTOR_NAME, '--input-file', pathToInputJson], import.meta.url),
-		).resolves.toBeUndefined();
+		await runCommand(ActorsCallCommand, {
+			args_actorId: ACTOR_NAME,
+			flags_inputFile: pathToInputJson,
+		});
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -170,35 +172,35 @@ describe('apify call', () => {
 	});
 
 	// TODO: move this to cucumber, much easier to test
-	it.skip('should work with stdin input without --input or --input-file', async () => {
-		const expectedInput = {
-			hello: 'from cli',
-		};
+	// it.skip('should work with stdin input without --input or --input-file', async () => {
+	// 	const expectedInput = {
+	// 		hello: 'from cli',
+	// 	};
 
-		const string = JSON.stringify(expectedInput);
+	// 	const string = JSON.stringify(expectedInput);
 
-		const { error } = await captureOutput(async () => {
-			stdin.reset();
-			setTimeout(() => {
-				stdin.send(`${string}\n`);
+	// 	const { error } = await captureOutput(async () => {
+	// 		stdin.reset();
+	// 		setTimeout(() => {
+	// 			stdin.send(`${string}\n`);
 
-				setTimeout(() => {
-					stdin.end();
-				}, 50);
-			}, 1000);
+	// 			setTimeout(() => {
+	// 				stdin.end();
+	// 			}, 50);
+	// 		}, 1000);
 
-			return ActorsCallCommand.run([ACTOR_NAME], import.meta.url);
-		});
+	// 		return ActorsCallCommand.run([ACTOR_NAME], import.meta.url);
+	// 	});
 
-		expect(error).toBeUndefined();
+	// 	expect(error).toBeUndefined();
 
-		const actorClient = testUserClient.actor(actorId);
-		const runs = await actorClient.runs().list();
-		const lastRun = runs.items.pop();
-		const lastRunDetail = await testUserClient.run(lastRun!.id).get();
-		const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
+	// 	const actorClient = testUserClient.actor(actorId);
+	// 	const runs = await actorClient.runs().list();
+	// 	const lastRun = runs.items.pop();
+	// 	const lastRunDetail = await testUserClient.run(lastRun!.id).get();
+	// 	const input = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('INPUT');
 
-		expect(expectedInput).toStrictEqual(input!.value);
-		expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
-	});
+	// 	expect(expectedInput).toStrictEqual(input!.value);
+	// 	expect(EXPECTED_INPUT_CONTENT_TYPE).toStrictEqual(input!.contentType);
+	// });
 });
