@@ -32,7 +32,7 @@ export type Language = (typeof LANGUAGE)[keyof typeof LANGUAGE];
 export const PROJECT_TYPES = {
 	SCRAPY: 'scrapy',
 	CRAWLEE: 'crawlee',
-	PRE_CRAWLEE_APIFY_SDK: 'apify',
+	APIFY_SDK: 'apify',
 	UNKNOWN: 'unknown',
 };
 
