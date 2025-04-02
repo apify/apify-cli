@@ -1,6 +1,7 @@
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { CommandExitCodes } from '../../lib/consts.js';
