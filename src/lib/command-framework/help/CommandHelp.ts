@@ -34,6 +34,14 @@ DESCRIPTION
 GLOBAL FLAGS
   --json  Format output as json.
 
+USAGE
+  $ apify login [-t <value>] [-m console|manual]
+
+FLAGS
+  -m, --method=<option>  [Optional] Method of logging in to Apify
+                         <options: console|manual>
+  -t, --token=<value>    [Optional] Apify API token
+
  */
 
 export class CommandHelp extends BaseCommandRenderer {
