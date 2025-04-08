@@ -2,9 +2,6 @@
 title: Apify CLI
 ---
 
-<a href="https://www.npmjs.com/package/apify-cli"><img src="https://badge.fury.io/js/apify-cli.svg" alt="npm version" loading="lazy" /></a>
-<a href="https://travis-ci.com/apify/apify-cli?branch=master"><img src="https://travis-ci.com/apify/apify-cli.svg?branch=master" loading="lazy" alt="Build Status" /></a>
-
 Apify command-line interface (Apify CLI) helps you create, develop, build and run
 [Apify Actors](https://apify.com/actors),
 and manage the Apify cloud platform from any computer.
