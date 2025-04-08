@@ -1,13 +1,5 @@
-import { type SpawnSyncOptions, spawnSync } from 'node:child_process';
-import {
-	createWriteStream,
-	existsSync,
-	mkdirSync,
-	readFileSync,
-	readdirSync,
-	renameSync,
-	writeFileSync,
-} from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
 import { dirname, join } from 'node:path';
@@ -33,22 +25,16 @@ import archiver from 'archiver';
 import { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import { globby } from 'globby';
-import inquirer from 'inquirer';
 import { getEncoding } from 'istextorbinary';
-import { loadJsonFile, loadJsonFileSync } from 'load-json-file';
 import { Mime } from 'mime';
 import otherMimes from 'mime/types/other.js';
 import standardMimes from 'mime/types/standard.js';
 import { gte, minVersion, satisfies } from 'semver';
-import _ from 'underscore';
-import { writeJsonFile, writeJsonFileSync } from 'write-json-file';
 
 import {
-	ACTOR_SPECIFICATION_VERSION,
 	APIFY_CLIENT_DEFAULT_HEADERS,
 	AUTH_FILE_PATH,
 	DEFAULT_LOCAL_STORAGE_DIR,
-	DEPRECATED_LOCAL_CONFIG_NAME,
 	GLOBAL_CONFIGS_FOLDER,
 	INPUT_FILE_REG_EXP,
 	LANGUAGE,
@@ -59,7 +45,6 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
-import { info } from './outputs.js';
 import { ProjectAnalyzer } from './project_analyzer.js';
 import type { AuthJSON } from './types.js';
 
@@ -81,9 +66,6 @@ export const httpsGet = async (url: string) => {
 		}).on('error', reject);
 	});
 };
-
-// Properties from apify.json file that will me migrated to Actor specs in .actor/actor.json
-const MIGRATED_APIFY_JSON_PROPERTIES = ['name', 'version', 'buildTag'];
 
 export const getLocalStorageDir = () => {
 	const envVar = APIFY_ENV_VARS.LOCAL_STORAGE_DIR;
@@ -197,126 +179,29 @@ export const getLoggedClient = async (token?: string, apiBaseUrl?: string) => {
 	// Always refresh Auth file
 	ensureApifyDirectory(AUTH_FILE_PATH());
 
-	await writeJsonFile(AUTH_FILE_PATH(), { token: apifyClient.token, ...userInfo });
+	writeFileSync(AUTH_FILE_PATH(), JSON.stringify({ token: apifyClient.token, ...userInfo }, null, '\t'));
 
 	return apifyClient;
 };
 
-const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);
-
-/**
- * @deprecated Use getLocalConfigPath
- */
-const getDeprecatedLocalConfigPath = (cwd: string) => join(cwd, DEPRECATED_LOCAL_CONFIG_NAME);
+export const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);
 
 export const getJsonFileContent = <T = Record<string, unknown>>(filePath: string) => {
 	if (!existsSync(filePath)) {
 		return;
 	}
 
-	return loadJsonFileSync<T>(filePath);
+	return JSON.parse(readFileSync(filePath, { encoding: 'utf-8' })) as T;
 };
 
 export const getLocalConfig = (cwd: string) => getJsonFileContent(getLocalConfigPath(cwd));
 
-/**
- * @deprecated Use getLocalConfig
- */
-const getDeprecatedLocalConfig = (cwd: string) => getJsonFileContent(getDeprecatedLocalConfigPath(cwd));
-
-export const getLocalConfigOrThrow = async (cwd: string) => {
-	let localConfig: Record<string, unknown> | undefined;
-
-	try {
-		localConfig = getLocalConfig(cwd);
-	} catch (error) {
-		throw new Error(`Failed to read local config at path: '${LOCAL_CONFIG_PATH}':`, { cause: error });
-	}
-
-	let deprecatedLocalConfig: Record<string, unknown> | undefined;
-
-	try {
-		deprecatedLocalConfig = getDeprecatedLocalConfig(cwd);
-	} catch (error) {
-		throw new Error(`Failed to read local config at path: '${DEPRECATED_LOCAL_CONFIG_NAME}':`, { cause: error });
-	}
-
-	if (localConfig && deprecatedLocalConfig) {
-		const answer = await inquirer.prompt([
-			{
-				name: 'isConfirm',
-				type: 'confirm',
-
-				message: `The new version of Apify CLI uses the "${LOCAL_CONFIG_PATH}" instead of the "apify.json" file. Since we have found both files in your Actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use "${LOCAL_CONFIG_PATH}". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?`,
-			},
-		]);
-
-		if (!answer.isConfirm) {
-			throw new Error(
-				'Command can not run with old "apify.json" file present in your Actor directory., Please, either rename or remove it.',
-			);
-		}
-		try {
-			renameSync(getDeprecatedLocalConfigPath(cwd), `${getDeprecatedLocalConfigPath(cwd)}.deprecated`);
-
-			info({
-				message: `The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.`,
-			});
-		} catch (e) {
-			throw new Error('Failed to rename deprecated "apify.json".');
-		}
-	}
-
-	if (!localConfig && !deprecatedLocalConfig) {
-		return {};
-	}
-
-	// If apify.json exists migrate it to .actor/actor.json
-	if (!localConfig && deprecatedLocalConfig) {
-		const answer = await inquirer.prompt([
-			{
-				name: 'isConfirm',
-				type: 'confirm',
-
-				message: `The new version of Apify CLI uses the "${LOCAL_CONFIG_PATH}" instead of the "apify.json" file. Your "apify.json" file will be automatically updated to the new format under "${LOCAL_CONFIG_PATH}". The original file will be renamed by adding the ".deprecated" suffix. Do you want to continue?`,
-			},
-		]);
-		if (!answer.isConfirm) {
-			throw new Error(
-				'Command can not run with old apify.json structure. Either let the CLI auto-update it or follow the guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.',
-			);
-		}
-		try {
-			// Check if apify.json contains old deprecated structure. If so, updates it.
-			if (_.isObject(deprecatedLocalConfig.version)) {
-				deprecatedLocalConfig = updateLocalConfigStructure(deprecatedLocalConfig);
-			}
-
-			localConfig = {
-				actorSpecification: ACTOR_SPECIFICATION_VERSION,
-				environmentVariables: deprecatedLocalConfig?.env || undefined,
-				..._.pick(deprecatedLocalConfig, MIGRATED_APIFY_JSON_PROPERTIES),
-			};
-
-			await writeJsonFile(getLocalConfigPath(cwd), localConfig);
-			renameSync(getDeprecatedLocalConfigPath(cwd), `${getDeprecatedLocalConfigPath(cwd)}.deprecated`);
-
-			info({
-				message: `The "apify.json" file has been migrated to "${LOCAL_CONFIG_PATH}" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`,
-			});
-		} catch (e) {
-			throw new Error(
-				`Can not update "${LOCAL_CONFIG_PATH}" structure. Follow guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.`,
-			);
-		}
-	}
-
-	return localConfig;
-};
-
 export const setLocalConfig = async (localConfig: Record<string, unknown>, actDir?: string) => {
-	actDir = actDir || process.cwd();
-	writeJsonFileSync(join(actDir, LOCAL_CONFIG_PATH), localConfig);
+	const fullPath = join(actDir || process.cwd(), LOCAL_CONFIG_PATH);
+
+	await mkdir(dirname(fullPath), { recursive: true });
+
+	writeFileSync(fullPath, JSON.stringify(localConfig, null, '\t'));
 };
 
 const GITIGNORE_REQUIRED_CONTENTS = [getLocalStorageDir(), 'node_modules', '.venv'];
@@ -582,30 +467,6 @@ export const checkIfStorageIsEmpty = async () => {
 };
 
 /**
- * Migration for deprecated structure of apify.json to latest.
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const updateLocalConfigStructure = (localConfig: any) => {
-	const updatedLocalConfig: Record<string, unknown> = {
-		name: localConfig.name,
-		template: localConfig.template,
-		version: localConfig.version.versionNumber,
-		buildTag: localConfig.version.buildTag,
-		env: null,
-	};
-
-	if (localConfig.version.envVars && localConfig.version.envVars.length) {
-		const env = {} as Record<string, string>;
-		localConfig.version.envVars.forEach((envVar: { name: string; value: string }) => {
-			if (envVar.name && envVar.value) env[envVar.name] = envVar.value;
-		});
-
-		updatedLocalConfig.env = env;
-	}
-	return updatedLocalConfig;
-};
-
-/**
  * Validates Actor name, if finds issue throws error.
  * @param actorName
  */
@@ -633,62 +494,8 @@ export const sanitizeActorName = (actorName: string) => {
 	return sanitizedName.slice(0, ACTOR_NAME.MAX_LENGTH);
 };
 
-export const getPythonCommand = (directory: string) => {
-	const pythonVenvPath = /^win/.test(process.platform) ? 'Scripts/python.exe' : 'bin/python3';
-
-	let fullPythonVenvPath;
-	if (process.env.VIRTUAL_ENV) {
-		fullPythonVenvPath = join(process.env.VIRTUAL_ENV, pythonVenvPath);
-	} else {
-		fullPythonVenvPath = join(directory, '.venv', pythonVenvPath);
-	}
-
-	if (existsSync(fullPythonVenvPath)) {
-		return fullPythonVenvPath;
-	}
-
-	return /^win/.test(process.platform) ? 'python' : 'python3';
-};
-
-const spawnOptions: SpawnSyncOptions = { shell: true, windowsHide: true };
-
-export const detectPythonVersion = (directory: string) => {
-	const pythonCommand = getPythonCommand(directory);
-	try {
-		const spawnResult = spawnSync(pythonCommand, ['-c', '"import platform; print(platform.python_version())"'], {
-			...spawnOptions,
-			encoding: 'utf-8',
-		});
-
-		if (!spawnResult.error && spawnResult.stdout) {
-			return spawnResult.stdout.trim();
-		}
-
-		return undefined;
-	} catch {
-		return undefined;
-	}
-};
-
 export const isPythonVersionSupported = (installedPythonVersion: string) => {
 	return satisfies(installedPythonVersion, `^${MINIMUM_SUPPORTED_PYTHON_VERSION}`);
-};
-
-export const detectNodeVersion = () => {
-	try {
-		const spawnResult = spawnSync('node', ['--version'], {
-			...spawnOptions,
-			encoding: 'utf-8',
-		});
-
-		if (!spawnResult.error && spawnResult.stdout) {
-			return spawnResult.stdout.trim().replace(/^v/, '');
-		}
-
-		return undefined;
-	} catch {
-		return undefined;
-	}
 };
 
 export const isNodeVersionSupported = (installedNodeVersion: string) => {
@@ -698,47 +505,10 @@ export const isNodeVersionSupported = (installedNodeVersion: string) => {
 	return gte(installedNodeVersion, minimumSupportedNodeVersion);
 };
 
-export const detectNpmVersion = () => {
-	const npmCommand = getNpmCmd();
-	try {
-		const spawnResult = spawnSync(npmCommand, ['--version'], {
-			...spawnOptions,
-			encoding: 'utf-8',
-		});
-
-		if (!spawnResult.error && spawnResult.stdout) {
-			return spawnResult.stdout.trim().replace(/^v/, '');
-		}
-
-		return undefined;
-	} catch {
-		return undefined;
-	}
-};
-
 export interface ActorLanguage {
 	language: Language;
 	languageVersion?: string;
 }
-
-export const detectLocalActorLanguage = (cwd: string) => {
-	const isActorInNode = existsSync(join(cwd, 'package.json'));
-	const isActorInPython =
-		existsSync(join(cwd, 'src/__main__.py')) || ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY;
-	const result = {} as ActorLanguage;
-
-	if (isActorInNode) {
-		result.language = LANGUAGE.NODEJS;
-		result.languageVersion = detectNodeVersion();
-	} else if (isActorInPython) {
-		result.language = LANGUAGE.PYTHON;
-		result.languageVersion = detectPythonVersion(cwd);
-	} else {
-		result.language = LANGUAGE.UNKNOWN;
-	}
-
-	return result;
-};
 
 export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: string }) => {
 	const zipStream = await httpsGet(url);

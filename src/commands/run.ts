@@ -6,8 +6,6 @@ import process from 'node:process';
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 import { Flags } from '@oclif/core';
-import { ensureDir } from 'fs-extra';
-import { loadJsonFile } from 'load-json-file';
 import mime from 'mime';
 import { minVersion } from 'semver';
 
@@ -31,14 +29,11 @@ import { replaceSecretsValue } from '../lib/secrets.js';
 import {
 	Ajv,
 	checkIfStorageIsEmpty,
-	detectLocalActorLanguage,
-	getLocalConfigOrThrow,
 	getLocalInput,
 	getLocalKeyValueStorePath,
 	getLocalStorageDir,
 	getLocalUserInfo,
 	getNpmCmd,
-	getPythonCommand,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
 	purgeDefaultDataset,

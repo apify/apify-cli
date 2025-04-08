@@ -2,9 +2,7 @@ import { existsSync, mkdirSync } from 'node:fs';
 import { stat, unlink } from 'node:fs/promises';
 import { join, sep } from 'node:path';
 
-import { loadJsonFile } from 'load-json-file';
 import { rimraf } from 'rimraf';
-import { writeJsonFile } from 'write-json-file';
 
 export const updateLocalJson = async (
 	jsonFilePath: string,

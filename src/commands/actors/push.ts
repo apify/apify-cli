@@ -19,7 +19,6 @@ import {
 	createActZip,
 	createSourceFiles,
 	getActorLocalFilePaths,
-	getLocalConfigOrThrow,
 	getLocalUserInfo,
 	getLoggedClientOrThrow,
 	outputJobLog,

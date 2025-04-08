@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { existsSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
 import deepClone from 'lodash.clonedeep';
-import _ from 'underscore';
-import { writeJsonFile } from 'write-json-file';
 
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
 import { warning } from './outputs.js';
@@ -90,10 +88,21 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
 			const validator = new Ajv({ strict: false });
 			validateInputSchema(validator, inputSchema);
 
-			inputFile = _.mapObject(inputSchema.properties as any, (fieldSchema) =>
-				fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden'
-					? fieldSchema.default
-					: fieldSchema.prefill,
+			// inputFile = _.mapObject(inputSchema.properties as any, (fieldSchema) =>
+			// 	fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden'
+			// 		? fieldSchema.default
+			// 		: fieldSchema.prefill,
+			// );
+			inputFile = Object.entries(inputSchema.properties as any).reduce(
+				(acc, [key, fieldSchema]: [string, any]) => {
+					acc[key] =
+						fieldSchema.type === 'boolean' || fieldSchema.editor === 'hidden'
+							? fieldSchema.default
+							: fieldSchema.prefill;
+
+					return acc;
+				},
+				{} as Record<string, any>,
 			);
 		}
 	} catch (err) {
@@ -105,7 +114,7 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
 	} finally {
 		const keyValueStorePath = getLocalKeyValueStorePath();
 		const inputJsonPath = join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
-		await writeJsonFile(inputJsonPath, inputFile);
+		writeFileSync(inputJsonPath, JSON.stringify(inputFile, null, '\t'));
 	}
 };
 

@@ -2,7 +2,7 @@ import { Args } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
-import { confirmAction } from '../../lib/commands/confirm.js';
+import { confirmAction } from '../../lib/utils/confirm.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 

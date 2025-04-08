@@ -1,6 +1,4 @@
-import { loadJsonFileSync } from 'load-json-file';
-import _ from 'underscore';
-import { writeJsonFileSync } from 'write-json-file';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 import { SECRETS_FILE_PATH } from './consts.js';
 import { warning } from './outputs.js';
@@ -13,7 +11,7 @@ const MAX_ENV_VAR_VALUE_LENGTH = 50000;
 
 export const getSecretsFile = () => {
 	try {
-		return loadJsonFileSync<Record<string, string>>(SECRETS_FILE_PATH()) || {};
+		return JSON.parse(readFileSync(SECRETS_FILE_PATH(), 'utf-8')) || {};
 	} catch (e) {
 		return {};
 	}
@@ -21,7 +19,7 @@ export const getSecretsFile = () => {
 
 const writeSecretsFile = (secrets: Record<string, string>) => {
 	ensureApifyDirectory(SECRETS_FILE_PATH());
-	writeJsonFileSync(SECRETS_FILE_PATH(), secrets);
+	writeFileSync(SECRETS_FILE_PATH(), JSON.stringify(secrets, null, '\t'));
 	return secrets;
 };
 
@@ -30,10 +28,10 @@ export const addSecret = (name: string, value: string) => {
 
 	if (secrets[name])
 		throw new Error(`Secret with name ${name} already exists. Call "apify secrets rm ${name}" to remove it.`);
-	if (!_.isString(name) || name.length > MAX_ENV_VAR_NAME_LENGTH) {
+	if (typeof name !== 'string' || name.length > MAX_ENV_VAR_NAME_LENGTH) {
 		throw new Error(`Secret name has to be string with maximum length ${MAX_ENV_VAR_NAME_LENGTH}.`);
 	}
-	if (!_.isString(value) || value.length > MAX_ENV_VAR_VALUE_LENGTH) {
+	if (typeof value !== 'string' || value.length > MAX_ENV_VAR_VALUE_LENGTH) {
 		throw new Error(`Secret value has to be string with maximum length ${MAX_ENV_VAR_VALUE_LENGTH}.`);
 	}
 

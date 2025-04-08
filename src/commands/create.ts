@@ -15,13 +15,9 @@ import { updateLocalJson } from '../lib/files.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
 import {
-	detectNodeVersion,
-	detectNpmVersion,
-	detectPythonVersion,
 	downloadAndUnzip,
 	getJsonFileContent,
 	getNpmCmd,
-	getPythonCommand,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
 	setLocalConfig,

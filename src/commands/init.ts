@@ -9,22 +9,15 @@ import {
 	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
 	EMPTY_LOCAL_CONFIG,
-	LANGUAGE,
 	LOCAL_CONFIG_PATH,
 	PROJECT_TYPES,
 } from '../lib/consts.js';
+import { useActorConfig } from '../lib/hooks/useActorConfig.js';
+import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
-import { ProjectAnalyzer } from '../lib/project_analyzer.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
-import {
-	detectLocalActorLanguage,
-	getLocalConfig,
-	getLocalConfigOrThrow,
-	setLocalConfig,
-	setLocalEnv,
-	validateActorName,
-} from '../lib/utils.js';
+import { setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
 
 export class InitCommand extends ApifyCommand<typeof InitCommand> {
 	static override description =
@@ -53,26 +46,44 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 		let { actorName } = this.args;
 		const cwd = process.cwd();
 
-		if (ProjectAnalyzer.getProjectType(cwd) === PROJECT_TYPES.SCRAPY) {
+		const projectResult = await useCwdProject();
+
+		// TODO: use direct .unwrap() once we migrate to yargs
+		if (projectResult.isErr()) {
+			error({ message: projectResult.unwrapErr().message });
+			process.exit(1);
+		}
+
+		const project = projectResult.unwrap();
+
+		if (project.type === ProjectLanguage.Scrapy) {
 			info({ message: 'The current directory looks like a Scrapy project. Using automatic project wrapping.' });
 			this.telemetryData.actorWrapper = PROJECT_TYPES.SCRAPY;
 
 			return wrapScrapyProject({ projectPath: cwd });
 		}
 
-		if (!this.flags.yes && detectLocalActorLanguage(cwd).language === LANGUAGE.UNKNOWN) {
+		if (!this.flags.yes && project.type === ProjectLanguage.Unknown) {
 			warning({ message: 'The current directory does not look like a Node.js or Python project.' });
 			const { c } = await inquirer.prompt([{ name: 'c', message: 'Do you want to continue?', type: 'confirm' }]);
 			if (!c) return;
 		}
 
-		if (getLocalConfig(cwd)) {
+		const actorConfig = await useActorConfig({ cwd });
+
+		if (actorConfig.isOkAnd((cfg) => cfg.exists && !cfg.migrated)) {
 			warning({
 				message: `Skipping creation of '${LOCAL_CONFIG_PATH}', the file already exists in the current directory.`,
 			});
 		} else {
+			if (actorConfig.isErr()) {
+				error({ message: actorConfig.unwrapErr().message });
+				process.exitCode = CommandExitCodes.InvalidActorJson;
+				return;
+			}
+
 			if (!actorName) {
-				let response = null;
+				let response = actorConfig.isOk() ? { actName: actorConfig.unwrap().config.name as string } : null;
 
 				while (!response) {
 					try {
@@ -89,21 +100,8 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 				({ actName: actorName } = response);
 			}
 
-			let existingLocalConfig: Record<string, unknown> | undefined;
-
-			try {
-				existingLocalConfig = await getLocalConfigOrThrow(cwd);
-			} catch (_error) {
-				const casted = _error as Error;
-				const cause = casted.cause as Error;
-
-				error({ message: `${casted.message}\n  ${cause.message}` });
-				process.exitCode = CommandExitCodes.InvalidActorJson;
-				return;
-			}
-
 			// Migrate apify.json to .actor/actor.json
-			const localConfig = { ...EMPTY_LOCAL_CONFIG, ...existingLocalConfig };
+			const localConfig = { ...EMPTY_LOCAL_CONFIG, ...actorConfig.unwrap().config };
 			await setLocalConfig(Object.assign(localConfig, { name: actorName }), cwd);
 		}
 

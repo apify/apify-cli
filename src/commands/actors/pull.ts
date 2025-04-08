@@ -12,7 +12,7 @@ import tiged from 'tiged';
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLocalConfigOrThrow, getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const extractGitHubZip = async (url: string, directoryPath: string) => {
 	const { data } = await axios.get(url, { responseType: 'arraybuffer' });
