@@ -169,9 +169,9 @@
     },
     "volta": {
         "node": "22.14.0",
-        "yarn": "4.8.1"
+        "yarn": "4.9.0"
     },
-    "packageManager": "yarn@4.8.1",
+    "packageManager": "yarn@4.9.0",
     "lint-staged": {
         "*": "biome format --write --no-errors-on-unmatched",
         "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts",
