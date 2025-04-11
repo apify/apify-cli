@@ -62,19 +62,19 @@ export default function Home() {
                     <div className="row padding-horiz--md" >
                         <div className="col col--6">
                             <p style={{ lineHeight: '200%' }}>
-                            Apify actors are cloud programs that can perform arbitrary web scraping,
+                            Apify Actors are cloud programs that can perform arbitrary web scraping,
                             automation, or data processing job. They accept input, perform their job and generate output.
                             </p>
                             <p style={{ lineHeight: '200%' }}>
-                            While you can develop actors in an online IDE in <a href="https://console.apify.com/">Apify Console</a>, for
-                            larger projects, it is more convenient to develop actors locally on your computer
-                            using <a href="https://docs.apify.com/sdk/js/">Apify SDK</a> and only push the actors
+                            While you can develop Actors in an online IDE in <a href="https://console.apify.com/">Apify Console</a>, for
+                            larger projects, it is more convenient to develop Actors locally on your computer
+                            using <a href="https://docs.apify.com/sdk/js/">Apify SDK</a> and only push the Actors
                             to the Apify platform during deployment. This is where the Apify CLI comes in to allow you to quickly develop
                             locally and then deploy to the cloud with a single command.
                             </p>
                         </div>
                         <div className="col col--6">
-                            <CodeBlock language='bash'>{`# Create your first actor
+                            <CodeBlock language='bash'>{`# Create your first Actor
 apify create my-actor
 
 # Go into the project directory
