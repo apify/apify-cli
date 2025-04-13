@@ -1,5 +1,5 @@
 import { access, readFile } from 'node:fs/promises';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import process from 'node:process';
 
 import { ok, type Result } from '@sapphire/result';
@@ -188,7 +188,11 @@ async function checkPythonProject(cwd: string) {
 	for (const path of filesToCheck) {
 		try {
 			await access(path);
-			return path;
+
+			// By default in python, we run python3 -m <module>
+			// For some unholy reason, python does NOT support absolute paths for this -.-
+			// Effectively, this returns `src` from `/cwd/src/__main__.py`, et al.
+			return basename(dirname(path));
 		} catch {
 			// Ignore errors
 		}

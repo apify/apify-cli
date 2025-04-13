@@ -122,6 +122,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const project = projectRuntimeResult.unwrap();
 		const { type, entrypoint: cwdEntrypoint, runtime } = project;
 
+		console.log(runtime);
+
 		if (type === ProjectLanguage.Unknown) {
 			throw new Error(
 				'Actor is of an unknown format.' +
@@ -154,13 +156,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		let runType: RunType;
 		let entrypoint: string;
 
-		if (cwdEntrypoint?.script) {
-			runType = RunType.Script;
-			entrypoint = cwdEntrypoint.script;
-		} else if (cwdEntrypoint?.path) {
-			runType = RunType.DirectFile;
-			entrypoint = cwdEntrypoint.path;
-		} else if (this.flags.entrypoint) {
+		if (this.flags.entrypoint) {
 			entrypoint = this.flags.entrypoint;
 
 			const entrypointPath = join(cwd, this.flags.entrypoint);
@@ -179,6 +175,12 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			else {
 				runType = RunType.Script;
 			}
+		} else if (cwdEntrypoint?.script) {
+			runType = RunType.Script;
+			entrypoint = cwdEntrypoint.script;
+		} else if (cwdEntrypoint?.path) {
+			runType = type === ProjectLanguage.Python ? RunType.Module : RunType.DirectFile;
+			entrypoint = cwdEntrypoint.path;
 		} else {
 			error({
 				message: `No entrypoint detected! Please provide an entrypoint using the --entrypoint flag, or make sure your project has an entrypoint.`,

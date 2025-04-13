@@ -304,9 +304,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			if (messages?.postCreate) {
 				info({ message: messages?.postCreate });
 			}
-		} else;
-		success({
-			message: `Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`,
-		});
+		} else {
+			success({
+				message: `Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`,
+			});
+		}
 	}
 }

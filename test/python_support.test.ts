@@ -10,7 +10,7 @@ const actorName = 'my-python-actor';
 const PYTHON_START_TEMPLATE_ID = 'python-start';
 const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, toggleCwdBetweenFullAndParentPath } = useTempPath(actorName, {
 	create: true,
-	remove: true,
+	remove: false,
 	cwd: true,
 	cwdParent: true,
 });
@@ -32,7 +32,7 @@ describe('Python support [python]', () => {
 	});
 
 	it('Python templates work [python]', { timeout: 120_000 }, async () => {
-		const runtime = await usePythonRuntime(tmpPath);
+		const runtime = await usePythonRuntime({ cwd: tmpPath, force: true });
 
 		const pythonVersion = runtime.map((r) => r.version).unwrapOr(undefined);
 
