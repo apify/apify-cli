@@ -15,6 +15,7 @@ import {
 import { TEST_USER_TOKEN } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
+import { resetCwdCaches } from '../__setup__/reset-cwd-caches.js';
 
 const actName = 'run-my-actor';
 const pathToDefaultsInputSchema = fileURLToPath(new URL('../__setup__/input-schemas/defaults.json', import.meta.url));
@@ -58,6 +59,10 @@ describe('apify run', () => {
 
 	afterAll(async () => {
 		await afterAllCalls();
+	});
+
+	beforeEach(() => {
+		resetCwdCaches();
 	});
 
 	it('run act with output', async () => {

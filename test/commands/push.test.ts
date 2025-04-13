@@ -13,6 +13,7 @@ import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
+import { resetCwdCaches } from '../__setup__/reset-cwd-caches.js';
 
 const ACTOR_NAME = `push-cli-test-${cryptoRandomObjectId(6)}`;
 const TEST_ACTOR: ActorCollectionCreateOptions = {
@@ -67,6 +68,10 @@ describe('apify push', () => {
 			const actorClient = testUserClient.actor(actorId);
 			await actorClient.delete();
 		}
+	});
+
+	beforeEach(() => {
+		resetCwdCaches();
 	});
 
 	it('should work without actorId', async () => {

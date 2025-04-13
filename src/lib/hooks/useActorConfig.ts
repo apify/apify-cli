@@ -31,7 +31,7 @@ export interface ActorConfigInput {
 	warnAboutOldConfig?: boolean;
 }
 
-const cwdCache = new Map<string, ActorConfigResult>();
+export const cwdCache = new Map<string, ActorConfigResult>();
 
 export async function useActorConfig(
 	{ cwd = process.cwd(), migrateConfig = true, warnAboutOldConfig = true }: ActorConfigInput = {

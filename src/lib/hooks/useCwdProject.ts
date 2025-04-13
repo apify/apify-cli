@@ -43,7 +43,7 @@ export interface CwdProjectError {
 	message: string;
 }
 
-const cwdCache = new Map<string, CwdProject>();
+export const cwdCache = new Map<string, CwdProject>();
 
 export async function useCwdProject(cwd = process.cwd()): Promise<Result<CwdProject, CwdProjectError>> {
 	const cached = cwdCache.get(cwd);
