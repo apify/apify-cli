@@ -256,6 +256,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 							// regenerate the `pythonCommand` after we create the virtual environment
 							runtime = (await usePythonRuntime({ cwd: actFolderDir, force: true })).unwrap();
+							project.runtime = runtime;
 						}
 
 						await execWithLog({
