@@ -99,7 +99,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const { proxy, id: userId, token } = await getLocalUserInfo();
 
-		const localConfigResult = await useActorConfig();
+		const localConfigResult = await useActorConfig({ cwd });
 
 		if (localConfigResult.isErr()) {
 			error({ message: localConfigResult.unwrapErr().message });
@@ -111,7 +111,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const actualStoragePath = getLocalStorageDir();
 
-		const projectRuntimeResult = await useCwdProject();
+		const projectRuntimeResult = await useCwdProject({ cwd });
 
 		if (projectRuntimeResult.isErr()) {
 			error({ message: projectRuntimeResult.unwrapErr().message });

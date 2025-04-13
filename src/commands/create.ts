@@ -1,5 +1,4 @@
-import { mkdirSync } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
+import { mkdir, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
@@ -103,7 +102,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 			// Create Actor directory structure
 			if (!folderExists) {
-				mkdirSync(actFolderDir);
+				await mkdir(actFolderDir, { recursive: true });
 			}
 			break;
 		}
@@ -149,7 +148,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		let dependenciesInstalled = false;
 		if (!skipDependencyInstall) {
-			const cwdProjectResult = await useCwdProject(actFolderDir);
+			const cwdProjectResult = await useCwdProject({ cwd: actFolderDir });
 
 			await cwdProjectResult.inspectAsync(async (project) => {
 				const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
@@ -256,7 +255,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 							});
 
 							// regenerate the `pythonCommand` after we create the virtual environment
-							runtime = (await usePythonRuntime(actFolderDir)).unwrap();
+							runtime = (await usePythonRuntime({ cwd: actFolderDir, force: true })).unwrap();
 						}
 
 						await execWithLog({

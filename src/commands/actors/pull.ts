@@ -52,7 +52,7 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 	async run() {
 		const cwd = process.cwd();
 
-		const actorConfigResult = await useActorConfig();
+		const actorConfigResult = await useActorConfig({ cwd });
 
 		if (actorConfigResult.isErr()) {
 			error({ message: actorConfigResult.unwrapErr().message });

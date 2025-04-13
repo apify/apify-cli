@@ -131,7 +131,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const apifyClient = await getLoggedClientOrThrow();
 
-		const actorConfigResult = await useActorConfig();
+		const actorConfigResult = await useActorConfig({ cwd });
 
 		if (actorConfigResult.isErr()) {
 			error({ message: actorConfigResult.unwrapErr().message });

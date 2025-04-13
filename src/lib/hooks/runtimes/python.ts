@@ -31,10 +31,18 @@ async function getPythonVersion(runtimePath: string) {
 	}
 }
 
-export async function usePythonRuntime(cwd = process.cwd()): Promise<Option<Runtime>> {
+export interface UsePythonRuntimeInput {
+	cwd?: string;
+	force?: boolean;
+}
+
+export async function usePythonRuntime({
+	cwd = process.cwd(),
+	force = false,
+}: UsePythonRuntimeInput = {}): Promise<Option<Runtime>> {
 	const cached = cwdCache.get(cwd);
 
-	if (cached) {
+	if (cached && !force) {
 		return cached;
 	}
 

@@ -45,7 +45,9 @@ export interface CwdProjectError {
 
 export const cwdCache = new Map<string, CwdProject>();
 
-export async function useCwdProject(cwd = process.cwd()): Promise<Result<CwdProject, CwdProjectError>> {
+export async function useCwdProject({
+	cwd = process.cwd(),
+}: { cwd?: string } = {}): Promise<Result<CwdProject, CwdProjectError>> {
 	const cached = cwdCache.get(cwd);
 
 	if (cached) {
@@ -62,7 +64,7 @@ export async function useCwdProject(cwd = process.cwd()): Promise<Result<CwdProj
 		if (isScrapy) {
 			project.type = ProjectLanguage.Scrapy;
 
-			const runtime = await usePythonRuntime(cwd);
+			const runtime = await usePythonRuntime({ cwd });
 
 			project.runtime = runtime.unwrapOr(undefined);
 
@@ -83,7 +85,7 @@ export async function useCwdProject(cwd = process.cwd()): Promise<Result<CwdProj
 		if (isPython) {
 			project.type = ProjectLanguage.Python;
 
-			const runtime = await usePythonRuntime(cwd);
+			const runtime = await usePythonRuntime({ cwd });
 
 			project.entrypoint = {
 				path: isPython,
