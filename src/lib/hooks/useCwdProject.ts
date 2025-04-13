@@ -2,7 +2,7 @@ import { access, readFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 import process from 'node:process';
 
-import { err, ok, type Result } from '@sapphire/result';
+import { ok, type Result } from '@sapphire/result';
 
 import { useJavaScriptRuntime } from './runtimes/javascript.js';
 import { usePythonRuntime } from './runtimes/python.js';
@@ -24,6 +24,7 @@ export interface Runtime {
 	version: string;
 	pmPath?: string | null;
 	pmVersion?: string | null;
+	runtimeShorthand?: string;
 }
 
 export interface Entrypoint {
@@ -41,7 +42,15 @@ export interface CwdProjectError {
 	message: string;
 }
 
+const cwdCache = new Map<string, CwdProject>();
+
 export async function useCwdProject(cwd = process.cwd()): Promise<Result<CwdProject, CwdProjectError>> {
+	const cached = cwdCache.get(cwd);
+
+	if (cached) {
+		return ok(cached);
+	}
+
 	const project: CwdProject = {
 		type: ProjectLanguage.Unknown,
 	};
@@ -51,6 +60,20 @@ export async function useCwdProject(cwd = process.cwd()): Promise<Result<CwdProj
 
 		if (isScrapy) {
 			project.type = ProjectLanguage.Scrapy;
+
+			const runtime = await usePythonRuntime(cwd);
+
+			project.runtime = runtime.unwrapOr(undefined);
+
+			const scrapyProject = new ScrapyProjectAnalyzer(cwd);
+			scrapyProject.loadScrapyCfg();
+
+			if (scrapyProject.configuration.hasKey('apify', 'mainpy_location')) {
+				project.entrypoint = {
+					path: scrapyProject.configuration.get('apify', 'mainpy_location')!,
+				};
+			}
+
 			return;
 		}
 
@@ -61,17 +84,11 @@ export async function useCwdProject(cwd = process.cwd()): Promise<Result<CwdProj
 
 			const runtime = await usePythonRuntime(cwd);
 
-			if (runtime.isNone()) {
-				return err({
-					message: 'Failed to detect Python runtime',
-				});
-			}
-
 			project.entrypoint = {
 				path: isPython,
 			};
 
-			project.runtime = runtime.unwrap();
+			project.runtime = runtime.unwrapOr(undefined);
 
 			return;
 		}
@@ -83,13 +100,7 @@ export async function useCwdProject(cwd = process.cwd()): Promise<Result<CwdProj
 
 			const runtime = await useJavaScriptRuntime();
 
-			if (runtime.isNone()) {
-				return err({
-					message: 'Failed to detect JavaScript runtime',
-				});
-			}
-
-			project.runtime = runtime.unwrap();
+			project.runtime = runtime.unwrapOr(undefined);
 
 			if (isNode.type === 'file') {
 				project.entrypoint = {
@@ -113,6 +124,8 @@ export async function useCwdProject(cwd = process.cwd()): Promise<Result<CwdProj
 		return maybeErr;
 	}
 
+	cwdCache.set(cwd, project);
+
 	return ok(project);
 }
 
@@ -129,7 +142,7 @@ async function checkNodeProject(cwd: string) {
 		}
 
 		if (pkg.scripts?.start) {
-			return { type: 'script', script: pkg.scripts.start } as const;
+			return { type: 'script', script: 'start' } as const;
 		}
 	} catch {
 		// Ignore missing package.json and try some common files

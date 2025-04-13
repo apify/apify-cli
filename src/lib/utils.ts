@@ -1,5 +1,5 @@
 import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
 import { dirname, join } from 'node:path';
@@ -37,15 +37,12 @@ import {
 	DEFAULT_LOCAL_STORAGE_DIR,
 	GLOBAL_CONFIGS_FOLDER,
 	INPUT_FILE_REG_EXP,
-	LANGUAGE,
 	LOCAL_CONFIG_PATH,
 	type Language,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
-	PROJECT_TYPES,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
-import { ProjectAnalyzer } from './project_analyzer.js';
 import type { AuthJSON } from './types.js';
 
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
@@ -100,7 +97,8 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	let result: AuthJSON = {};
 	try {
-		result = await loadJsonFile<AuthJSON>(AUTH_FILE_PATH());
+		const raw = await readFile(AUTH_FILE_PATH(), 'utf-8');
+		result = JSON.parse(raw) as AuthJSON;
 	} catch {
 		return {};
 	}
@@ -127,7 +125,8 @@ export const getLoggedClientOrThrow = async () => {
 
 const getTokenWithAuthFileFallback = (existingToken?: string) => {
 	if (!existingToken && existsSync(GLOBAL_CONFIGS_FOLDER()) && existsSync(AUTH_FILE_PATH())) {
-		return loadJsonFileSync<AuthJSON>(AUTH_FILE_PATH()).token;
+		const raw = readFileSync(AUTH_FILE_PATH(), 'utf-8');
+		return JSON.parse(raw).token;
 	}
 
 	return existingToken;

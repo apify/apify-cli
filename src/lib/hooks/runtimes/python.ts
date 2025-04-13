@@ -9,6 +9,8 @@ import which from 'which';
 
 import type { Runtime } from '../useCwdProject.js';
 
+const cwdCache = new Map<string, Option<Runtime>>();
+
 async function getPythonVersion(runtimePath: string) {
 	try {
 		const result = await execa(runtimePath, ['-c', '"import platform; print(platform.python_version())"'], {
@@ -30,6 +32,12 @@ async function getPythonVersion(runtimePath: string) {
 }
 
 export async function usePythonRuntime(cwd = process.cwd()): Promise<Option<Runtime>> {
+	const cached = cwdCache.get(cwd);
+
+	if (cached) {
+		return cached;
+	}
+
 	const isWindows = platform() === 'win32';
 
 	const pathParts = isWindows ? ['Scripts', 'python.exe'] : ['bin', 'python3'];
@@ -47,6 +55,14 @@ export async function usePythonRuntime(cwd = process.cwd()): Promise<Option<Runt
 		const version = await getPythonVersion(fullPythonVenvPath);
 
 		if (version) {
+			cwdCache.set(
+				cwd,
+				some({
+					executablePath: fullPythonVenvPath,
+					version,
+				}),
+			);
+
 			return some({
 				executablePath: fullPythonVenvPath,
 				version,
@@ -65,6 +81,14 @@ export async function usePythonRuntime(cwd = process.cwd()): Promise<Option<Runt
 			const version = await getPythonVersion(fullPath);
 
 			if (version) {
+				cwdCache.set(
+					cwd,
+					some({
+						executablePath: fullPath,
+						version,
+					}),
+				);
+
 				return some({
 					executablePath: fullPath,
 					version,
@@ -74,6 +98,8 @@ export async function usePythonRuntime(cwd = process.cwd()): Promise<Option<Runt
 			// Continue
 		}
 	}
+
+	cwdCache.set(cwd, none);
 
 	return none;
 }

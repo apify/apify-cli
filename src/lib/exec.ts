@@ -25,7 +25,7 @@ const spawnPromised = async (cmd: string, args: string[], opts: SpawnOptionsWith
 	// NOTE: This fix kills also puppeteer child node process
 	process.on('SIGINT', () => {
 		try {
-			childProcess.kill();
+			childProcess.kill('SIGINT');
 		} catch {
 			// SIGINT can come after the child process is finished, ignore it
 		}
@@ -40,7 +40,14 @@ const spawnPromised = async (cmd: string, args: string[], opts: SpawnOptionsWith
 	});
 };
 
-export async function execWithLog(cmd: string, args: string[] = [], opts: SpawnOptionsWithoutStdio = {}) {
-	run({ message: `${cmd} ${args.join(' ')}` });
+export interface ExecWithLogOptions {
+	cmd: string;
+	args?: string[];
+	opts?: SpawnOptionsWithoutStdio;
+	overrideCommand?: string;
+}
+
+export async function execWithLog({ cmd, args = [], opts = {}, overrideCommand }: ExecWithLogOptions) {
+	run({ message: `${overrideCommand || cmd} ${args.join(' ')}` });
 	await spawnPromised(cmd, args, opts);
 }

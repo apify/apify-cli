@@ -28,12 +28,24 @@ export interface ActorConfigResult {
 export interface ActorConfigInput {
 	cwd?: string;
 	migrateConfig?: boolean;
+	warnAboutOldConfig?: boolean;
 }
 
-export async function useActorConfig({
-	cwd = process.cwd(),
-	migrateConfig = true,
-}: ActorConfigInput): Promise<Result<ActorConfigResult, ActorConfigError>> {
+const cwdCache = new Map<string, ActorConfigResult>();
+
+export async function useActorConfig(
+	{ cwd = process.cwd(), migrateConfig = true, warnAboutOldConfig = true }: ActorConfigInput = {
+		cwd: process.cwd(),
+		migrateConfig: true,
+		warnAboutOldConfig: true,
+	},
+): Promise<Result<ActorConfigResult, ActorConfigError>> {
+	const cached = cwdCache.get(cwd);
+
+	if (cached) {
+		return ok(cached);
+	}
+
 	const newConfigPath = getLocalConfigPath(cwd);
 	const deprecatedConfigPath = getDeprecatedLocalConfigPath(cwd);
 
@@ -63,11 +75,13 @@ export async function useActorConfig({
 	}
 
 	// Handle cleanup of deprecated config, we just ignore the deprecated config if both exist
-	if (config && deprecatedConfig) {
+	if (config && deprecatedConfig && warnAboutOldConfig) {
 		await handleBothConfigVersionsFound(deprecatedConfigPath);
 	}
 
 	if (!config && !deprecatedConfig) {
+		cwdCache.set(cwd, { exists: false, migrated: false, config: {} });
+
 		return ok({ exists: false, migrated: false, config: {} });
 	}
 
@@ -83,6 +97,8 @@ export async function useActorConfig({
 		config = migratedConfig.unwrap();
 		migrated = true;
 	}
+
+	cwdCache.set(cwd, { exists: true, migrated, config: config || deprecatedConfig || {} });
 
 	return ok({ exists: true, migrated, config: config || deprecatedConfig || {} });
 }

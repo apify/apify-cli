@@ -1,8 +1,12 @@
+import process from 'node:process';
+
 import { none, some, type Option } from '@sapphire/result';
 import { execa } from 'execa';
 import which from 'which';
 
 import type { Runtime } from '../useCwdProject.js';
+
+const cwdCache = new Map<string, Option<Runtime>>();
 
 // Runtimes, in order of preference
 const runtimesToCheck = {
@@ -42,9 +46,13 @@ async function getNpmVersion(npmPath: string) {
 	return result.stdout.trim().replace(/^v/, '');
 }
 
-export async function useJavaScriptRuntime(): Promise<
-	Option<Runtime & { runtimeShorthand: keyof typeof runtimesToCheck }>
-> {
+export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<Runtime>> {
+	const cached = cwdCache.get(cwd);
+
+	if (cached) {
+		return cached;
+	}
+
 	for (const [runtime, args] of Object.entries(runtimesToCheck) as [keyof typeof runtimesToCheck, string[]][]) {
 		try {
 			const runtimePath = await which(runtime);
@@ -52,10 +60,9 @@ export async function useJavaScriptRuntime(): Promise<
 			const version = await getRuntimeVersion(runtimePath, args);
 
 			if (version) {
-				const res: Runtime & { runtimeShorthand: keyof typeof runtimesToCheck } = {
+				const res: Runtime = {
 					executablePath: runtimePath,
 					version,
-					runtimeShorthand: runtime,
 				};
 
 				// For npm, we also fetch the npm version
@@ -63,10 +70,18 @@ export async function useJavaScriptRuntime(): Promise<
 					const npmPath = await which('npm').catch(() => null);
 
 					if (npmPath) {
-						res.pmVersion = await getNpmVersion(npmPath);
 						res.pmPath = npmPath;
+						res.pmVersion = await getNpmVersion(npmPath);
 					}
 				}
+				// deno and bun support package.json scripts out of the box
+				else {
+					res.runtimeShorthand = runtime;
+					res.pmPath = runtimePath;
+					res.pmVersion = version;
+				}
+
+				cwdCache.set(cwd, some(res));
 
 				return some(res);
 			}
@@ -74,6 +89,8 @@ export async function useJavaScriptRuntime(): Promise<
 			// Ignore errors
 		}
 	}
+
+	cwdCache.set(cwd, none);
 
 	return none;
 }
