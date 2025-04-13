@@ -72,6 +72,7 @@ export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<
 					if (npmPath) {
 						res.pmPath = npmPath;
 						res.pmVersion = await getNpmVersion(npmPath);
+						res.pmName = 'npm';
 					}
 				}
 				// deno and bun support package.json scripts out of the box
@@ -79,6 +80,7 @@ export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<
 					res.runtimeShorthand = runtime;
 					res.pmPath = runtimePath;
 					res.pmVersion = version;
+					res.pmName = runtime;
 				}
 
 				cwdCache.set(cwd, some(res));

@@ -11,6 +11,7 @@ import tiged from 'tiged';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
@@ -51,18 +52,15 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 	async run() {
 		const cwd = process.cwd();
 
-		let localConfig: Record<string, unknown>;
+		const actorConfigResult = await useActorConfig();
 
-		try {
-			localConfig = (await getLocalConfigOrThrow(cwd))!;
-		} catch (_error) {
-			const casted = _error as Error;
-			const cause = casted.cause as Error;
-
-			error({ message: `${casted.message}\n  ${cause.message}` });
+		if (actorConfigResult.isErr()) {
+			error({ message: actorConfigResult.unwrapErr().message });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
+
+		const { config: actorConfig } = actorConfigResult.unwrap();
 
 		const userInfo = await getLocalUserInfo();
 		const apifyClient = await getLoggedClientOrThrow();
@@ -72,8 +70,8 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 		const actorId =
 			this.args?.actorId ||
-			(localConfig?.id as string | undefined) ||
-			(localConfig?.name ? `${usernameOrId}/${localConfig.name}` : undefined);
+			(actorConfig?.id as string | undefined) ||
+			(actorConfig?.name ? `${usernameOrId}/${actorConfig.name}` : undefined);
 
 		if (!actorId) throw new Error('Cannot find Actor in this directory.');
 

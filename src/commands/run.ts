@@ -338,7 +338,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 							cmd: runtime.pmPath,
 							args: ['run', entrypoint],
 							opts: { env, cwd },
-							overrideCommand: runtime.runtimeShorthand || 'npm',
+							overrideCommand: runtime.pmName,
 						});
 					}
 

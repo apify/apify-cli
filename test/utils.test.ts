@@ -80,7 +80,10 @@ describe('Utils', () => {
 			// Add in some retries for when the FS is slow to update
 			await withRetries(
 				async () => {
-					await execWithLog('unzip', ['-oq', zipName, '-d', tempFolder]);
+					await execWithLog({
+						cmd: 'unzip',
+						args: ['-oq', zipName, '-d', tempFolder],
+					});
 				},
 				3,
 				20,

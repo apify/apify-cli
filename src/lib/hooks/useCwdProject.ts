@@ -22,6 +22,7 @@ export enum ProjectLanguage {
 export interface Runtime {
 	executablePath: string;
 	version: string;
+	pmName?: string;
 	pmPath?: string | null;
 	pmVersion?: string | null;
 	runtimeShorthand?: string;

@@ -13,6 +13,7 @@ import open from 'open';
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
+import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, info, link, run, success, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
@@ -130,18 +131,15 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const apifyClient = await getLoggedClientOrThrow();
 
-		let localConfig: Record<string, unknown>;
+		const actorConfigResult = await useActorConfig();
 
-		try {
-			localConfig = (await getLocalConfigOrThrow(cwd))!;
-		} catch (_error) {
-			const casted = _error as Error;
-			const cause = casted.cause as Error;
-
-			error({ message: `${casted.message}\n  ${cause.message}` });
+		if (actorConfigResult.isErr()) {
+			error({ message: actorConfigResult.unwrapErr().message });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
+
+		const { config: actorConfig } = actorConfigResult.unwrap();
 
 		const userInfo = await getLocalUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
@@ -153,9 +151,9 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		// User can override Actor version and build tag, attributes in localConfig will remain same.
 		const version =
-			this.flags.version || (localConfig?.version as string | undefined) || DEFAULT_ACTOR_VERSION_NUMBER;
+			this.flags.version || (actorConfig?.version as string | undefined) || DEFAULT_ACTOR_VERSION_NUMBER;
 
-		let buildTag = this.flags.buildTag || (localConfig!.buildTag as string | undefined);
+		let buildTag = this.flags.buildTag || (actorConfig?.buildTag as string | undefined);
 
 		// We can't add the default build tag to everything. If a user creates a new
 		// version, e.g. for testing, but forgets to add a tag, it would use the default
@@ -179,16 +177,16 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			actorId = actor.id;
 		} else {
 			const usernameOrId = userInfo.username || userInfo.id;
-			actor = (await apifyClient.actor(`${usernameOrId}/${localConfig!.name}`).get())!;
+			actor = (await apifyClient.actor(`${usernameOrId}/${actorConfig!.name}`).get())!;
 			if (actor) {
 				actorId = actor.id;
 			} else {
 				const { templates } = await fetchManifest();
-				const actorTemplate = templates.find((t) => t.name === localConfig!.template);
+				const actorTemplate = templates.find((t) => t.name === actorConfig!.template);
 				const defaultRunOptions = (actorTemplate?.defaultRunOptions ||
 					DEFAULT_RUN_OPTIONS) as ActorDefaultRunOptions;
 				const newActor: ActorCollectionCreateOptions = {
-					name: localConfig!.name as string,
+					name: actorConfig!.name as string,
 					defaultRunOptions,
 					versions: [
 						{
@@ -203,11 +201,11 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				actor = await apifyClient.actors().create(newActor);
 				actorId = actor.id;
 				isActorCreatedNow = true;
-				info({ message: `Created Actor with name ${localConfig!.name} on Apify.` });
+				info({ message: `Created Actor with name ${actorConfig!.name} on Apify.` });
 			}
 		}
 
-		info({ message: `Deploying Actor '${localConfig!.name}' to Apify.` });
+		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
 		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
 		const actorClient = apifyClient.actor(actorId);
@@ -234,10 +232,10 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 					!this.flags.force &&
 					actorModifiedMs &&
 					mostRecentModifiedFileMs < actorModifiedMs &&
-					(localConfig?.name || forceActorId)
+					(actorConfig?.name || forceActorId)
 				) {
 					throw new Error(
-						`Actor with identifier "${localConfig?.name || forceActorId}" is already on the platform and was modified there since modified locally.
+						`Actor with identifier "${actorConfig?.name || forceActorId}" is already on the platform and was modified there since modified locally.
 Skipping push. Use --force to override.`,
 					);
 				}
@@ -267,8 +265,8 @@ Skipping push. Use --force to override.`,
 
 		// Update Actor version
 		const actorCurrentVersion = await actorClient.version(version).get();
-		const envVars = localConfig!.environmentVariables
-			? transformEnvToEnvVars(localConfig!.environmentVariables as Record<string, string>)
+		const envVars = actorConfig!.environmentVariables
+			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>)
 			: undefined;
 
 		if (actorCurrentVersion) {
