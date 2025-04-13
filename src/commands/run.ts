@@ -122,8 +122,6 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const project = projectRuntimeResult.unwrap();
 		const { type, entrypoint: cwdEntrypoint, runtime } = project;
 
-		console.log(runtime);
-
 		if (type === ProjectLanguage.Unknown) {
 			throw new Error(
 				'Actor is of an unknown format.' +
