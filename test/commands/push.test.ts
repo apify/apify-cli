@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { existsSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { platform } from 'node:os';
 
 import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS } from '@apify/consts';
 import { cryptoRandomObjectId } from '@apify/utilities';
 import type { ActorCollectionCreateOptions } from 'apify-client';
-import { loadJsonFileSync } from 'load-json-file';
-import { writeJsonFileSync } from 'write-json-file';
 
 import { LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../src/lib/utils.js';
@@ -72,15 +70,11 @@ describe('apify push', () => {
 	});
 
 	it('should work without actorId', async () => {
-		const actorJson = loadJsonFileSync<{
-			environmentVariables: Record<string, string>;
-			name: string;
-			version: string;
-		}>(joinPath(LOCAL_CONFIG_PATH));
+		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 		actorJson.environmentVariables = {
 			MY_ENV_VAR: 'envVarValue',
 		};
-		writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
+		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
 		await ActorsPushCommand.run(['--no-prompt', '--force'], import.meta.url);
 
@@ -113,7 +107,7 @@ describe('apify push', () => {
 	it('should work with actorId', async () => {
 		let testActor = await testUserClient.actors().create(TEST_ACTOR);
 		const testActorClient = testUserClient.actor(testActor.id);
-		const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
+		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 
 		await ActorsPushCommand.run(['--no-prompt', '--force', testActor.id], import.meta.url);
 
@@ -159,11 +153,9 @@ describe('apify push', () => {
 		actorsForCleanup.add(testActor.id);
 		const testActorClient = testUserClient.actor(testActor.id);
 
-		const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(
-			joinPath(LOCAL_CONFIG_PATH),
-		);
+		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 		delete actorJson.environmentVariables;
-		writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
+		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
 		await ActorsPushCommand.run(['--no-prompt', testActor.id], import.meta.url);
 
@@ -200,12 +192,10 @@ describe('apify push', () => {
 		let testActor = await testUserClient.actors().create(testActorWithEnvVars);
 		actorsForCleanup.add(testActor.id);
 		const testActorClient = testUserClient.actor(testActor.id);
-		const actorJson = loadJsonFileSync<{ environmentVariables?: Record<string, string>; version: string }>(
-			joinPath(LOCAL_CONFIG_PATH),
-		);
+		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 
 		delete actorJson.environmentVariables;
-		writeJsonFileSync(joinPath(LOCAL_CONFIG_PATH), actorJson);
+		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
 		// Create large file to ensure Actor will be uploaded as zip
 		writeFileSync(joinPath('3mb-file.txt'), Buffer.alloc(1024 * 1024 * 3));
@@ -234,11 +224,8 @@ describe('apify push', () => {
 	});
 
 	it('typescript files should be treated as text', async () => {
-		const { name, version } = loadJsonFileSync<{
-			environmentVariables?: Record<string, string>;
-			version: string;
-			name: string;
-		}>(joinPath(LOCAL_CONFIG_PATH));
+		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+		const { name, version } = actorJson;
 
 		writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
 
@@ -265,7 +252,7 @@ describe('apify push', () => {
 		const testActor = await testUserClient.actors().create(TEST_ACTOR);
 		actorsForCleanup.add(testActor.id);
 		const testActorClient = testUserClient.actor(testActor.id);
-		const actorJson = loadJsonFileSync<{ version: string }>(joinPath(LOCAL_CONFIG_PATH));
+		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 
 		// @ts-expect-error Wrong typing of update method
 		await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });

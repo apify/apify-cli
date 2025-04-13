@@ -1,8 +1,7 @@
-import { existsSync } from 'node:fs';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+import { existsSync, readFileSync } from 'node:fs';
 
 import axios from 'axios';
-import { loadJsonFileSync } from 'load-json-file';
-import _ from 'underscore';
 
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
@@ -35,14 +34,31 @@ describe('apify login and logout', () => {
 	it('should work with correct token', async () => {
 		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
 
-		const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), { token: TEST_USER_TOKEN });
-		const userInfoFromConfig = loadJsonFileSync(AUTH_FILE_PATH());
+		const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), {
+			token: TEST_USER_TOKEN,
+		}) as unknown as Record<string, string>;
+		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
 
 		expect(spy).toHaveBeenCalledTimes(1);
 		expect(spy.mock.calls[0][0]).to.include('Success:');
+
 		// Omit currentBillingPeriod, It can change during tests
-		const floatFields = ['currentBillingPeriod', 'plan', 'createdAt'];
-		expect(_.omit(expectedUserInfo, floatFields)).to.eql(_.omit(userInfoFromConfig, floatFields));
+
+		const {
+			currentBillingPeriod: _1,
+			plan: _2,
+			createdAt: _3,
+			...expectedUserInfoWithoutFloatFields
+		} = expectedUserInfo;
+
+		const {
+			currentBillingPeriod: _4,
+			plan: _5,
+			createdAt: _6,
+			...userInfoFromConfigWithoutFloatFields
+		} = userInfoFromConfig;
+
+		expect(expectedUserInfoWithoutFloatFields).to.eql(userInfoFromConfigWithoutFloatFields);
 
 		await LogoutCommand.run([], import.meta.url);
 		const isGlobalConfig = existsSync(AUTH_FILE_PATH());
@@ -69,12 +85,28 @@ describe('apify login and logout', () => {
 
 		expect(response.status).to.be.eql(200);
 
-		const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), { token: TEST_USER_TOKEN });
-		const userInfoFromConfig = loadJsonFileSync(AUTH_FILE_PATH());
+		const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), {
+			token: TEST_USER_TOKEN,
+		}) as unknown as Record<string, string>;
+		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
 
 		expect(spy.mock.calls[2][0]).to.include('Success:');
+
 		// Omit currentBillingPeriod, It can change during tests
-		const floatFields = ['currentBillingPeriod', 'plan', 'createdAt'];
-		expect(_.omit(expectedUserInfo, floatFields)).to.eql(_.omit(userInfoFromConfig, floatFields));
+
+		const {
+			currentBillingPeriod: _1,
+			plan: _2,
+			createdAt: _3,
+			...expectedUserInfoWithoutFloatFields
+		} = expectedUserInfo;
+		const {
+			currentBillingPeriod: _4,
+			plan: _5,
+			createdAt: _6,
+			...userInfoFromConfigWithoutFloatFields
+		} = userInfoFromConfig;
+
+		expect(expectedUserInfoWithoutFloatFields).to.eql(userInfoFromConfigWithoutFloatFields);
 	});
 });

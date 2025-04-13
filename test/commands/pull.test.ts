@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { runCommand } from '@oclif/test';
 import type { ActorCollectionCreateOptions } from 'apify-client';
-import { loadJsonFileSync } from 'load-json-file';
-import { writeJsonFile } from 'write-json-file';
 
 import { LoginCommand } from '../../src/commands/login.js';
 import { DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
@@ -146,7 +144,7 @@ describe('apify pull', () => {
 
 		await ActorsPullCommand.run([testActor.id], import.meta.url);
 
-		const actorJson = loadJsonFileSync<{ name: string }>(join(testActor.name, LOCAL_CONFIG_PATH));
+		const actorJson = JSON.parse(readFileSync(join(testActor.name, LOCAL_CONFIG_PATH), 'utf8'));
 
 		expect(actorJson.name).to.be.eql(actorFromServer!.name);
 	});
@@ -160,7 +158,7 @@ describe('apify pull', () => {
 
 		await ActorsPullCommand.run([testActor.id], import.meta.url);
 
-		const actorPackageJson = loadJsonFileSync<{ name: string }>(join(testActor.name, 'package.json'));
+		const actorPackageJson = JSON.parse(readFileSync(join(testActor.name, 'package.json'), 'utf8'));
 
 		expect(actorPackageJson.name).to.be.eql('act-in-gist');
 	});
@@ -174,7 +172,7 @@ describe('apify pull', () => {
 
 		await ActorsPullCommand.run([testActor.id], import.meta.url);
 
-		const actorJson = loadJsonFileSync<{ name: string }>(join(testActor.name, DEPRECATED_LOCAL_CONFIG_NAME));
+		const actorJson = JSON.parse(readFileSync(join(testActor.name, DEPRECATED_LOCAL_CONFIG_NAME), 'utf8'));
 
 		expect(actorJson.name).to.be.eql('baidu-scraper');
 	});
@@ -190,7 +188,7 @@ describe('apify pull', () => {
 		contentBeforeEdit.name = testActor.name;
 		(TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content = contentBeforeEdit;
 
-		await writeJsonFile(
+		writeFileSync(
 			join('pull-test-no-name', LOCAL_CONFIG_PATH),
 			(TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content,
 		);
