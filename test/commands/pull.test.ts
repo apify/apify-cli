@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { rm } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { runCommand } from '@oclif/test';
@@ -167,6 +167,7 @@ describe('apify pull', () => {
 		const testActor = await testUserClient
 			.actors()
 			.create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_GIT_REPO });
+
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add(testActor.name);
 
@@ -181,12 +182,19 @@ describe('apify pull', () => {
 		const testActor = await testUserClient
 			.actors()
 			.create({ name: `pull-test-${Date.now()}`, ...TEST_ACTOR_SOURCE_FILES });
+
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add('pull-test-no-name');
 
 		const contentBeforeEdit = JSON.parse((TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content);
 		contentBeforeEdit.name = testActor.name;
-		(TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content = contentBeforeEdit;
+		(TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content = JSON.stringify(
+			contentBeforeEdit,
+			null,
+			'\t',
+		);
+
+		await mkdir(join('pull-test-no-name', '.actor'), { recursive: true });
 
 		writeFileSync(
 			join('pull-test-no-name', LOCAL_CONFIG_PATH),
