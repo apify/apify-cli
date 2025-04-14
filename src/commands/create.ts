@@ -7,7 +7,13 @@ import { Args, Flags } from '@oclif/core';
 import { gte, minVersion } from 'semver';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
+import {
+	EMPTY_LOCAL_CONFIG,
+	LOCAL_CONFIG_PATH,
+	MINIMUM_SUPPORTED_PYTHON_VERSION,
+	PYTHON_VENV_PATH,
+	SUPPORTED_NODEJS_VERSION,
+} from '../lib/consts.js';
 import { enhanceReadmeWithLocalSuffix, ensureValidActorName, getTemplateDefinition } from '../lib/create-utils.js';
 import { execWithLog } from '../lib/exec.js';
 import { updateLocalJson } from '../lib/files.js';
@@ -156,7 +162,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				if (!project.runtime) {
 					switch (project.type) {
 						case ProjectLanguage.JavaScript: {
-							error({
+							warning({
 								message:
 									`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher` +
 									' to be able to run Node.js Actors locally.',
@@ -165,6 +171,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 						}
 						case ProjectLanguage.Scrapy:
 						case ProjectLanguage.Python: {
+							warning({
+								message: `No Python detected! Please install Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} or higher to be able to run Python Actors locally.`,
+							});
 							break;
 						}
 						default:
