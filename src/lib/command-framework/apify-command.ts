@@ -307,6 +307,30 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		} catch (err: any) {
 			// TODO: handle errors gracefully with a logger
 			console.error(err.message);
+		} finally {
+			// analytics
+			/*
+			eventData.installationType = detectInstallationType();
+
+			if (!this.telemetryData.actorLanguage && command && COMMANDS_WITHIN_ACTOR.includes(command)) {
+				const cwdProject = await useCwdProject();
+
+				cwdProject.inspect((project) => {
+					if (project.type === ProjectLanguage.JavaScript) {
+						eventData.actorLanguage = LANGUAGE.NODEJS;
+						eventData.actorNodejsVersion = project.runtime!.version;
+					} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
+						eventData.actorLanguage = LANGUAGE.PYTHON;
+						eventData.actorPythonVersion = project.runtime!.version;
+					}
+				});
+			}
+
+			await maybeTrackTelemetry({
+				eventName: `cli_command_${command}`,
+				eventData,
+			});
+			*/
 		}
 	}
 

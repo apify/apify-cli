@@ -1,9 +1,8 @@
-import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path/win32';
 import { fileURLToPath } from 'node:url';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
-import { ensureDirSync } from 'fs-extra';
 
 import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
@@ -288,7 +287,7 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 
 		beforeAll(() => {
 			writeFileSync(actPath, INPUT_SCHEMA_ACTOR_SRC, { flag: 'w' });
-			ensureDirSync(dirname(inputPath));
+			mkdirSync(dirname(inputPath), { recursive: true });
 		});
 
 		it('throws when required field is not provided', async () => {
