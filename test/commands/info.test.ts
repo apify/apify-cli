@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 
-
 import { InfoCommand } from '../../src/commands/info.js';
 import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
