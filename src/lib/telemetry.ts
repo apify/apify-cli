@@ -1,9 +1,8 @@
+import { readFileSync, writeFileSync } from 'node:fs';
 import { promisify } from 'node:util';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
-import { loadJsonFile } from 'load-json-file';
 import Mixpanel, { type PropertyDict } from 'mixpanel';
-import { writeJsonFile, writeJsonFileSync } from 'write-json-file';
 
 import { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } from './consts.js';
 import { info } from './outputs.js';
@@ -29,7 +28,7 @@ const createLocalDistinctId = () => `CLI:${cryptoRandomObjectId()}`;
  */
 export const getOrCreateLocalDistinctId = async () => {
 	try {
-		const telemetry = await loadJsonFile<{ distinctId: string }>(TELEMETRY_FILE_PATH());
+		const telemetry = JSON.parse(readFileSync(TELEMETRY_FILE_PATH(), 'utf-8'));
 		return telemetry.distinctId;
 	} catch (e) {
 		const userInfo = await getLocalUserInfo();
@@ -39,7 +38,7 @@ export const getOrCreateLocalDistinctId = async () => {
 		info({ message: TELEMETRY_WARNING_TEXT });
 
 		ensureApifyDirectory(TELEMETRY_FILE_PATH());
-		await writeJsonFile(TELEMETRY_FILE_PATH(), { distinctId });
+		writeFileSync(TELEMETRY_FILE_PATH(), JSON.stringify({ distinctId }, null, '\t'));
 
 		return distinctId;
 	}
@@ -48,9 +47,7 @@ export const getOrCreateLocalDistinctId = async () => {
 export const regenerateLocalDistinctId = () => {
 	try {
 		ensureApifyDirectory(TELEMETRY_FILE_PATH());
-		writeJsonFileSync(TELEMETRY_FILE_PATH(), {
-			distinctId: createLocalDistinctId(),
-		});
+		writeFileSync(TELEMETRY_FILE_PATH(), JSON.stringify({ distinctId: createLocalDistinctId() }, null, '\t'));
 	} catch {
 		// Ignore errors
 	}
@@ -89,7 +86,7 @@ export const useApifyIdentity = async (userId: string) => {
 	try {
 		const distinctId = getOrCreateLocalDistinctId();
 		ensureApifyDirectory(TELEMETRY_FILE_PATH());
-		await writeJsonFile(TELEMETRY_FILE_PATH(), { distinctId: userId });
+		writeFileSync(TELEMETRY_FILE_PATH(), JSON.stringify({ distinctId: userId }, null, '\t'));
 		await maybeTrackTelemetry({
 			eventName: '$create_alias',
 			eventData: {

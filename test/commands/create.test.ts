@@ -1,8 +1,7 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { runCommand } from '@oclif/test';
-import { loadJsonFileSync } from 'load-json-file';
 
 import { LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
@@ -53,10 +52,12 @@ describe('apify create', () => {
 		expect(existsSync(joinPath('package.json'))).toBeTruthy();
 		expect(existsSync(apifyJsonPath)).toBeFalsy();
 		expect(existsSync(actorJsonPath)).toBeTruthy();
-		expect(loadJsonFileSync<{ name: string }>(actorJsonPath).name).to.be.eql(actName);
-		expect(loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql(
-			expectedInput,
-		);
+		expect(JSON.parse(readFileSync(actorJsonPath, 'utf8')).name).to.be.eql(actName);
+		expect(
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
+			),
+		).to.be.eql(expectedInput);
 	});
 
 	it('basic template structure with prefilled INPUT.json', async () => {
@@ -78,10 +79,12 @@ describe('apify create', () => {
 		expect(existsSync(joinPath('package.json'))).toBeTruthy();
 		expect(existsSync(apifyJsonPath)).toBeFalsy();
 		expect(existsSync(actorJsonPath)).toBeTruthy();
-		expect(loadJsonFileSync<{ name: string }>(actorJsonPath)!.name).to.be.eql(actName);
-		expect(loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`))).to.be.eql(
-			expectedInput,
-		);
+		expect(JSON.parse(readFileSync(actorJsonPath, 'utf8')).name).to.be.eql(actName);
+		expect(
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
+			),
+		).to.be.eql(expectedInput);
 	});
 
 	it('should skip installing optional dependencies', async () => {

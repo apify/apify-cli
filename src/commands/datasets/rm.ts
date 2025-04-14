@@ -3,9 +3,9 @@ import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
-import { confirmAction } from '../../lib/commands/confirm.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { error, info, success } from '../../lib/outputs.js';
+import { confirmAction } from '../../lib/utils/confirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {

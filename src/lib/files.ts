@@ -1,18 +1,17 @@
 import { existsSync, mkdirSync } from 'node:fs';
-import { stat, unlink } from 'node:fs/promises';
+import { readFile, stat, unlink, writeFile } from 'node:fs/promises';
 import { join, sep } from 'node:path';
 
-import { loadJsonFile } from 'load-json-file';
 import { rimraf } from 'rimraf';
-import { writeJsonFile } from 'write-json-file';
 
 export const updateLocalJson = async (
 	jsonFilePath: string,
 	updateAttrs: Record<string, unknown> = {},
 	nestedObjectAttr = null,
 ) => {
+	const raw = await readFile(jsonFilePath, 'utf-8');
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const currentObject = (await loadJsonFile(jsonFilePath)) as Record<string, any>;
+	const currentObject = JSON.parse(raw) as Record<string, any>;
 	let newObject: Record<string, unknown>;
 
 	if (nestedObjectAttr) {
@@ -22,7 +21,7 @@ export const updateLocalJson = async (
 		newObject = { ...currentObject, ...updateAttrs };
 	}
 
-	await writeJsonFile(jsonFilePath, newObject);
+	await writeFile(jsonFilePath, JSON.stringify(newObject, null, '\t'));
 };
 
 /**

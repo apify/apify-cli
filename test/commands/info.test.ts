@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
+
 import { runCommand } from '@oclif/test';
-import { loadJsonFileSync } from 'load-json-file';
 
 import { InfoCommand } from '../../src/commands/info.js';
 import { LoginCommand } from '../../src/commands/login.js';
@@ -22,7 +23,7 @@ describe('apify info', () => {
 		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
 		await InfoCommand.run([], import.meta.url);
 
-		const userInfoFromConfig = loadJsonFileSync<{ id: string }>(AUTH_FILE_PATH());
+		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
 
 		expect(spy).toHaveBeenCalledTimes(2);
 		expect(spy.mock.calls[1][0]).to.include(userInfoFromConfig.id);

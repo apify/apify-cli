@@ -1,5 +1,4 @@
-import { existsSync, mkdirSync } from 'node:fs';
-import { readdir, stat } from 'node:fs/promises';
+import { mkdir, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
@@ -8,20 +7,23 @@ import { Args, Flags } from '@oclif/core';
 import { gte, minVersion } from 'semver';
 
 import { ApifyCommand } from '../lib/apify_command.js';
-import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH, PYTHON_VENV_PATH, SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
+import {
+	EMPTY_LOCAL_CONFIG,
+	LOCAL_CONFIG_PATH,
+	MINIMUM_SUPPORTED_PYTHON_VERSION,
+	PYTHON_VENV_PATH,
+	SUPPORTED_NODEJS_VERSION,
+} from '../lib/consts.js';
 import { enhanceReadmeWithLocalSuffix, ensureValidActorName, getTemplateDefinition } from '../lib/create-utils.js';
 import { execWithLog } from '../lib/exec.js';
 import { updateLocalJson } from '../lib/files.js';
+import { usePythonRuntime } from '../lib/hooks/runtimes/python.js';
+import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
 import {
-	detectNodeVersion,
-	detectNpmVersion,
-	detectPythonVersion,
 	downloadAndUnzip,
 	getJsonFileContent,
-	getNpmCmd,
-	getPythonCommand,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
 	setLocalConfig,
@@ -106,7 +108,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 			// Create Actor directory structure
 			if (!folderExists) {
-				mkdirSync(actFolderDir);
+				await mkdir(actFolderDir, { recursive: true });
 			}
 			break;
 		}
@@ -144,7 +146,6 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		await createPrefilledInputFileFromInputSchema(actFolderDir);
 
 		const packageJsonPath = join(actFolderDir, 'package.json');
-		const requirementsTxtPath = join(actFolderDir, 'requirements.txt');
 		const readmePath = join(actFolderDir, 'README.md');
 
 		// Add localReadmeSuffix which is fetched from manifest to README.md
@@ -153,60 +154,123 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		let dependenciesInstalled = false;
 		if (!skipDependencyInstall) {
-			if (existsSync(packageJsonPath)) {
-				const currentNodeVersion = detectNodeVersion();
+			const cwdProjectResult = await useCwdProject({ cwd: actFolderDir });
+
+			await cwdProjectResult.inspectAsync(async (project) => {
 				const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
-				if (currentNodeVersion) {
-					if (!isNodeVersionSupported(currentNodeVersion)) {
-						warning({
-							message:
-								`You are running Node.js version ${currentNodeVersion}, which is no longer supported. ` +
-								`Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
-						});
-					}
-					// If the Actor is a Node.js Actor (has package.json), run `npm install`
-					await updateLocalJson(packageJsonPath, { name: actorName });
-					// Run npm install in Actor dir.
-					// For efficiency, don't install Puppeteer for templates that don't use it
-					const cmdArgs = ['install'];
-					if (skipOptionalDeps) {
-						const currentNpmVersion = detectNpmVersion();
-						if (gte(currentNpmVersion!, '7.0.0')) {
-							cmdArgs.push('--omit=optional');
-						} else {
-							cmdArgs.push('--no-optional');
+
+				if (!project.runtime) {
+					switch (project.type) {
+						case ProjectLanguage.JavaScript: {
+							warning({
+								message:
+									`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher` +
+									' to be able to run Node.js Actors locally.',
+							});
+							break;
 						}
+						case ProjectLanguage.Scrapy:
+						case ProjectLanguage.Python: {
+							warning({
+								message: `No Python detected! Please install Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} or higher to be able to run Python Actors locally.`,
+							});
+							break;
+						}
+						default:
+						// Do nothing
 					}
-					await execWithLog(getNpmCmd(), cmdArgs, { cwd: actFolderDir });
-					dependenciesInstalled = true;
-				} else {
-					error({
-						message:
-							`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher` +
-							' to be able to run Node.js Actors locally.',
-					});
+					return;
 				}
-			} else if (existsSync(requirementsTxtPath)) {
-				const pythonVersion = detectPythonVersion(actFolderDir);
-				if (pythonVersion) {
-					if (isPythonVersionSupported(pythonVersion)) {
+
+				// eslint-disable-next-line prefer-destructuring
+				let runtime = project.runtime;
+
+				switch (project.type) {
+					case ProjectLanguage.JavaScript: {
+						if (!isNodeVersionSupported(runtime.version)) {
+							warning({
+								message:
+									`You are running Node.js version ${runtime.version}, which is no longer supported. ` +
+									`Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
+							});
+						}
+
+						// If the Actor is a Node.js Actor (has package.json), run `npm install`
+						await updateLocalJson(packageJsonPath, { name: actorName });
+
+						// Run npm install in Actor dir.
+						// For efficiency, don't install Puppeteer for templates that don't use it
+						const cmdArgs = ['install'];
+
+						if (skipOptionalDeps) {
+							switch (runtime.pmName) {
+								case 'npm': {
+									if (gte(runtime.pmVersion!, '7.0.0')) {
+										cmdArgs.push('--omit=optional');
+									} else {
+										cmdArgs.push('--no-optional');
+									}
+									break;
+								}
+								case 'bun': {
+									cmdArgs.push('--omit=optional');
+									break;
+								}
+								case 'deno': {
+									// We want to make deno use the node_modules dir
+									cmdArgs.push('--node-modules-dir');
+									break;
+								}
+								default:
+								// Do nothing
+							}
+						}
+
+						await execWithLog({
+							cmd: runtime.pmPath!,
+							args: cmdArgs,
+							opts: { cwd: actFolderDir },
+							overrideCommand: runtime.pmName,
+						});
+
+						dependenciesInstalled = true;
+
+						break;
+					}
+					case ProjectLanguage.Python:
+					case ProjectLanguage.Scrapy: {
+						if (!isPythonVersionSupported(runtime.version)) {
+							warning({
+								message: `Python Actors require Python 3.9 or higher, but you have Python ${runtime.version}!`,
+							});
+							warning({
+								message: 'Please install Python 3.9 or higher to be able to run Python Actors locally.',
+							});
+							return;
+						}
+
 						const venvPath = join(actFolderDir, '.venv');
-						info({ message: `Python version ${pythonVersion} detected.` });
+						info({ message: `Python version ${runtime.version} detected.` });
 						info({
 							message: `Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...`,
 						});
-						let pythonCommand = getPythonCommand(actFolderDir);
+
 						if (!process.env.VIRTUAL_ENV) {
 							// If Python is not running in a virtual environment, create a new one
-							await execWithLog(pythonCommand, ['-m', 'venv', '--prompt', '.', PYTHON_VENV_PATH], {
-								cwd: actFolderDir,
+							await execWithLog({
+								cmd: runtime.executablePath,
+								args: ['-m', 'venv', '--prompt', '.', PYTHON_VENV_PATH],
+								opts: { cwd: actFolderDir },
 							});
+
 							// regenerate the `pythonCommand` after we create the virtual environment
-							pythonCommand = getPythonCommand(actFolderDir);
+							runtime = (await usePythonRuntime({ cwd: actFolderDir, force: true })).unwrap();
+							project.runtime = runtime;
 						}
-						await execWithLog(
-							pythonCommand,
-							[
+
+						await execWithLog({
+							cmd: runtime.executablePath,
+							args: [
 								'-m',
 								'pip',
 								'install',
@@ -217,11 +281,12 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 								'setuptools',
 								'wheel',
 							],
-							{ cwd: actFolderDir },
-						);
-						await execWithLog(
-							pythonCommand,
-							[
+							opts: { cwd: actFolderDir },
+						});
+
+						await execWithLog({
+							cmd: runtime.executablePath,
+							args: [
 								'-m',
 								'pip',
 								'install',
@@ -230,24 +295,17 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 								'-r',
 								'requirements.txt',
 							],
-							{ cwd: actFolderDir },
-						);
+							opts: { cwd: actFolderDir },
+						});
+
 						dependenciesInstalled = true;
-					} else {
-						warning({
-							message: `Python Actors require Python 3.9 or higher, but you have Python ${pythonVersion}!`,
-						});
-						warning({
-							message: 'Please install Python 3.9 or higher to be able to run Python Actors locally.',
-						});
+
+						break;
 					}
-				} else {
-					warning({
-						message:
-							'No Python detected! Please install Python 3.9 or higher to be able to run Python Actors locally.',
-					});
+					default:
+					// Do nothing
 				}
-			}
+			});
 		}
 
 		if (dependenciesInstalled) {

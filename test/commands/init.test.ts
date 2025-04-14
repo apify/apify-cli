@@ -1,8 +1,7 @@
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
-import { loadJsonFileSync } from 'load-json-file';
-import { writeJsonFile } from 'write-json-file';
 
 import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
@@ -35,11 +34,13 @@ describe('apify init', () => {
 		const apifyJsonPath = 'apify.json';
 		expect(existsSync(joinPath(apifyJsonPath))).toBeFalsy();
 
-		expect(loadJsonFileSync(joinPath(LOCAL_CONFIG_PATH))).toStrictEqual(
+		expect(JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'))).toStrictEqual(
 			Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }),
 		);
 		expect(
-			loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`)),
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
+			),
 		).toStrictEqual({});
 	});
 
@@ -59,18 +60,22 @@ describe('apify init', () => {
 			},
 			required: ['url'],
 		};
+
 		const defaultActorJson = Object.assign(EMPTY_LOCAL_CONFIG, { name: actName, input });
 
-		await writeJsonFile(joinPath('.actor/actor.json'), defaultActorJson);
+		await mkdir(joinPath('.actor'), { recursive: true });
+		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(defaultActorJson, null, '\t'), { flag: 'w' });
 		await InitCommand.run(['-y', actName], import.meta.url);
 
 		// Check that it won't create deprecated config
 		// TODO: We can remove this later
 		const apifyJsonPath = 'apify.json';
 		expect(existsSync(joinPath(apifyJsonPath))).toBeFalsy();
-		expect(loadJsonFileSync(joinPath(LOCAL_CONFIG_PATH))).toStrictEqual(defaultActorJson);
+		expect(JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'))).toStrictEqual(defaultActorJson);
 		expect(
-			loadJsonFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`)),
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
+			),
 		).toStrictEqual({ url: 'https://www.apify.com/' });
 	});
 });

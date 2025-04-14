@@ -1,5 +1,4 @@
-import { loadJsonFileSync } from 'load-json-file';
-import { writeJsonFileSync } from 'write-json-file';
+import { readFileSync, writeFileSync } from 'node:fs';
 
 import { STATE_FILE_PATH } from './consts.js';
 
@@ -9,7 +8,7 @@ import { STATE_FILE_PATH } from './consts.js';
  */
 export const getLocalState = () => {
 	try {
-		return loadJsonFileSync<Record<string, unknown>>(STATE_FILE_PATH()) || {};
+		return JSON.parse(readFileSync(STATE_FILE_PATH(), 'utf-8')) || {};
 	} catch (e) {
 		return {};
 	}
@@ -21,8 +20,5 @@ export const getLocalState = () => {
  */
 export const extendLocalState = (data: Record<string, unknown>) => {
 	const state = getLocalState();
-	writeJsonFileSync(STATE_FILE_PATH(), {
-		...state,
-		...data,
-	});
+	writeFileSync(STATE_FILE_PATH(), JSON.stringify({ ...state, ...data }, null, '\t'));
 };

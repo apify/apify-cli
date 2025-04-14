@@ -3,9 +3,9 @@ import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
-import { confirmAction } from '../../lib/commands/confirm.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, info } from '../../lib/outputs.js';
+import { confirmAction } from '../../lib/utils/confirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyValueStoresDeleteValueCommand> {

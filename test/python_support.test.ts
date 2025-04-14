@@ -1,16 +1,16 @@
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
-import { loadJsonFileSync } from 'load-json-file';
-
 import { useTempPath } from './__setup__/hooks/useTempPath.js';
-import { detectPythonVersion, getLocalKeyValueStorePath } from '../src/lib/utils.js';
+import { resetCwdCaches } from './__setup__/reset-cwd-caches.js';
+import { usePythonRuntime } from '../src/lib/hooks/runtimes/python.js';
+import { getLocalKeyValueStorePath } from '../src/lib/utils.js';
 
 const actorName = 'my-python-actor';
 const PYTHON_START_TEMPLATE_ID = 'python-start';
 const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, toggleCwdBetweenFullAndParentPath } = useTempPath(actorName, {
 	create: true,
-	remove: true,
+	remove: false,
 	cwd: true,
 	cwdParent: true,
 });
@@ -27,8 +27,15 @@ describe('Python support [python]', () => {
 		await afterAllCalls();
 	});
 
+	beforeEach(() => {
+		resetCwdCaches();
+	});
+
 	it('Python templates work [python]', { timeout: 120_000 }, async () => {
-		const pythonVersion = detectPythonVersion('.');
+		const runtime = await usePythonRuntime({ cwd: tmpPath, force: true });
+
+		const pythonVersion = runtime.map((r) => r.version).unwrapOr(undefined);
+
 		// Don't fail this test when Python is not installed (it will be installed in the right CI workflow)
 		if (!pythonVersion && !process.env.CI) {
 			console.log('Skipping Python template test since Python is not installed');
@@ -65,7 +72,7 @@ async def main():
 
 		// Check Actor output
 		const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
-		const actorOutput = loadJsonFileSync(actorOutputPath);
-		expect(actorOutput).toStrictEqual(actorOutput);
+		const actorOutput = JSON.parse(readFileSync(actorOutputPath, 'utf8'));
+		expect(actorOutput).toStrictEqual(expectedOutput);
 	});
 });

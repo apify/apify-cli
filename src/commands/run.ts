@@ -1,13 +1,11 @@
 import { existsSync, renameSync } from 'node:fs';
-import { stat, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 import { Flags } from '@oclif/core';
-import { ensureDir } from 'fs-extra';
-import { loadJsonFile } from 'load-json-file';
 import mime from 'mime';
 import { minVersion } from 'semver';
 
@@ -16,29 +14,25 @@ import { getInputOverride } from '../lib/commands/resolve-input.js';
 import {
 	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
-	LANGUAGE,
 	LEGACY_LOCAL_STORAGE_DIR,
-	PROJECT_TYPES,
+	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
 import { execWithLog } from '../lib/exec.js';
 import { deleteFile } from '../lib/files.js';
+import { useActorConfig } from '../lib/hooks/useActorConfig.js';
+import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
+import { useModuleVersion } from '../lib/hooks/useModuleVersion.js';
 import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
 import { error, info, warning } from '../lib/outputs.js';
-import { ProjectAnalyzer } from '../lib/project_analyzer.js';
-import { ScrapyProjectAnalyzer } from '../lib/projects/scrapy/ScrapyProjectAnalyzer.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
 	Ajv,
 	checkIfStorageIsEmpty,
-	detectLocalActorLanguage,
-	getLocalConfigOrThrow,
 	getLocalInput,
 	getLocalKeyValueStorePath,
 	getLocalStorageDir,
 	getLocalUserInfo,
-	getNpmCmd,
-	getPythonCommand,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
 	purgeDefaultDataset,
@@ -105,40 +99,60 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const { proxy, id: userId, token } = await getLocalUserInfo();
 
-		let localConfig: Record<string, unknown>;
+		const localConfigResult = await useActorConfig({ cwd });
 
-		try {
-			localConfig = (await getLocalConfigOrThrow(cwd))!;
-		} catch (_error) {
-			const casted = _error as Error;
-			const cause = casted.cause as Error;
-
-			error({ message: `${casted.message}\n  ${cause.message}` });
+		if (localConfigResult.isErr()) {
+			error({ message: localConfigResult.unwrapErr().message });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
 
-		const packageJsonPath = join(cwd, 'package.json');
-		const mainPyPath = join(cwd, 'src/__main__.py');
+		const { config: localConfig } = localConfigResult.unwrap();
 
-		const projectType = ProjectAnalyzer.getProjectType(cwd);
 		const actualStoragePath = getLocalStorageDir();
 
-		const packageJsonExists = existsSync(packageJsonPath);
-		const mainPyExists = existsSync(mainPyPath);
-		const isScrapyProject = projectType === PROJECT_TYPES.SCRAPY;
-		const { language, languageVersion } = detectLocalActorLanguage(cwd);
+		const projectRuntimeResult = await useCwdProject({ cwd });
 
-		if (!packageJsonExists && !mainPyExists && !isScrapyProject) {
+		if (projectRuntimeResult.isErr()) {
+			error({ message: projectRuntimeResult.unwrapErr().message });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
+			return;
+		}
+
+		const project = projectRuntimeResult.unwrap();
+		const { type, entrypoint: cwdEntrypoint, runtime } = project;
+
+		if (type === ProjectLanguage.Unknown) {
 			throw new Error(
 				'Actor is of an unknown format.' +
-					` Make sure either the 'package.json' file or 'src/__main__.py' file exists or you are in a migrated Scrapy project.`,
+					` Make sure your project is supported by Apify CLI (either a package.json file is present, or a Python entrypoint could be found) or you are in a migrated Scrapy project.`,
 			);
 		}
 
-		// Defaults (for node, the start script, for python, the src module)
-		let runType: RunType = language === LANGUAGE.NODEJS ? RunType.Script : RunType.Module;
-		let entrypoint: string = language === LANGUAGE.NODEJS ? 'start' : 'src';
+		if (!runtime) {
+			switch (type) {
+				case ProjectLanguage.JavaScript:
+					error({
+						message: `No Node.js detected! Please install Node.js ${SUPPORTED_NODEJS_VERSION} (or higher) to be able to run Node.js Actors locally.`,
+					});
+					break;
+				case ProjectLanguage.Scrapy:
+				case ProjectLanguage.Python:
+					error({
+						message: `No Python detected! Please install Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} (or higher) to be able to run Python Actors locally.`,
+					});
+					break;
+				default:
+					error({
+						message: `No runtime detected! Make sure you have Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} (or higher) or Node.js ${SUPPORTED_NODEJS_VERSION} (or higher) installed.`,
+					});
+			}
+
+			return;
+		}
+
+		let runType: RunType;
+		let entrypoint: string;
 
 		if (this.flags.entrypoint) {
 			entrypoint = this.flags.entrypoint;
@@ -147,16 +161,30 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 			const entrypointStat = await stat(entrypointPath).catch(() => null);
 
-			// Directory -> We just try to run it as a module (in python, it needs to have a main.py file, in node.js, an index.(m)js file)
 			if (entrypointStat?.isDirectory()) {
+				// Directory -> We just try to run it as a module (in python, it needs to have a main.py file, in node.js, an index.(m)js file)
 				runType = RunType.Module;
-				// entrypoint -> ./src/file for example (running custom scripts)
-			} else if (entrypointStat?.isFile()) {
+			}
+			// File -> ./src/file for example (running custom scripts)
+			else if (entrypointStat?.isFile()) {
 				runType = RunType.DirectFile;
-				// If it's not a file, or a directory, we just let it be a script
-			} else {
+			}
+			// If it's not a file, or a directory, we just let it be a script
+			else {
 				runType = RunType.Script;
 			}
+		} else if (cwdEntrypoint?.script) {
+			runType = RunType.Script;
+			entrypoint = cwdEntrypoint.script;
+		} else if (cwdEntrypoint?.path) {
+			runType = type === ProjectLanguage.Python ? RunType.Module : RunType.DirectFile;
+			entrypoint = cwdEntrypoint.path;
+		} else {
+			error({
+				message: `No entrypoint detected! Please provide an entrypoint using the --entrypoint flag, or make sure your project has an entrypoint.`,
+			});
+
+			return;
 		}
 
 		if (existsSync(LEGACY_LOCAL_STORAGE_DIR) && !existsSync(actualStoragePath)) {
@@ -168,27 +196,28 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			});
 		}
 
+		const crawleeVersion = await useModuleVersion({
+			moduleName: 'crawlee',
+			project,
+		});
+
 		let CRAWLEE_PURGE_ON_START = '0';
 
 		// Purge stores
 		// TODO: this needs to be cleaned up heavily - ideally logic should be in the project analyzers
 		if (this.flags.purge) {
-			switch (projectType) {
-				case PROJECT_TYPES.PRE_CRAWLEE_APIFY_SDK: {
-					await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
-					info({ message: 'All default local stores were purged.' });
-					break;
-				}
-				case PROJECT_TYPES.CRAWLEE:
-				default: {
-					CRAWLEE_PURGE_ON_START = '1';
-				}
-			}
+			CRAWLEE_PURGE_ON_START = '1';
 
-			if (language === LANGUAGE.PYTHON) {
+			if (crawleeVersion.isNone()) {
 				await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
 				info({ message: 'All default local stores were purged.' });
 			}
+
+			// This might not be needed for python and scrapy projects
+			// if (type === ProjectLanguage.Python || type === ProjectLanguage.Scrapy) {
+			// 	await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
+			// 	info({ message: 'All default local stores were purged.' });
+			// }
 		}
 
 		// TODO: deprecate these flags
@@ -254,100 +283,100 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		}
 
 		try {
-			if (language === LANGUAGE.NODEJS) {
-				// Actor is written in Node.js
-				const currentNodeVersion = languageVersion;
-				const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
-				if (currentNodeVersion) {
-					// --max-http-header-size=80000
-					// Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
-					// However they did not think about all the sites there with large headers,
-					// so we put back the old limit of 80kb, which seems to work just fine.
-					if (isNodeVersionSupported(currentNodeVersion)) {
+			switch (type) {
+				case ProjectLanguage.JavaScript: {
+					const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
+
+					if (isNodeVersionSupported(runtime.version)) {
+						// --max-http-header-size=80000
+						// Increases default size of headers. The original limit was 80kb, but from node 10+ they decided to lower it to 8kb.
+						// However they did not think about all the sites there with large headers,
+						// so we put back the old limit of 80kb, which seems to work just fine.
 						env.NODE_OPTIONS = env.NODE_OPTIONS
 							? `${env.NODE_OPTIONS} --max-http-header-size=80000`
 							: '--max-http-header-size=80000';
 					} else {
 						warning({
 							message:
-								`You are running Node.js version ${currentNodeVersion}, which is no longer supported. ` +
+								`You are running Node.js version ${runtime.version}, which is no longer supported. ` +
 								`Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
 						});
 					}
 
-					this.telemetryData.actorNodejsVersion = currentNodeVersion;
-					this.telemetryData.actorLanguage = LANGUAGE.NODEJS;
-
-					// We allow "module" type directly in node too (it will work for a folder that has an `index.js` file)
 					if (runType === RunType.DirectFile || runType === RunType.Module) {
-						await execWithLog('node', [entrypoint], { env, cwd });
+						await execWithLog({
+							cmd: runtime.executablePath,
+							args: [entrypoint],
+							opts: { env, cwd },
+						});
 					} else {
-						// TODO(vladfrangu): what is this for? Some old template maybe?
-						// && !existsSync(serverJsFile)
-						// const serverJsFile = join(cwd, 'server.js');
-						const packageJson = await loadJsonFile<{
-							scripts: Record<string, string>;
-						}>(packageJsonPath);
+						// Assert the package.json content for scripts
+						const packageJson = await readFile(join(cwd, 'package.json'), 'utf8').catch(() => '{}');
+						const packageJsonObj = JSON.parse(packageJson);
 
-						if (!packageJson.scripts) {
+						if (!packageJsonObj.scripts) {
 							throw new Error(
 								'No scripts were found in package.json. Please set it up for your project. ' +
 									'For more information about that call "apify help run".',
 							);
 						}
 
-						if (!packageJson.scripts[entrypoint]) {
+						if (!packageJsonObj.scripts[entrypoint]) {
 							throw new Error(
 								`The script "${entrypoint}" was not found in package.json. Please set it up for your project. ` +
 									'For more information about that call "apify help run".',
 							);
 						}
 
-						await execWithLog(getNpmCmd(), ['run', entrypoint], { env, cwd });
+						if (!runtime.pmPath) {
+							throw new Error(
+								'No npm executable found! Please make sure your Node.js runtime has npm installed if you want to run package.json scripts locally.',
+							);
+						}
+
+						await execWithLog({
+							cmd: runtime.pmPath,
+							args: ['run', entrypoint],
+							opts: { env, cwd },
+							overrideCommand: runtime.pmName,
+						});
 					}
-				} else {
-					error({
-						message: `No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher to be able to run Node.js Actors locally.`,
-					});
+
+					break;
 				}
-			} else if (language === LANGUAGE.PYTHON) {
-				const pythonVersion = languageVersion;
-				this.telemetryData.actorPythonVersion = pythonVersion;
-				this.telemetryData.actorLanguage = LANGUAGE.PYTHON;
-				if (pythonVersion) {
-					if (isPythonVersionSupported(pythonVersion)) {
-						const pythonCommand = getPythonCommand(cwd);
-
-						if (isScrapyProject && !this.flags.entrypoint) {
-							const project = new ScrapyProjectAnalyzer(cwd);
-							project.loadScrapyCfg();
-							if (project.configuration.hasKey('apify', 'mainpy_location')) {
-								entrypoint = project.configuration.get('apify', 'mainpy_location')!;
-							}
-						}
-
-						if (runType === RunType.Module) {
-							await execWithLog(pythonCommand, ['-m', entrypoint], {
-								env,
-								cwd,
-							});
-						} else {
-							await execWithLog(pythonCommand, [entrypoint], { env, cwd });
-						}
-					} else {
+				case ProjectLanguage.Python:
+				case ProjectLanguage.Scrapy: {
+					if (!isPythonVersionSupported(runtime.version)) {
 						error({
-							message: `Python Actors require Python 3.9 or higher, but you have Python ${pythonVersion}!`,
+							message: `Python Actors require Python 3.9 or higher, but you have Python ${runtime.version}!`,
 						});
 						error({
 							message: 'Please install Python 3.9 or higher to be able to run Python Actors locally.',
 						});
+
+						return;
 					}
-				} else {
-					error({
-						message:
-							'No Python detected! Please install Python 3.9 or higher to be able to run Python Actors locally.',
-					});
+
+					if (runType === RunType.Module) {
+						await execWithLog({
+							cmd: runtime.executablePath,
+							args: ['-m', entrypoint],
+							opts: { env, cwd },
+						});
+					} else {
+						await execWithLog({
+							cmd: runtime.executablePath,
+							args: [entrypoint],
+							opts: { env, cwd },
+						});
+					}
+
+					break;
 				}
+				default:
+					error({
+						message: `Failed to detect the language of your project. Please report this issue to the Apify team with your project structure over at https://github.com/apify/apify-cli/issues`,
+					});
 			}
 		} finally {
 			if (storedInputResults) {
@@ -402,7 +431,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				existingInput?.fileName ?? 'INPUT.json',
 			);
 
-			await ensureDir(dirname(inputFilePath));
+			await mkdir(dirname(inputFilePath), { recursive: true });
 			await writeFile(inputFilePath, JSON.stringify(inputOverride.input, null, 2));
 
 			return {
@@ -462,7 +491,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				);
 			}
 
-			await ensureDir(dirname(inputFilePath));
+			await mkdir(dirname(inputFilePath), { recursive: true });
 			await writeFile(inputFilePath, JSON.stringify(fullInputOverride, null, 2));
 
 			return {
@@ -473,7 +502,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		}
 
 		if (!existingInput) {
-			await ensureDir(dirname(inputFilePath));
+			await mkdir(dirname(inputFilePath), { recursive: true });
 			// No input -> use defaults for this run
 			await writeFile(inputFilePath, JSON.stringify(defaults, null, 2));
 
@@ -508,7 +537,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			}
 
 			// Step 4: store the input
-			await ensureDir(dirname(inputFilePath));
+			await mkdir(dirname(inputFilePath), { recursive: true });
 			await writeFile(inputFilePath, JSON.stringify(fullInput, null, 2));
 
 			return {

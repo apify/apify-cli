@@ -3,8 +3,9 @@ import process from 'node:process';
 import { Command, type Interfaces, loadHelpClass } from '@oclif/core';
 
 import { COMMANDS_WITHIN_ACTOR, LANGUAGE } from './consts.js';
+import { ProjectLanguage, useCwdProject } from './hooks/useCwdProject.js';
 import { maybeTrackTelemetry } from './telemetry.js';
-import { type KeysToCamelCase, argsToCamelCase, detectLocalActorLanguage } from './utils.js';
+import { type KeysToCamelCase, argsToCamelCase } from './utils.js';
 import { detectInstallationType } from './version_check.js';
 
 export type ApifyFlags<T extends typeof Command> = KeysToCamelCase<Interfaces.InferredFlags<T['flags']>>;
@@ -54,15 +55,21 @@ export abstract class ApifyCommand<T extends typeof Command> extends Command {
 
 		try {
 			eventData.installationType = detectInstallationType();
+
 			if (!this.telemetryData.actorLanguage && command && COMMANDS_WITHIN_ACTOR.includes(command)) {
-				const { language, languageVersion } = detectLocalActorLanguage(process.cwd());
-				eventData.actorLanguage = language;
-				if (language === LANGUAGE.NODEJS) {
-					eventData.actorNodejsVersion = languageVersion;
-				} else if (language === LANGUAGE.PYTHON) {
-					eventData.actorPythonVersion = languageVersion;
-				}
+				const cwdProject = await useCwdProject();
+
+				cwdProject.inspect((project) => {
+					if (project.type === ProjectLanguage.JavaScript) {
+						eventData.actorLanguage = LANGUAGE.NODEJS;
+						eventData.actorNodejsVersion = project.runtime!.version;
+					} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
+						eventData.actorLanguage = LANGUAGE.PYTHON;
+						eventData.actorPythonVersion = project.runtime!.version;
+					}
+				});
 			}
+
 			await maybeTrackTelemetry({
 				eventName: `cli_command_${command}`,
 				eventData,

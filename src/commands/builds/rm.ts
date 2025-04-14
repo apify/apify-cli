@@ -2,8 +2,8 @@ import { Args } from '@oclif/core';
 import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
-import { confirmAction } from '../../lib/commands/confirm.js';
 import { error, info, success } from '../../lib/outputs.js';
+import { confirmAction } from '../../lib/utils/confirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
