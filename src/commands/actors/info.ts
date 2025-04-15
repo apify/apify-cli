@@ -42,7 +42,7 @@ const payPerEventTable = new ResponsiveTable({
 });
 
 export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
-	static override name = 'info';
+	static override name = 'info' as const;
 
 	static override description = 'Get information about an Actor.';
 

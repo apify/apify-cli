@@ -7,7 +7,7 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 
 export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCommand> {
-	static override name = 'create';
+	static override name = 'create' as const;
 
 	static override description = 'Creates a new dataset for storing structured data on your account.';
 

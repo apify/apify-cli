@@ -40,7 +40,7 @@ const usageMapping: Record<string, keyof ActorRunUsage> = {
 };
 
 export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
-	static override name = 'info';
+	static override name = 'info' as const;
 
 	static override description = 'Prints information about an Actor run.';
 

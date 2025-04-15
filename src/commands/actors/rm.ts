@@ -7,7 +7,7 @@ import { confirmAction } from '../../lib/utils/confirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
-	static override name = 'rm';
+	static override name = 'rm' as const;
 
 	static override description = 'Permanently removes an Actor from your account.';
 

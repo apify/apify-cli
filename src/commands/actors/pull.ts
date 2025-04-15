@@ -25,7 +25,7 @@ const extractGitHubZip = async (url: string, directoryPath: string) => {
 };
 
 export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
-	static override name = 'pull';
+	static override name = 'pull' as const;
 
 	static override description =
 		'Download Actor code to current directory. ' +

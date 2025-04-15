@@ -9,7 +9,7 @@ import { ActorsStartCommand } from './start.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 
 export class ActorsIndexCommand extends ApifyCommand<typeof ActorsIndexCommand> {
-	static override name = 'actors';
+	static override name = 'actors' as const;
 
 	static override description = 'Manages Actor creation, deployment, and execution on the Apify platform.';
 

@@ -8,7 +8,7 @@ import { simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
-	static override name = 'run';
+	static override name = 'run' as const;
 
 	static override description =
 		'Executes predefined Actor task remotely using local key-value store for input.\n' +

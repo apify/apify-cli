@@ -7,7 +7,7 @@ import { RunsRmCommand } from './rm.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 
 export class RunsIndexCommand extends ApifyCommand<typeof RunsIndexCommand> {
-	static override name = 'runs';
+	static override name = 'runs' as const;
 
 	static override description = 'Manages Actor run operations ';
 

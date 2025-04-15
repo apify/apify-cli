@@ -7,7 +7,7 @@ import { ActorSetValueCommand } from './set-value.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 
 export class ActorIndexCommand extends ApifyCommand<typeof ActorIndexCommand> {
-	static override name = 'actor';
+	static override name = 'actor' as const;
 
 	static override description = 'Manages runtime data operations inside of a running Actor.';
 

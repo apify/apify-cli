@@ -26,7 +26,7 @@ import {
 } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
-	static override name = 'call';
+	static override name = 'call' as const;
 
 	static override description =
 		'Executes Actor remotely using your authenticated account.\n' +

@@ -6,7 +6,7 @@ import { BuildsRmCommand } from './rm.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 
 export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> {
-	static override name = 'builds';
+	static override name = 'builds' as const;
 
 	static override description = 'Manages Actor build processes and versioning.';
 

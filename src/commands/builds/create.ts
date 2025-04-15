@@ -14,7 +14,7 @@ import {
 } from '../../lib/utils.js';
 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
-	static override name = 'create';
+	static override name = 'create' as const;
 
 	static override description = 'Creates a new build of the Actor.';
 

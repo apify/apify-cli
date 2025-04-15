@@ -9,7 +9,7 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCommand> {
-	static override name = 'rename';
+	static override name = 'rename' as const;
 
 	static override description = 'Change dataset name or removes name with --unname flag.';
 

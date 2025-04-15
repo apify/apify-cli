@@ -9,7 +9,7 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueStoresRenameCommand> {
-	static override name = 'rename';
+	static override name = 'rename' as const;
 
 	static override description = 'Renames a key-value store, or removes its unique name.';
 

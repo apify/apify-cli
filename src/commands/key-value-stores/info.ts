@@ -16,7 +16,7 @@ const consoleLikeTable = new ResponsiveTable({
 });
 
 export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStoresInfoCommand> {
-	static override name = 'info';
+	static override name = 'info' as const;
 
 	static override description = 'Shows information about a key-value store.';
 

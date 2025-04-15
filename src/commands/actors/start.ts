@@ -18,7 +18,7 @@ import {
 } from '../../lib/utils.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
-	static override name = 'start';
+	static override name = 'start' as const;
 
 	static override description =
 		'Starts Actor remotely and returns run details immediately.\n' +

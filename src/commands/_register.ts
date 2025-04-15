@@ -22,7 +22,7 @@ import { TasksIndexCommand } from './task/_index.js';
 import { ValidateInputSchemaCommand } from './validate-schema.js';
 import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.js';
 
-export const apifyCommands: (typeof BuiltApifyCommand)[] = [
+export const apifyCommands = [
 	// namespaces
 	ActorIndexCommand,
 	ActorsIndexCommand,
@@ -47,7 +47,7 @@ export const apifyCommands: (typeof BuiltApifyCommand)[] = [
 	ToplevelPushCommand,
 	RunCommand,
 	ValidateInputSchemaCommand,
-];
+] as const satisfies (typeof BuiltApifyCommand)[];
 
 export const actorCommands: (typeof BuiltApifyCommand)[] = [
 	//

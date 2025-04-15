@@ -6,7 +6,7 @@ import { error, simpleLog } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueStoresGetValueCommand> {
-	static override name = 'get-value';
+	static override name = 'get-value' as const;
 
 	static override description =
 		'Retrieves stored value for specified key. Use --only-content-type to check MIME type.';
