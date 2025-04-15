@@ -3,7 +3,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { addSecret } from '../../lib/secrets.js';
 
 export class SecretsAddCommand extends ApifyCommand<typeof SecretsAddCommand> {
-	static override name = 'add';
+	static override name = 'add' as const;
 
 	static override description = `Adds a new secret to '~/.apify' for use in Actor environment variables.`;
 

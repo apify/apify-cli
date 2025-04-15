@@ -11,7 +11,7 @@ import { info, success } from '../lib/outputs.js';
 import { Ajv } from '../lib/utils.js';
 
 export class ValidateInputSchemaCommand extends ApifyCommand<typeof ValidateInputSchemaCommand> {
-	static override name = 'validate-schema';
+	static override name = 'validate-schema' as const;
 
 	static override description = `Validates Actor input schema from one of these locations (in priority order):
 		1. Object in '${LOCAL_CONFIG_PATH}' under "input" key

@@ -98,7 +98,6 @@ jobs:
               env:
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
                   APIFY_CLI_DISABLE_TELEMETRY: 1
-                  NO_SILENT_TESTS: 1
               run: yarn test-python
 
     docs:

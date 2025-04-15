@@ -4,7 +4,7 @@ import { error, info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, outputJobLog } from '../../lib/utils.js';
 
 export class RunsLogCommand extends ApifyCommand<typeof RunsLogCommand> {
-	static override name = 'log';
+	static override name = 'log' as const;
 
 	static override description = 'Prints the log of a specific run.';
 

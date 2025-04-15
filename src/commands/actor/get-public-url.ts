@@ -10,7 +10,7 @@ import { CommandExitCodes } from '../../lib/consts.js';
 import { error } from '../../lib/outputs.js';
 
 export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublicUrlCommand> {
-	static override name = 'get-public-url';
+	static override name = 'get-public-url' as const;
 
 	static override description = 'Get an HTTP URL that allows public access to a key-value store item.';
 

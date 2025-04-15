@@ -8,7 +8,7 @@ import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueStoresSetValueCommand> {
-	static override name = 'set-value';
+	static override name = 'set-value' as const;
 
 	static override description = 'Stores value with specified key. Set content-type with --content-type flag.';
 

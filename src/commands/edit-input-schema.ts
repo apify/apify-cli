@@ -25,7 +25,7 @@ const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
 const API_VERSION = 'v1';
 
 export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaCommand> {
-	static override name = 'edit-input-schema';
+	static override name = 'edit-input-schema' as const;
 
 	static override description =
 		'Lets you edit your input schema that would be used on the platform in a visual input schema editor.';

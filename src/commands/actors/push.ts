@@ -45,7 +45,7 @@ const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 const DEFAULT_BUILD_TAG = 'latest';
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
-	static override name = 'push';
+	static override name = 'push' as const;
 
 	static override description =
 		`Deploys Actor to Apify platform using settings from '${LOCAL_CONFIG_PATH}'.\n` +

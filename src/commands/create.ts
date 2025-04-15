@@ -35,7 +35,7 @@ import {
 } from '../lib/utils.js';
 
 export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
-	static override name = 'create';
+	static override name = 'create' as const;
 
 	static override description = 'Creates an Actor project from a template in a new directory.';
 

@@ -41,7 +41,7 @@ const tryToLogin = async (token: string) => {
 };
 
 export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
-	static override name = 'login';
+	static override name = 'login' as const;
 
 	static override description =
 		`Authenticates your Apify account and saves credentials to '~/.apify'.\n` +

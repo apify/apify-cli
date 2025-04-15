@@ -18,7 +18,7 @@ const deletableStatuses = [
 ];
 
 export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
-	static override name = 'rm';
+	static override name = 'rm' as const;
 
 	static override description = 'Deletes an Actor Run.';
 

@@ -9,7 +9,7 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 import { confirmAction } from '../../lib/utils/confirm.js';
 
 export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyValueStoresDeleteValueCommand> {
-	static override name = 'delete-value';
+	static override name = 'delete-value' as const;
 
 	static override description = 'Delete a value from a key-value store.';
 

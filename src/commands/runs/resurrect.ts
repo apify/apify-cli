@@ -17,7 +17,7 @@ const resurrectStatuses = [
 ];
 
 export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectCommand> {
-	static override name = 'resurrect';
+	static override name = 'resurrect' as const;
 
 	static override description = 'Resurrects an aborted or finished Actor Run.';
 

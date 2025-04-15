@@ -4,7 +4,7 @@ import { info } from '../lib/outputs.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
 
 export class WrapScrapyCommand extends ApifyCommand<typeof WrapScrapyCommand> {
-	static override name = 'init-wrap-scrapy';
+	static override name = 'init-wrap-scrapy' as const;
 
 	static override description = `Wraps your existing Scrapy project to work like an Apify Actor.
 

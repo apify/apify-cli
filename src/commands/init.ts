@@ -21,7 +21,7 @@ import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
 import { setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
 
 export class InitCommand extends ApifyCommand<typeof InitCommand> {
-	static override name = 'init';
+	static override name = 'init' as const;
 
 	static override description =
 		`Sets up an Actor project in your current directory by creating actor.json and storage files.\n` +

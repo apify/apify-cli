@@ -58,7 +58,7 @@ enum RunType {
 }
 
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
-	static override name = 'run';
+	static override name = 'run' as const;
 
 	static override description =
 		`Executes Actor locally with simulated Apify environment variables.\n` +

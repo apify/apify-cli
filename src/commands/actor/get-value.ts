@@ -3,7 +3,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 
 export class ActorGetValueCommand extends ApifyCommand<typeof ActorGetValueCommand> {
-	static override name = 'get-value';
+	static override name = 'get-value' as const;
 
 	static override description = 'Gets a value from the default key-value store associated with the Actor run.';
 

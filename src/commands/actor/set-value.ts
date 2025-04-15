@@ -4,7 +4,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 
 export class ActorSetValueCommand extends ApifyCommand<typeof ActorSetValueCommand> {
-	static override name = 'set-value';
+	static override name = 'set-value' as const;
 
 	static override description =
 		'Sets or removes record into the default key-value store associated with the Actor run.\n\n' +

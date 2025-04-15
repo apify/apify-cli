@@ -8,7 +8,7 @@ import { error, simpleLog } from '../../lib/outputs.js';
 import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
-	static override name = 'info';
+	static override name = 'info' as const;
 
 	static override description = 'Prints information about a specific build.';
 

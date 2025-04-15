@@ -5,7 +5,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { error } from '../../lib/outputs.js';
 
 export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataCommand> {
-	static override name = 'push-data';
+	static override name = 'push-data' as const;
 
 	static override description =
 		"Saves data to Actor's run default dataset.\n\n" +

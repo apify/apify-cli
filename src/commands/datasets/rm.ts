@@ -9,7 +9,7 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 import { confirmAction } from '../../lib/utils/confirm.js';
 
 export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
-	static override name = 'rm';
+	static override name = 'rm' as const;
 
 	static override description = 'Permanently removes a dataset.';
 

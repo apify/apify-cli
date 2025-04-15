@@ -10,7 +10,7 @@ import { KeyValueStoresSetValueCommand } from './set-value.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 
 export class KeyValueStoresIndexCommand extends ApifyCommand<typeof KeyValueStoresIndexCommand> {
-	static override name = 'key-value-stores';
+	static override name = 'key-value-stores' as const;
 
 	static override description = 'Manages persistent key-value storage.\n\nAlias: kvs';
 
