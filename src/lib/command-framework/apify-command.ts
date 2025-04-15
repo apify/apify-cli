@@ -35,7 +35,7 @@ type If<T, Y, N> = T extends true ? Y : N;
 type IfNotUnknown<T, Y, N> = T extends unknown ? Y : N;
 
 type InferFlagTypeFromFlag<
-	Builder extends TaggedFlagBuilder<FlagTag, unknown, unknown, unknown>,
+	Builder extends TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>,
 	OptionalIfHasDefault = false,
 > = Builder extends TaggedFlagBuilder<infer ReturnedType, never, infer Required, infer HasDefault> // Handle special case where there can be no choices
 	? If<
@@ -90,7 +90,7 @@ type _InferArgsFromCommand<O extends Record<string, TaggedArgBuilder<ArgTag, unk
 };
 
 type _InferFlagsFromCommand<
-	O extends Record<string, TaggedFlagBuilder<FlagTag, unknown, unknown, unknown>>,
+	O extends Record<string, TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>>,
 	OptionalIfHasDefault = false,
 > = {
 	[K in keyof O as CamelCase<string & K>]: InferFlagTypeFromFlag<O[K], OptionalIfHasDefault>;
@@ -101,7 +101,7 @@ type InferArgsFromCommand<O extends Record<string, TaggedArgBuilder<ArgTag, unkn
 	: _InferArgsFromCommand<Exclude<O, undefined>>;
 
 type InferFlagsFromCommand<
-	O extends Record<string, TaggedFlagBuilder<FlagTag, unknown, unknown, unknown>> | undefined,
+	O extends Record<string, TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>> | undefined,
 	OptionalIfHasDefault = false,
 > = (O extends undefined
 	? Record<string, unknown>
@@ -128,7 +128,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		json?: 'Do not use json as the key of an argument, as it will prevent the --json flag from working';
 	};
 
-	static flags?: Record<string, TaggedFlagBuilder<FlagTag, unknown, unknown, unknown>> & {
+	static flags?: Record<string, TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>> & {
 		json?: 'Do not use json as the key of a flag, override the enableJsonFlag static property instead';
 	};
 

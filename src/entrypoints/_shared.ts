@@ -98,7 +98,7 @@ export async function runCLI(entrypoint: string) {
 			const commandFlags = Object.entries(command.flags ?? {})
 				.filter(([, flag]) => typeof flag !== 'string')
 				.map(([flagName, flag]) => {
-					const castedFlag = flag as TaggedFlagBuilder<FlagTag, unknown, unknown, unknown>;
+					const castedFlag = flag as TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>;
 
 					const flagKey = kebabCaseString(camelCaseToKebabCase(flagName)).toLowerCase();
 

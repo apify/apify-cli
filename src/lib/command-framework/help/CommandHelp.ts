@@ -141,7 +141,7 @@ export class CommandHelp extends BaseCommandRenderer {
 				}
 
 				return a[0].localeCompare(b[0]);
-			}) as [string, TaggedFlagBuilder<FlagTag, unknown, unknown, unknown>][],
+			}) as [string, TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>][],
 		);
 
 		const flagsToIgnore = new Set<string>();
@@ -226,14 +226,17 @@ export class CommandHelp extends BaseCommandRenderer {
 		result.push('');
 	}
 
-	protected pushFlags(result: string[], flags: Map<string, TaggedFlagBuilder<FlagTag, unknown, unknown, unknown>>) {
+	protected pushFlags(
+		result: string[],
+		flags: Map<string, TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>>,
+	) {
 		if (!flags.size) {
 			return;
 		}
 
 		result.push(chalk.bold('FLAGS'));
 
-		const linesOfFlags = new Map<string, TaggedFlagBuilder<FlagTag, unknown, unknown, unknown>>();
+		const linesOfFlags = new Map<string, TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>>();
 
 		for (const [flagName, flag] of flags) {
 			const stringParts: string[] = [];
@@ -249,9 +252,12 @@ export class CommandHelp extends BaseCommandRenderer {
 					stringParts.push(`--${this.kebabFlagName(flagName)}`);
 					break;
 				case 'string':
-				case 'integer':
-					stringParts.push(`--${this.kebabFlagName(flagName)}=${chalk.underline('<value>')}`);
+				case 'integer': {
+					const flagValues = flag.choicesType ? '<option>' : '<value>';
+
+					stringParts.push(`--${this.kebabFlagName(flagName)}=${chalk.underline(flagValues)}`);
 					break;
+				}
 				default:
 					throw new Error(`Unhandled flag tag: ${flag.flagTag}`);
 			}
@@ -263,7 +269,11 @@ export class CommandHelp extends BaseCommandRenderer {
 
 		for (const [flagString, flag] of linesOfFlags) {
 			const paddingToAdd = widestFlagNameLength - stripAnsi(flagString).length;
-			const fullString = `${flagString}${' '.repeat(paddingToAdd)}  ${flag.description ?? ''}`;
+			let fullString = `${flagString}${' '.repeat(paddingToAdd)}  ${flag.description ?? ''}`;
+
+			if (flag.choicesType?.length) {
+				fullString += `\n<options: ${flag.choicesType.join('|')}>`;
+			}
 
 			const wrapped = wrap(fullString, getMaxLineWidth() - widestFlagNameLength);
 

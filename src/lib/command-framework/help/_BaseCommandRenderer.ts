@@ -73,7 +73,7 @@ export abstract class BaseCommandRenderer {
 		return kebabCaseString(camelCaseToKebabCase(flagName)).toLowerCase();
 	}
 
-	protected makeFlagString(flagName: string, flag: TaggedFlagBuilder<FlagTag, unknown, unknown, unknown>) {
+	protected makeFlagString(flagName: string, flag: TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>) {
 		const flagKey = this.kebabFlagName(flagName);
 
 		const mainFlagPart = flag.char ? `-${flag.char}` : `--${flagKey}`;
@@ -85,7 +85,9 @@ export abstract class BaseCommandRenderer {
 
 			case 'string':
 			case 'integer': {
-				return `${mainFlagPart} <value>`;
+				const flagValues = flag.choicesType?.length ? `${flag.choicesType.join('|')}` : '<value>';
+
+				return `${mainFlagPart} ${flagValues}`;
 			}
 
 			default: {
