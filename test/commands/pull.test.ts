@@ -204,6 +204,6 @@ describe('apify pull', () => {
 		setProcessCwd(join(cwd, 'pull-test-no-name'));
 		await runCommand(ActorsPullCommand, {});
 
-		expect(existsSync(join('pull-test-no-name', 'src/__init__.py'))).to.be.eql(true);
+		expect(existsSync(join('pull-test-no-name', 'src', '__init__.py'))).to.be.eql(true);
 	});
 });
