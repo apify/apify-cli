@@ -97,6 +97,7 @@ const TEST_ACTOR_GIT_REPO: ActorCollectionCreateOptions = {
 
 useAuthSetup({ perTest: false });
 
+const originalCwd = process.cwd();
 let cwd: string = process.cwd();
 
 function setProcessCwd(newCwd: string) {
@@ -174,7 +175,9 @@ describe('apify pull', () => {
 
 		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
-		const actorJson = JSON.parse(readFileSync(join(testActor.name, DEPRECATED_LOCAL_CONFIG_NAME), 'utf8'));
+		const actorJson = JSON.parse(
+			readFileSync(join(originalCwd, testActor.name, DEPRECATED_LOCAL_CONFIG_NAME), 'utf8'),
+		);
 
 		expect(actorJson.name).to.be.eql('baidu-scraper');
 	});
@@ -195,10 +198,10 @@ describe('apify pull', () => {
 			'\t',
 		);
 
-		await mkdir(join('pull-test-no-name', '.actor'), { recursive: true });
+		await mkdir(join(originalCwd, 'pull-test-no-name', '.actor'), { recursive: true });
 
 		writeFileSync(
-			join('pull-test-no-name', LOCAL_CONFIG_PATH),
+			join(originalCwd, 'pull-test-no-name', LOCAL_CONFIG_PATH),
 			(TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content,
 		);
 
@@ -207,7 +210,7 @@ describe('apify pull', () => {
 
 		await setTimeout(500);
 
-		const exists = await access(join('pull-test-no-name', 'src', '__init__.py'))
+		const exists = await access(join(originalCwd, 'pull-test-no-name', 'src', '__init__.py'))
 			.then(() => true)
 			.catch(() => false);
 
