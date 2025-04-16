@@ -126,7 +126,7 @@ describe('apify pull', () => {
 		}
 
 		for (const name of actorNamesForCleanup) {
-			await rm(name, { recursive: true, force: true });
+			await rm(join(originalCwd, name), { recursive: true, force: true });
 		}
 	});
 
