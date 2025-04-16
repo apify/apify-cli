@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { mkdir, rm } from 'node:fs/promises';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { access, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import type { ActorCollectionCreateOptions } from 'apify-client';
@@ -206,6 +206,10 @@ describe('apify pull', () => {
 		setProcessCwd(join(cwd, 'pull-test-no-name'));
 		await runCommand(ActorsPullCommand, {});
 
-		expect(existsSync(join('pull-test-no-name', 'src', '__init__.py'))).to.be.eql(true);
+		const exists = await access(join('pull-test-no-name', 'src', '__init__.py'))
+			.then(() => true)
+			.catch(() => false);
+
+		expect(exists).to.be.eql(true);
 	});
 });
