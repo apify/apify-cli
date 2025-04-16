@@ -1,11 +1,11 @@
-import { Args, Flags } from '@oclif/core';
-
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Key', 'Size'],
@@ -13,9 +13,9 @@ const table = new ResponsiveTable({
 });
 
 export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStoresKeysCommand> {
-	static override description = 'Lists all keys in a key-value store.';
+	static override name = 'keys' as const;
 
-	static override hiddenAliases = ['kvs:keys'];
+	static override description = 'Lists all keys in a key-value store.';
 
 	static override flags = {
 		limit: Flags.integer({
@@ -56,7 +56,8 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 		const keys = await client.listKeys({ limit, exclusiveStartKey });
 
 		if (this.flags.json) {
-			return keys;
+			printJsonToStdout(keys);
+			return;
 		}
 
 		for (const keyData of keys.items) {
@@ -70,7 +71,5 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 			message: table.render(CompactMode.WebLikeCompact),
 			stdout: true,
 		});
-
-		return undefined;
 	}
 }

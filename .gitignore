@@ -9,7 +9,6 @@ my-act-*
 my-python-*
 pull-test-*
 _mytests
-.vscode
 .idea
 docs/changelog.md
 
@@ -21,8 +20,9 @@ package.tgz
 **/scrapy-wrapper/templates/*
 
 test/tmp
-oclif.manifest.json
 tmp
 
 package-lock.json
 scripts/temporary-reference.md
+
+bundles/*

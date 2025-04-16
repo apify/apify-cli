@@ -2,14 +2,14 @@ import type { Server } from 'http';
 import type { AddressInfo } from 'net';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
-import { Flags } from '@oclif/core';
 import computerName from 'computer-name';
 import cors from 'cors';
 import express from 'express';
 import inquirer from 'inquirer';
 import open from 'open';
 
-import { ApifyCommand } from '../lib/apify_command.js';
+import { ApifyCommand } from '../lib/command-framework/apify-command.js';
+import { Flags } from '../lib/command-framework/flags.js';
 import { error, info, success } from '../lib/outputs.js';
 import { useApifyIdentity } from '../lib/telemetry.js';
 import { getLocalUserInfo, getLoggedClient } from '../lib/utils.js';
@@ -40,6 +40,8 @@ const tryToLogin = async (token: string) => {
 };
 
 export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
+	static override name = 'login' as const;
+
 	static override description =
 		`Authenticates your Apify account and saves credentials to '~/.apify'.\n` +
 		`All other commands use these stored credentials.\n\n` +
@@ -54,7 +56,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 		method: Flags.string({
 			char: 'm',
 			description: '[Optional] Method of logging in to Apify',
-			options: ['console', 'manual'],
+			choices: ['console', 'manual'],
 			required: false,
 		}),
 	};

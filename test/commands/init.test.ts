@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
+import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
@@ -27,7 +28,7 @@ describe('apify init', () => {
 	});
 
 	it('correctly creates basic structure with empty INPUT.json', async () => {
-		await InitCommand.run(['-y', actName], import.meta.url);
+		await runCommand(InitCommand, { args_actorName: actName, flags_yes: true });
 
 		// Check that it won't create deprecated config
 		// TODO: We can remove this later
@@ -65,7 +66,7 @@ describe('apify init', () => {
 
 		await mkdir(joinPath('.actor'), { recursive: true });
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(defaultActorJson, null, '\t'), { flag: 'w' });
-		await InitCommand.run(['-y', actName], import.meta.url);
+		await runCommand(InitCommand, { args_actorName: actName, flags_yes: true });
 
 		// Check that it won't create deprecated config
 		// TODO: We can remove this later
