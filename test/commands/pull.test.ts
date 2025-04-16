@@ -2,6 +2,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { access, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import { setTimeout } from 'node:timers/promises';
 
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
@@ -205,6 +206,8 @@ describe('apify pull', () => {
 
 		setProcessCwd(join(cwd, 'pull-test-no-name'));
 		await runCommand(ActorsPullCommand, {});
+
+		await setTimeout(500);
 
 		const exists = await access(join('pull-test-no-name', 'src', '__init__.py'))
 			.then(() => true)
