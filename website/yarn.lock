@@ -6447,9 +6447,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.73":
-  version: 1.5.138
-  resolution: "electron-to-chromium@npm:1.5.138"
-  checksum: 10c0/f8e8b334857c3f858bb9ba1fa78b211e4174682fcc62316669a7cad6c86bbd01883a6433841b32effec694f90542bc439f28926826bb7e48d285ba951b4772ec
+  version: 1.5.139
+  resolution: "electron-to-chromium@npm:1.5.139"
+  checksum: 10c0/1b468c0c02a38322261b50b12ed090ff792a0d2ea24f299368babd484d5b81829528540463158572a3524fd835014d877d6c4bf097509bdb13ca696609b04aca
   languageName: node
   linkType: hard
 
@@ -15062,8 +15062,8 @@ __metadata:
   linkType: hard
 
 "webpack@npm:^5.88.1, webpack@npm:^5.95.0":
-  version: 5.99.5
-  resolution: "webpack@npm:5.99.5"
+  version: 5.99.6
+  resolution: "webpack@npm:5.99.6"
   dependencies:
     "@types/eslint-scope": "npm:^3.7.7"
     "@types/estree": "npm:^1.0.6"
@@ -15093,7 +15093,7 @@ __metadata:
       optional: true
   bin:
     webpack: bin/webpack.js
-  checksum: 10c0/8f5ebea5e2ae7449774d535862348ee564c100350643e4bdd0683fa07eabc058e88a07b7af7176ee4038d03e5172001daf65c16acebf90bc7ba48c08e25e6792
+  checksum: 10c0/b8b44b16933a0dd83e185ad42f292bbdfa9c47e245cbe786c48520d681556ece9af6ea7fff33059fafdf3d2cd62674715308d70a6f15eda6c6de7e03ef01842a
   languageName: node
   linkType: hard
 

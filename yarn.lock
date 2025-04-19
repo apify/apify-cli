@@ -5553,9 +5553,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.73":
-  version: 1.5.138
-  resolution: "electron-to-chromium@npm:1.5.138"
-  checksum: 10c0/f8e8b334857c3f858bb9ba1fa78b211e4174682fcc62316669a7cad6c86bbd01883a6433841b32effec694f90542bc439f28926826bb7e48d285ba951b4772ec
+  version: 1.5.139
+  resolution: "electron-to-chromium@npm:1.5.139"
+  checksum: 10c0/1b468c0c02a38322261b50b12ed090ff792a0d2ea24f299368babd484d5b81829528540463158572a3524fd835014d877d6c4bf097509bdb13ca696609b04aca
   languageName: node
   linkType: hard
 
@@ -6829,13 +6829,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"generative-bayesian-network@npm:^2.1.63":
-  version: 2.1.63
-  resolution: "generative-bayesian-network@npm:2.1.63"
+"generative-bayesian-network@npm:^2.1.64":
+  version: 2.1.64
+  resolution: "generative-bayesian-network@npm:2.1.64"
   dependencies:
     adm-zip: "npm:^0.5.9"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/d0b886663f14f7b8a43ea7f03fdac4e5d83f692a7829c5ed6af2ac6777b30b1c560dc1c55525bd7f50b0d0bf6ad28109151e85741b6f8dd4f0eb87f0dce42ea8
+  checksum: 10c0/a6de325a273ac5f6539a7431a8183ca4bce85a66f2814b0d3919d0777066a963a1e9a4991baa94b2f36c6b748f88cdf57d94ccb39793e40c8a0e48ef00519ed1
   languageName: node
   linkType: hard
 
@@ -7298,14 +7298,14 @@ __metadata:
   linkType: hard
 
 "header-generator@npm:^2.1.41":
-  version: 2.1.63
-  resolution: "header-generator@npm:2.1.63"
+  version: 2.1.64
+  resolution: "header-generator@npm:2.1.64"
   dependencies:
     browserslist: "npm:^4.21.1"
-    generative-bayesian-network: "npm:^2.1.63"
+    generative-bayesian-network: "npm:^2.1.64"
     ow: "npm:^0.28.1"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/a6f49019d77df53dfaa0f6e4ad7f7b99a8ee5d598eeed5956d0adbd32a22846d2c7dfb4e912cdc0a06eb954b7c39a285bd1b329e479ae9d6f122e6c544425297
+  checksum: 10c0/3835f82d7d7e523bdb7fd6f97b65e408952a2ee043a0dfbd813f9ef3c37cee5bbf942d6867e44dd0e4ff7cd488b70ba7aeed9852bfab96235ce888036cba38f1
   languageName: node
   linkType: hard
 
@@ -12092,8 +12092,8 @@ __metadata:
   linkType: hard
 
 "vite@npm:^5.0.0 || ^6.0.0":
-  version: 6.3.1
-  resolution: "vite@npm:6.3.1"
+  version: 6.3.2
+  resolution: "vite@npm:6.3.2"
   dependencies:
     esbuild: "npm:^0.25.0"
     fdir: "npm:^6.4.3"
@@ -12142,7 +12142,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 10c0/79a330a9cd0348195e9b693e0576c5480436fd7b21da53fda84877027274d39ef00fa26516fdbbf8b561700c2994c26d31d5460404e8d6982bd19ed28533a6fa
+  checksum: 10c0/08681e83e8338f3915cee729d8296bb9cfd53f71d6796816445d58cd84a8387396a3f5f3e179c52b09e98ccf7247ec3fabb50b95b0e7f3289a619ef8bf71bd8a
   languageName: node
   linkType: hard
 
