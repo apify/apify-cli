@@ -2,15 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 0.21.4 - **not yet released**
+## [0.21.4](https://github.com/apify/apify-cli/releases/tag/v0.21.4) (2025-04-22)
 
 ### 🐛 Bug Fixes
 
 - Python project detection and project detection ([#774](https://github.com/apify/apify-cli/pull/774)) ([09a42e4](https://github.com/apify/apify-cli/commit/09a42e48b26793578ce845639f7ca921a94d41ff)) by [@vladfrangu](https://github.com/vladfrangu)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [0.21.3](https://github.com/apify/apify-cli/releases/tag/v0.21.3) (2025-03-31)
 
