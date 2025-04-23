@@ -1,6 +1,6 @@
 import { type SpawnOptions, type SpawnOptionsWithoutStdio, spawn } from 'node:child_process';
-import { isAbsolute } from 'node:path';
 
+import { normalizeExecutablePath } from './hooks/runtimes/utils.js';
 import { run } from './outputs.js';
 
 const windowsOptions: SpawnOptions = {
@@ -12,7 +12,7 @@ const windowsOptions: SpawnOptions = {
  * Run child process and returns stdout and stderr to user stout
  */
 const spawnPromised = async (cmd: string, args: string[], opts: SpawnOptionsWithoutStdio) => {
-	const escapedCommand = isAbsolute(cmd) && process.platform === 'win32' ? `"${cmd}"` : cmd;
+	const escapedCommand = normalizeExecutablePath(cmd);
 
 	// NOTE: Pipes stderr, stdout to main process
 	const childProcess = spawn(escapedCommand, args, {

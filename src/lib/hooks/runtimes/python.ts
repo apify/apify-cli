@@ -8,6 +8,7 @@ import { execa } from 'execa';
 import which from 'which';
 
 import type { Runtime } from '../useCwdProject.js';
+import { normalizeExecutablePath } from './utils.js';
 
 const cwdCache = new Map<string, Option<Runtime>>();
 
@@ -51,11 +52,14 @@ export async function usePythonRuntime({
 	const pathParts = isWindows ? ['Scripts', 'python.exe'] : ['bin', 'python3'];
 
 	let fullPythonVenvPath;
+
 	if (process.env.VIRTUAL_ENV) {
 		fullPythonVenvPath = join(process.env.VIRTUAL_ENV, ...pathParts);
 	} else {
 		fullPythonVenvPath = join(cwd, '.venv', ...pathParts);
 	}
+
+	fullPythonVenvPath = normalizeExecutablePath(fullPythonVenvPath);
 
 	try {
 		await access(fullPythonVenvPath);
@@ -84,7 +88,7 @@ export async function usePythonRuntime({
 
 	for (const fallback of fallbacks) {
 		try {
-			const fullPath = await which(fallback);
+			const fullPath = normalizeExecutablePath(await which(fallback));
 
 			const version = await getPythonVersion(fullPath);
 

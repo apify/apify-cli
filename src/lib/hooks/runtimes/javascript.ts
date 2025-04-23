@@ -5,6 +5,7 @@ import { execa } from 'execa';
 import which from 'which';
 
 import type { Runtime } from '../useCwdProject.js';
+import { normalizeExecutablePath } from './utils.js';
 
 const cwdCache = new Map<string, Option<Runtime>>();
 
@@ -55,7 +56,7 @@ export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<
 
 	for (const [runtime, args] of Object.entries(runtimesToCheck) as [keyof typeof runtimesToCheck, string[]][]) {
 		try {
-			const runtimePath = await which(runtime);
+			const runtimePath = normalizeExecutablePath(await which(runtime));
 
 			const version = await getRuntimeVersion(runtimePath, args);
 
@@ -67,7 +68,7 @@ export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<
 
 				// For npm, we also fetch the npm version
 				if (runtime === 'node') {
-					const npmPath = await which('npm').catch(() => null);
+					const npmPath = normalizeExecutablePath(await which('npm').catch(() => null));
 
 					if (npmPath) {
 						res.pmPath = npmPath;
