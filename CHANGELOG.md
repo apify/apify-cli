@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 0.21.5 - **not yet released**
+
+### 🐛 Bug Fixes
+
+- Runtime detection on Windows ([#785](https://github.com/apify/apify-cli/pull/785)) ([579d303](https://github.com/apify/apify-cli/commit/579d3036ac5062420abe6c17f478a24ca5da9e93)) by [@vladfrangu](https://github.com/vladfrangu)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [0.21.4](https://github.com/apify/apify-cli/releases/tag/v0.21.4) (2025-04-22)
 
 ### 🐛 Bug Fixes
