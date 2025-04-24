@@ -17,6 +17,7 @@ async function getPythonVersion(runtimePath: string) {
 		const result = await execa(runtimePath, ['-c', '"import platform; print(platform.python_version())"'], {
 			shell: true,
 			windowsHide: true,
+			verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 		});
 
 		// No output -> issue or who knows

@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import process from 'node:process';
 
 import { Flags } from '@oclif/core';
+import type { ExecaError } from 'execa';
 import mime from 'mime';
 import { minVersion } from 'semver';
 
@@ -384,6 +385,12 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 					error({
 						message: `Failed to detect the language of your project. Please report this issue to the Apify team with your project structure over at https://github.com/apify/apify-cli/issues`,
 					});
+			}
+		} catch (err) {
+			const { stderr } = err as ExecaError;
+
+			if (stderr) {
+				// TODO: maybe throw in helpful tips for debugging issues (missing scripts, trying to start a ts file with old node, etc)
 			}
 		} finally {
 			if (storedInputResults) {
