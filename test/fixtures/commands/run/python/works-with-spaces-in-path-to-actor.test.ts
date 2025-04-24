@@ -23,7 +23,7 @@ const { beforeAllCalls, afterAllCalls, joinCwdPath, forceNewCwd } = useTempPath(
 const { CreateCommand } = await import('../../../../../src/commands/create.js');
 const { RunCommand } = await import('../../../../../src/commands/run.js');
 
-describe('apify run', () => {
+describe('[python] apify run', () => {
 	let outputPath: string;
 
 	beforeAll(async () => {

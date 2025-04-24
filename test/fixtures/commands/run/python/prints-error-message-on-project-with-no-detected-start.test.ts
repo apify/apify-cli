@@ -15,7 +15,7 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 const { CreateCommand } = await import('../../../../../src/commands/create.js');
 const { RunCommand } = await import('../../../../../src/commands/run.js');
 
-describe('apify run', () => {
+describe('[python] apify run', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
