@@ -15,9 +15,9 @@ const spawnPromised = async (cmd: string, args: string[], opts: Options) => {
 		windowsHide: true,
 		env: opts.env,
 		cwd: opts.cwd,
-		// Inherit means it gets collected by the parent process, pipe also pipes it out to the console
-		stdout: process.env.APIFY_NO_LOGS_IN_TESTS ? ['inherit'] : ['pipe', 'inherit'],
-		stderr: process.env.APIFY_NO_LOGS_IN_TESTS ? ['inherit'] : ['pipe', 'inherit'],
+		// Pipe means it gets collected by the parent process, inherit means it gets collected by the parent process and printed out to the console
+		stdout: process.env.APIFY_NO_LOGS_IN_TESTS ? ['pipe'] : ['pipe', 'inherit'],
+		stderr: process.env.APIFY_NO_LOGS_IN_TESTS ? ['pipe'] : ['pipe', 'inherit'],
 		verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 	});
 
