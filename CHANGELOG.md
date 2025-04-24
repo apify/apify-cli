@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.21.6](https://github.com/apify/apify-cli/releases/tag/v0.21.6) (2025-04-24)
+
+### 🐛 Bug Fixes
+
+- Windows and python compatibility ([#786](https://github.com/apify/apify-cli/pull/786)) ([eeca37d](https://github.com/apify/apify-cli/commit/eeca37df62461a0ca1fa6f2f72386b18eb65a077)) by [@vladfrangu](https://github.com/vladfrangu)
+
 ## [0.21.5](https://github.com/apify/apify-cli/releases/tag/v0.21.5) (2025-04-23)
 
 ### 🐛 Bug Fixes
