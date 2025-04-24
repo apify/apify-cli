@@ -226,8 +226,6 @@ jobs:
                   brew bump-formula-pr apify-cli \
                       --version ${PACKAGE_VERSION} \
                       --no-browse \
-                      --message "Automatic update of the \`apify-cli\` formula.
-
-                      CC @B4nan @vladfrangu"
+                      --message "Automatic update of the \`apify-cli\` formula. CC @B4nan @vladfrangu"
               env:
                   HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
