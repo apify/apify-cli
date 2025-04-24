@@ -86,7 +86,7 @@
         "express": "~4.21.0",
         "globby": "~14.1.0",
         "handlebars": "~4.7.8",
-        "inquirer": "~12.5.0",
+        "inquirer": "~12.6.0",
         "is-ci": "~4.1.0",
         "is-online": "~11.0.0",
         "istextorbinary": "~9.5.0",
@@ -166,10 +166,10 @@
         "topicSeparator": " "
     },
     "volta": {
-        "node": "22.14.0",
-        "yarn": "4.9.0"
+        "node": "22.15.0",
+        "yarn": "4.9.1"
     },
-    "packageManager": "yarn@4.9.0",
+    "packageManager": "yarn@4.9.1",
     "lint-staged": {
         "*": "biome format --write --no-errors-on-unmatched",
         "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts",
