@@ -6,6 +6,7 @@ import which from 'which';
 
 import type { Runtime } from '../useCwdProject.js';
 import { normalizeExecutablePath } from './utils.js';
+import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 
 const cwdCache = new Map<string, Option<Runtime>>();
 
@@ -51,6 +52,7 @@ export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<
 	const cached = cwdCache.get(cwd);
 
 	if (cached) {
+		cliDebugPrint('useJavaScriptRuntime', { cacheHit: true, cwd, runtime: cached.unwrapOr(null) });
 		return cached;
 	}
 
@@ -86,6 +88,8 @@ export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<
 
 				cwdCache.set(cwd, some(res));
 
+				cliDebugPrint('useJavaScriptRuntime', { cacheHit: false, cwd, runtime: cwdCache.get(cwd)?.unwrap() });
+
 				return some(res);
 			}
 		} catch {
@@ -94,6 +98,8 @@ export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<
 	}
 
 	cwdCache.set(cwd, none);
+
+	cliDebugPrint('useJavaScriptRuntime', { cacheHit: false, cwd, runtime: null });
 
 	return none;
 }

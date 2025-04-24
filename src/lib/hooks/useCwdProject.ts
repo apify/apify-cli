@@ -7,6 +7,7 @@ import { ok, type Result } from '@sapphire/result';
 import { useJavaScriptRuntime } from './runtimes/javascript.js';
 import { usePythonRuntime } from './runtimes/python.js';
 import { ScrapyProjectAnalyzer } from '../projects/scrapy/ScrapyProjectAnalyzer.js';
+import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 
 export enum ProjectLanguage {
 	JavaScript = 0,
@@ -51,6 +52,7 @@ export async function useCwdProject({
 	const cached = cwdCache.get(cwd);
 
 	if (cached) {
+		cliDebugPrint('useCwdProject', { cacheHit: true, project: cached });
 		return ok(cached);
 	}
 
@@ -124,9 +126,11 @@ export async function useCwdProject({
 	const maybeErr = await check();
 
 	if (maybeErr?.isErr()) {
+		cliDebugPrint('useCwdProject', { cacheHit: false, error: maybeErr });
 		return maybeErr;
 	}
 
+	cliDebugPrint('useCwdProject', { cacheHit: false, project });
 	cwdCache.set(cwd, project);
 
 	return ok(project);

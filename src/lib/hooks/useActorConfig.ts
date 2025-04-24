@@ -7,6 +7,7 @@ import { err, ok, type Result } from '@sapphire/result';
 
 import { ACTOR_SPECIFICATION_VERSION, DEPRECATED_LOCAL_CONFIG_NAME } from '../consts.js';
 import { error, info, warning } from '../outputs.js';
+import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { confirmAction } from '../utils/confirm.js';
 import { getJsonFileContent, getLocalConfigPath } from '../utils.js';
 
@@ -43,6 +44,7 @@ export async function useActorConfig(
 	const cached = cwdCache.get(cwd);
 
 	if (cached) {
+		cliDebugPrint('useActorConfig', { cacheHit: true, config: cached });
 		return ok(cached);
 	}
 
@@ -99,6 +101,8 @@ export async function useActorConfig(
 	}
 
 	cwdCache.set(cwd, { exists: true, migrated, config: config || deprecatedConfig || {} });
+
+	cliDebugPrint('useActorConfig', { cacheHit: false, config: cwdCache.get(cwd) });
 
 	return ok({ exists: true, migrated, config: config || deprecatedConfig || {} });
 }

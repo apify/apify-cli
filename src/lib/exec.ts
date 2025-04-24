@@ -2,6 +2,7 @@ import { type SpawnOptions, type SpawnOptionsWithoutStdio, spawn } from 'node:ch
 
 import { normalizeExecutablePath } from './hooks/runtimes/utils.js';
 import { run } from './outputs.js';
+import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 const windowsOptions: SpawnOptions = {
 	shell: true,
@@ -13,6 +14,8 @@ const windowsOptions: SpawnOptions = {
  */
 const spawnPromised = async (cmd: string, args: string[], opts: SpawnOptionsWithoutStdio) => {
 	const escapedCommand = normalizeExecutablePath(cmd);
+
+	cliDebugPrint('SpawnPromised', { escapedCommand, args, opts });
 
 	// NOTE: Pipes stderr, stdout to main process
 	const childProcess = spawn(escapedCommand, args, {
