@@ -1,4 +1,3 @@
-import { access } from 'node:fs/promises';
 import { platform } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
@@ -9,6 +8,7 @@ import which from 'which';
 
 import type { Runtime } from '../useCwdProject.js';
 import { normalizeExecutablePath } from './utils.js';
+import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 
 const cwdCache = new Map<string, Option<Runtime>>();
 
@@ -44,6 +44,7 @@ export async function usePythonRuntime({
 	const cached = cwdCache.get(cwd);
 
 	if (cached && !force) {
+		cliDebugPrint('usePythonRuntime', { cacheHit: true, cwd, runtime: cached.unwrapOr(null) });
 		return cached;
 	}
 
@@ -62,8 +63,6 @@ export async function usePythonRuntime({
 	fullPythonVenvPath = normalizeExecutablePath(fullPythonVenvPath);
 
 	try {
-		await access(fullPythonVenvPath);
-
 		const version = await getPythonVersion(fullPythonVenvPath);
 
 		if (version) {
@@ -75,10 +74,9 @@ export async function usePythonRuntime({
 				}),
 			);
 
-			return some({
-				executablePath: fullPythonVenvPath,
-				version,
-			});
+			cliDebugPrint('usePythonRuntime', { cacheHit: false, cwd, runtime: cwdCache.get(cwd)?.unwrap() });
+
+			return cwdCache.get(cwd)!;
 		}
 	} catch {
 		// Ignore errors
@@ -101,10 +99,9 @@ export async function usePythonRuntime({
 					}),
 				);
 
-				return some({
-					executablePath: fullPath,
-					version,
-				});
+				cliDebugPrint('usePythonRuntime', { cacheHit: false, cwd, runtime: cwdCache.get(cwd)?.unwrap() });
+
+				return cwdCache.get(cwd)!;
 			}
 		} catch {
 			// Continue
@@ -112,6 +109,8 @@ export async function usePythonRuntime({
 	}
 
 	cwdCache.set(cwd, none);
+
+	cliDebugPrint('usePythonRuntime', { cacheHit: false, cwd, runtime: null });
 
 	return none;
 }

@@ -2,6 +2,7 @@ import { none, some, type Option } from '@sapphire/result';
 import { execa } from 'execa';
 
 import { ProjectLanguage, type CwdProject } from './useCwdProject.js';
+import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 
 export interface UseModuleVersionInput {
 	moduleName: string;
@@ -77,6 +78,7 @@ const moduleVersionScripts: Record<string, (mod: string) => string[]> = {
 
 export async function useModuleVersion({ moduleName, project }: UseModuleVersionInput): Promise<Option<string>> {
 	if (!project.runtime) {
+		cliDebugPrint('useModuleVersion', { status: 'no_runtime_found', project, moduleName });
 		return none;
 	}
 
@@ -87,12 +89,14 @@ export async function useModuleVersion({ moduleName, project }: UseModuleVersion
 	} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
 		moduleVersionScriptKey = 'python';
 	} else {
+		cliDebugPrint('useModuleVersion', { status: 'unsupported_project_type', project, moduleName });
 		return none;
 	}
 
 	const args = moduleVersionScripts[moduleVersionScriptKey]?.(moduleName);
 
 	if (!args) {
+		cliDebugPrint('useModuleVersion', { status: 'no_version_script_found', project, moduleName });
 		return none;
 	}
 
@@ -103,11 +107,15 @@ export async function useModuleVersion({ moduleName, project }: UseModuleVersion
 		});
 
 		if (result.stdout.trim() === 'n/a') {
+			cliDebugPrint('useModuleVersion', { status: 'no_version_found', project, moduleName });
 			return none;
 		}
 
+		cliDebugPrint('useModuleVersion', { status: 'success', project, moduleName, version: result.stdout.trim() });
+
 		return some(result.stdout.trim());
-	} catch {
+	} catch (ex) {
+		cliDebugPrint('useModuleVersion', { status: 'failed_to_run_version_script', project, moduleName, error: ex });
 		return none;
 	}
 }
