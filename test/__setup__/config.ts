@@ -19,5 +19,6 @@ export const badUserClient = new ApifyClient(getApifyClientOptions(TEST_USER_BAD
 export const TEST_USER_TOKEN = ENV_TEST_USER_TOKEN;
 
 if (isCI) {
+	console.log('CI environment detected, masking secrets as they are created');
 	process.stdout.write(`${EOL}::add-mask::${TEST_USER_TOKEN}${EOL}`);
 }
