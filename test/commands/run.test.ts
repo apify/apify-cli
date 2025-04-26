@@ -13,8 +13,7 @@ import {
 	getLocalRequestQueuePath,
 	getLocalStorageDir,
 } from '../../src/lib/utils.js';
-import { TEST_USER_TOKEN } from '../__setup__/config.js';
-import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useAuthSetup, safeLogin } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../__setup__/reset-cwd-caches.js';
 
@@ -48,7 +47,6 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 
 const { CreateCommand } = await import('../../src/commands/create.js');
 const { RunCommand } = await import('../../src/commands/run.js');
-const { LoginCommand } = await import('../../src/commands/login.js');
 
 describe('apify run', () => {
 	beforeAll(async () => {
@@ -96,7 +94,7 @@ describe('apify run', () => {
 			TEST_LOCAL: 'testValue',
 		};
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await safeLogin();
 
 		const actCode = `
         import { Actor } from 'apify';
@@ -131,7 +129,7 @@ describe('apify run', () => {
 			TEST_LOCAL: 'testValue',
 		};
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await safeLogin();
 
 		const actCode = `
         import { Actor } from 'apify';
@@ -176,7 +174,7 @@ describe('apify run', () => {
 			TEST_LOCAL: 'testValue',
 		};
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await safeLogin();
 
 		const actCode = `
         import { Actor } from 'apify';

@@ -1,3 +1,5 @@
+import { EOL } from 'node:os';
+
 import { ApifyClient } from 'apify-client';
 
 import { getApifyClientOptions } from '../../src/lib/utils.js';
@@ -14,3 +16,5 @@ export const testUserClient = new ApifyClient(getApifyClientOptions(ENV_TEST_USE
 export const badUserClient = new ApifyClient(getApifyClientOptions(TEST_USER_BAD_TOKEN));
 
 export const TEST_USER_TOKEN = ENV_TEST_USER_TOKEN;
+
+process.stdout.write(`${EOL}::add-mask::${TEST_USER_TOKEN}${EOL}`);

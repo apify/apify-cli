@@ -4,8 +4,8 @@ import { platform } from 'node:os';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { waitForBuildToFinishWithTimeout } from '../../__setup__/build-utils.js';
-import { TEST_USER_TOKEN, testUserClient } from '../../__setup__/config.js';
-import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
+import { testUserClient } from '../../__setup__/config.js';
+import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 const actName = `task-on-my-actor-${cryptoRandomObjectId(6)}-${process.version.split('.')[0]}-${platform()}`;
@@ -20,7 +20,6 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 	cwdParent: true,
 });
 
-const { LoginCommand } = await import('../../../src/commands/login.js');
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { ActorsPushCommand } = await import('../../../src/commands/actors/push.js');
 const { TaskRunCommand } = await import('../../../src/commands/task/run.js');
@@ -38,7 +37,7 @@ describe('apify task run', () => {
 
 		const { username } = await testUserClient.user('me').get();
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await safeLogin();
 		await CreateCommand.run([actName, '--template', 'project_empty', '--skip-dependency-install'], import.meta.url);
 
 		const actCode = `

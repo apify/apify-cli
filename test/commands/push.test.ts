@@ -9,8 +9,8 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../src/lib/utils.js';
-import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
-import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { testUserClient } from '../__setup__/config.js';
+import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../__setup__/reset-cwd-caches.js';
@@ -43,7 +43,6 @@ const {
 	forceNewCwd,
 } = useTempPath(ACTOR_NAME, { create: true, remove: true, cwd: true, cwdParent: true });
 
-const { LoginCommand } = await import('../../src/commands/login.js');
 const { CreateCommand } = await import('../../src/commands/create.js');
 const { ActorsPushCommand } = await import('../../src/commands/actors/push.js');
 
@@ -55,7 +54,7 @@ describe('apify push', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await safeLogin();
 		await CreateCommand.run([ACTOR_NAME, '--template', ACT_TEMPLATE, '--skip-dependency-install'], import.meta.url);
 
 		toggleCwdBetweenFullAndParentPath();
