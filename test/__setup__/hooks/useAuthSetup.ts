@@ -2,6 +2,7 @@ import { rm } from 'node:fs/promises';
 import { EOL } from 'node:os';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
+import isCI from 'is-ci';
 
 import { LoginCommand } from '../../../src/commands/login.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
@@ -55,7 +56,7 @@ export async function safeLogin(tokenOverride?: string) {
 	try {
 		const userInfo = await getLocalUserInfo();
 
-		if (userInfo?.proxy?.password) {
+		if (userInfo?.proxy?.password && isCI) {
 			process.stdout.write(`${EOL}::add-mask::${userInfo.proxy.password}${EOL}`);
 		}
 	} catch {

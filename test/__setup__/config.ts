@@ -1,6 +1,7 @@
 import { EOL } from 'node:os';
 
 import { ApifyClient } from 'apify-client';
+import isCI from 'is-ci';
 
 import { getApifyClientOptions } from '../../src/lib/utils.js';
 
@@ -17,4 +18,6 @@ export const badUserClient = new ApifyClient(getApifyClientOptions(TEST_USER_BAD
 
 export const TEST_USER_TOKEN = ENV_TEST_USER_TOKEN;
 
-process.stdout.write(`${EOL}::add-mask::${TEST_USER_TOKEN}${EOL}`);
+if (isCI) {
+	process.stdout.write(`${EOL}::add-mask::${TEST_USER_TOKEN}${EOL}`);
+}
