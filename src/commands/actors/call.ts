@@ -222,7 +222,9 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					break;
 				}
 
-				await new Promise((resolve) => setTimeout(resolve, 250));
+				await new Promise((resolve) => {
+					setTimeout(resolve, 250);
+				});
 			} while (retries--);
 
 			const dataset = await apifyClient.dataset(datasetId).downloadItems(DownloadItemsFormat.JSON, {

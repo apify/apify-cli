@@ -17,7 +17,7 @@ export class CrawleeAnalyzer {
 			const packageJsonParsed = JSON.parse(packageJson);
 
 			return CRAWLEE_PACKAGES.some((pkg) => packageJsonParsed?.dependencies?.[pkg] !== undefined);
-		} catch (err) {
+		} catch {
 			return false;
 		}
 	}

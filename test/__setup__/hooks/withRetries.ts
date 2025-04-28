@@ -9,7 +9,9 @@ export async function withRetries<T extends () => unknown>(func: T, retries = 3,
 				throw err;
 			}
 
-			await new Promise((resolve) => setTimeout(resolve, delay));
+			await new Promise((resolve) => {
+				setTimeout(resolve, delay);
+			});
 		}
 	}
 

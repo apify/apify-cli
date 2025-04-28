@@ -25,7 +25,7 @@ async function getPythonVersion(runtimePath: string) {
 		}
 
 		return result.stdout.trim();
-	} catch (ex) {
+	} catch {
 		// const casted = ex as ExecaError;
 
 		return null;

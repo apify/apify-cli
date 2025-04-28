@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import axios from 'axios';
+import type { MockInstance } from 'vitest';
 
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
@@ -17,7 +18,7 @@ const { LoginCommand } = await import('../../src/commands/login.js');
 const { LogoutCommand } = await import('../../src/commands/logout.js');
 
 describe('apify login and logout', () => {
-	let spy: import('vitest').MockInstance<(typeof console)['error']>;
+	let spy: MockInstance<(typeof console)['error']>;
 
 	beforeEach(() => {
 		spy = vitest.spyOn(console, 'error');

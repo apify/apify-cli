@@ -119,7 +119,9 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 			}
 
 			// Wait a second before checking again
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			await new Promise((resolve) => {
+				setTimeout(resolve, 1000);
+			});
 		}
 	}
 

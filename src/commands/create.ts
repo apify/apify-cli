@@ -182,7 +182,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					return;
 				}
 
-				let runtime = project.runtime;
+				let { runtime } = project;
 
 				switch (project.type) {
 					case ProjectLanguage.JavaScript: {

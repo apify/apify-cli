@@ -258,7 +258,7 @@ describe('apify run', () => {
 		await rimrafPromised(getLocalStorageDir());
 		try {
 			await RunCommand.run(['--purge'], import.meta.url);
-		} catch (err) {
+		} catch {
 			throw new Error('Can not run Actor without storage folder!');
 		}
 	});

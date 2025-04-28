@@ -41,6 +41,12 @@ import {
 	purgeDefaultQueue,
 } from '../lib/utils.js';
 
+enum RunType {
+	DirectFile = 0,
+	Module = 1,
+	Script = 2,
+}
+
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	static override description =
 		`Executes Actor locally with simulated Apify environment variables.\n` +
@@ -550,10 +556,4 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		return null;
 	}
-}
-
-enum RunType {
-	DirectFile = 0,
-	Module = 1,
-	Script = 2,
 }
