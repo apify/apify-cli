@@ -62,6 +62,29 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@apify/eslint-config@npm:^1.0.0":
+  version: 1.0.0
+  resolution: "@apify/eslint-config@npm:1.0.0"
+  dependencies:
+    "@eslint/compat": "npm:^1.2.6"
+    "@jirimoravcik/eslint-plugin-import": "npm:2.32.0"
+    eslint-config-airbnb-base: "npm:^15.0.0"
+    eslint-plugin-import: "npm:^2.31.0"
+    eslint-plugin-simple-import-sort: "npm:^12.1.1"
+    globals: "npm:^15.14.0"
+  peerDependencies:
+    eslint: ^9.19.0
+    eslint-plugin-jest: ^28.11.0
+    typescript-eslint: ^8.23.0
+  peerDependenciesMeta:
+    eslint-plugin-jest:
+      optional: true
+    typescript-eslint:
+      optional: true
+  checksum: 10c0/8209477b867581c0a8fd502fe54ec6553cc0247f7b97a38e4e7d709416db1556222280917bc7324c0fc4df71d8931c39662377738e0c98b9ba144bb527625f27
+  languageName: node
+  linkType: hard
+
 "@apify/input_schema@npm:^3.12.0":
   version: 3.14.0
   resolution: "@apify/input_schema@npm:3.14.0"
@@ -1452,6 +1475,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@eslint/compat@npm:^1.2.6":
+  version: 1.2.8
+  resolution: "@eslint/compat@npm:1.2.8"
+  peerDependencies:
+    eslint: ^9.10.0
+  peerDependenciesMeta:
+    eslint:
+      optional: true
+  checksum: 10c0/1e004c6917220ff1731fdc562ada9ddcbcecc6f3ba2e4b0433fb6d8eddf2a443e009f1f9796b78128b78a0a588c723b78021319055ac6e5dda55c0ace346496b
+  languageName: node
+  linkType: hard
+
 "@eslint/eslintrc@npm:^2.1.4":
   version: 2.1.4
   resolution: "@eslint/eslintrc@npm:2.1.4"
@@ -1817,6 +1852,35 @@ __metadata:
   dependencies:
     minipass: "npm:^7.0.4"
   checksum: 10c0/c25b6dc1598790d5b55c0947a9b7d111cfa92594db5296c3b907e2f533c033666f692a3939eadac17b1c7c40d362d0b0635dc874cbfe3e70db7c2b07cc97a5d2
+  languageName: node
+  linkType: hard
+
+"@jirimoravcik/eslint-plugin-import@npm:2.32.0":
+  version: 2.32.0
+  resolution: "@jirimoravcik/eslint-plugin-import@npm:2.32.0"
+  dependencies:
+    "@rtsao/scc": "npm:^1.1.0"
+    array-includes: "npm:^3.1.8"
+    array.prototype.findlastindex: "npm:^1.2.5"
+    array.prototype.flat: "npm:^1.3.3"
+    array.prototype.flatmap: "npm:^1.3.3"
+    debug: "npm:^3.2.7"
+    doctrine: "npm:^2.1.0"
+    eslint-import-resolver-node: "npm:^0.3.9"
+    eslint-module-utils: "npm:^2.12.0"
+    hasown: "npm:^2.0.2"
+    is-core-module: "npm:^2.16.1"
+    is-glob: "npm:^4.0.3"
+    minimatch: "npm:^3.1.2"
+    object.fromentries: "npm:^2.0.8"
+    object.groupby: "npm:^1.0.3"
+    object.values: "npm:^1.2.1"
+    semver: "npm:^6.3.1"
+    string.prototype.trimend: "npm:^1.0.9"
+    tsconfig-paths: "npm:^3.15.0"
+  peerDependencies:
+    eslint: ^2 || ^3 || ^4 || ^5 || ^6 || ^7.2.0 || ^8 || ^9
+  checksum: 10c0/fbeb711869991914010fd122ab1555fe56b077c5a5db46e0ab7147897f4fe76b7f4f044884b04bcb17a7103fb0d7039ceff743987d2c8dd353ce1ba5391355a6
   languageName: node
   linkType: hard
 
@@ -3904,7 +3968,7 @@ __metadata:
   dependencies:
     "@apify/actor-templates": "npm:^0.1.5"
     "@apify/consts": "npm:^2.36.0"
-    "@apify/eslint-config": "npm:^0.4.0"
+    "@apify/eslint-config": "npm:^1.0.0"
     "@apify/eslint-config-ts": "npm:^0.4.1"
     "@apify/input_schema": "npm:^3.12.0"
     "@apify/tsconfig": "npm:^0.1.0"
@@ -4140,7 +4204,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"array.prototype.flat@npm:^1.3.1, array.prototype.flat@npm:^1.3.2":
+"array.prototype.flat@npm:^1.3.1, array.prototype.flat@npm:^1.3.2, array.prototype.flat@npm:^1.3.3":
   version: 1.3.3
   resolution: "array.prototype.flat@npm:1.3.3"
   dependencies:
@@ -6020,7 +6084,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"eslint-plugin-import@npm:^2.25.3, eslint-plugin-import@npm:^2.29.0":
+"eslint-plugin-import@npm:^2.25.3, eslint-plugin-import@npm:^2.29.0, eslint-plugin-import@npm:^2.31.0":
   version: 2.31.0
   resolution: "eslint-plugin-import@npm:2.31.0"
   dependencies:
@@ -6108,6 +6172,15 @@ __metadata:
   peerDependencies:
     eslint: ^3 || ^4 || ^5 || ^6 || ^7 || ^8 || ^9.7
   checksum: 10c0/c850bfd556291d4d9234f5ca38db1436924a1013627c8ab1853f77cac73ec19b020e861e6c7b783436a48b6ffcdfba4547598235a37ad4611b6739f65fd8ad57
+  languageName: node
+  linkType: hard
+
+"eslint-plugin-simple-import-sort@npm:^12.1.1":
+  version: 12.1.1
+  resolution: "eslint-plugin-simple-import-sort@npm:12.1.1"
+  peerDependencies:
+    eslint: ">=5.0.0"
+  checksum: 10c0/0ad1907ad9ddbadd1db655db0a9d0b77076e274b793a77b982c8525d808d868e6ecfce24f3a411e8a1fa551077387f9ebb38c00956073970ebd7ee6a029ce2b3
   languageName: node
   linkType: hard
 
@@ -7020,6 +7093,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"globals@npm:^15.14.0":
+  version: 15.15.0
+  resolution: "globals@npm:15.15.0"
+  checksum: 10c0/f9ae80996392ca71316495a39bec88ac43ae3525a438b5626cd9d5ce9d5500d0a98a266409605f8cd7241c7acf57c354a48111ea02a767ba4f374b806d6861fe
+  languageName: node
+  linkType: hard
+
 "globalthis@npm:^1.0.4":
   version: 1.0.4
   resolution: "globalthis@npm:1.0.4"
@@ -7662,7 +7742,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"is-core-module@npm:^2.13.0, is-core-module@npm:^2.15.1, is-core-module@npm:^2.16.0":
+"is-core-module@npm:^2.13.0, is-core-module@npm:^2.15.1, is-core-module@npm:^2.16.0, is-core-module@npm:^2.16.1":
   version: 2.16.1
   resolution: "is-core-module@npm:2.16.1"
   dependencies:
