@@ -1901,7 +1901,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@oclif/core@npm:^4, @oclif/core@npm:^4.2.10, @oclif/core@npm:~4.2.0":
+"@oclif/core@npm:^4, @oclif/core@npm:^4.2.10":
   version: 4.2.10
   resolution: "@oclif/core@npm:4.2.10"
   dependencies:
@@ -1924,6 +1924,32 @@ __metadata:
     wordwrap: "npm:^1.0.0"
     wrap-ansi: "npm:^7.0.0"
   checksum: 10c0/ce595bd23f38b02c3db11829f0e5a390b3b3849dedbb71e6ecb7482b51c2d9b14227ab319c0a184afb24c50351f8766d63cc10e228365b69573584908284862a
+  languageName: node
+  linkType: hard
+
+"@oclif/core@npm:~4.3.0":
+  version: 4.3.0
+  resolution: "@oclif/core@npm:4.3.0"
+  dependencies:
+    ansi-escapes: "npm:^4.3.2"
+    ansis: "npm:^3.17.0"
+    clean-stack: "npm:^3.0.1"
+    cli-spinners: "npm:^2.9.2"
+    debug: "npm:^4.4.0"
+    ejs: "npm:^3.1.10"
+    get-package-type: "npm:^0.1.0"
+    globby: "npm:^11.1.0"
+    indent-string: "npm:^4.0.0"
+    is-wsl: "npm:^2.2.0"
+    lilconfig: "npm:^3.1.3"
+    minimatch: "npm:^9.0.5"
+    semver: "npm:^7.6.3"
+    string-width: "npm:^4.2.3"
+    supports-color: "npm:^8"
+    widest-line: "npm:^3.1.0"
+    wordwrap: "npm:^1.0.0"
+    wrap-ansi: "npm:^7.0.0"
+  checksum: 10c0/4915039f066b2de769f5199a82b8cc2bf52a345462b1967ec695f91d0a48ceb3d0e99ee9f7930e5003cfca1cb0d4b3194d672d5ddf740b0cc7b9b90db5850baf
   languageName: node
   linkType: hard
 
@@ -3913,7 +3939,7 @@ __metadata:
     "@crawlee/memory-storage": "npm:^3.12.0"
     "@crawlee/types": "npm:^3.11.1"
     "@cucumber/cucumber": "npm:^11.0.0"
-    "@oclif/core": "npm:~4.2.0"
+    "@oclif/core": "npm:~4.3.0"
     "@oclif/plugin-help": "npm:~6.2.8"
     "@oclif/test": "npm:^4.0.8"
     "@root/walk": "npm:~1.1.0"

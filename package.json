@@ -64,7 +64,7 @@
         "@apify/input_schema": "^3.12.0",
         "@apify/utilities": "^2.15.1",
         "@crawlee/memory-storage": "^3.12.0",
-        "@oclif/core": "~4.2.0",
+        "@oclif/core": "~4.3.0",
         "@oclif/plugin-help": "~6.2.8",
         "@root/walk": "~1.1.0",
         "@sapphire/duration": "^1.1.2",
