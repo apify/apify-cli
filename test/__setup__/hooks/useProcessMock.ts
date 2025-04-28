@@ -1,4 +1,5 @@
-import { MockSTDIN, stdin as fstdin } from 'mock-stdin';
+import type { MockSTDIN } from 'mock-stdin';
+import { stdin as fstdin } from 'mock-stdin';
 
 interface ProcessMockOptions {
 	cwdMock: () => string;
@@ -28,7 +29,7 @@ export function useProcessMock({ cwdMock, mockStdin }: ProcessMockOptions) {
 	});
 
 	vitest.doMock('process', async () => {
-		const actual = await import('process');
+		const actual = await import('node:process');
 
 		return {
 			...actual,

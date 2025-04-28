@@ -1,10 +1,10 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
-import { useTempPath } from './__setup__/hooks/useTempPath.js';
-import { resetCwdCaches } from './__setup__/reset-cwd-caches.js';
 import { usePythonRuntime } from '../src/lib/hooks/runtimes/python.js';
 import { getLocalKeyValueStorePath } from '../src/lib/utils.js';
+import { useTempPath } from './__setup__/hooks/useTempPath.js';
+import { resetCwdCaches } from './__setup__/reset-cwd-caches.js';
 
 const actorName = 'my-python-actor';
 const PYTHON_START_TEMPLATE_ID = 'python-start';

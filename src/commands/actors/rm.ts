@@ -3,8 +3,8 @@ import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { error, info, success } from '../../lib/outputs.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+import { confirmAction } from '../../lib/utils/confirm.js';
 
 export class ActorRmCommand extends ApifyCommand<typeof ActorRmCommand> {
 	static override description = 'Permanently removes an Actor from your account.';

@@ -1,8 +1,8 @@
-import { none, some, type Option } from '@sapphire/result';
+import { none, type Option, some } from '@sapphire/result';
 import { execa } from 'execa';
 
-import { ProjectLanguage, type CwdProject } from './useCwdProject.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { type CwdProject, ProjectLanguage } from './useCwdProject.js';
 
 export interface UseModuleVersionInput {
 	moduleName: string;

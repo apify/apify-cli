@@ -1,4 +1,4 @@
-export async function withRetries<T extends () => unknown>(func: T, retries: number = 3, delay: number = 1000) {
+export async function withRetries<T extends () => unknown>(func: T, retries = 3, delay = 1000) {
 	let result;
 	for (let i = 0; i < retries; i++) {
 		try {

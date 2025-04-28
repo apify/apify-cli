@@ -1,14 +1,15 @@
 import process from 'node:process';
 
-import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Flags } from '@oclif/core';
 import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
-import { resolveInput } from './resolve-input.js';
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
+
 import { CommandExitCodes } from '../consts.js';
 import { error, run as runLog, success, warning } from '../outputs.js';
 import { outputJobLog } from '../utils.js';
+import { resolveInput } from './resolve-input.js';
 
 const TerminalStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,
@@ -80,7 +81,6 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		} else {
 			run = await apifyClient[clientMethod](actorOrTaskData.id).start(undefined, runOptions);
 		}
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	} catch (err: any) {
 		// TODO: Better error message in apify-client-js
 		if (err.type === 'record-not-found') {

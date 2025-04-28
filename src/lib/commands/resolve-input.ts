@@ -4,10 +4,10 @@ import process from 'node:process';
 
 import mime from 'mime';
 
-import { readStdin } from './read-stdin.js';
 import { CommandExitCodes } from '../consts.js';
 import { error } from '../outputs.js';
 import { getLocalInput } from '../utils.js';
+import { readStdin } from './read-stdin.js';
 
 export function resolveInput(cwd: string, inputOverride: Record<string, unknown> | undefined) {
 	let inputToUse: Record<string, unknown> | undefined;

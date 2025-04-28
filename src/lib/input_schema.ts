@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import process from 'node:process';
 
+import deepClone from 'lodash.clonedeep';
+
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
-import deepClone from 'lodash.clonedeep';
 
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
 import { warning } from './outputs.js';

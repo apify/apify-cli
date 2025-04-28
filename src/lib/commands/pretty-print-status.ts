@@ -1,5 +1,6 @@
-import type { ACTOR_JOB_STATUSES, ACTOR_JOB_TERMINAL_STATUSES } from '@apify/consts';
 import chalk from 'chalk';
+
+import type { ACTOR_JOB_STATUSES, ACTOR_JOB_TERMINAL_STATUSES } from '@apify/consts';
 
 // TIMED-OUT -> Timed Out
 // ABORTED -> Aborted

@@ -1,9 +1,10 @@
 import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 
-import type { Manifest, Template } from '@apify/actor-templates';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
+
+import type { Manifest, Template } from '@apify/actor-templates';
 
 import { warning } from './outputs.js';
 import { httpsGet, validateActorName } from './utils.js';
@@ -66,7 +67,7 @@ export const enhanceReadmeWithLocalSuffix = async (readmePath: string, manifestP
  */
 async function executePrompts(manifest: Manifest) {
 	const programmingLanguage = await promptProgrammingLanguage();
-	// eslint-disable-next-line no-constant-condition
+
 	while (true) {
 		const templateDefinition = await promptTemplateDefinition(manifest, programmingLanguage);
 		if (templateDefinition) {

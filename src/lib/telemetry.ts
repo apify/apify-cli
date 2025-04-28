@@ -1,8 +1,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { promisify } from 'node:util';
 
-import { cryptoRandomObjectId } from '@apify/utilities';
 import Mixpanel, { type PropertyDict } from 'mixpanel';
+
+import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } from './consts.js';
 import { info } from './outputs.js';

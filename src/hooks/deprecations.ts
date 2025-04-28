@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import { Hook } from '@oclif/core';
+import type { Hook } from '@oclif/core';
 
 import { warning } from '../lib/outputs.js';
 

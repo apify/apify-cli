@@ -1,7 +1,8 @@
 import process from 'node:process';
 
-import { validateInputSchema } from '@apify/input_schema';
 import { Args } from '@oclif/core';
+
+import { validateInputSchema } from '@apify/input_schema';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';

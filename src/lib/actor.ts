@@ -1,12 +1,15 @@
 import process from 'node:process';
 import { pipeline } from 'node:stream/promises';
 
-import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';
-import { MemoryStorage, MemoryStorageOptions } from '@crawlee/memory-storage';
-import { StorageClient } from '@crawlee/types';
-import { ApifyClient, ApifyClientOptions } from 'apify-client';
+import type { MemoryStorageOptions } from '@crawlee/memory-storage';
+import { MemoryStorage } from '@crawlee/memory-storage';
+import type { StorageClient } from '@crawlee/types';
+import type { ApifyClientOptions } from 'apify-client';
+import { ApifyClient } from 'apify-client';
 // Will this work, who knows
 import ow from 'ow';
+
+import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';
 
 import { getApifyClientOptions, getLocalStorageDir, getLocalUserInfo } from './utils.js';
 

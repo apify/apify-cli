@@ -11,6 +11,7 @@
 		"test",
 		".yarn/plugins/postinstallDev.cjs",
 		"features/**/*.ts",
-		"scripts"
+		"scripts",
+		"eslint.config.mjs"
 	]
 }

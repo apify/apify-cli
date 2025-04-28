@@ -1,5 +1,6 @@
-import { APIFY_ENV_VARS } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
+
+import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/apify_command.js';

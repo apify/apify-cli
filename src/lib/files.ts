@@ -10,7 +10,7 @@ export const updateLocalJson = async (
 	nestedObjectAttr = null,
 ) => {
 	const raw = await readFile(jsonFilePath, 'utf-8');
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 	const currentObject = JSON.parse(raw) as Record<string, any>;
 	let newObject: Record<string, unknown>;
 

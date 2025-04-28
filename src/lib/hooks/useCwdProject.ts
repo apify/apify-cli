@@ -4,10 +4,10 @@ import process from 'node:process';
 
 import { ok, type Result } from '@sapphire/result';
 
-import { useJavaScriptRuntime } from './runtimes/javascript.js';
-import { usePythonRuntime } from './runtimes/python.js';
 import { ScrapyProjectAnalyzer } from '../projects/scrapy/ScrapyProjectAnalyzer.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { useJavaScriptRuntime } from './runtimes/javascript.js';
+import { usePythonRuntime } from './runtimes/python.js';
 
 export enum ProjectLanguage {
 	JavaScript = 0,

@@ -1,6 +1,7 @@
-import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
+
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { error, success } from '../../lib/outputs.js';

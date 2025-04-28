@@ -1,12 +1,12 @@
 import process from 'node:process';
 
-import { none, some, type Option } from '@sapphire/result';
+import { none, type Option, some } from '@sapphire/result';
 import { execa } from 'execa';
 import which from 'which';
 
+import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 import type { Runtime } from '../useCwdProject.js';
 import { normalizeExecutablePath } from './utils.js';
-import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 
 const cwdCache = new Map<string, Option<Runtime>>();
 

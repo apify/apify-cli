@@ -2,10 +2,10 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { MockSTDIN } from 'mock-stdin';
+import type { MockSTDIN } from 'mock-stdin';
 
-import { useProcessMock } from './useProcessMock.js';
 import { rimrafPromised } from '../../../src/lib/files.js';
+import { useProcessMock } from './useProcessMock.js';
 
 export interface UseTempPathOptions {
 	/**

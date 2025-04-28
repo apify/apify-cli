@@ -1,5 +1,6 @@
+import type { ApifyClient } from 'apify-client';
+
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
-import { ApifyClient } from 'apify-client';
 
 /**
  * Waits for the build to finish

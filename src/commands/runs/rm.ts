@@ -1,11 +1,12 @@
-import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Args } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
+
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { error, info, success } from '../../lib/outputs.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+import { confirmAction } from '../../lib/utils/confirm.js';
 
 const deletableStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,

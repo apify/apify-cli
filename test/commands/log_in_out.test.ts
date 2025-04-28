@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { existsSync, readFileSync } from 'node:fs';
 
 import axios from 'axios';
