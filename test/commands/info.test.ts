@@ -4,7 +4,7 @@ import { runCommand } from '@oclif/test';
 
 import { InfoCommand } from '../../src/commands/info.js';
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
-import { useAuthSetup, safeLogin } from '../__setup__/hooks/useAuthSetup.js';
+import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 
 useAuthSetup();
 

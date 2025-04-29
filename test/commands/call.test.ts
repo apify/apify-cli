@@ -9,7 +9,7 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { waitForBuildToFinishWithTimeout } from '../__setup__/build-utils.js';
 import { testUserClient } from '../__setup__/config.js';
-import { useAuthSetup, safeLogin } from '../__setup__/hooks/useAuthSetup.js';
+import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
 const ACTOR_NAME = `call-my-actor-${cryptoRandomObjectId(6)}-${process.version.split('.')[0]}-${platform()}`;

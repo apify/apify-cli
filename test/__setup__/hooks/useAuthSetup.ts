@@ -1,8 +1,9 @@
 import { rm } from 'node:fs/promises';
 import { EOL } from 'node:os';
 
-import { cryptoRandomObjectId } from '@apify/utilities';
 import isCI from 'is-ci';
+
+import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { LoginCommand } from '../../../src/commands/login.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';

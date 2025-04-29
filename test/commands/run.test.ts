@@ -13,7 +13,7 @@ import {
 	getLocalRequestQueuePath,
 	getLocalStorageDir,
 } from '../../src/lib/utils.js';
-import { useAuthSetup, safeLogin } from '../__setup__/hooks/useAuthSetup.js';
+import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../__setup__/reset-cwd-caches.js';
 

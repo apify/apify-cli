@@ -5,7 +5,7 @@ import type { MockInstance } from 'vitest';
 
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
-import { useAuthSetup, safeLogin } from '../__setup__/hooks/useAuthSetup.js';
+import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 
 vitest.setConfig({ restoreMocks: false });
 useAuthSetup();

@@ -74,4 +74,16 @@ export default [
 			'consistent-return': 'off',
 		},
 	},
+	{
+		files: ['test/**/*'],
+		rules: {
+			'no-restricted-syntax': [
+				'error',
+				{
+					'selector': "CallExpression[callee.object.name='LoginCommand'][callee.property.name='run']",
+					'message': 'Use safeLogin() from test/__setup__/hooks/useAuthSetup.ts instead',
+				},
+			],
+		},
+	},
 ];
