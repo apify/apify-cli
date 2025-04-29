@@ -42,7 +42,7 @@ export class OldApifySDKAnalyzer {
 			}
 
 			return lt(actualVersion, VERSION_WHEN_APIFY_MOVED_TO_CRAWLEE);
-		} catch (err) {
+		} catch {
 			return false;
 		}
 	}

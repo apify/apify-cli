@@ -3,7 +3,7 @@ import type { ApifyClient, TaskStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
-import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../../lib/commands/run-on-cloud.js';
+import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 

@@ -1,14 +1,15 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
-import { Server } from 'http';
-import { AddressInfo } from 'net';
-import { dirname } from 'path';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { dirname } from 'node:path';
 
-import { cryptoRandomObjectId } from '@apify/utilities';
 import { Args } from '@oclif/core';
 import cors from 'cors';
 import detectIndent from 'detect-indent';
 import express from 'express';
 import open from 'open';
+
+import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';

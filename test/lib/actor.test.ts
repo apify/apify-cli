@@ -1,5 +1,6 @@
-import { APIFY_ENV_VARS } from '@apify/consts';
 import { ApifyClient } from 'apify-client';
+
+import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { getApifyStorageClient } from '../../src/lib/actor.js';
 

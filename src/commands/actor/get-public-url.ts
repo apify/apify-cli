@@ -1,6 +1,7 @@
+import { Args } from '@oclif/core';
+
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
-import { Args } from '@oclif/core';
 
 import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/apify_command.js';

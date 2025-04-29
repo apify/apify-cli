@@ -7,18 +7,18 @@ import { err, ok, type Result } from '@sapphire/result';
 
 import { ACTOR_SPECIFICATION_VERSION, DEPRECATED_LOCAL_CONFIG_NAME } from '../consts.js';
 import { error, info, warning } from '../outputs.js';
+import { getJsonFileContent, getLocalConfigPath } from '../utils.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { confirmAction } from '../utils/confirm.js';
-import { getJsonFileContent, getLocalConfigPath } from '../utils.js';
 
 const getDeprecatedLocalConfigPath = (cwd: string) => join(cwd, DEPRECATED_LOCAL_CONFIG_NAME);
 
-export type ActorConfigError = {
+export interface ActorConfigError {
 	message: string;
 	cause?: Error;
 	exists: boolean;
 	config: Record<string, unknown>;
-};
+}
 
 export interface ActorConfigResult {
 	exists: boolean;
@@ -219,7 +219,7 @@ async function handleMigrationFlow(
 /**
  * Migration for deprecated structure of apify.json to latest.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 function updateLocalConfigStructure(localConfig: any) {
 	const updatedLocalConfig: Record<string, unknown> = {
 		name: localConfig.name,

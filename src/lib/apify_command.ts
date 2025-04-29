@@ -5,7 +5,7 @@ import { Command, type Interfaces, loadHelpClass } from '@oclif/core';
 import { COMMANDS_WITHIN_ACTOR, LANGUAGE } from './consts.js';
 import { ProjectLanguage, useCwdProject } from './hooks/useCwdProject.js';
 import { maybeTrackTelemetry } from './telemetry.js';
-import { type KeysToCamelCase, argsToCamelCase } from './utils.js';
+import { argsToCamelCase, type KeysToCamelCase } from './utils.js';
 import { detectInstallationType } from './version_check.js';
 
 export type ApifyFlags<T extends typeof Command> = KeysToCamelCase<Interfaces.InferredFlags<T['flags']>>;

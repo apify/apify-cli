@@ -10,7 +10,7 @@ import { ensureApifyDirectory } from './utils.js';
 export const getLocalState = () => {
 	try {
 		return JSON.parse(readFileSync(STATE_FILE_PATH(), 'utf-8')) || {};
-	} catch (e) {
+	} catch {
 		return {};
 	}
 };

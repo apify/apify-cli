@@ -2,13 +2,13 @@ import { platform } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { none, some, type Option } from '@sapphire/result';
+import { none, type Option, some } from '@sapphire/result';
 import { execa } from 'execa';
 import which from 'which';
 
+import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 import type { Runtime } from '../useCwdProject.js';
 import { normalizeExecutablePath } from './utils.js';
-import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 
 const cwdCache = new Map<string, Option<Runtime>>();
 
@@ -25,7 +25,7 @@ async function getPythonVersion(runtimePath: string) {
 		}
 
 		return result.stdout.trim();
-	} catch (ex) {
+	} catch {
 		// const casted = ex as ExecaError;
 
 		return null;

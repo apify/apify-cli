@@ -1,11 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { platform } from 'node:os';
 
+import type { ActorCollectionCreateOptions } from 'apify-client';
+
 import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS } from '@apify/consts';
 import { cryptoRandomObjectId } from '@apify/utilities';
-import type { ActorCollectionCreateOptions } from 'apify-client';
 
 import { LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../src/lib/utils.js';

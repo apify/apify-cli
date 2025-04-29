@@ -12,7 +12,7 @@ const MAX_ENV_VAR_VALUE_LENGTH = 50000;
 export const getSecretsFile = () => {
 	try {
 		return JSON.parse(readFileSync(SECRETS_FILE_PATH(), 'utf-8')) || {};
-	} catch (e) {
+	} catch {
 		return {};
 	}
 };

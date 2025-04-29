@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-duplicate-enum-values */
-/* eslint-disable no-underscore-dangle */
 
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';

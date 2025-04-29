@@ -2,9 +2,10 @@ import { mkdir, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { fetchManifest, manifestUrl } from '@apify/actor-templates';
 import { Args, Flags } from '@oclif/core';
 import { gte, minVersion } from 'semver';
+
+import { fetchManifest, manifestUrl } from '@apify/actor-templates';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import {
@@ -84,7 +85,6 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		const cwd = process.cwd();
 		let actFolderDir = join(cwd, actorName);
 
-		// eslint-disable-next-line no-constant-condition
 		while (true) {
 			const folderExists = await stat(actFolderDir).catch(() => null);
 			const folderHasFiles =
@@ -182,8 +182,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					return;
 				}
 
-				// eslint-disable-next-line prefer-destructuring
-				let runtime = project.runtime;
+				let { runtime } = project;
 
 				switch (project.type) {
 					case ProjectLanguage.JavaScript: {

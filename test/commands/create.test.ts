@@ -1,7 +1,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { runCommand } from '@oclif/test';
+
+import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
 import { LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';

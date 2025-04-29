@@ -3,11 +3,12 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
-import { APIFY_ENV_VARS } from '@apify/consts';
-import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 import { Flags } from '@oclif/core';
 import mime from 'mime';
 import { minVersion } from 'semver';
+
+import { APIFY_ENV_VARS } from '@apify/consts';
+import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
@@ -39,6 +40,12 @@ import {
 	purgeDefaultKeyValueStore,
 	purgeDefaultQueue,
 } from '../lib/utils.js';
+
+enum RunType {
+	DirectFile = 0,
+	Module = 1,
+	Script = 2,
+}
 
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	static override description =
@@ -549,10 +556,4 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		return null;
 	}
-}
-
-enum RunType {
-	DirectFile = 0,
-	Module = 1,
-	Script = 2,
 }

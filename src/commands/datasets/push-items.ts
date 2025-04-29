@@ -38,7 +38,7 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 
 		const { datasetClient, dataset } = existingDataset;
 
-		let parsedData: Record<string, unknown> | Array<Record<string, unknown>>;
+		let parsedData: Record<string, unknown> | Record<string, unknown>[];
 
 		const item = _item || (await readStdin(process.stdin));
 

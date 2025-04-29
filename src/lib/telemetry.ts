@@ -1,8 +1,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { promisify } from 'node:util';
 
-import { cryptoRandomObjectId } from '@apify/utilities';
 import Mixpanel, { type PropertyDict } from 'mixpanel';
+
+import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { MIXPANEL_TOKEN, TELEMETRY_FILE_PATH } from './consts.js';
 import { info } from './outputs.js';
@@ -30,7 +31,7 @@ export const getOrCreateLocalDistinctId = async () => {
 	try {
 		const telemetry = JSON.parse(readFileSync(TELEMETRY_FILE_PATH(), 'utf-8'));
 		return telemetry.distinctId;
-	} catch (e) {
+	} catch {
 		const userInfo = await getLocalUserInfo();
 		const distinctId = userInfo.id || createLocalDistinctId();
 
@@ -72,7 +73,7 @@ export const maybeTrackTelemetry = async ({
 			app: 'cli',
 			...eventData,
 		});
-	} catch (e) {
+	} catch {
 		// Ignore errors
 	}
 };
@@ -93,7 +94,7 @@ export const useApifyIdentity = async (userId: string) => {
 				alias: distinctId,
 			},
 		});
-	} catch (e) {
+	} catch {
 		// Ignore errors
 	}
 };

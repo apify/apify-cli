@@ -1,8 +1,9 @@
-import type { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Flags } from '@oclif/core';
 import { Time } from '@sapphire/duration';
 import type { Actor, ActorRunListItem, ActorTaggedBuild, PaginatedList } from 'apify-client';
 import chalk from 'chalk';
+
+import type { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';

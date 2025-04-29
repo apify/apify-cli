@@ -1,6 +1,6 @@
-import { Hook } from '@oclif/core';
+import type { Hook } from '@oclif/core';
 
-import { SKIP_UPDATE_CHECK, checkLatestVersion } from '../lib/version_check.js';
+import { checkLatestVersion, SKIP_UPDATE_CHECK } from '../lib/version_check.js';
 
 /**
  * This code'll be call before each commmand run

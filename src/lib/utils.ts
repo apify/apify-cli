@@ -1,4 +1,4 @@
-import { createWriteStream, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
@@ -6,16 +6,6 @@ import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { finished } from 'node:stream/promises';
 
-import {
-	ACTOR_ENV_VARS,
-	ACTOR_JOB_TERMINAL_STATUSES,
-	ACTOR_NAME,
-	APIFY_ENV_VARS,
-	KEY_VALUE_STORE_KEYS,
-	LOCAL_ACTOR_ENV_VARS,
-	LOCAL_STORAGE_SUBDIRS,
-	SOURCE_FILE_FORMATS,
-} from '@apify/consts';
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
@@ -32,13 +22,24 @@ import standardMimes from 'mime/types/standard.js';
 import { gte, minVersion, satisfies } from 'semver';
 
 import {
+	ACTOR_ENV_VARS,
+	ACTOR_JOB_TERMINAL_STATUSES,
+	ACTOR_NAME,
+	APIFY_ENV_VARS,
+	KEY_VALUE_STORE_KEYS,
+	LOCAL_ACTOR_ENV_VARS,
+	LOCAL_STORAGE_SUBDIRS,
+	SOURCE_FILE_FORMATS,
+} from '@apify/consts';
+
+import {
 	APIFY_CLIENT_DEFAULT_HEADERS,
 	AUTH_FILE_PATH,
 	DEFAULT_LOCAL_STORAGE_DIR,
 	GLOBAL_CONFIGS_FOLDER,
 	INPUT_FILE_REG_EXP,
-	LOCAL_CONFIG_PATH,
 	type Language,
+	LOCAL_CONFIG_PATH,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
@@ -113,7 +114,7 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 /**
  * Gets instance of ApifyClient for user otherwise throws error
  */
-export const getLoggedClientOrThrow = async () => {
+export async function getLoggedClientOrThrow() {
 	const loggedClient = await getLoggedClient();
 
 	if (!loggedClient) {
@@ -121,7 +122,7 @@ export const getLoggedClientOrThrow = async () => {
 	}
 
 	return loggedClient;
-};
+}
 
 const getTokenWithAuthFileFallback = (existingToken?: string) => {
 	if (!existingToken && existsSync(GLOBAL_CONFIGS_FOLDER()) && existsSync(AUTH_FILE_PATH())) {
@@ -163,7 +164,7 @@ export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): Apif
  * NOTE: It refreshes global auth file each run
  * @param [token]
  */
-export const getLoggedClient = async (token?: string, apiBaseUrl?: string) => {
+export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 	token = getTokenWithAuthFileFallback(token);
 
 	const apifyClient = new ApifyClient(getApifyClientOptions(token, apiBaseUrl));
@@ -171,7 +172,7 @@ export const getLoggedClient = async (token?: string, apiBaseUrl?: string) => {
 	let userInfo;
 	try {
 		userInfo = await apifyClient.user('me').get();
-	} catch (err) {
+	} catch {
 		return null;
 	}
 
@@ -181,7 +182,7 @@ export const getLoggedClient = async (token?: string, apiBaseUrl?: string) => {
 	writeFileSync(AUTH_FILE_PATH(), JSON.stringify({ token: apifyClient.token, ...userInfo }, null, '\t'));
 
 	return apifyClient;
-};
+}
 
 export const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);
 
@@ -521,11 +522,11 @@ export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: s
 /**
  * Ensures the Apify directory exists, as well as nested folders (for tests)
  */
-export const ensureApifyDirectory = (file: string) => {
+export function ensureApifyDirectory(file: string) {
 	const path = dirname(file);
 
 	mkdirSync(path, { recursive: true });
-};
+}
 
 export const TimestampFormatter = new Timestamp('YYYY-MM-DD [at] HH:mm:ss');
 

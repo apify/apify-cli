@@ -1,28 +1,29 @@
 import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 
-import type { Manifest, Template } from '@apify/actor-templates';
 import chalk from 'chalk';
 import inquirer from 'inquirer';
+
+import type { Manifest, Template } from '@apify/actor-templates';
 
 import { warning } from './outputs.js';
 import { httpsGet, validateActorName } from './utils.js';
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 
-export const ensureValidActorName = async (maybeActorName?: string) => {
+export async function ensureValidActorName(maybeActorName?: string) {
 	if (maybeActorName) {
 		validateActorName(maybeActorName);
 		return maybeActorName;
 	}
 	return promptActorName();
-};
+}
 
 // TODO: this isn't even used anymore
-export const getTemplateDefinition = async (
+export async function getTemplateDefinition(
 	maybeTemplateName: string | undefined,
 	manifestPromise: Promise<Manifest | Error>,
-) => {
+) {
 	const manifest = await manifestPromise;
 	// If the fetch failed earlier, the resolve value of
 	// the promise will be the error from fetching the manifest.
@@ -37,13 +38,13 @@ export const getTemplateDefinition = async (
 	}
 
 	return executePrompts(manifest);
-};
+}
 
 // TODO: this isn't even used anymore
 /**
  * Fetch local readme suffix from the manifest and append it to the readme.
  */
-export const enhanceReadmeWithLocalSuffix = async (readmePath: string, manifestPromise: Promise<Manifest | Error>) => {
+export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestPromise: Promise<Manifest | Error>) {
 	const manifest = await manifestPromise;
 	// If the fetch failed earlier, the resolve value of
 	// the promise will be the error from fetching the manifest.
@@ -59,14 +60,14 @@ export const enhanceReadmeWithLocalSuffix = async (readmePath: string, manifestP
 			message: `Could not append local development instructions to README.md. Cause: ${(err as Error).message}`,
 		});
 	}
-};
+}
 
 /**
  * Inquirer does not have a native way to "go back" between prompts.
  */
 async function executePrompts(manifest: Manifest) {
 	const programmingLanguage = await promptProgrammingLanguage();
-	// eslint-disable-next-line no-constant-condition
+
 	while (true) {
 		const templateDefinition = await promptTemplateDefinition(manifest, programmingLanguage);
 		if (templateDefinition) {

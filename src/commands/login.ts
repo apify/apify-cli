@@ -1,13 +1,14 @@
-import type { Server } from 'http';
-import type { AddressInfo } from 'net';
+import type { Server } from 'node:http';
+import type { AddressInfo } from 'node:net';
 
-import { cryptoRandomObjectId } from '@apify/utilities';
 import { Flags } from '@oclif/core';
 import computerName from 'computer-name';
 import cors from 'cors';
 import express from 'express';
 import inquirer from 'inquirer';
 import open from 'open';
+
+import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { ApifyCommand } from '../lib/apify_command.js';
 import { error, info, success } from '../lib/outputs.js';

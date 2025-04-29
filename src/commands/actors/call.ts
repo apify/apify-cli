@@ -13,7 +13,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
-import { SharedRunOnCloudFlags, runActorOrTaskOnCloud } from '../../lib/commands/run-on-cloud.js';
+import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
@@ -222,7 +222,9 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					break;
 				}
 
-				await new Promise((resolve) => setTimeout(resolve, 250));
+				await new Promise((resolve) => {
+					setTimeout(resolve, 250);
+				});
 			} while (retries--);
 
 			const dataset = await apifyClient.dataset(datasetId).downloadItems(DownloadItemsFormat.JSON, {

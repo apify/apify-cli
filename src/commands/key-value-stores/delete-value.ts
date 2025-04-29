@@ -5,8 +5,8 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, info } from '../../lib/outputs.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+import { confirmAction } from '../../lib/utils/confirm.js';
 
 export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyValueStoresDeleteValueCommand> {
 	static override description = 'Delete a value from a key-value store.';

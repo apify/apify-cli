@@ -2,8 +2,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-import { cryptoRandomObjectId } from '@apify/utilities';
 import { captureOutput } from '@oclif/test';
+
+import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { LoginCommand } from '../../src/commands/login.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';

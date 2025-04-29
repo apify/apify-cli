@@ -11,15 +11,16 @@ import {
 import { basename, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { fetchManifest, wrapperManifestUrl } from '@apify/actor-templates';
 import rootWalk from '@root/walk';
 import ConfigParser from 'configparser';
 import Handlebars from 'handlebars';
 import inquirer from 'inquirer';
 
-import { ScrapyProjectAnalyzer } from './ScrapyProjectAnalyzer.js';
+import { fetchManifest, wrapperManifestUrl } from '@apify/actor-templates';
+
 import { info, success } from '../../outputs.js';
 import { downloadAndUnzip, sanitizeActorName } from '../../utils.js';
+import { ScrapyProjectAnalyzer } from './ScrapyProjectAnalyzer.js';
 
 /**
  * Files that should be concatenated instead of copied (and overwritten).

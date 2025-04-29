@@ -1,8 +1,9 @@
 import { copyFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
-import { APIFY_ENV_VARS } from '@apify/consts';
 import { captureOutput } from '@oclif/test';
+
+import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { rimrafPromised } from '../../src/lib/files.js';
@@ -257,7 +258,7 @@ describe('apify run', () => {
 		await rimrafPromised(getLocalStorageDir());
 		try {
 			await RunCommand.run(['--purge'], import.meta.url);
-		} catch (err) {
+		} catch {
 			throw new Error('Can not run Actor without storage folder!');
 		}
 	});

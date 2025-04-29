@@ -1,4 +1,4 @@
-import { type SpawnOptions, type SpawnOptionsWithoutStdio, spawn } from 'node:child_process';
+import { spawn, type SpawnOptions, type SpawnOptionsWithoutStdio } from 'node:child_process';
 
 import { normalizeExecutablePath } from './hooks/runtimes/utils.js';
 import { run } from './outputs.js';

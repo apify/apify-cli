@@ -1,14 +1,15 @@
-import { readFileSync, unlinkSync, statSync } from 'node:fs';
+import { readFileSync, statSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
-import { fetchManifest } from '@apify/actor-templates';
-import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 import { Args, Flags } from '@oclif/core';
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
 import inquirer from 'inquirer';
 import isCI from 'is-ci';
 import open from 'open';
+
+import { fetchManifest } from '@apify/actor-templates';
+import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/apify_command.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
