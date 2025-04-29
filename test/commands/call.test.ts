@@ -6,11 +6,10 @@ import { captureOutput } from '@oclif/test';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
-import { LoginCommand } from '../../src/commands/login.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { waitForBuildToFinishWithTimeout } from '../__setup__/build-utils.js';
-import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
-import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { testUserClient } from '../__setup__/config.js';
+import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
 const ACTOR_NAME = `call-my-actor-${cryptoRandomObjectId(6)}-${process.version.split('.')[0]}-${platform()}`;
@@ -48,7 +47,7 @@ describe('apify call', () => {
 
 		const { username } = await testUserClient.user('me').get();
 
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await safeLogin();
 		await CreateCommand.run(
 			[ACTOR_NAME, '--template', 'project_empty', '--skip-dependency-install'],
 			import.meta.url,

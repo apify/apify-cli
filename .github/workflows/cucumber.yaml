@@ -23,6 +23,10 @@ jobs:
         runs-on: ${{ matrix.os }}
 
         steps:
+            - name: Mask secrets
+              run: |
+                  echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
+
             - uses: actions/checkout@v4
 
             - name: Use Node.js ${{ matrix.node-version }}

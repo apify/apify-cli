@@ -1,8 +1,14 @@
 import { rm } from 'node:fs/promises';
+import { EOL } from 'node:os';
+
+import isCI from 'is-ci';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { LoginCommand } from '../../../src/commands/login.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
+import { getLocalUserInfo } from '../../../src/lib/utils.js';
+import { TEST_USER_TOKEN } from '../config.js';
 
 export interface UseAuthSetupOptions {
 	/**
@@ -42,4 +48,19 @@ export function useAuthSetup({ cleanup, perTest }: UseAuthSetupOptions = { clean
 
 		vitest.unstubAllEnvs();
 	});
+}
+
+export async function safeLogin(tokenOverride?: string) {
+	// eslint-disable-next-line no-restricted-syntax
+	await LoginCommand.run(['--token', tokenOverride ?? TEST_USER_TOKEN], import.meta.url);
+
+	try {
+		const userInfo = await getLocalUserInfo();
+
+		if (userInfo?.proxy?.password && isCI) {
+			process.stdout.write(`${EOL}::add-mask::${userInfo.proxy.password}${EOL}`);
+		}
+	} catch {
+		// Do nothing
+	}
 }

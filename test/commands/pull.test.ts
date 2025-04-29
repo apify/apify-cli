@@ -5,10 +5,9 @@ import { join } from 'node:path';
 import { runCommand } from '@oclif/test';
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
-import { LoginCommand } from '../../src/commands/login.js';
 import { DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
-import { TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
-import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { testUserClient } from '../__setup__/config.js';
+import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useProcessMock } from '../__setup__/hooks/useProcessMock.js';
 
 const TEST_ACTOR_SOURCE_FILES: ActorCollectionCreateOptions = {
@@ -111,7 +110,7 @@ describe('apify pull', () => {
 	const actorNamesForCleanup = new Set<string>();
 
 	beforeAll(async () => {
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await safeLogin();
 	});
 
 	afterAll(async () => {

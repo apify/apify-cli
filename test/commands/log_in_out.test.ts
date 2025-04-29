@@ -5,7 +5,7 @@ import type { MockInstance } from 'vitest';
 
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
-import { useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 
 vitest.setConfig({ restoreMocks: false });
 useAuthSetup();
@@ -25,14 +25,14 @@ describe('apify login and logout', () => {
 	});
 
 	it('should end with Error with bad token', async () => {
-		await LoginCommand.run(['--token', TEST_USER_BAD_TOKEN], import.meta.url);
+		await safeLogin(TEST_USER_BAD_TOKEN);
 
 		expect(spy).toHaveBeenCalledTimes(1);
 		expect(spy.mock.calls[0][0]).to.include('Error:');
 	});
 
 	it('should work with correct token', async () => {
-		await LoginCommand.run(['--token', TEST_USER_TOKEN], import.meta.url);
+		await safeLogin(TEST_USER_TOKEN);
 
 		const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), {
 			token: TEST_USER_TOKEN,
@@ -67,6 +67,7 @@ describe('apify login and logout', () => {
 	});
 
 	it('have correctly setup server for interactive login', async () => {
+		// eslint-disable-next-line no-restricted-syntax -- intentional test
 		await LoginCommand.run(['-m', 'console'], import.meta.url);
 
 		const consoleInfo = spy.mock.calls[0][1];
