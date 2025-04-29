@@ -8,7 +8,7 @@ import { cliDebugPrint } from './utils/cliDebugPrint.js';
 const spawnPromised = async (cmd: string, args: string[], opts: Options) => {
 	const escapedCommand = normalizeExecutablePath(cmd);
 
-	cliDebugPrint('spawnPromised2', { escapedCommand, args, opts });
+	cliDebugPrint('spawnPromised', { escapedCommand, args, opts });
 
 	const childProcess = execa(escapedCommand, args, {
 		shell: true,

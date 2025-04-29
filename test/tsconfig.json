@@ -7,11 +7,6 @@
 		"noEmit": true,
 		"rootDir": "."
 	},
-	"include": [
-		"./**/*.ts",
-		"./**/*.js",
-		"../src",
-		"fixtures/commands/run/python/prints-error-message-on-project-with-no-detected-start.test.ts"
-	],
+	"include": ["./**/*.ts", "./**/*.js", "../src"],
 	"references": [{ "path": ".." }]
 }
