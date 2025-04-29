@@ -108,7 +108,6 @@
         "@crawlee/types": "^3.11.1",
         "@cucumber/cucumber": "^11.0.0",
         "@oclif/test": "^4.0.8",
-        "@stylistic/eslint-plugin-ts": "^4.2.0",
         "@types/adm-zip": "^0.5.5",
         "@types/archiver": "^6.0.2",
         "@types/chai": "^4.3.17",

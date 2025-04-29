@@ -41,6 +41,7 @@ export default [
 			'no-underscore-dangle': 'off',
 
 			// we do default exports
+			// TODO: remove once moved to yargs
 			'import/no-default-export': 'off',
 
 			'@typescript-eslint/consistent-type-imports': [
@@ -52,7 +53,7 @@ export default [
 			'@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
 
 			// Not ideal, but we still use any for simplicity
-			'@typescript-eslint/no-explicit-any': 'warn',
+			'@typescript-eslint/no-explicit-any': 'off',
 
 			// '@typescript-eslint/array-type': 'error',
 			// '@typescript-eslint/no-empty-object-type': 'off',
