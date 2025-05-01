@@ -12,10 +12,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.36.0, @apify/consts@npm:^2.40.0":
-  version: 2.40.0
-  resolution: "@apify/consts@npm:2.40.0"
-  checksum: 10c0/5163abd66d01a5cd705d51acc6bbef2e1c4fd483ab43fef95df53045bd9d6f8b2172a3af0ee38c662334647262527e7893ae39a23bf945d64b8d739bd7f33046
+"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.23.0, @apify/consts@npm:^2.25.0, @apify/consts@npm:^2.36.0, @apify/consts@npm:^2.41.0":
+  version: 2.41.0
+  resolution: "@apify/consts@npm:2.41.0"
+  checksum: 10c0/c4ecdcbea6655f441663589457d1702b146e9c7bb3da27be2ce07dd5d7ad4e12ee04e66f8f1ce573257c04176b14b125ec4399ef71dff2fd3fed675784c94741
   languageName: node
   linkType: hard
 
@@ -50,36 +50,36 @@ __metadata:
   linkType: hard
 
 "@apify/input_schema@npm:^3.12.0":
-  version: 3.14.0
-  resolution: "@apify/input_schema@npm:3.14.0"
+  version: 3.14.1
+  resolution: "@apify/input_schema@npm:3.14.1"
   dependencies:
-    "@apify/consts": "npm:^2.40.0"
+    "@apify/consts": "npm:^2.41.0"
     acorn-loose: "npm:^8.4.0"
     countries-list: "npm:^3.0.0"
   peerDependencies:
     ajv: ^8.0.0
-  checksum: 10c0/30c8d495c3deb2162ebda0f420f733473ba82c944833353dc1f084b2daff23583f73f443bb974996052a49436fa3b51b45da6e0076a262f9f36258837393fef2
+  checksum: 10c0/a49b02b0bedfb8d936b93a777658de6bd7d38d797ce77a9713f341737c3ee21a1d39fe077f7df809f23ef442f829aa26ebbe010142b5d0b5f953f6b62fc49f19
   languageName: node
   linkType: hard
 
 "@apify/input_secrets@npm:^1.1.40":
-  version: 1.1.71
-  resolution: "@apify/input_secrets@npm:1.1.71"
+  version: 1.1.72
+  resolution: "@apify/input_secrets@npm:1.1.72"
   dependencies:
-    "@apify/log": "npm:^2.5.17"
-    "@apify/utilities": "npm:^2.15.4"
+    "@apify/log": "npm:^2.5.18"
+    "@apify/utilities": "npm:^2.15.5"
     ow: "npm:^0.28.2"
-  checksum: 10c0/3f37cb910b25c8029764c9281e232ca32f5d837176de1536505e44284c5612de797793718e64316ee0aa73d4de0a5cf4e582aa08936f853b4c546b41d6650974
+  checksum: 10c0/f4cda10751c981407cab1b4cc2890540c9f60113b6186eb94e9b366b92c9eb8bbf2fec5386f1939598894689ec169d0f7008dde3b924c60a6f70137d5d0b77ea
   languageName: node
   linkType: hard
 
-"@apify/log@npm:^2.2.6, @apify/log@npm:^2.4.0, @apify/log@npm:^2.4.3, @apify/log@npm:^2.5.17":
-  version: 2.5.17
-  resolution: "@apify/log@npm:2.5.17"
+"@apify/log@npm:^2.2.6, @apify/log@npm:^2.4.0, @apify/log@npm:^2.4.3, @apify/log@npm:^2.5.18":
+  version: 2.5.18
+  resolution: "@apify/log@npm:2.5.18"
   dependencies:
-    "@apify/consts": "npm:^2.40.0"
+    "@apify/consts": "npm:^2.41.0"
     ansi-colors: "npm:^4.1.1"
-  checksum: 10c0/21555fdde3e896ce4b33c77ad55312917cb98defdac1d7622ee98430d37a5fe090709e8e6bd364ac72a89234405e273f02931dd96561b2db64f9649c6a4a35f6
+  checksum: 10c0/54895e9dbb2ba1d0884e17ce17268cd46d4bc74dd05c9a01bbfe6ea3728e9e446dea081b58d84c028437755026197851ee104167b5ff3d245db6a7599cffcbc0
   languageName: node
   linkType: hard
 
@@ -95,11 +95,11 @@ __metadata:
   linkType: hard
 
 "@apify/pseudo_url@npm:^2.0.30":
-  version: 2.0.58
-  resolution: "@apify/pseudo_url@npm:2.0.58"
+  version: 2.0.59
+  resolution: "@apify/pseudo_url@npm:2.0.59"
   dependencies:
-    "@apify/log": "npm:^2.5.17"
-  checksum: 10c0/6e1e91baf0fc274b30e6e2b11f24a840083eec656d139ee4e92ade0edab3a3e3d7a8706b237b8e0f933bf464491a712b039edc5ce7f0331db7fecc2234b5854e
+    "@apify/log": "npm:^2.5.18"
+  checksum: 10c0/ae4d5be32ab7261e59fa7cec691b1a44c6e9a144547a20308df242a8380efe56e97f1b7d13f5afb65e13134b19b5accb70148a84eff4d122f1afadeae149c7a8
   languageName: node
   linkType: hard
 
@@ -117,13 +117,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/utilities@npm:^2.13.0, @apify/utilities@npm:^2.15.1, @apify/utilities@npm:^2.15.4, @apify/utilities@npm:^2.7.10":
-  version: 2.15.4
-  resolution: "@apify/utilities@npm:2.15.4"
+"@apify/utilities@npm:^2.13.0, @apify/utilities@npm:^2.15.1, @apify/utilities@npm:^2.15.5, @apify/utilities@npm:^2.7.10":
+  version: 2.15.5
+  resolution: "@apify/utilities@npm:2.15.5"
   dependencies:
-    "@apify/consts": "npm:^2.40.0"
-    "@apify/log": "npm:^2.5.17"
-  checksum: 10c0/d32e8182901c15f2e0948bdd93494e028208595ee35cc3ade0d232577f1c7e80d87dd13afeb54298af63ac00aaa3bc851db62f4124270f89b5ae049fe3350423
+    "@apify/consts": "npm:^2.41.0"
+    "@apify/log": "npm:^2.5.18"
+  checksum: 10c0/73b277d9accbf2e7bb0aead3a9eaf5cec49d9ad8c0380b6f5afa681fb2898435932f3ad8dac8d0788b01fceb114fa3a80de5e3530de65c2fea062c2151f8a9ed
   languageName: node
   linkType: hard
 
@@ -269,8 +269,8 @@ __metadata:
   linkType: hard
 
 "@aws-sdk/client-s3@npm:^3.787.0":
-  version: 3.799.0
-  resolution: "@aws-sdk/client-s3@npm:3.799.0"
+  version: 3.800.0
+  resolution: "@aws-sdk/client-s3@npm:3.800.0"
   dependencies:
     "@aws-crypto/sha1-browser": "npm:5.2.0"
     "@aws-crypto/sha256-browser": "npm:5.2.0"
@@ -288,7 +288,7 @@ __metadata:
     "@aws-sdk/middleware-ssec": "npm:3.775.0"
     "@aws-sdk/middleware-user-agent": "npm:3.799.0"
     "@aws-sdk/region-config-resolver": "npm:3.775.0"
-    "@aws-sdk/signature-v4-multi-region": "npm:3.799.0"
+    "@aws-sdk/signature-v4-multi-region": "npm:3.800.0"
     "@aws-sdk/types": "npm:3.775.0"
     "@aws-sdk/util-endpoints": "npm:3.787.0"
     "@aws-sdk/util-user-agent-browser": "npm:3.775.0"
@@ -328,7 +328,7 @@ __metadata:
     "@smithy/util-utf8": "npm:^4.0.0"
     "@smithy/util-waiter": "npm:^4.0.3"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/6ff255d4a063b1f9616c2277aaaa44dc1345a23c1e79ac8fa88a92018a0f3952e7d73a039f1ec4d629b2f889edecfed9d5ae9f4418eaa19ca15ca6b9e359d571
+  checksum: 10c0/718e55fd9b83d4f7a63ee95eef3b452f29398f27ad98ff97f6d14d86ad0d48b2543277af149de21c80e8c1bfeb1c1d3aa55abe4218c30ce7e9d5c47ed2c9c522
   languageName: node
   linkType: hard
 
@@ -715,9 +715,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/signature-v4-multi-region@npm:3.799.0":
-  version: 3.799.0
-  resolution: "@aws-sdk/signature-v4-multi-region@npm:3.799.0"
+"@aws-sdk/signature-v4-multi-region@npm:3.800.0":
+  version: 3.800.0
+  resolution: "@aws-sdk/signature-v4-multi-region@npm:3.800.0"
   dependencies:
     "@aws-sdk/middleware-sdk-s3": "npm:3.799.0"
     "@aws-sdk/types": "npm:3.775.0"
@@ -725,7 +725,7 @@ __metadata:
     "@smithy/signature-v4": "npm:^5.1.0"
     "@smithy/types": "npm:^4.2.0"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/14eb4b9a9d0c5eeb274bc803d26f92ff9860056c99cbe0f10989cc245cc348cc27091242df52ecddfcc4c429d02aa2d521be2dbdb2e0c4f03f26626d10809af4
+  checksum: 10c0/170010f44abc7a42b6d65e9f106273dfe5e15f22ad55f8bba22cdcf300fd895ed1bd68c8310efd6228646645f7adfa6bda6c7c31c97bee4d2ce2540b705b82a6
   languageName: node
   linkType: hard
 
@@ -824,20 +824,20 @@ __metadata:
   linkType: hard
 
 "@babel/code-frame@npm:^7.26.2":
-  version: 7.26.2
-  resolution: "@babel/code-frame@npm:7.26.2"
+  version: 7.27.1
+  resolution: "@babel/code-frame@npm:7.27.1"
   dependencies:
-    "@babel/helper-validator-identifier": "npm:^7.25.9"
+    "@babel/helper-validator-identifier": "npm:^7.27.1"
     js-tokens: "npm:^4.0.0"
-    picocolors: "npm:^1.0.0"
-  checksum: 10c0/7d79621a6849183c415486af99b1a20b84737e8c11cd55b6544f688c51ce1fd710e6d869c3dd21232023da272a79b91efb3e83b5bc2dc65c1187c5fcd1b72ea8
+    picocolors: "npm:^1.1.1"
+  checksum: 10c0/5dd9a18baa5fce4741ba729acc3a3272c49c25cb8736c4b18e113099520e7ef7b545a4096a26d600e4416157e63e87d66db46aa3fbf0a5f2286da2705c12da00
   languageName: node
   linkType: hard
 
-"@babel/helper-validator-identifier@npm:^7.25.9":
-  version: 7.25.9
-  resolution: "@babel/helper-validator-identifier@npm:7.25.9"
-  checksum: 10c0/4fc6f830177b7b7e887ad3277ddb3b91d81e6c4a24151540d9d1023e8dc6b1c0505f0f0628ae653601eb4388a8db45c1c14b2c07a9173837aef7e4116456259d
+"@babel/helper-validator-identifier@npm:^7.27.1":
+  version: 7.27.1
+  resolution: "@babel/helper-validator-identifier@npm:7.27.1"
+  checksum: 10c0/c558f11c4871d526498e49d07a84752d1800bf72ac0d3dad100309a2eaba24efbf56ea59af5137ff15e3a00280ebe588560534b0e894a4750f8b1411d8f78b84
   languageName: node
   linkType: hard
 
@@ -4434,9 +4434,9 @@ __metadata:
   linkType: hard
 
 "caniuse-lite@npm:^1.0.30001688":
-  version: 1.0.30001715
-  resolution: "caniuse-lite@npm:1.0.30001715"
-  checksum: 10c0/0109a7da797ffbe1aa197baa5242b205011098eecec1087ef3d0c58ceea19be325ab6679b2751a78660adc3051a9f77e99d5789938fd1eb1235e6fdf6a1dbf8e
+  version: 1.0.30001716
+  resolution: "caniuse-lite@npm:1.0.30001716"
+  checksum: 10c0/5cca5089f7ee214a346ea38ecbd114c1a675c94254675150e535aa0766fe2c446961990637f25f65dc29ce9c543aed12006d679dd797d2e6159c46aa518da0cb
   languageName: node
   linkType: hard
 
@@ -5364,9 +5364,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.73":
-  version: 1.5.144
-  resolution: "electron-to-chromium@npm:1.5.144"
-  checksum: 10c0/c0e2be98de5b7c002fa647f6f0ba9a09cccc4c8d4ce967ff2e44e0c7c69b87cb98ef7bd46e4d0d2f93e2e9a7d9c64c7cedb8e525ac1a560cb71b492148ca6c35
+  version: 1.5.146
+  resolution: "electron-to-chromium@npm:1.5.146"
+  checksum: 10c0/f941485aad6f0b1b26a0218f75cf7ca6c3d99aad122c5c1121cd5745e521b816f162d87a04d426d8dff1b20397143a0a2121c95be59401c4c3986dab1409482c
   languageName: node
   linkType: hard
 
@@ -9473,7 +9473,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"picocolors@npm:^1.0.0, picocolors@npm:^1.1.1":
+"picocolors@npm:^1.1.1":
   version: 1.1.1
   resolution: "picocolors@npm:1.1.1"
   checksum: 10c0/e2e3e8170ab9d7c7421969adaa7e1b31434f789afb9b3f115f6b96d91945041ac3ceb02e9ec6fe6510ff036bcc0bf91e69a1772edc0b707e12b19c0f2d6bcf58
@@ -11563,8 +11563,8 @@ __metadata:
   linkType: hard
 
 "vite@npm:^5.0.0 || ^6.0.0":
-  version: 6.3.3
-  resolution: "vite@npm:6.3.3"
+  version: 6.3.4
+  resolution: "vite@npm:6.3.4"
   dependencies:
     esbuild: "npm:^0.25.0"
     fdir: "npm:^6.4.4"
@@ -11613,7 +11613,7 @@ __metadata:
       optional: true
   bin:
     vite: bin/vite.js
-  checksum: 10c0/7ea27d2c80a9e0b7ccf6cbd6c251455501286568160e8b632984e5332440f21a6d05f9236408212ba7653f7d2d4790f848956d8a620bbf4dd2ecb792a2fe1ab1
+  checksum: 10c0/f1534a3f42d14b30e11c58e5e451903d965d5f5ba18d8c81f9df208589e3d2c65535abaa3268d3963573174b8e056ea7bc445f567622c65fcdf98eb4acc1bf4e
   languageName: node
   linkType: hard
 
