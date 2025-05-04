@@ -1985,11 +1985,11 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-help@npm:^6.2.27, @oclif/plugin-help@npm:~6.2.8":
-  version: 6.2.27
-  resolution: "@oclif/plugin-help@npm:6.2.27"
+  version: 6.2.28
+  resolution: "@oclif/plugin-help@npm:6.2.28"
   dependencies:
     "@oclif/core": "npm:^4"
-  checksum: 10c0/1c88b5c64550dad4d0dc1898cf12509498033d6b455013331ca4e623e75786d2492e9fdb53ae005c3bec72239de0c6a88530d3ba54f70d63c593c30c3070cda6
+  checksum: 10c0/ba3a6f9532d43cc7c5e547ba89675cd62023f6566792e308ea0a086804dd0409f3d116a4a5e2487317c7800bfe80fd054bd1873fe4f5bb05f4e5db9f97c2769d
   languageName: node
   linkType: hard
 
@@ -11900,8 +11900,8 @@ __metadata:
   linkType: hard
 
 "ws@npm:^8.18.0":
-  version: 8.18.1
-  resolution: "ws@npm:8.18.1"
+  version: 8.18.2
+  resolution: "ws@npm:8.18.2"
   peerDependencies:
     bufferutil: ^4.0.1
     utf-8-validate: ">=5.0.2"
@@ -11910,7 +11910,7 @@ __metadata:
       optional: true
     utf-8-validate:
       optional: true
-  checksum: 10c0/e498965d6938c63058c4310ffb6967f07d4fa06789d3364829028af380d299fe05762961742971c764973dce3d1f6a2633fe8b2d9410c9b52e534b4b882a99fa
+  checksum: 10c0/4b50f67931b8c6943c893f59c524f0e4905bbd183016cfb0f2b8653aa7f28dad4e456b9d99d285bbb67cca4fedd9ce90dfdfaa82b898a11414ebd66ee99141e4
   languageName: node
   linkType: hard
 
