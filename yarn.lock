@@ -1994,20 +1994,20 @@ __metadata:
   linkType: hard
 
 "@oclif/plugin-not-found@npm:^3.2.48":
-  version: 3.2.50
-  resolution: "@oclif/plugin-not-found@npm:3.2.50"
+  version: 3.2.51
+  resolution: "@oclif/plugin-not-found@npm:3.2.51"
   dependencies:
     "@inquirer/prompts": "npm:^7.5.0"
     "@oclif/core": "npm:^4"
     ansis: "npm:^3.17.0"
     fast-levenshtein: "npm:^3.0.0"
-  checksum: 10c0/d8cda04a82ccef2c7b1ba2a6ca3ff8b007355bf9563a3bc74ac31cac5af33e898c6ac63b63df415c613463a70a095b0fc1771e2f72dfa594429098a144c04a4f
+  checksum: 10c0/8fde46709398e2e475120c36ffb58f1c9a814ec5537b3b4f3c2e2e2005a39bfdbf427eb617a8cbc07d16ebee01b241069f295e03e98db8ed66f8fb728bd6c43a
   languageName: node
   linkType: hard
 
 "@oclif/plugin-warn-if-update-available@npm:^3.1.38":
-  version: 3.1.38
-  resolution: "@oclif/plugin-warn-if-update-available@npm:3.1.38"
+  version: 3.1.39
+  resolution: "@oclif/plugin-warn-if-update-available@npm:3.1.39"
   dependencies:
     "@oclif/core": "npm:^4"
     ansis: "npm:^3.17.0"
@@ -2015,7 +2015,7 @@ __metadata:
     http-call: "npm:^5.2.2"
     lodash: "npm:^4.17.21"
     registry-auth-token: "npm:^5.1.0"
-  checksum: 10c0/c0ebe908a300e4119ad3cbdae1469377e497e913b59e90ca725e394bd10a57e1b449c5128760c33c9786f5c9441d4743b9b819c2aa8524e98b34969d20cbe310
+  checksum: 10c0/a428b196ec32df0d785826905ee4c3c979c28dc6241d2e4e0d157d6b495c490c57f960b4d09765e976aa9b89c97c5f777be8ad347631b467abd1989185f0d57c
   languageName: node
   linkType: hard
 
@@ -11998,8 +11998,8 @@ __metadata:
   linkType: hard
 
 "zod@npm:^3.23.8, zod@npm:^3.24.2":
-  version: 3.24.3
-  resolution: "zod@npm:3.24.3"
-  checksum: 10c0/ab0369810968d0329a1a141e9418e01e5c9c2a4905cbb7cb7f5a131d6e9487596e1400e21eeff24c4a8ee28dacfa5bd6103893765c055b7a98c2006a5a4fc68d
+  version: 3.24.4
+  resolution: "zod@npm:3.24.4"
+  checksum: 10c0/ab3112f017562180a41a0f83d870b333677f7d6b77f106696c56894567051b91154714a088149d8387a4f50806a2520efcb666f108cd384a35c236a191186d91
   languageName: node
   linkType: hard
