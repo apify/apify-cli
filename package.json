@@ -129,7 +129,7 @@
         "cross-env": "^7.0.3",
         "eslint": "^9.25.1",
         "eslint-config-prettier": "^10.1.2",
-        "lint-staged": "^15.5.1",
+        "lint-staged": "^16.0.0",
         "mdast-util-from-markdown": "^2.0.2",
         "mock-stdin": "^1.0.0",
         "oclif": "^4.14.15",
