@@ -104,6 +104,7 @@ export async function useModuleVersion({ moduleName, project }: UseModuleVersion
 		const result = await execa(project.runtime.executablePath, args, {
 			shell: true,
 			windowsHide: true,
+			verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 		});
 
 		if (result.stdout.trim() === 'n/a') {

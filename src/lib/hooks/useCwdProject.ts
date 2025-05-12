@@ -1,5 +1,5 @@
 import { access, readFile } from 'node:fs/promises';
-import { basename, dirname, join } from 'node:path';
+import { basename, dirname, join, resolve } from 'node:path';
 import process from 'node:process';
 
 import { ok, type Result } from '@sapphire/result';
@@ -144,13 +144,24 @@ async function checkNodeProject(cwd: string) {
 
 		const pkg = JSON.parse(rawString);
 
-		if (pkg.main) {
-			return { path: join(cwd, pkg.main), type: 'file' } as const;
-		}
-
+		// Always prefer start script if it exists
 		if (pkg.scripts?.start) {
 			return { type: 'script', script: 'start' } as const;
 		}
+
+		// Try to find the main entrypoint if it exists (if its a TypeScript file, the user has to deal with ensuring their runtime can run it directly)
+		if (pkg.main) {
+			try {
+				await access(resolve(cwd, pkg.main));
+
+				return { path: resolve(cwd, pkg.main), type: 'file' } as const;
+			} catch {
+				// Ignore errors
+			}
+		}
+
+		// We have a node project but we don't know what to do with it
+		return { type: 'unknown-entrypoint' } as const;
 	} catch {
 		// Ignore missing package.json and try some common files
 	}
@@ -159,12 +170,21 @@ async function checkNodeProject(cwd: string) {
 		join(cwd, 'index.js'),
 		join(cwd, 'index.mjs'),
 		join(cwd, 'index.cjs'),
+		join(cwd, 'main.js'),
+		join(cwd, 'main.mjs'),
+		join(cwd, 'main.cjs'),
 		join(cwd, 'src', 'index.js'),
 		join(cwd, 'src', 'index.mjs'),
 		join(cwd, 'src', 'index.cjs'),
+		join(cwd, 'src', 'main.js'),
+		join(cwd, 'src', 'main.mjs'),
+		join(cwd, 'src', 'main.cjs'),
 		join(cwd, 'dist', 'index.js'),
 		join(cwd, 'dist', 'index.mjs'),
 		join(cwd, 'dist', 'index.cjs'),
+		join(cwd, 'dist', 'main.js'),
+		join(cwd, 'dist', 'main.mjs'),
+		join(cwd, 'dist', 'main.cjs'),
 	];
 
 	for (const path of filesToCheck) {

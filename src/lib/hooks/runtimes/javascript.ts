@@ -22,6 +22,7 @@ async function getRuntimeVersion(runtimePath: string, args: string[]) {
 		const result = await execa(runtimePath, args, {
 			shell: true,
 			windowsHide: true,
+			verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 		});
 
 		// No output -> issue or who knows
@@ -39,6 +40,7 @@ async function getNpmVersion(npmPath: string) {
 	const result = await execa(npmPath, ['--version'], {
 		shell: true,
 		windowsHide: true,
+		verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 	});
 
 	if (!result.stdout) {
