@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 0.21.7 - **not yet released**
+
+### 🐛 Bug Fixes
+
+- Pick the start script for node projects before main property ([#787](https://github.com/apify/apify-cli/pull/787)) ([0e2a9d3](https://github.com/apify/apify-cli/commit/0e2a9d375f3b977b6f1a588fe5bbce5527b7505b)) by [@vladfrangu](https://github.com/vladfrangu)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [0.21.6](https://github.com/apify/apify-cli/releases/tag/v0.21.6) (2025-04-24)
 
 ### 🐛 Bug Fixes
