@@ -77,6 +77,15 @@ export async function useCwdProject({
 				project.entrypoint = {
 					path: scrapyProject.configuration.get('apify', 'mainpy_location')!,
 				};
+			} else {
+				// Fallback for scrapy projects that use apify, but are not "migrated" (like our templates)
+				const pythonFile = await checkPythonProject(cwd);
+
+				if (pythonFile) {
+					project.entrypoint = {
+						path: pythonFile,
+					};
+				}
 			}
 
 			return;

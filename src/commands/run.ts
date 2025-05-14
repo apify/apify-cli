@@ -185,7 +185,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			runType = RunType.Script;
 			entrypoint = cwdEntrypoint.script;
 		} else if (cwdEntrypoint?.path) {
-			runType = type === ProjectLanguage.Python ? RunType.Module : RunType.DirectFile;
+			runType = type !== ProjectLanguage.JavaScript ? RunType.Module : RunType.DirectFile;
 			entrypoint = cwdEntrypoint.path;
 		} else {
 			error({
