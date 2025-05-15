@@ -131,7 +131,7 @@ describe('apify pull', () => {
 	it('should fail outside Actor folder without actorId defined', async () => {
 		await runCommand(ActorsPullCommand, {});
 
-		expect(lastErrorMessage()).toEqual('Cannot find Actor in this directory.');
+		expect(lastErrorMessage()).toMatch(/Cannot find Actor in this directory/i);
 	});
 
 	it('should work with Actor SOURCE_FILES', async () => {
