@@ -1,6 +1,7 @@
 import { rename } from 'node:fs/promises';
 
 import { runCommand } from '../../../../../src/lib/command-framework/apify-command.js';
+import { useConsoleSpy } from '../../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../../../../__setup__/reset-cwd-caches.js';
 
@@ -12,6 +13,8 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 	cwd: true,
 	cwdParent: true,
 });
+
+const { lastErrorMessage } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../../../src/commands/create.js');
 const { RunCommand } = await import('../../../../../src/commands/run.js');
@@ -34,6 +37,8 @@ describe('[python] apify run', () => {
 	});
 
 	it('should print error message on python project with no detected start', async () => {
-		await expect(runCommand(RunCommand, {})).rejects.toThrow(/Actor is of an unknown format./i);
+		await runCommand(RunCommand, {});
+
+		expect(lastErrorMessage()).toMatch(/Actor is of an unknown format./i);
 	});
 });

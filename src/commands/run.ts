@@ -112,7 +112,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const localConfigResult = await useActorConfig({ cwd });
 
 		if (localConfigResult.isErr()) {
-			error({ message: localConfigResult.unwrapErr().message });
+			const { message, cause } = localConfigResult.unwrapErr();
+
+			error({ message: `${message}${cause ? `\n  ${cause.message}` : ''}` });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
