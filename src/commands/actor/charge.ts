@@ -1,4 +1,3 @@
-
 import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';

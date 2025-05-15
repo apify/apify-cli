@@ -17,7 +17,7 @@ export interface BaseArgOptions {
 
 export type StringArgOptions = BaseArgOptions;
 
-export type TaggedArgBuilder<Tag extends ArgTag, Required = boolean> = {
+export interface TaggedArgBuilder<Tag extends ArgTag, Required = boolean> {
 	argTag: Tag;
 	builder: (args: Argv, objectName: string) => Argv;
 	required: Required;
@@ -26,7 +26,7 @@ export type TaggedArgBuilder<Tag extends ArgTag, Required = boolean> = {
 	// Options from the object
 	description: string | undefined;
 	aliases: readonly string[] | undefined;
-};
+}
 
 function stringArg<const T extends StringArgOptions>(option: T): TaggedArgBuilder<'string', T['required']> {
 	return {

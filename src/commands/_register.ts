@@ -1,3 +1,4 @@
+import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.js';
 import { ActorIndexCommand } from './actor/_index.js';
 import { ActorsIndexCommand } from './actors/_index.js';
 import { BuildsIndexCommand } from './builds/_index.js';
@@ -7,8 +8,8 @@ import { CreateCommand } from './create.js';
 import { DatasetsIndexCommand } from './datasets/_index.js';
 import { EditInputSchemaCommand } from './edit-input-schema.js';
 import { InfoCommand } from './info.js';
-import { WrapScrapyCommand } from './init-wrap-scrapy.js';
 import { InitCommand } from './init.js';
+import { WrapScrapyCommand } from './init-wrap-scrapy.js';
 import { KeyValueStoresIndexCommand } from './key-value-stores/_index.js';
 import { LoginCommand } from './login.js';
 import { LogoutCommand } from './logout.js';
@@ -20,7 +21,6 @@ import { RunsIndexCommand } from './runs/_index.js';
 import { SecretsIndexCommand } from './secrets/_index.js';
 import { TasksIndexCommand } from './task/_index.js';
 import { ValidateInputSchemaCommand } from './validate-schema.js';
-import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.js';
 
 export const apifyCommands = [
 	// namespaces

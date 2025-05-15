@@ -18,8 +18,6 @@ describe('apify info', () => {
 	});
 
 	it('should work when logged in', async () => {
-		const spy = vitest.spyOn(console, 'log');
-
 		await safeLogin();
 		await runCommand(InfoCommand, {});
 

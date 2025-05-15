@@ -51,8 +51,8 @@ describe('apify run', () => {
 
 		toggleCwdBetweenFullAndParentPath();
 
-		await writeFile(joinPath('src/main.js'), overriddenMainJs);
-		await writeFile(joinPath('.actor/input_schema.json'), await readFile(pathToDefaultsInputSchema, 'utf8'));
+		await writeFile(joinPath('src', 'main.js'), overriddenMainJs);
+		await writeFile(joinPath('.actor', 'input_schema.json'), await readFile(pathToDefaultsInputSchema, 'utf8'));
 
 		inputPath = joinPath(getLocalKeyValueStorePath(), 'INPUT.json');
 		outputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');

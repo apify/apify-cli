@@ -1,3 +1,4 @@
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { KeyValueStoresCreateCommand } from './create.js';
 import { KeyValueStoresDeleteValueCommand } from './delete-value.js';
 import { KeyValueStoresGetValueCommand } from './get-value.js';
@@ -7,7 +8,6 @@ import { KeyValueStoresLsCommand } from './ls.js';
 import { KeyValueStoresRenameCommand } from './rename.js';
 import { KeyValueStoresRmCommand } from './rm.js';
 import { KeyValueStoresSetValueCommand } from './set-value.js';
-import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 
 export class KeyValueStoresIndexCommand extends ApifyCommand<typeof KeyValueStoresIndexCommand> {
 	static override name = 'key-value-stores' as const;

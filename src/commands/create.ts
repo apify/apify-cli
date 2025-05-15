@@ -6,8 +6,6 @@ import { gte, minVersion } from 'semver';
 
 import { fetchManifest, manifestUrl } from '@apify/actor-templates';
 
-import { fetchManifest, manifestUrl } from '@apify/actor-templates';
-
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { Flags } from '../lib/command-framework/flags.js';

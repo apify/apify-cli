@@ -2,6 +2,7 @@ import process from 'node:process';
 
 import chalk from 'chalk';
 import yargonaut from 'yargonaut';
+// eslint-disable-next-line import/extensions
 import yargs from 'yargs/yargs';
 
 import { camelCaseToKebabCase, commandRegistry, kebabCaseString } from '../lib/command-framework/apify-command.js';

@@ -2,7 +2,6 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from
 import { dirname } from 'node:path/win32';
 import { fileURLToPath } from 'node:url';
 
-
 import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { runCommand } from '../../src/lib/command-framework/apify-command.js';

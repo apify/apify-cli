@@ -1,5 +1,3 @@
-import { Args } from '@oclif/core';
-
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 

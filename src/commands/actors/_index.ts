@@ -1,3 +1,4 @@
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { ActorsBuildCommand } from './build.js';
 import { ActorsCallCommand } from './call.js';
 import { ActorsInfoCommand } from './info.js';
@@ -6,7 +7,6 @@ import { ActorsPullCommand } from './pull.js';
 import { ActorsPushCommand } from './push.js';
 import { ActorsRmCommand } from './rm.js';
 import { ActorsStartCommand } from './start.js';
-import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 
 export class ActorsIndexCommand extends ApifyCommand<typeof ActorsIndexCommand> {
 	static override name = 'actors' as const;

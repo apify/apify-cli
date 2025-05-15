@@ -1,7 +1,7 @@
-import { SecretsAddCommand } from './add.js';
-import { SecretsRmCommand } from './rm.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { SecretsAddCommand } from './add.js';
+import { SecretsRmCommand } from './rm.js';
 
 export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand> {
 	static override name = 'secrets' as const;

@@ -10,8 +10,6 @@ import open from 'open';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
-import { cryptoRandomObjectId } from '@apify/utilities';
-
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';

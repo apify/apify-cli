@@ -1,7 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import axios from 'axios';
-import type { MockInstance } from 'vitest';
 
 import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
@@ -22,12 +21,6 @@ const { LoginCommand } = await import('../../src/commands/login.js');
 const { LogoutCommand } = await import('../../src/commands/logout.js');
 
 describe('apify login and logout', () => {
-	let spy: MockInstance<(typeof console)['error']>;
-
-	beforeEach(() => {
-		spy = vitest.spyOn(console, 'error');
-	});
-
 	it('should end with Error with bad token', async () => {
 		await safeLogin(TEST_USER_BAD_TOKEN);
 
@@ -71,6 +64,7 @@ describe('apify login and logout', () => {
 	});
 
 	it('have correctly setup server for interactive login', async () => {
+		// eslint-disable-next-line no-restricted-syntax -- Intentionally testing a different login method
 		await runCommand(LoginCommand, { flags_method: 'console' });
 
 		const consoleInfo = lastErrorMessage();

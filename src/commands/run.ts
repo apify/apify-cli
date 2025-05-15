@@ -10,15 +10,6 @@ import { minVersion } from 'semver';
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 
-import { APIFY_ENV_VARS } from '@apify/consts';
-import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
-
-import { APIFY_ENV_VARS } from '@apify/consts';
-import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
-
-import { APIFY_ENV_VARS } from '@apify/consts';
-import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
-
 import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';

@@ -35,12 +35,12 @@ export interface IntegerFlagOptions extends BaseFlagOptions {
 	default?: number;
 }
 
-export type TaggedFlagBuilder<
+export interface TaggedFlagBuilder<
 	Tag extends FlagTag,
 	ChoicesType extends readonly string[] | null,
 	Required = boolean,
 	HasDefault = false,
-> = {
+> {
 	flagTag: Tag;
 	builder: (args: Argv, objectName: string, extraArgs?: string[], invertDefaultIfSet?: boolean) => Argv;
 	choicesType: ChoicesType;
@@ -54,7 +54,7 @@ export type TaggedFlagBuilder<
 	char: string | undefined;
 	hidden: boolean | undefined;
 	exclusive: readonly string[] | undefined;
-};
+}
 
 export const Flags = {
 	string: stringFlag,

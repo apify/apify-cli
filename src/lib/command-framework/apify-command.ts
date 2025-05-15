@@ -7,12 +7,17 @@ import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 import type { ArgumentsCamelCase, Argv, CommandBuilder, CommandModule } from 'yargs';
 
-import type { ArgTag, TaggedArgBuilder } from './args.js';
-import type { FlagTag, TaggedFlagBuilder } from './flags.js';
-import { getMaxLineWidth } from './help/consts.js';
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { error } from '../outputs.js';
+import type { ArgTag, TaggedArgBuilder } from './args.js';
+import type { FlagTag, TaggedFlagBuilder } from './flags.js';
 import { registerCommandForHelpGeneration, renderHelpForCommand, selectiveRenderHelpForCommand } from './help.js';
+import { getMaxLineWidth } from './help/consts.js';
+
+export enum StdinMode {
+	Raw = 1,
+	Stringified = 2,
+}
 
 interface ArgTagToTSType {
 	string: string;
@@ -176,9 +181,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		}
 
 		// Cheating a bit here with the types, but its fine
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any -- makes parsing easier
+
 		this.args = {} as any;
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any -- makes parsing easier
+
 		this.flags = {} as any;
 
 		// If we have this set, we assume that the user wants only the flag
@@ -303,10 +308,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		try {
 			await this.run();
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		} catch (err: any) {
-			// TODO: handle errors gracefully with a logger
-			console.error(err.message);
+			error({ message: err.message });
 		} finally {
 			// analytics
 			/*
@@ -437,7 +440,6 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			if (this.ctor.subcommands?.length) {
 				for (const SubCommandClass of this.ctor.subcommands) {
-					// eslint-disable-next-line no-underscore-dangle
 					const yargsObject = new SubCommandClass()._toYargs();
 
 					finalYargs = finalYargs.command(yargsObject);
@@ -487,7 +489,6 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	static registerCommand(entrypoint: string, yargsInstance: Argv) {
 		const instance = new (this as typeof BuiltApifyCommand)();
 
-		// eslint-disable-next-line no-underscore-dangle -- We mark the function with `_` to semi-signal it should not be called outside internal code
 		const yargsObject = instance._toYargs();
 
 		yargsInstance.command(yargsObject);
@@ -583,7 +584,12 @@ export async function runCommand<Cmd extends typeof BuiltApifyCommand>(
 		} else {
 			const yargsFlagName = kebabCaseString(camelCaseToKebabCase(rawKey)).toLowerCase();
 
-			rawObject[yargsFlagName] = value;
+			// We handle "no-" flags differently, as yargs handles them by negating the base flag name (no-prompt -> prompt=false)
+			if (yargsFlagName.startsWith('no-')) {
+				rawObject[yargsFlagName.slice(3)] = !value;
+			} else {
+				rawObject[yargsFlagName] = value;
+			}
 		}
 	}
 
@@ -595,9 +601,4 @@ export async function runCommand<Cmd extends typeof BuiltApifyCommand>(
 
 export declare class BuiltApifyCommand extends ApifyCommand {
 	override run(): Awaitable<void>;
-}
-
-export enum StdinMode {
-	Raw = 1,
-	Stringified = 2,
 }

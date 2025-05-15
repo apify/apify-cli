@@ -1,9 +1,9 @@
 import { satisfies } from 'semver';
 
-import { cli, runCLI } from './_shared.js';
 import { actorCommands } from '../commands/_register.js';
 import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { error } from '../lib/outputs.js';
+import { cli, runCLI } from './_shared.js';
 
 cli.scriptName('actor');
 

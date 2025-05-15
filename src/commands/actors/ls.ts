@@ -4,8 +4,6 @@ import chalk from 'chalk';
 
 import type { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import type { ACTOR_JOB_STATUSES } from '@apify/consts';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';

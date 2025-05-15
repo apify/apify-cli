@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-duplicate-enum-values */
 
-import { homedir, arch, platform } from 'node:os';
+import { arch, homedir, platform } from 'node:os';
 import { join } from 'node:path';
 
 import { KEY_VALUE_STORE_KEYS, META_ORIGINS } from '@apify/consts';

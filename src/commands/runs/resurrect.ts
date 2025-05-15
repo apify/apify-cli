@@ -2,8 +2,6 @@ import type { ApifyApiError } from 'apify-client';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import { ACTOR_JOB_STATUSES } from '@apify/consts';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { error, success } from '../../lib/outputs.js';

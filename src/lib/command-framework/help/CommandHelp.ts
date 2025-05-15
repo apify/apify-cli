@@ -5,9 +5,9 @@ import stripAnsi from 'strip-ansi';
 import widestLine from 'widest-line';
 import wrap from 'wrap-ansi';
 
-import { BaseCommandRenderer, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
 import type { ArgTag, TaggedArgBuilder } from '../args.js';
 import type { FlagTag, TaggedFlagBuilder } from '../flags.js';
+import { BaseCommandRenderer, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
 import { getMaxLineWidth } from './consts.js';
 
 /*

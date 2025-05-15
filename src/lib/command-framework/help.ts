@@ -5,8 +5,8 @@ import wrapAnsi from 'wrap-ansi';
 
 import { cliDescription, cliVersion } from '../consts.js';
 import { error } from '../outputs.js';
-import type { BuiltApifyCommand } from './apify-command.js';
 import { mapGroupBy } from '../utils.js';
+import type { BuiltApifyCommand } from './apify-command.js';
 import type { BaseCommandRenderer, SelectiveRenderOptions } from './help/_BaseCommandRenderer.js';
 import { CommandHelp } from './help/CommandHelp.js';
 import { CommandWithSubcommandsHelp } from './help/CommandWithSubcommands.js';

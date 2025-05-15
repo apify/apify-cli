@@ -2,10 +2,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { fileURLToPath } from 'node:url';
 
-
 import { cryptoRandomObjectId } from '@apify/utilities';
-import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 
+import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../src/lib/utils.js';
 import { waitForBuildToFinishWithTimeout } from '../__setup__/build-utils.js';
 import { testUserClient } from '../__setup__/config.js';
@@ -13,12 +12,15 @@ import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../__setup__/hooks/useTempPath.js';
 
 const ACTOR_NAME = `call-my-actor-${cryptoRandomObjectId(6)}-${process.version.split('.')[0]}-${platform()}`;
+
 const EXPECTED_OUTPUT = {
 	test: Math.random(),
 };
+
 const EXPECTED_INPUT = {
 	myTestInput: Math.random(),
 };
+
 const EXPECTED_INPUT_CONTENT_TYPE = 'application/json';
 
 const pathToInputJson = fileURLToPath(new URL('../__setup__/test-data/input-file.json', import.meta.url));
@@ -26,12 +28,11 @@ const expectedInputFile = JSON.parse(readFileSync(pathToInputJson, 'utf-8'));
 
 useAuthSetup({ perTest: false });
 
-const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPath, stdin } = useTempPath(ACTOR_NAME, {
+const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPath } = useTempPath(ACTOR_NAME, {
 	cwd: true,
 	cwdParent: true,
 	create: true,
 	remove: true,
-	withStdinMock: true,
 });
 
 const { CreateCommand } = await import('../../src/commands/create.js');
@@ -84,9 +85,7 @@ describe('apify call', () => {
 			.actor(actorId)
 			.get()
 			.then((actor) => actor!.id);
-
-		stdin.end();
-	});
+	}, 120_000);
 
 	afterAll(async () => {
 		await testUserClient.actor(actorId).delete();

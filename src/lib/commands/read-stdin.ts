@@ -1,5 +1,5 @@
 import { once } from 'node:events';
-import { fstat as fstat_, constants } from 'node:fs';
+import { constants, fstat as fstat_ } from 'node:fs';
 import process from 'node:process';
 import { promisify } from 'node:util';
 

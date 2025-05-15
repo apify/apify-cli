@@ -1,6 +1,5 @@
 import process from 'node:process';
 
-
 import { validateInputSchema } from '@apify/input_schema';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';

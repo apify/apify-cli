@@ -1,11 +1,11 @@
 import { satisfies } from 'semver';
 
-import { cli, runCLI } from './_shared.js';
 import { apifyCommands } from '../commands/_register.js';
 import { CheckVersionCommand } from '../commands/check-version.js';
 import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { error } from '../lib/outputs.js';
 import { checkLatestVersion, SKIP_UPDATE_CHECK } from '../lib/version_check.js';
+import { cli, runCLI } from './_shared.js';
 
 if (!satisfies(process.version, SUPPORTED_NODEJS_VERSION)) {
 	error({

@@ -10,9 +10,6 @@ import open from 'open';
 import { fetchManifest } from '@apify/actor-templates';
 import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 
-import { fetchManifest } from '@apify/actor-templates';
-import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
