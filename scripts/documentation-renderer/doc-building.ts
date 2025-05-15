@@ -2,9 +2,12 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import chalk from 'chalk';
 
-import { Commands } from './commands';
-import { registerCommandForHelpGeneration, selectiveRenderHelpForCommand } from '../../src/lib/command-framework/help';
+import {
+	registerCommandForHelpGeneration,
+	selectiveRenderHelpForCommand,
+} from '../../src/lib/command-framework/help.js';
 import type { BaseCommandRenderer } from '../../src/lib/command-framework/help/_BaseCommandRenderer';
+import { Commands } from './commands.js';
 
 export interface CommandsInCategory extends Partial<Parameters<BaseCommandRenderer['selectiveRender']>[0]> {
 	command: (typeof Commands)[keyof typeof Commands];
@@ -18,7 +21,6 @@ const allCommands = new Set(Object.values(Commands).filter((command) => !command
 
 function fullCommandName(command: (typeof Commands)[keyof typeof Commands]) {
 	if (Reflect.ownKeys(command).includes('parent')) {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		const { parent, name } = command as any;
 		return `${parent.name} ${name}`;
 	}

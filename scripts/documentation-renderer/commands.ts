@@ -1,4 +1,4 @@
-import { apifyCommands } from '../../src/commands/_register';
+import { apifyCommands } from '../../src/commands/_register.js';
 
 function camelCaseString(str: string): string {
 	return str.replace(/[-_\s](.)/g, (_, group1) => group1.toUpperCase());
