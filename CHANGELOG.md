@@ -2,16 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 0.21.7 - **not yet released**
+## [0.21.7](https://github.com/apify/apify-cli/releases/tag/v0.21.7) (2025-05-15)
 
 ### 🐛 Bug Fixes
 
 - Pick the start script for node projects before main property ([#787](https://github.com/apify/apify-cli/pull/787)) ([0e2a9d3](https://github.com/apify/apify-cli/commit/0e2a9d375f3b977b6f1a588fe5bbce5527b7505b)) by [@vladfrangu](https://github.com/vladfrangu)
 - Non-&quot;migrated&quot; scrapy not working anymore ([#800](https://github.com/apify/apify-cli/pull/800)) ([9eaf76c](https://github.com/apify/apify-cli/commit/9eaf76cfe455c08b93511e985419182a6549d37e)) by [@vladfrangu](https://github.com/vladfrangu), closes [#796](https://github.com/apify/apify-cli/issues/796)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [0.21.6](https://github.com/apify/apify-cli/releases/tag/v0.21.6) (2025-04-24)
 
