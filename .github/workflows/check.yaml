@@ -98,7 +98,6 @@ jobs:
               env:
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
                   APIFY_CLI_DISABLE_TELEMETRY: 1
-                  NO_SILENT_TESTS: 1
               run: yarn test-python
 
     docs:
@@ -163,3 +162,40 @@ jobs:
 
             - name: Run format checks
               run: yarn format
+
+    build_bundles:
+        name: Build Test Bundles
+        runs-on: ubuntu-latest
+        needs: [build_and_test]
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Use Node.js 20
+              uses: actions/setup-node@v4
+
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
+
+            - name: Activate cache for Node.js 20
+              uses: actions/setup-node@v4
+              with:
+                  cache: yarn
+
+            - name: Install Dependencies
+              run: yarn
+
+            - uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - name: Build Bundles
+              run: yarn build-bundles
+
+            - name: Upload Bundles
+              uses: actions/upload-artifact@v4
+              with:
+                  name: apify-cli-bundles
+                  path: bundles/apify**

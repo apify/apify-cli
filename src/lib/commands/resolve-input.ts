@@ -1,13 +1,13 @@
 import { access, readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import path, { resolve } from 'node:path';
 import process from 'node:process';
 
 import mime from 'mime';
 
+import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { CommandExitCodes } from '../consts.js';
 import { error } from '../outputs.js';
 import { getLocalInput } from '../utils.js';
-import { readStdin } from './read-stdin.js';
 
 export function resolveInput(cwd: string, inputOverride: Record<string, unknown> | undefined) {
 	let inputToUse: Record<string, unknown> | undefined;
@@ -45,7 +45,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 
 	if (!inputFlag && !inputFileFlag) {
 		// Try reading stdin
-		const stdin = await readStdin(process.stdin);
+		const stdin = cachedStdinInput;
 
 		if (stdin) {
 			try {
@@ -87,15 +87,15 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					inputFlag.endsWith('.json') ||
 					inputFlag.endsWith('.json5') ||
 					// UNIX-style path access
-					inputFlag.startsWith('/') ||
+					// this also matches Windows paths
+					path.isAbsolute(inputFlag) ||
 					inputFlag.startsWith('./') ||
 					inputFlag.startsWith('../') ||
 					// Home directory access
 					inputFlag.includes('~') ||
 					// Windows-style path access
 					inputFlag.startsWith('.\\') ||
-					inputFlag.startsWith('..\\') ||
-					inputFlag.includes('\\');
+					inputFlag.startsWith('..\\');
 
 				if (fileExists || inputLooksLikePath) {
 					error({

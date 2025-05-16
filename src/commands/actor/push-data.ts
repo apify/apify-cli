@@ -1,11 +1,12 @@
-import { Args } from '@oclif/core';
-
+import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from '../../lib/actor.js';
-import { ApifyCommand } from '../../lib/apify_command.js';
-import { readStdin } from '../../lib/commands/read-stdin.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { error } from '../../lib/outputs.js';
 
-export class PushDataCommand extends ApifyCommand<typeof PushDataCommand> {
+export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataCommand> {
+	static override name = 'push-data' as const;
+
 	static override description =
 		"Saves data to Actor's run default dataset.\n\n" +
 		'Accept input as:\n' +
@@ -24,7 +25,7 @@ export class PushDataCommand extends ApifyCommand<typeof PushDataCommand> {
 	async run() {
 		const { item: _item } = this.args;
 
-		const item = _item || (await readStdin(process.stdin));
+		const item = _item || cachedStdinInput;
 
 		if (!item) {
 			error({ message: 'No item was provided.' });

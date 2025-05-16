@@ -1,11 +1,11 @@
-import { Args } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 
 const resurrectStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,
@@ -15,6 +15,8 @@ const resurrectStatuses = [
 ];
 
 export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectCommand> {
+	static override name = 'resurrect' as const;
+
 	static override description = 'Resurrects an aborted or finished Actor Run.';
 
 	static override args = {
@@ -51,7 +53,8 @@ export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectComma
 			const result = await apifyClient.run(runId).resurrect();
 
 			if (this.flags.json) {
-				return result;
+				printJsonToStdout(result);
+				return;
 			}
 
 			success({ message: `Run with ID "${runId}" was resurrected successfully.`, stdout: true });
@@ -63,7 +66,5 @@ export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectComma
 				stdout: true,
 			});
 		}
-
-		return undefined;
 	}
 }

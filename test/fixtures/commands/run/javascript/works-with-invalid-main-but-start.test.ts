@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+import { runCommand } from '../../../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../../../src/lib/utils.js';
 import { useTempPath } from '../../../../__setup__/hooks/useTempPath.js';
 
@@ -31,7 +32,7 @@ describe('apify run', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await CreateCommand.run([actorName, '--template', 'project_cheerio_crawler_js'], import.meta.url);
+		await runCommand(CreateCommand, { flags_template: 'project_cheerio_crawler_js', args_actorName: actorName });
 		toggleCwdBetweenFullAndParentPath();
 
 		await writeFile(joinPath('src', 'index.js'), mainFile);
@@ -57,7 +58,7 @@ describe('apify run', () => {
 	});
 
 	it('should work with invalid main but valid start script', async () => {
-		await RunCommand.run([], import.meta.url);
+		await runCommand(RunCommand, {});
 
 		const output = JSON.parse(await readFile(outputPath, 'utf8'));
 		expect(output).toBe('worked');

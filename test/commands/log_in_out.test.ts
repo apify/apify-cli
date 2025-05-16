@@ -1,34 +1,31 @@
 import { existsSync, readFileSync } from 'node:fs';
 
 import axios from 'axios';
-import type { MockInstance } from 'vitest';
 
+import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../__setup__/config.js';
 import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useConsoleSpy } from '../__setup__/hooks/useConsoleSpy.js';
 
 vitest.setConfig({ restoreMocks: false });
 useAuthSetup();
 
 vitest.mock('open', () => ({
-	default: (url: string) => console.error(`Open URL: ${url}`),
+	default: (url: string) => console.log(`Open URL: ${url}`),
 }));
+
+const { lastErrorMessage, errorSpy } = useConsoleSpy();
 
 const { LoginCommand } = await import('../../src/commands/login.js');
 const { LogoutCommand } = await import('../../src/commands/logout.js');
 
 describe('apify login and logout', () => {
-	let spy: MockInstance<(typeof console)['error']>;
-
-	beforeEach(() => {
-		spy = vitest.spyOn(console, 'error');
-	});
-
 	it('should end with Error with bad token', async () => {
 		await safeLogin(TEST_USER_BAD_TOKEN);
 
-		expect(spy).toHaveBeenCalledTimes(1);
-		expect(spy.mock.calls[0][0]).to.include('Error:');
+		expect(errorSpy()).toHaveBeenCalledTimes(1);
+		expect(lastErrorMessage()).to.include('Error:');
 	});
 
 	it('should work with correct token', async () => {
@@ -39,8 +36,8 @@ describe('apify login and logout', () => {
 		}) as unknown as Record<string, string>;
 		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
 
-		expect(spy).toHaveBeenCalledTimes(1);
-		expect(spy.mock.calls[0][0]).to.include('Success:');
+		expect(errorSpy()).toHaveBeenCalledTimes(1);
+		expect(lastErrorMessage()).to.include('Success:');
 
 		// Omit currentBillingPeriod, It can change during tests
 
@@ -60,17 +57,17 @@ describe('apify login and logout', () => {
 
 		expect(expectedUserInfoWithoutFloatFields).to.eql(userInfoFromConfigWithoutFloatFields);
 
-		await LogoutCommand.run([], import.meta.url);
+		await runCommand(LogoutCommand, {});
 		const isGlobalConfig = existsSync(AUTH_FILE_PATH());
 
 		expect(isGlobalConfig).to.be.eql(false);
 	});
 
 	it('have correctly setup server for interactive login', async () => {
-		// eslint-disable-next-line no-restricted-syntax -- intentional test
-		await LoginCommand.run(['-m', 'console'], import.meta.url);
+		// eslint-disable-next-line no-restricted-syntax -- Intentionally testing a different login method
+		await runCommand(LoginCommand, { flags_method: 'console' });
 
-		const consoleInfo = spy.mock.calls[0][1];
+		const consoleInfo = lastErrorMessage();
 		const consoleUrl = /"(http[s]?:\/\/[^"]*)"/.exec(consoleInfo)?.[1];
 
 		const consoleUrlParams = new URL(consoleUrl!).searchParams;
@@ -91,7 +88,7 @@ describe('apify login and logout', () => {
 		}) as unknown as Record<string, string>;
 		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
 
-		expect(spy.mock.calls[2][0]).to.include('Success:');
+		expect(lastErrorMessage()).to.include('Success:');
 
 		// Omit currentBillingPeriod, It can change during tests
 

@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-duplicate-enum-values */
 
-import { readFileSync } from 'node:fs';
-import { homedir } from 'node:os';
+import { arch, homedir, platform } from 'node:os';
 import { join } from 'node:path';
 
 import { KEY_VALUE_STORE_KEYS, META_ORIGINS } from '@apify/consts';
+
+import pkg from '../../package.json' with { type: 'json' };
 
 export const DEFAULT_LOCAL_STORAGE_DIR = 'storage';
 
@@ -83,8 +84,6 @@ export const INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..
 
 export const MAIN_FILE = 'main.js';
 
-const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
-
 export const SUPPORTED_NODEJS_VERSION = pkg.engines.node;
 
 export const CURRENT_APIFY_CLI_VERSION = pkg.version;
@@ -114,3 +113,28 @@ export enum CommandExitCodes {
 	NotFound = 250,
 	NotImplemented = 255,
 }
+
+// Yargs
+
+const runtimeName = (() => {
+	if (process.versions.bun) {
+		return 'bun';
+	}
+
+	if (process.versions.deno) {
+		return 'deno';
+	}
+
+	return 'node';
+})();
+
+const runtimeVersion = process.versions[runtimeName] || process.version;
+
+const nodeVersion = process.versions.node;
+
+const extraRuntimeData = runtimeName === 'node' ? '' : ` (emulating node ${nodeVersion})`;
+
+// apify-cli/0.21.2 darwin-arm64 node-v22.14.0
+export const cliVersion = `${pkg.name}/${pkg.version} ${platform()}-${arch()} ${runtimeName}-${runtimeVersion}${extraRuntimeData}`;
+
+export const cliDescription = pkg.description;

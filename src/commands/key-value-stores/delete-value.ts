@@ -1,20 +1,20 @@
-import { Args } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 import { confirmAction } from '../../lib/utils/confirm.js';
 
 export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyValueStoresDeleteValueCommand> {
+	static override name = 'delete-value' as const;
+
 	static override description = 'Delete a value from a key-value store.';
 
-	static override hiddenAliases = ['kvs:delete-value'];
-
 	static override args = {
-		storeId: Args.string({
+		'store id': Args.string({
 			description: 'The key-value store ID to delete the value from.',
 			required: true,
 		}),

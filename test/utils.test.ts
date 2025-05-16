@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { execWithLog } from '../src/lib/exec.js';
 import { ensureFolderExistsSync } from '../src/lib/files.js';
-import { argsToCamelCase, createActZip, getActorLocalFilePaths } from '../src/lib/utils.js';
+import { createActZip, getActorLocalFilePaths } from '../src/lib/utils.js';
 import { useTempPath } from './__setup__/hooks/useTempPath.js';
 import { withRetries } from './__setup__/hooks/withRetries.js';
 
@@ -23,25 +23,6 @@ const FILES_IN_IGNORED_DIR = ['test_to_ignore/in_test_ignore.js'];
 const FILES_TO_IGNORE = ['ignored_module.js'];
 
 describe('Utils', () => {
-	describe('argsToCamelCase()', () => {
-		it('should convert object', () => {
-			const object = {
-				'my-att': 'value',
-				'my-attr-test': 'secondValue',
-				'user-id': 'd7H9khHg',
-				token: 'Ad7H9khHgd7H9khHg',
-			};
-			const expected = {
-				myAtt: 'value',
-				myAttrTest: 'secondValue',
-				userId: 'd7H9khHg',
-				token: 'Ad7H9khHgd7H9khHg',
-			};
-			const convertedObject = argsToCamelCase(object);
-			expect(expected).to.be.eql(convertedObject);
-		});
-	});
-
 	describe('createActZip()', () => {
 		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(TEST_DIR, {
 			create: true,

@@ -1,13 +1,19 @@
-import { Args, Flags } from '@oclif/core';
 import type { ActorRun, ActorRunUsage, ActorTaggedBuild } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, ShortDurationFormatter, TimestampFormatter } from '../../lib/utils.js';
+import {
+	getLoggedClientOrThrow,
+	printJsonToStdout,
+	ShortDurationFormatter,
+	TimestampFormatter,
+} from '../../lib/utils.js';
 
 const usageTable = new ResponsiveTable({
 	allColumns: ['', 'Unit', 'USD Amount'],
@@ -34,6 +40,8 @@ const usageMapping: Record<string, keyof ActorRunUsage> = {
 };
 
 export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
+	static override name = 'info' as const;
+
 	static override description = 'Prints information about an Actor run.';
 
 	static override args = {
@@ -75,14 +83,16 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		]);
 
 		if (this.flags.json) {
-			return {
+			printJsonToStdout({
 				...run,
 				actor,
 				build,
 				task,
 				defaultDataset,
 				defaultRequestQueue,
-			};
+			});
+
+			return;
 		}
 
 		this.addDetailedUsage(run);
@@ -242,8 +252,6 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 
 		simpleLog({ message: message.join('\n'), stdout: true });
-
-		return undefined;
 	}
 
 	private addDetailedUsage(run: ActorRun) {

@@ -80,7 +80,7 @@ export default [
 			'no-restricted-syntax': [
 				'error',
 				{
-					'selector': "CallExpression[callee.object.name='LoginCommand'][callee.property.name='run']",
+					'selector': "ExpressionStatement[expression.argument.arguments.0.name='LoginCommand']",
 					'message': 'Use safeLogin() from test/__setup__/hooks/useAuthSetup.ts instead',
 				},
 			],

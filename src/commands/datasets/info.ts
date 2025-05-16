@@ -1,14 +1,14 @@
-import { Args } from '@oclif/core';
 import type { Task } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { getUserPlanPricing } from '../../lib/commands/storage-size.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 const consoleLikeTable = new ResponsiveTable({
 	allColumns: ['Row1', 'Row2'],
@@ -16,6 +16,8 @@ const consoleLikeTable = new ResponsiveTable({
 });
 
 export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand> {
+	static override name = 'info' as const;
+
 	static override description = 'Prints information about a specific dataset.';
 
 	static override args = {
@@ -62,13 +64,14 @@ export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand
 		}
 
 		if (this.flags.json) {
-			return {
+			printJsonToStdout({
 				...info,
 				user,
 				actor: actor || null,
 				run: run || null,
 				task: task || null,
-			};
+			});
+			return;
 		}
 
 		const fullSizeInBytes = info.stats?.storageBytes || 0;
@@ -154,7 +157,5 @@ export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand
 		].join('\n');
 
 		simpleLog({ message, stdout: true });
-
-		return undefined;
 	}
 }

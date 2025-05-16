@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
+import { runCommand } from '../../../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../../../src/lib/utils.js';
 import { useTempPath } from '../../../../__setup__/hooks/useTempPath.js';
 
@@ -29,7 +30,7 @@ describe('[python] apify run', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await CreateCommand.run([actorName, '--template', 'python-start'], import.meta.url);
+		await runCommand(CreateCommand, { flags_template: 'python-start', args_actorName: actorName });
 
 		forceNewCwd(actorName);
 
@@ -43,7 +44,7 @@ describe('[python] apify run', () => {
 	});
 
 	it('should work with spaces in path to actor', async () => {
-		await RunCommand.run([], import.meta.url);
+		await runCommand(RunCommand, {});
 
 		const output = await readFile(outputPath, 'utf8');
 		expect(output).toBe('worked');

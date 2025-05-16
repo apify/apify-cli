@@ -3,6 +3,7 @@ import { platform } from 'node:os';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { waitForBuildToFinishWithTimeout } from '../../__setup__/build-utils.js';
 import { testUserClient } from '../../__setup__/config.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -38,7 +39,12 @@ describe('apify task run', () => {
 		const { username } = await testUserClient.user('me').get();
 
 		await safeLogin();
-		await CreateCommand.run([actName, '--template', 'project_empty', '--skip-dependency-install'], import.meta.url);
+
+		await runCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+		});
 
 		const actCode = `
         import { Actor } from 'apify';
@@ -52,7 +58,11 @@ describe('apify task run', () => {
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
 		toggleCwdBetweenFullAndParentPath();
-		await ActorsPushCommand.run(['--no-prompt', '--force'], import.meta.url);
+
+		await runCommand(ActorsPushCommand, {
+			flags_noPrompt: true,
+			flags_force: true,
+		});
 
 		actorId = `${username}/${actName}`;
 
@@ -69,7 +79,7 @@ describe('apify task run', () => {
 		});
 
 		taskId = `${username}/${task.name}`;
-	});
+	}, 120_000);
 
 	afterAll(async () => {
 		await testUserClient.task(taskId).delete();
@@ -79,7 +89,9 @@ describe('apify task run', () => {
 	});
 
 	it('should work with just the task name', async () => {
-		await expect(TaskRunCommand.run([taskName], import.meta.url)).resolves.toBeUndefined();
+		await runCommand(TaskRunCommand, {
+			args_taskId: taskName,
+		});
 
 		const taskClient = testUserClient.task(taskId);
 		const runs = await taskClient.runs().list();
@@ -91,7 +103,9 @@ describe('apify task run', () => {
 	});
 
 	it('should work with the full name', async () => {
-		await expect(TaskRunCommand.run([taskId], import.meta.url)).resolves.toBeUndefined();
+		await runCommand(TaskRunCommand, {
+			args_taskId: taskId,
+		});
 
 		const taskClient = testUserClient.task(taskId);
 		const runs = await taskClient.runs().list();

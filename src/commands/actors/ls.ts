@@ -1,11 +1,11 @@
-import { Flags } from '@oclif/core';
 import { Time } from '@sapphire/duration';
 import type { Actor, ActorRunListItem, ActorTaggedBuild, PaginatedList } from 'apify-client';
 import chalk from 'chalk';
 
 import type { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { CompactMode, kSkipColumn, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { info, simpleLog } from '../../lib/outputs.js';
@@ -13,6 +13,7 @@ import {
 	DateOnlyTimestampFormatter,
 	getLoggedClientOrThrow,
 	MultilineTimestampFormatter,
+	printJsonToStdout,
 	ShortDurationFormatter,
 } from '../../lib/utils.js';
 
@@ -94,6 +95,8 @@ interface HydratedListData {
 }
 
 export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
+	static override name = 'ls' as const;
+
 	static override description = 'Prints a list of recently executed Actors or Actors you own.';
 
 	static override flags = {
@@ -126,7 +129,8 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 
 		if (rawActorList.count === 0) {
 			if (json) {
-				return rawActorList;
+				printJsonToStdout(rawActorList);
+				return;
 			}
 
 			info({
@@ -172,7 +176,8 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 		actorList.items = my ? this.sortByModifiedAt(actorList.items) : this.sortByLastRun(actorList.items);
 
 		if (json) {
-			return actorList;
+			printJsonToStdout(actorList);
+			return;
 		}
 
 		const table = my ? myRecentlyUsedTable : recentlyUsedTable;
@@ -280,8 +285,6 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			message: table.render(CompactMode.WebLikeCompact),
 			stdout: true,
 		});
-
-		return undefined;
 	}
 
 	private sortByModifiedAt(items: HydratedListData[]) {

@@ -6,32 +6,32 @@
     "types": "./dist/index.d.ts",
     "type": "module",
     "scripts": {
-        "dev": "tsx ./bin/dev.js",
+        "dev": "tsx ./src/entrypoints/apify.ts",
         "test": "vitest run",
         "test-python": "vitest run -t '.*\\[python\\]'",
         "test:cucumber": "cross-env NODE_OPTIONS=\"--import tsx\" cucumber-js",
-        "lint": "eslint src test --ext .ts,.cjs,.mjs",
-        "lint:fix": "eslint src test --fix --ext .ts,.cjs,.mjs",
+        "lint": "eslint src test scripts --ext .ts,.cjs,.mjs",
+        "lint:fix": "eslint src test scripts --fix --ext .ts,.cjs,.mjs",
         "format": "biome format . && prettier --check \"**/*.{md,yml,yaml}\"",
         "format:fix": "biome format --write . && prettier --write \"**/*.{md,yml,yaml}\"",
         "clean": "rimraf dist",
         "build": "yarn clean && tsc && tsc -p tsconfig.typechecking.json",
-        "postpack": "rimraf oclif.manifest.json",
-        "prepack": "yarn build && oclif manifest && oclif readme && yarn update-docs",
-        "update-docs": "tsx scripts/generate-reference.ts",
-        "postinstallDev": "yarn build && node ./bin/run.js check-version && node ./dist/lib/community.js"
+        "build-bundles": "bun run scripts/build-cli-bundles.ts",
+        "prepack": "yarn build && yarn update-docs",
+        "update-docs": "tsx scripts/generate-cli-docs.ts",
+        "postinstallDev": "yarn build && node ./dist/entrypoints/apify.js check-version && node ./dist/lib/community.js"
     },
     "files": [
-        "dist",
-        "oclif.manifest.json",
-        "bin"
+        "dist"
     ],
     "bin": {
-        "apify": "./bin/run.js"
+        "actor": "./dist/entrypoints/actor.js",
+        "apify": "./dist/entrypoints/apify.js"
     },
     "contributors": [
         "Jakub Drobník <jakub.drobnik@apify.com>",
-        "Jan Curn <jan@apify.com>"
+        "Jan Curn <jan@apify.com>",
+        "Vlad Frangu <vlad.frangu@apify.com>"
     ],
     "repository": {
         "type": "git",
@@ -64,8 +64,6 @@
         "@apify/input_schema": "^3.12.0",
         "@apify/utilities": "^2.15.1",
         "@crawlee/memory-storage": "^3.12.0",
-        "@oclif/core": "~4.3.0",
-        "@oclif/plugin-help": "~6.2.8",
         "@root/walk": "~1.1.0",
         "@sapphire/duration": "^1.1.2",
         "@sapphire/result": "^2.7.2",
@@ -86,6 +84,7 @@
         "express": "~5.1.0",
         "globby": "~14.1.0",
         "handlebars": "~4.7.8",
+        "indent-string": "^5.0.0",
         "inquirer": "~12.6.0",
         "is-ci": "~4.1.0",
         "is-online": "~11.0.0",
@@ -98,8 +97,14 @@
         "ow": "~2.0.0",
         "rimraf": "~6.0.1",
         "semver": "~7.7.0",
+        "string-width": "^7.2.0",
+        "strip-ansi": "^7.1.0",
         "tiged": "~2.12.7",
-        "which": "^5.0.0"
+        "which": "^5.0.0",
+        "widest-line": "^5.0.0",
+        "wrap-ansi": "^9.0.0",
+        "yargonaut": "^1.1.4",
+        "yargs": "^17.7.2"
     },
     "devDependencies": {
         "@apify/eslint-config": "^1.0.0",
@@ -107,9 +112,9 @@
         "@biomejs/biome": "^1.9.4",
         "@crawlee/types": "^3.11.1",
         "@cucumber/cucumber": "^11.0.0",
-        "@oclif/test": "^4.0.8",
         "@types/adm-zip": "^0.5.5",
         "@types/archiver": "^6.0.2",
+        "@types/bun": "^1.2.5",
         "@types/chai": "^4.3.17",
         "@types/cors": "^2.8.17",
         "@types/execa": "^2.0.2",
@@ -123,6 +128,7 @@
         "@types/node": "^22.0.0",
         "@types/semver": "^7.5.8",
         "@types/which": "^3.0.4",
+        "@types/yargs": "^17.0.33",
         "@yarnpkg/core": "^4.1.2",
         "apify": "^3.2.4",
         "chai": "^4.4.1",
@@ -132,36 +138,11 @@
         "lint-staged": "^16.0.0",
         "mdast-util-from-markdown": "^2.0.2",
         "mock-stdin": "^1.0.0",
-        "oclif": "^4.14.15",
         "prettier": "^3.5.3",
         "tsx": "^4.16.5",
         "typescript": "^5.8.3",
         "typescript-eslint": "^8.31.0",
         "vitest": "^3.0.0"
-    },
-    "oclif": {
-        "bin": "apify",
-        "dirname": "apify",
-        "commands": "./dist/commands",
-        "plugins": [
-            "@oclif/plugin-help"
-        ],
-        "hooks": {
-            "init": [
-                "./dist/hooks/init"
-            ],
-            "prerun": [
-                "./dist/hooks/deprecations"
-            ]
-        },
-        "helpClass": "./dist/lib/apify-oclif-help",
-        "additionalHelpFlags": [
-            "-h"
-        ],
-        "additionalVersionFlags": [
-            "-v"
-        ],
-        "topicSeparator": " "
     },
     "volta": {
         "node": "22.15.1",

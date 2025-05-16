@@ -1,11 +1,11 @@
-import { Flags } from '@oclif/core';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { info, simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+import { getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Dataset ID', 'Name', 'Items', 'Size', 'Created', 'Modified'],
@@ -16,6 +16,8 @@ const table = new ResponsiveTable({
 });
 
 export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
+	static override name = 'ls' as const;
+
 	static override description = 'Prints all datasets on your account.';
 
 	static override flags = {
@@ -48,7 +50,8 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 		const rawDatasetList = await client.datasets().list({ desc, offset, limit, unnamed });
 
 		if (json) {
-			return rawDatasetList;
+			printJsonToStdout(rawDatasetList);
+			return;
 		}
 
 		if (rawDatasetList.count === 0) {
@@ -81,7 +84,5 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 			message: table.render(CompactMode.WebLikeCompact),
 			stdout: true,
 		});
-
-		return undefined;
 	}
 }

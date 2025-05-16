@@ -1,17 +1,20 @@
-import { Args, Flags } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 
 const runningStatuses = [ACTOR_JOB_STATUSES.READY, ACTOR_JOB_STATUSES.RUNNING];
 
 const abortingStatuses = [ACTOR_JOB_STATUSES.ABORTING, ACTOR_JOB_STATUSES.TIMING_OUT];
 
 export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
+	static override name = 'abort' as const;
+
 	static override description = 'Aborts an Actor run.';
 
 	static override args = {
@@ -57,7 +60,8 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 			const result = await apifyClient.run(runId).abort({ gracefully: !this.flags.force });
 
 			if (this.flags.json) {
-				return result;
+				printJsonToStdout(result);
+				return;
 			}
 
 			if (this.flags.force) {
@@ -76,7 +80,5 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 				stdout: true,
 			});
 		}
-
-		return undefined;
 	}
 }

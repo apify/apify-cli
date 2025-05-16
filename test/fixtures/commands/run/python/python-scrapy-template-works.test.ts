@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { runCommand } from '../../../../../src/lib/command-framework/apify-command.js';
 import { getLocalDatasetPath } from '../../../../../src/lib/utils.js';
 import { safeLogin, useAuthSetup } from '../../../../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../../../../__setup__/hooks/useTempPath.js';
@@ -25,7 +26,7 @@ describe('python-scrapy-template-works', () => {
 
 		await safeLogin();
 
-		await CreateCommand.run([actorName, '--template', 'python-scrapy'], import.meta.url);
+		await runCommand(CreateCommand, { flags_template: 'python-scrapy', args_actorName: actorName });
 		toggleCwdBetweenFullAndParentPath();
 	});
 
@@ -34,7 +35,7 @@ describe('python-scrapy-template-works', () => {
 	});
 
 	it('should run the actor', async () => {
-		await RunCommand.run([], import.meta.url);
+		await runCommand(RunCommand, {});
 
 		const datasetDirectory = joinPath(getLocalDatasetPath('default'));
 		const datasetMetadataFile = join(datasetDirectory, '__metadata__.json');

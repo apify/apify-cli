@@ -1,9 +1,9 @@
-import { Args, Flags } from '@oclif/core';
-
 import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { info } from '../../lib/outputs.js';
 import { getLoggedClient } from '../../lib/utils.js';
 
@@ -16,7 +16,9 @@ import { getLoggedClient } from '../../lib/utils.js';
  * - Add logic to work with the max charge USD to prevent exceeding the charging limit.
  * - Add logic to store events in the log dataset for later inspection to aid local development.
  */
-export class ChargeCommand extends ApifyCommand<typeof ChargeCommand> {
+export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> {
+	static override name = 'charge' as const;
+
 	static override description = 'Charge for a specific event in the pay-per-event Actor run.';
 
 	static override args = {
