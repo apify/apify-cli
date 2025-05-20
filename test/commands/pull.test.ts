@@ -1,13 +1,15 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { mkdir, rm } from 'node:fs/promises';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { access, mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
+import { setTimeout } from 'node:timers/promises';
 
-import { runCommand } from '@oclif/test';
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
+import { runCommand } from '../../src/lib/command-framework/apify-command.js';
 import { DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../src/lib/consts.js';
 import { testUserClient } from '../__setup__/config.js';
 import { safeLogin, useAuthSetup } from '../__setup__/hooks/useAuthSetup.js';
+import { useConsoleSpy } from '../__setup__/hooks/useConsoleSpy.js';
 import { useProcessMock } from '../__setup__/hooks/useProcessMock.js';
 
 const TEST_ACTOR_SOURCE_FILES: ActorCollectionCreateOptions = {
@@ -95,6 +97,7 @@ const TEST_ACTOR_GIT_REPO: ActorCollectionCreateOptions = {
 
 useAuthSetup({ perTest: false });
 
+const originalCwd = process.cwd();
 let cwd: string = process.cwd();
 
 function setProcessCwd(newCwd: string) {
@@ -102,6 +105,8 @@ function setProcessCwd(newCwd: string) {
 }
 
 useProcessMock({ cwdMock: () => cwd });
+
+const { lastErrorMessage } = useConsoleSpy();
 
 const { ActorsPullCommand } = await import('../../src/commands/actors/pull.js');
 
@@ -119,15 +124,14 @@ describe('apify pull', () => {
 		}
 
 		for (const name of actorNamesForCleanup) {
-			await rm(name, { recursive: true, force: true });
+			await rm(join(originalCwd, name), { recursive: true, force: true });
 		}
 	});
 
 	it('should fail outside Actor folder without actorId defined', async () => {
-		const { error } = await runCommand(['pull'], import.meta.url);
+		await runCommand(ActorsPullCommand, {});
 
-		expect(error).toBeTruthy();
-		expect(error?.message).toEqual('Cannot find Actor in this directory.');
+		expect(lastErrorMessage()).toMatch(/Cannot find Actor in this directory/i);
 	});
 
 	it('should work with Actor SOURCE_FILES', async () => {
@@ -140,7 +144,7 @@ describe('apify pull', () => {
 		const testActorClient = testUserClient.actor(testActor.id);
 		const actorFromServer = await testActorClient.get();
 
-		await ActorsPullCommand.run([testActor.id], import.meta.url);
+		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
 		const actorJson = JSON.parse(readFileSync(join(testActor.name, LOCAL_CONFIG_PATH), 'utf8'));
 
@@ -154,7 +158,7 @@ describe('apify pull', () => {
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add(testActor.name);
 
-		await ActorsPullCommand.run([testActor.id], import.meta.url);
+		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
 		const actorPackageJson = JSON.parse(readFileSync(join(testActor.name, 'package.json'), 'utf8'));
 
@@ -169,9 +173,11 @@ describe('apify pull', () => {
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add(testActor.name);
 
-		await ActorsPullCommand.run([testActor.id], import.meta.url);
+		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
-		const actorJson = JSON.parse(readFileSync(join(testActor.name, DEPRECATED_LOCAL_CONFIG_NAME), 'utf8'));
+		const actorJson = JSON.parse(
+			readFileSync(join(originalCwd, testActor.name, DEPRECATED_LOCAL_CONFIG_NAME), 'utf8'),
+		);
 
 		expect(actorJson.name).to.be.eql('baidu-scraper');
 	});
@@ -192,16 +198,22 @@ describe('apify pull', () => {
 			'\t',
 		);
 
-		await mkdir(join('pull-test-no-name', '.actor'), { recursive: true });
+		await mkdir(join(originalCwd, 'pull-test-no-name', '.actor'), { recursive: true });
 
 		writeFileSync(
-			join('pull-test-no-name', LOCAL_CONFIG_PATH),
+			join(originalCwd, 'pull-test-no-name', LOCAL_CONFIG_PATH),
 			(TEST_ACTOR_SOURCE_FILES.versions![0] as any).sourceFiles[2].content,
 		);
 
 		setProcessCwd(join(cwd, 'pull-test-no-name'));
-		await ActorsPullCommand.run([], import.meta.url);
+		await runCommand(ActorsPullCommand, {});
 
-		expect(existsSync(join('pull-test-no-name', 'src/__init__.py'))).to.be.eql(true);
+		await setTimeout(500);
+
+		const exists = await access(join(originalCwd, 'pull-test-no-name', 'src', '__init__.py'))
+			.then(() => true)
+			.catch(() => false);
+
+		expect(exists).to.be.eql(true);
 	});
 });

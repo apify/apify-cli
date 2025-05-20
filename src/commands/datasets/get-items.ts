@@ -1,8 +1,8 @@
-import { Args, Flags } from '@oclif/core';
-import type { CustomOptions, FlagDefinition } from '@oclif/core/interfaces';
 import { type ApifyClient, type Dataset, type DatasetClient, DownloadItemsFormat } from 'apify-client';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
@@ -17,6 +17,8 @@ const downloadFormatToContentType: Record<DownloadItemsFormat, string> = {
 };
 
 export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
+	static override name = 'get-items' as const;
+
 	static override description = 'Retrieves dataset items in specified format (JSON, CSV, etc).';
 
 	static override flags = {
@@ -27,23 +29,11 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 		offset: Flags.integer({
 			description: 'The offset in the dataset where to start getting items.',
 		}),
-		format:
-			// This cast is used to turn the `format` field into a strictly typed value when using it in the run function,
-			// giving it the DownloadItemsFormat type
-			(
-				Flags.string as FlagDefinition<
-					DownloadItemsFormat,
-					CustomOptions,
-					{
-						multiple: false;
-						requiredOrDefaulted: false;
-					}
-				>
-			)({
-				description: "The format of the returned output. By default, it is set to 'json'",
-				options: Object.keys(downloadFormatToContentType),
-				default: DownloadItemsFormat.JSON,
-			}),
+		format: Flags.string({
+			description: "The format of the returned output. By default, it is set to 'json'",
+			choices: Object.keys(downloadFormatToContentType) as DownloadItemsFormat[],
+			default: DownloadItemsFormat.JSON,
+		}),
 	};
 
 	static override args = {

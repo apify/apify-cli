@@ -237,30 +237,6 @@ export const setLocalEnv = async (actDir: string) => {
 	}
 };
 
-// Adapted from https://gist.github.com/kuroski/9a7ae8e5e5c9e22985364d1ddbf3389d to support kebab-case
-type CamelCase<S extends string> = S extends `${infer P1}-${infer P2}${infer P3}` | `${infer P1}_${infer P2}${infer P3}`
-	? `${Lowercase<P1>}${Uppercase<P2>}${CamelCase<Lowercase<P3>>}`
-	: S;
-
-export type KeysToCamelCase<T> = {
-	[K in keyof T as CamelCase<string & K>]: T[K];
-};
-
-/**
- * Convert Object with kebab-case keys to camelCased keys
- */
-export const argsToCamelCase = <T extends object>(object: T): KeysToCamelCase<T> => {
-	const camelCasedObject = {} as KeysToCamelCase<T>;
-
-	Object.keys(object).forEach((arg) => {
-		const camelCasedArg = arg.replace(/-(.)/g, ($1) => $1.toUpperCase()).replace(/-/g, '');
-		// @ts-expect-error This is very hard to make stricter than it already will be at the top level
-		camelCasedObject[camelCasedArg] = object[arg];
-	});
-
-	return camelCasedObject;
-};
-
 const mime = new Mime(standardMimes, otherMimes).define(
 	{
 		// .tgz files don't have a MIME type defined, this fixes it
@@ -585,4 +561,29 @@ export function objectGroupBy<K extends PropertyKey, T>(
 	}
 
 	return result;
+}
+
+/**
+ * A "polyfill" for Map.groupBy
+ */
+export function mapGroupBy<K, T>(items: Iterable<T>, keySelector: (item: T, index: number) => K): Map<K, T[]> {
+	const map = new Map<K, T[]>();
+	let index = 0;
+
+	for (const value of items) {
+		const key = keySelector(value, index++);
+		const list = map.get(key);
+
+		if (list) {
+			list.push(value);
+		} else {
+			map.set(key, [value]);
+		}
+	}
+
+	return map;
+}
+
+export function printJsonToStdout(object: unknown) {
+	console.log(JSON.stringify(object, null, 2));
 }

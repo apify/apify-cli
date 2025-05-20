@@ -2,8 +2,9 @@
 	"extends": "@apify/tsconfig",
 	"compilerOptions": {
 		"target": "ES2022",
-		"module": "Node16",
-		"moduleResolution": "Node16",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext",
+		"resolveJsonModule": true,
 		"lib": ["ES2022"],
 		"allowJs": true,
 		"rootDir": "src",
@@ -11,7 +12,8 @@
 		// For now we need this :(
 		"skipLibCheck": true,
 		"tsBuildInfoFile": "dist/.tsbuildinfo",
-		"noImplicitOverride": true
+		"noImplicitOverride": true,
+		"types": ["node"]
 	},
 	"include": ["src"]
 }

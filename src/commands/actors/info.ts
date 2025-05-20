@@ -1,12 +1,13 @@
-import { Args, Flags } from '@oclif/core';
 import type { Actor, ActorTaggedBuild, Build, User } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { DurationFormatter, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 interface HydratedActorInfo extends Omit<Actor, 'taggedBuilds'> {
 	taggedBuilds?: Record<string, ActorTaggedBuild & { build?: Build }>;
@@ -41,6 +42,8 @@ const payPerEventTable = new ResponsiveTable({
 });
 
 export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
+	static override name = 'info' as const;
+
 	static override description = 'Get information about an Actor.';
 
 	static override flags = {
@@ -96,7 +99,8 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		}
 
 		if (json) {
-			return actorInfo;
+			printJsonToStdout(actorInfo);
+			return;
 		}
 
 		const latest = actorInfo.taggedBuilds?.latest;
@@ -292,7 +296,5 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		}
 
 		simpleLog({ message: message.join('\n'), stdout: true });
-
-		return undefined;
 	}
 }

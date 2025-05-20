@@ -1,6 +1,5 @@
 import process from 'node:process';
 
-import { Args, Flags } from '@oclif/core';
 import {
 	type ActorRun,
 	type ActorStartOptions,
@@ -11,14 +10,24 @@ import {
 } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+import {
+	getLocalConfig,
+	getLocalUserInfo,
+	getLoggedClientOrThrow,
+	printJsonToStdout,
+	TimestampFormatter,
+} from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
+	static override name = 'call' as const;
+
 	static override description =
 		'Executes Actor remotely using your authenticated account.\n' +
 		'Reads input from local key-value store by default.';
@@ -29,7 +38,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			char: 'i',
 			description: 'Optional JSON input to be given to the Actor.',
 			required: false,
-			allowStdin: true,
+			stdin: StdinMode.Stringified,
 			exclusive: ['input-file'],
 		}),
 		'input-file': Flags.string({
@@ -37,7 +46,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			description:
 				'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file. You can also specify `-` to read from standard input.',
 			required: false,
-			allowStdin: true,
+			stdin: StdinMode.Stringified,
 			exclusive: ['input'],
 		}),
 		silent: Flags.boolean({
@@ -193,7 +202,8 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		}
 
 		if (this.flags.json) {
-			return run!;
+			printJsonToStdout(run!);
+			return;
 		}
 
 		if (!this.flags.silent) {
@@ -233,8 +243,6 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 			console.log(dataset.toString());
 		}
-
-		return undefined;
 	}
 
 	static async resolveActorId({

@@ -1,16 +1,17 @@
 import process from 'node:process';
 
-import { Args } from '@oclif/core';
-
 import { validateInputSchema } from '@apify/input_schema';
 
-import { ApifyCommand } from '../lib/apify_command.js';
+import { ApifyCommand } from '../lib/command-framework/apify-command.js';
+import { Args } from '../lib/command-framework/args.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { readInputSchema } from '../lib/input_schema.js';
 import { info, success } from '../lib/outputs.js';
 import { Ajv } from '../lib/utils.js';
 
 export class ValidateInputSchemaCommand extends ApifyCommand<typeof ValidateInputSchemaCommand> {
+	static override name = 'validate-schema' as const;
+
 	static override description = `Validates Actor input schema from one of these locations (in priority order):
 		1. Object in '${LOCAL_CONFIG_PATH}' under "input" key
 		2. JSON file path in '${LOCAL_CONFIG_PATH}' "input" key

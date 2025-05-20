@@ -49,7 +49,7 @@ export interface TestWorld<Parameters = unknown[]> extends IWorld<Parameters> {
  */
 export const ProjectRoot = new URL('../../', import.meta.url);
 
-export const DevRunFile = new URL('./bin/dev.js', ProjectRoot);
+export const DevRunFile = new URL('./src/entrypoints/apify.ts', ProjectRoot);
 
 export const TestTmpRoot = new URL('./test/tmp/', ProjectRoot);
 

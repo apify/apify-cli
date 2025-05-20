@@ -1,16 +1,25 @@
-import { Args, Flags } from '@oclif/core';
 import type { ActorRun, ActorStartOptions, ActorTaggedBuild } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { simpleLog } from '../../lib/outputs.js';
-import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+import {
+	getLocalConfig,
+	getLocalUserInfo,
+	getLoggedClientOrThrow,
+	printJsonToStdout,
+	TimestampFormatter,
+} from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
+	static override name = 'start' as const;
+
 	static override description =
 		'Starts Actor remotely and returns run details immediately.\n' +
 		'Uses authenticated account and local key-value store for input.';
@@ -21,7 +30,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			char: 'i',
 			description: 'Optional JSON input to be given to the Actor.',
 			required: false,
-			allowStdin: true,
+			stdin: StdinMode.Stringified,
 			exclusive: ['input-file'],
 		}),
 		'input-file': Flags.string({
@@ -29,7 +38,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			description:
 				'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file. You can also specify `-` to read from standard input.',
 			required: false,
-			allowStdin: true,
+			stdin: StdinMode.Stringified,
 			exclusive: ['input'],
 		}),
 	};
@@ -104,7 +113,8 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		}
 
 		if (this.flags.json) {
-			return run;
+			printJsonToStdout(run);
+			return;
 		}
 
 		const url = `https://console.apify.com/actors/${actorId}/runs/${run.id}`;
@@ -164,7 +174,5 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			message: message.join('\n'),
 			stdout: true,
 		});
-
-		return undefined;
 	}
 }

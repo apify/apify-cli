@@ -1,6 +1,6 @@
-import { runCommand } from '@oclif/test';
-
 import { SecretsAddCommand } from '../../../src/commands/secrets/add.js';
+import { SecretsRmCommand } from '../../../src/commands/secrets/rm.js';
+import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { getSecretsFile } from '../../../src/lib/secrets.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 
@@ -12,14 +12,17 @@ describe('apify secrets:rm', () => {
 	beforeAll(async () => {
 		const secrets = getSecretsFile();
 		if (!secrets[SECRET_KEY]) {
-			await SecretsAddCommand.run([SECRET_KEY, 'owo'], import.meta.url);
+			await runCommand(SecretsAddCommand, {
+				args_name: SECRET_KEY,
+				args_value: 'mySecretValue',
+			});
 		}
 	});
 
 	it('should work', async () => {
-		const { error } = await runCommand(['secrets:rm', SECRET_KEY], import.meta.url);
-
-		expect(error).toBeFalsy();
+		await runCommand(SecretsRmCommand, {
+			args_name: SECRET_KEY,
+		});
 
 		const secrets = getSecretsFile();
 		expect(secrets[SECRET_KEY]).to.eql(undefined);

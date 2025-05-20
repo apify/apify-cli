@@ -1,15 +1,15 @@
-import { Args, Flags } from '@oclif/core';
-
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueStoresGetValueCommand> {
+	static override name = 'get-value' as const;
+
 	static override description =
 		'Retrieves stored value for specified key. Use --only-content-type to check MIME type.';
-
-	static override hiddenAliases = ['kvs:get-value'];
 
 	static override flags = {
 		'only-content-type': Flags.boolean({

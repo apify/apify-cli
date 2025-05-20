@@ -1,16 +1,17 @@
-import { Args, Flags } from '@oclif/core';
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
-import { ApifyCommand } from '../../lib/apify_command.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Args } from '../../lib/command-framework/args.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueStoresRenameCommand> {
-	static override description = 'Renames a key-value store, or removes its unique name.';
+	static override name = 'rename' as const;
 
-	static override hiddenAliases = ['kvs:rename'];
+	static override description = 'Renames a key-value store, or removes its unique name.';
 
 	static override flags = {
 		unname: Flags.boolean({

@@ -1,5 +1,7 @@
 import { rename } from 'node:fs/promises';
 
+import { runCommand } from '../../../../../src/lib/command-framework/apify-command.js';
+import { useConsoleSpy } from '../../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../../../../__setup__/reset-cwd-caches.js';
 
@@ -12,6 +14,8 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 	cwdParent: true,
 });
 
+const { lastErrorMessage } = useConsoleSpy();
+
 const { CreateCommand } = await import('../../../../../src/commands/create.js');
 const { RunCommand } = await import('../../../../../src/commands/run.js');
 
@@ -19,7 +23,7 @@ describe('[python] apify run', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await CreateCommand.run([actorName, '--template', 'python-start'], import.meta.url);
+		await runCommand(CreateCommand, { flags_template: 'python-start', args_actorName: actorName });
 		toggleCwdBetweenFullAndParentPath();
 
 		const srcFolder = joinPath('src');
@@ -33,6 +37,8 @@ describe('[python] apify run', () => {
 	});
 
 	it('should print error message on python project with no detected start', async () => {
-		await expect(RunCommand.run([], import.meta.url)).rejects.toThrow(/Actor is of an unknown format./i);
+		await runCommand(RunCommand, {});
+
+		expect(lastErrorMessage()).toMatch(/Actor is of an unknown format./i);
 	});
 });
