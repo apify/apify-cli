@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 0.21.8 - **not yet released**
+
+### 🐛 Bug Fixes
+
+- Pretty message for invalid choices ([#805](https://github.com/apify/apify-cli/pull/805)) ([57bd5de](https://github.com/apify/apify-cli/commit/57bd5de9bc5289f151a9083533dc3d2c71f8b9ab)) by [@vladfrangu](https://github.com/vladfrangu)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [0.21.7](https://github.com/apify/apify-cli/releases/tag/v0.21.7) (2025-05-15)
 
 ### 🐛 Bug Fixes
