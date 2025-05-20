@@ -11,6 +11,9 @@ import { renderMainHelpMenu, selectiveRenderHelpForCommand } from '../lib/comman
 import { readStdin } from '../lib/commands/read-stdin.js';
 import { cliVersion } from '../lib/consts.js';
 import { error } from '../lib/outputs.js';
+import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
+
+export const cachedStdinInput = await readStdin();
 
 yargonaut //
 	.style('blue')
@@ -64,7 +67,10 @@ export function printCLIVersionAndExitIfFlagUsed(parsed: Awaited<ReturnType<type
 	}
 }
 
-export function printHelpAndExitIfFlagUsed(parsed: Awaited<ReturnType<typeof cli.parse>>, entrypoint: string) {
+export function printHelpAndExitIfFlagUsedOrNoCommandPassed(
+	parsed: Awaited<ReturnType<typeof cli.parse>>,
+	entrypoint: string,
+) {
 	if (parsed.help === true || parsed.h === true || parsed._.length === 0) {
 		console.log(renderMainHelpMenu(entrypoint));
 		process.exit(0);
@@ -74,9 +80,7 @@ export function printHelpAndExitIfFlagUsed(parsed: Awaited<ReturnType<typeof cli
 export async function runCLI(entrypoint: string) {
 	await cli.parse(process.argv.slice(2), {}, (rawError, parsed) => {
 		if (rawError) {
-			if (process.env.CLI_DEBUG) {
-				console.error({ type: 'parsed', error: rawError?.message, parsed });
-			}
+			cliDebugPrint('RunCLIError', { type: 'parsed', error: rawError?.message, parsed });
 
 			const errorMessageSplit = rawError.message.split(' ');
 
@@ -193,7 +197,25 @@ export async function runCLI(entrypoint: string) {
 				}
 
 				default: {
-					console.error({ type: 'unhandled', error: rawError.message, parsed });
+					cliDebugPrint('RunCLIError', { type: 'unhandled', error: rawError.message, parsed });
+
+					console.error(
+						[
+							'The CLI encountered an unhandled argument parsing error!',
+							`Please report this issue at https://github.com/apify/apify-cli/issues, and provide the following information:`,
+							'',
+							`- Stack:\n\t${rawError.stack}`,
+							'',
+							'- Arguments (!!!only provide these as is if there is no sensitive information!!!):',
+							`\t${JSON.stringify(process.argv.slice(2))}`,
+							'',
+							`- CLI version: \`${cliVersion}\``,
+							`- CLI debug logs (process.env.APIFY_CLI_DEBUG): ${process.env.APIFY_CLI_DEBUG ? 'Enabled' : 'Disabled'}`,
+							`- Stdin data? ${cachedStdinInput ? 'Yes' : 'No'}`,
+						].join('\n'),
+					);
+
+					process.exit(1);
 				}
 			}
 		} else {
@@ -205,10 +227,8 @@ export async function runCLI(entrypoint: string) {
 export function handleParseResults(parsed: Awaited<ReturnType<typeof cli.parse>>, entrypoint: string) {
 	if (parsed._.length === 0) {
 		printCLIVersionAndExitIfFlagUsed(parsed);
-		printHelpAndExitIfFlagUsed(parsed, entrypoint);
+		printHelpAndExitIfFlagUsedOrNoCommandPassed(parsed, entrypoint);
 	}
 
 	// console.log({ unhandledArgs: parsed });
 }
-
-export const cachedStdinInput = await readStdin();
