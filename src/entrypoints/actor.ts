@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { satisfies } from 'semver';
 
 import { actorCommands } from '../commands/_register.js';

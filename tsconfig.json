@@ -13,7 +13,9 @@
 		"skipLibCheck": true,
 		"tsBuildInfoFile": "dist/.tsbuildinfo",
 		"noImplicitOverride": true,
-		"types": ["node"]
+		"types": ["node"],
+		"declaration": false,
+		"declarationMap": false
 	},
 	"include": ["src"]
 }
