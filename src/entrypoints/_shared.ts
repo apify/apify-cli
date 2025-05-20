@@ -50,6 +50,8 @@ export const cli = yargs()
 			other: 'NOT_ENOUGH_NON_OPTION_ARGUMENTS_INPUT {"got":%s,"need":%s}',
 		},
 		'Arguments %s and %s are mutually exclusive': 'ARGUMENTS_ARE_MUTUALLY_EXCLUSIVE_INPUT ["%s","%s"]',
+		'Invalid values:': 'INVALID_VALUES_INPUT',
+		'Argument: %s, Given: %s, Choices: %s': 'INVALID_ARGUMENT_OPTION {"argument":"%s","given":%s,"choices":[%s]}',
 	})
 	.option('help', {
 		boolean: true,
@@ -82,7 +84,7 @@ export async function runCLI(entrypoint: string) {
 		if (rawError) {
 			cliDebugPrint('RunCLIError', { type: 'parsed', error: rawError?.message, parsed });
 
-			const errorMessageSplit = rawError.message.split(' ');
+			const errorMessageSplit = rawError.message.split(' ').map((part) => part.trim());
 
 			const possibleCommands = [
 				//
@@ -196,6 +198,41 @@ export async function runCLI(entrypoint: string) {
 					break;
 				}
 
+				// @ts-expect-error Intentional fallthrough
+				case 'INVALID_VALUES_INPUT': {
+					if (errorMessageSplit[2] === 'INVALID_ARGUMENT_OPTION') {
+						const jsonPart = errorMessageSplit.slice(3).join(' ');
+
+						try {
+							const json = JSON.parse(jsonPart) as { argument: string; given: string; choices: string[] };
+
+							const type = commandFlags.some((flag) => flag.matches(json.argument)) ? 'flag' : 'argument';
+
+							const representation = type === 'flag' ? `--${json.argument}` : json.argument;
+
+							error({
+								message: [
+									`Expected ${representation} to have one of the following values: ${json.choices.join(', ')}`,
+									`  ${chalk.red('>')}  See more help with --help`,
+								].join('\n'),
+							});
+
+							break;
+						} catch {
+							cliDebugPrint('RunCLIError', {
+								type: 'parse_error_invalid_choices',
+								error: rawError.message,
+								parsed,
+								jsonPart,
+							});
+
+							// fallthrough
+						}
+					}
+
+					// fallthrough
+				}
+
 				default: {
 					cliDebugPrint('RunCLIError', { type: 'unhandled', error: rawError.message, parsed });
 
@@ -204,10 +241,10 @@ export async function runCLI(entrypoint: string) {
 							'The CLI encountered an unhandled argument parsing error!',
 							`Please report this issue at https://github.com/apify/apify-cli/issues, and provide the following information:`,
 							'',
-							`- Stack:\n\t${rawError.stack}`,
+							`- Stack:\n${rawError.stack}`,
 							'',
 							'- Arguments (!!!only provide these as is if there is no sensitive information!!!):',
-							`\t${JSON.stringify(process.argv.slice(2))}`,
+							`  ${JSON.stringify(process.argv.slice(2))}`,
 							'',
 							`- CLI version: \`${cliVersion}\``,
 							`- CLI debug logs (process.env.APIFY_CLI_DEBUG): ${process.env.APIFY_CLI_DEBUG ? 'Enabled' : 'Disabled'}`,
