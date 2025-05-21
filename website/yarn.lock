@@ -15,29 +15,29 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@algolia/autocomplete-core@npm:1.19.1":
-  version: 1.19.1
-  resolution: "@algolia/autocomplete-core@npm:1.19.1"
+"@algolia/autocomplete-core@npm:1.19.2":
+  version: 1.19.2
+  resolution: "@algolia/autocomplete-core@npm:1.19.2"
   dependencies:
-    "@algolia/autocomplete-plugin-algolia-insights": "npm:1.19.1"
-    "@algolia/autocomplete-shared": "npm:1.19.1"
-  checksum: 10c0/48384f2a261986d7321b2dd77c29ff784f5e8476a11388ace1e747ed9051963645e5e526dff6f7fcca8d97bce620f5e0e6edfbba1e01544ba34dda4600f82be1
+    "@algolia/autocomplete-plugin-algolia-insights": "npm:1.19.2"
+    "@algolia/autocomplete-shared": "npm:1.19.2"
+  checksum: 10c0/383952bc43a31f0771987416c350471824e480fcd15e1db8ae13386cd387879f1c81eadafceffa69f87e6b8e59fb1aa713da375fc07a30c5d8edb16a157b5f45
   languageName: node
   linkType: hard
 
 "@algolia/autocomplete-js@npm:^1.10.0":
-  version: 1.19.1
-  resolution: "@algolia/autocomplete-js@npm:1.19.1"
+  version: 1.19.2
+  resolution: "@algolia/autocomplete-js@npm:1.19.2"
   dependencies:
-    "@algolia/autocomplete-core": "npm:1.19.1"
-    "@algolia/autocomplete-preset-algolia": "npm:1.19.1"
-    "@algolia/autocomplete-shared": "npm:1.19.1"
+    "@algolia/autocomplete-core": "npm:1.19.2"
+    "@algolia/autocomplete-preset-algolia": "npm:1.19.2"
+    "@algolia/autocomplete-shared": "npm:1.19.2"
     htm: "npm:^3.1.1"
     preact: "npm:^10.13.2"
   peerDependencies:
     "@algolia/client-search": ">= 4.5.1 < 6"
     algoliasearch: ">= 4.9.1 < 6"
-  checksum: 10c0/48e372e988a2cbe2556faaa0783b7ea88770b7e79ce1842fb8392a203fb1a4590b8006d52e308b16f23afb24b91607ad0be51572025c218ca11d94c63c0ef6a9
+  checksum: 10c0/50e94462b3f468bcecd836d7a9588ddc756a44bc3b6e95f07718df7770d73abf9f0e01687f96e13509edcf82b6f1f0ac8c2e7215d24e066dbd7323c629437198
   languageName: node
   linkType: hard
 
@@ -52,14 +52,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@algolia/autocomplete-plugin-algolia-insights@npm:1.19.1":
-  version: 1.19.1
-  resolution: "@algolia/autocomplete-plugin-algolia-insights@npm:1.19.1"
+"@algolia/autocomplete-plugin-algolia-insights@npm:1.19.2":
+  version: 1.19.2
+  resolution: "@algolia/autocomplete-plugin-algolia-insights@npm:1.19.2"
   dependencies:
-    "@algolia/autocomplete-shared": "npm:1.19.1"
+    "@algolia/autocomplete-shared": "npm:1.19.2"
   peerDependencies:
     search-insights: ">= 1 < 3"
-  checksum: 10c0/f1b4e8985fbd0d10f0e4e006debdfe0513c245077d06867018acc398dcbab28f982347ba75a120cf1121bf373a1aa73c9bf471ccfa018e1bdc8f43679ae33c1b
+  checksum: 10c0/8548b6514004dbf6fb34d6da176ac911371f3e84724ef6b94600cd84d29339d2f44cead03d7c0d507b130da0d9acc61f6e4c9a0fba6f967a5ae2a42eea93f0c1
   languageName: node
   linkType: hard
 
@@ -75,15 +75,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@algolia/autocomplete-preset-algolia@npm:1.19.1":
-  version: 1.19.1
-  resolution: "@algolia/autocomplete-preset-algolia@npm:1.19.1"
+"@algolia/autocomplete-preset-algolia@npm:1.19.2":
+  version: 1.19.2
+  resolution: "@algolia/autocomplete-preset-algolia@npm:1.19.2"
   dependencies:
-    "@algolia/autocomplete-shared": "npm:1.19.1"
+    "@algolia/autocomplete-shared": "npm:1.19.2"
   peerDependencies:
     "@algolia/client-search": ">= 4.9.1 < 6"
     algoliasearch: ">= 4.9.1 < 6"
-  checksum: 10c0/f848833326f745de3bf23fcecba6a98efe6042ab4673275f2ebcc20e5dd7107877d6c287cd675e4af5af108748c6e92dc1b2f1259bb2998d09678a469773ca7c
+  checksum: 10c0/6155d822da953a876d5f0142e017ff291a4dcb34f3a2541f72174e1829a757122052646f0c01ded547f821f8e87faf145577b0bcdc2364160cc681d8115092f3
   languageName: node
   linkType: hard
 
@@ -97,20 +97,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@algolia/autocomplete-shared@npm:1.19.1":
-  version: 1.19.1
-  resolution: "@algolia/autocomplete-shared@npm:1.19.1"
+"@algolia/autocomplete-shared@npm:1.19.2":
+  version: 1.19.2
+  resolution: "@algolia/autocomplete-shared@npm:1.19.2"
   peerDependencies:
     "@algolia/client-search": ">= 4.9.1 < 6"
     algoliasearch: ">= 4.9.1 < 6"
-  checksum: 10c0/d8441a4298db90ec20d64e55ecffc1dc8a809f57be1606c6f1ceec71ec46500097779216f068a53037e2c26f94bfc575b242695de15ff5810c941a313e34fb10
+  checksum: 10c0/eee6615e6d9e6db7727727e442b876a554a6eda6f14c1d55d667ed2d14702c4c888a34b9bfb18f66ccc6d402995b2c7c37ace9f19ce9fc9c83bbb623713efbc4
   languageName: node
   linkType: hard
 
 "@algolia/autocomplete-theme-classic@npm:^1.10.0":
-  version: 1.19.1
-  resolution: "@algolia/autocomplete-theme-classic@npm:1.19.1"
-  checksum: 10c0/160475ebe372c0b2a859fcb9d6773ed6f772fdd7e95950f2d993c0a735a96bd3217f195e59779a2344dd0c8b63cf13cb8eed945d94d3bd6be4e76adde8eec32e
+  version: 1.19.2
+  resolution: "@algolia/autocomplete-theme-classic@npm:1.19.2"
+  checksum: 10c0/a67de5ceb2ddeab71771be383bb43792f8af0cede025f78997d1ac2bf1e379786924f79a7f50a2fb1492a1e730fcdd3c8c7c561e25ef2f58dd275b485af42a2e
   languageName: node
   linkType: hard
 
@@ -3969,11 +3969,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 22.15.19
-  resolution: "@types/node@npm:22.15.19"
+  version: 22.15.21
+  resolution: "@types/node@npm:22.15.21"
   dependencies:
     undici-types: "npm:~6.21.0"
-  checksum: 10c0/8ef52fa1a91b1c8891616d46f3921a9f3c65ad1c6bb62db7899c8c28643c13bf9d607a2403b1e5aceb3e6fa6749efc9e0ba5c39618a4872da6946437b0edbfbe
+  checksum: 10c0/f092bbccda2131c2b2c8f720338080aa0ef1d928f5f1062c03954a4f7dafa7ee3ed29bc3e51bd4e2584473b3d943c637a2b39ad7174898970818270187cf10c1
   languageName: node
   linkType: hard
 
@@ -8062,11 +8062,11 @@ __metadata:
   linkType: hard
 
 "get-tsconfig@npm:^4.10.0":
-  version: 4.10.0
-  resolution: "get-tsconfig@npm:4.10.0"
+  version: 4.10.1
+  resolution: "get-tsconfig@npm:4.10.1"
   dependencies:
     resolve-pkg-maps: "npm:^1.0.0"
-  checksum: 10c0/c9b5572c5118923c491c04285c73bd55b19e214992af957c502a3be0fc0043bb421386ffd45ca3433c0a7fba81221ca300479e8393960acf15d0ed4563f38a86
+  checksum: 10c0/7f8e3dabc6a49b747920a800fb88e1952fef871cdf51b79e98db48275a5de6cdaf499c55ee67df5fa6fe7ce65f0063e26de0f2e53049b408c585aa74d39ffa21
   languageName: node
   linkType: hard
 
@@ -16264,8 +16264,8 @@ __metadata:
   linkType: hard
 
 "webpack@npm:^5.88.1, webpack@npm:^5.95.0":
-  version: 5.99.8
-  resolution: "webpack@npm:5.99.8"
+  version: 5.99.9
+  resolution: "webpack@npm:5.99.9"
   dependencies:
     "@types/eslint-scope": "npm:^3.7.7"
     "@types/estree": "npm:^1.0.6"
@@ -16296,7 +16296,7 @@ __metadata:
       optional: true
   bin:
     webpack: bin/webpack.js
-  checksum: 10c0/c4852c3b795ed3fba799d2925802a4e259b2de7c2c597f0aaf0e228acfdc6755389ed8c29f1dad86610a9c6ad968c0b57c702b93891d60f09d302af63b2debe0
+  checksum: 10c0/34ec3f19b50bccaf27929e5e5b901b25047f2d414acba7d0967dc98eb4f404d107fb1a4b63095edbca2b006ff5815f1720b131e10b20664b074dfc86b7ffa717
   languageName: node
   linkType: hard
 
