@@ -25,9 +25,9 @@
         "dist"
     ],
     "bin": {
-        "apify-cli": "./dist/entrypoints/apify.js",
         "actor": "./dist/entrypoints/actor.js",
-        "apify": "./dist/entrypoints/apify.js"
+        "apify": "./dist/entrypoints/apify.js",
+        "apify-cli": "./dist/entrypoints/apify.js"
     },
     "contributors": [
         "Jakub Drobník <jakub.drobnik@apify.com>",

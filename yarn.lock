@@ -2431,6 +2431,7 @@ __metadata:
   bin:
     actor: ./dist/entrypoints/actor.js
     apify: ./dist/entrypoints/apify.js
+    apify-cli: ./dist/entrypoints/apify.js
   languageName: unknown
   linkType: soft
 
