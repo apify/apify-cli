@@ -253,8 +253,8 @@ __metadata:
   linkType: hard
 
 "@crawlee/core@npm:^3.13.0":
-  version: 3.13.4
-  resolution: "@crawlee/core@npm:3.13.4"
+  version: 3.13.5
+  resolution: "@crawlee/core@npm:3.13.5"
   dependencies:
     "@apify/consts": "npm:^2.20.0"
     "@apify/datastructures": "npm:^2.0.0"
@@ -262,9 +262,9 @@ __metadata:
     "@apify/pseudo_url": "npm:^2.0.30"
     "@apify/timeout": "npm:^0.3.0"
     "@apify/utilities": "npm:^2.7.10"
-    "@crawlee/memory-storage": "npm:3.13.4"
-    "@crawlee/types": "npm:3.13.4"
-    "@crawlee/utils": "npm:3.13.4"
+    "@crawlee/memory-storage": "npm:3.13.5"
+    "@crawlee/types": "npm:3.13.5"
+    "@crawlee/utils": "npm:3.13.5"
     "@sapphire/async-queue": "npm:^1.5.1"
     "@vladfrangu/async_event_emitter": "npm:^2.2.2"
     csv-stringify: "npm:^6.2.0"
@@ -274,20 +274,20 @@ __metadata:
     minimatch: "npm:^9.0.0"
     ow: "npm:^0.28.1"
     stream-json: "npm:^1.8.0"
-    tldts: "npm:^6.0.0"
+    tldts: "npm:^7.0.0"
     tough-cookie: "npm:^5.0.0"
     tslib: "npm:^2.4.0"
     type-fest: "npm:^4.0.0"
-  checksum: 10c0/b82e17785f7d1ced9102aa18db6005495c4eaf9e2ad7db30570282cfc7da142ae97f20e9dec682a8905ab90c7a6eb52a9ea80c19b977778b669b2850ff149c32
+  checksum: 10c0/00e3cee5dd95c9eb9df957645126ed9ae945fef43484189d77e71495379b2951f34abea77e20ced0791973fa43976543b18cac87e15d8971a8652b90586b2b93
   languageName: node
   linkType: hard
 
-"@crawlee/memory-storage@npm:3.13.4, @crawlee/memory-storage@npm:^3.12.0":
-  version: 3.13.4
-  resolution: "@crawlee/memory-storage@npm:3.13.4"
+"@crawlee/memory-storage@npm:3.13.5, @crawlee/memory-storage@npm:^3.12.0":
+  version: 3.13.5
+  resolution: "@crawlee/memory-storage@npm:3.13.5"
   dependencies:
     "@apify/log": "npm:^2.4.0"
-    "@crawlee/types": "npm:3.13.4"
+    "@crawlee/types": "npm:3.13.5"
     "@sapphire/async-queue": "npm:^1.5.0"
     "@sapphire/shapeshift": "npm:^3.0.0"
     content-type: "npm:^1.0.4"
@@ -296,26 +296,26 @@ __metadata:
     mime-types: "npm:^2.1.35"
     proper-lockfile: "npm:^4.1.2"
     tslib: "npm:^2.4.0"
-  checksum: 10c0/d5e50d6c4ae85e286d7fce9538adf5b88943de1197c12e6a8a8d22fbf2cd63e5080a04f0db5408ad0a4e1d4c8f5be5c2133fc27920d9e6060f88620cf7697a06
+  checksum: 10c0/3052f3bceedd59b3acbbd996e2fb98220642eded841194c6f78b944e42aac1a1c3f2698ff81280f88473c2f81a87a41c65d1212f5382e794084d32ba62c0564a
   languageName: node
   linkType: hard
 
-"@crawlee/types@npm:3.13.4, @crawlee/types@npm:^3.11.1, @crawlee/types@npm:^3.13.0, @crawlee/types@npm:^3.3.0":
-  version: 3.13.4
-  resolution: "@crawlee/types@npm:3.13.4"
+"@crawlee/types@npm:3.13.5, @crawlee/types@npm:^3.11.1, @crawlee/types@npm:^3.13.0, @crawlee/types@npm:^3.3.0":
+  version: 3.13.5
+  resolution: "@crawlee/types@npm:3.13.5"
   dependencies:
     tslib: "npm:^2.4.0"
-  checksum: 10c0/0d6ecf52ad37fe231d64ee5703682a4ad803d10f65e0b6880798db07e78d887409979928a369fd6f258f1cccea933a81fef9be852313b371acb2494e17997556
+  checksum: 10c0/2b1f8d6d0026fe4033efa6b32378305decf5e00441208e2a703a7cb5ae4e01d3fd5e1b5d764520682d006632f28a169bbf3dab55c7f0b74895085bf7f52d43e2
   languageName: node
   linkType: hard
 
-"@crawlee/utils@npm:3.13.4, @crawlee/utils@npm:^3.13.0":
-  version: 3.13.4
-  resolution: "@crawlee/utils@npm:3.13.4"
+"@crawlee/utils@npm:3.13.5, @crawlee/utils@npm:^3.13.0":
+  version: 3.13.5
+  resolution: "@crawlee/utils@npm:3.13.5"
   dependencies:
     "@apify/log": "npm:^2.4.0"
     "@apify/ps-tree": "npm:^1.2.0"
-    "@crawlee/types": "npm:3.13.4"
+    "@crawlee/types": "npm:3.13.5"
     "@types/sax": "npm:^1.2.7"
     cheerio: "npm:1.0.0-rc.12"
     file-type: "npm:^20.0.0"
@@ -325,7 +325,7 @@ __metadata:
     sax: "npm:^1.4.1"
     tslib: "npm:^2.4.0"
     whatwg-mimetype: "npm:^4.0.0"
-  checksum: 10c0/9736ab865cd1e518816d9edd7029db0a6bb9fdf8c1df76343e8ac25e76136b42f43efe5fbe80d72a734ebd0302137a9ef5ea7af5592d39924a63b74d94542fce
+  checksum: 10c0/3c28986d000e3abe020a8071d3c46b694e6e4143ec6d9e9200aaf2deb5ea89fa1582d402466cbdc97d2faa2a77d44eaf258c089967db240915a09738d66a3a8d
   languageName: node
   linkType: hard
 
@@ -1680,9 +1680,9 @@ __metadata:
   linkType: hard
 
 "@types/lodash@npm:*":
-  version: 4.17.16
-  resolution: "@types/lodash@npm:4.17.16"
-  checksum: 10c0/cf017901b8ab1d7aabc86d5189d9288f4f99f19a75caf020c0e2c77b8d4cead4db0d0b842d009b029339f92399f49f34377dd7c2721053388f251778b4c23534
+  version: 4.17.17
+  resolution: "@types/lodash@npm:4.17.17"
+  checksum: 10c0/8e75df02a15f04d4322c5a503e4efd0e7a92470570ce80f17e9f11ce2b1f1a7c994009c9bcff39f07e0f9ffd8ccaff09b3598997c404b801abd5a7eee5a639dc
   languageName: node
   linkType: hard
 
@@ -1719,11 +1719,11 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*, @types/node@npm:^22.0.0":
-  version: 22.15.19
-  resolution: "@types/node@npm:22.15.19"
+  version: 22.15.21
+  resolution: "@types/node@npm:22.15.21"
   dependencies:
     undici-types: "npm:~6.21.0"
-  checksum: 10c0/8ef52fa1a91b1c8891616d46f3921a9f3c65ad1c6bb62db7899c8c28643c13bf9d607a2403b1e5aceb3e6fa6749efc9e0ba5c39618a4872da6946437b0edbfbe
+  checksum: 10c0/f092bbccda2131c2b2c8f720338080aa0ef1d928f5f1062c03954a4f7dafa7ee3ed29bc3e51bd4e2584473b3d943c637a2b39ad7174898970818270187cf10c1
   languageName: node
   linkType: hard
 
@@ -4975,11 +4975,11 @@ __metadata:
   linkType: hard
 
 "get-tsconfig@npm:^4.7.5":
-  version: 4.10.0
-  resolution: "get-tsconfig@npm:4.10.0"
+  version: 4.10.1
+  resolution: "get-tsconfig@npm:4.10.1"
   dependencies:
     resolve-pkg-maps: "npm:^1.0.0"
-  checksum: 10c0/c9b5572c5118923c491c04285c73bd55b19e214992af957c502a3be0fc0043bb421386ffd45ca3433c0a7fba81221ca300479e8393960acf15d0ed4563f38a86
+  checksum: 10c0/7f8e3dabc6a49b747920a800fb88e1952fef871cdf51b79e98db48275a5de6cdaf499c55ee67df5fa6fe7ce65f0063e26de0f2e53049b408c585aa74d39ffa21
   languageName: node
   linkType: hard
 
@@ -9059,7 +9059,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tldts@npm:^6.0.0, tldts@npm:^6.1.32":
+"tldts-core@npm:^7.0.7":
+  version: 7.0.7
+  resolution: "tldts-core@npm:7.0.7"
+  checksum: 10c0/801a9861973dce3b45fce25c3775848a1c0d5c225752bc0f84e843e61dba9c31be60c610525cf0fc42039ae3c06944e5f76e429243a4bdc91ce5c8268f14f659
+  languageName: node
+  linkType: hard
+
+"tldts@npm:^6.1.32":
   version: 6.1.86
   resolution: "tldts@npm:6.1.86"
   dependencies:
@@ -9067,6 +9074,17 @@ __metadata:
   bin:
     tldts: bin/cli.js
   checksum: 10c0/27ae7526d9d78cb97b2de3f4d102e0b4321d1ccff0648a7bb0e039ed54acbce86bacdcd9cd3c14310e519b457854e7bafbef1f529f58a1e217a737ced63f0940
+  languageName: node
+  linkType: hard
+
+"tldts@npm:^7.0.0":
+  version: 7.0.7
+  resolution: "tldts@npm:7.0.7"
+  dependencies:
+    tldts-core: "npm:^7.0.7"
+  bin:
+    tldts: bin/cli.js
+  checksum: 10c0/d8eb99cd40af98ea96bc8cc9245513cd13ff178c97c25286443467cadc0916455d1e2558ecee7dd2dfb3374dd357c82274e3b39e4f0722c60ab1aaa893678f54
   languageName: node
   linkType: hard
 
