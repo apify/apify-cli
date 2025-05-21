@@ -25,6 +25,7 @@
         "dist"
     ],
     "bin": {
+        "apify-cli": "./dist/entrypoints/apify.js",
         "actor": "./dist/entrypoints/actor.js",
         "apify": "./dist/entrypoints/apify.js"
     },
