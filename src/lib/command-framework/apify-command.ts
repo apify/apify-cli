@@ -159,6 +159,12 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	protected args!: InferArgsFromCommand<T['args']>;
 
+	protected entrypoint: string;
+
+	public constructor(entrypoint: string) {
+		this.entrypoint = entrypoint;
+	}
+
 	abstract run(): Awaitable<void>;
 
 	protected get ctor(): typeof BuiltApifyCommand {
@@ -215,6 +221,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 							if (rawArgs[yargsArgName] === '-' && builderData.stdin) {
 								this.args[camelCasedName] = this._handleStdin(builderData.stdin);
+							}
+
+							if (builderData.catchAll) {
+								this.args[camelCasedName] = (this.args[camelCasedName] as string).split(',').join(' ');
 							}
 
 							break;
@@ -380,13 +390,24 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		let baseDefinition = `${nameOverride || this.ctor.name}`;
 
 		if (this.ctor.args) {
+			let setCatchAll = false;
+
 			for (const [key, internalBuilderData] of Object.entries(this.ctor.args)) {
 				if (typeof internalBuilderData === 'string') {
 					throw new RangeError('Do not provide the string for the json arg! It is a type level assertion!');
 				}
 
 				// We mark all args as optional, even if they are not, to pretty-print a help message ourselves
-				baseDefinition += ` [${key}]`;
+				if (internalBuilderData.catchAll) {
+					if (setCatchAll) {
+						throw new RangeError('Only one catch-all argument is allowed in a command');
+					}
+
+					setCatchAll = true;
+					baseDefinition += ` [${key}...]`;
+				} else {
+					baseDefinition += ` [${key}]`;
+				}
 			}
 		}
 
@@ -440,7 +461,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			if (this.ctor.subcommands?.length) {
 				for (const SubCommandClass of this.ctor.subcommands) {
-					const yargsObject = new SubCommandClass()._toYargs();
+					const yargsObject = new SubCommandClass(`${this.entrypoint} ${this.ctor.name}`)._toYargs();
 
 					finalYargs = finalYargs.command(yargsObject);
 				}
@@ -487,18 +508,105 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	}
 
 	static registerCommand(entrypoint: string, yargsInstance: Argv) {
-		const instance = new (this as typeof BuiltApifyCommand)();
+		const instance = new (this as typeof BuiltApifyCommand)(entrypoint);
 
 		const yargsObject = instance._toYargs();
 
 		yargsInstance.command(yargsObject);
 
 		registerCommandForHelpGeneration(entrypoint, this as typeof BuiltApifyCommand);
+
+		// Register the command itself
 		commandRegistry.set(this.name, this as typeof BuiltApifyCommand);
 
+		// Register all aliases
+		if (this.aliases?.length) {
+			for (const alias of this.aliases) {
+				commandRegistry.set(alias, this as typeof BuiltApifyCommand);
+			}
+		}
+
+		if (this.hiddenAliases?.length) {
+			for (const alias of this.hiddenAliases) {
+				commandRegistry.set(alias, this as typeof BuiltApifyCommand);
+			}
+		}
+
+		// For each subcommand, register it and all its aliases
 		if (this.subcommands?.length) {
 			for (const subcommand of this.subcommands) {
+				// Base name + subcommand name
 				commandRegistry.set(`${this.name} ${subcommand.name}`, subcommand as typeof BuiltApifyCommand);
+
+				// All aliases of the base command + subcommand name
+				if (this.aliases?.length) {
+					for (const alias of this.aliases) {
+						commandRegistry.set(`${alias} ${subcommand.name}`, subcommand as typeof BuiltApifyCommand);
+					}
+				}
+
+				// All hidden aliases of the base command + subcommand name
+				if (this.hiddenAliases?.length) {
+					for (const alias of this.hiddenAliases) {
+						commandRegistry.set(`${alias} ${subcommand.name}`, subcommand as typeof BuiltApifyCommand);
+					}
+				}
+
+				// For each subcommand, register all its aliases
+				if (subcommand.aliases?.length) {
+					for (const subcommandAlias of subcommand.aliases) {
+						// Base name + subcommand alias
+						commandRegistry.set(`${this.name} ${subcommandAlias}`, subcommand as typeof BuiltApifyCommand);
+
+						// All aliases of the base command + subcommand alias
+						if (this.aliases?.length) {
+							for (const alias of this.aliases) {
+								commandRegistry.set(
+									`${alias} ${subcommandAlias}`,
+									subcommand as typeof BuiltApifyCommand,
+								);
+							}
+						}
+
+						// All hidden aliases of the base command + subcommand alias
+						if (this.hiddenAliases?.length) {
+							for (const alias of this.hiddenAliases) {
+								commandRegistry.set(
+									`${alias} ${subcommandAlias}`,
+									subcommand as typeof BuiltApifyCommand,
+								);
+							}
+						}
+					}
+				}
+
+				// For each subcommand, register all its hidden aliases
+				if (subcommand.hiddenAliases?.length) {
+					for (const subcommandAlias of subcommand.hiddenAliases) {
+						// Base name + subcommand hidden alias
+						commandRegistry.set(`${this.name} ${subcommandAlias}`, subcommand as typeof BuiltApifyCommand);
+
+						// All aliases of the base command + subcommand hidden alias
+						if (this.aliases?.length) {
+							for (const alias of this.aliases) {
+								commandRegistry.set(
+									`${alias} ${subcommandAlias}`,
+									subcommand as typeof BuiltApifyCommand,
+								);
+							}
+						}
+
+						// All hidden aliases of the base command + subcommand hidden alias
+						if (this.hiddenAliases?.length) {
+							for (const alias of this.hiddenAliases) {
+								commandRegistry.set(
+									`${alias} ${subcommandAlias}`,
+									subcommand as typeof BuiltApifyCommand,
+								);
+							}
+						}
+					}
+				}
 			}
 		}
 	}
@@ -593,7 +701,7 @@ export async function runCommand<Cmd extends typeof BuiltApifyCommand>(
 		}
 	}
 
-	const instance = new (command as typeof BuiltApifyCommand)();
+	const instance = new (command as typeof BuiltApifyCommand)('test-cli');
 
 	// eslint-disable-next-line dot-notation
 	await instance['_run'](rawObject);

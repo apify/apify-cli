@@ -13,6 +13,11 @@ export interface BaseArgOptions {
 	 * @default false
 	 */
 	stdin?: StdinMode;
+	/**
+	 * Whether this argument should collect everything after it
+	 * @default false
+	 */
+	catchAll?: boolean;
 }
 
 export type StringArgOptions = BaseArgOptions;
@@ -26,6 +31,7 @@ export interface TaggedArgBuilder<Tag extends ArgTag, Required = boolean> {
 	// Options from the object
 	description: string | undefined;
 	aliases: readonly string[] | undefined;
+	catchAll: boolean;
 }
 
 function stringArg<const T extends StringArgOptions>(option: T): TaggedArgBuilder<'string', T['required']> {
@@ -46,6 +52,7 @@ function stringArg<const T extends StringArgOptions>(option: T): TaggedArgBuilde
 
 		description: option.description,
 		aliases: option.aliases,
+		catchAll: option.catchAll ?? false,
 	};
 }
 
