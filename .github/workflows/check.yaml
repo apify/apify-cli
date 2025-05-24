@@ -212,7 +212,7 @@ jobs:
               uses: oven-sh/setup-bun@v2
               if: ${{ matrix.os == 'windows-11-arm' }}
               with:
-                  bun-download-url: https://bun.sh/download/latest/win32/x64?avx2=true&profile=false
+                  bun-download-url: https://bun.sh/download/latest/win32/x64?avx2=false&profile=false
 
             # https://github.com/oven-sh/bun/issues/11198
             - name: Fix cross-platform building on Actions
