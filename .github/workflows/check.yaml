@@ -203,8 +203,18 @@ jobs:
               with:
                   bun-version: latest
 
+            # https://github.com/oven-sh/bun/issues/11198
+            - name: Fix cross-platform building on Actions
+              if: ${{ matrix.os == 'windows-latest' }}
+              run: |
+                  mkdir C:\\test
+                  cd C:\\test
+                  bun init -y
+                  bun build --compile --target=bun-windows-x64 --outfile test index.ts
+                  bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
+
             - name: Build Bundles
-              run: yarn prepack && yarn build-bundles
+              run: yarn insert-cli-metadata && yarn build-bundles
 
             - name: Upload Bundles
               uses: actions/upload-artifact@v4
