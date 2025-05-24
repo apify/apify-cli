@@ -170,11 +170,14 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
+                # TODO: windows on arm needs its own build for w/e reason
                 include:
                     - os: ubuntu-latest
                       name: unix
                     - os: windows-latest
                       name: windows
+                    - os: windows-11-arm
+                      name: windows-arm
 
         runs-on: ${{ matrix.os }}
 
@@ -205,7 +208,7 @@ jobs:
 
             # https://github.com/oven-sh/bun/issues/11198
             - name: Fix cross-platform building on Actions
-              if: ${{ matrix.os == 'windows-latest' }}
+              if: ${{ matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm' }}
               run: |
                   mkdir C:\\test
                   cd C:\\test
