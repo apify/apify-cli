@@ -203,15 +203,10 @@ jobs:
               run: yarn
 
             - name: Install Bun on Linux
-              if: ${{ matrix.os == 'ubuntu-latest' }}
               uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
-
-            - name: Install Bun on Windows
-              if: ${{ matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm' }}
-              run: |
-                  irm bun.sh/install.ps1|iex
+                  bun-download-url: ${{ matrix.os == 'windows-11-arm' && 'https://bun.sh/download/latest/win32/x64?avx2=true&profile=false' }}
 
             # https://github.com/oven-sh/bun/issues/11198
             - name: Fix cross-platform building on Actions
