@@ -12,15 +12,21 @@ const targets =
 		? [
 				//
 				'bun-windows-x64',
+				'bun-windows-x64-baseline',
 			]
 		: [
 				//
 				'bun-linux-x64',
+				'bun-linux-x64-baseline',
 				'bun-linux-arm64',
+				'bun-linux-arm64-baseline',
 				'bun-darwin-x64',
 				'bun-darwin-arm64',
+				'bun-darwin-arm64-baseline',
 				'bun-linux-x64-musl',
 				'bun-linux-arm64-musl',
+				'bun-linux-x64-musl-baseline',
+				'bun-linux-arm64-musl-baseline',
 			];
 
 const entryPoints = [
@@ -42,9 +48,9 @@ for (const entryPoint of entryPoints) {
 	const cliName = basename(entryPoint, '.ts');
 
 	for (const target of targets) {
-		const [, os, arch, musl] = target.split('-');
+		const [, os, arch, musl, baseline] = target.split('-');
 
-		const fileName = `${cliName}-${version}-${os}${musl ? '-musl' : ''}-${arch}`;
+		const fileName = `${cliName}-${version}-${os}${musl ? '-musl' : ''}-${arch}${baseline ? '-baseline' : ''}`;
 
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
 
