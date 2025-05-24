@@ -164,7 +164,7 @@ jobs:
               run: yarn format
 
     build_bundles:
-        name: Build Test Bundles
+        name: Build Test Bundles (${{ matrix.name }})
         needs: [build_and_test]
 
         strategy:
