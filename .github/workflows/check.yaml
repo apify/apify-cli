@@ -202,11 +202,17 @@ jobs:
             - name: Install Dependencies
               run: yarn
 
-            - name: Install Bun on Linux
+            - name: Install Bun on non-arm
               uses: oven-sh/setup-bun@v2
+              if: ${{ matrix.os != 'windows-11-arm' }}
               with:
                   bun-version: latest
-                  bun-download-url: ${{ matrix.os == 'windows-11-arm' && 'https://bun.sh/download/latest/win32/x64?avx2=true&profile=false' }}
+
+            - name: Install Bun on arm
+              uses: oven-sh/setup-bun@v2
+              if: ${{ matrix.os == 'windows-11-arm' }}
+              with:
+                  bun-download-url: https://bun.sh/download/latest/win32/x64?avx2=true&profile=false
 
             # https://github.com/oven-sh/bun/issues/11198
             - name: Fix cross-platform building on Actions
