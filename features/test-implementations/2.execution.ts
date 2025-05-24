@@ -10,6 +10,51 @@ import {
 	type TestWorld,
 } from './0.world';
 
+When<TestWorld>(/i run anywhere:?$/i, async function (commandBlock: string) {
+	if (typeof commandBlock !== 'string') {
+		throw new TypeError('When using the `I run anywhere` step, you must provide a text block containing a command');
+	}
+
+	const extraEnv: Record<string, string> = {};
+
+	if (this.authStatePath) {
+		extraEnv.__APIFY_INTERNAL_TEST_AUTH_PATH__ = this.authStatePath;
+	}
+
+	const result = await executeCommand({
+		rawCommand: commandBlock,
+		env: extraEnv,
+	});
+
+	if (result.isOk()) {
+		const value = result.unwrap();
+
+		if (this.testResults) {
+			console.error(`\n  Warning: Overwriting existing test results: ${JSON.stringify(this.testResults)}`);
+		}
+
+		this.testResults = {
+			exitCode: value.exitCode!,
+			stderr: value.stderr,
+			stdout: value.stdout,
+			runResults: null,
+		};
+	} else {
+		const error = result.unwrapErr();
+
+		if (this.testResults) {
+			console.error(`\n  Warning: Overwriting existing test results: ${JSON.stringify(this.testResults)}`);
+		}
+
+		this.testResults = {
+			exitCode: error.exitCode!,
+			stderr: error.stderr,
+			stdout: error.stdout,
+			runResults: null,
+		};
+	}
+});
+
 When<TestWorld>(/i run:?$/i, async function (commandBlock: string) {
 	assertWorldIsValid(this);
 
@@ -20,7 +65,6 @@ When<TestWorld>(/i run:?$/i, async function (commandBlock: string) {
 	const extraEnv: Record<string, string> = {};
 
 	if (this.authStatePath) {
-		// eslint-disable-next-line no-underscore-dangle
 		extraEnv.__APIFY_INTERNAL_TEST_AUTH_PATH__ = this.authStatePath;
 	}
 
@@ -103,7 +147,6 @@ When<TestWorld>(/i run with captured data/i, async function (commandBlock: strin
 	const extraEnv: Record<string, string> = {};
 
 	if (this.authStatePath) {
-		// eslint-disable-next-line no-underscore-dangle
 		extraEnv.__APIFY_INTERNAL_TEST_AUTH_PATH__ = this.authStatePath;
 	}
 

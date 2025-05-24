@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import type { IWorld } from '@cucumber/cucumber';
 import { Result } from '@sapphire/result';
 import type { ApifyClient } from 'apify-client';
-import { type Options, type ExecaError, type Result as ExecaResult, execaNode } from 'execa';
+import { type ExecaError, execaNode, type Options, type Result as ExecaResult } from 'execa';
 
 type DynamicOptions = {
 	-readonly [P in keyof Options]: Options[P];
@@ -49,8 +49,8 @@ export interface TestWorld<Parameters = unknown[]> extends IWorld<Parameters> {
  */
 export const ProjectRoot = new URL('../../', import.meta.url);
 
-export const DevRunFile = new URL('./src/entrypoints/apify.ts', ProjectRoot);
-
+export const ApifyDevRunFile = new URL('./src/entrypoints/apify.ts', ProjectRoot);
+export const ActorDevRunFile = new URL('./src/entrypoints/actor.ts', ProjectRoot);
 export const TestTmpRoot = new URL('./test/tmp/', ProjectRoot);
 
 await mkdir(TestTmpRoot, { recursive: true });
@@ -80,7 +80,7 @@ export async function executeCommand({
 	// step 1: get the first element, and make sure it starts with `apify`
 	const [command] = commandToRun;
 
-	if (!command.startsWith('apify')) {
+	if (!command.startsWith('apify') && !command.startsWith('actor')) {
 		// TODO: maybe try to parse these commands out and provide stdin that way, but for now, its better to get the writer to use the existing rules
 		if (command.startsWith('echo') || command.startsWith('jo')) {
 			throw new RangeError(
@@ -88,10 +88,12 @@ export async function executeCommand({
 			);
 		}
 
-		throw new RangeError(`Command must start with 'apify', received: ${command}`);
+		throw new RangeError(`Command must start with 'apify' or 'actor', received: ${command}`);
 	}
 
-	const cleanCommand = command.replace(/^apify/, '').trim();
+	const devRunFile = command.startsWith('apify') ? ApifyDevRunFile : ActorDevRunFile;
+
+	const cleanCommand = command.replace(/^apify|actor/, '').trim();
 
 	const options: DynamicOptions = {
 		cwd,
@@ -138,7 +140,7 @@ export async function executeCommand({
 	>(async () => {
 		const process = execaNode(
 			tsxCli,
-			[fileURLToPath(DevRunFile), ...commandArguments],
+			[fileURLToPath(devRunFile), ...commandArguments],
 			options as { cwd: typeof cwd; input: typeof stdin },
 		);
 
