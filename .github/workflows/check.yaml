@@ -210,4 +210,4 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: apify-cli-bundles-${{ matrix.name }}
-                  path: bundles/apify**
+                  path: bundles/**
