@@ -48,7 +48,13 @@ for (const entryPoint of entryPoints) {
 	const cliName = basename(entryPoint, '.ts');
 
 	for (const target of targets) {
-		const [, os, arch, musl, baseline] = target.split('-');
+		// eslint-disable-next-line prefer-const -- somehow it cannot tell that os and arch cannot be "const" while the rest are let
+		let [, os, arch, musl, baseline] = target.split('-');
+
+		if (musl === 'baseline') {
+			musl = '';
+			baseline = 'baseline';
+		}
 
 		const fileName = `${cliName}-${version}-${os}${musl ? '-musl' : ''}-${arch}${baseline ? '-baseline' : ''}`;
 
