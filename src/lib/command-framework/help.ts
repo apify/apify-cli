@@ -3,7 +3,7 @@ import indentString from 'indent-string';
 import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
-import { cliDescription, cliVersion } from '../consts.js';
+import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { error } from '../outputs.js';
 import { mapGroupBy } from '../utils.js';
 import type { BuiltApifyCommand } from './apify-command.js';
@@ -62,12 +62,16 @@ function sortByName(
 }
 
 export function renderMainHelpMenu(entrypoint: string) {
+	const cliMetadata = useCLIMetadata();
 	const result: string[] = [];
 
-	result.push(cliDescription, '');
+	result.push(
+		'Apify command-line interface (CLI) helps you manage the Apify cloud platform and develop, build, and deploy Apify Actors.',
+		'',
+	);
 
 	result.push(chalk.bold('VERSION'));
-	result.push(`  ${cliVersion}`);
+	result.push(`  ${cliMetadata.fullVersionString}`);
 	result.push('');
 
 	result.push(chalk.bold('USAGE'));

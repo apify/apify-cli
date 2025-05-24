@@ -5,11 +5,17 @@ import yargonaut from 'yargonaut';
 // eslint-disable-next-line import/extensions
 import yargs from 'yargs/yargs';
 
-import { camelCaseToKebabCase, commandRegistry, kebabCaseString } from '../lib/command-framework/apify-command.js';
+import {
+	camelCaseToKebabCase,
+	commandRegistry,
+	kebabCaseString,
+	runCommand,
+} from '../lib/command-framework/apify-command.js';
 import type { FlagTag, TaggedFlagBuilder } from '../lib/command-framework/flags.js';
 import { renderMainHelpMenu, selectiveRenderHelpForCommand } from '../lib/command-framework/help.js';
 import { readStdin } from '../lib/commands/read-stdin.js';
-import { cliVersion } from '../lib/consts.js';
+import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
+import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { error } from '../lib/outputs.js';
 import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
 
@@ -62,9 +68,29 @@ export const cli = yargs()
 // @ts-expect-error @types/yargs is outdated -.-
 cli.usageConfiguration({ 'hide-types': true });
 
+cli.middleware(async (argv) => {
+	const UpgradeCommand = commandRegistry.get('upgrade')!;
+
+	const checkVersionsCommandIds = [UpgradeCommand.name, ...(UpgradeCommand.aliases ?? [])];
+
+	if (checkVersionsCommandIds.some((id) => argv._[0] === id)) {
+		// Skip running the middleware
+		return;
+	}
+
+	// If the user has configured the `APIFY_CLI_SKIP_UPDATE_CHECK` env variable then skip the check.
+	if (shouldSkipVersionCheck()) {
+		return;
+	}
+
+	await runCommand(UpgradeCommand, {});
+});
+
+const cliMetadata = useCLIMetadata();
+
 export function printCLIVersionAndExitIfFlagUsed(parsed: Awaited<ReturnType<typeof cli.parse>>) {
 	if (parsed.v === true || parsed.version === true) {
-		console.log(cliVersion);
+		console.log(cliMetadata.fullVersionString);
 		process.exit(0);
 	}
 }
@@ -80,8 +106,13 @@ export function printHelpAndExitIfFlagUsedOrNoCommandPassed(
 }
 
 export async function runCLI(entrypoint: string) {
+	cliDebugPrint('CLIMetadata', {
+		...cliMetadata,
+		fullVersionString: cliMetadata.fullVersionString,
+	});
+
 	await cli.parse(process.argv.slice(2), {}, (rawError, parsed) => {
-		if (rawError) {
+		if (rawError && parsed._.length > 0) {
 			cliDebugPrint('RunCLIError', { type: 'parsed', error: rawError?.message, parsed });
 
 			const errorMessageSplit = rawError.message.split(' ').map((part) => part.trim());
@@ -246,7 +277,7 @@ export async function runCLI(entrypoint: string) {
 							'- Arguments (!!!only provide these as is if there is no sensitive information!!!):',
 							`  ${JSON.stringify(process.argv.slice(2))}`,
 							'',
-							`- CLI version: \`${cliVersion}\``,
+							`- CLI version: \`${cliMetadata.fullVersionString}\``,
 							`- CLI debug logs (process.env.APIFY_CLI_DEBUG): ${process.env.APIFY_CLI_DEBUG ? 'Enabled' : 'Disabled'}`,
 							`- Stdin data? ${cachedStdinInput ? 'Yes' : 'No'}`,
 						].join('\n'),
