@@ -49,7 +49,8 @@ for (const entryPoint of entryPoints) {
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
 
 		console.log(`Building ${cliName} for ${target} (result: ${fileName})...`);
-		await $`bun build --compile --minify --sourcemap --target=${target} --outfile=${outFile} ${entryPoint}`;
+		// TODO: --sourcemap crashes for w/e reason and --bytecode doesn't support ESM (TLA to be exact)
+		await $`bun build --compile --minify --target=${target} --outfile=${outFile} ${entryPoint}`;
 	}
 }
 
