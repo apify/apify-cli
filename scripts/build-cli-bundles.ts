@@ -7,16 +7,21 @@ import { $, fileURLToPath } from 'bun';
 
 import { version } from '../package.json' with { type: 'json' };
 
-const targets = [
-	//
-	'bun-linux-x64',
-	'bun-linux-arm64',
-	'bun-windows-x64',
-	'bun-darwin-x64',
-	'bun-darwin-arm64',
-	'bun-linux-x64-musl',
-	'bun-linux-arm64-musl',
-];
+const targets =
+	process.platform === 'win32'
+		? [
+				//
+				'bun-windows-x64',
+			]
+		: [
+				//
+				'bun-linux-x64',
+				'bun-linux-arm64',
+				'bun-darwin-x64',
+				'bun-darwin-arm64',
+				'bun-linux-x64-musl',
+				'bun-linux-arm64-musl',
+			];
 
 const entryPoints = [
 	//

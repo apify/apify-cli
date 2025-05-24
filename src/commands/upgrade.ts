@@ -8,7 +8,7 @@ import { info, simpleLog, warning } from '../lib/outputs.js';
 
 // TODO: who knows what the URL will be
 const unixCommand = 'curl -fsSL https://apify.com/cli/install-unix | sh';
-const windowsCommand = 'irm https://apify.com/cli/install-windows | iex';
+const windowsCommand = 'powershell -Command "irm https://apify.com/cli/install-windows | iex"';
 
 const UPDATE_COMMANDS: Record<Exclude<InstallMethod, 'bundle'>, string> & {
 	bundle: Partial<Record<typeof process.platform, string>>;
