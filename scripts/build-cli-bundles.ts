@@ -24,8 +24,6 @@ const entryPoints = [
 	fileURLToPath(new URL('../src/entrypoints/actor.ts', import.meta.url)),
 ];
 
-const { stdout: hash } = await $`git rev-parse HEAD`;
-
 await rm(new URL('../bundles/', import.meta.url), { recursive: true, force: true });
 
 const metadataFile = new URL('../src/lib/hooks/useCLIMetadata.ts', import.meta.url);
@@ -39,9 +37,9 @@ for (const entryPoint of entryPoints) {
 	const cliName = basename(entryPoint, '.ts');
 
 	for (const target of targets) {
-		const [, os, arch] = target.split('-');
+		const [, os, arch, musl] = target.split('-');
 
-		const fileName = `${cliName}-${version}-${hash.toString('utf8')}-${os}-${arch}`;
+		const fileName = `${cliName}-${version}-${os}${musl ? '-musl' : ''}-${arch}`;
 
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
 
