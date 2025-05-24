@@ -17,7 +17,8 @@
         "clean": "rimraf dist",
         "build": "yarn clean && tsc && tsc -p tsconfig.typechecking.json",
         "build-bundles": "bun run scripts/build-cli-bundles.ts",
-        "prepack": "yarn build && yarn update-docs",
+        "prepack": "yarn insert-cli-metadata && yarn build && yarn update-docs",
+        "insert-cli-metadata": "tsx scripts/insert-cli-metadata.ts",
         "update-docs": "tsx scripts/generate-cli-docs.ts",
         "postinstallDev": "yarn build && node ./dist/entrypoints/apify.js check-version && node ./dist/lib/community.js"
     },
