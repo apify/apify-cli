@@ -21,6 +21,7 @@ const targets =
 				'bun-linux-arm64',
 				'bun-linux-arm64-baseline',
 				'bun-darwin-x64',
+				'bun-darwin-x64-baseline',
 				'bun-darwin-arm64',
 				'bun-darwin-arm64-baseline',
 				'bun-linux-x64-musl',

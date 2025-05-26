@@ -141,7 +141,7 @@ fetch_latest_version() {
 
 executable_names=("apify" "actor")
 
-if [[ $# = 0 ]]; then
+if [[ $# = 0 || $1 = "latest" ]]; then
     version=$(fetch_latest_version)
 else
     version=$1
