@@ -1,174 +1,239 @@
-# PowerShell strict mode
-Set-StrictMode -Version Latest
+#!/usr/bin/env pwsh
+param(
+    [String]$Version = "latest",
+    # Forces installing the baseline build regardless of what CPU you are actually using.
+    [Switch]$ForceBaseline = $false
+)
+
+# The following script is adapted from the bun.sh install script
+# Licensed under the MIT License (https://github.com/oven-sh/bun/blob/main/LICENSE.md)
+
+# filter out 32 bit + ARM
+# TODO: Remove this once Bun supports ARM
+if (-not (((Get-CimInstance Win32_ComputerSystem)).SystemType -match "x64-based")) {
+    Write-Output "Install Failed:"
+    Write-Output "Apify CLI for Windows is currently only available for x86 64-bit Windows.`n"
+    return 1
+}
+
+# This corresponds to .win10_rs5 in build.zig
+$MinBuild = 17763;
+$MinBuildName = "Windows 10 1809 / Windows Server 2019"
+
+$WinVer = [System.Environment]::OSVersion.Version
+if ($WinVer.Major -lt 10 -or ($WinVer.Major -eq 10 -and $WinVer.Build -lt $MinBuild)) {
+    Write-Warning "Apify CLI requires at ${MinBuildName} or newer.`n`nThe install will still continue but it may not work.`n"
+    return 1
+}
+
 $ErrorActionPreference = "Stop"
 
-# Function to print colored output
-function Write-Info {
-    param([string]$Message)
-    Write-Host "[INFO] $Message" -ForegroundColor Blue
+# These three environment functions are roughly copied from https://github.com/prefix-dev/pixi/pull/692
+# They are used instead of `SetEnvironmentVariable` because of unwanted variable expansions.
+function Publish-Env {
+    if (-not ("Win32.NativeMethods" -as [Type])) {
+        Add-Type -Namespace Win32 -Name NativeMethods -MemberDefinition @"
+[DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+public static extern IntPtr SendMessageTimeout(
+    IntPtr hWnd, uint Msg, UIntPtr wParam, string lParam,
+    uint fuFlags, uint uTimeout, out UIntPtr lpdwResult);
+"@
+    }
+    $HWND_BROADCAST = [IntPtr] 0xffff
+    $WM_SETTINGCHANGE = 0x1a
+    $result = [UIntPtr]::Zero
+    [Win32.NativeMethods]::SendMessageTimeout($HWND_BROADCAST,
+        $WM_SETTINGCHANGE,
+        [UIntPtr]::Zero,
+        "Environment",
+        2,
+        5000,
+        [ref] $result
+    ) | Out-Null
 }
 
-function Write-Success {
-    param([string]$Message)
-    Write-Host "[SUCCESS] $Message" -ForegroundColor Green
-}
+function Write-Env {
+    param([String]$Key, [String]$Value)
 
-function Write-Warning {
-    param([string]$Message)
-    Write-Host "[WARNING] $Message" -ForegroundColor Yellow
-}
+    $RegisterKey = Get-Item -Path 'HKCU:'
 
-function Write-Error {
-    param([string]$Message)
-    Write-Host "[ERROR] $Message" -ForegroundColor Red
-}
-
-# Function to detect architecture (always return x64 for Windows as requested)
-function Get-Architecture {
-    $arch = $env:PROCESSOR_ARCHITECTURE
-    Write-Info "Detected system architecture: $arch"
-
-    # Check if architecture is 64-bit
-    if ($arch -ne "AMD64" -and $arch -ne "ARM64") {
-        Write-Error "Unsupported architecture: $arch"
-        Write-Error "Only 64-bit architectures (AMD64, ARM64) are supported"
-        exit 1
+    $EnvRegisterKey = $RegisterKey.OpenSubKey('Environment', $true)
+    if ($null -eq $Value) {
+        $EnvRegisterKey.DeleteValue($Key)
+    }
+    else {
+        $RegistryValueKind = if ($Value.Contains('%')) {
+            [Microsoft.Win32.RegistryValueKind]::ExpandString
+        }
+        elseif ($EnvRegisterKey.GetValue($Key)) {
+            $EnvRegisterKey.GetValueKind($Key)
+        }
+        else {
+            [Microsoft.Win32.RegistryValueKind]::String
+        }
+        $EnvRegisterKey.SetValue($Key, $Value, $RegistryValueKind)
     }
 
-    # Always use x64 for Windows (including ARM64 systems as requested)
-    if ($arch -eq "ARM64") {
-        Write-Info "ARM64 detected, using x64 version of the CLI"
-    }
-
-    return "x64"
+    Publish-Env
 }
 
-# Function to fetch latest version from GitHub API
+function Get-Env {
+    param([String] $Key)
+
+    $RegisterKey = Get-Item -Path 'HKCU:'
+    $EnvRegisterKey = $RegisterKey.OpenSubKey('Environment')
+    $EnvRegisterKey.GetValue($Key, $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+}
+
+$ExecutableNames = "apify", "actor"
+
 function Get-LatestVersion {
-    $apiUrl = "https://api.github.com/repos/apify/apify-cli/releases/latest"
+    $LatestVersion = Invoke-RestMethod -Uri "https://api.github.com/repos/apify/apify-cli/releases/latest"
+    return $LatestVersion.tag_name.TrimStart('v')
+}
+
+# The installation of Apify CLI is it's own function so that in the unlikely case the $IsBaseline check fails, we can do a recursive call.
+# There are also lots of sanity checks out of fear of anti-virus software or other weird Windows things happening.
+function Install-Apify {
+    param(
+        [string]$Version,
+        [bool]$ForceBaseline = $False
+    );
+
+    if (-not ($Version -match "^\d+\.\d+\.\d+$") -and -not ($Version = 'latest')) {
+        Write-Error "Invalid version: $Version"
+        return 1
+    }
+
+    $Arch = "x64"
+    $IsBaseline = $ForceBaseline
+    if (-not $IsBaseline) {
+        $IsBaseline = !(
+            Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern bool IsProcessorFeaturePresent(int ProcessorFeature);' -Name 'Kernel32' -Namespace 'Win32' -PassThru
+        )::IsProcessorFeaturePresent(40)
+    }
+
+    $ApifyRoot = if ($env:APIFY_CLI_INSTALL) { $env:APIFY_CLI_INSTALL } else { "${Home}\.apify" }
+    $ApifyBin = mkdir -Force "${ApifyRoot}\bin"
 
     try {
-        Write-Info "Fetching latest version from GitHub API..."
-        $response = Invoke-RestMethod -Uri $apiUrl -Method Get
-
-        if (-not $response.tag_name) {
-            throw "Failed to parse version from GitHub API response"
+        foreach ($ExecutableName in $ExecutableNames) {
+            Remove-Item "${ApifyBin}\${ExecutableName}.exe" -Force
         }
 
-        # Strip 'v' prefix if present
-        $version = $response.tag_name -replace '^v', ''
-        return $version
+        # Alias apify to apify-cli, as npm does (because otherwise npx apify-cli wouldn't work)
+        Remove-Item "${ApifyBin}\apify-cli.exe" -Force
+    }
+    catch [System.Management.Automation.ItemNotFoundException] {
+        # ignore
+    }
+    catch [System.UnauthorizedAccessException] {
+        $openProcesses = Get-Process -Name apify | Where-Object { $_.Path -eq "${ApifyBin}\apify.exe" }
+        if ($openProcesses.Count -gt 0) {
+            Write-Output "Install Failed - An older installation exists and is open. Please close open Apify CLI processes and try again."
+            return 1
+        }
+
+        Write-Output "Install Failed - An unknown error occurred while trying to remove the existing installation"
+        Write-Output $_
+        return 1
     }
     catch {
-        Write-Error "Failed to fetch version from GitHub API: $($_.Exception.Message)"
-        exit 1
+        Write-Output "Install Failed - An unknown error occurred while trying to remove the existing installation"
+        Write-Output $_
+        return 1
     }
-}
 
-# Function to construct download URL
-function Get-DownloadUrl {
-    param(
-        [string]$CliName,
-        [string]$Version,
-        [string]$Platform,
-        [string]$Arch
-    )
+    $BaseURL = "https://github.com/apify/apify-cli/releases/download/"
 
-    return "https://github.com/apify/apify-cli/releases/download/v${Version}/${CliName}-${Version}-${Platform}-${Arch}.exe"
-}
+    if ($Version -eq "latest") {
+        $Version = Get-LatestVersion
+    }
 
-# Function to download CLI bundle
-function Download-Bundle {
-    param(
-        [string]$CliName,
-        [string]$Version,
-        [string]$Platform,
-        [string]$Arch
-    )
+    $BaseURL += "v${Version}/"
 
-    $downloadUrl = Get-DownloadUrl -CliName $CliName -Version $Version -Platform $Platform -Arch $Arch
-    $outputFilename = "${CliName}-${Version}-${Platform}-${Arch}.exe"
+    $null = mkdir -Force $ApifyBin
 
-    Write-Info "Downloading $CliName CLI bundle..."
-    Write-Info "URL: $downloadUrl"
-    Write-Info "Output: $outputFilename"
+    foreach ($ExecutableName in $ExecutableNames) {
+        $FileName = "${ExecutableName}.exe"
+        $Target = "${ExecutableName}-${Version}-windows-${Arch}${IsBaseline ? '-baseline' : ''}"
 
+        $DownloadURL = "${BaseURL}${Target}.exe"
+        $DownloadPath = "${ApifyBin}\${FileName}"
+
+        curl.exe "-#SfLo" "$DownloadPath" "$DownloadURL"
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "The command 'curl.exe $DownloadURL -o $DownloadPath' exited with code ${LASTEXITCODE}`nTrying an alternative download method..."
+
+            try {
+                # Use Invoke-RestMethod instead of Invoke-WebRequest because Invoke-WebRequest breaks on
+                # some machines, see
+                Invoke-RestMethod -Uri $DownloadURL -OutFile $DownloadPath
+            }
+            catch {
+                Write-Output "Install Failed - could not download $DownloadURL"
+                Write-Output "The command 'Invoke-RestMethod $DownloadURL -OutFile $DownloadPath' exited with code ${LASTEXITCODE}`n"
+                return 1
+            }
+        }
+
+        $ApifyVersion = "$(& "${ApifyBin}\${FileName}" --version)"
+        if ($LASTEXITCODE -eq 1073741795) {
+            # STATUS_ILLEGAL_INSTRUCTION
+            if ($IsBaseline) {
+                Write-Output "Install Failed - apify.exe (baseline) is not compatible with your CPU.`n"
+                return 1
+            }
+
+            Write-Output "Install Failed - apify.exe is not compatible with your CPU. This should have been detected before downloading.`n"
+            Write-Output "Attempting to download apify.exe (baseline) instead.`n"
+
+            Install-Apify -Version $Version -ForceBaseline $True
+            return 1
+        }
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Output "Install Failed - could not verify apify.exe"
+            Write-Output "The command '${ApifyBin}\apify.exe --version' exited with code ${LASTEXITCODE}`n"
+            return 1
+        }
+
+        if ($ExecutableName -eq "apify") {
+            # Alias apify to apify-cli, as npm does (because otherwise npx apify-cli wouldn't work)
+            Copy-Item -Path "${ApifyBin}\${FileName}" -Destination "${ApifyBin}\apify-cli.exe" -Force
+        }
+    }
+
+    $C_RESET = [char]27 + "[0m"
+    $C_GREEN = [char]27 + "[1;32m"
+
+    Write-Output "${C_GREEN}Apify CLI ${ApifyVersion} was installed successfully!${C_RESET}"
+    Write-Output "The binary is located at ${ApifyBin}\apify.exe`n"
+
+    $hasExistingOther = $false;
     try {
-        Invoke-WebRequest -Uri $downloadUrl -OutFile $outputFilename -ErrorAction Stop
-        Write-Success "Downloaded $outputFilename"
-        return $true
-    }
-    catch {
-        Write-Warning "Failed to download $CliName bundle (might not exist for this platform/arch combination)"
-        Write-Warning "Error: $($_.Exception.Message)"
-        return $false
-    }
-}
-
-# Main execution function
-function Main {
-    Write-Info "Starting Apify CLI installation for Windows..."
-
-    # Set platform (always Windows for this script)
-    $Platform = "win32"
-
-    # Detect architecture (always use x64 as requested)
-    $Arch = Get-Architecture
-
-    Write-Info "Target platform: $Platform"
-    Write-Info "Target architecture: $Arch"
-
-    # Fetch latest version
-    $Version = Get-LatestVersion
-    Write-Success "Latest version: $Version"
-
-    # CLI names to download
-    $CliNames = @("apify", "actor")
-
-    # Download each CLI bundle
-    $successCount = 0
-    foreach ($cliName in $CliNames) {
-        Write-Host ""
-        if (Download-Bundle -CliName $cliName -Version $Version -Platform $Platform -Arch $Arch) {
-            $successCount++
+        $existing = Get-Command apify -ErrorAction
+        if ($existing.Source -ne "${ApifyBin}\apify.exe") {
+            Write-Warning "Note: Another apify.exe is already in %PATH% at $($existing.Source)`nTyping 'apify' in your terminal will not use what was just installed.`n"
+            $hasExistingOther = $true;
         }
     }
+    catch {}
 
-    Write-Host ""
-    Write-Success "Download process completed!"
-    Write-Info "Successfully downloaded $successCount out of $($CliNames.Count) CLI bundles"
-
-    # List downloaded files
-    Write-Host ""
-    Write-Info "Downloaded files:"
-    foreach ($cliName in $CliNames) {
-        $filename = "${cliName}-${Version}-${Platform}-${Arch}.exe"
-        if (Test-Path $filename) {
-            Write-Host "  ✓ $filename" -ForegroundColor Green
-        } else {
-            Write-Host "  ✗ $filename (not found)" -ForegroundColor Red
+    if (!$hasExistingOther) {
+        # Only try adding to path if there isn't already a apify.exe in the path
+        $Path = (Get-Env -Key "Path") -split ';'
+        if ($Path -notcontains $ApifyBin) {
+            $Path += $ApifyBin
+            Write-Env -Key 'Path' -Value ($Path -join ';')
+            $env:PATH = $Path;
         }
+
+        Write-Output "To get started, restart your terminal/editor, then type `"apify`"`n"
     }
 
-    Write-Host ""
-    Write-Info "You can now run the downloaded executables directly or add them to your PATH."
+    $LASTEXITCODE = 0;
 }
 
-# Check if we can make web requests
-try {
-    # Test basic connectivity
-    $null = Invoke-WebRequest -Uri "https://api.github.com" -Method Head -TimeoutSec 10
-}
-catch {
-    Write-Error "Cannot connect to GitHub API. Please check your internet connection and try again."
-    exit 1
-}
-
-# Run main function
-try {
-    Main
-}
-catch {
-    Write-Error "An unexpected error occurred: $($_.Exception.Message)"
-    exit 1
-}
+Install-Apify -Version $Version -ForceBaseline $ForceBaseline

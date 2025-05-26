@@ -170,14 +170,12 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                # TODO: windows on arm needs its own build for w/e reason
+                # TODO: windows on arm is not supported right now because bun doesn't support it
                 include:
                     - os: ubuntu-latest
                       name: unix
                     - os: windows-latest
                       name: windows
-                    - os: windows-11-arm
-                      name: windows-arm
 
         runs-on: ${{ matrix.os }}
 
@@ -202,21 +200,13 @@ jobs:
             - name: Install Dependencies
               run: yarn
 
-            - name: Install Bun on non-arm
-              uses: oven-sh/setup-bun@v2
-              if: ${{ matrix.os != 'windows-11-arm' }}
+            - uses: oven-sh/setup-bun@v2
               with:
                   bun-version: latest
 
-            - name: Install Bun on arm
-              uses: oven-sh/setup-bun@v2
-              if: ${{ matrix.os == 'windows-11-arm' }}
-              with:
-                  bun-download-url: https://bun.sh/download/latest/win32/x64?avx2=false&profile=false
-
             # https://github.com/oven-sh/bun/issues/11198
             - name: Fix cross-platform building on Actions
-              if: ${{ matrix.os == 'windows-latest' || matrix.os == 'windows-11-arm' }}
+              if: ${{ matrix.os == 'windows-latest' }}
               run: |
                   mkdir C:\\test
                   cd C:\\test

@@ -56,7 +56,7 @@ for (const entryPoint of entryPoints) {
 			baseline = 'baseline';
 		}
 
-		const fileName = `${cliName}-${version}-${os}${musl ? '-musl' : ''}-${arch}${baseline ? '-baseline' : ''}`;
+		const fileName = `${cliName}-${version}-${os}-${arch}${musl ? '-musl' : ''}${baseline ? '-baseline' : ''}`;
 
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
 
