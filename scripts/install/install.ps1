@@ -150,7 +150,7 @@ function Install-Apify {
         $Version = Get-LatestVersion
     }
 
-    $BaseURL += "v${Version}/"
+    $BaseURL += "${Version}/"
 
     $null = mkdir -Force $ApifyBin
 

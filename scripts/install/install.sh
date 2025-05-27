@@ -152,7 +152,7 @@ construct_download_url() {
     local cli_name="$1"
     local edition="$2"
 
-    echo "https://github.com/apify/apify-cli/releases/download/v${version}/${cli_name}-${version}-${edition}"
+    echo "https://github.com/apify/apify-cli/releases/download/${version}/${cli_name}-${version}-${edition}"
 }
 
 install_env=APIFY_CLI_INSTALL
