@@ -136,6 +136,8 @@ jobs:
 
             - name: Build CLI bundles
               run: yarn build-bundles
+              env:
+                  APIFY_FULL_CLI_BUNDLES: true
 
             - name: Create release
               uses: softprops/action-gh-release@v2

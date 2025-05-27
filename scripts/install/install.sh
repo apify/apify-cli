@@ -9,7 +9,7 @@ platform=$(uname -ms)
 # Invoke the ps1 script if on Windows
 if [[ ${OS:-} = Windows_NT ]]; then
     if [[ $platform != MINGW64* ]]; then
-        powershell -c "irm https://apify.com/cli/install-windows|iex"
+        powershell -c "irm https://apify.com/install-cli.ps1|iex"
         exit $?
     fi
 fi

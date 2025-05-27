@@ -6,9 +6,8 @@ import { DEVELOPMENT_VERSION_MARKER, type InstallMethod, useCLIMetadata } from '
 import { useCLIVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { info, simpleLog, warning } from '../lib/outputs.js';
 
-// TODO: who knows what the URL will be
-const unixCommand = 'curl -fsSL https://apify.com/cli/install-unix | sh';
-const windowsCommand = 'powershell -Command "irm https://apify.com/cli/install-windows | iex"';
+const unixCommand = 'curl -fsSL https://apify.com/install-cli.sh | sh';
+const windowsCommand = 'powershell -Command "irm https://apify.com/install-cli.ps1 | iex"';
 
 const UPDATE_COMMANDS: Record<Exclude<InstallMethod, 'bundle'>, string> & {
 	bundle: Partial<Record<typeof process.platform, string>>;
