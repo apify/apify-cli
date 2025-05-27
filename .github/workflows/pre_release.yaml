@@ -89,6 +89,65 @@ jobs:
                   author_email: noreply@apify.com
                   message: "chore(release): Update changelog and package version [skip ci]"
 
+    create_github_release:
+        name: Create GitHub release
+        needs: [release_metadata, update_changelog]
+        runs-on: ubuntu-latest
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        steps:
+            - uses: actions/checkout@v4
+              with:
+                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
+
+            - name: Install bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version-file: .bun-version
+
+            - name: Use Node.js 22
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  registry-url: https://registry.npmjs.org
+
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
+
+            - name: Activate cache for Node.js 22
+              uses: actions/setup-node@v4
+              with:
+                  cache: yarn
+
+            - name: Install dependencies
+              run: yarn
+
+            # Check version consistency and increment pre-release version number for beta only.
+            - name: Bump pre-release version
+              id: bump-pre-release-version
+              run: |
+                  yarn tsx ./.github/scripts/before-beta-release.ts
+                  echo "release_version=$(cat package.json | jq -r '.version')" >> $GITHUB_OUTPUT
+
+            - name: Insert release metadata
+              run: yarn insert-cli-metadata
+
+            - name: Build CLI bundles
+              run: yarn build-bundles
+
+            - name: Create release
+              uses: softprops/action-gh-release@v2
+              with:
+                  tag_name: ${{ steps.bump-pre-release-version.outputs.release_version }}
+                  name: ${{ steps.bump-pre-release-version.outputs.release_version }}
+                  target_commitish: ${{ needs.update_changelog.outputs.changelog_commitish }}
+                  body: ${{ needs.release_metadata.outputs.release_notes }}
+                  prerelease: true
+                  files: |
+                      bundles/*
+
     publish_to_npm:
         name: Publish to NPM
         needs: [update_changelog]
@@ -129,12 +188,8 @@ jobs:
             - name: Build module
               run: yarn build
 
-            - name: Pack with yarn
-              run: yarn pack
-
             - name: Publish to NPM
               run: |
-                  # `yarn npm publish` does not currently support --provenance: https://github.com/yarnpkg/berry/issues/5430
-                  npm publish package.tgz --provenance --access public --tag beta
+                  yarn npm publish --provenance --access public --tag beta
               env:
                   NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
