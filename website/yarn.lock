@@ -6153,9 +6153,9 @@ __metadata:
   linkType: hard
 
 "cssdb@npm:^8.2.5":
-  version: 8.2.5
-  resolution: "cssdb@npm:8.2.5"
-  checksum: 10c0/3f6f2941c958ea0bdbcc1f807ee728d851ef60c370fbcd54360840e3192f082e0a0b2fa4ea600ca74fa771936c9130883727d7845132cc8bf135a4e0a1e55746
+  version: 8.2.6
+  resolution: "cssdb@npm:8.2.6"
+  checksum: 10c0/41837b217adffc7af1868f8b2b1ae12cae0b17d3cb98d1e222baf320756c0284eb56e21eb3fa950b21277a342cb4a6fd4f234c5b4441a1a3f4d92b71a1cabfc5
   languageName: node
   linkType: hard
 
@@ -6701,9 +6701,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.149":
-  version: 1.5.157
-  resolution: "electron-to-chromium@npm:1.5.157"
-  checksum: 10c0/d22dc2603bdfb0d89c8e199bcc29a34995cc6e37261b5029b4e635ea536b843ed00dfc3b1dd2f69e1852031daee0c7cf3fb63cc70abf5312908328075b35e9af
+  version: 1.5.158
+  resolution: "electron-to-chromium@npm:1.5.158"
+  checksum: 10c0/e6c435d495d3be523f81b5850956052f2e7ebc1a346444951b24fa974683c7d0b3e55fae854489d66d61ecf856f3f8d337a82835bb4b7b532ed25ada41e75070
   languageName: node
   linkType: hard
 
@@ -13236,9 +13236,9 @@ __metadata:
   linkType: hard
 
 "preact@npm:^10.13.2":
-  version: 10.26.6
-  resolution: "preact@npm:10.26.6"
-  checksum: 10c0/af07817a24b76c48f0eb49895d2ab49d6e43097355b6f75271a4cab5c2886999968e9eab9331a48f0b7e3477bc16153b08cd1d6a24ebf1acea4016b7054daf29
+  version: 10.26.7
+  resolution: "preact@npm:10.26.7"
+  checksum: 10c0/781db5c0171a85f31902506b1db66317254510db74070e0f24393e3f8e0bd3c7096c77da788effa39e10c063d7fdf281493e4a1ac9de287c136185943576bc2c
   languageName: node
   linkType: hard
 
@@ -15458,12 +15458,12 @@ __metadata:
   linkType: hard
 
 "tinyglobby@npm:^0.2.12, tinyglobby@npm:^0.2.13":
-  version: 0.2.13
-  resolution: "tinyglobby@npm:0.2.13"
+  version: 0.2.14
+  resolution: "tinyglobby@npm:0.2.14"
   dependencies:
     fdir: "npm:^6.4.4"
     picomatch: "npm:^4.0.2"
-  checksum: 10c0/ef07dfaa7b26936601d3f6d999f7928a4d1c6234c5eb36896bb88681947c0d459b7ebe797022400e555fe4b894db06e922b95d0ce60cb05fd827a0a66326b18c
+  checksum: 10c0/f789ed6c924287a9b7d3612056ed0cda67306cd2c80c249fd280cf1504742b12583a2089b61f4abbd24605f390809017240e250241f09938054c9b363e51c0a6
   languageName: node
   linkType: hard
 
