@@ -247,7 +247,6 @@ const mime = new Mime(standardMimes, otherMimes).define(
 	true,
 );
 
-// Detect whether file is binary from its MIME type, or if not available, contents
 const getSourceFileFormat = (filePath: string, fileContent: Buffer) => {
 	// Try to detect the MIME type from the file path
 	const contentType = mime.getType(filePath);
@@ -259,6 +258,7 @@ const getSourceFileFormat = (filePath: string, fileContent: Buffer) => {
 			contentType.includes('xml') ||
 			contentType.includes('application/node') || // .cjs files
 			contentType.includes('application/toml') || // for example pyproject.toml files
+			contentType.includes('application/x-sh') || // .sh files
 			contentType.includes('application/x-httpd-php') // .php files
 				? SOURCE_FILE_FORMATS.TEXT
 				: SOURCE_FILE_FORMATS.BASE64;
