@@ -247,6 +247,7 @@ const mime = new Mime(standardMimes, otherMimes).define(
 	true,
 );
 
+// Detect whether file is binary from its MIME type, or if not available, contents
 const getSourceFileFormat = (filePath: string, fileContent: Buffer) => {
 	// Try to detect the MIME type from the file path
 	const contentType = mime.getType(filePath);
