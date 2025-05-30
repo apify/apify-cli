@@ -1,5 +1,12 @@
 /// <reference types="@types/bun" />
 
+/*
+This script is responsible for creating the CLI bundles (one file that embeds runtime with the CLI code, that can be just downloaded and ran).
+
+At the time of writing (~2025-05-31), the bundles are created using Bun as the runtime and the targets you can see in the code.
+When node stabilizes SEA (https://nodejs.org/api/single-executable-applications.html) [and supports ESM -.-], this code can be adapted to build it using that instead (but cross-platform will be a CI experience)
+*/
+
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
@@ -56,12 +63,16 @@ const entryPoints = [
 
 await rm(new URL('../bundles/', import.meta.url), { recursive: true, force: true });
 
+// #region Inject the fact the CLI is ran in a bundle, instead of installed through npm/volta
+
 const metadataFile = new URL('../src/lib/hooks/useCLIMetadata.ts', import.meta.url);
 const originalContent = await readFile(metadataFile, 'utf-8');
 
 const newContent = originalContent.replace('process.env.APIFY_CLI_BUNDLE', 'true');
 
 await writeFile(metadataFile, newContent);
+
+// #endregion
 
 for (const entryPoint of entryPoints) {
 	const cliName = basename(entryPoint, '.ts');

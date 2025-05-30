@@ -1,28 +1,20 @@
 import chalk from 'chalk';
+import { gte } from 'semver';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { DEVELOPMENT_VERSION_MARKER, type InstallMethod, useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { useCLIVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
-import { info, simpleLog, warning } from '../lib/outputs.js';
+import { error, info, simpleLog, warning } from '../lib/outputs.js';
 
-const unixCommand = 'curl -fsSL https://apify.com/install-cli.sh | sh';
-const windowsCommand = 'powershell -Command "irm https://apify.com/install-cli.ps1 | iex"';
-
-const UPDATE_COMMANDS: Record<Exclude<InstallMethod, 'bundle'>, string> & {
-	bundle: Partial<Record<typeof process.platform, string>>;
-} = {
-	npm: 'npm install -g apify-cli@latest',
+const UPDATE_COMMANDS: Record<Exclude<InstallMethod, 'bundle'>, (version: string) => string> = {
+	npm: (version) => `npm install -g apify-cli@${version}`,
 	// TODO: homebrew will move to bundles instead of node+npm, this might break resolving the version, tbd
-	homebrew: 'brew upgrade apify-cli',
-	volta: 'volta install apify-cli@latest',
-	bundle: {
-		darwin: unixCommand,
-		freebsd: unixCommand,
-		linux: unixCommand,
-		win32: windowsCommand,
-	},
+	homebrew: () => `brew upgrade apify-cli`,
+	volta: (version) => `volta install apify-cli@${version}`,
 };
+
+const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '0.28.0';
 
 export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	static override name = 'upgrade' as const;
@@ -35,32 +27,46 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 	static override flags = {
 		force: Flags.boolean({
-			description: 'Force a check for the latest version of the CLI.',
+			description:
+				'Whether to skip checking the locally cached latest version of the CLI and fetch it from the internet instead.',
 			required: false,
 			char: 'f',
+		}),
+		yes: Flags.boolean({
+			description: 'Whether to automatically run the command required to update the CLI.',
+			required: false,
+			char: 'y',
+		}),
+		version: Flags.string({
+			description: 'The version of the CLI to upgrade to. If not provided, the latest version will be used.',
+			required: false,
+			default: 'latest',
 		}),
 	};
 
 	async run() {
-		const result = await useCLIVersionCheck(this.flags.force);
-		const { installMethod } = useCLIMetadata();
-
-		if (!result.shouldUpdate) {
-			info({ message: 'Apify CLI is up to date 👍 \n' });
+		if (this.flags.version) {
+			await this.handleInstallSpecificVersion(this.flags.version);
 			return;
 		}
 
-		// Only for dev users
-		if (result.currentVersion === DEVELOPMENT_VERSION_MARKER) {
-			warning({ message: 'Version checker is running on a development version of the CLI.' });
+		const result = await useCLIVersionCheck(this.flags.force);
+		const { installMethod } = useCLIMetadata();
+
+		if (!result.shouldUpdate || result.currentVersion === DEVELOPMENT_VERSION_MARKER) {
+			if (!result.cacheHit) {
+				info({ message: 'Apify CLI is up to date 👍 \n' });
+			}
+
+			return;
 		}
 
-		let updateCommand = UPDATE_COMMANDS[installMethod];
-
-		// TODO: bundle should ideally self-upgrade, and not require a command run
 		if (installMethod === 'bundle') {
-			updateCommand = UPDATE_COMMANDS.bundle[process.platform] || unixCommand;
+			await this.handleBundleUpgrade();
+			return;
 		}
+
+		const updateCommand = UPDATE_COMMANDS[installMethod](this.flags.version);
 
 		simpleLog({ message: '' });
 
@@ -70,5 +76,22 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		].join('\n');
 
 		warning({ message });
+
+		// TODO: prompt for confirmation and auto-run command if --yes is passed / confirmed by the user
+	}
+
+	async handleInstallSpecificVersion(version: string) {
+		// Technically, we could allow downgrades to older versions, but then users would lose the upgrade command 🤷
+		if (!gte(version, MINIMUM_VERSION_FOR_UPGRADE_COMMAND)) {
+			error({ message: 'The minimum version of the CLI you can manually downgrade/upgrade to is 0.28.0.' });
+
+			return;
+		}
+
+		throw new Error('Not implemented');
+	}
+
+	async handleBundleUpgrade() {
+		throw new Error('Bundles do not support automatic upgrades yet.');
 	}
 }

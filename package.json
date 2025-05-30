@@ -89,7 +89,6 @@
         "indent-string": "^5.0.0",
         "inquirer": "~12.6.0",
         "is-ci": "~4.1.0",
-        "is-online": "~11.0.0",
         "istextorbinary": "~9.5.0",
         "jju": "~1.4.0",
         "lodash.clonedeep": "^4.5.0",

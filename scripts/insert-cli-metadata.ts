@@ -1,3 +1,10 @@
+/*
+CLI metadata (with the hook found in src/lib/hooks/useCLIMetadata.ts) stores constants about the CLI version that is used, for debugging purposes or commands
+like upgrade, that will check if the CLI is up to date.
+
+While we could embed this information in the package.json file, ideally we would not rely on reading from fs for it [or import statements for it]!
+*/
+
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { $ } from 'execa';
