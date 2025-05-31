@@ -19,7 +19,7 @@ jobs:
             fail-fast: false
             matrix:
                 os: [ubuntu-latest, windows-latest]
-                node-version: [18, 20, 22]
+                node-version: [18, 20, 22, 24]
 
         steps:
             - name: Mask secrets
@@ -71,17 +71,17 @@ jobs:
 
             - uses: actions/checkout@v4
 
-            - name: Use Node.js 20
+            - name: Use Node.js 22
               uses: actions/setup-node@v4
               with:
-                  node-version: 20
+                  node-version: 22
 
             - name: Enable corepack
               run: |
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 20
+            - name: Activate cache for Node.js 22
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -108,17 +108,17 @@ jobs:
             - name: Checkout Source code
               uses: actions/checkout@v4
 
-            - name: Use Node.js 20
+            - name: Use Node.js 22
               uses: actions/setup-node@v4
               with:
-                  node-version: 20
+                  node-version: 22
 
             - name: Enable corepack
               run: |
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 20
+            - name: Activate cache for Node.js 22
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -139,17 +139,17 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - name: Use Node.js 20
+            - name: Use Node.js 22
               uses: actions/setup-node@v4
               with:
-                  node-version: 20
+                  node-version: 22
 
             - name: Enable corepack
               run: |
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 20
+            - name: Activate cache for Node.js 22
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -164,22 +164,36 @@ jobs:
               run: yarn format
 
     build_bundles:
-        name: Build Test Bundles
-        runs-on: ubuntu-latest
+        name: Build Test Bundles (${{ matrix.label }})
         needs: [build_and_test]
+
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      label: unix
+                    - os: windows-latest
+                      label: windows-x64
+                    - os: windows-11-arm
+                      label: windows-arm64
+
+        runs-on: ${{ matrix.os }}
 
         steps:
             - uses: actions/checkout@v4
 
-            - name: Use Node.js 20
+            - name: Use Node.js 22
               uses: actions/setup-node@v4
+              with:
+                  node-version: 22
 
             - name: Enable corepack
               run: |
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 20
+            - name: Activate cache for Node.js 22
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -187,15 +201,40 @@ jobs:
             - name: Install Dependencies
               run: yarn
 
-            - uses: oven-sh/setup-bun@v2
+            - name: Install bun
+              uses: oven-sh/setup-bun@v2
+              if: ${{ matrix.os != 'windows-11-arm' }}
               with:
-                  bun-version: latest
+                  bun-version-file: .bun-version
+
+            - name: Install bun (Windows ARM)
+              if: ${{ matrix.os == 'windows-11-arm' }}
+              run: |
+                  $bunVersion = (Get-Content .bun-version).Trim()
+                  irm bun.sh/install.ps1 -OutFile install.ps1
+
+                  # Bun doesn't have Windows ARM64 builds, so the setup-bun action fails. The install script however,
+                  # does "support" it.
+
+                  .\install.ps1 -Version $bunVersion
+
+                  Join-Path (Resolve-Path ~).Path ".bun\bin" >> $env:GITHUB_PATH
+
+            # https://github.com/oven-sh/bun/issues/11198
+            - name: Fix cross-platform building on Actions
+              if: ${{ matrix.os != 'ubuntu-latest' }}
+              run: |
+                  mkdir C:\test
+                  cd C:\test
+                  bun init -y
+                  bun build --compile --target=bun-windows-x64 --outfile test index.ts
+                  bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
 
             - name: Build Bundles
-              run: yarn build-bundles
+              run: yarn insert-cli-metadata && yarn build-bundles
 
             - name: Upload Bundles
               uses: actions/upload-artifact@v4
               with:
-                  name: apify-cli-bundles
-                  path: bundles/apify**
+                  name: apify-cli-bundles-${{ matrix.label }}
+                  path: bundles/**
