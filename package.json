@@ -20,7 +20,7 @@
         "prepack": "yarn insert-cli-metadata && yarn build && yarn update-docs",
         "insert-cli-metadata": "tsx scripts/insert-cli-metadata.ts",
         "update-docs": "tsx scripts/generate-cli-docs.ts",
-        "postinstallDev": "yarn build && node ./dist/entrypoints/apify.js check-version && node ./dist/lib/community.js"
+        "postinstall": "node -e \"console.log('We have an active developer community on Discord. You can find it on https://discord.gg/crawlee-apify-801163717915574323.');\""
     },
     "files": [
         "dist"

@@ -110,8 +110,8 @@ export async function runCLI(entrypoint: string) {
 		...cliMetadata,
 		fullVersionString: cliMetadata.fullVersionString,
 		argv: process.argv,
-		_: process.env._,
 		cwd: process.cwd(),
+		execPath: process.execPath,
 	});
 
 	await cli.parse(process.argv.slice(2), {}, (rawError, parsed) => {

@@ -40,7 +40,6 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		version: Flags.string({
 			description: 'The version of the CLI to upgrade to. If not provided, the latest version will be used.',
 			required: false,
-			default: 'latest',
 		}),
 	};
 
@@ -66,7 +65,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			return;
 		}
 
-		const updateCommand = UPDATE_COMMANDS[installMethod](this.flags.version);
+		const updateCommand = UPDATE_COMMANDS[installMethod](this.flags.version ?? 'latest');
 
 		simpleLog({ message: '' });
 

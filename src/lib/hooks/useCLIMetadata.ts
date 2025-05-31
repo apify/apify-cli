@@ -1,4 +1,5 @@
 import { realpathSync } from 'node:fs';
+import { dirname } from 'node:path';
 
 import { warning } from '../outputs.js';
 
@@ -20,6 +21,10 @@ export interface CLIMetadata {
 	extraRuntimeData: string;
 	installMethod: InstallMethod;
 	fullVersionString: string;
+	/**
+	 * When set, represents the APIFY_CLI_HOME environment variable / $HOME/.apify/bin folder (when installed via bundles).
+	 */
+	installPath?: string;
 }
 
 function detectInstallMethod(): InstallMethod {
@@ -94,6 +99,10 @@ export function useCLIMetadata(): CLIMetadata {
 			return `apify-cli/${this.version} (${this.hash.slice(0, 7)}) running on ${this.platform}-${this.arch} with ${this.runtime}-${runtime.version}${this.extraRuntimeData ? ` ${this.extraRuntimeData}` : ''}, installed via ${this.installMethod}`;
 		},
 	};
+
+	if (installMethod === 'bundle') {
+		cachedMetadata.installPath = dirname(process.execPath);
+	}
 
 	return cachedMetadata;
 }
