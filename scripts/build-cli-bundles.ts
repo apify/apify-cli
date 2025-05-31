@@ -86,6 +86,12 @@ for (const entryPoint of entryPoints) {
 			baseline = 'baseline';
 		}
 
+		// If we are building on Windows ARM64, even though the target is x64, we mark it as "arm64" (there are some weird errors when compiling on x64
+		// and running on arm64). Hopefully bun will get arm64 native builds
+		if (os === 'windows' && process.arch === 'arm64') {
+			arch = 'arm64';
+		}
+
 		const fileName = `${cliName}-${version}-${os}-${arch}${musl ? '-musl' : ''}${baseline ? '-baseline' : ''}`;
 
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));

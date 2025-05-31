@@ -121,21 +121,28 @@ jobs:
                   author_email: noreply@apify.com
                   message: "chore(release): Update changelog and package version [skip ci]"
 
-    create_github_release:
-        name: Create GitHub release
+    build-bundles:
+        name: Build bundles
         needs: [release_metadata, update_changelog]
-        runs-on: ubuntu-latest
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        strategy:
+            fail-fast: false
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      label: unix
+                    - os: windows-latest
+                      label: windows-x64
+                    - os: windows-11-arm
+                      label: windows-arm64
+
+        runs-on: ${{ matrix.os }}
+
         steps:
-            - uses: actions/checkout@v4
+            - name: Checkout repository
+              uses: actions/checkout@v4
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
-
-            - name: Install bun
-              uses: oven-sh/setup-bun@v2
-              with:
-                  bun-version-file: .bun-version
 
             - name: Use Node.js 22
               uses: actions/setup-node@v4
@@ -156,13 +163,64 @@ jobs:
             - name: Install dependencies
               run: yarn
 
-            - name: Insert release metadata
-              run: yarn insert-cli-metadata
+            - name: Install bun
+              uses: oven-sh/setup-bun@v2
+              if: ${{ matrix.os != 'windows-11-arm' }}
+              with:
+                  bun-version-file: .bun-version
 
-            - name: Build CLI bundles
-              run: yarn build-bundles
-              env:
-                  APIFY_FULL_CLI_BUNDLES: true
+            - name: Install bun (Windows ARM)
+              if: ${{ matrix.os == 'windows-11-arm' }}
+              run: |
+                  $bunVersion = (Get-Content .bun-version).Trim()
+                  irm bun.sh/install.ps1 -OutFile install.ps1
+
+                  # Bun doesn't have Windows ARM64 builds, so the setup-bun action fails. The install script however,
+                  # does "support" it.
+
+                  .\install.ps1 -Version $bunVersion
+
+                  Join-Path (Resolve-Path ~).Path ".bun\bin" >> $env:GITHUB_PATH
+
+            # https://github.com/oven-sh/bun/issues/11198
+            - name: Fix cross-platform building on Actions
+              if: ${{ matrix.os != 'ubuntu-latest' }}
+              run: |
+                  mkdir C:\test
+                  cd C:\test
+                  bun init -y
+                  bun build --compile --target=bun-windows-x64 --outfile test index.ts
+                  bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
+
+            - name: Build Bundles
+              run: yarn insert-cli-metadata && yarn build-bundles
+
+            - name: Upload bundles
+              uses: actions/upload-artifact@v4
+              with:
+                  name: apify-cli-bundles-${{ matrix.label }}
+                  path: bundles/**
+
+    create_github_release:
+        name: Create GitHub release
+        needs: [release_metadata, update_changelog, build-bundles]
+        runs-on: ubuntu-latest
+
+        env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        steps:
+            # This step also deals with unzipping the archive from GitHub, so we get a big folder with all the bundles!
+            - name: Download bundles
+              uses: actions/download-artifact@v4
+              with:
+                  pattern: apify-cli-bundles-*
+                  merge-multiple: true
+                  path: bundles
+
+            - name: List bundles
+              run: |
+                  ls -la bundles
 
             - name: Create release
               uses: softprops/action-gh-release@v2
