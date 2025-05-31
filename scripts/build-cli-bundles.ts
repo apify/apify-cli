@@ -88,8 +88,12 @@ for (const entryPoint of entryPoints) {
 
 		// If we are building on Windows ARM64, even though the target is x64, we mark it as "arm64" (there are some weird errors when compiling on x64
 		// and running on arm64). Hopefully bun will get arm64 native builds
-		if (os === 'windows' && process.arch === 'arm64') {
-			arch = 'arm64';
+		if (os === 'windows' && process.platform === 'win32') {
+			const systemType = await $`pwsh -c "(Get-CimInstance Win32_ComputerSystem).SystemType"`.text();
+
+			if (systemType.toLowerCase().includes('arm')) {
+				arch = 'arm64';
+			}
 		}
 
 		const fileName = `${cliName}-${version}-${os}-${arch}${musl ? '-musl' : ''}${baseline ? '-baseline' : ''}`;
