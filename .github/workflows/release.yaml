@@ -234,7 +234,7 @@ jobs:
 
     publish_to_npm:
         name: Publish to NPM
-        needs: [update_changelog]
+        needs: [update_changelog, create_github_release]
         runs-on: ubuntu-latest
         permissions:
             contents: write
@@ -273,11 +273,11 @@ jobs:
               run: |
                   yarn npm publish --provenance --access public --tag beta
               env:
-                  NODE_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+                  YARN_NPM_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
 
     update_homebrew_formula:
         name: Update Homebrew Formula
-        needs: [update_changelog, create_github_release, publish_to_npm]
+        needs: [update_changelog, publish_to_npm]
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
