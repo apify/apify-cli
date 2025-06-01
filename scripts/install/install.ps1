@@ -8,12 +8,19 @@ param(
 # The following script is adapted from the bun.sh install script
 # Licensed under the MIT License (https://github.com/oven-sh/bun/blob/main/LICENSE.md)
 
-# filter out 32 bit + ARM
-# TODO: Remove this once Bun supports ARM
-if (-not (((Get-CimInstance Win32_ComputerSystem)).SystemType -match "x64-based")) {
+$allowedSystemTypes = @("x64-based", "ARM64-based")
+$currentSystemType = (Get-CimInstance Win32_ComputerSystem).SystemType
+
+# filter out 32 bit
+if (-not ($allowedSystemTypes | Where-Object { $currentSystemType -match $_ })) {
     Write-Output "Install Failed:"
-    Write-Output "Apify CLI for Windows is currently only available for x86 64-bit Windows.`n"
+    Write-Output "Apify CLI for Windows is currently only available for 64-bit Windows and ARM64 Windows.`n"
     return 1
+}
+
+if ($currentSystemType -match "ARM64") {
+    Write-Warning "Warning:"
+    Write-Warning "ARM64-based systems are not natively supported yet.`nThe install will still continue but Apify CLI might not work as intended.`n"
 }
 
 # This corresponds to .win10_rs5 in build.zig
@@ -22,7 +29,7 @@ $MinBuildName = "Windows 10 1809 / Windows Server 2019"
 
 $WinVer = [System.Environment]::OSVersion.Version
 if ($WinVer.Major -lt 10 -or ($WinVer.Major -eq 10 -and $WinVer.Build -lt $MinBuild)) {
-    Write-Warning "Apify CLI requires at ${MinBuildName} or newer.`n`nThe install will still continue but it may not work.`n"
+    Write-Warning "Apify CLI requires at least ${MinBuildName} or newer.`n"
     return 1
 }
 
@@ -105,8 +112,9 @@ function Install-Apify {
         return 1
     }
 
-    $Arch = "x64"
+    $Arch = if ($currentSystemType -match "ARM64") { "arm64" } else { "x64" }
     $IsBaseline = $ForceBaseline
+
     if (-not $IsBaseline) {
         $IsBaseline = !(
             Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern bool IsProcessorFeaturePresent(int ProcessorFeature);' -Name 'Kernel32' -Namespace 'Win32' -PassThru
