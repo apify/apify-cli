@@ -4,6 +4,7 @@ import { readFile, rm, writeFile } from 'node:fs/promises';
 import { AfterAll, Given, setDefaultTimeout } from '@cucumber/cucumber';
 import { ApifyClient } from 'apify-client';
 
+import { getApifyClientOptions } from '../../src/lib/utils.js';
 import {
 	assertWorldIsLoggedIn,
 	assertWorldIsValid,
@@ -12,7 +13,6 @@ import {
 	TestTmpRoot,
 	type TestWorld,
 } from './0.world';
-import { getApifyClientOptions } from '../../src/lib/utils';
 
 setDefaultTimeout(20_000);
 
@@ -230,7 +230,6 @@ Given<TestWorld>(/the local actor is pushed to the Apify platform/i, { timeout: 
 	const extraEnv: Record<string, string> = {};
 
 	if (this.authStatePath) {
-		// eslint-disable-next-line no-underscore-dangle
 		extraEnv.__APIFY_INTERNAL_TEST_AUTH_PATH__ = this.authStatePath;
 	}
 
