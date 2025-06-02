@@ -1,5 +1,11 @@
 import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.js';
 import { ActorIndexCommand } from './actor/_index.js';
+import { ActorChargeCommand } from './actor/charge.js';
+import { ActorGetInputCommand } from './actor/get-input.js';
+import { ActorGetPublicUrlCommand } from './actor/get-public-url.js';
+import { ActorGetValueCommand } from './actor/get-value.js';
+import { ActorPushDataCommand } from './actor/push-data.js';
+import { ActorSetValueCommand } from './actor/set-value.js';
 import { ActorsIndexCommand } from './actors/_index.js';
 import { BuildsIndexCommand } from './builds/_index.js';
 import { TopLevelCallCommand } from './call.js';
@@ -7,6 +13,7 @@ import { CheckVersionCommand } from './check-version.js';
 import { CreateCommand } from './create.js';
 import { DatasetsIndexCommand } from './datasets/_index.js';
 import { EditInputSchemaCommand } from './edit-input-schema.js';
+import { HelpCommand } from './help.js';
 import { InfoCommand } from './info.js';
 import { InitCommand } from './init.js';
 import { WrapScrapyCommand } from './init-wrap-scrapy.js';
@@ -47,8 +54,16 @@ export const apifyCommands = [
 	ToplevelPushCommand,
 	RunCommand,
 	ValidateInputSchemaCommand,
+	HelpCommand,
 ] as const satisfies (typeof BuiltApifyCommand)[];
 
-export const actorCommands: (typeof BuiltApifyCommand)[] = [
+export const actorCommands = [
 	//
-];
+	ActorSetValueCommand,
+	ActorPushDataCommand,
+	ActorGetValueCommand,
+	ActorGetPublicUrlCommand,
+	ActorGetInputCommand,
+	ActorChargeCommand,
+	HelpCommand,
+] as const satisfies (typeof BuiltApifyCommand)[];

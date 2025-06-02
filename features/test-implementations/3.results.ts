@@ -77,7 +77,6 @@ Then<TestWorld>(/i don't see any node\.js exception/i, function () {
 });
 
 Then<TestWorld>(/i can read text on stderr/i, function (expectedStdout: string) {
-	assertWorldIsValid(this);
 	assertWorldHasRanCommand(this);
 
 	if (typeof expectedStdout !== 'string') {
@@ -87,9 +86,16 @@ Then<TestWorld>(/i can read text on stderr/i, function (expectedStdout: string) 
 	}
 
 	const lowercasedResult = this.testResults.stderr.toLowerCase();
-	const lowercasedExpected = replaceMatchersInString(expectedStdout, {
-		testActorName: this.testActor.name,
-	}).toLowerCase();
+
+	let lowercasedExpected = expectedStdout;
+
+	if (this.testActor) {
+		lowercasedExpected = replaceMatchersInString(lowercasedExpected, {
+			testActorName: this.testActor.name,
+		});
+	}
+
+	lowercasedExpected = lowercasedExpected.toLowerCase();
 
 	strictEqual(
 		lowercasedResult.includes(lowercasedExpected),
@@ -99,7 +105,6 @@ Then<TestWorld>(/i can read text on stderr/i, function (expectedStdout: string) 
 });
 
 Then<TestWorld>(/i can read text on stdout/i, function (expectedStdout: string) {
-	assertWorldIsValid(this);
 	assertWorldHasRanCommand(this);
 
 	if (typeof expectedStdout !== 'string') {
@@ -109,9 +114,16 @@ Then<TestWorld>(/i can read text on stdout/i, function (expectedStdout: string) 
 	}
 
 	const lowercasedResult = this.testResults.stdout.toLowerCase();
-	const lowercasedExpected = replaceMatchersInString(expectedStdout, {
-		testActorName: this.testActor.name,
-	}).toLowerCase();
+
+	let lowercasedExpected = expectedStdout;
+
+	if (this.testActor) {
+		lowercasedExpected = replaceMatchersInString(lowercasedExpected, {
+			testActorName: this.testActor.name,
+		});
+	}
+
+	lowercasedExpected = lowercasedExpected.toLowerCase();
 
 	strictEqual(
 		lowercasedResult.includes(lowercasedExpected),

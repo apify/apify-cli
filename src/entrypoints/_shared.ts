@@ -171,7 +171,18 @@ export async function runCLI(entrypoint: string) {
 
 				case 'UNKNOWN_ARGUMENT_INPUT':
 				case 'UNKNOWN_ARGUMENTS_INPUT': {
-					const nonexistentType = commandFlags.length ? 'flag' : 'subcommand';
+					const nonexistentType = (() => {
+						if (commandFlags.length) {
+							return 'flag';
+						}
+
+						if (command.subcommands?.length) {
+							return 'subcommand';
+						}
+
+						return 'argument';
+					})();
+
 					const nonexistentRepresentation = (() => {
 						// Rudimentary as heck, we cannot infer if the flag is provided as `-f` or `-ff` or `--flag`, etc.
 						if (nonexistentType === 'flag') {
