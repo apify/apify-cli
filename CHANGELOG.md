@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 
 - Pretty message for invalid choices ([#805](https://github.com/apify/apify-cli/pull/805)) ([57bd5de](https://github.com/apify/apify-cli/commit/57bd5de9bc5289f151a9083533dc3d2c71f8b9ab)) by [@vladfrangu](https://github.com/vladfrangu)
 - Shebangs ([#806](https://github.com/apify/apify-cli/pull/806)) ([1cdc101](https://github.com/apify/apify-cli/commit/1cdc1011f36974708ab91a25d4d6c6a5dc43d989)) by [@vladfrangu](https://github.com/vladfrangu)
+- Recognize sh files as text files ([#813](https://github.com/apify/apify-cli/pull/813)) ([ef3e9b0](https://github.com/apify/apify-cli/commit/ef3e9b064483c04cd7bef2143a19e1a6992ddcff)) by [@DaveHanns](https://github.com/DaveHanns)
 
 <!-- git-cliff-unreleased-end -->
 
