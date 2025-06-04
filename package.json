@@ -107,7 +107,7 @@
         "widest-line": "^5.0.0",
         "wrap-ansi": "^9.0.0",
         "yargonaut": "^1.1.4",
-        "yargs": "^17.7.2"
+        "yargs": "^18.0.0"
     },
     "devDependencies": {
         "@apify/eslint-config": "^1.0.0",
