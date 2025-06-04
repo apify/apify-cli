@@ -143,6 +143,7 @@ jobs:
               uses: actions/checkout@v4
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
+                  fetch-depth: 0
 
             - name: Use Node.js 22
               uses: actions/setup-node@v4
