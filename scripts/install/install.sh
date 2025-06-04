@@ -190,8 +190,6 @@ for executable_name in "${executable_names[@]}"; do
     fi
 done
 
-success "Apify CLI was installed successfully"
-
 tildify() {
     if [[ $1 = $HOME/* ]]; then
         local replacement=\~/
@@ -202,8 +200,11 @@ tildify() {
     fi
 }
 
+success "Apify CLI was installed successfully to $Bold_Green$(tildify "$bin_dir/apify")"
+success "Actor CLI was installed successfully to $Bold_Green$(tildify "$bin_dir/actor")"
+
 if command -v apify >/dev/null; then
-    success "Run 'apify' to get started"
+    success "Run 'apify --help' to get started"
     exit
 fi
 
@@ -342,3 +343,4 @@ if [[ $refresh_command ]]; then
 fi
 
 info_bold "  apify --help"
+echo
