@@ -192,6 +192,9 @@ jobs:
                   bun build --compile --target=bun-windows-x64 --outfile test index.ts
                   bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
 
+            - name: Set version
+              run: yarn version ${{ needs.release_metadata.outputs.version_number }}
+
             - name: Build Bundles
               run: yarn insert-cli-metadata && yarn build-bundles
 

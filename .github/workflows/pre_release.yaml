@@ -169,9 +169,8 @@ jobs:
                   bun build --compile --target=bun-windows-x64 --outfile test index.ts
                   bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
 
-            # Check version consistency and increment pre-release version number for beta only.
-            - name: Bump pre-release version
-              run: yarn tsx ./.github/scripts/before-beta-release.ts
+            - name: Set pre-release version
+              run: yarn version ${{ needs.update_changelog.outputs.pre_release_version }}
 
             - name: Build Bundles
               run: yarn insert-cli-metadata && yarn build-bundles
