@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ## 0.21.8 - **not yet released**
 
+### 🚀 Features
+
+- Upgrade command, install shell script ([#810](https://github.com/apify/apify-cli/pull/810)) ([51ef00a](https://github.com/apify/apify-cli/commit/51ef00ad32a6835c48781b99c6233113cf58d8a4)) by [@vladfrangu](https://github.com/vladfrangu)
+
 ### 🐛 Bug Fixes
 
 - Pretty message for invalid choices ([#805](https://github.com/apify/apify-cli/pull/805)) ([57bd5de](https://github.com/apify/apify-cli/commit/57bd5de9bc5289f151a9083533dc3d2c71f8b9ab)) by [@vladfrangu](https://github.com/vladfrangu)
