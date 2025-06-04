@@ -9,7 +9,6 @@ import { ActorSetValueCommand } from './actor/set-value.js';
 import { ActorsIndexCommand } from './actors/_index.js';
 import { BuildsIndexCommand } from './builds/_index.js';
 import { TopLevelCallCommand } from './call.js';
-import { CheckVersionCommand } from './check-version.js';
 import { CreateCommand } from './create.js';
 import { DatasetsIndexCommand } from './datasets/_index.js';
 import { EditInputSchemaCommand } from './edit-input-schema.js';
@@ -27,6 +26,7 @@ import { RunCommand } from './run.js';
 import { RunsIndexCommand } from './runs/_index.js';
 import { SecretsIndexCommand } from './secrets/_index.js';
 import { TasksIndexCommand } from './task/_index.js';
+import { UpgradeCommand } from './upgrade.js';
 import { ValidateInputSchemaCommand } from './validate-schema.js';
 
 export const apifyCommands = [
@@ -42,7 +42,7 @@ export const apifyCommands = [
 	TasksIndexCommand,
 	// top-level
 	TopLevelCallCommand,
-	CheckVersionCommand,
+	UpgradeCommand,
 	CreateCommand,
 	EditInputSchemaCommand,
 	InfoCommand,

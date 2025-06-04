@@ -1,58 +1,11 @@
 import { once } from 'node:events';
-import { constants, fstat as fstat_ } from 'node:fs';
-import process from 'node:process';
-import { promisify } from 'node:util';
 
-const fstat = promisify(fstat_);
+import { useStdin } from '../hooks/useStdin.js';
 
-export async function readStdin(stdinStream: typeof process.stdin = process.stdin) {
-	// The best showcase of what this does: https://stackoverflow.com/a/59024214
-	const pipedIn = await fstat(0)
-		.then((stat) => {
-			if (process.env.STDIN_DEBUG) {
-				console.error({
-					stat,
-					isRegularFile: stat.isFile(),
-					isDirectory: stat.isDirectory(),
-					isBlockDevice: stat.isBlockDevice(),
-					isCharDevice: stat.isCharacterDevice(),
-					isSymbolicLink: stat.isSymbolicLink(),
-					isFIFO: stat.isFIFO(),
-					isSocket: stat.isSocket(),
-				});
-			}
+export async function readStdin() {
+	const { hasData, waitDelay, stream } = await useStdin();
 
-			// Right now, Windows always returns false for isFIFO, so we have to check for that manually
-			// Windows might also wrongly return the mode for this, who knows!
-			// TODO: https://github.com/nodejs/node/issues/57603
-			if (process.platform === 'win32') {
-				// eslint-disable-next-line no-bitwise
-				if ((stat.mode & constants.S_IFIFO) === constants.S_IFIFO) {
-					return 100;
-				}
-
-				// In node 18, for some reason this returns true for vitest, and thus always hangs.
-				if (stat.isFile()) {
-					return 50;
-				}
-			}
-
-			// isFIFO -> `node a | node b`
-			// isFile -> `node a < file`
-			// isSocket -> child processes (I think) [but we set a timeout of 50ms to avoid hanging]
-			return stat.isFIFO() || stat.isFile() || (stat.isSocket() ? 50 : false);
-		})
-		.catch(() => false);
-
-	if (process.env.STDIN_DEBUG) {
-		console.error({ isTTY: stdinStream.isTTY, pipedIn, readableEnd: stdinStream.readableEnded });
-	}
-
-	// The isTTY params will be true if there is no piping into stdin
-	// pipedIn is set if someone either runs `node a | node b`, or `node a < file`
-	// if that is the case, isTTY will be undefined (???)
-	// readableEnded is a catch all for when the stream is closed
-	if (stdinStream.isTTY || (!pipedIn && (stdinStream.isTTY === undefined || stdinStream.readableEnded))) {
+	if (!hasData) {
 		return;
 	}
 
@@ -62,13 +15,13 @@ export async function readStdin(stdinStream: typeof process.stdin = process.stdi
 
 	let timeout: NodeJS.Timeout | null = null;
 
-	if (typeof pipedIn === 'number') {
+	if (waitDelay) {
 		timeout = setTimeout(() => {
 			controller.abort();
-		}, pipedIn).unref();
+		}, waitDelay).unref();
 	}
 
-	stdinStream.on('data', (chunk) => {
+	stream.on('data', (chunk) => {
 		bufferChunks.push(chunk);
 
 		// If we got some data already, we can clear the timeout, as we will get more
@@ -79,7 +32,7 @@ export async function readStdin(stdinStream: typeof process.stdin = process.stdi
 	});
 
 	try {
-		await once(stdinStream, 'end', { signal: controller.signal });
+		await once(stream, 'end', { signal: controller.signal });
 	} catch (error) {
 		const casted = error as Error;
 

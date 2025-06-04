@@ -38,7 +38,6 @@ import {
 	DEFAULT_LOCAL_STORAGE_DIR,
 	GLOBAL_CONFIGS_FOLDER,
 	INPUT_FILE_REG_EXP,
-	type Language,
 	LOCAL_CONFIG_PATH,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
@@ -481,11 +480,6 @@ export const isNodeVersionSupported = (installedNodeVersion: string) => {
 	const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION)!;
 	return gte(installedNodeVersion, minimumSupportedNodeVersion);
 };
-
-export interface ActorLanguage {
-	language: Language;
-	languageVersion?: string;
-}
 
 export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: string }) => {
 	const zipStream = await httpsGet(url);
