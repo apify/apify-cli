@@ -107,7 +107,7 @@ function Install-Apify {
         [bool]$ForceBaseline = $False
     );
 
-    if (-not ($Version -match "^\d+\.\d+\.\d+$") -and -not ($Version = 'latest')) {
+    if (-not ($Version -match "^v?\d+\.\d+\.\d+(-beta\.\d+)?$") -and -not ($Version = 'latest')) {
         Write-Error "Invalid version: $Version"
         return 1
     }
@@ -157,8 +157,11 @@ function Install-Apify {
     if ($Version -eq "latest") {
         $Version = Get-LatestVersion
     }
+    elseif ($Version -match "^v?\d+\.\d+\.\d+(-beta\.\d+)?$") {
+        $Version = $Version.TrimStart('v')
+    }
 
-    $BaseURL += "${Version}/"
+    $BaseURL += "v${Version}/"
 
     $null = mkdir -Force $ApifyBin
 

@@ -145,6 +145,14 @@ if [[ $# = 0 || $1 = "latest" ]]; then
     version=$(fetch_latest_version)
 else
     version=$1
+
+    # Validate version format
+    if [[ ! $version =~ ^v?[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$ ]]; then
+        error "Invalid version format: $version. Expected format: x.y.z or x.y.z-beta.n (with optional 'v' prefix)"
+    fi
+
+    # Trim 'v' prefix if present
+    version=${version#v}
 fi
 
 # Function to construct download URL
@@ -152,7 +160,7 @@ construct_download_url() {
     local cli_name="$1"
     local edition="$2"
 
-    echo "https://github.com/apify/apify-cli/releases/download/${version}/${cli_name}-${version}-${edition}"
+    echo "https://github.com/apify/apify-cli/releases/download/v${version}/${cli_name}-${version}-${edition}"
 }
 
 install_env=APIFY_CLI_INSTALL

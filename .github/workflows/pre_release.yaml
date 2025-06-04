@@ -206,7 +206,7 @@ jobs:
             - name: Create release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ needs.update_changelog.outputs.pre_release_version }}
+                  tag_name: v${{ needs.update_changelog.outputs.pre_release_version }}
                   name: ${{ needs.update_changelog.outputs.pre_release_version }}
                   target_commitish: ${{ needs.update_changelog.outputs.changelog_commitish }}
                   body: ${{ needs.release_metadata.outputs.release_notes }}
