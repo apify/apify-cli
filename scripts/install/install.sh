@@ -339,8 +339,10 @@ info "To get started, run:"
 echo
 
 if [[ $refresh_command ]]; then
-    info_bold "  $refresh_command"
+    info_bold "  $refresh_command $(info "(if the shell is not automatically refreshed)")"
 fi
 
 info_bold "  apify --help"
 echo
+
+exec $refresh_command
