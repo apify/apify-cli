@@ -345,4 +345,5 @@ fi
 info_bold "  apify --help"
 echo
 
-sh -c $refresh_command
+# Not ideal but its the only way to refresh the shell (this also means if you type exit / CTRL+D, you'll need to do it twice)
+exec $SHELL
