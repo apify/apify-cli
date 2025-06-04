@@ -345,4 +345,4 @@ fi
 info_bold "  apify --help"
 echo
 
-exec $refresh_command
+sh -c $refresh_command
