@@ -209,7 +209,6 @@ jobs:
                   tag_name: v${{ needs.update_changelog.outputs.pre_release_version }}
                   name: ${{ needs.update_changelog.outputs.pre_release_version }}
                   target_commitish: ${{ needs.update_changelog.outputs.changelog_commitish }}
-                  body: ${{ needs.release_metadata.outputs.release_notes }}
                   prerelease: true
                   files: |
                       bundles/*
