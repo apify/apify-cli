@@ -1,6 +1,8 @@
+// eslint-disable-next-line import/extensions
 import { defineConfig } from 'vitest/config';
 
 const isWindows = process.platform === 'win32';
+const multiplierFactor = isWindows ? 4 : 1;
 
 export default defineConfig({
 	esbuild: {
@@ -10,8 +12,8 @@ export default defineConfig({
 	test: {
 		globals: true,
 		restoreMocks: true,
-		testTimeout: 60_000 * (isWindows ? 2 : 1),
-		hookTimeout: 60_000 * (isWindows ? 2 : 1),
+		testTimeout: 60_000 * multiplierFactor,
+		hookTimeout: 60_000 * multiplierFactor,
 		include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)'],
 		passWithNoTests: true,
 		silent: !process.env.NO_SILENT_TESTS,
