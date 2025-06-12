@@ -5,7 +5,7 @@ import { commandRegistry } from '../command-framework/apify-command.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 
 export function useCommandSuggestions(inputString: string) {
-	const allCommands = [...commandRegistry.entries()];
+	const allCommands = [...commandRegistry.entries()].sort(([a], [b]) => a.localeCompare(b));
 
 	const lowercasedCommandString = inputString.toLowerCase();
 
@@ -32,15 +32,17 @@ export function useCommandSuggestions(inputString: string) {
 				});
 
 				if (!isAlias) {
-					return `${lowercased}`;
+					return { string: `${lowercased}`, distance: jaroWinklerDistance };
 				}
 
-				return `${lowercased} (alias for ${cmdClass.name})`;
+				return { string: `${lowercased} (alias for ${cmdClass.name})`, distance: jaroWinklerDistance };
 			}
 
 			return null;
 		})
-		.filter((item) => item !== null);
+		.filter((item) => item !== null)
+		.sort((a, b) => b.distance - a.distance)
+		.map((item) => item.string);
 
 	return closestMatches;
 }
