@@ -237,7 +237,7 @@ export async function runCLI(entrypoint: string) {
 						chalk.gray(`Nonexistent ${nonexistentType}: ${chalk.whiteBright(nonexistentRepresentation)}`),
 					];
 
-					if (closestMatches.length) {
+					if (closestMatches.length && nonexistentType === 'subcommand') {
 						messageParts.push(
 							chalk.gray(
 								`  Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`,
