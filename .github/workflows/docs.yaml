@@ -58,7 +58,7 @@ jobs:
                   APIFY_SIGNING_TOKEN: ${{ secrets.APIFY_SIGNING_TOKEN }}
 
             - name: Commit the updated package(-lock).json
-              uses: stefanzweifel/git-auto-commit-action@v5
+              uses: stefanzweifel/git-auto-commit-action@v6
               with:
                   commit_message: "chore: Automatic theme updating workflow [skip ci]"
                   file_pattern: "website/package*.json website/yarn.lock"
