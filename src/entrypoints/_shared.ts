@@ -1,7 +1,6 @@
 import process from 'node:process';
 
 import chalk from 'chalk';
-import yargonaut from 'yargonaut';
 // eslint-disable-next-line import/extensions
 import yargs from 'yargs/yargs';
 
@@ -21,12 +20,6 @@ import { error } from '../lib/outputs.js';
 import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
 
 export const cachedStdinInput = await readStdin();
-
-yargonaut //
-	.style('blue')
-	.style('yellow', 'required')
-	.helpStyle('green')
-	.errorsStyle('red');
 
 export const cli = yargs()
 	.version(false)

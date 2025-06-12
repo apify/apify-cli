@@ -66,4 +66,5 @@ export const actorCommands = [
 	ActorGetInputCommand,
 	ActorChargeCommand,
 	HelpCommand,
+	UpgradeCommand,
 ] as const satisfies (typeof BuiltApifyCommand)[];
