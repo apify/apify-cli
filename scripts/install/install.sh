@@ -217,18 +217,18 @@ if [[ $quoted_install_dir = \"$HOME/* ]]; then
     quoted_install_dir=${quoted_install_dir/$HOME\//\$HOME/}
 fi
 
-if [[ -d /usr/local/bin ]]; then
+if [[ -d $HOME/.local/bin ]]; then
     # First, remove the symlinks if they exist
-    rm -f /usr/local/bin/apify
-    rm -f /usr/local/bin/actor
-    rm -f /usr/local/bin/apify-cli
+    rm -f $HOME/.local/bin/apify
+    rm -f $HOME/.local/bin/actor
+    rm -f $HOME/.local/bin/apify-cli
 
     # Symlink the three executables to /usr/local/bin
-    ln -s "$bin_dir/apify" /usr/local/bin/apify
-    ln -s "$bin_dir/actor" /usr/local/bin/actor
-    ln -s "$bin_dir/apify-cli" /usr/local/bin/apify-cli
+    ln -s "$bin_dir/apify" $HOME/.local/bin/apify
+    ln -s "$bin_dir/actor" $HOME/.local/bin/actor
+    ln -s "$bin_dir/apify-cli" $HOME/.local/bin/apify-cli
 
-    info "Symlinked apify, actor, and apify-cli to /usr/local/bin"
+    info "Symlinked apify, actor, and apify-cli to $HOME/.local/bin"
 fi
 
 echo
