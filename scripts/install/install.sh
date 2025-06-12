@@ -217,6 +217,20 @@ if [[ $quoted_install_dir = \"$HOME/* ]]; then
     quoted_install_dir=${quoted_install_dir/$HOME\//\$HOME/}
 fi
 
+if [[ -d $HOME/.local/bin ]]; then
+    # First, remove the symlinks if they exist
+    rm -f $HOME/.local/bin/apify
+    rm -f $HOME/.local/bin/actor
+    rm -f $HOME/.local/bin/apify-cli
+
+    # Symlink the three executables to /usr/local/bin
+    ln -s "$bin_dir/apify" $HOME/.local/bin/apify
+    ln -s "$bin_dir/actor" $HOME/.local/bin/actor
+    ln -s "$bin_dir/apify-cli" $HOME/.local/bin/apify-cli
+
+    info "Symlinked apify, actor, and apify-cli to $HOME/.local/bin"
+fi
+
 echo
 
 case $(basename "$SHELL") in
@@ -344,6 +358,3 @@ fi
 
 info_bold "  apify --help"
 echo
-
-# Not ideal but its the only way to refresh the shell (this also means if you type exit / CTRL+D, you'll need to do it twice)
-sh -c $SHELL
