@@ -178,21 +178,20 @@ DESCRIPTION
   NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.
 
 USAGE
-  $ apify run [--entrypoint <value>] [-i <value> | --input-file <value>] [-p] [--purge-dataset] [--purge-key-value-store] [--purge-queue]
+  $ apify run [--entrypoint <value>] [-i <value> | --input-file <value>] [-p | --resurrect]
 
 FLAGS
-      --entrypoint=<value>     Optional entrypoint for running with injected environment variables.
-                               For Python, it is the module name, or a path to a file.
-                               For node.js, it is the npm script name, or a path to a JS/MJS file. You can also pass in a directory name, provided that
-                               directory contains an "index.js" file.
-  -i, --input=<value>          Optional JSON input to be given to the Actor.
-      --input-file=<value>     Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON
-                               file. You can also specify `-` to read from standard input.
-  -p, --purge                  Shortcut that combines the --purge-queue, --purge-dataset and --purge-key-value-store options.
-      --purge-dataset          Deletes the local directory containing the default dataset before the run starts.
-      --purge-key-value-store  Deletes all records from the default key-value store in the local directory before the run starts,
-                               except for the "INPUT" key.
-      --purge-queue            Deletes the local directory containing the default request queue before the run starts.
+      --entrypoint=<value>  Optional entrypoint for running with injected environment variables.
+                            For Python, it is the module name, or a path to a file.
+                            For Node.js, it is the npm script name, or a path to a JS/MJS file. You can also pass in a directory name, provided that
+                            directory contains an "index.js" file.
+  -i, --input=<value>       Optional JSON input to be given to the Actor.
+      --input-file=<value>  Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file.
+                            You can also specify `-` to read from standard input.
+  -p, --purge               Whether to purge the default request queue, dataset and key-value store before the run starts.
+                            For crawlee projects, this is the default behavior, and the flag is optional.
+                            Use `--no-purge` to keep the storage folder intact.
+      --resurrect           Whether to keep the default request queue, dataset and key-value store before the run starts.
 ```
 
 ##### `apify validate-schema`
