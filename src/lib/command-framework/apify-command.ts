@@ -312,6 +312,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 					});
 
 					return;
+				} else if (typeof builderData.hasDefault !== 'undefined') {
+					this.flags[camelCasedName] = builderData.hasDefault;
 				}
 			}
 		}
@@ -452,7 +454,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 					// yargs handles "no-" flags by negating the flag, so we need to handle that differently if we register a flag with a "no-" prefix
 					if (flagKey.startsWith('no-')) {
-						finalYargs = internalBuilderData.builder(finalYargs, flagKey.slice(3), [], true);
+						finalYargs = internalBuilderData.builder(finalYargs, flagKey.slice(3));
 					} else {
 						finalYargs = internalBuilderData.builder(finalYargs, flagKey);
 					}
