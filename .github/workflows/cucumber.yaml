@@ -16,7 +16,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-11-arm]
+                os: [ubuntu-latest, windows-2025]
                 # We only test LTS for now
                 node-version: [22]
 

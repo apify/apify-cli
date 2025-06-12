@@ -18,7 +18,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-11-arm]
+                os: [ubuntu-latest, windows-2025]
                 node-version: [18, 20, 22, 24]
 
         steps:
@@ -60,7 +60,7 @@ jobs:
         strategy:
             fail-fast: false
             matrix:
-                os: [ubuntu-latest, windows-11-arm]
+                os: [ubuntu-latest, windows-2025]
                 python-version: ["3.9", "3.10", "3.11", "3.12"]
         runs-on: ${{ matrix.os }}
 
