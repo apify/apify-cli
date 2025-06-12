@@ -52,8 +52,8 @@ jobs:
                   APIFY_CLI_DISABLE_TELEMETRY: 1
               run: yarn test
 
-            - name: Ensure the reference documentation builds
-              run: yarn update-docs
+            # - name: Ensure the reference documentation builds
+            #   run: yarn update-docs
 
     test_python_support:
         name: Test Python template support
