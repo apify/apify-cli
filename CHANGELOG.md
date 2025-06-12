@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - Upgrade command, install shell script ([#810](https://github.com/apify/apify-cli/pull/810)) ([51ef00a](https://github.com/apify/apify-cli/commit/51ef00ad32a6835c48781b99c6233113cf58d8a4)) by [@vladfrangu](https://github.com/vladfrangu)
+- [**breaking**] Make storage purging default, add `--resurrect` ([#729](https://github.com/apify/apify-cli/pull/729)) ([8dff93a](https://github.com/apify/apify-cli/commit/8dff93a2d769997a96d4a7750fb36c2770b9a61c)) by [@vladfrangu](https://github.com/vladfrangu), closes [#590](https://github.com/apify/apify-cli/issues/590)
 
 ### 🐛 Bug Fixes
 
