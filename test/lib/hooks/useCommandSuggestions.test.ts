@@ -80,10 +80,11 @@ describe('useCommandSuggestions', () => {
 	test.each([
 		['hlp', 'help'],
 		['kv', 'kvs (alias for key-value-stores)', 'cv (alias for upgrade)'],
+		['key-value-stor', 'key-value-stores'],
 		// assert order based on distance
 		['kvs get-values', 'kvs get-value', 'kvs set-value'],
 		['kvs set-values', 'kvs set-value', 'kvs get-value'],
-	])('should return the correct command suggestions for %s', (input, ...expected) => {
+	])('command suggestions for %s', (input, ...expected) => {
 		const suggestions = useCommandSuggestions(input);
 
 		expect(suggestions).toEqual(expected);
