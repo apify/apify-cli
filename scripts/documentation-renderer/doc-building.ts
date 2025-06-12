@@ -6,7 +6,7 @@ import {
 	registerCommandForHelpGeneration,
 	selectiveRenderHelpForCommand,
 } from '../../src/lib/command-framework/help.js';
-import type { BaseCommandRenderer } from '../../src/lib/command-framework/help/_BaseCommandRenderer';
+import type { BaseCommandRenderer } from '../../src/lib/command-framework/help/_BaseCommandRenderer.js';
 import { Commands } from './commands.js';
 
 export interface CommandsInCategory extends Partial<Parameters<BaseCommandRenderer['selectiveRender']>[0]> {
