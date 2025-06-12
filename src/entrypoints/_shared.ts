@@ -238,10 +238,23 @@ export async function runCLI(entrypoint: string) {
 						return errorMessageSplit[1];
 					})();
 
+					const closestMatches = useCommandSuggestions(`${parsed._[0]} ${errorMessageSplit[1]}`);
+
+					const messageParts = [
+						chalk.gray(`Nonexistent ${nonexistentType}: ${chalk.whiteBright(nonexistentRepresentation)}`),
+					];
+
+					if (closestMatches.length) {
+						messageParts.push(
+							chalk.gray(
+								`  Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`,
+							),
+						);
+					}
+
 					error({
 						message: [
-							`Nonexistent ${nonexistentType}: ${nonexistentRepresentation}`,
-							`  ${chalk.red('>')}  See more help with --help`,
+							...messageParts,
 							'',
 							selectiveRenderHelpForCommand(command, {
 								showUsageString: true,
