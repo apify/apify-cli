@@ -1,0 +1,26 @@
+---
+description: Bootstraps a new CLI command
+globs:
+alwaysApply: false
+---
+Always prompt for a name if one is not given to you. The name must be lowercased, and use dashes for separators, NOT spaces, NOT underscores.
+
+Our base class for a command is in [apify-command.ts](mdc:src/lib/command-framework/apify-command.ts), import the `ApifyCommand` class, NOT the `BuiltApifyCommand` class
+Arguments are imported from [args.ts](mdc:src/lib/command-framework/args.ts), by importing the `Args` constant. Always use the variables from there, example: `Args.string()`.
+Flags are imported from [flags.ts](mdc:src/lib/command-framework/flags.ts), by importing the `Flags` constant. Always use the variables from there, example: `Flags.string()`.
+
+Example class for a command called `wow`:
+
+```ts
+export class WowCommand extends ApifyCommand<typeof WowCommand> {
+    static override name = 'wow' as const;
+
+    async run() {
+        // Command logic here
+    }
+}
+```
+
+Look at [validate-schema.ts](mdc:src/commands/validate-schema.ts), [upgrade.ts](mdc:src/commands/upgrade.ts) for how to define other properties in a command. Always mark the properties as `static override`.
+
+Once a command is created, always add it to the end of the `apifyCommands` variable in [_register.ts](mdc:src/commands/_register.ts). If the user requests an `actor` command instead, update the `actorCommands` variable instead. If unsure, prompt the user for the type.
