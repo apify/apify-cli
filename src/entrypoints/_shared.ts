@@ -231,13 +231,16 @@ export async function runCLI(entrypoint: string) {
 						return errorMessageSplit[1];
 					})();
 
-					const closestMatches = useCommandSuggestions(`${parsed._[0]} ${errorMessageSplit[1]}`);
+					const closestMatches =
+						nonexistentType === 'subcommand'
+							? useCommandSuggestions(`${parsed._[0]} ${errorMessageSplit[1]}`)
+							: [];
 
 					const messageParts = [
 						chalk.gray(`Nonexistent ${nonexistentType}: ${chalk.whiteBright(nonexistentRepresentation)}`),
 					];
 
-					if (closestMatches.length && nonexistentType === 'subcommand') {
+					if (closestMatches.length) {
 						messageParts.push(
 							chalk.gray(
 								`  Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`,
