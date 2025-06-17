@@ -2,7 +2,7 @@
 
 ## Dev mode
 
-You can call `./bin/dev.sh` to run the CLI in development mode. This will use the local version of the CLI instead of the one installed globally.
+You can run `yarn dev:apify` to run the CLI in development mode. This will use the local version of the CLI instead of the one installed globally.
 
 ## Tests
 
@@ -12,10 +12,10 @@ You need to have Apify account to test all apify-cli features.
 Then you can run tests with commands in repository root directory:
 
 1. Install all dependencies:
-   `npm install`
+   `yarn`
 
 2. Run tests using credentials of the 'apify-test' user:
-   `TEST_USER_TOKEN=<apifyUserApiToken> npm run test`
+   `TEST_USER_TOKEN=<apifyUserApiToken> yarn test:all`
 
 ## Publish new version
 
@@ -36,6 +36,9 @@ In `test/__setup__/hooks` we have a collection of hooks that you can use while w
 ### `useAuthSetup`
 
 Use this hook at the start of your test file to mark the entire suite as require-ing a separated authentication setup. By default, this will recreate the authentication setup per test in your suite, but you can disable that by passing in `{ perTest: false }` in the call to `useAuthSetup`.`
+
+If you're writing a test case or file that relies on API interactions, make sure it either goes in the `test/api` folder, and that it has a `[api]` reference in the name of the test case (usually at the start).
+If your test file also mixes local tests, always add `[api]` for test cases that need the API. They will automatically be skipped for local tests.
 
 #### Example usage
 
@@ -131,7 +134,4 @@ afterAll(async () => {
 
 ### Running commands
 
-Running commands in tests can be done in two ways:
-
-- Importing the command class and calling `Command.run([], import.meta.url);`, where the array is the argv of the commands (think of it like the arguments you'd pass to the command in the terminal).
-- By importing `runCommand` from `@oclif/test` and using that helper to run the command.
+Running commands in tests can be done by calling `runCommand` (imported from the command framework)

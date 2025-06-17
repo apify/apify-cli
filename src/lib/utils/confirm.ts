@@ -13,7 +13,12 @@ const inputValidation = ({
 	expectedValue,
 	failureMessage = 'That is not the correct input!',
 	message = `Are you sure you want to delete this ${type}? If so, please type in "${expectedValue}":`,
-}: { type: string; expectedValue: string; failureMessage?: string; message?: string }) =>
+}: {
+	type: string;
+	expectedValue: string;
+	failureMessage?: string;
+	message?: string;
+}) =>
 	({
 		name: 'confirmed',
 		type: 'input',
@@ -32,7 +37,12 @@ export async function confirmAction({
 	type,
 	failureMessage,
 	message,
-}: { type: string; expectedValue?: string; failureMessage?: string; message?: string }): Promise<boolean> {
+}: {
+	type: string;
+	expectedValue?: string;
+	failureMessage?: string;
+	message?: string;
+}): Promise<boolean> {
 	const result = await inquirer.prompt<{ confirmed: boolean | string }>(
 		expectedValue
 			? inputValidation({ type, expectedValue, failureMessage, message })

@@ -8,15 +8,17 @@
     "scripts": {
         "dev:apify": "tsx ./src/entrypoints/apify.ts",
         "dev:actor": "tsx ./src/entrypoints/actor.ts",
-        "test": "vitest run",
-        "test-python": "vitest run -t '.*\\[python\\]'",
+        "test:all": "yarn test:local && yarn test:api",
+        "test:local": "vitest run --testNamePattern '^((?!\\[api]).)*$' --exclude ./test/api",
+        "test:api": "vitest run --testNamePattern '\\[api\\]'",
+        "test:python": "vitest run --testNamePattern '\\[python\\]'",
         "test:cucumber": "cross-env NODE_OPTIONS=\"--import tsx\" cucumber-js",
         "lint": "eslint src test scripts features --ext .ts,.cjs,.mjs",
         "lint:fix": "eslint src test scripts features --fix --ext .ts,.cjs,.mjs",
         "format": "biome format . && prettier --check \"**/*.{md,yml,yaml}\"",
         "format:fix": "biome format --write . && prettier --write \"**/*.{md,yml,yaml}\"",
         "clean": "rimraf dist",
-        "build": "yarn clean && tsc && tsc -p tsconfig.typechecking.json",
+        "build": "yarn clean && tsc",
         "build-bundles": "bun run scripts/build-cli-bundles.ts",
         "prepack": "yarn insert-cli-metadata && yarn build && yarn update-docs",
         "insert-cli-metadata": "tsx scripts/insert-cli-metadata.ts",
@@ -76,7 +78,7 @@
         "ajv": "~8.17.1",
         "apify-client": "^2.11.0",
         "archiver": "~7.0.1",
-        "axios": "~1.9.0",
+        "axios": "~1.10.0",
         "chalk": "~5.4.0",
         "cli-table3": "^0.6.5",
         "computer-name": "~0.1.0",
@@ -112,7 +114,7 @@
     "devDependencies": {
         "@apify/eslint-config": "^1.0.0",
         "@apify/tsconfig": "^0.1.1",
-        "@biomejs/biome": "^1.9.4",
+        "@biomejs/biome": "^2.0.0",
         "@crawlee/types": "^3.11.1",
         "@cucumber/cucumber": "^11.0.0",
         "@types/adm-zip": "^0.5.5",
@@ -153,6 +155,25 @@
         "yarn": "4.9.2"
     },
     "packageManager": "yarn@4.9.2",
+    "devEngines": {
+        "runtime": [
+            {
+                "name": "node",
+                "version": ">= 20",
+                "onFail": "error"
+            },
+            {
+                "name": "bun",
+                "version": ">= 1.2.5",
+                "onFail": "ignore"
+            }
+        ],
+        "packageManager": {
+            "name": "yarn",
+            "version": ">= 4",
+            "onFail": "warn"
+        }
+    },
     "lint-staged": {
         "*": "biome format --write --no-errors-on-unmatched",
         "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts",

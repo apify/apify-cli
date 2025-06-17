@@ -407,10 +407,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	 * Ensures the input that the actor will be ran with locally matches the input schema (and prefills default values if missing)
 	 * @param inputOverride Optional input received through command flags
 	 */
-	private async validateAndStoreInput(inputOverride?: {
-		input: Record<string, unknown>;
-		source: string;
-	}) {
+	private async validateAndStoreInput(inputOverride?: { input: Record<string, unknown>; source: string }) {
 		const { inputSchema } = await readInputSchema({ cwd: process.cwd() });
 
 		if (!inputSchema) {

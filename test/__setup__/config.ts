@@ -6,6 +6,7 @@ import isCI from 'is-ci';
 import { getApifyClientOptions } from '../../src/lib/utils.js';
 
 const { TEST_USER_TOKEN: ENV_TEST_USER_TOKEN } = process.env;
+
 export const TEST_USER_BAD_TOKEN = 'badToken';
 
 if (!ENV_TEST_USER_TOKEN) {

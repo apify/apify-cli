@@ -9,7 +9,6 @@ import { LoginCommand } from '../../../src/commands/login.js';
 import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { getLocalUserInfo } from '../../../src/lib/utils.js';
-import { TEST_USER_TOKEN } from '../config.js';
 
 export interface UseAuthSetupOptions {
 	/**
@@ -30,7 +29,7 @@ const envVariable = '__APIFY_INTERNAL_TEST_AUTH_PATH__';
 /**
  * A hook that allows each test to have a unique auth setup.
  */
-export function useAuthSetup({ cleanup, perTest }: UseAuthSetupOptions = { cleanup: true, perTest: true }) {
+export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOptions = {}) {
 	const random = cryptoRandomObjectId(12);
 
 	const envValue = () => (perTest ? cryptoRandomObjectId(12) : random);
@@ -52,6 +51,8 @@ export function useAuthSetup({ cleanup, perTest }: UseAuthSetupOptions = { clean
 }
 
 export async function safeLogin(tokenOverride?: string) {
+	const { TEST_USER_TOKEN } = await import('../config.js');
+
 	// eslint-disable-next-line no-restricted-syntax -- The only place we should run this is here
 	await runCommand(LoginCommand, { flags_token: tokenOverride ?? TEST_USER_TOKEN });
 
