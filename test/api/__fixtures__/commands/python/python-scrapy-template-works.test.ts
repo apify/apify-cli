@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { runCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
-import { getLocalDatasetPath } from '../../../../../../src/lib/utils.js';
-import { safeLogin, useAuthSetup } from '../../../../../__setup__/hooks/useAuthSetup.js';
-import { useTempPath } from '../../../../../__setup__/hooks/useTempPath.js';
+import { runCommand } from '../../../../../src/lib/command-framework/apify-command.js';
+import { getLocalDatasetPath } from '../../../../../src/lib/utils.js';
+import { safeLogin, useAuthSetup } from '../../../../__setup__/hooks/useAuthSetup.js';
+import { useTempPath } from '../../../../__setup__/hooks/useTempPath.js';
 
 const actorName = 'python-scrapy-template-works';
 
@@ -17,8 +17,8 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 
 useAuthSetup({ perTest: false });
 
-const { CreateCommand } = await import('../../../../../../src/commands/create.js');
-const { RunCommand } = await import('../../../../../../src/commands/run.js');
+const { CreateCommand } = await import('../../../../../src/commands/create.js');
+const { RunCommand } = await import('../../../../../src/commands/run.js');
 
 describe('[python] scrapy template works', () => {
 	beforeAll(async () => {

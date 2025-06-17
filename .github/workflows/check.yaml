@@ -14,7 +14,7 @@ env:
 
 concurrency:
     cancel-in-progress: false
-    group: checks-${{ github.event_name }}
+    group: checks-${{ github.ref }}
 
 jobs:
     build:
@@ -172,6 +172,8 @@ jobs:
 
         name: Python Support
 
+        needs: [build]
+
         strategy:
             fail-fast: false
             matrix:
@@ -211,7 +213,9 @@ jobs:
                   python-version: ${{ matrix.python-version }}
 
             - name: Run Python tests
-              run: yarn test-python
+              env:
+                  TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
+              run: yarn test:python
 
     docs:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
@@ -293,6 +297,7 @@ jobs:
               if: ${{ matrix.os != 'windows-11-arm' }}
               with:
                   bun-version-file: .bun-version
+                  no-cache: true
 
             - name: Install bun (Windows ARM)
               if: ${{ matrix.os == 'windows-11-arm' }}
