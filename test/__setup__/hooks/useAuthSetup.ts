@@ -30,7 +30,7 @@ const envVariable = '__APIFY_INTERNAL_TEST_AUTH_PATH__';
 /**
  * A hook that allows each test to have a unique auth setup.
  */
-export function useAuthSetup({ cleanup, perTest }: UseAuthSetupOptions = { cleanup: true, perTest: true }) {
+export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOptions = {}) {
 	const random = cryptoRandomObjectId(12);
 
 	const envValue = () => (perTest ? cryptoRandomObjectId(12) : random);

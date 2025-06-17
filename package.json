@@ -8,8 +8,10 @@
     "scripts": {
         "dev:apify": "tsx ./src/entrypoints/apify.ts",
         "dev:actor": "tsx ./src/entrypoints/actor.ts",
-        "test": "vitest run",
-        "test-python": "vitest run -t '.*\\[python\\]'",
+        "test:all": "yarn test:local && yarn test:api",
+        "test:local": "vitest run ./test/local",
+        "test:api": "vitest run ./test/api",
+        "test:python": "vitest run -t '\\[python\\]'",
         "test:cucumber": "cross-env NODE_OPTIONS=\"--import tsx\" cucumber-js",
         "lint": "eslint src test scripts features --ext .ts,.cjs,.mjs",
         "lint:fix": "eslint src test scripts features --fix --ext .ts,.cjs,.mjs",
@@ -151,6 +153,25 @@
         "yarn": "4.9.2"
     },
     "packageManager": "yarn@4.9.2",
+    "devEngines": {
+        "runtime": [
+            {
+                "name": "node",
+                "version": ">= 20",
+                "onFail": "error"
+            },
+            {
+                "name": "bun",
+                "version": ">= 1.2.5",
+                "onFail": "ignore"
+            }
+        ],
+        "packageManager": {
+            "name": "yarn",
+            "version": ">= 4",
+            "onFail": "download"
+        }
+    },
     "lint-staged": {
         "*": "biome format --write --no-errors-on-unmatched",
         "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts",

@@ -3,11 +3,19 @@
 name: Check
 
 on:
-    # Push to master will deploy a beta version
     push:
         branches: [master, renovate/**]
     pull_request:
         branches: [master]
+
+env:
+    LATEST_NODE_VERSION: 22
+    LINUX_VERSION: ubuntu-latest
+    WINDOWS_VERSION: windows-2025
+
+concurrency:
+    cancel-in-progress: false
+    group: checks-${{ github.event_name }}
 
 jobs:
     build_and_test:
@@ -62,6 +70,7 @@ jobs:
             matrix:
                 os: [ubuntu-latest, windows-2025]
                 python-version: ["3.9", "3.10", "3.11", "3.12"]
+
         runs-on: ${{ matrix.os }}
 
         steps:
