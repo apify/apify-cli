@@ -18,7 +18,7 @@
         "format": "biome format . && prettier --check \"**/*.{md,yml,yaml}\"",
         "format:fix": "biome format --write . && prettier --write \"**/*.{md,yml,yaml}\"",
         "clean": "rimraf dist",
-        "build": "yarn clean && tsc && tsc -p tsconfig.typechecking.json",
+        "build": "yarn clean && tsc",
         "build-bundles": "bun run scripts/build-cli-bundles.ts",
         "prepack": "yarn insert-cli-metadata && yarn build && yarn update-docs",
         "insert-cli-metadata": "tsx scripts/insert-cli-metadata.ts",
