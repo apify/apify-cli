@@ -1,6 +1,6 @@
-import path from 'node:path';
-import { readFile, writeFile } from 'node:fs/promises';
 import { execSync } from 'node:child_process';
+import { readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
 
 const PKG_JSON_PATH = path.join(import.meta.dirname, '..', '..', 'package.json');
 
@@ -13,10 +13,14 @@ const nextVersion = getNextVersion(VERSION);
 console.log(`before-deploy: Setting version to ${nextVersion}`);
 pkgJson.version = nextVersion;
 
-await writeFile(PKG_JSON_PATH, JSON.stringify(pkgJson, null, 4) + '\n');
+await writeFile(PKG_JSON_PATH, `${JSON.stringify(pkgJson, null, 4)}\n`);
 
 function getNextVersion(version: string) {
-	const versionString = execSync(`npm show ${PACKAGE_NAME} versions --json`, { encoding: 'utf8' });
+	const versionString = execSync(`npm show ${PACKAGE_NAME} versions --json`, {
+		encoding: 'utf8',
+		stdio: ['ignore', 'pipe', 'ignore'],
+	});
+
 	const versions = JSON.parse(versionString) as string[];
 
 	if (versions.some((v) => v === VERSION)) {

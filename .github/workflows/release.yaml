@@ -66,7 +66,7 @@ jobs:
               with:
                   ref: ${{ github.ref }}
                   repo-token: ${{ secrets.GITHUB_TOKEN }}
-                  check-regexp: (Build & Test .*|Test Python template support|Lint|Docs build)
+                  check-regexp: (Build|(Local|API) Tests.*|Python Support.*|Docs build)
                   wait-interval: 5
 
     update_changelog:

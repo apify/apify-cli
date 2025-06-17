@@ -56,7 +56,11 @@ export abstract class BaseCommandRenderer {
 		state,
 		itemToAdd,
 		indentSize,
-	}: { state: string[]; itemToAdd: string; indentSize: number }) {
+	}: {
+		state: string[];
+		itemToAdd: string;
+		indentSize: number;
+	}) {
 		// Check the _last line_ of the state, not the whole string, as otherwise we get false positives
 		const currentLength = width(state.join(' ').split('\n').at(-1) || '') + indentSize;
 

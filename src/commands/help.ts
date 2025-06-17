@@ -1,9 +1,9 @@
-import { jaroWinkler } from '@skyra/jaro-winkler';
 import chalk from 'chalk';
 
 import { ApifyCommand, commandRegistry } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { renderHelpForCommand, renderMainHelpMenu } from '../lib/command-framework/help.js';
+import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
 import { error } from '../lib/outputs.js';
 
 export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
@@ -37,13 +37,7 @@ export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 		const command = commandRegistry.get(lowercasedCommandString);
 
 		if (!command) {
-			const allCommands = [...commandRegistry.keys()];
-
-			const closestMatches = allCommands.filter((cmd) => {
-				const lowercased = cmd.toLowerCase();
-
-				return jaroWinkler(lowercasedCommandString, lowercased) >= 0.95;
-			});
+			const closestMatches = useCommandSuggestions(lowercasedCommandString);
 
 			let message = chalk.gray(`Command ${chalk.whiteBright(commandString)} not found`);
 

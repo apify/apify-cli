@@ -13,7 +13,10 @@ import { getLocalConfig, getLocalUserInfo } from '../utils.js';
 export async function resolveActorContext({
 	providedActorNameOrId,
 	client,
-}: { providedActorNameOrId: string | undefined; client: ApifyClient }) {
+}: {
+	providedActorNameOrId: string | undefined;
+	client: ApifyClient;
+}) {
 	const userInfo = await getLocalUserInfo();
 	const usernameOrId = userInfo.username || (userInfo.id as string);
 	const localConfig = getLocalConfig(process.cwd()) || {};

@@ -12,7 +12,7 @@
 		".yarn/plugins/postinstallDev.cjs",
 		"features/**/*.ts",
 		"features/**/*.js",
-		"scripts",
+		".github/scripts",
 		"eslint.config.mjs"
 	]
 }

@@ -1,10 +1,12 @@
 {
 	"formatter": {
-		"ignore": [
-			"website/**",
-			"dist/**",
-			"test/__setup__/input-schemas/*.json",
-			"package.json"
+		"includes": [
+			"**",
+			"!**/website/**",
+			"!**/dist/**",
+			"!**/test/__setup__/input-schemas/**/*.json",
+			"!**/test/tmp/**",
+			"!**/package.json"
 		],
 		"formatWithErrors": true
 	},

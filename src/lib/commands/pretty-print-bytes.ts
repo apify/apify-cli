@@ -5,7 +5,12 @@ export function prettyPrintBytes({
 	shortBytes = false,
 	colorFunc = noColor,
 	precision = 2,
-}: { bytes: number; shortBytes?: boolean; colorFunc?: (val: string) => string; precision?: number }): string {
+}: {
+	bytes: number;
+	shortBytes?: boolean;
+	colorFunc?: (val: string) => string;
+	precision?: number;
+}): string {
 	const sizes = [shortBytes ? 'B' : 'Bytes', 'KB', 'MB', 'GB', 'TB'];
 
 	if (bytes === 0) {
