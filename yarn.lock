@@ -1687,6 +1687,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/js-levenshtein@npm:^1":
+  version: 1.1.3
+  resolution: "@types/js-levenshtein@npm:1.1.3"
+  checksum: 10c0/025f2bd8d865cfa7a996799a1a2f2a77fa2fc74a28971aa035a103de35d7c1e3d949721a88f57fdb532815bbcb2bf7019196a608ed0a8bbd1023d64c52bb251b
+  languageName: node
+  linkType: hard
+
 "@types/json-schema@npm:^7.0.15":
   version: 7.0.15
   resolution: "@types/json-schema@npm:7.0.15"
@@ -2432,6 +2439,7 @@ __metadata:
     "@types/inquirer": "npm:^9.0.7"
     "@types/is-ci": "npm:^3.0.4"
     "@types/jju": "npm:^1.4.5"
+    "@types/js-levenshtein": "npm:^1"
     "@types/lodash.clonedeep": "npm:^4"
     "@types/mime": "npm:^4.0.0"
     "@types/node": "npm:^22.0.0"
@@ -2465,6 +2473,7 @@ __metadata:
     is-ci: "npm:~4.1.0"
     istextorbinary: "npm:~9.5.0"
     jju: "npm:~1.4.0"
+    js-levenshtein: "npm:^1.1.6"
     lint-staged: "npm:^16.0.0"
     lodash.clonedeep: "npm:^4.5.0"
     mdast-util-from-markdown: "npm:^2.0.2"
@@ -5954,6 +5963,13 @@ __metadata:
   version: 1.4.0
   resolution: "jju@npm:1.4.0"
   checksum: 10c0/f3f444557e4364cfc06b1abf8331bf3778b26c0c8552ca54429bc0092652172fdea26cbffe33e1017b303d5aa506f7ede8571857400efe459cb7439180e2acad
+  languageName: node
+  linkType: hard
+
+"js-levenshtein@npm:^1.1.6":
+  version: 1.1.6
+  resolution: "js-levenshtein@npm:1.1.6"
+  checksum: 10c0/14045735325ea1fd87f434a74b11d8a14380f090f154747e613529c7cff68b5ee607f5230fa40665d5fb6125a3791f4c223f73b9feca754f989b059f5c05864f
   languageName: node
   linkType: hard
 

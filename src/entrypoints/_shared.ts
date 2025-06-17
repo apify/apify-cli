@@ -15,6 +15,7 @@ import { renderMainHelpMenu, selectiveRenderHelpForCommand } from '../lib/comman
 import { readStdin } from '../lib/commands/read-stdin.js';
 import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
+import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
 import { error } from '../lib/outputs.js';
 import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
 
@@ -122,9 +123,18 @@ export async function runCLI(entrypoint: string) {
 			const command = commandRegistry.get(possibleCommands.find((cmd) => commandRegistry.has(cmd)) ?? '');
 
 			if (!command) {
-				error({
-					message: `Command ${parsed._[0]} not found`,
-				});
+				const closestMatches = useCommandSuggestions(String(parsed._[0]));
+
+				let message = chalk.gray(`Command ${chalk.whiteBright(parsed._[0])} not found`);
+
+				if (closestMatches.length) {
+					message += '\n  ';
+					message += chalk.gray(
+						`Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`,
+					);
+				}
+
+				error({ message });
 
 				return;
 			}
@@ -221,10 +231,26 @@ export async function runCLI(entrypoint: string) {
 						return errorMessageSplit[1];
 					})();
 
+					const closestMatches =
+						nonexistentType === 'subcommand'
+							? useCommandSuggestions(`${parsed._[0]} ${errorMessageSplit[1]}`)
+							: [];
+
+					const messageParts = [
+						chalk.gray(`Nonexistent ${nonexistentType}: ${chalk.whiteBright(nonexistentRepresentation)}`),
+					];
+
+					if (closestMatches.length) {
+						messageParts.push(
+							chalk.gray(
+								`  Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`,
+							),
+						);
+					}
+
 					error({
 						message: [
-							`Nonexistent ${nonexistentType}: ${nonexistentRepresentation}`,
-							`  ${chalk.red('>')}  See more help with --help`,
+							...messageParts,
 							'',
 							selectiveRenderHelpForCommand(command, {
 								showUsageString: true,
