@@ -9,7 +9,7 @@
         "dev:apify": "tsx ./src/entrypoints/apify.ts",
         "dev:actor": "tsx ./src/entrypoints/actor.ts",
         "test:all": "yarn test:local && yarn test:api",
-        "test:local": "vitest run --testNamePattern '^((?!\\[api\\]).)*$'",
+        "test:local": "vitest run --testNamePattern '^((?!\\[api]).)*$' --exclude ./test/api",
         "test:api": "vitest run --testNamePattern '\\[api\\]'",
         "test:python": "vitest run --testNamePattern '\\[python\\]'",
         "test:cucumber": "cross-env NODE_OPTIONS=\"--import tsx\" cucumber-js",
