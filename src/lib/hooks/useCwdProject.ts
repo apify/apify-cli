@@ -48,7 +48,9 @@ export const cwdCache = new Map<string, CwdProject>();
 
 export async function useCwdProject({
 	cwd = process.cwd(),
-}: { cwd?: string } = {}): Promise<Result<CwdProject, CwdProjectError>> {
+}: {
+	cwd?: string;
+} = {}): Promise<Result<CwdProject, CwdProjectError>> {
 	const cached = cwdCache.get(cwd);
 
 	if (cached) {

@@ -68,7 +68,12 @@ export async function executeCommand({
 	stdin,
 	cwd = TestTmpRoot,
 	env,
-}: { rawCommand: string; stdin?: string; cwd?: string | URL; env?: Record<string, string> }) {
+}: {
+	rawCommand: string;
+	stdin?: string;
+	cwd?: string | URL;
+	env?: Record<string, string>;
+}) {
 	// Step 0: ensure the command is executable -> strip out $, trim spaces
 	const commandToRun = rawCommand.split('\n').map((str) => str.replace(/^\$/, '').trim());
 
