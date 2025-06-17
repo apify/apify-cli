@@ -2,11 +2,8 @@ import { SecretsAddCommand } from '../../../../src/commands/secrets/add.js';
 import { SecretsRmCommand } from '../../../../src/commands/secrets/rm.js';
 import { runCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { getSecretsFile } from '../../../../src/lib/secrets.js';
-import { useAuthSetup } from '../../../__setup__/hooks/useAuthSetup.js';
 
 const SECRET_KEY = 'mySecret';
-
-useAuthSetup({ perTest: false });
 
 describe('apify secrets:rm', () => {
 	beforeAll(async () => {
