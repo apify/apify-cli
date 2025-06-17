@@ -169,7 +169,7 @@
         "packageManager": {
             "name": "yarn",
             "version": ">= 4",
-            "onFail": "download"
+            "onFail": "warn"
         }
     },
     "lint-staged": {
