@@ -65,7 +65,8 @@ const categories: Record<string, CommandsInCategory[]> = {
 	],
 	'general': [
 		//
-		// { command: Commands.help },
+		{ command: Commands.help },
+		{ command: Commands.upgrade },
 	],
 	'dataset': [
 		//

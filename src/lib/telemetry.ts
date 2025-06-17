@@ -63,7 +63,10 @@ export const isTelemetryEnabled =
 export const maybeTrackTelemetry = async ({
 	eventName,
 	eventData,
-}: { eventName: string; eventData: Record<string, unknown> }) => {
+}: {
+	eventName: string;
+	eventData: Record<string, unknown>;
+}) => {
 	if (!isTelemetryEnabled) return;
 
 	try {

@@ -31,6 +31,8 @@ async function isOnline(timeout = 500) {
 		),
 	).catch(() => null);
 
+	clearTimeout(timeoutId);
+
 	if (!res) {
 		cliDebugPrint('isOnline', { state: 'timeout' });
 
@@ -38,8 +40,6 @@ async function isOnline(timeout = 500) {
 	}
 
 	if (res.ok) {
-		clearTimeout(timeoutId);
-
 		cliDebugPrint('isOnline', {
 			state: 'online',
 			site: res.url,
