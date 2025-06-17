@@ -95,7 +95,7 @@ describe('apify run', () => {
 		expect(actOutput).toStrictEqual(expectOutput);
 	});
 
-	it(`run with env vars from "${LOCAL_CONFIG_PATH}"`, async () => {
+	it(`[api] run with env vars from "${LOCAL_CONFIG_PATH}"`, async () => {
 		const testEnvVars = {
 			TEST_LOCAL: 'testValue',
 		};
@@ -130,7 +130,7 @@ describe('apify run', () => {
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
 	});
 
-	it(`run with env vars from "${LOCAL_CONFIG_PATH}" and custom script`, async () => {
+	it(`[api] run with env vars from "${LOCAL_CONFIG_PATH}" and custom script`, async () => {
 		const testEnvVars = {
 			TEST_LOCAL: 'testValue',
 		};
@@ -175,7 +175,7 @@ describe('apify run', () => {
 		expect(actOutput2).toStrictEqual('uwu');
 	});
 
-	it(`run with env vars from "${LOCAL_CONFIG_PATH}" and direct path to script`, async () => {
+	it(`[api] run with env vars from "${LOCAL_CONFIG_PATH}" and direct path to script`, async () => {
 		const testEnvVars = {
 			TEST_LOCAL: 'testValue',
 		};

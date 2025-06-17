@@ -20,7 +20,7 @@ useAuthSetup({ perTest: false });
 const { CreateCommand } = await import('../../../../../src/commands/create.js');
 const { RunCommand } = await import('../../../../../src/commands/run.js');
 
-describe('[python] scrapy template works', () => {
+describe('[python] [api] scrapy template works', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
