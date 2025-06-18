@@ -37,7 +37,7 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js ${{ env.LATEST_NODE_VERSION }}
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -71,7 +71,7 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js ${{ env.LATEST_NODE_VERSION }}
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -117,7 +117,12 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js ${{ matrix.node-version }}
+            - name: Activate cache for npm
+              uses: actions/setup-node@v4
+              with:
+                  cache: npm
+
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -154,7 +159,12 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js ${{ env.LATEST_NODE_VERSION }}
+            - name: Activate cache for npm
+              uses: actions/setup-node@v4
+              with:
+                  cache: npm
+
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -199,7 +209,12 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js ${{ env.LATEST_NODE_VERSION }}
+            - name: Activate cache for npm
+              uses: actions/setup-node@v4
+              with:
+                  cache: npm
+
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -237,7 +252,7 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js ${{ env.LATEST_NODE_VERSION }}
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -284,7 +299,7 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js ${{ env.LATEST_NODE_VERSION }}
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
