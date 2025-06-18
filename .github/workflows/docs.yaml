@@ -9,12 +9,15 @@ on:
 jobs:
     build:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+
         environment:
             name: github-pages
+
         permissions:
             contents: write
             pages: write
             id-token: write
+
         runs-on: ubuntu-latest
 
         steps:
@@ -22,17 +25,17 @@ jobs:
               with:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
-            - name: Use Node.js 20
+            - name: Use Node.js 22
               uses: actions/setup-node@v4
               with:
-                  node-version: 20
+                  node-version: 22
 
             - name: Enable corepack
               run: |
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 20
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn

@@ -39,7 +39,7 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js ${{ matrix.node-version }}
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn

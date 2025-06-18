@@ -92,7 +92,7 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 22
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -156,7 +156,7 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 22
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -259,7 +259,7 @@ jobs:
                   corepack enable
                   corepack prepare yarn@stable --activate
 
-            - name: Activate cache for Node.js 22
+            - name: Activate cache for yarn
               uses: actions/setup-node@v4
               with:
                   cache: yarn
@@ -275,7 +275,7 @@ jobs:
 
             - name: Publish to NPM
               run: |
-                  yarn npm publish --provenance --access public --tag beta
+                  yarn npm publish --provenance --access public
               env:
                   YARN_NPM_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
 
