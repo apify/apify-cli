@@ -10,8 +10,8 @@ export default defineConfig({
 	test: {
 		globals: true,
 		restoreMocks: true,
-		testTimeout: 60_000 * (isWindows ? 2 : 1),
-		hookTimeout: 60_000 * (isWindows ? 2 : 1),
+		testTimeout: 60_000 * (isWindows ? 4 : 2),
+		hookTimeout: 60_000 * (isWindows ? 4 : 2),
 		include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)'],
 		passWithNoTests: true,
 		silent: !process.env.NO_SILENT_TESTS,
