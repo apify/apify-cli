@@ -6,7 +6,8 @@
 			"!**/dist/**",
 			"!**/test/__setup__/input-schemas/**/*.json",
 			"!**/test/tmp/**",
-			"!**/package.json"
+			"!**/package.json",
+			"!**/LICENSE.md"
 		],
 		"formatWithErrors": true
 	},
