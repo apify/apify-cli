@@ -30,7 +30,7 @@ export class RunsLogCommand extends ApifyCommand<typeof RunsLogCommand> {
 		info({ message: `Log for run with ID "${runId}":\n`, stdout: true });
 
 		try {
-			await outputJobLog(run);
+			await outputJobLog({ job: run, apifyClient });
 		} catch (err) {
 			// This should never happen...
 			error({ message: `Failed to get log for run with ID "${runId}": ${(err as Error).message}` });
