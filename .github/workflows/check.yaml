@@ -5,7 +5,7 @@ name: Check
 on:
     # Push to master will deploy a beta version
     push:
-        branches: [0.21.x]
+        branches: [master]
     pull_request:
         branches: [master]
 
