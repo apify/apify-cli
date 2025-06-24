@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.21.8](https://github.com/apify/apify-cli/releases/tag/v0.21.8) (2025-06-24)
+
+### 🐛 Bug Fixes
+
+- Recognize sh files as text files (#813) ([9c514be](https://github.com/apify/apify-cli/commit/9c514bef27cded91d0d737077e01d8ddb471effb))
+- **init:** Prompt for a name if an old config does not exist (#836) ([4817c1c](https://github.com/apify/apify-cli/commit/4817c1c95ee6ca5d3078add283dd7c54c1444b48))
+- Pass apify client down to output job log wherever possible (#839) ([96ba05f](https://github.com/apify/apify-cli/commit/96ba05fdacf30131ef9173e24359bc98e805f1b1))
+
 ## [0.21.7](https://github.com/apify/apify-cli/releases/tag/v0.21.7) (2025-05-15)
 
 ### 🐛 Bug Fixes
