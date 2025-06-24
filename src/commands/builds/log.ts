@@ -29,7 +29,7 @@ export class BuildLogCommand extends ApifyCommand<typeof BuildLogCommand> {
 		info({ message: `Log for build with ID "${buildId}":\n` });
 
 		try {
-			await outputJobLog(build);
+			await outputJobLog({ job: build, apifyClient });
 		} catch (err) {
 			// This should never happen...
 			error({

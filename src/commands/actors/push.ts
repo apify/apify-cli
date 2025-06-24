@@ -300,7 +300,7 @@ Skipping push. Use --force to override.`,
 		});
 
 		try {
-			await outputJobLog(build, waitForFinishMillis);
+			await outputJobLog({ job: build, timeoutMillis: waitForFinishMillis, apifyClient });
 		} catch (err) {
 			warning({ message: 'Can not get log:' });
 			console.error(err);

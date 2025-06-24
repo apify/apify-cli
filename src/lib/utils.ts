@@ -390,9 +390,17 @@ export const purgeDefaultKeyValueStore = async () => {
 	await Promise.all(deletePromises);
 };
 
-export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
+export const outputJobLog = async ({
+	job,
+	timeoutMillis,
+	apifyClient,
+}: {
+	job: ActorRun | Build;
+	timeoutMillis?: number;
+	apifyClient?: ApifyClient;
+}) => {
 	const { id: logId, status } = job;
-	const apifyClient = new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
+	const client = apifyClient || new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
@@ -400,7 +408,7 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
 			return;
 		}
 
-		const log = await apifyClient.log(logId).get();
+		const log = await client.log(logId).get();
 		process.stderr.write(log!);
 		return;
 	}
@@ -408,7 +416,7 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
 	// In other case stream it to stderr
 	// eslint-disable-next-line no-async-promise-executor
 	return new Promise<'no-logs' | 'finished' | 'timeouts'>(async (resolve) => {
-		const stream = await apifyClient.log(logId).stream();
+		const stream = await client.log(logId).stream();
 
 		if (!stream) {
 			resolve('no-logs');
@@ -435,11 +443,11 @@ export const outputJobLog = async (job: ActorRun | Build, timeout?: number) => {
 			}
 		});
 
-		if (timeout) {
+		if (timeoutMillis) {
 			nodeTimeout = setTimeout(() => {
 				stream.destroy();
 				resolve('timeouts');
-			}, timeout);
+			}, timeoutMillis);
 		}
 	});
 };
