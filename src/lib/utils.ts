@@ -367,11 +367,11 @@ export const purgeDefaultKeyValueStore = async () => {
 
 export const outputJobLog = async ({
 	job,
-	timeout,
+	timeoutMillis,
 	apifyClient,
 }: {
 	job: ActorRun | Build;
-	timeout?: number;
+	timeoutMillis?: number;
 	apifyClient?: ApifyClient;
 }) => {
 	const { id: logId, status } = job;
@@ -418,11 +418,11 @@ export const outputJobLog = async ({
 			}
 		});
 
-		if (timeout) {
+		if (timeoutMillis) {
 			nodeTimeout = setTimeout(() => {
 				stream.destroy();
 				resolve('timeouts');
-			}, timeout);
+			}, timeoutMillis);
 		}
 	});
 };

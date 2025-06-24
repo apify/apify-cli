@@ -95,7 +95,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 
 	if (!silent && printRunLogs) {
 		try {
-			const res = await outputJobLog({ job: run, timeout: waitForFinishMillis, apifyClient });
+			const res = await outputJobLog({ job: run, timeoutMillis: waitForFinishMillis, apifyClient });
 
 			if (res === 'timeouts') {
 				console.error(`\n${chalk.gray('Timeout for printing logs was hit, there may be future logs.')}\n`);
