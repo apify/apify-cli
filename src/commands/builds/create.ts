@@ -146,7 +146,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		if (log) {
 			try {
-				await outputJobLog(build);
+				await outputJobLog({ job: build, apifyClient: client });
 			} catch (err) {
 				// This should never happen...
 				error({
