@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 - Shebangs ([#806](https://github.com/apify/apify-cli/pull/806)) ([1cdc101](https://github.com/apify/apify-cli/commit/1cdc1011f36974708ab91a25d4d6c6a5dc43d989)) by [@vladfrangu](https://github.com/vladfrangu)
 - Recognize sh files as text files ([#813](https://github.com/apify/apify-cli/pull/813)) ([ef3e9b0](https://github.com/apify/apify-cli/commit/ef3e9b064483c04cd7bef2143a19e1a6992ddcff)) by [@DaveHanns](https://github.com/DaveHanns)
 - **init:** Prompt for a name if an old config does not exist ([#836](https://github.com/apify/apify-cli/pull/836)) ([26fcd66](https://github.com/apify/apify-cli/commit/26fcd660a0f7b4adb4e1a3329705a8ff6d8f43b2)) by [@vladfrangu](https://github.com/vladfrangu), closes [#835](https://github.com/apify/apify-cli/issues/835)
+- Pass apify client down to output job log wherever possible ([#839](https://github.com/apify/apify-cli/pull/839)) ([5cdb06c](https://github.com/apify/apify-cli/commit/5cdb06c0e24c2501b2034dbb7339798985b269cc)) by [@vladfrangu](https://github.com/vladfrangu)
 
 <!-- git-cliff-unreleased-end -->
 
