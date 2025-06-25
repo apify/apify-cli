@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-start -->
 
-## 0.21.8 - **not yet released**
+## 0.21.9 - **not yet released**
 
 ### 🚀 Features
 
