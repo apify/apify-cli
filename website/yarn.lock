@@ -443,9 +443,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.181":
-  version: 1.0.181
-  resolution: "@apify/docs-theme@npm:1.0.181"
+"@apify/docs-theme@npm:^1.0.182":
+  version: 1.0.182
+  resolution: "@apify/docs-theme@npm:1.0.182"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.2.2"
     "@docusaurus/theme-common": "npm:^3.7.0"
@@ -465,7 +465,7 @@ __metadata:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/2953869f75290c35fb35edb6bfa9a48ba8929d1b755bf25d10d0e5a394cccb01ec2ddaee24f2e845c9e7287cfb4a7dd1408daf25717002c6b4a045cd8e8feb84
+  checksum: 10c0/2f7855a33af5760184bee59d42a94231bdc68e4ec6fe4f1250db9483f3679532edb7a38cce03fac4a56e26b9824d2b9766bc1186fd76420599e5e27f24fa99cf
   languageName: node
   linkType: hard
 
@@ -14039,7 +14039,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.181"
+    "@apify/docs-theme": "npm:^1.0.182"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^3.5.2"
