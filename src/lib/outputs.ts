@@ -34,7 +34,7 @@ export function error(options: SimpleLogOptions) {
 
 export function warning(options: SimpleLogOptions) {
 	internalLog({
-		[options.stdout ? 'stdoutOutput' : 'stderrOutput']: [chalk.rgb(254, 90, 29).bold('Warning:'), options.message],
+		[options.stdout ? 'stdoutOutput' : 'stderrOutput']: [chalk.yellow.bold('Warning:'), options.message],
 	});
 }
 
