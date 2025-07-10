@@ -11,6 +11,7 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
+import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { error, info, success } from '../lib/outputs.js';
 import { useApifyIdentity } from '../lib/telemetry.js';
 import { getLocalUserInfo, getLoggedClient } from '../lib/utils.js';
@@ -28,9 +29,12 @@ const tryToLogin = async (token: string) => {
 	const isUserLogged = await getLoggedClient(token, API_BASE_URL);
 	const userInfo = await getLocalUserInfo();
 	if (isUserLogged) {
+		const metadata = useCLIMetadata();
+		const isWindows = metadata.platform === 'win32';
+		const location = isWindows ? 'C:\\Users<YOUR_USERNAME>\\.apify\\auth.json' : '~/.apify/auth.json';
 		await useApifyIdentity(userInfo.id!);
 		success({
-			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}!`,
+			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}! You don't need to touch it, but just in case, your token is stored at ${location}`,
 		});
 	} else {
 		error({
