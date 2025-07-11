@@ -2552,9 +2552,9 @@ __metadata:
     wrap-ansi: "npm:^9.0.0"
     yargs: "npm:^17.7.2"
   bin:
-    actor: ./dist/entrypoints/actor.js
-    apify: ./dist/entrypoints/apify.js
-    apify-cli: ./dist/entrypoints/apify.js
+    actor: ./dist/actor.js
+    apify: ./dist/apify.js
+    apify-cli: ./dist/apify.js
   languageName: unknown
   linkType: soft
 
