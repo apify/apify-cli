@@ -43,7 +43,6 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
-import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import type { AuthJSON } from './types.js';
 
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
@@ -591,13 +590,3 @@ export function mapGroupBy<K, T>(items: Iterable<T>, keySelector: (item: T, inde
 export function printJsonToStdout(object: unknown) {
 	console.log(JSON.stringify(object, null, 2));
 }
-
-/**
- * Returns the location of the auth.json file
- */
-export const getAuthJsonLocation = (): string => {
-	const metadata = useCLIMetadata();
-	const isWindows = metadata.platform === 'win32';
-	const location = isWindows ? 'C:\\Users<YOUR_USERNAME>\\.apify\\auth.json' : '~/.apify/auth.json';
-	return location;
-};

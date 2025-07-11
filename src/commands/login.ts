@@ -1,6 +1,7 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
+import chalk from 'chalk';
 import computerName from 'computer-name';
 import cors from 'cors';
 import express from 'express';
@@ -11,9 +12,10 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
+import { AUTH_FILE_PATH } from '../lib/consts.js';
 import { error, info, success } from '../lib/outputs.js';
 import { useApifyIdentity } from '../lib/telemetry.js';
-import { getAuthJsonLocation, getLocalUserInfo, getLoggedClient } from '../lib/utils.js';
+import { getLocalUserInfo, getLoggedClient } from '../lib/utils.js';
 
 const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
 // const CONSOLE_BASE_URL = 'http://localhost:3000/settings/integrations';
@@ -30,7 +32,7 @@ const tryToLogin = async (token: string) => {
 	if (isUserLogged) {
 		await useApifyIdentity(userInfo.id!);
 		success({
-			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}! You don't need to touch it, but just in case, your token is stored at ${getAuthJsonLocation()}`,
+			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored at ${AUTH_FILE_PATH()}.`)}`,
 		});
 	} else {
 		error({
@@ -44,7 +46,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 	static override name = 'login' as const;
 
 	static override description =
-		`Authenticates your Apify account and saves credentials to '${getAuthJsonLocation()}'.\n` +
+		`Authenticates your Apify account and saves credentials to '${AUTH_FILE_PATH()}'.\n` +
 		`All other commands use these stored credentials.\n\n` +
 		`Run 'apify logout' to remove authentication.`;
 

@@ -28,7 +28,7 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 ```sh
 DESCRIPTION
-  Authenticates your Apify account and saves credentials to '~/.apify', or 'C:\Users\<YOUR_USERNAME>\.apify' (depending on your platform).
+  Removes authentication by deleting your API token and account information from '~/.apify'.
   All other commands use these stored credentials.
 
   Run 'apify logout' to remove authentication.
@@ -46,7 +46,7 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Removes authentication by deleting your API token and account information from '~/.apify', or 'C:\Users\<YOUR_USERNAME>\.apify' (depending on your platform).
+  Removes authentication by deleting your API token and account information from '~/.apify'.
   Run 'apify login' to authenticate again.
 
 USAGE
