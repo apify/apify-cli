@@ -45,22 +45,28 @@ Currently, the following phrases are implemented:
 - `given the actor implementation doesn't throw itself`
 - `given the following input provided via standard input`
   - Example:
+
   ```
   Given the following input provided via standard input
   """
   {"foo":"bar"}
   """
   ```
+
   - This step supports providing input to the CLI via stdin. This is useful for testing CLI commands that can optionally accept standard input.
+
 - `given the following input provided via file \`<filename>\``
   - Example:
+
   ```
   Given the following input provided via file `input.json`
   """
   {"foo":"bar"}
   """
   ```
+
   - This step supports providing input to the CLI via a file.
+
 - `given a logged in apify console user`
   - This step ensures the test is ran assuming a logged in user on the Apify console.
 - `given the local actor is pushed to the apify platform`
@@ -76,22 +82,28 @@ Currently, the following phrases are implemented:
 
 - `when I run:` followed by a code block consisting of a CLI command (optionally prefixed with `$`)
   - Example:
+
   ```
   When I run:
   `​`​`
   $ apify actor run --input='{"foo":"bar"}'
   `​`​`
   ```
+
   - This step supports running only CLI commands. It also expects only **one** command to be ran. Any more than one command will result in an error (this is done for simplicity sake)
   - When referring to the CLI, you should mention the `apify` binary (as if you'd write this in a terminal). For testing sake, when we actually run the command, it will instead call the `tsx ./bin/dev.js` script, meaning changes that you do to the CLI will be reflected in the tests without needing a rebuild.
+
 - `when i capture the <type> id`
   - Example:
+
   ```
   When I capture the build ID
   ```
+
   - This step captures the ID of the specified type and stores it in the world. This is useful for checking the output of the CLI, as some variables may be needed to check the output of the actor run.
   - Currently, the following types are implemented:
     - `build`: captures the ID of the build that was created
+
 - `when i run with captured data`
   - Identical to `when I run`, with the only difference being that you can use it in conjunction with `when i capture the <type> id` to run the CLI with the captured data.
 
@@ -103,40 +115,52 @@ Currently, the following phrases are implemented:
 
 - `then the local run has an input JSON:` followed by a code block consisting of a JSON object
   - Example:
+
   ```
   Then the local run has an input JSON:
   `​`​`
   {"foo":"bar"}
   `​`​`
   ```
+
   - This step checks the input of the actor run. It expects the input to be a JSON object. If the input is not a JSON object, an error will be thrown. This will ensure the overridden input is correctly passed to the actor run.
+
 - `then the local actor run has started`
   - This step checks if the actor run has actually started.
 - `then the local actor run hasn't even started`
   - This step checks if the actor run hasn't started. If the actor run has started, an error will be thrown.
 - ``then the exit status code is `<number>`​``
   - Example:
+
   ```
   Then the exit status code is `0`
   ```
+
   - This step checks the exit status code of the CLI. If the exit status code is not the same as the one provided, an error will be thrown.
+
 - ``then the exit status code is not `<number>`​``
   - Example:
+
   ```
   Then the exit status code is not `0`
   ```
+
   - This step checks the exit status code of the CLI. If the exit status code is the same as the one provided, an error will be thrown.
+
 - `then I don't see any Node.js exception`
   - This step checks if there are any Node.js exceptions in the output. If there are any, an error will be thrown.
 - `then I can read text on stderr:` followed by a code block consisting of a string
   - Example:
+
   ```
   Then I can read text on stderr:
   `​`​`
   use "--input-file=" flag instead
   `​`​`
   ```
+
   - This step checks if the text provided is in the stderr output. If the text is not in the stderr output, an error will be thrown.
+
 - `then i can read text on stdout:` followed by a code block consisting of a string
   - Example:
   ```

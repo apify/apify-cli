@@ -54,9 +54,11 @@
 
 - Given the local Actor is pushed to the Apify platform
 - When I run:
+
   ```
   $ apify builds create --json
   ```
+
   - Then I can read valid JSON on stdout
 
 ## Rule: Printing information about builds works
