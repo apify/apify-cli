@@ -500,14 +500,14 @@ __metadata:
   linkType: hard
 
 "@cucumber/query@npm:^13.0.2":
-  version: 13.4.0
-  resolution: "@cucumber/query@npm:13.4.0"
+  version: 13.5.0
+  resolution: "@cucumber/query@npm:13.5.0"
   dependencies:
     "@teppeis/multimaps": "npm:3.0.0"
     lodash.sortby: "npm:^4.7.0"
   peerDependencies:
     "@cucumber/messages": "*"
-  checksum: 10c0/9d259178b90c8228a583aae8eade4c6f35b36e991c6d7d340a8f62c424129d2962971832d98bffb40add9525b81c4ed62a7fea3d9cf80e5cca25dbb1dce67bd3
+  checksum: 10c0/af8ba3491fd5de38aab964578e7b744c9c02f03c0f2a2101c80da4d628160b6c1e6fd8f1edcec30c3200bb9b1d1074a38e8b420b58fda873a7e66e9b032f3479
   languageName: node
   linkType: hard
 
@@ -1802,20 +1802,20 @@ __metadata:
   linkType: hard
 
 "@types/node@npm:*":
-  version: 24.0.12
-  resolution: "@types/node@npm:24.0.12"
+  version: 24.0.13
+  resolution: "@types/node@npm:24.0.13"
   dependencies:
     undici-types: "npm:~7.8.0"
-  checksum: 10c0/333777c3416b758bbdb72a09e9db5599ff7789dca519d3fcf8150a1c56c79d808e0009e92d52016e80033b3c52724def08aad2c5b396e28f00dbdfe40a1756a4
+  checksum: 10c0/e1f3d4ea8973b1f2f987814ac5343d05ad8b56bf7fa41755295dee0ce0f7b4e2de4f3daef5296429180228970cef0d70f2ad873c61dbafc6f5eeca9d023aba76
   languageName: node
   linkType: hard
 
 "@types/node@npm:^22.0.0":
-  version: 22.16.2
-  resolution: "@types/node@npm:22.16.2"
+  version: 22.16.3
+  resolution: "@types/node@npm:22.16.3"
   dependencies:
     undici-types: "npm:~6.21.0"
-  checksum: 10c0/4b5e34ca73cceb2630ae2ca46cc8fe1173e0026edb24dcd203cb7cfa788f0bab84b0d8599c32aedbc506a519acc5027177ce8b47a4f63e4f7887808499fec6a3
+  checksum: 10c0/ea6829d0691713e216c15a767f87e412fa0f45c7ed4d49419098d967467e20a5dcdf66fee024e314deab2779f7e5282e1839ee918e845be27f14179247ec947a
   languageName: node
   linkType: hard
 
@@ -3510,9 +3510,9 @@ __metadata:
   linkType: hard
 
 "csv-stringify@npm:^6.2.0":
-  version: 6.5.2
-  resolution: "csv-stringify@npm:6.5.2"
-  checksum: 10c0/8d2c601ce99c4baf5009abb16a9021cfd8d91a7be660f54343cba566ee5057d0ef517e0afde91e7e8803aeafb81268f6f04e47cb272462553b12f8e65c9c0674
+  version: 6.6.0
+  resolution: "csv-stringify@npm:6.6.0"
+  checksum: 10c0/2e5b14ff1e434aba7b8cae74faa0329c1d967654820f2ae3f358a660b5887ab623224ed8eb7f3ab6d0f7342663c965ca079ca420b6046210709f72e8aec87d94
   languageName: node
   linkType: hard
 
@@ -3838,9 +3838,9 @@ __metadata:
   linkType: hard
 
 "electron-to-chromium@npm:^1.5.173":
-  version: 1.5.181
-  resolution: "electron-to-chromium@npm:1.5.181"
-  checksum: 10c0/9d4d2fbbcabe604348462c1df37c744615c3f1439eeb66dc12fd9e25ea4422dbafd20dd15f4a78106ad5aff9168f751ee2e62347ae36c1d7dd9dea61b325e98e
+  version: 1.5.182
+  resolution: "electron-to-chromium@npm:1.5.182"
+  checksum: 10c0/45d45a2d5d304547818574ca083e739e5099bab650b655329a1a39ff2aaa2bf8ba2114c8fc13b5d96014233181d87ec8f84a48d976c5b91140036ceb587bb8e5
   languageName: node
   linkType: hard
 
