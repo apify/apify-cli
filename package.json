@@ -3,7 +3,6 @@
     "version": "0.21.10",
     "description": "Apify command-line interface (CLI) helps you manage the Apify cloud platform and develop, build, and deploy Apify Actors.",
     "exports": "./dist/index.js",
-    "types": "./dist/index.d.ts",
     "type": "module",
     "scripts": {
         "dev:apify": "tsx ./src/entrypoints/apify.ts",
@@ -18,7 +17,7 @@
         "format": "biome format . && prettier --check \"**/*.{md,yml,yaml}\"",
         "format:fix": "biome format --write . && prettier --write \"**/*.{md,yml,yaml}\"",
         "clean": "rimraf dist",
-        "build": "yarn clean && tsc",
+        "build": "yarn clean && tsc && tsup",
         "build-bundles": "bun run scripts/build-cli-bundles.ts",
         "prepack": "yarn insert-cli-metadata && yarn build && yarn update-docs",
         "insert-cli-metadata": "tsx scripts/insert-cli-metadata.ts",
@@ -29,9 +28,9 @@
         "dist"
     ],
     "bin": {
-        "actor": "./dist/entrypoints/actor.js",
-        "apify": "./dist/entrypoints/apify.js",
-        "apify-cli": "./dist/entrypoints/apify.js"
+        "actor": "./dist/actor.js",
+        "apify": "./dist/apify.js",
+        "apify-cli": "./dist/apify.js"
     },
     "contributors": [
         "Jakub Drobník <jakub.drobnik@apify.com>",
@@ -145,6 +144,7 @@
         "mdast-util-from-markdown": "^2.0.2",
         "mock-stdin": "^1.0.0",
         "prettier": "^3.5.3",
+        "tsup": "^8.5.0",
         "tsx": "^4.16.5",
         "typescript": "^5.8.3",
         "typescript-eslint": "^8.31.0",

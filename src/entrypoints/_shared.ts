@@ -1,6 +1,7 @@
 import process from 'node:process';
 
 import chalk from 'chalk';
+import { satisfies } from 'semver';
 // eslint-disable-next-line import/extensions
 import yargs from 'yargs/yargs';
 
@@ -14,6 +15,7 @@ import {
 import type { FlagTag, TaggedFlagBuilder } from '../lib/command-framework/flags.js';
 import { renderMainHelpMenu, selectiveRenderHelpForCommand } from '../lib/command-framework/help.js';
 import { readStdin } from '../lib/commands/read-stdin.js';
+import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
@@ -84,6 +86,20 @@ cli.middleware(async (argv) => {
 const cliMetadata = useCLIMetadata();
 
 export const USER_AGENT = `Apify CLI/${cliMetadata.version} (https://github.com/apify/apify-cli)`;
+
+export function processVersionCheck(cliName: string) {
+	if (cliMetadata.installMethod === 'bundle') {
+		return;
+	}
+
+	if (!satisfies(process.version, SUPPORTED_NODEJS_VERSION)) {
+		error({
+			message: `${cliName} CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.`,
+		});
+
+		process.exit(1);
+	}
+}
 
 export function printCLIVersionAndExitIfFlagUsed(parsed: Awaited<ReturnType<typeof cli.parse>>) {
 	if (parsed.v === true || parsed.version === true) {

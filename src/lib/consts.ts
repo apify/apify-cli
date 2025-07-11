@@ -60,8 +60,6 @@ export const INPUT_FILE_REG_EXP = new RegExp(`^${KEY_VALUE_STORE_KEYS.INPUT}\\..
 
 export const SUPPORTED_NODEJS_VERSION = pkg.engines.node;
 
-export const CURRENT_APIFY_CLI_VERSION = pkg.version;
-
 export const APIFY_CLIENT_DEFAULT_HEADERS = { 'X-Apify-Request-Origin': META_ORIGINS.CLI };
 
 export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.9.0';
