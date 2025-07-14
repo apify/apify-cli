@@ -512,23 +512,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/ui-icons@npm:^1.14.0":
-  version: 1.14.0
-  resolution: "@apify/ui-icons@npm:1.14.0"
+"@apify/ui-icons@npm:^1.14.2":
+  version: 1.14.2
+  resolution: "@apify/ui-icons@npm:1.14.2"
   dependencies:
     clsx: "npm:^2.0.0"
   peerDependencies:
     react: 17.x || 18.x
     react-dom: 17.x || 18.x
-  checksum: 10c0/390d47bece74e2bd7e72c7f83a60ceec0d7027a6abe793e053b163482562b363d60c79a0c1b51ca8bdafbf51a29d86e483419f641545aeee3f80e3c9a11b4326
+  checksum: 10c0/664bef713e356ea94a952f14c84fa157f4f7481488eb54e791178a73fa60074ae6dfca7061055ff20645f9342bfbbba9119a191609491b043d85866fe6a11620
   languageName: node
   linkType: hard
 
 "@apify/ui-library@npm:*":
-  version: 1.84.0
-  resolution: "@apify/ui-library@npm:1.84.0"
+  version: 1.84.2
+  resolution: "@apify/ui-library@npm:1.84.2"
   dependencies:
-    "@apify/ui-icons": "npm:^1.14.0"
+    "@apify/ui-icons": "npm:^1.14.2"
     "@floating-ui/react": "npm:^0.26.2"
     "@react-hook/resize-observer": "npm:^2.0.2"
     clsx: "npm:^2.0.0"
@@ -551,7 +551,7 @@ __metadata:
     react: 17.x || 18.x
     react-dom: 17.x || 18.x
     styled-components: ^5.3.3
-  checksum: 10c0/37ee490dfb2e1d5ba1af2ea64cef727c4148c1ca935f65c01dd601eb599713d4335dc8dcaad286c2d67fa7037fc3ee28f8d432326b3d1b6a430ce32ad3662c9d
+  checksum: 10c0/1885808632f6125d0e0b29cd9322b5156fb9414920a7159c44c141c5371c9e808c25b7222a134bc003a4bf8002de4bd662019f157f3ea22648a4d9dd02787331
   languageName: node
   linkType: hard
 
@@ -4307,7 +4307,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/express-serve-static-core@npm:*":
+"@types/express-serve-static-core@npm:*, @types/express-serve-static-core@npm:^5.0.0":
   version: 5.0.7
   resolution: "@types/express-serve-static-core@npm:5.0.7"
   dependencies:
@@ -4331,7 +4331,18 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/express@npm:*, @types/express@npm:^4.17.13":
+"@types/express@npm:*":
+  version: 5.0.3
+  resolution: "@types/express@npm:5.0.3"
+  dependencies:
+    "@types/body-parser": "npm:*"
+    "@types/express-serve-static-core": "npm:^5.0.0"
+    "@types/serve-static": "npm:*"
+  checksum: 10c0/f0fbc8daa7f40070b103cf4d020ff1dd08503477d866d1134b87c0390bba71d5d7949cb8b4e719a81ccba89294d8e1573414e6dcbb5bb1d097a7b820928ebdef
+  languageName: node
+  linkType: hard
+
+"@types/express@npm:^4.17.13":
   version: 4.17.23
   resolution: "@types/express@npm:4.17.23"
   dependencies:
@@ -4582,7 +4593,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:^18.0.0":
+"@types/react@npm:*":
+  version: 19.1.8
+  resolution: "@types/react@npm:19.1.8"
+  dependencies:
+    csstype: "npm:^3.0.2"
+  checksum: 10c0/4908772be6dc941df276931efeb0e781777fa76e4d5d12ff9f75eb2dcc2db3065e0100efde16fde562c5bafa310cc8f50c1ee40a22640459e066e72cd342143e
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:^18.0.0":
   version: 18.3.23
   resolution: "@types/react@npm:18.3.23"
   dependencies:
@@ -11848,10 +11868,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mime-db@npm:1.52.0, mime-db@npm:>= 1.43.0 < 2":
+"mime-db@npm:1.52.0":
   version: 1.52.0
   resolution: "mime-db@npm:1.52.0"
   checksum: 10c0/0557a01deebf45ac5f5777fe7740b2a5c309c6d62d40ceab4e23da9f821899ce7a900b7ac8157d4548ddbb7beffe9abc621250e6d182b0397ec7f10c7b91a5aa
+  languageName: node
+  linkType: hard
+
+"mime-db@npm:>= 1.43.0 < 2":
+  version: 1.54.0
+  resolution: "mime-db@npm:1.54.0"
+  checksum: 10c0/8d907917bc2a90fa2df842cdf5dfeaf509adc15fe0531e07bb2f6ab15992416479015828d6a74200041c492e42cce3ebf78e5ce714388a0a538ea9c53eece284
   languageName: node
   linkType: hard
 
