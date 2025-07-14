@@ -5,6 +5,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { execWithLog } from '../../lib/exec.js';
 import { DEVELOPMENT_VERSION_MARKER, type InstallMethod, useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
+import { useCLIVersionAssets } from '../../lib/hooks/useCLIVersionAssets.js';
 import { useCLIVersionCheck } from '../../lib/hooks/useCLIVersionCheck.js';
 import { error, info, simpleLog, warning } from '../../lib/outputs.js';
 
@@ -16,7 +17,8 @@ const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: strin
 	volta: (version) => ['volta', 'install', `apify-cli@${version}`],
 };
 
-const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '0.28.0';
+// TODO: update this once we bump the CLI version and release it with this command available
+const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '0.21.8';
 
 export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	static override name = 'upgrade' as const;
@@ -68,7 +70,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		// If the flag is not set, a user manually called the command, so we should upgrade the CLI
 		if (!this.flags.internalAutomaticCall) {
-			await this.handleModuleUpgrade();
+			await this.handleInstallSpecificVersion('latest');
 			return;
 		}
 
@@ -86,23 +88,49 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 	async handleInstallSpecificVersion(version: string) {
 		// Technically, we could allow downgrades to older versions, but then users would lose the upgrade command 🤷
-		if (!gte(version, MINIMUM_VERSION_FOR_UPGRADE_COMMAND)) {
-			error({ message: 'The minimum version of the CLI you can manually downgrade/upgrade to is 0.28.0.' });
+		if (version !== 'latest' && !gte(version, MINIMUM_VERSION_FOR_UPGRADE_COMMAND)) {
+			error({
+				message: `The minimum version of the CLI you can manually downgrade/upgrade to is ${MINIMUM_VERSION_FOR_UPGRADE_COMMAND}.`,
+			});
 
 			return;
 		}
 
-		throw new Error('Not implemented');
-	}
+		const versionData = await useCLIVersionAssets(version);
 
-	async handleModuleUpgrade() {
-		const { installMethod } = useCLIMetadata();
-
-		if (installMethod === 'bundle') {
-			throw new Error('Bundles do not support automatic upgrades yet.');
+		if (!versionData) {
+			error({ message: `The provided version does not exist. Please check the version number and try again.` });
+			return;
 		}
 
-		const updateCommand = UPDATE_COMMANDS[installMethod]('latest', this.entrypoint);
+		const { assets, version: versionWithoutV } = versionData;
+
+		// Check again, in case `latest` returns an older version for whatever reason
+		if (!gte(versionWithoutV, MINIMUM_VERSION_FOR_UPGRADE_COMMAND)) {
+			error({
+				message: `The minimum version of the CLI you can manually downgrade/upgrade to is ${MINIMUM_VERSION_FOR_UPGRADE_COMMAND}.`,
+			});
+			return;
+		}
+
+		const metadata = useCLIMetadata();
+
+		if (metadata.installMethod === 'bundle') {
+			if (!assets.length) {
+				error({
+					message: [
+						'Failed to find the assets for your system and the provided version. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:',
+						`- The version you are trying to upgrade to: ${version}`,
+						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
+					].join('\n'),
+				});
+				return;
+			}
+
+			throw new Error('Bundles do not support manual upgrades yet.');
+		}
+
+		const updateCommand = UPDATE_COMMANDS[metadata.installMethod](version, this.entrypoint);
 
 		if (process.env.APIFY_CLI_DEBUG) {
 			info({ message: `Would run command: ${updateCommand.join(' ')}` });
@@ -113,7 +141,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			await execWithLog({ cmd: updateCommand[0], args: updateCommand.slice(1) });
 		} catch {
 			error({
-				message: `Failed to upgrade the CLI Automatically. Please run the following command manually: ${updateCommand.join(' ')}`,
+				message: `Failed to upgrade the CLI. Please run the following command manually: ${updateCommand.join(' ')}`,
 			});
 		}
 	}

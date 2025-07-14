@@ -16,8 +16,8 @@ export interface CLIMetadata {
 	version: string;
 	hash: string;
 	runtime: string;
-	platform: string;
-	arch: string;
+	platform: Exclude<(typeof process)['platform'], 'win32'> | 'windows';
+	arch: (typeof process)['arch'];
 	extraRuntimeData: string;
 	installMethod: InstallMethod;
 	fullVersionString: string;
@@ -100,7 +100,7 @@ export function useCLIMetadata(): CLIMetadata {
 		version: CLI_VERSION,
 		hash: CLI_HASH,
 		arch: process.arch,
-		platform: process.platform,
+		platform: process.platform === 'win32' ? 'windows' : process.platform,
 		runtime: runtime.runtime,
 		extraRuntimeData: runtime.nodeVersion ? `(emulating node ${runtime.nodeVersion})` : '',
 		installMethod,
