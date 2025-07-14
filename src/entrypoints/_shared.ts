@@ -4,6 +4,7 @@ import chalk from 'chalk';
 // eslint-disable-next-line import/extensions
 import yargs from 'yargs/yargs';
 
+import type { UpgradeCommand as TypeUpgradeCommand } from '../commands/cli-management/upgrade.js';
 import {
 	camelCaseToKebabCase,
 	commandRegistry,
@@ -63,7 +64,7 @@ export const cli = yargs()
 cli.usageConfiguration({ 'hide-types': true });
 
 cli.middleware(async (argv) => {
-	const UpgradeCommand = commandRegistry.get('upgrade')!;
+	const UpgradeCommand = commandRegistry.get('upgrade') as typeof TypeUpgradeCommand;
 
 	const checkVersionsCommandIds = [UpgradeCommand.name, ...(UpgradeCommand.aliases ?? [])];
 
@@ -77,7 +78,7 @@ cli.middleware(async (argv) => {
 		return;
 	}
 
-	await runCommand(UpgradeCommand, {});
+	await runCommand(UpgradeCommand, { flags_internalAutomaticCall: true });
 });
 
 const cliMetadata = useCLIMetadata();

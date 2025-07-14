@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
 
@@ -10,7 +11,7 @@ export const DEVELOPMENT_HASH_MARKER = '0000000';
 const CLI_VERSION = DEVELOPMENT_VERSION_MARKER;
 const CLI_HASH = DEVELOPMENT_HASH_MARKER;
 
-export type InstallMethod = 'npm' | 'homebrew' | 'volta' | 'bundle';
+export type InstallMethod = 'npm' | 'pnpm' | 'yarn' | 'homebrew' | 'volta' | 'bundle';
 
 export interface CLIMetadata {
 	version: string;
@@ -27,7 +28,30 @@ export interface CLIMetadata {
 	installPath?: string;
 }
 
+function tryGetYarnV1GlobalInstallPath() {
+	const cwd = process.cwd();
+
+	try {
+		const version = execSync('yarn -v', { stdio: 'pipe', cwd });
+		console.log(version.toString());
+		const versionString = version.toString().trim();
+
+		if (versionString.startsWith('1.')) {
+			return execSync('yarn global dir', { stdio: 'pipe', cwd }).toString().trim();
+		}
+
+		return null;
+	} catch {
+		return null;
+	}
+}
+
 function detectInstallMethod(): InstallMethod {
+	// Will be useful once npm versions move to running from bundles (and for testing)
+	if (process.env.APIFY_CLI_MARKED_INSTALL_METHOD) {
+		return process.env.APIFY_CLI_MARKED_INSTALL_METHOD as InstallMethod;
+	}
+
 	// This if check is special, and gets replaced with an always-true branch when running from bun bundles
 	if (process.env.APIFY_CLI_BUNDLE) {
 		return 'bundle';
@@ -49,6 +73,17 @@ function detectInstallMethod(): InstallMethod {
 
 	if (entrypointFilePath.includes('homebrew/Cellar') || entrypointFilePath.includes('linuxbrew/Cellar')) {
 		return 'homebrew';
+	}
+
+	if (process.env.PNPM_HOME && entrypointFilePath.includes(process.env.PNPM_HOME)) {
+		return 'pnpm';
+	}
+
+	// Only works for yarn 1.x
+	const yarnGlobalInstallPath = tryGetYarnV1GlobalInstallPath();
+
+	if (yarnGlobalInstallPath && entrypointFilePath.includes(yarnGlobalInstallPath)) {
+		return 'yarn';
 	}
 
 	return 'npm';

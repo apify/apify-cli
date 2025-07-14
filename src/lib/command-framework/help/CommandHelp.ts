@@ -101,7 +101,13 @@ export class CommandHelp extends BaseCommandRenderer {
 			}
 		}
 
-		const flags = Object.entries(this.command.flags ?? {});
+		const flags = Object.entries(this.command.flags ?? {}).filter(([, flag]) => {
+			if (typeof flag === 'string') {
+				throw new RangeError('This is a type-check only value, do not actually use it');
+			}
+
+			return !flag.hidden;
+		});
 
 		if (this.command.enableJsonFlag) {
 			flags.push([
