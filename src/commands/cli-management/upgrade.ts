@@ -120,7 +120,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 				error({
 					message: [
 						'Failed to find the assets for your system and the provided version. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:',
-						`- The version you are trying to upgrade to: ${version}`,
+						`- The version you are trying to upgrade to: ${versionWithoutV}`,
 						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
 					].join('\n'),
 				});
