@@ -56,7 +56,29 @@
 			"default": false,
 			"groupCaption": "Options",
 			"groupDescription": "Various options for this Actor"
-		}
+		},
+        "person": {
+            "title": "Person",
+            "type": "object",
+            "description": "An example of a nested object",
+            "editor": "schemaBased",
+            "properties": {
+                "firstName": {
+                    "type": "string",
+                    "title": "First Name",
+                    "description": "First name of the person",
+                    "editor": "textfield"
+                },
+                "lastName": {
+                    "type": "string",
+                    "title": "Last Name",
+                    "description": "Last name of the person",
+                    "editor": "textfield"
+                }
+            },
+            "additionalProperties": false,
+            "required": ["lastName"]
+        }
 	},
 	"required": ["queries"]
 }

@@ -9,7 +9,7 @@ import { finished } from 'node:stream/promises';
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
-import _Ajv from 'ajv';
+import _Ajv2019 from 'ajv/dist/2019.js';
 import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
 import archiver from 'archiver';
 import { AxiosHeaders } from 'axios';
@@ -47,7 +47,7 @@ import type { AuthJSON } from './types.js';
 
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
 // Welcome to the state of JavaScript/TypeScript and CJS/ESM interop.
-export const Ajv = _Ajv as unknown as typeof import('ajv').default;
+export const Ajv2019 = _Ajv2019 as unknown as typeof import('ajv/dist/2019.js').default;
 
 export const httpsGet = async (url: string) => {
 	return new Promise<IncomingMessage>((resolve, reject) => {
