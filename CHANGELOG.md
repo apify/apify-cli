@@ -2,24 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 0.21.9 - **not yet released**
+## [0.21.9](https://github.com/apify/apify-cli/releases/tag/v0.21.9) (2025-07-17)
 
 ### 🚀 Features
 
-- Upgrade command, install shell script ([#810](https://github.com/apify/apify-cli/pull/810)) ([51ef00a](https://github.com/apify/apify-cli/commit/51ef00ad32a6835c48781b99c6233113cf58d8a4)) by [@vladfrangu](https://github.com/vladfrangu)
-- [**breaking**] Make storage purging default, add `--resurrect` ([#729](https://github.com/apify/apify-cli/pull/729)) ([8dff93a](https://github.com/apify/apify-cli/commit/8dff93a2d769997a96d4a7750fb36c2770b9a61c)) by [@vladfrangu](https://github.com/vladfrangu), closes [#590](https://github.com/apify/apify-cli/issues/590)
+- Handle sub-schema validation (#853) ([51cc733](https://github.com/apify/apify-cli/commit/51cc7333ca665a6e0dfab8a6dc296a396b3e40ff))
+
+## [0.21.8](https://github.com/apify/apify-cli/releases/tag/v0.21.8) (2025-06-24)
 
 ### 🐛 Bug Fixes
 
-- Pretty message for invalid choices ([#805](https://github.com/apify/apify-cli/pull/805)) ([57bd5de](https://github.com/apify/apify-cli/commit/57bd5de9bc5289f151a9083533dc3d2c71f8b9ab)) by [@vladfrangu](https://github.com/vladfrangu)
-- Shebangs ([#806](https://github.com/apify/apify-cli/pull/806)) ([1cdc101](https://github.com/apify/apify-cli/commit/1cdc1011f36974708ab91a25d4d6c6a5dc43d989)) by [@vladfrangu](https://github.com/vladfrangu)
-- Recognize sh files as text files ([#813](https://github.com/apify/apify-cli/pull/813)) ([ef3e9b0](https://github.com/apify/apify-cli/commit/ef3e9b064483c04cd7bef2143a19e1a6992ddcff)) by [@DaveHanns](https://github.com/DaveHanns)
-- **init:** Prompt for a name if an old config does not exist ([#836](https://github.com/apify/apify-cli/pull/836)) ([26fcd66](https://github.com/apify/apify-cli/commit/26fcd660a0f7b4adb4e1a3329705a8ff6d8f43b2)) by [@vladfrangu](https://github.com/vladfrangu), closes [#835](https://github.com/apify/apify-cli/issues/835)
-- Pass apify client down to output job log wherever possible ([#839](https://github.com/apify/apify-cli/pull/839)) ([5cdb06c](https://github.com/apify/apify-cli/commit/5cdb06c0e24c2501b2034dbb7339798985b269cc)) by [@vladfrangu](https://github.com/vladfrangu)
-
-<!-- git-cliff-unreleased-end -->
+- Recognize sh files as text files (#813) ([9c514be](https://github.com/apify/apify-cli/commit/9c514bef27cded91d0d737077e01d8ddb471effb))
+- **init:** Prompt for a name if an old config does not exist (#836) ([4817c1c](https://github.com/apify/apify-cli/commit/4817c1c95ee6ca5d3078add283dd7c54c1444b48))
+- Pass apify client down to output job log wherever possible (#839) ([96ba05f](https://github.com/apify/apify-cli/commit/96ba05fdacf30131ef9173e24359bc98e805f1b1))
 
 ## [0.21.7](https://github.com/apify/apify-cli/releases/tag/v0.21.7) (2025-05-15)
 
