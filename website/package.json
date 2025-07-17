@@ -26,10 +26,11 @@
         "rimraf": "^6.0.0"
     },
     "dependencies": {
-        "@apify/docs-theme": "^1.0.182",
-        "@docusaurus/core": "^3.5.2",
-        "@docusaurus/plugin-client-redirects": "^3.5.2",
-        "@docusaurus/preset-classic": "^3.5.2",
+        "@apify/docs-theme": "^1.0.185",
+        "@docusaurus/core": "^3.8.1",
+        "@docusaurus/faster": "^3.8.1",
+        "@docusaurus/plugin-client-redirects": "^3.8.1",
+        "@docusaurus/preset-classic": "^3.8.1",
         "clsx": "^1.2.1",
         "docusaurus-gtm-plugin": "^0.0.2",
         "prop-types": "^15.8.1",

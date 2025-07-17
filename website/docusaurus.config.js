@@ -6,6 +6,21 @@ const versions = require('./versions.json');
 const { absoluteUrl } = config;
 /** @type {Partial<import('@docusaurus/types').DocusaurusConfig>} */
 module.exports = {
+    future: {
+        experimental_faster: {
+            swcJsLoader: true,
+            swcJsMinimizer: true,
+            swcHtmlMinimizer: true,
+            lightningCssMinimizer: true,
+            rspackBundler: true,
+            mdxCrossCompilerCache: true,
+            rspackPersistentCache: true,
+        },
+        v4: {
+            removeLegacyPostBuildHeadAttribute: true,
+            useCssCascadeLayers: false,
+        },
+    },
     title: 'CLI | Apify Documentation',
     url: absoluteUrl,
     baseUrl: '/cli',

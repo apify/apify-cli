@@ -8,7 +8,7 @@ export class LogoutCommand extends ApifyCommand<typeof LogoutCommand> {
 	static override name = 'logout' as const;
 
 	static override description =
-		`Removes authentication by deleting your API token and account information from '~/.apify'.\n` +
+		`Removes authentication by deleting your API token and account information from '${AUTH_FILE_PATH()}'.\n` +
 		`Run 'apify login' to authenticate again.`;
 
 	async run() {
