@@ -7,7 +7,7 @@ import { Args } from '../lib/command-framework/args.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { readInputSchema } from '../lib/input_schema.js';
 import { info, success } from '../lib/outputs.js';
-import { Ajv } from '../lib/utils.js';
+import { Ajv2019 } from '../lib/utils.js';
 
 export class ValidateInputSchemaCommand extends ApifyCommand<typeof ValidateInputSchemaCommand> {
 	static override name = 'validate-schema' as const;
@@ -45,7 +45,7 @@ export class ValidateInputSchemaCommand extends ApifyCommand<typeof ValidateInpu
 			info({ message: `Validating input schema embedded in '${LOCAL_CONFIG_PATH}'` });
 		}
 
-		const validator = new Ajv({ strict: false });
+		const validator = new Ajv2019({ strict: false });
 		validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
 		success({ message: 'Input schema is valid.' });
 	}

@@ -49,16 +49,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/input_schema@npm:^3.12.0":
-  version: 3.15.2
-  resolution: "@apify/input_schema@npm:3.15.2"
+"@apify/input_schema@npm:^3.17.0":
+  version: 3.17.0
+  resolution: "@apify/input_schema@npm:3.17.0"
   dependencies:
     "@apify/consts": "npm:^2.43.0"
+    "@apify/input_secrets": "npm:^1.2.1"
     acorn-loose: "npm:^8.4.0"
     countries-list: "npm:^3.0.0"
   peerDependencies:
     ajv: ^8.0.0
-  checksum: 10c0/4f75e00eb2fe94879b4caa5b3d208dc638890e41ddb22843b605a924b5db4d89e95d29c8f961cc6e180fece8be8abdacee40ad04df5b0abbfc22c08f22a59e40
+  checksum: 10c0/9d6a761f2bfb91cecd4d84a4094eda6a7c512bcbc98d875441062c88a3a1e83260bf90d113b8d0063457cd8a37d205d95138584267c8ee69e8bb863719164109
   languageName: node
   linkType: hard
 
@@ -70,6 +71,17 @@ __metadata:
     "@apify/utilities": "npm:^2.16.2"
     ow: "npm:^0.28.2"
   checksum: 10c0/59ebb973e783fffabad983af698655d7ea2dc045e6b2464bf0ab2fde73be510eef6acb207e0b11e5abffec2aba5d87e3c265c58b38474dc5c26a6c3834b4b1ac
+  languageName: node
+  linkType: hard
+
+"@apify/input_secrets@npm:^1.2.1":
+  version: 1.2.1
+  resolution: "@apify/input_secrets@npm:1.2.1"
+  dependencies:
+    "@apify/log": "npm:^2.5.20"
+    "@apify/utilities": "npm:^2.16.2"
+    ow: "npm:^0.28.2"
+  checksum: 10c0/0494940e807d33acc2779576a2fe4610bb359e535e8da31d3d06c5b2e6efda20a775711fcb51a1be0ed672116bee286bc00341d31135c9c27fcbe5b7f9f24a2d
   languageName: node
   linkType: hard
 
@@ -2465,7 +2477,7 @@ __metadata:
     "@apify/actor-templates": "npm:^0.1.5"
     "@apify/consts": "npm:^2.36.0"
     "@apify/eslint-config": "npm:^1.0.0"
-    "@apify/input_schema": "npm:^3.12.0"
+    "@apify/input_schema": "npm:^3.17.0"
     "@apify/tsconfig": "npm:^0.1.1"
     "@apify/utilities": "npm:^2.15.1"
     "@biomejs/biome": "npm:^2.0.0"
