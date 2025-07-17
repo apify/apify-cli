@@ -4,6 +4,7 @@ import { runCommand } from '../../../src/lib/command-framework/apify-command.js'
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
 import { waitForBuildToFinishWithTimeout } from '../../__setup__/build-utils.js';
 import { testUserClient } from '../../__setup__/config.js';
+import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 import { useUniqueId } from '../../__setup__/hooks/useUniqueId.js';
@@ -82,7 +83,7 @@ describe('[api] apify call', () => {
 			.actor(actorId)
 			.get()
 			.then((actor) => actor!.id);
-	}, 120_000);
+	}, TEST_TIMEOUT);
 
 	afterAll(async () => {
 		await testUserClient.actor(actorId).delete();

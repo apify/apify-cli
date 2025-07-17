@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { runCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../../src/lib/utils.js';
+import { TEST_TIMEOUT } from '../../../__setup__/consts.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
 import { defaultsInputSchemaPath } from '../../../__setup__/input-schemas/paths.js';
@@ -53,7 +54,7 @@ describe('apify run', () => {
 
 		inputPath = joinPath(getLocalKeyValueStorePath(), 'INPUT.json');
 		outputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
-	}, 120_000);
+	}, TEST_TIMEOUT);
 
 	afterAll(async () => {
 		await afterAllCalls();

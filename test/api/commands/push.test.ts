@@ -9,6 +9,7 @@ import { runCommand } from '../../../src/lib/command-framework/apify-command.js'
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../../src/lib/utils.js';
 import { testUserClient } from '../../__setup__/config.js';
+import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
@@ -63,7 +64,7 @@ describe('[api] apify push', () => {
 		});
 
 		toggleCwdBetweenFullAndParentPath();
-	});
+	}, TEST_TIMEOUT);
 
 	afterAll(async () => {
 		await afterAllCalls();
@@ -78,222 +79,260 @@ describe('[api] apify push', () => {
 		resetCwdCaches();
 	});
 
-	it('should work without actorId', async () => {
-		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
-		actorJson.environmentVariables = {
-			MY_ENV_VAR: 'envVarValue',
-		};
-		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+	it(
+		'should work without actorId',
+		async () => {
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			actorJson.environmentVariables = {
+				MY_ENV_VAR: 'envVarValue',
+			};
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
-		await runCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+			await runCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
 
-		const userInfo = await getLocalUserInfo();
-		const { name } = actorJson;
-		const actorId = `${userInfo.username}/${name}`;
-		actorsForCleanup.add(actorId);
-		const createdActorClient = testUserClient.actor(actorId);
-		const createdActor = await createdActorClient.get();
-		const createdActorVersion = await createdActorClient.version(actorJson.version).get();
+			const userInfo = await getLocalUserInfo();
+			const { name } = actorJson;
+			const actorId = `${userInfo.username}/${name}`;
+			actorsForCleanup.add(actorId);
+			const createdActorClient = testUserClient.actor(actorId);
+			const createdActor = await createdActorClient.get();
+			const createdActorVersion = await createdActorClient.version(actorJson.version).get();
 
-		const filePathsToPush = await getActorLocalFilePaths(tmpPath);
-		const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
+			const filePathsToPush = await getActorLocalFilePaths(tmpPath);
+			const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
 
-		if (createdActor) await createdActorClient.delete();
+			if (createdActor) await createdActorClient.delete();
 
-		expect(createdActorVersion!.versionNumber).to.be.eql(actorJson.version);
-		expect(createdActorVersion!.buildTag).to.be.eql('latest');
-		expect(createdActorVersion!.envVars).to.be.eql([
-			{
-				name: 'MY_ENV_VAR',
-				value: 'envVarValue',
-			},
-		]);
-		// TODO: vlad, fix this too
-		expect((createdActorVersion as any)!.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
-		expect(createdActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
-	}, 120_000);
+			expect(createdActorVersion!.versionNumber).to.be.eql(actorJson.version);
+			expect(createdActorVersion!.buildTag).to.be.eql('latest');
+			expect(createdActorVersion!.envVars).to.be.eql([
+				{
+					name: 'MY_ENV_VAR',
+					value: 'envVarValue',
+				},
+			]);
+			// TODO: vlad, fix this too
+			expect((createdActorVersion as any)!.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect(createdActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
+		},
+		TEST_TIMEOUT,
+	);
 
-	it('should work with actorId', async () => {
-		let testActor = await testUserClient.actors().create(TEST_ACTOR);
-		const testActorClient = testUserClient.actor(testActor.id);
-		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+	it(
+		'should work with actorId',
+		async () => {
+			let testActor = await testUserClient.actors().create(TEST_ACTOR);
+			const testActorClient = testUserClient.actor(testActor.id);
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 
-		await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true, flags_force: true });
+			await runCommand(ActorsPushCommand, {
+				args_actorId: testActor.id,
+				flags_noPrompt: true,
+				flags_force: true,
+			});
 
-		actorsForCleanup.add(testActor.id);
+			actorsForCleanup.add(testActor.id);
 
-		testActor = (await testActorClient.get())!;
-		const testActorVersion = await testActorClient.version(actorJson!.version).get();
+			testActor = (await testActorClient.get())!;
+			const testActorVersion = await testActorClient.version(actorJson!.version).get();
 
-		const filePathsToPush = await getActorLocalFilePaths(tmpPath);
-		const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
+			const filePathsToPush = await getActorLocalFilePaths(tmpPath);
+			const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
 
-		if (testActor) await testActorClient.delete();
+			if (testActor) await testActorClient.delete();
 
-		expect(testActorVersion!.versionNumber).to.be.eql(actorJson.version);
-		expect(testActorVersion!.buildTag).to.be.eql('latest');
-		expect(testActorVersion!.envVars).to.be.eql([
-			{
-				name: 'MY_ENV_VAR',
-				value: 'envVarValue',
-			},
-		]);
-		expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
-		expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
-	}, 120_000);
+			expect(testActorVersion!.versionNumber).to.be.eql(actorJson.version);
+			expect(testActorVersion!.buildTag).to.be.eql('latest');
+			expect(testActorVersion!.envVars).to.be.eql([
+				{
+					name: 'MY_ENV_VAR',
+					value: 'envVarValue',
+				},
+			]);
+			expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
+		},
+		TEST_TIMEOUT,
+	);
 
-	it('should not rewrite current Actor envVars', async () => {
-		const testActorWithEnvVars = { ...TEST_ACTOR };
-		testActorWithEnvVars.versions = [
-			{
-				versionNumber: '0.0',
-				sourceType: 'SOURCE_FILES' as never,
+	it(
+		'should not rewrite current Actor envVars',
+		async () => {
+			const testActorWithEnvVars = { ...TEST_ACTOR };
+			testActorWithEnvVars.versions = [
+				{
+					versionNumber: '0.0',
+					sourceType: 'SOURCE_FILES' as never,
+					buildTag: 'latest',
+					sourceFiles: [],
+					envVars: [
+						{
+							name: 'MY_TEST',
+							value: 'myValue',
+						},
+					],
+				},
+			];
+			let testActor = await testUserClient.actors().create(testActorWithEnvVars);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			delete actorJson.environmentVariables;
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+			await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+
+			testActor = (await testActorClient.get())!;
+			const testActorVersion = await testActorClient.version(actorJson.version).get();
+
+			const filePathsToPush = await getActorLocalFilePaths(tmpPath);
+			const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
+
+			if (testActor) await testActorClient.delete();
+
+			expect(testActorVersion!.versionNumber).to.be.eql(actorJson.version);
+			expect(testActorVersion!.envVars).to.be.eql(testActorWithEnvVars.versions[0].envVars);
+			expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should upload zip for source files larger that 3MB',
+		async () => {
+			const testActorWithEnvVars = { ...TEST_ACTOR };
+			testActorWithEnvVars.versions = [
+				{
+					versionNumber: '0.0',
+					sourceType: 'TARBALL' as any,
+					buildTag: 'latest',
+					tarballUrl: 'http://example.com/my_test.zip',
+					envVars: [
+						{
+							name: 'MY_TEST',
+							value: 'myValue',
+						},
+					],
+				},
+			];
+			let testActor = await testUserClient.actors().create(testActorWithEnvVars);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			delete actorJson.environmentVariables;
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+			// Create large file to ensure Actor will be uploaded as zip
+			writeFileSync(joinPath('3mb-file.txt'), Buffer.alloc(1024 * 1024 * 3));
+
+			await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+
+			// Remove the big file so sources in following tests are not zipped
+			unlinkSync(joinPath('3mb-file.txt'));
+
+			testActor = (await testActorClient.get())!;
+			const testActorVersion = await testActorClient.version(actorJson.version).get();
+			const store = await testUserClient.keyValueStores().getOrCreate(`actor-${testActor.id}-source`);
+			await testUserClient.keyValueStore(store.id).delete(); // We just needed the store ID, we can clean up now
+
+			if (testActor) await testActorClient.delete();
+
+			expect(testActorVersion).to.be.eql({
+				versionNumber: actorJson.version,
 				buildTag: 'latest',
-				sourceFiles: [],
-				envVars: [
-					{
-						name: 'MY_TEST',
-						value: 'myValue',
-					},
-				],
-			},
-		];
-		let testActor = await testUserClient.actors().create(testActorWithEnvVars);
-		actorsForCleanup.add(testActor.id);
-		const testActorClient = testUserClient.actor(testActor.id);
+				tarballUrl:
+					`${testActorClient.baseUrl}/key-value-stores/${store.id}` +
+					`/records/version-${actorJson.version}.zip?disableRedirect=true`,
+				envVars: testActorWithEnvVars.versions[0].envVars,
+				sourceType: ACTOR_SOURCE_TYPES.TARBALL,
+			});
+		},
+		TEST_TIMEOUT,
+	);
 
-		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
-		delete actorJson.environmentVariables;
-		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+	it(
+		'typescript files should be treated as text',
+		async () => {
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			const { name, version } = actorJson;
 
-		await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
 
-		testActor = (await testActorClient.get())!;
-		const testActorVersion = await testActorClient.version(actorJson.version).get();
+			await runCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
 
-		const filePathsToPush = await getActorLocalFilePaths(tmpPath);
-		const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
+			if (existsSync(joinPath('some-typescript-file.ts'))) unlinkSync(joinPath('some-typescript-file.ts'));
 
-		if (testActor) await testActorClient.delete();
+			const userInfo = await getLocalUserInfo();
+			const actorId = `${userInfo.username}/${name}`;
+			actorsForCleanup.add(actorId);
+			const createdActorClient = testUserClient.actor(actorId);
+			const createdActor = await createdActorClient.get();
+			const createdActorVersion = await createdActorClient.version(version).get();
 
-		expect(testActorVersion!.versionNumber).to.be.eql(actorJson.version);
-		expect(testActorVersion!.envVars).to.be.eql(testActorWithEnvVars.versions[0].envVars);
-		expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
-		expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
-	}, 120_000);
+			if (createdActor) await createdActorClient.delete();
 
-	it('should upload zip for source files larger that 3MB', async () => {
-		const testActorWithEnvVars = { ...TEST_ACTOR };
-		testActorWithEnvVars.versions = [
-			{
-				versionNumber: '0.0',
-				sourceType: 'TARBALL' as any,
-				buildTag: 'latest',
-				tarballUrl: 'http://example.com/my_test.zip',
-				envVars: [
-					{
-						name: 'MY_TEST',
-						value: 'myValue',
-					},
-				],
-			},
-		];
-		let testActor = await testUserClient.actors().create(testActorWithEnvVars);
-		actorsForCleanup.add(testActor.id);
-		const testActorClient = testUserClient.actor(testActor.id);
-		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			expect(
+				(createdActorVersion as any).sourceFiles.find((file: any) => file.name === 'some-typescript-file.ts')
+					.format,
+			).to.be.equal(SOURCE_FILE_FORMATS.TEXT);
+		},
+		TEST_TIMEOUT,
+	);
 
-		delete actorJson.environmentVariables;
-		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+	it(
+		'should not push Actor when there is newer version on platform',
+		async () => {
+			const testActor = await testUserClient.actors().create(TEST_ACTOR);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 
-		// Create large file to ensure Actor will be uploaded as zip
-		writeFileSync(joinPath('3mb-file.txt'), Buffer.alloc(1024 * 1024 * 3));
+			// @ts-expect-error Wrong typing of update method
+			await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
 
-		await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
 
-		// Remove the big file so sources in following tests are not zipped
-		unlinkSync(joinPath('3mb-file.txt'));
+			expect(lastErrorMessage()).to.includes('is already on the platform');
+		},
+		TEST_TIMEOUT,
+	);
 
-		testActor = (await testActorClient.get())!;
-		const testActorVersion = await testActorClient.version(actorJson.version).get();
-		const store = await testUserClient.keyValueStores().getOrCreate(`actor-${testActor.id}-source`);
-		await testUserClient.keyValueStore(store.id).delete(); // We just needed the store ID, we can clean up now
+	it(
+		'should not push Actor when there are no files to push',
+		async () => {
+			toggleCwdBetweenFullAndParentPath();
 
-		if (testActor) await testActorClient.delete();
+			await mkdir(joinCwdPath('empty-dir'), { recursive: true });
 
-		expect(testActorVersion).to.be.eql({
-			versionNumber: actorJson.version,
-			buildTag: 'latest',
-			tarballUrl:
-				`${testActorClient.baseUrl}/key-value-stores/${store.id}` +
-				`/records/version-${actorJson.version}.zip?disableRedirect=true`,
-			envVars: testActorWithEnvVars.versions[0].envVars,
-			sourceType: ACTOR_SOURCE_TYPES.TARBALL,
-		});
-	}, 120_000);
+			forceNewCwd('empty-dir');
 
-	it('typescript files should be treated as text', async () => {
-		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
-		const { name, version } = actorJson;
+			await runCommand(ActorsPushCommand, { flags_noPrompt: true });
 
-		writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
+			expect(lastErrorMessage()).to.include(
+				'You need to call this command from a folder that has an Actor in it',
+			);
+		},
+		TEST_TIMEOUT,
+	);
 
-		await runCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+	it(
+		'should not push when the folder does not seem to have a valid Actor',
+		async () => {
+			toggleCwdBetweenFullAndParentPath();
 
-		if (existsSync(joinPath('some-typescript-file.ts'))) unlinkSync(joinPath('some-typescript-file.ts'));
+			await mkdir(joinCwdPath('not-an-actor-i-promise'), { recursive: true });
 
-		const userInfo = await getLocalUserInfo();
-		const actorId = `${userInfo.username}/${name}`;
-		actorsForCleanup.add(actorId);
-		const createdActorClient = testUserClient.actor(actorId);
-		const createdActor = await createdActorClient.get();
-		const createdActorVersion = await createdActorClient.version(version).get();
+			forceNewCwd('not-an-actor-i-promise');
 
-		if (createdActor) await createdActorClient.delete();
+			await writeFile(joinCwdPath('owo.txt'), 'Lorem ipsum');
 
-		expect(
-			(createdActorVersion as any).sourceFiles.find((file: any) => file.name === 'some-typescript-file.ts')
-				.format,
-		).to.be.equal(SOURCE_FILE_FORMATS.TEXT);
-	}, 120_000);
+			await runCommand(ActorsPushCommand, { flags_noPrompt: true });
 
-	it('should not push Actor when there is newer version on platform', async () => {
-		const testActor = await testUserClient.actors().create(TEST_ACTOR);
-		actorsForCleanup.add(testActor.id);
-		const testActorClient = testUserClient.actor(testActor.id);
-		const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
-
-		// @ts-expect-error Wrong typing of update method
-		await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
-
-		await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
-
-		expect(lastErrorMessage()).to.includes('is already on the platform');
-	}, 120_000);
-
-	it('should not push Actor when there are no files to push', async () => {
-		toggleCwdBetweenFullAndParentPath();
-
-		await mkdir(joinCwdPath('empty-dir'), { recursive: true });
-
-		forceNewCwd('empty-dir');
-
-		await runCommand(ActorsPushCommand, { flags_noPrompt: true });
-
-		expect(lastErrorMessage()).to.include('You need to call this command from a folder that has an Actor in it');
-	}, 120_000);
-
-	it('should not push when the folder does not seem to have a valid Actor', async () => {
-		toggleCwdBetweenFullAndParentPath();
-
-		await mkdir(joinCwdPath('not-an-actor-i-promise'), { recursive: true });
-
-		forceNewCwd('not-an-actor-i-promise');
-
-		await writeFile(joinCwdPath('owo.txt'), 'Lorem ipsum');
-
-		await runCommand(ActorsPushCommand, { flags_noPrompt: true });
-
-		expect(lastErrorMessage()).to.include('A valid Actor could not be found in the current directory.');
-	}, 120_000);
+			expect(lastErrorMessage()).to.include('A valid Actor could not be found in the current directory.');
+		},
+		TEST_TIMEOUT,
+	);
 });

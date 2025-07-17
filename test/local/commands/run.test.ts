@@ -12,6 +12,7 @@ import {
 	getLocalRequestQueuePath,
 	getLocalStorageDir,
 } from '../../../src/lib/utils.js';
+import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
@@ -60,7 +61,7 @@ describe('apify run', () => {
 		});
 
 		toggleCwdBetweenFullAndParentPath();
-	}, 120_000);
+	}, TEST_TIMEOUT);
 
 	afterAll(async () => {
 		await afterAllCalls();

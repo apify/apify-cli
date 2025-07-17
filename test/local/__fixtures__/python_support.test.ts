@@ -4,6 +4,7 @@ import { rm } from 'node:fs/promises';
 import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { usePythonRuntime } from '../../../src/lib/hooks/runtimes/python.js';
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
+import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../../__setup__/reset-cwd-caches.js';
 
@@ -32,7 +33,7 @@ describe('[python] Python support', () => {
 		resetCwdCaches();
 	});
 
-	it('should work', { timeout: 120_000 }, async () => {
+	it('should work', { timeout: TEST_TIMEOUT }, async () => {
 		const runtime = await usePythonRuntime({ cwd: tmpPath, force: true });
 
 		const pythonVersion = runtime.map((r) => r.version).unwrapOr(undefined);
