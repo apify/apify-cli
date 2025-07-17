@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.21.9](https://github.com/apify/apify-cli/releases/tag/v0.21.9) (2025-07-17)
+
+### 🚀 Features
+
+- Handle sub-schema validation (#853) ([51cc733](https://github.com/apify/apify-cli/commit/51cc7333ca665a6e0dfab8a6dc296a396b3e40ff))
+
 ## [0.21.8](https://github.com/apify/apify-cli/releases/tag/v0.21.8) (2025-06-24)
 
 ### 🐛 Bug Fixes
