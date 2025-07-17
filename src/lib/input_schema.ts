@@ -9,7 +9,7 @@ import { validateInputSchema } from '@apify/input_schema';
 
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
 import { warning } from './outputs.js';
-import { Ajv, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
+import { Ajv2019, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
 	'.actor/INPUT_SCHEMA.json',
@@ -85,7 +85,7 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
 			 * It is not possible to install the package here because it is private
 			 * We should move it to @apify/input_schema and use it from there.
 			 */
-			const validator = new Ajv({ strict: false });
+			const validator = new Ajv2019({ strict: false });
 			validateInputSchema(validator, inputSchema);
 
 			// inputFile = _.mapObject(inputSchema.properties as any, (fieldSchema) =>

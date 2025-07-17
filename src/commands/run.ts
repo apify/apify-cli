@@ -29,7 +29,7 @@ import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '..
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
-	Ajv,
+	Ajv2019,
 	checkIfStorageIsEmpty,
 	getLocalInput,
 	getLocalKeyValueStorePath,
@@ -456,7 +456,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		}
 
 		// Step 1: validate the input schema
-		const validator = new Ajv({ strict: false, unicodeRegExp: false });
+		const validator = new Ajv2019({ strict: false, unicodeRegExp: false });
 		validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
 
 		const defaults = getDefaultsFromInputSchema(inputSchema);
