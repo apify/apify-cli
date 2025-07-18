@@ -16,8 +16,8 @@ export interface CLIMetadata {
 	version: string;
 	hash: string;
 	runtime: string;
-	platform: Exclude<(typeof process)['platform'], 'win32'> | 'windows';
-	arch: (typeof process)['arch'];
+	platform: Exclude<typeof process.platform, 'win32'> | 'windows';
+	arch: typeof process.arch;
 	extraRuntimeData: string;
 	installMethod: InstallMethod;
 	fullVersionString: string;
@@ -99,7 +99,7 @@ export function useCLIMetadata(): CLIMetadata {
 	cachedMetadata = {
 		version: CLI_VERSION,
 		hash: CLI_HASH,
-		arch: process.arch,
+		arch: (process.env.APIFY_BUNDLE_ARCH as typeof process.arch) ?? process.arch,
 		platform: process.platform === 'win32' ? 'windows' : process.platform,
 		runtime: runtime.runtime,
 		extraRuntimeData: runtime.nodeVersion ? `(emulating node ${runtime.nodeVersion})` : '',

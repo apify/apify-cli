@@ -66,7 +66,8 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		const { installMethod } = useCLIMetadata();
 
 		if (!result.shouldUpdate || result.currentVersion === DEVELOPMENT_VERSION_MARKER) {
-			if (!result.cacheHit && !this.flags.internalAutomaticCall) {
+			// Always print, unless the command was called automatically by the CLI for a version check
+			if (!this.flags.internalAutomaticCall) {
 				info({ message: `${this.cliName} is up to date 👍 \n` });
 			}
 
