@@ -155,7 +155,8 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 			for (const asset of assets) {
 				const cliName = asset.name.split('-')[0];
-				const filePath = join(bundleDirectory, cliName);
+				const fileName = metadata.platform === 'windows' ? `${cliName}.exe` : cliName;
+				const filePath = join(bundleDirectory, fileName);
 
 				const res = await fetch(asset.browser_download_url, { headers: { 'User-Agent': USER_AGENT } });
 
