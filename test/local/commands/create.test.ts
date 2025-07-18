@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
-import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
@@ -31,7 +31,7 @@ describe('apify create', () => {
 
 	['a'.repeat(151), 'sh', 'bad_escaped'].forEach((badActorName) => {
 		it(`returns error with bad Actor name ${badActorName}`, async () => {
-			await runCommand(CreateCommand, { args_actorName: badActorName });
+			await testRunCommand(CreateCommand, { args_actorName: badActorName });
 
 			expect(lastErrorMessage()).toMatch(/the actor name/i);
 		});
@@ -41,7 +41,7 @@ describe('apify create', () => {
 		const ACT_TEMPLATE = 'project_empty';
 		const expectedInput = {};
 
-		await runCommand(CreateCommand, {
+		await testRunCommand(CreateCommand, {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
@@ -72,7 +72,7 @@ describe('apify create', () => {
 		const ACT_TEMPLATE = 'getting_started_typescript';
 		const expectedInput = { url: 'https://www.apify.com' };
 
-		await runCommand(CreateCommand, {
+		await testRunCommand(CreateCommand, {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
@@ -102,7 +102,7 @@ describe('apify create', () => {
 	it('should skip installing optional dependencies', async () => {
 		const ACT_TEMPLATE = 'project_cheerio_crawler_js';
 
-		await runCommand(CreateCommand, {
+		await testRunCommand(CreateCommand, {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_omitOptionalDeps: true,

@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 
-import { runCommand } from '../../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
 
 const actName = 'create-my-spaced-actor';
@@ -26,7 +26,7 @@ describe.runIf(process.env.FORCE_WINDOWS_TESTS || process.platform === 'win32')(
 
 		it('should work', async () => {
 			const ACT_TEMPLATE = 'python-playwright';
-			await runCommand(CreateCommand, { args_actorName: actName, flags_template: ACT_TEMPLATE });
+			await testRunCommand(CreateCommand, { args_actorName: actName, flags_template: ACT_TEMPLATE });
 
 			// check files structure
 			expect(existsSync(joinPath(actName))).toBeTruthy();

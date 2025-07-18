@@ -4,11 +4,12 @@ import chalk from 'chalk';
 // eslint-disable-next-line import/extensions
 import yargs from 'yargs/yargs';
 
+import type { UpgradeCommand as TypeUpgradeCommand } from '../commands/cli-management/upgrade.js';
 import {
 	camelCaseToKebabCase,
 	commandRegistry,
+	internalRunCommand,
 	kebabCaseString,
-	runCommand,
 } from '../lib/command-framework/apify-command.js';
 import type { FlagTag, TaggedFlagBuilder } from '../lib/command-framework/flags.js';
 import { renderMainHelpMenu, selectiveRenderHelpForCommand } from '../lib/command-framework/help.js';
@@ -63,7 +64,7 @@ export const cli = yargs()
 cli.usageConfiguration({ 'hide-types': true });
 
 cli.middleware(async (argv) => {
-	const UpgradeCommand = commandRegistry.get('upgrade')!;
+	const UpgradeCommand = commandRegistry.get('upgrade') as typeof TypeUpgradeCommand;
 
 	const checkVersionsCommandIds = [UpgradeCommand.name, ...(UpgradeCommand.aliases ?? [])];
 
@@ -77,10 +78,12 @@ cli.middleware(async (argv) => {
 		return;
 	}
 
-	await runCommand(UpgradeCommand, {});
+	await internalRunCommand(argv.$0, UpgradeCommand, { flags_internalAutomaticCall: true });
 });
 
 const cliMetadata = useCLIMetadata();
+
+export const USER_AGENT = `Apify CLI/${cliMetadata.version} (https://github.com/apify/apify-cli)`;
 
 export function printCLIVersionAndExitIfFlagUsed(parsed: Awaited<ReturnType<typeof cli.parse>>) {
 	if (parsed.v === true || parsed.version === true) {
@@ -107,6 +110,8 @@ export async function runCLI(entrypoint: string) {
 		cwd: process.cwd(),
 		execPath: process.execPath,
 	});
+
+	cli.scriptName(entrypoint);
 
 	await cli.parse(process.argv.slice(2), {}, (rawError, parsed) => {
 		if (rawError && parsed._.length > 0) {

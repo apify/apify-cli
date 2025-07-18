@@ -93,6 +93,13 @@ for (const entryPoint of entryPoints) {
 
 			if (systemType.toLowerCase().includes('arm')) {
 				arch = 'arm64';
+
+				// On arm, process.arch will still return x64, which will break the upgrade command.
+				// So we override the arch to arm64
+
+				const newNewContent = newContent.replace('process.env.APIFY_BUNDLE_ARCH', '"arm64"');
+
+				await writeFile(metadataFile, newNewContent);
 			}
 		}
 
@@ -103,6 +110,9 @@ for (const entryPoint of entryPoints) {
 		console.log(`Building ${cliName} for ${target} (result: ${fileName})...`);
 		// TODO: --sourcemap crashes for w/e reason and --bytecode doesn't support ESM (TLA to be exact)
 		await $`bun build --compile --minify --target=${target} --outfile=${outFile} ${entryPoint}`;
+
+		// Remove the arch override
+		await writeFile(metadataFile, newContent);
 	}
 }
 

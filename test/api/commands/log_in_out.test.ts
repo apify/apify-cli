@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import axios from 'axios';
 
-import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../../__setup__/config.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -57,7 +57,7 @@ describe('[api] apify login and logout', () => {
 
 		expect(expectedUserInfoWithoutFloatFields).to.eql(userInfoFromConfigWithoutFloatFields);
 
-		await runCommand(LogoutCommand, {});
+		await testRunCommand(LogoutCommand, {});
 		const isGlobalConfig = existsSync(AUTH_FILE_PATH());
 
 		expect(isGlobalConfig).to.be.eql(false);
@@ -65,7 +65,7 @@ describe('[api] apify login and logout', () => {
 
 	it('have correctly setup server for interactive login', async () => {
 		// eslint-disable-next-line no-restricted-syntax -- Intentionally testing a different login method
-		await runCommand(LoginCommand, { flags_method: 'console' });
+		await testRunCommand(LoginCommand, { flags_method: 'console' });
 
 		const consoleInfo = lastErrorMessage();
 		const consoleUrl = /"(http[s]?:\/\/[^"]*)"/.exec(consoleInfo)?.[1];
