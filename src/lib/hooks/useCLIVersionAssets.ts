@@ -1,12 +1,11 @@
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 
+import { USER_AGENT } from '../../entrypoints/_shared.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { useCLIMetadata } from './useCLIMetadata.js';
 
 const metadata = useCLIMetadata();
-
-const USER_AGENT = `Apify CLI/${metadata.version} (https://github.com/apify/apify-cli)`;
 
 function isInstalledOnMusl() {
 	if (metadata.platform === 'linux') {
@@ -57,9 +56,11 @@ function isInstalledOnBaseline() {
  * @returns The assets for the given version of the CLI.
  */
 export async function useCLIVersionAssets(version: string) {
-	const versionWithoutV = version.replace(/^v/, '');
+	const versionWithoutV = version.replace(/^v(\d+)/, '$1');
 
-	const release = await fetch(`https://api.github.com/repos/apify/apify-cli/releases/tags/v${versionWithoutV}`, {
+	const tag = versionWithoutV === 'latest' ? 'latest' : `tags/v${versionWithoutV}`;
+
+	const release = await fetch(`https://api.github.com/repos/apify/apify-cli/releases/${tag}`, {
 		headers: {
 			'User-Agent': USER_AGENT,
 		},
@@ -69,6 +70,8 @@ export async function useCLIVersionAssets(version: string) {
 		cliDebugPrint('useCLIVersionAssets', 'Failed to fetch release', {
 			statusCode: release.status,
 			body: await release.text(),
+			version,
+			tag,
 		});
 
 		return null;
@@ -94,10 +97,6 @@ export async function useCLIVersionAssets(version: string) {
 			assetBaselineOrMusl,
 			assetBaseline,
 		] = asset.name.replace(versionWithoutV, 'version').replace('.exe', '').split('-');
-
-		if (assetOs === 'windows') {
-			console.log('asset', asset.name);
-		}
 
 		if (assetOs !== metadata.platform) {
 			return false;
@@ -125,6 +124,6 @@ export async function useCLIVersionAssets(version: string) {
 
 	return {
 		assets,
-		version: body.tag_name.replace(/^v/, ''),
+		version: body.tag_name.replace(/^v(\d+)/, '$1'),
 	};
 }

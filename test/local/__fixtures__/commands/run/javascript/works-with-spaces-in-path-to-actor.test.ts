@@ -1,6 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 
-import { runCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../../../../src/lib/utils.js';
 import { useTempPath } from '../../../../../__setup__/hooks/useTempPath.js';
 
@@ -32,7 +32,10 @@ describe('[javascript] spaces in path to actor', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await runCommand(CreateCommand, { flags_template: 'project_cheerio_crawler_js', args_actorName: actorName });
+		await testRunCommand(CreateCommand, {
+			flags_template: 'project_cheerio_crawler_js',
+			args_actorName: actorName,
+		});
 
 		forceNewCwd(actorName);
 
@@ -57,7 +60,7 @@ describe('[javascript] spaces in path to actor', () => {
 	});
 
 	it('should work', async () => {
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		const output = JSON.parse(await readFile(outputPath, 'utf8'));
 		expect(output).toBe('worked');

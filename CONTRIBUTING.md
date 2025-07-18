@@ -134,4 +134,4 @@ afterAll(async () => {
 
 ### Running commands
 
-Running commands in tests can be done by calling `runCommand` (imported from the command framework)
+Running commands in tests can be done by calling `testRunCommand` (imported from the command framework)

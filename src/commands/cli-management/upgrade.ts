@@ -1,13 +1,18 @@
+import { chmod, readdir, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+
 import chalk from 'chalk';
 import { gte } from 'semver';
 
+import { USER_AGENT } from '../../entrypoints/_shared.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { execWithLog } from '../../lib/exec.js';
 import { DEVELOPMENT_VERSION_MARKER, type InstallMethod, useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
 import { useCLIVersionAssets } from '../../lib/hooks/useCLIVersionAssets.js';
 import { useCLIVersionCheck } from '../../lib/hooks/useCLIVersionCheck.js';
-import { error, info, simpleLog, warning } from '../../lib/outputs.js';
+import { error, info, simpleLog, success, warning } from '../../lib/outputs.js';
+import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
 
 const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: string) => string[]> = {
 	bundle: (_, entrypoint) => [`${entrypoint}`, 'upgrade'],
@@ -127,7 +132,70 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 				return;
 			}
 
-			throw new Error('Bundles do not support manual upgrades yet.');
+			const bundleDirectory = dirname(process.execPath);
+
+			cliDebugPrint('[upgrade] bundleDirectory', bundleDirectory);
+
+			const directoryEntries = await readdir(bundleDirectory);
+
+			if (!directoryEntries.some((entry) => entry.startsWith('apify') || entry.startsWith('actor'))) {
+				cliDebugPrint('[upgrade] directoryEntries', directoryEntries);
+
+				error({
+					message: [
+						`Failed to find the currently installed ${this.cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
+						`- The version you are trying to upgrade to: ${versionWithoutV}`,
+						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
+						`- The directory where the ${this.cliName} bundle is installed: ${bundleDirectory}`,
+					].join('\n'),
+				});
+				return;
+			}
+
+			for (const asset of assets) {
+				const cliName = asset.name.split('-')[0];
+				const filePath = join(bundleDirectory, cliName);
+
+				const res = await fetch(asset.browser_download_url, { headers: { 'User-Agent': USER_AGENT } });
+
+				if (!res.ok) {
+					const body = await res.text();
+
+					cliDebugPrint('[upgrade] failed to fetch asset', { asset, status: res.status, body });
+
+					error({
+						message: [
+							`Failed to fetch the ${cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
+							`- The version you are trying to upgrade to: ${versionWithoutV}`,
+							`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
+							`- The URL of the asset that failed to fetch: ${asset.browser_download_url}`,
+							`- The status code of the response: ${res.status}`,
+							`- The body of the response: ${body}`,
+						].join('\n'),
+					});
+
+					return;
+				}
+
+				if (process.env.APIFY_CLI_DEBUG && !process.env.APIFY_CLI_FORCE) {
+					info({ message: `Would write asset ${cliName} to ${filePath}` });
+
+					continue;
+				}
+
+				const buffer = await res.arrayBuffer();
+
+				await writeFile(filePath, Buffer.from(buffer));
+
+				// Make the file executable again on unix systems
+				await chmod(filePath, 0o755);
+
+				cliDebugPrint(`[upgrade ${cliName}] wrote asset to`, filePath);
+			}
+
+			this.successMessage(versionWithoutV);
+
+			return;
 		}
 
 		const updateCommand = UPDATE_COMMANDS[metadata.installMethod](version, this.entrypoint);
@@ -139,10 +207,16 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		try {
 			await execWithLog({ cmd: updateCommand[0], args: updateCommand.slice(1) });
+
+			this.successMessage(versionWithoutV);
 		} catch {
 			error({
 				message: `Failed to upgrade the CLI. Please run the following command manually: ${updateCommand.join(' ')}`,
 			});
 		}
+	}
+
+	private successMessage(version: string) {
+		success({ message: `Successfully upgraded ${this.cliName} to ${version} 👍` });
 	}
 }

@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { runCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
 import { useConsoleSpy } from '../../../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../../../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../../../../../__setup__/reset-cwd-caches.js';
@@ -23,7 +23,10 @@ describe('[javascript] prints error message on project with no detected start', 
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await runCommand(CreateCommand, { flags_template: 'project_cheerio_crawler_js', args_actorName: actorName });
+		await testRunCommand(CreateCommand, {
+			flags_template: 'project_cheerio_crawler_js',
+			args_actorName: actorName,
+		});
 		toggleCwdBetweenFullAndParentPath();
 
 		const pkgJsonPath = joinPath('package.json');
@@ -45,7 +48,7 @@ describe('[javascript] prints error message on project with no detected start', 
 	});
 
 	it('should print error message', async () => {
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		expect(logMessages.error[0]).toMatch(/No entrypoint detected/i);
 	});
