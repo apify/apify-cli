@@ -54,7 +54,8 @@ function Download-File-To-Location {
         [Int]$Type,
         [Parameter(Mandatory = $true)]
         [String]$Location,
-        [String]$Version
+        [String]$Version,
+        [Boolean]$ExitOnError = $true
     )
     switch ($Type) {
         0 {
@@ -87,7 +88,10 @@ function Download-File-To-Location {
         catch {
             Write-Error "Upgrade Failed - could not download $URL"
             Write-Error "The command 'Invoke-RestMethod $URL -OutFile $FullPath' exited with error: $_`n"
-            exit 1
+
+            if ($ExitOnError) {
+                exit 1
+            }
         }
     }
 
@@ -103,7 +107,7 @@ foreach ($URL in $URLArray) {
 }
 
 # Download the updated upgrade script (should rarely change but just in case)
-Download-File-To-Location -URL $UpgradeScriptURL -FileName "upgrade" -Location $InstallLocation -Type 1
+Download-File-To-Location -URL $UpgradeScriptURL -FileName "upgrade" -Location $InstallLocation -Type 1 -ExitOnError $false
 
 $C_RESET = [char]27 + "[0m"
 $C_GREEN = [char]27 + "[1;32m"
