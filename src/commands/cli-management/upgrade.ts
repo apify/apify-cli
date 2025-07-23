@@ -1,3 +1,5 @@
+import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { chmod, readdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
@@ -9,6 +11,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { execWithLog } from '../../lib/exec.js';
 import { DEVELOPMENT_VERSION_MARKER, type InstallMethod, useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
+import type { Asset } from '../../lib/hooks/useCLIVersionAssets.js';
 import { useCLIVersionAssets } from '../../lib/hooks/useCLIVersionAssets.js';
 import { useCLIVersionCheck } from '../../lib/hooks/useCLIVersionCheck.js';
 import { error, info, simpleLog, success, warning } from '../../lib/outputs.js';
@@ -24,6 +27,8 @@ const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: strin
 
 // TODO: update this once we bump the CLI version and release it with this command available
 const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '0.21.8';
+
+const UPGRADE_SCRIPT_URL = 'https://raw.githubusercontent.com/apify/apify-cli/main/scripts/install/upgrade.ps1';
 
 export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	static override name = 'upgrade' as const;
@@ -153,47 +158,11 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 				return;
 			}
 
-			for (const asset of assets) {
-				const cliName = asset.name.split('-')[0];
-				const fileName = metadata.platform === 'windows' ? `${cliName}.exe` : cliName;
-				const filePath = join(bundleDirectory, fileName);
-
-				const res = await fetch(asset.browser_download_url, { headers: { 'User-Agent': USER_AGENT } });
-
-				if (!res.ok) {
-					const body = await res.text();
-
-					cliDebugPrint('[upgrade] failed to fetch asset', { asset, status: res.status, body });
-
-					error({
-						message: [
-							`Failed to fetch the ${cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
-							`- The version you are trying to upgrade to: ${versionWithoutV}`,
-							`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
-							`- The URL of the asset that failed to fetch: ${asset.browser_download_url}`,
-							`- The status code of the response: ${res.status}`,
-							`- The body of the response: ${body}`,
-						].join('\n'),
-					});
-
-					return;
-				}
-
-				if (process.env.APIFY_CLI_DEBUG && !process.env.APIFY_CLI_FORCE) {
-					info({ message: `Would write asset ${cliName} to ${filePath}` });
-
-					continue;
-				}
-
-				const buffer = await res.arrayBuffer();
-
-				await writeFile(filePath, Buffer.from(buffer));
-
-				// Make the file executable again on unix systems
-				await chmod(filePath, 0o755);
-
-				cliDebugPrint(`[upgrade ${cliName}] wrote asset to`, filePath);
+			if (metadata.platform === 'windows') {
+				return this.startUpgradeProcess(bundleDirectory, versionWithoutV, assets);
 			}
+
+			await this.handleUnixUpgrade(bundleDirectory, versionWithoutV, assets);
 
 			this.successMessage(versionWithoutV);
 
@@ -219,6 +188,132 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	}
 
 	private successMessage(version: string) {
-		success({ message: `Successfully upgraded ${this.cliName} to ${version} 👍` });
+		success({ message: `Successfully upgraded to ${version} 👍` });
+	}
+
+	private async startUpgradeProcess(bundleDirectory: string, version: string, assets: Asset[]) {
+		// Assert that we have the upgrade script, and download if it is missing
+		await this.upsertUpgradeScript(bundleDirectory);
+
+		// Start the child process with it, and exit the cli
+		const args = ['-ProcessId', process.pid.toString(), '-InstallLocation', bundleDirectory, '-Version', version];
+
+		const urls = assets.map((asset) => asset.browser_download_url).join(',');
+
+		args.push('-URL', `'${urls}'`);
+
+		cliDebugPrint('[upgrade] starting upgrade process with args', args);
+
+		info({ message: `Starting upgrade process...` });
+
+		const upgradeProcess = spawn(
+			'powershell.exe',
+			['-ExecutionPolicy', 'Bypass', '-File', `"${join(bundleDirectory, 'upgrade.ps1')}"`, ...args],
+			{
+				windowsHide: true,
+				detached: true,
+				windowsVerbatimArguments: true,
+				stdio: 'inherit',
+			},
+		);
+
+		upgradeProcess.unref();
+
+		// CLI exits, but the upgrade process continues in the background
+		process.exit(0);
+	}
+
+	private async upsertUpgradeScript(bundleDirectory: string) {
+		const filePath = join(bundleDirectory, 'upgrade.ps1');
+
+		if (existsSync(filePath)) {
+			return;
+		}
+
+		const metadata = useCLIMetadata();
+
+		const res = await fetch(UPGRADE_SCRIPT_URL, { headers: { 'User-Agent': USER_AGENT } });
+
+		if (!res.ok) {
+			error({
+				message: [
+					`Failed to fetch the upgrade script. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
+					`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
+					`- The URL of the asset that failed to fetch: ${UPGRADE_SCRIPT_URL}`,
+					`- The status code of the response: ${res.status}`,
+				].join('\n'),
+			});
+
+			return;
+		}
+
+		const buffer = await res.arrayBuffer();
+
+		await writeFile(filePath, Buffer.from(buffer));
+
+		cliDebugPrint('[upgrade] downloaded upgrade script to', filePath);
+	}
+
+	private async handleUnixUpgrade(bundleDirectory: string, version: string, assets: Asset[]) {
+		const metadata = useCLIMetadata();
+
+		for (const asset of assets) {
+			const cliName = asset.name.split('-')[0];
+			const filePath = join(bundleDirectory, cliName);
+
+			info({ message: `Downloading ${cliName}...` });
+
+			const res = await fetch(asset.browser_download_url, { headers: { 'User-Agent': USER_AGENT } });
+
+			if (!res.ok) {
+				const body = await res.text();
+
+				cliDebugPrint('[upgrade] failed to fetch asset', { asset, status: res.status, body });
+
+				error({
+					message: [
+						`Failed to fetch the ${cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
+						`- The version you are trying to upgrade to: ${version}`,
+						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
+						`- The URL of the asset that failed to fetch: ${asset.browser_download_url}`,
+						`- The status code of the response: ${res.status}`,
+						`- The body of the response: ${body}`,
+					].join('\n'),
+				});
+
+				return;
+			}
+
+			if (process.env.APIFY_CLI_DEBUG && !process.env.APIFY_CLI_FORCE) {
+				info({ message: `Would write asset ${cliName} to ${filePath}` });
+
+				continue;
+			}
+
+			info({ message: chalk.gray(`Writing ${cliName} to ${filePath}...`) });
+
+			const buffer = await res.arrayBuffer();
+
+			try {
+				await writeFile(filePath, Buffer.from(buffer));
+
+				// Make the file executable again on unix systems
+				await chmod(filePath, 0o755);
+
+				cliDebugPrint(`[upgrade ${cliName}] wrote asset to`, filePath);
+			} catch (err: any) {
+				cliDebugPrint('[upgrade] failed to write asset', { error: err });
+
+				error({
+					message: [
+						`Failed to write the ${cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
+						`- The version you are trying to upgrade to: ${version}`,
+						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
+						`- The URL of the asset that failed to fetch: ${asset.browser_download_url}`,
+						`- The error: ${err.message}`,
+					].join('\n'),
+				});
+			}
+		}
 	}
 }

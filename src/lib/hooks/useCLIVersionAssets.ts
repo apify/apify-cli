@@ -49,6 +49,11 @@ function isInstalledOnBaseline() {
 	return false;
 }
 
+export interface Asset {
+	name: string;
+	browser_download_url: string;
+}
+
 /**
  * Fetches the assets for a given version of the CLI, matching the os and arch of the current machine.
  *

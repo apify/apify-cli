@@ -179,7 +179,7 @@ function Install-Apify {
 
             try {
                 # Use Invoke-RestMethod instead of Invoke-WebRequest because Invoke-WebRequest breaks on
-                # some machines, see
+                # some machines
                 Invoke-RestMethod -Uri $DownloadURL -OutFile $DownloadPath
             }
             catch {
