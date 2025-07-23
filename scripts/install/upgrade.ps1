@@ -68,6 +68,14 @@ function Download-File-To-Location {
 
     $FullPath = Join-Path $Location $FileName
 
+    try {
+        # Delete the file if it exists
+        Remove-Item -Path $FullPath -Force
+    }
+    catch {
+        Write-Warning "Failed to delete $FullPath`: $($_.Exception.Message)"
+    }
+
     if ($Version) {
         Write-Output "Downloading $FileName version $Version to $FullPath"
     }

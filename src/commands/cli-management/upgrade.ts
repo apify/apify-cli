@@ -226,8 +226,11 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		upgradeProcess.unref();
 
-		// CLI exits, but the upgrade process continues in the background
-		process.exit(0);
+		// Wait a bit for the upgrade process to start
+		setTimeout(() => {
+			// CLI exits, but the upgrade process continues in the background
+			process.exit(0);
+		}, 1000);
 	}
 
 	private async upsertUpgradeScript(bundleDirectory: string) {
