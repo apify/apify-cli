@@ -7,35 +7,41 @@ param(
     [String]$InstallLocation,
 
     [Parameter(Mandatory = $true)]
-    [String]$URL,
+    [String]$AllUrls,
 
     [Parameter(Mandatory = $true)]
     [String]$Version
 )
 
-$ErrorActionPreference = "Stop"
-
 $UpgradeScriptURL = "https://raw.githubusercontent.com/apify/apify-cli/main/scripts/install/upgrade.ps1"
 
-$URLArray = $URL -split ','
+$URLArray = $AllUrls -split ','
 
 if ($URLArray.Count -ne 2) {
     Write-Error "URL parameter must contain exactly 2 comma-delimited URLs"
     exit 1
 }
 
+Write-Output "Apify and Actor CLI Upgrade Script - Starting Upgrade to version ${Version}...`n`n"
+
 # Check that the process is running
 $Process = $null
 
 try {
-    $Process = Get-Process -Id $ProcessID
+    $Process = (Get-Process -Id $ProcessID) 2>$null
 
     Write-Output "Waiting for CLI to exit..."
-    $Process.WaitForExit(10000)
+    $null = $Process.WaitForExit(10000)
 
     # If the process is still running, bail out
     if ($Process.HasExited -eq $false) {
         Write-Error "CLI did not exit in time. Try running the upgrade command again!"
+
+        Write-Output "Press any key to exit the upgrade script."
+
+        # Press any key to continue
+        [System.Console]::ReadKey($true) | Out-Null
+
         exit 1
     }
 }
@@ -43,6 +49,7 @@ catch {
     # Process doesn't exist, so we can continue
 }
 
+Write-Output "CLI exited successfully. Starting upgrade...`n`n"
 
 function Download-File-To-Location {
     param(
@@ -68,12 +75,14 @@ function Download-File-To-Location {
 
     $FullPath = Join-Path $Location $FileName
 
-    try {
-        # Delete the file if it exists
-        Remove-Item -Path $FullPath -Force
-    }
-    catch {
-        Write-Warning "Failed to delete $FullPath`: $($_.Exception.Message)"
+    if (-not $ExitOnError) {
+        try {
+            # Delete the file if it exists
+            Remove-Item -Path $FullPath -Force 2>$null
+        }
+        catch {
+            Write-Warning "Failed to delete $FullPath`: $($_.Exception.Message)"
+        }
     }
 
     if ($Version) {
@@ -85,21 +94,23 @@ function Download-File-To-Location {
 
     curl.exe "-#SfLo" "$FullPath" "$URL"
 
-    if ($LASTEXITCODE -ne 0) {
+    if ($LASTEXITCODE -ne 0 -and $ExitOnError) {
         Write-Warning "The command 'curl.exe $URL -o $FullPath' exited with code ${LASTEXITCODE}`nTrying an alternative download method..."
 
         try {
             # Use Invoke-RestMethod instead of Invoke-WebRequest because Invoke-WebRequest breaks on
             # some machines
-            Invoke-RestMethod -Uri $URL -OutFile $FullPath
+            Invoke-RestMethod -Uri $URL -OutFile $FullPath 2>$null
         }
         catch {
             Write-Error "Upgrade Failed - could not download $URL"
             Write-Error "The command 'Invoke-RestMethod $URL -OutFile $FullPath' exited with error: $_`n"
+            Write-Output "Press any key to exit the upgrade script."
 
-            if ($ExitOnError) {
-                exit 1
-            }
+            # Press any key to continue
+            [System.Console]::ReadKey($true) | Out-Null
+
+            exit 1
         }
     }
 
@@ -120,4 +131,9 @@ Download-File-To-Location -URL $UpgradeScriptURL -FileName "upgrade" -Location $
 $C_RESET = [char]27 + "[0m"
 $C_GREEN = [char]27 + "[1;32m"
 
-Write-Output "${C_GREEN}Success:${C_RESET} Successfully upgraded to ${Version} 👍"
+Write-Output "`n`n${C_GREEN}Success:${C_RESET} Successfully upgraded to ${Version}!"
+
+Write-Output "Press any key to exit the upgrade script."
+
+# Press any key to continue
+[System.Console]::ReadKey($true) | Out-Null

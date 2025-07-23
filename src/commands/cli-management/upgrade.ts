@@ -204,22 +204,24 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			'-ProcessId',
 			process.pid.toString(),
 			'-InstallLocation',
-			`'${bundleDirectory}'`,
+			`"${bundleDirectory}"`,
 			'-Version',
-			`'${version}'`,
+			`"${version}"`,
 		];
 
 		const urls = assets.map((asset) => asset.browser_download_url).join(',');
 
-		args.push('-URL', `'${urls}'`);
+		args.push('-AllUrls', `"${urls}"`);
 
 		cliDebugPrint('[upgrade] starting upgrade process with args', args);
 
 		info({ message: `Starting upgrade process...` });
 
 		const upgradeProcess = spawn('powershell.exe', args, {
-			windowsHide: false,
 			detached: true,
+			shell: true,
+			stdio: 'inherit',
+			windowsHide: false,
 			windowsVerbatimArguments: true,
 		});
 
