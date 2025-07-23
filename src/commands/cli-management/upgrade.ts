@@ -221,7 +221,6 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			windowsHide: false,
 			detached: true,
 			windowsVerbatimArguments: true,
-			stdio: [null, process.stdout, process.stderr],
 		});
 
 		upgradeProcess.unref();
