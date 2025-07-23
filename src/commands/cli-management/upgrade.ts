@@ -196,7 +196,18 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		await this.upsertUpgradeScript(bundleDirectory);
 
 		// Start the child process with it, and exit the cli
-		const args = ['-ProcessId', process.pid.toString(), '-InstallLocation', bundleDirectory, '-Version', version];
+		const args = [
+			'-ExecutionPolicy',
+			'Bypass',
+			'-File',
+			`"${join(bundleDirectory, 'upgrade.ps1')}"`,
+			'-ProcessId',
+			process.pid.toString(),
+			'-InstallLocation',
+			`'${bundleDirectory}'`,
+			'-Version',
+			`'${version}'`,
+		];
 
 		const urls = assets.map((asset) => asset.browser_download_url).join(',');
 
@@ -206,16 +217,12 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		info({ message: `Starting upgrade process...` });
 
-		const upgradeProcess = spawn(
-			'powershell.exe',
-			['-ExecutionPolicy', 'Bypass', '-File', `"${join(bundleDirectory, 'upgrade.ps1')}"`, ...args],
-			{
-				windowsHide: true,
-				detached: true,
-				windowsVerbatimArguments: true,
-				stdio: 'inherit',
-			},
-		);
+		const upgradeProcess = spawn('powershell.exe', args, {
+			windowsHide: false,
+			detached: true,
+			windowsVerbatimArguments: true,
+			stdio: [null, process.stdout, process.stderr],
+		});
 
 		upgradeProcess.unref();
 
@@ -244,7 +251,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 				].join('\n'),
 			});
 
-			return;
+			process.exit(1);
 		}
 
 		const buffer = await res.arrayBuffer();
