@@ -223,9 +223,10 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			windowsVerbatimArguments: true,
 		});
 
-		upgradeProcess.unref();
-
 		upgradeProcess.on('spawn', () => {
+			cliDebugPrint('[upgrade] upgrade process spawned');
+
+			upgradeProcess.unref();
 			// CLI exits, but the upgrade process continues in the background
 			process.exit(0);
 		});
