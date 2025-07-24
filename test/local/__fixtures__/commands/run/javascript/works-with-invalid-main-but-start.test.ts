@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { runCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../../../../src/lib/utils.js';
 import { useTempPath } from '../../../../../__setup__/hooks/useTempPath.js';
 
@@ -32,7 +32,10 @@ describe('[javascript] works with invalid main but start script', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await runCommand(CreateCommand, { flags_template: 'project_cheerio_crawler_js', args_actorName: actorName });
+		await testRunCommand(CreateCommand, {
+			flags_template: 'project_cheerio_crawler_js',
+			args_actorName: actorName,
+		});
 		toggleCwdBetweenFullAndParentPath();
 
 		await writeFile(joinPath('src', 'index.js'), mainFile);
@@ -58,7 +61,7 @@ describe('[javascript] works with invalid main but start script', () => {
 	});
 
 	it('should work', async () => {
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		const output = JSON.parse(await readFile(outputPath, 'utf8'));
 		expect(output).toBe('worked');

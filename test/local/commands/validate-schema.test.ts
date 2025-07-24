@@ -1,5 +1,5 @@
 import { ValidateInputSchemaCommand } from '../../../src/commands/validate-schema.js';
-import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
 	invalidInputSchemaPath,
@@ -11,7 +11,7 @@ const { lastErrorMessage } = useConsoleSpy();
 
 describe('apify validate-schema', () => {
 	it('should correctly validate schema 1', async () => {
-		await runCommand(ValidateInputSchemaCommand, {
+		await testRunCommand(ValidateInputSchemaCommand, {
 			args_path: validInputSchemaPath,
 		});
 
@@ -19,7 +19,7 @@ describe('apify validate-schema', () => {
 	});
 
 	it('should correctly validate schema 2', async () => {
-		await runCommand(ValidateInputSchemaCommand, {
+		await testRunCommand(ValidateInputSchemaCommand, {
 			args_path: invalidInputSchemaPath,
 		});
 
@@ -29,7 +29,7 @@ describe('apify validate-schema', () => {
 	});
 
 	it('should correctly validate schema 3', async () => {
-		await runCommand(ValidateInputSchemaCommand, {
+		await testRunCommand(ValidateInputSchemaCommand, {
 			args_path: unparsableInputSchemaPath,
 		});
 

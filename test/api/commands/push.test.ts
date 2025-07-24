@@ -5,7 +5,7 @@ import type { ActorCollectionCreateOptions } from 'apify-client';
 
 import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS } from '@apify/consts';
 
-import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../../src/lib/utils.js';
 import { testUserClient } from '../../__setup__/config.js';
@@ -57,7 +57,7 @@ describe('[api] apify push', () => {
 
 		await safeLogin();
 
-		await runCommand(CreateCommand, {
+		await testRunCommand(CreateCommand, {
 			args_actorName: ACTOR_NAME,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
@@ -88,7 +88,7 @@ describe('[api] apify push', () => {
 			};
 			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
-			await runCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
 
 			const userInfo = await getLocalUserInfo();
 			const { name } = actorJson;
@@ -125,7 +125,7 @@ describe('[api] apify push', () => {
 			const testActorClient = testUserClient.actor(testActor.id);
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 
-			await runCommand(ActorsPushCommand, {
+			await testRunCommand(ActorsPushCommand, {
 				args_actorId: testActor.id,
 				flags_noPrompt: true,
 				flags_force: true,
@@ -181,7 +181,7 @@ describe('[api] apify push', () => {
 			delete actorJson.environmentVariables;
 			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
-			await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
 
 			testActor = (await testActorClient.get())!;
 			const testActorVersion = await testActorClient.version(actorJson.version).get();
@@ -228,7 +228,7 @@ describe('[api] apify push', () => {
 			// Create large file to ensure Actor will be uploaded as zip
 			writeFileSync(joinPath('3mb-file.txt'), Buffer.alloc(1024 * 1024 * 3));
 
-			await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
 
 			// Remove the big file so sources in following tests are not zipped
 			unlinkSync(joinPath('3mb-file.txt'));
@@ -261,7 +261,7 @@ describe('[api] apify push', () => {
 
 			writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
 
-			await runCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
 
 			if (existsSync(joinPath('some-typescript-file.ts'))) unlinkSync(joinPath('some-typescript-file.ts'));
 
@@ -293,7 +293,7 @@ describe('[api] apify push', () => {
 			// @ts-expect-error Wrong typing of update method
 			await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
 
-			await runCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
 
 			expect(lastErrorMessage()).to.includes('is already on the platform');
 		},
@@ -309,7 +309,7 @@ describe('[api] apify push', () => {
 
 			forceNewCwd('empty-dir');
 
-			await runCommand(ActorsPushCommand, { flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true });
 
 			expect(lastErrorMessage()).to.include(
 				'You need to call this command from a folder that has an Actor in it',
@@ -329,7 +329,7 @@ describe('[api] apify push', () => {
 
 			await writeFile(joinCwdPath('owo.txt'), 'Lorem ipsum');
 
-			await runCommand(ActorsPushCommand, { flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true });
 
 			expect(lastErrorMessage()).to.include('A valid Actor could not be found in the current directory.');
 		},

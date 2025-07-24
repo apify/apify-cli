@@ -5,7 +5,7 @@ import { setTimeout } from 'node:timers/promises';
 
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
-import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { testUserClient } from '../../__setup__/config.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -130,7 +130,7 @@ describe('[api] apify pull', () => {
 	});
 
 	it('should fail outside Actor folder without actorId defined', async () => {
-		await runCommand(ActorsPullCommand, {});
+		await testRunCommand(ActorsPullCommand, {});
 
 		expect(lastErrorMessage()).toMatch(/Cannot find Actor in this directory/i);
 	});
@@ -145,7 +145,7 @@ describe('[api] apify pull', () => {
 		const testActorClient = testUserClient.actor(testActor.id);
 		const actorFromServer = await testActorClient.get();
 
-		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
+		await testRunCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
 		const actorJson = JSON.parse(readFileSync(join(originalCwd, testActor.name, LOCAL_CONFIG_PATH), 'utf8'));
 
@@ -159,7 +159,7 @@ describe('[api] apify pull', () => {
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add(testActor.name);
 
-		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
+		await testRunCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
 		const actorPackageJson = JSON.parse(readFileSync(join(originalCwd, testActor.name, 'package.json'), 'utf8'));
 
@@ -174,7 +174,7 @@ describe('[api] apify pull', () => {
 		actorsForCleanup.add(testActor.id);
 		actorNamesForCleanup.add(testActor.name);
 
-		await runCommand(ActorsPullCommand, { args_actorId: testActor.id });
+		await testRunCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
 		const actorJson = JSON.parse(
 			readFileSync(join(originalCwd, testActor.name, DEPRECATED_LOCAL_CONFIG_NAME), 'utf8'),
@@ -207,7 +207,7 @@ describe('[api] apify pull', () => {
 		);
 
 		setProcessCwd(join(cwd, 'pull-test-no-name'));
-		await runCommand(ActorsPullCommand, {});
+		await testRunCommand(ActorsPullCommand, {});
 
 		await setTimeout(500);
 

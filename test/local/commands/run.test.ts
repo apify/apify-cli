@@ -3,7 +3,7 @@ import { dirname } from 'node:path/win32';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { rimrafPromised } from '../../../src/lib/files.js';
 import {
@@ -55,7 +55,7 @@ describe('apify run', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await runCommand(CreateCommand, {
+		await testRunCommand(CreateCommand, {
 			args_actorName: actName,
 			flags_template: 'project_empty',
 		});
@@ -88,7 +88,7 @@ describe('apify run', () => {
         `;
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		// check act output
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
@@ -118,7 +118,7 @@ describe('apify run', () => {
 		apifyJson.environmentVariables = testEnvVars;
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
 
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
@@ -159,7 +159,7 @@ describe('apify run', () => {
 		parsedPkgJson.scripts.other = 'node src/other.js';
 		writeFileSync(joinPath('package.json'), JSON.stringify(parsedPkgJson, null, 2), { flag: 'w' });
 
-		await runCommand(RunCommand, { flags_entrypoint: 'other' });
+		await testRunCommand(RunCommand, { flags_entrypoint: 'other' });
 
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
@@ -199,7 +199,7 @@ describe('apify run', () => {
 		apifyJson.environmentVariables = testEnvVars;
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
 
-		await runCommand(RunCommand, { flags_entrypoint: 'src/other.js' });
+		await testRunCommand(RunCommand, { flags_entrypoint: 'src/other.js' });
 
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
@@ -237,7 +237,7 @@ describe('apify run', () => {
         `;
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		expect(existsSync(actInputPath)).toStrictEqual(true);
 		expect(existsSync(testJsonPath)).toStrictEqual(true);
@@ -251,7 +251,7 @@ describe('apify run', () => {
         `;
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
-		await runCommand(RunCommand, { flags_purge: true });
+		await testRunCommand(RunCommand, { flags_purge: true });
 
 		expect(existsSync(actInputPath)).toStrictEqual(true);
 		expect(existsSync(testJsonPath)).toStrictEqual(false);
@@ -271,7 +271,7 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			{ flag: 'w' },
 		);
 
-		await runCommand(RunCommand, { flags_purge: true });
+		await testRunCommand(RunCommand, { flags_purge: true });
 
 		expect(existsSync(joinPath('result.txt'))).toBeTruthy();
 	});
@@ -292,7 +292,7 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			writeFileSync(inputPath, '{}', { flag: 'w' });
 			copyFileSync(missingRequiredPropertyInputSchemaPath, inputSchemaPath);
 
-			await runCommand(RunCommand, {});
+			await testRunCommand(RunCommand, {});
 
 			expect(lastErrorMessage()).toMatch(/Field awesome is required/i);
 		});
@@ -301,7 +301,7 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			writeFileSync(inputPath, '{"awesome": 42}', { flag: 'w' });
 			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
 
-			await runCommand(RunCommand, {});
+			await testRunCommand(RunCommand, {});
 
 			expect(lastErrorMessage()).toMatch(/Field awesome must be boolean/i);
 		});
@@ -310,7 +310,7 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
 			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
 
-			await runCommand(RunCommand, { flags_input: handPassedInput });
+			await testRunCommand(RunCommand, { flags_input: handPassedInput });
 
 			expect(lastErrorMessage()).toMatch(/Field awesome must be boolean/i);
 		});
@@ -319,7 +319,7 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			writeFileSync(inputPath, '{"awesome": true, "help": 123}', { flag: 'w' });
 			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
 
-			await runCommand(RunCommand, {});
+			await testRunCommand(RunCommand, {});
 
 			expect(lastErrorMessage()).toMatch(/Field help must be string/i);
 		});
@@ -328,7 +328,7 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			writeFileSync(inputPath, '{"awesome": true, "help": 123}', { flag: 'w' });
 			copyFileSync(prefillsInputSchemaPath, inputSchemaPath);
 
-			await runCommand(RunCommand, {});
+			await testRunCommand(RunCommand, {});
 
 			expect(lastErrorMessage()).toMatch(/Field help must be string/i);
 		});
@@ -337,7 +337,7 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
 			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
 
-			await runCommand(RunCommand, {});
+			await testRunCommand(RunCommand, {});
 
 			const output = JSON.parse(readFileSync(outputPath, 'utf8'));
 			expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
@@ -347,7 +347,7 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
 			copyFileSync(prefillsInputSchemaPath, inputSchemaPath);
 
-			await runCommand(RunCommand, {});
+			await testRunCommand(RunCommand, {});
 
 			const output = JSON.parse(readFileSync(outputPath, 'utf8'));
 			expect(output).toStrictEqual({ awesome: true });

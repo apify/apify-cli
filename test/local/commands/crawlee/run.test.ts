@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { runCommand } from '../../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../../src/lib/utils.js';
 import { TEST_TIMEOUT } from '../../../__setup__/consts.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
@@ -42,7 +42,7 @@ describe('apify run', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await runCommand(CreateCommand, {
+		await testRunCommand(CreateCommand, {
 			args_actorName: actorName,
 			flags_template: 'project_cheerio_crawler_js',
 		});
@@ -63,7 +63,7 @@ describe('apify run', () => {
 	it('throws when required field is not provided', async () => {
 		await writeFile(inputPath, '{}');
 
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		expect(lastErrorMessage()).toMatch(/Field awesome is required/i);
 	});
@@ -71,7 +71,7 @@ describe('apify run', () => {
 	it('prefills input with defaults', async () => {
 		await writeFile(inputPath, originalInput);
 
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		const output = JSON.parse(await readFile(outputPath, 'utf8'));
 		expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
@@ -80,7 +80,7 @@ describe('apify run', () => {
 	it('should restore the original input file after run', async () => {
 		await writeFile(inputPath, originalInputWithExtraField);
 
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		const input = JSON.parse(await readFile(inputPath, 'utf8'));
 		expect(input).toStrictEqual({ awesome: true, extra: 'field' });

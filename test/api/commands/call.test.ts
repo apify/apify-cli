@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
-import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
 import { waitForBuildToFinishWithTimeout } from '../../__setup__/build-utils.js';
 import { testUserClient } from '../../__setup__/config.js';
@@ -48,7 +48,7 @@ describe('[api] apify call', () => {
 
 		await safeLogin();
 
-		await runCommand(CreateCommand, {
+		await testRunCommand(CreateCommand, {
 			args_actorName: ACTOR_NAME,
 			flags_template: 'project_empty',
 			flags_skipDependencyInstall: true,
@@ -70,7 +70,7 @@ describe('[api] apify call', () => {
 
 		toggleCwdBetweenFullAndParentPath();
 
-		await runCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+		await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
 
 		actorId = `${username}/${ACTOR_NAME}`;
 
@@ -91,7 +91,7 @@ describe('[api] apify call', () => {
 	});
 
 	it('without actId', async () => {
-		await runCommand(ActorsCallCommand, {});
+		await testRunCommand(ActorsCallCommand, {});
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
 		const lastRun = runs.items.pop();
@@ -105,7 +105,7 @@ describe('[api] apify call', () => {
 	});
 
 	it('should work with just the Actor name', async () => {
-		await runCommand(ActorsCallCommand, { args_actorId: ACTOR_NAME });
+		await testRunCommand(ActorsCallCommand, { args_actorId: ACTOR_NAME });
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -120,7 +120,7 @@ describe('[api] apify call', () => {
 	});
 
 	it('should work with just the Actor ID', async () => {
-		await runCommand(ActorsCallCommand, { args_actorId: apifyId });
+		await testRunCommand(ActorsCallCommand, { args_actorId: apifyId });
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -141,7 +141,7 @@ describe('[api] apify call', () => {
 
 		const string = JSON.stringify(expectedInput);
 
-		await runCommand(ActorsCallCommand, { args_actorId: ACTOR_NAME, flags_input: string });
+		await testRunCommand(ActorsCallCommand, { args_actorId: ACTOR_NAME, flags_input: string });
 
 		const actorClient = testUserClient.actor(actorId);
 		const runs = await actorClient.runs().list();
@@ -154,7 +154,7 @@ describe('[api] apify call', () => {
 	});
 
 	it('should work with passed in input file', async () => {
-		await runCommand(ActorsCallCommand, {
+		await testRunCommand(ActorsCallCommand, {
 			args_actorId: ACTOR_NAME,
 			flags_inputFile: inputFilePath,
 		});
