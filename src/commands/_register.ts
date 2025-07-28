@@ -9,6 +9,7 @@ import { ActorSetValueCommand } from './actor/set-value.js';
 import { ActorsIndexCommand } from './actors/_index.js';
 import { BuildsIndexCommand } from './builds/_index.js';
 import { TopLevelCallCommand } from './call.js';
+import { InstallCommand } from './cli-management/install.js';
 import { UpgradeCommand } from './cli-management/upgrade.js';
 import { CreateCommand } from './create.js';
 import { DatasetsIndexCommand } from './datasets/_index.js';
@@ -43,6 +44,7 @@ export const apifyCommands = [
 	// top-level
 	TopLevelCallCommand,
 	UpgradeCommand,
+	InstallCommand,
 	CreateCommand,
 	EditInputSchemaCommand,
 	InfoCommand,
@@ -65,6 +67,8 @@ export const actorCommands = [
 	ActorGetPublicUrlCommand,
 	ActorGetInputCommand,
 	ActorChargeCommand,
+	// top-level
 	HelpCommand,
 	UpgradeCommand,
+	InstallCommand,
 ] as const satisfies (typeof BuiltApifyCommand)[];

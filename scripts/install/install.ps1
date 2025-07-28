@@ -238,9 +238,10 @@ function Install-Apify {
 
     $C_RESET = [char]27 + "[0m"
     $C_GREEN = [char]27 + "[1;32m"
+    $C_DIM = [char]27 + "[0;2m"
 
     Write-Output "${C_GREEN}Apify and Actor CLI ${ApifyVersion} were installed successfully!${C_RESET}"
-    Write-Output "The binaries are located at ${ApifyBin}\apify.exe and ${ApifyBin}\actor.exe`n"
+    Write-Output "${C_DIM}The binaries are located at ${ApifyBin}\apify.exe and ${ApifyBin}\actor.exe${C_RESET}`n"
 
     $hasExistingOther = $false;
     try {
@@ -261,6 +262,8 @@ function Install-Apify {
             $env:PATH = $Path;
         }
 
+        # Unlike on Unix systems where we just have to symlink a file to make it just work without a reload,
+        # on Windows you _need_ to restart the running process for it to get the new path variable.
         Write-Output "To get started, restart your terminal/editor, then type `"apify`"`n"
     }
 
