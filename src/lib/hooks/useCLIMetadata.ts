@@ -10,7 +10,7 @@ export const DEVELOPMENT_HASH_MARKER = '0000000';
 const CLI_VERSION = DEVELOPMENT_VERSION_MARKER;
 const CLI_HASH = DEVELOPMENT_HASH_MARKER;
 
-export type InstallMethod = 'npm' | 'pnpm' | 'homebrew' | 'volta' | 'bundle';
+export type InstallMethod = 'npm' | 'pnpm' | 'homebrew' | 'volta' | 'bundle' | 'bun';
 
 export interface CLIMetadata {
 	version: string;
@@ -58,6 +58,10 @@ function detectInstallMethod(): InstallMethod {
 
 	if (process.env.PNPM_HOME && entrypointFilePath.includes(process.env.PNPM_HOME)) {
 		return 'pnpm';
+	}
+
+	if (process.env.BUN_INSTALL && entrypointFilePath.includes(process.env.BUN_INSTALL)) {
+		return 'bun';
 	}
 
 	return 'npm';

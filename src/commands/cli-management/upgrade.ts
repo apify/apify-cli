@@ -21,6 +21,7 @@ const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: strin
 	bundle: (_, entrypoint) => [`${entrypoint}`, 'upgrade'],
 	npm: (version) => ['npm', 'install', '-g', `apify-cli@${version}`],
 	pnpm: (version) => ['pnpm', 'install', '-g', `apify-cli@${version}`],
+	bun: (version) => ['bun', 'install', '-g', `apify-cli@${version}`],
 	homebrew: () => ['brew', 'upgrade', 'apify-cli'],
 	volta: (version) => ['volta', 'install', `apify-cli@${version}`],
 };
