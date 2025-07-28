@@ -7,7 +7,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
-import { info, warning } from '../../lib/outputs.js';
+import { info, simpleLog, success, warning } from '../../lib/outputs.js';
 import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
 import { confirmAction } from '../../lib/utils/confirm.js';
 
@@ -53,50 +53,12 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 		cliDebugPrint('[install] install marker written to', installMarkerPath);
 
+		simpleLog({ message: '' });
+		success({ message: 'To get started, run:' });
+		simpleLog({ message: chalk.white.bold('  apify --help\n  actor --help') });
+
 		/*
-		refresh_command=''
-
-tilde_bin_dir=$(tildify "$bin_dir")
-quoted_install_dir=\"${install_dir//\"/\\\"}\"
-
-if [[ $quoted_install_dir = \"$HOME/* ]]; then
-    quoted_install_dir=${quoted_install_dir/$HOME\//\$HOME/}
-fi
-
-echo
-
 case $(basename "$SHELL") in
-fish)
-
-zsh)
-    commands=(
-        "export $install_env=$quoted_install_dir"
-        "export PATH=\"$bin_env:\$PATH\""
-    )
-
-    zsh_config=$HOME/.zshrc
-    tilde_zsh_config=$(tildify "$zsh_config")
-
-    if [[ -w $zsh_config ]]; then
-        {
-            echo -e '\n# apify cli'
-
-            for command in "${commands[@]}"; do
-                echo "$command"
-            done
-        } >>"$zsh_config"
-
-        info "Added \"$tilde_bin_dir\" to \$PATH in \"$tilde_zsh_config\""
-
-        refresh_command="exec $SHELL"
-    else
-        echo "Manually add the directory to $tilde_zsh_config (or similar):"
-
-        for command in "${commands[@]}"; do
-            info_bold "  $command"
-        done
-    fi
-    ;;
 bash)
     commands=(
         "export $install_env=$quoted_install_dir"
@@ -219,6 +181,8 @@ echo
 
 		const binDir = process.env.FINAL_BIN_DIR!;
 
+		simpleLog({ message: '' });
+
 		const allowedToAutomaticallyDo = await confirmAction({
 			type: 'boolean',
 			message:
@@ -235,6 +199,11 @@ echo
 			case 'bash':
 				break;
 			case 'zsh':
+				linesToAdd.push(`export APIFY_CLI_INSTALL=${quotedInstallDir}`);
+				linesToAdd.push(`export PATH="$APIFY_CLI_INSTALL/bin:$PATH"`);
+
+				configFile = join(process.env.HOME!, '.zshrc');
+
 				break;
 			case 'fish': {
 				linesToAdd.push(`set --export APIFY_CLI_INSTALL ${quotedInstallDir}`);
@@ -246,6 +215,8 @@ echo
 			default:
 				break;
 		}
+
+		simpleLog({ message: '' });
 
 		if (allowedToAutomaticallyDo && configFile) {
 			const oldContent = await readFile(configFile, 'utf-8');
