@@ -29,7 +29,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	static override hidden = true;
 
 	async run() {
-		const { installMethod, installPath } = useCLIMetadata();
+		const { installMethod, installPath, version } = useCLIMetadata();
 
 		if (installMethod !== 'bundle') {
 			info({ message: `Apify and Actor CLI are already fully configured! 👍 \n` });
@@ -49,7 +49,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 		await this.promptAddToShell();
 
-		await writeFile(installMarkerPath, '');
+		await writeFile(installMarkerPath, version);
 
 		cliDebugPrint('[install] install marker written to', installMarkerPath);
 
@@ -109,10 +109,7 @@ bash)
     fi
     ;;
 *)
-    echo 'Manually add the directory to ~/.bashrc (or similar):'
-    info_bold "  export $install_env=$quoted_install_dir"
-    info_bold "  export PATH=\"$bin_env:\$PATH\""
-    ;;
+
 esac
 
 echo
@@ -213,6 +210,12 @@ echo
 				break;
 			}
 			default:
+				linesToAdd.push(`export APIFY_CLI_INSTALL=${quotedInstallDir}`);
+				linesToAdd.push(`export PATH="$APIFY_CLI_INSTALL/bin:$PATH"`);
+
+				// We don't use a path as we don't know the shell
+				configFile = '~/.bashrc';
+
 				break;
 		}
 
