@@ -56,73 +56,6 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		simpleLog({ message: '' });
 		success({ message: 'To get started, run:' });
 		simpleLog({ message: chalk.white.bold('  apify --help\n  actor --help') });
-
-		/*
-case $(basename "$SHELL") in
-bash)
-    commands=(
-        "export $install_env=$quoted_install_dir"
-        "export PATH=\"$bin_env:\$PATH\""
-    )
-
-    bash_configs=(
-        "$HOME/.bashrc"
-        "$HOME/.bash_profile"
-    )
-
-    if [[ ${XDG_CONFIG_HOME:-} ]]; then
-        bash_configs+=(
-            "$XDG_CONFIG_HOME/.bash_profile"
-            "$XDG_CONFIG_HOME/.bashrc"
-            "$XDG_CONFIG_HOME/bash_profile"
-            "$XDG_CONFIG_HOME/bashrc"
-        )
-    fi
-
-    set_manually=true
-    for bash_config in "${bash_configs[@]}"; do
-        tilde_bash_config=$(tildify "$bash_config")
-
-        if [[ -w $bash_config ]]; then
-            {
-                echo -e '\n# apify cli'
-
-                for command in "${commands[@]}"; do
-                    echo "$command"
-                done
-            } >>"$bash_config"
-
-            info "Added \"$tilde_bin_dir\" to \$PATH in \"$tilde_bash_config\""
-
-            refresh_command="source $bash_config"
-            set_manually=false
-            break
-        fi
-    done
-
-    if [[ $set_manually = true ]]; then
-        echo "Manually add the directory to $tilde_bash_config (or similar):"
-
-        for command in "${commands[@]}"; do
-            info_bold "  $command"
-        done
-    fi
-    ;;
-*)
-
-esac
-
-echo
-info "To get started, run:"
-echo
-
-if [[ $refresh_command ]]; then
-    info_bold "  $refresh_command $(info "(if the shell is not automatically refreshed)")"
-fi
-
-info_bold "  apify --help"
-echo
-		*/
 	}
 
 	private async symlinkToLocalBin(installPath: string) {
@@ -193,8 +126,31 @@ echo
 		let configFile = '';
 
 		switch (shell) {
-			case 'bash':
+			case 'bash': {
+				linesToAdd.push(`export APIFY_CLI_INSTALL=${quotedInstallDir}`);
+				linesToAdd.push(`export PATH="$APIFY_CLI_INSTALL/bin:$PATH"`);
+
+				const configFiles = [join(process.env.HOME!, '.bashrc'), join(process.env.HOME!, '.bash_profile')];
+
+				if (process.env.XDG_CONFIG_HOME) {
+					configFiles.push(
+						join(process.env.XDG_CONFIG_HOME, '.bashrc'),
+						join(process.env.XDG_CONFIG_HOME, '.bash_profile'),
+						join(process.env.XDG_CONFIG_HOME, 'bashrc'),
+						join(process.env.XDG_CONFIG_HOME, 'bash_profile'),
+					);
+				}
+
+				// Find the first likely match for the config file [because bash loves having a lot of alternatives]
+				for (const maybeConfigFile of configFiles) {
+					if (existsSync(maybeConfigFile)) {
+						configFile = maybeConfigFile;
+						break;
+					}
+				}
+
 				break;
+			}
 			case 'zsh':
 				linesToAdd.push(`export APIFY_CLI_INSTALL=${quotedInstallDir}`);
 				linesToAdd.push(`export PATH="$APIFY_CLI_INSTALL/bin:$PATH"`);
