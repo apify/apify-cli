@@ -240,7 +240,7 @@ function Install-Apify {
     $C_GREEN = [char]27 + "[1;32m"
 
     Write-Output "${C_GREEN}Apify and Actor CLI ${ApifyVersion} were installed successfully!${C_RESET}"
-    Write-Output "The binary is located at ${ApifyBin}\apify.exe and ${ApifyBin}\actor.exe`n"
+    Write-Output "The binaries are located at ${ApifyBin}\apify.exe and ${ApifyBin}\actor.exe`n"
 
     $hasExistingOther = $false;
     try {
