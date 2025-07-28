@@ -138,7 +138,7 @@
         "@yarnpkg/core": "^4.1.2",
         "apify": "^3.2.4",
         "chai": "^4.4.1",
-        "cross-env": "^7.0.3",
+        "cross-env": "^10.0.0",
         "eslint": "^9.25.1",
         "eslint-config-prettier": "^10.1.2",
         "lint-staged": "^16.0.0",
