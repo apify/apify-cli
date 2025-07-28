@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { chmod, readdir, writeFile } from 'node:fs/promises';
+import { lstat, readdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
 import chalk from 'chalk';
@@ -28,7 +28,10 @@ const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: strin
 // TODO: update this once we bump the CLI version and release it with this command available
 const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '0.21.8';
 
-const UPGRADE_SCRIPT_URL = 'https://raw.githubusercontent.com/apify/apify-cli/main/scripts/install/upgrade.ps1';
+/**
+ * The link to the upgrade script needed for windows when upgrading CLI bundles (as a fallback for when the script is missing)
+ */
+const WINDOWS_UPGRADE_SCRIPT_URL = 'https://raw.githubusercontent.com/apify/apify-cli/main/scripts/install/upgrade.ps1';
 
 export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	static override name = 'upgrade' as const;
@@ -247,14 +250,14 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		const metadata = useCLIMetadata();
 
-		const res = await fetch(UPGRADE_SCRIPT_URL, { headers: { 'User-Agent': USER_AGENT } });
+		const res = await fetch(WINDOWS_UPGRADE_SCRIPT_URL, { headers: { 'User-Agent': USER_AGENT } });
 
 		if (!res.ok) {
 			error({
 				message: [
 					`Failed to fetch the upgrade script. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
 					`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
-					`- The URL of the asset that failed to fetch: ${UPGRADE_SCRIPT_URL}`,
+					`- The URL of the asset that failed to fetch: ${WINDOWS_UPGRADE_SCRIPT_URL}`,
 					`- The status code of the response: ${res.status}`,
 				].join('\n'),
 			});
@@ -310,10 +313,16 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			const buffer = await res.arrayBuffer();
 
 			try {
-				await writeFile(filePath, Buffer.from(buffer));
+				const originalFilePerms = await lstat(filePath)
+					.then((stat) => stat.mode)
+					// Default to rwx for current user and rx for group and others
+					.catch(() => 0o755);
 
-				// Make the file executable again on unix systems
-				await chmod(filePath, 0o755);
+				await writeFile(filePath, Buffer.from(buffer), {
+					// Make the file executable again on unix systems, by always making the current user have rwx
+					// eslint-disable-next-line no-bitwise -- intentionally using bitwise operators
+					mode: originalFilePerms | 0o700,
+				});
 
 				cliDebugPrint(`[upgrade ${cliName}] wrote asset to`, filePath);
 			} catch (err: any) {
