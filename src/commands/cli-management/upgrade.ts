@@ -30,6 +30,8 @@ const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '0.21.8';
 
 /**
  * The link to the upgrade script needed for windows when upgrading CLI bundles (as a fallback for when the script is missing)
+ * Unix-based systems do not require a similar script as they allow the executing process to override itself
+ * (so we can replace the binary while it is running)
  */
 const WINDOWS_UPGRADE_SCRIPT_URL = 'https://raw.githubusercontent.com/apify/apify-cli/main/scripts/install/upgrade.ps1';
 
