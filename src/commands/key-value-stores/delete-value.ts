@@ -4,9 +4,9 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
-import { confirmAction } from '../../lib/utils/confirmOls.js';
 
 export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyValueStoresDeleteValueCommand> {
 	static override name = 'delete-value' as const;
@@ -49,8 +49,8 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 			return;
 		}
 
-		const confirm = await confirmAction({
-			type: 'record',
+		const confirm = await useYesNoConfirm({
+			message: `Are you sure you want to delete this record?`,
 		});
 
 		if (!confirm) {

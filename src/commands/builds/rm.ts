@@ -2,9 +2,9 @@ import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { useInputConfirmation } from '../../lib/hooks/user-confirmations/useInputConfirmation.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
-import { confirmAction } from '../../lib/utils/confirmOls.js';
 
 export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 	static override name = 'rm' as const;
@@ -32,7 +32,7 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 
 		const actor = await apifyClient.actor(build.actId).get();
 
-		let confirmationPrompt: string | undefined;
+		let confirmationPrompt = 'yes';
 
 		if (actor?.taggedBuilds) {
 			// If this build is tagged in the actor, console asks you to write the tag.
@@ -44,8 +44,8 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 			}
 		}
 
-		const confirmed = await confirmAction({
-			type: 'Actor Build',
+		const confirmed = await useInputConfirmation({
+			message: `Are you sure you want to delete this Actor Build?`,
 			expectedValue: confirmationPrompt,
 			failureMessage: 'Your provided value does not match the build tag.',
 		});

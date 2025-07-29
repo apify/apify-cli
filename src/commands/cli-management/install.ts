@@ -7,9 +7,9 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { info, simpleLog, success, warning } from '../../lib/outputs.js';
 import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
-import { confirmAction } from '../../lib/utils/confirmOls.js';
 
 const pathToInstallMarker = (installPath: string) => join(installPath, '.install-marker');
 
@@ -113,10 +113,11 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 		simpleLog({ message: '' });
 
-		const allowedToAutomaticallyDo = await confirmAction({
-			type: 'boolean',
+		const allowedToAutomaticallyDo = await useYesNoConfirm({
 			message:
 				'Should the CLI handle adding itself to your shell automatically? (If you say no, you will receive the lines to add to your shell config file)',
+			// For now, no stdin -> always false
+			providedConfirmFromStdin: false,
 		});
 
 		const shell = basename(process.env.SHELL ?? 'sh');
