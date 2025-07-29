@@ -13,6 +13,7 @@
 		"features/**/*.ts",
 		"features/**/*.js",
 		".github/scripts",
-		"eslint.config.mjs"
+		"eslint.config.mjs",
+		"tsup.config.ts"
 	]
 }

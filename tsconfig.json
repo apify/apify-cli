@@ -8,14 +8,12 @@
 		"lib": ["ES2022"],
 		"allowJs": true,
 		"rootDir": "src",
-		"outDir": "dist",
 		// For now we need this :(
 		"skipLibCheck": true,
 		"tsBuildInfoFile": "dist/.tsbuildinfo",
 		"noImplicitOverride": true,
 		"types": ["node"],
-		"declaration": false,
-		"declarationMap": false
+		"noEmit": true
 	},
 	"include": ["src"]
 }
