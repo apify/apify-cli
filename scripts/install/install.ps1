@@ -35,6 +35,8 @@ if ($WinVer.Major -lt 10 -or ($WinVer.Major -eq 10 -and $WinVer.Build -lt $MinBu
 
 $ErrorActionPreference = "Stop"
 
+$UpgradeScriptURL = "https://raw.githubusercontent.com/apify/apify-cli/main/scripts/install/upgrade.ps1"
+
 # These three environment functions are roughly copied from https://github.com/prefix-dev/pixi/pull/692
 # They are used instead of `SetEnvironmentVariable` because of unwanted variable expansions.
 function Publish-Env {
@@ -179,7 +181,7 @@ function Install-Apify {
 
             try {
                 # Use Invoke-RestMethod instead of Invoke-WebRequest because Invoke-WebRequest breaks on
-                # some machines, see
+                # some machines
                 Invoke-RestMethod -Uri $DownloadURL -OutFile $DownloadPath
             }
             catch {
@@ -216,11 +218,30 @@ function Install-Apify {
         }
     }
 
+    $UpgradeScriptPath = "${ApifyBin}\upgrade.ps1"
+    curl.exe "-#SfLo" "$UpgradeScriptPath" "$UpgradeScriptURL"
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "The command 'curl.exe $UpgradeScriptURL -o $UpgradeScriptPath' exited with code ${LASTEXITCODE}`nTrying an alternative download method..."
+
+        try {
+            # Use Invoke-RestMethod instead of Invoke-WebRequest because Invoke-WebRequest breaks on
+            # some machines
+            Invoke-RestMethod -Uri $UpgradeScriptURL -OutFile $UpgradeScriptPath
+        }
+        catch {
+            Write-Output "Install Failed - could not download $UpgradeScriptURL"
+            Write-Output "The command 'Invoke-RestMethod $UpgradeScriptURL -OutFile $UpgradeScriptPath' exited with code ${LASTEXITCODE}`n"
+            return 1
+        }
+    }
+
     $C_RESET = [char]27 + "[0m"
     $C_GREEN = [char]27 + "[1;32m"
+    $C_DIM = [char]27 + "[0;2m"
 
-    Write-Output "${C_GREEN}Apify CLI ${ApifyVersion} was installed successfully!${C_RESET}"
-    Write-Output "The binary is located at ${ApifyBin}\apify.exe`n"
+    Write-Output "${C_GREEN}Apify and Actor CLI ${ApifyVersion} were installed successfully!${C_RESET}"
+    Write-Output "${C_DIM}The binaries are located at ${ApifyBin}\apify.exe and ${ApifyBin}\actor.exe${C_RESET}`n"
 
     $hasExistingOther = $false;
     try {
@@ -241,6 +262,8 @@ function Install-Apify {
             $env:PATH = $Path;
         }
 
+        # Unlike on Unix systems where we just have to symlink a file to make it just work without a reload,
+        # on Windows you _need_ to restart the running process for it to get the new path variable.
         Write-Output "To get started, restart your terminal/editor, then type `"apify`"`n"
     }
 

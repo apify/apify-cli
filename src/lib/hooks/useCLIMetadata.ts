@@ -10,14 +10,14 @@ export const DEVELOPMENT_HASH_MARKER = '0000000';
 const CLI_VERSION = DEVELOPMENT_VERSION_MARKER;
 const CLI_HASH = DEVELOPMENT_HASH_MARKER;
 
-export type InstallMethod = 'npm' | 'homebrew' | 'volta' | 'bundle';
+export type InstallMethod = 'npm' | 'pnpm' | 'homebrew' | 'volta' | 'bundle' | 'bun';
 
 export interface CLIMetadata {
 	version: string;
 	hash: string;
 	runtime: string;
-	platform: string;
-	arch: string;
+	platform: Exclude<typeof process.platform, 'win32'> | 'windows';
+	arch: typeof process.arch;
 	extraRuntimeData: string;
 	installMethod: InstallMethod;
 	fullVersionString: string;
@@ -28,6 +28,11 @@ export interface CLIMetadata {
 }
 
 function detectInstallMethod(): InstallMethod {
+	// Will be useful once npm versions move to running from bundles (and for testing)
+	if (process.env.APIFY_CLI_MARKED_INSTALL_METHOD) {
+		return process.env.APIFY_CLI_MARKED_INSTALL_METHOD as InstallMethod;
+	}
+
 	// This if check is special, and gets replaced with an always-true branch when running from bun bundles
 	if (process.env.APIFY_CLI_BUNDLE) {
 		return 'bundle';
@@ -49,6 +54,14 @@ function detectInstallMethod(): InstallMethod {
 
 	if (entrypointFilePath.includes('homebrew/Cellar') || entrypointFilePath.includes('linuxbrew/Cellar')) {
 		return 'homebrew';
+	}
+
+	if (process.env.PNPM_HOME && entrypointFilePath.includes(process.env.PNPM_HOME)) {
+		return 'pnpm';
+	}
+
+	if (process.env.BUN_INSTALL && entrypointFilePath.includes(process.env.BUN_INSTALL)) {
+		return 'bun';
 	}
 
 	return 'npm';
@@ -90,8 +103,8 @@ export function useCLIMetadata(): CLIMetadata {
 	cachedMetadata = {
 		version: CLI_VERSION,
 		hash: CLI_HASH,
-		arch: process.arch,
-		platform: process.platform,
+		arch: (process.env.APIFY_BUNDLE_ARCH as typeof process.arch) ?? process.arch,
+		platform: process.platform === 'win32' ? 'windows' : process.platform,
 		runtime: runtime.runtime,
 		extraRuntimeData: runtime.nodeVersion ? `(emulating node ${runtime.nodeVersion})` : '',
 		installMethod,

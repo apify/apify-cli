@@ -1,6 +1,6 @@
 import { writeFileSync } from 'node:fs';
 
-import { runCommand } from '../../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { waitForBuildToFinishWithTimeout } from '../../../__setup__/build-utils.js';
 import { testUserClient } from '../../../__setup__/config.js';
 import { TEST_TIMEOUT } from '../../../__setup__/consts.js';
@@ -39,7 +39,7 @@ describe('[api] apify task run', () => {
 
 		await safeLogin();
 
-		await runCommand(CreateCommand, {
+		await testRunCommand(CreateCommand, {
 			args_actorName: actName,
 			flags_template: 'project_empty',
 			flags_skipDependencyInstall: true,
@@ -58,7 +58,7 @@ describe('[api] apify task run', () => {
 
 		toggleCwdBetweenFullAndParentPath();
 
-		await runCommand(ActorsPushCommand, {
+		await testRunCommand(ActorsPushCommand, {
 			flags_noPrompt: true,
 			flags_force: true,
 		});
@@ -88,7 +88,7 @@ describe('[api] apify task run', () => {
 	});
 
 	it('should work with just the task name', async () => {
-		await runCommand(TaskRunCommand, {
+		await testRunCommand(TaskRunCommand, {
 			args_taskId: taskName,
 		});
 
@@ -102,7 +102,7 @@ describe('[api] apify task run', () => {
 	});
 
 	it('should work with the full name', async () => {
-		await runCommand(TaskRunCommand, {
+		await testRunCommand(TaskRunCommand, {
 			args_taskId: taskId,
 		});
 

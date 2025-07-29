@@ -90,10 +90,10 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 		const { name, versions } = actor;
 
 		let correctVersion = null;
-		if (this.flags?.version) {
-			correctVersion = versions.find((version) => version.versionNumber === this.flags?.version);
+		if (this.flags.version) {
+			correctVersion = versions.find((version) => version.versionNumber === this.flags.version);
 			if (!correctVersion) {
-				throw new Error(`Cannot find version ${this.flags?.version} of Actor ${actorId}.`);
+				throw new Error(`Cannot find version ${this.flags.version} of Actor ${actorId}.`);
 			}
 		}
 

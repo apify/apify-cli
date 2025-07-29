@@ -676,7 +676,15 @@ type StaticArgsFlagsInput<Cmd extends typeof BuiltApifyCommand> = Omit<
 		flags_json?: boolean;
 	};
 
-export async function runCommand<Cmd extends typeof BuiltApifyCommand>(
+export async function testRunCommand<Cmd extends typeof BuiltApifyCommand>(
+	command: Cmd,
+	argsFlags: StaticArgsFlagsInput<Cmd>,
+) {
+	return internalRunCommand('test-cli', command, argsFlags);
+}
+
+export async function internalRunCommand<Cmd extends typeof BuiltApifyCommand>(
+	entrypoint: string,
 	command: Cmd,
 	argsFlags: StaticArgsFlagsInput<Cmd>,
 ) {
@@ -703,7 +711,7 @@ export async function runCommand<Cmd extends typeof BuiltApifyCommand>(
 		}
 	}
 
-	const instance = new (command as typeof BuiltApifyCommand)('test-cli');
+	const instance = new (command as typeof BuiltApifyCommand)(entrypoint);
 
 	// eslint-disable-next-line dot-notation
 	await instance['_run'](rawObject);

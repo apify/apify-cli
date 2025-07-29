@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 
 import { InfoCommand } from '../../../src/commands/info.js';
-import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
@@ -12,14 +12,14 @@ const { lastErrorMessage, logSpy } = useConsoleSpy();
 
 describe('[api] apify info', () => {
 	it('should end with Error when not logged in', async () => {
-		await runCommand(InfoCommand, {});
+		await testRunCommand(InfoCommand, {});
 
 		expect(lastErrorMessage()).toMatch(/you are not logged in/i);
 	});
 
 	it('should work when logged in', async () => {
 		await safeLogin();
-		await runCommand(InfoCommand, {});
+		await testRunCommand(InfoCommand, {});
 
 		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
 

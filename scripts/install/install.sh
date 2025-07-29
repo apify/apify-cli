@@ -164,8 +164,6 @@ construct_download_url() {
 }
 
 install_env=APIFY_CLI_INSTALL
-bin_env=\$$install_env/bin
-
 install_dir=${!install_env:-$HOME/.apify}
 bin_dir=$install_dir/bin
 
@@ -178,7 +176,9 @@ for executable_name in "${executable_names[@]}"; do
     download_url=$(construct_download_url "$executable_name" "$target")
     output_filename="${executable_name}"
 
-    curl --fail --location --progress-bar --output "$bin_dir/$output_filename" "$download_url" 2>/dev/null ||
+    info "Downloading $executable_name bundle for version $version and target $target"
+
+    curl --fail --location --progress-bar --output "$bin_dir/$output_filename" "$download_url" ||
         error "Failed to download $executable_name bundle for version $version and target $target (might not exist for this platform/arch combination)"
 
     chmod +x "$bin_dir/$output_filename" ||
@@ -200,161 +200,8 @@ tildify() {
     fi
 }
 
-success "Apify CLI was installed successfully to $Bold_Green$(tildify "$bin_dir/apify")"
-success "Actor CLI was installed successfully to $Bold_Green$(tildify "$bin_dir/actor")"
+success "Apify and Actor CLI $version were installed successfully!"
+info "The binaries are located at $Bold_Green$(tildify "$bin_dir/apify") ${Dim}and $Bold_Green$(tildify "$bin_dir/actor")"
 
-if command -v apify >/dev/null; then
-    success "Run 'apify --help' to get started"
-    exit
-fi
-
-refresh_command=''
-
-tilde_bin_dir=$(tildify "$bin_dir")
-quoted_install_dir=\"${install_dir//\"/\\\"}\"
-
-if [[ $quoted_install_dir = \"$HOME/* ]]; then
-    quoted_install_dir=${quoted_install_dir/$HOME\//\$HOME/}
-fi
-
-if [[ -d $HOME/.local/bin ]]; then
-    # First, remove the symlinks if they exist
-    rm -f $HOME/.local/bin/apify
-    rm -f $HOME/.local/bin/actor
-    rm -f $HOME/.local/bin/apify-cli
-
-    # Symlink the three executables to /usr/local/bin
-    ln -s "$bin_dir/apify" $HOME/.local/bin/apify
-    ln -s "$bin_dir/actor" $HOME/.local/bin/actor
-    ln -s "$bin_dir/apify-cli" $HOME/.local/bin/apify-cli
-
-    info "Symlinked apify, actor, and apify-cli to $HOME/.local/bin"
-fi
-
-echo
-
-case $(basename "$SHELL") in
-fish)
-    commands=(
-        "set --export $install_env $quoted_install_dir"
-        "set --export PATH $bin_env \$PATH"
-    )
-
-    fish_config=$HOME/.config/fish/config.fish
-    tilde_fish_config=$(tildify "$fish_config")
-
-    if [[ -w $fish_config ]]; then
-        {
-            echo -e '\n# apify cli'
-
-            for command in "${commands[@]}"; do
-                echo "$command"
-            done
-        } >>"$fish_config"
-
-        info "Added \"$tilde_bin_dir\" to \$PATH in \"$tilde_fish_config\""
-
-        refresh_command="source $tilde_fish_config"
-    else
-        echo "Manually add the directory to $tilde_fish_config (or similar):"
-
-        for command in "${commands[@]}"; do
-            info_bold "  $command"
-        done
-    fi
-    ;;
-zsh)
-    commands=(
-        "export $install_env=$quoted_install_dir"
-        "export PATH=\"$bin_env:\$PATH\""
-    )
-
-    zsh_config=$HOME/.zshrc
-    tilde_zsh_config=$(tildify "$zsh_config")
-
-    if [[ -w $zsh_config ]]; then
-        {
-            echo -e '\n# apify cli'
-
-            for command in "${commands[@]}"; do
-                echo "$command"
-            done
-        } >>"$zsh_config"
-
-        info "Added \"$tilde_bin_dir\" to \$PATH in \"$tilde_zsh_config\""
-
-        refresh_command="exec $SHELL"
-    else
-        echo "Manually add the directory to $tilde_zsh_config (or similar):"
-
-        for command in "${commands[@]}"; do
-            info_bold "  $command"
-        done
-    fi
-    ;;
-bash)
-    commands=(
-        "export $install_env=$quoted_install_dir"
-        "export PATH=\"$bin_env:\$PATH\""
-    )
-
-    bash_configs=(
-        "$HOME/.bashrc"
-        "$HOME/.bash_profile"
-    )
-
-    if [[ ${XDG_CONFIG_HOME:-} ]]; then
-        bash_configs+=(
-            "$XDG_CONFIG_HOME/.bash_profile"
-            "$XDG_CONFIG_HOME/.bashrc"
-            "$XDG_CONFIG_HOME/bash_profile"
-            "$XDG_CONFIG_HOME/bashrc"
-        )
-    fi
-
-    set_manually=true
-    for bash_config in "${bash_configs[@]}"; do
-        tilde_bash_config=$(tildify "$bash_config")
-
-        if [[ -w $bash_config ]]; then
-            {
-                echo -e '\n# apify cli'
-
-                for command in "${commands[@]}"; do
-                    echo "$command"
-                done
-            } >>"$bash_config"
-
-            info "Added \"$tilde_bin_dir\" to \$PATH in \"$tilde_bash_config\""
-
-            refresh_command="source $bash_config"
-            set_manually=false
-            break
-        fi
-    done
-
-    if [[ $set_manually = true ]]; then
-        echo "Manually add the directory to $tilde_bash_config (or similar):"
-
-        for command in "${commands[@]}"; do
-            info_bold "  $command"
-        done
-    fi
-    ;;
-*)
-    echo 'Manually add the directory to ~/.bashrc (or similar):'
-    info_bold "  export $install_env=$quoted_install_dir"
-    info_bold "  export PATH=\"$bin_env:\$PATH\""
-    ;;
-esac
-
-echo
-info "To get started, run:"
-echo
-
-if [[ $refresh_command ]]; then
-    info_bold "  $refresh_command $(info "(if the shell is not automatically refreshed)")"
-fi
-
-info_bold "  apify --help"
-echo
+# Invoke the CLI to handle shell integrations nicely
+PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install

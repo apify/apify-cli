@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
-import { runCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { usePythonRuntime } from '../../../src/lib/hooks/runtimes/python.js';
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
@@ -49,7 +49,7 @@ describe('[python] Python support', () => {
 			await rm(tmpPath, { recursive: true, force: true });
 		}
 
-		await runCommand(CreateCommand, {
+		await testRunCommand(CreateCommand, {
 			args_actorName: actorName,
 			flags_template: PYTHON_START_TEMPLATE_ID,
 		});
@@ -74,7 +74,7 @@ async def main():
 
 		toggleCwdBetweenFullAndParentPath();
 
-		await runCommand(RunCommand, {});
+		await testRunCommand(RunCommand, {});
 
 		// Check Actor output
 		const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
