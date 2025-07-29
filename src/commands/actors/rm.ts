@@ -2,9 +2,9 @@ import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
 
 export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 	static override name = 'rm' as const;
@@ -30,9 +30,8 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 			return;
 		}
 
-		const confirmedDelete = await confirmAction({
-			type: 'Actor',
-			failureMessage: `Your provided value does not match the Actor ID.`,
+		const confirmedDelete = await useYesNoConfirm({
+			message: `Are you sure you want to delete this Actor?`,
 		});
 
 		if (!confirmedDelete) {

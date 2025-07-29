@@ -9,7 +9,7 @@ import { ACTOR_SPECIFICATION_VERSION, DEPRECATED_LOCAL_CONFIG_NAME } from '../co
 import { error, info, warning } from '../outputs.js';
 import { getJsonFileContent, getLocalConfigPath } from '../utils.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
-import { confirmAction } from '../utils/confirm.js';
+import { confirmAction } from '../utils/confirmOls.js';
 
 const getDeprecatedLocalConfigPath = (cwd: string) => join(cwd, DEPRECATED_LOCAL_CONFIG_NAME);
 

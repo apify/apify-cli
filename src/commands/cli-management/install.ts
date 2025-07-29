@@ -9,7 +9,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
 import { info, simpleLog, success, warning } from '../../lib/outputs.js';
 import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
+import { confirmAction } from '../../lib/utils/confirmOls.js';
 
 const pathToInstallMarker = (installPath: string) => join(installPath, '.install-marker');
 

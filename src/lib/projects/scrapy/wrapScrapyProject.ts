@@ -14,10 +14,10 @@ import { fileURLToPath } from 'node:url';
 import rootWalk from '@root/walk';
 import ConfigParser from 'configparser';
 import Handlebars from 'handlebars';
-import inquirer from 'inquirer';
 
 import { fetchManifest, wrapperManifestUrl } from '@apify/actor-templates';
 
+import { useSelectFromList } from '../../hooks/user-confirmations/useSelectFromList.js';
 import { info, success } from '../../outputs.js';
 import { downloadAndUnzip, sanitizeActorName } from '../../utils.js';
 import { ScrapyProjectAnalyzer } from './ScrapyProjectAnalyzer.js';
@@ -90,17 +90,13 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 
 	await analyzer.init();
 
-	const { spiderIndex } = await inquirer.prompt([
-		{
-			type: 'list',
-			name: 'spiderIndex',
-			message: 'Pick the Scrapy spider you want to wrap:',
-			choices: analyzer.getAvailableSpiders().map((spider, i) => ({
-				name: `${spider.class_name} (${spider.pathname})`,
-				value: i,
-			})),
-		},
-	]);
+	const spiderIndex = await useSelectFromList({
+		message: 'Pick the Scrapy spider you want to wrap:',
+		choices: analyzer.getAvailableSpiders().map((spider, i) => ({
+			name: `${spider.class_name} (${spider.pathname})`,
+			value: i,
+		})),
+	});
 
 	function translatePathToRelativeModuleName(pathname: string) {
 		const relPath = relative(projectPath!, pathname);

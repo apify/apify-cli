@@ -3,7 +3,6 @@ import { join, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
-import inquirer from 'inquirer';
 import isCI from 'is-ci';
 import open from 'open';
 
@@ -16,6 +15,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, link, run, success, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
@@ -313,16 +313,11 @@ Skipping push. Use --force to override.`,
 
 		// Disable open browser on CI, or if user passed --no-prompt flag
 		if (!isCI && !this.flags.noPrompt) {
-			const shouldOpenBrowser = await inquirer.prompt([
-				{
-					type: 'confirm',
-					name: 'continue',
-					message: 'Do you want to open the Actor detail in your browser?',
-					default: true,
-				},
-			]);
+			const shouldOpenBrowser = await useYesNoConfirm({
+				message: 'Do you want to open the Actor detail in your browser?',
+			});
 
-			if (shouldOpenBrowser.continue) {
+			if (shouldOpenBrowser) {
 				await open(`https://console.apify.com${redirectUrlPart}/actors/${build.actId}`);
 			}
 		}

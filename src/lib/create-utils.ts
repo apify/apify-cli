@@ -1,11 +1,14 @@
 import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 
+import { Separator } from '@inquirer/core';
 import chalk from 'chalk';
-import inquirer from 'inquirer';
 
 import type { Manifest, Template } from '@apify/actor-templates';
 
+import type { ChoicesType } from './hooks/user-confirmations/useSelectFromList.js';
+import { useSelectFromList } from './hooks/user-confirmations/useSelectFromList.js';
+import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
 import { warning } from './outputs.js';
 import { httpsGet, validateActorName } from './utils.js';
 
@@ -16,6 +19,7 @@ export async function ensureValidActorName(maybeActorName?: string) {
 		validateActorName(maybeActorName);
 		return maybeActorName;
 	}
+
 	return promptActorName();
 }
 
@@ -82,45 +86,34 @@ async function executePrompts(manifest: Manifest) {
 }
 
 async function promptActorName() {
-	const answer = await inquirer.prompt<{
-		actorName: string;
-	}>([
-		{
-			name: 'actorName',
-			message: 'Name of your new Actor:',
-			type: 'input',
-			validate: (promptText) => {
-				try {
-					validateActorName(promptText);
-				} catch (err) {
-					return (err as Error).message;
-				}
-				return true;
-			},
+	const answer = await useUserInput({
+		message: 'Name of your new Actor:',
+		validate: (promptText) => {
+			try {
+				validateActorName(promptText);
+			} catch (err) {
+				return (err as Error).message;
+			}
+			return true;
 		},
-	]);
+	});
 
-	return answer.actorName;
+	return answer;
 }
 
 async function promptProgrammingLanguage() {
-	const answer = await inquirer.prompt<{
-		programmingLanguage: string;
-	}>([
-		{
-			type: 'list',
-			name: 'programmingLanguage',
-			message: 'Choose the programming language of your new Actor:',
-			default: PROGRAMMING_LANGUAGES[0],
-			choices: PROGRAMMING_LANGUAGES,
-			loop: false,
-		},
-	]);
-	return answer.programmingLanguage;
+	const language = await useSelectFromList<string>({
+		message: 'Choose the programming language of your new Actor:',
+		choices: PROGRAMMING_LANGUAGES,
+		loop: false,
+		default: PROGRAMMING_LANGUAGES[0],
+	});
+
+	return language;
 }
 
 async function promptTemplateDefinition(manifest: Manifest, programmingLanguage: string): Promise<Template | false> {
-	const choices = [
+	const choices: ChoicesType<Template | false> = [
 		...manifest.templates
 			.filter((t) => {
 				return t.category.toLowerCase() === programmingLanguage.toLowerCase();
@@ -132,7 +125,7 @@ async function promptTemplateDefinition(manifest: Manifest, programmingLanguage:
 				};
 			}),
 
-		new inquirer.Separator(),
+		new Separator(),
 
 		{
 			name: 'Go back',
@@ -140,26 +133,22 @@ async function promptTemplateDefinition(manifest: Manifest, programmingLanguage:
 		},
 	];
 
-	const answer = await inquirer.prompt([
-		{
-			type: 'list',
-			name: 'templateDefinition',
-			message:
-				'Choose a template for your new Actor. Detailed information about the template will be shown in the next step.',
-			default: choices[0],
-			choices,
-			loop: false,
-			pageSize: 8,
-		},
-	]);
+	const templateDefinition = await useSelectFromList({
+		message:
+			'Choose a template for your new Actor. Detailed information about the template will be shown in the next step.',
+		default: choices[0],
+		choices,
+		loop: false,
+		pageSize: 8,
+	});
 
-	return answer.templateDefinition;
+	return templateDefinition;
 }
 
 async function promptTemplateInstallation(templateDefinition: Template) {
-	const choices = [
+	const choices: ChoicesType<boolean> = [
 		{ name: `Install template`, value: true },
-		new inquirer.Separator(),
+		new Separator(),
 		{ name: 'Go back', value: false },
 	];
 
@@ -168,16 +157,12 @@ async function promptTemplateInstallation(templateDefinition: Template) {
 	const suffix = `\n ${label}:\n ${description}`;
 	const message = `Do you want to install the following template?${suffix}`;
 
-	const answer = await inquirer.prompt<{ shouldInstall: boolean }>([
-		{
-			type: 'list',
-			name: 'shouldInstall',
-			message,
-			default: choices[0],
-			choices,
-			loop: false,
-		},
-	]);
+	const answer = await useSelectFromList<boolean>({
+		message,
+		default: choices[0],
+		choices,
+		loop: false,
+	});
 
-	return answer.shouldInstall;
+	return answer;
 }

@@ -6,7 +6,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
+import { confirmAction } from '../../lib/utils/confirmOls.js';
 
 const deletableStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,
