@@ -85,9 +85,16 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 			throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
 		}
 
-		if (!actor) throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
+		if (!actor) {
+			throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
+		}
 
 		const { name, versions } = actor;
+
+		// @ts-expect-error TODO: fix apify-client types
+		if (actor.isSourceCodeHidden && !actor.versions.length) {
+			throw new Error(`You cannot pull source code of this Actor because you do not have permission to do so.`);
+		}
 
 		let correctVersion = null;
 		if (this.flags.version) {
