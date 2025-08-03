@@ -13972,11 +13972,11 @@ __metadata:
   linkType: hard
 
 "react-json-view-lite@npm:^2.3.0":
-  version: 2.4.1
-  resolution: "react-json-view-lite@npm:2.4.1"
+  version: 2.4.2
+  resolution: "react-json-view-lite@npm:2.4.2"
   peerDependencies:
     react: ^18.0.0 || ^19.0.0
-  checksum: 10c0/cc171d8cca04683b97292ffdd8bad4970d77ccb929ed1eff3d40d46893c69e569226742f3330c090be88f894bd8e97352286ff16989c1e765f9fda487ca44ee8
+  checksum: 10c0/0fb71260615d9b9c463ef3332075e4604225f88de3870118bf05f7d3ca869e159872caae03015160773fbf9bb7961b53e30e30ab24fa872000703666d8811e09
   languageName: node
   linkType: hard
 
