@@ -78,7 +78,7 @@
         "apify-client": "^2.12.6",
         "archiver": "~7.0.1",
         "axios": "^1.11.0",
-        "chalk": "~5.4.0",
+        "chalk": "~5.5.0",
         "cli-table3": "^0.6.5",
         "computer-name": "~0.1.0",
         "configparser": "~0.3.10",
