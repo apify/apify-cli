@@ -2,9 +2,10 @@ import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { useInputConfirmation } from '../../lib/hooks/user-confirmations/useInputConfirmation.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
 
 export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 	static override name = 'rm' as const;
@@ -44,9 +45,10 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 			}
 		}
 
-		const confirmed = await confirmAction({
-			type: 'Actor Build',
-			expectedValue: confirmationPrompt,
+		// If the build is tagged, console asks you to confirm by typing in the tag. Otherwise, it asks you to confirm with a yes/no question.
+		const confirmed = await (confirmationPrompt ? useInputConfirmation : useYesNoConfirm)({
+			message: `Are you sure you want to delete this Actor Build?${confirmationPrompt ? ` If so, please type in "${confirmationPrompt}":` : ''}`,
+			expectedValue: confirmationPrompt ?? '',
 			failureMessage: 'Your provided value does not match the build tag.',
 		});
 

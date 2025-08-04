@@ -5,7 +5,6 @@ import chalk from 'chalk';
 import computerName from 'computer-name';
 import cors from 'cors';
 import express from 'express';
-import inquirer from 'inquirer';
 import open from 'open';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
@@ -13,6 +12,8 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { AUTH_FILE_PATH } from '../lib/consts.js';
+import { useMaskedInput } from '../lib/hooks/user-confirmations/useMaskedInput.js';
+import { useSelectFromList } from '../lib/hooks/user-confirmations/useSelectFromList.js';
 import { error, info, success } from '../lib/outputs.js';
 import { useApifyIdentity } from '../lib/telemetry.js';
 import { getLocalUserInfo, getLoggedClient } from '../lib/utils.js';
@@ -74,28 +75,24 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 		let selectedMethod = method;
 
 		if (!method) {
-			const answer = await inquirer.prompt([
-				{
-					type: 'list',
-					name: 'loginMethod',
-					message: 'Choose how you want to log in to Apify',
-					choices: [
-						{
-							value: 'console',
-							name: 'Through Apify Console in your default browser',
-							short: 'Through Apify Console',
-						},
-						{
-							value: 'manual',
-							name: 'Enter API token manually',
-							short: 'Manually',
-						},
-					],
-					loop: true,
-				},
-			]);
+			const answer = await useSelectFromList({
+				message: 'Choose how you want to log in to Apify',
+				choices: [
+					{
+						value: 'console',
+						name: 'Through Apify Console in your default browser',
+						short: 'Through Apify Console',
+					},
+					{
+						value: 'manual',
+						name: 'Enter API token manually',
+						short: 'Manually',
+					},
+				] as const,
+				loop: true,
+			});
 
-			selectedMethod = answer.loginMethod;
+			selectedMethod = answer;
 		}
 
 		if (selectedMethod === 'console') {
@@ -199,10 +196,9 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 			console.log(
 				'Enter your Apify API token. You can find it at https://console.apify.com/settings/integrations',
 			);
-			const tokenAnswer = await inquirer.prompt<{ token: string }>([
-				{ name: 'token', message: 'token:', type: 'password' },
-			]);
-			await tryToLogin(tokenAnswer.token);
+
+			const tokenAnswer = await useMaskedInput({ message: 'token:' });
+			await tryToLogin(tokenAnswer);
 		}
 	}
 }

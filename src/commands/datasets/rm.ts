@@ -4,9 +4,9 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
 
 export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 	static override name = 'rm' as const;
@@ -35,7 +35,9 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 			return;
 		}
 
-		const confirmed = await confirmAction({ type: 'Dataset' });
+		const confirmed = await useYesNoConfirm({
+			message: `Are you sure you want to delete this Dataset?`,
+		});
 
 		if (!confirmed) {
 			info({ message: 'Dataset deletion has been aborted.' });

@@ -67,7 +67,13 @@ export async function useStdin(): Promise<StdinState> {
 		})
 		.catch(() => false);
 
-	cliDebugPrint('useStdin', { isTTY: state.isTTY, pipedIn, readableEnded: stdinStream.readableEnded });
+	cliDebugPrint('useStdin', {
+		hasData: state.hasData,
+		waitDelay: state.waitDelay,
+		isTTY: state.isTTY,
+		pipedIn,
+		readableEnded: stdinStream.readableEnded,
+	});
 
 	// The isTTY params will be true if there is no piping into stdin
 	// pipedIn is set if someone either runs `node a | node b`, or `node a < file`
