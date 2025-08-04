@@ -455,9 +455,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.189":
-  version: 1.0.189
-  resolution: "@apify/docs-theme@npm:1.0.189"
+"@apify/docs-theme@npm:^1.0.190":
+  version: 1.0.190
+  resolution: "@apify/docs-theme@npm:1.0.190"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.2.2"
     "@docusaurus/theme-common": "npm:^3.7.0"
@@ -469,6 +469,7 @@ __metadata:
     docusaurus-gtm-plugin: "npm:^0.0.2"
     postcss-preset-env: "npm:^10.1.3"
     prism-react-renderer: "npm:^2.4.1"
+    react-hotkeys-hook: "npm:^5.1.0"
     remark-parse: "npm:^11.0.0"
     remark-stringify: "npm:^11.0.0"
     unified: "npm:^11.0.5"
@@ -477,7 +478,7 @@ __metadata:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/566cfe50a7255b0b228a6294c3887160033ff749042fbfb9c450353eec4b029cadc4c84f9b6a074c77c0c02a5f61c0b26e8f2b5e43bc297ea9b9797c853edd31
+  checksum: 10c0/cc0a68bb34243151111ab24c4f571ff3c22e377c8a620b903cd0c8404967217251f4ee188b5d17577f233d8fdd893c8ceb95cadcc2ef0c55d73c904b083d7660
   languageName: node
   linkType: hard
 
@@ -13948,6 +13949,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-hotkeys-hook@npm:^5.1.0":
+  version: 5.1.0
+  resolution: "react-hotkeys-hook@npm:5.1.0"
+  peerDependencies:
+    react: ">=16.8.0"
+    react-dom: ">=16.8.0"
+  checksum: 10c0/99df6d3c305b139ac7afd073b58575961bf30a819fb23e8f1251b1b3a9f1c7662737f8b6266e3fc42bd5bdfdaca81aa1e019613f95f9a6313267de265e45836d
+  languageName: node
+  linkType: hard
+
 "react-icons@npm:^4.10.1":
   version: 4.12.0
   resolution: "react-icons@npm:4.12.0"
@@ -14638,7 +14649,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.189"
+    "@apify/docs-theme": "npm:^1.0.190"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^3.8.1"
