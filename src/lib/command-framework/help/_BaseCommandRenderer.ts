@@ -89,7 +89,7 @@ export abstract class BaseCommandRenderer {
 
 			case 'string':
 			case 'integer': {
-				const flagValues = flag.choicesType?.length ? `${flag.choicesType.join('|')}` : '<value>';
+				const flagValues = flag.choices?.length ? `${flag.choices.join('|')}` : '<value>';
 
 				return `${mainFlagPart} ${flagValues}`;
 			}

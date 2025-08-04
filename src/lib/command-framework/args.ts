@@ -1,5 +1,3 @@
-import type { Argv } from 'yargs';
-
 import { StdinMode } from './apify-command.js';
 
 export type ArgTag = 'string';
@@ -24,7 +22,6 @@ export type StringArgOptions = BaseArgOptions;
 
 export interface TaggedArgBuilder<Tag extends ArgTag, Required = boolean> {
 	argTag: Tag;
-	builder: (args: Argv, objectName: string) => Argv;
 	required: Required;
 	stdin: StdinMode;
 
@@ -37,16 +34,6 @@ export interface TaggedArgBuilder<Tag extends ArgTag, Required = boolean> {
 function stringArg<const T extends StringArgOptions>(option: T): TaggedArgBuilder<'string', T['required']> {
 	return {
 		argTag: 'string',
-		builder: (args, objectName) => {
-			args.positional(objectName, {
-				type: 'string',
-				alias: option.aliases,
-				description: option.description,
-				demandOption: false,
-			});
-
-			return args;
-		},
 		required: option.required ?? false,
 		stdin: option.stdin ?? StdinMode.Raw,
 

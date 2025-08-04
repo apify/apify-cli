@@ -1,4 +1,4 @@
-import type { Argv } from 'yargs';
+import type { ParseArgsOptionDescriptor } from 'node:util';
 
 import { camelCaseToKebabCase, kebabCaseString, StdinMode } from './apify-command.js';
 
@@ -35,6 +35,8 @@ export interface IntegerFlagOptions extends BaseFlagOptions {
 	default?: number;
 }
 
+type FlagBuilderReturn = { flagName: string; option: ParseArgsOptionDescriptor }[];
+
 export interface TaggedFlagBuilder<
 	Tag extends FlagTag,
 	ChoicesType extends readonly string[] | null,
@@ -42,8 +44,8 @@ export interface TaggedFlagBuilder<
 	HasDefault = false,
 > {
 	flagTag: Tag;
-	builder: (args: Argv, objectName: string, extraArgs?: string[]) => Argv;
-	choicesType: ChoicesType;
+	builder: (objectName: string) => FlagBuilderReturn;
+	choices: ChoicesType;
 	required: Required;
 	hasDefault: HasDefault;
 	stdin: StdinMode;
@@ -67,31 +69,42 @@ function stringFlag<const Choices extends string[], const T extends StringFlagOp
 ): TaggedFlagBuilder<'string', Choices, T['default'] extends string ? true : T['required'], T['default']> {
 	return {
 		flagTag: 'string',
-		builder: (args, objectName, extraAliases) => {
-			const allAliases = new Set([...(options.aliases ?? []), ...(extraAliases ?? [])]);
-
-			if (options.char) {
-				allAliases.add(options.char);
-			}
+		builder: (objectName) => {
+			const allAliases = new Set([...(options.aliases ?? [])]);
 
 			allAliases.delete(objectName);
 
-			return args.option(objectName, {
-				demandOption: false,
-				describe: options.description,
-				alias: [...allAliases].map((alias) => kebabCaseString(camelCaseToKebabCase(alias))),
-				hidden: options.hidden ?? false,
-				conflicts: options.exclusive,
-				choices: options.choices,
-				string: true,
-				// we only require something be passed in if we don't have a default or read from stdin
-				nargs: 1,
-			});
+			const returnValue: FlagBuilderReturn = [
+				{
+					flagName: objectName,
+					option: {
+						type: 'string',
+						// We specify true here to throw a nicer error later if the user passes multiple values / future proofing
+						multiple: true,
+					},
+				},
+			];
+
+			if (options.char) {
+				returnValue[0].option.short = options.char;
+			}
+
+			for (const alias of allAliases) {
+				returnValue.push({
+					flagName: kebabCaseString(camelCaseToKebabCase(alias)).toLowerCase(),
+					option: {
+						type: 'string',
+						multiple: true,
+					},
+				});
+			}
+
+			return returnValue;
 		},
-		choicesType: options.choices as Choices,
+		choices: options.choices as Choices,
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
-		stdin: options.stdin ?? StdinMode.Raw,
+		stdin: options.stdin ?? StdinMode.Stringified,
 
 		description: options.description,
 		aliases: options.aliases,
@@ -106,25 +119,38 @@ function booleanFlag<const T extends BooleanFlagOptions>(
 ): TaggedFlagBuilder<'boolean', never, T['default'] extends boolean ? true : T['required'], T['default']> {
 	return {
 		flagTag: 'boolean',
-		builder: (args, objectName, extraAliases) => {
-			const allAliases = new Set([...(options.aliases ?? []), ...(extraAliases ?? [])]);
-
-			if (options.char) {
-				allAliases.add(options.char);
-			}
+		builder: (objectName) => {
+			const allAliases = new Set([...(options.aliases ?? [])]);
 
 			allAliases.delete(objectName);
 
-			return args.option(objectName, {
-				demandOption: false,
-				describe: options.description,
-				alias: [...allAliases].map((alias) => kebabCaseString(camelCaseToKebabCase(alias))),
-				hidden: options.hidden ?? false,
-				conflicts: options.exclusive,
-				boolean: true,
-			});
+			const returnValue: FlagBuilderReturn = [
+				{
+					flagName: objectName,
+					option: {
+						type: 'boolean',
+						multiple: true,
+					},
+				},
+			];
+
+			if (options.char) {
+				returnValue[0].option.short = options.char;
+			}
+
+			for (const alias of allAliases) {
+				returnValue.push({
+					flagName: kebabCaseString(camelCaseToKebabCase(alias)).toLowerCase(),
+					option: {
+						type: 'boolean',
+						multiple: true,
+					},
+				});
+			}
+
+			return returnValue;
 		},
-		choicesType: null as never,
+		choices: null as never,
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
 		stdin: options.stdin ?? StdinMode.Raw,
@@ -142,27 +168,39 @@ function integerFlag<const T extends IntegerFlagOptions>(
 ): TaggedFlagBuilder<'integer', never, T['default'] extends number ? true : T['required'], T['default']> {
 	return {
 		flagTag: 'integer',
-		builder: (args, objectName, extraAliases) => {
-			const allAliases = new Set([...(options.aliases ?? []), ...(extraAliases ?? [])]);
-
-			if (options.char) {
-				allAliases.add(options.char);
-			}
+		builder: (objectName) => {
+			const allAliases = new Set([...(options.aliases ?? [])]);
 
 			allAliases.delete(objectName);
 
-			return args.option(objectName, {
-				demandOption: false,
-				describe: options.description,
-				alias: [...allAliases].map((alias) => kebabCaseString(camelCaseToKebabCase(alias))),
-				hidden: options.hidden ?? false,
-				conflicts: options.exclusive,
-				choices: options.choices,
-				string: true,
-				nargs: 1,
-			});
+			const returnValue: FlagBuilderReturn = [
+				{
+					flagName: objectName,
+					option: {
+						type: 'string',
+						// We specify true here to throw a nicer error later if the user passes multiple values / future proofing
+						multiple: true,
+					},
+				},
+			];
+
+			if (options.char) {
+				returnValue[0].option.short = options.char;
+			}
+
+			for (const alias of allAliases) {
+				returnValue.push({
+					flagName: kebabCaseString(camelCaseToKebabCase(alias)).toLowerCase(),
+					option: {
+						type: 'string',
+						multiple: true,
+					},
+				});
+			}
+
+			return returnValue;
 		},
-		choicesType: null as never,
+		choices: null as never,
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
 		stdin: options.stdin ?? StdinMode.Raw,
