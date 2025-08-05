@@ -107,8 +107,7 @@
         "tiged": "~2.12.7",
         "which": "^5.0.0",
         "widest-line": "^5.0.0",
-        "wrap-ansi": "^9.0.0",
-        "yargs": "^18.0.0"
+        "wrap-ansi": "^9.0.0"
     },
     "devDependencies": {
         "@apify/eslint-config": "^1.0.0",
