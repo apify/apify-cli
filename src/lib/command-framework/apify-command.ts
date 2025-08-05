@@ -345,7 +345,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				builderData,
 			);
 
-			const camelCasedName = camelCaseString(baseFlagName);
+			const camelCasedName = camelCaseString(rawBaseFlagName);
 
 			const usedShortFormOfTheFlag = rawTokens.some(
 				(token) => token.kind === 'option' && token.name === baseFlagName,

@@ -93,6 +93,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	};
 
 	async run() {
+		console.log(this.flags);
+
 		// Resolving with `.` will mean stay in the cwd folder, whereas anything else in dir will be resolved. If users pass in a full path (`/home/...`, it will correctly resolve to that)
 		const cwd = resolve(process.cwd(), this.flags.dir ?? '.');
 
