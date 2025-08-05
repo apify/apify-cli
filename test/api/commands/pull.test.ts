@@ -217,4 +217,12 @@ describe('[api] apify pull', () => {
 
 		expect(exists).to.be.eql(true);
 	});
+
+	it('should fail if actor is private', async () => {
+		await testRunCommand(ActorsPullCommand, { args_actorId: 'apify/website-content-crawler' });
+
+		expect(lastErrorMessage()).toMatch(
+			/You cannot pull source code of this Actor because you do not have permission to do so./i,
+		);
+	});
 });
