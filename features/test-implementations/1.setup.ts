@@ -243,6 +243,8 @@ Given<TestWorld>(/the local actor is pushed to the Apify platform/i, { timeout: 
 		pushedActorIds.push(this.testActor.name);
 	} else {
 		// This throws on errors
-		result.unwrap();
+		const err = result.unwrapErr();
+
+		throw new Error(`Failed to push actor: ${err.message}`);
 	}
 });

@@ -201,7 +201,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	}
 
 	private async _run(parseResult: ParseResult) {
-		const { values: rawFlags, positionals: rawArgs } = parseResult;
+		const { values: rawFlags, positionals: rawArgs, tokens: rawTokens } = parseResult;
 
 		if (rawFlags.help) {
 			this.ctor.printHelp();
@@ -261,7 +261,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			return;
 		}
 
-		this._parseFlags(rawFlags);
+		this._parseFlags(rawFlags, rawTokens);
 
 		try {
 			await this.run();
@@ -326,7 +326,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		return flagKey;
 	}
 
-	private _parseFlags(rawFlags: ParseResult['values']) {
+	private _parseFlags(rawFlags: ParseResult['values'], rawTokens: ParseResult['tokens']) {
 		if (!this.ctor.flags) {
 			return;
 		}
@@ -346,6 +346,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			);
 
 			const camelCasedName = camelCaseString(baseFlagName);
+
+			const usedShortFormOfTheFlag = rawTokens.some(
+				(token) => token.kind === 'option' && token.name === baseFlagName,
+			);
 
 			if (builderData.exclusive?.length) {
 				const existingExclusiveFlags = exclusiveFlagMap.get(baseFlagName) ?? new Set();
@@ -407,6 +411,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				}
 
 				rawFlag = rawFlag[0]! as string | boolean;
+			}
+
+			// -i='{"foo":"bar"}'
+			if (usedShortFormOfTheFlag && typeof rawFlag === 'string' && rawFlag.startsWith('=')) {
+				rawFlag = rawFlag.slice(1);
 			}
 
 			if (typeof rawFlag !== 'undefined') {
@@ -578,6 +587,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			allowNegative: true,
 			allowPositionals: true,
 			strict: true,
+			tokens: true,
 			options: {
 				help: helpFlagDefinition,
 			} as {
@@ -796,6 +806,7 @@ export async function internalRunCommand<Cmd extends typeof BuiltApifyCommand>(
 	const rawObject: ParseResult = {
 		positionals: [],
 		values: {},
+		tokens: [],
 	};
 
 	let positionalIndex = 0;
