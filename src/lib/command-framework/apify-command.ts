@@ -315,8 +315,15 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		return { baseFlagName, rawBaseFlagName, allMatchers: [baseFlagName, ...allMatchers] };
 	}
 
-	private _commandFlagKeyToCamelCasePropertyKey(commandFlagKey: string) {
-		return camelCaseString(kebabCaseString(camelCaseToKebabCase(commandFlagKey)).toLowerCase());
+	private _commandFlagKeyToKebabCaseRegisteredName(commandFlagKey: string) {
+		let flagKey = kebabCaseString(camelCaseToKebabCase(commandFlagKey)).toLowerCase();
+
+		if (flagKey.startsWith('no-')) {
+			// node handles `no-` flags by negating the flag, so we need to handle that differently if we register a flag with a "no-" prefix
+			flagKey = flagKey.slice(3);
+		}
+
+		return flagKey;
 	}
 
 	private _parseFlags(rawFlags: ParseResult['values']) {
@@ -339,23 +346,23 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			const camelCasedName = camelCaseString(baseFlagName);
 
 			if (builderData.exclusive?.length) {
-				const existingExclusiveFlags = exclusiveFlagMap.get(camelCasedName) ?? new Set();
+				const existingExclusiveFlags = exclusiveFlagMap.get(baseFlagName) ?? new Set();
 
 				for (const exclusiveFlag of builderData.exclusive) {
-					existingExclusiveFlags.add(this._commandFlagKeyToCamelCasePropertyKey(exclusiveFlag));
+					existingExclusiveFlags.add(this._commandFlagKeyToKebabCaseRegisteredName(exclusiveFlag));
 				}
 
-				exclusiveFlagMap.set(camelCasedName, existingExclusiveFlags);
+				exclusiveFlagMap.set(baseFlagName, existingExclusiveFlags);
 
 				// Go through each exclusive flag for this one flag and also add it
 				for (const exclusiveFlag of builderData.exclusive) {
-					const exclusiveFlagCamelCasedName = this._commandFlagKeyToCamelCasePropertyKey(exclusiveFlag);
+					const exclusiveFlagKebabCasedName = this._commandFlagKeyToKebabCaseRegisteredName(exclusiveFlag);
 
-					const exclusiveFlagExisting = exclusiveFlagMap.get(exclusiveFlagCamelCasedName) ?? new Set();
+					const exclusiveFlagExisting = exclusiveFlagMap.get(exclusiveFlagKebabCasedName) ?? new Set();
 
-					exclusiveFlagExisting.add(camelCasedName);
+					exclusiveFlagExisting.add(baseFlagName);
 
-					exclusiveFlagMap.set(exclusiveFlagCamelCasedName, exclusiveFlagExisting);
+					exclusiveFlagMap.set(exclusiveFlagKebabCasedName, exclusiveFlagExisting);
 				}
 			}
 
@@ -460,7 +467,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 
 			// Re-validate required (we don't have the flag and it's either required or passed in)
-			if (!this.flags[camelCasedName] && (builderData.required || rawFlag)) {
+			if (this.flags[camelCasedName] == null && (builderData.required || rawFlag != null)) {
 				throw new CommandError({
 					code: CommandErrorCode.APIFY_MISSING_FLAG,
 					command: this.ctor,
@@ -477,22 +484,20 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		for (const [flagA, flags] of exclusiveFlagMap) {
 			// If the flag is not set, or is set to null, we can skip it
-			if (this.flags[flagA] == null) {
+			if (rawFlags[flagA] == null) {
 				continue;
 			}
 
 			for (const flagB of flags) {
-				if (this.flags[flagB] == null) {
+				if (rawFlags[flagB] == null) {
 					continue;
 				}
 
 				// At this point we know both are set
-				const flagAValue = this.flags[flagA];
-				const flagBValue = this.flags[flagB];
+				const flagAValue = (rawFlags[flagA] as (string | boolean)[])[0];
+				const flagBValue = (rawFlags[flagB] as (string | boolean)[])[0];
 
-				const flagRepresentation = (flag: string, value: unknown) => {
-					const kebabCasedFlag = kebabCaseString(camelCaseToKebabCase(flag)).toLowerCase();
-
+				const flagRepresentation = (kebabCasedFlag: string, value: unknown) => {
 					if (typeof value === 'boolean') {
 						return value ? `--${kebabCasedFlag}` : `--no-${kebabCasedFlag}`;
 					}
