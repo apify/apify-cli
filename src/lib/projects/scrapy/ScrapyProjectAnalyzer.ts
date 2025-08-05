@@ -2,8 +2,8 @@ import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import ConfigParser from 'configparser';
-import inquirer from 'inquirer';
 
+import { useUserInput } from '../../hooks/user-confirmations/useUserInput.js';
 import { SpiderFileAnalyzer } from './SpiderFileAnalyzer.js';
 
 export class ScrapyProjectAnalyzer {
@@ -41,25 +41,19 @@ Are you sure there is a Scrapy project there?`);
 	async loadSettings() {
 		const assumedBotName = this.configuration.get('settings', 'default')!.split('.')[0];
 
-		const settings = await inquirer.prompt<{ BOT_NAME: string; SPIDER_MODULES: string }>([
-			{
-				type: 'input',
-				name: 'BOT_NAME',
-				message: 'Enter the Scrapy BOT_NAME (see settings.py):',
-				default: assumedBotName,
-			},
-			{
-				type: 'input',
-				name: 'SPIDER_MODULES',
-				message: 'What folder are the Scrapy spider modules stored in? (see SPIDER_MODULES in settings.py):',
-				default: `${assumedBotName}.spiders`,
-			},
-		]);
+		const botName = await useUserInput({
+			message: 'Enter the Scrapy BOT_NAME (see settings.py):',
+			default: assumedBotName,
+		});
+
+		const spiderModules = await useUserInput({
+			message: 'What folder are the Scrapy spider modules stored in? (see SPIDER_MODULES in settings.py):',
+			default: `${assumedBotName}.spiders`,
+		});
 
 		this.settings = {
-			BOT_NAME: settings.BOT_NAME,
-			SPIDER_MODULES:
-				typeof settings.SPIDER_MODULES === 'string' ? [settings.SPIDER_MODULES] : settings.SPIDER_MODULES,
+			BOT_NAME: botName,
+			SPIDER_MODULES: typeof spiderModules === 'string' ? [spiderModules] : spiderModules,
 		};
 	}
 

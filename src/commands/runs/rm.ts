@@ -4,9 +4,9 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
 
 const deletableStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,
@@ -47,9 +47,8 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 			return;
 		}
 
-		const confirmedDelete = await confirmAction({
-			type: 'Actor Run',
-			failureMessage: `Your provided value does not match the run ID.`,
+		const confirmedDelete = await useYesNoConfirm({
+			message: `Are you sure you want to delete this Actor Run?`,
 		});
 
 		if (!confirmedDelete) {

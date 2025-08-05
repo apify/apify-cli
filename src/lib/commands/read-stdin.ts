@@ -3,7 +3,9 @@ import { once } from 'node:events';
 import { useStdin } from '../hooks/useStdin.js';
 
 export async function readStdin() {
-	const { hasData, waitDelay, stream } = await useStdin();
+	const dataRef = await useStdin();
+
+	const { hasData, waitDelay, stream } = dataRef;
 
 	if (!hasData) {
 		return;
@@ -44,6 +46,9 @@ export async function readStdin() {
 	if (timeout) {
 		clearTimeout(timeout);
 	}
+
+	// Mark further uses of useStdin / readStdin as having no more data since we've read it all
+	dataRef.hasData = false;
 
 	const concat = Buffer.concat(bufferChunks);
 

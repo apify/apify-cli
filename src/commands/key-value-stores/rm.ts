@@ -4,9 +4,9 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
-import { confirmAction } from '../../lib/utils/confirm.js';
 
 export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresRmCommand> {
 	static override name = 'rm' as const;
@@ -35,7 +35,9 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 			return;
 		}
 
-		const confirmed = await confirmAction({ type: 'Key-value store' });
+		const confirmed = await useYesNoConfirm({
+			message: `Are you sure you want to delete this Key-value store?`,
+		});
 
 		if (!confirmed) {
 			info({ message: 'Key-value store deletion has been aborted.' });

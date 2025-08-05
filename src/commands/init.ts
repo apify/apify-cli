@@ -1,8 +1,6 @@
 import { basename } from 'node:path';
 import process from 'node:process';
 
-import inquirer from 'inquirer';
-
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { Flags } from '../lib/command-framework/flags.js';
@@ -15,6 +13,8 @@ import {
 } from '../lib/consts.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
+import { useUserInput } from '../lib/hooks/user-confirmations/useUserInput.js';
+import { useYesNoConfirm } from '../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
@@ -68,8 +68,15 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 		if (!this.flags.yes && project.type === ProjectLanguage.Unknown) {
 			warning({ message: 'The current directory does not look like a Node.js or Python project.' });
-			const { c } = await inquirer.prompt([{ name: 'c', message: 'Do you want to continue?', type: 'confirm' }]);
-			if (!c) return;
+
+			const confirmed = await useYesNoConfirm({
+				message: 'Do you want to continue?',
+				providedConfirmFromStdin: this.flags.yes,
+			});
+
+			if (!confirmed) {
+				return;
+			}
 		}
 
 		const actorConfig = await useActorConfig({ cwd });
@@ -87,22 +94,26 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 			if (!actorName) {
 				let response = actorConfig.isOkAnd((cfg) => cfg.exists)
-					? { actName: actorConfig.unwrap().config.name as string }
+					? (actorConfig.unwrap().config.name as string)
 					: null;
 
+				// TODO: see if we can use promptActorName instead
 				while (!response) {
 					try {
-						const answer = await inquirer.prompt([
-							{ name: 'actName', message: 'Actor name:', default: basename(cwd), type: 'input' },
-						]);
-						validateActorName(answer.actName);
+						const answer = await useUserInput({
+							message: 'Actor name:',
+							default: basename(cwd),
+						});
+
+						validateActorName(answer);
+
 						response = answer;
 					} catch (err) {
 						error({ message: (err as Error).message });
 					}
 				}
 
-				({ actName: actorName } = response);
+				actorName = response;
 			}
 
 			// Migrate apify.json to .actor/actor.json
