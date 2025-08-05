@@ -31,6 +31,7 @@
         "@docusaurus/faster": "^3.8.1",
         "@docusaurus/plugin-client-redirects": "^3.8.1",
         "@docusaurus/preset-classic": "^3.8.1",
+        "@signalwire/docusaurus-plugin-llms-txt": "^1.2.2",
         "clsx": "^1.2.1",
         "docusaurus-gtm-plugin": "^0.0.2",
         "prop-types": "^15.8.1",

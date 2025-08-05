@@ -97,6 +97,19 @@ module.exports = {
         ],
     ]),
     plugins: [
+		[
+			'@signalwire/docusaurus-plugin-llms-txt',
+			{
+				content: {
+					includeVersionedDocs: false,
+					enableLlmsFullTxt: true,
+					includeBlog: true,
+					includeGeneratedIndex: false,
+					includePages: true,
+					relativePaths: false,
+				},
+			},
+		],
         ...config.plugins,
     ],
     themeConfig: { ...config.themeConfig, versions },
