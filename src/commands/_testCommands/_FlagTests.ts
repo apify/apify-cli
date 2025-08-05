@@ -1,5 +1,5 @@
-import { ApifyCommand } from '../lib/command-framework/apify-command.js';
-import { Flags } from '../lib/command-framework/flags.js';
+import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 
 export class FlagTest extends ApifyCommand<typeof FlagTest> {
 	static override name = '_flag';
@@ -7,7 +7,7 @@ export class FlagTest extends ApifyCommand<typeof FlagTest> {
 	static override flags = {
 		foo: Flags.string({
 			description: 'Foo flag',
-			required: true,
+			// required: true,
 		}),
 		bar: Flags.string({
 			description: 'Bar flag',
@@ -25,7 +25,19 @@ export class FlagTest extends ApifyCommand<typeof FlagTest> {
 			choices: ['1', '2', '3'],
 		}),
 		int: Flags.integer({
-			default: 1,
+			exclusive: ['foo'],
+		}),
+		'space me': Flags.string({
+			description: 'Space message flag',
+			exclusive: ['lines-in'],
+		}),
+		'lines-in': Flags.integer({
+			description: 'Lines in flag',
+			exclusive: ['space me'],
+		}),
+		fooBar2: Flags.boolean({
+			description: 'Foo bar flag',
+			exclusive: ['lines-in'],
 		}),
 	};
 

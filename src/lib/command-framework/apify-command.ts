@@ -1,6 +1,6 @@
 /* eslint-disable max-classes-per-file */
 
-import type { parseArgs,ParseArgsConfig, ParseArgsOptionDescriptor } from 'node:util';
+import type { parseArgs, ParseArgsConfig, ParseArgsOptionDescriptor } from 'node:util';
 
 import type { Awaitable } from '@crawlee/types';
 import chalk from 'chalk';
@@ -245,7 +245,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 							}
 
 							if (builderData.catchAll) {
-								this.args[camelCasedName] = rawArgs.slice(index).join(' ');
+								this.args[camelCasedName] = rawArgs.slice(index - 1).join(' ');
 							}
 
 							break;
@@ -315,22 +315,49 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		return { baseFlagName, rawBaseFlagName, allMatchers: [baseFlagName, ...allMatchers] };
 	}
 
+	private _commandFlagKeyToCamelCasePropertyKey(commandFlagKey: string) {
+		return camelCaseString(kebabCaseString(camelCaseToKebabCase(commandFlagKey)).toLowerCase());
+	}
+
 	private _parseFlags(rawFlags: ParseResult['values']) {
 		if (!this.ctor.flags) {
 			return;
 		}
 
-		for (const [userFlagName, builderData] of Object.entries(this.ctor.flags)) {
+		const exclusiveFlagMap = new Map<string, Set<string>>();
+
+		for (const [commandFlagKey, builderData] of Object.entries(this.ctor.flags)) {
 			if (typeof builderData === 'string') {
 				throw new RangeError('Do not provide the string for the json arg! It is a type level assertion!');
 			}
 
 			const { allMatchers, baseFlagName, rawBaseFlagName } = this._userFlagNameToRegisteredName(
-				userFlagName,
+				commandFlagKey,
 				builderData,
 			);
 
 			const camelCasedName = camelCaseString(baseFlagName);
+
+			if (builderData.exclusive?.length) {
+				const existingExclusiveFlags = exclusiveFlagMap.get(camelCasedName) ?? new Set();
+
+				for (const exclusiveFlag of builderData.exclusive) {
+					existingExclusiveFlags.add(this._commandFlagKeyToCamelCasePropertyKey(exclusiveFlag));
+				}
+
+				exclusiveFlagMap.set(camelCasedName, existingExclusiveFlags);
+
+				// Go through each exclusive flag for this one flag and also add it
+				for (const exclusiveFlag of builderData.exclusive) {
+					const exclusiveFlagCamelCasedName = this._commandFlagKeyToCamelCasePropertyKey(exclusiveFlag);
+
+					const exclusiveFlagExisting = exclusiveFlagMap.get(exclusiveFlagCamelCasedName) ?? new Set();
+
+					exclusiveFlagExisting.add(camelCasedName);
+
+					exclusiveFlagMap.set(exclusiveFlagCamelCasedName, exclusiveFlagExisting);
+				}
+			}
 
 			// If you have a flag a, with alias b, and you pass --a and --b, it's not allowed
 			const matchingFlags = allMatchers.filter((matcher) => rawFlags[matcher]);
@@ -338,6 +365,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			if (matchingFlags.length > 1) {
 				throw new CommandError({
 					code: CommandErrorCode.APIFY_FLAG_PROVIDED_MULTIPLE_TIMES,
+					command: this.ctor,
 					metadata: {
 						flag: baseFlagName,
 					},
@@ -349,6 +377,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			if (!rawFlag && builderData.required) {
 				throw new CommandError({
 					code: CommandErrorCode.APIFY_MISSING_FLAG,
+					command: this.ctor,
 					metadata: {
 						flag: baseFlagName,
 						matcher: matchingFlags[0],
@@ -361,6 +390,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				if (rawFlag.length > 1) {
 					throw new CommandError({
 						code: CommandErrorCode.APIFY_FLAG_PROVIDED_MULTIPLE_TIMES,
+						command: this.ctor,
 						metadata: {
 							flag: baseFlagName,
 						},
@@ -383,6 +413,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 						if (Number.isNaN(parsed) || !Number.isInteger(parsed)) {
 							throw new CommandError({
 								code: CommandErrorCode.APIFY_INVALID_FLAG_INTEGER_VALUE,
+								command: this.ctor,
 								metadata: {
 									flag: baseFlagName,
 									value: String(rawFlag),
@@ -420,6 +451,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			) {
 				throw new CommandError({
 					code: CommandErrorCode.APIFY_INVALID_CHOICE,
+					command: this.ctor,
 					metadata: {
 						flag: baseFlagName,
 						choices: builderData.choices.map((choice) => chalk.white.bold(choice)).join(', '),
@@ -431,6 +463,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			if (!this.flags[camelCasedName] && (builderData.required || rawFlag)) {
 				throw new CommandError({
 					code: CommandErrorCode.APIFY_MISSING_FLAG,
+					command: this.ctor,
 					metadata: {
 						flag: baseFlagName,
 						matcher: matchingFlags[0],
@@ -438,6 +471,49 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 					},
 				});
 			}
+		}
+
+		const exclusiveErrors: [flagA: string, flagB: string][] = [];
+
+		for (const [flagA, flags] of exclusiveFlagMap) {
+			// If the flag is not set, or is set to null, we can skip it
+			if (this.flags[flagA] == null) {
+				continue;
+			}
+
+			for (const flagB of flags) {
+				if (this.flags[flagB] == null) {
+					continue;
+				}
+
+				// At this point we know both are set
+				const flagAValue = this.flags[flagA];
+				const flagBValue = this.flags[flagB];
+
+				const flagRepresentation = (flag: string, value: unknown) => {
+					const kebabCasedFlag = kebabCaseString(camelCaseToKebabCase(flag)).toLowerCase();
+
+					if (typeof value === 'boolean') {
+						return value ? `--${kebabCasedFlag}` : `--no-${kebabCasedFlag}`;
+					}
+
+					return `--${kebabCasedFlag}=${value}`;
+				};
+
+				exclusiveErrors.push([flagRepresentation(flagA, flagAValue), flagRepresentation(flagB, flagBValue)]);
+
+				break;
+			}
+		}
+
+		if (exclusiveErrors.length) {
+			throw new CommandError({
+				code: CommandErrorCode.APIFY_FLAG_IS_EXCLUSIVE_WITH_ANOTHER_FLAG,
+				command: this.ctor,
+				metadata: {
+					flagPairs: exclusiveErrors,
+				},
+			});
 		}
 	}
 

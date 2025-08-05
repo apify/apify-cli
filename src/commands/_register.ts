@@ -1,5 +1,4 @@
 import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.js';
-import { FlagTest } from './_FlagTests.js';
 import { ActorIndexCommand } from './actor/_index.js';
 import { ActorChargeCommand } from './actor/charge.js';
 import { ActorGetInputCommand } from './actor/get-input.js';
@@ -58,7 +57,9 @@ export const apifyCommands = [
 	RunCommand,
 	ValidateInputSchemaCommand,
 	HelpCommand,
-	FlagTest,
+
+	// test commands
+	// (await import('./_testCommands/_FlagTests.js')).FlagTest,
 ] as const satisfies (typeof BuiltApifyCommand)[];
 
 export const actorCommands = [

@@ -197,68 +197,10 @@ export async function runCLI(entrypoint: string) {
 
 		cliDebugPrint('CommandArgsResult', commandResult);
 	} catch (err) {
-		const commandError = CommandError.into(err);
+		const commandError = CommandError.into(err, FinalCommand);
 
 		error({ message: commandError.getPrettyMessage() });
 
 		process.exit(1);
 	}
-
-	// await cli.parse(process.argv.slice(2), {}, (rawError, parsed) => {
-	// 	if (rawError && parsed._.length > 0) {
-	// 		cliDebugPrint('RunCLIError', { type: 'parsed', error: rawError?.message, parsed });
-
-	// 		const errorMessageSplit = rawError.message.split(' ').map((part) => part.trim());
-
-	// 		const commandFlags = Object.entries(command.flags ?? {})
-	// 			.filter(([, flag]) => typeof flag !== 'string')
-	// 			.map(([flagName, flag]) => {
-	// 				const castedFlag = flag as TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>;
-
-	// 				const flagKey = kebabCaseString(camelCaseToKebabCase(flagName)).toLowerCase();
-
-	// 				return {
-	// 					flagKey,
-	// 					char: castedFlag.char,
-	// 					aliases: castedFlag.aliases?.map((alias) =>
-	// 						kebabCaseString(camelCaseToKebabCase(alias)).toLowerCase(),
-	// 					),
-	// 					matches(otherFlagKey: string) {
-	// 						return (
-	// 							this.flagKey === otherFlagKey ||
-	// 							this.char === otherFlagKey ||
-	// 							this.aliases?.some((aliasedFlag) => aliasedFlag === otherFlagKey)
-	// 						);
-	// 					},
-	// 				};
-	// 			});
-
-	// 			case 'ARGUMENTS_ARE_MUTUALLY_EXCLUSIVE_INPUT': {
-	// 				const args = JSON.parse(errorMessageSplit[1]) as string[];
-
-	// 				error({
-	// 					message: [
-	// 						`The following errors occurred:`,
-	// 						...args
-	// 							.sort((a, b) => a.localeCompare(b))
-	// 							.map((arg) => {
-	// 								const value = parsed[arg];
-
-	// 								const isBoolean = typeof value === 'boolean';
-
-	// 								const argRepresentation = isBoolean ? `--${arg}` : `--${arg}=${value}`;
-
-	// 								return `  ${chalk.red('>')}  ${chalk.gray(
-	// 									`${argRepresentation} cannot also be provided when using ${args
-	// 										.filter((a) => a !== arg)
-	// 										.map((a) => `--${a}`)
-	// 										.join(', ')}`,
-	// 								)}`;
-	// 							}),
-	// 						`  ${chalk.red('>')}  See more help with --help`,
-	// 					].join('\n'),
-	// 				});
-
-	// 				break;
-	// 			}
 }

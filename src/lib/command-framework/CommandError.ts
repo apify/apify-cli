@@ -2,6 +2,8 @@ import chalk from 'chalk';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
+import type { BuiltApifyCommand } from './apify-command.js';
+import { selectiveRenderHelpForCommand } from './help.js';
 
 export enum CommandErrorCode {
 	NODEJS_ERR_PARSE_ARGS_INVALID_OPTION_VALUE,
@@ -23,6 +25,10 @@ export enum CommandErrorCode {
 	 * Used when a flag is required but not provided
 	 */
 	APIFY_MISSING_FLAG,
+	/**
+	 * Used when a flag is provided, but it is exclusive with another flag
+	 */
+	APIFY_FLAG_IS_EXCLUSIVE_WITH_ANOTHER_FLAG,
 	APIFY_UNKNOWN_ERROR,
 }
 
@@ -31,22 +37,25 @@ export interface FlagData {
 	expectsValue: boolean;
 	ambiguousFlag?: string;
 	ambiguousMessage?: string;
+	unknownOptionSuggestion?: string;
 }
 export interface CommandErrorOptions {
 	code: CommandErrorCode;
+	command: typeof BuiltApifyCommand;
 	message?: string;
 	metadata?: CommandError['metadata'];
 }
 
 export class CommandError extends Error {
 	public readonly code: CommandErrorCode;
+	public readonly command: typeof BuiltApifyCommand;
+	public readonly metadata: Record<string, unknown>;
 
-	public readonly metadata: Record<string, string | string[] | boolean>;
-
-	public constructor({ code, message = '', metadata = {} }: CommandErrorOptions) {
+	public constructor({ code, message = '', metadata = {}, command }: CommandErrorOptions) {
 		super(message || String(CommandErrorCode[code]));
 		this.code = code;
 		this.metadata = metadata;
+		this.command = command;
 	}
 
 	public extractFlagNameFromMessage(): FlagData {
@@ -74,6 +83,25 @@ export class CommandError extends Error {
 
 				return flagData;
 			}
+
+			case CommandErrorCode.NODEJS_ERR_PARSE_ARGS_UNKNOWN_OPTION: {
+				const match = /Unknown option '--(?<optionName>[a-zA-Z0-9]+)'\.(?<nodeSuggestion>.*)/gi.exec(
+					this.message,
+				);
+
+				if (!match) {
+					throw new Error(
+						`Encountered unparsable error message from argument parser: ${this.message}.\n\nPlease report this issue at https://github.com/apify/apify-cli/issues`,
+					);
+				}
+
+				return {
+					name: match.groups!.optionName,
+					expectsValue: false,
+					unknownOptionSuggestion: match.groups!.nodeSuggestion,
+				};
+			}
+
 			default: {
 				throw new Error('Not implemented');
 			}
@@ -86,6 +114,25 @@ export class CommandError extends Error {
 				const flagData = this.extractFlagNameFromMessage();
 
 				return CommandError.buildMessageFromFlagData(flagData);
+			}
+
+			case CommandErrorCode.NODEJS_ERR_PARSE_ARGS_UNKNOWN_OPTION: {
+				const flagData = this.extractFlagNameFromMessage();
+
+				const helpMessage = selectiveRenderHelpForCommand(this.command, {
+					showUsageString: true,
+				});
+
+				return [
+					chalk.gray(`Unknown flag provided: ${chalk.white.bold(`--${flagData.name}`)}`),
+					flagData.unknownOptionSuggestion
+						? chalk.gray(`  ${flagData.unknownOptionSuggestion.trim()}`)
+						: null,
+					'',
+					helpMessage,
+				]
+					.filter((v) => v !== null)
+					.join('\n');
 			}
 
 			case CommandErrorCode.APIFY_FLAG_PROVIDED_MULTIPLE_TIMES: {
@@ -122,7 +169,27 @@ export class CommandError extends Error {
 					);
 				}
 
-				return chalk.gray(`Flag '${flagName}' is required, but was not provided.`);
+				return chalk.gray(`Flag ${flagName} is required, but was not provided.`);
+			}
+
+			case CommandErrorCode.APIFY_FLAG_IS_EXCLUSIVE_WITH_ANOTHER_FLAG: {
+				const { flagPairs } = this.metadata as { flagPairs: [string, string][] };
+
+				const messageParts = [chalk.gray(`The following errors occurred:`)];
+
+				const redArrow = chalk.red('  >  ');
+
+				for (const [a, b] of flagPairs) {
+					messageParts.push(
+						chalk.gray(
+							`${redArrow}${chalk.white.bold(a)} cannot also be provided when using ${chalk.white.bold(b)}`,
+						),
+					);
+				}
+
+				messageParts.push(chalk.gray(`${redArrow}See more help with ${chalk.white.bold('--help')}`));
+
+				return messageParts.join('\n');
 			}
 
 			default: {
@@ -168,7 +235,7 @@ export class CommandError extends Error {
 		return base.map((part) => chalk.gray(part)).join(' ');
 	}
 
-	static into(error: unknown): CommandError {
+	static into(error: unknown, command: typeof BuiltApifyCommand): CommandError {
 		if (error instanceof CommandError) {
 			return error;
 		}
@@ -181,24 +248,28 @@ export class CommandError extends Error {
 					return new CommandError({
 						code: CommandErrorCode.NODEJS_ERR_PARSE_ARGS_INVALID_OPTION_VALUE,
 						message: casted.message,
+						command,
 					});
 				}
 				case 'ERR_PARSE_ARGS_UNEXPECTED_POSITIONAL': {
 					return new CommandError({
 						code: CommandErrorCode.NODEJS_ERR_PARSE_ARGS_UNEXPECTED_POSITIONAL,
 						message: casted.message,
+						command,
 					});
 				}
 				case 'ERR_PARSE_ARGS_UNKNOWN_OPTION': {
 					return new CommandError({
 						code: CommandErrorCode.NODEJS_ERR_PARSE_ARGS_UNKNOWN_OPTION,
 						message: casted.message,
+						command,
 					});
 				}
 				default: {
 					return new CommandError({
 						code: CommandErrorCode.APIFY_UNKNOWN_ERROR,
 						message: `Unknown error: ${error instanceof Error ? error.message : String(error)}`,
+						command,
 					});
 				}
 			}
@@ -207,6 +278,7 @@ export class CommandError extends Error {
 		return new CommandError({
 			code: CommandErrorCode.APIFY_UNKNOWN_ERROR,
 			message: `Unknown error: ${error instanceof Error ? error.message : String(error)}`,
+			command,
 		});
 	}
 }
