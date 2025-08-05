@@ -29,6 +29,10 @@ export enum CommandErrorCode {
 	 * Used when a flag is provided, but it is exclusive with another flag
 	 */
 	APIFY_FLAG_IS_EXCLUSIVE_WITH_ANOTHER_FLAG,
+	/**
+	 * Used when two flag options want to receive their value from stdin
+	 */
+	APIFY_TOO_MANY_REQUESTERS_OF_STDIN,
 	APIFY_UNKNOWN_ERROR,
 }
 
@@ -62,7 +66,7 @@ export class CommandError extends Error {
 		switch (this.code) {
 			case CommandErrorCode.NODEJS_ERR_PARSE_ARGS_INVALID_OPTION_VALUE: {
 				const match =
-					/'(?:-[a-z], )?--(?<flagName>[a-zA-Z]+)(?: <value>)?' (?<noArg>does not take)?(?<missingArg>argument missing)?(?<ambiguous>argument is ambiguous\.(?<ambiguousMessage>\s*.*\s*.*)?)?/gi.exec(
+					/'(?:-[a-z], )?-?-(?<flagName>[a-zA-Z-]+)(?: <value>)?' (?<noArg>does not take)?(?<missingArg>argument missing)?(?<ambiguous>argument is ambiguous\.(?<ambiguousMessage>\s*.*\s*.*)?)?/gi.exec(
 						this.message,
 					);
 
@@ -192,6 +196,14 @@ export class CommandError extends Error {
 				return messageParts.join('\n');
 			}
 
+			case CommandErrorCode.APIFY_TOO_MANY_REQUESTERS_OF_STDIN: {
+				const { firstUse, secondUse } = this.metadata as { firstUse: string; secondUse: string };
+
+				return chalk.gray(
+					`Flag ${chalk.white.bold(`--${firstUse}`)} and ${chalk.white.bold(`--${secondUse}`)} cannot both request that their value comes from standard input at the same time.`,
+				);
+			}
+
 			default: {
 				const cliMetadata = useCLIMetadata();
 
@@ -222,7 +234,12 @@ export class CommandError extends Error {
 			base.push(`is ambiguous (meaning the provided value could be interpreted as a flag too).`);
 
 			if (flagData.ambiguousMessage) {
-				base.push(`\n${flagData.ambiguousMessage}`);
+				base.push(
+					`\n${flagData.ambiguousMessage
+						.split('\n')
+						.map((line) => `  ${line}`)
+						.join('\n')}`,
+				);
 			} else {
 				base.push(`To solve this, provide the flag like this: --${flagData.name}=<value>`);
 			}

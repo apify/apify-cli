@@ -333,6 +333,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		const exclusiveFlagMap = new Map<string, Set<string>>();
 
+		let flagThatUsedStdin: string | undefined;
+
 		for (const [commandFlagKey, builderData] of Object.entries(this.ctor.flags)) {
 			if (typeof builderData === 'string') {
 				throw new RangeError('Do not provide the string for the json arg! It is a type level assertion!');
@@ -437,6 +439,16 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 						this.flags[camelCasedName] = rawFlag;
 
 						if (rawFlag === '-' && builderData.stdin) {
+							if (flagThatUsedStdin) {
+								throw new CommandError({
+									code: CommandErrorCode.APIFY_TOO_MANY_REQUESTERS_OF_STDIN,
+									command: this.ctor,
+									metadata: { firstUse: flagThatUsedStdin, secondUse: baseFlagName },
+								});
+							}
+
+							flagThatUsedStdin = baseFlagName;
+
 							this.flags[camelCasedName] = this._handleStdin(builderData.stdin);
 						}
 
@@ -555,7 +567,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	private _handleStdin(mode: StdinMode) {
 		switch (mode) {
 			case StdinMode.Stringified:
-				return cachedStdinInput?.toString('utf8') ?? '';
+				return (cachedStdinInput?.toString('utf8') ?? '').trim();
 			default:
 				return cachedStdinInput;
 		}

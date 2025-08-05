@@ -42,7 +42,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			exclusive: ['input-file'],
 		}),
 		'input-file': Flags.string({
-			aliases: ['if'],
+			char: 'f',
 			description:
 				'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file. You can also specify `-` to read from standard input.',
 			required: false,
