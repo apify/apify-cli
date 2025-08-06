@@ -2305,7 +2305,6 @@ __metadata:
     lodash.clonedeep: "npm:^4.5.0"
     mdast-util-from-markdown: "npm:^2.0.2"
     mime: "npm:~4.0.4"
-    mixpanel: "npm:~0.18.0"
     mock-stdin: "npm:^1.0.0"
     open: "npm:~10.2.0"
     ow: "npm:~2.0.0"
@@ -6684,15 +6683,6 @@ __metadata:
   dependencies:
     minipass: "npm:^7.1.2"
   checksum: 10c0/9f3bd35e41d40d02469cb30470c55ccc21cae0db40e08d1d0b1dff01cc8cc89a6f78e9c5d2b7c844e485ec0a8abc2238111213fdc5b2038e6d1012eacf316f78
-  languageName: node
-  linkType: hard
-
-"mixpanel@npm:~0.18.0":
-  version: 0.18.1
-  resolution: "mixpanel@npm:0.18.1"
-  dependencies:
-    https-proxy-agent: "npm:5.0.0"
-  checksum: 10c0/32d60cbe8c68bd012bbb89bf5dab8c324217a061bfc6362d87e187ccd28a63277bd4ddf41a1f45033057f0e4a3d9abb3a69890c636f2617dde91412561ee33af
   languageName: node
   linkType: hard
 

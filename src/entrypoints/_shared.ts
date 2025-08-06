@@ -190,7 +190,10 @@ export async function runCLI(entrypoint: string) {
 	cliDebugPrint('RebuiltArgs', rebuiltArgs);
 	cliDebugPrint('CommandToRun', FinalCommand);
 
-	const instance = new FinalCommand(entrypoint);
+	const instance = new FinalCommand(
+		entrypoint,
+		hasSubcommand ? `${baseCommand.name} ${maybeSubcommandName}` : baseCommand.name,
+	);
 
 	// eslint-disable-next-line dot-notation
 	const parserOptions = instance['_buildParseArgsOption']();

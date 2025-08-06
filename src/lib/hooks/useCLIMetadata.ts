@@ -25,6 +25,7 @@ export interface CLIMetadata {
 	 * When set, represents the APIFY_CLI_HOME environment variable / $HOME/.apify/bin folder (when installed via bundles).
 	 */
 	installPath?: string;
+	isBeta: boolean;
 }
 
 function detectInstallMethod(): InstallMethod {
@@ -110,6 +111,9 @@ export function useCLIMetadata(): CLIMetadata {
 		installMethod,
 		get fullVersionString() {
 			return `apify-cli/${this.version} (${this.hash.slice(0, 7)}) running on ${this.platform}-${this.arch} with ${this.runtime}-${runtime.version}${this.extraRuntimeData ? ` ${this.extraRuntimeData}` : ''}, installed via ${this.installMethod}`;
+		},
+		get isBeta() {
+			return this.version.includes('beta') || this.version === DEVELOPMENT_VERSION_MARKER;
 		},
 	};
 

@@ -12,10 +12,10 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { AUTH_FILE_PATH } from '../lib/consts.js';
+import { updateUserId } from '../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../lib/hooks/user-confirmations/useSelectFromList.js';
 import { error, info, success } from '../lib/outputs.js';
-import { useApifyIdentity } from '../lib/telemetry.js';
 import { getLocalUserInfo, getLoggedClient } from '../lib/utils.js';
 
 const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
@@ -30,8 +30,10 @@ const API_VERSION = 'v1';
 const tryToLogin = async (token: string) => {
 	const isUserLogged = await getLoggedClient(token, API_BASE_URL);
 	const userInfo = await getLocalUserInfo();
+
 	if (isUserLogged) {
-		await useApifyIdentity(userInfo.id!);
+		await updateUserId(userInfo.id!);
+
 		success({
 			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored at ${AUTH_FILE_PATH()}.`)}`,
 		});
@@ -67,6 +69,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 
 	async run() {
 		const { token, method } = this.flags;
+
 		if (token) {
 			await tryToLogin(token);
 			return;
