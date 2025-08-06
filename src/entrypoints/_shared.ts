@@ -119,6 +119,8 @@ export async function runCLI(entrypoint: string) {
 
 	const startingArgs = process.argv.slice(2);
 
+	cliDebugPrint('ProcessArgv', startingArgs);
+
 	const startingResult = parseArgs({
 		allowPositionals: true,
 		strict: false,
@@ -144,7 +146,7 @@ export async function runCLI(entrypoint: string) {
 
 	// MIDDLEWARE END //
 
-	cliDebugPrint('StartingArgs', startingResult);
+	cliDebugPrint('TopLevelOptions', startingResult);
 
 	const [commandName, maybeSubcommandName] = startingResult.positionals;
 	let hasSubcommand = false;
@@ -175,11 +177,13 @@ export async function runCLI(entrypoint: string) {
 	// All this tomfoolery is to ensure that if the arguments are something like [kvs, --json, ls], it'll parse correctly
 	const rebuiltArgs: string[] = [...startingArgs];
 
-	const commandNameIndex = startingArgs.indexOf(commandName);
+	const commandNameIndex = rebuiltArgs.indexOf(commandName);
+	cliDebugPrint('CommandNameIndex', commandNameIndex);
 	rebuiltArgs.splice(commandNameIndex, 1);
 
 	if (hasSubcommand) {
-		const subcommandNameIndex = startingArgs.indexOf(maybeSubcommandName);
+		const subcommandNameIndex = rebuiltArgs.indexOf(maybeSubcommandName);
+		cliDebugPrint('SubcommandNameIndex', subcommandNameIndex);
 		rebuiltArgs.splice(subcommandNameIndex, 1);
 	}
 

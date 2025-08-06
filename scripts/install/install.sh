@@ -200,6 +200,8 @@ tildify() {
     fi
 }
 
+echo ''
+echo ''
 success "Apify and Actor CLI $version were installed successfully!"
 info "The binaries are located at $Bold_Green$(tildify "$bin_dir/apify") ${Dim}and $Bold_Green$(tildify "$bin_dir/actor")"
 

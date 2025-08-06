@@ -32,7 +32,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		const { installMethod, installPath, version } = useCLIMetadata();
 
 		if (installMethod !== 'bundle') {
-			info({ message: `Apify and Actor CLI are already fully configured! 👍 \n` });
+			info({ message: `Apify and Actor CLI are already fully configured! 👍` });
 			return;
 		}
 
@@ -41,7 +41,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		const installMarkerPath = pathToInstallMarker(installPath);
 
 		if (existsSync(installMarkerPath)) {
-			info({ message: `Apify and Actor CLI are already fully configured! 👍 \n` });
+			info({ message: `Apify and Actor CLI are already fully configured! 👍` });
 			return;
 		}
 
