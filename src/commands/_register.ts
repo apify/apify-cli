@@ -73,8 +73,12 @@ export const actorCommands = [
 	ActorGetPublicUrlCommand,
 	ActorGetInputCommand,
 	ActorChargeCommand,
+
 	// top-level
 	HelpCommand,
 	UpgradeCommand,
 	InstallCommand,
+
+	// namespaces
+	TelemetryIndexCommand,
 ] as const satisfies (typeof BuiltApifyCommand)[];
