@@ -8,6 +8,7 @@ import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
 import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
+import { createHmacSignature } from '@apify/utilities';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -258,7 +259,24 @@ Skipping push. Use --force to override.`,
 				contentType: 'application/zip',
 			});
 			unlinkSync(TEMP_ZIP_FILE_NAME);
-			tarballUrl = `${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`;
+			const tempTarballUrl = new URL(
+				`${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
+			);
+
+			/**
+			 * Signs the tarball URL to grant temporary access for restricted resources.
+			 * When a store is set to 'RESTRICTED', direct URLs are disabled. Instead of
+			 * appending a security token, we add a signature to the URL parameters.
+			 * https://github.com/apify/apify-core/issues/22197
+			 *
+			 * TODO: Use keyValueStore(:storeId).getRecordPublicUrl from apify-client instead once it is released.
+			 */
+			if (store?.urlSigningSecretKey) {
+				const signature = createHmacSignature(store.urlSigningSecretKey, key);
+				tempTarballUrl.searchParams.set('signature', signature);
+			}
+
+			tarballUrl = tempTarballUrl.toString();
 			sourceType = ACTOR_SOURCE_TYPES.TARBALL;
 		}
 
