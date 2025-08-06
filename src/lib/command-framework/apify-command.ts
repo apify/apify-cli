@@ -206,6 +206,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		const metadata = useCLIMetadata();
 
 		this.telemetryData.installationType = metadata.installMethod;
+		this.telemetryData.osArch = metadata.arch;
+		this.telemetryData.runtime = metadata.runtime;
+		this.telemetryData.runtimeVersion = metadata.runtime.version;
+		this.telemetryData.runtimeNodeVersion = metadata.runtime.nodeVersion ?? metadata.runtime.version;
+
 		this.telemetryData.commandString = commandString;
 		this.telemetryData.entrypoint = entrypoint;
 	}
@@ -314,6 +319,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 					}
 				});
 			}
+
+			this.telemetryData.flagsUsed = Object.keys(this.flags);
 
 			if (!this.skipTelemetry) {
 				await trackEvent({

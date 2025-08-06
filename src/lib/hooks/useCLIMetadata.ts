@@ -15,7 +15,7 @@ export type InstallMethod = 'npm' | 'pnpm' | 'homebrew' | 'volta' | 'bundle' | '
 export interface CLIMetadata {
 	version: string;
 	hash: string;
-	runtime: string;
+	runtime: ReturnType<typeof getRuntimeInfo>;
 	platform: Exclude<typeof process.platform, 'win32'> | 'windows';
 	arch: typeof process.arch;
 	extraRuntimeData: string;
@@ -106,7 +106,7 @@ export function useCLIMetadata(): CLIMetadata {
 		hash: CLI_HASH,
 		arch: (process.env.APIFY_BUNDLE_ARCH as typeof process.arch) ?? process.arch,
 		platform: process.platform === 'win32' ? 'windows' : process.platform,
-		runtime: runtime.runtime,
+		runtime,
 		extraRuntimeData: runtime.nodeVersion ? `(emulating node ${runtime.nodeVersion})` : '',
 		installMethod,
 		get fullVersionString() {
