@@ -1,15 +1,17 @@
 /* eslint-disable max-classes-per-file */
 
+import type { parseArgs, ParseArgsConfig, ParseArgsOptionDescriptor } from 'node:util';
+
 import type { Awaitable } from '@crawlee/types';
 import chalk from 'chalk';
 import indentString from 'indent-string';
 import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
-import type { ArgumentsCamelCase, Argv, CommandBuilder, CommandModule } from 'yargs';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { error } from '../outputs.js';
 import type { ArgTag, TaggedArgBuilder } from './args.js';
+import { CommandError, CommandErrorCode } from './CommandError.js';
 import type { FlagTag, TaggedFlagBuilder } from './flags.js';
 import { registerCommandForHelpGeneration, renderHelpForCommand, selectiveRenderHelpForCommand } from './help.js';
 import { getMaxLineWidth } from './help/consts.js';
@@ -126,7 +128,20 @@ export function camelCaseToKebabCase(str: string): string {
 	return str.replace(/([A-Z])/g, '-$1').toLowerCase();
 }
 
+const helpFlagDefinition = {
+	type: 'boolean',
+	multiple: false,
+	short: 'h',
+} as const satisfies ParseArgsOptionDescriptor;
+
+const jsonFlagDefinition = {
+	type: 'boolean',
+	multiple: false,
+} as const satisfies ParseArgsOptionDescriptor;
+
 export const commandRegistry = new Map<string, typeof BuiltApifyCommand>();
+
+type ParseResult = ReturnType<typeof parseArgs<ReturnType<ApifyCommand['_buildParseArgsOption']>>>;
 
 export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof BuiltApifyCommand> {
 	static args?: Record<string, TaggedArgBuilder<ArgTag, unknown>> & {
@@ -175,29 +190,33 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		return amount === 1 ? singular : plural;
 	}
 
-	protected printHelp(): never {
-		console.log(renderHelpForCommand(this.ctor));
+	static printHelp(): never {
+		console.log(renderHelpForCommand(this as typeof BuiltApifyCommand));
 
 		process.exit(0);
 	}
 
-	private async _run(rawArgs: ArgumentsCamelCase) {
-		if (rawArgs.help) {
-			this.printHelp();
+	protected printHelp() {
+		return this.ctor.printHelp();
+	}
+
+	private async _run(parseResult: ParseResult) {
+		const { values: rawFlags, positionals: rawArgs, tokens: rawTokens } = parseResult;
+
+		if (rawFlags.help) {
+			this.ctor.printHelp();
 		}
 
 		// Cheating a bit here with the types, but its fine
 
 		this.args = {} as any;
-
 		this.flags = {} as any;
 
 		// If we have this set, we assume that the user wants only the flag
 		if (this.ctor.enableJsonFlag) {
-			if (typeof rawArgs.json === 'boolean') {
-				this.flags.json = rawArgs.json;
+			if (typeof rawFlags.json === 'boolean') {
+				this.flags.json = rawFlags.json;
 			} else {
-				// Idk exactly if this is achievable but 🤷
 				this.flags.json = false;
 			}
 		}
@@ -205,26 +224,28 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		const missingRequiredArgs = new Map<string, TaggedArgBuilder<ArgTag, unknown>>();
 
 		if (this.ctor.args) {
+			let index = 0;
 			for (const [userArgName, builderData] of Object.entries(this.ctor.args)) {
 				if (typeof builderData === 'string') {
 					throw new RangeError('Do not provide the string for the json arg! It is a type level assertion!');
 				}
 
-				const yargsArgName = userArgName.replaceAll(' ', '');
 				const camelCasedName = camelCaseString(userArgName);
 
-				if (rawArgs[yargsArgName]) {
+				const rawArg = rawArgs[index++];
+
+				if (rawArg) {
 					switch (builderData.argTag) {
 						case 'string':
 						default:
-							this.args[camelCasedName] = String(rawArgs[yargsArgName]);
+							this.args[camelCasedName] = String(rawArg);
 
-							if (rawArgs[yargsArgName] === '-' && builderData.stdin) {
+							if (rawArg === '-' && builderData.stdin) {
 								this.args[camelCasedName] = this._handleStdin(builderData.stdin);
 							}
 
 							if (builderData.catchAll) {
-								this.args[camelCasedName] = (this.args[camelCasedName] as string).split(',').join(' ');
+								this.args[camelCasedName] = rawArgs.slice(index - 1).join(' ');
 							}
 
 							break;
@@ -240,83 +261,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			return;
 		}
 
-		if (this.ctor.flags) {
-			for (const [userFlagName, builderData] of Object.entries(this.ctor.flags)) {
-				if (typeof builderData === 'string') {
-					throw new RangeError('Do not provide the string for the json arg! It is a type level assertion!');
-				}
-
-				const rawYargsFlagName = kebabCaseString(camelCaseToKebabCase(userFlagName)).toLowerCase();
-				const camelCasedName = camelCaseString(rawYargsFlagName);
-
-				let yargsFlagName = rawYargsFlagName;
-
-				if (rawYargsFlagName.startsWith('no-')) {
-					yargsFlagName = rawYargsFlagName.slice(3);
-				}
-
-				if (typeof rawArgs[yargsFlagName] !== 'undefined') {
-					if (Array.isArray(rawArgs[yargsFlagName])) {
-						error({
-							message: `Flag --${yargsFlagName} can only be specified once`,
-						});
-
-						return;
-					}
-
-					switch (builderData.flagTag) {
-						case 'boolean': {
-							this.flags[camelCasedName] = rawYargsFlagName.startsWith('no-')
-								? !rawArgs[yargsFlagName]
-								: rawArgs[yargsFlagName];
-
-							break;
-						}
-						case 'integer': {
-							const parsed = Number(rawArgs[yargsFlagName]);
-
-							if (Number.isNaN(parsed) || !Number.isInteger(parsed)) {
-								error({
-									message: `The provided value for the '--${yargsFlagName}' flag could not be processed as an integer.`,
-								});
-
-								return;
-							}
-
-							this.flags[camelCasedName] = parsed;
-
-							break;
-						}
-						case 'string':
-						default: {
-							this.flags[camelCasedName] = rawArgs[yargsFlagName];
-
-							if (rawArgs[yargsFlagName] === '-' && builderData.stdin) {
-								this.flags[camelCasedName] = this._handleStdin(builderData.stdin);
-							}
-
-							if (!this.flags[camelCasedName]) {
-								error({
-									message: `Flag --${yargsFlagName} expects a value`,
-								});
-
-								return;
-							}
-
-							break;
-						}
-					}
-				} else if (builderData.required) {
-					error({
-						message: `Flag --${yargsFlagName} is required`,
-					});
-
-					return;
-				} else if (typeof builderData.hasDefault !== 'undefined') {
-					this.flags[camelCasedName] = builderData.hasDefault;
-				}
-			}
-		}
+		this._parseFlags(rawFlags, rawTokens);
 
 		try {
 			await this.run();
@@ -346,6 +291,255 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				eventData,
 			});
 			*/
+		}
+	}
+
+	private _userFlagNameToRegisteredName(
+		userFlagName: string,
+		builderData: TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>,
+	) {
+		const rawBaseFlagName = kebabCaseString(camelCaseToKebabCase(userFlagName)).toLowerCase();
+
+		let baseFlagName = rawBaseFlagName;
+
+		if (rawBaseFlagName.startsWith('no-')) {
+			baseFlagName = rawBaseFlagName.slice(3);
+		}
+
+		const allMatchers = new Set<string>();
+
+		for (const alias of builderData.aliases ?? []) {
+			allMatchers.add(kebabCaseString(camelCaseToKebabCase(alias)).toLowerCase());
+		}
+
+		return { baseFlagName, rawBaseFlagName, allMatchers: [baseFlagName, ...allMatchers] };
+	}
+
+	private _commandFlagKeyToKebabCaseRegisteredName(commandFlagKey: string) {
+		let flagKey = kebabCaseString(camelCaseToKebabCase(commandFlagKey)).toLowerCase();
+
+		if (flagKey.startsWith('no-')) {
+			// node handles `no-` flags by negating the flag, so we need to handle that differently if we register a flag with a "no-" prefix
+			flagKey = flagKey.slice(3);
+		}
+
+		return flagKey;
+	}
+
+	private _parseFlags(rawFlags: ParseResult['values'], rawTokens: ParseResult['tokens']) {
+		if (!this.ctor.flags) {
+			return;
+		}
+
+		const exclusiveFlagMap = new Map<string, Set<string>>();
+
+		let flagThatUsedStdin: string | undefined;
+
+		for (const [commandFlagKey, builderData] of Object.entries(this.ctor.flags)) {
+			if (typeof builderData === 'string') {
+				throw new RangeError('Do not provide the string for the json arg! It is a type level assertion!');
+			}
+
+			const { allMatchers, baseFlagName, rawBaseFlagName } = this._userFlagNameToRegisteredName(
+				commandFlagKey,
+				builderData,
+			);
+
+			const camelCasedName = camelCaseString(rawBaseFlagName);
+
+			const usedShortFormOfTheFlag = rawTokens.some(
+				(token) => token.kind === 'option' && token.name === baseFlagName,
+			);
+
+			if (builderData.exclusive?.length) {
+				const existingExclusiveFlags = exclusiveFlagMap.get(baseFlagName) ?? new Set();
+
+				for (const exclusiveFlag of builderData.exclusive) {
+					existingExclusiveFlags.add(this._commandFlagKeyToKebabCaseRegisteredName(exclusiveFlag));
+				}
+
+				exclusiveFlagMap.set(baseFlagName, existingExclusiveFlags);
+
+				// Go through each exclusive flag for this one flag and also add it
+				for (const exclusiveFlag of builderData.exclusive) {
+					const exclusiveFlagKebabCasedName = this._commandFlagKeyToKebabCaseRegisteredName(exclusiveFlag);
+
+					const exclusiveFlagExisting = exclusiveFlagMap.get(exclusiveFlagKebabCasedName) ?? new Set();
+
+					exclusiveFlagExisting.add(baseFlagName);
+
+					exclusiveFlagMap.set(exclusiveFlagKebabCasedName, exclusiveFlagExisting);
+				}
+			}
+
+			// If you have a flag a, with alias b, and you pass --a and --b, it's not allowed
+			const matchingFlags = allMatchers.filter((matcher) => rawFlags[matcher]);
+
+			if (matchingFlags.length > 1) {
+				throw new CommandError({
+					code: CommandErrorCode.APIFY_FLAG_PROVIDED_MULTIPLE_TIMES,
+					command: this.ctor,
+					metadata: {
+						flag: baseFlagName,
+					},
+				});
+			}
+
+			let rawFlag = rawFlags[matchingFlags[0]];
+
+			if (!rawFlag && builderData.required) {
+				throw new CommandError({
+					code: CommandErrorCode.APIFY_MISSING_FLAG,
+					command: this.ctor,
+					metadata: {
+						flag: baseFlagName,
+						matcher: matchingFlags[0],
+					},
+				});
+			}
+
+			// If you provide --a 1 --a 2, it's <currently> not allowed
+			if (Array.isArray(rawFlag)) {
+				if (rawFlag.length > 1) {
+					throw new CommandError({
+						code: CommandErrorCode.APIFY_FLAG_PROVIDED_MULTIPLE_TIMES,
+						command: this.ctor,
+						metadata: {
+							flag: baseFlagName,
+						},
+					});
+				}
+
+				rawFlag = rawFlag[0]! as string | boolean;
+			}
+
+			// -i='{"foo":"bar"}'
+			if (usedShortFormOfTheFlag && typeof rawFlag === 'string' && rawFlag.startsWith('=')) {
+				rawFlag = rawFlag.slice(1);
+			}
+
+			if (typeof rawFlag !== 'undefined') {
+				switch (builderData.flagTag) {
+					case 'boolean': {
+						this.flags[camelCasedName] = rawBaseFlagName.startsWith('no-') ? !rawFlag : rawFlag;
+
+						break;
+					}
+					case 'integer': {
+						const parsed = Number(rawFlag);
+
+						if (Number.isNaN(parsed) || !Number.isInteger(parsed)) {
+							throw new CommandError({
+								code: CommandErrorCode.APIFY_INVALID_FLAG_INTEGER_VALUE,
+								command: this.ctor,
+								metadata: {
+									flag: baseFlagName,
+									value: String(rawFlag),
+								},
+							});
+						}
+
+						this.flags[camelCasedName] = parsed;
+
+						break;
+					}
+					case 'string':
+					default: {
+						this.flags[camelCasedName] = rawFlag;
+
+						if (rawFlag === '-' && builderData.stdin) {
+							if (flagThatUsedStdin) {
+								throw new CommandError({
+									code: CommandErrorCode.APIFY_TOO_MANY_REQUESTERS_OF_STDIN,
+									command: this.ctor,
+									metadata: { firstUse: flagThatUsedStdin, secondUse: baseFlagName },
+								});
+							}
+
+							flagThatUsedStdin = baseFlagName;
+
+							this.flags[camelCasedName] = this._handleStdin(builderData.stdin);
+						}
+
+						break;
+					}
+				}
+			} else if (typeof builderData.hasDefault !== 'undefined') {
+				this.flags[camelCasedName] = builderData.hasDefault;
+			}
+
+			// Validate choices
+			if (
+				// We have the flag
+				this.flags[camelCasedName] &&
+				// And we have a list of choices
+				builderData.choices &&
+				// And the flag is not one of the choices
+				!builderData.choices.includes(this.flags[camelCasedName] as string)
+			) {
+				throw new CommandError({
+					code: CommandErrorCode.APIFY_INVALID_CHOICE,
+					command: this.ctor,
+					metadata: {
+						flag: baseFlagName,
+						choices: builderData.choices.map((choice) => chalk.white.bold(choice)).join(', '),
+					},
+				});
+			}
+
+			// Re-validate required (we don't have the flag and it's either required or passed in)
+			if (this.flags[camelCasedName] == null && (builderData.required || rawFlag != null)) {
+				throw new CommandError({
+					code: CommandErrorCode.APIFY_MISSING_FLAG,
+					command: this.ctor,
+					metadata: {
+						flag: baseFlagName,
+						matcher: matchingFlags[0],
+						providedButReceivedNoValue: !!rawFlag,
+					},
+				});
+			}
+		}
+
+		const exclusiveErrors: [flagA: string, flagB: string][] = [];
+
+		for (const [flagA, flags] of exclusiveFlagMap) {
+			// If the flag is not set, or is set to null, we can skip it
+			if (rawFlags[flagA] == null) {
+				continue;
+			}
+
+			for (const flagB of flags) {
+				if (rawFlags[flagB] == null) {
+					continue;
+				}
+
+				// At this point we know both are set
+				const flagAValue = (rawFlags[flagA] as (string | boolean)[])[0];
+				const flagBValue = (rawFlags[flagB] as (string | boolean)[])[0];
+
+				const flagRepresentation = (kebabCasedFlag: string, value: unknown) => {
+					if (typeof value === 'boolean') {
+						return value ? `--${kebabCasedFlag}` : `--no-${kebabCasedFlag}`;
+					}
+
+					return `--${kebabCasedFlag}=${value}`;
+				};
+
+				exclusiveErrors.push([flagRepresentation(flagA, flagAValue), flagRepresentation(flagB, flagBValue)]);
+
+				break;
+			}
+		}
+
+		if (exclusiveErrors.length) {
+			throw new CommandError({
+				code: CommandErrorCode.APIFY_FLAG_IS_EXCLUSIVE_WITH_ANOTHER_FLAG,
+				command: this.ctor,
+				metadata: {
+					flagPairs: exclusiveErrors,
+				},
+			});
 		}
 	}
 
@@ -382,140 +576,60 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	private _handleStdin(mode: StdinMode) {
 		switch (mode) {
 			case StdinMode.Stringified:
-				return cachedStdinInput?.toString('utf8') ?? '';
+				return (cachedStdinInput?.toString('utf8') ?? '').trim();
 			default:
 				return cachedStdinInput;
 		}
 	}
 
-	private _buildCommandStrings(nameOverride?: string): readonly string[] {
-		let baseDefinition = `${nameOverride || this.ctor.name}`;
-
-		if (this.ctor.args) {
-			let setCatchAll = false;
-
-			for (const [key, internalBuilderData] of Object.entries(this.ctor.args)) {
-				if (typeof internalBuilderData === 'string') {
-					throw new RangeError('Do not provide the string for the json arg! It is a type level assertion!');
-				}
-
-				// We mark all args as optional, even if they are not, to pretty-print a help message ourselves
-				if (internalBuilderData.catchAll) {
-					if (setCatchAll) {
-						throw new RangeError('Only one catch-all argument is allowed in a command');
-					}
-
-					setCatchAll = true;
-					baseDefinition += ` [${key}...]`;
-				} else {
-					baseDefinition += ` [${key}]`;
-				}
-			}
-		}
-
-		return [baseDefinition, ...(this.ctor.aliases ?? [])];
-	}
-
-	private _buildCommandBuilder(): CommandBuilder | undefined {
-		return (yargs) => {
-			let finalYargs = yargs;
-
-			if (this.ctor.args) {
-				for (const [key, internalBuilderData] of Object.entries(this.ctor.args)) {
-					if (typeof internalBuilderData === 'string') {
-						throw new RangeError(
-							'Do not provide the string for the json arg! It is a type level assertion!',
-						);
-					}
-
-					// Skip the "json" argument, as it is reserved for the --json flag
-					if (key.toLowerCase() === 'json') {
-						continue;
-					}
-
-					finalYargs = internalBuilderData.builder(finalYargs, key);
-				}
-			}
-
-			if (this.ctor.flags) {
-				for (const [key, internalBuilderData] of Object.entries(this.ctor.flags)) {
-					if (typeof internalBuilderData === 'string') {
-						throw new RangeError(
-							'Do not provide the string for the json flag! It is a type level assertion!',
-						);
-					}
-
-					// Skip the "json" flag, as it is set by enableJsonFlag
-					if (key.toLowerCase() === 'json') {
-						continue;
-					}
-
-					const flagKey = kebabCaseString(camelCaseToKebabCase(key)).toLowerCase();
-
-					// yargs handles "no-" flags by negating the flag, so we need to handle that differently if we register a flag with a "no-" prefix
-					if (flagKey.startsWith('no-')) {
-						finalYargs = internalBuilderData.builder(finalYargs, flagKey.slice(3));
-					} else {
-						finalYargs = internalBuilderData.builder(finalYargs, flagKey);
-					}
-				}
-			}
-
-			if (this.ctor.subcommands?.length) {
-				for (const SubCommandClass of this.ctor.subcommands) {
-					const yargsObject = new SubCommandClass(`${this.entrypoint} ${this.ctor.name}`)._toYargs();
-
-					finalYargs = finalYargs.command(yargsObject);
-				}
-			}
-
-			// Register --json
-			if (this.ctor.enableJsonFlag) {
-				finalYargs = finalYargs.option('json', {
-					boolean: true,
-					describe: 'Format output as json.',
-				});
-			}
-
-			return finalYargs;
-		};
-	}
-
-	private _toYargs(): CommandModule[] {
-		const baseCmd: CommandModule = {
-			handler: this._run.bind(this),
-			command: this._buildCommandStrings(),
-			describe: this.ctor.hidden ? false : this.ctor.description,
-			builder: this._buildCommandBuilder(),
-		};
-
-		const baseCommands: CommandModule[] = [
-			{
-				...baseCmd,
-				aliases: this.ctor.aliases,
+	protected _buildParseArgsOption() {
+		const object = {
+			allowNegative: true,
+			allowPositionals: true,
+			strict: true,
+			tokens: true,
+			options: {
+				help: helpFlagDefinition,
+			} as {
+				help: typeof helpFlagDefinition;
+				json: typeof jsonFlagDefinition;
+				[k: string]: ParseArgsOptionDescriptor;
 			},
-		];
+		} satisfies ParseArgsConfig;
 
-		if (this.ctor.hiddenAliases?.length) {
-			for (const alias of this.ctor.hiddenAliases) {
-				baseCommands.push({
-					...baseCmd,
-					command: this._buildCommandStrings(alias),
-					describe: false,
-				});
+		if (this.ctor.flags) {
+			for (const [key, internalBuilderData] of Object.entries(this.ctor.flags)) {
+				if (typeof internalBuilderData === 'string') {
+					throw new RangeError('Do not provide the string for the json flag! It is a type level assertion!');
+				}
+				// Skip the "json" flag, as it is set by enableJsonFlag
+				if (key.toLowerCase() === 'json') {
+					continue;
+				}
+
+				let flagKey = kebabCaseString(camelCaseToKebabCase(key)).toLowerCase();
+
+				// node handles `no-` flags by negating the flag, so we need to handle that differently if we register a flag with a "no-" prefix
+				if (flagKey.startsWith('no-')) {
+					flagKey = flagKey.slice(3);
+				}
+
+				const flagDefinitions = internalBuilderData.builder(flagKey);
+
+				for (const { flagName, option } of flagDefinitions) {
+					object.options![flagName] = option;
+				}
 			}
 		}
 
-		return baseCommands;
+		if (this.ctor.enableJsonFlag) {
+			object.options!.json = jsonFlagDefinition;
+		}
+
+		return object;
 	}
 
-	static registerCommand(entrypoint: string, yargsInstance: Argv) {
-		const instance = new (this as typeof BuiltApifyCommand)(entrypoint);
-
-		const yargsObject = instance._toYargs();
-
-		yargsInstance.command(yargsObject);
-
+	static registerCommand(entrypoint: string) {
 		registerCommandForHelpGeneration(entrypoint, this as typeof BuiltApifyCommand);
 
 		// Register the command itself
@@ -689,24 +803,27 @@ export async function internalRunCommand<Cmd extends typeof BuiltApifyCommand>(
 	argsFlags: StaticArgsFlagsInput<Cmd>,
 ) {
 	// This is very much yolo'd in, but its purpose is for testing only
-	const rawObject: ArgumentsCamelCase = {
-		_: [],
-		$0: 'apify',
+	const rawObject: ParseResult = {
+		positionals: [],
+		values: {},
+		tokens: [],
 	};
+
+	let positionalIndex = 0;
 
 	for (const [key, value] of Object.entries(argsFlags)) {
 		const [type, rawKey] = key.split('_');
 
 		if (type === 'args') {
-			rawObject[rawKey] = value;
+			rawObject.positionals[positionalIndex++] = value as unknown as string;
 		} else {
 			const yargsFlagName = kebabCaseString(camelCaseToKebabCase(rawKey)).toLowerCase();
 
 			// We handle "no-" flags differently, as yargs handles them by negating the base flag name (no-prompt -> prompt=false)
 			if (yargsFlagName.startsWith('no-')) {
-				rawObject[yargsFlagName.slice(3)] = !value;
+				rawObject.values[yargsFlagName.slice(3)] = !value;
 			} else {
-				rawObject[yargsFlagName] = value;
+				rawObject.values[yargsFlagName] = value;
 			}
 		}
 	}

@@ -113,7 +113,7 @@ export class CommandHelp extends BaseCommandRenderer {
 			flags.push([
 				'json',
 				{
-					choicesType: null,
+					choices: null,
 					flagTag: 'boolean',
 					hasDefault: false,
 					required: false,
@@ -259,7 +259,7 @@ export class CommandHelp extends BaseCommandRenderer {
 					break;
 				case 'string':
 				case 'integer': {
-					const flagValues = flag.choicesType ? '<option>' : '<value>';
+					const flagValues = flag.choices ? '<option>' : '<value>';
 
 					stringParts.push(`--${this.kebabFlagName(flagName)}=${chalk.underline(flagValues)}`);
 					break;
@@ -277,8 +277,8 @@ export class CommandHelp extends BaseCommandRenderer {
 			const paddingToAdd = widestFlagNameLength - stripAnsi(flagString).length;
 			let fullString = `${flagString}${' '.repeat(paddingToAdd)}  ${flag.description ?? ''}`;
 
-			if (flag.choicesType?.length) {
-				fullString += `\n<options: ${flag.choicesType.join('|')}>`;
+			if (flag.choices?.length) {
+				fullString += `\n<options: ${flag.choices.join('|')}>`;
 			}
 
 			const wrapped = wrap(fullString, getMaxLineWidth() - widestFlagNameLength);

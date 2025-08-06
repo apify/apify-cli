@@ -57,6 +57,9 @@ export const apifyCommands = [
 	RunCommand,
 	ValidateInputSchemaCommand,
 	HelpCommand,
+
+	// test commands
+	// (await import('./_testCommands/_FlagTests.js')).FlagTest,
 ] as const satisfies (typeof BuiltApifyCommand)[];
 
 export const actorCommands = [

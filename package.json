@@ -110,8 +110,7 @@
         "tiged": "~2.12.7",
         "which": "^5.0.0",
         "widest-line": "^5.0.0",
-        "wrap-ansi": "^9.0.0",
-        "yargs": "^17.7.2"
+        "wrap-ansi": "^9.0.0"
     },
     "devDependencies": {
         "@apify/eslint-config": "^1.0.0",
@@ -135,7 +134,6 @@
         "@types/node": "^22.0.0",
         "@types/semver": "^7.5.8",
         "@types/which": "^3.0.4",
-        "@types/yargs": "^17.0.33",
         "@yarnpkg/core": "^4.1.2",
         "apify": "^3.2.4",
         "chai": "^4.4.1",
