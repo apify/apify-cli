@@ -67,6 +67,9 @@ const categories: Record<string, CommandsInCategory[]> = {
 		//
 		{ command: Commands.help },
 		{ command: Commands.upgrade },
+		{ command: Commands.telemetry },
+		{ command: Commands.telemetryEnable },
+		{ command: Commands.telemetryDisable },
 	],
 	'dataset': [
 		//
