@@ -207,6 +207,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		this.telemetryData.installationType = metadata.installMethod;
 		this.telemetryData.commandString = commandString;
+		this.telemetryData.entrypoint = entrypoint;
 	}
 
 	abstract run(): Awaitable<void>;
