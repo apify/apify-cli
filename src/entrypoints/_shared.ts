@@ -171,10 +171,17 @@ export async function runCLI(entrypoint: string) {
 		return handleCommandNotFound(`${commandName} ${maybeSubcommandName}`);
 	}
 
-	const sliceStart = hasSubcommand ? 2 : 1;
-
 	// Take in all the raw arguments as they were provided to the process, skipping the command name and subcommand name
-	const rebuiltArgs: string[] = startingArgs.slice(sliceStart);
+	// All this tomfoolery is to ensure that if the arguments are something like [kvs, --json, ls], it'll parse correctly
+	const rebuiltArgs: string[] = [...startingArgs];
+
+	const commandNameIndex = startingArgs.indexOf(commandName);
+	rebuiltArgs.splice(commandNameIndex, 1);
+
+	if (hasSubcommand) {
+		const subcommandNameIndex = startingArgs.indexOf(maybeSubcommandName);
+		rebuiltArgs.splice(subcommandNameIndex, 1);
+	}
 
 	cliDebugPrint('RebuiltArgs', rebuiltArgs);
 	cliDebugPrint('CommandToRun', FinalCommand);
