@@ -171,11 +171,7 @@ export async function runCLI(entrypoint: string) {
 		return handleCommandNotFound(`${commandName} ${maybeSubcommandName}`);
 	}
 
-	let sliceStart = 1;
-
-	if (hasSubcommand) {
-		sliceStart++;
-	}
+	const sliceStart = hasSubcommand ? 2 : 1;
 
 	// Take in all the raw arguments as they were provided to the process, skipping the command name and subcommand name
 	const rebuiltArgs: string[] = startingArgs.slice(sliceStart);
