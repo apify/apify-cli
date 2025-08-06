@@ -22,6 +22,10 @@ All notable changes to this project will be documented in this file.
 - Pass apify client down to output job log wherever possible ([#839](https://github.com/apify/apify-cli/pull/839)) ([5cdb06c](https://github.com/apify/apify-cli/commit/5cdb06c0e24c2501b2034dbb7339798985b269cc)) by [@vladfrangu](https://github.com/vladfrangu)
 - **pull:** Handle private actors correctly ([#865](https://github.com/apify/apify-cli/pull/865)) ([efd7308](https://github.com/apify/apify-cli/commit/efd730855f99a36091ce51d501e5755b5ad79ffb)) by [@vladfrangu](https://github.com/vladfrangu), closes [#855](https://github.com/apify/apify-cli/issues/855)
 
+### Chore
+
+- [**breaking**] Move from yargs to node:util ([#871](https://github.com/apify/apify-cli/pull/871)) ([482d0b2](https://github.com/apify/apify-cli/commit/482d0b29f285c020320f1f2e3f0fd08a362d57cc)) by [@vladfrangu](https://github.com/vladfrangu), closes [#833](https://github.com/apify/apify-cli/issues/833)
+
 <!-- git-cliff-unreleased-end -->
 
 ## [0.21.9](https://github.com/apify/apify-cli/releases/tag/v0.21.9) (2025-07-17)
