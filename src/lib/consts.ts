@@ -66,8 +66,6 @@ export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.9.0';
 
 export const PYTHON_VENV_PATH = '.venv';
 
-export const MIXPANEL_TOKEN = 'ea75e434d4b4d2405d79ed9d14bfc93b';
-
 export enum CommandExitCodes {
 	BuildFailed = 1,
 	RunFailed = 1,
