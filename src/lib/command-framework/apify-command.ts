@@ -9,6 +9,10 @@ import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
+import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
+import { trackEvent } from '../hooks/telemetry/trackEvent.js';
+import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
+import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
 import { error } from '../outputs.js';
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import { CommandError, CommandErrorCode } from './CommandError.js';
@@ -143,6 +147,22 @@ export const commandRegistry = new Map<string, typeof BuiltApifyCommand>();
 
 type ParseResult = ReturnType<typeof parseArgs<ReturnType<ApifyCommand['_buildParseArgsOption']>>>;
 
+const COMMANDS_WITHIN_ACTOR = [
+	'init',
+	'run',
+
+	'push',
+	'actors push',
+
+	'pull',
+	'actors pull',
+
+	'call',
+	'actors call',
+
+	'actors start',
+];
+
 export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof BuiltApifyCommand> {
 	static args?: Record<string, TaggedArgBuilder<ArgTag, unknown>> & {
 		json?: 'Do not use json as the key of an argument, as it will prevent the --json flag from working';
@@ -168,7 +188,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	static hiddenAliases?: string[];
 
-	protected telemetryData: Record<string, unknown> = {};
+	protected telemetryData: TrackEventMap[`cli_command_${string}`] = {} as never;
 
 	protected flags!: InferFlagsFromCommand<T['flags']>;
 
@@ -176,8 +196,24 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	protected entrypoint: string;
 
-	public constructor(entrypoint: string) {
+	protected commandString: string;
+
+	protected skipTelemetry = false;
+
+	public constructor(entrypoint: string, commandString: string) {
 		this.entrypoint = entrypoint;
+		this.commandString = commandString;
+
+		const metadata = useCLIMetadata();
+
+		this.telemetryData.installMethod = metadata.installMethod;
+		this.telemetryData.osArch = metadata.arch;
+		this.telemetryData.runtime = metadata.runtime.runtime;
+		this.telemetryData.runtimeVersion = metadata.runtime.version;
+		this.telemetryData.runtimeNodeVersion = metadata.runtime.nodeVersion ?? metadata.runtime.version;
+
+		this.telemetryData.commandString = commandString;
+		this.telemetryData.entrypoint = entrypoint;
 	}
 
 	abstract run(): Awaitable<void>;
@@ -269,28 +305,30 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			error({ message: err.message });
 		} finally {
 			// analytics
-			/*
-			eventData.installationType = detectInstallationType();
-
-			if (!this.telemetryData.actorLanguage && command && COMMANDS_WITHIN_ACTOR.includes(command)) {
+			if (!this.telemetryData.actorLanguage && COMMANDS_WITHIN_ACTOR.includes(this.commandString)) {
 				const cwdProject = await useCwdProject();
 
 				cwdProject.inspect((project) => {
 					if (project.type === ProjectLanguage.JavaScript) {
-						eventData.actorLanguage = LANGUAGE.NODEJS;
-						eventData.actorNodejsVersion = project.runtime!.version;
+						this.telemetryData.actorLanguage = 'javascript';
+						this.telemetryData.actorRuntime = project.runtime!.runtimeShorthand || 'node';
+						this.telemetryData.actorRuntimeVersion = project.runtime!.version;
 					} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
-						eventData.actorLanguage = LANGUAGE.PYTHON;
-						eventData.actorPythonVersion = project.runtime!.version;
+						this.telemetryData.actorLanguage = 'python';
+						this.telemetryData.actorRuntime = 'python';
+						this.telemetryData.actorRuntimeVersion = project.runtime!.version;
 					}
 				});
 			}
 
-			await maybeTrackTelemetry({
-				eventName: `cli_command_${command}`,
-				eventData,
-			});
-			*/
+			this.telemetryData.flagsUsed = Object.keys(this.flags);
+
+			if (!this.skipTelemetry) {
+				await trackEvent(
+					`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
+					this.telemetryData,
+				);
+			}
 		}
 	}
 
@@ -828,7 +866,10 @@ export async function internalRunCommand<Cmd extends typeof BuiltApifyCommand>(
 		}
 	}
 
-	const instance = new (command as typeof BuiltApifyCommand)(entrypoint);
+	const instance = new (command as typeof BuiltApifyCommand)(entrypoint, command.name);
+
+	// eslint-disable-next-line dot-notation
+	instance['skipTelemetry'] = true;
 
 	// eslint-disable-next-line dot-notation
 	await instance['_run'](rawObject);

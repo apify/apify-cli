@@ -21,13 +21,6 @@ export const EMPTY_LOCAL_CONFIG = {
 	environmentVariables: {},
 };
 
-export const PROJECT_TYPES = {
-	SCRAPY: 'scrapy',
-	CRAWLEE: 'crawlee',
-	PRE_CRAWLEE_APIFY_SDK: 'apify',
-	UNKNOWN: 'unknown',
-};
-
 export const CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
 
 export const GLOBAL_CONFIGS_FOLDER = () => {
@@ -65,8 +58,6 @@ export const APIFY_CLIENT_DEFAULT_HEADERS = { 'X-Apify-Request-Origin': META_ORI
 export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.9.0';
 
 export const PYTHON_VENV_PATH = '.venv';
-
-export const MIXPANEL_TOKEN = 'ea75e434d4b4d2405d79ed9d14bfc93b';
 
 export enum CommandExitCodes {
 	BuildFailed = 1,

@@ -6,8 +6,6 @@ import { MemoryStorage } from '@crawlee/memory-storage';
 import type { StorageClient } from '@crawlee/types';
 import type { ApifyClientOptions } from 'apify-client';
 import { ApifyClient } from 'apify-client';
-// Will this work, who knows
-import ow from 'ow';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';
 
@@ -80,8 +78,6 @@ export const getDefaultStorageId = (storeType: (typeof APIFY_STORAGE_TYPES)[keyo
  * @param key - Record key
  */
 export const outputRecordFromDefaultStore = async (key: string) => {
-	ow(key, ow.string);
-
 	const apifyClient = await getApifyStorageClient();
 	const defaultStoreId = getDefaultStorageId(APIFY_STORAGE_TYPES.KEY_VALUE_STORE);
 	const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key, { stream: true });
