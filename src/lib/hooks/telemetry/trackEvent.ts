@@ -28,6 +28,15 @@ export interface TrackEventMap {
 		actorLanguage?: 'javascript' | 'python';
 		actorRuntime?: string;
 		actorRuntimeVersion?: string;
+
+		// create command
+		fromArchiveUrl?: boolean;
+		templateId?: string;
+		templateName?: string;
+		templateLanguage?: string;
+
+		// init command
+		actorWrapper?: string;
 	};
 }
 

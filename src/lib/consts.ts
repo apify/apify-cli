@@ -21,13 +21,6 @@ export const EMPTY_LOCAL_CONFIG = {
 	environmentVariables: {},
 };
 
-export const PROJECT_TYPES = {
-	SCRAPY: 'scrapy',
-	CRAWLEE: 'crawlee',
-	PRE_CRAWLEE_APIFY_SDK: 'apify',
-	UNKNOWN: 'unknown',
-};
-
 export const CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
 
 export const GLOBAL_CONFIGS_FOLDER = () => {

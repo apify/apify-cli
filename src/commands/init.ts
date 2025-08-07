@@ -4,13 +4,7 @@ import process from 'node:process';
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { Flags } from '../lib/command-framework/flags.js';
-import {
-	CommandExitCodes,
-	DEFAULT_LOCAL_STORAGE_DIR,
-	EMPTY_LOCAL_CONFIG,
-	LOCAL_CONFIG_PATH,
-	PROJECT_TYPES,
-} from '../lib/consts.js';
+import { CommandExitCodes, DEFAULT_LOCAL_STORAGE_DIR, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { useUserInput } from '../lib/hooks/user-confirmations/useUserInput.js';
@@ -61,7 +55,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 		if (project.type === ProjectLanguage.Scrapy) {
 			info({ message: 'The current directory looks like a Scrapy project. Using automatic project wrapping.' });
-			this.telemetryData.actorWrapper = PROJECT_TYPES.SCRAPY;
+			this.telemetryData.actorWrapper = 'scrapy';
 
 			return wrapScrapyProject({ projectPath: cwd });
 		}
