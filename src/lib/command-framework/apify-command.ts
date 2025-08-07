@@ -9,6 +9,7 @@ import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
+import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
 import { trackEvent } from '../hooks/telemetry/trackEvent.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
@@ -187,7 +188,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	static hiddenAliases?: string[];
 
-	protected telemetryData: Record<string, unknown> = {};
+	protected telemetryData: TrackEventMap[`cli_command_${string}`] = {} as never;
 
 	protected flags!: InferFlagsFromCommand<T['flags']>;
 
@@ -205,9 +206,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		const metadata = useCLIMetadata();
 
-		this.telemetryData.installationType = metadata.installMethod;
+		this.telemetryData.installMethod = metadata.installMethod;
 		this.telemetryData.osArch = metadata.arch;
-		this.telemetryData.runtime = metadata.runtime;
+		this.telemetryData.runtime = metadata.runtime.runtime;
 		this.telemetryData.runtimeVersion = metadata.runtime.version;
 		this.telemetryData.runtimeNodeVersion = metadata.runtime.nodeVersion ?? metadata.runtime.version;
 
@@ -323,10 +324,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			this.telemetryData.flagsUsed = Object.keys(this.flags);
 
 			if (!this.skipTelemetry) {
-				await trackEvent({
-					eventName: `cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}`,
-					eventData: this.telemetryData,
-				});
+				await trackEvent(
+					`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
+					this.telemetryData,
+				);
 			}
 		}
 	}

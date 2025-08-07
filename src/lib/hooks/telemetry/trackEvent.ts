@@ -1,5 +1,6 @@
 import { USER_AGENT } from '../../../entrypoints/_shared.js';
 import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
+import type { InstallMethod } from '../useCLIMetadata.js';
 import { useCLIMetadata } from '../useCLIMetadata.js';
 import { useTelemetryEnabled } from './useTelemetryEnabled.js';
 import { useTelemetryIdentifiers } from './useTelemetryIdentifiers.js';
@@ -11,12 +12,26 @@ const SEGMENT_API_URL = 'https://api.segment.io/v1/track';
 
 const SEGMENT_WRITE_KEY = metadata.isBeta ? 'rT67mFpIQD5qS9bJBoIYSFbZucrt2DZC' : '2uPK6yhPqjC0eNUFhaY78S26cRKyaa6t';
 
-export interface TrackEventInput {
-	eventName: string;
-	eventData: Record<string, unknown>;
+export interface TrackEventMap {
+	[key: `cli_command_${string}`]: {
+		installMethod: InstallMethod;
+		osArch: typeof process.arch;
+		runtime: typeof metadata.runtime.runtime;
+		runtimeVersion: typeof metadata.runtime.version;
+		runtimeNodeVersion: typeof metadata.runtime.nodeVersion;
+
+		commandString: string;
+		entrypoint: string;
+
+		flagsUsed: string[];
+
+		actorLanguage?: 'javascript' | 'python';
+		actorRuntime?: string;
+		actorRuntimeVersion?: string;
+	};
 }
 
-export async function trackEvent({ eventName, eventData }: TrackEventInput) {
+export async function trackEvent<Event extends keyof TrackEventMap>(event: Event, eventData: TrackEventMap[Event]) {
 	const identifiers = await useTelemetryIdentifiers();
 
 	const segmentPayload = {
@@ -37,7 +52,7 @@ export async function trackEvent({ eventName, eventData }: TrackEventInput) {
 			userAgent: USER_AGENT,
 			channel: 'server',
 		},
-		event: eventName,
+		event,
 		properties: {
 			...eventData,
 			app: 'cli',
