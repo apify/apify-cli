@@ -141,6 +141,6 @@ apify call apify/hello-world
 
 ### Next steps
 
-- Check the [command reference](reference.md) for more information about individual commands.
-- If you have a problem with the Apify CLI, check the [troubleshooting](troubleshooting.md) guide.
+- Check the [command reference](./reference.md) for more information about individual commands.
+- If you have a problem with the Apify CLI, check the [troubleshooting](./troubleshooting.md) guide.
 - Learn more about [Actors](/platform/actors).
