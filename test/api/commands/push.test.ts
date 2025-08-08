@@ -4,6 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
 import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS } from '@apify/consts';
+import { createHmacSignature } from '@apify/utilities';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
@@ -236,6 +237,10 @@ describe('[api] apify push', () => {
 			testActor = (await testActorClient.get())!;
 			const testActorVersion = await testActorClient.version(actorJson.version).get();
 			const store = await testUserClient.keyValueStores().getOrCreate(`actor-${testActor.id}-source`);
+
+			expect(store.urlSigningSecretKey).toBeDefined();
+			const signature = createHmacSignature(store.urlSigningSecretKey!, `version-${actorJson.version}.zip`);
+
 			await testUserClient.keyValueStore(store.id).delete(); // We just needed the store ID, we can clean up now
 
 			if (testActor) await testActorClient.delete();
@@ -245,7 +250,7 @@ describe('[api] apify push', () => {
 				buildTag: 'latest',
 				tarballUrl:
 					`${testActorClient.baseUrl}/key-value-stores/${store.id}` +
-					`/records/version-${actorJson.version}.zip?disableRedirect=true`,
+					`/records/version-${actorJson.version}.zip?disableRedirect=true&signature=${signature}`,
 				envVars: testActorWithEnvVars.versions[0].envVars,
 				sourceType: ACTOR_SOURCE_TYPES.TARBALL,
 			});
