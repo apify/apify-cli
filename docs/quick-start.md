@@ -62,7 +62,7 @@ apify --version
 which should print something like:
 
 ```bash showLineNumbers
-apify-cli/<@version> (<@commit_hash>) running on <@platform> with <@runtime>, installed via <@install_method>```
+apify-cli/1.0.1 (0dfcfd8) running on darwin-arm64 with bun-1.2.19 (emulating node 24.3.0), installed via bundle
 ```
 
 ### Step 2: Create your Actor
@@ -109,9 +109,13 @@ apify login
 
 :::note create an Apify account
 
-Before you can interact with the Apify cloud, you need to [create an Apify account](https://console.apify.com/)
-and log in to it using the above command. You will be prompted for
-your [Apify API token](https://console.apify.com/settings/integrations).
+Before you can interact with the Apify Console, [create an Apify account](https://console.apify.com/).
+When you run `apify login`, you can choose one of the following methods:
+
+- Sign in via the Apify Console in your browser — recommended.
+- Provide an [Apify API token](https://console.apify.com/settings/integrations) — alternative method.
+
+The interactive prompt will guide you through either option.
 
 :::
 
@@ -123,7 +127,7 @@ apify push
 
 ### Step 5: Call your Actor (optional)
 
-You can run your Actor on the Apify Platform. If you want to run the Actor corresponding to the current directory on the Apify Platform, use:
+You can run your Actor on the Apify Console. If you want to run the Actor corresponding to the current directory on the Apify Console, use:
 
 ```bash showLineNumbers
 apify call
