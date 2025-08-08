@@ -44,7 +44,7 @@ npm --version
 Install or upgrade Apify CLI by running:
 
 ```bash showLineNumbers
-npm -g install apify-cli
+npm install -g apify-cli
 ```
 
 :::tip Troubleshooting
