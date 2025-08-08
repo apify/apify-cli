@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { actorCommands } from '../commands/_register.js';
+import { actorCommands } from '../commands/_actorEntrypoint.js';
 import { processVersionCheck, runCLI } from './_shared.js';
 
 processVersionCheck('Actor');
