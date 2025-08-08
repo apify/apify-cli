@@ -8,7 +8,7 @@ interface UseMaskedInputInput {
 }
 
 export const useMaskedInput = stdinCheckWrapper(async ({ message, mask }: UseMaskedInputInput) => {
-	const result = await password({ message, mask });
+	const result = await password({ message, mask: mask ?? '*' });
 
 	return result;
 });
