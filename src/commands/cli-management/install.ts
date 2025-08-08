@@ -92,7 +92,10 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 			const symlinkPath = join(localBinDirectory, file);
 
-			await unlink(symlinkPath);
+			await unlink(symlinkPath).catch(() => {
+				// Ignore errors
+			});
+
 			await symlink(originalPath, symlinkPath);
 
 			cliDebugPrint('[install] symlink created for item', file, symlinkPath);
