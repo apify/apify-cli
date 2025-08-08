@@ -65,7 +65,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			required: false,
 		}),
 		'open': Flags.boolean({
-			description: 'Whether to open the browser automatically to the Actor build details.',
+			description: 'Whether to open the browser automatically to the Actor details page.',
 			default: false,
 			required: false,
 		}),
@@ -306,6 +306,11 @@ Skipping push. Use --force to override.`,
 		link({
 			message: 'Actor build detail',
 			url: `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`,
+		});
+
+		link({
+			message: 'Actor detail',
+			url: `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`,
 		});
 
 		if (this.flags.open) {
