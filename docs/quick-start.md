@@ -14,13 +14,13 @@ You can install Apify CLI either using installation scripts:
 
 ##### MacOS / Unix
 
-```bash showLineNumbers
+```bash
 curl -fsSL https://apify.com/install-cli.sh | bash
 ```
 
 ##### Windows
 
-```powershell showLineNumbers
+```powershell
 irm apify.com/install-cli.ps1 | iex
 ```
 
@@ -28,7 +28,7 @@ irm apify.com/install-cli.ps1 | iex
 
 ##### Homebrew
 
-```bash showLineNumbers
+```bash
 brew install apify-cli
 ```
 
@@ -43,7 +43,7 @@ npm --version
 
 Install or upgrade Apify CLI by running:
 
-```bash showLineNumbers
+```bash
 npm install -g apify-cli
 ```
 
@@ -55,13 +55,13 @@ If you receive a permission error, read npm's [official guide](https://docs.npmj
 
 You can verify the installation process by running the following command:
 
-```bash showLineNumbers
+```bash
 apify --version
 ```
 
 which should print something like:
 
-```bash showLineNumbers
+```bash
 apify-cli/1.0.1 (0dfcfd8) running on darwin-arm64 with bun-1.2.19 (emulating node 24.3.0), installed via bundle
 ```
 
@@ -69,7 +69,7 @@ apify-cli/1.0.1 (0dfcfd8) running on darwin-arm64 with bun-1.2.19 (emulating nod
 
 Run the following command in your terminal. It will guide you step by step through the creation process.
 
-```bash showLineNumbers
+```bash
 apify create
 ```
 
@@ -83,13 +83,13 @@ The Apify CLI will prompt you to choose a template. Browse the [full list of tem
 
 Once the Actor is initialized, you can run it:
 
-```bash showLineNumbers
+```bash
 apify run
 ```
 
 You'll see output similar to this in your terminal:
 
-```bash
+```bash showLineNumbers
 INFO  System info {"apifyVersion":"3.4.3","apifyClientVersion":"2.12.6","crawleeVersion":"3.13.10","osType":"Darwin","nodeVersion":"v22.17.0"}
 Extracted heading { level: 'h1', text: 'Your full‑stack platform for web scraping' }
 Extracted heading { level: 'h3', text: 'TikTok Scraper' }
@@ -103,7 +103,7 @@ Once you are ready, you can push your Actor to the Apify Console, where you can 
 
 #### Login to Apify Console
 
-```bash showLineNumbers
+```bash
 apify login
 ```
 
@@ -121,21 +121,15 @@ The interactive prompt will guide you through either option.
 
 #### Push to Apify Console
 
-```bash showLineNumbers
+```bash
 apify push
 ```
 
 ### Step 5: Call your Actor (optional)
 
-You can run your Actor on the Apify Console. If you want to run the Actor corresponding to the current directory on the Apify Console, use:
+You can run your Actor on the Apify Console. In the following example, the command runs `apify/hello-world` on the Apify Console.
 
-```bash showLineNumbers
-apify call
-```
-
-This command can also be used to run other Actors, for example:
-
-```bash showLineNumbers
+```bash
 apify call apify/hello-world
 ```
 
