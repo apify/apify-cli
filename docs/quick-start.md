@@ -62,7 +62,7 @@ apify --version
 which should print something like:
 
 ```bash showLineNumbers
-apify-cli/<@version> <platfrom> node-v18.17.0
+apify-cli/<@version> (<@commit_hash>) running on <@platform> with <@runtime>, installed via <@install_method>```
 ```
 
 ### Step 2: Create your Actor
