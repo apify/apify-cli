@@ -20,7 +20,7 @@ curl -fsSL https://apify.com/install-cli.sh | bash
 
 ##### Windows
 
-```bash showLineNumbers
+```powershell showLineNumbers
 irm apify.com/install-cli.ps1 | iex
 ```
 
