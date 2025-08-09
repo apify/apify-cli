@@ -1,11 +1,5 @@
 import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.js';
 import { ActorIndexCommand } from './actor/_index.js';
-import { ActorChargeCommand } from './actor/charge.js';
-import { ActorGetInputCommand } from './actor/get-input.js';
-import { ActorGetPublicUrlCommand } from './actor/get-public-url.js';
-import { ActorGetValueCommand } from './actor/get-value.js';
-import { ActorPushDataCommand } from './actor/push-data.js';
-import { ActorSetValueCommand } from './actor/set-value.js';
 import { ActorsIndexCommand } from './actors/_index.js';
 import { BuildsIndexCommand } from './builds/_index.js';
 import { TopLevelCallCommand } from './call.js';
@@ -63,22 +57,4 @@ export const apifyCommands = [
 
 	// test commands
 	// (await import('./_testCommands/_FlagTests.js')).FlagTest,
-] as const satisfies (typeof BuiltApifyCommand)[];
-
-export const actorCommands = [
-	//
-	ActorSetValueCommand,
-	ActorPushDataCommand,
-	ActorGetValueCommand,
-	ActorGetPublicUrlCommand,
-	ActorGetInputCommand,
-	ActorChargeCommand,
-
-	// top-level
-	HelpCommand,
-	UpgradeCommand,
-	InstallCommand,
-
-	// namespaces
-	TelemetryIndexCommand,
 ] as const satisfies (typeof BuiltApifyCommand)[];
