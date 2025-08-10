@@ -53,6 +53,8 @@ If you receive a permission error, read npm's [official guide](https://docs.npmj
 
 :::
 
+### Verify installation
+
 You can verify the installation process by running the following command:
 
 ```bash

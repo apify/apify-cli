@@ -1,5 +1,4 @@
 ---
-sidebar_label: Environment variables
 description: Learn how use environment variables for Apify CLI
 title: Environment variables
 ---
