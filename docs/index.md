@@ -14,7 +14,7 @@ using <a href="https://github.com/apify/apify-sdk-js">Apify SDK</a>
 and only push the Actors to the Apify cloud during deployment.
 This is where the Apify CLI comes in.
 
-:::note
+:::note Run Actors in Docker
 
 Actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
 you can build your Actors in any programming language.
