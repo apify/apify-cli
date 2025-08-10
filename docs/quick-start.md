@@ -6,7 +6,7 @@ sidebar_label: Quick Start
 
 Learn how to install Apify CLI, and how to create, run, and manage Actors through it.
 
-### Step 1: Installation
+## Step 1: Installation
 
 You can install Apify CLI either using installation scripts:
 
