@@ -3,13 +3,13 @@ sidebar_label: Troubleshooting
 title: Troubleshooting
 ---
 
-### Problems with installation
+## Problems with installation
 
 If you receive a permission error, read npm's [official guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) on installing packages globally.
 
 Alternatively, use a version manager to install Node 20+. We recommend [`fnm` (Fast Node Manager)](https://github.com/Schniz/fnm) or [Volta](https://volta.sh):
 
-#### Using fnm (recommended)
+### Using fnm (recommended)
 
 ```bash showLineNumbers
 curl -fsSL https://fnm.vercel.app/install | bash
@@ -19,7 +19,7 @@ fnm use 20
 npm install -g apify-cli
 ```
 
-#### Using Volta (recommended)
+### Using Volta (recommended)
 
 ```bash showLineNumbers
 curl https://get.volta.sh | bash
@@ -40,11 +40,11 @@ npm -g install apify-cli
 
 :::
 
-### Migrations
+## Migrations
 
 You can find the differences and migration info in [migration guidelines](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md).
 
-### Help command
+## Help command
 
 To see all CLI commands simply run:
 
@@ -58,6 +58,6 @@ To get information about a specific command run:
 apify help COMMAND
 ```
 
-### Need help?
+## Need help?
 
 For general support, reach out to us at [apify.com/contact](https://apify.com/contact). You can also join [Apify Discord](https://apify.com/discord), if you have a question. If you believe you are encountering a bug, file it on [GitHub](https://github.com/apify/apify-cli/issues/new).

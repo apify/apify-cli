@@ -10,29 +10,29 @@ Learn how to install Apify CLI, and how to create, run, and manage Actors throug
 
 You can install Apify CLI either using installation scripts:
 
-#### Preferred methods
+### Preferred methods
 
-##### MacOS / Unix
+#### MacOS / Unix
 
 ```bash
 curl -fsSL https://apify.com/install-cli.sh | bash
 ```
 
-##### Windows
+#### Windows
 
 ```powershell
 irm apify.com/install-cli.ps1 | iex
 ```
 
-#### Other methods
+### Other methods
 
-##### Homebrew
+#### Homebrew
 
 ```bash
 brew install apify-cli
 ```
 
-##### NPM
+#### NPM
 
 First, make sure you have [Node.js](https://nodejs.org) version 20 or higher with NPM installed on your computer:
 
@@ -59,13 +59,13 @@ You can verify the installation process by running the following command:
 apify --version
 ```
 
-which should print something like:
+The output should resemble the following (exact details like version or platform may vary):
 
 ```bash
 apify-cli/1.0.1 (0dfcfd8) running on darwin-arm64 with bun-1.2.19 (emulating node 24.3.0), installed via bundle
 ```
 
-### Step 2: Create your Actor
+## Step 2: Create your Actor
 
 Run the following command in your terminal. It will guide you step by step through the creation process.
 
@@ -79,7 +79,7 @@ The Apify CLI will prompt you to choose a template. Browse the [full list of tem
 
 :::
 
-### Step 3: Run your Actor
+## Step 3: Run your Actor
 
 Once the Actor is initialized, you can run it:
 
@@ -107,7 +107,7 @@ Once you are ready, you can push your Actor to the Apify Console, where you can 
 apify login
 ```
 
-:::note create an Apify account
+:::note Create an Apify account
 
 Before you can interact with the Apify Console, [create an Apify account](https://console.apify.com/).
 When you run `apify login`, you can choose one of the following methods:
@@ -119,21 +119,21 @@ The interactive prompt will guide you through either option.
 
 :::
 
-#### Push to Apify Console
+### Push to Apify Console
 
 ```bash
 apify push
 ```
 
-### Step 5: Call your Actor (optional)
+## Step 5: Call your Actor (optional)
 
-You can run your Actor on the Apify Console. In the following example, the command runs `apify/hello-world` on the Apify Console.
+You can run your Actor on the Apify platform. In the following example, the command runs `apify/hello-world` on the Apify platform.
 
 ```bash
 apify call apify/hello-world
 ```
 
-### Next steps
+## Next steps
 
 - Check the [command reference](./reference.md) for more information about individual commands.
 - If you have a problem with the Apify CLI, check the [troubleshooting](./troubleshooting.md) guide.
