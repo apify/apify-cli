@@ -3,7 +3,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
-import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS } from '@apify/consts';
+import { ACTOR_SOURCE_TYPES, SOURCE_FILE_FORMATS, STORAGE_GENERAL_ACCESS } from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
@@ -238,10 +238,19 @@ describe('[api] apify push', () => {
 			const testActorVersion = await testActorClient.version(actorJson.version).get();
 			const store = await testUserClient.keyValueStores().getOrCreate(`actor-${testActor.id}-source`);
 
+			// Update the store's general access to RESTRICTED
+			await testUserClient.keyValueStore(store.id).update({ generalAccess: STORAGE_GENERAL_ACCESS.RESTRICTED });
+
 			expect(store.urlSigningSecretKey).toBeDefined();
 			const signature = createHmacSignature(store.urlSigningSecretKey!, `version-${actorJson.version}.zip`);
 
-			await testUserClient.keyValueStore(store.id).delete(); // We just needed the store ID, we can clean up now
+			// Check if the tarball URL is accessible
+			await expect(fetch((testActorVersion as { tarballUrl: string }).tarballUrl)).resolves.toHaveProperty(
+				'status',
+				200,
+			);
+
+			await testUserClient.keyValueStore(store.id).delete();
 
 			if (testActor) await testActorClient.delete();
 

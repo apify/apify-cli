@@ -1,5 +1,4 @@
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
-import { createHmacSignature } from '@apify/utilities';
 
 import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -27,8 +26,6 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 			process.exitCode = CommandExitCodes.NotImplemented;
 			return;
 		}
-
-		const apiBase = process.env[APIFY_ENV_VARS.API_PUBLIC_BASE_URL];
 		const storeId = process.env[ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID];
 
 		// This should never happen, but handle it gracefully to prevent crashes.
@@ -43,8 +40,6 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 		const apifyClient = await getApifyStorageClient();
 		const store = await apifyClient.keyValueStore(storeId).get();
 
-		const publicUrl = new URL(`${apiBase}/v2/key-value-stores/${storeId}/records/${key}`);
-
 		if (!store) {
 			error({
 				message: `Key-Value store with ID '${storeId}' was not found. Ensure the store exists and that the correct ID is set in ${ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID}.`,
@@ -53,13 +48,8 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 			return;
 		}
 
-		// @ts-expect-error Add types to client
-		const { urlSigningSecretKey } = store;
+		const publicTarballUrl = await apifyClient.keyValueStore(storeId).getRecordPublicUrl(key);
 
-		if (urlSigningSecretKey) {
-			publicUrl.searchParams.append('signature', createHmacSignature(urlSigningSecretKey as string, key));
-		}
-
-		console.log(publicUrl.toString());
+		console.log(publicTarballUrl);
 	}
 }

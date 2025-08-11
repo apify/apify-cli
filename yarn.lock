@@ -117,17 +117,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/utilities@npm:^2.13.0, @apify/utilities@npm:^2.17.0, @apify/utilities@npm:^2.7.10":
-  version: 2.17.0
-  resolution: "@apify/utilities@npm:2.17.0"
-  dependencies:
-    "@apify/consts": "npm:^2.43.0"
-    "@apify/log": "npm:^2.5.20"
-  checksum: 10c0/673cf27daa31558f305a9b2aa6e8493a254f828fc8797a35dd9aa6810ecac8001ccffb6a2b3dd991176cd3c4f2c14c08c7794a34fd778330968e13e9a6326587
-  languageName: node
-  linkType: hard
-
-"@apify/utilities@npm:^2.18.0":
+"@apify/utilities@npm:^2.13.0, @apify/utilities@npm:^2.17.0, @apify/utilities@npm:^2.18.0, @apify/utilities@npm:^2.7.10":
   version: 2.18.0
   resolution: "@apify/utilities@npm:2.18.0"
   dependencies:
@@ -2288,7 +2278,7 @@ __metadata:
     adm-zip: "npm:~0.5.15"
     ajv: "npm:~8.17.1"
     apify: "npm:^3.2.4"
-    apify-client: "npm:^2.13.0"
+    apify-client: "npm:^2.14.0"
     archiver: "npm:~7.0.1"
     axios: "npm:^1.11.0"
     chai: "npm:^4.4.1"
@@ -2340,27 +2330,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"apify-client@npm:^2.12.1":
-  version: 2.12.6
-  resolution: "apify-client@npm:2.12.6"
-  dependencies:
-    "@apify/consts": "npm:^2.25.0"
-    "@apify/log": "npm:^2.2.6"
-    "@crawlee/types": "npm:^3.3.0"
-    agentkeepalive: "npm:^4.2.1"
-    async-retry: "npm:^1.3.3"
-    axios: "npm:^1.6.7"
-    content-type: "npm:^1.0.5"
-    ow: "npm:^0.28.2"
-    tslib: "npm:^2.5.0"
-    type-fest: "npm:^4.0.0"
-  checksum: 10c0/0310242ef5878c6ecc636ba159c82f73c8b07fd3db6c7cbcb42a17032f63fd3d8a258f4b0ddeaaffa138c1ef088f86fe6f7962ff74a52459c4bd7332f945c581
-  languageName: node
-  linkType: hard
-
-"apify-client@npm:^2.13.0":
-  version: 2.13.0
-  resolution: "apify-client@npm:2.13.0"
+"apify-client@npm:^2.12.1, apify-client@npm:^2.14.0":
+  version: 2.14.0
+  resolution: "apify-client@npm:2.14.0"
   dependencies:
     "@apify/consts": "npm:^2.25.0"
     "@apify/log": "npm:^2.2.6"
@@ -2373,7 +2345,7 @@ __metadata:
     ow: "npm:^0.28.2"
     tslib: "npm:^2.5.0"
     type-fest: "npm:^4.0.0"
-  checksum: 10c0/0596ba6aa4a534fc514e4d32b5ed232f1be7fd49cd3759380332edd136f5697add34a9e2ff3f8e98088f9945faf64ea5a7ebe53eb3d7b3886333ab3eddddfa32
+  checksum: 10c0/05eec1e28baa5ff8c8b4273e2671c8075aee1f53b40dad2d00d9d6ac96fdda2e1fe9a62708efa7f8bfc89c09719108822c71dd20ff0e44d5339c35a1ece37578
   languageName: node
   linkType: hard
 
@@ -2945,14 +2917,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"chalk@npm:^5.4.1":
-  version: 5.4.1
-  resolution: "chalk@npm:5.4.1"
-  checksum: 10c0/b23e88132c702f4855ca6d25cb5538b1114343e41472d5263ee8a37cccfccd9c4216d111e1097c6a27830407a1dc81fecdf2a56f2c63033d4dbbd88c10b0dcef
-  languageName: node
-  linkType: hard
-
-"chalk@npm:~5.5.0":
+"chalk@npm:^5.4.1, chalk@npm:~5.5.0":
   version: 5.5.0
   resolution: "chalk@npm:5.5.0"
   checksum: 10c0/23063b544f7c2fe57d25ff814807de561f8adfff72e4f0051051eaa606f772586470507ccd38d89166300eeaadb0164acde8bb8a0716a0f2d56ccdf3761d5e4f
