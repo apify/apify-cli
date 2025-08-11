@@ -1,3 +1,5 @@
+import type { ApifyClient } from 'apify-client';
+
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 
 import { getApifyStorageClient } from '../../lib/actor.js';
@@ -37,7 +39,7 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 			return;
 		}
 
-		const apifyClient = await getApifyStorageClient();
+		const apifyClient = (await getApifyStorageClient()) as ApifyClient;
 		const store = await apifyClient.keyValueStore(storeId).get();
 
 		if (!store) {
