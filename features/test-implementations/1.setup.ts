@@ -234,7 +234,7 @@ Given<TestWorld>(/the local actor is pushed to the Apify platform/i, { timeout: 
 	}
 
 	const result = await executeCommand({
-		rawCommand: 'apify push --no-prompt',
+		rawCommand: 'apify push',
 		cwd: this.testActor.pwd,
 		env: extraEnv,
 	});

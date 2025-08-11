@@ -28,6 +28,7 @@ import { RunCommand } from './run.js';
 import { RunsIndexCommand } from './runs/_index.js';
 import { SecretsIndexCommand } from './secrets/_index.js';
 import { TasksIndexCommand } from './task/_index.js';
+import { TelemetryIndexCommand } from './telemetry/_index.js';
 import { ValidateInputSchemaCommand } from './validate-schema.js';
 
 export const apifyCommands = [
@@ -41,6 +42,8 @@ export const apifyCommands = [
 	RunsIndexCommand,
 	SecretsIndexCommand,
 	TasksIndexCommand,
+	TelemetryIndexCommand,
+
 	// top-level
 	TopLevelCallCommand,
 	UpgradeCommand,
@@ -70,8 +73,12 @@ export const actorCommands = [
 	ActorGetPublicUrlCommand,
 	ActorGetInputCommand,
 	ActorChargeCommand,
+
 	// top-level
 	HelpCommand,
 	UpgradeCommand,
 	InstallCommand,
+
+	// namespaces
+	TelemetryIndexCommand,
 ] as const satisfies (typeof BuiltApifyCommand)[];

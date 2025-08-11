@@ -25,6 +25,7 @@ All notable changes to this project will be documented in this file.
 ### Chore
 
 - [**breaking**] Move from yargs to node:util ([#871](https://github.com/apify/apify-cli/pull/871)) ([482d0b2](https://github.com/apify/apify-cli/commit/482d0b29f285c020320f1f2e3f0fd08a362d57cc)) by [@vladfrangu](https://github.com/vladfrangu), closes [#833](https://github.com/apify/apify-cli/issues/833)
+- [**breaking**] Make opening the actor build results in push opt-in ([#881](https://github.com/apify/apify-cli/pull/881)) ([d842424](https://github.com/apify/apify-cli/commit/d84242421387a9487eef5c07183dd0b8ac7ae67b)) by [@vladfrangu](https://github.com/vladfrangu)
 
 <!-- git-cliff-unreleased-end -->
 

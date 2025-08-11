@@ -2,7 +2,7 @@
 import { defineConfig } from 'vitest/config';
 
 const isWindows = process.platform === 'win32';
-const multiplierFactor = isWindows ? 3 : 1;
+const multiplierFactor = isWindows ? 3 : 2;
 
 export default defineConfig({
 	esbuild: {

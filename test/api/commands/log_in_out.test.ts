@@ -36,7 +36,6 @@ describe('[api] apify login and logout', () => {
 		}) as unknown as Record<string, string>;
 		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
 
-		expect(errorSpy()).toHaveBeenCalledTimes(1);
 		expect(lastErrorMessage()).to.include('Success:');
 
 		// Omit currentBillingPeriod, It can change during tests

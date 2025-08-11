@@ -15,7 +15,7 @@ export type InstallMethod = 'npm' | 'pnpm' | 'homebrew' | 'volta' | 'bundle' | '
 export interface CLIMetadata {
 	version: string;
 	hash: string;
-	runtime: string;
+	runtime: ReturnType<typeof getRuntimeInfo>;
 	platform: Exclude<typeof process.platform, 'win32'> | 'windows';
 	arch: typeof process.arch;
 	extraRuntimeData: string;
@@ -25,6 +25,7 @@ export interface CLIMetadata {
 	 * When set, represents the APIFY_CLI_HOME environment variable / $HOME/.apify/bin folder (when installed via bundles).
 	 */
 	installPath?: string;
+	isBeta: boolean;
 }
 
 function detectInstallMethod(): InstallMethod {
@@ -105,11 +106,14 @@ export function useCLIMetadata(): CLIMetadata {
 		hash: CLI_HASH,
 		arch: (process.env.APIFY_BUNDLE_ARCH as typeof process.arch) ?? process.arch,
 		platform: process.platform === 'win32' ? 'windows' : process.platform,
-		runtime: runtime.runtime,
+		runtime,
 		extraRuntimeData: runtime.nodeVersion ? `(emulating node ${runtime.nodeVersion})` : '',
 		installMethod,
 		get fullVersionString() {
-			return `apify-cli/${this.version} (${this.hash.slice(0, 7)}) running on ${this.platform}-${this.arch} with ${this.runtime}-${runtime.version}${this.extraRuntimeData ? ` ${this.extraRuntimeData}` : ''}, installed via ${this.installMethod}`;
+			return `apify-cli/${this.version} (${this.hash.slice(0, 7)}) running on ${this.platform}-${this.arch} with ${this.runtime.runtime}-${runtime.version}${this.extraRuntimeData ? ` ${this.extraRuntimeData}` : ''}, installed via ${this.installMethod}`;
+		},
+		get isBeta() {
+			return this.version.includes('beta') || this.version === DEVELOPMENT_VERSION_MARKER;
 		},
 	};
 
