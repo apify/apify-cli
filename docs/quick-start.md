@@ -21,7 +21,7 @@ curl -fsSL https://apify.com/install-cli.sh | bash
 #### Windows
 
 ```powershell
-irm apify.com/install-cli.ps1 | iex
+irm https://apify.com/install-cli.ps1 | iex
 ```
 
 ### Other methods
