@@ -91,8 +91,10 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 		const { name, versions } = actor;
 
+		console.log(actor);
+
 		// @ts-expect-error TODO: fix apify-client types
-		if (actor.isSourceCodeHidden && !actor.versions.length) {
+		if (actor.isSourceCodeHidden) {
 			throw new Error(`You cannot pull source code of this Actor because you do not have permission to do so.`);
 		}
 
