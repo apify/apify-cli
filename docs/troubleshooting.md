@@ -7,41 +7,16 @@ title: Troubleshooting
 
 If you receive a permission error, read npm's [official guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) on installing packages globally.
 
-A better approach is to use a Node.js version manager to install Node.js 20+. It prevents permission issues from happening in the first place. We recommend:
+The best practice is to use a Node.js version manager to install Node.js 22+. It prevents permission issues from happening in the first place. We recommend:
 
 - [fnm (Fast Node Manager)](https://github.com/Schniz/fnm)
 - [Volta](https://volta.sh/).
 
-### Using fnm (recommended)
+Once you have the correct version of Node.js on your machine, install the Apify CLI with the following command:
 
-```bash showLineNumbers
-curl -fsSL https://fnm.vercel.app/install | bash
-# Install and use Node 20
-fnm install 20
-fnm use 20
+```bash
 npm install -g apify-cli
 ```
-
-### Using Volta (recommended)
-
-```bash showLineNumbers
-curl https://get.volta.sh | bash
-# Install Node 20 and use it globally
-volta install node@20
-npm install -g apify-cli
-```
-
-:::note Last resort: nvm
-
-If you prefer `nvm`, you can use it as well.
-
-```bash showLineNumbers
-nvm install 20
-nvm use 20
-npm -g install apify-cli
-```
-
-:::
 
 ## Migrations
 

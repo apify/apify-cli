@@ -17,6 +17,11 @@ module.exports = [
         },
         {
             type: 'doc',
+            id: 'reference',
+            label: 'Command reference',
+        },
+        {
+            type: 'doc',
             id: 'vars',
             label: 'Environment variables',
         },
@@ -30,11 +35,6 @@ module.exports = [
                     label: 'Integrating Scrapy',
                 },
             ],
-        },
-        {
-            type: 'doc',
-            id: 'reference',
-            label: 'Command reference',
         },
         {
             type: 'doc',
