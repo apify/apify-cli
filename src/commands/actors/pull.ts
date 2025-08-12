@@ -91,9 +91,12 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 		const { name, versions } = actor;
 
-		// @ts-expect-error TODO: fix apify-client types
-		if (actor.isSourceCodeHidden) {
+		const throwMissingSourceCodeAccessError = () => {
 			throw new Error(`You cannot pull source code of this Actor because you do not have permission to do so.`);
+		};
+
+		if (!actor.versions.length) {
+			throw new Error(`Actor ${actorId} has no versions.`);
 		}
 
 		let correctVersion = null;
@@ -121,11 +124,19 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 		switch (correctVersion.sourceType) {
 			case 'TARBALL': {
+				if (!correctVersion.tarballUrl) {
+					throwMissingSourceCodeAccessError();
+				}
+
 				await extractGitHubZip(correctVersion.tarballUrl, dirpath);
 
 				break;
 			}
 			case 'SOURCE_FILES': {
+				if (!correctVersion.sourceFiles) {
+					throwMissingSourceCodeAccessError();
+				}
+
 				const { sourceFiles } = correctVersion;
 				for (const file of sourceFiles) {
 					const folderPath = dirname(file.name);
@@ -150,6 +161,10 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 			}
 			case 'GIT_REPO': {
 				// e.g. https://github.com/jakubbalada/Datasety.git#master:RejstrikPolitickychStran
+				if (!correctVersion.gitRepoUrl) {
+					throwMissingSourceCodeAccessError();
+				}
+
 				const { gitRepoUrl } = correctVersion;
 				const [repoUrl, branchDirPart] = gitRepoUrl.split('#');
 
@@ -170,6 +185,10 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 				break;
 			}
 			case 'GITHUB_GIST': {
+				if (!correctVersion.gitHubGistUrl) {
+					throwMissingSourceCodeAccessError();
+				}
+
 				await extractGitHubZip(`${correctVersion.gitHubGistUrl}/archive/master.zip`, dirpath);
 
 				break;
