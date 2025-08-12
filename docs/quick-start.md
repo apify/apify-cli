@@ -43,7 +43,7 @@ Extracted heading { level: 'h3', text: 'Instagram Scraper' }
 
 ## Step 3: Push your Actor
 
-Once you are ready, you can push your Actor to the Apify Console, where you can schedule runs, or make the Actor public for other developers.
+Once you are ready, you can push your Actor to the Apify platform, where you can schedule runs, or make the Actor public for other developers.
 
 #### Login to Apify Console
 

@@ -7,7 +7,10 @@ title: Troubleshooting
 
 If you receive a permission error, read npm's [official guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) on installing packages globally.
 
-Alternatively, use a version manager to install Node 20+. We recommend [`fnm` (Fast Node Manager)](https://github.com/Schniz/fnm) or [Volta](https://volta.sh):
+A better approach is to use a Node.js version manager to install Node.js 20+. It prevents permission issues from happening in the first place. We recommend:
+
+- [fnm (Fast Node Manager)](https://github.com/Schniz/fnm)
+- [Volta](https://volta.sh/).
 
 ### Using fnm (recommended)
 
