@@ -33,7 +33,7 @@ apify run
 
 You'll see output similar to this in your terminal:
 
-```bash showLineNumbers
+```bash
 INFO  System info {"apifyVersion":"3.4.3","apifyClientVersion":"2.12.6","crawleeVersion":"3.13.10","osType":"Darwin","nodeVersion":"v22.17.0"}
 Extracted heading { level: 'h1', text: 'Your full‑stack platform for web scraping' }
 Extracted heading { level: 'h3', text: 'TikTok Scraper' }
