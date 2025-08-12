@@ -7,6 +7,11 @@ module.exports = [
         },
         {
             type: 'doc',
+            id: 'installation',
+            label: 'Installation',
+        },
+        {
+            type: 'doc',
             id: 'quick-start',
             label: 'Quick Start',
         },

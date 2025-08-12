@@ -1,73 +1,15 @@
 ---
 title: Quick Start
-description: Learn how to install Apify CLI, and how to create, run, and manage Actors through it.
-sidebar_label: Quick Start
+description: Learn how to create, run, and manage Actors using Apify CLI.
 ---
 
-Learn how to install Apify CLI, and how to create, run, and manage Actors through it.
+Learn how to create, run, and manage Actors using Apify CLI.
 
-## Step 1: Installation
+## Prerequisites
 
-You can install Apify CLI either using installation scripts:
+Before you begin, make sure you have the Apify CLI installed on your system. If you haven't installed it yet, follow the [installation guide](./installation.md).
 
-### Preferred methods
-
-#### MacOS / Unix
-
-```bash
-curl -fsSL https://apify.com/install-cli.sh | bash
-```
-
-#### Windows
-
-```powershell
-irm https://apify.com/install-cli.ps1 | iex
-```
-
-### Other methods
-
-#### Homebrew
-
-```bash
-brew install apify-cli
-```
-
-#### NPM
-
-First, make sure you have [Node.js](https://nodejs.org) version 20 or higher with NPM installed on your computer:
-
-```bash showLineNumbers
-node --version
-npm --version
-```
-
-Install or upgrade Apify CLI by running:
-
-```bash
-npm install -g apify-cli
-```
-
-:::tip Troubleshooting
-
-If you receive a permission error, read npm's [official guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) on installing packages globally.
-
-:::
-
-### Verify installation
-
-You can verify the installation process by running the following command:
-
-```bash
-apify --version
-```
-
-The output should resemble the following (exact details like version or platform may vary):
-
-```bash
-apify-cli/1.0.1 (0dfcfd8) running on darwin-arm64 with bun-1.2.19 (emulating node 24.3.0), installed via bundle
-```
-
-## Step 2: Create your Actor
+## Step 1: Create your Actor
 
 Run the following command in your terminal. It will guide you step by step through the creation process.
 
@@ -81,7 +23,7 @@ The Apify CLI will prompt you to choose a template. Browse the [full list of tem
 
 :::
 
-## Step 3: Run your Actor
+## Step 2: Run your Actor
 
 Once the Actor is initialized, you can run it:
 
@@ -99,7 +41,7 @@ Extracted heading { level: 'h3', text: 'Google Maps Scraper' }
 Extracted heading { level: 'h3', text: 'Instagram Scraper' }
 ```
 
-### Step 4: Push your Actor
+## Step 3: Push your Actor
 
 Once you are ready, you can push your Actor to the Apify Console, where you can schedule runs, or make the Actor public for other developers.
 
@@ -127,7 +69,7 @@ The interactive prompt will guide you through either option.
 apify push
 ```
 
-## Step 5: Call your Actor (optional)
+## Step 4: Call your Actor (optional)
 
 You can run your Actor on the Apify platform. In the following example, the command runs `apify/hello-world` on the Apify platform.
 
@@ -139,4 +81,4 @@ apify call apify/hello-world
 
 - Check the [command reference](./reference.md) for more information about individual commands.
 - If you have a problem with the Apify CLI, check the [troubleshooting](./troubleshooting.md) guide.
-- Learn more about [Actors](/platform/actors).
+- Learn more about [Actors](https://docs.apify.com/platform/actors).
