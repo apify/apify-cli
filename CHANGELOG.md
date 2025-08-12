@@ -12,6 +12,7 @@ All notable changes to this project will be documented in this file.
 - [**breaking**] Make storage purging default, add `--resurrect` ([#729](https://github.com/apify/apify-cli/pull/729)) ([8dff93a](https://github.com/apify/apify-cli/commit/8dff93a2d769997a96d4a7750fb36c2770b9a61c)) by [@vladfrangu](https://github.com/vladfrangu), closes [#590](https://github.com/apify/apify-cli/issues/590)
 - Handle sub-schema validation ([#853](https://github.com/apify/apify-cli/pull/853)) ([5fc2a2f](https://github.com/apify/apify-cli/commit/5fc2a2f6b780a86a250b69375455f3bb2e9a8983)) by [@MFori](https://github.com/MFori)
 - Upgrade command upgrading CLI + install command ([#856](https://github.com/apify/apify-cli/pull/856)) ([4252e6c](https://github.com/apify/apify-cli/commit/4252e6cb681deb5f92c654520d0ed03b70e426c3)) by [@vladfrangu](https://github.com/vladfrangu)
+- Add signature to KV store URLs where required ([#875](https://github.com/apify/apify-cli/pull/875)) ([a1e9982](https://github.com/apify/apify-cli/commit/a1e998270b5c05cd91280efa144325e2d7a7de0e)) by [@danpoletaev](https://github.com/danpoletaev)
 
 ### 🐛 Bug Fixes
 
