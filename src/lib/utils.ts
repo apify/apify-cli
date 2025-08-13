@@ -2,6 +2,7 @@ import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, wr
 import { mkdir, readFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
+import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { finished } from 'node:stream/promises';
@@ -590,3 +591,11 @@ export function mapGroupBy<K, T>(items: Iterable<T>, keySelector: (item: T, inde
 export function printJsonToStdout(object: unknown) {
 	console.log(JSON.stringify(object, null, 2));
 }
+
+export const tildify = (path: string) => {
+	if (path.startsWith(homedir())) {
+		return path.replace(homedir(), '~');
+	}
+
+	return path;
+};

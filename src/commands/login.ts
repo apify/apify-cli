@@ -16,7 +16,7 @@ import { updateUserId } from '../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../lib/hooks/user-confirmations/useSelectFromList.js';
 import { error, info, success } from '../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClient } from '../lib/utils.js';
+import { getLocalUserInfo, getLoggedClient, tildify } from '../lib/utils.js';
 
 const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
 // const CONSOLE_BASE_URL = 'http://localhost:3000/settings/integrations';
@@ -49,7 +49,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 	static override name = 'login' as const;
 
 	static override description =
-		`Authenticates your Apify account and saves credentials to '${AUTH_FILE_PATH()}'.\n` +
+		`Authenticates your Apify account and saves credentials to '${tildify(AUTH_FILE_PATH())}'.\n` +
 		`All other commands use these stored credentials.\n\n` +
 		`Run 'apify logout' to remove authentication.`;
 
