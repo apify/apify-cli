@@ -86,7 +86,7 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 ```sh
 DESCRIPTION
-  Authenticates your Apify account and saves credentials to '/home/runner/.apify/auth.json'.
+  Authenticates your Apify account and saves credentials to '~/.apify/auth.json'.
   All other commands use these stored credentials.
 
   Run 'apify logout' to remove authentication.
@@ -104,7 +104,7 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Removes authentication by deleting your API token and account information from '/home/runner/.apify/auth.json'.
+  Removes authentication by deleting your API token and account information from '~/.apify/auth.json'.
   Run 'apify login' to authenticate again.
 
 USAGE
