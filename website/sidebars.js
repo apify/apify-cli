@@ -3,7 +3,7 @@ module.exports = [
         {
             type: 'doc',
             id: 'index',
-            label: 'Apify CLI',
+            label: 'Overview',
         },
         {
             type: 'doc',
@@ -12,8 +12,8 @@ module.exports = [
         },
         {
             type: 'doc',
-            id: 'vars',
-            label: 'Environment variables',
+            id: 'quick-start',
+            label: 'Quick Start',
         },
         {
             type: 'doc',
@@ -22,8 +22,19 @@ module.exports = [
         },
         {
             type: 'doc',
-            id: 'integrating-scrapy',
-            label: 'Integrating Scrapy',
+            id: 'vars',
+            label: 'Environment variables',
+        },
+        {
+            type: 'category',
+            label: 'Use Cases',
+            items: [
+                {
+                    type: 'doc',
+                    id: 'integrating-scrapy',
+                    label: 'Integrating Scrapy',
+                },
+            ],
         },
         {
             type: 'doc',

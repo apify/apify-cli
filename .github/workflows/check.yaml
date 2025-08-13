@@ -25,7 +25,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v4
@@ -59,7 +59,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v4
@@ -105,7 +105,7 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - name: Use Node.js ${{ matrix.node-version }}
               uses: actions/setup-node@v4
@@ -147,7 +147,7 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v4
@@ -197,7 +197,7 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v4
@@ -240,7 +240,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v4
@@ -287,7 +287,7 @@ jobs:
         runs-on: ${{ matrix.os }}
 
         steps:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v5
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v4

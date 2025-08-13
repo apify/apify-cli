@@ -1,5 +1,5 @@
 ---
-sidebar_label: Environment variables
+description: Learn how use environment variables for Apify CLI
 title: Environment variables
 ---
 
@@ -58,20 +58,3 @@ After adding a new secret you can use the secret in `.actor/actor.json`.
     ...
 }
 ```
-
-### Need help?
-
-To see all CLI commands simply run:
-
-```bash
-apify help
-```
-
-To get information about a specific command run:
-
-```bash
-apify help COMMAND
-```
-
-Still haven't found what you were looking for? Please go to [Apify Help center](https://www.apify.com/help)
-or [contact us](https://www.apify.com/contact).

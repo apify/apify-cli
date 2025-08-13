@@ -1,5 +1,5 @@
 ---
-title: Apify CLI
+title: Overview
 ---
 
 Apify command-line interface (Apify CLI) helps you create, develop, build and run
@@ -14,6 +14,10 @@ using <a href="https://github.com/apify/apify-sdk-js">Apify SDK</a>
 and only push the Actors to the Apify cloud during deployment.
 This is where the Apify CLI comes in.
 
-Note that Actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
+:::note Run Actors in Docker
+
+Actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
 you can build your Actors in any programming language.
-However, we recommend using JavaScript / Node.js, for which we provide most libraries and support.
+However, we recommend using JavaScript/Node.js and Python, for which we provide most libraries and support.
+
+:::
