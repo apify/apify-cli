@@ -21,6 +21,20 @@ However, we recommend using JavaScript / Node.js, for which we provide most libr
 
 ## Installation
 
+### Via bundles
+
+#### MacOS / Unix
+
+```bash
+curl -fsSL https://apify.com/install-cli.sh | bash
+```
+
+#### Windows
+
+```powershell
+irm https://apify.com/install-cli.ps1 | iex
+```
+
 ### Via Homebrew
 
 On macOS (or Linux), you can install the Apify CLI via the [Homebrew package manager](https://brew.sh).
@@ -31,7 +45,7 @@ brew install apify-cli
 
 ### Via NPM
 
-First, make sure you have [Node.js](https://nodejs.org) version 16 or higher with NPM installed on your computer:
+First, make sure you have [Node.js](https://nodejs.org) version 22 or higher with NPM installed on your computer:
 
 ```bash
 node --version
@@ -41,33 +55,21 @@ npm --version
 Install or upgrade Apify CLI by running:
 
 ```bash
-npm -g install apify-cli
+npm install -g apify-cli
 ```
 
-If you receive an `EACCES` error, you might need to run the command as root:
+Alternatively, you can use [fnm (Fast Node Manager)](https://github.com/Schniz/fnm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
 
 ```bash
-sudo npm -g install apify-cli
-```
-
-Alternatively, you can use [Node Version Manager (nvm)](https://github.com/nvm-sh/nvm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
-
-```
-nvm install 16
-nvm use 16
-npm -g install apify-cli
+fnm install 22
+fnm use 22
+npm install -g apify-cli
 ```
 
 Finally, verify that Apify CLI was installed correctly by running:
 
 ```bash
 apify --version
-```
-
-which should print something like:
-
-```
-apify-cli/0.10.0 darwin-x64 node-v16.14.2
 ```
 
 > You can also skip the manual global installation altogether and use `npx apify-cli` with all the following commands instead.
@@ -114,7 +116,7 @@ You can find more information about by running `apify help run`.
 
 ### Create a new Actor from Scrapy project
 
-If you want to run a Scrapy project on Apify platform, follow the Scrapy integration guide [here](https://docs.apify.com/cli/docs/integrating-scrapy).
+If you want to run a Scrapy project on Apify platform, follow the [Scrapy integration guide](https://docs.apify.com/cli/docs/integrating-scrapy).
 
 ### Run the Actor locally
 
@@ -278,4 +280,4 @@ or [contact us](https://www.apify.com/contact).
 
 ## Command reference
 
-This section contains printouts of `apify help` for all commands.
+See a list of all our commands on the [reference page](https://docs.apify.com/cli/docs/reference)

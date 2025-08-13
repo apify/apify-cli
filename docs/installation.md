@@ -65,3 +65,11 @@ The output should resemble the following (exact details like version or platform
 ```bash
 apify-cli/1.0.1 (0dfcfd8) running on darwin-arm64 with bun-1.2.19 (emulating node 24.3.0), installed via bundle
 ```
+
+## Upgrading
+
+Upgrading Apify CLI is as simple as running the following command:
+
+```bash
+apify upgrade
+```
