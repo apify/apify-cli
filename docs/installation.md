@@ -33,7 +33,7 @@ brew install apify-cli
 
 ### NPM
 
-First, make sure you have [Node.js](https://nodejs.org) version 20 or higher with NPM installed on your computer:
+First, make sure you have [Node.js](https://nodejs.org) version 22 or higher with NPM installed on your computer:
 
 ```bash showLineNumbers
 node --version

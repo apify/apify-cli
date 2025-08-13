@@ -6,23 +6,9 @@ sidebar_label: Integrating Scrapy projects
 
 [Scrapy](https://scrapy.org/) is a widely used open-source web scraping framework for Python. Scrapy projects can now be executed on the Apify platform using our dedicated wrapping tool. This tool allows users to transform their Scrapy projects into [Apify Actors](https://docs.apify.com/platform/actors) with just a few simple commands.
 
-## Getting started
+## Prerequisites
 
-### Install Apify CLI
-
-To run the migration tool, you need to have the Apify CLI installed. You can install it using Homebrew with the following command:
-
-```bash
-brew install apify-cli
-```
-
-Alternatively, you can install it using NPM with the following command:
-
-```bash
-npm i -g apify-cli
-```
-
-In case of any issues, please refer to the [installation guide](./quick-start.md).
+Before you begin, make sure you have the Apify CLI installed on your system. If you haven't installed it yet, follow the [installation guide](./installation.md).
 
 ## Actorization of your existing Scrapy spider
 
