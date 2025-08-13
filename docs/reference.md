@@ -14,7 +14,65 @@ The general commands provide basic functionality for getting help and informatio
 
 <!-- prettier-ignore-start -->
 <!-- general-commands-start -->
+##### `apify help`
 
+```sh
+DESCRIPTION
+  Prints out help about a command, or all available commands.
+
+USAGE
+  $ apify help [commandString]
+
+ARGUMENTS
+  commandString  The command to get help for.
+```
+
+##### `apify upgrade`
+
+```sh
+DESCRIPTION
+  Checks that installed Apify CLI version is up to date.
+
+USAGE
+  $ apify upgrade [-f] [--version <value>]
+
+FLAGS
+  -f, --force            Whether to skip checking the locally cached latest version of the CLI and fetch it from the internet
+                         instead.
+      --version=<value>  The version of the CLI to upgrade to. If not provided, the latest version will be used.
+```
+
+##### `apify telemetry`
+
+```sh
+DESCRIPTION
+  Manages telemetry settings. We use this data to improve the CLI and the Apify platform.
+  Read more: https://docs.apify.com/cli/docs/telemetry
+
+SUBCOMMANDS
+  telemetry enable   Enables telemetry.
+  telemetry disable  Disables telemetry.
+```
+
+##### `apify telemetry enable`
+
+```sh
+DESCRIPTION
+  Enables telemetry.
+
+USAGE
+  $ apify enable
+```
+
+##### `apify telemetry disable`
+
+```sh
+DESCRIPTION
+  Disables telemetry.
+
+USAGE
+  $ apify disable
+```
 <!-- general-commands-end -->
 <!-- prettier-ignore-end -->
 
@@ -28,7 +86,7 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 ```sh
 DESCRIPTION
-  Authenticates your Apify account and saves credentials to '~/.apify'.
+  Authenticates your Apify account and saves credentials to '/home/runner/.apify/auth.json'.
   All other commands use these stored credentials.
 
   Run 'apify logout' to remove authentication.
@@ -46,7 +104,7 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Removes authentication by deleting your API token and account information from '~/.apify'.
+  Removes authentication by deleting your API token and account information from '/home/runner/.apify/auth.json'.
   Run 'apify login' to authenticate again.
 
 USAGE
@@ -132,18 +190,17 @@ DESCRIPTION
   Creates an Actor project from a template in a new directory.
 
 USAGE
-  $ apify create [actorName] [--omit-optional-deps] [--skip-dependency-install] [-t <value>] [--template-archive-url <value>]
+  $ apify create [actorName] [--omit-optional-deps] [--skip-dependency-install] [-t <value>]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory
 
 FLAGS
-      --omit-optional-deps            Skip installing optional dependencies.
-      --skip-dependency-install       Skip installing Actor dependencies.
-  -t, --template=<value>              Template for the Actor. If not provided, the command will prompt for it.
-                                      Visit https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json to find available
-                                      template names.
-      --template-archive-url=<value>  Actor template archive url. Useful for developing new templates.
+      --omit-optional-deps       Skip installing optional dependencies.
+      --skip-dependency-install  Skip installing Actor dependencies.
+  -t, --template=<value>         Template for the Actor. If not provided, the command will prompt for it.
+                                 Visit https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json to find available template
+                                 names.
 ```
 
 ##### `apify init`
@@ -405,7 +462,7 @@ DESCRIPTION
   Use --force to override newer remote versions.
 
 USAGE
-  $ apify push [actorId] [-b <value>] [--dir <value>] [--force] [--no-prompt] [-v <value>] [-w <value>]
+  $ apify push [actorId] [-b <value>] [--dir <value>] [--force] [--open] [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command will create or
@@ -416,8 +473,7 @@ FLAGS
                                  '.actor/actor.json' file
       --dir=<value>              Directory where the Actor is located
       --force                    Push an Actor even when the local files are older than the Actor on the platform.
-      --no-prompt                Do not prompt for opening the Actor details in a browser. This will also not open the browser
-                                 automatically.
+      --open                     Whether to open the browser automatically to the Actor details page.
   -v, --version=<value>          Actor version number to which the files should be pushed. By default, it is taken from the
                                  '.actor/actor.json' file.
   -w, --wait-for-finish=<value>  Seconds for waiting to build to finish, if no value passed, it waits forever.
@@ -449,7 +505,7 @@ DESCRIPTION
   Reads input from local key-value store by default.
 
 USAGE
-  $ apify call [actorId] [-b <value>] [-i <value> | --input-file <value>] [--json] [-m <value>] [-o] [-s] [-t <value>]
+  $ apify call [actorId] [-b <value>] [-i <value> | -f <value>] [--json] [-m <value>] [-o] [-s] [-t <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "my-actor", "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the
@@ -458,8 +514,8 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>       Tag or number of the build to run (e.g. "latest" or "1.2.34").
   -i, --input=<value>       Optional JSON input to be given to the Actor.
-      --input-file=<value>  Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file.
-                            You can also specify `-` to read from standard input.
+  -f, --input-file=<value>  Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON
+                            file. You can also specify `-` to read from standard input.
       --json                Format the command output as JSON
   -m, --memory=<value>      Amount of memory allocated for the Actor run, in megabytes.
   -o, --output-dataset      Prints out the entire default dataset on successful run of the Actor.
