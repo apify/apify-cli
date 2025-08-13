@@ -21,6 +21,20 @@ However, we recommend using JavaScript / Node.js, for which we provide most libr
 
 ## Installation
 
+### Via bundles
+
+#### MacOS / Unix
+
+```bash
+curl -fsSL https://apify.com/install-cli.sh | bash
+```
+
+#### Windows
+
+```powershell
+irm https://apify.com/install-cli.ps1 | iex
+```
+
 ### Via Homebrew
 
 On macOS (or Linux), you can install the Apify CLI via the [Homebrew package manager](https://brew.sh).
@@ -41,7 +55,7 @@ npm --version
 Install or upgrade Apify CLI by running:
 
 ```bash
-npm -g install apify-cli
+npm install -g apify-cli
 ```
 
 Alternatively, you can use [fnm (Fast Node Manager)](https://github.com/Schniz/fnm) and install Apify CLI only into a selected user-level Node version without requiring root privileges:
@@ -49,7 +63,7 @@ Alternatively, you can use [fnm (Fast Node Manager)](https://github.com/Schniz/f
 ```bash
 fnm install 22
 fnm use 22
-npm -g install apify-cli
+npm install -g apify-cli
 ```
 
 Finally, verify that Apify CLI was installed correctly by running:
@@ -266,4 +280,4 @@ or [contact us](https://www.apify.com/contact).
 
 ## Command reference
 
-This section contains printouts of `apify help` for all commands.
+See a list of all our commands on the [reference page](https://docs.apify.com/cli/docs/reference)
