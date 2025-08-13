@@ -7,8 +7,8 @@ export const DEVELOPMENT_VERSION_MARKER = '0.0.0';
 export const DEVELOPMENT_HASH_MARKER = '0000000';
 
 // These values are replaced with the actual values when building the CLI
-const CLI_VERSION = '1.1.0';
-const CLI_HASH = '374b97ff683c806b2e630026d786333ab7842f2f';
+const CLI_VERSION = DEVELOPMENT_VERSION_MARKER;
+const CLI_HASH = DEVELOPMENT_HASH_MARKER;
 
 export type InstallMethod = 'npm' | 'pnpm' | 'homebrew' | 'volta' | 'bundle' | 'bun';
 
@@ -113,7 +113,7 @@ export function useCLIMetadata(): CLIMetadata {
 			return `apify-cli/${this.version} (${this.hash.slice(0, 7)}) running on ${this.platform}-${this.arch} with ${this.runtime.runtime}-${runtime.version}${this.extraRuntimeData ? ` ${this.extraRuntimeData}` : ''}, installed via ${this.installMethod}`;
 		},
 		get isBeta() {
-			return this.version.includes('beta') || this.version === '1.1.0';
+			return this.version.includes('beta') || this.version === DEVELOPMENT_VERSION_MARKER;
 		},
 	};
 

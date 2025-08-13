@@ -113,6 +113,10 @@ jobs:
             - name: Format
               run: yarn format:fix
 
+            - name: Ignore changes to useCLIMetadata.ts
+              run: |
+                  git update-index --assume-unchanged src/lib/hooks/useCLIMetadata.ts
+
             - name: Commit changes
               id: commit
               uses: EndBug/add-and-commit@v9
