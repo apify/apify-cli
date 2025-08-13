@@ -9,17 +9,10 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { info, simpleLog, success, warning } from '../../lib/outputs.js';
+import { tildify } from '../../lib/utils.js';
 import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
 
 const pathToInstallMarker = (installPath: string) => join(installPath, '.install-marker');
-
-const tildify = (path: string) => {
-	if (path.startsWith(process.env.HOME!)) {
-		return path.replace(process.env.HOME!, '~');
-	}
-
-	return path;
-};
 
 export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	static override name = 'install' as const;
