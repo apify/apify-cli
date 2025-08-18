@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ## 1.1.1 - **not yet released**
 
+### 🐛 Bug Fixes
+
+- Unknown errors from tracking ([#895](https://github.com/apify/apify-cli/pull/895)) ([3485f36](https://github.com/apify/apify-cli/commit/3485f366f3a62117ac833e78157c230206c3c60e)) by [@vladfrangu](https://github.com/vladfrangu), closes [#894](https://github.com/apify/apify-cli/issues/894)
+
 <!-- git-cliff-unreleased-end -->
 
 ## [1.1.0](https://github.com/apify/apify-cli/releases/tag/v1.1.0) (2025-08-13)
