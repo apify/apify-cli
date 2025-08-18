@@ -81,15 +81,19 @@ export async function trackEvent<Event extends keyof TrackEventMap>(event: Event
 		return;
 	}
 
-	const res = await fetch(SEGMENT_API_URL, {
-		method: 'POST',
-		body: JSON.stringify(segmentPayload),
-	});
+	try {
+		const res = await fetch(SEGMENT_API_URL, {
+			method: 'POST',
+			body: JSON.stringify(segmentPayload),
+		});
 
-	if (!res.ok) {
-		cliDebugPrint('trackEvent', 'failed to send event', await res.text());
-		return;
+		if (!res.ok) {
+			cliDebugPrint('trackEvent', 'failed to send event', await res.text());
+			return;
+		}
+
+		cliDebugPrint('trackEvent', 'event sent');
+	} catch (error) {
+		cliDebugPrint('trackEvent', 'failed to send event', error);
 	}
-
-	cliDebugPrint('trackEvent', 'event sent');
 }
