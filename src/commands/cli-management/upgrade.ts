@@ -48,10 +48,9 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	static override flags = {
 		force: Flags.boolean({
 			description:
-				'[DEPRECATED] Whether to skip checking the locally cached latest version of the CLI and fetch it from the internet instead.',
+				'[DEPRECATED] This flag is now ignored, as running the command manually will always check for the latest version.',
 			required: false,
 			char: 'f',
-			hidden: true,
 		}),
 		version: Flags.string({
 			description: 'The version of the CLI to upgrade to. If not provided, the latest version will be used.',
