@@ -2,16 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 1.1.1 - **not yet released**
+## [1.1.1](https://github.com/apify/apify-cli/releases/tag/v1.1.1) (2025-08-18)
 
 ### 🐛 Bug Fixes
 
 - Unknown errors from tracking ([#895](https://github.com/apify/apify-cli/pull/895)) ([3485f36](https://github.com/apify/apify-cli/commit/3485f366f3a62117ac833e78157c230206c3c60e)) by [@vladfrangu](https://github.com/vladfrangu), closes [#894](https://github.com/apify/apify-cli/issues/894)
 - Upgrade command should always check when manually ran ([#897](https://github.com/apify/apify-cli/pull/897)) ([5e0ea9f](https://github.com/apify/apify-cli/commit/5e0ea9ff84012732ca7117d1f68207b5170ffeed)) by [@vladfrangu](https://github.com/vladfrangu)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [1.1.0](https://github.com/apify/apify-cli/releases/tag/v1.1.0) (2025-08-13)
 
