@@ -198,11 +198,18 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	protected commandString: string;
 
+	protected aliasUsed: string;
+
+	protected subcommandAliasUsed?: string;
+
 	protected skipTelemetry = false;
 
-	public constructor(entrypoint: string, commandString: string) {
+	public constructor(entrypoint: string, commandString: string, aliasUsed: string, subcommandAliasUsed?: string) {
 		this.entrypoint = entrypoint;
 		this.commandString = commandString;
+
+		this.aliasUsed = aliasUsed;
+		this.subcommandAliasUsed = subcommandAliasUsed;
 
 		const metadata = useCLIMetadata();
 
@@ -866,7 +873,7 @@ export async function internalRunCommand<Cmd extends typeof BuiltApifyCommand>(
 		}
 	}
 
-	const instance = new (command as typeof BuiltApifyCommand)(entrypoint, command.name);
+	const instance = new (command as typeof BuiltApifyCommand)(entrypoint, command.name, command.name);
 
 	// eslint-disable-next-line dot-notation
 	instance['skipTelemetry'] = true;

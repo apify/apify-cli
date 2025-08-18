@@ -193,6 +193,8 @@ export async function runCLI(entrypoint: string) {
 	const instance = new FinalCommand(
 		entrypoint,
 		hasSubcommand ? `${baseCommand.name} ${maybeSubcommandName}` : baseCommand.name,
+		commandName,
+		hasSubcommand ? maybeSubcommandName : undefined,
 	);
 
 	// eslint-disable-next-line dot-notation
