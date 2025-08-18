@@ -2,6 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import chalk from 'chalk';
 
+import { apifyCommands } from '../../src/commands/_register.js';
 import {
 	registerCommandForHelpGeneration,
 	selectiveRenderHelpForCommand,
@@ -31,6 +32,10 @@ function fullCommandName(command: (typeof Commands)[keyof typeof Commands]) {
 chalk.level = 0;
 
 export async function renderDocs(categories: Record<string, CommandsInCategory[]>) {
+	for (const command of apifyCommands) {
+		registerCommandForHelpGeneration('apify', command);
+	}
+
 	// render description in code block, then usage, no short description after command header
 	let templateFile = await readFile(templateFilePath, 'utf8');
 
@@ -61,8 +66,6 @@ export async function renderDocs(categories: Record<string, CommandsInCategory[]
 			allCommands.delete(command);
 
 			const stringParts: string[] = [];
-
-			registerCommandForHelpGeneration('apify', command);
 
 			const commandHeaderParts = [fullCommandName(command)];
 

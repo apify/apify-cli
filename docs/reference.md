@@ -61,7 +61,7 @@ DESCRIPTION
   Enables telemetry.
 
 USAGE
-  $ apify enable
+  $ apify telemetry enable
 ```
 
 ##### `apify telemetry disable`
@@ -71,7 +71,7 @@ DESCRIPTION
   Disables telemetry.
 
 USAGE
-  $ apify disable
+  $ apify telemetry disable
 ```
 <!-- general-commands-end -->
 <!-- prettier-ignore-end -->
@@ -155,7 +155,7 @@ DESCRIPTION
   Adds a new secret to '~/.apify' for use in Actor environment variables.
 
 USAGE
-  $ apify add <name> <value>
+  $ apify secrets add <name> <value>
 
 ARGUMENTS
   name   Name of the secret
@@ -169,7 +169,7 @@ DESCRIPTION
   Permanently deletes a secret from your stored credentials.
 
 USAGE
-  $ apify rm <name>
+  $ apify secrets rm <name>
 
 ARGUMENTS
   name  Name of the secret
@@ -306,7 +306,7 @@ DESCRIPTION
   Prints a list of recently executed Actors or Actors you own.
 
 USAGE
-  $ apify ls [--desc] [--json] [--limit <value>] [--my] [--offset <value>]
+  $ apify actors ls [--desc] [--json] [--limit <value>] [--my] [--offset <value>]
 
 FLAGS
       --desc            Sort Actors in descending order.
@@ -323,7 +323,7 @@ DESCRIPTION
   Permanently removes an Actor from your account.
 
 USAGE
-  $ apify rm <actorId>
+  $ apify actors rm <actorId>
 
 ARGUMENTS
   actorId  The Actor ID to delete.
@@ -351,7 +351,7 @@ DESCRIPTION
   Charge for a specific event in the pay-per-event Actor run.
 
 USAGE
-  $ apify charge <eventName> [--count <value>] [--idempotency-key <value>] [--test-pay-per-event]
+  $ apify actor charge <eventName> [--count <value>] [--idempotency-key <value>] [--test-pay-per-event]
 
 ARGUMENTS
   eventName  Name of the event to charge for
@@ -369,7 +369,7 @@ DESCRIPTION
   Gets the Actor input value from the default key-value store associated with the Actor run.
 
 USAGE
-  $ apify get-input
+  $ apify actor get-input
 ```
 
 ##### `apify actor get-public-url`
@@ -379,7 +379,7 @@ DESCRIPTION
   Get an HTTP URL that allows public access to a key-value store item.
 
 USAGE
-  $ apify get-public-url <key>
+  $ apify actor get-public-url <key>
 
 ARGUMENTS
   key  Key of the record in key-value store
@@ -392,7 +392,7 @@ DESCRIPTION
   Gets a value from the default key-value store associated with the Actor run.
 
 USAGE
-  $ apify get-value <key>
+  $ apify actor get-value <key>
 
 ARGUMENTS
   key  Key of the record in key-value store
@@ -411,7 +411,7 @@ DESCRIPTION
     $ cat ./test.json | apify actor push-data
 
 USAGE
-  $ apify push-data [item]
+  $ apify actor push-data [item]
 
 ARGUMENTS
   item  JSON string with one object or array of objects containing data to be stored in the default dataset.
@@ -432,7 +432,7 @@ DESCRIPTION
   $ cat ./my-text-file.txt | apify actor set-value KEY --contentType text/plain
 
 USAGE
-  $ apify set-value <key> [value] [-c <value>]
+  $ apify actor set-value <key> [value] [-c <value>]
 
 ARGUMENTS
   key    Key of the record in key-value store.
@@ -462,7 +462,7 @@ DESCRIPTION
   Use --force to override newer remote versions.
 
 USAGE
-  $ apify push [actorId] [-b <value>] [--dir <value>] [--force] [--open] [-v <value>] [-w <value>]
+  $ apify actors push [actorId] [-b <value>] [--dir <value>] [--force] [--open] [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command will create or
@@ -486,7 +486,7 @@ DESCRIPTION
   Download Actor code to current directory. Clones Git repositories or fetches Actor files based on the source type.
 
 USAGE
-  $ apify pull [actorId] [--dir <value>] [-v <value>]
+  $ apify actors pull [actorId] [--dir <value>] [-v <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command will update the Actor
@@ -505,7 +505,7 @@ DESCRIPTION
   Reads input from local key-value store by default.
 
 USAGE
-  $ apify call [actorId] [-b <value>] [-i <value> | -f <value>] [--json] [-m <value>] [-o] [-s] [-t <value>]
+  $ apify actors call [actorId] [-b <value>] [-i <value> | -f <value>] [--json] [-m <value>] [-o] [-s] [-t <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "my-actor", "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the
@@ -531,7 +531,7 @@ DESCRIPTION
   Uses authenticated account and local key-value store for input.
 
 USAGE
-  $ apify start [actorId] [-b <value>] [-i <value> | --input-file <value>] [--json] [-m <value>] [-t <value>]
+  $ apify actors start [actorId] [-b <value>] [-i <value> | --input-file <value>] [--json] [-m <value>] [-t <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "my-actor", "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the
@@ -554,7 +554,7 @@ DESCRIPTION
   Get information about an Actor.
 
 USAGE
-  $ apify info <actorId> [--input | --readme] [--json]
+  $ apify actors info <actorId> [--input | --readme] [--json]
 
 ARGUMENTS
   actorId  The ID of the Actor to return information about.
@@ -594,7 +594,7 @@ DESCRIPTION
   Creates a new build of the Actor.
 
 USAGE
-  $ apify create [actorId] [--json] [--log] [--tag <value>] [--version <value>]
+  $ apify builds create [actorId] [--json] [--log] [--tag <value>] [--version <value>]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to trigger a build for. By default, it will use the Actor from the current directory.
@@ -614,7 +614,7 @@ DESCRIPTION
   Prints information about a specific build.
 
 USAGE
-  $ apify info <buildId> [--json]
+  $ apify builds info <buildId> [--json]
 
 ARGUMENTS
   buildId  The build ID to get information about.
@@ -630,7 +630,7 @@ DESCRIPTION
   Prints the log of a specific build.
 
 USAGE
-  $ apify log <buildId>
+  $ apify builds log <buildId>
 
 ARGUMENTS
   buildId  The build ID to get the log from.
@@ -643,7 +643,7 @@ DESCRIPTION
   Lists all builds of the Actor.
 
 USAGE
-  $ apify ls [actorId] [-c] [--desc] [--json] [--limit <value>] [--offset <value>]
+  $ apify builds ls [actorId] [-c] [--desc] [--json] [--limit <value>] [--offset <value>]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to list runs for. By default, it will use the Actor from the current directory.
@@ -663,7 +663,7 @@ DESCRIPTION
   Permanently removes an Actor build from the Apify platform.
 
 USAGE
-  $ apify rm <buildId>
+  $ apify builds rm <buildId>
 
 ARGUMENTS
   buildId  The build ID to delete.
@@ -699,7 +699,7 @@ DESCRIPTION
   Aborts an Actor run.
 
 USAGE
-  $ apify abort <runId> [-f] [--json]
+  $ apify runs abort <runId> [-f] [--json]
 
 ARGUMENTS
   runId  The run ID to abort.
@@ -716,7 +716,7 @@ DESCRIPTION
   Prints information about an Actor run.
 
 USAGE
-  $ apify info <runId> [--json] [-v]
+  $ apify runs info <runId> [--json] [-v]
 
 ARGUMENTS
   runId  The run ID to print information about.
@@ -733,7 +733,7 @@ DESCRIPTION
   Prints the log of a specific run.
 
 USAGE
-  $ apify log <runId>
+  $ apify runs log <runId>
 
 ARGUMENTS
   runId  The run ID to get the log from.
@@ -746,7 +746,7 @@ DESCRIPTION
   Lists all runs of the Actor.
 
 USAGE
-  $ apify ls [actorId] [-c] [--desc] [--json] [--limit <value>] [--offset <value>]
+  $ apify runs ls [actorId] [-c] [--desc] [--json] [--limit <value>] [--offset <value>]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to list runs for. By default, it will use the Actor from the current directory.
@@ -766,7 +766,7 @@ DESCRIPTION
   Resurrects an aborted or finished Actor Run.
 
 USAGE
-  $ apify resurrect <runId> [--json]
+  $ apify runs resurrect <runId> [--json]
 
 ARGUMENTS
   runId  The run ID to resurrect.
@@ -782,7 +782,7 @@ DESCRIPTION
   Deletes an Actor Run.
 
 USAGE
-  $ apify rm <runId>
+  $ apify runs rm <runId>
 
 ARGUMENTS
   runId  The run ID to delete.
@@ -823,7 +823,7 @@ DESCRIPTION
   Creates a new dataset for storing structured data on your account.
 
 USAGE
-  $ apify create [datasetName] [--json]
+  $ apify datasets create [datasetName] [--json]
 
 ARGUMENTS
   datasetName  Optional name for the Dataset
@@ -839,7 +839,7 @@ DESCRIPTION
   Retrieves dataset items in specified format (JSON, CSV, etc).
 
 USAGE
-  $ apify get-items <datasetId> [--format json|jsonl|csv|html|rss|xml|xlsx] [--limit <value>] [--offset <value>]
+  $ apify datasets get-items <datasetId> [--format json|jsonl|csv|html|rss|xml|xlsx] [--limit <value>] [--offset <value>]
 
 ARGUMENTS
   datasetId  The ID of the Dataset to export the items for
@@ -858,7 +858,7 @@ DESCRIPTION
   Prints information about a specific dataset.
 
 USAGE
-  $ apify info <storeId> [--json]
+  $ apify datasets info <storeId> [--json]
 
 ARGUMENTS
   storeId  The dataset store ID to print information about.
@@ -874,7 +874,7 @@ DESCRIPTION
   Prints all datasets on your account.
 
 USAGE
-  $ apify ls [--desc] [--json] [--limit <value>] [--offset <value>] [--unnamed]
+  $ apify datasets ls [--desc] [--json] [--limit <value>] [--offset <value>] [--unnamed]
 
 FLAGS
       --desc            Sorts datasets in descending order.
@@ -891,7 +891,7 @@ DESCRIPTION
   Adds data items to specified dataset. Accepts single object or array of objects.
 
 USAGE
-  $ apify push-items <nameOrId> [item]
+  $ apify datasets push-items <nameOrId> [item]
 
 ARGUMENTS
   nameOrId  The dataset ID or name to push the objects to
@@ -905,7 +905,7 @@ DESCRIPTION
   Change dataset name or removes name with --unname flag.
 
 USAGE
-  $ apify rename <nameOrId> [newName] [--unname]
+  $ apify datasets rename <nameOrId> [newName] [--unname]
 
 ARGUMENTS
   nameOrId  The dataset ID or name to delete.
@@ -922,7 +922,7 @@ DESCRIPTION
   Permanently removes a dataset.
 
 USAGE
-  $ apify rm <datasetNameOrId>
+  $ apify datasets rm <datasetNameOrId>
 
 ARGUMENTS
   datasetNameOrId  The dataset ID or name to delete
@@ -963,7 +963,7 @@ DESCRIPTION
   Creates a new key-value store on your account.
 
 USAGE
-  $ apify create [key-value store name] [--json]
+  $ apify key-value-stores create [key-value store name] [--json]
 
 ARGUMENTS
   key-value store name  Optional name for the key-value store
@@ -979,7 +979,7 @@ DESCRIPTION
   Delete a value from a key-value store.
 
 USAGE
-  $ apify delete-value <store id> <itemKey>
+  $ apify key-value-stores delete-value <store id> <itemKey>
 
 ARGUMENTS
   store id  The key-value store ID to delete the value from.
@@ -993,7 +993,7 @@ DESCRIPTION
   Retrieves stored value for specified key. Use --only-content-type to check MIME type.
 
 USAGE
-  $ apify get-value <keyValueStoreId> <itemKey> [--only-content-type]
+  $ apify key-value-stores get-value <keyValueStoreId> <itemKey> [--only-content-type]
 
 ARGUMENTS
   keyValueStoreId  The key-value store ID to get the value from.
@@ -1010,7 +1010,7 @@ DESCRIPTION
   Shows information about a key-value store.
 
 USAGE
-  $ apify info <storeId> [--json]
+  $ apify key-value-stores info <storeId> [--json]
 
 ARGUMENTS
   storeId  The key-value store ID to print information about.
@@ -1026,7 +1026,7 @@ DESCRIPTION
   Lists all keys in a key-value store.
 
 USAGE
-  $ apify keys <storeId> [--exclusive-start-key <value>] [--json] [--limit <value>]
+  $ apify key-value-stores keys <storeId> [--exclusive-start-key <value>] [--json] [--limit <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to list keys for.
@@ -1044,7 +1044,7 @@ DESCRIPTION
   Lists all key-value stores on your account.
 
 USAGE
-  $ apify ls [--desc] [--json] [--limit <value>] [--offset <value>] [--unnamed]
+  $ apify key-value-stores ls [--desc] [--json] [--limit <value>] [--offset <value>] [--unnamed]
 
 FLAGS
       --desc            Sorts key-value stores in descending order.
@@ -1061,7 +1061,7 @@ DESCRIPTION
   Renames a key-value store, or removes its unique name.
 
 USAGE
-  $ apify rename <keyValueStoreNameOrId> [newName] [--unname]
+  $ apify key-value-stores rename <keyValueStoreNameOrId> [newName] [--unname]
 
 ARGUMENTS
   keyValueStoreNameOrId  The key-value store ID or name to delete
@@ -1078,7 +1078,7 @@ DESCRIPTION
   Permanently removes a key-value store.
 
 USAGE
-  $ apify rm <keyValueStoreNameOrId>
+  $ apify key-value-stores rm <keyValueStoreNameOrId>
 
 ARGUMENTS
   keyValueStoreNameOrId  The key-value store ID or name to delete
@@ -1091,7 +1091,7 @@ DESCRIPTION
   Stores value with specified key. Set content-type with --content-type flag.
 
 USAGE
-  $ apify set-value <storeId> <itemKey> [value] [--content-type <value>]
+  $ apify key-value-stores set-value <storeId> <itemKey> [value] [--content-type <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to set the value in.
@@ -1146,7 +1146,7 @@ DESCRIPTION
   Customize with --memory and --timeout flags.
 
 USAGE
-  $ apify run <taskId> [-b <value>] [-m <value>] [-t <value>]
+  $ apify task run <taskId> [-b <value>] [-m <value>] [-t <value>]
 
 ARGUMENTS
   taskId  Name or ID of the Task to run (e.g. "my-task" or "E2jjCZBezvAZnX8Rb").
