@@ -27,7 +27,7 @@ const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: strin
 };
 
 // TODO: update this once we bump the CLI version and release it with this command available
-const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '0.21.8';
+const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '1.0.1';
 
 /**
  * The link to the upgrade script needed for windows when upgrading CLI bundles (as a fallback for when the script is missing)
@@ -48,9 +48,10 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	static override flags = {
 		force: Flags.boolean({
 			description:
-				'Whether to skip checking the locally cached latest version of the CLI and fetch it from the internet instead.',
+				'[DEPRECATED] Whether to skip checking the locally cached latest version of the CLI and fetch it from the internet instead.',
 			required: false,
 			char: 'f',
+			hidden: true,
 		}),
 		version: Flags.string({
 			description: 'The version of the CLI to upgrade to. If not provided, the latest version will be used.',
@@ -73,7 +74,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			return;
 		}
 
-		const result = await useCLIVersionCheck(this.flags.force);
+		const result = await useCLIVersionCheck(!this.flags.internalAutomaticCall);
 		const { installMethod } = useCLIMetadata();
 
 		if (!result.shouldUpdate || result.currentVersion === DEVELOPMENT_VERSION_MARKER) {
