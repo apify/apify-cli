@@ -37,8 +37,8 @@ USAGE
   $ apify upgrade [-f] [--version <value>]
 
 FLAGS
-  -f, --force            Whether to skip checking the locally cached latest version of the CLI and fetch it from the internet
-                         instead.
+  -f, --force            [DEPRECATED] This flag is now ignored, as running the command manually will always check for the latest
+                         version.
       --version=<value>  The version of the CLI to upgrade to. If not provided, the latest version will be used.
 ```
 
