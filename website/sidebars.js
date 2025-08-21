@@ -13,7 +13,7 @@ module.exports = [
         {
             type: 'doc',
             id: 'quick-start',
-            label: 'Quick Start',
+            label: 'Quick start',
         },
         {
             type: 'doc',
@@ -27,7 +27,7 @@ module.exports = [
         },
         {
             type: 'category',
-            label: 'Use Cases',
+            label: 'Use cases',
             items: [
                 {
                     type: 'doc',

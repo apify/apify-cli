@@ -1,5 +1,5 @@
 ---
-title: Quick Start
+title: Quick start
 description: Learn how to create, run, and manage Actors using Apify CLI.
 ---
 
