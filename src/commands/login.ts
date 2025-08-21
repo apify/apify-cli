@@ -56,12 +56,12 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 	static override flags = {
 		token: Flags.string({
 			char: 't',
-			description: '[Optional] Apify API token',
+			description: 'Apify API token',
 			required: false,
 		}),
 		method: Flags.string({
 			char: 'm',
-			description: '[Optional] Method of logging in to Apify',
+			description: 'Method of logging in to Apify',
 			choices: ['console', 'manual'],
 			required: false,
 		}),

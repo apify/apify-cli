@@ -37,16 +37,19 @@ USAGE
   $ apify upgrade [-f] [--version <value>]
 
 FLAGS
-  -f, --force            [DEPRECATED] This flag is now ignored, as running the command manually will always check for the latest
-                         version.
-      --version=<value>  The version of the CLI to upgrade to. If not provided, the latest version will be used.
+  -f, --force            [DEPRECATED] This flag is now
+                         ignored, as running the command manually will always check
+                         for the latest version.
+      --version=<value>  The version of the CLI to upgrade to. If
+                         not provided, the latest version will be used.
 ```
 
 ##### `apify telemetry`
 
 ```sh
 DESCRIPTION
-  Manages telemetry settings. We use this data to improve the CLI and the Apify platform.
+  Manages telemetry settings. We use this data to improve the CLI and the Apify 
+  platform.
   Read more: https://docs.apify.com/cli/docs/telemetry
 
 SUBCOMMANDS
@@ -86,7 +89,8 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 ```sh
 DESCRIPTION
-  Authenticates your Apify account and saves credentials to '~/.apify/auth.json'.
+  Authenticates your Apify account and saves credentials to 
+  '~/.apify/auth.json'.
   All other commands use these stored credentials.
 
   Run 'apify logout' to remove authentication.
@@ -95,16 +99,17 @@ USAGE
   $ apify login [-m console|manual] [-t <value>]
 
 FLAGS
-  -m, --method=<option>  [Optional] Method of logging in to Apify
+  -m, --method=<option>  Method of logging in to Apify
                          <options: console|manual>
-  -t, --token=<value>    [Optional] Apify API token
+  -t, --token=<value>    Apify API token
 ```
 
 ##### `apify logout`
 
 ```sh
 DESCRIPTION
-  Removes authentication by deleting your API token and account information from '~/.apify/auth.json'.
+  Removes authentication by deleting your API token and account information from
+   '~/.apify/auth.json'.
   Run 'apify login' to authenticate again.
 
 USAGE
@@ -130,8 +135,8 @@ DESCRIPTION
   Example:
   $ apify secrets add mySecret TopSecretValue123
 
-  The "mySecret" value can be used in an environment variable defined in '.actor/actor.json' file by adding the "@"
-  prefix:
+  The "mySecret" value can be used in an environment variable defined in 
+  '.actor/actor.json' file by adding the "@" prefix:
 
   {
     "actorSpecification": 1,
@@ -140,12 +145,14 @@ DESCRIPTION
     "version": "0.1"
   }
 
-  When the Actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable
-  of the Actor.
+  When the Actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is
+   stored as a secret environment variable of the Actor.
 
 SUBCOMMANDS
-  secrets add  Adds a new secret to '~/.apify' for use in Actor environment variables.
-  secrets rm   Permanently deletes a secret from your stored credentials.
+  secrets add  Adds a new secret to '~/.apify' for use in Actor
+               environment variables.
+  secrets rm   Permanently deletes a secret from your stored
+               credentials.
 ```
 
 ##### `apify secrets add`
@@ -190,27 +197,35 @@ DESCRIPTION
   Creates an Actor project from a template in a new directory.
 
 USAGE
-  $ apify create [actorName] [--omit-optional-deps] [--skip-dependency-install] [-t <value>]
+  $ apify create [actorName] [--omit-optional-deps]
+                 [--skip-dependency-install] [-t <value>]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory
 
 FLAGS
-      --omit-optional-deps       Skip installing optional dependencies.
-      --skip-dependency-install  Skip installing Actor dependencies.
-  -t, --template=<value>         Template for the Actor. If not provided, the command will prompt for it.
-                                 Visit https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json to find available template
-                                 names.
+      --omit-optional-deps       Skip installing optional
+                                 dependencies.
+      --skip-dependency-install  Skip installing Actor
+                                 dependencies.
+  -t, --template=<value>         Template for the
+                                 Actor. If not provided, the command will prompt for
+                                 it. Visit
+                                 https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json
+                                 to find available template names.
 ```
 
 ##### `apify init`
 
 ```sh
 DESCRIPTION
-  Sets up an Actor project in your current directory by creating actor.json and storage files.
-  If the directory contains a Scrapy project in Python, the command automatically creates wrappers so that you can run your scrapers without changes.
-  Creates the '.actor/actor.json' file and the 'storage' directory in the current directory, but does not touch any other existing files or 
-  directories.
+  Sets up an Actor project in your current directory by creating actor.json and 
+  storage files.
+  If the directory contains a Scrapy project in Python, the command 
+  automatically creates wrappers so that you can run your scrapers without 
+  changes.
+  Creates the '.actor/actor.json' file and the 'storage' directory in the 
+  current directory, but does not touch any other existing files or directories.
 
   WARNING: Overwrites existing 'storage' directory.
 
@@ -218,10 +233,12 @@ USAGE
   $ apify init [actorName] [-y]
 
 ARGUMENTS
-  actorName  Name of the Actor. If not provided, you will be prompted for it.
+  actorName  Name of the Actor. If not provided, you will be prompted
+             for it.
 
 FLAGS
-  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all prompts. Note that in some cases, the command may still ask for
+  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
+             prompts. Note that in some cases, the command may still ask for
              confirmation.
 ```
 
@@ -232,23 +249,35 @@ DESCRIPTION
   Executes Actor locally with simulated Apify environment variables.
   Stores data in local 'storage' directory.
 
-  NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.
+  NOTE: For Node.js Actors, customize behavior by modifying the 'start' script 
+  in package.json file.
 
 USAGE
-  $ apify run [--entrypoint <value>] [-i <value> | --input-file <value>] [-p | --resurrect]
+  $ apify run [--entrypoint <value>]
+              [-i <value> | --input-file <value>] [-p | --resurrect]
 
 FLAGS
-      --entrypoint=<value>  Optional entrypoint for running with injected environment variables.
+      --entrypoint=<value>  Optional entrypoint for running
+                            with injected environment variables.
                             For Python, it is the module name, or a path to a file.
-                            For Node.js, it is the npm script name, or a path to a JS/MJS file. You can also pass in a directory name, provided that
-                            directory contains an "index.js" file.
-  -i, --input=<value>       Optional JSON input to be given to the Actor.
-      --input-file=<value>  Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file.
-                            You can also specify `-` to read from standard input.
-  -p, --purge               Whether to purge the default request queue, dataset and key-value store before the run starts.
-                            For crawlee projects, this is the default behavior, and the flag is optional.
+                            For Node.js, it is the npm script name, or a path to a
+                            JS/MJS file. You can also pass in a directory name,
+                            provided that directory contains an "index.js" file.
+  -i, --input=<value>       Optional JSON input to be
+                            given to the Actor.
+      --input-file=<value>  Optional path to a file with JSON
+                            input to be given to the Actor. The file must be a valid
+                            JSON file. You can also specify `-` to read from
+                            standard input.
+  -p, --purge               Whether to purge the default
+                            request queue, dataset and key-value store before the
+                            run starts.
+                            For crawlee projects, this is the default behavior, and
+                            the flag is optional.
                             Use `--no-purge` to keep the storage folder intact.
-      --resurrect           Whether to keep the default request queue, dataset and key-value store before the run starts.
+      --resurrect           Whether to keep the default
+                            request queue, dataset and key-value store before the
+                            run starts.
 ```
 
 ##### `apify validate-schema`
@@ -256,18 +285,19 @@ FLAGS
 ```sh
 DESCRIPTION
   Validates Actor input schema from one of these locations (in priority order):
-  		1. Object in '.actor/actor.json' under "input" key
-  		2. JSON file path in '.actor/actor.json' "input" key
-  		3. .actor/INPUT_SCHEMA.json
-  		4. INPUT_SCHEMA.json
+    1. Object in '.actor/actor.json' under "input" key
+    2. JSON file path in '.actor/actor.json' "input" key
+    3. .actor/INPUT_SCHEMA.json
+    4. INPUT_SCHEMA.json
 
-  		Optionally specify custom schema path to validate.
+  Optionally specify custom schema path to validate.
 
 USAGE
   $ apify validate-schema [path]
 
 ARGUMENTS
-  path  Optional path to your INPUT_SCHEMA.json file. If not provided ./INPUT_SCHEMA.json is used.
+  path  Optional path to your INPUT_SCHEMA.json file. If not provided
+        ./INPUT_SCHEMA.json is used.
 ```
 <!-- actor-dev-commands-end -->
 <!-- prettier-ignore-end -->
@@ -289,13 +319,18 @@ DESCRIPTION
   Manages Actor creation, deployment, and execution on the Apify platform.
 
 SUBCOMMANDS
-  actors start  Starts Actor remotely and returns run details immediately.
+  actors start  Starts Actor remotely and returns run details
+                immediately.
   actors rm     Permanently removes an Actor from your account.
-  actors push   Deploys Actor to Apify platform using settings from '.actor/actor.json'.
-  actors pull   Download Actor code to current directory. Clones Git repositories or fetches Actor files based on the source type.
-  actors ls     Prints a list of recently executed Actors or Actors you own.
+  actors push   Deploys Actor to Apify platform using settings from
+                '.actor/actor.json'.
+  actors pull   Download Actor code to current directory. Clones Git
+                repositories or fetches Actor files based on the source type.
+  actors ls     Prints a list of recently executed Actors or Actors
+                you own.
   actors info   Get information about an Actor.
-  actors call   Executes Actor remotely using your authenticated account.
+  actors call   Executes Actor remotely using your authenticated
+                account.
   actors build  Creates a new build of the Actor.
 ```
 
@@ -306,13 +341,15 @@ DESCRIPTION
   Prints a list of recently executed Actors or Actors you own.
 
 USAGE
-  $ apify actors ls [--desc] [--json] [--limit <value>] [--my] [--offset <value>]
+  $ apify actors ls [--desc] [--json] [--limit <value>] [--my]
+                    [--offset <value>]
 
 FLAGS
       --desc            Sort Actors in descending order.
       --json            Format the command output as JSON
       --limit=<value>   Number of Actors that will be listed.
-      --my              Whether to list Actors made by the logged in user.
+      --my              Whether to list Actors made by the logged
+                        in user.
       --offset=<value>  Number of Actors that will be skipped.
 ```
 
@@ -336,12 +373,18 @@ DESCRIPTION
   Manages runtime data operations inside of a running Actor.
 
 SUBCOMMANDS
-  actor set-value       Sets or removes record into the default key-value store associated with the Actor run.
-  actor push-data       Saves data to Actor's run default dataset.
-  actor get-value       Gets a value from the default key-value store associated with the Actor run.
-  actor get-public-url  Get an HTTP URL that allows public access to a key-value store item.
-  actor get-input       Gets the Actor input value from the default key-value store associated with the Actor run.
-  actor charge          Charge for a specific event in the pay-per-event Actor run.
+  actor set-value       Sets or removes record into the
+                        default key-value store associated with the Actor run.
+  actor push-data       Saves data to Actor's run default
+                        dataset.
+  actor get-value       Gets a value from the default
+                        key-value store associated with the Actor run.
+  actor get-public-url  Get an HTTP URL that allows public
+                        access to a key-value store item.
+  actor get-input       Gets the Actor input value from the
+                        default key-value store associated with the Actor run.
+  actor charge          Charge for a specific event in the
+                        pay-per-event Actor run.
 ```
 
 ##### `apify actor charge`
@@ -351,22 +394,27 @@ DESCRIPTION
   Charge for a specific event in the pay-per-event Actor run.
 
 USAGE
-  $ apify actor charge <eventName> [--count <value>] [--idempotency-key <value>] [--test-pay-per-event]
+  $ apify actor charge <eventName> [--count <value>]
+                       [--idempotency-key <value>] [--test-pay-per-event]
 
 ARGUMENTS
   eventName  Name of the event to charge for
 
 FLAGS
-      --count=<value>            Number of events to charge
-      --idempotency-key=<value>  Idempotency key for the charge request
-      --test-pay-per-event       Test pay-per-event charging without actually charging
+      --count=<value>            Number of events to
+                                 charge
+      --idempotency-key=<value>  Idempotency key for the
+                                 charge request
+      --test-pay-per-event       Test pay-per-event
+                                 charging without actually charging
 ```
 
 ##### `apify actor get-input`
 
 ```sh
 DESCRIPTION
-  Gets the Actor input value from the default key-value store associated with the Actor run.
+  Gets the Actor input value from the default key-value store associated with 
+  the Actor run.
 
 USAGE
   $ apify actor get-input
@@ -414,14 +462,16 @@ USAGE
   $ apify actor push-data [item]
 
 ARGUMENTS
-  item  JSON string with one object or array of objects containing data to be stored in the default dataset.
+  item  JSON string with one object or array of objects containing data to
+        be stored in the default dataset.
 ```
 
 ##### `apify actor set-value`
 
 ```sh
 DESCRIPTION
-  Sets or removes record into the default key-value store associated with the Actor run.
+  Sets or removes record into the default key-value store associated with the 
+  Actor run.
 
   It is possible to pass data using argument or stdin.
 
@@ -438,11 +488,14 @@ ARGUMENTS
   key    Key of the record in key-value store.
   value  Record data, which can be one of the following values:
          - If empty, the record in the key-value store is deleted.
-         - If no `contentType` flag is specified, value is expected to be any JSON string value.
+         - If no `contentType` flag is specified, value is expected to be any JSON
+         string value.
          - If options.contentType is set, value is taken as is.
 
 FLAGS
-  -c, --content-type=<value>  Specifies a custom MIME content type of the record. By default "application/json" is used.
+  -c, --content-type=<value>  Specifies a custom MIME
+                              content type of the record. By default
+                              "application/json" is used.
 ```
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->
@@ -458,43 +511,59 @@ These commands handle the deployment workflow of Actors to Apify platform. Use t
 ```sh
 DESCRIPTION
   Deploys Actor to Apify platform using settings from '.actor/actor.json'.
-  Files under '3' MB upload as "Multiple source files"; larger projects upload as ZIP file.
+  Files under '3' MB upload as "Multiple source files"; larger projects upload 
+  as ZIP file.
   Use --force to override newer remote versions.
 
 USAGE
-  $ apify actors push [actorId] [-b <value>] [--dir <value>] [--force] [--open] [-v <value>] [-w <value>]
+  $ apify actors push [actorId] [-b <value>] [--dir <value>]
+                      [--force] [--open] [-v <value>] [-w <value>]
 
 ARGUMENTS
-  actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command will create or
+  actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
+           "E2jjCZBezvAZnX8Rb"). If not provided, the command will create or
            modify the Actor with the name specified in '.actor/actor.json' file.
 
 FLAGS
-  -b, --build-tag=<value>        Build tag to be applied to the successful Actor build. By default, it is taken from the
-                                 '.actor/actor.json' file
-      --dir=<value>              Directory where the Actor is located
-      --force                    Push an Actor even when the local files are older than the Actor on the platform.
-      --open                     Whether to open the browser automatically to the Actor details page.
-  -v, --version=<value>          Actor version number to which the files should be pushed. By default, it is taken from the
-                                 '.actor/actor.json' file.
-  -w, --wait-for-finish=<value>  Seconds for waiting to build to finish, if no value passed, it waits forever.
+  -b, --build-tag=<value>        Build tag to be
+                                 applied to the successful Actor build. By default,
+                                 it is taken from the '.actor/actor.json' file
+      --dir=<value>              Directory where the
+                                 Actor is located
+      --force                    Push an Actor even when
+                                 the local files are older than the Actor on the
+                                 platform.
+      --open                     Whether to open the
+                                 browser automatically to the Actor details page.
+  -v, --version=<value>          Actor version number
+                                 to which the files should be pushed. By default, it
+                                 is taken from the '.actor/actor.json' file.
+  -w, --wait-for-finish=<value>  Seconds for waiting
+                                 to build to finish, if no value passed, it waits
+                                 forever.
 ```
 
 ##### `apify actors pull` / `apify pull`
 
 ```sh
 DESCRIPTION
-  Download Actor code to current directory. Clones Git repositories or fetches Actor files based on the source type.
+  Download Actor code to current directory. Clones Git repositories or fetches 
+  Actor files based on the source type.
 
 USAGE
   $ apify actors pull [actorId] [--dir <value>] [-v <value>]
 
 ARGUMENTS
-  actorId  Name or ID of the Actor to run (e.g. "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command will update the Actor
-           in the current directory based on its name in ".actor/actor.json" file.
+  actorId  Name or ID of the Actor to run (e.g. "apify/hello-world" or
+           "E2jjCZBezvAZnX8Rb"). If not provided, the command will update the
+           Actor in the current directory based on its name in ".actor/actor.json"
+           file.
 
 FLAGS
-      --dir=<value>      Directory where the Actor should be pulled to
-  -v, --version=<value>  Actor version number which will be pulled, e.g. 1.2. Default: the highest version
+      --dir=<value>      Directory where the Actor should be
+                         pulled to
+  -v, --version=<value>  Actor version number which will be
+                         pulled, e.g. 1.2. Default: the highest version
 ```
 
 ##### `apify actors call` / `apify call`
@@ -505,22 +574,34 @@ DESCRIPTION
   Reads input from local key-value store by default.
 
 USAGE
-  $ apify actors call [actorId] [-b <value>] [-i <value> | -f <value>] [--json] [-m <value>] [-o] [-s] [-t <value>]
+  $ apify actors call [actorId] [-b <value>]
+                      [-i <value> | -f <value>] [--json] [-m <value>] [-o] [-s]
+                      [-t <value>]
 
 ARGUMENTS
-  actorId  Name or ID of the Actor to run (e.g. "my-actor", "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the
-           remote Actor specified in the '.actor/actor.json' file.
+  actorId  Name or ID of the Actor to run (e.g. "my-actor",
+           "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
+           command runs the remote Actor specified in the '.actor/actor.json'
+           file.
 
 FLAGS
-  -b, --build=<value>       Tag or number of the build to run (e.g. "latest" or "1.2.34").
-  -i, --input=<value>       Optional JSON input to be given to the Actor.
-  -f, --input-file=<value>  Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON
-                            file. You can also specify `-` to read from standard input.
+  -b, --build=<value>       Tag or number of the build to
+                            run (e.g. "latest" or "1.2.34").
+  -i, --input=<value>       Optional JSON input to be
+                            given to the Actor.
+  -f, --input-file=<value>  Optional path to a file with
+                            JSON input to be given to the Actor. The file must be a
+                            valid JSON file. You can also specify `-` to read from
+                            standard input.
       --json                Format the command output as JSON
-  -m, --memory=<value>      Amount of memory allocated for the Actor run, in megabytes.
-  -o, --output-dataset      Prints out the entire default dataset on successful run of the Actor.
-  -s, --silent              Prevents printing the logs of the Actor run to the console.
-  -t, --timeout=<value>     Timeout for the Actor run in seconds. Zero value means there is no timeout.
+  -m, --memory=<value>      Amount of memory allocated for
+                            the Actor run, in megabytes.
+  -o, --output-dataset      Prints out the entire default
+                            dataset on successful run of the Actor.
+  -s, --silent              Prevents printing the logs of
+                            the Actor run to the console.
+  -t, --timeout=<value>     Timeout for the Actor run in
+                            seconds. Zero value means there is no timeout.
 ```
 
 ##### `apify actors start`
@@ -531,20 +612,30 @@ DESCRIPTION
   Uses authenticated account and local key-value store for input.
 
 USAGE
-  $ apify actors start [actorId] [-b <value>] [-i <value> | --input-file <value>] [--json] [-m <value>] [-t <value>]
+  $ apify actors start [actorId] [-b <value>]
+                       [-i <value> | --input-file <value>] [--json] [-m <value>]
+                       [-t <value>]
 
 ARGUMENTS
-  actorId  Name or ID of the Actor to run (e.g. "my-actor", "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the command runs the
-           remote Actor specified in the '.actor/actor.json' file.
+  actorId  Name or ID of the Actor to run (e.g. "my-actor",
+           "apify/hello-world" or "E2jjCZBezvAZnX8Rb"). If not provided, the
+           command runs the remote Actor specified in the '.actor/actor.json'
+           file.
 
 FLAGS
-  -b, --build=<value>       Tag or number of the build to run (e.g. "latest" or "1.2.34").
-  -i, --input=<value>       Optional JSON input to be given to the Actor.
-      --input-file=<value>  Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file.
-                            You can also specify `-` to read from standard input.
+  -b, --build=<value>       Tag or number of the build to
+                            run (e.g. "latest" or "1.2.34").
+  -i, --input=<value>       Optional JSON input to be
+                            given to the Actor.
+      --input-file=<value>  Optional path to a file with JSON
+                            input to be given to the Actor. The file must be a valid
+                            JSON file. You can also specify `-` to read from
+                            standard input.
       --json                Format the command output as JSON
-  -m, --memory=<value>      Amount of memory allocated for the Actor run, in megabytes.
-  -t, --timeout=<value>     Timeout for the Actor run in seconds. Zero value means there is no timeout.
+  -m, --memory=<value>      Amount of memory allocated for
+                            the Actor run, in megabytes.
+  -t, --timeout=<value>     Timeout for the Actor run in
+                            seconds. Zero value means there is no timeout.
 ```
 
 ##### `apify actors info`
@@ -580,7 +671,8 @@ DESCRIPTION
   Manages Actor build processes and versioning.
 
 SUBCOMMANDS
-  builds rm      Permanently removes an Actor build from the Apify platform.
+  builds rm      Permanently removes an Actor build from the Apify
+                 platform.
   builds ls      Lists all builds of the Actor.
   builds log     Prints the log of a specific build.
   builds info    Prints information about a specific build.
@@ -594,17 +686,22 @@ DESCRIPTION
   Creates a new build of the Actor.
 
 USAGE
-  $ apify builds create [actorId] [--json] [--log] [--tag <value>] [--version <value>]
+  $ apify builds create [actorId] [--json] [--log]
+                        [--tag <value>] [--version <value>]
 
 ARGUMENTS
-  actorId  Optional Actor ID or Name to trigger a build for. By default, it will use the Actor from the current directory.
+  actorId  Optional Actor ID or Name to trigger a build for. By default,
+           it will use the Actor from the current directory.
 
 FLAGS
       --json             Format the command output as JSON
-      --log              Whether to print out the build log after the build is triggered.
-      --tag=<value>      Build tag to be applied to the successful Actor build. By default, this is "latest".
-      --version=<value>  Optional Actor Version to build. By default, this will be inferred from the tag, but this flag is required
-                         when multiple versions have the same tag.
+      --log              Whether to print out the build log after
+                         the build is triggered.
+      --tag=<value>      Build tag to be applied to the
+                         successful Actor build. By default, this is "latest".
+      --version=<value>  Optional Actor Version to build. By
+                         default, this will be inferred from the tag, but this flag
+                         is required when multiple versions have the same tag.
 ```
 
 ##### `apify builds info`
@@ -643,10 +740,12 @@ DESCRIPTION
   Lists all builds of the Actor.
 
 USAGE
-  $ apify builds ls [actorId] [-c] [--desc] [--json] [--limit <value>] [--offset <value>]
+  $ apify builds ls [actorId] [-c] [--desc] [--json]
+                    [--limit <value>] [--offset <value>]
 
 ARGUMENTS
-  actorId  Optional Actor ID or Name to list runs for. By default, it will use the Actor from the current directory.
+  actorId  Optional Actor ID or Name to list runs for. By default, it
+           will use the Actor from the current directory.
 
 FLAGS
   -c, --compact         Display a compact table.
@@ -705,7 +804,8 @@ ARGUMENTS
   runId  The run ID to abort.
 
 FLAGS
-  -f, --force  Whether to force the run to abort immediately, instead of gracefully.
+  -f, --force  Whether to force the run to abort immediately, instead
+               of gracefully.
       --json   Format the command output as JSON
 ```
 
@@ -723,7 +823,8 @@ ARGUMENTS
 
 FLAGS
       --json     Format the command output as JSON
-  -v, --verbose  Prints more in-depth information about the Actor run.
+  -v, --verbose  Prints more in-depth information about the Actor
+                 run.
 ```
 
 ##### `apify runs log`
@@ -746,10 +847,12 @@ DESCRIPTION
   Lists all runs of the Actor.
 
 USAGE
-  $ apify runs ls [actorId] [-c] [--desc] [--json] [--limit <value>] [--offset <value>]
+  $ apify runs ls [actorId] [-c] [--desc] [--json]
+                  [--limit <value>] [--offset <value>]
 
 ARGUMENTS
-  actorId  Optional Actor ID or Name to list runs for. By default, it will use the Actor from the current directory.
+  actorId  Optional Actor ID or Name to list runs for. By default, it
+           will use the Actor from the current directory.
 
 FLAGS
   -c, --compact         Display a compact table.
@@ -807,13 +910,18 @@ DESCRIPTION
   Manages structured data storage and retrieval.
 
 SUBCOMMANDS
-  datasets create      Creates a new dataset for storing structured data on your account.
-  datasets get-items   Retrieves dataset items in specified format (JSON, CSV, etc).
+  datasets create      Creates a new dataset for storing
+                       structured data on your account.
+  datasets get-items   Retrieves dataset items in specified
+                       format (JSON, CSV, etc).
   datasets ls          Prints all datasets on your account.
-  datasets info        Prints information about a specific dataset.
+  datasets info        Prints information about a specific
+                       dataset.
   datasets rm          Permanently removes a dataset.
-  datasets rename      Change dataset name or removes name with --unname flag.
-  datasets push-items  Adds data items to specified dataset. Accepts single object or array of objects.
+  datasets rename      Change dataset name or removes name
+                       with --unname flag.
+  datasets push-items  Adds data items to specified dataset.
+                       Accepts single object or array of objects.
 ```
 
 ##### `apify datasets create`
@@ -839,16 +947,21 @@ DESCRIPTION
   Retrieves dataset items in specified format (JSON, CSV, etc).
 
 USAGE
-  $ apify datasets get-items <datasetId> [--format json|jsonl|csv|html|rss|xml|xlsx] [--limit <value>] [--offset <value>]
+  $ apify datasets get-items <datasetId>
+                             [--format json|jsonl|csv|html|rss|xml|xlsx]
+                             [--limit <value>] [--offset <value>]
 
 ARGUMENTS
   datasetId  The ID of the Dataset to export the items for
 
 FLAGS
-      --format=<option>  The format of the returned output. By default, it is set to 'json'
+      --format=<option>  The format of the returned output. By
+                         default, it is set to 'json'
                          <options: json|jsonl|csv|html|rss|xml|xlsx>
-      --limit=<value>    The amount of elements to get from the dataset. By default, it will return all available items.
-      --offset=<value>   The offset in the dataset where to start getting items.
+      --limit=<value>    The amount of elements to get from the
+                         dataset. By default, it will return all available items.
+      --offset=<value>   The offset in the dataset where to start
+                         getting items.
 ```
 
 ##### `apify datasets info`
@@ -874,7 +987,8 @@ DESCRIPTION
   Prints all datasets on your account.
 
 USAGE
-  $ apify datasets ls [--desc] [--json] [--limit <value>] [--offset <value>] [--unnamed]
+  $ apify datasets ls [--desc] [--json] [--limit <value>]
+                      [--offset <value>] [--unnamed]
 
 FLAGS
       --desc            Sorts datasets in descending order.
@@ -888,7 +1002,8 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Adds data items to specified dataset. Accepts single object or array of objects.
+  Adds data items to specified dataset. Accepts single object or array of 
+  objects.
 
 USAGE
   $ apify datasets push-items <nameOrId> [item]
@@ -945,15 +1060,26 @@ DESCRIPTION
   Alias: kvs
 
 SUBCOMMANDS
-  key-value-stores create        Creates a new key-value store on your account.
-  key-value-stores delete-value  Delete a value from a key-value store.
-  key-value-stores get-value     Retrieves stored value for specified key. Use --only-content-type to check MIME type.
-  key-value-stores info          Shows information about a key-value store.
-  key-value-stores keys          Lists all keys in a key-value store.
-  key-value-stores ls            Lists all key-value stores on your account.
-  key-value-stores rename        Renames a key-value store, or removes its unique name.
-  key-value-stores rm            Permanently removes a key-value store.
-  key-value-stores set-value     Stores value with specified key. Set content-type with --content-type flag.
+  key-value-stores create        Creates a new
+                                 key-value store on your account.
+  key-value-stores delete-value  Delete a value
+                                 from a key-value store.
+  key-value-stores get-value     Retrieves stored
+                                 value for specified key. Use --only-content-type
+                                 to check MIME type.
+  key-value-stores info          Shows information
+                                 about a key-value store.
+  key-value-stores keys          Lists all keys in
+                                 a key-value store.
+  key-value-stores ls            Lists all
+                                 key-value stores on your account.
+  key-value-stores rename        Renames a
+                                 key-value store, or removes its unique name.
+  key-value-stores rm            Permanently
+                                 removes a key-value store.
+  key-value-stores set-value     Stores value with
+                                 specified key. Set content-type with
+                                 --content-type flag.
 ```
 
 ##### `apify key-value-stores create`
@@ -963,10 +1089,12 @@ DESCRIPTION
   Creates a new key-value store on your account.
 
 USAGE
-  $ apify key-value-stores create [key-value store name] [--json]
+  $ apify key-value-stores create
+                                  [key-value store name] [--json]
 
 ARGUMENTS
-  key-value store name  Optional name for the key-value store
+  key-value store name  Optional name for the key-value
+                        store
 
 FLAGS
       --json  Format the command output as JSON
@@ -979,7 +1107,8 @@ DESCRIPTION
   Delete a value from a key-value store.
 
 USAGE
-  $ apify key-value-stores delete-value <store id> <itemKey>
+  $ apify key-value-stores delete-value
+                                        <store id> <itemKey>
 
 ARGUMENTS
   store id  The key-value store ID to delete the value from.
@@ -990,17 +1119,21 @@ ARGUMENTS
 
 ```sh
 DESCRIPTION
-  Retrieves stored value for specified key. Use --only-content-type to check MIME type.
+  Retrieves stored value for specified key. Use --only-content-type to check 
+  MIME type.
 
 USAGE
-  $ apify key-value-stores get-value <keyValueStoreId> <itemKey> [--only-content-type]
+  $ apify key-value-stores get-value
+                                     <keyValueStoreId> <itemKey>
+                                     [--only-content-type]
 
 ARGUMENTS
   keyValueStoreId  The key-value store ID to get the value from.
   itemKey          The key of the item in the key-value store.
 
 FLAGS
-      --only-content-type  Only return the content type of the specified key
+      --only-content-type  Only return the content type of the
+                           specified key
 ```
 
 ##### `apify key-value-stores info`
@@ -1026,15 +1159,20 @@ DESCRIPTION
   Lists all keys in a key-value store.
 
 USAGE
-  $ apify key-value-stores keys <storeId> [--exclusive-start-key <value>] [--json] [--limit <value>]
+  $ apify key-value-stores keys <storeId>
+                                [--exclusive-start-key <value>] [--json]
+                                [--limit <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to list keys for.
 
 FLAGS
-      --exclusive-start-key=<value>  The key to start the list from.
-      --json                         Format the command output as JSON
-      --limit=<value>                The maximum number of keys to return.
+      --exclusive-start-key=<value>  The key to start
+                                     the list from.
+      --json                         Format the
+                                     command output as JSON
+      --limit=<value>                The maximum
+                                     number of keys to return.
 ```
 
 ##### `apify key-value-stores ls`
@@ -1044,14 +1182,19 @@ DESCRIPTION
   Lists all key-value stores on your account.
 
 USAGE
-  $ apify key-value-stores ls [--desc] [--json] [--limit <value>] [--offset <value>] [--unnamed]
+  $ apify key-value-stores ls [--desc] [--json]
+                              [--limit <value>] [--offset <value>] [--unnamed]
 
 FLAGS
-      --desc            Sorts key-value stores in descending order.
+      --desc            Sorts key-value stores in descending
+                        order.
       --json            Format the command output as JSON
-      --limit=<value>   Number of key-value stores that will be listed.
-      --offset=<value>  Number of key-value stores that will be skipped.
-      --unnamed         Lists key-value stores that don't have a name set.
+      --limit=<value>   Number of key-value stores that will be
+                        listed.
+      --offset=<value>  Number of key-value stores that will be
+                        skipped.
+      --unnamed         Lists key-value stores that don't have a
+                        name set.
 ```
 
 ##### `apify key-value-stores rename`
@@ -1061,11 +1204,14 @@ DESCRIPTION
   Renames a key-value store, or removes its unique name.
 
 USAGE
-  $ apify key-value-stores rename <keyValueStoreNameOrId> [newName] [--unname]
+  $ apify key-value-stores rename
+                                  <keyValueStoreNameOrId> [newName] [--unname]
 
 ARGUMENTS
-  keyValueStoreNameOrId  The key-value store ID or name to delete
-  newName                The new name for the key-value store
+  keyValueStoreNameOrId  The key-value store ID or name to
+                         delete
+  newName                The new name for the key-value
+                         store
 
 FLAGS
       --unname  Removes the unique name of the key-value store
@@ -1081,7 +1227,8 @@ USAGE
   $ apify key-value-stores rm <keyValueStoreNameOrId>
 
 ARGUMENTS
-  keyValueStoreNameOrId  The key-value store ID or name to delete
+  keyValueStoreNameOrId  The key-value store ID or name to
+                         delete
 ```
 
 ##### `apify key-value-stores set-value`
@@ -1091,7 +1238,8 @@ DESCRIPTION
   Stores value with specified key. Set content-type with --content-type flag.
 
 USAGE
-  $ apify key-value-stores set-value <storeId> <itemKey> [value] [--content-type <value>]
+  $ apify key-value-stores set-value <storeId>
+                                     <itemKey> [value] [--content-type <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to set the value in.
@@ -1099,7 +1247,8 @@ ARGUMENTS
   value    The value to set.
 
 FLAGS
-      --content-type=<value>  The MIME content type of the value. By default, "application/json" is assumed.
+      --content-type=<value>  The MIME content type of the
+                              value. By default, "application/json" is assumed.
 ```
 <!-- keyval-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1135,7 +1284,8 @@ DESCRIPTION
   Manages scheduled and predefined Actor configurations.
 
 SUBCOMMANDS
-  task run  Executes predefined Actor task remotely using local key-value store for input.
+  task run  Executes predefined Actor task remotely using local
+            key-value store for input.
 ```
 
 ##### `apify task run`
@@ -1146,15 +1296,20 @@ DESCRIPTION
   Customize with --memory and --timeout flags.
 
 USAGE
-  $ apify task run <taskId> [-b <value>] [-m <value>] [-t <value>]
+  $ apify task run <taskId> [-b <value>] [-m <value>]
+                   [-t <value>]
 
 ARGUMENTS
-  taskId  Name or ID of the Task to run (e.g. "my-task" or "E2jjCZBezvAZnX8Rb").
+  taskId  Name or ID of the Task to run (e.g. "my-task" or
+          "E2jjCZBezvAZnX8Rb").
 
 FLAGS
-  -b, --build=<value>    Tag or number of the build to run (e.g. "latest" or "1.2.34").
-  -m, --memory=<value>   Amount of memory allocated for the Task run, in megabytes.
-  -t, --timeout=<value>  Timeout for the Task run in seconds. Zero value means there is no timeout.
+  -b, --build=<value>    Tag or number of the build to run
+                         (e.g. "latest" or "1.2.34").
+  -m, --memory=<value>   Amount of memory allocated for the
+                         Task run, in megabytes.
+  -t, --timeout=<value>  Timeout for the Task run in seconds.
+                         Zero value means there is no timeout.
 ```
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->

@@ -40,9 +40,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override flags = {
 		template: Flags.string({
 			char: 't',
-			description:
-				'Template for the Actor. If not provided, the command will prompt for it.\n' +
-				`Visit ${manifestUrl} to find available template names.`,
+			description: `Template for the Actor. If not provided, the command will prompt for it. Visit ${manifestUrl} to find available template names.`,
 			required: false,
 		}),
 		'skip-dependency-install': Flags.boolean({
