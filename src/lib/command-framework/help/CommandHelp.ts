@@ -271,7 +271,7 @@ export class CommandHelp extends BaseCommandRenderer {
 			linesOfFlags.set(stringParts.join(' '), flag);
 		}
 
-		const widestFlagNameLength = widestLine([...linesOfFlags.keys()].join('\n'));
+		const widestFlagNameLength = widestLine([...linesOfFlags.keys()].map(stripAnsi).join('\n'));
 
 		for (const [flagString, flag] of linesOfFlags) {
 			const paddingToAdd = widestFlagNameLength - stripAnsi(flagString).length;

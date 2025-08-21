@@ -3,7 +3,7 @@ import type { CommandsInCategory } from './documentation-renderer/doc-building.j
 import { renderDocs } from './documentation-renderer/doc-building.js';
 
 // This sets the maximum line length that will be rendered in the docs.
-process.env.APIFY_CLI_MAX_LINE_WIDTH = '150';
+process.env.APIFY_CLI_MAX_LINE_WIDTH = '80';
 
 const categories: Record<string, CommandsInCategory[]> = {
 	'auth': [
