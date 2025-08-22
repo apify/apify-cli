@@ -1394,14 +1394,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/chai@npm:^4.3.17":
-  version: 4.3.20
-  resolution: "@types/chai@npm:4.3.20"
-  checksum: 10c0/4601189d611752e65018f1ecadac82e94eed29f348e1d5430e5681a60b01e1ecf855d9bcc74ae43b07394751f184f6970fac2b5561fc57a1f36e93a0f5ffb6e8
-  languageName: node
-  linkType: hard
-
-"@types/chai@npm:^5.2.2":
+"@types/chai@npm:^5.0.0, @types/chai@npm:^5.2.2":
   version: 5.2.2
   resolution: "@types/chai@npm:5.2.2"
   dependencies:
@@ -2254,7 +2247,7 @@ __metadata:
     "@types/adm-zip": "npm:^0.5.5"
     "@types/archiver": "npm:^6.0.2"
     "@types/bun": "npm:^1.2.5"
-    "@types/chai": "npm:^4.3.17"
+    "@types/chai": "npm:^5.0.0"
     "@types/cors": "npm:^2.8.17"
     "@types/execa": "npm:^2.0.2"
     "@types/express": "npm:^5.0.0"
