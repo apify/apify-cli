@@ -7,9 +7,7 @@ Learn how to install Apify CLI using installation scripts, Homebrew, or NPM.
 
 ---
 
-The recommended way to install Apify CLI is by using our installation scripts. This means you don't need to install Node.js to use the CLI, which is useful for Python users or anyone who doesn't want to manage Node.js dependencies.
-
-## Preferred methods
+## Installation scripts
 
 ### MacOS / Linux
 
@@ -23,15 +21,25 @@ curl -fsSL https://apify.com/install-cli.sh | bash
 irm https://apify.com/install-cli.ps1 | iex
 ```
 
-## Other methods
+:::tip No need for Node.js
 
-### Homebrew
+If you install Apify CLI using our installation scripts, you don't need to install Node.js to use the CLI. This is because we use [Bun](https://bun.sh/) as a bundler, which creates a standalone executable file. This is especially useful for Python users or anyone who prefers not to manage Node.js dependencies.
+
+:::
+
+## Homebrew
 
 ```bash
 brew install apify-cli
 ```
 
-### NPM
+:::tip Node.js required with Homebrew
+
+If you install Apify CLI using Homebrew, be aware that internally it still installs Node.js, as Homebrew does not support having everything in one executable file.
+
+:::
+
+## NPM
 
 First, make sure you have [Node.js](https://nodejs.org) version 22 or higher with NPM installed on your computer:
 
