@@ -11,7 +11,7 @@ The recommended way to install Apify CLI is by using our installation scripts. T
 
 ## Preferred methods
 
-### MacOS / Unix
+### MacOS / Linux
 
 ```bash
 curl -fsSL https://apify.com/install-cli.sh | bash
