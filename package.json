@@ -134,7 +134,7 @@
         "@types/which": "^3.0.4",
         "@yarnpkg/core": "^4.1.2",
         "apify": "^3.2.4",
-        "chai": "^4.4.1",
+        "chai": "^6.0.0",
         "cross-env": "^10.0.0",
         "eslint": "^9.25.1",
         "eslint-config-prettier": "^10.1.2",
