@@ -33,7 +33,6 @@ If you install Apify CLI using our installation scripts, you don't need to insta
 brew install apify-cli
 ```
 
-:::tip Node.js required with Homebrew
 
 :::tip Homebrew and Node.js dependency
 
