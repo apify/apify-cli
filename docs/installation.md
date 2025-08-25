@@ -33,7 +33,6 @@ If you install Apify CLI using our installation scripts, you don't need to insta
 brew install apify-cli
 ```
 
-
 :::tip Homebrew and Node.js dependency
 
 When you install Apify CLI using Homebrew, it automatically installs Node.js as a dependency. If you already have Node.js installed through another method (e.g., `nvm`), this may create version conflicts.
@@ -41,7 +40,6 @@ When you install Apify CLI using Homebrew, it automatically installs Node.js as 
 If you experience Node.js version conflicts, modify your `PATH` environment variable to prioritize your preferred Node.js installation over Homebrew's version.
 
 :::
-
 
 ## NPM
 
