@@ -23,7 +23,7 @@ irm https://apify.com/install-cli.ps1 | iex
 
 :::tip No need for Node.js
 
-If you install Apify CLI using our installation scripts, you don't need Node.js The scripts use [Bun](https://bun.sh/) to create a standalone executable file.
+If you install Apify CLI using our installation scripts, you don't need Node.js. The scripts use [Bun](https://bun.sh/) to create a standalone executable file.
 
 This approach eliminates Node.js dependency management, which is useful for Python developers or users working in non-Node.js environments.
 
