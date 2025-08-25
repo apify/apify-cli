@@ -42,7 +42,6 @@ If you experience Node.js version conflicts, modify your `PATH` environment vari
 
 :::
 
-:::
 
 ## NPM
 
