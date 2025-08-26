@@ -148,9 +148,9 @@
     },
     "volta": {
         "node": "22.18.0",
-        "yarn": "4.9.3"
+        "yarn": "4.9.4"
     },
-    "packageManager": "yarn@4.9.3",
+    "packageManager": "yarn@4.9.4",
     "devEngines": {
         "runtime": [
             {
