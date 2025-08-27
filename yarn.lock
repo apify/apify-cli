@@ -2336,7 +2336,7 @@ __metadata:
     prettier: "npm:^3.5.3"
     rimraf: "npm:~6.0.1"
     semver: "npm:~7.7.0"
-    string-width: "npm:^7.2.0"
+    string-width: "npm:^8.0.0"
     strip-ansi: "npm:^7.1.0"
     tiged: "npm:~2.12.7"
     tsup: "npm:^8.5.0"
@@ -4688,7 +4688,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"get-east-asian-width@npm:^1.0.0":
+"get-east-asian-width@npm:^1.0.0, get-east-asian-width@npm:^1.3.0":
   version: 1.3.0
   resolution: "get-east-asian-width@npm:1.3.0"
   checksum: 10c0/1a049ba697e0f9a4d5514c4623781c5246982bdb61082da6b5ae6c33d838e52ce6726407df285cdbb27ec1908b333cf2820989bd3e986e37bb20979437fdf34b
@@ -8340,7 +8340,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"string-width@npm:^7.0.0, string-width@npm:^7.2.0":
+"string-width@npm:^7.0.0":
   version: 7.2.0
   resolution: "string-width@npm:7.2.0"
   dependencies:
@@ -8348,6 +8348,16 @@ __metadata:
     get-east-asian-width: "npm:^1.0.0"
     strip-ansi: "npm:^7.1.0"
   checksum: 10c0/eb0430dd43f3199c7a46dcbf7a0b34539c76fe3aa62763d0b0655acdcbdf360b3f66f3d58ca25ba0205f42ea3491fa00f09426d3b7d3040e506878fc7664c9b9
+  languageName: node
+  linkType: hard
+
+"string-width@npm:^8.0.0":
+  version: 8.0.0
+  resolution: "string-width@npm:8.0.0"
+  dependencies:
+    get-east-asian-width: "npm:^1.3.0"
+    strip-ansi: "npm:^7.1.0"
+  checksum: 10c0/5f82872aba8c1871b6a066d1d7694585ebb89b252374d077d142234512c02fedde9fbf2532f252bdd0453dba5565d45efc7e6851b9e5c9493d204e159943baa1
   languageName: node
   linkType: hard
 
