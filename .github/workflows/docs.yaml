@@ -26,7 +26,7 @@ jobs:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Use Node.js 22
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   node-version: 22
 
@@ -36,7 +36,7 @@ jobs:
                   corepack prepare yarn@stable --activate
 
             - name: Activate cache for yarn
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   cache: yarn
 
