@@ -83,7 +83,7 @@ jobs:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Use Node.js 22
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   node-version: 22
 
@@ -93,7 +93,7 @@ jobs:
                   corepack prepare yarn@stable --activate
 
             - name: Activate cache for yarn
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   cache: yarn
 
@@ -150,7 +150,7 @@ jobs:
                   fetch-depth: 0
 
             - name: Use Node.js 22
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   node-version: 22
                   registry-url: https://registry.npmjs.org
@@ -161,7 +161,7 @@ jobs:
                   corepack prepare yarn@stable --activate
 
             - name: Activate cache for yarn
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   cache: yarn
 
@@ -253,7 +253,7 @@ jobs:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
 
             - name: Use Node.js 22
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   node-version: 22
                   registry-url: https://registry.npmjs.org
@@ -264,7 +264,7 @@ jobs:
                   corepack prepare yarn@stable --activate
 
             - name: Activate cache for yarn
-              uses: actions/setup-node@v4
+              uses: actions/setup-node@v5
               with:
                   cache: yarn
 
