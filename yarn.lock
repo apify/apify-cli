@@ -2330,7 +2330,7 @@ __metadata:
     lint-staged: "npm:^16.0.0"
     lodash.clonedeep: "npm:^4.5.0"
     mdast-util-from-markdown: "npm:^2.0.2"
-    mime: "npm:~4.0.4"
+    mime: "npm:~4.1.0"
     mock-stdin: "npm:^1.0.0"
     open: "npm:~10.2.0"
     prettier: "npm:^3.5.3"
@@ -6437,7 +6437,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"mime@npm:*":
+"mime@npm:*, mime@npm:~4.1.0":
   version: 4.1.0
   resolution: "mime@npm:4.1.0"
   bin:
@@ -6452,15 +6452,6 @@ __metadata:
   bin:
     mime: cli.js
   checksum: 10c0/402e792a8df1b2cc41cb77f0dcc46472b7944b7ec29cb5bbcd398624b6b97096728f1239766d3fdeb20551dd8d94738344c195a6ea10c4f906eb0356323b0531
-  languageName: node
-  linkType: hard
-
-"mime@npm:~4.0.4":
-  version: 4.0.7
-  resolution: "mime@npm:4.0.7"
-  bin:
-    mime: bin/cli.js
-  checksum: 10c0/2fd22ee2012a3f1dcac7dd06b7dc314dd677ebcefb14355b7c9453f0092af6eabbe9d754d9849d2a1f346ddd53d716a851379be05386f7a6ccb40af4bd61f32b
   languageName: node
   linkType: hard
 
