@@ -7,7 +7,7 @@ There are two options how you can set up environment variables for Actors.
 
 ### Set up environment variables in `.actor/actor.json`
 
-All keys from `env` will be set as environment variables into Apify platform after you push Actor to Apify. Current values on Apify will be overridden.
+All keys from `environmentVariables` will be set as environment variables into Apify platform after you push Actor to Apify. Current values on Apify will be overridden.
 
 ```json
 {
