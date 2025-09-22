@@ -31,6 +31,7 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
+                  package-manager-cache: false
 
             - name: Enable corepack
               run: |
@@ -65,6 +66,7 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
+                  package-manager-cache: false
 
             - name: Enable corepack
               run: |
@@ -111,6 +113,7 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: ${{ matrix.node-version }}
+                  package-manager-cache: false
 
             - name: Enable corepack
               run: |
@@ -153,6 +156,7 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
+                  package-manager-cache: false
 
             - name: Enable corepack
               run: |
@@ -203,6 +207,7 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
+                  package-manager-cache: false
 
             - name: Enable corepack
               run: |
@@ -246,6 +251,7 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
+                  package-manager-cache: false
 
             - name: Enable corepack
               run: |
@@ -293,6 +299,7 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
+                  package-manager-cache: false
 
             - name: Enable corepack
               run: |
