@@ -38,11 +38,6 @@ export class MyCommandCommand extends ApifyCommand<typeof MyCommandCommand> {
     
     static override description = "Description of what this command does";
     
-    static override examples = [
-        "$ apify my-command",
-        "$ apify my-command --flag value"
-    ];
-    
     static override args = {
         // Define arguments here using Args.*
     };
@@ -88,7 +83,7 @@ Study these existing commands for patterns and best practices:
 
 ### Error Handling
 
-- Use appropriate error codes from `src/lib/consts.ts`
+- Use appropriate exit error codes from `src/lib/consts.ts` 
 - Provide helpful error messages to users
 - Handle edge cases gracefully
 
@@ -107,11 +102,10 @@ Study these existing commands for patterns and best practices:
 ## Development Workflow
 
 1. Install dependencies: `yarn install`
-2. Run in development mode: `yarn dev:apify` or `yarn dev:actor`
-3. Lint code: `yarn lint` or `yarn lint:fix`
-4. Format code: `yarn format` or `yarn format:fix`
-5. Build project: `yarn build`
-6. Run tests: `yarn test:local` or `yarn test:all`
+2. Lint code: `yarn lint` or `yarn lint:fix`
+3. Format code: `yarn format` or `yarn format:fix`
+4. Build project: `yarn build`
+5. Run tests: `yarn test:local` or `yarn test:all`
 
 ## Important Notes
 
@@ -119,4 +113,4 @@ Study these existing commands for patterns and best practices:
 - Follow the established patterns for command structure and organization
 - When in doubt about command type (apify vs actor), ask for clarification
 - Maintain backward compatibility when possible
-- Update documentation when adding new commands
+- Do NOT override the documentation when adding new commands, as it is automatically generated
