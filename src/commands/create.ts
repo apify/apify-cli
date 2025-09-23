@@ -341,7 +341,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Report git initialization result after actor creation success
 		if (!skipGitInit) {
 			if (gitInitResult.success) {
-				info({ message: `Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.` });
+				info({
+					message: `Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`,
+				});
 			} else {
 				// Git init is not critical, so we just warn if it fails
 				warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
