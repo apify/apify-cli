@@ -57,6 +57,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Skip installing optional dependencies.',
 			required: false,
 		}),
+		'skip-git-init': Flags.boolean({
+			description: 'Skip initializing a git repository in the Actor directory.',
+			required: false,
+		}),
 	};
 
 	static override args = {
@@ -68,7 +72,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 	async run() {
 		let { actorName } = this.args;
-		const { template: templateName, skipDependencyInstall } = this.flags;
+		const { template: templateName, skipDependencyInstall, skipGitInit } = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
 		// for testing of templates that are not yet published in the manifest
@@ -318,6 +322,22 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			success({
 				message: `Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`,
 			});
+		}
+
+		// Initialize git repository unless explicitly skipped
+		if (!skipGitInit) {
+			try {
+				await execWithLog({
+					cmd: 'git',
+					args: ['init'],
+					opts: { cwd: actFolderDir },
+				});
+				info({ message: `Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.` });
+			} catch (err) {
+				// Git init is not critical, so we just warn if it fails
+				warning({ message: `Failed to initialize git repository: ${(err as Error).message}` });
+				warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
+			}
 		}
 	}
 }
