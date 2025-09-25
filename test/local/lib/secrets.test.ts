@@ -105,4 +105,59 @@ describe('Secrets', () => {
 			);
 		});
 	});
+
+	describe('Integration scenarios', () => {
+		it('should handle mixed environment variables correctly', () => {
+			const secrets = {
+				validSecret: 'validValue',
+			};
+			const env = {
+				VALID_SECRET: '@validSecret',
+				NORMAL_VAR: 'normalValue',
+				INVALID_SECRET: '@missingSecret',
+			};
+
+			// Should fail because of missing secret
+			expect(() => transformEnvToEnvVars(env, secrets)).toThrow('Missing secrets: missingSecret');
+		});
+
+		it('should work with empty environment variables', () => {
+			const result = transformEnvToEnvVars({});
+			expect(result).toEqual([]);
+		});
+
+		it('should work with environment variables that contain no secrets', () => {
+			const env = {
+				NORMAL_VAR1: 'value1',
+				NORMAL_VAR2: 'value2',
+			};
+			const result = transformEnvToEnvVars(env);
+			
+			expect(result).toEqual([
+				{
+					name: 'NORMAL_VAR1',
+					value: 'value1',
+				},
+				{
+					name: 'NORMAL_VAR2',
+					value: 'value2',
+				},
+			]);
+		});
+
+		it('should maintain order of environment variables', () => {
+			const secrets = {
+				secret1: 'value1',
+				secret2: 'value2',
+			};
+			const env = {
+				THIRD: 'third',
+				FIRST: '@secret1',
+				SECOND: '@secret2',
+			};
+			const result = transformEnvToEnvVars(env, secrets);
+			
+			expect(result.map(r => r.name)).toEqual(['THIRD', 'FIRST', 'SECOND']);
+		});
+	});
 });

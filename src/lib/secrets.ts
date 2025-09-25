@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import { SECRETS_FILE_PATH } from './consts.js';
-import { warning } from './outputs.js';
 import { ensureApifyDirectory } from './utils.js';
 
 const SECRET_KEY_PREFIX = '@';
