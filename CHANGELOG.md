@@ -6,6 +6,10 @@ All notable changes to this project will be documented in this file.
 
 ## 1.1.2 - **not yet released**
 
+### 🚀 Features
+
+- Add automatic git repository initialization to `apify create` command ([#919](https://github.com/apify/apify-cli/pull/919)) ([bd1f0a1](https://github.com/apify/apify-cli/commit/bd1f0a1f7be15d807fab1e74951641059783f117)) by [@Copilot](https://github.com/Copilot), closes [#918](https://github.com/apify/apify-cli/issues/918)
+
 <!-- git-cliff-unreleased-end -->
 
 ## [1.1.1](https://github.com/apify/apify-cli/releases/tag/v1.1.1) (2025-08-18)
