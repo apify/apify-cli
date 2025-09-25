@@ -118,4 +118,36 @@ describe('apify create', () => {
 		expect(existsSync(joinPath('node_modules', 'cheerio'))).toBeTruthy();
 		expect(existsSync(joinPath('node_modules', 'playwright'))).toBeFalsy();
 	});
+
+	it('should initialize git repository by default', async () => {
+		const ACT_TEMPLATE = 'project_empty';
+
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: ACT_TEMPLATE,
+			flags_skipDependencyInstall: true,
+		});
+
+		toggleCwdBetweenFullAndParentPath();
+
+		// Check that .git directory exists
+		expect(existsSync(joinPath('.git'))).toBeTruthy();
+		expect(existsSync(joinPath('.git', 'config'))).toBeTruthy();
+	});
+
+	it('should skip git initialization when --skip-git-init flag is used', async () => {
+		const ACT_TEMPLATE = 'project_empty';
+
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: ACT_TEMPLATE,
+			flags_skipDependencyInstall: true,
+			flags_skipGitInit: true,
+		});
+
+		toggleCwdBetweenFullAndParentPath();
+
+		// Check that .git directory does not exist
+		expect(existsSync(joinPath('.git'))).toBeFalsy();
+	});
 });

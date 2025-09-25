@@ -57,6 +57,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Skip installing optional dependencies.',
 			required: false,
 		}),
+		'skip-git-init': Flags.boolean({
+			description: 'Skip initializing a git repository in the Actor directory.',
+			required: false,
+		}),
 	};
 
 	static override args = {
@@ -68,7 +72,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 	async run() {
 		let { actorName } = this.args;
-		const { template: templateName, skipDependencyInstall } = this.flags;
+		const { template: templateName, skipDependencyInstall, skipGitInit } = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
 		// for testing of templates that are not yet published in the manifest
@@ -308,6 +312,20 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			});
 		}
 
+		// Initialize git repository before reporting success, but store result for later
+		let gitInitResult: { success: boolean; error?: Error } = { success: true };
+		if (!skipGitInit) {
+			try {
+				await execWithLog({
+					cmd: 'git',
+					args: ['init'],
+					opts: { cwd: actFolderDir },
+				});
+			} catch (err) {
+				gitInitResult = { success: false, error: err as Error };
+			}
+		}
+
 		if (dependenciesInstalled) {
 			success({ message: `Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".` });
 			info({ message: 'To run your code in the cloud, run "apify push" and deploy your code to Apify Console.' });
@@ -318,6 +336,19 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			success({
 				message: `Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`,
 			});
+		}
+
+		// Report git initialization result after actor creation success
+		if (!skipGitInit) {
+			if (gitInitResult.success) {
+				info({
+					message: `Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`,
+				});
+			} else {
+				// Git init is not critical, so we just warn if it fails
+				warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
+				warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
+			}
 		}
 	}
 }
