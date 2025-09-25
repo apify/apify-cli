@@ -160,4 +160,101 @@ describe('Secrets', () => {
 			expect(result.map(r => r.name)).toEqual(['THIRD', 'FIRST', 'SECOND']);
 		});
 	});
+
+	describe('ignoreMissingSecrets flag behavior', () => {
+		it('transformEnvToEnvVars should emit warnings when ignoreMissingSecrets is true', () => {
+			const spy = vitest.spyOn(console, 'error');
+			
+			const secrets = {
+				validSecret: 'validValue',
+			};
+			const env = {
+				VALID_SECRET: '@validSecret',
+				INVALID_SECRET: '@missingSecret',
+				NORMAL_VAR: 'normalValue',
+			};
+			
+			const result = transformEnvToEnvVars(env, secrets, true);
+			
+			// Should include valid secret and normal var, but omit missing secret
+			expect(result).toEqual([
+				{
+					name: 'VALID_SECRET',
+					value: 'validValue',
+					isSecret: true,
+				},
+				{
+					name: 'NORMAL_VAR',
+					value: 'normalValue',
+				},
+			]);
+			
+			// Should have emitted a warning
+			expect(spy).toHaveBeenCalled();
+			expect(spy.mock.calls[0][0]).to.include('Warning:');
+		});
+
+		it('replaceSecretsValue should emit warnings when ignoreMissingSecrets is true', () => {
+			const spy = vitest.spyOn(console, 'error');
+			
+			const secrets = {
+				validSecret: 'validValue',
+			};
+			const env = {
+				VALID_SECRET: '@validSecret',
+				INVALID_SECRET: '@missingSecret',
+				NORMAL_VAR: 'normalValue',
+			};
+			
+			const result = replaceSecretsValue(env, secrets, true);
+			
+			// Should include valid secret and normal var, but omit missing secret
+			expect(result).toEqual({
+				VALID_SECRET: 'validValue',
+				NORMAL_VAR: 'normalValue',
+			});
+			
+			// Should have emitted a warning
+			expect(spy).toHaveBeenCalled();
+			expect(spy.mock.calls[0][0]).to.include('Warning:');
+		});
+
+		it('should still throw error when ignoreMissingSecrets is false (default behavior)', () => {
+			const secrets = {};
+			const env = {
+				INVALID_SECRET: '@missingSecret',
+			};
+			
+			// Should throw when ignoreMissingSecrets is false (default)
+			expect(() => transformEnvToEnvVars(env, secrets, false)).toThrow('Missing secrets: missingSecret');
+			
+			// Should also throw when parameter is not provided (default)
+			expect(() => transformEnvToEnvVars(env, secrets)).toThrow('Missing secrets: missingSecret');
+		});
+
+		it('should handle multiple missing secrets with ignoreMissingSecrets', () => {
+			const spy = vitest.spyOn(console, 'error');
+			
+			const secrets = {};
+			const env = {
+				SECRET1: '@missing1',
+				SECRET2: '@missing2',
+				NORMAL_VAR: 'value',
+			};
+			
+			const result = transformEnvToEnvVars(env, secrets, true);
+			
+			expect(result).toEqual([
+				{
+					name: 'NORMAL_VAR',
+					value: 'value',
+				},
+			]);
+			
+			// Should have emitted warnings for both missing secrets
+			expect(spy).toHaveBeenCalledTimes(2);
+			expect(spy.mock.calls[0][0]).to.include('Warning:');
+			expect(spy.mock.calls[1][0]).to.include('Warning:');
+		});
+	});
 });
