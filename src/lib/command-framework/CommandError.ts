@@ -42,7 +42,9 @@ export interface FlagData {
 	ambiguousFlag?: string;
 	ambiguousMessage?: string;
 	unknownOptionSuggestion?: string;
+	shortForm?: boolean;
 }
+
 export interface CommandErrorOptions {
 	code: CommandErrorCode;
 	command: typeof BuiltApifyCommand;
@@ -89,7 +91,7 @@ export class CommandError extends Error {
 			}
 
 			case CommandErrorCode.NODEJS_ERR_PARSE_ARGS_UNKNOWN_OPTION: {
-				const match = /Unknown option '--(?<optionName>[a-zA-Z0-9]+)'\.(?<nodeSuggestion>.*)/gi.exec(
+				const match = /Unknown option '-(?<longForm>-)?(?<optionName>.+)'\.(?<nodeSuggestion>.*)/gi.exec(
 					this.message,
 				);
 
@@ -103,6 +105,7 @@ export class CommandError extends Error {
 					name: match.groups!.optionName,
 					expectsValue: false,
 					unknownOptionSuggestion: match.groups!.nodeSuggestion,
+					shortForm: !match.groups!.longForm,
 				};
 			}
 
@@ -128,7 +131,9 @@ export class CommandError extends Error {
 				});
 
 				return [
-					chalk.gray(`Unknown flag provided: ${chalk.white.bold(`--${flagData.name}`)}`),
+					chalk.gray(
+						`Unknown flag provided: ${chalk.white.bold(flagData.shortForm ? `-${flagData.name}` : `--${flagData.name}`)}`,
+					),
 					flagData.unknownOptionSuggestion
 						? chalk.gray(`  ${flagData.unknownOptionSuggestion.trim()}`)
 						: null,
@@ -228,7 +233,7 @@ export class CommandError extends Error {
 	}
 
 	static buildMessageFromFlagData(flagData: FlagData): string {
-		const base = [`Flag ${chalk.white.bold(`--${flagData.name}`)}`];
+		const base = [`Flag ${chalk.white.bold(flagData.shortForm ? `-${flagData.name}` : `--${flagData.name}`)}`];
 
 		if (flagData.ambiguousFlag) {
 			base.push(`is ambiguous (meaning the provided value could be interpreted as a flag too).`);
