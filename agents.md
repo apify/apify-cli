@@ -4,7 +4,7 @@ This file contains instructions for AI agents working on the Apify CLI project t
 
 ## Project Overview
 
-The Apify CLI is a command-line interface that helps developers create, develop, build, and run Apify Actors, and manage the Apify cloud platform. It's built with TypeScript and uses a modular command framework.
+The Apify CLI is a command-line interface that helps developers create, develop, build, and run Apify Actors, and manage their Actors on the Apify cloud platform. It's built with TypeScript and uses a modular command framework.
 
 ## Command Development Guidelines
 
@@ -34,21 +34,21 @@ When creating new CLI commands, follow these guidelines:
 
 ```typescript
 export class MyCommandCommand extends ApifyCommand<typeof MyCommandCommand> {
-    static override name = "my-command" as const;
-    
-    static override description = "Description of what this command does";
-    
-    static override args = {
-        // Define arguments here using Args.*
-    };
-    
-    static override flags = {
-        // Define flags here using Flags.*
-    };
+  static override name = "my-command" as const;
 
-    async run() {
-        // Command logic implementation
-    }
+  static override description = "Description of what this command does";
+
+  static override args = {
+    // Define arguments here using Args.*
+  };
+
+  static override flags = {
+    // Define flags here using Flags.*
+  };
+
+  async run() {
+    // Command logic implementation
+  }
 }
 ```
 
@@ -83,14 +83,13 @@ Study these existing commands for patterns and best practices:
 
 ### Error Handling
 
-- Use appropriate exit error codes from `src/lib/consts.ts` 
+- Use appropriate exit error codes from `src/lib/consts.ts`
 - Provide helpful error messages to users
 - Handle edge cases gracefully
 
 ### Configuration
 
 - Actor configuration uses `.actor/actor.json` (new format)
-- Legacy `apify.json` is deprecated but may need migration support
 - Reference constants from `src/lib/consts.ts` for file paths and configurations
 
 ## Testing
@@ -105,7 +104,7 @@ Study these existing commands for patterns and best practices:
 2. Lint code: `yarn lint` or `yarn lint:fix`
 3. Format code: `yarn format` or `yarn format:fix`
 4. Build project: `yarn build`
-5. Run tests: `yarn test:local` or `yarn test:all`
+5. Run tests: `yarn test:local`
 
 ## Important Notes
 
