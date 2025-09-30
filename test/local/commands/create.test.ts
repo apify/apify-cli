@@ -1,4 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
+import { mkdir } from 'node:fs/promises';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
@@ -9,12 +10,13 @@ import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 const actName = 'create-my-actor';
-const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPath, tmpPath } = useTempPath(actName, {
-	create: true,
-	remove: true,
-	cwd: true,
-	cwdParent: true,
-});
+const { beforeAllCalls, afterAllCalls, joinPath, joinCwdPath, toggleCwdBetweenFullAndParentPath, tmpPath } =
+	useTempPath(actName, {
+		create: true,
+		remove: true,
+		cwd: true,
+		cwdParent: true,
+	});
 
 const { lastErrorMessage } = useConsoleSpy();
 
@@ -149,5 +151,23 @@ describe('apify create', () => {
 
 		// Check that .git directory does not exist
 		expect(existsSync(joinPath('.git'))).toBeFalsy();
+	});
+
+	it('should skip git initialization when run from within an existing git repository', async () => {
+		const ACT_TEMPLATE = 'project_empty';
+
+		// Create a .git folder in the parent directory (cwd) to simulate being inside a git repository
+		await mkdir(joinCwdPath('.git'), { recursive: true });
+
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: ACT_TEMPLATE,
+			flags_skipDependencyInstall: true,
+		});
+
+		toggleCwdBetweenFullAndParentPath();
+
+		// Check that .git directory does not exist in the newly created actor directory
+		expect(existsSync(joinCwdPath('.git'))).toBeFalsy();
 	});
 });
