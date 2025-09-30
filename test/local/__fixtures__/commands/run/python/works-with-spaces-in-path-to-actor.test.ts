@@ -16,7 +16,7 @@ async def main():
 
 const { beforeAllCalls, afterAllCalls, joinCwdPath, forceNewCwd } = useTempPath(actorName.replaceAll('-', ' '), {
 	create: true,
-	remove: true,
+	remove: false,
 	cwd: true,
 	cwdParent: false,
 });
@@ -36,7 +36,7 @@ describe('[python] spaces in path to actor', () => {
 
 		await writeFile(joinCwdPath('src', 'main.py'), mainFile);
 
-		outputPath = joinCwdPath(getLocalKeyValueStorePath(), 'OUTPUT.txt');
+		outputPath = joinCwdPath(getLocalKeyValueStorePath(), 'OUTPUT');
 	});
 
 	afterAll(async () => {

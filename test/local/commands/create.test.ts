@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, rm } from 'node:fs/promises';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
@@ -169,5 +169,9 @@ describe('apify create', () => {
 
 		// Check that .git directory does not exist in the newly created actor directory
 		expect(existsSync(joinCwdPath('.git'))).toBeFalsy();
+
+		// Cleanup
+		toggleCwdBetweenFullAndParentPath();
+		await rm(joinCwdPath('.git'), { recursive: true });
 	});
 });
