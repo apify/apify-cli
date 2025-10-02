@@ -314,7 +314,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		// Initialize git repository before reporting success, but store result for later
 		let gitInitResult: { success: boolean; error?: Error } = { success: true };
-		if (!skipGitInit) {
+		const cwdHasGit = await stat(join(cwd, '.git')).catch(() => null);
+
+		if (!skipGitInit && !cwdHasGit) {
 			try {
 				await execWithLog({
 					cmd: 'git',
@@ -339,7 +341,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}
 
 		// Report git initialization result after actor creation success
-		if (!skipGitInit) {
+		if (!skipGitInit && !cwdHasGit) {
 			if (gitInitResult.success) {
 				info({
 					message: `Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`,
