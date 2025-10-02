@@ -77,7 +77,7 @@ async def main():
 		await testRunCommand(RunCommand, {});
 
 		// Check Actor output
-		const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
+		const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT');
 		const actorOutput = JSON.parse(readFileSync(actorOutputPath, 'utf8'));
 		expect(actorOutput).toStrictEqual(expectedOutput);
 	});
