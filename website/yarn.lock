@@ -450,8 +450,6 @@ __metadata:
   resolution: "@apify/docs-theme@npm:1.0.213"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.2.2"
-    "@apify/ui-icons": "npm:^1.19.0"
-    "@apify/ui-library": "npm:^1.97.2"
     "@docusaurus/theme-common": "npm:^3.7.0"
     "@stackql/docusaurus-plugin-hubspot": "npm:^1.1.0"
     algoliasearch: "npm:^5.19.0"
@@ -529,7 +527,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/ui-library@npm:*, @apify/ui-library@npm:^1.97.2":
+"@apify/ui-library@npm:*":
   version: 1.98.2
   resolution: "@apify/ui-library@npm:1.98.2"
   dependencies:
