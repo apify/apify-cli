@@ -450,6 +450,8 @@ __metadata:
   resolution: "@apify/docs-theme@npm:1.0.213"
   dependencies:
     "@apify/docs-search-modal": "npm:^1.2.2"
+    "@apify/ui-icons": "npm:^1.19.0"
+    "@apify/ui-library": "npm:^1.97.2"
     "@docusaurus/theme-common": "npm:^3.7.0"
     "@stackql/docusaurus-plugin-hubspot": "npm:^1.1.0"
     algoliasearch: "npm:^5.19.0"
@@ -515,23 +517,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/ui-icons@npm:^1.18.2":
-  version: 1.18.2
-  resolution: "@apify/ui-icons@npm:1.18.2"
+"@apify/ui-icons@npm:^1.19.0":
+  version: 1.19.0
+  resolution: "@apify/ui-icons@npm:1.19.0"
   dependencies:
     clsx: "npm:^2.0.0"
   peerDependencies:
     react: 17.x || 18.x
     react-dom: 17.x || 18.x
-  checksum: 10c0/432eec5ef5ab40a5fb065650b5442c97f0a80516a473339046aabdd74d3aadaa853d37f8e369093731543a4c433596c3866e61f30dd061f7473da79b649befca
+  checksum: 10c0/292d111cc545572670b19e43b8a028c143d623b5956c9945bdc73948bc6f830608738d16533071f79f52c8c60ed644eb6ebdf7027e9fccaf4f195fdfa6f346a9
   languageName: node
   linkType: hard
 
-"@apify/ui-library@npm:*":
-  version: 1.97.0
-  resolution: "@apify/ui-library@npm:1.97.0"
+"@apify/ui-library@npm:*, @apify/ui-library@npm:^1.97.2":
+  version: 1.98.2
+  resolution: "@apify/ui-library@npm:1.98.2"
   dependencies:
-    "@apify/ui-icons": "npm:^1.18.2"
+    "@apify/ui-icons": "npm:^1.19.0"
     "@floating-ui/react": "npm:^0.26.2"
     "@react-hook/resize-observer": "npm:^2.0.2"
     clsx: "npm:^2.0.0"
@@ -554,7 +556,7 @@ __metadata:
     react: 17.x || 18.x
     react-dom: 17.x || 18.x
     styled-components: ^5.3.3
-  checksum: 10c0/4baccbf8be22470ee083c893291831d55abe2dbddb2e26e85e558bf35cb6d0ac54cdcc3031e87abd9d39e3da7053dce76831661c13833ce046634960ccf48dd3
+  checksum: 10c0/62a1547b7d761e04509b4128370f142027039a07e20e755aa0c8188300d8a0e015e4b4095034d041dca0c0096fb8e7304edd439b69429a21e4c5492a2091a50d
   languageName: node
   linkType: hard
 
