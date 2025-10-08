@@ -426,9 +426,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/docs-search-modal@npm:^1.2.2":
-  version: 1.3.1
-  resolution: "@apify/docs-search-modal@npm:1.3.1"
+"@apify/docs-search-modal@npm:^1.3.3":
+  version: 1.3.3
+  resolution: "@apify/docs-search-modal@npm:1.3.3"
   dependencies:
     "@algolia/autocomplete-js": "npm:^1.10.0"
     "@algolia/autocomplete-theme-classic": "npm:^1.10.0"
@@ -441,15 +441,15 @@ __metadata:
   peerDependencies:
     react: "> 18.0.0"
     react-dom: "> 18.0.0"
-  checksum: 10c0/12a17236c4f4f8b718081369cd80582689b302a1cbfa805ccf3497ea3c6dd839dfb974aed0868fdfa6ea0ba28dadb6c365f16a8a14420005c32b5d3b7812858e
+  checksum: 10c0/792698540c784c513fbec1bba41cfd461969b08c738d459c56e9157968199c3ef5d25a41d0b24fa64ef7b15131ab1eab35e8d4bca2e23af5a8adeeff4281a9cb
   languageName: node
   linkType: hard
 
-"@apify/docs-theme@npm:^1.0.215":
-  version: 1.0.215
-  resolution: "@apify/docs-theme@npm:1.0.215"
+"@apify/docs-theme@npm:^1.0.216":
+  version: 1.0.216
+  resolution: "@apify/docs-theme@npm:1.0.216"
   dependencies:
-    "@apify/docs-search-modal": "npm:^1.2.2"
+    "@apify/docs-search-modal": "npm:^1.3.3"
     "@apify/ui-icons": "npm:^1.19.0"
     "@apify/ui-library": "npm:^1.97.2"
     "@docusaurus/theme-common": "npm:^3.7.0"
@@ -470,7 +470,7 @@ __metadata:
     clsx: "*"
     react: "*"
     react-dom: "*"
-  checksum: 10c0/9ef76720d406cae2a4977f7b50ee90bee72ed897f35d46ae222915bbc41de747648c489149ec26bd492bc03687a9885e061b2556578d522ad9ed61e3c78cd5a8
+  checksum: 10c0/645cc6da0a55f204a15cdcf63b998dd876923cf70bfe9f0861ea5c54a6864637df754854525247bebb8ca1dd5f1a8b9f02a59c92066c98acbc77edd857fc33de
   languageName: node
   linkType: hard
 
@@ -14912,7 +14912,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "root-workspace-0b6124@workspace:."
   dependencies:
-    "@apify/docs-theme": "npm:^1.0.215"
+    "@apify/docs-theme": "npm:^1.0.216"
     "@apify/eslint-config-ts": "npm:^0.4.0"
     "@apify/tsconfig": "npm:^0.1.0"
     "@docusaurus/core": "npm:^3.8.1"
