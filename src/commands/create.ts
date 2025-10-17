@@ -16,7 +16,12 @@ import {
 	PYTHON_VENV_PATH,
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
-import { enhanceReadmeWithLocalSuffix, ensureValidActorName, getTemplateDefinition } from '../lib/create-utils.js';
+import {
+	enhanceReadmeWithLocalSuffix,
+	ensureValidActorName,
+	formatCreateSuccessMessage,
+	getTemplateDefinition,
+} from '../lib/create-utils.js';
 import { execWithLog } from '../lib/exec.js';
 import { updateLocalJson } from '../lib/files.js';
 import { usePythonRuntime } from '../lib/hooks/runtimes/python.js';
@@ -329,17 +334,13 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			}
 		}
 
-		if (dependenciesInstalled) {
-			success({ message: `Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".` });
-			info({ message: 'To run your code in the cloud, run "apify push" and deploy your code to Apify Console.' });
-			if (messages?.postCreate) {
-				info({ message: messages?.postCreate });
-			}
-		} else {
-			success({
-				message: `Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`,
-			});
-		}
+		success({
+			message: formatCreateSuccessMessage({
+				actorName,
+				dependenciesInstalled,
+				postCreate: messages?.postCreate ?? null,
+			}),
+		});
 
 		// Report git initialization result after actor creation success
 		if (!skipGitInit && !cwdHasGit) {
