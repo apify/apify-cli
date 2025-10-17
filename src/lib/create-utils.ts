@@ -66,6 +66,30 @@ export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestP
 	}
 }
 
+export function formatCreateSuccessMessage(params: {
+	actorName: string;
+	dependenciesInstalled: boolean;
+	postCreate?: string | null;
+}) {
+	const { actorName, dependenciesInstalled, postCreate } = params;
+
+	let message = `✅ Actor '${actorName}' created successfully!`;
+
+	if (dependenciesInstalled) {
+		message += `\n\nNext steps:\n\ncd '${actorName}'\napify run`;
+	} else {
+		message += `\n\nNext steps:\n\ncd '${actorName}'\ninstall dependencies\napify run`;
+	}
+
+	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
+
+	if (postCreate) {
+		message += `\n\n${postCreate}`;
+	}
+
+	return message;
+}
+
 /**
  * Inquirer does not have a native way to "go back" between prompts.
  */
@@ -134,8 +158,7 @@ async function promptTemplateDefinition(manifest: Manifest, programmingLanguage:
 	];
 
 	const templateDefinition = await useSelectFromList({
-		message:
-			'Choose a template for your new Actor. Detailed information about the template will be shown in the next step.',
+		message: 'Choose a template for your new Actor. You can check more information at https://apify.com/templates.',
 		default: choices[0],
 		choices,
 		loop: false,
