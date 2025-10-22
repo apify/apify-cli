@@ -334,25 +334,58 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			}
 		}
 
-		success({
-			message: formatCreateSuccessMessage({
-				actorName,
-				dependenciesInstalled,
-				postCreate: messages?.postCreate ?? null,
-			}),
-		});
+		// Suggest install command if dependencies were not installed
+		let installCommandSuggestion: string | null = null;
+		if (!dependenciesInstalled) {
+			const projectInfo = await useCwdProject({ cwd: actFolderDir });
+			await projectInfo.inspectAsync(async (project) => {
+				if (project.type === ProjectLanguage.JavaScript) {
+					const hasYarnLock = await stat(join(actFolderDir, 'yarn.lock'))
+						.then(() => true)
+						.catch(() => false);
+					const hasPnpmLock = await stat(join(actFolderDir, 'pnpm-lock.yaml'))
+						.then(() => true)
+						.catch(() => false);
+					const hasBunLock = await stat(join(actFolderDir, 'bun.lockb'))
+						.then(() => true)
+						.catch(() => false);
+					if (hasYarnLock) {
+						installCommandSuggestion = 'yarn install';
+					} else if (hasPnpmLock) {
+						installCommandSuggestion = 'pnpm install';
+					} else if (hasBunLock) {
+						installCommandSuggestion = 'bun install';
+					} else if (project.runtime?.pmName === 'bun') {
+						installCommandSuggestion = 'bun install';
+					} else if (project.runtime?.pmName === 'deno') {
+						installCommandSuggestion = 'deno install --node-modules-dir';
+					} else {
+						installCommandSuggestion = 'npm install';
+					}
+				} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
+					installCommandSuggestion = 'python -m pip install -r requirements.txt';
+				}
+			});
+		}
 
-		// Report git initialization result after actor creation success
-		if (!skipGitInit && !cwdHasGit) {
-			if (gitInitResult.success) {
-				info({
-					message: `Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`,
-				});
-			} else {
-				// Git init is not critical, so we just warn if it fails
-				warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
-				warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
-			}
+		success(
+			{
+				message: formatCreateSuccessMessage({
+					actorName,
+					dependenciesInstalled,
+					postCreate: messages?.postCreate ?? null,
+					gitRepositoryInitialized: !skipGitInit && !cwdHasGit && gitInitResult.success,
+					installCommandSuggestion,
+				}),
+			},
+			true,
+		);
+
+		// Report git initialization result only if it failed (success already included in success message)
+		if (!skipGitInit && !cwdHasGit && !gitInitResult.success) {
+			// Git init is not critical, so we just warn if it fails
+			warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
+			warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
 		}
 	}
 }

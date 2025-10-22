@@ -2,7 +2,6 @@ import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 
 import { Separator } from '@inquirer/core';
-import chalk from 'chalk';
 
 import type { Manifest, Template } from '@apify/actor-templates';
 
@@ -70,18 +69,25 @@ export function formatCreateSuccessMessage(params: {
 	actorName: string;
 	dependenciesInstalled: boolean;
 	postCreate?: string | null;
+	gitRepositoryInitialized?: boolean;
+	installCommandSuggestion?: string | null;
 }) {
-	const { actorName, dependenciesInstalled, postCreate } = params;
+	const { actorName, dependenciesInstalled, postCreate, gitRepositoryInitialized, installCommandSuggestion } = params;
 
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
 	if (dependenciesInstalled) {
 		message += `\n\nNext steps:\n\ncd '${actorName}'\napify run`;
 	} else {
-		message += `\n\nNext steps:\n\ncd '${actorName}'\ninstall dependencies\napify run`;
+		const installLine = installCommandSuggestion || 'install dependencies';
+		message += `\n\nNext steps:\n\ncd '${actorName}'\n${installLine}\napify run`;
 	}
 
 	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
+
+	if (gitRepositoryInitialized) {
+		message += `\n🌱 Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`;
+	}
 
 	if (postCreate) {
 		message += `\n\n${postCreate}`;
@@ -99,7 +105,7 @@ async function executePrompts(manifest: Manifest) {
 	while (true) {
 		const templateDefinition = await promptTemplateDefinition(manifest, programmingLanguage);
 		if (templateDefinition) {
-			const shouldInstall = await promptTemplateInstallation(templateDefinition);
+			const shouldInstall = await promptTemplateInstallation();
 			if (shouldInstall) {
 				return templateDefinition;
 			}
@@ -168,20 +174,15 @@ async function promptTemplateDefinition(manifest: Manifest, programmingLanguage:
 	return templateDefinition;
 }
 
-async function promptTemplateInstallation(templateDefinition: Template) {
+async function promptTemplateInstallation() {
 	const choices: ChoicesType<boolean> = [
-		{ name: `Install template`, value: true },
+		{ name: `Install dependencies`, value: true },
 		new Separator(),
 		{ name: 'Go back', value: false },
 	];
 
-	const label = chalk.underline(templateDefinition.label);
-	const description = chalk.dim(templateDefinition.description);
-	const suffix = `\n ${label}:\n ${description}`;
-	const message = `Do you want to install the following template?${suffix}`;
-
 	const answer = await useSelectFromList<boolean>({
-		message,
+		message: 'Almost done! Last step is to install dependencies.',
 		default: choices[0],
 		choices,
 		loop: false,
