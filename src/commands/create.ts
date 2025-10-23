@@ -25,6 +25,7 @@ import {
 import { execWithLog } from '../lib/exec.js';
 import { updateLocalJson } from '../lib/files.js';
 import { usePythonRuntime } from '../lib/hooks/runtimes/python.js';
+import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
@@ -335,38 +336,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}
 
 		// Suggest install command if dependencies were not installed
-		let installCommandSuggestion: string | null = null;
-		if (!dependenciesInstalled) {
-			const projectInfo = await useCwdProject({ cwd: actFolderDir });
-			await projectInfo.inspectAsync(async (project) => {
-				if (project.type === ProjectLanguage.JavaScript) {
-					const hasYarnLock = await stat(join(actFolderDir, 'yarn.lock'))
-						.then(() => true)
-						.catch(() => false);
-					const hasPnpmLock = await stat(join(actFolderDir, 'pnpm-lock.yaml'))
-						.then(() => true)
-						.catch(() => false);
-					const hasBunLock = await stat(join(actFolderDir, 'bun.lockb'))
-						.then(() => true)
-						.catch(() => false);
-					if (hasYarnLock) {
-						installCommandSuggestion = 'yarn install';
-					} else if (hasPnpmLock) {
-						installCommandSuggestion = 'pnpm install';
-					} else if (hasBunLock) {
-						installCommandSuggestion = 'bun install';
-					} else if (project.runtime?.pmName === 'bun') {
-						installCommandSuggestion = 'bun install';
-					} else if (project.runtime?.pmName === 'deno') {
-						installCommandSuggestion = 'deno install --node-modules-dir';
-					} else {
-						installCommandSuggestion = 'npm install';
-					}
-				} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
-					installCommandSuggestion = 'python -m pip install -r requirements.txt';
-				}
-			});
-		}
+		const installCommandSuggestion = !dependenciesInstalled
+			? await getInstallCommandSuggestion(actFolderDir)
+			: null;
 
 		success(
 			{
