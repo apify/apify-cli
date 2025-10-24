@@ -38,12 +38,9 @@ export function warning(options: SimpleLogOptions) {
 	});
 }
 
-export function success(options: SimpleLogOptions, newLine = false) {
+export function success(options: SimpleLogOptions) {
 	internalLog({
-		[options.stdout ? 'stdoutOutput' : 'stderrOutput']: [
-			chalk.green(`${newLine ? '\n' : ''}Success:`),
-			options.message,
-		],
+		[options.stdout ? 'stdoutOutput' : 'stderrOutput']: [chalk.green('Success:'), options.message],
 	});
 }
 

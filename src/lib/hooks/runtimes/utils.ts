@@ -1,7 +1,7 @@
 import { stat } from 'node:fs/promises';
-import { isAbsolute , join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
-import { ProjectLanguage,useCwdProject  } from '../useCwdProject.js';
+import { ProjectLanguage, useCwdProject } from '../useCwdProject.js';
 
 export function normalizeExecutablePath(path: string): string;
 export function normalizeExecutablePath(path: string | null): string | null;
@@ -29,20 +29,27 @@ export async function getInstallCommandSuggestion(actFolderDir: string) {
 	const projectInfo = await useCwdProject({ cwd: actFolderDir });
 	await projectInfo.inspectAsync(async (project) => {
 		if (project.type === ProjectLanguage.JavaScript) {
-			const hasYarnLock = await stat(join(actFolderDir, 'yarn.lock'))
-				.then(() => true)
-				.catch(() => false);
-			const hasPnpmLock = await stat(join(actFolderDir, 'pnpm-lock.yaml'))
-				.then(() => true)
-				.catch(() => false);
-			const hasBunLock = await stat(join(actFolderDir, 'bun.lockb'))
-				.then(() => true)
-				.catch(() => false);
+			const [hasYarnLock, hasPnpmLock, hasBunLockb, hasBunLock] = await Promise.all([
+				stat(join(actFolderDir, 'yarn.lock'))
+					.then(() => true)
+					.catch(() => false),
+				stat(join(actFolderDir, 'pnpm-lock.yaml'))
+					.then(() => true)
+					.catch(() => false),
+				stat(join(actFolderDir, 'bun.lockb'))
+					.then(() => true)
+					.catch(() => false),
+				stat(join(actFolderDir, 'bun.lock'))
+					.then(() => true)
+					.catch(() => false),
+			]);
+
+			const hasAnyBunLock = hasBunLockb || hasBunLock;
 			if (hasYarnLock) {
 				installCommandSuggestion = 'yarn install';
 			} else if (hasPnpmLock) {
 				installCommandSuggestion = 'pnpm install';
-			} else if (hasBunLock) {
+			} else if (hasAnyBunLock) {
 				installCommandSuggestion = 'bun install';
 			} else if (project.runtime?.pmName === 'bun') {
 				installCommandSuggestion = 'bun install';

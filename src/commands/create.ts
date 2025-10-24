@@ -28,7 +28,7 @@ import { usePythonRuntime } from '../lib/hooks/runtimes/python.js';
 import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
-import { error, info, success, warning } from '../lib/outputs.js';
+import { error, info, simpleLog, success, warning } from '../lib/outputs.js';
 import {
 	downloadAndUnzip,
 	getJsonFileContent,
@@ -340,18 +340,17 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			? await getInstallCommandSuggestion(actFolderDir)
 			: null;
 
-		success(
-			{
-				message: formatCreateSuccessMessage({
-					actorName,
-					dependenciesInstalled,
-					postCreate: messages?.postCreate ?? null,
-					gitRepositoryInitialized: !skipGitInit && !cwdHasGit && gitInitResult.success,
-					installCommandSuggestion,
-				}),
-			},
-			true,
-		);
+		// Success message with extra empty line
+		simpleLog({ message: '' });
+		success({
+			message: formatCreateSuccessMessage({
+				actorName,
+				dependenciesInstalled,
+				postCreate: messages?.postCreate ?? null,
+				gitRepositoryInitialized: !skipGitInit && !cwdHasGit && gitInitResult.success,
+				installCommandSuggestion,
+			}),
+		});
 
 		// Report git initialization result only if it failed (success already included in success message)
 		if (!skipGitInit && !cwdHasGit && !gitInitResult.success) {
