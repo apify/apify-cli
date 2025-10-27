@@ -16,13 +16,19 @@ import {
 	PYTHON_VENV_PATH,
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
-import { enhanceReadmeWithLocalSuffix, ensureValidActorName, getTemplateDefinition } from '../lib/create-utils.js';
+import {
+	enhanceReadmeWithLocalSuffix,
+	ensureValidActorName,
+	formatCreateSuccessMessage,
+	getTemplateDefinition,
+} from '../lib/create-utils.js';
 import { execWithLog } from '../lib/exec.js';
 import { updateLocalJson } from '../lib/files.js';
 import { usePythonRuntime } from '../lib/hooks/runtimes/python.js';
+import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
-import { error, info, success, warning } from '../lib/outputs.js';
+import { error, info, simpleLog, success, warning } from '../lib/outputs.js';
 import {
 	downloadAndUnzip,
 	getJsonFileContent,
@@ -329,29 +335,28 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			}
 		}
 
-		if (dependenciesInstalled) {
-			success({ message: `Actor '${actorName}' was created. To run it, run "cd ${actorName}" and "apify run".` });
-			info({ message: 'To run your code in the cloud, run "apify push" and deploy your code to Apify Console.' });
-			if (messages?.postCreate) {
-				info({ message: messages?.postCreate });
-			}
-		} else {
-			success({
-				message: `Actor '${actorName}' was created. Please install its dependencies to be able to run it using "apify run".`,
-			});
-		}
+		// Suggest install command if dependencies were not installed
+		const installCommandSuggestion = !dependenciesInstalled
+			? await getInstallCommandSuggestion(actFolderDir)
+			: null;
 
-		// Report git initialization result after actor creation success
-		if (!skipGitInit && !cwdHasGit) {
-			if (gitInitResult.success) {
-				info({
-					message: `Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`,
-				});
-			} else {
-				// Git init is not critical, so we just warn if it fails
-				warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
-				warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
-			}
+		// Success message with extra empty line
+		simpleLog({ message: '' });
+		success({
+			message: formatCreateSuccessMessage({
+				actorName,
+				dependenciesInstalled,
+				postCreate: messages?.postCreate ?? null,
+				gitRepositoryInitialized: !skipGitInit && !cwdHasGit && gitInitResult.success,
+				installCommandSuggestion,
+			}),
+		});
+
+		// Report git initialization result only if it failed (success already included in success message)
+		if (!skipGitInit && !cwdHasGit && !gitInitResult.success) {
+			// Git init is not critical, so we just warn if it fails
+			warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
+			warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
 		}
 	}
 }
