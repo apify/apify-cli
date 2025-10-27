@@ -79,7 +79,7 @@ export function formatCreateSuccessMessage(params: {
 	if (dependenciesInstalled) {
 		message += `\n\nNext steps:\n\ncd '${actorName}'\napify run`;
 	} else {
-		const installLine = installCommandSuggestion || 'install dependencies';
+		const installLine = installCommandSuggestion || 'install dependencies with your package manager';
 		message += `\n\nNext steps:\n\ncd '${actorName}'\n${installLine}\napify run`;
 	}
 
