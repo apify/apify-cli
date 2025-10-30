@@ -16,7 +16,7 @@ async def main():
 
 const { beforeAllCalls, afterAllCalls, joinCwdPath, forceNewCwd } = useTempPath(actorName.replaceAll('-', ' '), {
 	create: true,
-	remove: false,
+	remove: true,
 	cwd: true,
 	cwdParent: false,
 });
@@ -46,7 +46,12 @@ describe('[python] spaces in path to actor', () => {
 	it('should work', async () => {
 		await testRunCommand(RunCommand, {});
 
-		const output = await readFile(outputPath, 'utf8');
-		expect(output).toBe('worked');
+		try {
+			const output = await readFile(outputPath, 'utf8');
+			expect(output).toBe('worked');
+		} catch (error) {
+			console.error(error);
+			expect(error).toBeUndefined();
+		}
 	});
 });
