@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 
 import { testRunCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../../../../src/lib/utils.js';
@@ -51,6 +51,11 @@ describe('[python] spaces in path to actor', () => {
 			expect(output).toBe('worked');
 		} catch (error) {
 			console.error(error);
+
+			const filesInStorage = await readdir(joinCwdPath(getLocalKeyValueStorePath()));
+
+			console.error(filesInStorage);
+
 			expect(error).toBeUndefined();
 		}
 	});
