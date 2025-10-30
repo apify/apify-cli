@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises';
+import { readdir, readFile, writeFile } from 'node:fs/promises';
 
 import { testRunCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../../../../src/lib/utils.js';
@@ -16,7 +16,7 @@ async def main():
 
 const { beforeAllCalls, afterAllCalls, joinCwdPath, forceNewCwd } = useTempPath(actorName.replaceAll('-', ' '), {
 	create: true,
-	remove: false,
+	remove: true,
 	cwd: true,
 	cwdParent: false,
 });
@@ -46,7 +46,15 @@ describe('[python] spaces in path to actor', () => {
 	it('should work', async () => {
 		await testRunCommand(RunCommand, {});
 
-		const output = await readFile(outputPath, 'utf8');
-		expect(output).toBe('worked');
+		try {
+			const output = await readFile(outputPath, 'utf8');
+			expect(output).toBe('worked');
+		} catch (error) {
+			const filesInStorage = await readdir(joinCwdPath(getLocalKeyValueStorePath()));
+
+			(error as any).files = filesInStorage;
+
+			expect(error).toBeUndefined();
+		}
 	});
 });
