@@ -71,6 +71,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			required: false,
 		}),
 		force: Flags.boolean({
+			char: 'f',
 			description: 'Push an Actor even when the local files are older than the Actor on the platform.',
 			default: false,
 			required: false,
