@@ -1,6 +1,7 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { INPUT_FILE_REG_EXP } from '../../../src/lib/consts.js';
 import { execWithLog } from '../../../src/lib/exec.js';
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { createActZip, getActorLocalFilePaths } from '../../../src/lib/utils.js';
@@ -76,6 +77,24 @@ describe('Utils', () => {
 			FILES_IN_IGNORED_DIR.concat(FILES_TO_IGNORE).forEach((file) =>
 				expect(existsSync(join(tempFolder, file))).toBeFalsy(),
 			);
+		});
+	});
+
+	describe('input file regex', () => {
+		const validFiles = ['INPUT', 'INPUT.json', 'INPUT.bin'];
+
+		const invalidFiles = ['INPUT_', 'INPUT.__metadata__.json'];
+
+		validFiles.forEach((file) => {
+			it(`should match ${file}`, () => {
+				expect(!!file.match(INPUT_FILE_REG_EXP)).toBeTruthy();
+			});
+		});
+
+		invalidFiles.forEach((file) => {
+			it(`should not match ${file}`, () => {
+				expect(!!file.match(INPUT_FILE_REG_EXP)).toBeFalsy();
+			});
 		});
 	});
 });
