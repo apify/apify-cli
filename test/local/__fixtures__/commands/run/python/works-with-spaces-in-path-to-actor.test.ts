@@ -50,11 +50,9 @@ describe('[python] spaces in path to actor', () => {
 			const output = await readFile(outputPath, 'utf8');
 			expect(output).toBe('worked');
 		} catch (error) {
-			console.error(error);
-
 			const filesInStorage = await readdir(joinCwdPath(getLocalKeyValueStorePath()));
 
-			console.error(filesInStorage);
+			(error as any).files = filesInStorage;
 
 			expect(error).toBeUndefined();
 		}
