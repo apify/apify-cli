@@ -101,7 +101,7 @@
         "lodash.clonedeep": "^4.5.0",
         "mime": "~4.1.0",
         "open": "~10.2.0",
-        "rimraf": "~6.0.1",
+        "rimraf": "~6.1.0",
         "semver": "~7.7.0",
         "string-width": "^8.0.0",
         "strip-ansi": "^7.1.0",
