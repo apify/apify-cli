@@ -1,6 +1,6 @@
 # Documentation codeowner
 
-* @B4nan @vladfrangu
+* @vladfrangu
 
 /docs/*.md @TC-MO
 /docs/*.mdx @TC-MO
