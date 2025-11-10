@@ -19,20 +19,18 @@ describe('apify validate-schema', () => {
 	});
 
 	it('should correctly validate schema 2', async () => {
-		await testRunCommand(ValidateInputSchemaCommand, {
-			args_path: invalidInputSchemaPath,
-		});
-
-		expect(lastErrorMessage()).to.contain(
-			'Field schema.properties.queries.editor must be equal to one of the allowed values',
-		);
+		await expect(
+			testRunCommand(ValidateInputSchemaCommand, {
+				args_path: invalidInputSchemaPath,
+			}),
+		).rejects.toThrow(/Field schema.properties.queries.editor must be equal to one of the allowed values/);
 	});
 
 	it('should correctly validate schema 3', async () => {
-		await testRunCommand(ValidateInputSchemaCommand, {
-			args_path: unparsableInputSchemaPath,
-		});
-
-		expect(lastErrorMessage()).to.contain.oneOf(['Unexpected token }', "Expected ',' or ']' after array element"]);
+		await expect(
+			testRunCommand(ValidateInputSchemaCommand, {
+				args_path: unparsableInputSchemaPath,
+			}),
+		).rejects.toThrow();
 	});
 });

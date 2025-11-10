@@ -37,8 +37,6 @@ describe('[python] prints error message on project with no detected start', () =
 	});
 
 	it('should print error message', async () => {
-		await testRunCommand(RunCommand, {});
-
-		expect(lastErrorMessage()).toMatch(/Actor is of an unknown format./i);
+		await expect(testRunCommand(RunCommand, {})).rejects.toThrow(/Actor is of an unknown format./i);
 	});
 });

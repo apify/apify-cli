@@ -33,9 +33,9 @@ describe('apify create', () => {
 
 	['a'.repeat(151), 'sh', 'bad_escaped'].forEach((badActorName) => {
 		it(`returns error with bad Actor name ${badActorName}`, async () => {
-			await testRunCommand(CreateCommand, { args_actorName: badActorName });
-
-			expect(lastErrorMessage()).toMatch(/the actor name/i);
+			await expect(testRunCommand(CreateCommand, { args_actorName: badActorName })).rejects.toThrow(
+				/the actor name/i,
+			);
 		});
 	});
 

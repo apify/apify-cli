@@ -63,9 +63,7 @@ describe('apify run', () => {
 	it('throws when required field is not provided', async () => {
 		await writeFile(inputPath, '{}');
 
-		await testRunCommand(RunCommand, {});
-
-		expect(lastErrorMessage()).toMatch(/Field awesome is required/i);
+		await expect(testRunCommand(RunCommand, {})).rejects.toThrow(/Field awesome is required/i);
 	});
 
 	it('prefills input with defaults', async () => {
