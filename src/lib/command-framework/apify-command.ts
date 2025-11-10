@@ -301,15 +301,17 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		if (missingRequiredArgs.size) {
 			this._printMissingRequiredArgs(missingRequiredArgs);
-			return;
 		}
 
 		this._parseFlags(rawFlags, rawTokens);
+
+		let hadError: Error | null = null;
 
 		try {
 			await this.run();
 		} catch (err: any) {
 			error({ message: err.message });
+			hadError = err;
 		} finally {
 			// analytics
 			if (!this.telemetryData.actorLanguage && COMMANDS_WITHIN_ACTOR.includes(this.commandString)) {
@@ -335,6 +337,15 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 					`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
 					this.telemetryData,
 				);
+			}
+
+			if (hadError) {
+				// In test mode (skipTelemetry=true), throw the error so tests can catch it
+				// In normal mode, exit with code 1
+				if (this.skipTelemetry) {
+					throw hadError;
+				}
+				process.exit(1);
 			}
 		}
 	}
@@ -588,7 +599,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		}
 	}
 
-	private _printMissingRequiredArgs(missingRequiredArgs: Map<string, TaggedArgBuilder<ArgTag, unknown>>) {
+	private _printMissingRequiredArgs(missingRequiredArgs: Map<string, TaggedArgBuilder<ArgTag, unknown>>): never {
 		const help = selectiveRenderHelpForCommand(this.ctor, {
 			showUsageString: true,
 		});
@@ -616,6 +627,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				help,
 			].join('\n'),
 		});
+
+		process.exit(1);
 	}
 
 	private _handleStdin(mode: StdinMode) {
