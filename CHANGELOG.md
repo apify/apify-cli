@@ -10,6 +10,13 @@ All notable changes to this project will be documented in this file.
 
 - Add automatic git repository initialization to `apify create` command ([#919](https://github.com/apify/apify-cli/pull/919)) ([bd1f0a1](https://github.com/apify/apify-cli/commit/bd1f0a1f7be15d807fab1e74951641059783f117)) by [@Copilot](https://github.com/Copilot), closes [#918](https://github.com/apify/apify-cli/issues/918)
 
+### 🐛 Bug Fixes
+
+- Only run `git init` in new actors if not running from a git repository ([#925](https://github.com/apify/apify-cli/pull/925)) ([5c904bb](https://github.com/apify/apify-cli/commit/5c904bbc3819196bae59197729d67854034c0f4b)) by [@vladfrangu](https://github.com/vladfrangu)
+- Handle unknown flags with random characters in name correctly ([#920](https://github.com/apify/apify-cli/pull/920)) ([958a3f2](https://github.com/apify/apify-cli/commit/958a3f22a8f714f651a39361c28d83f0fc2bba85)) by [@vladfrangu](https://github.com/vladfrangu)
+- Alias `-f` for `--force` in `apify push` ([#940](https://github.com/apify/apify-cli/pull/940)) ([fea16ec](https://github.com/apify/apify-cli/commit/fea16ec6cf706a894d4e3e15165c8770911c1b16)) by [@vladfrangu](https://github.com/vladfrangu)
+- **run:** Only match correct INPUT files, not any possible metadatas ([#951](https://github.com/apify/apify-cli/pull/951)) ([a07d513](https://github.com/apify/apify-cli/commit/a07d5130f6212f33f09e6c353875997fa15a8110)) by [@vladfrangu](https://github.com/vladfrangu), closes [#933](https://github.com/apify/apify-cli/issues/933)
+
 <!-- git-cliff-unreleased-end -->
 
 ## [1.1.1](https://github.com/apify/apify-cli/releases/tag/v1.1.1) (2025-08-18)
