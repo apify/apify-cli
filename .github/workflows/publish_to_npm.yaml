@@ -29,10 +29,10 @@ jobs:
               with:
                   ref: ${{ inputs.ref }}
 
-            - name: Use Node.js 22
-              uses: actions/setup-node@v5
+            - name: Use Node.js
+              uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   registry-url: "https://registry.npmjs.org"
                   package-manager-cache: false
 
@@ -42,7 +42,7 @@ jobs:
                   corepack prepare yarn@stable --activate
 
             - name: Activate cache for yarn
-              uses: actions/setup-node@v5
+              uses: actions/setup-node@v6
               with:
                   cache: yarn
 
