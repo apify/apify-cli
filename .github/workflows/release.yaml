@@ -82,10 +82,10 @@ jobs:
               with:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
-            - name: Use Node.js 22
+            - name: Use Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   package-manager-cache: false
 
             - name: Enable corepack
@@ -150,10 +150,10 @@ jobs:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
                   fetch-depth: 0
 
-            - name: Use Node.js 22
+            - name: Use Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   registry-url: https://registry.npmjs.org
                   package-manager-cache: false
 
@@ -206,7 +206,7 @@ jobs:
               run: yarn insert-cli-metadata && yarn build-bundles
 
             - name: Upload bundles
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v5
               with:
                   name: apify-cli-bundles-${{ matrix.label }}
                   path: bundles/**
@@ -222,7 +222,7 @@ jobs:
         steps:
             # This step also deals with unzipping the archive from GitHub, so we get a big folder with all the bundles!
             - name: Download bundles
-              uses: actions/download-artifact@v5
+              uses: actions/download-artifact@v6
               with:
                   pattern: apify-cli-bundles-*
                   merge-multiple: true
@@ -254,10 +254,10 @@ jobs:
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
 
-            - name: Use Node.js 22
+            - name: Use Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   registry-url: https://registry.npmjs.org
                   package-manager-cache: false
 

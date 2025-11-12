@@ -25,10 +25,10 @@ jobs:
               with:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
-            - name: Use Node.js 22
+            - name: Use Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   package-manager-cache: false
 
             - name: Enable corepack

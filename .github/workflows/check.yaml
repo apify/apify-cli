@@ -9,7 +9,7 @@ on:
         branches: [master]
 
 env:
-    LATEST_NODE_VERSION: 22
+    LATEST_NODE_VERSION: 24
     APIFY_CLI_DISABLE_TELEMETRY: 1
 
 concurrency:
@@ -129,6 +129,12 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   cache: yarn
+
+            - name: Setup Python 3.12 (Windows)
+              if: ${{ matrix.os == 'windows-2025' }}
+              uses: actions/setup-python@v6
+              with:
+                  python-version: 3.12
 
             - name: Install Dependencies
               run: yarn
@@ -348,7 +354,7 @@ jobs:
               run: yarn insert-cli-metadata && yarn build-bundles
 
             - name: Upload Bundles
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v5
               with:
                   name: apify-cli-bundles-${{ matrix.label }}
                   path: bundles/**
