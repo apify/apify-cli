@@ -82,10 +82,10 @@ jobs:
               with:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
-            - name: Use Node.js 22
+            - name: Use Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   package-manager-cache: false
 
             - name: Enable corepack
@@ -150,10 +150,10 @@ jobs:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
                   fetch-depth: 0
 
-            - name: Use Node.js 22
+            - name: Use Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   registry-url: https://registry.npmjs.org
                   package-manager-cache: false
 
@@ -254,10 +254,10 @@ jobs:
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
 
-            - name: Use Node.js 22
+            - name: Use Node.js
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   registry-url: https://registry.npmjs.org
                   package-manager-cache: false
 

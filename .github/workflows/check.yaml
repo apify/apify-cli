@@ -9,7 +9,7 @@ on:
         branches: [master]
 
 env:
-    LATEST_NODE_VERSION: 22
+    LATEST_NODE_VERSION: 24
     APIFY_CLI_DISABLE_TELEMETRY: 1
 
 concurrency:
