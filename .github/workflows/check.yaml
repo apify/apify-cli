@@ -354,7 +354,7 @@ jobs:
               run: yarn insert-cli-metadata && yarn build-bundles
 
             - name: Upload Bundles
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v5
               with:
                   name: apify-cli-bundles-${{ matrix.label }}
                   path: bundles/**
