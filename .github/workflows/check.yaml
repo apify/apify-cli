@@ -130,6 +130,12 @@ jobs:
               with:
                   cache: yarn
 
+            - name: Setup Python 3.12 (Windows)
+              if: ${{ matrix.os == 'windows-2025' }}
+              uses: actions/setup-python@v6
+              with:
+                  python-version: 3.12
+
             - name: Install Dependencies
               run: yarn
 
