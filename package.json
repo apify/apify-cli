@@ -128,7 +128,7 @@
         "@types/js-levenshtein": "^1",
         "@types/lodash.clonedeep": "^4",
         "@types/mime": "^4.0.0",
-        "@types/node": "^22.0.0",
+        "@types/node": "^24.0.0",
         "@types/semver": "^7.5.8",
         "@types/which": "^3.0.4",
         "@yarnpkg/core": "^4.1.2",
@@ -147,7 +147,7 @@
         "vitest": "^3.0.0"
     },
     "volta": {
-        "node": "22.20.0",
+        "node": "24.11.1",
         "yarn": "4.10.3"
     },
     "packageManager": "yarn@4.10.3",

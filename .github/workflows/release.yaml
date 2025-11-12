@@ -85,7 +85,7 @@ jobs:
             - name: Use Node.js 22
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   package-manager-cache: false
 
             - name: Enable corepack
@@ -153,7 +153,7 @@ jobs:
             - name: Use Node.js 22
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   registry-url: https://registry.npmjs.org
                   package-manager-cache: false
 
@@ -257,7 +257,7 @@ jobs:
             - name: Use Node.js 22
               uses: actions/setup-node@v6
               with:
-                  node-version: 22
+                  node-version: 24
                   registry-url: https://registry.npmjs.org
                   package-manager-cache: false
 
