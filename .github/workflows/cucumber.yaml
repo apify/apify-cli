@@ -18,7 +18,7 @@ jobs:
             matrix:
                 os: [ubuntu-latest, windows-2025]
                 # We only test LTS for now
-                node-version: [22]
+                node-version: [24]
 
         runs-on: ${{ matrix.os }}
 
