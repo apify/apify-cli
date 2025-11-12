@@ -312,41 +312,41 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		} catch (err: any) {
 			error({ message: err.message });
 			hadError = err;
-		} finally {
-			// analytics
-			if (!this.telemetryData.actorLanguage && COMMANDS_WITHIN_ACTOR.includes(this.commandString)) {
-				const cwdProject = await useCwdProject();
+		}
 
-				cwdProject.inspect((project) => {
-					if (project.type === ProjectLanguage.JavaScript) {
-						this.telemetryData.actorLanguage = 'javascript';
-						this.telemetryData.actorRuntime = project.runtime!.runtimeShorthand || 'node';
-						this.telemetryData.actorRuntimeVersion = project.runtime!.version;
-					} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
-						this.telemetryData.actorLanguage = 'python';
-						this.telemetryData.actorRuntime = 'python';
-						this.telemetryData.actorRuntimeVersion = project.runtime!.version;
-					}
-				});
-			}
+		// analytics
+		if (!this.telemetryData.actorLanguage && COMMANDS_WITHIN_ACTOR.includes(this.commandString)) {
+			const cwdProject = await useCwdProject();
 
-			this.telemetryData.flagsUsed = Object.keys(this.flags);
-
-			if (!this.skipTelemetry) {
-				await trackEvent(
-					`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
-					this.telemetryData,
-				);
-			}
-
-			if (hadError) {
-				// In test mode (skipTelemetry=true), throw the error so tests can catch it
-				// In normal mode, exit with code 1
-				if (this.skipTelemetry) {
-					throw hadError;
+			cwdProject.inspect((project) => {
+				if (project.type === ProjectLanguage.JavaScript) {
+					this.telemetryData.actorLanguage = 'javascript';
+					this.telemetryData.actorRuntime = project.runtime!.runtimeShorthand || 'node';
+					this.telemetryData.actorRuntimeVersion = project.runtime!.version;
+				} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
+					this.telemetryData.actorLanguage = 'python';
+					this.telemetryData.actorRuntime = 'python';
+					this.telemetryData.actorRuntimeVersion = project.runtime!.version;
 				}
-				process.exit(1);
+			});
+		}
+
+		this.telemetryData.flagsUsed = Object.keys(this.flags);
+
+		if (!this.skipTelemetry) {
+			await trackEvent(
+				`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
+				this.telemetryData,
+			);
+		}
+
+		if (hadError) {
+			// In test mode (skipTelemetry=true), throw the error so tests can catch it
+			// In normal mode, exit with code 1
+			if (this.skipTelemetry) {
+				throw hadError;
 			}
+			process.exit(1);
 		}
 	}
 

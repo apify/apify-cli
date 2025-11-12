@@ -1,7 +1,6 @@
 import { rename } from 'node:fs/promises';
 
 import { testRunCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
-import { useConsoleSpy } from '../../../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../../../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../../../../../__setup__/reset-cwd-caches.js';
 
@@ -13,8 +12,6 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 	cwd: true,
 	cwdParent: true,
 });
-
-const { lastErrorMessage } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../../../../src/commands/create.js');
 const { RunCommand } = await import('../../../../../../src/commands/run.js');
