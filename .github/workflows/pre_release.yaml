@@ -179,7 +179,7 @@ jobs:
               run: yarn insert-cli-metadata && yarn build-bundles
 
             - name: Upload bundles
-              uses: actions/upload-artifact@v4
+              uses: actions/upload-artifact@v5
               with:
                   name: apify-cli-bundles-${{ matrix.label }}
                   path: bundles/**
@@ -195,7 +195,7 @@ jobs:
         steps:
             # This step also deals with unzipping the archive from GitHub, so we get a big folder with all the bundles!
             - name: Download bundles
-              uses: actions/download-artifact@v5
+              uses: actions/download-artifact@v6
               with:
                   pattern: apify-cli-bundles-*
                   merge-multiple: true
