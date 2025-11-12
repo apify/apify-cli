@@ -1425,12 +1425,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/archiver@npm:^6.0.2":
-  version: 6.0.3
-  resolution: "@types/archiver@npm:6.0.3"
+"@types/archiver@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "@types/archiver@npm:7.0.0"
   dependencies:
     "@types/readdir-glob": "npm:*"
-  checksum: 10c0/59c6be3d81da240a35f7e4a70348012ee462a74c56fb37c86add2e11562fae46a8e243dcca29a34ed2dc401239b6f3dd9623584570ca5b07c2aa61ee7822f91f
+  checksum: 10c0/30fe68377e3fbdd9691235bca1c99e1d6ac9c850156a56abc09fa3ed7777c520a260cbee6a1c796994a5adee96dcdc6dd3742cc4444aca713e2611c6b6d1f73d
   languageName: node
   linkType: hard
 
@@ -2311,7 +2311,7 @@ __metadata:
     "@sapphire/timestamp": "npm:^1.0.3"
     "@skyra/jaro-winkler": "npm:^1.1.1"
     "@types/adm-zip": "npm:^0.5.5"
-    "@types/archiver": "npm:^6.0.2"
+    "@types/archiver": "npm:^7.0.0"
     "@types/bun": "npm:^1.2.5"
     "@types/cors": "npm:^2.8.17"
     "@types/execa": "npm:^2.0.2"
