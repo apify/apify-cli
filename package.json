@@ -106,7 +106,7 @@
         "string-width": "^8.0.0",
         "strip-ansi": "^7.1.0",
         "tiged": "~2.12.7",
-        "which": "^5.0.0",
+        "which": "^6.0.0",
         "widest-line": "^5.0.0",
         "wrap-ansi": "^9.0.0"
     },
