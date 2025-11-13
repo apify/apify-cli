@@ -56,8 +56,5 @@ jobs:
             - name: Build module
               run: yarn build
 
-            - name: Pack with yarn
-              run: yarn pack
-
             - name: Publish to NPM
               run: yarn npm publish --provenance --access public --tag ${{ inputs.tag }}
