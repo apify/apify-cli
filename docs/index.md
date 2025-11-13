@@ -1,7 +1,7 @@
 ---
-title: Introduction
+title: Apify CLI overview
 description: An introduction to Apify CLI, a command-line interface for creating, developing, building, and running Apify Actors and managing the Apify cloud platform.
-sidebar_label: Introduction
+sidebar_label: Overview
 ---
 
 Apify command-line interface (Apify CLI) helps you create, develop, build and run [Apify Actors](https://apify.com/actors), and manage the Apify cloud platform from any computer.
