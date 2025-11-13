@@ -220,44 +220,13 @@ jobs:
         needs: [update_changelog]
         runs-on: ubuntu-latest
 
-        # Required for --provenances to work
-        permissions:
-            id-token: write
-
         steps:
-            - uses: actions/checkout@v5
+            - name: Execute publish workflow
+              uses: apify/workflows/execute-workflow@main
               with:
-                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
-
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24
-                  registry-url: https://registry.npmjs.org
-                  package-manager-cache: false
-
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install dependencies
-              run: yarn
-
-            # Check version consistency and increment pre-release version number for beta only.
-            - name: Bump pre-release version
-              run: yarn tsx ./.github/scripts/before-beta-release.ts
-
-            - name: Build module
-              run: yarn build
-
-            - name: Publish to NPM
-              run: |
-                  yarn npm publish --provenance --access public --tag beta
-              env:
-                  YARN_NPM_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+                  workflow: publish_to_npm.yaml
+                  inputs: >
+                      { 
+                          "ref": "${{ needs.update_changelog.outputs.changelog_commitish }}", 
+                          "tag": "beta" 
+                      }

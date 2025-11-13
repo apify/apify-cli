@@ -1,0 +1,60 @@
+name: Publish to NPM
+
+on:
+    workflow_dispatch:
+        inputs:
+            ref:
+                description: Git ref to publish (branch, tag, or commit SHA)
+                required: true
+                type: string
+            tag:
+                description: NPM dist-tag
+                required: true
+                type: choice
+                default: latest
+                options:
+                    - latest
+                    - beta
+
+permissions:
+    id-token: write # Required for OIDC
+    contents: read
+
+jobs:
+    publish_to_npm:
+        name: Publish to NPM
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v5
+              with:
+                  ref: ${{ inputs.ref }}
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  registry-url: "https://registry.npmjs.org"
+                  package-manager-cache: false
+
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
+
+            - name: Activate cache for yarn
+              uses: actions/setup-node@v6
+              with:
+                  cache: yarn
+
+            - name: Install dependencies
+              run: yarn
+
+            - name: Check version consistency and bump pre-release version (beta only)
+              if: ${{ inputs.tag == 'beta' }}
+              run: yarn tsx ./.github/scripts/before-beta-release.ts
+
+            - name: Build module
+              run: yarn build
+
+            - name: Publish to NPM
+              run: yarn npm publish --provenance --access public --tag ${{ inputs.tag }}
