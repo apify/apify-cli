@@ -54,10 +54,13 @@ const isSecretKey = (envValue: string) => {
  * Replaces secure values in env with proper values from local secrets file.
  * @param env
  * @param secrets - Object with secrets, if not set, will be load from secrets file.
+ * @param ignoreMissingSecrets - If true, emit warnings for missing secrets instead of throwing errors
  */
-export const replaceSecretsValue = (env: Record<string, string>, secrets?: Record<string, string>) => {
+export const replaceSecretsValue = (env: Record<string, string>, secrets?: Record<string, string>, ignoreMissingSecrets?: boolean) => {
 	secrets = secrets || getSecretsFile();
 	const updatedEnv = {};
+	const missingSecrets: string[] = [];
+	
 	Object.keys(env).forEach((key) => {
 		if (isSecretKey(env[key])) {
 			const secretKey = env[key].replace(new RegExp(`^${SECRET_KEY_PREFIX}`), '');
@@ -65,15 +68,30 @@ export const replaceSecretsValue = (env: Record<string, string>, secrets?: Recor
 				// @ts-expect-error - we are replacing the value
 				updatedEnv[key] = secrets[secretKey];
 			} else {
-				warning({
-					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
-				});
+				missingSecrets.push(secretKey);
 			}
 		} else {
 			// @ts-expect-error - we are replacing the value
 			updatedEnv[key] = env[key];
 		}
 	});
+	
+	if (missingSecrets.length > 0) {
+		if (ignoreMissingSecrets) {
+			// Emit warnings for each missing secret, keeping original behavior
+			missingSecrets.forEach(secretKey => {
+				warning({
+					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
+				});
+			});
+		} else {
+			throw new Error(
+				`Missing secrets: ${missingSecrets.join(', ')}. ` +
+				`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>".`
+			);
+		}
+	}
+	
 	return updatedEnv;
 };
 
@@ -86,11 +104,15 @@ interface EnvVar {
 /**
  * Transform env to envVars format attribute, which uses Apify API
  * It replaces secrets to values from secrets file.
+ * @param env
  * @param secrets - Object with secrets, if not set, will be load from secrets file.
+ * @param ignoreMissingSecrets - If true, emit warnings for missing secrets instead of throwing errors
  */
-export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Record<string, string>) => {
+export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Record<string, string>, ignoreMissingSecrets?: boolean) => {
 	secrets = secrets || getSecretsFile();
 	const envVars: EnvVar[] = [];
+	const missingSecrets: string[] = [];
+	
 	Object.keys(env).forEach((key) => {
 		if (isSecretKey(env[key])) {
 			const secretKey = env[key].replace(new RegExp(`^${SECRET_KEY_PREFIX}`), '');
@@ -101,9 +123,7 @@ export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Rec
 					isSecret: true,
 				});
 			} else {
-				warning({
-					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
-				});
+				missingSecrets.push(secretKey);
 			}
 		} else {
 			envVars.push({
@@ -112,5 +132,22 @@ export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Rec
 			});
 		}
 	});
+	
+	if (missingSecrets.length > 0) {
+		if (ignoreMissingSecrets) {
+			// Emit warnings for each missing secret, keeping original behavior
+			missingSecrets.forEach(secretKey => {
+				warning({
+					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
+				});
+			});
+		} else {
+			throw new Error(
+				`Missing secrets: ${missingSecrets.join(', ')}. ` +
+				`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>".`
+			);
+		}
+	}
+	
 	return envVars;
 };
