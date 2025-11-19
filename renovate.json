@@ -25,8 +25,16 @@
 		{
 			"groupName": "eslint/prettier/biome",
 			"automerge": true,
+			"automergeType": "branch",
 			"groupSlug": "formatting-linting-dependencies",
 			"matchPackageNames": ["/eslint/", "/prettier/", "/biome/"]
+		},
+		{
+			"groupName": "inquirer",
+			"automerge": true,
+			"automergeType": "branch",
+			"groupSlug": "all-inquirer",
+			"matchPackageNames": ["@inquirer/**"]
 		}
 	],
 	"schedule": ["every weekday"]
