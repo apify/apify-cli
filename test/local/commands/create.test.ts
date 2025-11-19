@@ -6,7 +6,6 @@ import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
-import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 const actName = 'create-my-actor';
@@ -17,8 +16,6 @@ const { beforeAllCalls, afterAllCalls, joinPath, joinCwdPath, toggleCwdBetweenFu
 		cwd: true,
 		cwdParent: true,
 	});
-
-const { lastErrorMessage } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 
@@ -33,9 +30,9 @@ describe('apify create', () => {
 
 	['a'.repeat(151), 'sh', 'bad_escaped'].forEach((badActorName) => {
 		it(`returns error with bad Actor name ${badActorName}`, async () => {
-			await testRunCommand(CreateCommand, { args_actorName: badActorName });
-
-			expect(lastErrorMessage()).toMatch(/the actor name/i);
+			await expect(testRunCommand(CreateCommand, { args_actorName: badActorName })).rejects.toThrow(
+				/the actor name/i,
+			);
 		});
 	});
 
