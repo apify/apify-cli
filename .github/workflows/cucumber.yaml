@@ -27,7 +27,7 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - name: Use Node.js ${{ matrix.node-version }}
               uses: actions/setup-node@v6
