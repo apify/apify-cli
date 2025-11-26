@@ -14,7 +14,6 @@ import {
 } from '../../../src/lib/utils.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
-import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 import {
 	defaultsInputSchemaPath,
@@ -45,8 +44,6 @@ const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPa
 	cwd: true,
 	cwdParent: true,
 });
-
-const { lastErrorMessage } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { RunCommand } = await import('../../../src/commands/run.js');
@@ -292,45 +289,37 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			writeFileSync(inputPath, '{}', { flag: 'w' });
 			copyFileSync(missingRequiredPropertyInputSchemaPath, inputSchemaPath);
 
-			await testRunCommand(RunCommand, {});
-
-			expect(lastErrorMessage()).toMatch(/Field awesome is required/i);
+			await expect(testRunCommand(RunCommand, {})).rejects.toThrow(/Field awesome is required/i);
 		});
 
 		it('throws when required field has wrong type', async () => {
 			writeFileSync(inputPath, '{"awesome": 42}', { flag: 'w' });
 			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
 
-			await testRunCommand(RunCommand, {});
-
-			expect(lastErrorMessage()).toMatch(/Field awesome must be boolean/i);
+			await expect(testRunCommand(RunCommand, {})).rejects.toThrow(/Field awesome must be boolean/i);
 		});
 
 		it('throws when passing manual input, but local file has correct input', async () => {
 			writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
 			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
 
-			await testRunCommand(RunCommand, { flags_input: handPassedInput });
-
-			expect(lastErrorMessage()).toMatch(/Field awesome must be boolean/i);
+			await expect(testRunCommand(RunCommand, { flags_input: handPassedInput })).rejects.toThrow(
+				/Field awesome must be boolean/i,
+			);
 		});
 
 		it('throws when input has default field of wrong type', async () => {
 			writeFileSync(inputPath, '{"awesome": true, "help": 123}', { flag: 'w' });
 			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
 
-			await testRunCommand(RunCommand, {});
-
-			expect(lastErrorMessage()).toMatch(/Field help must be string/i);
+			await expect(testRunCommand(RunCommand, {})).rejects.toThrow(/Field help must be string/i);
 		});
 
 		it('throws when input has prefilled field of wrong type', async () => {
 			writeFileSync(inputPath, '{"awesome": true, "help": 123}', { flag: 'w' });
 			copyFileSync(prefillsInputSchemaPath, inputSchemaPath);
 
-			await testRunCommand(RunCommand, {});
-
-			expect(lastErrorMessage()).toMatch(/Field help must be string/i);
+			await expect(testRunCommand(RunCommand, {})).rejects.toThrow(/Field help must be string/i);
 		});
 
 		it('automatically inserts missing defaulted fields', async () => {
