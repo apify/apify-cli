@@ -1,16 +1,22 @@
-import type { ApifyClient, Dataset, DatasetClient, KeyValueStore, KeyValueStoreClient } from 'apify-client';
+import type {
+	DatasetClient,
+	DatasetInfo as CoreDatasetInfo,
+	KeyValueStoreClient,
+	KeyValueStoreInfo as CoreKeyValueStoreInfo,
+	StorageClient,
+} from '@crawlee/types';
+import type { Dataset as ApifyDataset, KeyValueStore as ApifyKeyValueStore } from 'apify-client';
+import { ApifyClient } from 'apify-client';
 
-import { getLocalUserInfo } from '../utils.js';
+type DatasetInfo = CoreDatasetInfo & Partial<ApifyDataset>;
+type KeyValueStoreInfo = CoreKeyValueStoreInfo & Partial<ApifyKeyValueStore>;
 
 type ReturnTypeForStorage<T extends 'dataset' | 'keyValueStore'> = T extends 'dataset'
-	? {
-			dataset: Dataset;
-			datasetClient: DatasetClient;
-		}
-	: { keyValueStore: KeyValueStore; keyValueStoreClient: KeyValueStoreClient };
+	? { dataset: DatasetInfo; datasetClient: DatasetClient }
+	: { keyValueStore: KeyValueStoreInfo; keyValueStoreClient: KeyValueStoreClient };
 
 async function tryToGetStorage<T extends 'dataset' | 'keyValueStore'>(
-	client: ApifyClient,
+	client: StorageClient,
 	id: string,
 	storageType: T,
 ): Promise<ReturnTypeForStorage<T> | null> {
@@ -25,32 +31,36 @@ async function tryToGetStorage<T extends 'dataset' | 'keyValueStore'>(
 		} as ReturnTypeForStorage<T>;
 	}
 
-	const info = await getLocalUserInfo();
+	if (!(client instanceof ApifyClient)) {
+		return null;
+	}
+
+	const info = await client.user('me').get();
 
 	const byName = await client[storageType](`${info.username!}/${id}`)
 		.get()
 		.catch(() => undefined);
 
 	if (byName) {
+		// @ts-expect-error WHY DOES THIS NOT TYPECHECK :((
 		return {
 			[storageType]: byName,
 			[`${storageType}Client`]: client[storageType](byName.id),
 		} as ReturnTypeForStorage<T>;
 	}
-
 	return null;
 }
 
 export async function tryToGetDataset(
-	client: ApifyClient,
+	client: StorageClient,
 	datasetId: string,
-): Promise<{ dataset: Dataset; datasetClient: DatasetClient } | null> {
+): Promise<{ dataset: DatasetInfo; datasetClient: DatasetClient } | null> {
 	return tryToGetStorage(client, datasetId, 'dataset');
 }
 
 export async function tryToGetKeyValueStore(
-	client: ApifyClient,
+	client: StorageClient,
 	keyValueStoreId: string,
-): Promise<{ keyValueStore: KeyValueStore; keyValueStoreClient: KeyValueStoreClient } | null> {
+): Promise<{ keyValueStore: KeyValueStoreInfo; keyValueStoreClient: KeyValueStoreClient } | null> {
 	return tryToGetStorage(client, keyValueStoreId, 'keyValueStore');
 }

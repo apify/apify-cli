@@ -1,8 +1,5 @@
-import type { ApifyClient } from 'apify-client';
+import { ACTOR_ENV_VARS } from '@apify/consts';
 
-import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
-
-import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { CommandExitCodes } from '../../lib/consts.js';
@@ -20,14 +17,11 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { key } = this.args;
 
-		if ([undefined, 'false', ''].includes(process.env[APIFY_ENV_VARS.IS_AT_HOME])) {
-			error({ message: 'get-public-url is not yet implemented for local development' });
-			process.exitCode = CommandExitCodes.NotImplemented;
-			return;
-		}
 		const storeId = process.env[ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID];
 
 		// This should never happen, but handle it gracefully to prevent crashes.
@@ -39,8 +33,7 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 			return;
 		}
 
-		const apifyClient = (await getApifyStorageClient()) as ApifyClient;
-		const store = await apifyClient.keyValueStore(storeId).get();
+		const store = await this.apifyClient.keyValueStore(storeId).get();
 
 		if (!store) {
 			error({
@@ -50,7 +43,7 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 			return;
 		}
 
-		const publicTarballUrl = await apifyClient.keyValueStore(storeId).getRecordPublicUrl(key);
+		const publicTarballUrl = await this.apifyClient.keyValueStore(storeId).getRecordPublicUrl(key);
 
 		console.log(publicTarballUrl);
 	}

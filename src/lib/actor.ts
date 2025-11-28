@@ -1,15 +1,13 @@
 import process from 'node:process';
 import { pipeline } from 'node:stream/promises';
 
-import type { MemoryStorageOptions } from '@crawlee/memory-storage';
 import { MemoryStorage } from '@crawlee/memory-storage';
 import type { StorageClient } from '@crawlee/types';
-import type { ApifyClientOptions } from 'apify-client';
-import { ApifyClient } from 'apify-client';
+import type { ApifyClient } from 'apify-client';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';
 
-import { getApifyClientOptions, getLocalStorageDir, getLocalUserInfo } from './utils.js';
+import { getLocalStorageDir } from './utils.js';
 
 export const APIFY_STORAGE_TYPES = {
 	KEY_VALUE_STORE: 'KEY_VALUE_STORE',
@@ -18,32 +16,12 @@ export const APIFY_STORAGE_TYPES = {
 } as const;
 
 /**
- * Returns Apify token from environment variable or local auth file.
- * @returns Apify token
- */
-export const getApifyTokenFromEnvOrAuthFile = async () => {
-	const apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
-	if (apifyToken) {
-		return apifyToken;
-	}
-
-	const localUserInfo = await getLocalUserInfo();
-	if (!localUserInfo || !localUserInfo.token) {
-		throw new Error(
-			'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
-		);
-	}
-
-	return localUserInfo.token;
-};
-
-/**
  * Returns instance of ApifyClient or ApifyStorageLocal based on environment variables.
- * @param options - ApifyClient options
+ * @param apifyClient - ApifyClient instance to use if local storage is not used.
  * @param forceCloud - If true then ApifyClient will be returned.
  */
 export const getApifyStorageClient = async (
-	options: MemoryStorageOptions | ApifyClientOptions = {},
+	apifyClient: ApifyClient | undefined,
 	forceCloud = Reflect.has(process.env, APIFY_ENV_VARS.IS_AT_HOME),
 ): Promise<StorageClient> => {
 	const storageDir = getLocalStorageDir();
@@ -51,15 +29,14 @@ export const getApifyStorageClient = async (
 	if (storageDir && !forceCloud) {
 		return new MemoryStorage({
 			localDataDirectory: storageDir,
-			...options,
 		});
 	}
-	const apifyToken = await getApifyTokenFromEnvOrAuthFile();
 
-	return new ApifyClient({
-		...getApifyClientOptions(apifyToken),
-		...options,
-	});
+	if (!apifyClient) {
+		throw new Error('ApifyClient instance must be provided when not using local storage.');
+	}
+
+	return apifyClient;
 };
 
 /**
@@ -75,18 +52,23 @@ export const getDefaultStorageId = (storeType: (typeof APIFY_STORAGE_TYPES)[keyo
 
 /**
  * Outputs value of record into standard output of the command.
+ *
+ * @param apifyClient - ApifyClient instance to use if local storage is not used.
  * @param key - Record key
  */
-export const outputRecordFromDefaultStore = async (key: string) => {
-	const apifyClient = await getApifyStorageClient();
+export const outputRecordFromDefaultStore = async (apifyClient: ApifyClient | undefined, key: string) => {
+	const client = await getApifyStorageClient(apifyClient);
 	const defaultStoreId = getDefaultStorageId(APIFY_STORAGE_TYPES.KEY_VALUE_STORE);
-	const record = await apifyClient.keyValueStore(defaultStoreId).getRecord(key, { stream: true });
+	const record = await client.keyValueStore(defaultStoreId).getRecord(key, { stream: true });
 	// If record does not exist return empty string.
 	if (!record) return;
 
 	await pipeline(record.value, process.stdout, { end: false });
 };
 
-export const outputInputFromDefaultStore = async () => {
-	return outputRecordFromDefaultStore(process.env[ACTOR_ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT);
+export const outputInputFromDefaultStore = async (apifyClient: ApifyClient | undefined) => {
+	return outputRecordFromDefaultStore(
+		apifyClient,
+		process.env[ACTOR_ENV_VARS.INPUT_KEY] || KEY_VALUE_STORE_KEYS.INPUT,
+	);
 };

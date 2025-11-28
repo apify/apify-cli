@@ -1,11 +1,9 @@
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { info } from '../../lib/outputs.js';
-import { getLoggedClient } from '../../lib/utils.js';
 
 /**
  * This command can be used to charge for a specific event in the pay-per-event Actor run.
@@ -45,6 +43,8 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { eventName } = this.args;
 		const { count, testPayPerEvent, idempotencyKey } = this.flags;
@@ -67,18 +67,13 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 			return;
 		}
 
-		const apifyToken = await getApifyTokenFromEnvOrAuthFile();
-		const apifyClient = await getLoggedClient(apifyToken);
-		if (!apifyClient) {
-			throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN.');
-		}
 		const runId = process.env[APIFY_ENV_VARS.ACTOR_RUN_ID];
 
 		if (!runId) {
 			throw new Error('Charge command must be executed in a running Actor. Run ID not found.');
 		}
 
-		const run = await apifyClient.run(runId).get();
+		const run = await this.apifyClient.run(runId).get();
 		if (run?.pricingInfo?.pricingModel !== 'PAY_PER_EVENT') {
 			throw new Error('Charge command can only be used with pay-per-event pricing model.');
 		}
@@ -87,7 +82,7 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 			message: `Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}" (runId: ${runId}).`,
 			stdout: true,
 		});
-		await apifyClient.run(runId).charge({
+		await this.apifyClient.run(runId).charge({
 			eventName,
 			count,
 			idempotencyKey,

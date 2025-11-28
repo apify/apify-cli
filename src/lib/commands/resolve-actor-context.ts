@@ -2,7 +2,7 @@ import process from 'node:process';
 
 import type { ApifyClient } from 'apify-client';
 
-import { getLocalConfig, getLocalUserInfo } from '../utils.js';
+import { getLocalConfig } from '../utils.js';
 
 /**
  * Tries to resolve what actor the command ran points to. If an actor id is provided via command line, attempt to resolve it,
@@ -17,7 +17,7 @@ export async function resolveActorContext({
 	providedActorNameOrId: string | undefined;
 	client: ApifyClient;
 }) {
-	const userInfo = await getLocalUserInfo();
+	const userInfo = await client.user('me').get();
 	const usernameOrId = userInfo.username || (userInfo.id as string);
 	const localConfig = getLocalConfig(process.cwd()) || {};
 

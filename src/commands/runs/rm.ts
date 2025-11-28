@@ -6,7 +6,6 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const deletableStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,
@@ -27,12 +26,12 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { runId } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-
-		const run = await apifyClient.run(runId).get();
+		const run = await this.apifyClient.run(runId).get();
 
 		if (!run) {
 			error({ message: `Run with ID "${runId}" was not found on your account.` });
@@ -60,7 +59,7 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		}
 
 		try {
-			await apifyClient.run(runId).delete();
+			await this.apifyClient.run(runId).delete();
 
 			success({
 				message: `Run with ID "${runId}" was deleted.`,

@@ -17,14 +17,7 @@ import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, info, link, run, success, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
-import {
-	createActZip,
-	createSourceFiles,
-	getActorLocalFilePaths,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	outputJobLog,
-} from '../../lib/utils.js';
+import { createActZip, createSourceFiles, getActorLocalFilePaths, outputJobLog } from '../../lib/utils.js';
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
 const DEFAULT_RUN_OPTIONS = {
@@ -91,6 +84,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		// Resolving with `.` will mean stay in the cwd folder, whereas anything else in dir will be resolved. If users pass in a full path (`/home/...`, it will correctly resolve to that)
 		const cwd = resolve(process.cwd(), this.flags.dir ?? '.');
@@ -127,8 +122,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			return;
 		}
 
-		const apifyClient = await getLoggedClientOrThrow();
-
 		const actorConfigResult = await useActorConfig({ cwd });
 
 		if (actorConfigResult.isErr()) {
@@ -139,8 +132,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		const userInfo = await getLocalUserInfo();
-		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
+		const userInfo = await this.apifyClient.user('me').get();
+		const isOrganizationLoggedIn = !!(userInfo as any).organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
 
 		let actorId: string;
@@ -170,12 +163,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const forceActorId = this.args.actorId;
 
 		if (forceActorId) {
-			actor = (await apifyClient.actor(forceActorId).get())!;
+			actor = (await this.apifyClient.actor(forceActorId).get())!;
 			if (!actor) throw new Error(`Cannot find Actor with ID '${forceActorId}' in your account.`);
 			actorId = actor.id;
 		} else {
 			const usernameOrId = userInfo.username || userInfo.id;
-			actor = (await apifyClient.actor(`${usernameOrId}/${actorConfig!.name}`).get())!;
+			actor = (await this.apifyClient.actor(`${usernameOrId}/${actorConfig!.name}`).get())!;
 			if (actor) {
 				actorId = actor.id;
 			} else {
@@ -196,7 +189,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 						},
 					],
 				};
-				actor = await apifyClient.actors().create(newActor);
+				actor = await this.apifyClient.actors().create(newActor);
 				actorId = actor.id;
 				isActorCreatedNow = true;
 				info({ message: `Created Actor with name ${actorConfig!.name} on Apify.` });
@@ -206,7 +199,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
 		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
-		const actorClient = apifyClient.actor(actorId);
+		const actorClient = this.apifyClient.actor(actorId);
 
 		let sourceType;
 		let sourceFiles;
@@ -247,10 +240,10 @@ Skipping push. Use --force to override.`,
 			await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush, cwd);
 
 			// Upload it to Apify.keyValueStores
-			const store = await apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
+			const store = await this.apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
 			const key = `version-${version}.zip`;
 			const buffer = readFileSync(TEMP_ZIP_FILE_NAME);
-			await apifyClient.keyValueStore(store.id).setRecord({
+			await this.apifyClient.keyValueStore(store.id).setRecord({
 				key,
 				// TODO: fix this type too
 				value: buffer as never,
@@ -258,7 +251,7 @@ Skipping push. Use --force to override.`,
 			});
 			unlinkSync(TEMP_ZIP_FILE_NAME);
 			const tempTarballUrl = new URL(
-				`${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
+				`${this.apifyClient.publicBaseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
 			);
 
 			/**
@@ -314,13 +307,13 @@ Skipping push. Use --force to override.`,
 		});
 
 		try {
-			await outputJobLog({ job: build, timeoutMillis: waitForFinishMillis, apifyClient });
+			await outputJobLog({ job: build, timeoutMillis: waitForFinishMillis, apifyClient: this.apifyClient });
 		} catch (err) {
 			warning({ message: 'Can not get log:' });
 			console.error(err);
 		}
 
-		build = (await apifyClient.build(build.id).get())!;
+		build = (await this.apifyClient.build(build.id).get())!;
 
 		link({
 			message: 'Actor build detail',

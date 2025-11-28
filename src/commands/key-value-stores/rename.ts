@@ -1,12 +1,12 @@
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueStoresRenameCommand> {
 	static override name = 'rename' as const;
@@ -29,6 +29,8 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { unname } = this.flags;
 		const { newName, keyValueStoreNameOrId } = this.args;
@@ -45,7 +47,7 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 			return;
 		}
 
-		const client = await getLoggedClientOrThrow();
+		const client = await getApifyStorageClient(this.apifyClient);
 		const existingDataset = await tryToGetKeyValueStore(client, keyValueStoreNameOrId);
 
 		if (!existingDataset) {

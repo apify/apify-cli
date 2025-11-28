@@ -9,6 +9,7 @@ import open from 'open';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { getLoggedClient } from '../lib/authFile.js';
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { AUTH_FILE_PATH } from '../lib/consts.js';
@@ -16,22 +17,24 @@ import { updateUserId } from '../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../lib/hooks/user-confirmations/useSelectFromList.js';
 import { error, info, success } from '../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClient, tildify } from '../lib/utils.js';
+import { tildify } from '../lib/utils.js';
 
-const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
-// const CONSOLE_BASE_URL = 'http://localhost:3000/settings/integrations';
-const CONSOLE_URL_ORIGIN = new URL(CONSOLE_BASE_URL).origin;
-
-const API_BASE_URL = CONSOLE_BASE_URL.includes('localhost') ? 'http://localhost:3333' : undefined;
+const CONSOLE_URL_ORIGIN = 'https://console.apify.com';
+const LOCALHOST_URL_ORIGIN = 'http://localhost:3000';
+const CONSOLE_LOGIN_PATH = '/settings/integrations';
 
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
-const tryToLogin = async (token: string) => {
-	const isUserLogged = await getLoggedClient(token, API_BASE_URL);
-	const userInfo = await getLocalUserInfo();
+const tryToLogin = async (token: string, baseUrl: string | undefined) => {
+	const client = await getLoggedClient({
+		token,
+		baseUrl,
+		storeAsNewUser: true,
+	});
 
-	if (isUserLogged) {
+	if (client) {
+		const userInfo = await client.user('me').get();
 		await updateUserId(userInfo.id!);
 
 		success({
@@ -42,7 +45,7 @@ const tryToLogin = async (token: string) => {
 			message: 'Login to Apify failed, the provided API token is not valid.',
 		});
 	}
-	return isUserLogged;
+	return client;
 };
 
 export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
@@ -65,13 +68,18 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 			choices: ['console', 'manual'],
 			required: false,
 		}),
+		alternativeUrl: Flags.string({
+			description: '[Apify developers only] Alternative API URL to use with this account.',
+			required: false,
+			hidden: true,
+		}),
 	};
 
 	async run() {
-		const { token, method } = this.flags;
+		const { token, method, alternativeUrl } = this.flags;
 
 		if (token) {
-			await tryToLogin(token);
+			await tryToLogin(token, alternativeUrl);
 			return;
 		}
 
@@ -99,13 +107,21 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 		}
 
 		if (selectedMethod === 'console') {
+			const isLocalhost = alternativeUrl?.includes('localhost');
+			if (alternativeUrl && !isLocalhost)
+				throw new Error(
+					'The interactive login can only be used with prod or localhost backends, other deployments are currently not supported',
+				);
+
+			const consoleOrigin = isLocalhost ? LOCALHOST_URL_ORIGIN : CONSOLE_URL_ORIGIN;
+
 			let server: Server;
 			const app = express();
 
 			// To send requests from browser to localhost, CORS has to be configured properly
 			app.use(
 				cors({
-					origin: CONSOLE_URL_ORIGIN,
+					origin: consoleOrigin,
 					allowedHeaders: ['Content-Type', 'Authorization'],
 				}),
 			);
@@ -147,7 +163,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 			apiRouter.post('/login-token', async (req, res) => {
 				try {
 					if (req.body.apiToken) {
-						await tryToLogin(req.body.apiToken);
+						await tryToLogin(req.body.apiToken, alternativeUrl);
 					} else {
 						throw new Error('Request did not contain API token');
 					}
@@ -182,7 +198,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 			server = app.listen(0);
 			const { port } = server.address() as AddressInfo;
 
-			const consoleUrl = new URL(CONSOLE_BASE_URL);
+			const consoleUrl = new URL(CONSOLE_LOGIN_PATH, consoleOrigin);
 			consoleUrl.searchParams.set('localCliCommand', 'login');
 			consoleUrl.searchParams.set('localCliPort', `${port}`);
 			consoleUrl.searchParams.set('localCliToken', authToken);
@@ -201,7 +217,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 			);
 
 			const tokenAnswer = await useMaskedInput({ message: 'token:' });
-			await tryToLogin(tokenAnswer);
+			await tryToLogin(tokenAnswer, alternativeUrl);
 		}
 	}
 }

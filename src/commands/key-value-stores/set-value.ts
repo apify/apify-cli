@@ -1,11 +1,11 @@
 import type { ApifyApiError } from 'apify-client';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueStoresSetValueCommand> {
 	static override name = 'set-value' as const;
@@ -33,12 +33,14 @@ export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueS
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { storeId, itemKey, value } = this.args;
 		const { contentType } = this.flags;
 
-		const apifyClient = await getLoggedClientOrThrow();
-		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
+		const storageClient = await getApifyStorageClient(this.apifyClient);
+		const maybeStore = await tryToGetKeyValueStore(storageClient, storeId);
 
 		if (!maybeStore) {
 			error({

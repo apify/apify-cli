@@ -3,12 +3,16 @@
 import type { parseArgs, ParseArgsConfig, ParseArgsOptionDescriptor } from 'node:util';
 
 import type { Awaitable } from '@crawlee/types';
+import type { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 import indentString from 'indent-string';
 import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
+import { APIFY_ENV_VARS } from '@apify/consts';
+
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
+import { getLoggedClient } from '../authFile.js';
 import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
 import { trackEvent } from '../hooks/telemetry/trackEvent.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
@@ -143,6 +147,18 @@ const jsonFlagDefinition = {
 	multiple: false,
 } as const satisfies ParseArgsOptionDescriptor;
 
+const tokenFlagDefinition = {
+	type: 'string',
+	multiple: false,
+	short: 't',
+} as const satisfies ParseArgsOptionDescriptor;
+
+const userFlagDefinition = {
+	type: 'string',
+	multiple: false,
+	short: 'u',
+} as const satisfies ParseArgsOptionDescriptor;
+
 export const commandRegistry = new Map<string, typeof BuiltApifyCommand>();
 
 type ParseResult = ReturnType<typeof parseArgs<ReturnType<ApifyCommand['_buildParseArgsOption']>>>;
@@ -176,6 +192,18 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	static enableJsonFlag = false;
 
+	/**
+	 * If the command requires authentication, set this to `'always' as const`. You command can then use `this.apifyClient`,
+	 * which will correctly typecheck as `ApifyClient`. With `'optionally' as const`, `this.apifyClient` will be typed
+	 * as `ApifyClient | null`.
+	 *
+	 * This adds two flags to the command: --token and --user.
+	 *
+	 * The `user` flag selects which user from the auth file to use, falling back to the default. The `token` flag
+	 * overrides that, allowing to provide a token directly. (It is an error to provide both flags at the same time.)
+	 */
+	static requiresAuthentication: 'never' | 'optionally' | 'always' = 'never';
+
 	static name: string;
 
 	static shortDescription?: string;
@@ -203,6 +231,13 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	protected subcommandAliasUsed?: string;
 
 	protected skipTelemetry = false;
+
+	/** Authenticated Apify client instance for commands that require authentication. See `requiresAuthentication` for details. */
+	protected apifyClient!: T['requiresAuthentication'] extends 'always'
+		? ApifyClient
+		: T['requiresAuthentication'] extends 'optionally'
+			? ApifyClient | undefined
+			: unknown;
 
 	public constructor(entrypoint: string, commandString: string, aliasUsed: string, subcommandAliasUsed?: string) {
 		this.entrypoint = entrypoint;
@@ -243,6 +278,47 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		return this.ctor.printHelp();
 	}
 
+	private async parseAuthFlags(rawFlags: ParseResult['values']): Promise<ApifyClient | undefined> {
+		const envToken = process.env[APIFY_ENV_VARS.TOKEN];
+		let client: ApifyClient | null = null;
+		if (envToken) {
+			client = await getLoggedClient({ token: envToken, baseUrl: undefined });
+			if (!client) {
+				throw new CommandError({
+					code: CommandErrorCode.NODEJS_ERR_PARSE_ARGS_INVALID_OPTION_VALUE,
+					command: this.ctor,
+					message: 'The API token provided in the APIFY_TOKEN environment variable is invalid.',
+				});
+			}
+		} else if (typeof rawFlags.token === 'string') {
+			if (typeof rawFlags.user === 'string') {
+				throw new CommandError({
+					code: CommandErrorCode.APIFY_FLAG_IS_EXCLUSIVE_WITH_ANOTHER_FLAG,
+					command: this.ctor,
+					message: 'The --token and --user flags should not be used together.',
+				});
+			}
+			client = await getLoggedClient({ token: rawFlags.token, baseUrl: undefined });
+			if (!client) {
+				throw new CommandError({
+					code: CommandErrorCode.NODEJS_ERR_PARSE_ARGS_INVALID_OPTION_VALUE,
+					command: this.ctor,
+					message: 'The provided token is invalid.',
+				});
+			}
+		} else {
+			client = await getLoggedClient({ usernameOrId: rawFlags.user });
+		}
+		if (!client && this.ctor.requiresAuthentication === 'always') {
+			throw new CommandError({
+				code: CommandErrorCode.APIFY_MISSING_AUTHENTICATION,
+				command: this.ctor,
+				message: 'You must be logged in to perform this action. Please run "apify login" command.',
+			});
+		}
+		return client ?? undefined;
+	}
+
 	private async _run(parseResult: ParseResult) {
 		const { values: rawFlags, positionals: rawArgs, tokens: rawTokens } = parseResult;
 
@@ -262,6 +338,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			} else {
 				this.flags.json = false;
 			}
+		}
+
+		if (this.ctor.requiresAuthentication !== 'never') {
+			(this.apifyClient as ApifyClient | undefined) = await this.parseAuthFlags(rawFlags);
 		}
 
 		const missingRequiredArgs = new Map<string, TaggedArgBuilder<ArgTag, unknown>>();
@@ -310,6 +390,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			await this.run();
 		} catch (err: any) {
 			error({ message: err.message });
+			if (process.env.APIFY_CLI_DEBUG) console.error(indentString(err.stack, 2));
 		} finally {
 			// analytics
 			if (!this.telemetryData.actorLanguage && COMMANDS_WITHIN_ACTOR.includes(this.commandString)) {
@@ -638,6 +719,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			} as {
 				help: typeof helpFlagDefinition;
 				json: typeof jsonFlagDefinition;
+				token: typeof tokenFlagDefinition;
+				user: typeof userFlagDefinition;
 				[k: string]: ParseArgsOptionDescriptor;
 			},
 		} satisfies ParseArgsConfig;
@@ -647,8 +730,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				if (typeof internalBuilderData === 'string') {
 					throw new RangeError('Do not provide the string for the json flag! It is a type level assertion!');
 				}
-				// Skip the "json" flag, as it is set by enableJsonFlag
-				if (key.toLowerCase() === 'json') {
+				// Skip the flags automatically added by global options
+				if (['json', 'token', 'user'].includes(key.toLowerCase())) {
 					continue;
 				}
 
@@ -669,6 +752,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		if (this.ctor.enableJsonFlag) {
 			object.options!.json = jsonFlagDefinition;
+		}
+
+		if (this.ctor.requiresAuthentication) {
+			object.options!.token = tokenFlagDefinition;
+			object.options!.user = userFlagDefinition;
 		}
 
 		return object;

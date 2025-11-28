@@ -6,9 +6,9 @@ import isCI from 'is-ci';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { LoginCommand } from '../../../src/commands/login.js';
+import { getLoggedClient } from '../../../src/lib/authFile.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
-import { getLocalUserInfo } from '../../../src/lib/utils.js';
 
 export interface UseAuthSetupOptions {
 	/**
@@ -52,12 +52,14 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 
 export async function safeLogin(tokenOverride?: string) {
 	const { TEST_USER_TOKEN } = await import('../config.js');
+	const token = tokenOverride ?? TEST_USER_TOKEN;
 
 	// eslint-disable-next-line no-restricted-syntax -- The only place we should run this is here
-	await testRunCommand(LoginCommand, { flags_token: tokenOverride ?? TEST_USER_TOKEN });
+	await testRunCommand(LoginCommand, { flags_token: token });
 
 	try {
-		const userInfo = await getLocalUserInfo();
+		const client = await getLoggedClient({ token, baseUrl: undefined });
+		const userInfo = await client?.user('me').get();
 
 		if (userInfo?.proxy?.password && isCI) {
 			process.stdout.write(`${EOL}::add-mask::${userInfo.proxy.password}${EOL}`);

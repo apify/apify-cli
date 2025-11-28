@@ -7,7 +7,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { DurationFormatter, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 interface HydratedActorInfo extends Omit<Actor, 'taggedBuilds'> {
 	taggedBuilds?: Record<string, ActorTaggedBuild & { build?: Build }>;
@@ -64,14 +64,15 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	static override enableJsonFlag = true;
 
 	async run() {
 		const { actorId } = this.args;
 		const { readme, input, json } = this.flags;
 
-		const client = await getLoggedClientOrThrow();
-		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
+		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client: this.apifyClient });
 
 		if (!ctx.valid) {
 			error({
@@ -82,8 +83,8 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 			return;
 		}
 
-		const actorInfo = (await client.actor(ctx.id).get())! as HydratedActorInfo;
-		const actorMaker = await client.user(actorInfo.userId).get();
+		const actorInfo = (await this.apifyClient.actor(ctx.id).get())! as HydratedActorInfo;
+		const actorMaker = await this.apifyClient.user(actorInfo.userId).get();
 
 		actorInfo.actorMaker = actorMaker;
 
@@ -93,7 +94,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 				continue;
 			}
 
-			const buildData = await client.build(taggedBuild.buildId).get();
+			const buildData = await this.apifyClient.build(taggedBuild.buildId).get();
 
 			taggedBuild.build = buildData;
 		}

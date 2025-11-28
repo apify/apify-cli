@@ -34,7 +34,6 @@ import {
 	getLocalInput,
 	getLocalKeyValueStorePath,
 	getLocalStorageDir,
-	getLocalUserInfo,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
 	purgeDefaultDataset,
@@ -100,10 +99,13 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const cwd = process.cwd();
 
-		const { proxy, id: userId, token } = await getLocalUserInfo();
+		const { token } = this.apifyClient;
+		const { proxy, id: userId } = await this.apifyClient.user('me').get();
 
 		const localConfigResult = await useActorConfig({ cwd });
 
@@ -258,6 +260,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
 		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
+		if (this.apifyClient.baseUrl) localEnvVars[APIFY_ENV_VARS.API_BASE_URL] = this.apifyClient.baseUrl;
+		if (this.apifyClient.publicBaseUrl)
+			localEnvVars[APIFY_ENV_VARS.API_PUBLIC_BASE_URL] = this.apifyClient.publicBaseUrl;
 		if (localConfig!.environmentVariables) {
 			const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>);
 			Object.assign(localEnvVars, updatedEnv);

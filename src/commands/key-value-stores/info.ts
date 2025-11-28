@@ -1,6 +1,7 @@
 import type { Task } from 'apify-client';
 import chalk from 'chalk';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
@@ -8,7 +9,7 @@ import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-tabl
 import { getUserPlanPricing } from '../../lib/commands/storage-size.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 const consoleLikeTable = new ResponsiveTable({
 	allColumns: ['Row1', 'Row2'],
@@ -29,11 +30,13 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 
 	static override enableJsonFlag = true;
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { storeId } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
+		const storageClient = await getApifyStorageClient(this.apifyClient);
+		const maybeStore = await tryToGetKeyValueStore(storageClient, storeId);
 
 		if (!maybeStore) {
 			error({
@@ -46,19 +49,20 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 		const { keyValueStore: info } = maybeStore;
 
 		const [user, actor, run] = await Promise.all([
-			apifyClient
-				.user(info.userId)
-				.get()
-				.then((u) => u!),
-			info.actId ? apifyClient.actor(info.actId).get() : Promise.resolve(undefined),
-			info.actRunId ? apifyClient.run(info.actRunId).get() : Promise.resolve(undefined),
+			this.apifyClient
+				? this.apifyClient
+						.user(info.userId)
+						.get()
+						.then((u) => u!)
+				: Promise.resolve(undefined),
+			this.apifyClient && info.actId ? this.apifyClient.actor(info.actId).get() : Promise.resolve(undefined),
+			this.apifyClient && info.actRunId ? this.apifyClient.run(info.actRunId).get() : Promise.resolve(undefined),
 		]);
 
 		let task: Task | undefined;
 
 		if (run?.actorTaskId) {
-			task = await apifyClient
-				.task(run.actorTaskId)
+			task = await this.apifyClient!.task(run.actorTaskId)
 				.get()
 				.catch(() => undefined);
 		}
@@ -66,7 +70,7 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 		if (this.flags.json) {
 			printJsonToStdout({
 				...info,
-				user,
+				user: user || null,
 				actor: actor || null,
 				run: run || null,
 				task: task || null,
@@ -89,7 +93,7 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 
 		let row3 = `Operations: ${operationsParts.join(' / ')}`;
 
-		if (user.plan) {
+		if (user?.plan) {
 			const pricing = getUserPlanPricing(user.plan);
 
 			if (pricing) {
@@ -149,9 +153,14 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 		// Remove the first row
 		rows.shift();
 
+		let ownerInfo = '';
+		if (user) {
+			ownerInfo = `  ${chalk.gray('Owned by')} ${chalk.blue(user.username)}`;
+		}
+
 		const message = [
 			`${chalk.bold(info.name || chalk.italic('Unnamed'))}`,
-			`${chalk.gray(info.name ? `${user.username}/${info.name}` : info.id)}  ${chalk.gray('Owned by')} ${chalk.blue(user.username)}`,
+			`${chalk.gray(info.name ? `${user?.username}/${info.name}` : info.id)}${ownerInfo}`,
 			'',
 			rows.join('\n'),
 			'',

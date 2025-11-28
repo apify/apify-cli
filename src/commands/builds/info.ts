@@ -5,7 +5,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { DurationFormatter, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 	static override name = 'info' as const;
@@ -21,12 +21,12 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 
 	static override enableJsonFlag = true;
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { buildId } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-
-		const build = await apifyClient.build(buildId).get();
+		const build = await this.apifyClient.build(buildId).get();
 
 		if (!build) {
 			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
@@ -39,7 +39,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 			return;
 		}
 
-		const actor = await apifyClient.actor(build.actId).get();
+		const actor = await this.apifyClient.actor(build.actId).get();
 
 		let buildTag: string | undefined;
 

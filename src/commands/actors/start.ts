@@ -8,13 +8,7 @@ import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { simpleLog } from '../../lib/outputs.js';
-import {
-	getLocalConfig,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLocalConfig, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
@@ -54,11 +48,12 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const cwd = process.cwd();
 		const localConfig = getLocalConfig(cwd) || {};
-		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await this.apifyClient.user('me').get();
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		const {
@@ -66,7 +61,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			userFriendlyId,
 			actorData,
 		} = await ActorsCallCommand.resolveActorId({
-			client: apifyClient,
+			client: this.apifyClient,
 			localActorName: localConfig.name as string | undefined,
 			usernameOrId,
 			providedActorNameOrId: this.args.actorId,
@@ -93,7 +88,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			return;
 		}
 
-		const iterator = runActorOrTaskOnCloud(apifyClient, {
+		const iterator = runActorOrTaskOnCloud(this.apifyClient, {
 			actorOrTaskData: {
 				id: actorId,
 				userFriendlyId,

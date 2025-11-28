@@ -22,6 +22,8 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { item: _item } = this.args;
 
@@ -32,7 +34,7 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 			return;
 		}
 
-		const apifyClient = await getApifyStorageClient();
+		const apifyClient = await getApifyStorageClient(this.apifyClient);
 		const defaultStoreId = getDefaultStorageId(APIFY_STORAGE_TYPES.DATASET);
 
 		let parsedData: Record<string, unknown> | Record<string, unknown>[];

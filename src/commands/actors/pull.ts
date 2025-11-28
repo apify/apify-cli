@@ -14,7 +14,6 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const extractGitHubZip = async (url: string, directoryPath: string) => {
 	const { data } = await axios.get(url, { responseType: 'arraybuffer' });
@@ -52,6 +51,8 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const cwd = process.cwd();
 
@@ -65,10 +66,8 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		const userInfo = await getLocalUserInfo();
-		const apifyClient = await getLoggedClientOrThrow();
-
 		const isActorAutomaticallyDetected = !this.args.actorId;
+		const userInfo = await this.apifyClient.user('me').get();
 		const usernameOrId = userInfo.username || userInfo.id;
 
 		const actorId =
@@ -80,7 +79,7 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 		let actor;
 		try {
-			actor = await apifyClient.actor(actorId).get();
+			actor = await this.apifyClient.actor(actorId).get();
 		} catch {
 			throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
 		}

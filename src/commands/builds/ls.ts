@@ -8,7 +8,7 @@ import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, objectGroupBy, printJsonToStdout, ShortDurationFormatter } from '../../lib/utils.js';
+import { objectGroupBy, printJsonToStdout, ShortDurationFormatter } from '../../lib/utils.js';
 
 const tableFactory = () =>
 	new ResponsiveTable({
@@ -53,14 +53,14 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 
 	static override enableJsonFlag = true;
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { desc, limit, offset, compact, json } = this.flags;
 		const { actorId } = this.args;
 
-		const client = await getLoggedClientOrThrow();
-
 		// TODO: technically speaking, we don't *need* an actor id to list builds. But it makes more sense to have a table of builds for a specific actor.
-		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
+		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client: this.apifyClient });
 
 		if (!ctx.valid) {
 			error({
@@ -71,8 +71,8 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 			return;
 		}
 
-		const allBuilds = await client.actor(ctx.id).builds().list({ desc, limit, offset });
-		const actorInfo = (await client.actor(ctx.id).get())!;
+		const allBuilds = await this.apifyClient.actor(ctx.id).builds().list({ desc, limit, offset });
+		const actorInfo = (await this.apifyClient.actor(ctx.id).get())!;
 
 		const buildsByActorVersion = objectGroupBy(allBuilds.items, (item) => {
 			const versionNumber = Reflect.get(item, 'buildNumber') as string;

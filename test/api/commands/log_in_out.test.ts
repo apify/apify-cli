@@ -1,9 +1,8 @@
-import { existsSync, readFileSync } from 'node:fs';
-
 import axios from 'axios';
 
+import { InfoCommand } from '../../../src/commands/info.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
-import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
+import { getLocalUserInfo } from '../../../src/lib/utils.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../../__setup__/config.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
@@ -34,7 +33,7 @@ describe('[api] apify login and logout', () => {
 		const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), {
 			token: TEST_USER_TOKEN,
 		}) as unknown as Record<string, string>;
-		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
+		const userInfoFromConfig = (await getLocalUserInfo()) as unknown as Record<string, string>;
 
 		expect(lastErrorMessage()).to.include('Success:');
 
@@ -57,9 +56,9 @@ describe('[api] apify login and logout', () => {
 		expect(expectedUserInfoWithoutFloatFields).to.eql(userInfoFromConfigWithoutFloatFields);
 
 		await testRunCommand(LogoutCommand, {});
-		const isGlobalConfig = existsSync(AUTH_FILE_PATH());
-
-		expect(isGlobalConfig).to.be.eql(false);
+		expect(lastErrorMessage()).to.include('Success:');
+		await testRunCommand(InfoCommand, {});
+		expect(lastErrorMessage()).to.include('You are not logged in');
 	});
 
 	it('have correctly setup server for interactive login', async () => {
@@ -85,7 +84,7 @@ describe('[api] apify login and logout', () => {
 		const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), {
 			token: TEST_USER_TOKEN,
 		}) as unknown as Record<string, string>;
-		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
+		const userInfoFromConfig = (await getLocalUserInfo()) as unknown as Record<string, string>;
 
 		expect(lastErrorMessage()).to.include('Success:');
 

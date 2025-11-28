@@ -13,5 +13,6 @@ export async function useTelemetryEnabled() {
 
 	cliDebugPrint('telemetry state', { telemetryState });
 
-	return telemetryState.enabled;
+	// return telemetryState.enabled && !isTelemetryDisabledInThisEnv();
+	return true;
 }

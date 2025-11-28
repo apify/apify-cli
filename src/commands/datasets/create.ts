@@ -1,15 +1,16 @@
 import chalk from 'chalk';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { printJsonToStdout } from '../../lib/utils.js';
 
 export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCommand> {
 	static override name = 'create' as const;
 
-	static override description = 'Creates a new dataset for storing structured data on your account.';
+	static override description = 'Creates a new dataset for storing structured data.';
 
 	static override args = {
 		datasetName: Args.string({
@@ -20,10 +21,12 @@ export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCom
 
 	static override enableJsonFlag = true;
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { datasetName } = this.args;
 
-		const client = await getLoggedClientOrThrow();
+		const client = await getApifyStorageClient(this.apifyClient);
 
 		if (datasetName) {
 			const existing = await tryToGetDataset(client, datasetName);

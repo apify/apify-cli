@@ -4,7 +4,6 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 	static override name = 'rm' as const;
@@ -18,12 +17,12 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { actorId } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-
-		const actor = await apifyClient.actor(actorId).get();
+		const actor = await this.apifyClient.actor(actorId).get();
 
 		if (!actor) {
 			error({ message: `Actor with ID "${actorId}" was not found on your account.` });
@@ -42,7 +41,7 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 		}
 
 		try {
-			await apifyClient.actor(actorId).delete();
+			await this.apifyClient.actor(actorId).delete();
 
 			success({ message: `Actor with ID "${actorId}" was deleted.` });
 		} catch (err) {

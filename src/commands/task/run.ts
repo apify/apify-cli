@@ -5,7 +5,6 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override name = 'run' as const;
@@ -23,12 +22,13 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
-		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await this.apifyClient.user('me').get();
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
-		const { id: taskId, userFriendlyId, title } = await this.resolveTaskId(apifyClient, usernameOrId);
+		const { id: taskId, userFriendlyId, title } = await this.resolveTaskId(this.apifyClient, usernameOrId);
 
 		const runOpts: TaskStartOptions = {
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
@@ -49,7 +49,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 		let url: string;
 		let datasetUrl: string;
 
-		const iterator = runActorOrTaskOnCloud(apifyClient, {
+		const iterator = runActorOrTaskOnCloud(this.apifyClient, {
 			actorOrTaskData: {
 				id: taskId,
 				userFriendlyId,

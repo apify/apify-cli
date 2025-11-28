@@ -1,7 +1,7 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { error, info } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, outputJobLog } from '../../lib/utils.js';
+import { outputJobLog } from '../../lib/utils.js';
 
 export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
 	static override name = 'log' as const;
@@ -15,12 +15,12 @@ export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { buildId } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-
-		const build = await apifyClient.build(buildId).get();
+		const build = await this.apifyClient.build(buildId).get();
 
 		if (!build) {
 			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
@@ -30,7 +30,7 @@ export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
 		info({ message: `Log for build with ID "${buildId}":\n` });
 
 		try {
-			await outputJobLog({ job: build, apifyClient });
+			await outputJobLog({ job: build, apifyClient: this.apifyClient });
 		} catch (err) {
 			// This should never happen...
 			error({

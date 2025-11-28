@@ -1,10 +1,11 @@
-import { type ApifyClient, type Dataset, type DatasetClient, DownloadItemsFormat } from 'apify-client';
+import { DownloadItemsFormat } from 'apify-client';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const downloadFormatToContentType: Record<DownloadItemsFormat, string> = {
 	[DownloadItemsFormat.JSON]: 'application/json',
@@ -43,12 +44,13 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { limit, offset, format } = this.flags;
 		const { datasetId } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-		const maybeDataset = await this.tryToGetDataset(apifyClient, datasetId);
+		const maybeDataset = await tryToGetDataset(await getApifyStorageClient(this.apifyClient), datasetId);
 
 		if (!maybeDataset) {
 			error({ message: `Dataset with ID "${datasetId}" not found.` });
@@ -72,38 +74,5 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 
 		process.stdout.write(result);
 		process.stdout.write('\n');
-	}
-
-	private async tryToGetDataset(
-		client: ApifyClient,
-		datasetId: string,
-	): Promise<{ dataset: Dataset | undefined; datasetClient: DatasetClient } | null> {
-		const byIdOrName = await client
-			.dataset(datasetId)
-			.get()
-			.catch(() => undefined);
-
-		if (byIdOrName) {
-			return {
-				dataset: byIdOrName,
-				datasetClient: client.dataset(byIdOrName.id),
-			};
-		}
-
-		const info = await getLocalUserInfo();
-
-		const byName = await client
-			.dataset(`${info.username!}/${datasetId}`)
-			.get()
-			.catch(() => undefined);
-
-		if (byName) {
-			return {
-				dataset: byName,
-				datasetClient: client.dataset(byName.id),
-			};
-		}
-
-		return null;
 	}
 }

@@ -7,7 +7,9 @@ export class ActorGetInputCommand extends ApifyCommand<typeof ActorGetInputComma
 	static override description =
 		'Gets the Actor input value from the default key-value store associated with the Actor run.';
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
-		await outputInputFromDefaultStore();
+		await outputInputFromDefaultStore(this.apifyClient);
 	}
 }

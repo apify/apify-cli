@@ -1,12 +1,12 @@
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCommand> {
 	static override name = 'rename' as const;
@@ -29,6 +29,8 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { unname } = this.flags;
 		const { newName, nameOrId } = this.args;
@@ -45,7 +47,7 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 			return;
 		}
 
-		const client = await getLoggedClientOrThrow();
+		const client = await getApifyStorageClient(this.apifyClient);
 		const existingDataset = await tryToGetDataset(client, nameOrId);
 
 		if (!existingDataset) {

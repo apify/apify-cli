@@ -5,8 +5,6 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { TELEMETRY_FILE_PATH } from '../../consts.js';
 import { info } from '../../outputs.js';
-import type { AuthJSON } from '../../types.js';
-import { getLocalUserInfo } from '../../utils.js';
 
 type TelemetryState = TelemetryStateV0 | TelemetryStateV1;
 
@@ -34,23 +32,28 @@ function createAnonymousId() {
 	return `CLI:${cryptoRandomObjectId()}`;
 }
 
+export function isTelemetryDisabledInThisEnv() {
+	// return getApifyAPIBaseUrl() !== 'https://api.apify.com';
+}
+
 async function migrateStateV0ToV1(state: TelemetryState) {
 	if (state.version && state.version >= 1) {
 		return false;
 	}
 
-	const casted = state as TelemetryStateV0;
+	createAnonymousId();
+	// const casted = state as TelemetryStateV0;
 
-	const existingAuthState = await getLocalUserInfo().catch(() => ({}) as AuthJSON);
+	// const existingAuthState = await getLocalUserInfo().catch(() => ({}) as AuthJSON);
 
-	updateTelemetryState({ version: 1, enabled: true } as never, (stateToUpdate) => {
-		if (existingAuthState.id && casted.distinctId === existingAuthState.id) {
-			stateToUpdate.anonymousId = createAnonymousId();
-			stateToUpdate.userId = existingAuthState.id;
-		} else {
-			stateToUpdate.anonymousId = casted.distinctId;
-		}
-	});
+	// updateTelemetryState({ version: 1, enabled: true } as never, (stateToUpdate) => {
+	// 	if (existingAuthState.id && casted.distinctId === existingAuthState.id) {
+	// stateToUpdate.anonymousId = createAnonymousId();
+	// 		stateToUpdate.userId = existingAuthState.id;
+	// 	} else {
+	// 		stateToUpdate.anonymousId = casted.distinctId;
+	// 	}
+	// });
 
 	return true;
 }
@@ -61,14 +64,14 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 	const exists = existsSync(filePath);
 
 	if (!exists) {
-		const existingAuthState = await getLocalUserInfo().catch(() => ({}) as AuthJSON);
+		// const existingAuthState = await getLocalUserInfo().catch(() => ({}) as AuthJSON);
 
-		updateTelemetryState({
-			version: 1,
-			enabled: true,
-			anonymousId: createAnonymousId(),
-			userId: existingAuthState.id,
-		});
+		// updateTelemetryState({
+		// 	version: 1,
+		// 	enabled: true,
+		// 	anonymousId: createAnonymousId(),
+		// 	userId: existingAuthState.id,
+		// });
 
 		// First time we are tracking telemetry, so we want to notify user about it.
 		info({ message: telemetryWarningText });
@@ -89,7 +92,7 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 
 export type StateUpdater = (state: LatestTelemetryState) => void;
 
-export function updateTelemetryState(state: LatestTelemetryState, updater?: StateUpdater) {
+function updateTelemetryState(state: LatestTelemetryState, updater?: StateUpdater) {
 	// Update the state in memory
 	const stateClone = { ...state };
 	updater?.(stateClone);
@@ -103,6 +106,8 @@ export function updateTelemetryState(state: LatestTelemetryState, updater?: Stat
 }
 
 export async function updateUserId(userId: string | null) {
+	// if (isTelemetryDisabledInThisEnv()) return;
+
 	const state = await useTelemetryState();
 
 	updateTelemetryState(state, (stateToUpdate) => {

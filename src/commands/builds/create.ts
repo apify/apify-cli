@@ -5,13 +5,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLoggedClientOrThrow,
-	objectGroupBy,
-	outputJobLog,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { objectGroupBy, outputJobLog, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
 	static override name = 'create' as const;
@@ -41,13 +35,13 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 	static override enableJsonFlag = true;
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { tag, version, json, log } = this.flags;
 		const { actorId } = this.args;
 
-		const client = await getLoggedClientOrThrow();
-
-		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
+		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client: this.apifyClient });
 
 		if (!ctx.valid) {
 			error({
@@ -58,7 +52,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			return;
 		}
 
-		const actorInfo = (await client.actor(ctx.id).get())!;
+		const actorInfo = (await this.apifyClient.actor(ctx.id).get())!;
 
 		const versionsByBuildTag = objectGroupBy(
 			actorInfo.versions,
@@ -119,7 +113,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			return;
 		}
 
-		const build = await client.actor(ctx.id).build(selectedVersion, { tag });
+		const build = await this.apifyClient.actor(ctx.id).build(selectedVersion, { tag });
 
 		if (json) {
 			printJsonToStdout(build);
@@ -146,7 +140,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		if (log) {
 			try {
-				await outputJobLog({ job: build, apifyClient: client });
+				await outputJobLog({ job: build, apifyClient: this.apifyClient });
 			} catch (err) {
 				// This should never happen...
 				error({

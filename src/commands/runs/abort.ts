@@ -6,7 +6,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { printJsonToStdout } from '../../lib/utils.js';
 
 const runningStatuses = [ACTOR_JOB_STATUSES.READY, ACTOR_JOB_STATUSES.RUNNING];
 
@@ -32,14 +32,14 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	static override enableJsonFlag = true;
 
 	async run() {
 		const { runId } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-
-		const run = await apifyClient.run(runId).get();
+		const run = await this.apifyClient.run(runId).get();
 
 		if (!run) {
 			error({ message: `Run with ID "${runId}" was not found on your account.`, stdout: true });
@@ -57,7 +57,7 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 		}
 
 		try {
-			const result = await apifyClient.run(runId).abort({ gracefully: !this.flags.force });
+			const result = await this.apifyClient.run(runId).abort({ gracefully: !this.flags.force });
 
 			if (this.flags.json) {
 				printJsonToStdout(result);

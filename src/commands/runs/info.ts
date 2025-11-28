@@ -8,12 +8,7 @@ import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	ShortDurationFormatter,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { printJsonToStdout, ShortDurationFormatter, TimestampFormatter } from '../../lib/utils.js';
 
 const usageTable = new ResponsiveTable({
 	allColumns: ['', 'Unit', 'USD Amount'],
@@ -61,12 +56,12 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 	static override enableJsonFlag = true;
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { runId } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-
-		const run = await apifyClient.run(runId).get();
+		const run = await this.apifyClient.run(runId).get();
 
 		if (!run) {
 			error({ message: `Run with ID "${runId}" was not found on your account.` });
@@ -75,11 +70,11 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 		// Not ideal but we need to fetch the actor, build and task after fetching the run
 		const [actor, build, task, defaultDataset, defaultRequestQueue] = await Promise.all([
-			apifyClient.actor(run.actId).get(),
-			apifyClient.build(run.buildId).get(),
-			run.actorTaskId ? apifyClient.task(run.actorTaskId).get() : Promise.resolve(undefined),
-			apifyClient.dataset(run.defaultDatasetId).get(),
-			apifyClient.requestQueue(run.defaultRequestQueueId).get(),
+			this.apifyClient.actor(run.actId).get(),
+			this.apifyClient.build(run.buildId).get(),
+			run.actorTaskId ? this.apifyClient.task(run.actorTaskId).get() : Promise.resolve(undefined),
+			this.apifyClient.dataset(run.defaultDatasetId).get(),
+			this.apifyClient.requestQueue(run.defaultRequestQueueId).get(),
 		]);
 
 		if (this.flags.json) {

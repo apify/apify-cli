@@ -7,12 +7,7 @@ import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLoggedClientOrThrow,
-	MultilineTimestampFormatter,
-	printJsonToStdout,
-	ShortDurationFormatter,
-} from '../../lib/utils.js';
+import { MultilineTimestampFormatter, printJsonToStdout, ShortDurationFormatter } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'],
@@ -59,14 +54,14 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 	static override enableJsonFlag = true;
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { desc, limit, offset, compact, json } = this.flags;
 		const { actorId } = this.args;
 
-		const client = await getLoggedClientOrThrow();
-
 		// Should we allow users to list any runs, not just actor-specific runs? Right now it works like `builds ls`, requiring an actor
-		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
+		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client: this.apifyClient });
 
 		if (!ctx.valid) {
 			error({
@@ -76,7 +71,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 			return;
 		}
 
-		const allRuns = await client.actor(ctx.id).runs().list({ desc, limit, offset });
+		const allRuns = await this.apifyClient.actor(ctx.id).runs().list({ desc, limit, offset });
 
 		if (json) {
 			printJsonToStdout(allRuns);
@@ -98,7 +93,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		const datasetInfos = new Map(
 			await Promise.all(
 				allRuns.items.map(async (run) =>
-					client
+					this.apifyClient
 						.dataset(run.defaultDatasetId)
 						.get()
 						.then(

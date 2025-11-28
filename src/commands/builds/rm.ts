@@ -5,7 +5,6 @@ import { Args } from '../../lib/command-framework/args.js';
 import { useInputConfirmation } from '../../lib/hooks/user-confirmations/useInputConfirmation.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 	static override name = 'rm' as const;
@@ -19,19 +18,19 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		}),
 	};
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { buildId } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-
-		const build = await apifyClient.build(buildId).get();
+		const build = await this.apifyClient.build(buildId).get();
 
 		if (!build) {
 			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
 			return;
 		}
 
-		const actor = await apifyClient.actor(build.actId).get();
+		const actor = await this.apifyClient.actor(build.actId).get();
 
 		let confirmationPrompt: string | undefined;
 
@@ -62,7 +61,7 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		}
 
 		try {
-			await apifyClient.build(buildId).delete();
+			await this.apifyClient.build(buildId).delete();
 
 			success({
 				message: `Build with ID "${buildId}" was deleted.`,

@@ -11,7 +11,6 @@ import { CompactMode, kSkipColumn, ResponsiveTable } from '../../lib/commands/re
 import { info, simpleLog } from '../../lib/outputs.js';
 import {
 	DateOnlyTimestampFormatter,
-	getLoggedClientOrThrow,
 	MultilineTimestampFormatter,
 	printJsonToStdout,
 	ShortDurationFormatter,
@@ -120,12 +119,12 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 
 	static override enableJsonFlag = true;
 
+	static override requiresAuthentication = 'always' as const;
+
 	async run() {
 		const { desc, limit, offset, my, json } = this.flags;
 
-		const client = await getLoggedClientOrThrow();
-
-		const rawActorList = await client.actors().list({ limit, offset, desc, my });
+		const rawActorList = await this.apifyClient.actors().list({ limit, offset, desc, my });
 
 		if (rawActorList.count === 0) {
 			if (json) {
@@ -146,8 +145,8 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			...rawActorList,
 			items: await Promise.all(
 				rawActorList.items.map(async (actorData) => {
-					const actor = await client.actor(actorData.id).get();
-					const runs = await client
+					const actor = await this.apifyClient.actor(actorData.id).get();
+					const runs = await this.apifyClient
 						.actor(actorData.id)
 						.runs()
 						.list({ desc: true, limit: 1 })

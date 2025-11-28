@@ -14,9 +14,11 @@ export class ActorGetValueCommand extends ApifyCommand<typeof ActorGetValueComma
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { key } = this.args;
 
-		await outputRecordFromDefaultStore(key);
+		await outputRecordFromDefaultStore(this.apifyClient, key);
 	}
 }

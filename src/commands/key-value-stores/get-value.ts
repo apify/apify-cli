@@ -1,9 +1,9 @@
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueStoresGetValueCommand> {
 	static override name = 'get-value' as const;
@@ -29,12 +29,14 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { onlyContentType } = this.flags;
 		const { keyValueStoreId, itemKey } = this.args;
 
-		const apifyClient = await getLoggedClientOrThrow();
-		const maybeStore = await tryToGetKeyValueStore(apifyClient, keyValueStoreId);
+		const storageClient = await getApifyStorageClient(this.apifyClient);
+		const maybeStore = await tryToGetKeyValueStore(storageClient, keyValueStoreId);
 
 		if (!maybeStore) {
 			error({ message: `Key-value store with ID "${keyValueStoreId}" not found.` });

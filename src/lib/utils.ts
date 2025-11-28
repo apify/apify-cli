@@ -1,5 +1,5 @@
 import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
 import { homedir } from 'node:os';
@@ -11,9 +11,8 @@ import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapp
 import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
-import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
+import type { ActorRun, ApifyClient, Build } from 'apify-client';
 import archiver from 'archiver';
-import { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import { globby } from 'globby';
 import { getEncoding } from 'istextorbinary';
@@ -34,17 +33,13 @@ import {
 } from '@apify/consts';
 
 import {
-	APIFY_CLIENT_DEFAULT_HEADERS,
-	AUTH_FILE_PATH,
 	DEFAULT_LOCAL_STORAGE_DIR,
-	GLOBAL_CONFIGS_FOLDER,
 	INPUT_FILE_REG_EXP,
 	LOCAL_CONFIG_PATH,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
-import type { AuthJSON } from './types.js';
 
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
 // Welcome to the state of JavaScript/TypeScript and CJS/ESM interop.
@@ -91,98 +86,6 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 
 	return join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.requestQueues, storeDir);
 };
-
-/**
- * Returns object from auth file or empty object.
- */
-export const getLocalUserInfo = async (): Promise<AuthJSON> => {
-	let result: AuthJSON = {};
-	try {
-		const raw = await readFile(AUTH_FILE_PATH(), 'utf-8');
-		result = JSON.parse(raw) as AuthJSON;
-	} catch {
-		return {};
-	}
-
-	if (!result.username && !result.id) {
-		throw new Error('Corrupted local user info was found. Please run "apify login" to fix it.');
-	}
-
-	return result;
-};
-
-/**
- * Gets instance of ApifyClient for user otherwise throws error
- */
-export async function getLoggedClientOrThrow() {
-	const loggedClient = await getLoggedClient();
-
-	if (!loggedClient) {
-		throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
-	}
-
-	return loggedClient;
-}
-
-const getTokenWithAuthFileFallback = (existingToken?: string) => {
-	if (!existingToken && existsSync(GLOBAL_CONFIGS_FOLDER()) && existsSync(AUTH_FILE_PATH())) {
-		const raw = readFileSync(AUTH_FILE_PATH(), 'utf-8');
-		return JSON.parse(raw).token;
-	}
-
-	return existingToken;
-};
-
-// biome-ignore format: off
-type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
-
-/**
- * Returns options for ApifyClient
- */
-export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): ApifyClientOptions => {
-	token = getTokenWithAuthFileFallback(token);
-
-	return {
-		token,
-		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
-		requestInterceptors: [
-			(config) => {
-				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
-
-				for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
-					config.headers![key] = value;
-				}
-
-				return config;
-			},
-		],
-	};
-};
-
-/**
- * Gets instance of ApifyClient for token or for params from global auth file.
- * NOTE: It refreshes global auth file each run
- * @param [token]
- */
-export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
-	token = getTokenWithAuthFileFallback(token);
-
-	const apifyClient = new ApifyClient(getApifyClientOptions(token, apiBaseUrl));
-
-	let userInfo;
-	try {
-		userInfo = await apifyClient.user('me').get();
-	} catch {
-		return null;
-	}
-
-	// Always refresh Auth file
-	ensureApifyDirectory(AUTH_FILE_PATH());
-
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify({ token: apifyClient.token, ...userInfo }, null, '\t'));
-
-	return apifyClient;
-}
 
 export const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);
 
@@ -373,10 +276,9 @@ export const outputJobLog = async ({
 }: {
 	job: ActorRun | Build;
 	timeoutMillis?: number;
-	apifyClient?: ApifyClient;
+	apifyClient: ApifyClient;
 }) => {
 	const { id: logId, status } = job;
-	const client = apifyClient || new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
@@ -384,7 +286,7 @@ export const outputJobLog = async ({
 			return;
 		}
 
-		const log = await client.log(logId).get();
+		const log = await apifyClient.log(logId).get();
 		process.stderr.write(log!);
 		return;
 	}
@@ -392,7 +294,7 @@ export const outputJobLog = async ({
 	// In other case stream it to stderr
 	// eslint-disable-next-line no-async-promise-executor
 	return new Promise<'no-logs' | 'finished' | 'timeouts'>(async (resolve) => {
-		const stream = await client.log(logId).stream();
+		const stream = await apifyClient.log(logId).stream();
 
 		if (!stream) {
 			resolve('no-logs');

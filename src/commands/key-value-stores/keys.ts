@@ -1,3 +1,4 @@
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -5,7 +6,7 @@ import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { printJsonToStdout } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Key', 'Size'],
@@ -34,14 +35,16 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	static override enableJsonFlag = true;
 
 	async run() {
 		const { storeId } = this.args;
 		const { limit, exclusiveStartKey } = this.flags;
 
-		const apifyClient = await getLoggedClientOrThrow();
-		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
+		const storageClient = await getApifyStorageClient(this.apifyClient);
+		const maybeStore = await tryToGetKeyValueStore(storageClient, storeId);
 
 		if (!maybeStore) {
 			error({

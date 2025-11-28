@@ -4,7 +4,7 @@ import { dirname } from 'node:path/win32';
 import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
-import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { rimrafPromised } from '../../../src/lib/files.js';
 import {
 	getLocalDatasetPath,
@@ -123,9 +123,9 @@ describe('apify run', () => {
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
 		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
-		const auth = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
+		const auth = await getLocalUserInfo();
 
-		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
+		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy!.password);
 		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(auth.id);
 		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(auth.token);
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
@@ -164,9 +164,9 @@ describe('apify run', () => {
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
 		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
-		const auth = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
+		const auth = await getLocalUserInfo();
 
-		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
+		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy!.password);
 		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(auth.id);
 		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(auth.token);
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
@@ -204,9 +204,9 @@ describe('apify run', () => {
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
 		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
-		const auth = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
+		const auth = await getLocalUserInfo();
 
-		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
+		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy!.password);
 		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(auth.id);
 		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(auth.token);
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);

@@ -17,13 +17,7 @@ import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLocalConfig,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLocalConfig, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
@@ -62,6 +56,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	};
 
 	static override enableJsonFlag = true;
+	static override requiresAuthentication = 'always' as const;
 
 	static override args = {
 		actorId: Args.string({
@@ -75,8 +70,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	async run() {
 		const cwd = process.cwd();
 		const localConfig = getLocalConfig(cwd) || {};
-		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await this.apifyClient.user().get();
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		if (this.flags.json && this.flags.outputDataset) {
@@ -91,7 +85,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			userFriendlyId,
 			actorData,
 		} = await ActorsCallCommand.resolveActorId({
-			client: apifyClient,
+			client: this.apifyClient,
 			localActorName: localConfig.name as string | undefined,
 			usernameOrId,
 			providedActorNameOrId: this.args.actorId,
@@ -126,7 +120,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		let url: string;
 		let datasetUrl: string;
 
-		const iterator = runActorOrTaskOnCloud(apifyClient, {
+		const iterator = runActorOrTaskOnCloud(this.apifyClient, {
 			actorOrTaskData: {
 				id: actorId,
 				userFriendlyId,
@@ -226,7 +220,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			// Why is this needed? Sometimes, when fetching the dataset info right after the run ends, the object doesn't have the stats up-to-date.
 			// But sometimes it does!
 			do {
-				info = (await apifyClient.dataset(datasetId).get())!;
+				info = (await this.apifyClient.dataset(datasetId).get())!;
 
 				if (info?.itemCount) {
 					break;
@@ -237,7 +231,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 				});
 			} while (retries--);
 
-			const dataset = await apifyClient.dataset(datasetId).downloadItems(DownloadItemsFormat.JSON, {
+			const dataset = await this.apifyClient.dataset(datasetId).downloadItems(DownloadItemsFormat.JSON, {
 				clean: true,
 			});
 

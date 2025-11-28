@@ -5,6 +5,8 @@ import stripAnsi from 'strip-ansi';
 import widestLine from 'widest-line';
 import wrap from 'wrap-ansi';
 
+import { APIFY_ENV_VARS } from '@apify/consts';
+
 import type { ArgTag, TaggedArgBuilder } from '../args.js';
 import type { FlagTag, TaggedFlagBuilder } from '../flags.js';
 import { BaseCommandRenderer, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
@@ -122,6 +124,41 @@ export class CommandHelp extends BaseCommandRenderer {
 					aliases: undefined,
 					char: undefined,
 					description: 'Format the command output as JSON',
+					hidden: undefined,
+					exclusive: undefined,
+				},
+			]);
+		}
+
+		if (this.command.requiresAuthentication) {
+			flags.push([
+				'user',
+				{
+					choices: null,
+					flagTag: 'string',
+					hasDefault: true,
+					required: false,
+					stdin: null as never,
+					builder: null as never,
+					aliases: undefined,
+					char: undefined,
+					description: 'Username or ID of the authenticated Apify account to use',
+					hidden: undefined,
+					exclusive: undefined,
+				},
+			]);
+			flags.push([
+				'token',
+				{
+					choices: null,
+					flagTag: 'string',
+					hasDefault: false,
+					required: false,
+					stdin: null as never,
+					builder: null as never,
+					aliases: undefined,
+					char: undefined,
+					description: `Apify API token to use, overrides any stored authentication info. Can be also specified using the "${APIFY_ENV_VARS.TOKEN}" environment variable.`,
 					hidden: undefined,
 					exclusive: undefined,
 				},

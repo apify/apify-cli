@@ -37,13 +37,15 @@ export class ActorSetValueCommand extends ApifyCommand<typeof ActorSetValueComma
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { key, value } = this.args;
 		const { contentType = 'application/json; charset=utf-8' } = this.flags;
 
 		// NOTE: If user pass value as argument and data on stdin same time. We use the value from argument.
 		const recordValue = value || process.stdin;
-		const apifyClient = await getApifyStorageClient();
+		const apifyClient = await getApifyStorageClient(this.apifyClient);
 		const storeClient = apifyClient.keyValueStore(getDefaultStorageId(APIFY_STORAGE_TYPES.KEY_VALUE_STORE));
 
 		if (

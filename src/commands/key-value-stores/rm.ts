@@ -1,12 +1,12 @@
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresRmCommand> {
 	static override name = 'rm' as const;
@@ -20,10 +20,12 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	async run() {
 		const { keyValueStoreNameOrId } = this.args;
 
-		const client = await getLoggedClientOrThrow();
+		const client = await getApifyStorageClient(this.apifyClient);
 
 		const existingKvs = await tryToGetKeyValueStore(client, keyValueStoreNameOrId);
 

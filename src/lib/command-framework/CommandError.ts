@@ -34,6 +34,7 @@ export enum CommandErrorCode {
 	 */
 	APIFY_TOO_MANY_REQUESTERS_OF_STDIN,
 	APIFY_UNKNOWN_ERROR,
+	APIFY_MISSING_AUTHENTICATION,
 }
 
 export interface FlagData {
@@ -207,6 +208,10 @@ export class CommandError extends Error {
 				return chalk.gray(
 					`Flag ${chalk.white.bold(`--${firstUse}`)} and ${chalk.white.bold(`--${secondUse}`)} cannot both request that their value comes from standard input at the same time.`,
 				);
+			}
+
+			case CommandErrorCode.APIFY_MISSING_AUTHENTICATION: {
+				return chalk.gray(`You must be logged in to perform this action. Please run "apify login" command.`);
 			}
 
 			default: {

@@ -1,10 +1,11 @@
 import chalk from 'chalk';
 
+import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { printJsonToStdout } from '../../lib/utils.js';
 
 export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueStoresCreateCommand> {
 	static override name = 'create' as const;
@@ -18,12 +19,14 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 		}),
 	};
 
+	static override requiresAuthentication = 'optionally' as const;
+
 	static override enableJsonFlag = true;
 
 	async run() {
 		const { keyValueStoreName } = this.args;
 
-		const client = await getLoggedClientOrThrow();
+		const client = await getApifyStorageClient(this.apifyClient);
 
 		if (keyValueStoreName) {
 			const existing = await tryToGetKeyValueStore(client, keyValueStoreName);
