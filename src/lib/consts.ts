@@ -76,3 +76,5 @@ export enum CommandExitCodes {
 	NotFound = 250,
 	NotImplemented = 255,
 }
+
+export const DEFAULT_APIFY_API_BASE_URL = 'https://api.apify.com';

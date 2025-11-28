@@ -1,5 +1,5 @@
 import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
-import { useTelemetryState } from './useTelemetryState.js';
+import { isTelemetryDisabledInThisEnv, useTelemetryState } from './useTelemetryState.js';
 
 export async function useTelemetryEnabled() {
 	// Env variable present and not false/0
@@ -13,5 +13,5 @@ export async function useTelemetryEnabled() {
 
 	cliDebugPrint('telemetry state', { telemetryState });
 
-	return telemetryState.enabled;
+	return telemetryState.enabled && !isTelemetryDisabledInThisEnv();
 }

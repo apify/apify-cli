@@ -6,7 +6,7 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 import { TELEMETRY_FILE_PATH } from '../../consts.js';
 import { info } from '../../outputs.js';
 import type { AuthJSON } from '../../types.js';
-import { getLocalUserInfo } from '../../utils.js';
+import { getApifyAPIBaseUrl, getLocalUserInfo } from '../../utils.js';
 
 type TelemetryState = TelemetryStateV0 | TelemetryStateV1;
 
@@ -32,6 +32,10 @@ const telemetryWarningText = [
 
 function createAnonymousId() {
 	return `CLI:${cryptoRandomObjectId()}`;
+}
+
+export function isTelemetryDisabledInThisEnv() {
+	return getApifyAPIBaseUrl() !== 'https://api.apify.com';
 }
 
 async function migrateStateV0ToV1(state: TelemetryState) {
@@ -89,7 +93,7 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 
 export type StateUpdater = (state: LatestTelemetryState) => void;
 
-export function updateTelemetryState(state: LatestTelemetryState, updater?: StateUpdater) {
+function updateTelemetryState(state: LatestTelemetryState, updater?: StateUpdater) {
 	// Update the state in memory
 	const stateClone = { ...state };
 	updater?.(stateClone);
@@ -103,6 +107,8 @@ export function updateTelemetryState(state: LatestTelemetryState, updater?: Stat
 }
 
 export async function updateUserId(userId: string | null) {
+	if (isTelemetryDisabledInThisEnv()) return;
+
 	const state = await useTelemetryState();
 
 	updateTelemetryState(state, (stateToUpdate) => {

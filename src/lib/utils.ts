@@ -36,14 +36,15 @@ import {
 import {
 	APIFY_CLIENT_DEFAULT_HEADERS,
 	AUTH_FILE_PATH,
+	DEFAULT_APIFY_API_BASE_URL,
 	DEFAULT_LOCAL_STORAGE_DIR,
-	GLOBAL_CONFIGS_FOLDER,
 	INPUT_FILE_REG_EXP,
 	LOCAL_CONFIG_PATH,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { warning } from './outputs.js';
 import type { AuthJSON } from './types.js';
 
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
@@ -92,15 +93,72 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 	return join(getLocalStorageDir(), LOCAL_STORAGE_SUBDIRS.requestQueues, storeDir);
 };
 
+let hasLoggedAPIBaseUrlDeprecation = false;
+export const getApifyAPIBaseUrl = () => {
+	const envVar = APIFY_ENV_VARS.API_BASE_URL;
+
+	const legacyVar = 'APIFY_CLIENT_BASE_URL';
+	if (process.env[legacyVar]) {
+		if (!hasLoggedAPIBaseUrlDeprecation) {
+			warning({ message: `Environment variable '${legacyVar}' is deprecated. Please use '${envVar}' instead.` });
+			hasLoggedAPIBaseUrlDeprecation = true;
+		}
+		return process.env[legacyVar];
+	}
+
+	// here we _could_ fallback to `undefined` and let ApifyClient to fill the default value, but this function is also
+	// used for identifying the stored token in the global auth file
+	// (to allow keeping a separate login for api.apify.com and localhost)
+	// it is probably safe to assume that the default is https://api.apify.com
+	return process.env[envVar] || DEFAULT_APIFY_API_BASE_URL;
+};
+
+interface MultiBackendAuthJSON {
+	_authFileVersion: 2;
+	/** Mapping of ApifyAPIBaseUrl to the AuthJSON for that backend */
+	backends: Record<string, AuthJSON>;
+}
+
+/**
+ * Returns info about logins stored for all available backends.
+ */
+const getAllLocalUserInfos = async (): Promise<MultiBackendAuthJSON> => {
+	let result: AuthJSON | MultiBackendAuthJSON = {};
+	try {
+		const raw = await readFile(AUTH_FILE_PATH(), 'utf-8');
+		result = JSON.parse(raw) as AuthJSON | MultiBackendAuthJSON;
+	} catch {
+		return { _authFileVersion: 2, backends: {} };
+	}
+
+	if ('_authFileVersion' in result) return result;
+
+	// migrate to multi-backend format, assume the stored data is for the current backend
+	const backendUrl = getApifyAPIBaseUrl();
+	const multiBackendResult: MultiBackendAuthJSON = { _authFileVersion: 2, backends: {} };
+	multiBackendResult.backends[backendUrl] = result;
+	return multiBackendResult;
+};
+
+/**
+ * Lists stored user infos for all backends.
+ */
+export const listLocalUserInfos = async (): Promise<({ baseUrl: string } & Pick<AuthJSON, 'username' | 'id'>)[]> => {
+	const allInfos = await getAllLocalUserInfos();
+	return Object.entries(allInfos.backends).map(([baseUrl, info]) => ({
+		baseUrl,
+		username: info.username,
+		id: info.id,
+	}));
+};
+
 /**
  * Returns object from auth file or empty object.
  */
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
-	let result: AuthJSON = {};
-	try {
-		const raw = await readFile(AUTH_FILE_PATH(), 'utf-8');
-		result = JSON.parse(raw) as AuthJSON;
-	} catch {
+	const allInfos = await getAllLocalUserInfos();
+	const result = allInfos.backends[getApifyAPIBaseUrl()];
+	if (!result) {
 		return {};
 	}
 
@@ -110,6 +168,34 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 
 	return result;
 };
+
+/**
+ * Persists auth info for the current backend
+ */
+export async function storeLocalUserInfo(userInfo: AuthJSON) {
+	ensureApifyDirectory(AUTH_FILE_PATH());
+
+	const allInfos = await getAllLocalUserInfos();
+	allInfos.backends[getApifyAPIBaseUrl()] = userInfo;
+
+	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(allInfos, null, '\t'));
+}
+
+/**
+ * Removes auth info for the current backend - effectively logs out the user.
+ *
+ * Returns true if info was removed, false if there was no info for this backend.
+ */
+export async function clearLocalUserInfo() {
+	const allInfos = await getAllLocalUserInfos();
+	const backendUrl = getApifyAPIBaseUrl();
+
+	if (!allInfos.backends[backendUrl]) return false;
+
+	delete allInfos.backends[backendUrl];
+	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(allInfos, null, '\t'));
+	return true;
+}
 
 /**
  * Gets instance of ApifyClient for user otherwise throws error
@@ -124,13 +210,11 @@ export async function getLoggedClientOrThrow() {
 	return loggedClient;
 }
 
-const getTokenWithAuthFileFallback = (existingToken?: string) => {
-	if (!existingToken && existsSync(GLOBAL_CONFIGS_FOLDER()) && existsSync(AUTH_FILE_PATH())) {
-		const raw = readFileSync(AUTH_FILE_PATH(), 'utf-8');
-		return JSON.parse(raw).token;
-	}
+const getTokenWithAuthFileFallback = async (existingToken?: string) => {
+	if (existingToken) return existingToken;
 
-	return existingToken;
+	const userInfo = await getLocalUserInfo();
+	return userInfo.token;
 };
 
 // biome-ignore format: off
@@ -139,12 +223,12 @@ type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } 
 /**
  * Returns options for ApifyClient
  */
-export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): ApifyClientOptions => {
-	token = getTokenWithAuthFileFallback(token);
+export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => {
+	token = await getTokenWithAuthFileFallback(token);
 
 	return {
 		token,
-		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
+		baseUrl: apiBaseUrl || getApifyAPIBaseUrl(),
 		requestInterceptors: [
 			(config) => {
 				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
@@ -165,9 +249,9 @@ export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): Apif
  * @param [token]
  */
 export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
-	token = getTokenWithAuthFileFallback(token);
+	token = await getTokenWithAuthFileFallback(token);
 
-	const apifyClient = new ApifyClient(getApifyClientOptions(token, apiBaseUrl));
+	const apifyClient = new ApifyClient(await getApifyClientOptions(token, apiBaseUrl));
 
 	let userInfo;
 	try {
@@ -177,9 +261,7 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 	}
 
 	// Always refresh Auth file
-	ensureApifyDirectory(AUTH_FILE_PATH());
-
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify({ token: apifyClient.token, ...userInfo }, null, '\t'));
+	await storeLocalUserInfo({ token: apifyClient.token, ...userInfo });
 
 	return apifyClient;
 }
@@ -376,7 +458,7 @@ export const outputJobLog = async ({
 	apifyClient?: ApifyClient;
 }) => {
 	const { id: logId, status } = job;
-	const client = apifyClient || new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
+	const client = apifyClient || new ApifyClient({ baseUrl: getApifyAPIBaseUrl() });
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
