@@ -6,11 +6,23 @@ sidebar_label: Overview
 
 Apify command-line interface (Apify CLI) helps you create, develop, build and run [Apify Actors](https://apify.com/actors), and manage the Apify platform from any computer.
 
-Apify Actors are cloud programs that can perform arbitrary web scraping, automation or data processing job. They accept input, perform their job and generate output. The Apify CLI enables you to develop Actors locally on your computer using your preferred code editor, version control system, and development tools. This approach gives you full control over your development environment, makes it easier to work on complex projects, and allows you to leverage the [Apify SDK](https://github.com/apify/apify-sdk-js) with all its powerful features. When you're ready, simply push your Actor to the Apify platform for deployment.
+## What are Apify Actors?
+
+Actors are cloud programs that can perform arbitrary web scraping, automation or data processing job. They accept input, perform their job and generate output.
+
+## Why use Apify CLI?
+
+The Apify CLI enables you to develop Actors locally on your computer using your preferred tools:
+
+- Your favorite code editor
+- Version control system
+- Development tools and workflows
+
+This gives you full control over your development environment and makes it easier to work on complex projects. You can leverage the [Apify SDK](https://github.com/apify/apify-sdk-js) with all its powerful features, then push your Actor to the Apify platform for deployment when ready.
 
 :::note Actor development environment
 
-Actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile` you can build your Actors in any programming language. However, we recommend using JavaScript/Node.js and Python, for which we provide most libraries and support.
+Actors run in Docker containers on the Apify platform. With an appropriate `Dockerfile`, you can build Actors in any programming language. We recommend JavaScript/Node.js and Python, for which we have the most comprehensive libraries and support.
 
 :::
 
