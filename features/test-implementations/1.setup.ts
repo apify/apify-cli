@@ -193,7 +193,7 @@ Given<TestWorld>(/logged in apify console user/i, async function () {
 	}
 
 	// Try to make the client with the token
-	const client = new ApifyClient(getApifyClientOptions(process.env.TEST_USER_TOKEN));
+	const client = new ApifyClient(await getApifyClientOptions(process.env.TEST_USER_TOKEN));
 
 	try {
 		await client.user('me').get();

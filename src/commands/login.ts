@@ -16,19 +16,18 @@ import { updateUserId } from '../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../lib/hooks/user-confirmations/useSelectFromList.js';
 import { error, info, success } from '../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClient, tildify } from '../lib/utils.js';
+import { getApifyAPIBaseUrl, getLocalUserInfo, getLoggedClient, tildify } from '../lib/utils.js';
 
-const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
-// const CONSOLE_BASE_URL = 'http://localhost:3000/settings/integrations';
+const CONSOLE_BASE_URL = getApifyAPIBaseUrl()?.includes('localhost')
+	? 'http://localhost:3000/settings/integrations'
+	: 'https://console.apify.com/settings/integrations';
 const CONSOLE_URL_ORIGIN = new URL(CONSOLE_BASE_URL).origin;
-
-const API_BASE_URL = CONSOLE_BASE_URL.includes('localhost') ? 'http://localhost:3333' : undefined;
 
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
 const tryToLogin = async (token: string) => {
-	const isUserLogged = await getLoggedClient(token, API_BASE_URL);
+	const isUserLogged = await getLoggedClient(token);
 	const userInfo = await getLocalUserInfo();
 
 	if (isUserLogged) {
