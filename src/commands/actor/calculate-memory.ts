@@ -54,31 +54,14 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 	async run() {
 		const { input, defaultMemoryMbytes, ...runOptions } = this.flags;
 
-		const cwd = process.cwd();
+		let memoryExpression: string | undefined = defaultMemoryMbytes;
 
-		let preparedDefaultMemoryMbytes: string | undefined = defaultMemoryMbytes;
-		if (!preparedDefaultMemoryMbytes) {
-			const localConfigResult = await useActorConfig({ cwd });
-
-			if (localConfigResult.isErr()) {
-				const { message, cause } = localConfigResult.unwrapErr();
-
-				error({ message: `${message}${cause ? `\n  ${cause.message}` : ''}` });
-				process.exitCode = CommandExitCodes.InvalidActorJson;
-				return;
-			}
-
-			if (localConfigResult.isOkAnd((cfg) => cfg.exists === false)) {
-				throw new Error(
-					`actor.json not found at: ${join(cwd, 'actor.json')}. Make sure the file exists and is readable.`,
-				);
-			}
-
-			const { config: localConfig } = localConfigResult.unwrap();
-			preparedDefaultMemoryMbytes = localConfig.defaultMemoryMbytes as string | undefined;
+		// If not provided via flag, try to load from actor.json
+		if (!memoryExpression) {
+			memoryExpression = await this.getExpressionFromConfig();
 		}
 
-		if (!preparedDefaultMemoryMbytes) {
+		if (!memoryExpression) {
 			throw new Error(
 				`No memory-calculation expression found. Provide it via the --defaultMemoryMbytes flag or define defaultMemoryMbytes in actor.json.`,
 			);
@@ -88,10 +71,10 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		const inputPath = join(process.cwd(), this.flags.input ?? this.DEFAULT_INPUT_PATH);
 		const inputJson = getJsonFileContent(inputPath) ?? {};
 
-		info({ message: `Evaluating memory expression: ${preparedDefaultMemoryMbytes}` });
+		info({ message: `Evaluating memory expression: ${memoryExpression}` });
 
 		try {
-			const result = await calculateRunDynamicMemory(preparedDefaultMemoryMbytes, {
+			const result = await calculateRunDynamicMemory(memoryExpression, {
 				input: inputJson,
 				runOptions,
 			});
@@ -99,5 +82,30 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		} catch (err) {
 			error({ message: `Memory calculation failed: ${(err as Error).message}` });
 		}
+	}
+
+	/**
+	 * Helper to load the `defaultMemoryMbytes` expression from actor.json.
+	 */
+	private async getExpressionFromConfig(): Promise<string | undefined> {
+		const cwd = process.cwd();
+		const localConfigResult = await useActorConfig({ cwd });
+
+		if (localConfigResult.isErr()) {
+			const { message, cause } = localConfigResult.unwrapErr();
+
+			error({ message: `${message}${cause ? `\n  ${cause.message}` : ''}` });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
+			return;
+		}
+
+		if (localConfigResult.isOkAnd((cfg) => cfg.exists === false)) {
+			throw new Error(
+				`actor.json not found at: ${join(cwd, 'actor.json')}. Make sure the file exists and is readable.`,
+			);
+		}
+
+		const { config: localConfig } = localConfigResult.unwrap();
+		return localConfig?.defaultMemoryMbytes?.toString();
 	}
 }
