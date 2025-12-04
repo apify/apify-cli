@@ -5,6 +5,17 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
+"@apify/actor-memory-expression@npm:^0.1.3":
+  version: 0.1.3
+  resolution: "@apify/actor-memory-expression@npm:0.1.3"
+  dependencies:
+    "@apify/consts": "npm:^2.48.0"
+    "@apify/log": "npm:^2.5.28"
+    mathjs: "npm:^15.1.0"
+  checksum: 10c0/354cad5a9e126c9e8aa13bf04de11f31514d0eb90385859666454b543116147f49acf8862f34ecc5700e28a805a4ce84d1b7feebfc88bed1ea0844163adeb4b6
+  languageName: node
+  linkType: hard
+
 "@apify/actor-templates@npm:^0.1.5":
   version: 0.1.5
   resolution: "@apify/actor-templates@npm:0.1.5"
@@ -16,6 +27,13 @@ __metadata:
   version: 2.47.0
   resolution: "@apify/consts@npm:2.47.0"
   checksum: 10c0/77c11f20719af5655be40048baf648d00aaad43e353b3d288c6a46243567dc73bb911085ebeb9f363ea7414006a4797bed798ae73ac2b57ab362118300991f53
+  languageName: node
+  linkType: hard
+
+"@apify/consts@npm:^2.48.0":
+  version: 2.48.0
+  resolution: "@apify/consts@npm:2.48.0"
+  checksum: 10c0/5ee435a6990dee4c58ef7181c049d74851bfe95649a2880f11a761c9502dcdf94be496ef008648fdadead7878b7c1e465e3948b19af9e62471799e0394cd34a9
   languageName: node
   linkType: hard
 
@@ -94,6 +112,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@apify/log@npm:^2.5.28":
+  version: 2.5.28
+  resolution: "@apify/log@npm:2.5.28"
+  dependencies:
+    "@apify/consts": "npm:^2.48.0"
+    ansi-colors: "npm:^4.1.1"
+  checksum: 10c0/9021a48bd6785b7d8ae3c8e69060d2bb731d0166e3b99cf5f254e66c0492c80d80cfc9a68c22cdda80bf816e9565cc016c04a46be566ccb4a160cac851f16065
+  languageName: node
+  linkType: hard
+
 "@apify/ps-tree@npm:^1.2.0":
   version: 1.2.0
   resolution: "@apify/ps-tree@npm:1.2.0"
@@ -162,6 +190,13 @@ __metadata:
   version: 7.28.5
   resolution: "@babel/helper-validator-identifier@npm:7.28.5"
   checksum: 10c0/42aaebed91f739a41f3d80b72752d1f95fd7c72394e8e4bd7cdd88817e0774d80a432451bcba17c2c642c257c483bf1d409dd4548883429ea9493a3bc4ab0847
+  languageName: node
+  linkType: hard
+
+"@babel/runtime@npm:^7.26.10":
+  version: 7.28.4
+  resolution: "@babel/runtime@npm:7.28.4"
+  checksum: 10c0/792ce7af9750fb9b93879cc9d1db175701c4689da890e6ced242ea0207c9da411ccf16dc04e689cc01158b28d7898c40d75598f4559109f761c12ce01e959bf7
   languageName: node
   linkType: hard
 
@@ -2465,6 +2500,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "apify-cli@workspace:."
   dependencies:
+    "@apify/actor-memory-expression": "npm:^0.1.3"
     "@apify/actor-templates": "npm:^0.1.5"
     "@apify/consts": "npm:^2.36.0"
     "@apify/eslint-config": "npm:^1.0.0"
@@ -3357,6 +3393,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"complex.js@npm:^2.2.5":
+  version: 2.4.3
+  resolution: "complex.js@npm:2.4.3"
+  checksum: 10c0/c61b225c4c2925c922ebaf2c4c6d7d0c2f9cebf4fb5eb8dce231aea7508f15db0920b52107279fdd9947b54a0320eae2911d430a421c2db8d0d24df6c2cb2cf8
+  languageName: node
+  linkType: hard
+
 "compress-commons@npm:^6.0.2":
   version: 6.0.2
   resolution: "compress-commons@npm:6.0.2"
@@ -3587,6 +3630,13 @@ __metadata:
   dependencies:
     ms: "npm:^2.1.1"
   checksum: 10c0/37d96ae42cbc71c14844d2ae3ba55adf462ec89fd3a999459dec3833944cd999af6007ff29c780f1c61153bcaaf2c842d1e4ce1ec621e4fc4923244942e4a02a
+  languageName: node
+  linkType: hard
+
+"decimal.js@npm:^10.4.3":
+  version: 10.6.0
+  resolution: "decimal.js@npm:10.6.0"
+  checksum: 10c0/07d69fbcc54167a340d2d97de95f546f9ff1f69d2b45a02fd7a5292412df3cd9eb7e23065e532a318f5474a2e1bccf8392fdf0443ef467f97f3bf8cb0477e5aa
   languageName: node
   linkType: hard
 
@@ -4275,6 +4325,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"escape-latex@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "escape-latex@npm:1.2.0"
+  checksum: 10c0/b77ea1594a38625295793a61105222c283c1792d1b2511bbfd6338cf02cc427dcabce7e7c1e22ec2f5c40baf3eaf2eeaf229a62dbbb74c6e69bb4a4209f2544f
+  languageName: node
+  linkType: hard
+
 "escape-string-regexp@npm:^1.0.5":
   version: 1.0.5
   resolution: "escape-string-regexp@npm:1.0.5"
@@ -4876,6 +4933,13 @@ __metadata:
   version: 0.2.0
   resolution: "forwarded@npm:0.2.0"
   checksum: 10c0/9b67c3fac86acdbc9ae47ba1ddd5f2f81526fa4c8226863ede5600a3f7c7416ef451f6f1e240a3cc32d0fd79fcfe6beb08fd0da454f360032bde70bf80afbb33
+  languageName: node
+  linkType: hard
+
+"fraction.js@npm:^5.2.1":
+  version: 5.3.4
+  resolution: "fraction.js@npm:5.3.4"
+  checksum: 10c0/f90079fe9bfc665e0a07079938e8ff71115bce9462f17b32fc283f163b0540ec34dc33df8ed41bb56f028316b04361b9a9995b9ee9258617f8338e0b05c5f95a
   languageName: node
   linkType: hard
 
@@ -6053,6 +6117,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"javascript-natural-sort@npm:^0.7.1":
+  version: 0.7.1
+  resolution: "javascript-natural-sort@npm:0.7.1"
+  checksum: 10c0/340f8ffc5d30fb516e06dc540e8fa9e0b93c865cf49d791fed3eac3bdc5fc71f0066fc81d44ec1433edc87caecaf9f13eec4a1fce8c5beafc709a71eaedae6fe
+  languageName: node
+  linkType: hard
+
 "jju@npm:~1.4.0":
   version: 1.4.0
   resolution: "jju@npm:1.4.0"
@@ -6417,6 +6488,25 @@ __metadata:
   version: 1.1.0
   resolution: "math-intrinsics@npm:1.1.0"
   checksum: 10c0/7579ff94e899e2f76ab64491d76cf606274c874d8f2af4a442c016bd85688927fcfca157ba6bf74b08e9439dc010b248ce05b96cc7c126a354c3bae7fcb48b7f
+  languageName: node
+  linkType: hard
+
+"mathjs@npm:^15.1.0":
+  version: 15.1.0
+  resolution: "mathjs@npm:15.1.0"
+  dependencies:
+    "@babel/runtime": "npm:^7.26.10"
+    complex.js: "npm:^2.2.5"
+    decimal.js: "npm:^10.4.3"
+    escape-latex: "npm:^1.2.0"
+    fraction.js: "npm:^5.2.1"
+    javascript-natural-sort: "npm:^0.7.1"
+    seedrandom: "npm:^3.0.5"
+    tiny-emitter: "npm:^2.1.0"
+    typed-function: "npm:^4.2.1"
+  bin:
+    mathjs: bin/cli.js
+  checksum: 10c0/119de0d6f3ecb9b053e49ae5082f949982ecd2418a50f98d6f5f960a4d0b20311dacdad95e79d33be4baf38b9a441ebde80bb0653fd5f5137228e5199ce8e316
   languageName: node
   linkType: hard
 
@@ -8236,6 +8326,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"seedrandom@npm:^3.0.5":
+  version: 3.0.5
+  resolution: "seedrandom@npm:3.0.5"
+  checksum: 10c0/929752ac098ff4990b3f8e0ac39136534916e72879d6eb625230141d20db26e2f44c4d03d153d457682e8cbaab0fb7d58a1e7267a157cf23fd8cf34e25044e88
+  languageName: node
+  linkType: hard
+
 "semver@npm:7.7.2":
   version: 7.7.2
   resolution: "semver@npm:7.7.2"
@@ -8951,6 +9048,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tiny-emitter@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "tiny-emitter@npm:2.1.0"
+  checksum: 10c0/459c0bd6e636e80909898220eb390e1cba2b15c430b7b06cec6ac29d87acd29ef618b9b32532283af749f5d37af3534d0e3bde29fdf6bcefbf122784333c953d
+  languageName: node
+  linkType: hard
+
 "tiny-glob@npm:0.2.8":
   version: 0.2.8
   resolution: "tiny-glob@npm:0.2.8"
@@ -9267,6 +9371,13 @@ __metadata:
     possible-typed-array-names: "npm:^1.0.0"
     reflect.getprototypeof: "npm:^1.0.6"
   checksum: 10c0/e38f2ae3779584c138a2d8adfa8ecf749f494af3cd3cdafe4e688ce51418c7d2c5c88df1bd6be2bbea099c3f7cea58c02ca02ed438119e91f162a9de23f61295
+  languageName: node
+  linkType: hard
+
+"typed-function@npm:^4.2.1":
+  version: 4.2.2
+  resolution: "typed-function@npm:4.2.2"
+  checksum: 10c0/92f2acc7e6d94431f4b37c2219d131cc90c1f43c19c097b7e337408cfd91336e481680d3362e30b5616318272950480ba670572b4585e8c690ca509d65c97554
   languageName: node
   linkType: hard
 
