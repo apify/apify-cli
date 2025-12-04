@@ -1,23 +1,36 @@
 ---
-title: Overview
+title: Apify CLI overview
+description: An introduction to Apify CLI, a command-line interface for creating, developing, building, and running Apify Actors and managing the Apify cloud platform.
+sidebar_label: Overview
 ---
 
-Apify command-line interface (Apify CLI) helps you create, develop, build and run
-[Apify Actors](https://apify.com/actors),
-and manage the Apify cloud platform from any computer.
+Apify command-line interface (Apify CLI) helps you create, develop, build and run [Apify Actors](https://apify.com/actors), and manage the Apify platform from any computer.
 
-Apify Actors are cloud programs that can perform arbitrary web scraping, automation or data processing job.
-They accept input, perform their job and generate output.
-While you can develop Actors in an online IDE directly in the [Apify web application](https://console.apify.com/),
-for complex projects it is more convenient to develop Actors locally on your computer
-using <a href="https://github.com/apify/apify-sdk-js">Apify SDK</a>
-and only push the Actors to the Apify cloud during deployment.
-This is where the Apify CLI comes in.
+## What are Apify Actors?
 
-:::note Run Actors in Docker
+Actors are cloud programs that can perform arbitrary web scraping, automation or data processing job. They accept input, perform their job and generate output.
 
-Actors running on the Apify platform are executed in Docker containers, so with an appropriate `Dockerfile`
-you can build your Actors in any programming language.
-However, we recommend using JavaScript/Node.js and Python, for which we provide most libraries and support.
+## Why use Apify CLI?
+
+The Apify CLI enables you to develop Actors locally on your computer using your preferred tools:
+
+- Your favorite code editor
+- Version control system
+- Development tools and workflows
+
+This gives you full control over your development environment and makes it easier to work on complex projects. You can leverage the [Apify SDK](https://github.com/apify/apify-sdk-js) with all its powerful features, then push your Actor to the Apify platform for deployment when ready.
+
+:::note Actor development environment
+
+Actors run in Docker containers on the Apify platform. With an appropriate `Dockerfile`, you can build Actors in any programming language. We recommend JavaScript/Node.js and Python, for which we have the most comprehensive libraries and support.
 
 :::
+
+## Learn more
+
+Learn everything you need to use the Apify CLI effectively:
+
+- Learn how to [install](./installation.md) the CLI on your system
+- Get started with your [first Actor project](./quick-start.md)
+- See the complete [reference of all CLI commands](./reference.md) and options
+- Find [solutions to common issues](./troubleshooting.md)
