@@ -25,6 +25,8 @@ const createActorJson = async (overrides: Record<string, unknown> = {}) => {
 };
 
 describe('apify actor calculate-memory', () => {
+	const START_URLS_LENGTH_BASED_MEMORY_EXPRESSION = "get(input, 'startUrls.length', 1) * 1024";
+
 	beforeEach(async () => {
 		await beforeAllCalls();
 		toggleCwdBetweenFullAndParentPath();
@@ -51,16 +53,17 @@ describe('apify actor calculate-memory', () => {
 	it('should calculate memory using defaultMemoryMbytes flag', async () => {
 		await testRunCommand(ActorCalculateMemoryCommand, {
 			flags_input: 'INPUT.json',
-			flags_defaultMemoryMbytes: '512',
+			flags_defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION,
 		});
 
-		expect(lastErrorMessage()).toMatch(/Calculated memory: 512 MB/);
+		// INPUT.json does not exist, so input.startUrls.length will be undefined, defaulting to 1
+		expect(lastErrorMessage()).toMatch(/Calculated memory: 1024 MB/);
 	});
 
-	it('should calculate memory using expression from .actor.json', async () => {
+	it('should calculate memory using expression from actor.json', async () => {
 		writeFileSync(joinPath('INPUT.json'), JSON.stringify({ startUrls: [1, 2, 3, 4] }));
 
-		await createActorJson({ defaultMemoryMbytes: "get(input, 'startUrls.length') * 1024" });
+		await createActorJson({ defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION });
 
 		await testRunCommand(ActorCalculateMemoryCommand, {
 			flags_input: 'INPUT.json',
@@ -72,13 +75,13 @@ describe('apify actor calculate-memory', () => {
 	it('should fallback to default input path if input flag is not provided', async () => {
 		const defaultInputPath = joinPath('storage/key_value_stores/default');
 		mkdirSync(defaultInputPath, { recursive: true });
-		writeFileSync(join(defaultInputPath, 'INPUT.json'), JSON.stringify({ memory: 128 }));
+		writeFileSync(join(defaultInputPath, 'INPUT.json'), JSON.stringify({ startUrls: [1] }));
 
-		await createActorJson({ defaultMemoryMbytes: 'input.memory' });
+		await createActorJson({ defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION });
 
 		await testRunCommand(ActorCalculateMemoryCommand, {});
 
-		expect(lastErrorMessage()).toMatch(/Calculated memory: 128 MB/);
+		expect(lastErrorMessage()).toMatch(/Calculated memory: 1024 MB/);
 	});
 
 	it('should report error if memory calculation expression is invalid', async () => {

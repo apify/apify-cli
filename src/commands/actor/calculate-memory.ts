@@ -16,7 +16,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 	private readonly DEFAULT_INPUT_PATH = 'storage/key_value_stores/default/INPUT.json';
 
 	static override description =
-		`Calculates the actor’s dynamic memory usage based on a memory expression from actor.json, input data, and run options.`;
+		`Calculates the Actor’s dynamic memory usage based on a memory expression from actor.json, input data, and run options.`;
 
 	static override flags = {
 		input: Flags.string({
