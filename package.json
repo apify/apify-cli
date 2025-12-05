@@ -63,6 +63,7 @@
         "node": ">=20"
     },
     "dependencies": {
+        "@apify/actor-memory-expression": "^0.1.3",
         "@apify/actor-templates": "^0.1.5",
         "@apify/consts": "^2.36.0",
         "@apify/input_schema": "^3.17.0",
