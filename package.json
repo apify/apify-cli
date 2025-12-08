@@ -69,7 +69,7 @@
         "@apify/utilities": "^2.18.0",
         "@crawlee/memory-storage": "^3.12.0",
         "@inquirer/core": "^10.1.15",
-        "@inquirer/input": "^4.2.1",
+        "@inquirer/input": "^5.0.0",
         "@inquirer/password": "^4.0.17",
         "@inquirer/select": "^4.3.1",
         "@root/walk": "~1.1.0",
