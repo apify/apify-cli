@@ -70,7 +70,7 @@
         "@crawlee/memory-storage": "^3.12.0",
         "@inquirer/core": "^10.1.15",
         "@inquirer/input": "^4.2.1",
-        "@inquirer/password": "^4.0.17",
+        "@inquirer/password": "^5.0.0",
         "@inquirer/select": "^4.3.1",
         "@root/walk": "~1.1.0",
         "@sapphire/duration": "^1.1.2",
