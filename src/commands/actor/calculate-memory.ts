@@ -12,6 +12,13 @@ import { getJsonFileContent, getLocalKeyValueStorePath } from '../../lib/utils.j
 
 const DEFAULT_INPUT_PATH = join(getLocalKeyValueStorePath('default'), 'INPUT.json');
 
+/**
+ * This command can be used to test dynamic memory calculation expressions
+ * defined in actor.json or provided via command-line flags.
+ *
+ * Dynamic memory allows Actors to adjust their memory usage based on input data
+ * and run options, optimizing resource allocation and costs.
+ */
 export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalculateMemoryCommand> {
 	static override name = 'calculate-memory' as const;
 
