@@ -14,7 +14,7 @@ const DEFAULT_INPUT_PATH = join(getLocalKeyValueStorePath('default'), 'INPUT.jso
 
 /**
  * This command can be used to test dynamic memory calculation expressions
- * defined in actor.json or provided via command-line flags.
+ * defined in actor.json or provided via command-line flag.
  *
  * Dynamic memory allows Actors to adjust their memory usage based on input data
  * and run options, optimizing resource allocation and costs.
@@ -75,7 +75,6 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 			);
 		}
 
-		// Let's not check for input existence here, as the expression might not use it at all.
 		const inputPath = resolve(process.cwd(), this.flags.input);
 		const inputJson = getJsonFileContent(inputPath) ?? {};
 
