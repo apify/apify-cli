@@ -56,7 +56,7 @@ describe('apify actor calculate-memory', () => {
 
 	it('should calculate memory using defaultMemoryMbytes flag', async () => {
 		await testRunCommand(ActorCalculateMemoryCommand, {
-			flags_input: `${getLocalKeyValueStorePath('default')}/INPUT.json`,
+			flags_input: inputPath,
 			flags_defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION,
 		});
 
@@ -67,7 +67,7 @@ describe('apify actor calculate-memory', () => {
 		await createActorJson({ defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION });
 
 		await testRunCommand(ActorCalculateMemoryCommand, {
-			flags_input: `${getLocalKeyValueStorePath('default')}/INPUT.json`,
+			flags_input: inputPath,
 		});
 
 		expect(lastLogMessage()).toMatch(/4096 MB/);

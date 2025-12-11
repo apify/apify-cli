@@ -1,4 +1,4 @@
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import process from 'node:process';
 
 import { calculateRunDynamicMemory } from '@apify/actor-memory-expression';
@@ -76,7 +76,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		}
 
 		// Let's not check for input existence here, as the expression might not use it at all.
-		const inputPath = join(process.cwd(), this.flags.input);
+		const inputPath = resolve(process.cwd(), this.flags.input);
 		const inputJson = getJsonFileContent(inputPath) ?? {};
 
 		info({ message: `Evaluating memory expression: ${memoryExpression}` });
