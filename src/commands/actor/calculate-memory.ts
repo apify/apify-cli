@@ -18,6 +18,11 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 	static override description =
 		`Calculates the Actor’s dynamic memory usage based on a memory expression from actor.json, input data, and run options.`;
 
+	/**
+	 * Additional run options exist (e.g., memoryMbytes, disksMbytes, etc.),
+	 * but we intentionally omit them here. These options are rarely needed and
+	 * exposing them would introduce unnecessary confusion for users.
+	 */
 	static override flags = {
 		input: Flags.string({
 			description: 'Path to the input JSON file used for the calculation.',
@@ -43,10 +48,6 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		}),
 		maxTotalChargeUsd: Flags.integer({
 			description: 'Maximum total charge in USD.',
-			required: false,
-		}),
-		restartOnError: Flags.boolean({
-			description: 'Whether the Actor will be restarted on error.',
 			required: false,
 		}),
 	};
