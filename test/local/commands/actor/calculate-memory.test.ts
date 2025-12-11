@@ -28,10 +28,13 @@ const createActorJson = async (overrides: Record<string, unknown> = {}) => {
 
 describe('apify actor calculate-memory', () => {
 	const START_URLS_LENGTH_BASED_MEMORY_EXPRESSION = "get(input, 'startUrls.length', 1) * 1024";
+	const DEFAULT_INPUT = { startUrls: [1, 2, 3, 4] };
 
 	const inputPath = joinPath(getLocalKeyValueStorePath('default'), 'INPUT.json');
 
 	beforeAll(async () => {
+		mkdirSync(dirname(inputPath), { recursive: true });
+		writeFileSync(inputPath, JSON.stringify(DEFAULT_INPUT), { flag: 'w' });
 		await beforeAllCalls();
 	});
 
@@ -53,18 +56,14 @@ describe('apify actor calculate-memory', () => {
 
 	it('should calculate memory using defaultMemoryMbytes flag', async () => {
 		await testRunCommand(ActorCalculateMemoryCommand, {
-			flags_input: 'INPUT.json',
+			flags_input: `${getLocalKeyValueStorePath('default')}/INPUT.json`,
 			flags_defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION,
 		});
 
-		// INPUT.json does not exist, so input.startUrls.length will be undefined, defaulting to 1
-		expect(lastLogMessage()).toMatch(/1024 MB/);
+		expect(lastLogMessage()).toMatch(/4096 MB/);
 	});
 
 	it('should calculate memory using expression from actor.json', async () => {
-		mkdirSync(dirname(inputPath), { recursive: true });
-		writeFileSync(inputPath, JSON.stringify({ startUrls: [1, 2, 3, 4] }), { flag: 'w' });
-
 		await createActorJson({ defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION });
 
 		await testRunCommand(ActorCalculateMemoryCommand, {
@@ -75,9 +74,6 @@ describe('apify actor calculate-memory', () => {
 	});
 
 	it('should fallback to default input path if input flag is not provided', async () => {
-		mkdirSync(dirname(inputPath), { recursive: true });
-		writeFileSync(inputPath, JSON.stringify({ startUrls: [1, 2, 3, 4] }), { flag: 'w' });
-
 		await createActorJson({ defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION });
 
 		await testRunCommand(ActorCalculateMemoryCommand, {});
