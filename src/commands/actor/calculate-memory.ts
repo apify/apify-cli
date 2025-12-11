@@ -8,12 +8,12 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, info, success } from '../../lib/outputs.js';
-import { getJsonFileContent } from '../../lib/utils.js';
+import { getJsonFileContent, getLocalKeyValueStorePath } from '../../lib/utils.js';
+
+const DEFAULT_INPUT_PATH = join(getLocalKeyValueStorePath('default'), 'INPUT.json');
 
 export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalculateMemoryCommand> {
 	static override name = 'calculate-memory' as const;
-
-	private readonly DEFAULT_INPUT_PATH = 'storage/key_value_stores/default/INPUT.json';
 
 	static override description =
 		`Calculates the Actor’s dynamic memory usage based on a memory expression from actor.json, input data, and run options.`;
@@ -22,7 +22,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		input: Flags.string({
 			description: 'Path to the input JSON file used for the calculation.',
 			required: false,
-			default: 'storage/key_value_stores/default/INPUT.json',
+			default: DEFAULT_INPUT_PATH,
 		}),
 		defaultMemoryMbytes: Flags.string({
 			description:
@@ -46,7 +46,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 			required: false,
 		}),
 		restartOnError: Flags.boolean({
-			description: 'Whether to restart the actor on error.',
+			description: 'Whether the Actor will be restarted on error.',
 			required: false,
 		}),
 	};
@@ -68,7 +68,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		}
 
 		// Let's not check for input existence here, as the expression might not use it at all.
-		const inputPath = join(process.cwd(), this.flags.input ?? this.DEFAULT_INPUT_PATH);
+		const inputPath = join(process.cwd(), this.flags.input);
 		const inputJson = getJsonFileContent(inputPath) ?? {};
 
 		info({ message: `Evaluating memory expression: ${memoryExpression}` });
@@ -78,7 +78,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 				input: inputJson,
 				runOptions,
 			});
-			success({ message: `Calculated memory: ${result} MB` });
+			success({ message: `Calculated memory: ${result} MB`, stdout: true });
 		} catch (err) {
 			error({ message: `Memory calculation failed: ${(err as Error).message}` });
 		}
@@ -97,12 +97,6 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 			error({ message: `${message}${cause ? `\n  ${cause.message}` : ''}` });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
-		}
-
-		if (localConfigResult.isOkAnd((cfg) => cfg.exists === false)) {
-			throw new Error(
-				`actor.json not found at: ${join(cwd, 'actor.json')}. Make sure the file exists and is readable.`,
-			);
 		}
 
 		const { config: localConfig } = localConfigResult.unwrap();

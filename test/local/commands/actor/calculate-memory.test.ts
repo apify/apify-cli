@@ -1,21 +1,23 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname } from 'node:path';
 
 import { ActorCalculateMemoryCommand } from '../../../../src/commands/actor/calculate-memory.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../../src/lib/consts.js';
+import { getLocalKeyValueStorePath } from '../../../../src/lib/utils.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
+import { resetCwdCaches } from '../../../__setup__/reset-cwd-caches.js';
 
-const { beforeAllCalls, afterAllCalls, joinPath, toggleCwdBetweenFullAndParentPath } = useTempPath('calculate-memory', {
+const { beforeAllCalls, afterAllCalls, joinPath } = useTempPath('calculate-memory', {
 	create: true,
 	remove: true,
 	cwd: true,
 	cwdParent: false,
 });
 
-const { lastErrorMessage } = useConsoleSpy();
+const { lastErrorMessage, lastLogMessage } = useConsoleSpy();
 
 const createActorJson = async (overrides: Record<string, unknown> = {}) => {
 	const actorJson = { ...EMPTY_LOCAL_CONFIG, ...overrides };
@@ -27,19 +29,18 @@ const createActorJson = async (overrides: Record<string, unknown> = {}) => {
 describe('apify actor calculate-memory', () => {
 	const START_URLS_LENGTH_BASED_MEMORY_EXPRESSION = "get(input, 'startUrls.length', 1) * 1024";
 
-	beforeEach(async () => {
+	const inputPath = joinPath(getLocalKeyValueStorePath('default'), 'INPUT.json');
+
+	beforeAll(async () => {
 		await beforeAllCalls();
-		toggleCwdBetweenFullAndParentPath();
 	});
 
-	afterEach(async () => {
+	afterAll(async () => {
 		await afterAllCalls();
 	});
 
-	it('should fail when default memory is not provided and actor.json is missing', async () => {
-		await testRunCommand(ActorCalculateMemoryCommand, {});
-
-		expect(lastErrorMessage()).toMatch(/actor.json not found at/);
+	beforeEach(() => {
+		resetCwdCaches();
 	});
 
 	it('should fail when default memory is not provided in flags or actor.json', async () => {
@@ -57,31 +58,31 @@ describe('apify actor calculate-memory', () => {
 		});
 
 		// INPUT.json does not exist, so input.startUrls.length will be undefined, defaulting to 1
-		expect(lastErrorMessage()).toMatch(/Calculated memory: 1024 MB/);
+		expect(lastLogMessage()).toMatch(/1024 MB/);
 	});
 
 	it('should calculate memory using expression from actor.json', async () => {
-		writeFileSync(joinPath('INPUT.json'), JSON.stringify({ startUrls: [1, 2, 3, 4] }));
+		mkdirSync(dirname(inputPath), { recursive: true });
+		writeFileSync(inputPath, JSON.stringify({ startUrls: [1, 2, 3, 4] }), { flag: 'w' });
 
 		await createActorJson({ defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION });
 
 		await testRunCommand(ActorCalculateMemoryCommand, {
-			flags_input: 'INPUT.json',
+			flags_input: `${getLocalKeyValueStorePath('default')}/INPUT.json`,
 		});
 
-		expect(lastErrorMessage()).toMatch(/Calculated memory: 4096 MB/);
+		expect(lastLogMessage()).toMatch(/4096 MB/);
 	});
 
 	it('should fallback to default input path if input flag is not provided', async () => {
-		const defaultInputPath = joinPath('storage/key_value_stores/default');
-		mkdirSync(defaultInputPath, { recursive: true });
-		writeFileSync(join(defaultInputPath, 'INPUT.json'), JSON.stringify({ startUrls: [1] }));
+		mkdirSync(dirname(inputPath), { recursive: true });
+		writeFileSync(inputPath, JSON.stringify({ startUrls: [1, 2, 3, 4] }), { flag: 'w' });
 
 		await createActorJson({ defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION });
 
 		await testRunCommand(ActorCalculateMemoryCommand, {});
 
-		expect(lastErrorMessage()).toMatch(/Calculated memory: 1024 MB/);
+		expect(lastLogMessage()).toMatch(/4096 MB/);
 	});
 
 	it('should report error if memory calculation expression is invalid', async () => {
