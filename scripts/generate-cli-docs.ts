@@ -29,6 +29,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.actorsRm },
 
 		{ command: Commands.actor },
+		{ command: Commands.actorCalculateMemory },
 		{ command: Commands.actorCharge },
 		{ command: Commands.actorGetInput },
 		{ command: Commands.actorGetPublicUrl },

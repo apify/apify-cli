@@ -194,11 +194,13 @@ These commands help you develop Actors locally. Use them to create new Actor pro
 
 ```sh
 DESCRIPTION
-  Creates an Actor project from a template in a new directory.
+  Creates an Actor project from a template in a new directory. The command 
+  automatically initializes a git repository in the newly created Actor 
+  directory.
 
 USAGE
   $ apify create [actorName] [--omit-optional-deps]
-                 [--skip-dependency-install] [-t <value>]
+                 [--skip-dependency-install] [--skip-git-init] [-t <value>]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory
@@ -208,6 +210,8 @@ FLAGS
                                  dependencies.
       --skip-dependency-install  Skip installing Actor
                                  dependencies.
+      --skip-git-init            Skip initializing a git
+                                 repository in the Actor directory.
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
                                  it. Visit
@@ -373,18 +377,54 @@ DESCRIPTION
   Manages runtime data operations inside of a running Actor.
 
 SUBCOMMANDS
-  actor set-value       Sets or removes record into the
-                        default key-value store associated with the Actor run.
-  actor push-data       Saves data to Actor's run default
-                        dataset.
-  actor get-value       Gets a value from the default
-                        key-value store associated with the Actor run.
-  actor get-public-url  Get an HTTP URL that allows public
-                        access to a key-value store item.
-  actor get-input       Gets the Actor input value from the
-                        default key-value store associated with the Actor run.
-  actor charge          Charge for a specific event in the
-                        pay-per-event Actor run.
+  actor set-value         Sets or removes record into the
+                          default key-value store associated with the Actor run.
+  actor push-data         Saves data to Actor's run
+                          default dataset.
+  actor get-value         Gets a value from the default
+                          key-value store associated with the Actor run.
+  actor get-public-url    Get an HTTP URL that allows
+                          public access to a key-value store item.
+  actor get-input         Gets the Actor input value from
+                          the default key-value store associated with the Actor
+                          run.
+  actor charge            Charge for a specific event in
+                          the pay-per-event Actor run.
+  actor calculate-memory  Calculates the Actor’s dynamic
+                          memory usage based on a memory expression from
+                          actor.json, input data, and run options.
+```
+
+##### `apify actor calculate-memory`
+
+```sh
+DESCRIPTION
+  Calculates the Actor’s dynamic memory usage based on a memory expression from 
+  actor.json, input data, and run options.
+
+USAGE
+  $ apify actor calculate-memory [--build <value>]
+                                 [--default-memory-mbytes <value>]
+                                 [--input <value>] [--max-items <value>]
+                                 [--max-total-charge-usd <value>]
+                                 [--timeout-secs <value>]
+
+FLAGS
+      --build=<value>                  Actor build
+                                       version or build tag to evaluate the
+                                       expression with.
+      --default-memory-mbytes=<value>
+                                       Memory-calculation expression (in MB). If
+                                       omitted, the value is loaded from the
+                                       actor.json file.
+      --input=<value>                  Path to the
+                                       input JSON file used for the calculation.
+      --max-items=<value>              Maximum
+                                       number of items Actor can output.
+      --max-total-charge-usd=<value>   Maximum
+                                       total charge in USD.
+      --timeout-secs=<value>           Maximum run
+                                       timeout, in seconds.
 ```
 
 ##### `apify actor charge`
@@ -517,7 +557,7 @@ DESCRIPTION
 
 USAGE
   $ apify actors push [actorId] [-b <value>] [--dir <value>]
-                      [--force] [--open] [-v <value>] [-w <value>]
+                      [-f] [--open] [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -530,9 +570,9 @@ FLAGS
                                  it is taken from the '.actor/actor.json' file
       --dir=<value>              Directory where the
                                  Actor is located
-      --force                    Push an Actor even when
-                                 the local files are older than the Actor on the
-                                 platform.
+  -f, --force                    Push an Actor even
+                                 when the local files are older than the Actor on
+                                 the platform.
       --open                     Whether to open the
                                  browser automatically to the Actor details page.
   -v, --version=<value>          Actor version number
