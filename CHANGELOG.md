@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - Add automatic git repository initialization to `apify create` command ([#919](https://github.com/apify/apify-cli/pull/919)) ([bd1f0a1](https://github.com/apify/apify-cli/commit/bd1f0a1f7be15d807fab1e74951641059783f117)) by [@Copilot](https://github.com/Copilot), closes [#918](https://github.com/apify/apify-cli/issues/918)
+- Add calculate-memory command to actor ([#980](https://github.com/apify/apify-cli/pull/980)) ([78eeee7](https://github.com/apify/apify-cli/commit/78eeee79e61b7c300ef669c7c310925539683e90)) by [@danpoletaev](https://github.com/danpoletaev)
 
 ### 🐛 Bug Fixes
 
