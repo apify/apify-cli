@@ -1,4 +1,5 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { ActorCalculateMemoryCommand } from './calculate-memory.js';
 import { ActorChargeCommand } from './charge.js';
 import { ActorGetInputCommand } from './get-input.js';
 import { ActorGetPublicUrlCommand } from './get-public-url.js';
@@ -19,6 +20,7 @@ export class ActorIndexCommand extends ApifyCommand<typeof ActorIndexCommand> {
 		ActorGetPublicUrlCommand,
 		ActorGetInputCommand,
 		ActorChargeCommand,
+		ActorCalculateMemoryCommand,
 	];
 
 	async run() {
