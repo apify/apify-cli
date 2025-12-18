@@ -16,6 +16,16 @@ describe('apify secrets add', () => {
 		}
 	});
 
+	afterEach(async () => {
+		// Clean up after each test
+		const secrets = getSecretsFile();
+		if (secrets[SECRET_KEY]) {
+			await testRunCommand(SecretsRmCommand, {
+				args_name: SECRET_KEY,
+			});
+		}
+	});
+
 	it('should work', async () => {
 		await testRunCommand(SecretsAddCommand, {
 			args_name: SECRET_KEY,
@@ -26,13 +36,19 @@ describe('apify secrets add', () => {
 		expect(secrets[SECRET_KEY]).to.eql(SECRET_VALUE);
 	});
 
-	afterAll(async () => {
-		const secrets = getSecretsFile();
+	it('should throw error when adding duplicate secret', async () => {
+		// First add a secret
+		await testRunCommand(SecretsAddCommand, {
+			args_name: SECRET_KEY,
+			args_value: SECRET_VALUE,
+		});
 
-		if (secrets[SECRET_KEY]) {
-			await testRunCommand(SecretsRmCommand, {
+		// Try to add the same secret again and expect it to throw
+		await expect(
+			testRunCommand(SecretsAddCommand, {
 				args_name: SECRET_KEY,
-			});
-		}
+				args_value: SECRET_VALUE,
+			}),
+		).rejects.toThrow(`Secret with name ${SECRET_KEY} already exists`);
 	});
 });
