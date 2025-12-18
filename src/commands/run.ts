@@ -98,6 +98,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			stdin: StdinMode.Stringified,
 			exclusive: ['input'],
 		}),
+		'ignore-missing-secrets': Flags.boolean({
+			description: 'Ignore missing secrets and show warnings instead of failing. Environment variables referencing missing secrets will be omitted.',
+			default: false,
+			required: false,
+		}),
 	};
 
 	async run() {
@@ -259,7 +264,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
 		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
 		if (localConfig!.environmentVariables) {
-			const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>);
+			const updatedEnv = replaceSecretsValue(
+				localConfig!.environmentVariables as Record<string, string>,
+				undefined,
+				this.flags.ignoreMissingSecrets
+			);
 			Object.assign(localEnvVars, updatedEnv);
 		}
 
