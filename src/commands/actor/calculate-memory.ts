@@ -74,14 +74,11 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 
 		// If not provided via flag, try to load from actor.json
 		if (!memoryExpression) {
-			const {
-				defaultMemoryMbytes: defaultMemoryMbytesFromConfig,
-				minMemoryMbytes = minMemory,
-				maxMemoryMbytes = maxMemory,
-			} = await this.getExpressionFromConfig();
-			memoryExpression = defaultMemoryMbytesFromConfig;
-			minMemory = minMemoryMbytes;
-			maxMemory = maxMemoryMbytes;
+			({
+				defaultMemoryMbytes: memoryExpression,
+				minMemoryMbytes: minMemory = minMemory, // Fallback to minMemory(0) if undefined
+				maxMemoryMbytes: maxMemory = maxMemory, // Fallback to maxMemory(Infinity) if undefined
+			} = await this.getExpressionFromConfig());
 		}
 
 		if (!memoryExpression) {
