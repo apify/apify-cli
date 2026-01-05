@@ -12,6 +12,12 @@ import { getJsonFileContent, getLocalKeyValueStorePath } from '../../lib/utils.j
 
 const DEFAULT_INPUT_PATH = join(getLocalKeyValueStorePath('default'), 'INPUT.json');
 
+interface ActorMemoryConfig {
+	defaultMemoryMbytes?: string;
+	minMemoryMbytes?: number;
+	maxMemoryMbytes?: number;
+}
+
 /**
  * This command can be used to test dynamic memory calculation expressions
  * defined in actor.json or provided via command-line flag.
@@ -63,10 +69,19 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		const { input, defaultMemoryMbytes, ...runOptions } = this.flags;
 
 		let memoryExpression: string | undefined = defaultMemoryMbytes;
+		let minMemory = 0;
+		let maxMemory = Infinity;
 
 		// If not provided via flag, try to load from actor.json
 		if (!memoryExpression) {
-			memoryExpression = await this.getExpressionFromConfig();
+			const {
+				defaultMemoryMbytes: defaultMemoryMbytesFromConfig,
+				minMemoryMbytes = minMemory,
+				maxMemoryMbytes = maxMemory,
+			} = await this.getExpressionFromConfig();
+			memoryExpression = defaultMemoryMbytesFromConfig;
+			minMemory = minMemoryMbytes;
+			maxMemory = maxMemoryMbytes;
 		}
 
 		if (!memoryExpression) {
@@ -85,7 +100,9 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 				input: inputJson,
 				runOptions,
 			});
-			success({ message: `Calculated memory: ${result} MB`, stdout: true });
+			const clampedResult = Math.min(Math.max(result, minMemory), maxMemory);
+
+			success({ message: `Calculated memory: ${clampedResult} MB`, stdout: true });
 		} catch (err) {
 			error({ message: `Memory calculation failed: ${(err as Error).message}` });
 		}
@@ -94,7 +111,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 	/**
 	 * Helper to load the `defaultMemoryMbytes` expression from actor.json.
 	 */
-	private async getExpressionFromConfig(): Promise<string | undefined> {
+	private async getExpressionFromConfig(): Promise<ActorMemoryConfig> {
 		const cwd = process.cwd();
 		const localConfigResult = await useActorConfig({ cwd });
 
@@ -103,10 +120,14 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 
 			error({ message: `${message}${cause ? `\n  ${cause.message}` : ''}` });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
-			return;
+			return {};
 		}
 
 		const { config: localConfig } = localConfigResult.unwrap();
-		return localConfig?.defaultMemoryMbytes?.toString();
+		return {
+			defaultMemoryMbytes: localConfig?.defaultMemoryMbytes?.toString(),
+			minMemoryMbytes: localConfig?.minMemoryMbytes as number,
+			maxMemoryMbytes: localConfig?.maxMemoryMbytes as number,
+		};
 	}
 }
