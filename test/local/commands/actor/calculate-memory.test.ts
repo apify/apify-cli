@@ -90,4 +90,30 @@ describe('apify actor calculate-memory', () => {
 
 		expect(lastErrorMessage()).toMatch(/Memory calculation failed: /);
 	});
+
+	describe('clamping to minMemoryMbytes/maxMemoryMbytes', () => {
+		it('should clamp memory to minMemoryMbytes from actor.json', async () => {
+			await createActorJson({
+				defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION,
+				minMemoryMbytes: 8192,
+			});
+
+			await testRunCommand(ActorCalculateMemoryCommand, {
+				flags_input: inputPath,
+			});
+			expect(lastLogMessage()).toMatch(/8192 MB/);
+		});
+
+		it('should clamp memory to maxMemoryMbytes from actor.json', async () => {
+			await createActorJson({
+				defaultMemoryMbytes: START_URLS_LENGTH_BASED_MEMORY_EXPRESSION,
+				maxMemoryMbytes: 2048,
+			});
+
+			await testRunCommand(ActorCalculateMemoryCommand, {
+				flags_input: inputPath,
+			});
+			expect(lastLogMessage()).toMatch(/2048 MB/);
+		});
+	});
 });

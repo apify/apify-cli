@@ -12,6 +12,12 @@ import { getJsonFileContent, getLocalKeyValueStorePath } from '../../lib/utils.j
 
 const DEFAULT_INPUT_PATH = join(getLocalKeyValueStorePath('default'), 'INPUT.json');
 
+interface ActorMemoryConfig {
+	defaultMemoryMbytes?: string;
+	minMemoryMbytes?: number;
+	maxMemoryMbytes?: number;
+}
+
 /**
  * This command can be used to test dynamic memory calculation expressions
  * defined in actor.json or provided via command-line flag.
@@ -60,14 +66,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 	};
 
 	async run() {
-		const { input, defaultMemoryMbytes, ...runOptions } = this.flags;
-
-		let memoryExpression: string | undefined = defaultMemoryMbytes;
-
-		// If not provided via flag, try to load from actor.json
-		if (!memoryExpression) {
-			memoryExpression = await this.getExpressionFromConfig();
-		}
+		const { input, memoryExpression, minMemory, maxMemory, runOptions } = await this.prepareMemoryArguments();
 
 		if (!memoryExpression) {
 			throw new Error(
@@ -75,7 +74,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 			);
 		}
 
-		const inputPath = resolve(process.cwd(), this.flags.input);
+		const inputPath = resolve(process.cwd(), input);
 		const inputJson = getJsonFileContent(inputPath) ?? {};
 
 		info({ message: `Evaluating memory expression: ${memoryExpression}` });
@@ -85,16 +84,48 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 				input: inputJson,
 				runOptions,
 			});
-			success({ message: `Calculated memory: ${result} MB`, stdout: true });
+			const clampedResult = Math.min(Math.max(result, minMemory), maxMemory);
+
+			success({ message: `Calculated memory: ${clampedResult} MB`, stdout: true });
 		} catch (err) {
 			error({ message: `Memory calculation failed: ${(err as Error).message}` });
 		}
 	}
 
 	/**
+	 * Determines the memory arguments to use.
+	 * If --defaultMemoryMbytes flag is set, use it (unlimited min/max).
+	 * Otherwise, load from actor.json.
+	 */
+	private async prepareMemoryArguments() {
+		const { input, defaultMemoryMbytes, ...runOptions } = this.flags;
+
+		let memoryExpression: string | undefined = defaultMemoryMbytes;
+		let minMemory = 0;
+		let maxMemory = Infinity;
+
+		// If not provided via flag, try to load from actor.json
+		if (!memoryExpression) {
+			({
+				defaultMemoryMbytes: memoryExpression,
+				minMemoryMbytes: minMemory = minMemory, // Fallback to minMemory(0) if undefined
+				maxMemoryMbytes: maxMemory = maxMemory, // Fallback to maxMemory(Infinity) if undefined
+			} = await this.getExpressionFromConfig());
+		}
+
+		return {
+			memoryExpression,
+			minMemory,
+			maxMemory,
+			input,
+			runOptions,
+		};
+	}
+
+	/**
 	 * Helper to load the `defaultMemoryMbytes` expression from actor.json.
 	 */
-	private async getExpressionFromConfig(): Promise<string | undefined> {
+	private async getExpressionFromConfig(): Promise<ActorMemoryConfig> {
 		const cwd = process.cwd();
 		const localConfigResult = await useActorConfig({ cwd });
 
@@ -103,10 +134,14 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 
 			error({ message: `${message}${cause ? `\n  ${cause.message}` : ''}` });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
-			return;
+			return {};
 		}
 
 		const { config: localConfig } = localConfigResult.unwrap();
-		return localConfig?.defaultMemoryMbytes?.toString();
+		return {
+			defaultMemoryMbytes: localConfig?.defaultMemoryMbytes?.toString(),
+			minMemoryMbytes: localConfig?.minMemoryMbytes as number | undefined,
+			maxMemoryMbytes: localConfig?.maxMemoryMbytes as number | undefined,
+		};
 	}
 }
