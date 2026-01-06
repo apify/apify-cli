@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 - Handle unknown flags with random characters in name correctly ([#920](https://github.com/apify/apify-cli/pull/920)) ([958a3f2](https://github.com/apify/apify-cli/commit/958a3f22a8f714f651a39361c28d83f0fc2bba85)) by [@vladfrangu](https://github.com/vladfrangu)
 - Alias `-f` for `--force` in `apify push` ([#940](https://github.com/apify/apify-cli/pull/940)) ([fea16ec](https://github.com/apify/apify-cli/commit/fea16ec6cf706a894d4e3e15165c8770911c1b16)) by [@vladfrangu](https://github.com/vladfrangu)
 - **run:** Only match correct INPUT files, not any possible metadatas ([#951](https://github.com/apify/apify-cli/pull/951)) ([a07d513](https://github.com/apify/apify-cli/commit/a07d5130f6212f33f09e6c353875997fa15a8110)) by [@vladfrangu](https://github.com/vladfrangu), closes [#933](https://github.com/apify/apify-cli/issues/933)
+- Calculate run memory min&#x2F;max memory clamping ([#986](https://github.com/apify/apify-cli/pull/986)) ([0101cb1](https://github.com/apify/apify-cli/commit/0101cb18742d3e349d782710ed9fcbaa709f4bc7)) by [@danpoletaev](https://github.com/danpoletaev)
 
 <!-- git-cliff-unreleased-end -->
 
