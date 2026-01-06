@@ -246,18 +246,15 @@ jobs:
         name: Publish to NPM
         needs: [update_changelog, create_github_release]
         runs-on: ubuntu-latest
-        permissions:
-            contents: write
-            id-token: write
         steps:
             - name: Execute publish workflow
               uses: apify/workflows/execute-workflow@main
               with:
                   workflow: publish_to_npm.yaml
                   inputs: >
-                      { 
-                          "ref": "${{ needs.update_changelog.outputs.changelog_commitish }}", 
-                          "tag": "latest" 
+                      {
+                          "ref": "${{ needs.update_changelog.outputs.changelog_commitish }}",
+                          "tag": "latest"
                       }
 
     update_homebrew_formula:
