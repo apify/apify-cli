@@ -58,3 +58,54 @@ jobs:
 
             - name: Publish to NPM
               run: yarn npm publish --provenance --access public --tag ${{ inputs.tag }}
+
+    update_homebrew_formula:
+        name: Update Homebrew Formula
+        needs: [publish_to_npm]
+        if: ${{ inputs.tag == 'latest' }}
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  ref: ${{ inputs.ref }}
+
+            - name: Set git identity
+              run: |
+                  git config --global user.name 'Apify Service Account'
+                  git config --global user.email 'apify-service-account@users.noreply.github.com'
+
+            - name: Set up Homebrew
+              uses: Homebrew/actions/setup-homebrew@master
+
+            # It can happen that the updated package version is not available right after the `npm publish` command finishes
+            # Try waiting 3 minutes until the updated package version is available
+            - name: Wait for updated package to be available on NPM
+              run: |
+                  PACKAGE_VERSION=`node -p "require('./package.json').version"`
+                  PACKAGE_DEFINITION_URL="https://registry.npmjs.org/apify-cli/${PACKAGE_VERSION}"
+
+                  for _i in {1..30}; do
+                      curl -sf "${PACKAGE_DEFINITION_URL}" &> /dev/null && exit 0;
+                      echo "Package 'apify-cli' version '${PACKAGE_VERSION}' is not available yet, will retry in 10 seconds."
+                      sleep 10;
+                  done
+                  curl -sf "${PACKAGE_DEFINITION_URL}" &> /dev/null || exit 1;
+
+            - name: Update Homebrew formula in apify/homebrew-tap repo
+              run: |
+                  PACKAGE_VERSION=`node -p "require('./package.json').version"`
+                  gh workflow run update_formula.yaml --repo apify/homebrew-tap --field package=apify-cli --field version=$PACKAGE_VERSION
+              env:
+                  GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+            - name: Send PR with formula update to homebrew/homebrew-core repo
+              run: |
+                  PACKAGE_VERSION=`node -p "require('./package.json').version"`
+                  brew tap --force homebrew/core
+                  brew bump-formula-pr apify-cli \
+                      --version ${PACKAGE_VERSION} \
+                      --no-browse \
+                      --message "Automatic update of the \`apify-cli\` formula. CC @B4nan @vladfrangu"
+              env:
+                  HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
