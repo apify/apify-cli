@@ -70,7 +70,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 
 		if (!memoryExpression) {
 			throw new Error(
-				`No memory-calculation expression found. Provide it via the --defaultMemoryMbytes flag or define defaultMemoryMbytes in actor.json.`,
+				`No memory-calculation expression found. Provide it via the --default-memory-mbytes flag or define defaultMemoryMbytes in actor.json.`,
 			);
 		}
 
