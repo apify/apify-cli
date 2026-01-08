@@ -13,6 +13,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.info },
 		{ command: Commands.secrets },
 		{ command: Commands.secretsAdd },
+		{ command: Commands.secretsLs },
 		{ command: Commands.secretsRm },
 	],
 	'actor-dev': [

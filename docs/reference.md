@@ -151,6 +151,8 @@ DESCRIPTION
 SUBCOMMANDS
   secrets add  Adds a new secret to '~/.apify' for use in Actor
                environment variables.
+  secrets ls   Lists all secret keys stored in your local
+               configuration.
   secrets rm   Permanently deletes a secret from your stored
                credentials.
 ```
@@ -167,6 +169,19 @@ USAGE
 ARGUMENTS
   name   Name of the secret
   value  Value of the secret
+```
+
+##### `apify secrets ls`
+
+```sh
+DESCRIPTION
+  Lists all secret keys stored in your local configuration.
+
+USAGE
+  $ apify secrets ls [--json]
+
+FLAGS
+      --json  Format the command output as JSON
 ```
 
 ##### `apify secrets rm`
