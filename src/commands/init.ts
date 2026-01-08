@@ -37,6 +37,10 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 				'Automatic yes to prompts; assume "yes" as answer to all prompts. Note that in some cases, the command may still ask for confirmation.',
 			required: false,
 		}),
+		dockerfile: Flags.string({
+			description: 'Path to a Dockerfile to use for the Actor (e.g., "./Dockerfile" or "./docker/Dockerfile").',
+			required: false,
+		}),
 	};
 
 	async run() {
@@ -111,8 +115,21 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 			}
 
 			// Migrate apify.json to .actor/actor.json
-			const localConfig = { ...EMPTY_LOCAL_CONFIG, ...actorConfig.unwrap().config };
-			await setLocalConfig(Object.assign(localConfig, { name: actorName }), cwd);
+			const localConfig = {
+				...EMPTY_LOCAL_CONFIG,
+				...actorConfig.unwrap().config,
+			};
+			const configToWrite: Record<string, unknown> = {
+				...localConfig,
+				name: actorName,
+			};
+
+			// Add dockerfile field if provided
+			if (this.flags.dockerfile) {
+				configToWrite.dockerfile = this.flags.dockerfile;
+			}
+
+			await setLocalConfig(configToWrite, cwd);
 		}
 
 		await setLocalEnv(cwd);
