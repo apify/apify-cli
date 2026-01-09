@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 1.2.2 - **not yet released**
+
+### 🚀 Features
+
+- Add `--dockerfile` flag to `apify init` ([#989](https://github.com/apify/apify-cli/pull/989)) ([3f2104e](https://github.com/apify/apify-cli/commit/3f2104ef3321728cca07c53b853f668e31c66648)) by [@janbuchar](https://github.com/janbuchar), closes [#76](https://github.com/apify/apify-cli/issues/76)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [1.2.1](https://github.com/apify/apify-cli/releases/tag/v1.2.1) (2026-01-06)
 
 ## [1.2.0](https://github.com/apify/apify-cli/releases/tag/v1.2.0) (2026-01-06)
