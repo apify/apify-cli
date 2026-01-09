@@ -35,14 +35,16 @@ describe('apify secrets ls', () => {
 	});
 
 	it('should list all secrets', async () => {
+		const spy = vitest.spyOn(console, 'log');
+
 		await testRunCommand(SecretsLsCommand, {});
 
-		const secrets = getSecretsFile();
-		const secretKeys = Object.keys(secrets);
+		// Verify the command outputs our test secrets
+		const output = spy.mock.calls.map((call) => call.join(' ')).join('\n');
+		expect(output).to.include(SECRET_KEY_1);
+		expect(output).to.include(SECRET_KEY_2);
 
-		// Verify our test secrets are in the list
-		expect(secretKeys).to.include(SECRET_KEY_1);
-		expect(secretKeys).to.include(SECRET_KEY_2);
+		spy.mockRestore();
 	});
 
 	afterAll(async () => {
