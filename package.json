@@ -92,7 +92,7 @@
         "escape-string-regexp": "~5.0.0",
         "execa": "^9.5.2",
         "express": "~5.2.0",
-        "globby": "~15.0.0",
+        "globby": "~16.1.0",
         "handlebars": "~4.7.8",
         "indent-string": "^5.0.0",
         "is-ci": "~4.1.0",
