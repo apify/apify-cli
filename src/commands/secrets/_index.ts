@@ -1,6 +1,7 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { SecretsAddCommand } from './add.js';
+import { SecretsLsCommand } from './ls.js';
 import { SecretsRmCommand } from './rm.js';
 
 export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand> {
@@ -19,7 +20,7 @@ export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand
 		`}\n\n` +
 		`When the Actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable of the Actor.`;
 
-	static override subcommands = [SecretsAddCommand, SecretsRmCommand];
+	static override subcommands = [SecretsAddCommand, SecretsLsCommand, SecretsRmCommand];
 
 	async run() {
 		this.printHelp();
