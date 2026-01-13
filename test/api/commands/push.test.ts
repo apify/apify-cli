@@ -427,7 +427,7 @@ describe('[api] apify push', () => {
 				usesStandbyMode: true,
 			};
 
-			await writeFile(joinCwdPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'));
+			await writeFile(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'));
 
 			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
 
@@ -484,7 +484,7 @@ describe('[api] apify push', () => {
 				usesStandbyMode: true,
 			};
 
-			await writeFile(joinCwdPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'));
+			await writeFile(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'));
 
 			// Push to existing actor - this should update standby mode
 			await testRunCommand(ActorsPushCommand, {
