@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - Add `--dockerfile` flag to `apify init` ([#989](https://github.com/apify/apify-cli/pull/989)) ([3f2104e](https://github.com/apify/apify-cli/commit/3f2104ef3321728cca07c53b853f668e31c66648)) by [@janbuchar](https://github.com/janbuchar), closes [#76](https://github.com/apify/apify-cli/issues/76)
+- Add secrets:ls command to list all secrets ([#990](https://github.com/apify/apify-cli/pull/990)) ([8256cf5](https://github.com/apify/apify-cli/commit/8256cf55995060c8ff845dede46fb1943c9ec179)) by [@janbuchar](https://github.com/janbuchar), closes [#80](https://github.com/apify/apify-cli/issues/80)
 
 <!-- git-cliff-unreleased-end -->
 
