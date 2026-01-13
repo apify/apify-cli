@@ -407,4 +407,112 @@ describe('[api] apify push', () => {
 		},
 		TEST_TIMEOUT,
 	);
+
+	it(
+		'should enable standby mode when usesStandbyMode is true in actor.json',
+		async () => {
+			toggleCwdBetweenFullAndParentPath();
+
+			const standbyActorName = `${ACTOR_NAME}-standby`;
+
+			await mkdir(joinCwdPath(standbyActorName), { recursive: true });
+			forceNewCwd(standbyActorName);
+
+			// Create a minimal actor with usesStandbyMode enabled
+			const actorJson = {
+				actorSpecification: 1,
+				name: standbyActorName,
+				version: '0.0',
+				buildTag: 'latest',
+				usesStandbyMode: true,
+			};
+
+			await writeFile(joinCwdPath('.actor/actor.json'), JSON.stringify(actorJson, null, '\t'));
+			await writeFile(joinCwdPath('Dockerfile'), 'FROM apify/actor-node:18\nCOPY . ./\nCMD ["node", "main.js"]');
+			await writeFile(joinCwdPath('main.js'), 'console.log("Hello");');
+
+			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+
+			const userInfo = await getLocalUserInfo();
+			const actorId = `${userInfo.username}/${standbyActorName}`;
+			actorsForCleanup.add(actorId);
+			const createdActorClient = testUserClient.actor(actorId);
+			const createdActor = await createdActorClient.get();
+
+			// Verify all standby options are set to default values
+			expect(createdActor?.actorStandby).to.be.eql({
+				isEnabled: true,
+				disableStandbyFieldsOverride: false,
+				maxRequestsPerActorRun: 4,
+				desiredRequestsPerActorRun: 3,
+				idleTimeoutSecs: 300,
+				build: 'latest',
+				memoryMbytes: 1024,
+				shouldPassActorInput: false,
+			});
+
+			if (createdActor) await createdActorClient.delete();
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should enable standby mode on existing actor when usesStandbyMode is true in actor.json',
+		async () => {
+			toggleCwdBetweenFullAndParentPath();
+
+			// Create an actor without standby mode first
+			const testActorWithoutStandby = {
+				...TEST_ACTOR,
+				name: `${ACTOR_NAME}-standby-update`,
+			};
+			const testActor = await testUserClient.actors().create(testActorWithoutStandby);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+
+			// Verify standby is not enabled initially
+			const initialActor = await testActorClient.get();
+			expect(initialActor?.actorStandby?.isEnabled).to.not.be.eql(true);
+
+			await mkdir(joinCwdPath(testActorWithoutStandby.name), { recursive: true });
+			forceNewCwd(testActorWithoutStandby.name);
+
+			// Create actor.json with usesStandbyMode enabled
+			const actorJson = {
+				actorSpecification: 1,
+				name: testActorWithoutStandby.name,
+				version: '0.0',
+				buildTag: 'latest',
+				usesStandbyMode: true,
+			};
+
+			await writeFile(joinCwdPath('.actor/actor.json'), JSON.stringify(actorJson, null, '\t'));
+			await writeFile(joinCwdPath('Dockerfile'), 'FROM apify/actor-node:18\nCOPY . ./\nCMD ["node", "main.js"]');
+			await writeFile(joinCwdPath('main.js'), 'console.log("Hello");');
+
+			// Push to existing actor - this should update standby mode
+			await testRunCommand(ActorsPushCommand, {
+				args_actorId: testActor.id,
+				flags_noPrompt: true,
+				flags_force: true,
+			});
+
+			const updatedActor = await testActorClient.get();
+
+			// Verify all standby options are set to default values
+			expect(updatedActor?.actorStandby).to.be.eql({
+				isEnabled: true,
+				disableStandbyFieldsOverride: false,
+				maxRequestsPerActorRun: 4,
+				desiredRequestsPerActorRun: 3,
+				idleTimeoutSecs: 300,
+				build: 'latest',
+				memoryMbytes: 1024,
+				shouldPassActorInput: false,
+			});
+
+			if (updatedActor) await testActorClient.delete();
+		},
+		TEST_TIMEOUT,
+	);
 });
