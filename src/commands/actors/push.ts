@@ -185,6 +185,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 					DEFAULT_RUN_OPTIONS) as ActorDefaultRunOptions;
 				const newActor: ActorCollectionCreateOptions = {
 					name: actorConfig!.name as string,
+					title: actorConfig!.title as string | undefined,
+					description: actorConfig!.description as string | undefined,
 					defaultRunOptions,
 					versions: [
 						{
@@ -203,10 +205,28 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			}
 		}
 
+		const actorClient = apifyClient.actor(actorId);
+
+		// Update actor title/description if they differ from the current values
+		if (!isActorCreatedNow) {
+			const actorUpdates: Record<string, unknown> = {};
+
+			if (actorConfig!.title && actorConfig!.title !== actor.title) {
+				actorUpdates.title = actorConfig!.title;
+			}
+
+			if (actorConfig!.description && actorConfig!.description !== actor.description) {
+				actorUpdates.description = actorConfig!.description;
+			}
+
+			if (Object.keys(actorUpdates).length > 0) {
+				await actorClient.update(actorUpdates);
+			}
+		}
+
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
 		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
-		const actorClient = apifyClient.actor(actorId);
 
 		let sourceType;
 		let sourceFiles;
