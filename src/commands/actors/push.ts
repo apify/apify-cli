@@ -207,23 +207,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const actorClient = apifyClient.actor(actorId);
 
-		// Update actor title/description if they differ from the current values
-		if (!isActorCreatedNow) {
-			const actorUpdates: Record<string, unknown> = {};
-
-			if (actorConfig!.title && actorConfig!.title !== actor.title) {
-				actorUpdates.title = actorConfig!.title;
-			}
-
-			if (actorConfig!.description && actorConfig!.description !== actor.description) {
-				actorUpdates.description = actorConfig!.description;
-			}
-
-			if (Object.keys(actorUpdates).length > 0) {
-				await actorClient.update(actorUpdates);
-			}
-		}
-
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
 		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
@@ -235,6 +218,54 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			const client = await actorClient.get();
 
 			if (!isActorCreatedNow) {
+				const actorUpdates: Record<string, unknown> = {};
+
+				// Only update title if it is not present so we are sure we not
+				// overwrite user's edits in console by push.
+
+				if (actorConfig!.title && !actor.title) {
+					actorUpdates.title = actorConfig!.title;
+				}
+
+				// Only update description if it is not present so we are sure we not
+				// overwrite user's edits in console by push.
+				if (actorConfig!.description && !actor.description) {
+					actorUpdates.description = actorConfig!.description;
+				}
+
+				// Provide all atributes needed for successfull update.
+				if (Object.keys(actorUpdates).length > 0 && client) {
+					const {
+						actorPermissionLevel,
+						actorStandby,
+						categories,
+						defaultRunOptions,
+						description,
+						isDeprecated,
+						isPublic,
+						name,
+						restartOnError,
+						seoDescription,
+						seoTitle,
+						title,
+						versions,
+					} = actor;
+					await actorClient.update({
+						actorPermissionLevel,
+						actorStandby,
+						categories,
+						defaultRunOptions,
+						description: description ?? actorUpdates.description,
+						isDeprecated,
+						isPublic,
+						name,
+						restartOnError,
+						seoDescription,
+						seoTitle,
+						title: title ?? actorUpdates.title,
+						versions,
+					} as never);
+				}
 				// Check when was files modified last
 				const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
 					const { mtimeMs, ctimeMs } = statSync(join(cwd, filePath));
