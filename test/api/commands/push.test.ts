@@ -308,8 +308,66 @@ describe('[api] apify push', () => {
 			await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
 
 			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			if (testActor) await testActorClient.delete();
 
 			expect(lastErrorMessage()).to.includes('is already on the platform');
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should set title and description when creating a new actor',
+		async () => {
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			actorJson.name = `${actorJson.name}-title-test`;
+			actorJson.title = 'My Custom Actor Title';
+			actorJson.description = 'This is a custom description for the actor.';
+
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+
+			const userInfo = await getLocalUserInfo();
+			const actorId = `${userInfo.username}/${actorJson.name}`;
+			actorsForCleanup.add(actorId);
+			const createdActorClient = testUserClient.actor(actorId);
+			const createdActor = await createdActorClient.get();
+
+			expect(createdActor?.title).to.be.eql('My Custom Actor Title');
+			expect(createdActor?.description).to.be.eql('This is a custom description for the actor.');
+
+			if (createdActor) await createdActorClient.delete();
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should not rewrite current Actor title and description',
+		async () => {
+			const testActorWithTitleDesc = {
+				...TEST_ACTOR,
+				title: 'Original Title',
+				description: 'Original description.',
+			};
+			let testActor = await testUserClient.actors().create(testActorWithTitleDesc);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+
+			// Remove title and description from local actor.json
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			delete actorJson.title;
+			delete actorJson.description;
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+
+			testActor = (await testActorClient.get())!;
+
+			if (testActor) await testActorClient.delete();
+
+			// Title and description should be preserved from the original actor
+			expect(testActor.title).to.be.eql('Original Title');
+			expect(testActor.description).to.be.eql('Original description.');
 		},
 		TEST_TIMEOUT,
 	);
