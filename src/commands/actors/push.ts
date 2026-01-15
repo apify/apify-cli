@@ -41,7 +41,7 @@ const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 const DEFAULT_BUILD_TAG = 'latest';
 
 // Default standby mode configuration when usesStandbyMode is enabled in actor.json
-const DEFAULT_STANDBY_OPTIONS = {
+export const DEFAULT_STANDBY_OPTIONS = {
 	isEnabled: true,
 	disableStandbyFieldsOverride: false,
 	maxRequestsPerActorRun: 4,
@@ -213,7 +213,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 				// Enable standby mode if configured in actor.json
 				if (actorConfig!.usesStandbyMode) {
-					newActor.actorStandby = DEFAULT_STANDBY_OPTIONS as ActorCollectionCreateOptions['actorStandby'];
+					newActor.actorStandby = DEFAULT_STANDBY_OPTIONS;
 				}
 
 				actor = await apifyClient.actors().create(newActor);
