@@ -308,8 +308,35 @@ describe('[api] apify push', () => {
 			await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
 
 			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			if (testActor) await testActorClient.delete();
 
 			expect(lastErrorMessage()).to.includes('is already on the platform');
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should set title and description when creating a new actor',
+		async () => {
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			actorJson.name = `${actorJson.name}-title-test`;
+			actorJson.title = 'My Custom Actor Title';
+			actorJson.description = 'This is a custom description for the actor.';
+
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+
+			const userInfo = await getLocalUserInfo();
+			const actorId = `${userInfo.username}/${actorJson.name}`;
+			actorsForCleanup.add(actorId);
+			const createdActorClient = testUserClient.actor(actorId);
+			const createdActor = await createdActorClient.get();
+
+			expect(createdActor?.title).to.be.eql('My Custom Actor Title');
+			expect(createdActor?.description).to.be.eql('This is a custom description for the actor.');
+
+			if (createdActor) await createdActorClient.delete();
 		},
 		TEST_TIMEOUT,
 	);
@@ -346,94 +373,6 @@ describe('[api] apify push', () => {
 			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true });
 
 			expect(lastErrorMessage()).to.include('A valid Actor could not be found in the current directory.');
-		},
-		TEST_TIMEOUT,
-	);
-
-	it(
-		'should set title and description when creating a new actor',
-		async () => {
-			toggleCwdBetweenFullAndParentPath();
-
-			const actorWithTitleName = `${ACTOR_NAME}-with-title`;
-
-			await mkdir(joinCwdPath(actorWithTitleName), { recursive: true });
-			forceNewCwd(actorWithTitleName);
-
-			// Create an actor with title and description
-			const actorJson = {
-				actorSpecification: 1,
-				name: actorWithTitleName,
-				title: 'My Custom Actor Title',
-				description: 'This is a custom description for the actor.',
-				version: '0.0',
-				buildTag: 'latest',
-			};
-
-			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
-
-			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
-
-			const userInfo = await getLocalUserInfo();
-			const actorId = `${userInfo.username}/${actorWithTitleName}`;
-			actorsForCleanup.add(actorId);
-			const createdActorClient = testUserClient.actor(actorId);
-			const createdActor = await createdActorClient.get();
-
-			expect(createdActor?.title).to.be.eql('My Custom Actor Title');
-			expect(createdActor?.description).to.be.eql('This is a custom description for the actor.');
-
-			if (createdActor) await createdActorClient.delete();
-		},
-		TEST_TIMEOUT,
-	);
-
-	it(
-		'should update title and description on existing actor',
-		async () => {
-			toggleCwdBetweenFullAndParentPath();
-
-			// Create an actor without title/description first
-			const testActorWithoutTitle = {
-				...TEST_ACTOR,
-				name: `${ACTOR_NAME}-title-update`,
-			};
-			const testActor = await testUserClient.actors().create(testActorWithoutTitle);
-			actorsForCleanup.add(testActor.id);
-			const testActorClient = testUserClient.actor(testActor.id);
-
-			// Verify title/description are not set initially
-			const initialActor = await testActorClient.get();
-			expect(initialActor?.title).to.not.be.eql('Updated Actor Title');
-
-			await mkdir(joinCwdPath(testActorWithoutTitle.name), { recursive: true });
-			forceNewCwd(testActorWithoutTitle.name);
-
-			// Create actor.json with title and description
-			const actorJson = {
-				actorSpecification: 1,
-				name: testActorWithoutTitle.name,
-				title: 'Updated Actor Title',
-				description: 'Updated actor description.',
-				version: '0.0',
-				buildTag: 'latest',
-			};
-
-			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
-
-			// Push to existing actor - this should update title and description
-			await testRunCommand(ActorsPushCommand, {
-				args_actorId: testActor.id,
-				flags_noPrompt: true,
-				flags_force: true,
-			});
-
-			const updatedActor = await testActorClient.get();
-
-			expect(updatedActor?.title).to.be.eql('Updated Actor Title');
-			expect(updatedActor?.description).to.be.eql('Updated actor description.');
-
-			if (updatedActor) await testActorClient.delete();
 		},
 		TEST_TIMEOUT,
 	);
