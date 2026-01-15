@@ -342,6 +342,37 @@ describe('[api] apify push', () => {
 	);
 
 	it(
+		'should not rewrite current Actor title and description',
+		async () => {
+			const testActorWithTitleDesc = {
+				...TEST_ACTOR,
+				title: 'Original Title',
+				description: 'Original description.',
+			};
+			let testActor = await testUserClient.actors().create(testActorWithTitleDesc);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+
+			// Remove title and description from local actor.json
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			delete actorJson.title;
+			delete actorJson.description;
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+
+			testActor = (await testActorClient.get())!;
+
+			if (testActor) await testActorClient.delete();
+
+			// Title and description should be preserved from the original actor
+			expect(testActor.title).to.be.eql('Original Title');
+			expect(testActor.description).to.be.eql('Original description.');
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
 		'should not push Actor when there are no files to push',
 		async () => {
 			toggleCwdBetweenFullAndParentPath();
