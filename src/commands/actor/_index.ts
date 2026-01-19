@@ -1,6 +1,7 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { ActorCalculateMemoryCommand } from './calculate-memory.js';
 import { ActorChargeCommand } from './charge.js';
+import { ActorGenerateTypesCommand } from './generate-files.js';
 import { ActorGetInputCommand } from './get-input.js';
 import { ActorGetPublicUrlCommand } from './get-public-url.js';
 import { ActorGetValueCommand } from './get-value.js';
@@ -21,6 +22,7 @@ export class ActorIndexCommand extends ApifyCommand<typeof ActorIndexCommand> {
 		ActorGetInputCommand,
 		ActorChargeCommand,
 		ActorCalculateMemoryCommand,
+		ActorGenerateTypesCommand,
 	];
 
 	async run() {
