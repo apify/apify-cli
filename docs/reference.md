@@ -249,16 +249,19 @@ DESCRIPTION
   WARNING: Overwrites existing 'storage' directory.
 
 USAGE
-  $ apify init [actorName] [-y]
+  $ apify init [actorName] [--dockerfile <value>] [-y]
 
 ARGUMENTS
   actorName  Name of the Actor. If not provided, you will be prompted
              for it.
 
 FLAGS
-  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
-             prompts. Note that in some cases, the command may still ask for
-             confirmation.
+      --dockerfile=<value>  Path to a Dockerfile to use for
+                            the Actor (e.g., "./Dockerfile" or
+                            "./docker/Dockerfile").
+  -y, --yes                 Automatic yes to prompts;
+                            assume "yes" as answer to all prompts. Note that in some
+                            cases, the command may still ask for confirmation.
 ```
 
 ##### `apify run`
@@ -408,6 +411,8 @@ SUBCOMMANDS
   actor calculate-memory  Calculates the Actor’s dynamic
                           memory usage based on a memory expression from
                           actor.json, input data, and run options.
+  actor generate-types    Generate TypeScript types from a
+                          JSON schema file.
 ```
 
 ##### `apify actor calculate-memory`
@@ -462,6 +467,26 @@ FLAGS
                                  charge request
       --test-pay-per-event       Test pay-per-event
                                  charging without actually charging
+```
+
+##### `apify actor generate-types`
+
+```sh
+DESCRIPTION
+  Generate TypeScript types from a JSON schema file.
+
+USAGE
+  $ apify actor generate-types <path> [-o <value>]
+                               [-s]
+
+ARGUMENTS
+  path  Path to the JSON schema file.
+
+FLAGS
+  -o, --output=<value>  Directory where the generated files
+                        should be outputted.
+  -s, --strict          Whether generated interfaces should be
+                        strict (no index signature [key: string]: unknown).
 ```
 
 ##### `apify actor get-input`
