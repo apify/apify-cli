@@ -8,6 +8,7 @@ import { createHmacSignature } from '@apify/utilities';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { execWithLog } from '../../../src/lib/exec.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../../src/lib/utils.js';
 import { testUserClient } from '../../__setup__/config.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
@@ -89,7 +90,7 @@ describe('[api] apify push', () => {
 			};
 			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
-			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+			await testRunCommand(ActorsPushCommand, { flags_force: true });
 
 			const userInfo = await getLocalUserInfo();
 			const { name } = actorJson;
@@ -128,7 +129,6 @@ describe('[api] apify push', () => {
 
 			await testRunCommand(ActorsPushCommand, {
 				args_actorId: testActor.id,
-				flags_noPrompt: true,
 				flags_force: true,
 			});
 
@@ -182,7 +182,7 @@ describe('[api] apify push', () => {
 			delete actorJson.environmentVariables;
 			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
-			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id });
 
 			testActor = (await testActorClient.get())!;
 			const testActorVersion = await testActorClient.version(actorJson.version).get();
@@ -229,7 +229,7 @@ describe('[api] apify push', () => {
 			// Create large file to ensure Actor will be uploaded as zip
 			writeFileSync(joinPath('3mb-file.txt'), Buffer.alloc(1024 * 1024 * 3));
 
-			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id });
 
 			// Remove the big file so sources in following tests are not zipped
 			unlinkSync(joinPath('3mb-file.txt'));
@@ -275,7 +275,7 @@ describe('[api] apify push', () => {
 
 			writeFileSync(joinPath('some-typescript-file.ts'), `console.log('ok');`);
 
-			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+			await testRunCommand(ActorsPushCommand, { flags_force: true });
 
 			if (existsSync(joinPath('some-typescript-file.ts'))) unlinkSync(joinPath('some-typescript-file.ts'));
 
@@ -307,7 +307,7 @@ describe('[api] apify push', () => {
 			// @ts-expect-error Wrong typing of update method
 			await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
 
-			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id });
 			if (testActor) await testActorClient.delete();
 
 			expect(lastErrorMessage()).to.includes('is already on the platform');
@@ -325,7 +325,7 @@ describe('[api] apify push', () => {
 			actorJson.description = 'This is a custom description for the actor.';
 
 			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
-			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+			await testRunCommand(ActorsPushCommand, { flags_force: true });
 
 			const userInfo = await getLocalUserInfo();
 			const actorId = `${userInfo.username}/${actorJson.name}`;
@@ -359,7 +359,7 @@ describe('[api] apify push', () => {
 			delete actorJson.description;
 			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
-			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id });
 
 			testActor = (await testActorClient.get())!;
 
@@ -381,7 +381,7 @@ describe('[api] apify push', () => {
 
 			forceNewCwd('empty-dir');
 
-			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true });
+			await testRunCommand(ActorsPushCommand, {});
 
 			expect(lastErrorMessage()).to.include(
 				'You need to call this command from a folder that has an Actor in it',
@@ -401,7 +401,13 @@ describe('[api] apify push', () => {
 
 			await writeFile(joinCwdPath('owo.txt'), 'Lorem ipsum');
 
-			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true });
+			await execWithLog({
+				cmd: 'git',
+				args: ['init'],
+				opts: { cwd: joinCwdPath() },
+			});
+
+			await testRunCommand(ActorsPushCommand, {});
 
 			expect(lastErrorMessage()).to.include('A valid Actor could not be found in the current directory.');
 		},

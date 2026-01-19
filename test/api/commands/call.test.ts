@@ -70,7 +70,7 @@ describe('[api] apify call', () => {
 
 		toggleCwdBetweenFullAndParentPath();
 
-		await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+		await testRunCommand(ActorsPushCommand, { flags_force: true });
 
 		actorId = `${username}/${ACTOR_NAME}`;
 
