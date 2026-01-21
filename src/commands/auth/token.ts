@@ -1,4 +1,5 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class AuthTokenCommand extends ApifyCommand<typeof AuthTokenCommand> {
@@ -11,7 +12,7 @@ export class AuthTokenCommand extends ApifyCommand<typeof AuthTokenCommand> {
 		const userInfo = await getLocalUserInfo();
 
 		if (userInfo.token) {
-			console.log(userInfo.token);
+			simpleLog({ message: userInfo.token, stdout: true });
 		}
 	}
 }
