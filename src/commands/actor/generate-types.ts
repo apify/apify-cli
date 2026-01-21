@@ -1,12 +1,15 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
+import type { JSONSchema4 } from 'json-schema';
 import { compile } from 'json-schema-to-typescript';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { readAndValidateInputSchema } from '../../lib/input_schema.js';
 import { success } from '../../lib/outputs.js';
 
 export const BANNER_COMMENT = `
@@ -24,7 +27,15 @@ export const BANNER_COMMENT = `
 export class ActorGenerateTypesCommand extends ApifyCommand<typeof ActorGenerateTypesCommand> {
 	static override name = 'generate-types' as const;
 
-	static override description = 'Generate TypeScript types from a JSON schema file.';
+	static override description = `Generate TypeScript types from an Actor input schema.
+
+Reads the input schema from one of these locations (in priority order):
+  1. Object in '${LOCAL_CONFIG_PATH}' under "input" key
+  2. JSON file path in '${LOCAL_CONFIG_PATH}' "input" key
+  3. .actor/INPUT_SCHEMA.json
+  4. INPUT_SCHEMA.json
+
+Optionally specify custom schema path to use.`;
 
 	static override flags = {
 		output: Flags.string({
@@ -43,21 +54,21 @@ export class ActorGenerateTypesCommand extends ApifyCommand<typeof ActorGenerate
 
 	static override args = {
 		path: Args.string({
-			required: true,
-			description: 'Path to the JSON schema file.',
+			required: false,
+			description: 'Optional path to the input schema file. If not provided, searches default locations.',
 		}),
 	};
 
 	async run() {
-		const inputPath = this.args.path;
-		const absolutePath = path.resolve(process.cwd(), inputPath);
+		const { inputSchema, inputSchemaPath } = await readAndValidateInputSchema({
+			forcePath: this.args.path,
+			cwd: process.cwd(),
+			action: 'Generating types from',
+		});
 
-		const schemaContent = await readFile(absolutePath, 'utf-8');
-		const schema = JSON.parse(schemaContent);
+		const name = inputSchemaPath ? path.basename(inputSchemaPath, path.extname(inputSchemaPath)) : 'input';
 
-		const name = path.basename(inputPath, path.extname(inputPath));
-
-		const result = await compile(schema, name, {
+		const result = await compile(inputSchema as JSONSchema4, name, {
 			bannerComment: BANNER_COMMENT,
 			maxItems: -1,
 			unknownAny: true,

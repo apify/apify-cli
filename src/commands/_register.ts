@@ -2,7 +2,7 @@ import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.j
 import { ActorIndexCommand } from './actor/_index.js';
 import { ActorCalculateMemoryCommand } from './actor/calculate-memory.js';
 import { ActorChargeCommand } from './actor/charge.js';
-import { ActorGenerateTypesCommand } from './actor/generate-files.js';
+import { ActorGenerateTypesCommand } from './actor/generate-types.js';
 import { ActorGetInputCommand } from './actor/get-input.js';
 import { ActorGetPublicUrlCommand } from './actor/get-public-url.js';
 import { ActorGetValueCommand } from './actor/get-value.js';

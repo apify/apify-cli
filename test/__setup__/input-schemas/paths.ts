@@ -13,3 +13,5 @@ export const prefillsInputSchemaPath = fileURLToPath(new URL('./prefills.json', 
 export const unparsableInputSchemaPath = fileURLToPath(new URL('./unparsable.json', import.meta.url));
 
 export const validInputSchemaPath = fileURLToPath(new URL('./valid.json', import.meta.url));
+
+export const complexInputSchemaPath = fileURLToPath(new URL('./complex.json', import.meta.url));

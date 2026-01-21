@@ -1,0 +1,80 @@
+{
+  "$schema": "https://apify-projects.github.io/actor-json-schemas/input.ide.json?v=0.6",
+  "title": "Example Actor Input Schema",
+  "description": "A sample input schema demonstrating different input field types.",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "startUrls": {
+      "title": "Start URLs",
+      "description": "List of URLs to start crawling",
+      "type": "array",
+      "editor": "requestListSources",
+      "prefill": [
+        { "url": "https://example.com" },
+        { "url": "https://example.org" }
+      ]
+    },
+    "searchQuery": {
+      "title": "Search query",
+      "description": "The keyword or phrase to search for",
+      "type": "string",
+      "editor": "textfield",
+      "minLength": 3,
+      "default": "apify"
+    },
+    "maxItems": {
+      "title": "Maximum items to fetch",
+      "description": "Limit the number of items the Actor will process",
+      "type": "integer",
+      "editor": "number",
+      "minimum": 1,
+      "default": 100
+    },
+    "includeImages": {
+      "title": "Include images",
+      "description": "Whether to include image data in the results",
+      "type": "boolean",
+      "editor": "checkbox",
+      "default": false
+    },
+    "crawlerType": {
+      "title": "Crawler type",
+      "description": "Select the crawling engine to use",
+      "type": "string",
+      "editor": "select",
+      "enum": ["cheerio", "puppeteer", "playwright"],
+      "enumTitles": [
+        "Cheerio crawler",
+        "Puppeteer browser",
+        "Playwright browser"
+      ],
+      "default": "cheerio"
+    },
+    "proxyConfig": {
+      "title": "Proxy configuration",
+      "description": "Optional proxy settings to use while crawling",
+      "type": "object",
+      "editor": "json",
+      "properties": {
+        "useApifyProxy": {
+          "title": "Use Apify Proxy",
+          "description": "Enable Apify Proxy",
+          "type": "boolean"
+        },
+        "customProxyUrls": {
+          "title": "Custom proxy URLs",
+          "description": "List of custom proxy URLs",
+          "type": "array",
+          "editor": "json",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": ["useApifyProxy"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["startUrls", "searchQuery"]
+}
