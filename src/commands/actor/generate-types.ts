@@ -42,7 +42,7 @@ Optionally specify custom schema path to use.`;
 			char: 'o',
 			description: 'Directory where the generated files should be outputted.',
 			required: false,
-			default: './.generated/actor/',
+			default: 'src/.generated/actor/',
 		}),
 		strict: Flags.boolean({
 			char: 's',

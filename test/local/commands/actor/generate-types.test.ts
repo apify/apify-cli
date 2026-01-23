@@ -52,7 +52,7 @@ describe('apify actor generate-types', () => {
 		expect(lastErrorMessage()).include('Generated types written to');
 		expect(lastErrorMessage()).include(join('.generated', 'actor', 'complex.ts'));
 
-		const generatedFile = await readFile(joinPath('.generated', 'actor', 'complex.ts'), 'utf-8');
+		const generatedFile = await readFile(joinPath('src', '.generated', 'actor', 'complex.ts'), 'utf-8');
 		expect(generatedFile).toContain('export interface');
 	});
 
