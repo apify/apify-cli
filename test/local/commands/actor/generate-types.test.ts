@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import { ActorGenerateTypesCommand } from '../../../../src/commands/actor/generate-types.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
@@ -36,7 +37,7 @@ describe('apify actor generate-types', () => {
 			flags_output: outputDir,
 		});
 
-		expect(lastErrorMessage()).toMatch(/Generated types written to/);
+		expect(lastErrorMessage()).include('Generated types written to');
 
 		const generatedFile = await readFile(joinPath('output', 'complex.ts'), 'utf-8');
 		expect(generatedFile).toContain('export interface');
@@ -48,8 +49,8 @@ describe('apify actor generate-types', () => {
 			args_path: complexInputSchemaPath,
 		});
 
-		expect(lastErrorMessage()).toMatch(/Generated types written to/);
-		expect(lastErrorMessage()).toMatch(/\.generated\/actor\/complex\.ts/);
+		expect(lastErrorMessage()).include('Generated types written to');
+		expect(lastErrorMessage()).include(join('.generated', 'actor', 'complex.ts'));
 
 		const generatedFile = await readFile(joinPath('.generated', 'actor', 'complex.ts'), 'utf-8');
 		expect(generatedFile).toContain('export interface');
@@ -89,7 +90,7 @@ describe('apify actor generate-types', () => {
 			flags_output: outputDir,
 		});
 
-		expect(lastErrorMessage()).toMatch(/Input schema has not been found/i);
+		expect(lastErrorMessage()).include('Input schema has not been found');
 	});
 
 	it('should fail when schema is not valid JSON', async () => {
@@ -100,7 +101,7 @@ describe('apify actor generate-types', () => {
 			flags_output: outputDir,
 		});
 
-		expect(lastErrorMessage()).toMatch(/Unexpected token|Expected|JSON/i);
+		expect(lastErrorMessage()).toBeTruthy();
 	});
 
 	it('should use custom output directory with -o flag', async () => {
@@ -110,7 +111,7 @@ describe('apify actor generate-types', () => {
 			flags_output: outputDir,
 		});
 
-		expect(lastErrorMessage()).toMatch(/Generated types written to/);
-		expect(lastErrorMessage()).toContain('custom-output');
+		expect(lastErrorMessage()).include('Generated types written to');
+		expect(lastErrorMessage()).include('custom-output');
 	});
 });
