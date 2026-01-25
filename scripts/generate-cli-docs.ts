@@ -49,10 +49,12 @@ const categories: Record<string, CommandsInCategory[]> = {
 	'actor-build': [
 		//
 		{ command: Commands.builds },
+		{ command: Commands.buildsAddTag },
 		{ command: Commands.buildsCreate, aliases: [Commands.actorsBuild] },
 		{ command: Commands.buildsInfo },
 		{ command: Commands.buildsLog },
 		{ command: Commands.buildsLs },
+		{ command: Commands.buildsRemoveTag },
 		{ command: Commands.buildsRm },
 	],
 	'actor-run': [

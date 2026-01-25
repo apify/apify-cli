@@ -71,7 +71,7 @@ export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand
 						buildId: build.id,
 					},
 				},
-			});
+			} as never);
 
 			const previousBuildInfo = existingTagData?.buildNumber
 				? ` (previously pointed to build ${chalk.gray(existingTagData.buildNumber)})`
