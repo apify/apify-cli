@@ -3,7 +3,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { error, success } from '../../lib/outputs.js';
+import { error, success, warning } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand> {
@@ -56,7 +56,7 @@ export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand
 		const existingTagData = existingTaggedBuilds[tag];
 
 		if (existingTagData?.buildId === buildId) {
-			error({
+			warning({
 				message: `Build "${buildId}" is already tagged as "${tag}".`,
 				stdout: true,
 			});
