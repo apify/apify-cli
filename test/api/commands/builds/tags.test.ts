@@ -31,7 +31,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 			versions: [
 				{
 					versionNumber: '0.0',
-					sourceType: 'SOURCE_FILES',
+					sourceType: 'SOURCE_FILES' as any,
 					buildTag: 'latest',
 					sourceFiles: [
 						{
@@ -87,7 +87,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 				flags_tag: 'existing-tag',
 			});
 
-			expect(lastErrorMessage()).toMatch(/already tagged/i);
+			expect(lastLogMessage()).toMatch(/already tagged/i);
 		});
 
 		it('should show error when build does not exist', async () => {
