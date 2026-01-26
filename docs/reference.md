@@ -85,7 +85,21 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 <!-- prettier-ignore-start -->
 <!-- auth-commands-start -->
-##### `apify login`
+##### `apify auth`
+
+```sh
+DESCRIPTION
+  Manages authentication for Apify CLI.
+
+SUBCOMMANDS
+  auth login   Authenticates your Apify account and saves credentials
+               to '~/.apify/auth.json'.
+  auth logout  Removes authentication by deleting your API token and
+               account information from '~/.apify/auth.json'.
+  auth token   Prints the current API token for the Apify CLI.
+```
+
+##### `apify auth login` / `apify login`
 
 ```sh
 DESCRIPTION
@@ -96,7 +110,7 @@ DESCRIPTION
   Run 'apify logout' to remove authentication.
 
 USAGE
-  $ apify login [-m console|manual] [-t <value>]
+  $ apify auth login [-m console|manual] [-t <value>]
 
 FLAGS
   -m, --method=<option>  Method of logging in to Apify
@@ -104,7 +118,7 @@ FLAGS
   -t, --token=<value>    Apify API token
 ```
 
-##### `apify logout`
+##### `apify auth logout` / `apify logout`
 
 ```sh
 DESCRIPTION
@@ -113,7 +127,17 @@ DESCRIPTION
   Run 'apify login' to authenticate again.
 
 USAGE
-  $ apify logout
+  $ apify auth logout
+```
+
+##### `apify auth token`
+
+```sh
+DESCRIPTION
+  Prints the current API token for the Apify CLI.
+
+USAGE
+  $ apify auth token
 ```
 
 ##### `apify info`
