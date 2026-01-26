@@ -62,6 +62,7 @@ export const PYTHON_VENV_PATH = '.venv';
 export enum CommandExitCodes {
 	BuildFailed = 1,
 	RunFailed = 1,
+	MissingAuth = 1,
 
 	BuildTimedOut = 2,
 
