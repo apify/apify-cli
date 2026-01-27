@@ -85,7 +85,21 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 <!-- prettier-ignore-start -->
 <!-- auth-commands-start -->
-##### `apify login`
+##### `apify auth`
+
+```sh
+DESCRIPTION
+  Manages authentication for Apify CLI.
+
+SUBCOMMANDS
+  auth login   Authenticates your Apify account and saves credentials
+               to '~/.apify/auth.json'.
+  auth logout  Removes authentication by deleting your API token and
+               account information from '~/.apify/auth.json'.
+  auth token   Prints the current API token for the Apify CLI.
+```
+
+##### `apify auth login` / `apify login`
 
 ```sh
 DESCRIPTION
@@ -96,7 +110,7 @@ DESCRIPTION
   Run 'apify logout' to remove authentication.
 
 USAGE
-  $ apify login [-m console|manual] [-t <value>]
+  $ apify auth login [-m console|manual] [-t <value>]
 
 FLAGS
   -m, --method=<option>  Method of logging in to Apify
@@ -104,7 +118,7 @@ FLAGS
   -t, --token=<value>    Apify API token
 ```
 
-##### `apify logout`
+##### `apify auth logout` / `apify logout`
 
 ```sh
 DESCRIPTION
@@ -113,7 +127,17 @@ DESCRIPTION
   Run 'apify login' to authenticate again.
 
 USAGE
-  $ apify logout
+  $ apify auth logout
+```
+
+##### `apify auth token`
+
+```sh
+DESCRIPTION
+  Prints the current API token for the Apify CLI.
+
+USAGE
+  $ apify auth token
 ```
 
 ##### `apify info`
@@ -751,12 +775,28 @@ DESCRIPTION
   Manages Actor build processes and versioning.
 
 SUBCOMMANDS
-  builds rm      Permanently removes an Actor build from the Apify
-                 platform.
-  builds ls      Lists all builds of the Actor.
-  builds log     Prints the log of a specific build.
-  builds info    Prints information about a specific build.
-  builds create  Creates a new build of the Actor.
+  builds add-tag     Adds a tag to a specific Actor build.
+  builds remove-tag  Removes a tag from a specific Actor build.
+  builds rm          Permanently removes an Actor build from
+                     the Apify platform.
+  builds ls          Lists all builds of the Actor.
+  builds log         Prints the log of a specific build.
+  builds info        Prints information about a specific build.
+  builds create      Creates a new build of the Actor.
+```
+
+##### `apify builds add-tag`
+
+```sh
+DESCRIPTION
+  Adds a tag to a specific Actor build.
+
+USAGE
+  $ apify builds add-tag -b <value> -t <value>
+
+FLAGS
+  -b, --build=<value>  The build ID to tag.
+  -t, --tag=<value>    The tag to add to the build.
 ```
 
 ##### `apify builds create` / `apify actors build`
@@ -833,6 +873,22 @@ FLAGS
       --json            Format the command output as JSON
       --limit=<value>   Number of builds that will be listed.
       --offset=<value>  Number of builds that will be skipped.
+```
+
+##### `apify builds remove-tag`
+
+```sh
+DESCRIPTION
+  Removes a tag from a specific Actor build.
+
+USAGE
+  $ apify builds remove-tag -b <value> -t <value> [-y]
+
+FLAGS
+  -b, --build=<value>  The build ID to remove the tag from.
+  -t, --tag=<value>    The tag to remove from the build.
+  -y, --yes            Automatic yes to prompts; assume "yes"
+                       as answer to all prompts.
 ```
 
 ##### `apify builds rm`

@@ -1,8 +1,10 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { BuildsAddTagCommand } from './add-tag.js';
 import { BuildsCreateCommand } from './create.js';
 import { BuildsInfoCommand } from './info.js';
 import { BuildsLogCommand } from './log.js';
 import { BuildsLsCommand } from './ls.js';
+import { BuildsRemoveTagCommand } from './remove-tag.js';
 import { BuildsRmCommand } from './rm.js';
 
 export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> {
@@ -12,6 +14,8 @@ export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> 
 
 	static override subcommands = [
 		//
+		BuildsAddTagCommand,
+		BuildsRemoveTagCommand,
 		BuildsRmCommand,
 		BuildsLsCommand,
 		BuildsLogCommand,
