@@ -753,12 +753,28 @@ DESCRIPTION
   Manages Actor build processes and versioning.
 
 SUBCOMMANDS
-  builds rm      Permanently removes an Actor build from the Apify
-                 platform.
-  builds ls      Lists all builds of the Actor.
-  builds log     Prints the log of a specific build.
-  builds info    Prints information about a specific build.
-  builds create  Creates a new build of the Actor.
+  builds add-tag     Adds a tag to a specific Actor build.
+  builds remove-tag  Removes a tag from a specific Actor build.
+  builds rm          Permanently removes an Actor build from
+                     the Apify platform.
+  builds ls          Lists all builds of the Actor.
+  builds log         Prints the log of a specific build.
+  builds info        Prints information about a specific build.
+  builds create      Creates a new build of the Actor.
+```
+
+##### `apify builds add-tag`
+
+```sh
+DESCRIPTION
+  Adds a tag to a specific Actor build.
+
+USAGE
+  $ apify builds add-tag -b <value> -t <value>
+
+FLAGS
+  -b, --build=<value>  The build ID to tag.
+  -t, --tag=<value>    The tag to add to the build.
 ```
 
 ##### `apify builds create` / `apify actors build`
@@ -835,6 +851,22 @@ FLAGS
       --json            Format the command output as JSON
       --limit=<value>   Number of builds that will be listed.
       --offset=<value>  Number of builds that will be skipped.
+```
+
+##### `apify builds remove-tag`
+
+```sh
+DESCRIPTION
+  Removes a tag from a specific Actor build.
+
+USAGE
+  $ apify builds remove-tag -b <value> -t <value> [-y]
+
+FLAGS
+  -b, --build=<value>  The build ID to remove the tag from.
+  -t, --tag=<value>    The tag to remove from the build.
+  -y, --yes            Automatic yes to prompts; assume "yes"
+                       as answer to all prompts.
 ```
 
 ##### `apify builds rm`
