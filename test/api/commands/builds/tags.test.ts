@@ -147,7 +147,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 				flags_yes: true,
 			});
 
-			expect(lastLogMessage()).include('tag "to-remove" removed');
+			expect(lastLogMessage()).include('Tag "to-remove" removed');
 
 			// Verify via API
 			actor = await testUserClient.actor(testActor.id).get();
