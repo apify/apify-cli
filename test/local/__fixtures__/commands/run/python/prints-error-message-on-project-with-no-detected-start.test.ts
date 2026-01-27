@@ -1,4 +1,4 @@
-import { rename } from 'node:fs/promises';
+import { rename, rm } from 'node:fs/promises';
 
 import { testRunCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
 import { useConsoleSpy } from '../../../../../__setup__/hooks/useConsoleSpy.js';
@@ -28,6 +28,10 @@ describe('[python] prints error message on project with no detected start', () =
 
 		const srcFolder = joinPath('src');
 		await rename(srcFolder, joinPath('entrypoint'));
+
+		// Remove requirements.txt so it's not detected as Python project
+		const requirementsTxt = joinPath('requirements.txt');
+		await rm(requirementsTxt, { force: true });
 
 		resetCwdCaches();
 	});

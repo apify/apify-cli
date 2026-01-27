@@ -1,8 +1,8 @@
-import { access, readFile } from 'node:fs/promises';
-import { basename, dirname, join, resolve } from 'node:path';
+import { access, readdir, readFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
 import process from 'node:process';
 
-import { ok, type Result } from '@sapphire/result';
+import { err, ok, type Result } from '@sapphire/result';
 
 import { ScrapyProjectAnalyzer } from '../projects/scrapy/ScrapyProjectAnalyzer.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
@@ -81,19 +81,47 @@ export async function useCwdProject({
 				};
 			} else {
 				// Fallback for scrapy projects that use apify, but are not "migrated" (like our templates)
-				const pythonFile = await checkPythonProject(cwd);
+				try {
+					const pythonFile = await checkPythonProject(cwd);
 
-				if (pythonFile) {
-					project.entrypoint = {
-						path: pythonFile,
-					};
+					if (pythonFile) {
+						project.entrypoint = {
+							path: pythonFile,
+						};
+					}
+				} catch {
+					// If we can't find the Python entrypoint, that's okay for Scrapy projects
+					// Just continue without setting the entrypoint
 				}
 			}
 
 			return;
 		}
 
-		const isPython = await checkPythonProject(cwd);
+		// Check for mixed projects (both Python and Node.js indicators)
+		const hasPythonIndicators = await isPythonProject(cwd);
+		const hasNodeIndicators = await fileExists(join(cwd, 'package.json'));
+
+		if (hasPythonIndicators && hasNodeIndicators) {
+			return err({
+				message:
+					'Mixed project detected (both Python and Node.js files found). ' +
+					'Please use explicit configuration to specify which runtime to use. ' +
+					'You can use the --entrypoint flag to specify the entrypoint explicitly.',
+			});
+		}
+
+		let isPython: string | null = null;
+		try {
+			// Pass the already-computed hasPythonIndicators to avoid redundant filesystem checks
+			isPython = await checkPythonProject(cwd, hasPythonIndicators);
+		} catch (error) {
+			// If checkPythonProject throws an error, it means it detected Python but
+			// couldn't determine the entrypoint. We should propagate this error.
+			return err({
+				message: error instanceof Error ? error.message : String(error),
+			});
+		}
 
 		if (isPython) {
 			project.type = ProjectLanguage.Python;
@@ -210,30 +238,184 @@ async function checkNodeProject(cwd: string) {
 	return null;
 }
 
-async function checkPythonProject(cwd: string) {
-	const baseName = basename(cwd);
+// Helper functions for Python project detection
 
-	const filesToCheck = [
-		join(cwd, 'src', '__main__.py'),
-		join(cwd, '__main__.py'),
-		join(cwd, baseName, '__main__.py'),
-		join(cwd, baseName.replaceAll('-', '_').replaceAll(' ', '_'), '__main__.py'),
-	];
+async function fileExists(path: string): Promise<boolean> {
+	try {
+		await access(path);
+		return true;
+	} catch {
+		return false;
+	}
+}
 
-	for (const path of filesToCheck) {
-		try {
-			await access(path);
+async function dirExists(path: string): Promise<boolean> {
+	return fileExists(path);
+}
 
-			// By default in python, we run python3 -m <module>
-			// For some unholy reason, python does NOT support absolute paths for this -.-
-			// Effectively, this returns `src` from `/cwd/src/__main__.py`, et al.
-			return basename(dirname(path));
-		} catch {
-			// Ignore errors
+function isValidPythonIdentifier(name: string): boolean {
+	// Must start with letter or underscore, contain only alphanumerics and underscores
+	return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
+}
+
+async function hasPythonFiles(dir: string): Promise<boolean> {
+	try {
+		const entries = await readdir(dir, { withFileTypes: true });
+		return entries.some((entry) => entry.isFile() && entry.name.endsWith('.py'));
+	} catch {
+		return false;
+	}
+}
+
+async function isPythonProject(cwd: string): Promise<boolean> {
+	// Check for pyproject.toml
+	if (await fileExists(join(cwd, 'pyproject.toml'))) {
+		return true;
+	}
+
+	// Check for requirements.txt
+	if (await fileExists(join(cwd, 'requirements.txt'))) {
+		return true;
+	}
+
+	// Check for .py files in level 1 (CWD)
+	const level1HasPython = await hasPythonFiles(cwd);
+	if (level1HasPython) {
+		return true;
+	}
+
+	// Check for .py files in level 2 (src/)
+	const srcDir = join(cwd, 'src');
+	if (await dirExists(srcDir)) {
+		const level2HasPython = await hasPythonFiles(srcDir);
+		if (level2HasPython) {
+			return true;
 		}
 	}
 
-	return null;
+	return false;
+}
+
+async function findPackagesInDir(dir: string): Promise<{ name: string; path: string }[]> {
+	try {
+		const entries = await readdir(dir, { withFileTypes: true });
+		const packages = [];
+
+		for (const entry of entries) {
+			if (!entry.isDirectory()) continue;
+
+			const { name } = entry;
+
+			// Skip hidden directories (starting with .) and underscore-prefixed directories
+			// (private/special packages like _internal or __pycache__ shouldn't be main entrypoints)
+			if (name.startsWith('.') || name.startsWith('_')) continue;
+			if (!isValidPythonIdentifier(name)) continue;
+
+			// Check for __init__.py
+			const initPath = join(dir, name, '__init__.py');
+			if (await fileExists(initPath)) {
+				packages.push({ name, path: join(dir, name) });
+			}
+		}
+
+		return packages;
+	} catch {
+		return [];
+	}
+}
+
+async function discoverPythonPackages(cwd: string): Promise<string[]> {
+	const packages: string[] = [];
+
+	// Search level 1 (CWD)
+	const level1Packages = await findPackagesInDir(cwd);
+	packages.push(...level1Packages.map((p) => p.name));
+
+	// Search level 2 (src/) - only if src/ is NOT itself a package
+	// If src/ has __init__.py, it's a package and anything inside is a subpackage, not a top-level package
+	const srcDir = join(cwd, 'src');
+	const srcIsPackage = await fileExists(join(srcDir, '__init__.py'));
+
+	if ((await dirExists(srcDir)) && !srcIsPackage) {
+		const level2Packages = await findPackagesInDir(srcDir);
+		packages.push(...level2Packages.map((p) => `src.${p.name}`));
+	}
+
+	return packages;
+}
+
+async function findPythonEntrypoint(cwd: string): Promise<string> {
+	// Discover all valid Python packages
+	const discoveredPackages = await discoverPythonPackages(cwd);
+
+	if (discoveredPackages.length === 0) {
+		// No packages found - provide helpful error with context
+		const hasPyFiles =
+			(await hasPythonFiles(cwd)) ||
+			((await dirExists(join(cwd, 'src'))) && (await hasPythonFiles(join(cwd, 'src'))));
+
+		if (hasPyFiles) {
+			throw new Error(
+				'No Python package found. Found Python files, but no valid package structure detected.\n' +
+					'A Python package requires:\n' +
+					'  - A directory with a valid Python identifier name (letters, numbers, underscores)\n' +
+					'  - An __init__.py file inside the directory\n' +
+					'\n' +
+					'Common package structures:\n' +
+					'  my_package/\n' +
+					'    __init__.py\n' +
+					'    main.py\n' +
+					'\n' +
+					'  src/\n' +
+					'    my_package/\n' +
+					'      __init__.py\n' +
+					'      main.py\n' +
+					'\n' +
+					'Use --entrypoint flag to specify a custom entry point.',
+			);
+		} else {
+			throw new Error(
+				'No Python package or Python files found in the current directory or src/ subdirectory.\n' +
+					'Expected to find either:\n' +
+					'  - A package directory (with __init__.py)\n' +
+					'  - Python source files (.py)\n' +
+					'\n' +
+					'Use --entrypoint flag to specify a custom entry point.',
+			);
+		}
+	}
+
+	if (discoveredPackages.length > 1) {
+		// Multiple packages found - list them and guide user
+		const packageList = discoveredPackages.map((pkg) => `  - ${pkg}`).join('\n');
+		throw new Error(
+			`Multiple Python packages found:\n${packageList}\n\n` +
+				'Apify CLI cannot determine which package to run.\n' +
+				'Please specify the package explicitly using: --entrypoint <package_name>\n' +
+				'\n' +
+				'For example:\n' +
+				`  apify run --entrypoint ${discoveredPackages[0]}`,
+		);
+	}
+
+	// Exactly one package found - success!
+	return discoveredPackages[0];
+}
+
+async function checkPythonProject(cwd: string, alreadyDetectedAsPython?: boolean): Promise<string | null> {
+	// Step 1: Check if it's a Python project (skip if already checked)
+	if (alreadyDetectedAsPython === undefined) {
+		const isPython = await isPythonProject(cwd);
+		if (!isPython) {
+			return null;
+		}
+	} else if (!alreadyDetectedAsPython) {
+		return null;
+	}
+
+	// Step 2: Find the entrypoint (this may throw with a helpful error message)
+	const entrypoint = await findPythonEntrypoint(cwd);
+	return entrypoint;
 }
 
 async function checkScrapyProject(cwd: string) {
