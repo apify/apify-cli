@@ -123,7 +123,6 @@
         "@types/cors": "^2.8.17",
         "@types/execa": "^2.0.2",
         "@types/express": "^5.0.0",
-        "@types/fs-extra": "^11",
         "@types/is-ci": "^3.0.4",
         "@types/jju": "^1.4.5",
         "@types/js-levenshtein": "^1",
@@ -138,7 +137,6 @@
         "eslint": "^9.25.1",
         "eslint-config-prettier": "^10.1.2",
         "lint-staged": "^16.0.0",
-        "mdast-util-from-markdown": "^2.0.2",
         "mock-stdin": "^1.0.0",
         "prettier": "^3.5.3",
         "tsup": "^8.5.0",
@@ -175,5 +173,8 @@
         "*": "biome format --write --no-errors-on-unmatched",
         "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts",
         "*.md": "prettier --write"
+    },
+    "resolutions": {
+        "tar": "7.5.6"
     }
 }

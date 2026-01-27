@@ -8,8 +8,10 @@ process.env.APIFY_CLI_MAX_LINE_WIDTH = '80';
 const categories: Record<string, CommandsInCategory[]> = {
 	'auth': [
 		//
-		{ command: Commands.login },
-		{ command: Commands.logout },
+		{ command: Commands.auth },
+		{ command: Commands.authLogin, aliases: [Commands.login] },
+		{ command: Commands.authLogout, aliases: [Commands.logout] },
+		{ command: Commands.authToken },
 		{ command: Commands.info },
 		{ command: Commands.secrets },
 		{ command: Commands.secretsAdd },
