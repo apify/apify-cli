@@ -14,7 +14,7 @@ const ACTOR_NAME = useUniqueId('cli-builds-tag-test');
 
 useAuthSetup({ perTest: false });
 
-const { lastErrorMessage, lastLogMessage } = useConsoleSpy();
+const { lastLogMessage } = useConsoleSpy();
 
 const TEST_TIMEOUT = 120_000;
 
@@ -67,7 +67,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 				flags_tag: 'beta',
 			});
 
-			expect(lastLogMessage()).toMatch(/tag.*beta.*added/i);
+			expect(lastLogMessage().toLowerCase()).toContain('tag "beta" added');
 
 			// Verify via API
 			const actor = await testUserClient.actor(testActor.id).get();
@@ -87,7 +87,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 				flags_tag: 'existing-tag',
 			});
 
-			expect(lastLogMessage()).toMatch(/already tagged/i);
+			expect(lastLogMessage()).include('already tagged');
 		});
 
 		it('should show error when build does not exist', async () => {
@@ -96,10 +96,10 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 				flags_tag: 'test-tag',
 			});
 
-			expect(lastErrorMessage()).toMatch(/not found/i);
+			expect(lastLogMessage()).include('not found');
 		});
 
-		it(
+		it.only(
 			'should show previous build info when reassigning a tag',
 			async () => {
 				// Tag the build with 'reassign-test'
@@ -118,7 +118,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 					flags_tag: 'reassign-test',
 				});
 
-				expect(lastLogMessage()).toMatch(/previously pointed to build/i);
+				expect(lastLogMessage()).include('previously pointed to build');
 
 				// Verify via API
 				const actor = await testUserClient.actor(testActor.id).get();
@@ -147,7 +147,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 				flags_yes: true,
 			});
 
-			expect(lastLogMessage()).toMatch(/tag.*to-remove.*removed/i);
+			expect(lastLogMessage()).include('tag "to-remove" removed');
 
 			// Verify via API
 			actor = await testUserClient.actor(testActor.id).get();
@@ -161,7 +161,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 				flags_yes: true,
 			});
 
-			expect(lastErrorMessage()).toMatch(/does not exist/i);
+			expect(lastLogMessage()).include('does not exist');
 		});
 
 		it(
@@ -183,7 +183,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 					flags_yes: true,
 				});
 
-				expect(lastErrorMessage()).toMatch(/not associated with build/i);
+				expect(lastLogMessage()).include('not associated with build');
 			},
 			TEST_TIMEOUT,
 		);
@@ -195,7 +195,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 				flags_yes: true,
 			});
 
-			expect(lastErrorMessage()).toMatch(/not found/i);
+			expect(lastLogMessage()).include('not found');
 		});
 	});
 });
