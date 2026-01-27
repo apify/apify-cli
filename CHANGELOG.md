@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 - Add `--dockerfile` flag to `apify init` ([#989](https://github.com/apify/apify-cli/pull/989)) ([3f2104e](https://github.com/apify/apify-cli/commit/3f2104ef3321728cca07c53b853f668e31c66648)) by [@janbuchar](https://github.com/janbuchar), closes [#76](https://github.com/apify/apify-cli/issues/76)
 - Add secrets:ls command to list all secrets ([#990](https://github.com/apify/apify-cli/pull/990)) ([8256cf5](https://github.com/apify/apify-cli/commit/8256cf55995060c8ff845dede46fb1943c9ec179)) by [@janbuchar](https://github.com/janbuchar), closes [#80](https://github.com/apify/apify-cli/issues/80)
 - **actors:** Propagates title&#x2F;description ([#992](https://github.com/apify/apify-cli/pull/992)) ([7285aec](https://github.com/apify/apify-cli/commit/7285aec39a1ecdcf6e21999ddf2195c427335da9)) by [@l2ysho](https://github.com/l2ysho), closes [#723](https://github.com/apify/apify-cli/issues/723)
+- **auth:** Introduces auth commands ([#1002](https://github.com/apify/apify-cli/pull/1002)) ([f3e1460](https://github.com/apify/apify-cli/commit/f3e146065f489d0b0c85ff5356a9f070c1a279ab)) by [@l2ysho](https://github.com/l2ysho), closes [#898](https://github.com/apify/apify-cli/issues/898)
 
 <!-- git-cliff-unreleased-end -->
 

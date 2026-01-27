@@ -59,6 +59,7 @@ describe('[api] apify task run', () => {
 		toggleCwdBetweenFullAndParentPath();
 
 		await testRunCommand(ActorsPushCommand, {
+			flags_noPrompt: true,
 			flags_force: true,
 		});
 
