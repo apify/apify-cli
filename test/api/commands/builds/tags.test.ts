@@ -99,7 +99,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 			expect(lastLogMessage()).include('not found');
 		});
 
-		it.only(
+		it(
 			'should show previous build info when reassigning a tag',
 			async () => {
 				// Tag the build with 'reassign-test'
