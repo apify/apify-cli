@@ -2300,7 +2300,7 @@ __metadata:
     adm-zip: "npm:~0.5.15"
     ajv: "npm:~8.17.1"
     apify: "npm:^3.2.4"
-    apify-client: "npm:2.21.1-beta.11"
+    apify-client: "npm:2.22.0"
     archiver: "npm:~7.0.1"
     axios: "npm:^1.11.0"
     chalk: "npm:~5.6.0"
@@ -2348,9 +2348,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"apify-client@npm:2.21.1-beta.11":
-  version: 2.21.1-beta.11
-  resolution: "apify-client@npm:2.21.1-beta.11"
+"apify-client@npm:2.22.0":
+  version: 2.22.0
+  resolution: "apify-client@npm:2.22.0"
   dependencies:
     "@apify/consts": "npm:^2.42.0"
     "@apify/log": "npm:^2.2.6"
@@ -2364,7 +2364,7 @@ __metadata:
     proxy-agent: "npm:^6.5.0"
     tslib: "npm:^2.5.0"
     type-fest: "npm:^4.0.0"
-  checksum: 10c0/60177986b424fc98eb7c3487f8f7958c1b5d7419deea8ea3852dd57ef971573a91f9f541f8c6cc4771a137376f110669f290ec763e0bdac06167de9a16213883
+  checksum: 10c0/9fb6f22665c7dd8ea19b2e92a7ce9ee3bdcd9af200acb251d6ca1ddd4d6bdcba532d7934da540a6f2447df633590f8a03c4312e1393460c9bf5219b71177cede
   languageName: node
   linkType: hard
 
