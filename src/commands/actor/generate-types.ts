@@ -22,6 +22,7 @@ export const BANNER_COMMENT = `
  * DO NOT MODIFY IT BY HAND. Instead, modify the source JSONSchema file,
  * and run apify actor generate-types to regenerate this file.
  */
+ /** */
 `;
 
 export class ActorGenerateTypesCommand extends ApifyCommand<typeof ActorGenerateTypesCommand> {
