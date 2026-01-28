@@ -2300,7 +2300,7 @@ __metadata:
     adm-zip: "npm:~0.5.15"
     ajv: "npm:~8.17.1"
     apify: "npm:^3.2.4"
-    apify-client: "npm:~2.22.0"
+    apify-client: "npm:^2.22.0"
     archiver: "npm:~7.0.1"
     axios: "npm:^1.11.0"
     chalk: "npm:~5.6.0"
@@ -2368,7 +2368,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"apify-client@npm:~2.22.0":
+"apify-client@npm:^2.22.0":
   version: 2.22.0
   resolution: "apify-client@npm:2.22.0"
   dependencies:
