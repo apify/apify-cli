@@ -108,7 +108,7 @@
         "strip-ansi": "^7.1.0",
         "tiged": "~2.12.7",
         "which": "^6.0.0",
-        "widest-line": "^5.0.0",
+        "widest-line": "^6.0.0",
         "wrap-ansi": "^9.0.0"
     },
     "devDependencies": {
@@ -175,6 +175,6 @@
         "*.md": "prettier --write"
     },
     "resolutions": {
-        "tar": "7.5.6"
+        "tar": "7.5.7"
     }
 }
