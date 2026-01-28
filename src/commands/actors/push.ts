@@ -198,6 +198,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 						},
 					],
 				};
+
+				// Enable standby mode if configured in actor.json
+				if (actorConfig!.usesStandbyMode) {
+					newActor.actorStandby = { isEnabled: true };
+				}
+
 				actor = await apifyClient.actors().create(newActor);
 				actorId = actor.id;
 				isActorCreatedNow = true;
