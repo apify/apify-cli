@@ -159,6 +159,12 @@ const userFlagDefinition = {
 	short: 'u',
 } as const satisfies ParseArgsOptionDescriptor;
 
+const apiBaseUrlFlagDefinition = {
+	type: 'string',
+	multiple: false,
+	short: 'x',
+} as const satisfies ParseArgsOptionDescriptor;
+
 export const commandRegistry = new Map<string, typeof BuiltApifyCommand>();
 
 type ParseResult = ReturnType<typeof parseArgs<ReturnType<ApifyCommand['_buildParseArgsOption']>>>;
@@ -282,7 +288,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		const envToken = process.env[APIFY_ENV_VARS.TOKEN];
 		let client: ApifyClient | null = null;
 		if (envToken) {
-			client = await getLoggedClient({ token: envToken, baseUrl: undefined });
+			client = await getLoggedClient({ token: envToken, baseUrl: process.env[APIFY_ENV_VARS.API_BASE_URL], publicBaseUrl: process.env[APIFY_ENV_VARS.API_PUBLIC_BASE_URL] });
 			if (!client) {
 				throw new CommandError({
 					code: CommandErrorCode.NODEJS_ERR_PARSE_ARGS_INVALID_OPTION_VALUE,
@@ -298,7 +304,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 					message: 'The --token and --user flags should not be used together.',
 				});
 			}
-			client = await getLoggedClient({ token: rawFlags.token, baseUrl: undefined });
+			client = await getLoggedClient({ token: rawFlags.token, baseUrl: rawFlags['api-base-url'] });
 			if (!client) {
 				throw new CommandError({
 					code: CommandErrorCode.NODEJS_ERR_PARSE_ARGS_INVALID_OPTION_VALUE,
@@ -721,18 +727,31 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				json: typeof jsonFlagDefinition;
 				token: typeof tokenFlagDefinition;
 				user: typeof userFlagDefinition;
+				'api-base-url': typeof apiBaseUrlFlagDefinition;
 				[k: string]: ParseArgsOptionDescriptor;
 			},
 		} satisfies ParseArgsConfig;
+
+		if (this.ctor.enableJsonFlag) {
+			object.options!.json = jsonFlagDefinition;
+		}
+
+		if (this.ctor.requiresAuthentication !== 'never') {
+			object.options!.token = tokenFlagDefinition;
+			object.options!.user = userFlagDefinition;
+			object.options!['api-base-url'] = apiBaseUrlFlagDefinition;
+		}
 
 		if (this.ctor.flags) {
 			for (const [key, internalBuilderData] of Object.entries(this.ctor.flags)) {
 				if (typeof internalBuilderData === 'string') {
 					throw new RangeError('Do not provide the string for the json flag! It is a type level assertion!');
 				}
-				// Skip the flags automatically added by global options
-				if (['json', 'token', 'user'].includes(key.toLowerCase())) {
-					continue;
+
+				if (key in object.options!) {
+					throw new RangeError(
+						`The flag name "${key}" is reserved as a global option and cannot be used. Please choose a different name.`,
+					);
 				}
 
 				let flagKey = kebabCaseString(camelCaseToKebabCase(key)).toLowerCase();
@@ -750,14 +769,6 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 		}
 
-		if (this.ctor.enableJsonFlag) {
-			object.options!.json = jsonFlagDefinition;
-		}
-
-		if (this.ctor.requiresAuthentication) {
-			object.options!.token = tokenFlagDefinition;
-			object.options!.user = userFlagDefinition;
-		}
 
 		return object;
 	}

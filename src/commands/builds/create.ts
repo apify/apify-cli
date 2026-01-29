@@ -5,7 +5,13 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { objectGroupBy, outputJobLog, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import {
+	getConsoleUrlForApi,
+	objectGroupBy,
+	outputJobLog,
+	printJsonToStdout,
+	TimestampFormatter,
+} from '../../lib/utils.js';
 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
 	static override name = 'create' as const;
@@ -130,7 +136,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			'',
 		];
 
-		const url = `https://console.apify.com/actors/${build.actId}/builds/${build.buildNumber}`;
+		const url = `${getConsoleUrlForApi(this.apifyClient.publicBaseUrl)}/actors/${build.actId}/builds/${build.buildNumber}`;
 		const viewMessage = `${chalk.blue('View in Apify Console')}: ${url}`;
 
 		simpleLog({

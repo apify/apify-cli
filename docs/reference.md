@@ -113,7 +113,10 @@ DESCRIPTION
   Run 'apify login' to authenticate again.
 
 USAGE
-  $ apify logout
+  $ apify logout [-u <value>]
+
+FLAGS
+  -u, --user=<value>  Username or ID of the user to log out
 ```
 
 ##### `apify info`
@@ -123,7 +126,14 @@ DESCRIPTION
   Prints details about your currently authenticated Apify account.
 
 USAGE
-  $ apify info
+  $ apify info [-t <value>] [-u <value>]
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify secrets`
@@ -194,11 +204,13 @@ These commands help you develop Actors locally. Use them to create new Actor pro
 
 ```sh
 DESCRIPTION
-  Creates an Actor project from a template in a new directory.
+  Creates an Actor project from a template in a new directory. The command 
+  automatically initializes a git repository in the newly created Actor 
+  directory.
 
 USAGE
   $ apify create [actorName] [--omit-optional-deps]
-                 [--skip-dependency-install] [-t <value>]
+                 [--skip-dependency-install] [--skip-git-init] [-t <value>]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory
@@ -208,6 +220,8 @@ FLAGS
                                  dependencies.
       --skip-dependency-install  Skip installing Actor
                                  dependencies.
+      --skip-git-init            Skip initializing a git
+                                 repository in the Actor directory.
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
                                  it. Visit
@@ -254,7 +268,8 @@ DESCRIPTION
 
 USAGE
   $ apify run [--entrypoint <value>]
-              [-i <value> | --input-file <value>] [-p | --resurrect]
+              [-i <value> | --input-file <value>] [-p | --resurrect] [-t <value>]
+              [-u <value>]
 
 FLAGS
       --entrypoint=<value>  Optional entrypoint for running
@@ -278,6 +293,11 @@ FLAGS
       --resurrect           Whether to keep the default
                             request queue, dataset and key-value store before the
                             run starts.
+  -t, --token=<value>       Apify API token to use,
+                            overrides any stored authentication info. Can be also
+                            specified using the "APIFY_TOKEN" environment variable.
+  -u, --user=<value>        Username or ID of the
+                            authenticated Apify account to use
 ```
 
 ##### `apify validate-schema`
@@ -342,7 +362,7 @@ DESCRIPTION
 
 USAGE
   $ apify actors ls [--desc] [--json] [--limit <value>] [--my]
-                    [--offset <value>]
+                    [--offset <value>] [-t <value>] [-u <value>]
 
 FLAGS
       --desc            Sort Actors in descending order.
@@ -351,6 +371,11 @@ FLAGS
       --my              Whether to list Actors made by the logged
                         in user.
       --offset=<value>  Number of Actors that will be skipped.
+  -t, --token=<value>   Apify API token to use, overrides any
+                        stored authentication info. Can be also specified using the
+                        "APIFY_TOKEN" environment variable.
+  -u, --user=<value>    Username or ID of the authenticated
+                        Apify account to use
 ```
 
 ##### `apify actors rm`
@@ -360,10 +385,17 @@ DESCRIPTION
   Permanently removes an Actor from your account.
 
 USAGE
-  $ apify actors rm <actorId>
+  $ apify actors rm <actorId> [-t <value>] [-u <value>]
 
 ARGUMENTS
   actorId  The Actor ID to delete.
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify actor`
@@ -396,6 +428,7 @@ DESCRIPTION
 USAGE
   $ apify actor charge <eventName> [--count <value>]
                        [--idempotency-key <value>] [--test-pay-per-event]
+                       [-t <value>] [-u <value>]
 
 ARGUMENTS
   eventName  Name of the event to charge for
@@ -407,6 +440,12 @@ FLAGS
                                  charge request
       --test-pay-per-event       Test pay-per-event
                                  charging without actually charging
+  -t, --token=<value>            Apify API token to
+                                 use, overrides any stored authentication info. Can
+                                 be also specified using the "APIFY_TOKEN"
+                                 environment variable.
+  -u, --user=<value>             Username or ID of
+                                 the authenticated Apify account to use
 ```
 
 ##### `apify actor get-input`
@@ -417,7 +456,14 @@ DESCRIPTION
   the Actor run.
 
 USAGE
-  $ apify actor get-input
+  $ apify actor get-input [-t <value>] [-u <value>]
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify actor get-public-url`
@@ -427,10 +473,18 @@ DESCRIPTION
   Get an HTTP URL that allows public access to a key-value store item.
 
 USAGE
-  $ apify actor get-public-url <key>
+  $ apify actor get-public-url <key> [-t <value>]
+                               [-u <value>]
 
 ARGUMENTS
   key  Key of the record in key-value store
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify actor get-value`
@@ -440,10 +494,17 @@ DESCRIPTION
   Gets a value from the default key-value store associated with the Actor run.
 
 USAGE
-  $ apify actor get-value <key>
+  $ apify actor get-value <key> [-t <value>] [-u <value>]
 
 ARGUMENTS
   key  Key of the record in key-value store
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify actor push-data`
@@ -459,11 +520,19 @@ DESCRIPTION
     $ cat ./test.json | apify actor push-data
 
 USAGE
-  $ apify actor push-data [item]
+  $ apify actor push-data [item] [-t <value>] [-u
+                          <value>]
 
 ARGUMENTS
   item  JSON string with one object or array of objects containing data to
         be stored in the default dataset.
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify actor set-value`
@@ -483,6 +552,7 @@ DESCRIPTION
 
 USAGE
   $ apify actor set-value <key> [value] [-c <value>]
+                          [-t <value>] [-u <value>]
 
 ARGUMENTS
   key    Key of the record in key-value store.
@@ -496,6 +566,12 @@ FLAGS
   -c, --content-type=<value>  Specifies a custom MIME
                               content type of the record. By default
                               "application/json" is used.
+  -t, --token=<value>         Apify API token to use,
+                              overrides any stored authentication info. Can be also
+                              specified using the "APIFY_TOKEN" environment
+                              variable.
+  -u, --user=<value>          Username or ID of the
+                              authenticated Apify account to use
 ```
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->
@@ -517,7 +593,8 @@ DESCRIPTION
 
 USAGE
   $ apify actors push [actorId] [-b <value>] [--dir <value>]
-                      [--force] [--open] [-v <value>] [-w <value>]
+                      [-f] [--open] [-t <value>] [-u <value>] [-v <value>]
+                      [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -530,11 +607,17 @@ FLAGS
                                  it is taken from the '.actor/actor.json' file
       --dir=<value>              Directory where the
                                  Actor is located
-      --force                    Push an Actor even when
-                                 the local files are older than the Actor on the
-                                 platform.
+  -f, --force                    Push an Actor even
+                                 when the local files are older than the Actor on
+                                 the platform.
       --open                     Whether to open the
                                  browser automatically to the Actor details page.
+  -t, --token=<value>            Apify API token to
+                                 use, overrides any stored authentication info. Can
+                                 be also specified using the "APIFY_TOKEN"
+                                 environment variable.
+  -u, --user=<value>             Username or ID of
+                                 the authenticated Apify account to use
   -v, --version=<value>          Actor version number
                                  to which the files should be pushed. By default, it
                                  is taken from the '.actor/actor.json' file.
@@ -551,7 +634,8 @@ DESCRIPTION
   Actor files based on the source type.
 
 USAGE
-  $ apify actors pull [actorId] [--dir <value>] [-v <value>]
+  $ apify actors pull [actorId] [--dir <value>] [-t <value>]
+                      [-u <value>] [-v <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "apify/hello-world" or
@@ -562,6 +646,11 @@ ARGUMENTS
 FLAGS
       --dir=<value>      Directory where the Actor should be
                          pulled to
+  -t, --token=<value>    Apify API token to use, overrides
+                         any stored authentication info. Can be also specified using
+                         the "APIFY_TOKEN" environment variable.
+  -u, --user=<value>     Username or ID of the authenticated
+                         Apify account to use
   -v, --version=<value>  Actor version number which will be
                          pulled, e.g. 1.2. Default: the highest version
 ```
@@ -576,7 +665,7 @@ DESCRIPTION
 USAGE
   $ apify actors call [actorId] [-b <value>]
                       [-i <value> | -f <value>] [--json] [-m <value>] [-o] [-s]
-                      [-t <value>]
+                      [-t <value>] [-t <value>] [-u <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "my-actor",
@@ -602,6 +691,11 @@ FLAGS
                             the Actor run to the console.
   -t, --timeout=<value>     Timeout for the Actor run in
                             seconds. Zero value means there is no timeout.
+  -t, --token=<value>       Apify API token to use,
+                            overrides any stored authentication info. Can be also
+                            specified using the "APIFY_TOKEN" environment variable.
+  -u, --user=<value>        Username or ID of the
+                            authenticated Apify account to use
 ```
 
 ##### `apify actors start`
@@ -614,7 +708,7 @@ DESCRIPTION
 USAGE
   $ apify actors start [actorId] [-b <value>]
                        [-i <value> | --input-file <value>] [--json] [-m <value>]
-                       [-t <value>]
+                       [-t <value>] [-t <value>] [-u <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "my-actor",
@@ -636,6 +730,11 @@ FLAGS
                             the Actor run, in megabytes.
   -t, --timeout=<value>     Timeout for the Actor run in
                             seconds. Zero value means there is no timeout.
+  -t, --token=<value>       Apify API token to use,
+                            overrides any stored authentication info. Can be also
+                            specified using the "APIFY_TOKEN" environment variable.
+  -u, --user=<value>        Username or ID of the
+                            authenticated Apify account to use
 ```
 
 ##### `apify actors info`
@@ -646,14 +745,20 @@ DESCRIPTION
 
 USAGE
   $ apify actors info <actorId> [--input | --readme] [--json]
+                      [-t <value>] [-u <value>]
 
 ARGUMENTS
   actorId  The ID of the Actor to return information about.
 
 FLAGS
-      --input   Return the Actor input schema.
-      --json    Format the command output as JSON
-      --readme  Return the Actor README.
+      --input          Return the Actor input schema.
+      --json           Format the command output as JSON
+      --readme         Return the Actor README.
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 <!-- actor-deploy-commands-end -->
 <!-- prettier-ignore-end -->
@@ -687,7 +792,8 @@ DESCRIPTION
 
 USAGE
   $ apify builds create [actorId] [--json] [--log]
-                        [--tag <value>] [--version <value>]
+                        [--tag <value>] [-t <value>] [-u <value>]
+                        [--version <value>]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to trigger a build for. By default,
@@ -699,6 +805,11 @@ FLAGS
                          the build is triggered.
       --tag=<value>      Build tag to be applied to the
                          successful Actor build. By default, this is "latest".
+  -t, --token=<value>    Apify API token to use, overrides
+                         any stored authentication info. Can be also specified using
+                         the "APIFY_TOKEN" environment variable.
+  -u, --user=<value>     Username or ID of the authenticated
+                         Apify account to use
       --version=<value>  Optional Actor Version to build. By
                          default, this will be inferred from the tag, but this flag
                          is required when multiple versions have the same tag.
@@ -711,13 +822,19 @@ DESCRIPTION
   Prints information about a specific build.
 
 USAGE
-  $ apify builds info <buildId> [--json]
+  $ apify builds info <buildId> [--json] [-t <value>]
+                      [-u <value>]
 
 ARGUMENTS
   buildId  The build ID to get information about.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json           Format the command output as JSON
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify builds log`
@@ -727,10 +844,17 @@ DESCRIPTION
   Prints the log of a specific build.
 
 USAGE
-  $ apify builds log <buildId>
+  $ apify builds log <buildId> [-t <value>] [-u <value>]
 
 ARGUMENTS
   buildId  The build ID to get the log from.
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify builds ls`
@@ -741,7 +865,8 @@ DESCRIPTION
 
 USAGE
   $ apify builds ls [actorId] [-c] [--desc] [--json]
-                    [--limit <value>] [--offset <value>]
+                    [--limit <value>] [--offset <value>] [-t <value>]
+                    [-u <value>]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to list runs for. By default, it
@@ -753,6 +878,11 @@ FLAGS
       --json            Format the command output as JSON
       --limit=<value>   Number of builds that will be listed.
       --offset=<value>  Number of builds that will be skipped.
+  -t, --token=<value>   Apify API token to use, overrides any
+                        stored authentication info. Can be also specified using the
+                        "APIFY_TOKEN" environment variable.
+  -u, --user=<value>    Username or ID of the authenticated
+                        Apify account to use
 ```
 
 ##### `apify builds rm`
@@ -762,10 +892,17 @@ DESCRIPTION
   Permanently removes an Actor build from the Apify platform.
 
 USAGE
-  $ apify builds rm <buildId>
+  $ apify builds rm <buildId> [-t <value>] [-u <value>]
 
 ARGUMENTS
   buildId  The build ID to delete.
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 <!-- actor-build-commands-end -->
 <!-- prettier-ignore-end -->
@@ -798,15 +935,21 @@ DESCRIPTION
   Aborts an Actor run.
 
 USAGE
-  $ apify runs abort <runId> [-f] [--json]
+  $ apify runs abort <runId> [-f] [--json] [-t <value>]
+                     [-u <value>]
 
 ARGUMENTS
   runId  The run ID to abort.
 
 FLAGS
-  -f, --force  Whether to force the run to abort immediately, instead
-               of gracefully.
-      --json   Format the command output as JSON
+  -f, --force          Whether to force the run to abort
+                       immediately, instead of gracefully.
+      --json           Format the command output as JSON
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify runs info`
@@ -816,15 +959,21 @@ DESCRIPTION
   Prints information about an Actor run.
 
 USAGE
-  $ apify runs info <runId> [--json] [-v]
+  $ apify runs info <runId> [--json] [-t <value>] [-u <value>]
+                    [-v]
 
 ARGUMENTS
   runId  The run ID to print information about.
 
 FLAGS
-      --json     Format the command output as JSON
-  -v, --verbose  Prints more in-depth information about the Actor
-                 run.
+      --json           Format the command output as JSON
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
+  -v, --verbose        Prints more in-depth information about
+                       the Actor run.
 ```
 
 ##### `apify runs log`
@@ -834,10 +983,17 @@ DESCRIPTION
   Prints the log of a specific run.
 
 USAGE
-  $ apify runs log <runId>
+  $ apify runs log <runId> [-t <value>] [-u <value>]
 
 ARGUMENTS
   runId  The run ID to get the log from.
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify runs ls`
@@ -848,7 +1004,7 @@ DESCRIPTION
 
 USAGE
   $ apify runs ls [actorId] [-c] [--desc] [--json]
-                  [--limit <value>] [--offset <value>]
+                  [--limit <value>] [--offset <value>] [-t <value>] [-u <value>]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to list runs for. By default, it
@@ -860,6 +1016,11 @@ FLAGS
       --json            Format the command output as JSON
       --limit=<value>   Number of runs that will be listed.
       --offset=<value>  Number of runs that will be skipped.
+  -t, --token=<value>   Apify API token to use, overrides any
+                        stored authentication info. Can be also specified using the
+                        "APIFY_TOKEN" environment variable.
+  -u, --user=<value>    Username or ID of the authenticated
+                        Apify account to use
 ```
 
 ##### `apify runs resurrect`
@@ -869,13 +1030,19 @@ DESCRIPTION
   Resurrects an aborted or finished Actor Run.
 
 USAGE
-  $ apify runs resurrect <runId> [--json]
+  $ apify runs resurrect <runId> [--json] [-t <value>]
+                         [-u <value>]
 
 ARGUMENTS
   runId  The run ID to resurrect.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json           Format the command output as JSON
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify runs rm`
@@ -885,10 +1052,17 @@ DESCRIPTION
   Deletes an Actor Run.
 
 USAGE
-  $ apify runs rm <runId>
+  $ apify runs rm <runId> [-t <value>] [-u <value>]
 
 ARGUMENTS
   runId  The run ID to delete.
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 <!-- actor-run-commands-end -->
 <!-- prettier-ignore-end -->
@@ -911,7 +1085,7 @@ DESCRIPTION
 
 SUBCOMMANDS
   datasets create      Creates a new dataset for storing
-                       structured data on your account.
+                       structured data.
   datasets get-items   Retrieves dataset items in specified
                        format (JSON, CSV, etc).
   datasets ls          Prints all datasets on your account.
@@ -928,16 +1102,22 @@ SUBCOMMANDS
 
 ```sh
 DESCRIPTION
-  Creates a new dataset for storing structured data on your account.
+  Creates a new dataset for storing structured data.
 
 USAGE
   $ apify datasets create [datasetName] [--json]
+                          [-t <value>] [-u <value>]
 
 ARGUMENTS
   datasetName  Optional name for the Dataset
 
 FLAGS
-      --json  Format the command output as JSON
+      --json           Format the command output as JSON
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify datasets get-items`
@@ -949,7 +1129,8 @@ DESCRIPTION
 USAGE
   $ apify datasets get-items <datasetId>
                              [--format json|jsonl|csv|html|rss|xml|xlsx]
-                             [--limit <value>] [--offset <value>]
+                             [--limit <value>] [--offset <value>] [-t <value>]
+                             [-u <value>]
 
 ARGUMENTS
   datasetId  The ID of the Dataset to export the items for
@@ -962,6 +1143,11 @@ FLAGS
                          dataset. By default, it will return all available items.
       --offset=<value>   The offset in the dataset where to start
                          getting items.
+  -t, --token=<value>    Apify API token to use, overrides
+                         any stored authentication info. Can be also specified using
+                         the "APIFY_TOKEN" environment variable.
+  -u, --user=<value>     Username or ID of the authenticated
+                         Apify account to use
 ```
 
 ##### `apify datasets info`
@@ -971,13 +1157,19 @@ DESCRIPTION
   Prints information about a specific dataset.
 
 USAGE
-  $ apify datasets info <storeId> [--json]
+  $ apify datasets info <storeId> [--json] [-t <value>]
+                        [-u <value>]
 
 ARGUMENTS
   storeId  The dataset store ID to print information about.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json           Format the command output as JSON
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify datasets ls`
@@ -988,14 +1180,19 @@ DESCRIPTION
 
 USAGE
   $ apify datasets ls [--desc] [--json] [--limit <value>]
-                      [--offset <value>] [--unnamed]
+                      [--offset <value>] [-t <value>] [--unnamed] [-u <value>]
 
 FLAGS
       --desc            Sorts datasets in descending order.
       --json            Format the command output as JSON
       --limit=<value>   Number of datasets that will be listed.
       --offset=<value>  Number of datasets that will be skipped.
+  -t, --token=<value>   Apify API token to use, overrides any
+                        stored authentication info. Can be also specified using the
+                        "APIFY_TOKEN" environment variable.
       --unnamed         Lists datasets that don't have a name set.
+  -u, --user=<value>    Username or ID of the authenticated
+                        Apify account to use
 ```
 
 ##### `apify datasets push-items`
@@ -1007,10 +1204,18 @@ DESCRIPTION
 
 USAGE
   $ apify datasets push-items <nameOrId> [item]
+                              [-t <value>] [-u <value>]
 
 ARGUMENTS
   nameOrId  The dataset ID or name to push the objects to
   item      The object or array of objects to be pushed.
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify datasets rename`
@@ -1020,14 +1225,20 @@ DESCRIPTION
   Change dataset name or removes name with --unname flag.
 
 USAGE
-  $ apify datasets rename <nameOrId> [newName] [--unname]
+  $ apify datasets rename <nameOrId> [newName]
+                          [-t <value>] [--unname] [-u <value>]
 
 ARGUMENTS
   nameOrId  The dataset ID or name to delete.
   newName   The new name for the dataset.
 
 FLAGS
-      --unname  Removes the unique name of the dataset.
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+      --unname         Removes the unique name of the dataset.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify datasets rm`
@@ -1037,10 +1248,18 @@ DESCRIPTION
   Permanently removes a dataset.
 
 USAGE
-  $ apify datasets rm <datasetNameOrId>
+  $ apify datasets rm <datasetNameOrId> [-t <value>]
+                      [-u <value>]
 
 ARGUMENTS
   datasetNameOrId  The dataset ID or name to delete
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 <!-- dataset-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1090,14 +1309,20 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores create
-                                  [key-value store name] [--json]
+                                  [key-value store name] [--json] [-t <value>]
+                                  [-u <value>]
 
 ARGUMENTS
   key-value store name  Optional name for the key-value
                         store
 
 FLAGS
-      --json  Format the command output as JSON
+      --json           Format the command output as JSON
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify key-value-stores delete-value`
@@ -1108,11 +1333,19 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores delete-value
-                                        <store id> <itemKey>
+                                        <store id> <itemKey> [-t <value>]
+                                        [-u <value>]
 
 ARGUMENTS
   store id  The key-value store ID to delete the value from.
   itemKey   The key of the item in the key-value store.
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify key-value-stores get-value`
@@ -1125,7 +1358,8 @@ DESCRIPTION
 USAGE
   $ apify key-value-stores get-value
                                      <keyValueStoreId> <itemKey>
-                                     [--only-content-type]
+                                     [--only-content-type] [-t <value>]
+                                     [-u <value>]
 
 ARGUMENTS
   keyValueStoreId  The key-value store ID to get the value from.
@@ -1134,6 +1368,11 @@ ARGUMENTS
 FLAGS
       --only-content-type  Only return the content type of the
                            specified key
+  -t, --token=<value>      Apify API token to use,
+                           overrides any stored authentication info. Can be also
+                           specified using the "APIFY_TOKEN" environment variable.
+  -u, --user=<value>       Username or ID of the
+                           authenticated Apify account to use
 ```
 
 ##### `apify key-value-stores info`
@@ -1144,12 +1383,18 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores info <storeId> [--json]
+                                [-t <value>] [-u <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to print information about.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json           Format the command output as JSON
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify key-value-stores keys`
@@ -1161,7 +1406,7 @@ DESCRIPTION
 USAGE
   $ apify key-value-stores keys <storeId>
                                 [--exclusive-start-key <value>] [--json]
-                                [--limit <value>]
+                                [--limit <value>] [-t <value>] [-u <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to list keys for.
@@ -1173,6 +1418,12 @@ FLAGS
                                      command output as JSON
       --limit=<value>                The maximum
                                      number of keys to return.
+  -t, --token=<value>                Apify API
+                                     token to use, overrides any stored
+                                     authentication info. Can be also specified
+                                     using the "APIFY_TOKEN" environment variable.
+  -u, --user=<value>                 Username or
+                                     ID of the authenticated Apify account to use
 ```
 
 ##### `apify key-value-stores ls`
@@ -1183,7 +1434,8 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores ls [--desc] [--json]
-                              [--limit <value>] [--offset <value>] [--unnamed]
+                              [--limit <value>] [--offset <value>] [-t <value>]
+                              [--unnamed] [-u <value>]
 
 FLAGS
       --desc            Sorts key-value stores in descending
@@ -1193,8 +1445,13 @@ FLAGS
                         listed.
       --offset=<value>  Number of key-value stores that will be
                         skipped.
+  -t, --token=<value>   Apify API token to use, overrides any
+                        stored authentication info. Can be also specified using the
+                        "APIFY_TOKEN" environment variable.
       --unnamed         Lists key-value stores that don't have a
                         name set.
+  -u, --user=<value>    Username or ID of the authenticated
+                        Apify account to use
 ```
 
 ##### `apify key-value-stores rename`
@@ -1205,7 +1462,8 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores rename
-                                  <keyValueStoreNameOrId> [newName] [--unname]
+                                  <keyValueStoreNameOrId> [newName] [-t <value>]
+                                  [--unname] [-u <value>]
 
 ARGUMENTS
   keyValueStoreNameOrId  The key-value store ID or name to
@@ -1214,7 +1472,13 @@ ARGUMENTS
                          store
 
 FLAGS
-      --unname  Removes the unique name of the key-value store
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+      --unname         Removes the unique name of the key-value
+                       store
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify key-value-stores rm`
@@ -1225,10 +1489,18 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores rm <keyValueStoreNameOrId>
+                              [-t <value>] [-u <value>]
 
 ARGUMENTS
   keyValueStoreNameOrId  The key-value store ID or name to
                          delete
+
+FLAGS
+  -t, --token=<value>  Apify API token to use, overrides any
+                       stored authentication info. Can be also specified using the
+                       "APIFY_TOKEN" environment variable.
+  -u, --user=<value>   Username or ID of the authenticated
+                       Apify account to use
 ```
 
 ##### `apify key-value-stores set-value`
@@ -1240,6 +1512,7 @@ DESCRIPTION
 USAGE
   $ apify key-value-stores set-value <storeId>
                                      <itemKey> [value] [--content-type <value>]
+                                     [-t <value>] [-u <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to set the value in.
@@ -1249,6 +1522,12 @@ ARGUMENTS
 FLAGS
       --content-type=<value>  The MIME content type of the
                               value. By default, "application/json" is assumed.
+  -t, --token=<value>         Apify API token to use,
+                              overrides any stored authentication info. Can be also
+                              specified using the "APIFY_TOKEN" environment
+                              variable.
+  -u, --user=<value>          Username or ID of the
+                              authenticated Apify account to use
 ```
 <!-- keyval-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1297,7 +1576,7 @@ DESCRIPTION
 
 USAGE
   $ apify task run <taskId> [-b <value>] [-m <value>]
-                   [-t <value>]
+                   [-t <value>] [-t <value>] [-u <value>]
 
 ARGUMENTS
   taskId  Name or ID of the Task to run (e.g. "my-task" or
@@ -1310,6 +1589,11 @@ FLAGS
                          Task run, in megabytes.
   -t, --timeout=<value>  Timeout for the Task run in seconds.
                          Zero value means there is no timeout.
+  -t, --token=<value>    Apify API token to use, overrides
+                         any stored authentication info. Can be also specified using
+                         the "APIFY_TOKEN" environment variable.
+  -u, --user=<value>     Username or ID of the authenticated
+                         Apify account to use
 ```
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->

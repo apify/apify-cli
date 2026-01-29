@@ -17,10 +17,8 @@ import { updateUserId } from '../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../lib/hooks/user-confirmations/useSelectFromList.js';
 import { error, info, success } from '../lib/outputs.js';
-import { tildify } from '../lib/utils.js';
+import { getConsoleUrlForApi, tildify } from '../lib/utils.js';
 
-const CONSOLE_URL_ORIGIN = 'https://console.apify.com';
-const LOCALHOST_URL_ORIGIN = 'http://localhost:3000';
 const CONSOLE_LOGIN_PATH = '/settings/integrations';
 
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
@@ -68,7 +66,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 			choices: ['console', 'manual'],
 			required: false,
 		}),
-		alternativeUrl: Flags.string({
+		apiBaseUrl: Flags.string({
 			description: '[Apify developers only] Alternative API URL to use with this account.',
 			required: false,
 			hidden: true,
@@ -76,10 +74,10 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 	};
 
 	async run() {
-		const { token, method, alternativeUrl } = this.flags;
+		const { token, method, apiBaseUrl } = this.flags;
 
 		if (token) {
-			await tryToLogin(token, alternativeUrl);
+			await tryToLogin(token, apiBaseUrl);
 			return;
 		}
 
@@ -107,13 +105,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 		}
 
 		if (selectedMethod === 'console') {
-			const isLocalhost = alternativeUrl?.includes('localhost');
-			if (alternativeUrl && !isLocalhost)
-				throw new Error(
-					'The interactive login can only be used with prod or localhost backends, other deployments are currently not supported',
-				);
-
-			const consoleOrigin = isLocalhost ? LOCALHOST_URL_ORIGIN : CONSOLE_URL_ORIGIN;
+			const consoleOrigin = getConsoleUrlForApi(apiBaseUrl ?? 'https://api.apify.com');
 
 			let server: Server;
 			const app = express();
@@ -163,7 +155,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 			apiRouter.post('/login-token', async (req, res) => {
 				try {
 					if (req.body.apiToken) {
-						await tryToLogin(req.body.apiToken, alternativeUrl);
+						await tryToLogin(req.body.apiToken, apiBaseUrl);
 					} else {
 						throw new Error('Request did not contain API token');
 					}
@@ -217,7 +209,7 @@ export class LoginCommand extends ApifyCommand<typeof LoginCommand> {
 			);
 
 			const tokenAnswer = await useMaskedInput({ message: 'token:' });
-			await tryToLogin(tokenAnswer, alternativeUrl);
+			await tryToLogin(tokenAnswer, apiBaseUrl);
 		}
 	}
 }

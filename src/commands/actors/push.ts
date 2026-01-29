@@ -17,7 +17,7 @@ import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, info, link, run, success, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
-import { createActZip, createSourceFiles, getActorLocalFilePaths, outputJobLog } from '../../lib/utils.js';
+import { createActZip, createSourceFiles, getActorLocalFilePaths, getConsoleUrlForApi, outputJobLog } from '../../lib/utils.js';
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
 const DEFAULT_RUN_OPTIONS = {
@@ -315,18 +315,20 @@ Skipping push. Use --force to override.`,
 
 		build = (await this.apifyClient.build(build.id).get())!;
 
+		const consoleUrl = getConsoleUrlForApi(this.apifyClient.publicBaseUrl);
+
 		link({
 			message: 'Actor build detail',
-			url: `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`,
+			url: `${consoleUrl}${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`,
 		});
 
 		link({
 			message: 'Actor detail',
-			url: `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`,
+			url: `${consoleUrl}${redirectUrlPart}/actors/${build.actId}`,
 		});
 
 		if (this.flags.open) {
-			await open(`https://console.apify.com${redirectUrlPart}/actors/${build.actId}`);
+			await open(`${consoleUrl}${redirectUrlPart}/actors/${build.actId}`);
 		}
 
 		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED) {

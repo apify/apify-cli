@@ -47,6 +47,13 @@ enum RunType {
 	Script = 2,
 }
 
+const stripV2FromUrl = (url: string) => {
+	if (url.endsWith('/v2')) {
+		return url.slice(0, -3);
+	}
+	return url;
+};
+
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	static override name = 'run' as const;
 
@@ -260,9 +267,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
 		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
-		if (this.apifyClient.baseUrl) localEnvVars[APIFY_ENV_VARS.API_BASE_URL] = this.apifyClient.baseUrl;
-		if (this.apifyClient.publicBaseUrl)
-			localEnvVars[APIFY_ENV_VARS.API_PUBLIC_BASE_URL] = this.apifyClient.publicBaseUrl;
+		if (this.apifyClient.baseUrl) localEnvVars[APIFY_ENV_VARS.API_BASE_URL] = stripV2FromUrl(this.apifyClient.baseUrl);
+		if (this.apifyClient.publicBaseUrl) localEnvVars[APIFY_ENV_VARS.API_PUBLIC_BASE_URL] = stripV2FromUrl(this.apifyClient.publicBaseUrl);
 		if (localConfig!.environmentVariables) {
 			const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>);
 			Object.assign(localEnvVars, updatedEnv);

@@ -17,7 +17,7 @@ import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLocalConfig, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { getConsoleUrlForApi, getLocalConfig, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
@@ -141,8 +141,9 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 				// A *lot* is copied from `runs info`
 				if (!this.flags.silent) {
-					url = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
-					datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
+					const consoleUrl = getConsoleUrlForApi(this.apifyClient.publicBaseUrl);
+					url = `${consoleUrl}/actors/${actorId}/runs/${yieldedRun.id}`;
+					datasetUrl = `${consoleUrl}/storage/datasets/${yieldedRun.defaultDatasetId}`;
 
 					const message: string[] = [
 						`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`,

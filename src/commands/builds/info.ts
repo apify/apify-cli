@@ -5,7 +5,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { DurationFormatter, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { DurationFormatter, getConsoleUrlForApi, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 	static override name = 'info' as const;
@@ -96,7 +96,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 
 		message.push('');
 
-		const url = `https://console.apify.com/actors/${build.actId}/builds/${build.buildNumber}`;
+		const url = `${getConsoleUrlForApi(this.apifyClient.publicBaseUrl)}/actors/${build.actId}/builds/${build.buildNumber}`;
 
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 

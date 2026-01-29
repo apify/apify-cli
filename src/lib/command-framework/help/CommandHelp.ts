@@ -130,18 +130,18 @@ export class CommandHelp extends BaseCommandRenderer {
 			]);
 		}
 
-		if (this.command.requiresAuthentication) {
+		if (this.command.requiresAuthentication !== 'never') {
 			flags.push([
 				'user',
 				{
 					choices: null,
 					flagTag: 'string',
-					hasDefault: true,
+					hasDefault: false,
 					required: false,
 					stdin: null as never,
 					builder: null as never,
 					aliases: undefined,
-					char: undefined,
+					char: 'u',
 					description: 'Username or ID of the authenticated Apify account to use',
 					hidden: undefined,
 					exclusive: undefined,
@@ -157,12 +157,13 @@ export class CommandHelp extends BaseCommandRenderer {
 					stdin: null as never,
 					builder: null as never,
 					aliases: undefined,
-					char: undefined,
+					char: 't',
 					description: `Apify API token to use, overrides any stored authentication info. Can be also specified using the "${APIFY_ENV_VARS.TOKEN}" environment variable.`,
 					hidden: undefined,
 					exclusive: undefined,
 				},
 			]);
+			// note: we don't show the --api-base-url flag in help
 		}
 
 		const sortedFlags = new Map(

@@ -169,14 +169,16 @@ export async function clearLocalUserInfo(usernameOrId?: string): Promise<null | 
 // biome-ignore format: off
 type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
 
+type GetLoggedClientOptions =
+	| { token: string; storeAsNewUser?: boolean; baseUrl: string | undefined; publicBaseUrl?: string }
+	| { usernameOrId: string | undefined };
+
 /**
- * Returns options for ApifyClient
+ * Gets instance of ApifyClient for token or for params from global auth file.
+ * NOTE: It refreshes global auth file each run
  */
-const getApifyClientOptions = (token: string, apiBaseUrl?: string): ApifyClientOptions => {
-	return {
-		token,
-		baseUrl: apiBaseUrl || 'https://api.apify.com',
-		publicBaseUrl: apiBaseUrl || 'https://api.apify.com',
+export async function getLoggedClient(options: GetLoggedClientOptions): Promise<ApifyClient | null> {
+	const clientOptions: ApifyClientOptions = {
 		requestInterceptors: [
 			(config) => {
 				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
@@ -189,36 +191,27 @@ const getApifyClientOptions = (token: string, apiBaseUrl?: string): ApifyClientO
 			},
 		],
 	};
-};
-
-type GetLoggedClientOptions =
-	| { token: string; storeAsNewUser?: boolean; baseUrl: string | undefined }
-	| { usernameOrId: string | undefined };
-
-/**
- * Gets instance of ApifyClient for token or for params from global auth file.
- * NOTE: It refreshes global auth file each run
- */
-export async function getLoggedClient(options: GetLoggedClientOptions): Promise<ApifyClient | null> {
-	let token: string;
-	let baseUrl: string | undefined;
 
 	let updateExisting = true;
 
 	if ('token' in options) {
-		token = options.token;
-		baseUrl = options.baseUrl;
+		clientOptions.token = options.token;
+		clientOptions.baseUrl = options.baseUrl;
+		clientOptions.publicBaseUrl = options.publicBaseUrl;
 		updateExisting = !options.storeAsNewUser;
 	} else {
 		const userInfo = await getLocalUserInfo({ selectedUsernameOrId: options.usernameOrId ?? null });
 		if (!userInfo) {
 			return null;
 		}
-		token = userInfo.token;
-		baseUrl = userInfo.baseUrl;
+		clientOptions.token = userInfo.token;
+		// Hard setting both URLs from base URL is not ideal... But stored logins are hopefully only used for local development,
+		// not on Apify platform, so there won't be a special (cloud intranet) base URL needed.
+		clientOptions.baseUrl = userInfo.baseUrl;
+		clientOptions.publicBaseUrl = userInfo.baseUrl;
 	}
 
-	const apifyClient = new ApifyClient(getApifyClientOptions(token, baseUrl));
+	const apifyClient = new ApifyClient(clientOptions);
 
 	let userInfo;
 	try {
@@ -233,12 +226,12 @@ export async function getLoggedClient(options: GetLoggedClientOptions): Promise<
 	// Always refresh Auth file
 	await storeLocalUserInfo(
 		{
-			token,
+			token: clientOptions.token!,
 			id: userInfo.id!,
 			username: userInfo.username,
 			email: userInfo.email!,
 			organizationOwnerUserId: (userInfo as any).organizationOwnerUserId,
-			baseUrl,
+			baseUrl: clientOptions.baseUrl,
 		},
 		{ updateExisting, makeDefault: false },
 	);

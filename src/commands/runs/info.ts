@@ -8,7 +8,7 @@ import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { printJsonToStdout, ShortDurationFormatter, TimestampFormatter } from '../../lib/utils.js';
+import { getConsoleUrlForApi, printJsonToStdout, ShortDurationFormatter, TimestampFormatter } from '../../lib/utils.js';
 
 const usageTable = new ResponsiveTable({
 	allColumns: ['', 'Unit', 'USD Amount'],
@@ -238,9 +238,10 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 		message.push('');
 
-		const url = `https://console.apify.com/actors/${run.actId}/runs/${run.id}`;
-		const datasetUrl = `https://console.apify.com/storage/datasets/${run.defaultDatasetId}`;
-		const keyValueStoreUrl = `https://console.apify.com/storage/key-value-stores/${run.defaultKeyValueStoreId}`;
+		const consoleUrl = getConsoleUrlForApi(this.apifyClient.publicBaseUrl);
+		const url = `${consoleUrl}/actors/${run.actId}/runs/${run.id}`;
+		const datasetUrl = `${consoleUrl}/storage/datasets/${run.defaultDatasetId}`;
+		const keyValueStoreUrl = `${consoleUrl}/storage/key-value-stores/${run.defaultKeyValueStoreId}`;
 
 		message.push(`${chalk.blue('Export results')}: ${datasetUrl}`);
 		message.push(`${chalk.blue('View saved items')}: ${keyValueStoreUrl}`);

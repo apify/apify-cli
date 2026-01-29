@@ -7,8 +7,8 @@ export const DEVELOPMENT_VERSION_MARKER = '0.0.0';
 export const DEVELOPMENT_HASH_MARKER = '0000000';
 
 // These values are replaced with the actual values when building the CLI
-const CLI_VERSION = DEVELOPMENT_VERSION_MARKER;
-const CLI_HASH = DEVELOPMENT_HASH_MARKER;
+const CLI_VERSION = "1.1.2";
+const CLI_HASH = "08f7eb44c3240a6df67155fc9cc214b37991f872";
 
 export type InstallMethod = 'npm' | 'pnpm' | 'homebrew' | 'volta' | 'bundle' | 'bun';
 

@@ -8,7 +8,7 @@ import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { simpleLog } from '../../lib/outputs.js';
-import { getLocalConfig, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { getConsoleUrlForApi, getLocalConfig, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
@@ -112,8 +112,9 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			return;
 		}
 
-		const url = `https://console.apify.com/actors/${actorId}/runs/${run.id}`;
-		const datasetUrl = `https://console.apify.com/storage/datasets/${run.defaultDatasetId}`;
+		const consoleUrl = getConsoleUrlForApi(this.apifyClient.publicBaseUrl);
+		const url = `${consoleUrl}/actors/${actorId}/runs/${run.id}`;
+		const datasetUrl = `${consoleUrl}/storage/datasets/${run.defaultDatasetId}`;
 
 		const message: string[] = [
 			`${chalk.gray('Run:')} Calling Actor ${userFriendlyId} (${chalk.gray(actorId)})`,

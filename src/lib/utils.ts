@@ -501,3 +501,13 @@ export const tildify = (path: string) => {
 
 	return path;
 };
+
+export function getConsoleUrlForApi(apiBaseUrl: string) {
+	const match = apiBaseUrl.match(/^https?:\/\/api(-.+)?\.apify\.com(\/|$)/);
+	if (match) {
+		const subdomain = match[1] || '';
+		return `https://console${subdomain}.apify.com`;
+	}
+	if (apiBaseUrl.includes('localhost')) return 'http://localhost:3000';
+	return 'https://console.apify.com';
+}
