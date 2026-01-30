@@ -435,6 +435,8 @@ SUBCOMMANDS
   actor calculate-memory  Calculates the Actor’s dynamic
                           memory usage based on a memory expression from
                           actor.json, input data, and run options.
+  actor generate-types    Generate TypeScript types from a
+                          JSON schema file.
 ```
 
 ##### `apify actor calculate-memory`
@@ -489,6 +491,26 @@ FLAGS
                                  charge request
       --test-pay-per-event       Test pay-per-event
                                  charging without actually charging
+```
+
+##### `apify actor generate-types`
+
+```sh
+DESCRIPTION
+  Generate TypeScript types from a JSON schema file.
+
+USAGE
+  $ apify actor generate-types <path> [-o <value>]
+                               [-s]
+
+ARGUMENTS
+  path  Path to the JSON schema file.
+
+FLAGS
+  -o, --output=<value>  Directory where the generated files
+                        should be outputted.
+  -s, --strict          Whether generated interfaces should be
+                        strict (no index signature [key: string]: unknown).
 ```
 
 ##### `apify actor get-input`

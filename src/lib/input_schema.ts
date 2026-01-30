@@ -7,8 +7,8 @@ import deepClone from 'lodash.clonedeep';
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
 
-import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
-import { warning } from './outputs.js';
+import { ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_PATH } from './consts.js';
+import { info, warning } from './outputs.js';
 import { Ajv2019, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
@@ -68,6 +68,45 @@ export const readInputSchema = async (
 		inputSchema: null,
 		inputSchemaPath: join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0]),
 	};
+};
+
+/**
+ * Reads and validates input schema, logging appropriate info messages.
+ * Throws an error if the schema is not found or invalid.
+ *
+ * @param options.forcePath - Optional path to force reading from
+ * @param options.cwd - Current working directory
+ * @param options.action - Action description for the info message (e.g., "Validating", "Generating types from")
+ * @returns The validated input schema and its path
+ */
+export const readAndValidateInputSchema = async ({
+	forcePath,
+	cwd,
+	action,
+}: {
+	forcePath?: string;
+	cwd: string;
+	action: string;
+}): Promise<{ inputSchema: Record<string, unknown>; inputSchemaPath: string | null }> => {
+	const { inputSchema, inputSchemaPath } = await readInputSchema({
+		forcePath,
+		cwd,
+	});
+
+	if (!inputSchema) {
+		throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
+	}
+
+	if (inputSchemaPath) {
+		info({ message: `${action} input schema at ${inputSchemaPath}` });
+	} else {
+		info({ message: `${action} input schema embedded in '${LOCAL_CONFIG_PATH}'` });
+	}
+
+	const validator = new Ajv2019({ strict: false });
+	validateInputSchema(validator, inputSchema);
+
+	return { inputSchema, inputSchemaPath };
 };
 
 /**
