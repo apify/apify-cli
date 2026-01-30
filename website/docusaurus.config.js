@@ -112,7 +112,17 @@ module.exports = {
 		],
         ...config.plugins,
     ],
-    themeConfig: { ...config.themeConfig, versions },
+    themeConfig: {
+        ...config.themeConfig,
+        versions,
+        footer: {
+            ...config.themeConfig.footer,
+            logo: {
+                ...config.themeConfig.footer.logo,
+                href: '/docs',
+            },
+        },
+    },
     staticDirectories: ['node_modules/@apify/docs-theme/static', 'static'],
     customFields: {
         ...(config.customFields ?? []),
