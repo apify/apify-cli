@@ -175,6 +175,7 @@
         "*.md": "prettier --write"
     },
     "resolutions": {
-        "tar": "7.5.7"
+        "tar": "7.5.7",
+        "lodash": "4.17.23"
     }
 }
