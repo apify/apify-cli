@@ -326,21 +326,22 @@ describe('useCwdProject - Python project detection', () => {
 	});
 
 	describe('mixed project detection', () => {
-		it('should error when both Python and Node.js indicators are present', async () => {
+		it('should prefer Node.js when both Python and Node.js indicators are present', async () => {
 			// Structure:
 			// package.json
 			// requirements.txt
 			// my_package/
 			//   __init__.py
-			await createFile('package.json', '{"name": "test"}');
+			// When both are present, package.json takes precedence
+			await createFile('package.json', '{"name": "test", "scripts": {"start": "node index.js"}}');
 			await createFile('requirements.txt', 'apify>=1.0.0');
 			await createPythonPackage('my_package');
 
 			const result = await useCwdProject({ cwd: testDir });
 
-			expect(result.isErr()).toBe(true);
-			const error = result.unwrapErr();
-			expect(error.message).toContain('Mixed project detected');
+			expect(result.isOk()).toBe(true);
+			const project = result.unwrap();
+			expect(project.type).toBe(ProjectLanguage.JavaScript);
 		});
 	});
 });

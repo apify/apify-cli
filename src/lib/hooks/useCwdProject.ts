@@ -98,46 +98,36 @@ export async function useCwdProject({
 			return;
 		}
 
-		// Check for mixed projects (both Python and Node.js indicators)
-		const hasPythonIndicators = await isPythonProject(cwd);
-		const hasNodeIndicators = await fileExists(join(cwd, 'package.json'));
-
-		if (hasPythonIndicators && hasNodeIndicators) {
-			return err({
-				message:
-					'Mixed project detected (both Python and Node.js files found). ' +
-					'Please use explicit configuration to specify which runtime to use. ' +
-					'You can use the --entrypoint flag to specify the entrypoint explicitly.',
-			});
-		}
-
-		let isPython: string | null = null;
-		try {
-			// Pass the already-computed hasPythonIndicators to avoid redundant filesystem checks
-			isPython = await checkPythonProject(cwd, hasPythonIndicators);
-		} catch (error) {
-			// If checkPythonProject throws an error, it means it detected Python but
-			// couldn't determine the entrypoint. We should propagate this error.
-			return err({
-				message: error instanceof Error ? error.message : String(error),
-			});
-		}
-
-		if (isPython) {
-			project.type = ProjectLanguage.Python;
-
-			const runtime = await usePythonRuntime({ cwd });
-
-			project.entrypoint = {
-				path: isPython,
-			};
-
-			project.runtime = runtime.unwrapOr(undefined);
-
-			return;
-		}
-
+		// Check for Node.js first (package.json takes precedence over Python indicators)
 		const isNode = await checkNodeProject(cwd);
+
+		if (!isNode) {
+			// No Node.js project found, check for Python
+			let isPython: string | null = null;
+			try {
+				isPython = await checkPythonProject(cwd);
+			} catch (error) {
+				// If checkPythonProject throws an error, it means it detected Python but
+				// couldn't determine the entrypoint. We should propagate this error.
+				return err({
+					message: error instanceof Error ? error.message : String(error),
+				});
+			}
+
+			if (isPython) {
+				project.type = ProjectLanguage.Python;
+
+				const runtime = await usePythonRuntime({ cwd });
+
+				project.entrypoint = {
+					path: isPython,
+				};
+
+				project.runtime = runtime.unwrapOr(undefined);
+
+				return;
+			}
+		}
 
 		if (isNode) {
 			project.type = ProjectLanguage.JavaScript;
@@ -369,18 +359,14 @@ async function findPythonEntrypoint(cwd: string): Promise<string> {
 					'  src/\n' +
 					'    my_package/\n' +
 					'      __init__.py\n' +
-					'      main.py\n' +
-					'\n' +
-					'Use --entrypoint flag to specify a custom entry point.',
+					'      main.py',
 			);
 		} else {
 			throw new Error(
 				'No Python package or Python files found in the current directory or src/ subdirectory.\n' +
 					'Expected to find either:\n' +
 					'  - A package directory (with __init__.py)\n' +
-					'  - Python source files (.py)\n' +
-					'\n' +
-					'Use --entrypoint flag to specify a custom entry point.',
+					'  - Python source files (.py)',
 			);
 		}
 	}
@@ -391,10 +377,7 @@ async function findPythonEntrypoint(cwd: string): Promise<string> {
 		throw new Error(
 			`Multiple Python packages found:\n${packageList}\n\n` +
 				'Apify CLI cannot determine which package to run.\n' +
-				'Please specify the package explicitly using: --entrypoint <package_name>\n' +
-				'\n' +
-				'For example:\n' +
-				`  apify run --entrypoint ${discoveredPackages[0]}`,
+				'Please ensure only one top-level package exists in your project.',
 		);
 	}
 
