@@ -61,7 +61,7 @@ jobs:
                     echo 'skipped=false' >> $GITHUB_OUTPUT
                   fi
 
-            - uses: lewagon/wait-on-check-action@v1.4.1
+            - uses: lewagon/wait-on-check-action@v1.5.0
               if: ${{ steps.check_skip.outputs.skipped == 'false' }}
               with:
                   ref: ${{ github.ref }}

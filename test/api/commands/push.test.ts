@@ -362,12 +362,83 @@ describe('[api] apify push', () => {
 			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
 
 			testActor = (await testActorClient.get())!;
-
 			if (testActor) await testActorClient.delete();
 
 			// Title and description should be preserved from the original actor
 			expect(testActor.title).to.be.eql('Original Title');
 			expect(testActor.description).to.be.eql('Original description.');
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should enable standby mode when usesStandbyMode is true in actor.json',
+		async () => {
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			actorJson.name = `${actorJson.name}-standBy-test`;
+			actorJson.usesStandbyMode = true;
+
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true, flags_force: true });
+
+			const userInfo = await getLocalUserInfo();
+			const actorId = `${userInfo.username}/${actorJson.name}`;
+			actorsForCleanup.add(actorId);
+			const createdActorClient = testUserClient.actor(actorId);
+			const createdActor = await createdActorClient.get();
+
+			// Verify all standby options are set to default values
+			expect(createdActor?.actorStandby).to.be.eql({
+				isEnabled: true,
+				disableStandbyFieldsOverride: false,
+				maxRequestsPerActorRun: 4,
+				desiredRequestsPerActorRun: 3,
+				idleTimeoutSecs: 300,
+				build: 'latest',
+				memoryMbytes: 1024,
+				shouldPassActorInput: false,
+			});
+
+			if (createdActor) await createdActorClient.delete();
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should not enable standby mode on existing actor when usesStandbyMode is true in actor.json',
+		async () => {
+			// Create an actor without standby mode first
+			const testActorWithTitleDesc = {
+				...TEST_ACTOR,
+				name: `${TEST_ACTOR.name}-standBy-rewrite-test`,
+			};
+			const testActor = await testUserClient.actors().create(testActorWithTitleDesc);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+
+			// Verify standby is not enabled initially
+			const initialActor = await testActorClient.get();
+			expect(initialActor?.actorStandby?.isEnabled).to.not.be.eql(true);
+
+			// Enable standby
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			actorJson.usesStandbyMode = true;
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+			// Push to existing actor - this should update standby mode
+			await testRunCommand(ActorsPushCommand, {
+				args_actorId: testActor.id,
+				flags_noPrompt: true,
+				flags_force: true,
+			});
+
+			const updatedActor = await testActorClient.get();
+
+			// Verify standby is not enabled after push
+			expect(updatedActor?.actorStandby?.isEnabled).to.not.be.eql(true);
+			if (updatedActor) await testActorClient.delete();
 		},
 		TEST_TIMEOUT,
 	);
