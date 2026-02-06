@@ -248,42 +248,100 @@ function isValidPythonIdentifier(name: string): boolean {
 	return /^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name);
 }
 
-async function hasPythonFiles(dir: string): Promise<boolean> {
+async function hasPythonFilesInDirOrSubdirs(cwd: string): Promise<boolean> {
 	try {
-		const entries = await readdir(dir, { withFileTypes: true });
-		return entries.some((entry) => entry.isFile() && entry.name.endsWith('.py'));
+		const entries = await readdir(cwd, { withFileTypes: true });
+
+		// Check for .py files directly in cwd
+		if (entries.some((entry) => entry.isFile() && entry.name.endsWith('.py'))) {
+			return true;
+		}
+
+		// Check for .py files in immediate subdirectories (e.g. my_package/main.py)
+		for (const entry of entries) {
+			if (!entry.isDirectory()) continue;
+			if (entry.name.startsWith('.') || entry.name.startsWith('_')) continue;
+
+			const subDir = join(cwd, entry.name);
+
+			try {
+				const subEntries = await readdir(subDir, { withFileTypes: true });
+				if (subEntries.some((sub) => sub.isFile() && sub.name.endsWith('.py'))) {
+					return true;
+				}
+
+				// For src/ container, also check one level deeper (e.g. src/my_package/main.py)
+				if (entry.name === 'src') {
+					for (const srcEntry of subEntries) {
+						if (!srcEntry.isDirectory()) continue;
+						if (srcEntry.name.startsWith('.') || srcEntry.name.startsWith('_')) continue;
+
+						try {
+							const srcSubEntries = await readdir(join(subDir, srcEntry.name), { withFileTypes: true });
+							if (srcSubEntries.some((sub) => sub.isFile() && sub.name.endsWith('.py'))) {
+								return true;
+							}
+						} catch {
+							// Ignore unreadable subdirectories
+						}
+					}
+				}
+			} catch {
+				// Ignore unreadable subdirectories
+			}
+		}
+
+		return false;
 	} catch {
 		return false;
 	}
 }
 
-async function isPythonProject(cwd: string): Promise<boolean> {
-	// Check for pyproject.toml
-	if (await fileExists(join(cwd, 'pyproject.toml'))) {
-		return true;
-	}
+interface NearMissPackage {
+	name: string;
+	needsRename: boolean;
+	needsInit: boolean;
+}
 
-	// Check for requirements.txt
-	if (await fileExists(join(cwd, 'requirements.txt'))) {
-		return true;
+async function dirHasPyFiles(dir: string): Promise<boolean> {
+	try {
+		const entries = await readdir(dir, { withFileTypes: true });
+		return entries.some((entry) => entry.isFile() && entry.name.endsWith('.py') && entry.name !== '__init__.py');
+	} catch {
+		return false;
 	}
+}
 
-	// Check for .py files in level 1 (CWD)
-	const level1HasPython = await hasPythonFiles(cwd);
-	if (level1HasPython) {
-		return true;
-	}
+async function findNearMissPackagesInDir(dir: string): Promise<NearMissPackage[]> {
+	try {
+		const entries = await readdir(dir, { withFileTypes: true });
+		const nearMisses: NearMissPackage[] = [];
 
-	// Check for .py files in level 2 (src/)
-	const srcDir = join(cwd, 'src');
-	if (await dirExists(srcDir)) {
-		const level2HasPython = await hasPythonFiles(srcDir);
-		if (level2HasPython) {
-			return true;
+		for (const entry of entries) {
+			if (!entry.isDirectory()) continue;
+			if (entry.name.startsWith('.') || entry.name.startsWith('_')) continue;
+
+			const validName = isValidPythonIdentifier(entry.name);
+			const hasInit = await fileExists(join(dir, entry.name, '__init__.py'));
+			const hasPy = hasInit || (await dirHasPyFiles(join(dir, entry.name)));
+
+			// Skip if already a valid package (valid name + __init__.py) — not a near-miss
+			if (validName && hasInit) continue;
+
+			// Skip if no Python indicators at all — not a near-miss
+			if (!hasPy) continue;
+
+			nearMisses.push({
+				name: entry.name,
+				needsRename: !validName,
+				needsInit: !hasInit,
+			});
 		}
-	}
 
-	return false;
+		return nearMisses;
+	} catch {
+		return [];
+	}
 }
 
 async function findPackagesInDir(dir: string): Promise<{ name: string; path: string }[]> {
@@ -334,45 +392,14 @@ async function discoverPythonPackages(cwd: string): Promise<string[]> {
 	return packages;
 }
 
-async function findPythonEntrypoint(cwd: string): Promise<string> {
-	// Discover all valid Python packages
+async function checkPythonProject(cwd: string): Promise<string | null> {
 	const discoveredPackages = await discoverPythonPackages(cwd);
 
-	if (discoveredPackages.length === 0) {
-		// No packages found - provide helpful error with context
-		const hasPyFiles =
-			(await hasPythonFiles(cwd)) ||
-			((await dirExists(join(cwd, 'src'))) && (await hasPythonFiles(join(cwd, 'src'))));
-
-		if (hasPyFiles) {
-			throw new Error(
-				'No Python package found. Found Python files, but no valid package structure detected.\n' +
-					'A Python package requires:\n' +
-					'  - A directory with a valid Python identifier name (letters, numbers, underscores)\n' +
-					'  - An __init__.py file inside the directory\n' +
-					'\n' +
-					'Common package structures:\n' +
-					'  my_package/\n' +
-					'    __init__.py\n' +
-					'    main.py\n' +
-					'\n' +
-					'  src/\n' +
-					'    my_package/\n' +
-					'      __init__.py\n' +
-					'      main.py',
-			);
-		} else {
-			throw new Error(
-				'No Python package or Python files found in the current directory or src/ subdirectory.\n' +
-					'Expected to find either:\n' +
-					'  - A package directory (with __init__.py)\n' +
-					'  - Python source files (.py)',
-			);
-		}
+	if (discoveredPackages.length === 1) {
+		return discoveredPackages[0];
 	}
 
 	if (discoveredPackages.length > 1) {
-		// Multiple packages found - list them and guide user
 		const packageList = discoveredPackages.map((pkg) => `  - ${pkg}`).join('\n');
 		throw new Error(
 			`Multiple Python packages found:\n${packageList}\n\n` +
@@ -381,24 +408,56 @@ async function findPythonEntrypoint(cwd: string): Promise<string> {
 		);
 	}
 
-	// Exactly one package found - success!
-	return discoveredPackages[0];
-}
+	// No packages found — check for near-miss packages
+	const nearMissAtRoot = await findNearMissPackagesInDir(cwd);
+	const srcDir = join(cwd, 'src');
+	const srcIsPackage = await fileExists(join(srcDir, '__init__.py'));
+	const nearMissInSrc = !srcIsPackage && (await dirExists(srcDir)) ? await findNearMissPackagesInDir(srcDir) : [];
 
-async function checkPythonProject(cwd: string, alreadyDetectedAsPython?: boolean): Promise<string | null> {
-	// Step 1: Check if it's a Python project (skip if already checked)
-	if (alreadyDetectedAsPython === undefined) {
-		const isPython = await isPythonProject(cwd);
-		if (!isPython) {
-			return null;
-		}
-	} else if (!alreadyDetectedAsPython) {
-		return null;
+	const allNearMisses = [
+		...nearMissAtRoot.map((nm) => ({ ...nm, prefix: '' })),
+		...nearMissInSrc.map((nm) => ({ ...nm, prefix: 'src/' })),
+	];
+
+	if (allNearMisses.length > 0) {
+		const suggestions = allNearMisses
+			.map(({ name, prefix, needsRename, needsInit }) => {
+				const fixes: string[] = [];
+				if (needsRename) fixes.push(`rename to "${prefix}${name.replace(/-/g, '_')}/"`);
+				if (needsInit) fixes.push('add __init__.py');
+				return `  - "${prefix}${name}/" → ${fixes.join(' and ')}`;
+			})
+			.join('\n');
+
+		throw new Error(
+			`Found directories that appear to be Python packages but have issues:\n${suggestions}\n\n` +
+				'A valid Python package requires a directory with a valid identifier name ' +
+				'(letters, numbers, underscores) and an __init__.py file.',
+		);
 	}
 
-	// Step 2: Find the entrypoint (this may throw with a helpful error message)
-	const entrypoint = await findPythonEntrypoint(cwd);
-	return entrypoint;
+	// Check if there are loose .py files (broken Python project)
+	const hasPyFiles = await hasPythonFilesInDirOrSubdirs(cwd);
+	if (hasPyFiles) {
+		throw new Error(
+			'No Python package found. Found Python files, but no valid package structure detected.\n' +
+				'A Python package requires:\n' +
+				'  - A directory with a valid Python identifier name (letters, numbers, underscores)\n' +
+				'  - An __init__.py file inside the directory\n' +
+				'\n' +
+				'Common package structures:\n' +
+				'  my_package/\n' +
+				'    __init__.py\n' +
+				'    main.py\n' +
+				'\n' +
+				'  src/\n' +
+				'    my_package/\n' +
+				'      __init__.py\n' +
+				'      main.py',
+		);
+	}
+
+	return null; // Not a Python project
 }
 
 async function checkScrapyProject(cwd: string) {

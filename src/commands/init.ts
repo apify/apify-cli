@@ -12,7 +12,7 @@ import { useYesNoConfirm } from '../lib/hooks/user-confirmations/useYesNoConfirm
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
-import { setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
+import { sanitizeActorName, setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
 
 export class InitCommand extends ApifyCommand<typeof InitCommand> {
 	static override name = 'init' as const;
@@ -57,6 +57,14 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 		const project = projectResult.unwrap();
 
+		let defaultActorName = basename(cwd);
+		if (project.type === ProjectLanguage.Python && project.entrypoint?.path) {
+			const entryPath = project.entrypoint.path;
+			// Extract the actual package name (last segment of dotted path)
+			const packageName = entryPath.includes('.') ? entryPath.split('.').pop()! : entryPath;
+			defaultActorName = sanitizeActorName(packageName);
+		}
+
 		if (project.type === ProjectLanguage.Scrapy) {
 			info({ message: 'The current directory looks like a Scrapy project. Using automatic project wrapping.' });
 			this.telemetryData.actorWrapper = 'scrapy';
@@ -100,7 +108,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 					try {
 						const answer = await useUserInput({
 							message: 'Actor name:',
-							default: basename(cwd),
+							default: defaultActorName,
 						});
 
 						validateActorName(answer);
