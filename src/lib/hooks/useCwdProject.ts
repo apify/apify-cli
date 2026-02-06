@@ -1,4 +1,4 @@
-import { access, readdir, readFile } from 'node:fs/promises';
+import { access, readdir, readFile, stat } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
@@ -38,6 +38,7 @@ export interface CwdProject {
 	type: ProjectLanguage;
 	entrypoint?: Entrypoint;
 	runtime?: Runtime;
+	warnings?: string[];
 }
 
 export interface CwdProjectError {
@@ -98,7 +99,10 @@ export async function useCwdProject({
 			return;
 		}
 
-		// Check for Node.js first (package.json takes precedence over Python indicators)
+		// Check for Node.js first. If a package.json exists (even without a start script),
+		// the project is treated as JavaScript. This is intentional: package.json is a strong
+		// signal of a Node.js project, and Python projects typically don't have one.
+		// If both package.json and a Python package exist, JavaScript wins.
 		const isNode = await checkNodeProject(cwd);
 
 		if (!isNode) {
@@ -124,6 +128,17 @@ export async function useCwdProject({
 				};
 
 				project.runtime = runtime.unwrapOr(undefined);
+
+				// Check if the detected package has __main__.py (required for `python -m <package>`)
+				const packageDir = join(cwd, isPython.replace(/\./g, '/'));
+				const hasMainPy = await fileExists(join(packageDir, '__main__.py'));
+
+				if (!hasMainPy) {
+					project.warnings = [
+						`The detected Python package "${isPython}" is missing __main__.py. ` +
+							'Running with "python -m" will fail without it.',
+					];
+				}
 
 				return;
 			}
@@ -240,7 +255,12 @@ async function fileExists(path: string): Promise<boolean> {
 }
 
 async function dirExists(path: string): Promise<boolean> {
-	return fileExists(path);
+	try {
+		const s = await stat(path);
+		return s.isDirectory();
+	} catch {
+		return false;
+	}
 }
 
 function isValidPythonIdentifier(name: string): boolean {
@@ -423,7 +443,7 @@ async function checkPythonProject(cwd: string): Promise<string | null> {
 		const suggestions = allNearMisses
 			.map(({ name, prefix, needsRename, needsInit }) => {
 				const fixes: string[] = [];
-				if (needsRename) fixes.push(`rename to "${prefix}${name.replace(/-/g, '_')}/"`);
+				if (needsRename) fixes.push(`rename to "${prefix}${name.replace(/[^a-zA-Z0-9_]/g, '_')}/"`);
 				if (needsInit) fixes.push('add __init__.py');
 				return `  - "${prefix}${name}/" → ${fixes.join(' and ')}`;
 			})

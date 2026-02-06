@@ -461,4 +461,61 @@ describe('useCwdProject - Python project detection', () => {
 			expect(result.unwrap().type).toBe(ProjectLanguage.Unknown);
 		});
 	});
+
+	describe('src/ as a package (not a container)', () => {
+		it('should detect src/ itself as a Python package when it has __init__.py', async () => {
+			await createPythonPackageIn(testDir, 'src');
+			await createFileIn(testDir, 'src/__main__.py', 'print("hello")');
+			await createFileIn(testDir, 'src/main.py', 'print("hello")');
+
+			const result = await useCwdProject({ cwd: testDir });
+
+			expect(result.isOk()).toBe(true);
+			const project = result.unwrap();
+			expect(project.type).toBe(ProjectLanguage.Python);
+			expect(project.entrypoint?.path).toBe('src');
+		});
+
+		it('should not search inside src/ for packages when src/ is itself a package', async () => {
+			// src/ is a package, and has a sub-package inside — should still detect src/ as the only package
+			await createPythonPackageIn(testDir, 'src');
+			await createFileIn(testDir, 'src/__main__.py', 'print("hello")');
+			await createPythonPackageIn(testDir, 'src/sub_package');
+
+			const result = await useCwdProject({ cwd: testDir });
+
+			expect(result.isOk()).toBe(true);
+			const project = result.unwrap();
+			expect(project.type).toBe(ProjectLanguage.Python);
+			expect(project.entrypoint?.path).toBe('src');
+		});
+	});
+
+	describe('missing __main__.py warning', () => {
+		it('should warn when detected package has __init__.py but no __main__.py', async () => {
+			await createPythonPackageIn(testDir, 'my_package');
+			await createFileIn(testDir, 'my_package/main.py', 'print("hello")');
+
+			const result = await useCwdProject({ cwd: testDir });
+
+			expect(result.isOk()).toBe(true);
+			const project = result.unwrap();
+			expect(project.type).toBe(ProjectLanguage.Python);
+			expect(project.warnings).toBeDefined();
+			expect(project.warnings!.length).toBeGreaterThan(0);
+			expect(project.warnings![0]).toContain('__main__.py');
+		});
+
+		it('should not warn when package has both __init__.py and __main__.py', async () => {
+			await createPythonPackageIn(testDir, 'my_package');
+			await createFileIn(testDir, 'my_package/__main__.py', 'print("hello")');
+
+			const result = await useCwdProject({ cwd: testDir });
+
+			expect(result.isOk()).toBe(true);
+			const project = result.unwrap();
+			expect(project.type).toBe(ProjectLanguage.Python);
+			expect(project.warnings ?? []).toHaveLength(0);
+		});
+	});
 });

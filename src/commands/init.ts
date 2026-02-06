@@ -57,6 +57,12 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 		const project = projectResult.unwrap();
 
+		if (project.warnings?.length) {
+			for (const w of project.warnings) {
+				warning({ message: w });
+			}
+		}
+
 		let defaultActorName = basename(cwd);
 		if (project.type === ProjectLanguage.Python && project.entrypoint?.path) {
 			const entryPath = project.entrypoint.path;
