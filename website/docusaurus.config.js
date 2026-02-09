@@ -1,3 +1,5 @@
+const { resolve } = require('node:path');
+
 const { config } = require('@apify/docs-theme');
 
 const { externalLinkProcessor } = require('./tools/utils/externalLink');
@@ -97,6 +99,13 @@ module.exports = {
         ],
     ]),
     plugins: [
+        [
+            resolve(__dirname, 'src/plugins/docusaurus-plugin-segment'),
+            {
+                writeKey: process.env.SEGMENT_TOKEN,
+                allowedInDev: false,
+            },
+        ],
 		[
 			'@signalwire/docusaurus-plugin-llms-txt',
 			{
