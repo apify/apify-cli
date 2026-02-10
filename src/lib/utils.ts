@@ -290,40 +290,39 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 };
 
 /**
- * Reads .gitignore from the given directory and returns an ignore filter.
- * Returns undefined if no .gitignore file exists.
- */
-const getGitignoreFilter = (dir: string) => {
-	const gitignorePath = join(dir, '.gitignore');
-
-	if (!existsSync(gitignorePath)) {
-		return undefined;
-	}
-
-	const content = readFileSync(gitignorePath, { encoding: 'utf-8' });
-	return ignore().add(content);
-};
-
-/**
  * Get Actor local files, omit files defined in .gitignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
 export const getActorLocalFilePaths = async (cwd?: string) => {
 	const resolvedCwd = cwd ?? process.cwd();
-	const ig = getGitignoreFilter(resolvedCwd);
 
-	const paths = await glob(['*', '**/**'], {
+	let paths = await glob(['*', '**/**'], {
 		ignore: ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'],
 		dot: true,
 		expandDirectories: false,
 		cwd: resolvedCwd,
 	});
 
-	if (!ig) {
-		return paths;
+	// Collect all .gitignore files and apply each one scoped to its directory
+	const gitignoreFiles = paths.filter((p) => p === '.gitignore' || p.endsWith('/.gitignore'));
+
+	for (const giPath of gitignoreFiles) {
+		const dir = dirname(giPath);
+		const content = readFileSync(join(resolvedCwd, giPath), { encoding: 'utf-8' });
+		const ig = ignore().add(content);
+
+		paths = paths.filter((p) => {
+			// Only apply this .gitignore to paths under its directory
+			if (dir !== '.') {
+				if (!p.startsWith(`${dir}/`)) return true;
+				return !ig.ignores(p.slice(dir.length + 1));
+			}
+
+			return !ig.ignores(p);
+		});
 	}
 
-	return ig.filter(paths);
+	return paths;
 };
 
 /**
