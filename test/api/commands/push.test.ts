@@ -201,6 +201,51 @@ describe('[api] apify push', () => {
 	);
 
 	it(
+		'should not rewrite current Actor envVars when environmentVariables is empty object',
+		async () => {
+			const testActorWithEnvVars = { ...TEST_ACTOR };
+			testActorWithEnvVars.versions = [
+				{
+					versionNumber: '0.0',
+					sourceType: 'SOURCE_FILES' as never,
+					buildTag: 'latest',
+					sourceFiles: [],
+					envVars: [
+						{
+							name: 'MY_TEST',
+							value: 'myValue',
+						},
+					],
+				},
+			];
+			let testActor = await testUserClient.actors().create(testActorWithEnvVars);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+
+			// Set environmentVariables to empty object (the default from EMPTY_LOCAL_CONFIG)
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			actorJson.environmentVariables = {};
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+
+			testActor = (await testActorClient.get())!;
+			const testActorVersion = await testActorClient.version(actorJson.version).get();
+
+			const filePathsToPush = await getActorLocalFilePaths(tmpPath);
+			const sourceFiles = await createSourceFiles(filePathsToPush, tmpPath);
+
+			if (testActor) await testActorClient.delete();
+
+			expect(testActorVersion!.versionNumber).to.be.eql(actorJson.version);
+			expect(testActorVersion!.envVars).to.be.eql(testActorWithEnvVars.versions[0].envVars);
+			expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
 		'should upload zip for source files larger that 3MB',
 		async () => {
 			const testActorWithEnvVars = { ...TEST_ACTOR };

@@ -289,9 +289,11 @@ Skipping push. Use --force to override.`,
 
 		// Update Actor version
 		const actorCurrentVersion = await actorClient.version(version).get();
-		const envVars = actorConfig!.environmentVariables
-			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>)
-			: undefined;
+		const envVars =
+			actorConfig!.environmentVariables &&
+			Object.keys(actorConfig!.environmentVariables as Record<string, string>).length > 0
+				? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>)
+				: undefined;
 
 		if (actorCurrentVersion) {
 			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
