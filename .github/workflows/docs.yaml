@@ -60,6 +60,7 @@ jobs:
                   GIT_USER: "apify-service-account:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
                   GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
                   APIFY_SIGNING_TOKEN: ${{ secrets.APIFY_SIGNING_TOKEN }}
+                  SEGMENT_TOKEN: ${{ secrets.SEGMENT_TOKEN }}
 
             - name: Commit the updated package(-lock).json
               uses: stefanzweifel/git-auto-commit-action@v7
