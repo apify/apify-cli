@@ -40,7 +40,9 @@ describe('Utils', () => {
 			});
 
 			FILES.concat(FILES_TO_IGNORE, FILES_IN_IGNORED_DIR).forEach((file) =>
-				writeFileSync(joinPath(file), Math.random().toString(36).substring(7), { flag: 'w' }),
+				writeFileSync(joinPath(file), Math.random().toString(36).substring(7), {
+					flag: 'w',
+				}),
 			);
 
 			const toIgnore = FOLDERS_TO_IGNORE.concat(FILES_TO_IGNORE).join('\n');
@@ -77,6 +79,118 @@ describe('Utils', () => {
 			FILES_IN_IGNORED_DIR.concat(FILES_TO_IGNORE).forEach((file) =>
 				expect(existsSync(join(tempFolder, file))).toBeFalsy(),
 			);
+		});
+	});
+
+	describe('getActorLocalFilePaths()', () => {
+		describe('without .gitignore', () => {
+			const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('no-gitignore-dir', {
+				create: true,
+				remove: true,
+				cwd: false,
+				cwdParent: false,
+			});
+
+			beforeAll(async () => {
+				await beforeAllCalls();
+
+				ensureFolderExistsSync(tmpPath, 'src');
+				writeFileSync(joinPath('main.js'), 'console.log("hi")', { flag: 'w' });
+				writeFileSync(joinPath('src/index.js'), 'export default {}', {
+					flag: 'w',
+				});
+				writeFileSync(joinPath('.env'), 'SECRET=123', { flag: 'w' });
+			});
+
+			afterAll(async () => {
+				await afterAllCalls();
+			});
+
+			it('should return all files when no .gitignore exists', async () => {
+				const paths = await getActorLocalFilePaths(tmpPath);
+
+				expect(paths).toContain('main.js');
+				expect(paths).toContain('src/index.js');
+				expect(paths).toContain('.env');
+			});
+		});
+
+		describe('with .gitignore patterns', () => {
+			const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('gitignore-patterns-dir', {
+				create: true,
+				remove: true,
+				cwd: false,
+				cwdParent: false,
+			});
+
+			beforeAll(async () => {
+				await beforeAllCalls();
+
+				ensureFolderExistsSync(tmpPath, 'src');
+				ensureFolderExistsSync(tmpPath, 'dist');
+				ensureFolderExistsSync(tmpPath, '.actor');
+				writeFileSync(joinPath('src/index.js'), 'export default {}', {
+					flag: 'w',
+				});
+				writeFileSync(joinPath('dist/bundle.js'), 'compiled', { flag: 'w' });
+				writeFileSync(joinPath('.env'), 'SECRET=123', { flag: 'w' });
+				writeFileSync(joinPath('.actor/actor.json'), '{}', { flag: 'w' });
+				writeFileSync(joinPath('package.json'), '{}', { flag: 'w' });
+			});
+
+			afterAll(async () => {
+				await afterAllCalls();
+			});
+
+			it('should exclude files matching .gitignore wildcard patterns', async () => {
+				writeFileSync(joinPath('.gitignore'), 'dist\n*.env\n', { flag: 'w' });
+				const paths = await getActorLocalFilePaths(tmpPath);
+
+				expect(paths).not.toContain('dist/bundle.js');
+				expect(paths).not.toContain('.env');
+				expect(paths).toContain('src/index.js');
+				expect(paths).toContain('package.json');
+			});
+
+			it('should include dot folders not in .gitignore', async () => {
+				writeFileSync(joinPath('.gitignore'), 'dist\n', { flag: 'w' });
+				const paths = await getActorLocalFilePaths(tmpPath);
+
+				expect(paths).toContain('.actor/actor.json');
+				expect(paths).toContain('.env');
+			});
+
+			it('should handle negation patterns in .gitignore', async () => {
+				writeFileSync(joinPath('.gitignore'), '*.env\n!.env\n', {
+					flag: 'w',
+				});
+				const paths = await getActorLocalFilePaths(tmpPath);
+
+				expect(paths).toContain('.env');
+				expect(paths).toContain('src/index.js');
+				expect(paths).toContain('dist/bundle.js');
+			});
+
+			it('should handle comments and empty lines in .gitignore', async () => {
+				writeFileSync(joinPath('.gitignore'), '# This is a comment\n\ndist\n\n# Another comment\n', {
+					flag: 'w',
+				});
+				const paths = await getActorLocalFilePaths(tmpPath);
+
+				expect(paths).not.toContain('dist/bundle.js');
+				expect(paths).toContain('src/index.js');
+				expect(paths).toContain('.env');
+			});
+
+			it('should handle empty .gitignore', async () => {
+				writeFileSync(joinPath('.gitignore'), '', { flag: 'w' });
+				const paths = await getActorLocalFilePaths(tmpPath);
+
+				expect(paths).toContain('src/index.js');
+				expect(paths).toContain('dist/bundle.js');
+				expect(paths).toContain('.env');
+				expect(paths).toContain('.actor/actor.json');
+			});
 		});
 	});
 

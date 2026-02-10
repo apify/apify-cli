@@ -15,12 +15,13 @@ import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 
 import archiver from 'archiver';
 import { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
-import { globby } from 'globby';
+import ignore from 'ignore';
 import { getEncoding } from 'istextorbinary';
 import { Mime } from 'mime';
 import otherMimes from 'mime/types/other.js';
 import standardMimes from 'mime/types/standard.js';
 import { gte, minVersion, satisfies } from 'semver';
+import { glob } from 'tinyglobby';
 
 import {
 	ACTOR_ENV_VARS,
@@ -134,8 +135,7 @@ const getTokenWithAuthFileFallback = (existingToken?: string) => {
 	return existingToken;
 };
 
-// biome-ignore format: off
-type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
+type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' }}).AxiosRequestConfig['headers'];
 
 /**
  * Returns options for ApifyClient
@@ -231,9 +231,13 @@ export const setLocalEnv = async (actDir: string) => {
 	if (gitignoreAdditions.length > 0) {
 		if (gitignoreContents.length > 0) {
 			gitignoreAdditions.unshift('# Added by Apify CLI');
-			writeFileSync(gitignorePath, `\n${gitignoreAdditions.join('\n')}\n`, { flag: 'a' });
+			writeFileSync(gitignorePath, `\n${gitignoreAdditions.join('\n')}\n`, {
+				flag: 'a',
+			});
 		} else {
-			writeFileSync(gitignorePath, `${gitignoreAdditions.join('\n')}\n`, { flag: 'w' });
+			writeFileSync(gitignorePath, `${gitignoreAdditions.join('\n')}\n`, {
+				flag: 'w',
+			});
 		}
 	}
 };
@@ -286,16 +290,41 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 };
 
 /**
+ * Reads .gitignore from the given directory and returns an ignore filter.
+ * Returns undefined if no .gitignore file exists.
+ */
+const getGitignoreFilter = (dir: string) => {
+	const gitignorePath = join(dir, '.gitignore');
+
+	if (!existsSync(gitignorePath)) {
+		return undefined;
+	}
+
+	const content = readFileSync(gitignorePath, { encoding: 'utf-8' });
+	return ignore().add(content);
+};
+
+/**
  * Get Actor local files, omit files defined in .gitignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
-export const getActorLocalFilePaths = async (cwd?: string) =>
-	globby(['*', '**/**'], {
+export const getActorLocalFilePaths = async (cwd?: string) => {
+	const resolvedCwd = cwd ?? process.cwd();
+	const ig = getGitignoreFilter(resolvedCwd);
+
+	const paths = await glob(['*', '**/**'], {
 		ignore: ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'],
-		gitignore: true,
 		dot: true,
-		cwd,
+		expandDirectories: false,
+		cwd: resolvedCwd,
 	});
+
+	if (!ig) {
+		return paths;
+	}
+
+	return ig.filter(paths);
+};
 
 /**
  * Create zip file with all Actor files specified with pathsToZip
@@ -441,7 +470,7 @@ export const getNpmCmd = (): string => {
  * Returns true if apify storage is empty (expect INPUT.*)
  */
 export const checkIfStorageIsEmpty = async () => {
-	const filesWithoutInput = await globby([
+	const filesWithoutInput = await glob([
 		`${getLocalStorageDir()}/**`,
 		// Omit INPUT.* file
 		`!${getLocalKeyValueStorePath()}/${KEY_VALUE_STORE_KEYS.INPUT}.*`,
