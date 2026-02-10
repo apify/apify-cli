@@ -422,7 +422,7 @@ describe('useCwdProject - Python project detection', () => {
 			expect(error.message).toContain('Multiple Python packages found');
 			expect(error.message).toContain('package_a');
 			expect(error.message).toContain('package_b');
-			expect(error.message).toContain('only one top-level package');
+			expect(error.message).toContain('--entrypoint');
 		});
 
 		it('should error when multiple packages exist in src/ container', async () => {
@@ -434,7 +434,7 @@ describe('useCwdProject - Python project detection', () => {
 			expect(result.isErr()).toBe(true);
 			const error = result.unwrapErr();
 			expect(error.message).toContain('Multiple Python packages found');
-			expect(error.message).toContain('only one top-level package');
+			expect(error.message).toContain('--entrypoint');
 		});
 	});
 

@@ -424,7 +424,8 @@ async function checkPythonProject(cwd: string): Promise<string | null> {
 		throw new Error(
 			`Multiple Python packages found:\n${packageList}\n\n` +
 				'Apify CLI cannot determine which package to run.\n' +
-				'Please ensure only one top-level package exists in your project.',
+				'Please specify the package using the --entrypoint flag, e.g.:\n' +
+				'  apify run --entrypoint <package_name>',
 		);
 	}
 
