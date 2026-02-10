@@ -337,10 +337,13 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 	}
 
 	const writeStream = createWriteStream(zipName);
-	const archive = archiver('zip');
+	// Use compression level 6 for better balance between speed and compression ratio (default is 9)
+	const archive = archiver('zip', {
+		zlib: { level: 6 },
+	});
 	archive.pipe(writeStream);
 
-	pathsToZip.forEach((globPath) => archive.glob(globPath, { cwd }));
+	pathsToZip.forEach((filePath) => archive.file(join(cwd, filePath), { name: filePath }));
 
 	await archive.finalize();
 };
