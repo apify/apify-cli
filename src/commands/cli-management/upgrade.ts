@@ -287,7 +287,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			const cliName = asset.name.split('-')[0];
 			const filePath = join(bundleDirectory, cliName);
 
-			info({ message: `Downloading ${cliName}...` });
+			info({ message: `Downloading \`${cliName}\` binary of the Apify CLI...` });
 
 			const res = await fetch(asset.browser_download_url, { headers: { 'User-Agent': USER_AGENT } });
 

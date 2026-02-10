@@ -25,7 +25,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v6
@@ -60,7 +60,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v6
@@ -107,7 +107,7 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - name: Use Node.js ${{ matrix.node-version }}
               uses: actions/setup-node@v6
@@ -156,7 +156,7 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v6
@@ -207,7 +207,7 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v6
@@ -251,7 +251,7 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v6
@@ -299,7 +299,7 @@ jobs:
         runs-on: ${{ matrix.os }}
 
         steps:
-            - uses: actions/checkout@v5
+            - uses: actions/checkout@v6
 
             - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
               uses: actions/setup-node@v6
@@ -354,7 +354,7 @@ jobs:
               run: yarn insert-cli-metadata && yarn build-bundles
 
             - name: Upload Bundles
-              uses: actions/upload-artifact@v5
+              uses: actions/upload-artifact@v6
               with:
                   name: apify-cli-bundles-${{ matrix.label }}
                   path: bundles/**

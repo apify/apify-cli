@@ -10,6 +10,7 @@ my-python-*
 pull-test-*
 _mytests
 .idea
+.zed
 docs/changelog.md
 
 # Yarn files

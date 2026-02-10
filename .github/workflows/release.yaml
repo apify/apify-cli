@@ -51,7 +51,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v5
+              uses: actions/checkout@v6
             - name: Check if the head commit contains [skip ci]
               id: check_skip
               run: |
@@ -61,7 +61,7 @@ jobs:
                     echo 'skipped=false' >> $GITHUB_OUTPUT
                   fi
 
-            - uses: lewagon/wait-on-check-action@v1.4.1
+            - uses: lewagon/wait-on-check-action@v1.5.0
               if: ${{ steps.check_skip.outputs.skipped == 'false' }}
               with:
                   ref: ${{ github.ref }}
@@ -78,7 +78,7 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v5
+              uses: actions/checkout@v6
               with:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
@@ -145,7 +145,7 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v5
+              uses: actions/checkout@v6
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
                   fetch-depth: 0
@@ -206,7 +206,7 @@ jobs:
               run: yarn insert-cli-metadata && yarn build-bundles
 
             - name: Upload bundles
-              uses: actions/upload-artifact@v5
+              uses: actions/upload-artifact@v6
               with:
                   name: apify-cli-bundles-${{ matrix.label }}
                   path: bundles/**
@@ -222,7 +222,7 @@ jobs:
         steps:
             # This step also deals with unzipping the archive from GitHub, so we get a big folder with all the bundles!
             - name: Download bundles
-              uses: actions/download-artifact@v6
+              uses: actions/download-artifact@v7
               with:
                   pattern: apify-cli-bundles-*
                   merge-multiple: true
@@ -246,45 +246,16 @@ jobs:
         name: Publish to NPM
         needs: [update_changelog, create_github_release]
         runs-on: ubuntu-latest
-        permissions:
-            contents: write
-            id-token: write
         steps:
-            - uses: actions/checkout@v5
+            - name: Execute publish workflow
+              uses: apify/workflows/execute-workflow@main
               with:
-                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
-
-            - name: Use Node.js
-              uses: actions/setup-node@v6
-              with:
-                  node-version: 24
-                  registry-url: https://registry.npmjs.org
-                  package-manager-cache: false
-
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install dependencies
-              run: yarn
-
-            - name: Build module
-              run: yarn build
-
-            - name: Pack with yarn
-              run: yarn pack
-
-            - name: Publish to NPM
-              run: |
-                  yarn npm publish --provenance --access public
-              env:
-                  YARN_NPM_AUTH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_NPM_TOKEN }}
+                  workflow: publish_to_npm.yaml
+                  inputs: >
+                      {
+                          "ref": "${{ needs.update_changelog.outputs.changelog_commitish }}",
+                          "tag": "latest"
+                      }
 
     update_homebrew_formula:
         name: Update Homebrew Formula
@@ -292,7 +263,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v5
+              uses: actions/checkout@v6
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
 

@@ -8,11 +8,14 @@ process.env.APIFY_CLI_MAX_LINE_WIDTH = '80';
 const categories: Record<string, CommandsInCategory[]> = {
 	'auth': [
 		//
-		{ command: Commands.login },
-		{ command: Commands.logout },
+		{ command: Commands.auth },
+		{ command: Commands.authLogin, aliases: [Commands.login] },
+		{ command: Commands.authLogout, aliases: [Commands.logout] },
+		{ command: Commands.authToken },
 		{ command: Commands.info },
 		{ command: Commands.secrets },
 		{ command: Commands.secretsAdd },
+		{ command: Commands.secretsLs },
 		{ command: Commands.secretsRm },
 	],
 	'actor-dev': [
@@ -29,6 +32,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.actorsRm },
 
 		{ command: Commands.actor },
+		{ command: Commands.actorCalculateMemory },
 		{ command: Commands.actorCharge },
 		{ command: Commands.actorGetInput },
 		{ command: Commands.actorGetPublicUrl },
@@ -47,10 +51,12 @@ const categories: Record<string, CommandsInCategory[]> = {
 	'actor-build': [
 		//
 		{ command: Commands.builds },
+		{ command: Commands.buildsAddTag },
 		{ command: Commands.buildsCreate, aliases: [Commands.actorsBuild] },
 		{ command: Commands.buildsInfo },
 		{ command: Commands.buildsLog },
 		{ command: Commands.buildsLs },
+		{ command: Commands.buildsRemoveTag },
 		{ command: Commands.buildsRm },
 	],
 	'actor-run': [

@@ -4,11 +4,27 @@ All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-start -->
 
-## 1.1.2 - **not yet released**
+## 1.2.2 - **not yet released**
+
+### 🚀 Features
+
+- Add `--dockerfile` flag to `apify init` ([#989](https://github.com/apify/apify-cli/pull/989)) ([3f2104e](https://github.com/apify/apify-cli/commit/3f2104ef3321728cca07c53b853f668e31c66648)) by [@janbuchar](https://github.com/janbuchar), closes [#76](https://github.com/apify/apify-cli/issues/76)
+- Add secrets:ls command to list all secrets ([#990](https://github.com/apify/apify-cli/pull/990)) ([8256cf5](https://github.com/apify/apify-cli/commit/8256cf55995060c8ff845dede46fb1943c9ec179)) by [@janbuchar](https://github.com/janbuchar), closes [#80](https://github.com/apify/apify-cli/issues/80)
+- **actors:** Propagates title&#x2F;description ([#992](https://github.com/apify/apify-cli/pull/992)) ([7285aec](https://github.com/apify/apify-cli/commit/7285aec39a1ecdcf6e21999ddf2195c427335da9)) by [@l2ysho](https://github.com/l2ysho), closes [#723](https://github.com/apify/apify-cli/issues/723)
+- **auth:** Introduces auth commands ([#1002](https://github.com/apify/apify-cli/pull/1002)) ([f3e1460](https://github.com/apify/apify-cli/commit/f3e146065f489d0b0c85ff5356a9f070c1a279ab)) by [@l2ysho](https://github.com/l2ysho), closes [#898](https://github.com/apify/apify-cli/issues/898)
+- **builds:** Adds build tag commands ([#1004](https://github.com/apify/apify-cli/pull/1004)) ([082f981](https://github.com/apify/apify-cli/commit/082f981a9161c745bbcfa5c89303ba381bff226c)) by [@l2ysho](https://github.com/l2ysho), closes [#997](https://github.com/apify/apify-cli/issues/997)
+- **actors:** Enables standby mode via actor.json ([#991](https://github.com/apify/apify-cli/pull/991)) ([519aa43](https://github.com/apify/apify-cli/commit/519aa4327d92117d398fa47b819653012526ebdf)) by [@l2ysho](https://github.com/l2ysho), closes [#913](https://github.com/apify/apify-cli/issues/913)
+
+<!-- git-cliff-unreleased-end -->
+
+## [1.2.1](https://github.com/apify/apify-cli/releases/tag/v1.2.1) (2026-01-06)
+
+## [1.2.0](https://github.com/apify/apify-cli/releases/tag/v1.2.0) (2026-01-06)
 
 ### 🚀 Features
 
 - Add automatic git repository initialization to `apify create` command ([#919](https://github.com/apify/apify-cli/pull/919)) ([bd1f0a1](https://github.com/apify/apify-cli/commit/bd1f0a1f7be15d807fab1e74951641059783f117)) by [@Copilot](https://github.com/Copilot), closes [#918](https://github.com/apify/apify-cli/issues/918)
+- Add calculate-memory command to actor ([#980](https://github.com/apify/apify-cli/pull/980)) ([78eeee7](https://github.com/apify/apify-cli/commit/78eeee79e61b7c300ef669c7c310925539683e90)) by [@danpoletaev](https://github.com/danpoletaev)
 
 ### 🐛 Bug Fixes
 
@@ -16,8 +32,7 @@ All notable changes to this project will be documented in this file.
 - Handle unknown flags with random characters in name correctly ([#920](https://github.com/apify/apify-cli/pull/920)) ([958a3f2](https://github.com/apify/apify-cli/commit/958a3f22a8f714f651a39361c28d83f0fc2bba85)) by [@vladfrangu](https://github.com/vladfrangu)
 - Alias `-f` for `--force` in `apify push` ([#940](https://github.com/apify/apify-cli/pull/940)) ([fea16ec](https://github.com/apify/apify-cli/commit/fea16ec6cf706a894d4e3e15165c8770911c1b16)) by [@vladfrangu](https://github.com/vladfrangu)
 - **run:** Only match correct INPUT files, not any possible metadatas ([#951](https://github.com/apify/apify-cli/pull/951)) ([a07d513](https://github.com/apify/apify-cli/commit/a07d5130f6212f33f09e6c353875997fa15a8110)) by [@vladfrangu](https://github.com/vladfrangu), closes [#933](https://github.com/apify/apify-cli/issues/933)
-
-<!-- git-cliff-unreleased-end -->
+- Calculate run memory min&#x2F;max memory clamping ([#986](https://github.com/apify/apify-cli/pull/986)) ([0101cb1](https://github.com/apify/apify-cli/commit/0101cb18742d3e349d782710ed9fcbaa709f4bc7)) by [@danpoletaev](https://github.com/danpoletaev)
 
 ## [1.1.1](https://github.com/apify/apify-cli/releases/tag/v1.1.1) (2025-08-18)
 

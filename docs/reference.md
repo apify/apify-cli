@@ -85,7 +85,21 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 <!-- prettier-ignore-start -->
 <!-- auth-commands-start -->
-##### `apify login`
+##### `apify auth`
+
+```sh
+DESCRIPTION
+  Manages authentication for Apify CLI.
+
+SUBCOMMANDS
+  auth login   Authenticates your Apify account and saves credentials
+               to '~/.apify/auth.json'.
+  auth logout  Removes authentication by deleting your API token and
+               account information from '~/.apify/auth.json'.
+  auth token   Prints the current API token for the Apify CLI.
+```
+
+##### `apify auth login` / `apify login`
 
 ```sh
 DESCRIPTION
@@ -96,7 +110,7 @@ DESCRIPTION
   Run 'apify logout' to remove authentication.
 
 USAGE
-  $ apify login [-m console|manual] [-t <value>]
+  $ apify auth login [-m console|manual] [-t <value>]
 
 FLAGS
   -m, --method=<option>  Method of logging in to Apify
@@ -104,7 +118,7 @@ FLAGS
   -t, --token=<value>    Apify API token
 ```
 
-##### `apify logout`
+##### `apify auth logout` / `apify logout`
 
 ```sh
 DESCRIPTION
@@ -113,7 +127,17 @@ DESCRIPTION
   Run 'apify login' to authenticate again.
 
 USAGE
-  $ apify logout
+  $ apify auth logout
+```
+
+##### `apify auth token`
+
+```sh
+DESCRIPTION
+  Prints the current API token for the Apify CLI.
+
+USAGE
+  $ apify auth token
 ```
 
 ##### `apify info`
@@ -151,6 +175,8 @@ DESCRIPTION
 SUBCOMMANDS
   secrets add  Adds a new secret to '~/.apify' for use in Actor
                environment variables.
+  secrets ls   Lists all secret keys stored in your local
+               configuration.
   secrets rm   Permanently deletes a secret from your stored
                credentials.
 ```
@@ -167,6 +193,19 @@ USAGE
 ARGUMENTS
   name   Name of the secret
   value  Value of the secret
+```
+
+##### `apify secrets ls`
+
+```sh
+DESCRIPTION
+  Lists all secret keys stored in your local configuration.
+
+USAGE
+  $ apify secrets ls [--json]
+
+FLAGS
+      --json  Format the command output as JSON
 ```
 
 ##### `apify secrets rm`
@@ -194,11 +233,13 @@ These commands help you develop Actors locally. Use them to create new Actor pro
 
 ```sh
 DESCRIPTION
-  Creates an Actor project from a template in a new directory.
+  Creates an Actor project from a template in a new directory. The command 
+  automatically initializes a git repository in the newly created Actor 
+  directory.
 
 USAGE
   $ apify create [actorName] [--omit-optional-deps]
-                 [--skip-dependency-install] [-t <value>]
+                 [--skip-dependency-install] [--skip-git-init] [-t <value>]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory
@@ -208,6 +249,8 @@ FLAGS
                                  dependencies.
       --skip-dependency-install  Skip installing Actor
                                  dependencies.
+      --skip-git-init            Skip initializing a git
+                                 repository in the Actor directory.
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
                                  it. Visit
@@ -230,16 +273,19 @@ DESCRIPTION
   WARNING: Overwrites existing 'storage' directory.
 
 USAGE
-  $ apify init [actorName] [-y]
+  $ apify init [actorName] [--dockerfile <value>] [-y]
 
 ARGUMENTS
   actorName  Name of the Actor. If not provided, you will be prompted
              for it.
 
 FLAGS
-  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
-             prompts. Note that in some cases, the command may still ask for
-             confirmation.
+      --dockerfile=<value>  Path to a Dockerfile to use for
+                            the Actor (e.g., "./Dockerfile" or
+                            "./docker/Dockerfile").
+  -y, --yes                 Automatic yes to prompts;
+                            assume "yes" as answer to all prompts. Note that in some
+                            cases, the command may still ask for confirmation.
 ```
 
 ##### `apify run`
@@ -373,18 +419,54 @@ DESCRIPTION
   Manages runtime data operations inside of a running Actor.
 
 SUBCOMMANDS
-  actor set-value       Sets or removes record into the
-                        default key-value store associated with the Actor run.
-  actor push-data       Saves data to Actor's run default
-                        dataset.
-  actor get-value       Gets a value from the default
-                        key-value store associated with the Actor run.
-  actor get-public-url  Get an HTTP URL that allows public
-                        access to a key-value store item.
-  actor get-input       Gets the Actor input value from the
-                        default key-value store associated with the Actor run.
-  actor charge          Charge for a specific event in the
-                        pay-per-event Actor run.
+  actor set-value         Sets or removes record into the
+                          default key-value store associated with the Actor run.
+  actor push-data         Saves data to Actor's run
+                          default dataset.
+  actor get-value         Gets a value from the default
+                          key-value store associated with the Actor run.
+  actor get-public-url    Get an HTTP URL that allows
+                          public access to a key-value store item.
+  actor get-input         Gets the Actor input value from
+                          the default key-value store associated with the Actor
+                          run.
+  actor charge            Charge for a specific event in
+                          the pay-per-event Actor run.
+  actor calculate-memory  Calculates the Actor’s dynamic
+                          memory usage based on a memory expression from
+                          actor.json, input data, and run options.
+```
+
+##### `apify actor calculate-memory`
+
+```sh
+DESCRIPTION
+  Calculates the Actor’s dynamic memory usage based on a memory expression from 
+  actor.json, input data, and run options.
+
+USAGE
+  $ apify actor calculate-memory [--build <value>]
+                                 [--default-memory-mbytes <value>]
+                                 [--input <value>] [--max-items <value>]
+                                 [--max-total-charge-usd <value>]
+                                 [--timeout-secs <value>]
+
+FLAGS
+      --build=<value>                  Actor build
+                                       version or build tag to evaluate the
+                                       expression with.
+      --default-memory-mbytes=<value>
+                                       Memory-calculation expression (in MB). If
+                                       omitted, the value is loaded from the
+                                       actor.json file.
+      --input=<value>                  Path to the
+                                       input JSON file used for the calculation.
+      --max-items=<value>              Maximum
+                                       number of items Actor can output.
+      --max-total-charge-usd=<value>   Maximum
+                                       total charge in USD.
+      --timeout-secs=<value>           Maximum run
+                                       timeout, in seconds.
 ```
 
 ##### `apify actor charge`
@@ -517,7 +599,7 @@ DESCRIPTION
 
 USAGE
   $ apify actors push [actorId] [-b <value>] [--dir <value>]
-                      [--force] [--open] [-v <value>] [-w <value>]
+                      [-f] [--open] [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -530,9 +612,9 @@ FLAGS
                                  it is taken from the '.actor/actor.json' file
       --dir=<value>              Directory where the
                                  Actor is located
-      --force                    Push an Actor even when
-                                 the local files are older than the Actor on the
-                                 platform.
+  -f, --force                    Push an Actor even
+                                 when the local files are older than the Actor on
+                                 the platform.
       --open                     Whether to open the
                                  browser automatically to the Actor details page.
   -v, --version=<value>          Actor version number
@@ -671,12 +753,28 @@ DESCRIPTION
   Manages Actor build processes and versioning.
 
 SUBCOMMANDS
-  builds rm      Permanently removes an Actor build from the Apify
-                 platform.
-  builds ls      Lists all builds of the Actor.
-  builds log     Prints the log of a specific build.
-  builds info    Prints information about a specific build.
-  builds create  Creates a new build of the Actor.
+  builds add-tag     Adds a tag to a specific Actor build.
+  builds remove-tag  Removes a tag from a specific Actor build.
+  builds rm          Permanently removes an Actor build from
+                     the Apify platform.
+  builds ls          Lists all builds of the Actor.
+  builds log         Prints the log of a specific build.
+  builds info        Prints information about a specific build.
+  builds create      Creates a new build of the Actor.
+```
+
+##### `apify builds add-tag`
+
+```sh
+DESCRIPTION
+  Adds a tag to a specific Actor build.
+
+USAGE
+  $ apify builds add-tag -b <value> -t <value>
+
+FLAGS
+  -b, --build=<value>  The build ID to tag.
+  -t, --tag=<value>    The tag to add to the build.
 ```
 
 ##### `apify builds create` / `apify actors build`
@@ -753,6 +851,22 @@ FLAGS
       --json            Format the command output as JSON
       --limit=<value>   Number of builds that will be listed.
       --offset=<value>  Number of builds that will be skipped.
+```
+
+##### `apify builds remove-tag`
+
+```sh
+DESCRIPTION
+  Removes a tag from a specific Actor build.
+
+USAGE
+  $ apify builds remove-tag -b <value> -t <value> [-y]
+
+FLAGS
+  -b, --build=<value>  The build ID to remove the tag from.
+  -t, --tag=<value>    The tag to remove from the build.
+  -y, --yes            Automatic yes to prompts; assume "yes"
+                       as answer to all prompts.
 ```
 
 ##### `apify builds rm`

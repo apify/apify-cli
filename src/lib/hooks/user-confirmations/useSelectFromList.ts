@@ -10,22 +10,11 @@ interface UseSelectFromListInput<T> {
 	pageSize?: number;
 	loop?: boolean;
 	default?: unknown;
-	instructions?: {
-		navigation: string;
-		pager: string;
-	};
 }
 
 export const useSelectFromList = stdinCheckWrapper(
-	async ({
-		message,
-		choices,
-		pageSize,
-		loop,
-		default: defaultValue,
-		instructions,
-	}: UseSelectFromListInput<unknown>) => {
-		const result = await select({ message, choices, pageSize, loop, default: defaultValue, instructions });
+	async ({ message, choices, pageSize, loop, default: defaultValue }: UseSelectFromListInput<unknown>) => {
+		const result = await select({ message, choices, pageSize, loop, default: defaultValue });
 
 		return result;
 	},

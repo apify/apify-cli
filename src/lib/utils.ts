@@ -36,6 +36,7 @@ import {
 import {
 	APIFY_CLIENT_DEFAULT_HEADERS,
 	AUTH_FILE_PATH,
+	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
 	GLOBAL_CONFIGS_FOLDER,
 	INPUT_FILE_REG_EXP,
@@ -118,9 +119,9 @@ export async function getLoggedClientOrThrow() {
 	const loggedClient = await getLoggedClient();
 
 	if (!loggedClient) {
+		process.exitCode = CommandExitCodes.MissingAuth;
 		throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
 	}
-
 	return loggedClient;
 }
 
@@ -306,10 +307,13 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 	}
 
 	const writeStream = createWriteStream(zipName);
-	const archive = archiver('zip');
+	// Use compression level 6 for better balance between speed and compression ratio (default is 9)
+	const archive = archiver('zip', {
+		zlib: { level: 6 },
+	});
 	archive.pipe(writeStream);
 
-	pathsToZip.forEach((globPath) => archive.glob(globPath, { cwd }));
+	pathsToZip.forEach((filePath) => archive.file(join(cwd, filePath), { name: filePath }));
 
 	await archive.finalize();
 };

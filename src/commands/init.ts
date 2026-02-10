@@ -12,7 +12,7 @@ import { useYesNoConfirm } from '../lib/hooks/user-confirmations/useYesNoConfirm
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
-import { setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
+import { sanitizeActorName, setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
 
 export class InitCommand extends ApifyCommand<typeof InitCommand> {
 	static override name = 'init' as const;
@@ -37,6 +37,10 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 				'Automatic yes to prompts; assume "yes" as answer to all prompts. Note that in some cases, the command may still ask for confirmation.',
 			required: false,
 		}),
+		dockerfile: Flags.string({
+			description: 'Path to a Dockerfile to use for the Actor (e.g., "./Dockerfile" or "./docker/Dockerfile").',
+			required: false,
+		}),
 	};
 
 	async run() {
@@ -52,6 +56,20 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 		}
 
 		const project = projectResult.unwrap();
+
+		if (project.warnings?.length) {
+			for (const w of project.warnings) {
+				warning({ message: w });
+			}
+		}
+
+		let defaultActorName = basename(cwd);
+		if (project.type === ProjectLanguage.Python && project.entrypoint?.path) {
+			const entryPath = project.entrypoint.path;
+			// Extract the actual package name (last segment of dotted path)
+			const packageName = entryPath.includes('.') ? entryPath.split('.').pop()! : entryPath;
+			defaultActorName = sanitizeActorName(packageName);
+		}
 
 		if (project.type === ProjectLanguage.Scrapy) {
 			info({ message: 'The current directory looks like a Scrapy project. Using automatic project wrapping.' });
@@ -96,7 +114,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 					try {
 						const answer = await useUserInput({
 							message: 'Actor name:',
-							default: basename(cwd),
+							default: defaultActorName,
 						});
 
 						validateActorName(answer);
@@ -111,8 +129,21 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 			}
 
 			// Migrate apify.json to .actor/actor.json
-			const localConfig = { ...EMPTY_LOCAL_CONFIG, ...actorConfig.unwrap().config };
-			await setLocalConfig(Object.assign(localConfig, { name: actorName }), cwd);
+			const localConfig = {
+				...EMPTY_LOCAL_CONFIG,
+				...actorConfig.unwrap().config,
+			};
+			const configToWrite: Record<string, unknown> = {
+				...localConfig,
+				name: actorName,
+			};
+
+			// Add dockerfile field if provided
+			if (this.flags.dockerfile) {
+				configToWrite.dockerfile = this.flags.dockerfile;
+			}
+
+			await setLocalConfig(configToWrite, cwd);
 		}
 
 		await setLocalEnv(cwd);

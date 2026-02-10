@@ -28,7 +28,10 @@ describe('apify init', () => {
 	});
 
 	it('correctly creates basic structure with empty INPUT.json', async () => {
-		await testRunCommand(InitCommand, { args_actorName: actName, flags_yes: true });
+		await testRunCommand(InitCommand, {
+			args_actorName: actName,
+			flags_yes: true,
+		});
 
 		// Check that it won't create deprecated config
 		// TODO: We can remove this later
@@ -62,11 +65,17 @@ describe('apify init', () => {
 			required: ['url'],
 		};
 
-		const defaultActorJson = Object.assign(EMPTY_LOCAL_CONFIG, { name: actName, input });
+		const defaultActorJson = Object.assign(EMPTY_LOCAL_CONFIG, {
+			name: actName,
+			input,
+		});
 
 		await mkdir(joinPath('.actor'), { recursive: true });
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(defaultActorJson, null, '\t'), { flag: 'w' });
-		await testRunCommand(InitCommand, { args_actorName: actName, flags_yes: true });
+		await testRunCommand(InitCommand, {
+			args_actorName: actName,
+			flags_yes: true,
+		});
 
 		// Check that it won't create deprecated config
 		// TODO: We can remove this later
@@ -78,5 +87,32 @@ describe('apify init', () => {
 				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
 			),
 		).toStrictEqual({ url: 'https://www.apify.com/' });
+	});
+
+	it('correctly creates config with dockerfile when provided', async () => {
+		const dockerfilePath = './Dockerfile';
+		await testRunCommand(InitCommand, {
+			args_actorName: actName,
+			flags_yes: true,
+			flags_dockerfile: dockerfilePath,
+		});
+
+		const config = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+		expect(config).toMatchObject({
+			...EMPTY_LOCAL_CONFIG,
+			name: actName,
+			dockerfile: dockerfilePath,
+		});
+	});
+
+	it('correctly creates config without dockerfile when not provided', async () => {
+		await testRunCommand(InitCommand, {
+			args_actorName: actName,
+			flags_yes: true,
+		});
+
+		const config = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+		expect(config).toStrictEqual(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
+		expect(config.dockerfile).toBeUndefined();
 	});
 });

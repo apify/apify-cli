@@ -35,12 +35,10 @@ interface FlagTagToTSType {
 	integer: number;
 }
 
-type InferArgTypeFromArg<Builder extends TaggedArgBuilder<ArgTag, unknown>> = Builder extends TaggedArgBuilder<
-	infer ReturnedType,
-	infer Required
->
-	? If<Required, ArgTagToTSType[ReturnedType], ArgTagToTSType[ReturnedType] | undefined>
-	: unknown;
+type InferArgTypeFromArg<Builder extends TaggedArgBuilder<ArgTag, unknown>> =
+	Builder extends TaggedArgBuilder<infer ReturnedType, infer Required>
+		? If<Required, ArgTagToTSType[ReturnedType], ArgTagToTSType[ReturnedType] | undefined>
+		: unknown;
 
 type If<T, Y, N> = T extends true ? Y : N;
 type IfNotUnknown<T, Y, N> = T extends unknown ? Y : N;

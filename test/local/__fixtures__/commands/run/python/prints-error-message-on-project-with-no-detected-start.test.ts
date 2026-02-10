@@ -1,4 +1,4 @@
-import { rename } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 
 import { testRunCommand } from '../../../../../../src/lib/command-framework/apify-command.js';
 import { useTempPath } from '../../../../../__setup__/hooks/useTempPath.js';
@@ -23,8 +23,12 @@ describe('[python] prints error message on project with no detected start', () =
 		await testRunCommand(CreateCommand, { flags_template: 'python-start', args_actorName: actorName });
 		toggleCwdBetweenFullAndParentPath();
 
+		// Remove src/ package and requirements.txt so there is no detectable Python package structure
 		const srcFolder = joinPath('src');
-		await rename(srcFolder, joinPath('entrypoint'));
+		await rm(srcFolder, { recursive: true, force: true });
+
+		const requirementsTxt = joinPath('requirements.txt');
+		await rm(requirementsTxt, { force: true });
 
 		resetCwdCaches();
 	});
