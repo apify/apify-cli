@@ -192,6 +192,69 @@ describe('Utils', () => {
 				expect(paths).toContain('.actor/actor.json');
 			});
 		});
+
+		describe('with nested .gitignore files', () => {
+			const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('nested-gitignore-dir', {
+				create: true,
+				remove: true,
+				cwd: false,
+				cwdParent: false,
+			});
+
+			beforeAll(async () => {
+				await beforeAllCalls();
+
+				ensureFolderExistsSync(tmpPath, 'src');
+				ensureFolderExistsSync(tmpPath, 'src/generated');
+				ensureFolderExistsSync(tmpPath, 'lib');
+				writeFileSync(joinPath('main.js'), 'entry', { flag: 'w' });
+				writeFileSync(joinPath('src/app.js'), 'app', { flag: 'w' });
+				writeFileSync(joinPath('src/generated/types.js'), 'generated', { flag: 'w' });
+				writeFileSync(joinPath('src/generated/keep.js'), 'keep', { flag: 'w' });
+				writeFileSync(joinPath('lib/helper.js'), 'helper', { flag: 'w' });
+				writeFileSync(joinPath('lib/temp.log'), 'log', { flag: 'w' });
+			});
+
+			afterAll(async () => {
+				await afterAllCalls();
+			});
+
+			it('should apply nested .gitignore scoped to its directory', async () => {
+				writeFileSync(joinPath('.gitignore'), '', { flag: 'w' });
+				writeFileSync(joinPath('src/.gitignore'), 'generated\n', { flag: 'w' });
+				const paths = await getActorLocalFilePaths(tmpPath);
+
+				expect(paths).toContain('main.js');
+				expect(paths).toContain('src/app.js');
+				expect(paths).not.toContain('src/generated/types.js');
+				expect(paths).not.toContain('src/generated/keep.js');
+				expect(paths).toContain('lib/helper.js');
+				expect(paths).toContain('lib/temp.log');
+			});
+
+			it('should not apply nested .gitignore patterns to sibling directories', async () => {
+				writeFileSync(joinPath('.gitignore'), '', { flag: 'w' });
+				writeFileSync(joinPath('lib/.gitignore'), '*.log\n', { flag: 'w' });
+				const paths = await getActorLocalFilePaths(tmpPath);
+
+				expect(paths).not.toContain('lib/temp.log');
+				expect(paths).toContain('lib/helper.js');
+				expect(paths).toContain('src/app.js');
+				expect(paths).toContain('main.js');
+			});
+
+			it('should combine root and nested .gitignore rules', async () => {
+				writeFileSync(joinPath('.gitignore'), '*.log\n', { flag: 'w' });
+				writeFileSync(joinPath('src/.gitignore'), 'generated\n', { flag: 'w' });
+				const paths = await getActorLocalFilePaths(tmpPath);
+
+				expect(paths).toContain('main.js');
+				expect(paths).toContain('src/app.js');
+				expect(paths).not.toContain('src/generated/types.js');
+				expect(paths).not.toContain('lib/temp.log');
+				expect(paths).toContain('lib/helper.js');
+			});
+		});
 	});
 
 	describe('input file regex', () => {
