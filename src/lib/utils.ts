@@ -303,8 +303,10 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 		cwd: resolvedCwd,
 	});
 
-	// Collect all .gitignore files and apply each one scoped to its directory
-	const gitignoreFiles = paths.filter((p) => p === '.gitignore' || p.endsWith('/.gitignore'));
+	// Collect all .gitignore files sorted by depth (root first) and apply each one scoped to its directory
+	const gitignoreFiles = paths
+		.filter((p) => p === '.gitignore' || p.endsWith('/.gitignore'))
+		.sort((a, b) => a.split('/').length - b.split('/').length);
 
 	for (const giPath of gitignoreFiles) {
 		const dir = dirname(giPath);
