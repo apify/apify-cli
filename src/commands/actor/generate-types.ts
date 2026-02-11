@@ -77,7 +77,6 @@ Optionally specify custom schema path to use.`;
 			default: 'src/.generated/actor/',
 		}),
 		strict: Flags.boolean({
-			char: 's',
 			description: 'Whether generated interfaces should be strict (no index signature [key: string]: unknown).',
 			required: false,
 			default: true,
