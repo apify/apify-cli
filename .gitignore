@@ -12,6 +12,7 @@ _mytests
 .idea
 .zed
 docs/changelog.md
+.generated
 
 # Yarn files
 .yarn/install-state.gz
