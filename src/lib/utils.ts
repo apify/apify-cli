@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
@@ -15,13 +16,12 @@ import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 
 import archiver from 'archiver';
 import { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
-import ignore from 'ignore';
 import { getEncoding } from 'istextorbinary';
 import { Mime } from 'mime';
 import otherMimes from 'mime/types/other.js';
 import standardMimes from 'mime/types/standard.js';
 import { gte, minVersion, satisfies } from 'semver';
-import { glob } from 'tinyglobby';
+import { escapePath, glob } from 'tinyglobby';
 
 import {
 	ACTOR_ENV_VARS,
@@ -46,6 +46,7 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { warning } from './outputs.js';
 import type { AuthJSON } from './types.js';
 
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
@@ -296,35 +297,34 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 export const getActorLocalFilePaths = async (cwd?: string) => {
 	const resolvedCwd = cwd ?? process.cwd();
 
-	let paths = await glob(['*', '**/**'], {
-		ignore: ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'],
+	const ignore = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+
+	// Use git ls-files to get gitignored paths — this correctly handles ancestor .gitignore files,
+	// nested .gitignore files, .git/info/exclude, and global gitignore config
+	try {
+		const gitIgnored = execSync('git ls-files --others --ignored --exclude-standard --directory', {
+			cwd: resolvedCwd,
+			encoding: 'utf-8',
+			stdio: ['ignore', 'pipe', 'ignore'],
+		})
+			.split('\n')
+			.filter(Boolean)
+			.map((p) => escapePath(p));
+
+		ignore.push(...gitIgnored);
+	} catch {
+		warning({
+			message:
+				'Unable to read .gitignore rules — git is not installed or the directory is not in a git repository.',
+		});
+	}
+
+	return glob(['*', '**/**'], {
+		ignore,
 		dot: true,
 		expandDirectories: false,
 		cwd: resolvedCwd,
 	});
-
-	// Collect all .gitignore files sorted by depth (root first) and apply each one scoped to its directory
-	const gitignoreFiles = paths
-		.filter((p) => p === '.gitignore' || p.endsWith('/.gitignore'))
-		.sort((a, b) => a.split('/').length - b.split('/').length);
-
-	for (const giPath of gitignoreFiles) {
-		const dir = dirname(giPath);
-		const content = readFileSync(join(resolvedCwd, giPath), { encoding: 'utf-8' });
-		const ig = ignore().add(content);
-
-		paths = paths.filter((p) => {
-			// Only apply this .gitignore to paths under its directory
-			if (dir !== '.') {
-				if (!p.startsWith(`${dir}/`)) return true;
-				return !ig.ignores(p.slice(dir.length + 1));
-			}
-
-			return !ig.ignores(p);
-		});
-	}
-
-	return paths;
 };
 
 /**
@@ -337,10 +337,13 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 	}
 
 	const writeStream = createWriteStream(zipName);
-	const archive = archiver('zip');
+	// Use compression level 6 for better balance between speed and compression ratio (default is 9)
+	const archive = archiver('zip', {
+		zlib: { level: 6 },
+	});
 	archive.pipe(writeStream);
 
-	pathsToZip.forEach((globPath) => archive.glob(globPath, { cwd }));
+	pathsToZip.forEach((filePath) => archive.file(join(cwd, filePath), { name: filePath }));
 
 	await archive.finalize();
 };

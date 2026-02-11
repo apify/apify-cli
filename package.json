@@ -93,7 +93,6 @@
         "execa": "^9.5.2",
         "express": "~5.2.0",
         "handlebars": "~4.7.8",
-        "ignore": "^7.0.5",
         "indent-string": "^5.0.0",
         "is-ci": "~4.1.0",
         "istextorbinary": "~9.5.0",
