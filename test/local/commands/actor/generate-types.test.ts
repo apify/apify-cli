@@ -205,7 +205,7 @@ describe('makePropertiesRequired', () => {
 		};
 
 		const result = makePropertiesRequired(schema);
-		const {nested} = (result.properties as any);
+		const { nested } = result.properties as any;
 		expect(nested.required).toEqual(['innerRequired']);
 	});
 
