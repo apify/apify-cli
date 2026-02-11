@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { ActorGenerateTypesCommand } from '../../../../src/commands/actor/generate-types.js';
+import { ActorGenerateTypesCommand, makePropertiesRequired } from '../../../../src/commands/actor/generate-types.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
@@ -113,5 +113,118 @@ describe('apify actor generate-types', () => {
 
 		expect(lastErrorMessage()).include('Generated types written to');
 		expect(lastErrorMessage()).include('custom-output');
+	});
+
+	it('should generate required properties by default for fields without defaults', async () => {
+		const outputDir = joinPath('output-required');
+
+		await testRunCommand(ActorGenerateTypesCommand, {
+			args_path: complexInputSchemaPath,
+			flags_output: outputDir,
+		});
+
+		const generatedFile = await readFile(joinPath('output-required', 'complex.ts'), 'utf-8');
+
+		// startUrls has no default -> required (no ?)
+		expect(generatedFile).toMatch(/startUrls:/);
+		expect(generatedFile).not.toMatch(/startUrls\?:/);
+
+		// proxyConfig has no default -> required (no ?)
+		expect(generatedFile).toMatch(/proxyConfig:/);
+		expect(generatedFile).not.toMatch(/proxyConfig\?:/);
+
+		// maxItems has default: 100 -> optional (has ?)
+		expect(generatedFile).toMatch(/maxItems\?:/);
+
+		// includeImages has default: false -> optional (has ?)
+		expect(generatedFile).toMatch(/includeImages\?:/);
+
+		// crawlerType has default: "cheerio" -> optional (has ?)
+		expect(generatedFile).toMatch(/crawlerType\?:/);
+	});
+
+	it('should make all properties optional with --all-optional flag', async () => {
+		const outputDir = joinPath('output-all-optional');
+
+		await testRunCommand(ActorGenerateTypesCommand, {
+			args_path: complexInputSchemaPath,
+			flags_output: outputDir,
+			'flags_all-optional': true,
+		});
+
+		const generatedFile = await readFile(joinPath('output-all-optional', 'complex.ts'), 'utf-8');
+
+		// With --all-optional, properties not in the original required array should be optional
+		expect(generatedFile).toMatch(/maxItems\?:/);
+		expect(generatedFile).toMatch(/includeImages\?:/);
+		expect(generatedFile).toMatch(/proxyConfig\?:/);
+	});
+});
+
+describe('makePropertiesRequired', () => {
+	it('should add properties without defaults to required array', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				name: { type: 'string' },
+				age: { type: 'number', default: 25 },
+			},
+		};
+
+		const result = makePropertiesRequired(schema);
+		expect(result.required).toEqual(['name']);
+	});
+
+	it('should preserve existing required entries', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				name: { type: 'string' },
+				age: { type: 'number', default: 25 },
+			},
+			required: ['age'],
+		};
+
+		const result = makePropertiesRequired(schema);
+		expect(result.required).toContain('age');
+		expect(result.required).toContain('name');
+	});
+
+	it('should recurse into nested object properties', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				nested: {
+					type: 'object',
+					properties: {
+						innerRequired: { type: 'string' },
+						innerOptional: { type: 'string', default: 'hello' },
+					},
+				},
+			},
+		};
+
+		const result = makePropertiesRequired(schema);
+		const {nested} = (result.properties as any);
+		expect(nested.required).toEqual(['innerRequired']);
+	});
+
+	it('should not mutate the original schema', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				name: { type: 'string' },
+			},
+			required: [] as string[],
+		};
+
+		makePropertiesRequired(schema);
+		expect(schema.required).toEqual([]);
+	});
+
+	it('should return schema unchanged when there are no properties', () => {
+		const schema = { type: 'object' };
+		const result = makePropertiesRequired(schema);
+		expect(result).toEqual({ type: 'object' });
 	});
 });

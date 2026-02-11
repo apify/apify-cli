@@ -4,6 +4,7 @@ import process from 'node:process';
 
 import type { JSONSchema4 } from 'json-schema';
 import { compile } from 'json-schema-to-typescript';
+import deepClone from 'lodash.clonedeep';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -24,6 +25,36 @@ export const BANNER_COMMENT = `
  */
  /** */
 `;
+
+/**
+ * Transforms a JSON schema so that all properties without a `default` value are marked as required.
+ * Properties that have a `default` are left optional, since Apify fills them in at runtime.
+ * Recurses into nested object properties.
+ */
+export function makePropertiesRequired(schema: Record<string, unknown>): Record<string, unknown> {
+	const clone = deepClone(schema);
+
+	if (!clone.properties || typeof clone.properties !== 'object') {
+		return clone;
+	}
+
+	const properties = clone.properties as Record<string, Record<string, unknown>>;
+	const requiredSet = new Set<string>(Array.isArray(clone.required) ? (clone.required as string[]) : []);
+
+	for (const [key, prop] of Object.entries(properties)) {
+		if (prop.default === undefined) {
+			requiredSet.add(key);
+		}
+
+		if (prop.type === 'object' && prop.properties) {
+			properties[key] = makePropertiesRequired(prop) as Record<string, unknown>;
+		}
+	}
+
+	clone.required = Array.from(requiredSet);
+
+	return clone;
+}
 
 export class ActorGenerateTypesCommand extends ApifyCommand<typeof ActorGenerateTypesCommand> {
 	static override name = 'generate-types' as const;
@@ -51,6 +82,12 @@ Optionally specify custom schema path to use.`;
 			required: false,
 			default: true,
 		}),
+		'all-optional': Flags.boolean({
+			description:
+				'Mark all properties as optional. By default, properties without a "default" value are required.',
+			required: false,
+			default: false,
+		}),
 	};
 
 	static override args = {
@@ -69,7 +106,9 @@ Optionally specify custom schema path to use.`;
 
 		const name = inputSchemaPath ? path.basename(inputSchemaPath, path.extname(inputSchemaPath)) : 'input';
 
-		const result = await compile(inputSchema as JSONSchema4, name, {
+		const schemaToCompile = this.flags.allOptional ? inputSchema : makePropertiesRequired(inputSchema);
+
+		const result = await compile(schemaToCompile as JSONSchema4, name, {
 			bannerComment: BANNER_COMMENT,
 			maxItems: -1,
 			unknownAny: true,
