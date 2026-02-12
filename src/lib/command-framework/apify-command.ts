@@ -299,6 +299,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		}
 
 		if (missingRequiredArgs.size) {
+			process.exitCode = 1;
 			this._printMissingRequiredArgs(missingRequiredArgs);
 			return;
 		}
@@ -309,6 +310,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			await this.run();
 		} catch (err: any) {
 			error({ message: err.message });
+			process.exitCode ||= 1;
 		} finally {
 			// analytics
 			if (!this.telemetryData.actorLanguage && COMMANDS_WITHIN_ACTOR.includes(this.commandString)) {
@@ -588,9 +590,15 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	}
 
 	private _printMissingRequiredArgs(missingRequiredArgs: Map<string, TaggedArgBuilder<ArgTag, unknown>>) {
-		const help = selectiveRenderHelpForCommand(this.ctor, {
-			showUsageString: true,
-		});
+		let help: string | undefined;
+
+		try {
+			help = selectiveRenderHelpForCommand(this.ctor, {
+				showUsageString: true,
+			});
+		} catch {
+			// Help renderer may not be registered (e.g. in tests)
+		}
 
 		const widestArgNameLength = widestLine([...missingRequiredArgs.keys()].join('\n'));
 
@@ -606,14 +614,18 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			missingArgsStrings.push(`  ${chalk.red('>')}  ${indented}`);
 		}
 
+		const messageParts = [
+			`Missing ${missingRequiredArgs.size} required ${this.pluralString(missingRequiredArgs.size, 'argument', 'arguments')}:`,
+			...missingArgsStrings,
+			chalk.gray('  See more help with --help'),
+		];
+
+		if (help) {
+			messageParts.push('', help);
+		}
+
 		error({
-			message: [
-				`Missing ${missingRequiredArgs.size} required ${this.pluralString(missingRequiredArgs.size, 'argument', 'arguments')}:`,
-				...missingArgsStrings,
-				chalk.gray('  See more help with --help'),
-				'',
-				help,
-			].join('\n'),
+			message: messageParts.join('\n'),
 		});
 	}
 
