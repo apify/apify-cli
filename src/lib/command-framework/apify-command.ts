@@ -46,46 +46,45 @@ type IfNotUnknown<T, Y, N> = T extends unknown ? Y : N;
 type InferFlagTypeFromFlag<
 	Builder extends TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>,
 	OptionalIfHasDefault = false,
-> =
-	Builder extends TaggedFlagBuilder<infer ReturnedType, never, infer Required, infer HasDefault> // Handle special case where there can be no choices
-		? If<
-				// If we want to mark flags as optional if they have a default
-				OptionalIfHasDefault,
-				// If the flag actually has a default value, assert on that
-				IfNotUnknown<
-					HasDefault,
-					FlagTagToTSType[ReturnedType] | undefined,
-					// Otherwise fall back to required status
-					If<Required, FlagTagToTSType[ReturnedType], FlagTagToTSType[ReturnedType] | undefined>
-				>,
-				// fallback to required status
+> = Builder extends TaggedFlagBuilder<infer ReturnedType, never, infer Required, infer HasDefault> // Handle special case where there can be no choices
+	? If<
+			// If we want to mark flags as optional if they have a default
+			OptionalIfHasDefault,
+			// If the flag actually has a default value, assert on that
+			IfNotUnknown<
+				HasDefault,
+				FlagTagToTSType[ReturnedType] | undefined,
+				// Otherwise fall back to required status
 				If<Required, FlagTagToTSType[ReturnedType], FlagTagToTSType[ReturnedType] | undefined>
-			>
-		: // Might have choices, in which case we branch based on that
-			Builder extends TaggedFlagBuilder<infer ReturnedType, infer ChoiceType, infer Required, infer HasDefault>
-			? // If choices is a valid array
-				ChoiceType extends unknown[] | readonly unknown[]
-				? // If we want optional flags to stay as optional
-					If<
-						OptionalIfHasDefault,
-						ChoiceType[number] | undefined,
-						// fallback to required status
-						If<Required, ChoiceType[number], ChoiceType[number] | undefined>
-					>
-				: If<
-						// If we want to mark flags as optional if they have a default
-						OptionalIfHasDefault,
-						// If the flag actually has a default value, assert on that
-						IfNotUnknown<
-							HasDefault,
-							FlagTagToTSType[ReturnedType] | undefined,
-							// Fallback to required status
-							If<Required, FlagTagToTSType[ReturnedType], FlagTagToTSType[ReturnedType] | undefined>
-						>,
-						// fallback to required status
+			>,
+			// fallback to required status
+			If<Required, FlagTagToTSType[ReturnedType], FlagTagToTSType[ReturnedType] | undefined>
+		>
+	: // Might have choices, in which case we branch based on that
+		Builder extends TaggedFlagBuilder<infer ReturnedType, infer ChoiceType, infer Required, infer HasDefault>
+		? // If choices is a valid array
+			ChoiceType extends unknown[] | readonly unknown[]
+			? // If we want optional flags to stay as optional
+				If<
+					OptionalIfHasDefault,
+					ChoiceType[number] | undefined,
+					// fallback to required status
+					If<Required, ChoiceType[number], ChoiceType[number] | undefined>
+				>
+			: If<
+					// If we want to mark flags as optional if they have a default
+					OptionalIfHasDefault,
+					// If the flag actually has a default value, assert on that
+					IfNotUnknown<
+						HasDefault,
+						FlagTagToTSType[ReturnedType] | undefined,
+						// Fallback to required status
 						If<Required, FlagTagToTSType[ReturnedType], FlagTagToTSType[ReturnedType] | undefined>
-					>
-			: unknown;
+					>,
+					// fallback to required status
+					If<Required, FlagTagToTSType[ReturnedType], FlagTagToTSType[ReturnedType] | undefined>
+				>
+		: unknown;
 
 // Adapted from https://gist.github.com/kuroski/9a7ae8e5e5c9e22985364d1ddbf3389d to support kebab-case and "string a"
 type CamelCase<S extends string> = S extends
@@ -299,6 +298,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		}
 
 		if (missingRequiredArgs.size) {
+			process.exitCode = 1;
 			this._printMissingRequiredArgs(missingRequiredArgs);
 			return;
 		}
@@ -309,6 +309,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			await this.run();
 		} catch (err: any) {
 			error({ message: err.message });
+			process.exitCode ||= 1;
 		} finally {
 			// analytics
 			if (!this.telemetryData.actorLanguage && COMMANDS_WITHIN_ACTOR.includes(this.commandString)) {
@@ -588,9 +589,15 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	}
 
 	private _printMissingRequiredArgs(missingRequiredArgs: Map<string, TaggedArgBuilder<ArgTag, unknown>>) {
-		const help = selectiveRenderHelpForCommand(this.ctor, {
-			showUsageString: true,
-		});
+		let help: string | undefined;
+
+		try {
+			help = selectiveRenderHelpForCommand(this.ctor, {
+				showUsageString: true,
+			});
+		} catch {
+			// Help renderer may not be registered (e.g. in tests)
+		}
 
 		const widestArgNameLength = widestLine([...missingRequiredArgs.keys()].join('\n'));
 
@@ -606,14 +613,18 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			missingArgsStrings.push(`  ${chalk.red('>')}  ${indented}`);
 		}
 
+		const messageParts = [
+			`Missing ${missingRequiredArgs.size} required ${this.pluralString(missingRequiredArgs.size, 'argument', 'arguments')}:`,
+			...missingArgsStrings,
+			chalk.gray('  See more help with --help'),
+		];
+
+		if (help) {
+			messageParts.push('', help);
+		}
+
 		error({
-			message: [
-				`Missing ${missingRequiredArgs.size} required ${this.pluralString(missingRequiredArgs.size, 'argument', 'arguments')}:`,
-				...missingArgsStrings,
-				chalk.gray('  See more help with --help'),
-				'',
-				help,
-			].join('\n'),
+			message: messageParts.join('\n'),
 		});
 	}
 
