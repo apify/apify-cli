@@ -49,9 +49,9 @@ describe('apify actor calculate-memory', () => {
 	it('should fail when default memory is not provided in flags or actor.json', async () => {
 		await createActorJson();
 
-		await testRunCommand(ActorCalculateMemoryCommand, {});
-
-		expect(lastErrorMessage()).toMatch(/No memory-calculation expression found./);
+		await expect(testRunCommand(ActorCalculateMemoryCommand, {})).rejects.toThrow(
+			/No memory-calculation expression found./,
+		);
 	});
 
 	it('should calculate memory using defaultMemoryMbytes flag', async () => {
