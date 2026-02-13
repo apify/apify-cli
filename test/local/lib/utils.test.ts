@@ -35,6 +35,10 @@ describe('Utils', () => {
 		beforeAll(async () => {
 			await beforeAllCalls();
 
+			// Initialize a fresh git repo so the local .gitignore is parsed independently
+			// from the parent repo (which gitignores test/tmp entirely)
+			await execWithLog({ cmd: 'git', args: ['init'], opts: { cwd: tmpPath } });
+
 			FOLDERS.concat(FOLDERS_TO_IGNORE).forEach((folder) => {
 				ensureFolderExistsSync(tmpPath, folder);
 			});
