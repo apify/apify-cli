@@ -110,6 +110,45 @@ export const readAndValidateInputSchema = async ({
 };
 
 /**
+ * Read the dataset schema from the actor config.
+ *
+ * Resolves `storages.dataset` from `.actor/actor.json`:
+ * - If it's an object, uses it directly as the embedded schema.
+ * - If it's a string, resolves the file path relative to `.actor/`.
+ * - If it's missing, returns `null`.
+ */
+export const readDatasetSchema = (
+	{ cwd }: { cwd: string } = { cwd: process.cwd() },
+): { datasetSchema: Record<string, unknown>; datasetSchemaPath: string | null } | null => {
+	const localConfig = getLocalConfig(cwd);
+
+	const datasetRef = (localConfig?.storages as Record<string, unknown> | undefined)?.dataset;
+
+	if (typeof datasetRef === 'object' && datasetRef !== null) {
+		return {
+			datasetSchema: datasetRef as Record<string, unknown>,
+			datasetSchemaPath: null,
+		};
+	}
+
+	if (typeof datasetRef === 'string') {
+		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, datasetRef);
+		const schema = getJsonFileContent(fullPath);
+
+		if (!schema) {
+			return null;
+		}
+
+		return {
+			datasetSchema: schema,
+			datasetSchemaPath: fullPath,
+		};
+	}
+
+	return null;
+};
+
+/**
  * Goes to the Actor directory and creates INPUT.json file from the input schema prefills.
 
  */

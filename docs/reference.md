@@ -48,7 +48,7 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Manages telemetry settings. We use this data to improve the CLI and the Apify 
+  Manages telemetry settings. We use this data to improve the CLI and the Apify
   platform.
   Read more: https://docs.apify.com/cli/docs/telemetry
 
@@ -103,7 +103,7 @@ SUBCOMMANDS
 
 ```sh
 DESCRIPTION
-  Authenticates your Apify account and saves credentials to 
+  Authenticates your Apify account and saves credentials to
   '~/.apify/auth.json'.
   All other commands use these stored credentials.
 
@@ -159,7 +159,7 @@ DESCRIPTION
   Example:
   $ apify secrets add mySecret TopSecretValue123
 
-  The "mySecret" value can be used in an environment variable defined in 
+  The "mySecret" value can be used in an environment variable defined in
   '.actor/actor.json' file by adding the "@" prefix:
 
   {
@@ -233,8 +233,8 @@ These commands help you develop Actors locally. Use them to create new Actor pro
 
 ```sh
 DESCRIPTION
-  Creates an Actor project from a template in a new directory. The command 
-  automatically initializes a git repository in the newly created Actor 
+  Creates an Actor project from a template in a new directory. The command
+  automatically initializes a git repository in the newly created Actor
   directory.
 
 USAGE
@@ -262,12 +262,12 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Sets up an Actor project in your current directory by creating actor.json and 
+  Sets up an Actor project in your current directory by creating actor.json and
   storage files.
-  If the directory contains a Scrapy project in Python, the command 
-  automatically creates wrappers so that you can run your scrapers without 
+  If the directory contains a Scrapy project in Python, the command
+  automatically creates wrappers so that you can run your scrapers without
   changes.
-  Creates the '.actor/actor.json' file and the 'storage' directory in the 
+  Creates the '.actor/actor.json' file and the 'storage' directory in the
   current directory, but does not touch any other existing files or directories.
 
   WARNING: Overwrites existing 'storage' directory.
@@ -295,7 +295,7 @@ DESCRIPTION
   Executes Actor locally with simulated Apify environment variables.
   Stores data in local 'storage' directory.
 
-  NOTE: For Node.js Actors, customize behavior by modifying the 'start' script 
+  NOTE: For Node.js Actors, customize behavior by modifying the 'start' script
   in package.json file.
 
 USAGE
@@ -436,14 +436,14 @@ SUBCOMMANDS
                           memory usage based on a memory expression from
                           actor.json, input data, and run options.
   actor generate-types    Generate TypeScript types from
-                          an Actor input schema.
+                          Actor schemas.
 ```
 
 ##### `apify actor calculate-memory`
 
 ```sh
 DESCRIPTION
-  Calculates the Actor’s dynamic memory usage based on a memory expression from 
+  Calculates the Actor’s dynamic memory usage based on a memory expression from
   actor.json, input data, and run options.
 
 USAGE
@@ -497,7 +497,10 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Generate TypeScript types from an Actor input schema.
+  Generate TypeScript types from Actor schemas.
+
+  Generates types from the input schema and, when no custom path is provided,
+  also from the dataset schema defined in '.actor/actor.json' under "storages.dataset".
 
   Reads the input schema from one of these locations (in priority order):
     1. Object in '.actor/actor.json' under "input" key
@@ -528,7 +531,7 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Gets the Actor input value from the default key-value store associated with 
+  Gets the Actor input value from the default key-value store associated with
   the Actor run.
 
 USAGE
@@ -585,7 +588,7 @@ ARGUMENTS
 
 ```sh
 DESCRIPTION
-  Sets or removes record into the default key-value store associated with the 
+  Sets or removes record into the default key-value store associated with the
   Actor run.
 
   It is possible to pass data using argument or stdin.
@@ -626,7 +629,7 @@ These commands handle the deployment workflow of Actors to Apify platform. Use t
 ```sh
 DESCRIPTION
   Deploys Actor to Apify platform using settings from '.actor/actor.json'.
-  Files under '3' MB upload as "Multiple source files"; larger projects upload 
+  Files under '3' MB upload as "Multiple source files"; larger projects upload
   as ZIP file.
   Use --force to override newer remote versions.
 
@@ -662,7 +665,7 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Download Actor code to current directory. Clones Git repositories or fetches 
+  Download Actor code to current directory. Clones Git repositories or fetches
   Actor files based on the source type.
 
 USAGE
@@ -1149,7 +1152,7 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Adds data items to specified dataset. Accepts single object or array of 
+  Adds data items to specified dataset. Accepts single object or array of
   objects.
 
 USAGE
@@ -1266,7 +1269,7 @@ ARGUMENTS
 
 ```sh
 DESCRIPTION
-  Retrieves stored value for specified key. Use --only-content-type to check 
+  Retrieves stored value for specified key. Use --only-content-type to check
   MIME type.
 
 USAGE

@@ -1,8 +1,13 @@
-import { readFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { ActorGenerateTypesCommand, makePropertiesRequired } from '../../../../src/commands/actor/generate-types.js';
+import {
+	ActorGenerateTypesCommand,
+	makePropertiesRequired,
+	prepareDatasetSchemaForCompilation,
+} from '../../../../src/commands/actor/generate-types.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
+import { validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
 import {
@@ -11,7 +16,54 @@ import {
 	unparsableInputSchemaPath,
 } from '../../../__setup__/input-schemas/paths.js';
 
-const { lastErrorMessage } = useConsoleSpy();
+const { lastErrorMessage, logMessages } = useConsoleSpy();
+
+async function setupActorConfig(
+	basePath: string,
+	{
+		inputSchema,
+		datasetSchemaRef,
+	}: {
+		inputSchema?: Record<string, unknown>;
+		datasetSchemaRef?: string | Record<string, unknown>;
+	},
+) {
+	const actorDir = join(basePath, '.actor');
+	await mkdir(actorDir, { recursive: true });
+
+	// Always provide a minimal input schema so the command doesn't fail
+	const minimalInput = inputSchema ?? {
+		title: 'Test',
+		type: 'object',
+		schemaVersion: 1,
+		properties: {
+			foo: { title: 'Foo', description: 'A foo field', type: 'string', default: 'bar', editor: 'textfield' },
+		},
+	};
+
+	await writeFile(join(actorDir, 'input_schema.json'), JSON.stringify(minimalInput, null, '\t'));
+
+	const actorJson: Record<string, unknown> = {
+		actorSpecification: 1,
+		name: 'test-actor',
+		version: '0.1',
+		input: './input_schema.json',
+	};
+
+	if (datasetSchemaRef !== undefined) {
+		if (typeof datasetSchemaRef === 'string') {
+			// Copy the dataset schema file into the .actor dir
+			const content = await readFile(datasetSchemaRef, 'utf-8');
+			const fileName = datasetSchemaRef.split('/').pop()!;
+			await writeFile(join(actorDir, fileName), content);
+			actorJson.storages = { dataset: `./${fileName}` };
+		} else {
+			actorJson.storages = { dataset: datasetSchemaRef };
+		}
+	}
+
+	await writeFile(join(actorDir, 'actor.json'), JSON.stringify(actorJson, null, '\t'));
+}
 
 describe('apify actor generate-types', () => {
 	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath('generate-types', {
@@ -158,6 +210,219 @@ describe('apify actor generate-types', () => {
 		expect(generatedFile).toMatch(/maxItems\?:/);
 		expect(generatedFile).toMatch(/includeImages\?:/);
 		expect(generatedFile).toMatch(/proxyConfig\?:/);
+	});
+
+	describe('dataset schema', () => {
+		it('should generate types from dataset schema referenced in actor.json', async () => {
+			const outputDir = joinPath('ds-output');
+			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const generatedFile = await readFile(joinPath('ds-output', 'valid.ts'), 'utf-8');
+			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('title');
+			expect(generatedFile).toContain('url');
+			expect(generatedFile).toContain('price');
+		});
+
+		it('should generate types from dataset schema embedded in actor.json', async () => {
+			const outputDir = joinPath('ds-output-embedded');
+			await setupActorConfig(joinPath(), {
+				datasetSchemaRef: {
+					actorSpecification: 1,
+					fields: {
+						type: 'object',
+						properties: {
+							name: { type: 'string' },
+							value: { type: 'integer' },
+						},
+						required: ['name'],
+					},
+					views: {},
+				},
+			});
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const generatedFile = await readFile(joinPath('ds-output-embedded', 'dataset.ts'), 'utf-8');
+			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('name');
+			expect(generatedFile).toContain('value');
+		});
+
+		it('should skip when dataset fields are empty', async () => {
+			const outputDir = joinPath('ds-output-empty');
+			await setupActorConfig(joinPath(), {
+				datasetSchemaRef: {
+					actorSpecification: 1,
+					fields: {},
+					views: {},
+				},
+			});
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const errorMessages = logMessages.error.join('\n');
+			expect(errorMessages).toContain('no fields defined');
+		});
+
+		it('should skip when storages.dataset is not defined in actor.json', async () => {
+			const outputDir = joinPath('ds-output-no-dataset');
+			await setupActorConfig(joinPath(), {});
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			// Should succeed for input schema without mentioning dataset schema generation
+			const errorMessages = logMessages.error.join('\n');
+			expect(errorMessages).toContain('Generated types written to');
+			expect(errorMessages).not.toContain('dataset schema');
+		});
+
+		it('should respect required array from dataset fields as-is', async () => {
+			const outputDir = joinPath('ds-output-required');
+			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const generatedFile = await readFile(joinPath('ds-output-required', 'valid.ts'), 'utf-8');
+
+			// title and url are in required -> no ?
+			expect(generatedFile).toMatch(/title:/);
+			expect(generatedFile).not.toMatch(/title\?:/);
+			expect(generatedFile).toMatch(/url:/);
+			expect(generatedFile).not.toMatch(/url\?:/);
+
+			// price is NOT in required -> has ?
+			expect(generatedFile).toMatch(/price\?:/);
+		});
+
+		it('should make all dataset properties optional with --all-optional', async () => {
+			const outputDir = joinPath('ds-output-all-optional');
+			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				flags_output: outputDir,
+				'flags_all-optional': true,
+			});
+
+			const generatedFile = await readFile(joinPath('ds-output-all-optional', 'valid.ts'), 'utf-8');
+
+			expect(generatedFile).toMatch(/title\?:/);
+			expect(generatedFile).toMatch(/url\?:/);
+			expect(generatedFile).toMatch(/price\?:/);
+		});
+
+		it('should generate strict dataset types by default (no index signature)', async () => {
+			const outputDir = joinPath('ds-output-strict');
+			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const generatedFile = await readFile(joinPath('ds-output-strict', 'valid.ts'), 'utf-8');
+			expect(generatedFile).not.toContain('[k: string]: unknown');
+		});
+
+		it('should not generate dataset types when path argument is provided', async () => {
+			const outputDir = joinPath('ds-output-path-arg');
+			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				args_path: complexInputSchemaPath,
+				flags_output: outputDir,
+			});
+
+			// Only input schema types should be generated
+			const errorMessages = logMessages.error.join('\n');
+			expect(errorMessages).not.toContain('dataset schema');
+		});
+	});
+});
+
+describe('prepareDatasetSchemaForCompilation', () => {
+	it('should extract fields sub-schema', () => {
+		const schema = {
+			actorSpecification: 1,
+			fields: {
+				type: 'object',
+				properties: {
+					title: { type: 'string' },
+				},
+				required: ['title'],
+			},
+			views: {},
+		};
+
+		const result = prepareDatasetSchemaForCompilation(schema);
+		expect(result).toEqual({
+			type: 'object',
+			properties: { title: { type: 'string' } },
+			required: ['title'],
+		});
+	});
+
+	it('should inject type: "object" when missing from fields', () => {
+		const schema = {
+			actorSpecification: 1,
+			fields: {
+				properties: {
+					name: { type: 'string' },
+				},
+			},
+			views: {},
+		};
+
+		const result = prepareDatasetSchemaForCompilation(schema);
+		expect(result).not.toBeNull();
+		expect(result!.type).toBe('object');
+	});
+
+	it('should return null for empty fields', () => {
+		const schema = {
+			actorSpecification: 1,
+			fields: {},
+			views: {},
+		};
+
+		const result = prepareDatasetSchemaForCompilation(schema);
+		expect(result).toBeNull();
+	});
+
+	it('should return null when fields key is missing', () => {
+		const schema = {
+			actorSpecification: 1,
+			views: {},
+		};
+
+		const result = prepareDatasetSchemaForCompilation(schema);
+		expect(result).toBeNull();
+	});
+
+	it('should not mutate the original schema', () => {
+		const schema = {
+			actorSpecification: 1,
+			fields: {
+				properties: {
+					title: { type: 'string' },
+				},
+			},
+			views: {},
+		};
+
+		prepareDatasetSchemaForCompilation(schema);
+		expect((schema.fields as any).type).toBeUndefined();
 	});
 });
 

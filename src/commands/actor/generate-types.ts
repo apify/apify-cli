@@ -10,8 +10,8 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { readAndValidateInputSchema } from '../../lib/input_schema.js';
-import { success } from '../../lib/outputs.js';
+import { readAndValidateInputSchema, readDatasetSchema } from '../../lib/input_schema.js';
+import { info, success } from '../../lib/outputs.js';
 
 export const BANNER_COMMENT = `
 /* eslint-disable */
@@ -56,10 +56,33 @@ export function makePropertiesRequired(schema: Record<string, unknown>): Record<
 	return clone;
 }
 
+/**
+ * Extracts and prepares the `fields` sub-schema from a dataset schema for compilation.
+ * Returns `null` if the schema has no compilable fields (empty or missing).
+ */
+export function prepareDatasetSchemaForCompilation(schema: Record<string, unknown>): Record<string, unknown> | null {
+	const fields = schema.fields as Record<string, unknown> | undefined;
+
+	if (!fields || typeof fields !== 'object' || !fields.properties || typeof fields.properties !== 'object') {
+		return null;
+	}
+
+	const clone = deepClone(fields);
+
+	if (!clone.type) {
+		clone.type = 'object';
+	}
+
+	return clone;
+}
+
 export class ActorGenerateTypesCommand extends ApifyCommand<typeof ActorGenerateTypesCommand> {
 	static override name = 'generate-types' as const;
 
-	static override description = `Generate TypeScript types from an Actor input schema.
+	static override description = `Generate TypeScript types from Actor schemas.
+
+Generates types from the input schema and, when no custom path is provided,
+also from the dataset schema defined in '${LOCAL_CONFIG_PATH}' under "storages.dataset".
 
 Reads the input schema from one of these locations (in priority order):
   1. Object in '${LOCAL_CONFIG_PATH}' under "input" key
@@ -97,9 +120,11 @@ Optionally specify custom schema path to use.`;
 	};
 
 	async run() {
+		const cwd = process.cwd();
+
 		const { inputSchema, inputSchemaPath } = await readAndValidateInputSchema({
 			forcePath: this.args.path,
-			cwd: process.cwd(),
+			cwd,
 			action: 'Generating types from',
 		});
 
@@ -107,19 +132,70 @@ Optionally specify custom schema path to use.`;
 
 		const schemaToCompile = this.flags.allOptional ? inputSchema : makePropertiesRequired(inputSchema);
 
-		const result = await compile(schemaToCompile as JSONSchema4, name, {
+		const compileOptions = {
 			bannerComment: BANNER_COMMENT,
 			maxItems: -1,
 			unknownAny: true,
 			format: true,
 			additionalProperties: !this.flags.strict,
 			$refOptions: { resolve: { external: false, file: false, http: false } },
-		});
+		};
 
-		const outputDir = path.resolve(process.cwd(), this.flags.output);
+		const result = await compile(schemaToCompile as JSONSchema4, name, compileOptions);
+
+		const outputDir = path.resolve(cwd, this.flags.output);
 		await mkdir(outputDir, { recursive: true });
 
 		const outputFile = path.join(outputDir, `${name}.ts`);
+		await writeFile(outputFile, result, 'utf-8');
+
+		success({ message: `Generated types written to ${outputFile}` });
+
+		// When no custom path is provided, also generate types from additional schemas
+		if (!this.args.path) {
+			await this.generateDatasetTypes({ cwd, outputDir, compileOptions });
+		}
+	}
+
+	private async generateDatasetTypes({
+		cwd,
+		outputDir,
+		compileOptions,
+	}: {
+		cwd: string;
+		outputDir: string;
+		compileOptions: Record<string, unknown>;
+	}) {
+		const datasetResult = readDatasetSchema({ cwd });
+
+		if (!datasetResult) {
+			return;
+		}
+
+		const { datasetSchema, datasetSchemaPath } = datasetResult;
+
+		if (datasetSchemaPath) {
+			info({ message: `Generating types from dataset schema at ${datasetSchemaPath}` });
+		} else {
+			info({ message: `Generating types from dataset schema embedded in '${LOCAL_CONFIG_PATH}'` });
+		}
+
+		const prepared = prepareDatasetSchemaForCompilation(datasetSchema);
+
+		if (!prepared) {
+			info({ message: 'Dataset schema has no fields defined, skipping type generation.' });
+			return;
+		}
+
+		const datasetName = datasetSchemaPath
+			? path.basename(datasetSchemaPath, path.extname(datasetSchemaPath))
+			: 'dataset';
+
+		const schemaToCompile = this.flags.allOptional ? { ...prepared, required: [] } : prepared;
+
+		const result = await compile(schemaToCompile as JSONSchema4, datasetName, compileOptions);
+
+		const outputFile = path.join(outputDir, `${datasetName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
 		success({ message: `Generated types written to ${outputFile}` });
