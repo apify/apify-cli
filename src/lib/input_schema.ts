@@ -136,6 +136,9 @@ export const readDatasetSchema = (
 		const schema = getJsonFileContent(fullPath);
 
 		if (!schema) {
+			warning({
+				message: `Dataset schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
 			return null;
 		}
 

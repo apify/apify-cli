@@ -519,8 +519,8 @@ ARGUMENTS
         default locations.
 
 FLAGS
-      --all-optional    Mark all properties as optional. By
-                        default, properties without a "default" value are required.
+      --all-optional    Mark all properties as optional in
+                        generated types.
   -o, --output=<value>  Directory where the generated files
                         should be outputted.
       --strict          Whether generated interfaces should be

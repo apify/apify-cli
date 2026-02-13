@@ -7,7 +7,7 @@ import {
 	prepareDatasetSchemaForCompilation,
 } from '../../../../src/commands/actor/generate-types.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
-import { validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
+import { noFieldsDatasetSchemaPath, validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
 import {
@@ -347,6 +347,49 @@ describe('apify actor generate-types', () => {
 			// Only input schema types should be generated
 			const errorMessages = logMessages.error.join('\n');
 			expect(errorMessages).not.toContain('dataset schema');
+		});
+
+		it('should skip when fields key is missing from dataset schema', async () => {
+			const outputDir = joinPath('ds-output-no-fields');
+			await setupActorConfig(joinPath(), { datasetSchemaRef: noFieldsDatasetSchemaPath });
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const errorMessages = logMessages.error.join('\n');
+			expect(errorMessages).toContain('no fields defined');
+		});
+
+		it('should add index signature when additionalProperties is enabled on dataset schema', async () => {
+			const { readFileSync } = await import('node:fs');
+			const { compile: compileSchema } = await import('json-schema-to-typescript');
+
+			const rawSchema = JSON.parse(readFileSync(validDatasetSchemaPath, 'utf-8'));
+			const prepared = prepareDatasetSchemaForCompilation(rawSchema);
+			expect(prepared).not.toBeNull();
+
+			const result = await compileSchema(prepared!, 'valid', {
+				bannerComment: '',
+				additionalProperties: true, // --strict=false
+			});
+
+			expect(result).toContain('[k: string]: unknown');
+		});
+
+		it('should not include views content in generated types', async () => {
+			const outputDir = joinPath('ds-output-no-views');
+			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
+
+			await testRunCommand(ActorGenerateTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const generatedFile = await readFile(joinPath('ds-output-no-views', 'valid.ts'), 'utf-8');
+			expect(generatedFile).not.toContain('Overview');
+			expect(generatedFile).not.toContain('transformation');
+			expect(generatedFile).not.toContain('component');
+			expect(generatedFile).not.toContain('display');
 		});
 	});
 });

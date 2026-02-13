@@ -105,8 +105,7 @@ Optionally specify custom schema path to use.`;
 			default: true,
 		}),
 		'all-optional': Flags.boolean({
-			description:
-				'Mark all properties as optional. By default, properties without a "default" value are required.',
+			description: 'Mark all properties as optional in generated types.',
 			required: false,
 			default: false,
 		}),
