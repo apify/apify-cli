@@ -97,7 +97,8 @@ Optionally specify custom schema path to use.`;
 	static override flags = {
 		output: Flags.string({
 			char: 'o',
-			description: 'Directory where the generated files should be outputted.',
+			description:
+				'Directory where the generated files should be outputted. Defaults to src/.generated/actor/ to stay within the typical tsconfig rootDir.',
 			required: false,
 			default: 'src/.generated/actor/',
 		}),
