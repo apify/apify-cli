@@ -2,10 +2,10 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import {
-	ActorGenerateTypesCommand,
+	ActorGenerateSchemaTypesCommand,
 	makePropertiesRequired,
 	prepareDatasetSchemaForCompilation,
-} from '../../../../src/commands/actor/generate-types.js';
+} from '../../../../src/commands/actor/generate-schema-types.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { noFieldsDatasetSchemaPath, validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
@@ -65,8 +65,8 @@ async function setupActorConfig(
 	await writeFile(join(actorDir, 'actor.json'), JSON.stringify(actorJson, null, '\t'));
 }
 
-describe('apify actor generate-types', () => {
-	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath('generate-types', {
+describe('apify actor generate-schema-types', () => {
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath('generate-schema-types', {
 		create: true,
 		remove: true,
 		cwd: true,
@@ -84,7 +84,7 @@ describe('apify actor generate-types', () => {
 	it('should generate types from a valid schema', async () => {
 		const outputDir = joinPath('output');
 
-		await testRunCommand(ActorGenerateTypesCommand, {
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: complexInputSchemaPath,
 			flags_output: outputDir,
 		});
@@ -97,7 +97,7 @@ describe('apify actor generate-types', () => {
 	});
 
 	it('should use default output directory when not specified', async () => {
-		await testRunCommand(ActorGenerateTypesCommand, {
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: complexInputSchemaPath,
 		});
 
@@ -111,7 +111,7 @@ describe('apify actor generate-types', () => {
 	it('should generate strict types by default (no index signature)', async () => {
 		const outputDir = joinPath('output-strict');
 
-		await testRunCommand(ActorGenerateTypesCommand, {
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: complexInputSchemaPath,
 			flags_output: outputDir,
 		});
@@ -123,7 +123,7 @@ describe('apify actor generate-types', () => {
 	it('should generate non-strict types when -s is used', async () => {
 		const outputDir = joinPath('output-non-strict');
 
-		await testRunCommand(ActorGenerateTypesCommand, {
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: defaultsInputSchemaPath,
 			flags_output: outputDir,
 			flags_strict: false,
@@ -137,7 +137,7 @@ describe('apify actor generate-types', () => {
 	it('should fail when schema file does not exist', async () => {
 		const outputDir = joinPath('output-missing');
 
-		await testRunCommand(ActorGenerateTypesCommand, {
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: '/non/existent/schema.json',
 			flags_output: outputDir,
 		});
@@ -148,7 +148,7 @@ describe('apify actor generate-types', () => {
 	it('should fail when schema is not valid JSON', async () => {
 		const outputDir = joinPath('output-invalid');
 
-		await testRunCommand(ActorGenerateTypesCommand, {
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: unparsableInputSchemaPath,
 			flags_output: outputDir,
 		});
@@ -158,7 +158,7 @@ describe('apify actor generate-types', () => {
 
 	it('should use custom output directory with -o flag', async () => {
 		const outputDir = joinPath('custom-output');
-		await testRunCommand(ActorGenerateTypesCommand, {
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: defaultsInputSchemaPath,
 			flags_output: outputDir,
 		});
@@ -170,7 +170,7 @@ describe('apify actor generate-types', () => {
 	it('should generate required properties by default for fields without defaults', async () => {
 		const outputDir = joinPath('output-required');
 
-		await testRunCommand(ActorGenerateTypesCommand, {
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: complexInputSchemaPath,
 			flags_output: outputDir,
 		});
@@ -198,7 +198,7 @@ describe('apify actor generate-types', () => {
 	it('should make all properties optional with --all-optional flag', async () => {
 		const outputDir = joinPath('output-all-optional');
 
-		await testRunCommand(ActorGenerateTypesCommand, {
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: complexInputSchemaPath,
 			flags_output: outputDir,
 			'flags_all-optional': true,
@@ -217,7 +217,7 @@ describe('apify actor generate-types', () => {
 			const outputDir = joinPath('ds-output');
 			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
@@ -245,7 +245,7 @@ describe('apify actor generate-types', () => {
 				},
 			});
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
@@ -265,7 +265,7 @@ describe('apify actor generate-types', () => {
 				},
 			});
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
@@ -277,7 +277,7 @@ describe('apify actor generate-types', () => {
 			const outputDir = joinPath('ds-output-no-dataset');
 			await setupActorConfig(joinPath(), {});
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
@@ -291,7 +291,7 @@ describe('apify actor generate-types', () => {
 			const outputDir = joinPath('ds-output-required');
 			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
@@ -311,7 +311,7 @@ describe('apify actor generate-types', () => {
 			const outputDir = joinPath('ds-output-all-optional');
 			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 				'flags_all-optional': true,
 			});
@@ -327,7 +327,7 @@ describe('apify actor generate-types', () => {
 			const outputDir = joinPath('ds-output-strict');
 			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
@@ -339,7 +339,7 @@ describe('apify actor generate-types', () => {
 			const outputDir = joinPath('ds-output-path-arg');
 			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				args_path: complexInputSchemaPath,
 				flags_output: outputDir,
 			});
@@ -353,7 +353,7 @@ describe('apify actor generate-types', () => {
 			const outputDir = joinPath('ds-output-no-fields');
 			await setupActorConfig(joinPath(), { datasetSchemaRef: noFieldsDatasetSchemaPath });
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
@@ -381,7 +381,7 @@ describe('apify actor generate-types', () => {
 			const outputDir = joinPath('ds-output-no-views');
 			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
 
-			await testRunCommand(ActorGenerateTypesCommand, {
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
