@@ -8,13 +8,11 @@ import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
 useAuthSetup();
 
-const { lastErrorMessage, logSpy } = useConsoleSpy();
+const { logSpy } = useConsoleSpy();
 
 describe('[api] apify info', () => {
 	it('should end with Error when not logged in', async () => {
-		await testRunCommand(InfoCommand, {});
-
-		expect(lastErrorMessage()).toMatch(/you are not logged in/i);
+		await expect(testRunCommand(InfoCommand, {})).rejects.toThrow(/you are not logged in/i);
 	});
 
 	it('should work when logged in', async () => {

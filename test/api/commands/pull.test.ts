@@ -9,7 +9,6 @@ import { testRunCommand } from '../../../src/lib/command-framework/apify-command
 import { DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { testUserClient } from '../../__setup__/config.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
-import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useProcessMock } from '../../__setup__/hooks/useProcessMock.js';
 import { useUniqueId } from '../../__setup__/hooks/useUniqueId.js';
 
@@ -107,8 +106,6 @@ function setProcessCwd(newCwd: string) {
 
 useProcessMock({ cwdMock: () => cwd });
 
-const { lastErrorMessage } = useConsoleSpy();
-
 const { ActorsPullCommand } = await import('../../../src/commands/actors/pull.js');
 
 describe('[api] apify pull', () => {
@@ -130,9 +127,7 @@ describe('[api] apify pull', () => {
 	});
 
 	it('should fail outside Actor folder without actorId defined', async () => {
-		await testRunCommand(ActorsPullCommand, {});
-
-		expect(lastErrorMessage()).toMatch(/Cannot find Actor in this directory/i);
+		await expect(testRunCommand(ActorsPullCommand, {})).rejects.toThrow(/Cannot find Actor in this directory/i);
 	});
 
 	it('should work with Actor SOURCE_FILES', async () => {
@@ -219,10 +214,8 @@ describe('[api] apify pull', () => {
 	});
 
 	it('should fail if actor is private', async () => {
-		await testRunCommand(ActorsPullCommand, { args_actorId: 'apify/website-content-crawler' });
-
-		expect(lastErrorMessage()).toMatch(
-			/You cannot pull source code of this Actor because you do not have permission to do so./i,
-		);
+		await expect(
+			testRunCommand(ActorsPullCommand, { args_actorId: 'apify/website-content-crawler' }),
+		).rejects.toThrow(/You cannot pull source code of this Actor because you do not have permission to do so./i);
 	});
 });
