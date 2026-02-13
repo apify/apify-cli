@@ -300,41 +300,52 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		if (missingRequiredArgs.size) {
 			this._printMissingRequiredArgs(missingRequiredArgs);
-			return;
 		}
 
 		this._parseFlags(rawFlags, rawTokens);
+
+		let hadError: Error | null = null;
 
 		try {
 			await this.run();
 		} catch (err: any) {
 			error({ message: err.message });
-		} finally {
-			// analytics
-			if (!this.telemetryData.actorLanguage && COMMANDS_WITHIN_ACTOR.includes(this.commandString)) {
-				const cwdProject = await useCwdProject();
+			hadError = err;
+		}
 
-				cwdProject.inspect((project) => {
-					if (project.type === ProjectLanguage.JavaScript) {
-						this.telemetryData.actorLanguage = 'javascript';
-						this.telemetryData.actorRuntime = project.runtime!.runtimeShorthand || 'node';
-						this.telemetryData.actorRuntimeVersion = project.runtime!.version;
-					} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
-						this.telemetryData.actorLanguage = 'python';
-						this.telemetryData.actorRuntime = 'python';
-						this.telemetryData.actorRuntimeVersion = project.runtime!.version;
-					}
-				});
+		// analytics
+		if (!this.telemetryData.actorLanguage && COMMANDS_WITHIN_ACTOR.includes(this.commandString)) {
+			const cwdProject = await useCwdProject();
+
+			cwdProject.inspect((project) => {
+				if (project.type === ProjectLanguage.JavaScript) {
+					this.telemetryData.actorLanguage = 'javascript';
+					this.telemetryData.actorRuntime = project.runtime!.runtimeShorthand || 'node';
+					this.telemetryData.actorRuntimeVersion = project.runtime!.version;
+				} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
+					this.telemetryData.actorLanguage = 'python';
+					this.telemetryData.actorRuntime = 'python';
+					this.telemetryData.actorRuntimeVersion = project.runtime!.version;
+				}
+			});
+		}
+
+		this.telemetryData.flagsUsed = Object.keys(this.flags);
+
+		if (!this.skipTelemetry) {
+			await trackEvent(
+				`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
+				this.telemetryData,
+			);
+		}
+
+		if (hadError) {
+			// In test mode (skipTelemetry=true), throw the error so tests can catch it
+			// In normal mode, exit with code 1
+			if (this.skipTelemetry) {
+				throw hadError;
 			}
-
-			this.telemetryData.flagsUsed = Object.keys(this.flags);
-
-			if (!this.skipTelemetry) {
-				await trackEvent(
-					`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
-					this.telemetryData,
-				);
-			}
+			process.exit(1);
 		}
 	}
 
@@ -587,7 +598,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		}
 	}
 
-	private _printMissingRequiredArgs(missingRequiredArgs: Map<string, TaggedArgBuilder<ArgTag, unknown>>) {
+	private _printMissingRequiredArgs(missingRequiredArgs: Map<string, TaggedArgBuilder<ArgTag, unknown>>): never {
 		const help = selectiveRenderHelpForCommand(this.ctor, {
 			showUsageString: true,
 		});
@@ -615,6 +626,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				help,
 			].join('\n'),
 		});
+
+		process.exit(1);
 	}
 
 	private _handleStdin(mode: StdinMode) {

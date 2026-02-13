@@ -307,10 +307,10 @@ describe('[api] apify push', () => {
 			// @ts-expect-error Wrong typing of update method
 			await testActorClient.version(actorJson.version).update({ buildTag: 'beta' });
 
-			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+			await expect(
+				testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true }),
+			).rejects.toThrow(/is already on the platform/);
 			if (testActor) await testActorClient.delete();
-
-			expect(lastErrorMessage()).to.includes('is already on the platform');
 		},
 		TEST_TIMEOUT,
 	);
