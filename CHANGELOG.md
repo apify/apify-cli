@@ -18,6 +18,7 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - Improve Python project detection and entrypoint resolution ([#1010](https://github.com/apify/apify-cli/pull/1010)) ([f0704d3](https://github.com/apify/apify-cli/commit/f0704d3767c8e4cab883e3ba5d678f951a3fa378)) by [@vdusek](https://github.com/vdusek)
+- Set correct exit code on incorect `apify secrets` usage ([#1021](https://github.com/apify/apify-cli/pull/1021)) ([083c909](https://github.com/apify/apify-cli/commit/083c909990185ca48e88be77dce12ac5a627cf37)) by [@janbuchar](https://github.com/janbuchar), closes [#953](https://github.com/apify/apify-cli/issues/953)
 
 ### ⚡ Performance
 
