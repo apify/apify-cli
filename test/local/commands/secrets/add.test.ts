@@ -16,6 +16,10 @@ describe('apify secrets add', () => {
 		}
 	});
 
+	afterEach(() => {
+		process.exitCode = undefined;
+	});
+
 	it('should work', async () => {
 		await testRunCommand(SecretsAddCommand, {
 			args_name: SECRET_KEY,
@@ -24,6 +28,23 @@ describe('apify secrets add', () => {
 
 		const secrets = getSecretsFile();
 		expect(secrets[SECRET_KEY]).to.eql(SECRET_VALUE);
+	});
+
+	it('should exit with non-zero code when adding a duplicate secret', async () => {
+		// The first add should succeed (added in the "should work" test above)
+		await testRunCommand(SecretsAddCommand, {
+			args_name: SECRET_KEY,
+			args_value: SECRET_VALUE,
+		});
+
+		expect(process.exitCode).to.eql(1);
+	});
+
+	it('should exit with non-zero code when called without arguments', async () => {
+		// @ts-expect-error -- We intentionally pass no args to test the missing args case
+		await testRunCommand(SecretsAddCommand, {});
+
+		expect(process.exitCode).to.eql(1);
 	});
 
 	afterAll(async () => {
