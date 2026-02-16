@@ -186,6 +186,9 @@ describe('apify actor generate-schema-types', () => {
 		expect(generatedFile).toMatch(/proxyConfig:/);
 		expect(generatedFile).not.toMatch(/proxyConfig\?:/);
 
+		// searchQuery is in original required array but has default: "apify" -> optional (has ?)
+		expect(generatedFile).toMatch(/searchQuery\?:/);
+
 		// maxItems has default: 100 -> optional (has ?)
 		expect(generatedFile).toMatch(/maxItems\?:/);
 
@@ -490,7 +493,7 @@ describe('makePropertiesRequired', () => {
 		expect(result.required).toEqual(['name']);
 	});
 
-	it('should preserve existing required entries', () => {
+	it('should remove existing required entries that have defaults', () => {
 		const schema = {
 			type: 'object',
 			properties: {
@@ -501,8 +504,8 @@ describe('makePropertiesRequired', () => {
 		};
 
 		const result = makePropertiesRequired(schema);
-		expect(result.required).toContain('age');
 		expect(result.required).toContain('name');
+		expect(result.required).not.toContain('age');
 	});
 
 	it('should recurse into nested object properties', () => {

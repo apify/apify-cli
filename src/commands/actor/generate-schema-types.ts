@@ -43,6 +43,8 @@ export function makePropertiesRequired(schema: Record<string, unknown>): Record<
 	for (const [key, prop] of Object.entries(properties)) {
 		if (prop.default === undefined) {
 			requiredSet.add(key);
+		} else {
+			requiredSet.delete(key);
 		}
 
 		if (prop.type === 'object' && prop.properties) {
