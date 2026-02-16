@@ -1,3 +1,5 @@
+const { resolve } = require('node:path');
+
 const { config } = require('@apify/docs-theme');
 
 const { externalLinkProcessor } = require('./tools/utils/externalLink');
@@ -97,6 +99,13 @@ module.exports = {
         ],
     ]),
     plugins: [
+        [
+            resolve(__dirname, 'src/plugins/docusaurus-plugin-segment'),
+            {
+                writeKey: process.env.SEGMENT_TOKEN,
+                allowedInDev: false,
+            },
+        ],
 		[
 			'@signalwire/docusaurus-plugin-llms-txt',
 			{
@@ -112,7 +121,17 @@ module.exports = {
 		],
         ...config.plugins,
     ],
-    themeConfig: { ...config.themeConfig, versions },
+    themeConfig: {
+        ...config.themeConfig,
+        versions,
+        footer: {
+            ...config.themeConfig.footer,
+            logo: {
+                ...config.themeConfig.footer.logo,
+                href: '/docs',
+            },
+        },
+    },
     staticDirectories: ['node_modules/@apify/docs-theme/static', 'static'],
     customFields: {
         ...(config.customFields ?? []),

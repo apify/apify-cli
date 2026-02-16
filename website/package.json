@@ -26,7 +26,7 @@
         "rimraf": "^6.0.0"
     },
     "dependencies": {
-        "@apify/docs-theme": "^1.0.230",
+        "@apify/docs-theme": "^1.0.233",
         "@docusaurus/core": "^3.8.1",
         "@docusaurus/faster": "^3.8.1",
         "@docusaurus/plugin-client-redirects": "^3.8.1",
@@ -41,7 +41,7 @@
         "unist-util-visit": "^5.0.0"
     },
     "volta": {
-        "node": "24.13.0",
+        "node": "24.13.1",
         "yarn": "4.12.0"
     },
     "packageManager": "yarn@4.12.0"

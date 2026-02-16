@@ -15,6 +15,15 @@ All notable changes to this project will be documented in this file.
 - **builds:** Adds build tag commands ([#1004](https://github.com/apify/apify-cli/pull/1004)) ([082f981](https://github.com/apify/apify-cli/commit/082f981a9161c745bbcfa5c89303ba381bff226c)) by [@l2ysho](https://github.com/l2ysho), closes [#997](https://github.com/apify/apify-cli/issues/997)
 - **actors:** Enables standby mode via actor.json ([#991](https://github.com/apify/apify-cli/pull/991)) ([519aa43](https://github.com/apify/apify-cli/commit/519aa4327d92117d398fa47b819653012526ebdf)) by [@l2ysho](https://github.com/l2ysho), closes [#913](https://github.com/apify/apify-cli/issues/913)
 
+### 🐛 Bug Fixes
+
+- Improve Python project detection and entrypoint resolution ([#1010](https://github.com/apify/apify-cli/pull/1010)) ([f0704d3](https://github.com/apify/apify-cli/commit/f0704d3767c8e4cab883e3ba5d678f951a3fa378)) by [@vdusek](https://github.com/vdusek)
+- Set correct exit code on incorect `apify secrets` usage ([#1021](https://github.com/apify/apify-cli/pull/1021)) ([083c909](https://github.com/apify/apify-cli/commit/083c909990185ca48e88be77dce12ac5a627cf37)) by [@janbuchar](https://github.com/janbuchar), closes [#953](https://github.com/apify/apify-cli/issues/953)
+
+### ⚡ Performance
+
+- Speed up creating archives when pusing big codebases ([#1011](https://github.com/apify/apify-cli/pull/1011)) ([a873e0c](https://github.com/apify/apify-cli/commit/a873e0cb6c1c1f9e3bca61821de2b8373ec92744)) by [@matyascimbulka](https://github.com/matyascimbulka)
+
 <!-- git-cliff-unreleased-end -->
 
 ## [1.2.1](https://github.com/apify/apify-cli/releases/tag/v1.2.1) (2026-01-06)
