@@ -3,6 +3,7 @@ import { basename, join } from 'node:path';
 
 import {
 	ActorGenerateSchemaTypesCommand,
+	clearAllRequired,
 	makePropertiesRequired,
 	prepareDatasetSchemaForCompilation,
 } from '../../../../src/commands/actor/generate-schema-types.js';
@@ -212,6 +213,10 @@ describe('apify actor generate-schema-types', () => {
 		expect(generatedFile).toMatch(/maxItems\?:/);
 		expect(generatedFile).toMatch(/includeImages\?:/);
 		expect(generatedFile).toMatch(/proxyConfig\?:/);
+
+		// Nested required properties should also become optional
+		expect(generatedFile).toMatch(/useApifyProxy\?:/);
+		expect(generatedFile).not.toMatch(/useApifyProxy:/); // ensure it's not non-optional
 	});
 
 	describe('dataset schema', () => {
@@ -536,5 +541,60 @@ describe('makePropertiesRequired', () => {
 		const schema = { type: 'object' };
 		const result = makePropertiesRequired(schema);
 		expect(result).toEqual({ type: 'object' });
+	});
+});
+
+describe('clearAllRequired', () => {
+	it('should remove top-level required array', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				name: { type: 'string' },
+			},
+			required: ['name'],
+		};
+
+		const result = clearAllRequired(schema);
+		expect(result.required).toBeUndefined();
+	});
+
+	it('should remove required arrays from nested objects', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				nested: {
+					type: 'object',
+					properties: {
+						inner: { type: 'string' },
+					},
+					required: ['inner'],
+				},
+			},
+			required: ['nested'],
+		};
+
+		const result = clearAllRequired(schema);
+		expect(result.required).toBeUndefined();
+		const { nested } = result.properties as any;
+		expect(nested.required).toBeUndefined();
+	});
+
+	it('should not mutate the original schema', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				name: { type: 'string' },
+			},
+			required: ['name'],
+		};
+
+		clearAllRequired(schema);
+		expect(schema.required).toEqual(['name']);
+	});
+
+	it('should handle schema with no properties', () => {
+		const schema = { type: 'object', required: ['foo'] };
+		const result = clearAllRequired(schema);
+		expect(result.required).toBeUndefined();
 	});
 });

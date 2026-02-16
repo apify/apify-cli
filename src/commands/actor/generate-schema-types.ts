@@ -56,6 +56,27 @@ export function makePropertiesRequired(schema: Record<string, unknown>): Record<
 }
 
 /**
+ * Deep clones a schema and recursively removes all `required` arrays,
+ * making every property optional at all nesting levels.
+ */
+export function clearAllRequired(schema: Record<string, unknown>): Record<string, unknown> {
+	const clone = deepClone(schema);
+
+	delete clone.required;
+
+	if (clone.properties && typeof clone.properties === 'object') {
+		const properties = clone.properties as Record<string, Record<string, unknown>>;
+		for (const [key, prop] of Object.entries(properties)) {
+			if (prop.type === 'object' && prop.properties) {
+				properties[key] = clearAllRequired(prop) as Record<string, unknown>;
+			}
+		}
+	}
+
+	return clone;
+}
+
+/**
  * Extracts and prepares the `fields` sub-schema from a dataset schema for compilation.
  * Returns `null` if the schema has no compilable fields (empty or missing).
  */
@@ -132,7 +153,7 @@ Optionally specify custom schema path to use.`;
 		const name = 'input';
 
 		const schemaToCompile = this.flags.allOptional
-			? { ...inputSchema, required: [] }
+			? clearAllRequired(inputSchema)
 			: makePropertiesRequired(inputSchema);
 
 		const compileOptions = {
@@ -192,7 +213,7 @@ Optionally specify custom schema path to use.`;
 
 		const datasetName = 'dataset';
 
-		const schemaToCompile = this.flags.allOptional ? { ...prepared, required: [] } : prepared;
+		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
 
 		const result = await compile(schemaToCompile as JSONSchema4, datasetName, compileOptions);
 
