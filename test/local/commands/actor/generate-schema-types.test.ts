@@ -91,7 +91,7 @@ describe('apify actor generate-schema-types', () => {
 
 		expect(lastErrorMessage()).include('Generated types written to');
 
-		const generatedFile = await readFile(joinPath('output', 'complex.ts'), 'utf-8');
+		const generatedFile = await readFile(joinPath('output', 'input.ts'), 'utf-8');
 		expect(generatedFile).toContain('export interface');
 		expect(generatedFile).toContain('searchQuery');
 	});
@@ -102,9 +102,9 @@ describe('apify actor generate-schema-types', () => {
 		});
 
 		expect(lastErrorMessage()).include('Generated types written to');
-		expect(lastErrorMessage()).include(join('.generated', 'actor', 'complex.ts'));
+		expect(lastErrorMessage()).include(join('.generated', 'actor', 'input.ts'));
 
-		const generatedFile = await readFile(joinPath('src', '.generated', 'actor', 'complex.ts'), 'utf-8');
+		const generatedFile = await readFile(joinPath('src', '.generated', 'actor', 'input.ts'), 'utf-8');
 		expect(generatedFile).toContain('export interface');
 	});
 
@@ -116,7 +116,7 @@ describe('apify actor generate-schema-types', () => {
 			flags_output: outputDir,
 		});
 
-		const generatedFile = await readFile(joinPath('output-strict', 'complex.ts'), 'utf-8');
+		const generatedFile = await readFile(joinPath('output-strict', 'input.ts'), 'utf-8');
 		expect(generatedFile).not.toContain('[key: string]: unknown');
 	});
 
@@ -129,9 +129,9 @@ describe('apify actor generate-schema-types', () => {
 			flags_strict: false,
 		});
 
-		const generatedFile = await readFile(joinPath('output-non-strict', 'defaults.ts'), 'utf-8');
+		const generatedFile = await readFile(joinPath('output-non-strict', 'input.ts'), 'utf-8');
 		// Verify the file is generated with the interface
-		expect(generatedFile).toContain('export interface Defaults');
+		expect(generatedFile).toContain('export interface');
 	});
 
 	it('should fail when schema file does not exist', async () => {
@@ -175,7 +175,7 @@ describe('apify actor generate-schema-types', () => {
 			flags_output: outputDir,
 		});
 
-		const generatedFile = await readFile(joinPath('output-required', 'complex.ts'), 'utf-8');
+		const generatedFile = await readFile(joinPath('output-required', 'input.ts'), 'utf-8');
 
 		// startUrls has no default -> required (no ?)
 		expect(generatedFile).toMatch(/startUrls:/);
@@ -204,7 +204,7 @@ describe('apify actor generate-schema-types', () => {
 			'flags_all-optional': true,
 		});
 
-		const generatedFile = await readFile(joinPath('output-all-optional', 'complex.ts'), 'utf-8');
+		const generatedFile = await readFile(joinPath('output-all-optional', 'input.ts'), 'utf-8');
 
 		// With --all-optional, properties not in the original required array should be optional
 		expect(generatedFile).toMatch(/maxItems\?:/);
@@ -221,7 +221,7 @@ describe('apify actor generate-schema-types', () => {
 				flags_output: outputDir,
 			});
 
-			const generatedFile = await readFile(joinPath('ds-output', 'valid.ts'), 'utf-8');
+			const generatedFile = await readFile(joinPath('ds-output', 'dataset.ts'), 'utf-8');
 			expect(generatedFile).toContain('export interface');
 			expect(generatedFile).toContain('title');
 			expect(generatedFile).toContain('url');
@@ -295,7 +295,7 @@ describe('apify actor generate-schema-types', () => {
 				flags_output: outputDir,
 			});
 
-			const generatedFile = await readFile(joinPath('ds-output-required', 'valid.ts'), 'utf-8');
+			const generatedFile = await readFile(joinPath('ds-output-required', 'dataset.ts'), 'utf-8');
 
 			// title and url are in required -> no ?
 			expect(generatedFile).toMatch(/title:/);
@@ -316,7 +316,7 @@ describe('apify actor generate-schema-types', () => {
 				'flags_all-optional': true,
 			});
 
-			const generatedFile = await readFile(joinPath('ds-output-all-optional', 'valid.ts'), 'utf-8');
+			const generatedFile = await readFile(joinPath('ds-output-all-optional', 'dataset.ts'), 'utf-8');
 
 			expect(generatedFile).toMatch(/title\?:/);
 			expect(generatedFile).toMatch(/url\?:/);
@@ -331,7 +331,7 @@ describe('apify actor generate-schema-types', () => {
 				flags_output: outputDir,
 			});
 
-			const generatedFile = await readFile(joinPath('ds-output-strict', 'valid.ts'), 'utf-8');
+			const generatedFile = await readFile(joinPath('ds-output-strict', 'dataset.ts'), 'utf-8');
 			expect(generatedFile).not.toContain('[k: string]: unknown');
 		});
 
@@ -385,7 +385,7 @@ describe('apify actor generate-schema-types', () => {
 				flags_output: outputDir,
 			});
 
-			const generatedFile = await readFile(joinPath('ds-output-no-views', 'valid.ts'), 'utf-8');
+			const generatedFile = await readFile(joinPath('ds-output-no-views', 'dataset.ts'), 'utf-8');
 			expect(generatedFile).not.toContain('Overview');
 			expect(generatedFile).not.toContain('transformation');
 			expect(generatedFile).not.toContain('component');

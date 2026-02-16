@@ -124,13 +124,13 @@ Optionally specify custom schema path to use.`;
 	async run() {
 		const cwd = process.cwd();
 
-		const { inputSchema, inputSchemaPath } = await readAndValidateInputSchema({
+		const { inputSchema } = await readAndValidateInputSchema({
 			forcePath: this.args.path,
 			cwd,
 			action: 'Generating types from',
 		});
 
-		const name = inputSchemaPath ? path.basename(inputSchemaPath, path.extname(inputSchemaPath)) : 'input';
+		const name = 'input';
 
 		const schemaToCompile = this.flags.allOptional ? inputSchema : makePropertiesRequired(inputSchema);
 
@@ -189,9 +189,7 @@ Optionally specify custom schema path to use.`;
 			return;
 		}
 
-		const datasetName = datasetSchemaPath
-			? path.basename(datasetSchemaPath, path.extname(datasetSchemaPath))
-			: 'dataset';
+		const datasetName = 'dataset';
 
 		const schemaToCompile = this.flags.allOptional ? { ...prepared, required: [] } : prepared;
 
