@@ -131,7 +131,9 @@ Optionally specify custom schema path to use.`;
 
 		const name = 'input';
 
-		const schemaToCompile = this.flags.allOptional ? inputSchema : makePropertiesRequired(inputSchema);
+		const schemaToCompile = this.flags.allOptional
+			? { ...inputSchema, required: [] }
+			: makePropertiesRequired(inputSchema);
 
 		const compileOptions = {
 			bannerComment: BANNER_COMMENT,

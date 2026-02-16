@@ -206,7 +206,9 @@ describe('apify actor generate-schema-types', () => {
 
 		const generatedFile = await readFile(joinPath('output-all-optional', 'input.ts'), 'utf-8');
 
-		// With --all-optional, properties not in the original required array should be optional
+		// With --all-optional, ALL properties should be optional - including originally required ones
+		expect(generatedFile).toMatch(/startUrls\?:/);
+		expect(generatedFile).toMatch(/searchQuery\?:/);
 		expect(generatedFile).toMatch(/maxItems\?:/);
 		expect(generatedFile).toMatch(/includeImages\?:/);
 		expect(generatedFile).toMatch(/proxyConfig\?:/);
