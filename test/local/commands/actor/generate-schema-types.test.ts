@@ -1,5 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 
 import {
 	ActorGenerateSchemaTypesCommand,
@@ -54,7 +54,7 @@ async function setupActorConfig(
 		if (typeof datasetSchemaRef === 'string') {
 			// Copy the dataset schema file into the .actor dir
 			const content = await readFile(datasetSchemaRef, 'utf-8');
-			const fileName = datasetSchemaRef.split('/').pop()!;
+			const fileName = basename(datasetSchemaRef);
 			await writeFile(join(actorDir, fileName), content);
 			actorJson.storages = { dataset: `./${fileName}` };
 		} else {
