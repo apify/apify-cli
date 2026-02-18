@@ -84,6 +84,34 @@ export function clearAllRequired(schema: Record<string, unknown>): Record<string
 }
 
 /**
+ * Recursively strips `title` from all properties in a schema.
+ *
+ * When a nested property has a `title`, `json-schema-to-typescript` extracts it
+ * as a separate named `export interface`. Stripping titles forces all nested types
+ * to be inlined, ensuring only one exported interface per schema.
+ */
+export function stripTitles(schema: Record<string, unknown>): Record<string, unknown> {
+	const clone = deepClone(schema);
+
+	delete clone.title;
+
+	if (clone.properties && typeof clone.properties === 'object') {
+		const properties = clone.properties as Record<string, Record<string, unknown>>;
+		for (const [key, prop] of Object.entries(properties)) {
+			if (prop && typeof prop === 'object') {
+				properties[key] = stripTitles(prop) as Record<string, unknown>;
+			}
+		}
+	}
+
+	if (clone.items && typeof clone.items === 'object') {
+		clone.items = stripTitles(clone.items as Record<string, unknown>);
+	}
+
+	return clone;
+}
+
+/**
  * Extracts and prepares the `fields` sub-schema from a Dataset or KVS schema for compilation.
  * Returns `null` if the schema has no compilable fields (empty or missing).
  */
@@ -256,7 +284,7 @@ Optionally specify custom schema path to use.`;
 			$refOptions: { resolve: { external: false, file: false, http: false } },
 		};
 
-		const result = await compile(schemaToCompile as JSONSchema4, name, compileOptions);
+		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, name, compileOptions);
 
 		const outputDir = path.resolve(cwd, this.flags.output);
 		await mkdir(outputDir, { recursive: true });
@@ -308,7 +336,7 @@ Optionally specify custom schema path to use.`;
 
 		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
 
-		const result = await compile(schemaToCompile as JSONSchema4, datasetName, compileOptions);
+		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, datasetName, compileOptions);
 
 		const outputFile = path.join(outputDir, `${datasetName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
@@ -350,7 +378,7 @@ Optionally specify custom schema path to use.`;
 
 		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
 
-		const result = await compile(schemaToCompile as JSONSchema4, outputName, compileOptions);
+		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, outputName, compileOptions);
 
 		const outputFile = path.join(outputDir, `${outputName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
@@ -395,7 +423,7 @@ Optionally specify custom schema path to use.`;
 		for (const { name, schema } of collections) {
 			const schemaToCompile = this.flags.allOptional ? clearAllRequired(schema) : schema;
 
-			const compiled = await compile(schemaToCompile as JSONSchema4, name, {
+			const compiled = await compile(stripTitles(schemaToCompile) as JSONSchema4, name, {
 				...compileOptions,
 				// Only the first collection gets the banner comment
 				bannerComment: parts.length === 0 ? (compileOptions.bannerComment as string) : '',
