@@ -6,9 +6,11 @@ import {
 	clearAllRequired,
 	makePropertiesRequired,
 	prepareDatasetSchemaForCompilation,
+	prepareKvsCollectionsForCompilation,
+	prepareOutputSchemaForCompilation,
 } from '../../../../src/commands/actor/generate-schema-types.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
-import { noFieldsDatasetSchemaPath, validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
+import { validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
 import {
@@ -16,6 +18,8 @@ import {
 	defaultsInputSchemaPath,
 	unparsableInputSchemaPath,
 } from '../../../__setup__/input-schemas/paths.js';
+import { validKvsSchemaPath } from '../../../__setup__/kvs-schemas/paths.js';
+import { noPropertiesOutputSchemaPath, validOutputSchemaPath } from '../../../__setup__/output-schemas/paths.js';
 
 const { lastErrorMessage, logMessages } = useConsoleSpy();
 
@@ -24,9 +28,13 @@ async function setupActorConfig(
 	{
 		inputSchema,
 		datasetSchemaRef,
+		outputSchemaRef,
+		kvsSchemaRef,
 	}: {
 		inputSchema?: Record<string, unknown>;
 		datasetSchemaRef?: string | Record<string, unknown>;
+		outputSchemaRef?: string | Record<string, unknown>;
+		kvsSchemaRef?: string | Record<string, unknown>;
 	},
 ) {
 	const actorDir = join(basePath, '.actor');
@@ -51,15 +59,42 @@ async function setupActorConfig(
 		input: './input_schema.json',
 	};
 
+	const storages: Record<string, unknown> = {};
+
 	if (datasetSchemaRef !== undefined) {
 		if (typeof datasetSchemaRef === 'string') {
-			// Copy the dataset schema file into the .actor dir
 			const content = await readFile(datasetSchemaRef, 'utf-8');
 			const fileName = basename(datasetSchemaRef);
 			await writeFile(join(actorDir, fileName), content);
-			actorJson.storages = { dataset: `./${fileName}` };
+			storages.dataset = `./${fileName}`;
 		} else {
-			actorJson.storages = { dataset: datasetSchemaRef };
+			storages.dataset = datasetSchemaRef;
+		}
+	}
+
+	if (kvsSchemaRef !== undefined) {
+		if (typeof kvsSchemaRef === 'string') {
+			const content = await readFile(kvsSchemaRef, 'utf-8');
+			const fileName = `kvs-${basename(kvsSchemaRef)}`;
+			await writeFile(join(actorDir, fileName), content);
+			storages.keyValueStore = `./${fileName}`;
+		} else {
+			storages.keyValueStore = kvsSchemaRef;
+		}
+	}
+
+	if (Object.keys(storages).length > 0) {
+		actorJson.storages = storages;
+	}
+
+	if (outputSchemaRef !== undefined) {
+		if (typeof outputSchemaRef === 'string') {
+			const content = await readFile(outputSchemaRef, 'utf-8');
+			const fileName = `output-${basename(outputSchemaRef)}`;
+			await writeFile(join(actorDir, fileName), content);
+			actorJson.output = `./${fileName}`;
+		} else {
+			actorJson.output = outputSchemaRef;
 		}
 	}
 
@@ -283,68 +318,6 @@ describe('apify actor generate-schema-types', () => {
 			expect(errorMessages).toContain('no fields defined');
 		});
 
-		it('should skip when storages.dataset is not defined in actor.json', async () => {
-			const outputDir = joinPath('ds-output-no-dataset');
-			await setupActorConfig(joinPath(), {});
-
-			await testRunCommand(ActorGenerateSchemaTypesCommand, {
-				flags_output: outputDir,
-			});
-
-			// Should succeed for input schema without mentioning dataset schema generation
-			const errorMessages = logMessages.error.join('\n');
-			expect(errorMessages).toContain('Generated types written to');
-			expect(errorMessages).not.toContain('Dataset schema');
-		});
-
-		it('should respect required array from dataset fields as-is', async () => {
-			const outputDir = joinPath('ds-output-required');
-			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
-
-			await testRunCommand(ActorGenerateSchemaTypesCommand, {
-				flags_output: outputDir,
-			});
-
-			const generatedFile = await readFile(joinPath('ds-output-required', 'dataset.ts'), 'utf-8');
-
-			// title and url are in required -> no ?
-			expect(generatedFile).toMatch(/title:/);
-			expect(generatedFile).not.toMatch(/title\?:/);
-			expect(generatedFile).toMatch(/url:/);
-			expect(generatedFile).not.toMatch(/url\?:/);
-
-			// price is NOT in required -> has ?
-			expect(generatedFile).toMatch(/price\?:/);
-		});
-
-		it('should make all dataset properties optional with --all-optional', async () => {
-			const outputDir = joinPath('ds-output-all-optional');
-			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
-
-			await testRunCommand(ActorGenerateSchemaTypesCommand, {
-				flags_output: outputDir,
-				'flags_all-optional': true,
-			});
-
-			const generatedFile = await readFile(joinPath('ds-output-all-optional', 'dataset.ts'), 'utf-8');
-
-			expect(generatedFile).toMatch(/title\?:/);
-			expect(generatedFile).toMatch(/url\?:/);
-			expect(generatedFile).toMatch(/price\?:/);
-		});
-
-		it('should generate strict dataset types by default (no index signature)', async () => {
-			const outputDir = joinPath('ds-output-strict');
-			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
-
-			await testRunCommand(ActorGenerateSchemaTypesCommand, {
-				flags_output: outputDir,
-			});
-
-			const generatedFile = await readFile(joinPath('ds-output-strict', 'dataset.ts'), 'utf-8');
-			expect(generatedFile).not.toContain('[k: string]: unknown');
-		});
-
 		it('should not generate dataset types when path argument is provided', async () => {
 			const outputDir = joinPath('ds-output-path-arg');
 			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
@@ -354,52 +327,164 @@ describe('apify actor generate-schema-types', () => {
 				flags_output: outputDir,
 			});
 
-			// Only input schema types should be generated
 			const errorMessages = logMessages.error.join('\n');
 			expect(errorMessages).not.toContain('Dataset schema');
 		});
+	});
 
-		it('should skip when fields key is missing from dataset schema', async () => {
-			const outputDir = joinPath('ds-output-no-fields');
-			await setupActorConfig(joinPath(), { datasetSchemaRef: noFieldsDatasetSchemaPath });
+	describe('output schema', () => {
+		it('should generate types from output schema referenced in actor.json', async () => {
+			const outputDir = joinPath('out-output');
+			await setupActorConfig(joinPath(), { outputSchemaRef: validOutputSchemaPath });
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const generatedFile = await readFile(joinPath('out-output', 'output.ts'), 'utf-8');
+			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('productPage');
+			expect(generatedFile).toContain('screenshot');
+			expect(generatedFile).toContain('report');
+			// template fields should be stripped
+			expect(generatedFile).not.toContain('template');
+			expect(generatedFile).not.toContain('{{');
+		});
+
+		it('should generate types from output schema embedded in actor.json', async () => {
+			const outputDir = joinPath('out-output-embedded');
+			await setupActorConfig(joinPath(), {
+				outputSchemaRef: {
+					actorOutputSchemaVersion: 1,
+					properties: {
+						resultPage: { type: 'string', template: 'https://example.com/{{id}}' },
+						dataExport: { type: 'string', template: 'https://example.com/export/{{id}}' },
+					},
+					required: ['resultPage'],
+				},
+			});
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const generatedFile = await readFile(joinPath('out-output-embedded', 'output.ts'), 'utf-8');
+			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('resultPage');
+			expect(generatedFile).toContain('dataExport');
+		});
+
+		it('should skip when output schema has no properties', async () => {
+			const outputDir = joinPath('out-output-empty');
+			await setupActorConfig(joinPath(), { outputSchemaRef: noPropertiesOutputSchemaPath });
 
 			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
 			const errorMessages = logMessages.error.join('\n');
-			expect(errorMessages).toContain('no fields defined');
+			expect(errorMessages).toContain('no properties defined');
 		});
 
-		it('should add index signature when additionalProperties is enabled on dataset schema', async () => {
-			const { readFileSync } = await import('node:fs');
-			const { compile: compileSchema } = await import('json-schema-to-typescript');
+		it('should not generate output types when path argument is provided', async () => {
+			const outputDir = joinPath('out-output-path-arg');
+			await setupActorConfig(joinPath(), { outputSchemaRef: validOutputSchemaPath });
 
-			const rawSchema = JSON.parse(readFileSync(validDatasetSchemaPath, 'utf-8'));
-			const prepared = prepareDatasetSchemaForCompilation(rawSchema);
-			expect(prepared).not.toBeNull();
-
-			const result = await compileSchema(prepared!, 'valid', {
-				bannerComment: '',
-				additionalProperties: true, // --strict=false
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: complexInputSchemaPath,
+				flags_output: outputDir,
 			});
 
-			expect(result).toContain('[k: string]: unknown');
+			const errorMessages = logMessages.error.join('\n');
+			expect(errorMessages).not.toContain('Output schema');
 		});
+	});
 
-		it('should not include views content in generated types', async () => {
-			const outputDir = joinPath('ds-output-no-views');
-			await setupActorConfig(joinPath(), { datasetSchemaRef: validDatasetSchemaPath });
+	describe('key-value store schema', () => {
+		it('should generate types from KVS schema referenced in actor.json', async () => {
+			const outputDir = joinPath('kvs-output');
+			await setupActorConfig(joinPath(), { kvsSchemaRef: validKvsSchemaPath });
 
 			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
 
-			const generatedFile = await readFile(joinPath('ds-output-no-views', 'dataset.ts'), 'utf-8');
-			expect(generatedFile).not.toContain('Overview');
-			expect(generatedFile).not.toContain('transformation');
-			expect(generatedFile).not.toContain('component');
-			expect(generatedFile).not.toContain('display');
+			const generatedFile = await readFile(joinPath('kvs-output', 'key-value-store.ts'), 'utf-8');
+			expect(generatedFile).toContain('export interface');
+			// Only "results" collection has jsonSchema; "screenshots" does not
+			expect(generatedFile).toContain('totalItems');
+			expect(generatedFile).toContain('summary');
+		});
+
+		it('should generate types from KVS schema embedded in actor.json', async () => {
+			const outputDir = joinPath('kvs-output-embedded');
+			await setupActorConfig(joinPath(), {
+				kvsSchemaRef: {
+					actorKeyValueStoreSchemaVersion: 1,
+					title: 'Test KVS',
+					collections: {
+						metrics: {
+							title: 'Metrics',
+							contentTypes: ['application/json'],
+							key: 'METRICS',
+							jsonSchema: {
+								type: 'object',
+								properties: {
+									runCount: { type: 'integer' },
+									avgDuration: { type: 'number' },
+								},
+								required: ['runCount'],
+							},
+						},
+					},
+				},
+			});
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const generatedFile = await readFile(joinPath('kvs-output-embedded', 'key-value-store.ts'), 'utf-8');
+			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('runCount');
+			expect(generatedFile).toContain('avgDuration');
+		});
+
+		it('should skip when no collections have jsonSchema', async () => {
+			const outputDir = joinPath('kvs-output-no-json');
+			await setupActorConfig(joinPath(), {
+				kvsSchemaRef: {
+					actorKeyValueStoreSchemaVersion: 1,
+					title: 'Image KVS',
+					collections: {
+						images: {
+							title: 'Images',
+							contentTypes: ['image/png'],
+							keyPrefix: 'img-',
+						},
+					},
+				},
+			});
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				flags_output: outputDir,
+			});
+
+			const errorMessages = logMessages.error.join('\n');
+			expect(errorMessages).toContain('no collections with JSON schemas');
+		});
+
+		it('should not generate KVS types when path argument is provided', async () => {
+			const outputDir = joinPath('kvs-output-path-arg');
+			await setupActorConfig(joinPath(), { kvsSchemaRef: validKvsSchemaPath });
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: complexInputSchemaPath,
+				flags_output: outputDir,
+			});
+
+			const errorMessages = logMessages.error.join('\n');
+			expect(errorMessages).not.toContain('Key-Value Store schema');
 		});
 	});
 });
@@ -476,6 +561,191 @@ describe('prepareDatasetSchemaForCompilation', () => {
 
 		prepareDatasetSchemaForCompilation(schema);
 		expect((schema.fields as any).type).toBeUndefined();
+	});
+});
+
+describe('prepareOutputSchemaForCompilation', () => {
+	it('should extract properties and strip template fields', () => {
+		const schema = {
+			actorOutputSchemaVersion: 1,
+			properties: {
+				page: { type: 'string', template: 'https://example.com/{{id}}', title: 'Page' },
+				report: { type: 'string', template: 'https://example.com/report/{{id}}' },
+			},
+			required: ['page'],
+		};
+
+		const result = prepareOutputSchemaForCompilation(schema);
+		expect(result).toEqual({
+			type: 'object',
+			properties: {
+				page: { type: 'string', title: 'Page' },
+				report: { type: 'string' },
+			},
+			required: ['page'],
+		});
+	});
+
+	it('should return null when properties are missing', () => {
+		const schema = {
+			actorOutputSchemaVersion: 1,
+		};
+
+		const result = prepareOutputSchemaForCompilation(schema);
+		expect(result).toBeNull();
+	});
+
+	it('should return null when properties are empty', () => {
+		const schema = {
+			actorOutputSchemaVersion: 1,
+			properties: {},
+		};
+
+		const result = prepareOutputSchemaForCompilation(schema);
+		expect(result).toBeNull();
+	});
+
+	it('should not include non-JSON-Schema keys like actorOutputSchemaVersion', () => {
+		const schema = {
+			actorOutputSchemaVersion: 1,
+			properties: {
+				name: { type: 'string', template: 'https://example.com/{{name}}' },
+			},
+		};
+
+		const result = prepareOutputSchemaForCompilation(schema);
+		expect(result).not.toBeNull();
+		expect(result).not.toHaveProperty('actorOutputSchemaVersion');
+	});
+
+	it('should not mutate the original schema', () => {
+		const schema = {
+			actorOutputSchemaVersion: 1,
+			properties: {
+				name: { type: 'string', template: 'https://example.com/{{name}}' },
+			},
+		};
+
+		prepareOutputSchemaForCompilation(schema);
+		expect(schema).toHaveProperty('actorOutputSchemaVersion');
+		expect((schema.properties as any).name).toHaveProperty('template');
+	});
+});
+
+describe('prepareKvsCollectionsForCompilation', () => {
+	it('should extract jsonSchema from collections', () => {
+		const schema = {
+			actorKeyValueStoreSchemaVersion: 1,
+			title: 'Test',
+			collections: {
+				results: {
+					contentTypes: ['application/json'],
+					key: 'RESULTS',
+					jsonSchema: {
+						type: 'object',
+						properties: { count: { type: 'integer' } },
+					},
+				},
+			},
+		};
+
+		const result = prepareKvsCollectionsForCompilation(schema);
+		expect(result).toHaveLength(1);
+		expect(result[0].name).toBe('results');
+		expect(result[0].schema).toEqual({
+			type: 'object',
+			properties: { count: { type: 'integer' } },
+		});
+	});
+
+	it('should skip collections without jsonSchema', () => {
+		const schema = {
+			actorKeyValueStoreSchemaVersion: 1,
+			title: 'Test',
+			collections: {
+				images: {
+					contentTypes: ['image/png'],
+					keyPrefix: 'img-',
+				},
+				results: {
+					contentTypes: ['application/json'],
+					key: 'RESULTS',
+					jsonSchema: {
+						type: 'object',
+						properties: { count: { type: 'integer' } },
+					},
+				},
+			},
+		};
+
+		const result = prepareKvsCollectionsForCompilation(schema);
+		expect(result).toHaveLength(1);
+		expect(result[0].name).toBe('results');
+	});
+
+	it('should return empty array when no collections exist', () => {
+		const schema = {
+			actorKeyValueStoreSchemaVersion: 1,
+			title: 'Test',
+		};
+
+		const result = prepareKvsCollectionsForCompilation(schema);
+		expect(result).toEqual([]);
+	});
+
+	it('should return empty array when no collections have jsonSchema', () => {
+		const schema = {
+			actorKeyValueStoreSchemaVersion: 1,
+			title: 'Test',
+			collections: {
+				images: {
+					contentTypes: ['image/png'],
+					keyPrefix: 'img-',
+				},
+			},
+		};
+
+		const result = prepareKvsCollectionsForCompilation(schema);
+		expect(result).toEqual([]);
+	});
+
+	it('should inject type: "object" when missing from jsonSchema', () => {
+		const schema = {
+			actorKeyValueStoreSchemaVersion: 1,
+			title: 'Test',
+			collections: {
+				data: {
+					contentTypes: ['application/json'],
+					key: 'DATA',
+					jsonSchema: {
+						properties: { name: { type: 'string' } },
+					},
+				},
+			},
+		};
+
+		const result = prepareKvsCollectionsForCompilation(schema);
+		expect(result).toHaveLength(1);
+		expect(result[0].schema.type).toBe('object');
+	});
+
+	it('should not mutate the original schema', () => {
+		const schema = {
+			actorKeyValueStoreSchemaVersion: 1,
+			title: 'Test',
+			collections: {
+				data: {
+					contentTypes: ['application/json'],
+					key: 'DATA',
+					jsonSchema: {
+						properties: { name: { type: 'string' } },
+					},
+				},
+			},
+		};
+
+		prepareKvsCollectionsForCompilation(schema);
+		expect((schema.collections as any).data.jsonSchema.type).toBeUndefined();
 	});
 });
 

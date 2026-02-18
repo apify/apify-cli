@@ -110,41 +110,108 @@ export const readAndValidateInputSchema = async ({
 };
 
 /**
- * Read the Dataset schema from the Actor config.
+ * Read a storage schema (Dataset or Key-Value Store) from the Actor config.
  *
- * Resolves `storages.dataset` from `.actor/actor.json`:
+ * Resolves `storages.<key>` from `.actor/actor.json`:
  * - If it's an object, uses it directly as the embedded schema.
  * - If it's a string, resolves the file path relative to `.actor/`.
  * - If it's missing, returns `null`.
  */
-export const readDatasetSchema = (
-	{ cwd }: { cwd: string } = { cwd: process.cwd() },
-): { datasetSchema: Record<string, unknown>; datasetSchemaPath: string | null } | null => {
+export const readStorageSchema = ({
+	cwd,
+	key,
+	label,
+}: {
+	cwd: string;
+	key: string;
+	label: string;
+}): { schema: Record<string, unknown>; schemaPath: string | null } | null => {
 	const localConfig = getLocalConfig(cwd);
 
-	const datasetRef = (localConfig?.storages as Record<string, unknown> | undefined)?.dataset;
+	const ref = (localConfig?.storages as Record<string, unknown> | undefined)?.[key];
 
-	if (typeof datasetRef === 'object' && datasetRef !== null) {
+	if (typeof ref === 'object' && ref !== null) {
 		return {
-			datasetSchema: datasetRef as Record<string, unknown>,
-			datasetSchemaPath: null,
+			schema: ref as Record<string, unknown>,
+			schemaPath: null,
 		};
 	}
 
-	if (typeof datasetRef === 'string') {
-		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, datasetRef);
+	if (typeof ref === 'string') {
+		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, ref);
 		const schema = getJsonFileContent(fullPath);
 
 		if (!schema) {
 			warning({
-				message: `Dataset schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+				message: `${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
 			});
 			return null;
 		}
 
 		return {
-			datasetSchema: schema,
-			datasetSchemaPath: fullPath,
+			schema,
+			schemaPath: fullPath,
+		};
+	}
+
+	return null;
+};
+
+/**
+ * Read the Dataset schema from the Actor config.
+ * Thin wrapper around `readStorageSchema` for backwards compatibility.
+ */
+export const readDatasetSchema = (
+	{ cwd }: { cwd: string } = { cwd: process.cwd() },
+): { datasetSchema: Record<string, unknown>; datasetSchemaPath: string | null } | null => {
+	const result = readStorageSchema({ cwd, key: 'dataset', label: 'Dataset' });
+
+	if (!result) {
+		return null;
+	}
+
+	return {
+		datasetSchema: result.schema,
+		datasetSchemaPath: result.schemaPath,
+	};
+};
+
+/**
+ * Read the Output schema from the Actor config.
+ *
+ * Resolves `output` from `.actor/actor.json`:
+ * - If it's an object, uses it directly as the embedded schema.
+ * - If it's a string, resolves the file path relative to `.actor/`.
+ * - If it's missing, returns `null`.
+ */
+export const readOutputSchema = (
+	{ cwd }: { cwd: string } = { cwd: process.cwd() },
+): { outputSchema: Record<string, unknown>; outputSchemaPath: string | null } | null => {
+	const localConfig = getLocalConfig(cwd);
+
+	const outputRef = localConfig?.output;
+
+	if (typeof outputRef === 'object' && outputRef !== null) {
+		return {
+			outputSchema: outputRef as Record<string, unknown>,
+			outputSchemaPath: null,
+		};
+	}
+
+	if (typeof outputRef === 'string') {
+		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, outputRef);
+		const schema = getJsonFileContent(fullPath);
+
+		if (!schema) {
+			warning({
+				message: `Output schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
+			return null;
+		}
+
+		return {
+			outputSchema: schema,
+			outputSchemaPath: fullPath,
 		};
 	}
 

@@ -10,7 +10,12 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { readAndValidateInputSchema, readDatasetSchema } from '../../lib/input_schema.js';
+import {
+	readAndValidateInputSchema,
+	readDatasetSchema,
+	readOutputSchema,
+	readStorageSchema,
+} from '../../lib/input_schema.js';
 import { info, success } from '../../lib/outputs.js';
 
 export const BANNER_COMMENT = `
@@ -79,10 +84,10 @@ export function clearAllRequired(schema: Record<string, unknown>): Record<string
 }
 
 /**
- * Extracts and prepares the `fields` sub-schema from a Dataset schema for compilation.
+ * Extracts and prepares the `fields` sub-schema from a Dataset or KVS schema for compilation.
  * Returns `null` if the schema has no compilable fields (empty or missing).
  */
-export function prepareDatasetSchemaForCompilation(schema: Record<string, unknown>): Record<string, unknown> | null {
+export function prepareFieldsSchemaForCompilation(schema: Record<string, unknown>): Record<string, unknown> | null {
 	const fields = schema.fields as Record<string, unknown> | undefined;
 
 	if (!fields || typeof fields !== 'object' || !fields.properties || typeof fields.properties !== 'object') {
@@ -98,6 +103,89 @@ export function prepareDatasetSchemaForCompilation(schema: Record<string, unknow
 	return clone;
 }
 
+/** @deprecated Use `prepareFieldsSchemaForCompilation` instead. */
+export const prepareDatasetSchemaForCompilation = prepareFieldsSchemaForCompilation;
+
+/**
+ * Prepares an Output schema for compilation by stripping non-JSON-Schema keys.
+ *
+ * Output schemas have `properties` at the top level where each property always has
+ * `type: "string"` and a `template` field (URL construction pattern).
+ * We strip `template` since it's not valid JSON Schema.
+ *
+ * Returns `null` if the schema has no compilable properties.
+ */
+export function prepareOutputSchemaForCompilation(schema: Record<string, unknown>): Record<string, unknown> | null {
+	const properties = schema.properties as Record<string, Record<string, unknown>> | undefined;
+
+	if (!properties || typeof properties !== 'object' || Object.keys(properties).length === 0) {
+		return null;
+	}
+
+	const clonedProperties = deepClone(properties);
+
+	// Strip non-JSON-Schema keys (like `template`) from each property
+	for (const prop of Object.values(clonedProperties)) {
+		if (prop && typeof prop === 'object') {
+			delete prop.template;
+		}
+	}
+
+	const result: Record<string, unknown> = {
+		type: schema.type || 'object',
+		properties: clonedProperties,
+	};
+
+	if (Array.isArray(schema.required)) {
+		result.required = [...schema.required];
+	}
+
+	return result;
+}
+
+/**
+ * Extracts compilable JSON schemas from KVS collections.
+ *
+ * KVS schemas use `collections` where each collection can have a `jsonSchema` (Draft 07).
+ * Only collections with `jsonSchema` are returned, as non-JSON collections (e.g. images)
+ * have no type to generate.
+ *
+ * Returns an array of `{ name, schema }` pairs, or an empty array if none are found.
+ */
+export function prepareKvsCollectionsForCompilation(
+	schema: Record<string, unknown>,
+): { name: string; schema: Record<string, unknown> }[] {
+	const collections = schema.collections as Record<string, Record<string, unknown>> | undefined;
+
+	if (!collections || typeof collections !== 'object') {
+		return [];
+	}
+
+	const result: { name: string; schema: Record<string, unknown> }[] = [];
+
+	for (const [name, collection] of Object.entries(collections)) {
+		if (!collection || typeof collection !== 'object') {
+			continue;
+		}
+
+		const jsonSchema = collection.jsonSchema as Record<string, unknown> | undefined;
+
+		if (!jsonSchema || typeof jsonSchema !== 'object' || Object.keys(jsonSchema).length === 0) {
+			continue;
+		}
+
+		const clone = deepClone(jsonSchema);
+
+		if (!clone.type) {
+			clone.type = 'object';
+		}
+
+		result.push({ name, schema: clone });
+	}
+
+	return result;
+}
+
 export class ActorGenerateSchemaTypesCommand extends ApifyCommand<typeof ActorGenerateSchemaTypesCommand> {
 	static override name = 'generate-schema-types' as const;
 
@@ -106,7 +194,8 @@ export class ActorGenerateSchemaTypesCommand extends ApifyCommand<typeof ActorGe
 	static override description = `Generate TypeScript types from Actor schemas.
 
 Generates types from the input schema and, when no custom path is provided,
-also from the Dataset schema defined in '${LOCAL_CONFIG_PATH}' under "storages.dataset".
+also from the Dataset, Output (experimental), and Key-Value Store (experimental)
+schemas defined in '${LOCAL_CONFIG_PATH}'.
 
 Reads the input schema from one of these locations (in priority order):
   1. Object in '${LOCAL_CONFIG_PATH}' under "input" key
@@ -180,6 +269,8 @@ Optionally specify custom schema path to use.`;
 		// When no custom path is provided, also generate types from additional schemas
 		if (!this.args.path) {
 			await this.generateDatasetTypes({ cwd, outputDir, compileOptions });
+			await this.generateOutputTypes({ cwd, outputDir, compileOptions });
+			await this.generateKvsTypes({ cwd, outputDir, compileOptions });
 		}
 	}
 
@@ -201,12 +292,12 @@ Optionally specify custom schema path to use.`;
 		const { datasetSchema, datasetSchemaPath } = datasetResult;
 
 		if (datasetSchemaPath) {
-			info({ message: `Generating types from Dataset schema at ${datasetSchemaPath}` });
+			info({ message: `[experimental] Generating types from Dataset schema at ${datasetSchemaPath}` });
 		} else {
-			info({ message: `Generating types from Dataset schema embedded in '${LOCAL_CONFIG_PATH}'` });
+			info({ message: `[experimental] Generating types from Dataset schema embedded in '${LOCAL_CONFIG_PATH}'` });
 		}
 
-		const prepared = prepareDatasetSchemaForCompilation(datasetSchema);
+		const prepared = prepareFieldsSchemaForCompilation(datasetSchema);
 
 		if (!prepared) {
 			info({ message: 'Dataset schema has no fields defined, skipping type generation.' });
@@ -221,6 +312,100 @@ Optionally specify custom schema path to use.`;
 
 		const outputFile = path.join(outputDir, `${datasetName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
+
+		success({ message: `Generated types written to ${outputFile}` });
+	}
+
+	private async generateOutputTypes({
+		cwd,
+		outputDir,
+		compileOptions,
+	}: {
+		cwd: string;
+		outputDir: string;
+		compileOptions: Record<string, unknown>;
+	}) {
+		const outputResult = readOutputSchema({ cwd });
+
+		if (!outputResult) {
+			return;
+		}
+
+		const { outputSchema, outputSchemaPath } = outputResult;
+
+		if (outputSchemaPath) {
+			info({ message: `[experimental] Generating types from Output schema at ${outputSchemaPath}` });
+		} else {
+			info({ message: `[experimental] Generating types from Output schema embedded in '${LOCAL_CONFIG_PATH}'` });
+		}
+
+		const prepared = prepareOutputSchemaForCompilation(outputSchema);
+
+		if (!prepared) {
+			info({ message: 'Output schema has no properties defined, skipping type generation.' });
+			return;
+		}
+
+		const outputName = 'output';
+
+		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
+
+		const result = await compile(schemaToCompile as JSONSchema4, outputName, compileOptions);
+
+		const outputFile = path.join(outputDir, `${outputName}.ts`);
+		await writeFile(outputFile, result, 'utf-8');
+
+		success({ message: `Generated types written to ${outputFile}` });
+	}
+
+	private async generateKvsTypes({
+		cwd,
+		outputDir,
+		compileOptions,
+	}: {
+		cwd: string;
+		outputDir: string;
+		compileOptions: Record<string, unknown>;
+	}) {
+		const kvsResult = readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store' });
+
+		if (!kvsResult) {
+			return;
+		}
+
+		const { schema: kvsSchema, schemaPath: kvsSchemaPath } = kvsResult;
+
+		if (kvsSchemaPath) {
+			info({ message: `[experimental] Generating types from Key-Value Store schema at ${kvsSchemaPath}` });
+		} else {
+			info({
+				message: `[experimental] Generating types from Key-Value Store schema embedded in '${LOCAL_CONFIG_PATH}'`,
+			});
+		}
+
+		const collections = prepareKvsCollectionsForCompilation(kvsSchema);
+
+		if (collections.length === 0) {
+			info({ message: 'Key-Value Store schema has no collections with JSON schemas, skipping type generation.' });
+			return;
+		}
+
+		const parts: string[] = [];
+
+		for (const { name, schema } of collections) {
+			const schemaToCompile = this.flags.allOptional ? clearAllRequired(schema) : schema;
+
+			const compiled = await compile(schemaToCompile as JSONSchema4, name, {
+				...compileOptions,
+				// Only the first collection gets the banner comment
+				bannerComment: parts.length === 0 ? (compileOptions.bannerComment as string) : '',
+			});
+
+			parts.push(compiled);
+		}
+
+		const outputFile = path.join(outputDir, 'key-value-store.ts');
+		await writeFile(outputFile, parts.join('\n'), 'utf-8');
 
 		success({ message: `Generated types written to ${outputFile}` });
 	}
