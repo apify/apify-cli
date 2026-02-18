@@ -5,7 +5,7 @@ import {
 	ActorGenerateSchemaTypesCommand,
 	clearAllRequired,
 	makePropertiesRequired,
-	prepareDatasetSchemaForCompilation,
+	prepareFieldsSchemaForCompilation,
 	prepareKvsCollectionsForCompilation,
 	prepareOutputSchemaForCompilation,
 } from '../../../../src/commands/actor/generate-schema-types.js';
@@ -489,7 +489,7 @@ describe('apify actor generate-schema-types', () => {
 	});
 });
 
-describe('prepareDatasetSchemaForCompilation', () => {
+describe('prepareFieldsSchemaForCompilation', () => {
 	it('should extract fields sub-schema', () => {
 		const schema = {
 			actorSpecification: 1,
@@ -503,7 +503,7 @@ describe('prepareDatasetSchemaForCompilation', () => {
 			views: {},
 		};
 
-		const result = prepareDatasetSchemaForCompilation(schema);
+		const result = prepareFieldsSchemaForCompilation(schema);
 		expect(result).toEqual({
 			type: 'object',
 			properties: { title: { type: 'string' } },
@@ -522,7 +522,7 @@ describe('prepareDatasetSchemaForCompilation', () => {
 			views: {},
 		};
 
-		const result = prepareDatasetSchemaForCompilation(schema);
+		const result = prepareFieldsSchemaForCompilation(schema);
 		expect(result).not.toBeNull();
 		expect(result!.type).toBe('object');
 	});
@@ -534,7 +534,7 @@ describe('prepareDatasetSchemaForCompilation', () => {
 			views: {},
 		};
 
-		const result = prepareDatasetSchemaForCompilation(schema);
+		const result = prepareFieldsSchemaForCompilation(schema);
 		expect(result).toBeNull();
 	});
 
@@ -544,7 +544,7 @@ describe('prepareDatasetSchemaForCompilation', () => {
 			views: {},
 		};
 
-		const result = prepareDatasetSchemaForCompilation(schema);
+		const result = prepareFieldsSchemaForCompilation(schema);
 		expect(result).toBeNull();
 	});
 
@@ -559,7 +559,7 @@ describe('prepareDatasetSchemaForCompilation', () => {
 			views: {},
 		};
 
-		prepareDatasetSchemaForCompilation(schema);
+		prepareFieldsSchemaForCompilation(schema);
 		expect((schema.fields as any).type).toBeUndefined();
 	});
 });

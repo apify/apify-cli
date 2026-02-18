@@ -3,7 +3,7 @@ import path, { join } from 'node:path';
 import process from 'node:process';
 
 import type { JSONSchema4 } from 'json-schema';
-import { compile } from 'json-schema-to-typescript';
+import { compile, type Options } from 'json-schema-to-typescript';
 import deepClone from 'lodash.clonedeep';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -108,6 +108,32 @@ export function stripTitles(schema: Record<string, unknown>): Record<string, unk
 		clone.items = stripTitles(clone.items as Record<string, unknown>);
 	}
 
+	// Recurse into composition keywords (arrays of sub-schemas)
+	for (const keyword of ['allOf', 'anyOf', 'oneOf'] as const) {
+		if (Array.isArray(clone[keyword])) {
+			clone[keyword] = (clone[keyword] as Record<string, unknown>[]).map((subSchema) =>
+				subSchema && typeof subSchema === 'object' ? stripTitles(subSchema) : subSchema,
+			);
+		}
+	}
+
+	// Recurse into definitions / $defs (objects mapping names to sub-schemas)
+	for (const keyword of ['definitions', '$defs'] as const) {
+		if (clone[keyword] && typeof clone[keyword] === 'object' && !Array.isArray(clone[keyword])) {
+			const defs = clone[keyword] as Record<string, Record<string, unknown>>;
+			for (const [key, def] of Object.entries(defs)) {
+				if (def && typeof def === 'object') {
+					defs[key] = stripTitles(def) as Record<string, unknown>;
+				}
+			}
+		}
+	}
+
+	// Recurse into additionalProperties when it is a schema object
+	if (clone.additionalProperties && typeof clone.additionalProperties === 'object') {
+		clone.additionalProperties = stripTitles(clone.additionalProperties as Record<string, unknown>);
+	}
+
 	return clone;
 }
 
@@ -130,9 +156,6 @@ export function prepareFieldsSchemaForCompilation(schema: Record<string, unknown
 
 	return clone;
 }
-
-/** @deprecated Use `prepareFieldsSchemaForCompilation` instead. */
-export const prepareDatasetSchemaForCompilation = prepareFieldsSchemaForCompilation;
 
 /**
  * Prepares an Output schema for compilation by stripping non-JSON-Schema keys.
@@ -275,7 +298,7 @@ Optionally specify custom schema path to use.`;
 			? clearAllRequired(inputSchema)
 			: makePropertiesRequired(inputSchema);
 
-		const compileOptions = {
+		const compileOptions: Partial<Options> = {
 			bannerComment: BANNER_COMMENT,
 			maxItems: -1,
 			unknownAny: true,
@@ -296,9 +319,11 @@ Optionally specify custom schema path to use.`;
 
 		// When no custom path is provided, also generate types from additional schemas
 		if (!this.args.path) {
-			await this.generateDatasetTypes({ cwd, outputDir, compileOptions });
-			await this.generateOutputTypes({ cwd, outputDir, compileOptions });
-			await this.generateKvsTypes({ cwd, outputDir, compileOptions });
+			await Promise.all([
+				this.generateDatasetTypes({ cwd, outputDir, compileOptions }),
+				this.generateOutputTypes({ cwd, outputDir, compileOptions }),
+				this.generateKvsTypes({ cwd, outputDir, compileOptions }),
+			]);
 		}
 	}
 
@@ -309,7 +334,7 @@ Optionally specify custom schema path to use.`;
 	}: {
 		cwd: string;
 		outputDir: string;
-		compileOptions: Record<string, unknown>;
+		compileOptions: Partial<Options>;
 	}) {
 		const datasetResult = readDatasetSchema({ cwd });
 
@@ -351,7 +376,7 @@ Optionally specify custom schema path to use.`;
 	}: {
 		cwd: string;
 		outputDir: string;
-		compileOptions: Record<string, unknown>;
+		compileOptions: Partial<Options>;
 	}) {
 		const outputResult = readOutputSchema({ cwd });
 
@@ -393,7 +418,7 @@ Optionally specify custom schema path to use.`;
 	}: {
 		cwd: string;
 		outputDir: string;
-		compileOptions: Record<string, unknown>;
+		compileOptions: Partial<Options>;
 	}) {
 		const kvsResult = readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store' });
 
