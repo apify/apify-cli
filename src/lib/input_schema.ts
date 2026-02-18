@@ -110,7 +110,7 @@ export const readAndValidateInputSchema = async ({
 };
 
 /**
- * Read the dataset schema from the actor config.
+ * Read the Dataset schema from the Actor config.
  *
  * Resolves `storages.dataset` from `.actor/actor.json`:
  * - If it's an object, uses it directly as the embedded schema.

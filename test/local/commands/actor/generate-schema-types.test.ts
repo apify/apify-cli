@@ -294,7 +294,7 @@ describe('apify actor generate-schema-types', () => {
 			// Should succeed for input schema without mentioning dataset schema generation
 			const errorMessages = logMessages.error.join('\n');
 			expect(errorMessages).toContain('Generated types written to');
-			expect(errorMessages).not.toContain('dataset schema');
+			expect(errorMessages).not.toContain('Dataset schema');
 		});
 
 		it('should respect required array from dataset fields as-is', async () => {
@@ -356,7 +356,7 @@ describe('apify actor generate-schema-types', () => {
 
 			// Only input schema types should be generated
 			const errorMessages = logMessages.error.join('\n');
-			expect(errorMessages).not.toContain('dataset schema');
+			expect(errorMessages).not.toContain('Dataset schema');
 		});
 
 		it('should skip when fields key is missing from dataset schema', async () => {

@@ -79,7 +79,7 @@ export function clearAllRequired(schema: Record<string, unknown>): Record<string
 }
 
 /**
- * Extracts and prepares the `fields` sub-schema from a dataset schema for compilation.
+ * Extracts and prepares the `fields` sub-schema from a Dataset schema for compilation.
  * Returns `null` if the schema has no compilable fields (empty or missing).
  */
 export function prepareDatasetSchemaForCompilation(schema: Record<string, unknown>): Record<string, unknown> | null {
@@ -106,7 +106,7 @@ export class ActorGenerateSchemaTypesCommand extends ApifyCommand<typeof ActorGe
 	static override description = `Generate TypeScript types from Actor schemas.
 
 Generates types from the input schema and, when no custom path is provided,
-also from the dataset schema defined in '${LOCAL_CONFIG_PATH}' under "storages.dataset".
+also from the Dataset schema defined in '${LOCAL_CONFIG_PATH}' under "storages.dataset".
 
 Reads the input schema from one of these locations (in priority order):
   1. Object in '${LOCAL_CONFIG_PATH}' under "input" key
@@ -122,7 +122,7 @@ Optionally specify custom schema path to use.`;
 			description:
 				'Directory where the generated files should be outputted. Defaults to src/.generated/actor/ to stay within the typical tsconfig rootDir.',
 			required: false,
-			default: join('src', 'generated', 'actor'),
+			default: join('src', '.generated', 'actor'),
 		}),
 		strict: Flags.boolean({
 			description: 'Whether generated interfaces should be strict (no index signature [key: string]: unknown).',
@@ -201,9 +201,9 @@ Optionally specify custom schema path to use.`;
 		const { datasetSchema, datasetSchemaPath } = datasetResult;
 
 		if (datasetSchemaPath) {
-			info({ message: `Generating types from dataset schema at ${datasetSchemaPath}` });
+			info({ message: `Generating types from Dataset schema at ${datasetSchemaPath}` });
 		} else {
-			info({ message: `Generating types from dataset schema embedded in '${LOCAL_CONFIG_PATH}'` });
+			info({ message: `Generating types from Dataset schema embedded in '${LOCAL_CONFIG_PATH}'` });
 		}
 
 		const prepared = prepareDatasetSchemaForCompilation(datasetSchema);
