@@ -16,6 +16,7 @@ import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 
 import archiver from 'archiver';
 import { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
+import ignoreModule, { type Ignore } from 'ignore';
 import { getEncoding } from 'istextorbinary';
 import { Mime } from 'mime';
 import otherMimes from 'mime/types/other.js';
@@ -46,7 +47,6 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
-import { warning } from './outputs.js';
 import type { AuthJSON } from './types.js';
 
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
@@ -291,6 +291,50 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 };
 
 /**
+ * Fallback for when git is unavailable: find all .gitignore files and build a filter
+ * using the `ignore` package, scoped to each file's directory.
+ */
+const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]) => string[]> => {
+	const gitignoreFiles = await glob('**/.gitignore', {
+		dot: true,
+		cwd,
+		ignore: ['.git/**'],
+		expandDirectories: false,
+	});
+
+	if (gitignoreFiles.length === 0) {
+		return (paths) => paths;
+	}
+
+	const filters: { dir: string; ig: Ignore }[] = [];
+
+	for (const gitignoreFile of gitignoreFiles) {
+		const gitignoreDir = dirname(gitignoreFile); // e.g. 'src' or '.'
+		const content = readFileSync(join(cwd, gitignoreFile), 'utf-8');
+		const ig = (ignoreModule as unknown as () => Ignore)().add(content);
+		filters.push({ dir: gitignoreDir === '.' ? '' : gitignoreDir, ig });
+	}
+
+	return (paths) =>
+		paths.filter((filePath) => {
+			for (const { dir, ig } of filters) {
+				let relativePath: string | null;
+				if (!dir) {
+					relativePath = filePath;
+				} else if (filePath.startsWith(`${dir}/`)) {
+					relativePath = filePath.slice(dir.length + 1);
+				} else {
+					relativePath = null;
+				}
+				if (relativePath !== null && ig.ignores(relativePath)) {
+					return false;
+				}
+			}
+			return true;
+		});
+};
+
+/**
  * Get Actor local files, omit files defined in .gitignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
@@ -298,6 +342,8 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 	const resolvedCwd = cwd ?? process.cwd();
 
 	const ignore = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+
+	let fallbackFilter: ((paths: string[]) => string[]) | null = null;
 
 	// Use git ls-files to get gitignored paths — this correctly handles ancestor .gitignore files,
 	// nested .gitignore files, .git/info/exclude, and global gitignore config
@@ -313,18 +359,18 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 
 		ignore.push(...gitIgnored);
 	} catch {
-		warning({
-			message:
-				'Unable to read .gitignore rules — git is not installed or the directory is not in a git repository.',
-		});
+		// git is unavailable or directory is not a git repo — fall back to parsing .gitignore files
+		fallbackFilter = await getGitignoreFallbackFilter(resolvedCwd);
 	}
 
-	return glob(['*', '**/**'], {
+	const paths = await glob(['*', '**/**'], {
 		ignore,
 		dot: true,
 		expandDirectories: false,
 		cwd: resolvedCwd,
 	});
+
+	return fallbackFilter ? fallbackFilter(paths) : paths;
 };
 
 /**
