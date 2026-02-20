@@ -310,7 +310,9 @@ const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]
 
 	for (const gitignoreFile of gitignoreFiles) {
 		const gitignoreDir = dirname(gitignoreFile); // e.g. 'src' or '.'
-		const content = readFileSync(join(cwd, gitignoreFile), 'utf-8');
+		const content = await readFile(join(cwd, gitignoreFile), 'utf-8');
+		// `ignore` is a CJS package; TypeScript sees its default import as the module
+		// object rather than the callable factory, so we cast through unknown.
 		const ig = (ignoreModule as unknown as () => Ignore)().add(content);
 		filters.push({ dir: gitignoreDir === '.' ? '' : gitignoreDir, ig });
 	}

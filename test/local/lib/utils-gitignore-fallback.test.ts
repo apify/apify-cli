@@ -59,3 +59,43 @@ describe('Utils - gitignore fallback (no git)', () => {
 		FILES_IN_IGNORED_DIR.concat(FILES_TO_IGNORE).forEach((file) => expect(paths).not.toContain(file));
 	});
 });
+
+const NESTED_TEST_DIR = 'gitignore-nested-test-dir';
+
+describe('Utils - nested .gitignore scoping (no git)', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NESTED_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		// Create directory structure
+		ensureFolderExistsSync(tmpPath, 'src');
+		ensureFolderExistsSync(tmpPath, 'src/internal');
+
+		// Create files: one public, one that should be scoped-ignored by src/.gitignore
+		writeFileSync(joinPath('src/public.js'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('src/internal/secret.js'), 'content', { flag: 'w' });
+
+		// Only a nested .gitignore — the root has no entry for src/internal
+		writeFileSync(joinPath('src/.gitignore'), 'internal/', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should exclude files matched by a nested .gitignore scoped to its own directory', async () => {
+		const paths = await getActorLocalFilePaths(tmpPath);
+
+		// src/public.js should be present
+		expect(paths).toContain('src/public.js');
+
+		// src/internal/secret.js should be excluded by src/.gitignore's `internal/` rule
+		expect(paths).not.toContain('src/internal/secret.js');
+	});
+});
