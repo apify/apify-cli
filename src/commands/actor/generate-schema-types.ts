@@ -9,14 +9,14 @@ import deepClone from 'lodash.clonedeep';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import {
 	readAndValidateInputSchema,
 	readDatasetSchema,
 	readOutputSchema,
 	readStorageSchema,
 } from '../../lib/input_schema.js';
-import { info, success } from '../../lib/outputs.js';
+import { error, info, success } from '../../lib/outputs.js';
 
 export const BANNER_COMMENT = `
 // biome-ignore-all lint: generated
@@ -319,11 +319,27 @@ Optionally specify custom schema path to use.`;
 
 		// When no custom path is provided, also generate types from additional schemas
 		if (!this.args.path) {
-			await Promise.all([
+			const schemaResults = await Promise.allSettled([
 				this.generateDatasetTypes({ cwd, outputDir, compileOptions }),
 				this.generateOutputTypes({ cwd, outputDir, compileOptions }),
 				this.generateKvsTypes({ cwd, outputDir, compileOptions }),
 			]);
+
+			const schemaLabels = ['Dataset', 'Output', 'Key-Value Store'];
+			let anyFailed = false;
+
+			for (const [i, schemaResult] of schemaResults.entries()) {
+				if (schemaResult.status === 'rejected') {
+					anyFailed = true;
+					error({
+						message: `Failed to generate types for ${schemaLabels[i]} schema: ${schemaResult.reason instanceof Error ? schemaResult.reason.message : String(schemaResult.reason)}`,
+					});
+				}
+			}
+
+			if (anyFailed) {
+				process.exitCode = CommandExitCodes.BuildFailed;
+			}
 		}
 	}
 
