@@ -315,6 +315,12 @@ Skipping push. Use --force to override.`,
 			run({ message: `Created version ${version} for Actor ${actor.name}.` });
 		}
 
+		// Enable standby mode on existing actors if configured in actor.json
+		if (!isActorCreatedNow && actorConfig!.usesStandbyMode && !actor.actorStandby?.isEnabled) {
+			await actorClient.update({ actorStandby: { isEnabled: true } });
+			info({ message: `Enabled standby mode for Actor ${actor.name}.` });
+		}
+
 		// Build Actor on Apify and wait for build to finish
 		run({ message: `Building Actor ${actor.name}` });
 		let build = await actorClient.build(version, {
