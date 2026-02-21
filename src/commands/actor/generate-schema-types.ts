@@ -1,5 +1,5 @@
 import { mkdir, writeFile } from 'node:fs/promises';
-import path, { join } from 'node:path';
+import path from 'node:path';
 import process from 'node:process';
 
 import type { JSONSchema4 } from 'json-schema';
@@ -62,7 +62,7 @@ Optionally specify custom schema path to use.`;
 			description:
 				'Directory where the generated files should be outputted. Defaults to src/.generated/actor/ to stay within the typical tsconfig rootDir.',
 			required: false,
-			default: join('src', '.generated', 'actor'),
+			default: path.join('src', '.generated', 'actor'),
 		}),
 		strict: Flags.boolean({
 			description: 'Whether generated interfaces should be strict (no index signature [key: string]: unknown).',
