@@ -99,6 +99,7 @@
         "istextorbinary": "~9.5.0",
         "jju": "~1.4.0",
         "js-levenshtein": "^1.1.6",
+        "json-schema-to-typescript": "^15.0.4",
         "lodash.clonedeep": "^4.5.0",
         "mime": "~4.1.0",
         "open": "~11.0.0",

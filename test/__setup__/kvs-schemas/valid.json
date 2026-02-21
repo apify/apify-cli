@@ -1,0 +1,24 @@
+{
+	"actorKeyValueStoreSchemaVersion": 1,
+	"title": "Test KVS",
+	"collections": {
+		"screenshots": {
+			"title": "Screenshots",
+			"contentTypes": ["image/png"],
+			"keyPrefix": "screenshot-"
+		},
+		"results": {
+			"title": "Results",
+			"contentTypes": ["application/json"],
+			"key": "RESULTS",
+			"jsonSchema": {
+				"type": "object",
+				"properties": {
+					"totalItems": { "type": "integer" },
+					"summary": { "type": "string" }
+				},
+				"required": ["totalItems"]
+			}
+		}
+	}
+}

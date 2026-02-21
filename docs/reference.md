@@ -419,22 +419,26 @@ DESCRIPTION
   Manages runtime data operations inside of a running Actor.
 
 SUBCOMMANDS
-  actor set-value         Sets or removes record into the
-                          default key-value store associated with the Actor run.
-  actor push-data         Saves data to Actor's run
-                          default dataset.
-  actor get-value         Gets a value from the default
-                          key-value store associated with the Actor run.
-  actor get-public-url    Get an HTTP URL that allows
-                          public access to a key-value store item.
-  actor get-input         Gets the Actor input value from
-                          the default key-value store associated with the Actor
-                          run.
-  actor charge            Charge for a specific event in
-                          the pay-per-event Actor run.
-  actor calculate-memory  Calculates the Actor’s dynamic
-                          memory usage based on a memory expression from
-                          actor.json, input data, and run options.
+  actor set-value              Sets or removes record
+                               into the default key-value store associated with
+                               the Actor run.
+  actor push-data              Saves data to Actor's
+                               run default dataset.
+  actor get-value              Gets a value from the
+                               default key-value store associated with the Actor
+                               run.
+  actor get-public-url         Get an HTTP URL that
+                               allows public access to a key-value store item.
+  actor get-input              Gets the Actor input
+                               value from the default key-value store associated
+                               with the Actor run.
+  actor charge                 Charge for a specific
+                               event in the pay-per-event Actor run.
+  actor calculate-memory       Calculates the Actor’s
+                               dynamic memory usage based on a memory expression
+                               from actor.json, input data, and run options.
+  actor generate-schema-types  Generate TypeScript
+                               types from Actor schemas.
 ```
 
 ##### `apify actor calculate-memory`
@@ -489,6 +493,42 @@ FLAGS
                                  charge request
       --test-pay-per-event       Test pay-per-event
                                  charging without actually charging
+```
+
+##### `apify actor generate-schema-types`
+
+```sh
+DESCRIPTION
+  Generate TypeScript types from Actor schemas.
+
+  Generates types from the input schema and, when no custom path is provided,
+  also from the dataset schema defined in '.actor/actor.json' under 
+  "storages.dataset".
+
+  Reads the input schema from one of these locations (in priority order):
+    1. Object in '.actor/actor.json' under "input" key
+    2. JSON file path in '.actor/actor.json' "input" key
+    3. .actor/INPUT_SCHEMA.json
+    4. INPUT_SCHEMA.json
+
+  Optionally specify custom schema path to use.
+
+USAGE
+  $ apify actor generate-schema-types [path]
+                                      [--all-optional] [-o <value>] [--strict]
+
+ARGUMENTS
+  path  Optional path to the input schema file. If not provided, searches
+        default locations.
+
+FLAGS
+      --all-optional    Mark all properties as optional in
+                        generated types.
+  -o, --output=<value>  Directory where the generated files
+                        should be outputted. Defaults to src/.generated/actor/ to
+                        stay within the typical tsconfig rootDir.
+      --strict          Whether generated interfaces should be
+                        strict (no index signature [key: string]: unknown).
 ```
 
 ##### `apify actor get-input`

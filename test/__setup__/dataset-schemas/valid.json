@@ -1,0 +1,29 @@
+{
+	"actorSpecification": 1,
+	"fields": {
+		"type": "object",
+		"properties": {
+			"title": {
+				"type": "string",
+				"title": "Title",
+				"description": "Item title"
+			},
+			"url": { "type": "string", "title": "URL" },
+			"price": { "type": "integer", "title": "Price" }
+		},
+		"required": ["title", "url"]
+	},
+	"views": {
+		"overview": {
+			"title": "Overview",
+			"transformation": { "fields": ["title", "url"] },
+			"display": {
+				"component": "table",
+				"properties": {
+					"title": { "label": "Title", "format": "text" },
+					"url": { "label": "URL", "format": "link" }
+				}
+			}
+		}
+	}
+}

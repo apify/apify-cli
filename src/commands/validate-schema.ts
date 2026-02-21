@@ -1,13 +1,10 @@
 import process from 'node:process';
 
-import { validateInputSchema } from '@apify/input_schema';
-
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
-import { readInputSchema } from '../lib/input_schema.js';
-import { info, success } from '../lib/outputs.js';
-import { Ajv2019 } from '../lib/utils.js';
+import { readAndValidateInputSchema } from '../lib/input_schema.js';
+import { success } from '../lib/outputs.js';
 
 export class ValidateInputSchemaCommand extends ApifyCommand<typeof ValidateInputSchemaCommand> {
 	static override name = 'validate-schema' as const;
@@ -30,23 +27,12 @@ Optionally specify custom schema path to validate.`;
 	static override hiddenAliases = ['vis'];
 
 	async run() {
-		const { inputSchema, inputSchemaPath } = await readInputSchema({
+		await readAndValidateInputSchema({
 			forcePath: this.args.path,
 			cwd: process.cwd(),
+			action: 'Validating',
 		});
 
-		if (!inputSchema) {
-			throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
-		}
-
-		if (inputSchemaPath) {
-			info({ message: `Validating input schema stored at ${inputSchemaPath}` });
-		} else {
-			info({ message: `Validating input schema embedded in '${LOCAL_CONFIG_PATH}'` });
-		}
-
-		const validator = new Ajv2019({ strict: false });
-		validateInputSchema(validator, inputSchema); // This one throws an error in a case of invalid schema.
 		success({ message: 'Input schema is valid.' });
 	}
 }

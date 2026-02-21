@@ -7,8 +7,8 @@ import deepClone from 'lodash.clonedeep';
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
 
-import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
-import { warning } from './outputs.js';
+import { ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_PATH } from './consts.js';
+import { info, warning } from './outputs.js';
 import { Ajv2019, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
@@ -68,6 +68,154 @@ export const readInputSchema = async (
 		inputSchema: null,
 		inputSchemaPath: join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0]),
 	};
+};
+
+/**
+ * Reads and validates input schema, logging appropriate info messages.
+ * Throws an error if the schema is not found or invalid.
+ *
+ * @param options.forcePath - Optional path to force reading from
+ * @param options.cwd - Current working directory
+ * @param options.action - Action description for the info message (e.g., "Validating", "Generating types from")
+ * @returns The validated input schema and its path
+ */
+export const readAndValidateInputSchema = async ({
+	forcePath,
+	cwd,
+	action,
+}: {
+	forcePath?: string;
+	cwd: string;
+	action: string;
+}): Promise<{ inputSchema: Record<string, unknown>; inputSchemaPath: string | null }> => {
+	const { inputSchema, inputSchemaPath } = await readInputSchema({
+		forcePath,
+		cwd,
+	});
+
+	if (!inputSchema) {
+		throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
+	}
+
+	if (inputSchemaPath) {
+		info({ message: `${action} input schema at ${inputSchemaPath}` });
+	} else {
+		info({ message: `${action} input schema embedded in '${LOCAL_CONFIG_PATH}'` });
+	}
+
+	const validator = new Ajv2019({ strict: false });
+	validateInputSchema(validator, inputSchema);
+
+	return { inputSchema, inputSchemaPath };
+};
+
+/**
+ * Read a storage schema (Dataset or Key-Value Store) from the Actor config.
+ *
+ * Resolves `storages.<key>` from `.actor/actor.json`:
+ * - If it's an object, uses it directly as the embedded schema.
+ * - If it's a string, resolves the file path relative to `.actor/`.
+ * - If it's missing, returns `null`.
+ */
+export const readStorageSchema = ({
+	cwd,
+	key,
+	label,
+}: {
+	cwd: string;
+	key: string;
+	label: string;
+}): { schema: Record<string, unknown>; schemaPath: string | null } | null => {
+	const localConfig = getLocalConfig(cwd);
+
+	const ref = (localConfig?.storages as Record<string, unknown> | undefined)?.[key];
+
+	if (typeof ref === 'object' && ref !== null) {
+		return {
+			schema: ref as Record<string, unknown>,
+			schemaPath: null,
+		};
+	}
+
+	if (typeof ref === 'string') {
+		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, ref);
+		const schema = getJsonFileContent(fullPath);
+
+		if (!schema) {
+			warning({
+				message: `${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
+			return null;
+		}
+
+		return {
+			schema,
+			schemaPath: fullPath,
+		};
+	}
+
+	return null;
+};
+
+/**
+ * Read the Dataset schema from the Actor config.
+ * Thin wrapper around `readStorageSchema` for backwards compatibility.
+ */
+export const readDatasetSchema = (
+	{ cwd }: { cwd: string } = { cwd: process.cwd() },
+): { datasetSchema: Record<string, unknown>; datasetSchemaPath: string | null } | null => {
+	const result = readStorageSchema({ cwd, key: 'dataset', label: 'Dataset' });
+
+	if (!result) {
+		return null;
+	}
+
+	return {
+		datasetSchema: result.schema,
+		datasetSchemaPath: result.schemaPath,
+	};
+};
+
+/**
+ * Read the Output schema from the Actor config.
+ *
+ * Resolves `output` from `.actor/actor.json`:
+ * - If it's an object, uses it directly as the embedded schema.
+ * - If it's a string, resolves the file path relative to `.actor/`.
+ * - If it's missing, returns `null`.
+ */
+export const readOutputSchema = (
+	{ cwd }: { cwd: string } = { cwd: process.cwd() },
+): { outputSchema: Record<string, unknown>; outputSchemaPath: string | null } | null => {
+	const localConfig = getLocalConfig(cwd);
+
+	const outputRef = localConfig?.output;
+
+	if (typeof outputRef === 'object' && outputRef !== null) {
+		return {
+			outputSchema: outputRef as Record<string, unknown>,
+			outputSchemaPath: null,
+		};
+	}
+
+	if (typeof outputRef === 'string') {
+		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, outputRef);
+		const schema = getJsonFileContent(fullPath);
+
+		if (!schema) {
+			warning({
+				message: `Output schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
+			return null;
+		}
+
+		return {
+			outputSchema: schema,
+			outputSchemaPath: fullPath,
+		};
+	}
+
+	return null;
 };
 
 /**

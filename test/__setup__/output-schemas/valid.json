@@ -1,0 +1,24 @@
+{
+	"actorOutputSchemaVersion": 1,
+	"properties": {
+		"productPage": {
+			"type": "string",
+			"title": "Product Page",
+			"description": "URL of the product page",
+			"template": "https://example.com/products/{{productId}}"
+		},
+		"screenshot": {
+			"type": "string",
+			"title": "Screenshot",
+			"description": "URL of the screenshot",
+			"template": "https://example.com/screenshots/{{screenshotId}}"
+		},
+		"report": {
+			"type": "string",
+			"title": "Report",
+			"description": "URL of the report",
+			"template": "https://example.com/reports/{{reportId}}"
+		}
+	},
+	"required": ["productPage", "screenshot"]
+}
