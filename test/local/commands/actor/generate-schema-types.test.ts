@@ -1,15 +1,15 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
+import { ActorGenerateSchemaTypesCommand } from '../../../../src/commands/actor/generate-schema-types.js';
+import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import {
-	ActorGenerateSchemaTypesCommand,
 	clearAllRequired,
 	makePropertiesRequired,
 	prepareFieldsSchemaForCompilation,
 	prepareKvsCollectionsForCompilation,
 	prepareOutputSchemaForCompilation,
-} from '../../../../src/commands/actor/generate-schema-types.js';
-import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
+} from '../../../../src/lib/schema-transforms.js';
 import { validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
