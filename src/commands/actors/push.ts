@@ -24,6 +24,7 @@ import {
 	getLocalUserInfo,
 	getLoggedClientOrThrow,
 	outputJobLog,
+	printJsonToStdout,
 } from '../../lib/utils.js';
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
@@ -48,6 +49,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files"; ` +
 		`larger projects upload as ZIP file.\n` +
 		`Use --force to override newer remote versions.`;
+
+	static override enableJsonFlag = true;
 
 	static override flags = {
 		version: Flags.string({
@@ -330,6 +333,11 @@ Skipping push. Use --force to override.`,
 		}
 
 		build = (await apifyClient.build(build.id).get())!;
+
+		if (this.flags.json) {
+			printJsonToStdout(build);
+			return;
+		}
 
 		link({
 			message: 'Actor build detail',
