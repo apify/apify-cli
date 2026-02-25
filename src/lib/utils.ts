@@ -4,7 +4,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import process from 'node:process';
 import { finished } from 'node:stream/promises';
 
@@ -293,6 +293,8 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 /**
  * Fallback for when git is unavailable: find all .gitignore files and build a filter
  * using the `ignore` package, scoped to each file's directory.
+ * Also walks ancestor directories to pick up parent .gitignore files (e.g. monorepo root),
+ * stopping at the first .git boundary found.
  */
 const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]) => string[]> => {
 	const gitignoreFiles = await glob('**/.gitignore', {
@@ -302,27 +304,55 @@ const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]
 		expandDirectories: false,
 	});
 
-	if (gitignoreFiles.length === 0) {
-		return (paths) => paths;
-	}
+	// `ignore` is a CJS package; TypeScript sees its default import as the module
+	// object rather than the callable factory, so we cast through unknown.
+	const makeIg = ignoreModule as unknown as () => Ignore;
 
-	const filters: { dir: string; ig: Ignore }[] = [];
+	const filters: { dir: string; ig: Ignore; ancestorPrefix?: string }[] = [];
 
 	for (const gitignoreFile of gitignoreFiles) {
 		const gitignoreDir = dirname(gitignoreFile); // e.g. 'src' or '.'
 		const content = await readFile(join(cwd, gitignoreFile), 'utf-8');
-		// `ignore` is a CJS package; TypeScript sees its default import as the module
-		// object rather than the callable factory, so we cast through unknown.
-		const ig = (ignoreModule as unknown as () => Ignore)().add(content);
-		filters.push({ dir: gitignoreDir === '.' ? '' : gitignoreDir, ig });
+		filters.push({ dir: gitignoreDir === '.' ? '' : gitignoreDir, ig: makeIg().add(content) });
+	}
+
+	// Walk ancestor directories to pick up parent .gitignore files (e.g. monorepo root).
+	// Check for a .git boundary FIRST so we stop before processing the git root's own
+	// .gitignore — that file is handled by `git ls-files` when git is available, and
+	// avoids accidentally applying rules from an unrelated outer repository.
+	let parentDir = dirname(cwd);
+	while (parentDir !== dirname(parentDir)) {
+		if (existsSync(join(parentDir, '.git'))) {
+			break;
+		}
+
+		const parentGitignorePath = join(parentDir, '.gitignore');
+		if (existsSync(parentGitignorePath)) {
+			try {
+				const content = await readFile(parentGitignorePath, 'utf-8');
+				// Paths passed to this filter are relative to cwd. To test them against
+				// a .gitignore that lives above cwd we need to prepend the relative path
+				// from the ancestor dir to cwd so the ignore patterns see the right scope.
+				const ancestorPrefix = relative(parentDir, cwd);
+				filters.push({ dir: '', ig: makeIg().add(content), ancestorPrefix });
+			} catch {
+				// Ignore read errors
+			}
+		}
+
+		parentDir = dirname(parentDir);
+	}
+
+	if (filters.length === 0) {
+		return (paths) => paths;
 	}
 
 	return (paths) =>
 		paths.filter((filePath) => {
-			for (const { dir, ig } of filters) {
+			for (const { dir, ig, ancestorPrefix } of filters) {
 				let relativePath: string | null;
 				if (!dir) {
-					relativePath = filePath;
+					relativePath = ancestorPrefix ? `${ancestorPrefix}/${filePath}` : filePath;
 				} else if (filePath.startsWith(`${dir}/`)) {
 					relativePath = filePath.slice(dir.length + 1);
 				} else {

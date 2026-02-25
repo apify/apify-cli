@@ -1,4 +1,5 @@
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
@@ -97,5 +98,65 @@ describe('Utils - nested .gitignore scoping (no git)', () => {
 
 		// src/internal/secret.js should be excluded by src/.gitignore's `internal/` rule
 		expect(paths).not.toContain('src/internal/secret.js');
+	});
+});
+
+const PARENT_TEST_DIR = 'gitignore-parent-test-dir';
+
+describe('Utils - parent .gitignore applied to subproject (no git)', () => {
+	// tmpPath is the "project root" that holds the parent .gitignore.
+	// The actual cwd passed to getActorLocalFilePaths is tmpPath/subproject/.
+	const { tmpPath, beforeAllCalls, afterAllCalls } = useTempPath(PARENT_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	let subprojectPath: string;
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		subprojectPath = join(tmpPath, 'subproject');
+
+		// Parent .gitignore — rules that should apply to everything inside subproject/.
+		// No fake .git is needed: the ancestor-walker already stops at the apify-cli
+		// repo root (.git lives there) before touching its own .gitignore.
+		writeFileSync(join(tmpPath, '.gitignore'), '*.secret\nbuild/\n', { flag: 'w' });
+
+		// Subproject directory structure
+		mkdirSync(subprojectPath, { recursive: true });
+		ensureFolderExistsSync(subprojectPath, 'src');
+		ensureFolderExistsSync(subprojectPath, 'build');
+
+		// Files that should be kept
+		writeFileSync(join(subprojectPath, 'main.js'), 'content', { flag: 'w' });
+		writeFileSync(join(subprojectPath, 'src', 'utils.js'), 'content', { flag: 'w' });
+
+		// Files/dirs that should be excluded by parent .gitignore
+		writeFileSync(join(subprojectPath, 'config.secret'), 'content', { flag: 'w' });
+		writeFileSync(join(subprojectPath, 'src', 'db.secret'), 'content', { flag: 'w' });
+		writeFileSync(join(subprojectPath, 'build', 'output.js'), 'content', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should exclude files matched by *.secret pattern in parent .gitignore', async () => {
+		const paths = await getActorLocalFilePaths(subprojectPath);
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('src/utils.js');
+
+		expect(paths).not.toContain('config.secret');
+		expect(paths).not.toContain('src/db.secret');
+	});
+
+	it('should exclude directory matched by build/ pattern in parent .gitignore', async () => {
+		const paths = await getActorLocalFilePaths(subprojectPath);
+
+		expect(paths).not.toContain('build/output.js');
 	});
 });
