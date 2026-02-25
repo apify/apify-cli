@@ -15,7 +15,7 @@ import {
 	readOutputSchema,
 	readStorageSchema,
 } from '../../lib/input_schema.js';
-import { error, info, success } from '../../lib/outputs.js';
+import { error, info, success, warning } from '../../lib/outputs.js';
 import {
 	clearAllRequired,
 	makePropertiesRequired,
@@ -169,7 +169,7 @@ Optionally specify custom schema path to use.`;
 		const prepared = prepareFieldsSchemaForCompilation(datasetSchema);
 
 		if (!prepared) {
-			info({ message: 'Dataset schema has no fields defined, skipping type generation.' });
+			warning({ message: 'Dataset schema has no fields defined, skipping type generation.' });
 			return;
 		}
 
@@ -211,7 +211,7 @@ Optionally specify custom schema path to use.`;
 		const prepared = prepareOutputSchemaForCompilation(outputSchema);
 
 		if (!prepared) {
-			info({ message: 'Output schema has no properties defined, skipping type generation.' });
+			warning({ message: 'Output schema has no properties defined, skipping type generation.' });
 			return;
 		}
 
@@ -255,7 +255,9 @@ Optionally specify custom schema path to use.`;
 		const collections = prepareKvsCollectionsForCompilation(kvsSchema);
 
 		if (collections.length === 0) {
-			info({ message: 'Key-Value Store schema has no collections with JSON schemas, skipping type generation.' });
+			warning({
+				message: 'Key-Value Store schema has no collections with JSON schemas, skipping type generation.',
+			});
 			return;
 		}
 
