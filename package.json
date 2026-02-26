@@ -22,7 +22,8 @@
         "prepack": "yarn insert-cli-metadata && yarn build && yarn update-docs",
         "insert-cli-metadata": "tsx scripts/insert-cli-metadata.ts",
         "update-docs": "tsx scripts/generate-cli-docs.ts",
-        "postinstall": "node -e \"console.log('We have an active developer community on Discord. You can find it on https://discord.gg/crawlee-apify-801163717915574323.');\""
+        "postinstall": "node -e \"console.log('We have an active developer community on Discord. You can find it on https://discord.gg/crawlee-apify-801163717915574323.');\"",
+        "prepare": "husky"
     },
     "files": [
         "dist"
@@ -123,7 +124,6 @@
         "@types/cors": "^2.8.17",
         "@types/execa": "^2.0.2",
         "@types/express": "^5.0.0",
-        "@types/is-ci": "^3.0.4",
         "@types/jju": "^1.4.5",
         "@types/js-levenshtein": "^1",
         "@types/lodash.clonedeep": "^4",
@@ -136,6 +136,7 @@
         "cross-env": "^10.0.0",
         "eslint": "^9.25.1",
         "eslint-config-prettier": "^10.1.2",
+        "husky": "^9",
         "lint-staged": "^16.0.0",
         "mock-stdin": "^1.0.0",
         "prettier": "^3.5.3",
