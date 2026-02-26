@@ -407,7 +407,7 @@ describe('[api] apify push', () => {
 	);
 
 	it(
-		'should enable standby mode on existing actor when usesStandbyMode is true in actor.json',
+		'should sync standby mode on existing actor based on usesStandbyMode in actor.json',
 		async () => {
 			// Create an actor without standby mode first
 			const testActorWithTitleDesc = {
@@ -422,23 +422,33 @@ describe('[api] apify push', () => {
 			const initialActor = await testActorClient.get();
 			expect(initialActor?.actorStandby?.isEnabled).to.not.be.eql(true);
 
-			// Enable standby in actor.json
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			// Enable standby in actor.json and push
 			actorJson.usesStandbyMode = true;
 			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
-
-			// Push to existing actor - this should enable standby mode
 			await testRunCommand(ActorsPushCommand, {
 				args_actorId: testActor.id,
 				flags_noPrompt: true,
 				flags_force: true,
 			});
 
-			const updatedActor = await testActorClient.get();
+			const enabledActor = await testActorClient.get();
+			expect(enabledActor?.actorStandby?.isEnabled).to.be.eql(true);
 
-			// Verify standby is enabled after push
-			expect(updatedActor?.actorStandby?.isEnabled).to.be.eql(true);
-			if (updatedActor) await testActorClient.delete();
+			// Remove usesStandbyMode from actor.json and push again (should disable)
+			delete actorJson.usesStandbyMode;
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+			await testRunCommand(ActorsPushCommand, {
+				args_actorId: testActor.id,
+				flags_noPrompt: true,
+				flags_force: true,
+			});
+
+			const disabledActor = await testActorClient.get();
+			expect(disabledActor?.actorStandby?.isEnabled).to.be.eql(false);
+
+			if (disabledActor) await testActorClient.delete();
 		},
 		TEST_TIMEOUT,
 	);
