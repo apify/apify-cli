@@ -79,7 +79,7 @@
         "@sapphire/timestamp": "^1.0.3",
         "@skyra/jaro-winkler": "^1.1.1",
         "adm-zip": "~0.5.15",
-        "ajv": "~8.17.1",
+        "ajv": "~8.18.0",
         "apify-client": "^2.22.0",
         "archiver": "~7.0.1",
         "axios": "^1.11.0",
@@ -109,7 +109,7 @@
         "tiged": "~2.12.7",
         "which": "^6.0.0",
         "widest-line": "^6.0.0",
-        "wrap-ansi": "^9.0.0"
+        "wrap-ansi": "^10.0.0"
     },
     "devDependencies": {
         "@apify/eslint-config": "^1.0.0",
@@ -146,7 +146,7 @@
         "vitest": "^4.0.0"
     },
     "volta": {
-        "node": "24.13.0",
+        "node": "24.14.0",
         "yarn": "4.12.0"
     },
     "packageManager": "yarn@4.12.0",
@@ -175,6 +175,6 @@
         "*.md": "prettier --write"
     },
     "resolutions": {
-        "tar": "7.5.7"
+        "tar": "7.5.9"
     }
 }
