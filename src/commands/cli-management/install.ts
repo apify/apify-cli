@@ -15,8 +15,8 @@ import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
 
 const pathToInstallMarker = (installPath: string) => join(installPath, '.install-marker');
 
-const defaultInstallDir = join(process.env.HOME!, '.apify');
-const defaultBinDir = join(defaultInstallDir, 'bin');
+const defaultInstallDir = process.env.APIFY_CLI_INSTALL ?? join(process.env.HOME!, '.apify');
+const defaultBinDir = process.env.FINAL_BIN_DIR ?? join(defaultInstallDir, 'bin');
 
 export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	static override name = 'install' as const;
