@@ -40,7 +40,7 @@ export const BANNER_COMMENT = `
 export class ActorGenerateSchemaTypesCommand extends ApifyCommand<typeof ActorGenerateSchemaTypesCommand> {
 	static override name = 'generate-schema-types' as const;
 
-	static override hiddenAliases = ['generate-types'];
+	static override hiddenAliases = ['generate-types', 'generate'];
 
 	static override description = `Generate TypeScript types from Actor schemas.
 
