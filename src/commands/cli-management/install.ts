@@ -1,7 +1,8 @@
 import assert from 'node:assert';
-import { existsSync } from 'node:fs';
+import { existsSync, openSync } from 'node:fs';
 import { mkdir, readFile, symlink, unlink, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
+import { ReadStream } from 'node:tty';
 
 import chalk from 'chalk';
 
@@ -97,6 +98,66 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		info({ message: chalk.gray(`Symlinked apify, actor, and apify-cli to ${localBinDirectory}`) });
 	}
 
+	/**
+	 * Prompt using /dev/tty directly, bypassing Inquirer (whose internal readline
+	 * cannot be closed and hangs the process when given a custom input stream).
+	 */
+	private async confirmFromTty(message: string): Promise<boolean> {
+		let ttyStream: ReadStream | undefined;
+
+		const prompt = `${chalk.green('?')} ${chalk.bold(message)} ${chalk.dim('(Y/n)')} `;
+
+		const writeDone = (answer: string) => {
+			// Clear the current line and rewrite with the final answer, like Inquirer does
+			process.stdout.write(`\r\x1b[2K${chalk.green('?')} ${chalk.bold(message)} ${chalk.cyan(answer)}\n`);
+		};
+
+		try {
+			cliDebugPrint('[install] opening /dev/tty for raw mode');
+			const fd = openSync('/dev/tty', 'r');
+			ttyStream = new ReadStream(fd);
+
+			process.stdout.write(prompt);
+
+			ttyStream.setRawMode(true);
+			ttyStream.resume();
+
+			const result = await new Promise<boolean>((resolve) => {
+				const onData = (data: Buffer) => {
+					const key = data.toString();
+
+					if (key === 'y' || key === 'Y' || key === '\r' || key === '\n') {
+						ttyStream!.removeListener('data', onData);
+						writeDone('Yes');
+						resolve(true);
+					} else if (key === 'n' || key === 'N') {
+						ttyStream!.removeListener('data', onData);
+						writeDone('No');
+						resolve(false);
+					} else if (key === '\u0003' || key === '\u0004') {
+						// Ctrl+C or Ctrl+D
+						ttyStream!.removeListener('data', onData);
+						process.stdout.write('\n');
+						resolve(false);
+					}
+				};
+
+				ttyStream!.on('data', onData);
+			});
+
+			return result;
+		} catch (error) {
+			cliDebugPrint('[install] failed to open /dev/tty for raw mode', error);
+			return false;
+		} finally {
+			if (ttyStream) {
+				ttyStream.setRawMode(false);
+				ttyStream.pause();
+				ttyStream.destroy();
+			}
+		}
+	}
+
 	private async promptAddToShell() {
 		const installDir = process.env.PROVIDED_INSTALL_DIR;
 
@@ -109,12 +170,24 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 		simpleLog({ message: '' });
 
-		const allowedToAutomaticallyDo = await useYesNoConfirm({
-			message:
-				'Should the CLI handle adding itself to your shell automatically? (If you say no, you will receive the lines to add to your shell config file)',
-			// For now, no stdin -> always false
-			providedConfirmFromStdin: false,
-		});
+		const confirmMessage =
+			'Should the CLI handle adding itself to your shell automatically? (If you say no, you will receive the lines to add to your shell config file)';
+
+		let allowedToAutomaticallyDo: boolean;
+
+		if (process.env.APIFY_OPEN_TTY && process.platform !== 'win32') {
+			// When running via `curl | bash`, Inquirer's readline interface cannot be
+			// properly cleaned up (it never closes), which hangs the process.
+			// Instead, we open /dev/tty directly and read a single keypress ourselves.
+			allowedToAutomaticallyDo = await this.confirmFromTty(confirmMessage);
+		} else {
+			cliDebugPrint('[install] opening /dev/tty for raw mode not requested, falling back to normal flow');
+			allowedToAutomaticallyDo = await useYesNoConfirm({
+				message: confirmMessage,
+				// For now, no stdin -> always false
+				providedConfirmFromStdin: false,
+			});
+		}
 
 		const shell = basename(process.env.SHELL ?? 'sh');
 		const quotedInstallDir = `"${installDir.replaceAll('"', '\\"')}"`;
@@ -168,6 +241,8 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 				// We don't use a path as we don't know the shell
 				configFile = '~/.bashrc';
+				// But never automatically add to the file as we don't know the shell
+				allowedToAutomaticallyDo = false;
 
 				break;
 		}
@@ -175,7 +250,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		simpleLog({ message: '' });
 
 		if (allowedToAutomaticallyDo && configFile) {
-			const oldContent = await readFile(configFile, 'utf-8');
+			const oldContent = await readFile(configFile, 'utf-8').catch(() => '');
 
 			const newContent = `${oldContent}\n\n# apify cli\n${linesToAdd.join('\n')}`;
 
