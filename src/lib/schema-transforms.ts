@@ -1,12 +1,10 @@
-import deepClone from 'lodash.clonedeep';
-
 /**
  * Transforms a JSON schema so that all properties without a `default` value are marked as required.
  * Properties that have a `default` are left optional, since Apify fills them in at runtime.
  * Recurses into nested object properties.
  */
 export function makePropertiesRequired(schema: Record<string, unknown>): Record<string, unknown> {
-	const clone = deepClone(schema);
+	const clone = structuredClone(schema);
 
 	if (!clone.properties || typeof clone.properties !== 'object') {
 		return clone;
@@ -37,7 +35,7 @@ export function makePropertiesRequired(schema: Record<string, unknown>): Record<
  * making every property optional at all nesting levels.
  */
 export function clearAllRequired(schema: Record<string, unknown>): Record<string, unknown> {
-	const clone = deepClone(schema);
+	const clone = structuredClone(schema);
 
 	delete clone.required;
 
@@ -61,7 +59,7 @@ export function clearAllRequired(schema: Record<string, unknown>): Record<string
  * to be inlined, ensuring only one exported interface per schema.
  */
 export function stripTitles(schema: Record<string, unknown>): Record<string, unknown> {
-	const clone = deepClone(schema);
+	const clone = structuredClone(schema);
 
 	delete clone.title;
 
@@ -139,7 +137,7 @@ export function prepareFieldsSchemaForCompilation(schema: Record<string, unknown
 		return null;
 	}
 
-	const clone = deepClone(fields);
+	const clone = structuredClone(fields);
 
 	if (!clone.type) {
 		clone.type = 'object';
@@ -164,7 +162,7 @@ export function prepareOutputSchemaForCompilation(schema: Record<string, unknown
 		return null;
 	}
 
-	const clonedProperties = deepClone(properties);
+	const clonedProperties = structuredClone(properties);
 
 	// Strip non-JSON-Schema keys (like `template`) from each property
 	for (const prop of Object.values(clonedProperties)) {
@@ -216,7 +214,7 @@ export function prepareKvsCollectionsForCompilation(
 			continue;
 		}
 
-		const clone = deepClone(jsonSchema);
+		const clone = structuredClone(jsonSchema);
 
 		if (!clone.type) {
 			clone.type = 'object';

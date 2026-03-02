@@ -1,7 +1,6 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import deepClone from 'lodash.clonedeep';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
@@ -257,7 +256,7 @@ export const getDefaultsFromInputSchema = (inputSchema: any) => {
 
 // Lots of code copied from @apify-packages/actor, this really should be moved to the shared input_schema package
 export const getAjvValidator = (inputSchema: any, ajvInstance: import('ajv').Ajv) => {
-	const copyOfSchema = deepClone(inputSchema);
+	const copyOfSchema = structuredClone(inputSchema);
 	copyOfSchema.required = [];
 
 	for (const [inputSchemaFieldKey, inputSchemaField] of Object.entries<any>(inputSchema.properties)) {
