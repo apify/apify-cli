@@ -114,14 +114,16 @@ export const readStorageSchema = ({
 	cwd,
 	key,
 	label,
+	getRef,
 }: {
 	cwd: string;
 	key: string;
 	label: string;
+	getRef?: (config: ReturnType<typeof getLocalConfig>) => unknown;
 }): { schema: Record<string, unknown>; schemaPath: string | null } | null => {
 	const localConfig = getLocalConfig(cwd);
 
-	const ref = (localConfig?.storages as Record<string, unknown> | undefined)?.[key];
+	const ref = getRef ? getRef(localConfig) : (localConfig?.storages as Record<string, unknown> | undefined)?.[key];
 
 	if (typeof ref === 'object' && ref !== null) {
 		return {
@@ -173,46 +175,24 @@ export const readDatasetSchema = ({
 
 /**
  * Read the Output schema from the Actor config.
- *
- * Resolves `output` from `.actor/actor.json`:
- * - If it's an object, uses it directly as the embedded schema.
- * - If it's a string, resolves the file path relative to `.actor/`.
- * - If it's missing, returns `null`.
+ * Thin wrapper around `readStorageSchema` — reads `output` from the top-level config
+ * rather than `storages.<key>`.
  */
 export const readOutputSchema = ({
 	cwd,
 }: {
 	cwd: string;
 }): { outputSchema: Record<string, unknown>; outputSchemaPath: string | null } | null => {
-	const localConfig = getLocalConfig(cwd);
+	const result = readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output });
 
-	const outputRef = localConfig?.output;
-
-	if (typeof outputRef === 'object' && outputRef !== null) {
-		return {
-			outputSchema: outputRef as Record<string, unknown>,
-			outputSchemaPath: null,
-		};
+	if (!result) {
+		return null;
 	}
 
-	if (typeof outputRef === 'string') {
-		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, outputRef);
-		const schema = getJsonFileContent(fullPath);
-
-		if (!schema) {
-			warning({
-				message: `Output schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
-			});
-			return null;
-		}
-
-		return {
-			outputSchema: schema,
-			outputSchemaPath: fullPath,
-		};
-	}
-
-	return null;
+	return {
+		outputSchema: result.schema,
+		outputSchemaPath: result.schemaPath,
+	};
 };
 
 /**
