@@ -35,12 +35,18 @@ describe('Utils', () => {
 		beforeAll(async () => {
 			await beforeAllCalls();
 
+			// Initialize a fresh git repo so the local .gitignore is parsed independently
+			// from the parent repo (which gitignores test/tmp entirely)
+			await execWithLog({ cmd: 'git', args: ['init'], opts: { cwd: tmpPath } });
+
 			FOLDERS.concat(FOLDERS_TO_IGNORE).forEach((folder) => {
 				ensureFolderExistsSync(tmpPath, folder);
 			});
 
 			FILES.concat(FILES_TO_IGNORE, FILES_IN_IGNORED_DIR).forEach((file) =>
-				writeFileSync(joinPath(file), Math.random().toString(36).substring(7), { flag: 'w' }),
+				writeFileSync(joinPath(file), Math.random().toString(36).substring(7), {
+					flag: 'w',
+				}),
 			);
 
 			const toIgnore = FOLDERS_TO_IGNORE.concat(FILES_TO_IGNORE).join('\n');
