@@ -82,11 +82,11 @@ export const readInputSchema = async (
 export const readAndValidateInputSchema = async ({
 	forcePath,
 	cwd,
-	action,
+	getMessage,
 }: {
 	forcePath?: string;
 	cwd: string;
-	action: string;
+	getMessage: (path: string | null) => string;
 }): Promise<{ inputSchema: Record<string, unknown>; inputSchemaPath: string | null }> => {
 	const { inputSchema, inputSchemaPath } = await readInputSchema({
 		forcePath,
@@ -97,11 +97,7 @@ export const readAndValidateInputSchema = async ({
 		throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
 	}
 
-	if (inputSchemaPath) {
-		info({ message: `${action} input schema at ${inputSchemaPath}` });
-	} else {
-		info({ message: `${action} input schema embedded in '${LOCAL_CONFIG_PATH}'` });
-	}
+	info({ message: getMessage(inputSchemaPath) });
 
 	const validator = new Ajv2019({ strict: false });
 	validateInputSchema(validator, inputSchema);
@@ -161,9 +157,11 @@ export const readStorageSchema = ({
  * Read the Dataset schema from the Actor config.
  * Thin wrapper around `readStorageSchema` for backwards compatibility.
  */
-export const readDatasetSchema = (
-	{ cwd }: { cwd: string } = { cwd: process.cwd() },
-): { datasetSchema: Record<string, unknown>; datasetSchemaPath: string | null } | null => {
+export const readDatasetSchema = ({
+	cwd,
+}: {
+	cwd: string;
+}): { datasetSchema: Record<string, unknown>; datasetSchemaPath: string | null } | null => {
 	const result = readStorageSchema({ cwd, key: 'dataset', label: 'Dataset' });
 
 	if (!result) {
@@ -184,9 +182,11 @@ export const readDatasetSchema = (
  * - If it's a string, resolves the file path relative to `.actor/`.
  * - If it's missing, returns `null`.
  */
-export const readOutputSchema = (
-	{ cwd }: { cwd: string } = { cwd: process.cwd() },
-): { outputSchema: Record<string, unknown>; outputSchemaPath: string | null } | null => {
+export const readOutputSchema = ({
+	cwd,
+}: {
+	cwd: string;
+}): { outputSchema: Record<string, unknown>; outputSchemaPath: string | null } | null => {
 	const localConfig = getLocalConfig(cwd);
 
 	const outputRef = localConfig?.output;

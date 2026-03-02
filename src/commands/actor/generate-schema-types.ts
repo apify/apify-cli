@@ -89,7 +89,10 @@ Optionally specify custom schema path to use.`;
 		const { inputSchema } = await readAndValidateInputSchema({
 			forcePath: this.args.path,
 			cwd,
-			action: 'Generating types from',
+			getMessage: (schemaPath) =>
+				schemaPath
+					? `Generating types from input schema at ${schemaPath}`
+					: `Generating types from input schema embedded in '${LOCAL_CONFIG_PATH}'`,
 		});
 
 		const name = 'input';

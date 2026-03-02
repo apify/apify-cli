@@ -30,7 +30,10 @@ Optionally specify custom schema path to validate.`;
 		await readAndValidateInputSchema({
 			forcePath: this.args.path,
 			cwd: process.cwd(),
-			action: 'Validating',
+			getMessage: (path) =>
+				path
+					? `Validating input schema at ${path}`
+					: `Validating input schema embedded in '${LOCAL_CONFIG_PATH}'`,
 		});
 
 		success({ message: 'Input schema is valid.' });
