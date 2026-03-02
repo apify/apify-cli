@@ -1,9 +1,10 @@
+import { execSync } from 'node:child_process';
 import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
 import { homedir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import process from 'node:process';
 import { finished } from 'node:stream/promises';
 
@@ -15,12 +16,13 @@ import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 
 import archiver from 'archiver';
 import { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
-import { globby } from 'globby';
+import ignoreModule, { type Ignore } from 'ignore';
 import { getEncoding } from 'istextorbinary';
 import { Mime } from 'mime';
 import otherMimes from 'mime/types/other.js';
 import standardMimes from 'mime/types/standard.js';
 import { gte, minVersion, satisfies } from 'semver';
+import { escapePath, glob } from 'tinyglobby';
 
 import {
 	ACTOR_ENV_VARS,
@@ -134,8 +136,7 @@ const getTokenWithAuthFileFallback = (existingToken?: string) => {
 	return existingToken;
 };
 
-// biome-ignore format: off
-type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
+type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' }}).AxiosRequestConfig['headers'];
 
 /**
  * Returns options for ApifyClient
@@ -231,9 +232,13 @@ export const setLocalEnv = async (actDir: string) => {
 	if (gitignoreAdditions.length > 0) {
 		if (gitignoreContents.length > 0) {
 			gitignoreAdditions.unshift('# Added by Apify CLI');
-			writeFileSync(gitignorePath, `\n${gitignoreAdditions.join('\n')}\n`, { flag: 'a' });
+			writeFileSync(gitignorePath, `\n${gitignoreAdditions.join('\n')}\n`, {
+				flag: 'a',
+			});
 		} else {
-			writeFileSync(gitignorePath, `${gitignoreAdditions.join('\n')}\n`, { flag: 'w' });
+			writeFileSync(gitignorePath, `${gitignoreAdditions.join('\n')}\n`, {
+				flag: 'w',
+			});
 		}
 	}
 };
@@ -286,16 +291,119 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 };
 
 /**
+ * Fallback for when git is unavailable: find all .gitignore files and build a filter
+ * using the `ignore` package, scoped to each file's directory.
+ * Also walks ancestor directories to pick up parent .gitignore files (e.g. monorepo root),
+ * stopping at the first .git boundary found.
+ */
+const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]) => string[]> => {
+	const gitignoreFiles = await glob('**/.gitignore', {
+		dot: true,
+		cwd,
+		ignore: ['.git/**'],
+		expandDirectories: false,
+	});
+
+	// `ignore` is a CJS package; TypeScript sees its default import as the module
+	// object rather than the callable factory, so we cast through unknown.
+	const makeIg = ignoreModule as unknown as () => Ignore;
+
+	const filters: { dir: string; ig: Ignore; ancestorPrefix?: string }[] = [];
+
+	for (const gitignoreFile of gitignoreFiles) {
+		const gitignoreDir = dirname(gitignoreFile); // e.g. 'src' or '.'
+		const content = await readFile(join(cwd, gitignoreFile), 'utf-8');
+		filters.push({ dir: gitignoreDir === '.' ? '' : gitignoreDir, ig: makeIg().add(content) });
+	}
+
+	// Walk ancestor directories to pick up parent .gitignore files (e.g. monorepo root).
+	// Check for a .git boundary FIRST so we stop before processing the git root's own
+	// .gitignore — that file is handled by `git ls-files` when git is available, and
+	// avoids accidentally applying rules from an unrelated outer repository.
+	let parentDir = dirname(cwd);
+	while (parentDir !== dirname(parentDir)) {
+		if (existsSync(join(parentDir, '.git'))) {
+			break;
+		}
+
+		const parentGitignorePath = join(parentDir, '.gitignore');
+		if (existsSync(parentGitignorePath)) {
+			try {
+				const content = await readFile(parentGitignorePath, 'utf-8');
+				// Paths passed to this filter are relative to cwd. To test them against
+				// a .gitignore that lives above cwd we need to prepend the relative path
+				// from the ancestor dir to cwd so the ignore patterns see the right scope.
+				const ancestorPrefix = relative(parentDir, cwd);
+				filters.push({ dir: '', ig: makeIg().add(content), ancestorPrefix });
+			} catch {
+				// Ignore read errors
+			}
+		}
+
+		parentDir = dirname(parentDir);
+	}
+
+	if (filters.length === 0) {
+		return (paths) => paths;
+	}
+
+	return (paths) =>
+		paths.filter((filePath) => {
+			for (const { dir, ig, ancestorPrefix } of filters) {
+				let relativePath: string | null;
+				if (!dir) {
+					relativePath = ancestorPrefix ? `${ancestorPrefix}/${filePath}` : filePath;
+				} else if (filePath.startsWith(`${dir}/`)) {
+					relativePath = filePath.slice(dir.length + 1);
+				} else {
+					relativePath = null;
+				}
+				if (relativePath !== null && ig.ignores(relativePath)) {
+					return false;
+				}
+			}
+			return true;
+		});
+};
+
+/**
  * Get Actor local files, omit files defined in .gitignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
-export const getActorLocalFilePaths = async (cwd?: string) =>
-	globby(['*', '**/**'], {
-		ignore: ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'],
-		gitignore: true,
+export const getActorLocalFilePaths = async (cwd?: string) => {
+	const resolvedCwd = cwd ?? process.cwd();
+
+	const ignore = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+
+	let fallbackFilter: ((paths: string[]) => string[]) | null = null;
+
+	// Use git ls-files to get gitignored paths — this correctly handles ancestor .gitignore files,
+	// nested .gitignore files, .git/info/exclude, and global gitignore config
+	try {
+		const gitIgnored = execSync('git ls-files --others --ignored --exclude-standard --directory', {
+			cwd: resolvedCwd,
+			encoding: 'utf-8',
+			stdio: ['ignore', 'pipe', 'ignore'],
+		})
+			.split('\n')
+			.filter(Boolean)
+			.map((p) => escapePath(p));
+
+		ignore.push(...gitIgnored);
+	} catch {
+		// git is unavailable or directory is not a git repo — fall back to parsing .gitignore files
+		fallbackFilter = await getGitignoreFallbackFilter(resolvedCwd);
+	}
+
+	const paths = await glob(['*', '**/**'], {
+		ignore,
 		dot: true,
-		cwd,
+		expandDirectories: false,
+		cwd: resolvedCwd,
 	});
+
+	return fallbackFilter ? fallbackFilter(paths) : paths;
+};
 
 /**
  * Create zip file with all Actor files specified with pathsToZip
@@ -444,7 +552,7 @@ export const getNpmCmd = (): string => {
  * Returns true if apify storage is empty (expect INPUT.*)
  */
 export const checkIfStorageIsEmpty = async () => {
-	const filesWithoutInput = await globby([
+	const filesWithoutInput = await glob([
 		`${getLocalStorageDir()}/**`,
 		// Omit INPUT.* file
 		`!${getLocalKeyValueStorePath()}/${KEY_VALUE_STORE_KEYS.INPUT}.*`,
