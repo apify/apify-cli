@@ -9,6 +9,7 @@ import {
 	prepareFieldsSchemaForCompilation,
 	prepareKvsCollectionsForCompilation,
 	prepareOutputSchemaForCompilation,
+	stripTitles,
 } from '../../../../src/lib/schema-transforms.js';
 import { validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
@@ -900,5 +901,105 @@ describe('clearAllRequired', () => {
 		const schema = { type: 'object', required: ['foo'] };
 		const result = clearAllRequired(schema);
 		expect(result.required).toBeUndefined();
+	});
+});
+
+describe('stripTitles', () => {
+	it('should remove top-level title', () => {
+		const schema = { title: 'MySchema', type: 'object', properties: {} };
+		const result = stripTitles(schema);
+		expect(result.title).toBeUndefined();
+	});
+
+	it('should strip titles from nested properties', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				name: { title: 'Name', type: 'string' },
+				age: { title: 'Age', type: 'integer' },
+			},
+		};
+		const result = stripTitles(schema);
+		const props = result.properties as any;
+		expect(props.name.title).toBeUndefined();
+		expect(props.age.title).toBeUndefined();
+	});
+
+	it('should strip title from items', () => {
+		const schema = {
+			type: 'array',
+			items: { title: 'Item', type: 'string' },
+		};
+		const result = stripTitles(schema);
+		expect((result.items as any).title).toBeUndefined();
+	});
+
+	it('should strip titles from allOf / anyOf / oneOf sub-schemas', () => {
+		const schema = {
+			allOf: [{ title: 'A', type: 'string' }],
+			anyOf: [{ title: 'B', type: 'number' }],
+			oneOf: [{ title: 'C', type: 'boolean' }],
+		};
+		const result = stripTitles(schema);
+		expect((result.allOf as any[])[0].title).toBeUndefined();
+		expect((result.anyOf as any[])[0].title).toBeUndefined();
+		expect((result.oneOf as any[])[0].title).toBeUndefined();
+	});
+
+	it('should strip titles from definitions and $defs', () => {
+		const schema = {
+			definitions: { Foo: { title: 'Foo', type: 'string' } },
+			$defs: { Bar: { title: 'Bar', type: 'number' } },
+		};
+		const result = stripTitles(schema);
+		expect((result.definitions as any).Foo.title).toBeUndefined();
+		expect((result.$defs as any).Bar.title).toBeUndefined();
+	});
+
+	it('should strip title from additionalProperties when it is a schema object', () => {
+		const schema = {
+			type: 'object',
+			additionalProperties: { title: 'Extra', type: 'string' },
+		};
+		const result = stripTitles(schema);
+		expect((result.additionalProperties as any).title).toBeUndefined();
+	});
+
+	it('should strip titles from if / then / else / not', () => {
+		const schema = {
+			if: { title: 'If', type: 'string' },
+			then: { title: 'Then', type: 'number' },
+			else: { title: 'Else', type: 'boolean' },
+			not: { title: 'Not', type: 'null' },
+		};
+		const result = stripTitles(schema);
+		expect((result.if as any).title).toBeUndefined();
+		expect((result.then as any).title).toBeUndefined();
+		expect((result.else as any).title).toBeUndefined();
+		expect((result.not as any).title).toBeUndefined();
+	});
+
+	it('should strip titles from patternProperties', () => {
+		const schema = {
+			type: 'object',
+			patternProperties: {
+				'^S_': { title: 'StringProp', type: 'string' },
+			},
+		};
+		const result = stripTitles(schema);
+		expect((result.patternProperties as any)['^S_'].title).toBeUndefined();
+	});
+
+	it('should not mutate the original schema', () => {
+		const schema = {
+			title: 'Root',
+			type: 'object',
+			properties: {
+				name: { title: 'Name', type: 'string' },
+			},
+		};
+		stripTitles(schema);
+		expect(schema.title).toBe('Root');
+		expect((schema.properties as any).name.title).toBe('Name');
 	});
 });
