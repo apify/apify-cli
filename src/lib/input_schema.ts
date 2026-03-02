@@ -1,6 +1,5 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import process from 'node:process';
 
 import deepClone from 'lodash.clonedeep';
 
@@ -25,9 +24,7 @@ const DEFAULT_INPUT_SCHEMA_PATHS = [
  * In such a case, path would be set to the location
  * where the input schema would be expected to be found (and e.g. can be created there).
  */
-export const readInputSchema = async (
-	{ forcePath, cwd }: { forcePath?: string; cwd: string } = { cwd: process.cwd() },
-) => {
+export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; cwd: string }) => {
 	if (forcePath) {
 		return {
 			inputSchema: getJsonFileContent(forcePath),
