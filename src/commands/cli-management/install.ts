@@ -15,6 +15,9 @@ import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
 
 const pathToInstallMarker = (installPath: string) => join(installPath, '.install-marker');
 
+const defaultInstallDir = join(process.env.HOME!, '.apify');
+const defaultBinDir = join(defaultInstallDir, 'bin');
+
 export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	static override name = 'install' as const;
 
@@ -159,14 +162,14 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	}
 
 	private async promptAddToShell() {
-		const installDir = process.env.PROVIDED_INSTALL_DIR;
+		const installDir = process.env.PROVIDED_INSTALL_DIR ?? defaultInstallDir;
 
 		if (!installDir) {
 			warning({ message: chalk.gray(`Install directory not found, cannot add to shell`) });
 			return;
 		}
 
-		const binDir = process.env.FINAL_BIN_DIR!;
+		const binDir = process.env.FINAL_BIN_DIR ?? defaultBinDir;
 
 		simpleLog({ message: '' });
 
@@ -252,7 +255,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		if (allowedToAutomaticallyDo && configFile) {
 			const oldContent = await readFile(configFile, 'utf-8').catch(() => '');
 
-			const newContent = `${oldContent}\n\n# apify cli\n${linesToAdd.join('\n')}`;
+			const newContent = `${oldContent}\n\n# apify cli\n${linesToAdd.join('\n')}\n`;
 
 			await writeFile(configFile, newContent);
 
