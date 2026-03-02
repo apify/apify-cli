@@ -487,6 +487,37 @@ describe('apify actor generate-schema-types', () => {
 			expect(errorMessages).not.toContain('Key-Value Store schema');
 		});
 	});
+
+	it('should write successful schemas and report error for the failing one', async () => {
+		const outputDir = joinPath('partial-fail-output');
+
+		// Dataset schema has a $ref that cannot be resolved (file resolution is disabled),
+		// so dataset compilation will throw while input compilation succeeds.
+		await setupActorConfig(joinPath(), {
+			datasetSchemaRef: {
+				actorSpecification: 1,
+				fields: {
+					type: 'object',
+					properties: {
+						x: { $ref: './nonexistent.json' },
+					},
+				},
+				views: {},
+			},
+		});
+
+		await testRunCommand(ActorGenerateSchemaTypesCommand, {
+			flags_output: outputDir,
+		});
+
+		// input.ts must have been written despite the dataset failure
+		const inputFile = await readFile(joinPath('partial-fail-output', 'input.ts'), 'utf-8');
+		expect(inputFile).toContain('export interface');
+
+		// An error naming the failing schema must be logged
+		const allErrors = logMessages.error.join('\n');
+		expect(allErrors).toContain('Failed to generate types for Dataset schema');
+	});
 });
 
 describe('prepareFieldsSchemaForCompilation', () => {
