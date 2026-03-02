@@ -104,6 +104,27 @@ export function stripTitles(schema: Record<string, unknown>): Record<string, unk
 		clone.additionalProperties = stripTitles(clone.additionalProperties as Record<string, unknown>);
 	}
 
+	// Recurse into single sub-schema keywords
+	for (const keyword of ['if', 'then', 'else', 'not'] as const) {
+		if (clone[keyword] && typeof clone[keyword] === 'object') {
+			clone[keyword] = stripTitles(clone[keyword] as Record<string, unknown>);
+		}
+	}
+
+	// Recurse into patternProperties (object mapping patterns to sub-schemas)
+	if (
+		clone.patternProperties &&
+		typeof clone.patternProperties === 'object' &&
+		!Array.isArray(clone.patternProperties)
+	) {
+		const patternProperties = clone.patternProperties as Record<string, Record<string, unknown>>;
+		for (const [key, prop] of Object.entries(patternProperties)) {
+			if (prop && typeof prop === 'object') {
+				patternProperties[key] = stripTitles(prop) as Record<string, unknown>;
+			}
+		}
+	}
+
 	return clone;
 }
 
