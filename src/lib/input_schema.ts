@@ -1,7 +1,6 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
 
