@@ -439,6 +439,7 @@ describe('[api] apify push', () => {
 			// Remove usesStandbyMode from actor.json and push again (should disable)
 			delete actorJson.usesStandbyMode;
 			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+			resetCwdCaches();
 			await testRunCommand(ActorsPushCommand, {
 				args_actorId: testActor.id,
 				flags_noPrompt: true,
