@@ -2298,7 +2298,7 @@ __metadata:
     express: "npm:~5.2.0"
     handlebars: "npm:~4.7.8"
     husky: "npm:^9"
-    ignore: "npm:^5.3.2"
+    ignore: "npm:^7.0.0"
     indent-string: "npm:^5.0.0"
     is-ci: "npm:~4.1.0"
     istextorbinary: "npm:~9.5.0"
@@ -5245,14 +5245,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ignore@npm:^5.2.0, ignore@npm:^5.3.2":
+"ignore@npm:^5.2.0":
   version: 5.3.2
   resolution: "ignore@npm:5.3.2"
   checksum: 10c0/f9f652c957983634ded1e7f02da3b559a0d4cc210fca3792cb67f1b153623c9c42efdc1c4121af171e295444459fc4a9201101fb041b1104a3c000bccb188337
   languageName: node
   linkType: hard
 
-"ignore@npm:^7.0.5":
+"ignore@npm:^7.0.0, ignore@npm:^7.0.5":
   version: 7.0.5
   resolution: "ignore@npm:7.0.5"
   checksum: 10c0/ae00db89fe873064a093b8999fe4cc284b13ef2a178636211842cceb650b9c3e390d3339191acb145d81ed5379d2074840cf0c33a20bdbd6f32821f79eb4ad5d
