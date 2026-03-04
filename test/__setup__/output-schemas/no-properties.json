@@ -1,0 +1,8 @@
+{
+	"actorOutputSchemaVersion": 1,
+	"views": {
+		"overview": {
+			"title": "Overview"
+		}
+	}
+}

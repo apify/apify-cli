@@ -1,0 +1,11 @@
+{
+	"actorSpecification": 1,
+	"fields": {
+		"properties": {
+			"name": { "type": "string" },
+			"count": { "type": "integer" }
+		},
+		"required": ["name"]
+	},
+	"views": {}
+}
