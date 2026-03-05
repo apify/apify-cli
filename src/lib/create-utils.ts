@@ -77,10 +77,10 @@ export function formatCreateSuccessMessage(params: {
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
 	if (dependenciesInstalled) {
-		message += `\n\nNext steps:\n\ncd '${actorName}'\napify run`;
+		message += `\n\nNext steps:\n\ncd "${actorName}"\napify run`;
 	} else {
 		const installLine = installCommandSuggestion || 'install dependencies with your package manager';
-		message += `\n\nNext steps:\n\ncd '${actorName}'\n${installLine}\napify run`;
+		message += `\n\nNext steps:\n\ncd "${actorName}"\n${installLine}\napify run`;
 	}
 
 	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
