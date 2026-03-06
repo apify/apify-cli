@@ -153,8 +153,8 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			});
 
 			return result;
-		} catch (error) {
-			cliDebugPrint('[install] failed to open /dev/tty for raw mode', error);
+		} catch (err) {
+			cliDebugPrint('[install] failed to open /dev/tty for raw mode', err);
 			return false;
 		} finally {
 			if (ttyStream) {
