@@ -94,13 +94,13 @@
         "execa": "^9.5.2",
         "express": "~5.2.0",
         "handlebars": "~4.7.8",
-        "ignore": "^5.3.2",
+        "ignore": "^7.0.0",
         "indent-string": "^5.0.0",
         "is-ci": "~4.1.0",
         "istextorbinary": "~9.5.0",
         "jju": "~1.4.0",
         "js-levenshtein": "^1.1.6",
-        "lodash.clonedeep": "^4.5.0",
+        "json-schema-to-typescript": "^15.0.4",
         "mime": "~4.1.0",
         "open": "~11.0.0",
         "rimraf": "~6.1.0",
@@ -127,7 +127,6 @@
         "@types/express": "^5.0.0",
         "@types/jju": "^1.4.5",
         "@types/js-levenshtein": "^1",
-        "@types/lodash.clonedeep": "^4",
         "@types/mime": "^4.0.0",
         "@types/node": "^24.0.0",
         "@types/semver": "^7.5.8",
@@ -177,6 +176,6 @@
         "*.md": "prettier --write"
     },
     "resolutions": {
-        "tar": "7.5.9"
+        "tar": "7.5.10"
     }
 }

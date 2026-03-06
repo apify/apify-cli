@@ -1,14 +1,11 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import process from 'node:process';
-
-import deepClone from 'lodash.clonedeep';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
 
-import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
-import { warning } from './outputs.js';
+import { ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_PATH } from './consts.js';
+import { info, warning } from './outputs.js';
 import { Ajv2019, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
@@ -25,9 +22,7 @@ const DEFAULT_INPUT_SCHEMA_PATHS = [
  * In such a case, path would be set to the location
  * where the input schema would be expected to be found (and e.g. can be created there).
  */
-export const readInputSchema = async (
-	{ forcePath, cwd }: { forcePath?: string; cwd: string } = { cwd: process.cwd() },
-) => {
+export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; cwd: string }) => {
 	if (forcePath) {
 		return {
 			inputSchema: getJsonFileContent(forcePath),
@@ -67,6 +62,134 @@ export const readInputSchema = async (
 	return {
 		inputSchema: null,
 		inputSchemaPath: join(cwd, DEFAULT_INPUT_SCHEMA_PATHS[0]),
+	};
+};
+
+/**
+ * Reads and validates input schema, logging appropriate info messages.
+ * Throws an error if the schema is not found or invalid.
+ *
+ * @param options.forcePath - Optional path to force reading from
+ * @param options.cwd - Current working directory
+ * @param options.action - Action description for the info message (e.g., "Validating", "Generating types from")
+ * @returns The validated input schema and its path
+ */
+export const readAndValidateInputSchema = async ({
+	forcePath,
+	cwd,
+	getMessage,
+}: {
+	forcePath?: string;
+	cwd: string;
+	getMessage: (path: string | null) => string;
+}): Promise<{ inputSchema: Record<string, unknown>; inputSchemaPath: string | null }> => {
+	const { inputSchema, inputSchemaPath } = await readInputSchema({
+		forcePath,
+		cwd,
+	});
+
+	if (!inputSchema) {
+		throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
+	}
+
+	info({ message: getMessage(inputSchemaPath) });
+
+	const validator = new Ajv2019({ strict: false });
+	validateInputSchema(validator, inputSchema);
+
+	return { inputSchema, inputSchemaPath };
+};
+
+/**
+ * Read a storage schema (Dataset or Key-Value Store) from the Actor config.
+ *
+ * Resolves `storages.<key>` from `.actor/actor.json`:
+ * - If it's an object, uses it directly as the embedded schema.
+ * - If it's a string, resolves the file path relative to `.actor/`.
+ * - If it's missing, returns `null`.
+ */
+export const readStorageSchema = ({
+	cwd,
+	key,
+	label,
+	getRef,
+}: {
+	cwd: string;
+	key: string;
+	label: string;
+	getRef?: (config: ReturnType<typeof getLocalConfig>) => unknown;
+}): { schema: Record<string, unknown>; schemaPath: string | null } | null => {
+	const localConfig = getLocalConfig(cwd);
+
+	const ref = getRef ? getRef(localConfig) : (localConfig?.storages as Record<string, unknown> | undefined)?.[key];
+
+	if (typeof ref === 'object' && ref !== null) {
+		return {
+			schema: ref as Record<string, unknown>,
+			schemaPath: null,
+		};
+	}
+
+	if (typeof ref === 'string') {
+		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, ref);
+		const schema = getJsonFileContent(fullPath);
+
+		if (!schema) {
+			warning({
+				message: `${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
+			return null;
+		}
+
+		return {
+			schema,
+			schemaPath: fullPath,
+		};
+	}
+
+	return null;
+};
+
+/**
+ * Read the Dataset schema from the Actor config.
+ * Thin wrapper around `readStorageSchema` for backwards compatibility.
+ */
+export const readDatasetSchema = ({
+	cwd,
+}: {
+	cwd: string;
+}): { datasetSchema: Record<string, unknown>; datasetSchemaPath: string | null } | null => {
+	const result = readStorageSchema({ cwd, key: 'dataset', label: 'Dataset' });
+
+	if (!result) {
+		return null;
+	}
+
+	return {
+		datasetSchema: result.schema,
+		datasetSchemaPath: result.schemaPath,
+	};
+};
+
+/**
+ * Read the Output schema from the Actor config.
+ * Thin wrapper around `readStorageSchema` — reads `output` from the top-level config
+ * rather than `storages.<key>`.
+ */
+export const readOutputSchema = ({
+	cwd,
+}: {
+	cwd: string;
+}): { outputSchema: Record<string, unknown>; outputSchemaPath: string | null } | null => {
+	const result = readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output });
+
+	if (!result) {
+		return null;
+	}
+
+	return {
+		outputSchema: result.schema,
+		outputSchemaPath: result.schemaPath,
 	};
 };
 
@@ -132,7 +255,7 @@ export const getDefaultsFromInputSchema = (inputSchema: any) => {
 
 // Lots of code copied from @apify-packages/actor, this really should be moved to the shared input_schema package
 export const getAjvValidator = (inputSchema: any, ajvInstance: import('ajv').Ajv) => {
-	const copyOfSchema = deepClone(inputSchema);
+	const copyOfSchema = structuredClone(inputSchema);
 	copyOfSchema.required = [];
 
 	for (const [inputSchemaFieldKey, inputSchemaField] of Object.entries<any>(inputSchema.properties)) {
