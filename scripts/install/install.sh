@@ -101,10 +101,6 @@ if [[ $target = darwin-x64 ]]; then
     fi
 fi
 
-GITHUB=${GITHUB-"https://github.com"}
-
-github_repo="$GITHUB/apify/apify-cli"
-
 # If AVX2 isn't supported, use the -baseline build
 case "$target" in
 'darwin-x64'*)
@@ -119,6 +115,9 @@ case "$target" in
     fi
     ;;
 esac
+
+GITHUB=${GITHUB-"https://github.com"}
+github_repo="$GITHUB/apify/apify-cli"
 
 # Function to fetch latest version from GitHub API
 fetch_latest_version() {
@@ -200,10 +199,18 @@ tildify() {
     fi
 }
 
+success "Apify and Actor CLI were installed successfully!"
 echo ''
+echo -e "  ${Dim}Version: $Green$version"
+echo -e "  ${Dim}Location: $Color_Off$Bold_White$(tildify "$bin_dir/apify") ${Dim}and $Color_Off$Bold_White$(tildify "$bin_dir/actor")"
 echo ''
-success "Apify and Actor CLI $version were installed successfully!"
-info "The binaries are located at $Bold_Green$(tildify "$bin_dir/apify") ${Dim}and $Bold_Green$(tildify "$bin_dir/actor")"
 
 # Invoke the CLI to handle shell integrations nicely
-PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install
+# When running the script via `curl xxx | bash`, stdin is the script that gets consumed by bash.
+# If stdin is not a tty and we have a readable /dev/tty, tell Node.js to open /dev/tty itself
+# (shell-level redirects don't support raw mode properly for Node.js/Inquirer).
+if ! [ -t 0 ] && [ -r /dev/tty ]; then
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_OPEN_TTY=1 "$bin_dir/apify" install
+else
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install
+fi
