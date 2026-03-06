@@ -711,3 +711,57 @@ export const tildify = (path: string) => {
 
 	return path;
 };
+
+export function detectShell() {
+	const shell = process.env.SHELL ?? '';
+
+	if (shell.includes('zsh')) {
+		return 'zsh';
+	}
+
+	if (shell.includes('bash')) {
+		return 'bash';
+	}
+
+	if (shell.includes('fish')) {
+		return 'fish';
+	}
+
+	return 'unknown';
+}
+
+export function shellConfigFile(userHomeDirectory: string, shell: ReturnType<typeof detectShell>) {
+	// eslint-disable-next-line default-case -- We do not want to add a shell and it fall through to default case
+	switch (shell) {
+		case 'bash': {
+			const configFiles = [join(userHomeDirectory, '.bashrc'), join(userHomeDirectory, '.bash_profile')];
+
+			if (process.env.XDG_CONFIG_HOME) {
+				configFiles.push(
+					join(process.env.XDG_CONFIG_HOME, '.bashrc'),
+					join(process.env.XDG_CONFIG_HOME, '.bash_profile'),
+					join(process.env.XDG_CONFIG_HOME, 'bashrc'),
+					join(process.env.XDG_CONFIG_HOME, 'bash_profile'),
+				);
+			}
+
+			for (const maybeConfigFile of configFiles) {
+				if (existsSync(maybeConfigFile)) {
+					return maybeConfigFile;
+				}
+			}
+
+			return `~/.bashrc`;
+		}
+		case 'zsh': {
+			const zshBaseDir = process.env.ZDORDIR || homedir();
+			return join(zshBaseDir, '.zshrc');
+		}
+		case 'fish': {
+			return join(userHomeDirectory, '.config', 'fish', 'config.fish');
+		}
+		case 'unknown': {
+			return `your shell config file`;
+		}
+	}
+}

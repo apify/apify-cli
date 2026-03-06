@@ -136,7 +136,21 @@ for executable_name in "${executable_names[@]}"; do
     chmod +x "$bin_dir/$output_filename"
 done
 
-success "Installed bundles successfully"
+tildify() {
+    if [[ $1 = $HOME/* ]]; then
+        local replacement=\~/
+
+        echo "${1/$HOME\//$replacement}"
+    else
+        echo "$1"
+    fi
+}
+
+success "Apify and Actor CLI were installed successfully!"
+echo ''
+echo -e "  ${Dim}Version: $Green$version"
+echo -e "  ${Dim}Location: $Color_Off$Bold_White$(tildify "$bin_dir/apify") ${Dim}and $Color_Off$Bold_White$(tildify "$bin_dir/actor")"
+echo ''
 
 if ! [ -t 0 ] && [ -r /dev/tty ]; then
     PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_OPEN_TTY=1 "$bin_dir/apify" install
