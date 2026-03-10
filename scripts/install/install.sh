@@ -19,12 +19,7 @@ Color_Off=''
 
 # Regular Colors
 Red=''
-Green=''
 Dim='' # White
-
-# Bold
-Bold_White=''
-Bold_Green=''
 
 if [[ -t 1 ]]; then
     # Reset
@@ -32,12 +27,7 @@ if [[ -t 1 ]]; then
 
     # Regular Colors
     Red='\033[0;31m'   # Red
-    Green='\033[0;32m' # Green
     Dim='\033[0;2m'    # White
-
-    # Bold
-    Bold_Green='\033[1;32m' # Bold Green
-    Bold_White='\033[1m'    # Bold White
 fi
 
 error() {
@@ -47,14 +37,6 @@ error() {
 
 info() {
     echo -e "${Dim}$@ ${Color_Off}"
-}
-
-info_bold() {
-    echo -e "${Bold_White}$@ ${Color_Off}"
-}
-
-success() {
-    echo -e "${Green}$@ ${Color_Off}"
 }
 
 if [[ $# -gt 1 ]]; then
@@ -115,9 +97,6 @@ case "$target" in
     fi
     ;;
 esac
-
-GITHUB=${GITHUB-"https://github.com"}
-github_repo="$GITHUB/apify/apify-cli"
 
 # Function to fetch latest version from GitHub API
 fetch_latest_version() {
@@ -188,16 +167,6 @@ for executable_name in "${executable_names[@]}"; do
         cp "$bin_dir/$output_filename" "$bin_dir/apify-cli"
     fi
 done
-
-tildify() {
-    if [[ $1 = $HOME/* ]]; then
-        local replacement=\~/
-
-        echo "${1/$HOME\//$replacement}"
-    else
-        echo "$1"
-    fi
-}
 
 # Invoke the CLI to handle shell integrations nicely
 # When running the script via `curl xxx | bash`, stdin is the script that gets consumed by bash.

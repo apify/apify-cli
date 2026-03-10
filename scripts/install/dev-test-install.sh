@@ -8,12 +8,7 @@ Color_Off=''
 
 # Regular Colors
 Red=''
-Green=''
 Dim='' # White
-
-# Bold
-Bold_White=''
-Bold_Green=''
 
 if [[ -t 1 ]]; then
     # Reset
@@ -21,12 +16,7 @@ if [[ -t 1 ]]; then
 
     # Regular Colors
     Red='\033[0;31m'   # Red
-    Green='\033[0;32m' # Green
     Dim='\033[0;2m'    # White
-
-    # Bold
-    Bold_Green='\033[1;32m' # Bold Green
-    Bold_White='\033[1m'    # Bold White
 fi
 
 error() {
@@ -36,14 +26,6 @@ error() {
 
 info() {
     echo -e "${Dim}$@ ${Color_Off}"
-}
-
-info_bold() {
-    echo -e "${Bold_White}$@ ${Color_Off}"
-}
-
-success() {
-    echo -e "${Green}$@ ${Color_Off}"
 }
 
 platform=$(uname -ms)
@@ -134,16 +116,6 @@ for executable_name in "${executable_names[@]}"; do
     cp "bundles/$executable_name-$version-$target" "$bin_dir/$output_filename"
     chmod +x "$bin_dir/$output_filename"
 done
-
-tildify() {
-    if [[ $1 = $HOME/* ]]; then
-        local replacement=\~/
-
-        echo "${1/$HOME\//$replacement}"
-    else
-        echo "$1"
-    fi
-}
 
 if ! [ -t 0 ] && [ -r /dev/tty ]; then
     PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_OPEN_TTY=1 "$bin_dir/apify" install
