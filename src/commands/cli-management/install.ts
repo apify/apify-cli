@@ -55,6 +55,17 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 		cliDebugPrint('[install] install marker written to', installMarkerPath);
 
+		simpleLog({
+			message: [
+				chalk.green('Apify and Actor CLI were installed successfully!'),
+				'',
+				chalk.gray(`  Version: ${chalk.green(version)}`),
+				chalk.gray(
+					`  Location: ${chalk.bold.white(tildify(join(installPath, 'apify')))} and ${chalk.bold.white(tildify(join(installPath, 'actor')))}`,
+				),
+			].join('\n'),
+		});
+
 		simpleLog({ message: '' });
 		success({ message: 'To get started, run:' });
 		simpleLog({ message: chalk.white.bold('  apify --help\n  actor --help') });
@@ -180,8 +191,17 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		}
 
 		// Check if we can already resolve the CLI from PATH
-		const apifyCliPath = await which('apify', { nothrow: true });
-		if (apifyCliPath) {
+		const [apifyCliPath, actorCliPath] = await Promise.allSettled([
+			which('apify', { nothrow: true }),
+			which('actor', { nothrow: true }),
+		]);
+
+		if (
+			apifyCliPath.status === 'fulfilled' &&
+			actorCliPath.status === 'fulfilled' &&
+			apifyCliPath.value &&
+			actorCliPath.value
+		) {
 			info({ message: chalk.gray(`Apify and Actor CLIs are already in PATH, skipping shell integration`) });
 			return;
 		}
@@ -298,8 +318,10 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			return;
 		}
 
+		const resolvedConfigFile = configFile ?? 'your shell config file';
+
 		if (showOneLiner) {
-			const oneLiner = `echo '${linesToAdd.join('\\n')}' >> "${configFile}" && source "${configFile}"`;
+			const oneLiner = `echo -e '${linesToAdd.join('\\n')}' >> "${resolvedConfigFile}" && source "${resolvedConfigFile}"`;
 
 			info({
 				message: [
@@ -315,7 +337,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 		info({
 			message: [
-				chalk.gray(`Manually add the following lines to ${tildify(configFile)} or similar:`),
+				chalk.gray(`Manually add the following lines to ${resolvedConfigFile} or similar:`),
 				...linesToAdd.map((line) => chalk.white.bold(`  ${line}`)),
 			].join('\n'),
 		});

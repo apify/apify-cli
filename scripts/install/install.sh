@@ -199,12 +199,6 @@ tildify() {
     fi
 }
 
-success "Apify and Actor CLI were installed successfully!"
-echo ''
-echo -e "  ${Dim}Version: $Green$version"
-echo -e "  ${Dim}Location: $Color_Off$Bold_White$(tildify "$bin_dir/apify") ${Dim}and $Color_Off$Bold_White$(tildify "$bin_dir/actor")"
-echo ''
-
 # Invoke the CLI to handle shell integrations nicely
 # When running the script via `curl xxx | bash`, stdin is the script that gets consumed by bash.
 # If stdin is not a tty and we have a readable /dev/tty, tell Node.js to open /dev/tty itself
