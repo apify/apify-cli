@@ -754,7 +754,7 @@ export function shellConfigFile(userHomeDirectory: string, shell: ReturnType<typ
 			return `~/.bashrc`;
 		}
 		case 'zsh': {
-			const zshBaseDir = process.env.ZDORDIR || homedir();
+			const zshBaseDir = process.env.ZDOTDIR || homedir();
 			return join(zshBaseDir, '.zshrc');
 		}
 		case 'fish': {

@@ -299,7 +299,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		}
 
 		if (showOneLiner) {
-			const oneLiner = `echo '${linesToAdd.join('\\n')}' >> "${tildify(configFile)}" && source "${tildify(configFile)}"`;
+			const oneLiner = `echo '${linesToAdd.join('\\n')}' >> "${configFile}" && source "${configFile}"`;
 
 			info({
 				message: [

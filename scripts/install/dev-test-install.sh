@@ -101,7 +101,6 @@ fi
 # Ensure we are in the apify-cli root by checking for ./package.json
 if [[ ! -f ./package.json ]]; then
     error "Not in the apify-cli root"
-    exit 1
 fi
 
 echo "Install directory: $install_dir"
