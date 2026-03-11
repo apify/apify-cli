@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 
 - Improve Python project detection and entrypoint resolution ([#1010](https://github.com/apify/apify-cli/pull/1010)) ([f0704d3](https://github.com/apify/apify-cli/commit/f0704d3767c8e4cab883e3ba5d678f951a3fa378)) by [@vdusek](https://github.com/vdusek)
 - Set correct exit code on incorect `apify secrets` usage ([#1021](https://github.com/apify/apify-cli/pull/1021)) ([083c909](https://github.com/apify/apify-cli/commit/083c909990185ca48e88be77dce12ac5a627cf37)) by [@janbuchar](https://github.com/janbuchar), closes [#953](https://github.com/apify/apify-cli/issues/953)
+- Enable standby mode on actors during push when usesStandbyMode is set ([#1016](https://github.com/apify/apify-cli/pull/1016)) ([fca7c58](https://github.com/apify/apify-cli/commit/fca7c58ce4659e659e0dc7984467ff43ce8f0949)) by [@MQ37](https://github.com/MQ37)
 
 ### ⚡ Performance
 
