@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 - **builds:** Adds build tag commands ([#1004](https://github.com/apify/apify-cli/pull/1004)) ([082f981](https://github.com/apify/apify-cli/commit/082f981a9161c745bbcfa5c89303ba381bff226c)) by [@l2ysho](https://github.com/l2ysho), closes [#997](https://github.com/apify/apify-cli/issues/997)
 - **actors:** Enables standby mode via actor.json ([#991](https://github.com/apify/apify-cli/pull/991)) ([519aa43](https://github.com/apify/apify-cli/commit/519aa4327d92117d398fa47b819653012526ebdf)) by [@l2ysho](https://github.com/l2ysho), closes [#913](https://github.com/apify/apify-cli/issues/913)
 - Add `--json` flag support to `apify push` ([#1025](https://github.com/apify/apify-cli/pull/1025)) ([baf39bb](https://github.com/apify/apify-cli/commit/baf39bb806ec8a552a1c34784d7bf1f0c76fcda4)) by [@Copilot](https://github.com/Copilot), closes [#1024](https://github.com/apify/apify-cli/issues/1024)
+- **actor:** Adds actor types generation ([#1000](https://github.com/apify/apify-cli/pull/1000)) ([ed11261](https://github.com/apify/apify-cli/commit/ed11261f8cfdc1f7ca30d056c7da8411d4258b45)) by [@l2ysho](https://github.com/l2ysho), closes [#993](https://github.com/apify/apify-cli/issues/993)
 
 ### 🐛 Bug Fixes
 

@@ -22,7 +22,8 @@
         "prepack": "yarn insert-cli-metadata && yarn build && yarn update-docs",
         "insert-cli-metadata": "tsx scripts/insert-cli-metadata.ts",
         "update-docs": "tsx scripts/generate-cli-docs.ts",
-        "postinstall": "node -e \"console.log('We have an active developer community on Discord. You can find it on https://discord.gg/crawlee-apify-801163717915574323.');\""
+        "postinstall": "node -e \"console.log('We have an active developer community on Discord. You can find it on https://discord.gg/crawlee-apify-801163717915574323.');\"",
+        "prepare": "husky"
     },
     "files": [
         "dist"
@@ -92,14 +93,14 @@
         "escape-string-regexp": "~5.0.0",
         "execa": "^9.5.2",
         "express": "~5.2.0",
-        "globby": "~15.0.0",
         "handlebars": "~4.7.8",
+        "ignore": "^7.0.0",
         "indent-string": "^5.0.0",
         "is-ci": "~4.1.0",
         "istextorbinary": "~9.5.0",
         "jju": "~1.4.0",
         "js-levenshtein": "^1.1.6",
-        "lodash.clonedeep": "^4.5.0",
+        "json-schema-to-typescript": "^15.0.4",
         "mime": "~4.1.0",
         "open": "~11.0.0",
         "rimraf": "~6.1.0",
@@ -107,6 +108,7 @@
         "string-width": "^8.0.0",
         "strip-ansi": "^7.1.0",
         "tiged": "~2.12.7",
+        "tinyglobby": "^0.2.15",
         "which": "^6.0.0",
         "widest-line": "^6.0.0",
         "wrap-ansi": "^10.0.0"
@@ -123,10 +125,8 @@
         "@types/cors": "^2.8.17",
         "@types/execa": "^2.0.2",
         "@types/express": "^5.0.0",
-        "@types/is-ci": "^3.0.4",
         "@types/jju": "^1.4.5",
         "@types/js-levenshtein": "^1",
-        "@types/lodash.clonedeep": "^4",
         "@types/mime": "^4.0.0",
         "@types/node": "^24.0.0",
         "@types/semver": "^7.5.8",
@@ -136,6 +136,7 @@
         "cross-env": "^10.0.0",
         "eslint": "^9.25.1",
         "eslint-config-prettier": "^10.1.2",
+        "husky": "^9",
         "lint-staged": "^16.0.0",
         "mock-stdin": "^1.0.0",
         "prettier": "^3.5.3",
@@ -175,6 +176,6 @@
         "*.md": "prettier --write"
     },
     "resolutions": {
-        "tar": "7.5.9"
+        "tar": "7.5.11"
     }
 }
