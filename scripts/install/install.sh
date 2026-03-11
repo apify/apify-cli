@@ -79,7 +79,7 @@ if [[ $target = darwin-x64 ]]; then
     # redirect stderr to devnull to avoid error message when not running in Rosetta
     if [[ $(sysctl -n sysctl.proc_translated 2>/dev/null) = 1 ]]; then
         target=darwin-arm64
-        info "Your shell is running in Rosetta 2. Downloading Apify CLI for $target instead"
+        info "Your shell is running in Rosetta 2. Downloading Apify and Actor CLI for $target instead"
     fi
 fi
 

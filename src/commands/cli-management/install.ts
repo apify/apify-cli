@@ -2,7 +2,7 @@ import assert from 'node:assert';
 import { existsSync, openSync } from 'node:fs';
 import { mkdir, readFile, symlink, unlink, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { ReadStream } from 'node:tty';
 
 import chalk from 'chalk';
@@ -42,16 +42,18 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			return;
 		}
 
-		// We don't want any errors bubbled up to prevent the command from finalizing
-		try {
-			await this.promptAddToShell();
-		} catch (err: any) {
-			error({ message: err.message || 'Failed to automatically handle shell integration' });
+		if (process.platform !== 'win32') {
+			await this.symlinkToLocalBin(installPath);
+
+			// We don't want any errors bubbled up to prevent the command from finalizing
+			try {
+				await this.promptAddToShell();
+			} catch (err: any) {
+				error({ message: err.message || 'Failed to automatically handle shell integration' });
+			}
+
+			simpleLog({ message: '' });
 		}
-
-		simpleLog({ message: '' });
-
-		await this.symlinkToLocalBin(installPath);
 
 		await writeFile(installMarkerPath, version);
 
@@ -75,11 +77,6 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	}
 
 	private async symlinkToLocalBin(installPath: string) {
-		// On windows our install script automatically handles path handling
-		if (process.platform === 'win32') {
-			return;
-		}
-
 		const userHomeDirectory = HOMEDIR();
 
 		cliDebugPrint('[install -> symlinkToLocalBin] user home directory', userHomeDirectory);
@@ -196,11 +193,6 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	}
 
 	private async promptAddToShell() {
-		// On windows our install script automatically handles path handling
-		if (process.platform === 'win32') {
-			return;
-		}
-
 		// Check if we can already resolve the CLI from PATH
 		const [apifyCliPath, actorCliPath] = await Promise.allSettled([
 			which('apify', { nothrow: true }),
@@ -306,6 +298,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			const newContent = `${oldContent}\n\n# apify cli\n${linesToAdd.join('\n')}\n`;
 
 			try {
+				await mkdir(dirname(configFile), { recursive: true });
 				await writeFile(configFile, newContent);
 			} catch (err: any) {
 				if (err.code === 'EACCES') {

@@ -31,6 +31,9 @@ const targets = (() => {
 			'bun-darwin-arm64-baseline',
 			'bun-linux-x64-musl',
 			'bun-linux-arm64-musl',
+			// TODO: when adding native windows arm64 builds, remove these too
+			'bun-linux-x64-musl-baseline' as never,
+			'bun-linux-arm64-musl-baseline' as never,
 		] satisfies Build.CompileTarget[];
 	}
 
@@ -49,6 +52,8 @@ const targets = (() => {
 		'bun-darwin-arm64-baseline',
 		'bun-linux-x64-musl',
 		'bun-linux-arm64-musl',
+		'bun-linux-x64-musl-baseline' as never,
+		'bun-linux-arm64-musl-baseline' as never,
 	] satisfies Build.CompileTarget[];
 })();
 
