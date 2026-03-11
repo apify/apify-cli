@@ -7,10 +7,11 @@ At the time of writing (~2025-05-31), the bundles are created using Bun as the r
 When node stabilizes SEA (https://nodejs.org/api/single-executable-applications.html) [and supports ESM -.-], this code can be adapted to build it using that instead (but cross-platform will be a CI experience)
 */
 
+import { readFileSync } from 'node:fs';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
-import { $, fileURLToPath } from 'bun';
+import { $, type Build, build, fileURLToPath } from 'bun';
 
 import { version } from '../package.json' with { type: 'json' };
 
@@ -30,13 +31,14 @@ const targets = (() => {
 			'bun-darwin-arm64-baseline',
 			'bun-linux-x64-musl',
 			'bun-linux-arm64-musl',
-			'bun-linux-x64-musl-baseline',
-			'bun-linux-arm64-musl-baseline',
-		];
+			// TODO: when adding native windows arm64 builds, remove these too
+			'bun-linux-x64-musl-baseline' as never,
+			'bun-linux-arm64-musl-baseline' as never,
+		] satisfies Build.CompileTarget[];
 	}
 
 	if (process.platform === 'win32') {
-		return ['bun-windows-x64', 'bun-windows-x64-baseline'];
+		return ['bun-windows-x64', 'bun-windows-x64-baseline'] satisfies Build.CompileTarget[];
 	}
 
 	return [
@@ -50,9 +52,9 @@ const targets = (() => {
 		'bun-darwin-arm64-baseline',
 		'bun-linux-x64-musl',
 		'bun-linux-arm64-musl',
-		'bun-linux-x64-musl-baseline',
-		'bun-linux-arm64-musl-baseline',
-	];
+		'bun-linux-x64-musl-baseline' as never,
+		'bun-linux-arm64-musl-baseline' as never,
+	] satisfies Build.CompileTarget[];
 })();
 
 const entryPoints = [
@@ -77,6 +79,35 @@ await writeFile(metadataFile, newContent);
 for (const entryPoint of entryPoints) {
 	const cliName = basename(entryPoint, '.ts');
 
+	const lines = readFileSync(entryPoint, 'utf-8').split('\n');
+	lines.splice(1, 0, 'import "proxy-agent";');
+
+	// Step 1: create one fat JS file with node resolver to ensure no imports point to non-node export conditions
+	const result = await build({
+		entrypoints: [entryPoint],
+		files: {
+			[entryPoint]: lines.join('\n'),
+		},
+		outdir: fileURLToPath(new URL(`../bundles/fat-clis`, import.meta.url)),
+		conditions: 'node',
+		target: 'bun',
+		sourcemap: 'none',
+	});
+
+	const entrypointResultFilePath = result.outputs[0]!.path;
+
+	// Fix apify client js (it now lazy loads proxy-agent, which makes bun skip it from the bundle)
+	{
+		const entrypointResultFileContent = await result.outputs[0]!.text();
+
+		const newEntrypointResultFileContent = entrypointResultFileContent.replace(
+			`(0, utils_1.dynamicNodeImport)("proxy-agent")`,
+			`Promise.resolve().then(() => import_proxy_agent)`,
+		);
+
+		await writeFile(entrypointResultFilePath, newEntrypointResultFileContent);
+	}
+
 	for (const target of targets) {
 		// eslint-disable-next-line prefer-const -- somehow it cannot tell that os and arch cannot be "const" while the rest are let
 		let [, os, arch, musl, baseline] = target.split('-');
@@ -88,6 +119,7 @@ for (const entryPoint of entryPoints) {
 
 		// If we are building on Windows ARM64, even though the target is x64, we mark it as "arm64" (there are some weird errors when compiling on x64
 		// and running on arm64). Hopefully bun will get arm64 native builds
+		// TODO: Vlad remove this in a subsequent PR as Bun now has native arm64 windows builds
 		if (os === 'windows' && process.platform === 'win32') {
 			const systemType = await $`pwsh -c "(Get-CimInstance Win32_ComputerSystem).SystemType"`.text();
 
@@ -108,8 +140,21 @@ for (const entryPoint of entryPoints) {
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
 
 		console.log(`Building ${cliName} for ${target} (result: ${fileName})...`);
-		// TODO: --sourcemap crashes for w/e reason and --bytecode doesn't support ESM (TLA to be exact)
-		await $`bun build --compile --minify --target=${target} --outfile=${outFile} ${entryPoint}`;
+
+		// Step 2: create the final executable bundle
+		await build({
+			entrypoints: [entrypointResultFilePath],
+			compile: {
+				outfile: outFile,
+				target,
+			},
+			format: 'esm',
+			minify: {
+				identifiers: true,
+				keepNames: true,
+			},
+			bytecode: true,
+		});
 
 		// Remove the arch override
 		await writeFile(metadataFile, newContent);

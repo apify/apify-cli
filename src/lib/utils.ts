@@ -48,6 +48,7 @@ import {
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import type { AuthJSON } from './types.js';
+import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
 // Welcome to the state of JavaScript/TypeScript and CJS/ESM interop.
@@ -174,7 +175,8 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 	let userInfo;
 	try {
 		userInfo = await apifyClient.user('me').get();
-	} catch {
+	} catch (err) {
+		cliDebugPrint('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
 		return null;
 	}
 
@@ -711,3 +713,57 @@ export const tildify = (path: string) => {
 
 	return path;
 };
+
+export function detectShell() {
+	const shell = process.env.SHELL ?? '';
+
+	if (shell.includes('zsh')) {
+		return 'zsh';
+	}
+
+	if (shell.includes('bash')) {
+		return 'bash';
+	}
+
+	if (shell.includes('fish')) {
+		return 'fish';
+	}
+
+	return 'unknown';
+}
+
+export function shellConfigFile(userHomeDirectory: string, shell: ReturnType<typeof detectShell>): string | null {
+	// eslint-disable-next-line default-case -- We do not want to add a shell and it fall through to default case
+	switch (shell) {
+		case 'bash': {
+			const configFiles = [join(userHomeDirectory, '.bashrc'), join(userHomeDirectory, '.bash_profile')];
+
+			if (process.env.XDG_CONFIG_HOME) {
+				configFiles.push(
+					join(process.env.XDG_CONFIG_HOME, '.bashrc'),
+					join(process.env.XDG_CONFIG_HOME, '.bash_profile'),
+					join(process.env.XDG_CONFIG_HOME, 'bashrc'),
+					join(process.env.XDG_CONFIG_HOME, 'bash_profile'),
+				);
+			}
+
+			for (const maybeConfigFile of configFiles) {
+				if (existsSync(maybeConfigFile)) {
+					return maybeConfigFile;
+				}
+			}
+
+			return null;
+		}
+		case 'zsh': {
+			const zshBaseDir = process.env.ZDOTDIR || homedir();
+			return join(zshBaseDir, '.zshrc');
+		}
+		case 'fish': {
+			return join(userHomeDirectory, '.config', 'fish', 'config.fish');
+		}
+		case 'unknown': {
+			return null;
+		}
+	}
+}
