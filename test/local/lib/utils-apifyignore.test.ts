@@ -27,9 +27,7 @@ describe('Utils - .apifyignore with git', () => {
 			ensureFolderExistsSync(tmpPath, folder);
 		});
 
-		FILES.concat(FILES_TO_APIFYIGNORE).forEach((file) =>
-			writeFileSync(joinPath(file), 'content', { flag: 'w' }),
-		);
+		FILES.concat(FILES_TO_APIFYIGNORE).forEach((file) => writeFileSync(joinPath(file), 'content', { flag: 'w' }));
 
 		writeFileSync(joinPath('.apifyignore'), 'docs/\nassets/\n', { flag: 'w' });
 	});
