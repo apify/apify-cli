@@ -502,8 +502,9 @@ DESCRIPTION
   Generate TypeScript types from Actor schemas.
 
   Generates types from the input schema and, when no custom path is provided,
-  also from the dataset schema defined in '.actor/actor.json' under 
-  "storages.dataset".
+  also from the Dataset, Output (experimental), and Key-Value Store 
+  (experimental)
+  schemas defined in '.actor/actor.json'.
 
   Reads the input schema from one of these locations (in priority order):
     1. Object in '.actor/actor.json' under "input" key
@@ -639,7 +640,7 @@ DESCRIPTION
 
 USAGE
   $ apify actors push [actorId] [-b <value>] [--dir <value>]
-                      [-f] [--open] [-v <value>] [-w <value>]
+                      [-f] [--json] [--open] [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -655,6 +656,8 @@ FLAGS
   -f, --force                    Push an Actor even
                                  when the local files are older than the Actor on
                                  the platform.
+      --json                     Format the command
+                                 output as JSON
       --open                     Whether to open the
                                  browser automatically to the Actor details page.
   -v, --version=<value>          Actor version number

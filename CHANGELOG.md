@@ -2,9 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 1.2.2 - **not yet released**
+## [1.3.0](https://github.com/apify/apify-cli/releases/tag/v1.3.0) (2026-03-11)
 
 ### 🚀 Features
 
@@ -27,8 +25,6 @@ All notable changes to this project will be documented in this file.
 ### ⚡ Performance
 
 - Speed up creating archives when pusing big codebases ([#1011](https://github.com/apify/apify-cli/pull/1011)) ([a873e0c](https://github.com/apify/apify-cli/commit/a873e0cb6c1c1f9e3bca61821de2b8373ec92744)) by [@matyascimbulka](https://github.com/matyascimbulka)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [1.2.1](https://github.com/apify/apify-cli/releases/tag/v1.2.1) (2026-01-06)
 
