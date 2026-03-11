@@ -17,6 +17,10 @@ import archiver from 'archiver';
 import { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import ignoreModule, { type Ignore } from 'ignore';
+
+// `ignore` is a CJS package; TypeScript sees its default import as the module
+// object rather than the callable factory, so we cast through unknown.
+const makeIg = ignoreModule as unknown as () => Ignore;
 import { getEncoding } from 'istextorbinary';
 import { Mime } from 'mime';
 import otherMimes from 'mime/types/other.js';
@@ -304,10 +308,6 @@ const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]
 		expandDirectories: false,
 	});
 
-	// `ignore` is a CJS package; TypeScript sees its default import as the module
-	// object rather than the callable factory, so we cast through unknown.
-	const makeIg = ignoreModule as unknown as () => Ignore;
-
 	const filters: { dir: string; ig: Ignore; ancestorPrefix?: string }[] = [];
 
 	for (const gitignoreFile of gitignoreFiles) {
@@ -372,7 +372,6 @@ const getApifyignoreFilter = async (cwd: string): Promise<((paths: string[]) => 
 		return null;
 	}
 	const content = await readFile(apifyignorePath, 'utf-8');
-	const makeIg = ignoreModule as unknown as () => Ignore;
 	const ig = makeIg().add(content);
 	return (paths) => paths.filter((filePath) => !ig.ignores(filePath));
 };
