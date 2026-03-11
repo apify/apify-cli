@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This script should be used like so: `/bin/cat dev-test-install.sh | bash`
+# This script should be used from the repo root like so: `cat scripts/install/dev-test-install.sh | bash`
 
 # Reset
 Color_Off=''
@@ -94,6 +94,11 @@ if ! command -v bun &> /dev/null; then
     exit 1
 fi
 
+# Ensure we have jq installed
+if ! command -v jq &> /dev/null; then
+    error "jq could not be found. Please install it from https://stedolan.github.io/jq/"
+    exit 1
+fi
 # Check package.json for the version
 version=$(jq -r '.version' package.json)
 echo "Version: $version"
