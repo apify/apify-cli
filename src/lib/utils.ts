@@ -366,8 +366,19 @@ const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]
 		});
 };
 
+const getApifyignoreFilter = async (cwd: string): Promise<((paths: string[]) => string[]) | null> => {
+	const apifyignorePath = join(cwd, '.apifyignore');
+	if (!existsSync(apifyignorePath)) {
+		return null;
+	}
+	const content = await readFile(apifyignorePath, 'utf-8');
+	const makeIg = ignoreModule as unknown as () => Ignore;
+	const ig = makeIg().add(content);
+	return (paths) => paths.filter((filePath) => !ig.ignores(filePath));
+};
+
 /**
- * Get Actor local files, omit files defined in .gitignore and .git folder
+ * Get Actor local files, omit files defined in .gitignore, .apifyignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
 export const getActorLocalFilePaths = async (cwd?: string) => {
@@ -395,14 +406,23 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 		fallbackFilter = await getGitignoreFallbackFilter(resolvedCwd);
 	}
 
-	const paths = await glob(['*', '**/**'], {
+	let paths = await glob(['*', '**/**'], {
 		ignore,
 		dot: true,
 		expandDirectories: false,
 		cwd: resolvedCwd,
 	});
 
-	return fallbackFilter ? fallbackFilter(paths) : paths;
+	if (fallbackFilter) {
+		paths = fallbackFilter(paths);
+	}
+
+	const apifyignoreFilter = await getApifyignoreFilter(resolvedCwd);
+	if (apifyignoreFilter) {
+		paths = apifyignoreFilter(paths);
+	}
+
+	return paths;
 };
 
 /**
