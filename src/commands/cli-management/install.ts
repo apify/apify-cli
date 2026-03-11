@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import { closeSync, existsSync, openSync } from 'node:fs';
+import { existsSync, openSync } from 'node:fs';
 import { mkdir, readFile, symlink, unlink, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -42,8 +42,6 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			return;
 		}
 
-		await this.symlinkToLocalBin(installPath);
-
 		// We don't want any errors bubbled up to prevent the command from finalizing
 		try {
 			await this.promptAddToShell();
@@ -51,12 +49,17 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			error({ message: err.message || 'Failed to automatically handle shell integration' });
 		}
 
+		simpleLog({ message: '' });
+
+		await this.symlinkToLocalBin(installPath);
+
 		await writeFile(installMarkerPath, version);
 
 		cliDebugPrint('[install] install marker written to', installMarkerPath);
 
 		simpleLog({
 			message: [
+				'',
 				chalk.green('Apify and Actor CLI were installed successfully!'),
 				'',
 				chalk.gray(`  Version: ${chalk.green(version)}`),
@@ -72,6 +75,11 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	}
 
 	private async symlinkToLocalBin(installPath: string) {
+		// On windows our install script automatically handles path handling
+		if (process.platform === 'win32') {
+			return;
+		}
+
 		const userHomeDirectory = HOMEDIR();
 
 		cliDebugPrint('[install -> symlinkToLocalBin] user home directory', userHomeDirectory);
@@ -174,13 +182,16 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 				ttyStream.destroy();
 			}
 
-			if (fd !== undefined) {
-				try {
-					closeSync(fd);
-				} catch {
-					// Like in C, if close fails, tough luck
-				}
-			}
+			// Keeping this code here if we will need it again,
+			// but it looks like in Bun it automatically closes the file descriptor [possibly ttyStream.destroy() does this]
+
+			// if (fd !== undefined) {
+			// 	try {
+			// 		closeSync(fd);
+			// 	} catch {
+			// 		// Like in C, if close fails, tough luck
+			// 	}
+			// }
 		}
 	}
 
@@ -202,6 +213,8 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			apifyCliPath.value &&
 			actorCliPath.value
 		) {
+			cliDebugPrint('[install -> promptAddToShell] already in PATH', { apifyCliPath, actorCliPath });
+
 			info({ message: chalk.gray(`Apify and Actor CLIs are already in PATH, skipping shell integration`) });
 			return;
 		}
