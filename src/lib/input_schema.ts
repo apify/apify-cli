@@ -3,6 +3,11 @@ import { join } from 'node:path';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
+import {
+	getDatasetSchemaValidator,
+	getKeyValueStoreSchemaValidator,
+	getOutputSchemaValidator,
+} from '@apify/json_schemas';
 
 import { ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_PATH } from './consts.js';
 import { info, warning } from './outputs.js';
@@ -252,6 +257,38 @@ export const getDefaultsFromInputSchema = (inputSchema: any) => {
 
 	return defaults;
 };
+
+function formatSchemaValidationErrors(errors: import('ajv').ErrorObject[], schemaName: string): string {
+	const details = errors
+		.map((err) => {
+			const path = err.instancePath ? ` at ${err.instancePath}` : '';
+			return `  - ${err.message}${path}`;
+		})
+		.join('\n');
+
+	return `${schemaName} schema is not valid:\n${details}`;
+}
+
+export function validateDatasetSchema(schema: Record<string, unknown>): void {
+	const validate = getDatasetSchemaValidator();
+	if (!validate(schema)) {
+		throw new Error(formatSchemaValidationErrors(validate.errors!, 'Dataset'));
+	}
+}
+
+export function validateOutputSchema(schema: Record<string, unknown>): void {
+	const validate = getOutputSchemaValidator();
+	if (!validate(schema)) {
+		throw new Error(formatSchemaValidationErrors(validate.errors!, 'Output'));
+	}
+}
+
+export function validateKvsSchema(schema: Record<string, unknown>): void {
+	const validate = getKeyValueStoreSchemaValidator();
+	if (!validate(schema)) {
+		throw new Error(formatSchemaValidationErrors(validate.errors!, 'Key-Value Store'));
+	}
+}
 
 // Lots of code copied from @apify-packages/actor, this really should be moved to the shared input_schema package
 export const getAjvValidator = (inputSchema: any, ajvInstance: import('ajv').Ajv) => {
