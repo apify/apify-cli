@@ -1,10 +1,8 @@
-import { replaceSecretsValue } from '../../../src/lib/secrets.js';
+import { replaceSecretsValue, transformEnvToEnvVars } from '../../../src/lib/secrets.js';
 
 describe('Secrets', () => {
 	describe('replaceSecretsValue()', () => {
-		it('should work', () => {
-			const spy = vitest.spyOn(console, 'error');
-
+		it('should replace secret references with their values', () => {
 			const secrets = {
 				myProdToken: 'mySecretToken',
 				mongoUrl: 'mongo://bla@bla:supermongo.com:27017',
@@ -13,7 +11,6 @@ describe('Secrets', () => {
 				TOKEN: '@myProdToken',
 				USER: 'jakub.drobnik@apify.com',
 				MONGO_URL: '@mongoUrl',
-				WARNING: '@doesNotExist',
 			};
 			const updatedEnv = replaceSecretsValue(env, secrets);
 
@@ -22,9 +19,51 @@ describe('Secrets', () => {
 				USER: 'jakub.drobnik@apify.com',
 				MONGO_URL: secrets.mongoUrl,
 			});
+		});
 
-			expect(spy).toHaveBeenCalled();
-			expect(spy.mock.calls[0][0]).to.include('Warning:');
+		it('should throw an error when secrets are missing', () => {
+			const secrets = {
+				myProdToken: 'mySecretToken',
+			};
+			const env = {
+				TOKEN: '@myProdToken',
+				MISSING_ONE: '@doesNotExist',
+				MISSING_TWO: '@alsoMissing',
+			};
+
+			expect(() => replaceSecretsValue(env, secrets)).toThrow(
+				/The following secrets are missing:\n\s+- doesNotExist\n\s+- alsoMissing/,
+			);
+		});
+	});
+
+	describe('transformEnvToEnvVars()', () => {
+		it('should transform env to envVars format with secret resolution', () => {
+			const secrets = {
+				myProdToken: 'mySecretToken',
+			};
+			const env = {
+				TOKEN: '@myProdToken',
+				USER: 'jakub.drobnik@apify.com',
+			};
+			const envVars = transformEnvToEnvVars(env, secrets);
+
+			expect(envVars).toStrictEqual([
+				{ name: 'TOKEN', value: 'mySecretToken', isSecret: true },
+				{ name: 'USER', value: 'jakub.drobnik@apify.com' },
+			]);
+		});
+
+		it('should throw an error when secrets are missing', () => {
+			const secrets = {};
+			const env = {
+				TOKEN: '@doesNotExist',
+				USER: 'plain-value',
+			};
+
+			expect(() => transformEnvToEnvVars(env, secrets)).toThrow(
+				/The following secrets are missing:\n\s+- doesNotExist/,
+			);
 		});
 	});
 });

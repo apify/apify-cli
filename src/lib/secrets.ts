@@ -1,7 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import { SECRETS_FILE_PATH } from './consts.js';
-import { warning } from './outputs.js';
 import { ensureApifyDirectory } from './utils.js';
 
 const SECRET_KEY_PREFIX = '@';
@@ -58,6 +57,8 @@ const isSecretKey = (envValue: string) => {
 export const replaceSecretsValue = (env: Record<string, string>, secrets?: Record<string, string>) => {
 	secrets = secrets || getSecretsFile();
 	const updatedEnv = {};
+	const missingSecrets: string[] = [];
+
 	Object.keys(env).forEach((key) => {
 		if (isSecretKey(env[key])) {
 			const secretKey = env[key].replace(new RegExp(`^${SECRET_KEY_PREFIX}`), '');
@@ -65,15 +66,22 @@ export const replaceSecretsValue = (env: Record<string, string>, secrets?: Recor
 				// @ts-expect-error - we are replacing the value
 				updatedEnv[key] = secrets[secretKey];
 			} else {
-				warning({
-					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
-				});
+				missingSecrets.push(secretKey);
 			}
 		} else {
 			// @ts-expect-error - we are replacing the value
 			updatedEnv[key] = env[key];
 		}
 	});
+
+	if (missingSecrets.length > 0) {
+		const secretsList = missingSecrets.map((s) => `  - ${s}`).join('\n');
+		throw new Error(
+			`The following secrets are missing:\n${secretsList}\n\n` +
+				`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>" for each missing secret.`,
+		);
+	}
+
 	return updatedEnv;
 };
 
@@ -91,6 +99,8 @@ interface EnvVar {
 export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Record<string, string>) => {
 	secrets = secrets || getSecretsFile();
 	const envVars: EnvVar[] = [];
+	const missingSecrets: string[] = [];
+
 	Object.keys(env).forEach((key) => {
 		if (isSecretKey(env[key])) {
 			const secretKey = env[key].replace(new RegExp(`^${SECRET_KEY_PREFIX}`), '');
@@ -101,9 +111,7 @@ export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Rec
 					isSecret: true,
 				});
 			} else {
-				warning({
-					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
-				});
+				missingSecrets.push(secretKey);
 			}
 		} else {
 			envVars.push({
@@ -112,5 +120,14 @@ export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Rec
 			});
 		}
 	});
+
+	if (missingSecrets.length > 0) {
+		const secretsList = missingSecrets.map((s) => `  - ${s}`).join('\n');
+		throw new Error(
+			`The following secrets are missing:\n${secretsList}\n\n` +
+				`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>" for each missing secret.`,
+		);
+	}
+
 	return envVars;
 };
