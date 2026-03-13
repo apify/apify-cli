@@ -35,6 +35,38 @@ describe('Secrets', () => {
 				/The following secrets are missing:\n\s+- doesNotExist\n\s+- alsoMissing/,
 			);
 		});
+
+		it('should mention --allow-missing-secrets in the error message', () => {
+			const env = { TOKEN: '@doesNotExist' };
+
+			expect(() => replaceSecretsValue(env, {})).toThrow(/--allow-missing-secrets/);
+		});
+
+		it('should warn instead of throwing when allowMissing is true', () => {
+			const spy = vitest.spyOn(console, 'error');
+
+			const secrets = {
+				myProdToken: 'mySecretToken',
+			};
+			const env = {
+				TOKEN: '@myProdToken',
+				MISSING_ONE: '@doesNotExist',
+				MISSING_TWO: '@alsoMissing',
+			};
+
+			const updatedEnv = replaceSecretsValue(env, secrets, {
+				allowMissing: true,
+			});
+
+			expect(updatedEnv).toStrictEqual({
+				TOKEN: secrets.myProdToken,
+			});
+
+			expect(spy).toHaveBeenCalled();
+			expect(spy.mock.calls.flat().join(' ')).to.include('doesNotExist');
+
+			spy.mockRestore();
+		});
 	});
 
 	describe('transformEnvToEnvVars()', () => {
@@ -64,6 +96,33 @@ describe('Secrets', () => {
 			expect(() => transformEnvToEnvVars(env, secrets)).toThrow(
 				/The following secrets are missing:\n\s+- doesNotExist/,
 			);
+		});
+
+		it('should mention --allow-missing-secrets in the error message', () => {
+			const env = { TOKEN: '@doesNotExist' };
+
+			expect(() => transformEnvToEnvVars(env, {})).toThrow(/--allow-missing-secrets/);
+		});
+
+		it('should warn instead of throwing when allowMissing is true', () => {
+			const spy = vitest.spyOn(console, 'error');
+
+			const secrets = {};
+			const env = {
+				TOKEN: '@doesNotExist',
+				USER: 'plain-value',
+			};
+
+			const envVars = transformEnvToEnvVars(env, secrets, {
+				allowMissing: true,
+			});
+
+			expect(envVars).toStrictEqual([{ name: 'USER', value: 'plain-value' }]);
+
+			expect(spy).toHaveBeenCalled();
+			expect(spy.mock.calls.flat().join(' ')).to.include('doesNotExist');
+
+			spy.mockRestore();
 		});
 	});
 });

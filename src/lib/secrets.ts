@@ -1,6 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import { SECRETS_FILE_PATH } from './consts.js';
+import { warning } from './outputs.js';
 import { ensureApifyDirectory } from './utils.js';
 
 const SECRET_KEY_PREFIX = '@';
@@ -54,7 +55,11 @@ const isSecretKey = (envValue: string) => {
  * @param env
  * @param secrets - Object with secrets, if not set, will be load from secrets file.
  */
-export const replaceSecretsValue = (env: Record<string, string>, secrets?: Record<string, string>) => {
+export const replaceSecretsValue = (
+	env: Record<string, string>,
+	secrets?: Record<string, string>,
+	{ allowMissing = false }: { allowMissing?: boolean } = {},
+) => {
 	secrets = secrets || getSecretsFile();
 	const updatedEnv = {};
 	const missingSecrets: string[] = [];
@@ -76,10 +81,19 @@ export const replaceSecretsValue = (env: Record<string, string>, secrets?: Recor
 
 	if (missingSecrets.length > 0) {
 		const secretsList = missingSecrets.map((s) => `  - ${s}`).join('\n');
-		throw new Error(
-			`The following secrets are missing:\n${secretsList}\n\n` +
-				`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>" for each missing secret.`,
-		);
+		if (allowMissing) {
+			for (const secretKey of missingSecrets) {
+				warning({
+					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
+				});
+			}
+		} else {
+			throw new Error(
+				`The following secrets are missing:\n${secretsList}\n\n` +
+					`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>" for each missing secret.\n` +
+					`If you want to skip missing secrets, run the command with the --allow-missing-secrets flag.`,
+			);
+		}
 	}
 
 	return updatedEnv;
@@ -96,7 +110,11 @@ interface EnvVar {
  * It replaces secrets to values from secrets file.
  * @param secrets - Object with secrets, if not set, will be load from secrets file.
  */
-export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Record<string, string>) => {
+export const transformEnvToEnvVars = (
+	env: Record<string, string>,
+	secrets?: Record<string, string>,
+	{ allowMissing = false }: { allowMissing?: boolean } = {},
+) => {
 	secrets = secrets || getSecretsFile();
 	const envVars: EnvVar[] = [];
 	const missingSecrets: string[] = [];
@@ -123,10 +141,19 @@ export const transformEnvToEnvVars = (env: Record<string, string>, secrets?: Rec
 
 	if (missingSecrets.length > 0) {
 		const secretsList = missingSecrets.map((s) => `  - ${s}`).join('\n');
-		throw new Error(
-			`The following secrets are missing:\n${secretsList}\n\n` +
-				`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>" for each missing secret.`,
-		);
+		if (allowMissing) {
+			for (const secretKey of missingSecrets) {
+				warning({
+					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
+				});
+			}
+		} else {
+			throw new Error(
+				`The following secrets are missing:\n${secretsList}\n\n` +
+					`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>" for each missing secret.\n` +
+					`If you want to skip missing secrets, run the command with the --allow-missing-secrets flag.`,
+			);
+		}
 	}
 
 	return envVars;

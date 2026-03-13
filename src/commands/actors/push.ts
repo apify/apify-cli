@@ -83,6 +83,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			description: 'Directory where the Actor is located',
 			required: false,
 		}),
+		'allow-missing-secrets': Flags.boolean({
+			description:
+				'Allow the command to continue even when secret values are not found in the local secrets storage.',
+			required: false,
+			default: false,
+		}),
 	};
 
 	static override args = {
@@ -293,7 +299,9 @@ Skipping push. Use --force to override.`,
 		// Update Actor version
 		const actorCurrentVersion = await actorClient.version(version).get();
 		const envVars = actorConfig!.environmentVariables
-			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>)
+			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>, undefined, {
+					allowMissing: this.flags.allowMissingSecrets,
+				})
 			: undefined;
 
 		if (actorCurrentVersion) {
