@@ -56,3 +56,45 @@ describe('Utils - .apifyignore with .gitignore fallback (no git)', () => {
 		FILES_TO_APIFYIGNORE.forEach((file) => expect(paths).not.toContain(file));
 	});
 });
+
+const NEGATE_NO_GIT_TEST_DIR = 'apifyignore-negate-no-git-test-dir';
+const NEGATE_FOLDERS = ['src', 'dist'];
+const NEGATE_FILES = ['main.js', 'src/index.js'];
+const NEGATE_FILES_TO_GITIGNORE = ['dist/bundle.js'];
+
+describe('Utils - .apifyignore negation overrides gitignore (no git)', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NEGATE_NO_GIT_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		NEGATE_FOLDERS.forEach((folder) => {
+			ensureFolderExistsSync(tmpPath, folder);
+		});
+
+		NEGATE_FILES.concat(NEGATE_FILES_TO_GITIGNORE).forEach((file) =>
+			writeFileSync(joinPath(file), 'content', { flag: 'w' }),
+		);
+
+		writeFileSync(joinPath('.gitignore'), 'dist/\n', { flag: 'w' });
+		// .apifyignore force-includes dist/ (overrides gitignore)
+		writeFileSync(joinPath('.apifyignore'), '!dist/\n', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should include gitignored files that match negation patterns in .apifyignore', async () => {
+		const paths = await getActorLocalFilePaths(tmpPath);
+
+		NEGATE_FILES.forEach((file) => expect(paths).toContain(file));
+		// dist/bundle.js is gitignored but force-included by .apifyignore
+		NEGATE_FILES_TO_GITIGNORE.forEach((file) => expect(paths).toContain(file));
+	});
+});

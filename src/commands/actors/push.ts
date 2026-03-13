@@ -48,7 +48,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`Deploys Actor to Apify platform using settings from '${LOCAL_CONFIG_PATH}'.\n` +
 		`Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files"; ` +
 		`larger projects upload as ZIP file.\n` +
-		`Files matched by .gitignore and .apifyignore are excluded.\n` +
+		`Files matched by .gitignore and .apifyignore are excluded. ` +
+		`Use negation patterns (e.g. !dist/) in .apifyignore to force-include git-ignored files.\n` +
 		`Use --force to override newer remote versions.`;
 
 	static override enableJsonFlag = true;

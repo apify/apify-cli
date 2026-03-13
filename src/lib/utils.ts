@@ -366,14 +366,44 @@ const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]
 		});
 };
 
-const getApifyignoreFilter = async (cwd: string): Promise<((paths: string[]) => string[]) | null> => {
+interface ApifyignoreResult {
+	/** Filter that removes paths matching non-negated .apifyignore patterns */
+	excludeFilter: ((paths: string[]) => string[]) | null;
+	/** Patterns from negation lines (with `!` stripped) — files matching these should be force-included even if git-ignored */
+	forceIncludePatterns: string[];
+}
+
+const parseApifyignore = async (cwd: string): Promise<ApifyignoreResult> => {
 	const apifyignorePath = join(cwd, '.apifyignore');
 	if (!existsSync(apifyignorePath)) {
-		return null;
+		return { excludeFilter: null, forceIncludePatterns: [] };
 	}
+
 	const content = await readFile(apifyignorePath, 'utf-8');
-	const ig = makeIg().add(content);
-	return (paths) => paths.filter((filePath) => !ig.ignores(filePath));
+	const lines = content.split(/\r?\n/);
+
+	const excludeLines: string[] = [];
+	const forceIncludePatterns: string[] = [];
+
+	for (const line of lines) {
+		const trimmed = line.trim();
+		if (!trimmed || trimmed.startsWith('#')) continue;
+		if (trimmed.startsWith('!')) {
+			forceIncludePatterns.push(trimmed.slice(1));
+		} else {
+			excludeLines.push(trimmed);
+		}
+	}
+
+	const excludeFilter =
+		excludeLines.length > 0
+			? (paths: string[]) => {
+					const ig = makeIg().add(excludeLines);
+					return paths.filter((filePath) => !ig.ignores(filePath));
+				}
+			: null;
+
+	return { excludeFilter, forceIncludePatterns };
 };
 
 /**
@@ -383,7 +413,11 @@ const getApifyignoreFilter = async (cwd: string): Promise<((paths: string[]) => 
 export const getActorLocalFilePaths = async (cwd?: string) => {
 	const resolvedCwd = cwd ?? process.cwd();
 
-	const ignore = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+	const hardcodedIgnore = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+	const ignore = [...hardcodedIgnore];
+
+	// Parse .apifyignore early to get both exclude filter and force-include patterns
+	const { excludeFilter: apifyignoreFilter, forceIncludePatterns } = await parseApifyignore(resolvedCwd);
 
 	let fallbackFilter: ((paths: string[]) => string[]) | null = null;
 
@@ -416,9 +450,26 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 		paths = fallbackFilter(paths);
 	}
 
-	const apifyignoreFilter = await getApifyignoreFilter(resolvedCwd);
 	if (apifyignoreFilter) {
 		paths = apifyignoreFilter(paths);
+	}
+
+	// Force-include: negation patterns in .apifyignore (e.g. !dist/) override gitignore,
+	// allowing git-ignored files to be included in the push
+	if (forceIncludePatterns.length > 0) {
+		const forceIncludeIg = makeIg().add(forceIncludePatterns);
+		const allFiles = await glob(['*', '**/**'], {
+			ignore: hardcodedIgnore,
+			dot: true,
+			expandDirectories: false,
+			cwd: resolvedCwd,
+		});
+		const forceIncluded = allFiles.filter((filePath) => forceIncludeIg.ignores(filePath));
+		const pathSet = new Set(paths);
+		for (const file of forceIncluded) {
+			pathSet.add(file);
+		}
+		paths = [...pathSet];
 	}
 
 	return paths;
