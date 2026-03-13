@@ -17,10 +17,6 @@ import archiver from 'archiver';
 import { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import ignoreModule, { type Ignore } from 'ignore';
-
-// `ignore` is a CJS package; TypeScript sees its default import as the module
-// object rather than the callable factory, so we cast through unknown.
-const makeIg = ignoreModule as unknown as () => Ignore;
 import { getEncoding } from 'istextorbinary';
 import { Mime } from 'mime';
 import otherMimes from 'mime/types/other.js';
@@ -52,6 +48,10 @@ import {
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import type { AuthJSON } from './types.js';
+
+// `ignore` is a CJS package; TypeScript sees its default import as the module
+// object rather than the callable factory, so we cast through unknown.
+const makeIg = ignoreModule as unknown as () => Ignore;
 
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
 // Welcome to the state of JavaScript/TypeScript and CJS/ESM interop.
