@@ -30,11 +30,14 @@ describe('[python] spaces in path to actor', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 
-		await testRunCommand(CreateCommand, { flags_template: 'python-start', args_actorName: actorName });
+		await testRunCommand(CreateCommand, {
+			flags_template: 'python-start',
+			args_actorName: actorName,
+		});
 
 		forceNewCwd(actorName);
 
-		await writeFile(joinCwdPath('src', 'main.py'), mainFile);
+		await writeFile(joinCwdPath('my_actor', 'main.py'), mainFile);
 
 		outputPath = joinCwdPath(getLocalKeyValueStorePath(), 'OUTPUT');
 	});
