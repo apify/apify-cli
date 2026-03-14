@@ -70,7 +70,9 @@ async def main():
         await Actor.set_value('OUTPUT', ${JSON.stringify(expectedOutput)})
 `;
 
-		writeFileSync(joinPath('src', 'main.py'), actorCode, { flag: 'w' });
+		writeFileSync(joinPath('my_actor', 'main.py'), actorCode, {
+			flag: 'w',
+		});
 
 		toggleCwdBetweenFullAndParentPath();
 
