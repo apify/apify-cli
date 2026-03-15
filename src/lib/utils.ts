@@ -382,7 +382,7 @@ const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 	}
 
 	const content = await readFile(actorignorePath, 'utf-8');
-	const lines = content.split(/\r?\n/);
+	const lines = content.split('\n');
 
 	const excludeLines: string[] = [];
 	const forceIncludePatterns: string[] = [];
