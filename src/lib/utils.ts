@@ -375,7 +375,7 @@ interface ActorIgnoreResult {
 	forceIncludePatterns: string[];
 }
 
-const parseActorignore = async (cwd: string): Promise<ActorignoreResult> => {
+const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 	const actorignorePath = join(cwd, '.actorignore');
 	if (!existsSync(actorignorePath)) {
 		return { excludeFilter: null, forceIncludePatterns: [] };
