@@ -5,12 +5,12 @@ import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
-const TEST_DIR = 'apifyignore-test-dir';
+const TEST_DIR = 'actorignore-test-dir';
 const FOLDERS = ['src', 'docs', 'assets'];
 const FILES = ['main.js', 'src/index.js'];
-const FILES_TO_APIFYIGNORE = ['docs/README.md', 'assets/logo.png'];
+const FILES_TO_ACTORIGNORE = ['docs/README.md', 'assets/logo.png'];
 
-describe('Utils - .apifyignore with git', () => {
+describe('Utils - .actorignore with git', () => {
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(TEST_DIR, {
 		create: true,
 		remove: true,
@@ -27,32 +27,32 @@ describe('Utils - .apifyignore with git', () => {
 			ensureFolderExistsSync(tmpPath, folder);
 		});
 
-		FILES.concat(FILES_TO_APIFYIGNORE).forEach((file) => writeFileSync(joinPath(file), 'content', { flag: 'w' }));
+		FILES.concat(FILES_TO_ACTORIGNORE).forEach((file) => writeFileSync(joinPath(file), 'content', { flag: 'w' }));
 
-		writeFileSync(joinPath('.apifyignore'), 'docs/\nassets/\n', { flag: 'w' });
+		writeFileSync(joinPath('.actorignore'), 'docs/\nassets/\n', { flag: 'w' });
 	});
 
 	afterAll(async () => {
 		await afterAllCalls();
 	});
 
-	it('should exclude files matched by .apifyignore', async () => {
+	it('should exclude files matched by .actorignore', async () => {
 		const paths = await getActorLocalFilePaths(tmpPath);
 
 		FILES.forEach((file) => expect(paths).toContain(file));
-		FILES_TO_APIFYIGNORE.forEach((file) => expect(paths).not.toContain(file));
+		FILES_TO_ACTORIGNORE.forEach((file) => expect(paths).not.toContain(file));
 	});
 
-	it('should include .apifyignore itself in the file list', async () => {
+	it('should include .actorignore itself in the file list', async () => {
 		const paths = await getActorLocalFilePaths(tmpPath);
 
-		expect(paths).toContain('.apifyignore');
+		expect(paths).toContain('.actorignore');
 	});
 });
 
-const GLOB_TEST_DIR = 'apifyignore-glob-test-dir';
+const GLOB_TEST_DIR = 'actorignore-glob-test-dir';
 
-describe('Utils - .apifyignore with file-glob patterns', () => {
+describe('Utils - .actorignore with file-glob patterns', () => {
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(GLOB_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -73,7 +73,7 @@ describe('Utils - .apifyignore with file-glob patterns', () => {
 		writeFileSync(joinPath('src/error.log'), 'content', { flag: 'w' });
 		writeFileSync(joinPath('data.tmp'), 'content', { flag: 'w' });
 
-		writeFileSync(joinPath('.apifyignore'), '*.log\n*.tmp\n', { flag: 'w' });
+		writeFileSync(joinPath('.actorignore'), '*.log\n*.tmp\n', { flag: 'w' });
 	});
 
 	afterAll(async () => {
@@ -91,9 +91,9 @@ describe('Utils - .apifyignore with file-glob patterns', () => {
 	});
 });
 
-const COMMENT_TEST_DIR = 'apifyignore-comment-test-dir';
+const COMMENT_TEST_DIR = 'actorignore-comment-test-dir';
 
-describe('Utils - .apifyignore with comments and blank lines', () => {
+describe('Utils - .actorignore with comments and blank lines', () => {
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(COMMENT_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -111,14 +111,14 @@ describe('Utils - .apifyignore with comments and blank lines', () => {
 		writeFileSync(joinPath('main.js'), 'content', { flag: 'w' });
 		writeFileSync(joinPath('logs/app.log'), 'content', { flag: 'w' });
 
-		writeFileSync(joinPath('.apifyignore'), '# Ignore log files\n\nlogs/\n', { flag: 'w' });
+		writeFileSync(joinPath('.actorignore'), '# Ignore log files\n\nlogs/\n', { flag: 'w' });
 	});
 
 	afterAll(async () => {
 		await afterAllCalls();
 	});
 
-	it('should ignore comment lines and blank lines in .apifyignore', async () => {
+	it('should ignore comment lines and blank lines in .actorignore', async () => {
 		const paths = await getActorLocalFilePaths(tmpPath);
 
 		expect(paths).toContain('main.js');
@@ -126,9 +126,9 @@ describe('Utils - .apifyignore with comments and blank lines', () => {
 	});
 });
 
-const EMPTY_TEST_DIR = 'apifyignore-empty-test-dir';
+const EMPTY_TEST_DIR = 'actorignore-empty-test-dir';
 
-describe('Utils - empty .apifyignore', () => {
+describe('Utils - empty .actorignore', () => {
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(EMPTY_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -143,24 +143,24 @@ describe('Utils - empty .apifyignore', () => {
 
 		writeFileSync(joinPath('main.js'), 'content', { flag: 'w' });
 
-		writeFileSync(joinPath('.apifyignore'), '', { flag: 'w' });
+		writeFileSync(joinPath('.actorignore'), '', { flag: 'w' });
 	});
 
 	afterAll(async () => {
 		await afterAllCalls();
 	});
 
-	it('should include all files when .apifyignore is empty', async () => {
+	it('should include all files when .actorignore is empty', async () => {
 		const paths = await getActorLocalFilePaths(tmpPath);
 
 		expect(paths).toContain('main.js');
-		expect(paths).toContain('.apifyignore');
+		expect(paths).toContain('.actorignore');
 	});
 });
 
-const NEGATE_TEST_DIR = 'apifyignore-negate-test-dir';
+const NEGATE_TEST_DIR = 'actorignore-negate-test-dir';
 
-describe('Utils - .apifyignore negation overrides gitignore', () => {
+describe('Utils - .actorignore negation overrides gitignore', () => {
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NEGATE_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -184,20 +184,20 @@ describe('Utils - .apifyignore negation overrides gitignore', () => {
 
 		// git ignores dist/ and .env
 		writeFileSync(joinPath('.gitignore'), 'dist/\n.env\n', { flag: 'w' });
-		// .apifyignore force-includes dist/ (overrides gitignore)
-		writeFileSync(joinPath('.apifyignore'), '!dist/\n', { flag: 'w' });
+		// .actorignore force-includes dist/ (overrides gitignore)
+		writeFileSync(joinPath('.actorignore'), '!dist/\n', { flag: 'w' });
 	});
 
 	afterAll(async () => {
 		await afterAllCalls();
 	});
 
-	it('should include git-ignored files that match negation patterns in .apifyignore', async () => {
+	it('should include git-ignored files that match negation patterns in .actorignore', async () => {
 		const paths = await getActorLocalFilePaths(tmpPath);
 
 		expect(paths).toContain('main.js');
 		expect(paths).toContain('src/index.js');
-		// dist/ is git-ignored but force-included by .apifyignore
+		// dist/ is git-ignored but force-included by .actorignore
 		expect(paths).toContain('dist/bundle.js');
 		expect(paths).toContain('dist/styles.css');
 		// .env is git-ignored and NOT force-included
@@ -205,9 +205,9 @@ describe('Utils - .apifyignore negation overrides gitignore', () => {
 	});
 });
 
-const NEGATE_FILE_TEST_DIR = 'apifyignore-negate-file-test-dir';
+const NEGATE_FILE_TEST_DIR = 'actorignore-negate-file-test-dir';
 
-describe('Utils - .apifyignore negation for specific file', () => {
+describe('Utils - .actorignore negation for specific file', () => {
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NEGATE_FILE_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -228,8 +228,8 @@ describe('Utils - .apifyignore negation for specific file', () => {
 
 		// git ignores dist/
 		writeFileSync(joinPath('.gitignore'), 'dist/\n', { flag: 'w' });
-		// .apifyignore force-includes only dist/bundle.js
-		writeFileSync(joinPath('.apifyignore'), '!dist/bundle.js\n', { flag: 'w' });
+		// .actorignore force-includes only dist/bundle.js
+		writeFileSync(joinPath('.actorignore'), '!dist/bundle.js\n', { flag: 'w' });
 	});
 
 	afterAll(async () => {
@@ -245,9 +245,9 @@ describe('Utils - .apifyignore negation for specific file', () => {
 	});
 });
 
-const NEGATE_AND_EXCLUDE_TEST_DIR = 'apifyignore-negate-and-exclude-test-dir';
+const NEGATE_AND_EXCLUDE_TEST_DIR = 'actorignore-negate-and-exclude-test-dir';
 
-describe('Utils - .apifyignore with both exclude and negation patterns', () => {
+describe('Utils - .actorignore with both exclude and negation patterns', () => {
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NEGATE_AND_EXCLUDE_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -269,8 +269,8 @@ describe('Utils - .apifyignore with both exclude and negation patterns', () => {
 
 		// git ignores dist/
 		writeFileSync(joinPath('.gitignore'), 'dist/\n', { flag: 'w' });
-		// .apifyignore: exclude docs/, force-include dist/
-		writeFileSync(joinPath('.apifyignore'), 'docs/\n!dist/\n', { flag: 'w' });
+		// .actorignore: exclude docs/, force-include dist/
+		writeFileSync(joinPath('.actorignore'), 'docs/\n!dist/\n', { flag: 'w' });
 	});
 
 	afterAll(async () => {
@@ -286,9 +286,9 @@ describe('Utils - .apifyignore with both exclude and negation patterns', () => {
 	});
 });
 
-const NO_IGNORE_TEST_DIR = 'apifyignore-absent-test-dir';
+const NO_IGNORE_TEST_DIR = 'actorignore-absent-test-dir';
 
-describe('Utils - no .apifyignore present (git)', () => {
+describe('Utils - no .actorignore present (git)', () => {
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NO_IGNORE_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -311,7 +311,7 @@ describe('Utils - no .apifyignore present (git)', () => {
 		await afterAllCalls();
 	});
 
-	it('should include all files when .apifyignore is absent', async () => {
+	it('should include all files when .actorignore is absent', async () => {
 		const paths = await getActorLocalFilePaths(tmpPath);
 
 		expect(paths).toContain('main.js');

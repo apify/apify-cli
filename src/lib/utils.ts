@@ -366,20 +366,20 @@ const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]
 		});
 };
 
-interface ApifyignoreResult {
-	/** Filter that removes paths matching non-negated .apifyignore patterns */
+interface ActorignoreResult {
+	/** Filter that removes paths matching non-negated .actorignore patterns */
 	excludeFilter: ((paths: string[]) => string[]) | null;
 	/** Patterns from negation lines (with `!` stripped) — files matching these should be force-included even if git-ignored */
 	forceIncludePatterns: string[];
 }
 
-const parseApifyignore = async (cwd: string): Promise<ApifyignoreResult> => {
-	const apifyignorePath = join(cwd, '.apifyignore');
-	if (!existsSync(apifyignorePath)) {
+const parseActorignore = async (cwd: string): Promise<ActorignoreResult> => {
+	const actorignorePath = join(cwd, '.actorignore');
+	if (!existsSync(actorignorePath)) {
 		return { excludeFilter: null, forceIncludePatterns: [] };
 	}
 
-	const content = await readFile(apifyignorePath, 'utf-8');
+	const content = await readFile(actorignorePath, 'utf-8');
 	const lines = content.split(/\r?\n/);
 
 	const excludeLines: string[] = [];
@@ -407,7 +407,7 @@ const parseApifyignore = async (cwd: string): Promise<ApifyignoreResult> => {
 };
 
 /**
- * Get Actor local files, omit files defined in .gitignore, .apifyignore and .git folder
+ * Get Actor local files, omit files defined in .gitignore, .actorignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
 export const getActorLocalFilePaths = async (cwd?: string) => {
@@ -416,8 +416,8 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 	const hardcodedIgnore = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
 	const ignore = [...hardcodedIgnore];
 
-	// Parse .apifyignore early to get both exclude filter and force-include patterns
-	const { excludeFilter: apifyignoreFilter, forceIncludePatterns } = await parseApifyignore(resolvedCwd);
+	// Parse .actorignore early to get both exclude filter and force-include patterns
+	const { excludeFilter: actorignoreFilter, forceIncludePatterns } = await parseActorignore(resolvedCwd);
 
 	let fallbackFilter: ((paths: string[]) => string[]) | null = null;
 
@@ -450,11 +450,11 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 		paths = fallbackFilter(paths);
 	}
 
-	if (apifyignoreFilter) {
-		paths = apifyignoreFilter(paths);
+	if (actorignoreFilter) {
+		paths = actorignoreFilter(paths);
 	}
 
-	// Force-include: negation patterns in .apifyignore (e.g. !dist/) override gitignore,
+	// Force-include: negation patterns in .actorignore (e.g. !dist/) override gitignore,
 	// allowing git-ignored files to be included in the push
 	if (forceIncludePatterns.length > 0) {
 		const forceIncludeIg = makeIg().add(forceIncludePatterns);
