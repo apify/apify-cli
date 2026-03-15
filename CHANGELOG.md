@@ -4,7 +4,11 @@ All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-start -->
 
-## 1.2.2 - **not yet released**
+## 1.3.1 - **not yet released**
+
+<!-- git-cliff-unreleased-end -->
+
+## [1.3.0](https://github.com/apify/apify-cli/releases/tag/v1.3.0) (2026-03-11)
 
 ### 🚀 Features
 
@@ -22,12 +26,11 @@ All notable changes to this project will be documented in this file.
 - Improve Python project detection and entrypoint resolution ([#1010](https://github.com/apify/apify-cli/pull/1010)) ([f0704d3](https://github.com/apify/apify-cli/commit/f0704d3767c8e4cab883e3ba5d678f951a3fa378)) by [@vdusek](https://github.com/vdusek)
 - Set correct exit code on incorect `apify secrets` usage ([#1021](https://github.com/apify/apify-cli/pull/1021)) ([083c909](https://github.com/apify/apify-cli/commit/083c909990185ca48e88be77dce12ac5a627cf37)) by [@janbuchar](https://github.com/janbuchar), closes [#953](https://github.com/apify/apify-cli/issues/953)
 - Enable standby mode on actors during push when usesStandbyMode is set ([#1016](https://github.com/apify/apify-cli/pull/1016)) ([fca7c58](https://github.com/apify/apify-cli/commit/fca7c58ce4659e659e0dc7984467ff43ce8f0949)) by [@MQ37](https://github.com/MQ37)
+- Install script TTY handling on Unix ([#1032](https://github.com/apify/apify-cli/pull/1032)) ([f149310](https://github.com/apify/apify-cli/commit/f14931001b4eaf708185e8106bec5e902ad8fd65)) by [@vladfrangu](https://github.com/vladfrangu), closes [#1027](https://github.com/apify/apify-cli/issues/1027)
 
 ### ⚡ Performance
 
 - Speed up creating archives when pusing big codebases ([#1011](https://github.com/apify/apify-cli/pull/1011)) ([a873e0c](https://github.com/apify/apify-cli/commit/a873e0cb6c1c1f9e3bca61821de2b8373ec92744)) by [@matyascimbulka](https://github.com/matyascimbulka)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [1.2.1](https://github.com/apify/apify-cli/releases/tag/v1.2.1) (2026-01-06)
 

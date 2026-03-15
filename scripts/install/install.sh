@@ -19,12 +19,7 @@ Color_Off=''
 
 # Regular Colors
 Red=''
-Green=''
 Dim='' # White
-
-# Bold
-Bold_White=''
-Bold_Green=''
 
 if [[ -t 1 ]]; then
     # Reset
@@ -32,12 +27,7 @@ if [[ -t 1 ]]; then
 
     # Regular Colors
     Red='\033[0;31m'   # Red
-    Green='\033[0;32m' # Green
     Dim='\033[0;2m'    # White
-
-    # Bold
-    Bold_Green='\033[1;32m' # Bold Green
-    Bold_White='\033[1m'    # Bold White
 fi
 
 error() {
@@ -47,14 +37,6 @@ error() {
 
 info() {
     echo -e "${Dim}$@ ${Color_Off}"
-}
-
-info_bold() {
-    echo -e "${Bold_White}$@ ${Color_Off}"
-}
-
-success() {
-    echo -e "${Green}$@ ${Color_Off}"
 }
 
 if [[ $# -gt 1 ]]; then
@@ -97,13 +79,9 @@ if [[ $target = darwin-x64 ]]; then
     # redirect stderr to devnull to avoid error message when not running in Rosetta
     if [[ $(sysctl -n sysctl.proc_translated 2>/dev/null) = 1 ]]; then
         target=darwin-arm64
-        info "Your shell is running in Rosetta 2. Downloading Apify CLI for $target instead"
+        info "Your shell is running in Rosetta 2. Downloading Apify and Actor CLI for $target instead"
     fi
 fi
-
-GITHUB=${GITHUB-"https://github.com"}
-
-github_repo="$GITHUB/apify/apify-cli"
 
 # If AVX2 isn't supported, use the -baseline build
 case "$target" in
@@ -190,20 +168,12 @@ for executable_name in "${executable_names[@]}"; do
     fi
 done
 
-tildify() {
-    if [[ $1 = $HOME/* ]]; then
-        local replacement=\~/
-
-        echo "${1/$HOME\//$replacement}"
-    else
-        echo "$1"
-    fi
-}
-
-echo ''
-echo ''
-success "Apify and Actor CLI $version were installed successfully!"
-info "The binaries are located at $Bold_Green$(tildify "$bin_dir/apify") ${Dim}and $Bold_Green$(tildify "$bin_dir/actor")"
-
 # Invoke the CLI to handle shell integrations nicely
-PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install
+# When running the script via `curl xxx | bash`, stdin is the script that gets consumed by bash.
+# If stdin is not a tty and we have a readable /dev/tty, tell Node.js to open /dev/tty itself
+# (shell-level redirects don't support raw mode properly for Node.js/Inquirer).
+if ! [ -t 0 ] && [ -r /dev/tty ]; then
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_OPEN_TTY=1 "$bin_dir/apify" install
+else
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install
+fi
