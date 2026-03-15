@@ -419,7 +419,7 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 	const ignore = [...hardcodedIgnore];
 
 	// Parse .actorignore early to get both exclude filter and force-include patterns
-	const { excludeFilter: actorignoreFilter, forceIncludePatterns } = await parseActorignore(resolvedCwd);
+	const { excludeFilter: actorignoreFilter, forceIncludePatterns } = await parseActorIgnore(resolvedCwd);
 
 	let fallbackFilter: ((paths: string[]) => string[]) | null = null;
 
