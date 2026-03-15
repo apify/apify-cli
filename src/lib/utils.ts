@@ -368,7 +368,7 @@ const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]
 		});
 };
 
-interface ActorignoreResult {
+interface ActorIgnoreResult {
 	/** Filter that removes paths matching non-negated .actorignore patterns */
 	excludeFilter: ((paths: string[]) => string[]) | null;
 	/** Patterns from negation lines (with `!` stripped) — files matching these should be force-included even if git-ignored */
