@@ -467,6 +467,16 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 		paths = [...pathSet];
 	}
 
+	// .actor/ is the Actor specification folder — always include it regardless of gitignore/actorignore
+	const actorSpecFiles = allFiles.filter((p) => p === '.actor' || p.startsWith('.actor/'));
+	if (actorSpecFiles.length > 0) {
+		const pathSet = new Set(paths);
+		for (const file of actorSpecFiles) {
+			pathSet.add(file);
+		}
+		paths = [...pathSet];
+	}
+
 	return paths;
 };
 

@@ -286,6 +286,56 @@ describe('Utils - .actorignore with both exclude and negation patterns', () => {
 	});
 });
 
+const GITIGNORED_ACTOR_DIR = 'actorignore-gitignored-actor-dir';
+
+describe('Utils - .actor directory included even when git-ignored', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(GITIGNORED_ACTOR_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+
+		ensureFolderExistsSync(tmpPath, '.actor');
+		ensureFolderExistsSync(tmpPath, 'src');
+
+		writeFileSync(joinPath('main.js'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('src/index.js'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('.actor/actor.json'), '{}', { flag: 'w' });
+		writeFileSync(joinPath('.actor/Dockerfile'), 'FROM node', { flag: 'w' });
+
+		// git ignores .actor/
+		writeFileSync(joinPath('.gitignore'), '.actor/\n', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should always include .actor/ files regardless of gitignore', async () => {
+		const paths = await getActorLocalFilePaths(tmpPath);
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('src/index.js');
+		expect(paths).toContain('.actor/actor.json');
+		expect(paths).toContain('.actor/Dockerfile');
+	});
+
+	it('should include .actor/ files even when actorignored', async () => {
+		writeFileSync(joinPath('.actorignore'), '.actor/Dockerfile\n', { flag: 'w' });
+
+		const paths = await getActorLocalFilePaths(tmpPath);
+
+		expect(paths).toContain('.actor/actor.json');
+		expect(paths).toContain('.actor/Dockerfile');
+	});
+});
+
 const NO_IGNORE_TEST_DIR = 'actorignore-absent-test-dir';
 
 describe('Utils - no .actorignore present (git)', () => {
