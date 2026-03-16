@@ -22,7 +22,7 @@ import { Mime } from 'mime';
 import otherMimes from 'mime/types/other.js';
 import standardMimes from 'mime/types/standard.js';
 import { gte, minVersion, satisfies } from 'semver';
-import { escapePath, glob } from 'tinyglobby';
+import { glob } from 'tinyglobby';
 
 import {
 	ACTOR_ENV_VARS,
@@ -416,12 +416,11 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 	const resolvedCwd = cwd ?? process.cwd();
 
 	const hardcodedIgnore = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
-	const ignore = [...hardcodedIgnore];
 
 	// Parse .actorignore early to get both exclude filter and force-include patterns
 	const { excludeFilter: actorignoreFilter, forceIncludePatterns } = await parseActorIgnore(resolvedCwd);
 
-	let fallbackFilter: ((paths: string[]) => string[]) | null = null;
+	let gitIgnoreFilter: ((paths: string[]) => string[]) | null = null;
 
 	// Use git ls-files to get gitignored paths — this correctly handles ancestor .gitignore files,
 	// nested .gitignore files, .git/info/exclude, and global gitignore config
@@ -432,25 +431,25 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 			stdio: ['ignore', 'pipe', 'ignore'],
 		})
 			.split('\n')
-			.filter(Boolean)
-			.map((p) => escapePath(p));
+			.filter(Boolean);
 
-		ignore.push(...gitIgnored);
+		if (gitIgnored.length > 0) {
+			const ig = makeIg().add(gitIgnored);
+			gitIgnoreFilter = (paths) => paths.filter((p) => !ig.ignores(p));
+		}
 	} catch {
 		// git is unavailable or directory is not a git repo — fall back to parsing .gitignore files
-		fallbackFilter = await getGitignoreFallbackFilter(resolvedCwd);
+		gitIgnoreFilter = await getGitignoreFallbackFilter(resolvedCwd);
 	}
 
-	let paths = await glob(['*', '**/**'], {
-		ignore,
+	const allFiles = await glob(['*', '**/**'], {
+		ignore: hardcodedIgnore,
 		dot: true,
 		expandDirectories: false,
 		cwd: resolvedCwd,
 	});
 
-	if (fallbackFilter) {
-		paths = fallbackFilter(paths);
-	}
+	let paths = gitIgnoreFilter ? gitIgnoreFilter(allFiles) : allFiles;
 
 	if (actorignoreFilter) {
 		paths = actorignoreFilter(paths);
@@ -460,12 +459,6 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 	// allowing git-ignored files to be included in the push
 	if (forceIncludePatterns.length > 0) {
 		const forceIncludeIg = makeIg().add(forceIncludePatterns);
-		const allFiles = await glob(['*', '**/**'], {
-			ignore: hardcodedIgnore,
-			dot: true,
-			expandDirectories: false,
-			cwd: resolvedCwd,
-		});
 		const forceIncluded = allFiles.filter((filePath) => forceIncludeIg.ignores(filePath));
 		const pathSet = new Set(paths);
 		for (const file of forceIncluded) {
