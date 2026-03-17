@@ -90,6 +90,7 @@
         "configparser": "~0.3.10",
         "cors": "~2.8.5",
         "detect-indent": "~7.0.1",
+        "es-toolkit": "^1.45.1",
         "escape-string-regexp": "~5.0.0",
         "execa": "^9.5.2",
         "express": "~5.2.0",
