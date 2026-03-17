@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 1.3.1 - **not yet released**
+
+### 🚀 Features
+
+- Add `.actorignore` support ([#1038](https://github.com/apify/apify-cli/pull/1038)) ([cb77da8](https://github.com/apify/apify-cli/commit/cb77da8c012ab4c234a207e7d26858647ba0370b)) by [@l2ysho](https://github.com/l2ysho), closes [#706](https://github.com/apify/apify-cli/issues/706), [#982](https://github.com/apify/apify-cli/issues/982)
+
+### 🐛 Bug Fixes
+
+- Throw an error on missing secrets ([#1039](https://github.com/apify/apify-cli/pull/1039)) ([2ac7e3c](https://github.com/apify/apify-cli/commit/2ac7e3ca32d0fe35bfb6be9c2d38513518b16e61)) by [@janbuchar](https://github.com/janbuchar), closes [#921](https://github.com/apify/apify-cli/issues/921)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [1.3.0](https://github.com/apify/apify-cli/releases/tag/v1.3.0) (2026-03-11)
 
 ### 🚀 Features
