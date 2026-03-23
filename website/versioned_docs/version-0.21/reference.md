@@ -1,5 +1,5 @@
 ---
-title: Apify CLI Reference Documentation
+title: Apify CLI reference documentation
 sidebar_label: Command reference
 toc_max_heading_level: 5
 ---
@@ -34,7 +34,7 @@ DESCRIPTION
 <!-- general-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Authentication & Account Management
+### Authentication & Account management
 
 Use these commands to manage your Apify account authentication, access tokens, and configuration settings. These commands control how you interact with Apify platform and manage sensitive information.
 
@@ -146,7 +146,7 @@ DESCRIPTION
 <!-- auth-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Actor Development
+### Actor development
 
 These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas.
 
@@ -254,11 +254,11 @@ DESCRIPTION
 <!-- actor-dev-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Actor Management
+### Actor management
 
 These commands let you manage Actors on Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your Actors in the cloud environment.
 
-#### Basic Actor Operations
+#### Basic Actor operations
 
 Use these commands to handle core Actor operations like creation, listing, deletion, and basic runtime management. These are the essential commands for working with Actors on Apify platform.
 
@@ -439,7 +439,7 @@ DESCRIPTION
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Actor Deployment
+#### Actor deployment
 
 These commands handle the deployment workflow of Actors to Apify platform. Use them to push local changes, pull remote Actors, and manage Actor versions and builds.
 
@@ -584,7 +584,7 @@ DESCRIPTION
 <!-- actor-deploy-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Actor Builds
+#### Actor builds
 
 Use these commands to manage Actor build processes. They help you create, monitor, and maintain versioned snapshots of your Actors that can be executed on Apify platform.
 
@@ -726,7 +726,7 @@ DESCRIPTION
 <!-- actor-build-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Actor Runs
+#### Actor runs
 
 These commands control Actor execution on Apify platform. Use them to start, monitor, and manage Actor runs, including accessing logs and handling execution states.
 
@@ -1012,7 +1012,7 @@ DESCRIPTION
 <!-- dataset-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Key-Value Stores
+#### Key-value stores
 
 These commands handle key-value store operations. Use them to create stores, manage key-value pairs, and handle persistent storage of arbitrary data types.
 
@@ -1203,7 +1203,7 @@ DESCRIPTION
 <!-- keyval-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Request Queues
+#### Request queues
 
 These commands manage request queues, which handle URL processing for web scraping and automation tasks. Use them to maintain lists of URLs with automatic retry mechanisms and state management.
 
