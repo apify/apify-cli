@@ -1,5 +1,5 @@
 ---
-title: Apify CLI reference documentation
+title: Command reference
 sidebar_label: Command reference
 toc_max_heading_level: 5
 ---
@@ -148,7 +148,7 @@ DESCRIPTION
 
 ### Actor development
 
-These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas.
+These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas. This section also includes commands used within running Actors to interact with the Apify platform, such as reading input, storing values, and pushing data.
 
 <!-- prettier-ignore-start -->
 <!-- actor-dev-commands-start -->
@@ -251,67 +251,6 @@ DESCRIPTION
 
   Optionally specify custom schema path to validate.
 ```
-<!-- actor-dev-commands-end -->
-<!-- prettier-ignore-end -->
-
-### Actor management
-
-These commands let you manage Actors on Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your Actors in the cloud environment.
-
-#### Basic Actor operations
-
-Use these commands to handle core Actor operations like creation, listing, deletion, and basic runtime management. These are the essential commands for working with Actors on Apify platform.
-
-<!-- prettier-ignore-start -->
-<!-- actor-basic-commands-start -->
-##### `apify actors`
-
-Manages Actor creation, deployment, and execution on the Apify platform.
-
-```
-USAGE
-  $ apify actors
-
-DESCRIPTION
-  Manages Actor creation, deployment, and execution on the Apify platform.
-```
-
-##### `apify actors ls`
-
-Prints a list of recently executed Actors or Actors you own.
-
-```
-USAGE
-  $ apify actors ls [--json] [--my] [--offset <value>] [--limit <value>] [--desc]
-
-FLAGS
-  --desc            Sort Actors in descending order.
-  --limit=<value>   [default: 20] Number of Actors that will be listed.
-  --my              Whether to list Actors made by the logged in user.
-  --offset=<value>  Number of Actors that will be skipped.
-
-GLOBAL FLAGS
-  --json  Format output as json.
-
-DESCRIPTION
-  Prints a list of recently executed Actors or Actors you own.
-```
-
-##### `apify actors rm ACTORID`
-
-Permanently removes an Actor from your account.
-
-```
-USAGE
-  $ apify actors rm ACTORID
-
-ARGUMENTS
-  ACTORID  The Actor ID to delete.
-
-DESCRIPTION
-  Permanently removes an Actor from your account.
-```
-
 ##### `apify actor`
 
 Manages runtime data operations inside of a running Actor.
@@ -435,6 +374,62 @@ DESCRIPTION
 
   Passing data using stdin with pipe:
   $ cat ./my-text-file.txt | apify actor set-value KEY --contentType text/plain
+```
+<!-- actor-dev-commands-end -->
+<!-- prettier-ignore-end -->
+
+### Actor management
+
+These commands let you manage Actors on Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your Actors in the cloud environment.
+
+<!-- prettier-ignore-start -->
+<!-- actor-basic-commands-start -->
+##### `apify actors`
+
+Manages Actor creation, deployment, and execution on the Apify platform.
+
+```
+USAGE
+  $ apify actors
+
+DESCRIPTION
+  Manages Actor creation, deployment, and execution on the Apify platform.
+```
+
+##### `apify actors ls`
+
+Prints a list of recently executed Actors or Actors you own.
+
+```
+USAGE
+  $ apify actors ls [--json] [--my] [--offset <value>] [--limit <value>] [--desc]
+
+FLAGS
+  --desc            Sort Actors in descending order.
+  --limit=<value>   [default: 20] Number of Actors that will be listed.
+  --my              Whether to list Actors made by the logged in user.
+  --offset=<value>  Number of Actors that will be skipped.
+
+GLOBAL FLAGS
+  --json  Format output as json.
+
+DESCRIPTION
+  Prints a list of recently executed Actors or Actors you own.
+```
+
+##### `apify actors rm ACTORID`
+
+Permanently removes an Actor from your account.
+
+```
+USAGE
+  $ apify actors rm ACTORID
+
+ARGUMENTS
+  ACTORID  The Actor ID to delete.
+
+DESCRIPTION
+  Permanently removes an Actor from your account.
 ```
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->

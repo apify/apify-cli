@@ -1,5 +1,5 @@
 ---
-title: Apify CLI reference documentation
+title: Command reference
 sidebar_label: Command reference
 toc_max_heading_level: 5
 ---
@@ -28,7 +28,7 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 ### Actor development
 
-These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas.
+These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas. This section also includes commands used within running Actors to interact with the Apify platform, such as reading input, storing values, and pushing data.
 
 <!-- prettier-ignore-start -->
 <!-- actor-dev-commands-start -->
@@ -38,10 +38,6 @@ These commands help you develop Actors locally. Use them to create new Actor pro
 ### Actor management
 
 These commands let you manage Actors on Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your Actors in the cloud environment.
-
-#### Basic Actor operations
-
-Use these commands to handle core Actor operations like creation, listing, deletion, and basic runtime management. These are the essential commands for working with Actors on Apify platform.
 
 <!-- prettier-ignore-start -->
 <!-- actor-basic-commands-start -->

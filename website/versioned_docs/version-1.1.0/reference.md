@@ -1,5 +1,5 @@
 ---
-title: Apify CLI reference documentation
+title: Command reference
 sidebar_label: Command reference
 toc_max_heading_level: 5
 ---
@@ -186,7 +186,7 @@ ARGUMENTS
 
 ### Actor development
 
-These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas.
+These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas. This section also includes commands used within running Actors to interact with the Apify platform, such as reading input, storing values, and pushing data.
 
 <!-- prettier-ignore-start -->
 <!-- actor-dev-commands-start -->
@@ -299,73 +299,6 @@ ARGUMENTS
   path  Optional path to your INPUT_SCHEMA.json file. If not provided
         ./INPUT_SCHEMA.json is used.
 ```
-<!-- actor-dev-commands-end -->
-<!-- prettier-ignore-end -->
-
-### Actor management
-
-These commands let you manage Actors on Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your Actors in the cloud environment.
-
-#### Basic Actor operations
-
-Use these commands to handle core Actor operations like creation, listing, deletion, and basic runtime management. These are the essential commands for working with Actors on Apify platform.
-
-<!-- prettier-ignore-start -->
-<!-- actor-basic-commands-start -->
-##### `apify actors`
-
-```sh
-DESCRIPTION
-  Manages Actor creation, deployment, and execution on the Apify platform.
-
-SUBCOMMANDS
-  actors start  Starts Actor remotely and returns run details
-                immediately.
-  actors rm     Permanently removes an Actor from your account.
-  actors push   Deploys Actor to Apify platform using settings from
-                '.actor/actor.json'.
-  actors pull   Download Actor code to current directory. Clones Git
-                repositories or fetches Actor files based on the source type.
-  actors ls     Prints a list of recently executed Actors or Actors
-                you own.
-  actors info   Get information about an Actor.
-  actors call   Executes Actor remotely using your authenticated
-                account.
-  actors build  Creates a new build of the Actor.
-```
-
-##### `apify actors ls`
-
-```sh
-DESCRIPTION
-  Prints a list of recently executed Actors or Actors you own.
-
-USAGE
-  $ apify actors ls [--desc] [--json] [--limit <value>] [--my]
-                    [--offset <value>]
-
-FLAGS
-      --desc            Sort Actors in descending order.
-      --json            Format the command output as JSON
-      --limit=<value>   Number of Actors that will be listed.
-      --my              Whether to list Actors made by the logged
-                        in user.
-      --offset=<value>  Number of Actors that will be skipped.
-```
-
-##### `apify actors rm`
-
-```sh
-DESCRIPTION
-  Permanently removes an Actor from your account.
-
-USAGE
-  $ apify actors rm <actorId>
-
-ARGUMENTS
-  actorId  The Actor ID to delete.
-```
-
 ##### `apify actor`
 
 ```sh
@@ -496,6 +429,68 @@ FLAGS
   -c, --content-type=<value>  Specifies a custom MIME
                               content type of the record. By default
                               "application/json" is used.
+```
+<!-- actor-dev-commands-end -->
+<!-- prettier-ignore-end -->
+
+### Actor management
+
+These commands let you manage Actors on Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your Actors in the cloud environment.
+
+<!-- prettier-ignore-start -->
+<!-- actor-basic-commands-start -->
+##### `apify actors`
+
+```sh
+DESCRIPTION
+  Manages Actor creation, deployment, and execution on the Apify platform.
+
+SUBCOMMANDS
+  actors start  Starts Actor remotely and returns run details
+                immediately.
+  actors rm     Permanently removes an Actor from your account.
+  actors push   Deploys Actor to Apify platform using settings from
+                '.actor/actor.json'.
+  actors pull   Download Actor code to current directory. Clones Git
+                repositories or fetches Actor files based on the source type.
+  actors ls     Prints a list of recently executed Actors or Actors
+                you own.
+  actors info   Get information about an Actor.
+  actors call   Executes Actor remotely using your authenticated
+                account.
+  actors build  Creates a new build of the Actor.
+```
+
+##### `apify actors ls`
+
+```sh
+DESCRIPTION
+  Prints a list of recently executed Actors or Actors you own.
+
+USAGE
+  $ apify actors ls [--desc] [--json] [--limit <value>] [--my]
+                    [--offset <value>]
+
+FLAGS
+      --desc            Sort Actors in descending order.
+      --json            Format the command output as JSON
+      --limit=<value>   Number of Actors that will be listed.
+      --my              Whether to list Actors made by the logged
+                        in user.
+      --offset=<value>  Number of Actors that will be skipped.
+```
+
+##### `apify actors rm`
+
+```sh
+DESCRIPTION
+  Permanently removes an Actor from your account.
+
+USAGE
+  $ apify actors rm <actorId>
+
+ARGUMENTS
+  actorId  The Actor ID to delete.
 ```
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->
