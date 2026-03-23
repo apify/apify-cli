@@ -1,5 +1,5 @@
 ---
-title: Apify CLI Reference Documentation
+title: Command reference
 sidebar_label: Command reference
 toc_max_heading_level: 5
 ---
@@ -79,7 +79,7 @@ USAGE
 <!-- general-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Authentication & Account Management
+### Authentication & Account management
 
 Use these commands to manage your Apify account authentication, access tokens, and configuration settings. These commands control how you interact with Apify platform and manage sensitive information.
 
@@ -223,9 +223,9 @@ ARGUMENTS
 <!-- auth-commands-end -->
 <!-- prettier-ignore-end -->
 
-### Actor Development
+### Actor development
 
-These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas.
+These commands help you develop Actors locally. Use them to create new Actor projects, initialize configurations, run Actors in development mode, and validate input schemas. This section also includes commands used within running Actors to interact with the Apify platform, such as reading input, storing values, and pushing data.
 
 <!-- prettier-ignore-start -->
 <!-- actor-dev-commands-start -->
@@ -299,31 +299,35 @@ DESCRIPTION
   in package.json file.
 
 USAGE
-  $ apify run [--entrypoint <value>]
+  $ apify run [--allow-missing-secrets] [--entrypoint <value>]
               [-i <value> | --input-file <value>] [-p | --resurrect]
 
 FLAGS
-      --entrypoint=<value>  Optional entrypoint for running
-                            with injected environment variables.
-                            For Python, it is the module name, or a path to a file.
-                            For Node.js, it is the npm script name, or a path to a
-                            JS/MJS file. You can also pass in a directory name,
-                            provided that directory contains an "index.js" file.
-  -i, --input=<value>       Optional JSON input to be
-                            given to the Actor.
-      --input-file=<value>  Optional path to a file with JSON
-                            input to be given to the Actor. The file must be a valid
-                            JSON file. You can also specify `-` to read from
-                            standard input.
-  -p, --purge               Whether to purge the default
-                            request queue, dataset and key-value store before the
-                            run starts.
-                            For crawlee projects, this is the default behavior, and
-                            the flag is optional.
-                            Use `--no-purge` to keep the storage folder intact.
-      --resurrect           Whether to keep the default
-                            request queue, dataset and key-value store before the
-                            run starts.
+      --allow-missing-secrets  Allow the command to
+                               continue even when secret values are not found in the
+                               local secrets storage.
+      --entrypoint=<value>     Optional entrypoint for
+                               running with injected environment variables.
+                               For Python, it is the module name, or a path to a
+                               file.
+                               For Node.js, it is the npm script name, or a path to
+                               a JS/MJS file. You can also pass in a directory name,
+                               provided that directory contains an "index.js" file.
+  -i, --input=<value>          Optional JSON input to
+                               be given to the Actor.
+      --input-file=<value>     Optional path to a file with
+                               JSON input to be given to the Actor. The file must be
+                               a valid JSON file. You can also specify `-` to read
+                               from standard input.
+  -p, --purge                  Whether to purge the
+                               default request queue, dataset and key-value store
+                               before the run starts.
+                               For crawlee projects, this is the default behavior,
+                               and the flag is optional.
+                               Use `--no-purge` to keep the storage folder intact.
+      --resurrect              Whether to keep the default
+                               request queue, dataset and key-value store before the
+                               run starts.
 ```
 
 ##### `apify validate-schema`
@@ -344,72 +348,6 @@ USAGE
 ARGUMENTS
   path  Optional path to your INPUT_SCHEMA.json file. If not provided
         ./INPUT_SCHEMA.json is used.
-```
-<!-- actor-dev-commands-end -->
-<!-- prettier-ignore-end -->
-
-### Actor Management
-
-These commands let you manage Actors on Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your Actors in the cloud environment.
-
-#### Basic Actor Operations
-
-Use these commands to handle core Actor operations like creation, listing, deletion, and basic runtime management. These are the essential commands for working with Actors on Apify platform.
-
-<!-- prettier-ignore-start -->
-<!-- actor-basic-commands-start -->
-##### `apify actors`
-
-```sh
-DESCRIPTION
-  Manages Actor creation, deployment, and execution on the Apify platform.
-
-SUBCOMMANDS
-  actors start  Starts Actor remotely and returns run details
-                immediately.
-  actors rm     Permanently removes an Actor from your account.
-  actors push   Deploys Actor to Apify platform using settings from
-                '.actor/actor.json'.
-  actors pull   Download Actor code to current directory. Clones Git
-                repositories or fetches Actor files based on the source type.
-  actors ls     Prints a list of recently executed Actors or Actors
-                you own.
-  actors info   Get information about an Actor.
-  actors call   Executes Actor remotely using your authenticated
-                account.
-  actors build  Creates a new build of the Actor.
-```
-
-##### `apify actors ls`
-
-```sh
-DESCRIPTION
-  Prints a list of recently executed Actors or Actors you own.
-
-USAGE
-  $ apify actors ls [--desc] [--json] [--limit <value>] [--my]
-                    [--offset <value>]
-
-FLAGS
-      --desc            Sort Actors in descending order.
-      --json            Format the command output as JSON
-      --limit=<value>   Number of Actors that will be listed.
-      --my              Whether to list Actors made by the logged
-                        in user.
-      --offset=<value>  Number of Actors that will be skipped.
-```
-
-##### `apify actors rm`
-
-```sh
-DESCRIPTION
-  Permanently removes an Actor from your account.
-
-USAGE
-  $ apify actors rm <actorId>
-
-ARGUMENTS
-  actorId  The Actor ID to delete.
 ```
 
 ##### `apify actor`
@@ -620,10 +558,72 @@ FLAGS
                               content type of the record. By default
                               "application/json" is used.
 ```
+<!-- actor-dev-commands-end -->
+<!-- prettier-ignore-end -->
+
+### Actor management
+
+These commands let you manage Actors on Apify platform. They provide functionality for deployment, execution, monitoring, and maintenance of your Actors in the cloud environment.
+
+<!-- prettier-ignore-start -->
+<!-- actor-basic-commands-start -->
+##### `apify actors`
+
+```sh
+DESCRIPTION
+  Manages Actor creation, deployment, and execution on the Apify platform.
+
+SUBCOMMANDS
+  actors start  Starts Actor remotely and returns run details
+                immediately.
+  actors rm     Permanently removes an Actor from your account.
+  actors push   Deploys Actor to Apify platform using settings from
+                '.actor/actor.json'.
+  actors pull   Download Actor code to current directory. Clones Git
+                repositories or fetches Actor files based on the source type.
+  actors ls     Prints a list of recently executed Actors or Actors
+                you own.
+  actors info   Get information about an Actor.
+  actors call   Executes Actor remotely using your authenticated
+                account.
+  actors build  Creates a new build of the Actor.
+```
+
+##### `apify actors ls`
+
+```sh
+DESCRIPTION
+  Prints a list of recently executed Actors or Actors you own.
+
+USAGE
+  $ apify actors ls [--desc] [--json] [--limit <value>] [--my]
+                    [--offset <value>]
+
+FLAGS
+      --desc            Sort Actors in descending order.
+      --json            Format the command output as JSON
+      --limit=<value>   Number of Actors that will be listed.
+      --my              Whether to list Actors made by the logged
+                        in user.
+      --offset=<value>  Number of Actors that will be skipped.
+```
+
+##### `apify actors rm`
+
+```sh
+DESCRIPTION
+  Permanently removes an Actor from your account.
+
+USAGE
+  $ apify actors rm <actorId>
+
+ARGUMENTS
+  actorId  The Actor ID to delete.
+```
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Actor Deployment
+#### Actor deployment
 
 These commands handle the deployment workflow of Actors to Apify platform. Use them to push local changes, pull remote Actors, and manage Actor versions and builds.
 
@@ -636,11 +636,14 @@ DESCRIPTION
   Deploys Actor to Apify platform using settings from '.actor/actor.json'.
   Files under '3' MB upload as "Multiple source files"; larger projects upload 
   as ZIP file.
+  Files matched by .gitignore and .actorignore are excluded. Use negation 
+  patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.
   Use --force to override newer remote versions.
 
 USAGE
-  $ apify actors push [actorId] [-b <value>] [--dir <value>]
-                      [-f] [--json] [--open] [-v <value>] [-w <value>]
+  $ apify actors push [actorId] [--allow-missing-secrets]
+                      [-b <value>] [--dir <value>] [-f] [--json] [--open]
+                      [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -648,6 +651,9 @@ ARGUMENTS
            modify the Actor with the name specified in '.actor/actor.json' file.
 
 FLAGS
+      --allow-missing-secrets    Allow the command to
+                                 continue even when secret values are not found in
+                                 the local secrets storage.
   -b, --build-tag=<value>        Build tag to be
                                  applied to the successful Actor build. By default,
                                  it is taken from the '.actor/actor.json' file
@@ -783,7 +789,7 @@ FLAGS
 <!-- actor-deploy-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Actor Builds
+#### Actor builds
 
 Use these commands to manage Actor build processes. They help you create, monitor, and maintain versioned snapshots of your Actors that can be executed on Apify platform.
 
@@ -927,7 +933,7 @@ ARGUMENTS
 <!-- actor-build-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Actor Runs
+#### Actor runs
 
 These commands control Actor execution on Apify platform. Use them to start, monitor, and manage Actor runs, including accessing logs and handling execution states.
 
@@ -1202,7 +1208,7 @@ ARGUMENTS
 <!-- dataset-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Key-Value Stores
+#### Key-value stores
 
 These commands handle key-value store operations. Use them to create stores, manage key-value pairs, and handle persistent storage of arbitrary data types.
 
@@ -1410,7 +1416,7 @@ FLAGS
 <!-- keyval-commands-end -->
 <!-- prettier-ignore-end -->
 
-#### Request Queues
+#### Request queues
 
 These commands manage request queues, which handle URL processing for web scraping and automation tasks. Use them to maintain lists of URLs with automatic retry mechanisms and state management.
 

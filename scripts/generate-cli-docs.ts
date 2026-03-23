@@ -24,12 +24,6 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.init },
 		{ command: Commands.run },
 		{ command: Commands.validateSchema },
-	],
-	'actor-basic': [
-		//
-		{ command: Commands.actors },
-		{ command: Commands.actorsLs },
-		{ command: Commands.actorsRm },
 
 		{ command: Commands.actor },
 		{ command: Commands.actorCalculateMemory },
@@ -40,6 +34,12 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.actorGetValue },
 		{ command: Commands.actorPushData },
 		{ command: Commands.actorSetValue },
+	],
+	'actor-basic': [
+		//
+		{ command: Commands.actors },
+		{ command: Commands.actorsLs },
+		{ command: Commands.actorsRm },
 	],
 	'actor-deploy': [
 		//
