@@ -1,8 +1,8 @@
 import { cloneDeep } from 'es-toolkit';
 
 /**
- * Transforms a JSON schema so that all properties without a `default` value are marked as required.
- * Properties that have a `default` are left optional, since Apify fills them in at runtime.
+ * Transforms a JSON schema so that all properties with a `default` value are marked as required, since Apify fills them in at runtime.
+ * Properties that don't have a `default` are left optional.
  * Recurses into nested object properties.
  */
 export function makePropertiesRequired(schema: Record<string, unknown>): Record<string, unknown> {
@@ -16,10 +16,11 @@ export function makePropertiesRequired(schema: Record<string, unknown>): Record<
 	const requiredSet = new Set<string>(Array.isArray(clone.required) ? (clone.required as string[]) : []);
 
 	for (const [key, prop] of Object.entries(properties)) {
-		if (prop.default === undefined) {
+		if (requiredSet.has(key)) {
+			continue;
+		}
+		if (prop.default !== undefined) {
 			requiredSet.add(key);
-		} else {
-			requiredSet.delete(key);
 		}
 
 		if (prop.type === 'object' && prop.properties) {
