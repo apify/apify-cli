@@ -34,7 +34,8 @@ function truncateDescription(description?: string, maxLength = 60): string {
 export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand> {
 	static override name = 'search' as const;
 
-	static override description = 'Searches Actors in the Apify Store.\n\nSearches the Apify Store for Actors matching the given query. Results can be filtered by category, author, pricing model, and more. This command does not require authentication.';
+	static override description =
+		'Searches Actors in the Apify Store.\n\nSearches the Apify Store for Actors matching the given query. Results can be filtered by category, author, pricing model, and more. This command does not require authentication.';
 
 	static override args = {
 		query: Args.string({
