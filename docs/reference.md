@@ -574,19 +574,20 @@ DESCRIPTION
   Manages Actor creation, deployment, and execution on the Apify platform.
 
 SUBCOMMANDS
-  actors start  Starts Actor remotely and returns run details
-                immediately.
-  actors rm     Permanently removes an Actor from your account.
-  actors push   Deploys Actor to Apify platform using settings from
-                '.actor/actor.json'.
-  actors pull   Download Actor code to current directory. Clones Git
-                repositories or fetches Actor files based on the source type.
-  actors ls     Prints a list of recently executed Actors or Actors
-                you own.
-  actors info   Get information about an Actor.
-  actors call   Executes Actor remotely using your authenticated
-                account.
-  actors build  Creates a new build of the Actor.
+  actors start   Starts Actor remotely and returns run details
+                 immediately.
+  actors rm      Permanently removes an Actor from your account.
+  actors search  Searches Actors in the Apify Store.
+  actors push    Deploys Actor to Apify platform using settings
+                 from '.actor/actor.json'.
+  actors pull    Download Actor code to current directory. Clones
+                 Git repositories or fetches Actor files based on the source type.
+  actors ls      Prints a list of recently executed Actors or
+                 Actors you own.
+  actors info    Get information about an Actor.
+  actors call    Executes Actor remotely using your authenticated
+                 account.
+  actors build   Creates a new build of the Actor.
 ```
 
 ##### `apify actors ls`
@@ -606,6 +607,41 @@ FLAGS
       --my              Whether to list Actors made by the logged
                         in user.
       --offset=<value>  Number of Actors that will be skipped.
+```
+
+##### `apify actors search`
+
+```sh
+DESCRIPTION
+  Searches Actors in the Apify Store.
+
+  Searches the Apify Store for Actors matching the given query. Results can be 
+  filtered by category, author, pricing model, and more. This command does not 
+  require authentication.
+
+USAGE
+  $ apify actors search [query] [--category <value>]
+                        [--json] [--limit <value>] [--offset <value>]
+                        [--pricing-model <value>] [--sort-by <value>]
+                        [--username <value>]
+
+ARGUMENTS
+  query  Search query to find Actors by title, name, description, username,
+         or readme.
+
+FLAGS
+      --category=<value>       Filter by category (e.g.
+                               AI).
+      --json                   Format the command output as
+                               JSON
+      --limit=<value>          Maximum number of results to
+                               return.
+      --offset=<value>         Number of results to skip
+                               for pagination.
+      --pricing-model=<value>  Filter by pricing model.
+      --sort-by=<value>        Sort order for the results.
+      --username=<value>       Filter by Actor author
+                               username.
 ```
 
 ##### `apify actors rm`

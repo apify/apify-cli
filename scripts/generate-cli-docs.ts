@@ -39,6 +39,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		//
 		{ command: Commands.actors },
 		{ command: Commands.actorsLs },
+		{ command: Commands.actorsSearch },
 		{ command: Commands.actorsRm },
 	],
 	'actor-deploy': [
