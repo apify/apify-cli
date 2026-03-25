@@ -214,25 +214,24 @@ describe('apify actor generate-schema-types', () => {
 
 		const generatedFile = await readFile(joinPath('output-required', 'input.ts'), 'utf-8');
 
-		// startUrls has no default -> required (no ?)
+		// startUrls has no default but is required -> required (no ?)
 		expect(generatedFile).toMatch(/startUrls:/);
 		expect(generatedFile).not.toMatch(/startUrls\?:/);
 
-		// proxyConfig has no default -> required (no ?)
-		expect(generatedFile).toMatch(/proxyConfig:/);
-		expect(generatedFile).not.toMatch(/proxyConfig\?:/);
+		// proxyConfig has no default -> optional (has ?)
+		expect(generatedFile).toMatch(/proxyConfig\?:/);
 
-		// searchQuery is in original required array but has default: "apify" -> optional (has ?)
-		expect(generatedFile).toMatch(/searchQuery\?:/);
+		// searchQuery is in original required array but has default: "apify" -> required (no ?)
+		expect(generatedFile).toMatch(/searchQuery:/);
 
-		// maxItems has default: 100 -> optional (has ?)
-		expect(generatedFile).toMatch(/maxItems\?:/);
+		// maxItems has default: 100 -> required (no ?)
+		expect(generatedFile).toMatch(/maxItems:/);
 
-		// includeImages has default: false -> optional (has ?)
-		expect(generatedFile).toMatch(/includeImages\?:/);
+		// includeImages has default: false -> required (no ?)
+		expect(generatedFile).toMatch(/includeImages:/);
 
-		// crawlerType has default: "cheerio" -> optional (has ?)
-		expect(generatedFile).toMatch(/crawlerType\?:/);
+		// crawlerType has default: "cheerio" -> required (no ?)
+		expect(generatedFile).toMatch(/crawlerType:/);
 	});
 
 	it('should make all properties optional with --all-optional flag', async () => {
@@ -782,7 +781,7 @@ describe('prepareKvsCollectionsForCompilation', () => {
 });
 
 describe('makePropertiesRequired', () => {
-	it('should add properties without defaults to required array', () => {
+	it('should add properties with defaults to required array', () => {
 		const schema = {
 			type: 'object',
 			properties: {
@@ -792,22 +791,22 @@ describe('makePropertiesRequired', () => {
 		};
 
 		const result = makePropertiesRequired(schema);
-		expect(result.required).toEqual(['name']);
+		expect(result.required).toEqual(['age']);
 	});
 
-	it('should remove existing required entries that have defaults', () => {
+	it('should not remove existing required entries that dont have defaults', () => {
 		const schema = {
 			type: 'object',
 			properties: {
 				name: { type: 'string' },
 				age: { type: 'number', default: 25 },
 			},
-			required: ['age'],
+			required: ['name'],
 		};
 
 		const result = makePropertiesRequired(schema);
 		expect(result.required).toContain('name');
-		expect(result.required).not.toContain('age');
+		expect(result.required).toContain('age');
 	});
 
 	it('should recurse into nested object properties', () => {
@@ -817,16 +816,18 @@ describe('makePropertiesRequired', () => {
 				nested: {
 					type: 'object',
 					properties: {
+						innerOptional: { type: 'string' },
 						innerRequired: { type: 'string' },
-						innerOptional: { type: 'string', default: 'hello' },
+						innerDefault: { type: 'string', default: 'hello' },
 					},
+					required: ['innerRequired'],
 				},
 			},
 		};
 
 		const result = makePropertiesRequired(schema);
 		const { nested } = result.properties as any;
-		expect(nested.required).toEqual(['innerRequired']);
+		expect(nested.required).toEqual(['innerRequired', 'innerDefault']);
 	});
 
 	it('should not mutate the original schema', () => {
