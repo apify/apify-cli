@@ -122,7 +122,8 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 			return;
 		}
 
-		switch (correctVersion.sourceType) {
+		const { sourceType } = correctVersion;
+		switch (sourceType) {
 			case 'TARBALL': {
 				if (!correctVersion.tarballUrl) {
 					throwMissingSourceCodeAccessError();
@@ -194,7 +195,7 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 				break;
 			}
 			default:
-				throw new Error(`Unknown source type: ${correctVersion.sourceType}`);
+				throw new Error(`Unknown source type: ${sourceType}`);
 		}
 
 		success({
