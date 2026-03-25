@@ -16,9 +16,6 @@ export function makePropertiesRequired(schema: Record<string, unknown>): Record<
 	const requiredSet = new Set<string>(Array.isArray(clone.required) ? (clone.required as string[]) : []);
 
 	for (const [key, prop] of Object.entries(properties)) {
-		if (requiredSet.has(key)) {
-			continue;
-		}
 		if (prop.default !== undefined) {
 			requiredSet.add(key);
 		}
