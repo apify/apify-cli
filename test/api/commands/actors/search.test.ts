@@ -1,5 +1,10 @@
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+
 import { ActorsSearchCommand } from '../../../../src/commands/actors/search.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
+import { AUTH_FILE_PATH } from '../../../../src/lib/consts.js';
+import { useAuthSetup } from '../../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 
 const { logMessages, lastLogMessage } = useConsoleSpy();
@@ -198,5 +203,28 @@ describe('[api] apify actors search', () => {
 		expect(parsed.total).toBeGreaterThan(0);
 		expect(parsed.offset).toBe(5);
 		expect(parsed.count).toBeGreaterThan(0);
+	});
+
+	describe('with expired/invalid token', () => {
+		useAuthSetup({ cleanup: true, perTest: true });
+
+		it('should still succeed when an invalid token is stored (no auth required)', async () => {
+			// Write a fake expired token to the auth file
+			const authPath = AUTH_FILE_PATH();
+			mkdirSync(dirname(authPath), { recursive: true });
+			writeFileSync(authPath, JSON.stringify({ token: 'fake-expired-token-12345' }));
+
+			await testRunCommand(ActorsSearchCommand, {
+				args_query: 'web scraper',
+				flags_json: true,
+				flags_limit: 1,
+			});
+
+			expect(process.exitCode).toBeUndefined();
+
+			const output = lastLogMessage();
+			const parsed = JSON.parse(output);
+			expect(parsed).toHaveProperty('items');
+		});
 	});
 });
