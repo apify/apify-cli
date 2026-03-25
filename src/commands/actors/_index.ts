@@ -6,6 +6,7 @@ import { ActorsLsCommand } from './ls.js';
 import { ActorsPullCommand } from './pull.js';
 import { ActorsPushCommand } from './push.js';
 import { ActorsRmCommand } from './rm.js';
+import { ActorsSearchCommand } from './search.js';
 import { ActorsStartCommand } from './start.js';
 
 export class ActorsIndexCommand extends ApifyCommand<typeof ActorsIndexCommand> {
@@ -17,6 +18,7 @@ export class ActorsIndexCommand extends ApifyCommand<typeof ActorsIndexCommand> 
 		//
 		ActorsStartCommand,
 		ActorsRmCommand,
+		ActorsSearchCommand,
 		ActorsPushCommand,
 		ActorsPullCommand,
 		ActorsLsCommand,
