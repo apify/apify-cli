@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - Add `.actorignore` support ([#1038](https://github.com/apify/apify-cli/pull/1038)) ([cb77da8](https://github.com/apify/apify-cli/commit/cb77da8c012ab4c234a207e7d26858647ba0370b)) by [@l2ysho](https://github.com/l2ysho), closes [#706](https://github.com/apify/apify-cli/issues/706), [#982](https://github.com/apify/apify-cli/issues/982)
+- Add `actors search` command to search Apify Store ([#1047](https://github.com/apify/apify-cli/pull/1047)) ([ada9674](https://github.com/apify/apify-cli/commit/ada967424619ed2c1f597bb80153d0b1c77ec009)) by [@patrikbraborec](https://github.com/patrikbraborec)
 
 ### 🐛 Bug Fixes
 
