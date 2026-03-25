@@ -848,6 +848,73 @@ describe('makePropertiesRequired', () => {
 		const result = makePropertiesRequired(schema);
 		expect(result).toEqual({ type: 'object' });
 	});
+
+	it('should recurse into nested object that is already in parent required array and promote inner defaults', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				nested: {
+					type: 'object',
+					properties: {
+						innerDefault: { type: 'string', default: 'hello' },
+						innerOptional: { type: 'string' },
+					},
+				},
+			},
+			required: ['nested'],
+		};
+
+		const result = makePropertiesRequired(schema);
+		const { nested } = result.properties as any;
+		expect(nested.required).toEqual(['innerDefault']);
+	});
+
+	it('should recurse into nested object that is already in parent required and merge inner required with inner defaults', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				nested: {
+					type: 'object',
+					properties: {
+						innerRequired: { type: 'string' },
+						innerDefault: { type: 'number', default: 42 },
+						innerOptional: { type: 'boolean' },
+					},
+					required: ['innerRequired'],
+				},
+			},
+			required: ['nested'],
+		};
+
+		const result = makePropertiesRequired(schema);
+		const { nested } = result.properties as any;
+		expect(nested.required).toContain('innerRequired');
+		expect(nested.required).toContain('innerDefault');
+		expect(nested.required).not.toContain('innerOptional');
+	});
+
+	it('should recurse into nested object that is already in parent required with no inner required array and promote inner defaults', () => {
+		const schema = {
+			type: 'object',
+			properties: {
+				nested: {
+					type: 'object',
+					properties: {
+						innerA: { type: 'string', default: 'a' },
+						innerB: { type: 'number', default: 1 },
+						innerC: { type: 'boolean' },
+					},
+				},
+			},
+			required: ['nested'],
+		};
+
+		const result = makePropertiesRequired(schema);
+		const { nested } = result.properties as any;
+		expect(nested.required).toContain('innerA');
+		expect(nested.required).toContain('innerB');
+		expect(nested.required).not.toContain('innerC');
+	});
 });
 
 describe('clearAllRequired', () => {
