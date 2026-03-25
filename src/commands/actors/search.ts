@@ -1,4 +1,3 @@
-import type { ActorStoreList } from 'apify-client';
 import { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
