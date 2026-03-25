@@ -123,7 +123,7 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 			},
 		});
 
-		for (const item of result.items as ActorStoreList[]) {
+		for (const item of result.items) {
 			table.pushRow({
 				Name: `${item.title}\n${chalk.gray(`${item.username}/${item.name}`)}`,
 				Description: truncateDescription(item.description),
