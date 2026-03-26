@@ -2,9 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 1.3.1 - **not yet released**
+## [1.4.0](https://github.com/apify/apify-cli/releases/tag/v1.4.0) (2026-03-26)
 
 ### 🚀 Features
 
@@ -15,8 +13,6 @@ All notable changes to this project will be documented in this file.
 
 - Throw an error on missing secrets ([#1039](https://github.com/apify/apify-cli/pull/1039)) ([2ac7e3c](https://github.com/apify/apify-cli/commit/2ac7e3ca32d0fe35bfb6be9c2d38513518b16e61)) by [@janbuchar](https://github.com/janbuchar), closes [#921](https://github.com/apify/apify-cli/issues/921)
 - **generate-schema-types:** Mark properties with defaults as always present in generated types ([#1048](https://github.com/apify/apify-cli/pull/1048)) ([0af4974](https://github.com/apify/apify-cli/commit/0af497418e32425b9d9235898f6447c553f4e810)) by [@JuanGalilea](https://github.com/JuanGalilea)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [1.3.0](https://github.com/apify/apify-cli/releases/tag/v1.3.0) (2026-03-11)
 
