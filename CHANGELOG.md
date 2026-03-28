@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 1.4.1 - **not yet released**
+
+<!-- git-cliff-unreleased-end -->
+
 ## [1.4.0](https://github.com/apify/apify-cli/releases/tag/v1.4.0) (2026-03-26)
 
 ### 🚀 Features
