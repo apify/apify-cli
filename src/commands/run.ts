@@ -420,7 +420,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	}
 
 	/**
-	 * Ensures the input that the actor will be ran with locally matches the input schema (and prefills default values if missing)
+	 * Validates the input against the input schema and writes to disk only when necessary.
+	 * When the user already has an INPUT.json and no override is provided, it validates in-memory
+	 * without modifying the file (returns null so the finally block is a no-op).
 	 * @param inputOverride Optional input received through command flags
 	 */
 	private async validateAndStoreInput(inputOverride?: { input: Record<string, unknown>; source: string }) {
@@ -546,15 +548,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				);
 			}
 
-			// Step 4: store the input
-			await mkdir(dirname(inputFilePath), { recursive: true });
-			await writeFile(inputFilePath, JSON.stringify(fullInput, null, 2));
-
-			return {
-				existingInput,
-				inputFilePath,
-				writtenAt: Date.now(),
-			};
+			// Don't write to the file — leave the user's INPUT.json untouched
+			return null;
 		}
 
 		return null;

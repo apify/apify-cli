@@ -333,14 +333,18 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			expect(lastErrorMessage()).toMatch(/Field help must be string/i);
 		});
 
-		it('automatically inserts missing defaulted fields', async () => {
-			writeFileSync(inputPath, '{"awesome": true}', { flag: 'w' });
+		it('does not inject defaults into existing input file', async () => {
+			const originalContent = '{"awesome": true}';
+			writeFileSync(inputPath, originalContent, { flag: 'w' });
 			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
 
 			await testRunCommand(RunCommand, {});
 
 			const output = JSON.parse(readFileSync(outputPath, 'utf8'));
 			expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
+
+			const inputAfterRun = readFileSync(inputPath, 'utf8');
+			expect(inputAfterRun).toBe(originalContent);
 		});
 
 		it('does not insert missing prefilled fields', async () => {
