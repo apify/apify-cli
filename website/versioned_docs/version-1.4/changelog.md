@@ -373,7 +373,7 @@ All notable changes to this project will be documented in this file.
   ## 0.2.1 / 2018-09-17
 
 * **BREAKING CHANGES**: The local storage directories have been renamed and package.json files needs a new `start` command.
-  See [migration guide](/MIGRATIONS.md) for existing projects if you are upgrading from 0.1.\_ to 0.2.\_.
+  See [migration guide](https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md) for existing projects if you are upgrading from 0.1.\_ to 0.2.\_.
 
 * You can specified another file that main.js for `apify run` command using npm start script.
 
