@@ -39,6 +39,7 @@ module.exports = {
         [
             '@apify/docs-theme',
             {
+				changelogFromRoot: true,
                 subNavbar: {
                     title: 'Apify CLI',
                     items: [
