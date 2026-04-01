@@ -1,6 +1,8 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { cloneDeep } from 'es-toolkit';
+
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
 import {
@@ -292,7 +294,7 @@ export function validateKvsSchema(schema: Record<string, unknown>): void {
 
 // Lots of code copied from @apify-packages/actor, this really should be moved to the shared input_schema package
 export const getAjvValidator = (inputSchema: any, ajvInstance: import('ajv').Ajv) => {
-	const copyOfSchema = structuredClone(inputSchema);
+	const copyOfSchema = cloneDeep(inputSchema);
 	copyOfSchema.required = [];
 
 	for (const [inputSchemaFieldKey, inputSchemaField] of Object.entries<any>(inputSchema.properties)) {

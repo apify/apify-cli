@@ -48,6 +48,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`Deploys Actor to Apify platform using settings from '${LOCAL_CONFIG_PATH}'.\n` +
 		`Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files"; ` +
 		`larger projects upload as ZIP file.\n` +
+		`Files matched by .gitignore and .actorignore are excluded. ` +
+		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.\n` +
 		`Use --force to override newer remote versions.`;
 
 	static override enableJsonFlag = true;
@@ -82,6 +84,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		dir: Flags.string({
 			description: 'Directory where the Actor is located',
 			required: false,
+		}),
+		'allow-missing-secrets': Flags.boolean({
+			description:
+				'Allow the command to continue even when secret values are not found in the local secrets storage.',
+			required: false,
+			default: false,
 		}),
 	};
 
@@ -293,7 +301,9 @@ Skipping push. Use --force to override.`,
 		// Update Actor version
 		const actorCurrentVersion = await actorClient.version(version).get();
 		const envVars = actorConfig!.environmentVariables
-			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>)
+			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>, undefined, {
+					allowMissing: this.flags.allowMissingSecrets,
+				})
 			: undefined;
 
 		if (actorCurrentVersion) {

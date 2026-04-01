@@ -98,6 +98,12 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			stdin: StdinMode.Stringified,
 			exclusive: ['input'],
 		}),
+		'allow-missing-secrets': Flags.boolean({
+			description:
+				'Allow the command to continue even when secret values are not found in the local secrets storage.',
+			required: false,
+			default: false,
+		}),
 	};
 
 	async run() {
@@ -265,7 +271,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
 		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
 		if (localConfig!.environmentVariables) {
-			const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>);
+			const updatedEnv = replaceSecretsValue(
+				localConfig!.environmentVariables as Record<string, string>,
+				undefined,
+				{ allowMissing: this.flags.allowMissingSecrets },
+			);
 			Object.assign(localEnvVars, updatedEnv);
 		}
 

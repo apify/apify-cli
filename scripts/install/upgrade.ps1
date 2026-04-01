@@ -13,7 +13,7 @@ param(
     [String]$Version
 )
 
-$UpgradeScriptURL = "https://raw.githubusercontent.com/apify/apify-cli/main/scripts/install/upgrade.ps1"
+$UpgradeScriptURL = "https://raw.githubusercontent.com/apify/apify-cli/refs/heads/master/scripts/install/upgrade.ps1"
 
 $URLArray = $AllUrls -split ','
 
