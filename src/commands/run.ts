@@ -26,7 +26,7 @@ import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { useModuleVersion } from '../lib/hooks/useModuleVersion.js';
 import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
-import { CRAWLEE_INPUT_KEY_ENV, TEMP_INPUT_KEY_PREFIX, resolveInputKey } from '../lib/input-key.js';
+import { CRAWLEE_INPUT_KEY_ENV, resolveInputKey, TEMP_INPUT_KEY_PREFIX } from '../lib/input-key.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
@@ -248,7 +248,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			CRAWLEE_PURGE_ON_START = '1';
 
 			if (crawleeVersion.isNone()) {
-				await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(resolvedInputKey), purgeDefaultDataset()]);
+				await Promise.all([
+					purgeDefaultQueue(),
+					purgeDefaultKeyValueStore(resolvedInputKey),
+					purgeDefaultDataset(),
+				]);
 				info({ message: 'All default local stores were purged.' });
 			}
 		}
@@ -509,7 +513,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const existingInput = getLocalInput(process.cwd(), resolvedInputKey);
 
 		// Prepare the file path for where we'll temporarily store the validated input
-		const inputFilePath = join(process.cwd(), getLocalKeyValueStorePath(), existingInput?.fileName ?? `${resolvedInputKey}.json`);
+		const inputFilePath = join(
+			process.cwd(),
+			getLocalKeyValueStorePath(),
+			existingInput?.fileName ?? `${resolvedInputKey}.json`,
+		);
 
 		let errorHeader: string;
 
