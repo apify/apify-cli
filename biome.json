@@ -8,7 +8,8 @@
 			"!**/test/__setup__/input-schemas/**/*.json",
 			"!**/test/tmp/**",
 			"!**/package.json",
-			"!**/LICENSE.md"
+			"!**/LICENSE.md",
+			"!**/pnpm-lock.yaml"
 		],
 		"formatWithErrors": true
 	},

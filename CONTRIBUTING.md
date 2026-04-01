@@ -2,7 +2,7 @@
 
 ## Dev mode
 
-You can run `yarn dev:apify` to run the CLI in development mode. This will use the local version of the CLI instead of the one installed globally.
+You can run `pnpm run dev:apify` to run the CLI in development mode. This will use the local version of the CLI instead of the one installed globally.
 
 ## Tests
 
@@ -12,10 +12,10 @@ You need to have Apify account to test all apify-cli features.
 Then you can run tests with commands in repository root directory:
 
 1. Install all dependencies:
-   `yarn`
+   `pnpm install`
 
 2. Run tests using credentials of the 'apify-test' user:
-   `TEST_USER_TOKEN=<apifyUserApiToken> yarn test:all`
+   `TEST_USER_TOKEN=<apifyUserApiToken> pnpm run test:all`
 
 ## Publish new version
 
