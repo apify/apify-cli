@@ -6,9 +6,8 @@ import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import {
-	readDatasetSchema,
+	readAndValidateInputSchema,
 	readInputSchema,
-	readOutputSchema,
 	readStorageSchema,
 	validateDatasetSchema,
 	validateKvsSchema,
@@ -49,16 +48,11 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 	}
 
 	private async validateInputSchemaAtPath(forcePath: string) {
-		const { inputSchema } = await readInputSchema({ forcePath, cwd: process.cwd() });
-
-		if (!inputSchema) {
-			throw new Error(`Input schema has not been found at ${forcePath}.`);
-		}
-
-		info({ message: `Validating input schema at ${forcePath}` });
-
-		const validator = new Ajv2019({ strict: false });
-		validateInputSchema(validator, inputSchema);
+		await readAndValidateInputSchema({
+			forcePath,
+			cwd: process.cwd(),
+			getMessage: (path) => `Validating input schema at ${path ?? forcePath}`,
+		});
 
 		success({ message: 'Input schema is valid.' });
 	}
@@ -68,82 +62,54 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 		let foundAny = false;
 		let hasErrors = false;
 
-		// Input schema
-		const { inputSchema, inputSchemaPath } = await readInputSchema({ cwd });
+		// Input schema — not using readAndValidateInputSchema here because it throws
+		// when no schema is found; in the all-schemas scan, a missing input schema
+		// should be silently skipped, not treated as an error.
+		try {
+			const { inputSchema, inputSchemaPath } = await readInputSchema({ cwd });
 
-		if (inputSchema) {
-			foundAny = true;
+			if (inputSchema) {
+				foundAny = true;
 
-			const location = inputSchemaPath
-				? `at ${inputSchemaPath}`
-				: `embedded in '${LOCAL_CONFIG_PATH}'`;
-			info({ message: `Validating input schema ${location}` });
+				const location = inputSchemaPath
+					? `at ${inputSchemaPath}`
+					: `embedded in '${LOCAL_CONFIG_PATH}'`;
+				info({ message: `Validating input schema ${location}` });
 
-			try {
 				const validator = new Ajv2019({ strict: false });
 				validateInputSchema(validator, inputSchema);
 				success({ message: 'Input schema is valid.' });
-			} catch (err) {
-				hasErrors = true;
-				error({ message: (err as Error).message });
 			}
+		} catch (err) {
+			foundAny = true;
+			hasErrors = true;
+			error({ message: (err as Error).message });
 		}
 
-		// Dataset schema
-		const datasetResult = readDatasetSchema({ cwd });
+		// Storage schemas (Dataset, Output, Key-Value Store)
+		const storageSchemas = [
+			{ label: 'Dataset', read: () => readStorageSchema({ cwd, key: 'dataset', label: 'Dataset' }), validate: validateDatasetSchema },
+			{ label: 'Output', read: () => readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output }), validate: validateOutputSchema },
+			{ label: 'Key-Value Store', read: () => readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store' }), validate: validateKvsSchema },
+		];
 
-		if (datasetResult) {
-			foundAny = true;
-
-			const location = datasetResult.datasetSchemaPath
-				? `at ${datasetResult.datasetSchemaPath}`
-				: `embedded in '${LOCAL_CONFIG_PATH}'`;
-			info({ message: `Validating Dataset schema ${location}` });
-
+		for (const { label, read, validate } of storageSchemas) {
 			try {
-				validateDatasetSchema(datasetResult.datasetSchema);
-				success({ message: 'Dataset schema is valid.' });
+				const result = read();
+
+				if (result) {
+					foundAny = true;
+
+					const location = result.schemaPath
+						? `at ${result.schemaPath}`
+						: `embedded in '${LOCAL_CONFIG_PATH}'`;
+					info({ message: `Validating ${label} schema ${location}` });
+
+					validate(result.schema);
+					success({ message: `${label} schema is valid.` });
+				}
 			} catch (err) {
-				hasErrors = true;
-				error({ message: (err as Error).message });
-			}
-		}
-
-		// Output schema
-		const outputResult = readOutputSchema({ cwd });
-
-		if (outputResult) {
-			foundAny = true;
-
-			const location = outputResult.outputSchemaPath
-				? `at ${outputResult.outputSchemaPath}`
-				: `embedded in '${LOCAL_CONFIG_PATH}'`;
-			info({ message: `Validating Output schema ${location}` });
-
-			try {
-				validateOutputSchema(outputResult.outputSchema);
-				success({ message: 'Output schema is valid.' });
-			} catch (err) {
-				hasErrors = true;
-				error({ message: (err as Error).message });
-			}
-		}
-
-		// Key-Value Store schema
-		const kvsResult = readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store' });
-
-		if (kvsResult) {
-			foundAny = true;
-
-			const location = kvsResult.schemaPath
-				? `at ${kvsResult.schemaPath}`
-				: `embedded in '${LOCAL_CONFIG_PATH}'`;
-			info({ message: `Validating Key-Value Store schema ${location}` });
-
-			try {
-				validateKvsSchema(kvsResult.schema);
-				success({ message: 'Key-Value Store schema is valid.' });
-			} catch (err) {
+				foundAny = true;
 				hasErrors = true;
 				error({ message: (err as Error).message });
 			}

@@ -39,7 +39,7 @@ export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; 
 
 	const localConfig = getLocalConfig(cwd);
 
-	if (typeof localConfig?.input === 'object') {
+	if (typeof localConfig?.input === 'object' && localConfig.input !== null) {
 		return {
 			inputSchema: localConfig.input as Record<string, unknown>,
 			inputSchemaPath: null,
@@ -48,8 +48,17 @@ export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; 
 
 	if (typeof localConfig?.input === 'string') {
 		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, localConfig.input);
+		const schema = getJsonFileContent(fullPath);
+
+		if (!schema) {
+			warning({
+				message: `Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
+			return { inputSchema: null, inputSchemaPath: fullPath };
+		}
+
 		return {
-			inputSchema: getJsonFileContent(fullPath),
+			inputSchema: schema,
 			inputSchemaPath: fullPath,
 		};
 	}
