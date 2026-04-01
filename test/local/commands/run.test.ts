@@ -1,7 +1,7 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path/win32';
 
-import { APIFY_ENV_VARS } from '@apify/consts';
+import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
@@ -355,6 +355,28 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 
 			const output = JSON.parse(readFileSync(outputPath, 'utf8'));
 			expect(output).toStrictEqual({ awesome: true });
+		});
+
+		it('respects ACTOR_INPUT_KEY env var for custom input file', async () => {
+			const customInputPath = joinPath(getLocalKeyValueStorePath(), 'MY_INPUT.json');
+			const originalContent = '{"awesome": true}';
+
+			writeFileSync(customInputPath, originalContent, { flag: 'w' });
+			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
+
+			process.env[ACTOR_ENV_VARS.INPUT_KEY] = 'MY_INPUT';
+
+			try {
+				await testRunCommand(RunCommand, {});
+
+				const output = JSON.parse(readFileSync(outputPath, 'utf8'));
+				expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
+
+				const inputAfterRun = readFileSync(customInputPath, 'utf8');
+				expect(inputAfterRun).toBe(originalContent);
+			} finally {
+				delete process.env[ACTOR_ENV_VARS.INPUT_KEY];
+			}
 		});
 	});
 });

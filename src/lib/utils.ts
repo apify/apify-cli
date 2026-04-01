@@ -41,12 +41,12 @@ import {
 	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
 	GLOBAL_CONFIGS_FOLDER,
-	INPUT_FILE_REG_EXP,
 	LOCAL_CONFIG_PATH,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { TEMP_INPUT_KEY_PREFIX, inputFileRegExp } from './input-key.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -504,7 +504,7 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 /**
  * Get Actor input from local store
  */
-export const getLocalInput = (cwd: string) => {
+export const getLocalInput = (cwd: string, inputKey?: string) => {
 	const defaultLocalStorePath = getLocalKeyValueStorePath();
 
 	const folderExists = existsSync(join(cwd, defaultLocalStorePath));
@@ -512,7 +512,7 @@ export const getLocalInput = (cwd: string) => {
 	if (!folderExists) return;
 
 	const files = readdirSync(join(cwd, defaultLocalStorePath));
-	const inputName = files.find((file) => !!file.match(INPUT_FILE_REG_EXP));
+	const inputName = files.find((file) => !!file.match(inputFileRegExp(inputKey ?? 'INPUT')));
 
 	// No input file
 	if (!inputName) return;
@@ -536,16 +536,17 @@ export const purgeDefaultDataset = async () => {
 	}
 };
 
-export const purgeDefaultKeyValueStore = async () => {
+export const purgeDefaultKeyValueStore = async (...inputKeys: string[]) => {
 	const defaultKeyValueStorePath = getLocalKeyValueStorePath();
 	if (!existsSync(getLocalStorageDir()) || !existsSync(defaultKeyValueStorePath)) {
 		return;
 	}
 	const filesToDelete = readdirSync(defaultKeyValueStorePath);
+	const preserveRegExps = (inputKeys.length > 0 ? inputKeys : ['INPUT']).map(inputFileRegExp);
 
 	const deletePromises: Promise<void>[] = [];
 	filesToDelete.forEach((file) => {
-		if (!file.match(INPUT_FILE_REG_EXP)) {
+		if (!preserveRegExps.some((re) => re.test(file))) {
 			deletePromises.push(deleteFile(join(defaultKeyValueStorePath, file)));
 		}
 	});
@@ -626,13 +627,12 @@ export const getNpmCmd = (): string => {
 /**
  * Returns true if apify storage is empty (expect INPUT.*)
  */
-export const checkIfStorageIsEmpty = async () => {
+export const checkIfStorageIsEmpty = async (inputKey?: string) => {
+	const key = inputKey || KEY_VALUE_STORE_KEYS.INPUT;
 	const filesWithoutInput = await glob([
 		`${getLocalStorageDir()}/**`,
-		// Omit INPUT.* file
-		`!${getLocalKeyValueStorePath()}/${KEY_VALUE_STORE_KEYS.INPUT}.*`,
-		// Omit INPUT_CLI-* files
-		`!${getLocalKeyValueStorePath()}/${KEY_VALUE_STORE_KEYS.INPUT}_CLI-*`,
+		`!${getLocalKeyValueStorePath()}/${key}.*`,
+		`!${getLocalKeyValueStorePath()}/${TEMP_INPUT_KEY_PREFIX}${key}.*`,
 	]);
 
 	return filesWithoutInput.length === 0;

@@ -3,7 +3,7 @@
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
-import { KEY_VALUE_STORE_KEYS, META_ORIGINS } from '@apify/consts';
+import { META_ORIGINS } from '@apify/consts';
 
 import pkg from '../../package.json' with { type: 'json' };
 
@@ -48,8 +48,6 @@ export const ACTOR_SPECIFICATION_FOLDER = '.actor';
 export const LOCAL_CONFIG_NAME = 'actor.json';
 
 export const LOCAL_CONFIG_PATH = join(ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_NAME);
-
-export const INPUT_FILE_REG_EXP = new RegExp(`(^${KEY_VALUE_STORE_KEYS.INPUT}(?:\\.[^.]+)?$)`);
 
 export const SUPPORTED_NODEJS_VERSION = pkg.engines.node;
 
