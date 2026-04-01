@@ -1,4 +1,4 @@
-import confirmImpl from '../../utils/inquirer/confirmImpl.js';
+import { confirmImpl } from '../../utils/inquirer/confirmImpl.js';
 import { stdinCheckWrapper } from './_stdinCheckWrapper.js';
 
 interface UseYesNoConfirmInput {
