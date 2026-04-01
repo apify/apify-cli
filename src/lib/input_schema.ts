@@ -51,10 +51,9 @@ export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; 
 		const schema = getJsonFileContent(fullPath);
 
 		if (!schema) {
-			warning({
-				message: `Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
-			});
-			return { inputSchema: null, inputSchemaPath: fullPath };
+			throw new Error(
+				`Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			);
 		}
 
 		return {
@@ -151,10 +150,9 @@ export const readStorageSchema = ({
 		const schema = getJsonFileContent(fullPath);
 
 		if (!schema) {
-			warning({
-				message: `${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
-			});
-			return null;
+			throw new Error(
+				`${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			);
 		}
 
 		return {
