@@ -1,0 +1,19 @@
+packages:
+    - .
+    - website
+
+allowBuilds:
+    "@apify/ui-icons": true
+    "@swc/core": true
+    core-js: true
+    core-js-pure: true
+    esbuild: true
+    unrs-resolver: true
+
+overrides:
+    tar: 7.5.13
+
+# We might not need to define these patterns, but if eslint or prettier have issues without this... keep it
+publicHoistPattern:
+    - "*eslint*"
+    - "*prettier*"
