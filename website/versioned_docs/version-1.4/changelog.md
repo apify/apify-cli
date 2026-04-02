@@ -8,6 +8,16 @@ toc_max_heading_level: 3
 
 All notable changes to this project will be documented in this file.
 
+### [1.4.1](https://github.com/apify/apify-cli/releases/tag/v1.4.1) (2026-04-02)
+
+#### 🐛 Bug Fixes
+
+- Correct upgrade script URL for Windows ([#1055](https://github.com/apify/apify-cli/pull/1055)) ([0c5d1ec](https://github.com/apify/apify-cli/commit/0c5d1ec18be2711ed51cd90cc743ef869eb79465)) by [@vladfrangu](https://github.com/vladfrangu)
+
+#### 🔩 Dependency Updates
+
+- Update `handlebars` to v4.7.9 (security patch)
+
 ### [1.4.0](https://github.com/apify/apify-cli/releases/tag/v1.4.0) (2026-03-26)
 
 #### 🚀 Features
