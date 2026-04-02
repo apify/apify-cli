@@ -1,6 +1,7 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import type { Ajv, ErrorObject } from 'ajv';
 import { cloneDeep } from 'es-toolkit';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
@@ -293,7 +294,7 @@ export const getDefaultsFromInputSchema = (inputSchema: any) => {
 	return defaults;
 };
 
-function formatSchemaValidationErrors(errors: import('ajv').ErrorObject[], schemaName: string): string {
+function formatSchemaValidationErrors(errors: ErrorObject[], schemaName: string): string {
 	const details = errors
 		.map((err) => {
 			const path = err.instancePath ? ` at ${err.instancePath}` : '';
@@ -326,7 +327,7 @@ export function validateKvsSchema(schema: Record<string, unknown>): void {
 }
 
 // Lots of code copied from @apify-packages/actor, this really should be moved to the shared input_schema package
-export const getAjvValidator = (inputSchema: any, ajvInstance: import('ajv').Ajv) => {
+export const getAjvValidator = (inputSchema: any, ajvInstance: Ajv) => {
 	const copyOfSchema = cloneDeep(inputSchema);
 	copyOfSchema.required = [];
 
