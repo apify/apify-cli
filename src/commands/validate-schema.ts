@@ -32,7 +32,8 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 	static override args = {
 		path: Args.string({
 			required: false,
-			description: 'Optional path to your INPUT_SCHEMA.json file. If not provided, validates all schemas in actor.json.',
+			description:
+				'Optional path to your INPUT_SCHEMA.json file. If not provided, validates all schemas in actor.json.',
 		}),
 	};
 
@@ -71,9 +72,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 			if (inputSchema) {
 				foundAny = true;
 
-				const location = inputSchemaPath
-					? `at ${inputSchemaPath}`
-					: `embedded in '${LOCAL_CONFIG_PATH}'`;
+				const location = inputSchemaPath ? `at ${inputSchemaPath}` : `embedded in '${LOCAL_CONFIG_PATH}'`;
 				info({ message: `Validating input schema ${location}` });
 
 				const validator = new Ajv2019({ strict: false });
@@ -88,9 +87,29 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 
 		// Storage schemas (Dataset, Output, Key-Value Store)
 		const storageSchemas = [
-			{ label: 'Dataset', read: () => readStorageSchema({ cwd, key: 'dataset', label: 'Dataset', throwOnMissing: true }), validate: validateDatasetSchema },
-			{ label: 'Output', read: () => readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output, throwOnMissing: true }), validate: validateOutputSchema },
-			{ label: 'Key-Value Store', read: () => readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store', throwOnMissing: true }), validate: validateKvsSchema },
+			{
+				label: 'Dataset',
+				read: () => readStorageSchema({ cwd, key: 'dataset', label: 'Dataset', throwOnMissing: true }),
+				validate: validateDatasetSchema,
+			},
+			{
+				label: 'Output',
+				read: () =>
+					readStorageSchema({
+						cwd,
+						key: 'output',
+						label: 'Output',
+						getRef: (config) => config?.output,
+						throwOnMissing: true,
+					}),
+				validate: validateOutputSchema,
+			},
+			{
+				label: 'Key-Value Store',
+				read: () =>
+					readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store', throwOnMissing: true }),
+				validate: validateKvsSchema,
+			},
 		];
 
 		for (const { label, read, validate } of storageSchemas) {
@@ -116,7 +135,9 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 		}
 
 		if (!foundAny) {
-			throw new Error(`No schemas found. Make sure '${LOCAL_CONFIG_PATH}' exists and defines at least one schema.`);
+			throw new Error(
+				`No schemas found. Make sure '${LOCAL_CONFIG_PATH}' exists and defines at least one schema.`,
+			);
 		}
 
 		if (hasErrors) {

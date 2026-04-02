@@ -29,7 +29,15 @@ const DEFAULT_INPUT_SCHEMA_PATHS = [
  * In such a case, path would be set to the location
  * where the input schema would be expected to be found (and e.g. can be created there).
  */
-export const readInputSchema = async ({ forcePath, cwd, throwOnMissing = false }: { forcePath?: string; cwd: string; throwOnMissing?: boolean }) => {
+export const readInputSchema = async ({
+	forcePath,
+	cwd,
+	throwOnMissing = false,
+}: {
+	forcePath?: string;
+	cwd: string;
+	throwOnMissing?: boolean;
+}) => {
 	if (forcePath) {
 		return {
 			inputSchema: getJsonFileContent(forcePath),
@@ -52,9 +60,7 @@ export const readInputSchema = async ({ forcePath, cwd, throwOnMissing = false }
 
 		if (!schema) {
 			if (throwOnMissing) {
-				throw new Error(
-					`Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
-				);
+				throw new Error(`Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`);
 			}
 
 			warning({
