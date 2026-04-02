@@ -14,9 +14,7 @@ _mytests
 docs/changelog.md
 .generated
 
-# Yarn files
-.yarn/install-state.gz
-.yarn/build-state.yml
+# Package manager files
 package.tgz
 
 **/scrapy-wrapper/templates/*
