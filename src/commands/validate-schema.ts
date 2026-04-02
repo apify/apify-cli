@@ -66,7 +66,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 		// when no schema is found; in the all-schemas scan, a missing input schema
 		// should be silently skipped, not treated as an error.
 		try {
-			const { inputSchema, inputSchemaPath } = await readInputSchema({ cwd });
+			const { inputSchema, inputSchemaPath } = await readInputSchema({ cwd, throwOnMissing: true });
 
 			if (inputSchema) {
 				foundAny = true;
@@ -88,9 +88,9 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 
 		// Storage schemas (Dataset, Output, Key-Value Store)
 		const storageSchemas = [
-			{ label: 'Dataset', read: () => readStorageSchema({ cwd, key: 'dataset', label: 'Dataset' }), validate: validateDatasetSchema },
-			{ label: 'Output', read: () => readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output }), validate: validateOutputSchema },
-			{ label: 'Key-Value Store', read: () => readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store' }), validate: validateKvsSchema },
+			{ label: 'Dataset', read: () => readStorageSchema({ cwd, key: 'dataset', label: 'Dataset', throwOnMissing: true }), validate: validateDatasetSchema },
+			{ label: 'Output', read: () => readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output, throwOnMissing: true }), validate: validateOutputSchema },
+			{ label: 'Key-Value Store', read: () => readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store', throwOnMissing: true }), validate: validateKvsSchema },
 		];
 
 		for (const { label, read, validate } of storageSchemas) {
@@ -120,7 +120,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 		}
 
 		if (hasErrors) {
-			process.exitCode = CommandExitCodes.BuildFailed;
+			process.exitCode = CommandExitCodes.InvalidInput;
 		}
 	}
 }

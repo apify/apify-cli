@@ -29,7 +29,7 @@ const DEFAULT_INPUT_SCHEMA_PATHS = [
  * In such a case, path would be set to the location
  * where the input schema would be expected to be found (and e.g. can be created there).
  */
-export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; cwd: string }) => {
+export const readInputSchema = async ({ forcePath, cwd, throwOnMissing = false }: { forcePath?: string; cwd: string; throwOnMissing?: boolean }) => {
 	if (forcePath) {
 		return {
 			inputSchema: getJsonFileContent(forcePath),
@@ -51,9 +51,20 @@ export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; 
 		const schema = getJsonFileContent(fullPath);
 
 		if (!schema) {
-			throw new Error(
-				`Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
-			);
+			if (throwOnMissing) {
+				throw new Error(
+					`Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+				);
+			}
+
+			warning({
+				message: `Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
+
+			return {
+				inputSchema: null,
+				inputSchemaPath: fullPath,
+			};
 		}
 
 		return {
@@ -128,11 +139,13 @@ export const readStorageSchema = ({
 	key,
 	label,
 	getRef,
+	throwOnMissing = false,
 }: {
 	cwd: string;
 	key: string;
 	label: string;
 	getRef?: (config: ReturnType<typeof getLocalConfig>) => unknown;
+	throwOnMissing?: boolean;
 }): { schema: Record<string, unknown>; schemaPath: string | null } | null => {
 	const localConfig = getLocalConfig(cwd);
 
@@ -150,9 +163,16 @@ export const readStorageSchema = ({
 		const schema = getJsonFileContent(fullPath);
 
 		if (!schema) {
-			throw new Error(
-				`${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
-			);
+			if (throwOnMissing) {
+				throw new Error(
+					`${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+				);
+			}
+
+			warning({
+				message: `${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
+			return null;
 		}
 
 		return {
