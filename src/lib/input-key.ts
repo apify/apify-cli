@@ -2,10 +2,8 @@ import escapeStringRegexp from 'escape-string-regexp';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 
-// Not available in @apify/consts
 export const CRAWLEE_INPUT_KEY_ENV = 'CRAWLEE_INPUT_KEY';
 
-/** Prefix used when creating temporary input files so the user's original is never touched. */
 export const TEMP_INPUT_KEY_PREFIX = '__CLI_';
 
 /**
