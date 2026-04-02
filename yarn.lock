@@ -96,6 +96,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@apify/json_schemas@npm:^0.13.0":
+  version: 0.13.0
+  resolution: "@apify/json_schemas@npm:0.13.0"
+  dependencies:
+    "@apify/consts": "npm:^2.51.0"
+    ajv: "npm:^8.17.1"
+  checksum: 10c0/2612be7a73802b810c0bf82fc45ee8a5e3488b94303a66b66af1b13b8dc0b8aa8b4ca88e63fb7340fd9e82f6fa27f3b0d2ab66d51578b4a351ba47f6358887a4
+  languageName: node
+  linkType: hard
+
 "@apify/json_schemas@npm:^0.14.2":
   version: 0.14.2
   resolution: "@apify/json_schemas@npm:0.14.2"
@@ -2398,6 +2408,7 @@ __metadata:
     "@apify/consts": "npm:^2.36.0"
     "@apify/eslint-config": "npm:^1.0.0"
     "@apify/input_schema": "npm:^3.17.0"
+    "@apify/json_schemas": "npm:^0.13.0"
     "@apify/tsconfig": "npm:^0.1.1"
     "@apify/utilities": "npm:^2.18.0"
     "@biomejs/biome": "npm:^2.0.0"
