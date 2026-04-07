@@ -22,6 +22,8 @@ interface TelemetryStateV1 {
 	enabled: boolean;
 	userId?: string | null;
 	anonymousId: string;
+	lastCommand?: string;
+	lastCommandTimestamp?: number;
 }
 
 const telemetryWarningText = [
@@ -108,6 +110,33 @@ export async function updateUserId(userId: string | null) {
 	updateTelemetryState(state, (stateToUpdate) => {
 		stateToUpdate.userId = userId;
 	});
+}
+
+/** Max time (ms) between identical commands to consider the second one a retry (e.g. user re-running after a failure). */
+const RETRY_WINDOW_MS = 10_000;
+
+/**
+ * Checks whether the same command was executed within {@link RETRY_WINDOW_MS} and updates the
+ * last-command state for future calls. Detection is best-effort — concurrent invocations may
+ * both read stale state, which is acceptable for an analytics heuristic.
+ */
+export async function checkAndUpdateLastCommand(commandString: string): Promise<boolean> {
+	try {
+		const state = await useTelemetryState();
+		const now = Date.now();
+
+		const wasRetried =
+			state.lastCommand === commandString && now - (state.lastCommandTimestamp ?? 0) < RETRY_WINDOW_MS;
+
+		updateTelemetryState(state, (stateToUpdate) => {
+			stateToUpdate.lastCommand = commandString;
+			stateToUpdate.lastCommandTimestamp = now;
+		});
+
+		return wasRetried;
+	} catch {
+		return false;
+	}
 }
 
 export async function updateTelemetryEnabled(enabled: boolean) {
