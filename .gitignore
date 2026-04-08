@@ -14,9 +14,6 @@ _mytests
 docs/changelog.md
 .generated
 
-# Generated at build time from Apify OpenAPI spec
-src/commands/api-endpoints.json
-
 # Yarn files
 .yarn/install-state.gz
 .yarn/build-state.yml
