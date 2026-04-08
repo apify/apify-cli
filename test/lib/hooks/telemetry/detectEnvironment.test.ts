@@ -51,9 +51,7 @@ describe('detectCi', () => {
 		vi.resetModules();
 		vi.doMock('ci-info', () => ({ default: { isCI: true, id: 'GITHUB_ACTIONS' } }));
 
-		const { detectCi: detectCiFresh } = await import(
-			'../../../../src/lib/hooks/telemetry/detectEnvironment.js'
-		);
+		const { detectCi: detectCiFresh } = await import('../../../../src/lib/hooks/telemetry/detectEnvironment.js');
 
 		expect(detectCiFresh()).toEqual({ isCi: true, ciProvider: 'github_actions' });
 	});
@@ -62,9 +60,7 @@ describe('detectCi', () => {
 		vi.resetModules();
 		vi.doMock('ci-info', () => ({ default: { isCI: true, id: null } }));
 
-		const { detectCi: detectCiFresh } = await import(
-			'../../../../src/lib/hooks/telemetry/detectEnvironment.js'
-		);
+		const { detectCi: detectCiFresh } = await import('../../../../src/lib/hooks/telemetry/detectEnvironment.js');
 
 		expect(detectCiFresh()).toEqual({ isCi: true, ciProvider: 'unknown' });
 	});
