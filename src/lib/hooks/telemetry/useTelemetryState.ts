@@ -73,7 +73,10 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 		});
 
 		// First time we are tracking telemetry, so we want to notify user about it.
-		info({ message: telemetryWarningText });
+		// Skip the notice if telemetry is disabled via env var — the user already opted out.
+		if (!process.env.APIFY_CLI_DISABLE_TELEMETRY || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)) {
+			info({ message: telemetryWarningText });
+		}
 
 		return useTelemetryState();
 	}
