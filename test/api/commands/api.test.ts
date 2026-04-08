@@ -85,29 +85,34 @@ describe('[api] apify api', () => {
 		await safeLogin();
 
 		const actorName = `test-api-cmd-${Date.now()}`;
+		let actorId: string | undefined;
 
-		// Create an actor via POST
-		await testRunCommand(ApiCommand, {
-			args_endpoint: 'v2/acts',
-			flags_method: 'POST',
-			flags_body: JSON.stringify({ name: actorName, title: 'Test API Command' }),
-		});
+		try {
+			// Create an actor via POST
+			await testRunCommand(ApiCommand, {
+				args_endpoint: 'v2/acts',
+				flags_method: 'POST',
+				flags_body: JSON.stringify({ name: actorName, title: 'Test API Command' }),
+			});
 
-		const spy = logSpy();
-		expect(spy).toHaveBeenCalled();
+			const spy = logSpy();
+			expect(spy).toHaveBeenCalled();
 
-		const output = spy.mock.calls[0][0];
-		const parsed = JSON.parse(output);
+			const output = spy.mock.calls[0][0];
+			const parsed = JSON.parse(output);
 
-		expect(parsed.data).toBeDefined();
-		expect(parsed.data.name).toBe(actorName);
+			expect(parsed.data).toBeDefined();
+			expect(parsed.data.name).toBe(actorName);
 
-		// Cleanup — delete the created actor
-		const actorId = parsed.data.id;
-
-		await testRunCommand(ApiCommand, {
-			args_endpoint: `v2/acts/${actorId}`,
-			flags_method: 'DELETE',
-		});
+			actorId = parsed.data.id;
+		} finally {
+			// Cleanup — delete the created actor even if assertions fail
+			if (actorId) {
+				await testRunCommand(ApiCommand, {
+					args_endpoint: `v2/acts/${actorId}`,
+					flags_method: 'DELETE',
+				});
+			}
+		}
 	});
 });

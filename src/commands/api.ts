@@ -57,6 +57,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 
 		if (!this.args.endpoint) {
 			this.printHelp();
+			return;
 		}
 
 		const { token } = getApifyClientOptions();
