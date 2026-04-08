@@ -1,4 +1,4 @@
-import isCI from 'is-ci';
+import ciInfo from 'ci-info';
 
 const AI_AGENT_ENV_VARS: [string, string][] = [
 	['CLAUDECODE', 'claude_code'],
@@ -12,15 +12,6 @@ const AI_AGENT_ENV_VARS: [string, string][] = [
 	['OPENCLAW_SHELL', 'openclaw'],
 ];
 
-const CI_PROVIDER_ENV_VARS: [string, string][] = [
-	['GITHUB_ACTIONS', 'github_actions'],
-	['GITLAB_CI', 'gitlab'],
-	['JENKINS_URL', 'jenkins'],
-	['CIRCLECI', 'circle'],
-	['BUILDKITE', 'buildkite'],
-	['TRAVIS', 'travis'],
-];
-
 export function detectAiAgent(): string | undefined {
 	for (const [envVar, agent] of AI_AGENT_ENV_VARS) {
 		if (process.env[envVar]) {
@@ -32,17 +23,11 @@ export function detectAiAgent(): string | undefined {
 }
 
 export function detectCi(): { isCi: boolean; ciProvider: string | undefined } {
-	if (!isCI) {
+	if (!ciInfo.isCI) {
 		return { isCi: false, ciProvider: undefined };
 	}
 
-	for (const [envVar, provider] of CI_PROVIDER_ENV_VARS) {
-		if (process.env[envVar]) {
-			return { isCi: true, ciProvider: provider };
-		}
-	}
-
-	return { isCi: true, ciProvider: 'unknown' };
+	return { isCi: true, ciProvider: ciInfo.id?.toLowerCase() ?? 'unknown' };
 }
 
 export function detectIsInteractive(): boolean {

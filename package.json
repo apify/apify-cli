@@ -89,6 +89,7 @@
         "computer-name": "~0.1.0",
         "configparser": "~0.3.10",
         "cors": "~2.8.5",
+        "ci-info": "~4.4.0",
         "detect-indent": "~7.0.1",
         "es-toolkit": "^1.45.1",
         "escape-string-regexp": "~5.0.0",

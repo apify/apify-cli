@@ -1,8 +1,8 @@
 import { detectAiAgent, detectCi, detectIsInteractive } from '../../../../src/lib/hooks/telemetry/detectEnvironment.js';
 
-// `is-ci` (and its underlying `ci-info`) evaluates process.env at import time,
+// `ci-info` evaluates process.env at import time,
 // so we mock it to control the return value per-test.
-vi.mock('is-ci', () => ({ default: false }));
+vi.mock('ci-info', () => ({ default: { isCI: false, id: null } }));
 
 describe('detectAiAgent', () => {
 	const agentEnvVars = [
@@ -42,34 +42,25 @@ describe('detectAiAgent', () => {
 });
 
 describe('detectCi', () => {
-	const ciProviderEnvVars = ['GITHUB_ACTIONS', 'GITLAB_CI', 'JENKINS_URL', 'CIRCLECI', 'BUILDKITE', 'TRAVIS'];
-
-	afterEach(() => {
-		for (const key of ciProviderEnvVars) {
-			delete process.env[key];
-		}
-	});
-
 	test('returns isCi false when not in CI', () => {
 		const result = detectCi();
 		expect(result).toEqual({ isCi: false, ciProvider: undefined });
 	});
 
-	test('returns known provider when in CI with recognized env var', async () => {
+	test('returns provider id from ci-info when in CI', async () => {
 		vi.resetModules();
-		vi.doMock('is-ci', () => ({ default: true }));
+		vi.doMock('ci-info', () => ({ default: { isCI: true, id: 'GITHUB_ACTIONS' } }));
 
 		const { detectCi: detectCiFresh } = await import(
 			'../../../../src/lib/hooks/telemetry/detectEnvironment.js'
 		);
 
-		process.env.GITHUB_ACTIONS = 'true';
 		expect(detectCiFresh()).toEqual({ isCi: true, ciProvider: 'github_actions' });
 	});
 
-	test('returns unknown provider when in CI but no recognized provider env var', async () => {
+	test('returns unknown provider when in CI but ci-info has no id', async () => {
 		vi.resetModules();
-		vi.doMock('is-ci', () => ({ default: true }));
+		vi.doMock('ci-info', () => ({ default: { isCI: true, id: null } }));
 
 		const { detectCi: detectCiFresh } = await import(
 			'../../../../src/lib/hooks/telemetry/detectEnvironment.js'
