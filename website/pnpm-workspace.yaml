@@ -1,5 +1,9 @@
-overrides:
-    tar: 7.5.13
+allowBuilds:
+  "@apify/ui-icons": true
+  "@swc/core": true
+  core-js: true
+  core-js-pure: true
+  unrs-resolver: true
 
 # Unfortunately, several parts of this project expect everything to be hoisted up in the node_modules directory...
 # And fixing it would take longer than just enabling this and shedding a tear
