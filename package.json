@@ -18,7 +18,7 @@
         "format:fix": "biome format --write . && prettier --write \"**/*.{md,yml,yaml}\"",
         "clean": "rimraf dist",
         "fetch-api-endpoints": "tsx scripts/fetch-api-endpoints.ts",
-        "build": "(yarn fetch-api-endpoints || true) && yarn clean && tsc && tsup",
+        "build": "(yarn fetch-api-endpoints || echo 'Warning: Failed to fetch API endpoints, using existing file') && yarn clean && tsc && tsup",
         "build-bundles": "bun run scripts/build-cli-bundles.ts",
         "prepack": "yarn insert-cli-metadata && yarn build && yarn update-docs",
         "insert-cli-metadata": "tsx scripts/insert-cli-metadata.ts",

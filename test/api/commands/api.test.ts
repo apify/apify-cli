@@ -10,7 +10,7 @@ const { lastErrorMessage, logSpy, errorSpy } = useConsoleSpy();
 describe('[api] apify api', () => {
 	it('should fail when not logged in', async () => {
 		await testRunCommand(ApiCommand, {
-			args_endpoint: 'v2/users/me',
+			args_methodOrEndpoint: 'v2/users/me',
 		});
 
 		expect(lastErrorMessage()).toMatch(/you are not logged in/i);
@@ -20,7 +20,7 @@ describe('[api] apify api', () => {
 		await safeLogin();
 
 		await testRunCommand(ApiCommand, {
-			args_endpoint: 'v2/users/me',
+			args_methodOrEndpoint: 'v2/users/me',
 		});
 
 		const spy = logSpy();
@@ -38,7 +38,7 @@ describe('[api] apify api', () => {
 		await safeLogin();
 
 		await testRunCommand(ApiCommand, {
-			args_endpoint: '/v2/users/me',
+			args_methodOrEndpoint: '/v2/users/me',
 		});
 
 		const spy = logSpy();
@@ -51,11 +51,29 @@ describe('[api] apify api', () => {
 		expect(parsed.data.id).toBeDefined();
 	});
 
+	it('should auto-prepend v2/ prefix when omitted', async () => {
+		await safeLogin();
+
+		await testRunCommand(ApiCommand, {
+			args_methodOrEndpoint: 'users/me',
+		});
+
+		const spy = logSpy();
+		expect(spy).toHaveBeenCalled();
+
+		const output = spy.mock.calls[0][0];
+		const parsed = JSON.parse(output);
+
+		expect(parsed.data).toBeDefined();
+		expect(parsed.data.id).toBeDefined();
+		expect(parsed.data.username).toBeDefined();
+	});
+
 	it('should set exit code for non-existent endpoint', async () => {
 		await safeLogin();
 
 		await testRunCommand(ApiCommand, {
-			args_endpoint: 'v2/acts/this-actor-does-not-exist-at-all-12345',
+			args_methodOrEndpoint: 'v2/acts/this-actor-does-not-exist-at-all-12345',
 		});
 
 		expect(process.exitCode).toBe(1);
@@ -68,7 +86,7 @@ describe('[api] apify api', () => {
 		await safeLogin();
 
 		await testRunCommand(ApiCommand, {
-			args_endpoint: 'v2/users/me',
+			args_methodOrEndpoint: 'v2/users/me',
 			flags_header: 'X-Custom-Test:hello',
 		});
 
@@ -81,6 +99,44 @@ describe('[api] apify api', () => {
 		expect(parsed.data.id).toBeDefined();
 	});
 
+	it('should support positional HTTP method before endpoint', async () => {
+		await safeLogin();
+
+		await testRunCommand(ApiCommand, {
+			args_methodOrEndpoint: 'GET',
+			args_endpoint: 'v2/users/me',
+		});
+
+		const spy = logSpy();
+		expect(spy).toHaveBeenCalled();
+
+		const output = spy.mock.calls[0][0];
+		const parsed = JSON.parse(output);
+
+		expect(parsed.data).toBeDefined();
+		expect(parsed.data.id).toBeDefined();
+		expect(parsed.data.username).toBeDefined();
+	});
+
+	it('should support --params flag for query parameters', async () => {
+		await safeLogin();
+
+		await testRunCommand(ApiCommand, {
+			args_methodOrEndpoint: 'v2/actor-runs',
+			flags_params: JSON.stringify({ limit: 1, desc: true }),
+		});
+
+		const spy = logSpy();
+		expect(spy).toHaveBeenCalled();
+
+		const output = spy.mock.calls[0][0];
+		const parsed = JSON.parse(output);
+
+		expect(parsed.data).toBeDefined();
+		expect(parsed.data.items).toBeDefined();
+		expect(parsed.data.items.length).toBeLessThanOrEqual(1);
+	});
+
 	it('should support POST with --body', async () => {
 		await safeLogin();
 
@@ -90,7 +146,7 @@ describe('[api] apify api', () => {
 		try {
 			// Create an actor via POST
 			await testRunCommand(ApiCommand, {
-				args_endpoint: 'v2/acts',
+				args_methodOrEndpoint: 'v2/acts',
 				flags_method: 'POST',
 				flags_body: JSON.stringify({ name: actorName, title: 'Test API Command' }),
 			});
@@ -109,7 +165,7 @@ describe('[api] apify api', () => {
 			// Cleanup — delete the created actor even if assertions fail
 			if (actorId) {
 				await testRunCommand(ApiCommand, {
-					args_endpoint: `v2/acts/${actorId}`,
+					args_methodOrEndpoint: `v2/acts/${actorId}`,
 					flags_method: 'DELETE',
 				});
 			}

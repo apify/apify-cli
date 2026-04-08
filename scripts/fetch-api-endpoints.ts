@@ -47,6 +47,6 @@ for (const [path, methods] of Object.entries(spec.paths)) {
 // Sort by path, then method
 endpoints.sort((a, b) => a.path.localeCompare(b.path) || a.method.localeCompare(b.method));
 
-await writeFile(OUTPUT_PATH, JSON.stringify(endpoints, null, '\t'));
+await writeFile(OUTPUT_PATH, `${JSON.stringify(endpoints, null, '\t')}\n`);
 
 console.log(`Extracted ${endpoints.length} endpoints to ${OUTPUT_PATH.pathname}`);
