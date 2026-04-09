@@ -13,32 +13,26 @@
         "docusaurus": "docusaurus"
     },
     "devDependencies": {
-        "@apify/eslint-config-ts": "^0.4.0",
-        "@apify/tsconfig": "^0.1.0",
-        "@types/react": "^19.0.0",
-        "@typescript-eslint/eslint-plugin": "^8.0.0",
-        "@typescript-eslint/parser": "^8.0.0",
-        "eslint": "^9.0.0",
-        "eslint-plugin-react": "^7.33.2",
-        "eslint-plugin-react-hooks": "^7.0.0",
+        "@apify/tsconfig": "^0.1.1",
+        "@types/react": "^19.2.14",
         "path-browserify": "^1.0.1",
-        "prettier": "^3.0.3",
-        "rimraf": "^6.0.0"
+        "prettier": "^3.8.1",
+        "rimraf": "^6.1.3"
     },
     "dependencies": {
         "@apify/docs-theme": "^1.0.240",
-        "@docusaurus/core": "3.9.2",
-        "@docusaurus/faster": "3.9.2",
-        "@docusaurus/plugin-client-redirects": "3.9.2",
-        "@docusaurus/preset-classic": "3.9.2",
+        "@docusaurus/core": "^3.10.0",
+        "@docusaurus/faster": "^3.10.0",
+        "@docusaurus/plugin-client-redirects": "^3.10.0",
+        "@docusaurus/preset-classic": "^3.10.0",
         "@signalwire/docusaurus-plugin-llms-txt": "^1.2.2",
-        "clsx": "^1.2.1",
+        "clsx": "^2.1.1",
         "docusaurus-gtm-plugin": "^0.0.2",
         "prop-types": "^15.8.1",
         "raw-loader": "^4.0.2",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
-        "unist-util-visit": "^5.0.0"
+        "react": "^19.2.5",
+        "react-dom": "^19.2.5",
+        "unist-util-visit": "^5.1.0"
     },
     "volta": {
         "node": "24.14.1",
