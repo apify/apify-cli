@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -24,6 +24,8 @@ export interface TestActor {
  */
 export async function createTestActor(prefix = 'e2e'): Promise<TestActor> {
 	const name = `${prefix}-${randomBytes(6).toString('hex')}`;
+
+	await mkdir(TestTmpRoot, { recursive: true });
 
 	const result = await runCli('apify', ['create', name, '--template', 'project_empty'], {
 		cwd: TestTmpRoot,
