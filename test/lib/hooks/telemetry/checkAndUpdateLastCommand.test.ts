@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 
 let telemetryFilePath: string;
 
@@ -18,7 +18,7 @@ vi.mock('../../../../src/lib/utils.js', () => ({
 }));
 
 vi.mock('../../../../src/lib/outputs.js', () => ({
-	info: () => {},
+	info: () => { /* noop */ },
 }));
 
 function writeTelemetryState(state: Record<string, unknown>) {
@@ -47,7 +47,6 @@ describe('checkAndUpdateLastCommand', () => {
 	afterEach(() => {
 		vi.useRealTimers();
 		// Clean up temp files
-		const { rmSync } = require('node:fs');
 		if (existsSync(testDir)) {
 			rmSync(testDir, { recursive: true, force: true });
 		}
