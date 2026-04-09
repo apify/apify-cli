@@ -7,7 +7,6 @@
 			"!**/dist/**",
 			"!**/test/__setup__/input-schemas/**/*.json",
 			"!**/test/tmp/**",
-			"!**/package.json",
 			"!**/LICENSE.md",
 			"!**/pnpm-lock.yaml"
 		],

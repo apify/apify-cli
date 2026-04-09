@@ -1,2 +1,7 @@
 LICENSE.md
 **/pnpm-lock.yaml
+website/versioned*/**
+website/i18n/**
+website/.docusaurus
+test/__setup__/input-schemas/**/*.json
+test/tmp/**
