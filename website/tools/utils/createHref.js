@@ -1,4 +1,3 @@
-/* eslint-disable max-len */
 /**
  * Copyright (c) Facebook, Inc. and its affiliates.
  *
