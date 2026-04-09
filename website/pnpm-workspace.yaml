@@ -1,3 +1,5 @@
+minimumReleaseAge: 1440
+
 allowBuilds:
     "@apify/ui-icons": true
     "@swc/core": true
