@@ -177,7 +177,7 @@
     },
     "lint-staged": {
         "*": "biome format --write --no-errors-on-unmatched",
-        "*.{mjs,js,ts}": "eslint --fix --ext mjs,js,ts",
+        "*.{mjs,js,ts,mts,jsx,tsx}": "eslint --fix",
         "*.md": "prettier --write"
     }
 }
