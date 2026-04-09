@@ -18,7 +18,9 @@ vi.mock('../../../../src/lib/utils.js', () => ({
 }));
 
 vi.mock('../../../../src/lib/outputs.js', () => ({
-	info: () => { /* noop */ },
+	info: () => {
+		/* noop */
+	},
 }));
 
 function writeTelemetryState(state: Record<string, unknown>) {
@@ -55,9 +57,7 @@ describe('checkAndUpdateLastCommand', () => {
 	test('returns false on first invocation (no prior command)', async () => {
 		vi.setSystemTime(1000);
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		const result = await checkAndUpdateLastCommand('apify run');
 
@@ -67,9 +67,7 @@ describe('checkAndUpdateLastCommand', () => {
 	test('stores the command and timestamp in telemetry state', async () => {
 		vi.setSystemTime(50_000);
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		await checkAndUpdateLastCommand('apify push');
 
@@ -90,9 +88,7 @@ describe('checkAndUpdateLastCommand', () => {
 			lastCommandTimestamp: 95_000, // 5 seconds ago — within the 10s window
 		});
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		const result = await checkAndUpdateLastCommand('apify run');
 
@@ -110,9 +106,7 @@ describe('checkAndUpdateLastCommand', () => {
 			lastCommandTimestamp: 80_000, // 20 seconds ago — outside the 10s window
 		});
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		const result = await checkAndUpdateLastCommand('apify run');
 
@@ -130,9 +124,7 @@ describe('checkAndUpdateLastCommand', () => {
 			lastCommandTimestamp: 95_000,
 		});
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		const result = await checkAndUpdateLastCommand('apify push');
 
@@ -150,9 +142,7 @@ describe('checkAndUpdateLastCommand', () => {
 			lastCommandTimestamp: 90_000,
 		});
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		await checkAndUpdateLastCommand('apify push');
 
@@ -172,9 +162,7 @@ describe('checkAndUpdateLastCommand', () => {
 			// no lastCommandTimestamp
 		});
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		const result = await checkAndUpdateLastCommand('apify run');
 
@@ -187,9 +175,7 @@ describe('checkAndUpdateLastCommand', () => {
 		mkdirSync(dir, { recursive: true });
 		writeFileSync(telemetryFilePath, '{{{invalid json');
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		const result = await checkAndUpdateLastCommand('apify run');
 
@@ -208,9 +194,7 @@ describe('checkAndUpdateLastCommand', () => {
 			lastCommandTimestamp: 100_000,
 		});
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		const result = await checkAndUpdateLastCommand('apify run');
 
@@ -229,9 +213,7 @@ describe('checkAndUpdateLastCommand', () => {
 			lastCommandTimestamp: 100_000,
 		});
 
-		const { checkAndUpdateLastCommand } = await import(
-			'../../../../src/lib/hooks/telemetry/useTelemetryState.js'
-		);
+		const { checkAndUpdateLastCommand } = await import('../../../../src/lib/hooks/telemetry/useTelemetryState.js');
 
 		const result = await checkAndUpdateLastCommand('apify run');
 
