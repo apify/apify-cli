@@ -338,13 +338,13 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				});
 			}
 
-			this.telemetryData.flagsUsed = Object.keys(this.flags);
-			this.telemetryData.exitCode = typeof process.exitCode === 'number' ? process.exitCode : 0;
-			this.telemetryData.durationMs = Date.now() - startTime;
-
-			this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString);
-
 			if (!this.skipTelemetry) {
+				this.telemetryData.flagsUsed = Object.keys(this.flags);
+				this.telemetryData.exitCode = typeof process.exitCode === 'number' ? process.exitCode : 0;
+				this.telemetryData.durationMs = Date.now() - startTime;
+
+				this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString);
+
 				await trackEvent(
 					`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
 					this.telemetryData,
