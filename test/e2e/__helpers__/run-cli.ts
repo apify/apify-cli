@@ -26,7 +26,7 @@ export interface RunCliResult {
  * Resolve the executable and arguments based on the current mode.
  */
 function resolveExec(binary: 'apify' | 'actor', args: string[]): { file: string; args: string[] } {
-	const mode = process.env.APIFY_CLI_E2E_MODE?.toLowerCase() ?? (isCI ? 'npx' : 'dist');
+	const mode = process.env.APIFY_CLI_E2E_MODE?.toLowerCase() || (isCI ? 'npx' : 'dist');
 
 	switch (mode) {
 		case 'dist': {
