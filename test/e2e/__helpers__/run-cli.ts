@@ -23,24 +23,6 @@ export interface RunCliResult {
 }
 
 /**
- * Parse a command string like "apify builds create --json" into
- * { binary: 'apify' | 'actor', args: ['builds', 'create', '--json'] }
- */
-function parseCommand(raw: string): { binary: 'apify' | 'actor'; args: string[] } {
-	const trimmed = raw.replace(/^\$\s*/, '').trim();
-
-	if (!trimmed.startsWith('apify') && !trimmed.startsWith('actor')) {
-		throw new Error(`Command must start with 'apify' or 'actor', got: ${trimmed}`);
-	}
-
-	const binary = trimmed.startsWith('actor') ? 'actor' : 'apify';
-	const rest = trimmed.replace(/^(apify|actor)\s*/, '');
-	const args = rest ? rest.split(/\s+/) : [];
-
-	return { binary, args };
-}
-
-/**
  * Resolve the executable and arguments based on the current mode.
  */
 function resolveExec(binary: 'apify' | 'actor', args: string[]): { file: string; args: string[] } {
@@ -78,12 +60,15 @@ function resolveExec(binary: 'apify' | 'actor', args: string[]): { file: string;
  *   "global"         → apify <args>                    (tests globally installed binary)
  *
  * @example
- * const result = await runCli('apify help');
+ * const result = await runCli('apify', ['help']);
  * expect(result.exitCode).toBe(0);
  * expect(result.stdout).toContain('apify-cli');
  */
-export async function runCli(command: string, options: RunCliOptions = {}): Promise<RunCliResult> {
-	const { binary, args } = parseCommand(command);
+export async function runCli(
+	binary: 'apify' | 'actor',
+	args: string[],
+	options: RunCliOptions = {},
+): Promise<RunCliResult> {
 	const exec = resolveExec(binary, args);
 
 	const result = await execa(exec.file, exec.args, {
