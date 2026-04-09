@@ -37,7 +37,7 @@ describe('[e2e] actor run input', () => {
 		it('passes JSON string to the actor', async () => {
 			const result = await runCli('apify', ['run', '--input={"foo":"bar"}'], { cwd: actor.dir });
 
-			expect(result.exitCode).toBe(0);
+			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 			const run = await getRunResults(actor.dir);
 			expect(run.started).toBe(true);
 			expect(run.input).toEqual({ foo: 'bar' });
@@ -67,7 +67,7 @@ describe('[e2e] actor run input', () => {
 
 			const result = await runCli('apify', ['run', '--input-file=my-file.json'], { cwd: actor.dir });
 
-			expect(result.exitCode).toBe(0);
+			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 			const run = await getRunResults(actor.dir);
 			expect(run.started).toBe(true);
 			expect(run.input).toEqual({ foo: 'bar' });
@@ -92,7 +92,7 @@ describe('[e2e] actor run input', () => {
 				stdin: '{"foo":"bar"}',
 			});
 
-			expect(result.exitCode).toBe(0);
+			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 			const run = await getRunResults(actor.dir);
 			expect(run.started).toBe(true);
 			expect(run.input).toEqual({ foo: 'bar' });
@@ -104,7 +104,7 @@ describe('[e2e] actor run input', () => {
 				stdin: '{"foo":"bar"}',
 			});
 
-			expect(result.exitCode).toBe(0);
+			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 			const run = await getRunResults(actor.dir);
 			expect(run.started).toBe(true);
 			expect(run.input).toEqual({ foo: 'bar' });

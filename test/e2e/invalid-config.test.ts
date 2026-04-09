@@ -16,7 +16,7 @@ describe('[e2e] invalid actor.json', () => {
 	it('prints the path to invalid actor.json and exits with code 5', async () => {
 		const result = await runCli('apify', ['run'], { cwd: actor.dir });
 
-		expect(result.exitCode).toBe(5);
+		expect(result.exitCode, `stdout: ${result.stdout}\nstderr: ${result.stderr}`).toBe(5);
 		expect(result.stderr).toContain('Failed to read local config at path:');
 		expect(result.stderr).toContain("Expected property name or '}'");
 	});
