@@ -85,8 +85,5 @@ export async function removeTestActor(actor: TestActor): Promise<void> {
  * Corrupt the actor.json to test error handling.
  */
 export async function corruptActorJson(actorDir: string): Promise<void> {
-	await writeFile(
-		path.join(actorDir, '.actor', 'actor.json'),
-		'{ wow "name": "my-invalid-actor" }',
-	);
+	await writeFile(path.join(actorDir, '.actor', 'actor.json'), '{ wow "name": "my-invalid-actor" }');
 }
