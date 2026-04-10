@@ -2,14 +2,14 @@ const { resolve } = require('node:path');
 
 const { config } = require('@apify/docs-theme');
 
-const { externalLinkProcessor } = require('./tools/utils/externalLink');
+const { externalLinkProcessor } = require('./tools/utils/externalLink.js');
 const versions = require('./versions.json');
 
 const { absoluteUrl } = config;
 /** @type {Partial<import('@docusaurus/types').DocusaurusConfig>} */
 module.exports = {
     future: {
-        experimental_faster: {
+        faster: {
             swcJsLoader: true,
             swcJsMinimizer: true,
             swcHtmlMinimizer: true,

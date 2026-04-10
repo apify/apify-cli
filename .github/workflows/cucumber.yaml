@@ -33,23 +33,12 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: ${{ matrix.node-version }}
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install Dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: ./.github/actions/pnpm-install
 
             - name: Run Cucumber tests
               env:
                   APIFY_CLI_DISABLE_TELEMETRY: 1
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
-              run: yarn test:cucumber
+              run: pnpm run test:cucumber

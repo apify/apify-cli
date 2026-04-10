@@ -1,4 +1,7 @@
 import prettier from 'eslint-config-prettier';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import globals from 'globals';
 import tsEslint from 'typescript-eslint';
 
 // eslint-disable-next-line import/extensions -- todo: the import/extensions rule should be replaced with something that can handle exports in a package.json
@@ -61,10 +64,28 @@ export default [
 	},
 	{
 		files: ['website/**/*'],
+		plugins: {
+			'react': reactPlugin,
+			'react-hooks': reactHooksPlugin,
+		},
+		languageOptions: {
+			globals: globals.browser,
+			parserOptions: {
+				ecmaFeatures: { jsx: true },
+				project: 'website/tsconfig.eslint.json',
+			},
+		},
+		settings: {
+			react: { version: 'detect' },
+		},
 		rules: {
+			...reactPlugin.configs.flat.recommended.rules,
+			'react-hooks/rules-of-hooks': 'error',
+			'react-hooks/exhaustive-deps': 'warn',
 			'@typescript-eslint/no-shadow': 'off',
 			'no-console': 'off',
 			'no-undef': 'off',
+			'quote-props': ['error', 'consistent'],
 		},
 	},
 	{

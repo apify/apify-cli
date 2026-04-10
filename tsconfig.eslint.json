@@ -9,7 +9,6 @@
 		"bin",
 		"vitest.config.ts",
 		"test",
-		".yarn/plugins/postinstallDev.cjs",
 		"features/**/*.ts",
 		"features/**/*.js",
 		".github/scripts",
