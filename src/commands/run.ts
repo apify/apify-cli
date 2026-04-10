@@ -424,14 +424,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	 * @param inputOverride Optional input received through command flags
 	 */
 	private async validateAndStoreInput(inputOverride?: { input: Record<string, unknown>; source: string }) {
-		let inputSchema: Record<string, unknown> | null | undefined;
-
-		try {
-			({ inputSchema } = await readInputSchema({ cwd: process.cwd() }));
-		} catch (err) {
-			warning({ message: (err as Error).message });
-			inputSchema = null;
-		}
+		const { inputSchema } = await readInputSchema({ cwd: process.cwd() });
 
 		if (!inputSchema) {
 			if (!inputOverride) {
