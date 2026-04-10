@@ -483,22 +483,18 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			}
 
 			// We cannot validate input schema if it is not found -> default to no validation and overriding if flags are given
-			const existingInput = getLocalInput(process.cwd(), resolvedInputKey);
+			// Write the override to a temp file so the user's input file is never touched.
+			const defaultStorePath = join(process.cwd(), getLocalKeyValueStorePath());
+			await mkdir(defaultStorePath, { recursive: true });
 
-			// Prepare the file path for where we'll temporarily store the validated input
-			const inputFilePath = join(
-				process.cwd(),
-				getLocalKeyValueStorePath(),
-				existingInput?.fileName ?? `${resolvedInputKey}.json`,
-			);
+			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
+			const tempInputFilePath = join(defaultStorePath, `${tempInputKey}.json`);
 
-			await mkdir(dirname(inputFilePath), { recursive: true });
-			await writeFile(inputFilePath, JSON.stringify(inputOverride.input, null, 2));
+			await writeFile(tempInputFilePath, JSON.stringify(inputOverride.input, null, 2));
 
 			return {
-				existingInput,
-				inputFilePath,
-				writtenAt: Date.now(),
+				tempInputKey,
+				tempInputFilePath,
 			};
 		}
 
@@ -556,13 +552,16 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				);
 			}
 
+			// Write to a temp file so the user's input file is never touched.
+			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
+			const tempInputFilePath = join(dirname(inputFilePath), `${tempInputKey}.json`);
+
 			await mkdir(dirname(inputFilePath), { recursive: true });
-			await writeFile(inputFilePath, JSON.stringify(fullInputOverride, null, 2));
+			await writeFile(tempInputFilePath, JSON.stringify(fullInputOverride, null, 2));
 
 			return {
-				existingInput,
-				inputFilePath,
-				writtenAt: Date.now(),
+				tempInputKey,
+				tempInputFilePath,
 			};
 		}
 
