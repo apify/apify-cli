@@ -488,6 +488,90 @@ describe('apify actor generate-schema-types', () => {
 		});
 	});
 
+	describe('directory path argument', () => {
+		it('should discover and generate all schema types from a directory', async () => {
+			const projectDir = joinPath('my-actor-project');
+			await mkdir(projectDir, { recursive: true });
+
+			await setupActorConfig(projectDir, {
+				datasetSchemaRef: validDatasetSchemaPath,
+				outputSchemaRef: validOutputSchemaPath,
+				kvsSchemaRef: validKvsSchemaPath,
+			});
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: projectDir,
+			});
+
+			// All schema types should be generated inside the project directory
+			const outputDir = join(projectDir, 'src', '.generated', 'actor');
+
+			const inputFile = await readFile(join(outputDir, 'input.ts'), 'utf-8');
+			expect(inputFile).toContain('export interface');
+
+			const datasetFile = await readFile(join(outputDir, 'dataset.ts'), 'utf-8');
+			expect(datasetFile).toContain('export interface');
+
+			const outputFile = await readFile(join(outputDir, 'output.ts'), 'utf-8');
+			expect(outputFile).toContain('export interface');
+
+			const kvsFile = await readFile(join(outputDir, 'key-value-store.ts'), 'utf-8');
+			expect(kvsFile).toContain('export interface');
+		});
+
+		it('should discover input schema from default locations in the directory', async () => {
+			const projectDir = joinPath('default-locations-project');
+			const actorDir = join(projectDir, '.actor');
+			await mkdir(actorDir, { recursive: true });
+
+			// Place input schema at a default location without actor.json referencing it
+			const inputSchema = {
+				title: 'Test',
+				type: 'object',
+				schemaVersion: 1,
+				properties: {
+					query: { title: 'Query', description: 'Search query', type: 'string', editor: 'textfield' },
+				},
+			};
+
+			await writeFile(join(actorDir, 'INPUT_SCHEMA.json'), JSON.stringify(inputSchema));
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: projectDir,
+			});
+
+			const outputDir = join(projectDir, 'src', '.generated', 'actor');
+			const generatedFile = await readFile(join(outputDir, 'input.ts'), 'utf-8');
+			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('query');
+		});
+
+		it('should output types inside the provided directory by default', async () => {
+			const projectDir = joinPath('output-location-project');
+			await setupActorConfig(projectDir, {});
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: projectDir,
+			});
+
+			// Output should be inside the project directory, not in cwd
+			const outputFile = join(projectDir, 'src', '.generated', 'actor', 'input.ts');
+			const generatedFile = await readFile(outputFile, 'utf-8');
+			expect(generatedFile).toContain('export interface');
+		});
+
+		it('should fail with clear error when directory has no schemas', async () => {
+			const emptyDir = joinPath('empty-project');
+			await mkdir(emptyDir, { recursive: true });
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: emptyDir,
+			});
+
+			expect(lastErrorMessage()).include('Input schema has not been found');
+		});
+	});
+
 	it('should write successful schemas and report error for the failing one', async () => {
 		const outputDir = joinPath('partial-fail-output');
 
