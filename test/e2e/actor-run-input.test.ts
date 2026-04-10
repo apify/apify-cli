@@ -26,7 +26,7 @@ describe('[e2e] actor run input', () => {
 	});
 
 	afterAll(async () => {
-		await removeTestActor(actor);
+		if (actor) await removeTestActor(actor);
 	});
 
 	afterEach(async () => {

@@ -10,7 +10,7 @@ describe('[e2e] invalid actor.json', () => {
 	});
 
 	afterAll(async () => {
-		await removeTestActor(actor);
+		if (actor) await removeTestActor(actor);
 	});
 
 	it('prints the path to invalid actor.json and exits with code 5', async () => {
