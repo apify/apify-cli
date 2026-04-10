@@ -33,7 +33,7 @@ jobs:
         name: Wait for code checks to pass
         runs-on: ubuntu-latest
         steps:
-            - uses: lewagon/wait-on-check-action@v1.5.0
+            - uses: lewagon/wait-on-check-action@v1.6.0
               with:
                   ref: ${{ github.ref }}
                   repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -87,7 +87,7 @@ jobs:
 
             - name: Commit changes
               id: commit
-              uses: EndBug/add-and-commit@v9
+              uses: EndBug/add-and-commit@v10
               with:
                   author_name: Apify Release Bot
                   author_email: noreply@apify.com

@@ -61,7 +61,7 @@ jobs:
                     echo 'skipped=false' >> $GITHUB_OUTPUT
                   fi
 
-            - uses: lewagon/wait-on-check-action@v1.5.0
+            - uses: lewagon/wait-on-check-action@v1.6.0
               if: ${{ steps.check_skip.outputs.skipped == 'false' }}
               with:
                   ref: ${{ github.ref }}
@@ -120,7 +120,7 @@ jobs:
 
             - name: Commit changes
               id: commit
-              uses: EndBug/add-and-commit@v9
+              uses: EndBug/add-and-commit@v10
               with:
                   author_name: Apify Release Bot
                   author_email: noreply@apify.com

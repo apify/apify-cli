@@ -35,7 +35,7 @@ if ($WinVer.Major -lt 10 -or ($WinVer.Major -eq 10 -and $WinVer.Build -lt $MinBu
 
 $ErrorActionPreference = "Stop"
 
-$UpgradeScriptURL = "https://raw.githubusercontent.com/apify/apify-cli/main/scripts/install/upgrade.ps1"
+$UpgradeScriptURL = "https://raw.githubusercontent.com/apify/apify-cli/refs/heads/master/scripts/install/upgrade.ps1"
 
 # These three environment functions are roughly copied from https://github.com/prefix-dev/pixi/pull/692
 # They are used instead of `SetEnvironmentVariable` because of unwanted variable expansions.

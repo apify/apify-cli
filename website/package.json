@@ -41,8 +41,8 @@
         "unist-util-visit": "^5.0.0"
     },
     "volta": {
-        "node": "24.14.0",
-        "yarn": "4.12.0"
+        "node": "24.14.1",
+        "yarn": "4.13.0"
     },
-    "packageManager": "yarn@4.12.0"
+    "packageManager": "yarn@4.13.0"
 }
