@@ -1,0 +1,87 @@
+name: E2E Tests
+
+on:
+    # Run after a pre-release is published to npm
+    workflow_run:
+        workflows: ["Create a pre-release"]
+        types: [completed]
+        branches: [master]
+
+    # TODO: Remove after validating the workflow works
+    pull_request:
+        branches: [master]
+
+    # Manual trigger with optional version override
+    workflow_dispatch:
+        inputs:
+            cli_version:
+                description: "npm version/tag to test (e.g. beta, latest, 1.5.0-beta.1). Leave empty for default (npx apify-cli@beta)."
+                required: false
+
+    # Daily fallback at 06:00 UTC
+    schedule:
+        - cron: "0 6 * * *"
+
+concurrency:
+    group: e2e-${{ github.event_name }}-${{ github.ref }}
+    cancel-in-progress: false
+
+jobs:
+    e2e:
+        if: >
+            startsWith(github.repository, 'apify/') &&
+            (github.event_name != 'workflow_run' ||
+             github.event.workflow_run.conclusion == 'success')
+
+        name: E2E Tests (${{ matrix.os }})
+        timeout-minutes: 30
+
+        strategy:
+            fail-fast: false
+            matrix:
+                os: [ubuntu-latest]
+
+        runs-on: ${{ matrix.os }}
+
+        steps:
+            - name: Mask secrets
+              run: |
+                  echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
+
+            - uses: actions/checkout@v6
+
+            - name: Use Node.js 24
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+                  package-manager-cache: false
+
+            - name: Enable corepack
+              run: |
+                  corepack enable
+                  corepack prepare yarn@stable --activate
+
+            - name: Activate cache for yarn
+              uses: actions/setup-node@v6
+              with:
+                  cache: yarn
+
+            - name: Install dependencies
+              run: yarn
+
+            - name: Install specific CLI version
+              if: ${{ inputs.cli_version }}
+              env:
+                  CLI_VERSION: ${{ inputs.cli_version }}
+              run: npm install -g "apify-cli@${CLI_VERSION}"
+
+            - name: Verify installed CLI version
+              if: ${{ inputs.cli_version }}
+              run: apify --version
+
+            - name: Run E2E tests
+              env:
+                  APIFY_CLI_DISABLE_TELEMETRY: 1
+                  APIFY_CLI_E2E_MODE: ${{ inputs.cli_version && 'global' || '' }}
+                  TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
+              run: yarn test:e2e
