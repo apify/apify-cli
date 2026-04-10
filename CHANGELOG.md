@@ -46,6 +46,10 @@ All notable changes to this project will be documented in this file.
 
 ## [1.2.1](https://github.com/apify/apify-cli/releases/tag/v1.2.1) (2026-01-06)
 
+### 🔧 CI/CD
+
+- Fix release flow permissions ([#988](https://github.com/apify/apify-cli/pull/988)) ([a9d0d90](https://github.com/apify/apify-cli/commit/a9d0d9013f42e48bfcdddbc467e995b1655cf853)) by [@vladfrangu](https://github.com/vladfrangu)
+
 ## [1.2.0](https://github.com/apify/apify-cli/releases/tag/v1.2.0) (2026-01-06)
 
 ### 🚀 Features
