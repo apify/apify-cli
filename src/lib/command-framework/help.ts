@@ -5,7 +5,6 @@ import wrapAnsi from 'wrap-ansi';
 
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { error } from '../outputs.js';
-import { mapGroupBy } from '../utils.js';
 import type { BuiltApifyCommand } from './apify-command.js';
 import type { BaseCommandRenderer, SelectiveRenderOptions } from './help/_BaseCommandRenderer.js';
 import { CommandHelp } from './help/CommandHelp.js';
@@ -61,14 +60,46 @@ function sortByName(
 	return itemA[0].name.localeCompare(itemB[0].name);
 }
 
+/**
+ * Ordered list of groups shown in the main help menu. The order here determines
+ * the order groups appear on screen.
+ */
+const GROUP_ORDER = ['Local Actor Development', 'Apify Console', 'Authentication', 'Utilities'] as const;
+const OTHER_GROUP = 'Other';
+
+/**
+ * Canonical example invocations shown at the bottom of the main help screen.
+ * Kept short and representative of typical user flows.
+ */
+const APIFY_EXAMPLES = [
+	'apify login',
+	'apify create my-actor',
+	'apify run',
+	'apify push',
+	'apify actors search "web scraper"',
+];
+
+const ACTOR_EXAMPLES = [
+	'actor get-input',
+	`actor push-data '{"url":"https://example.com"}'`,
+	'actor set-value OUTPUT \'{"done":true}\'',
+];
+
 export function renderMainHelpMenu(entrypoint: string) {
 	const cliMetadata = useCLIMetadata();
 	const result: string[] = [];
 
-	result.push(
-		'Apify command-line interface (CLI) helps you manage the Apify cloud platform and develop, build, and deploy Apify Actors.',
-		'',
-	);
+	if (entrypoint === 'actor') {
+		result.push(
+			`'actor' is the runtime CLI baked into Apify Actor Docker images. It exposes a reduced command set intended for use from inside a running Actor. When available, these commands are equivalent to 'apify actor <subcommand>'.`,
+			'',
+		);
+	} else {
+		result.push(
+			'Apify command-line interface (CLI) helps you manage the Apify cloud platform and develop, build, and deploy Apify Actors.',
+			'',
+		);
+	}
 
 	result.push(chalk.bold('VERSION'));
 	result.push(`  ${cliMetadata.fullVersionString}`);
@@ -78,80 +109,79 @@ export function renderMainHelpMenu(entrypoint: string) {
 	result.push(`  $ ${entrypoint} <command> [options]`);
 	result.push('');
 
-	const allGroupedByType = mapGroupBy(commands, ([command, helpGenerator]) => {
-		// We register the help generators for all subcommands with an entrypoint that includes the root command,
-		// so we need to ignore those
-		if (helpGenerator.entrypoint.includes(' ')) {
-			return 'ignored';
-		}
-
-		if (command.hidden) {
-			return 'ignored';
-		}
-
-		if (helpGenerator instanceof CommandWithSubcommandsHelp) {
-			return 'subcommand';
-		}
-
-		return 'command';
-	});
-
-	const groupedSubcommands = allGroupedByType.get('subcommand')?.sort(sortByName);
-	const groupedCommands = allGroupedByType.get('command')?.sort(sortByName);
-
-	if (groupedSubcommands?.length) {
-		result.push(chalk.bold('TOPICS'));
-
-		const lines: string[] = [];
-
-		const widestTopicNameLength = widestLine(groupedSubcommands.map(([subcommand]) => subcommand.name).join('\n'));
-
-		for (const [subcommand] of groupedSubcommands) {
-			if (subcommand.hidden) {
-				continue;
-			}
-
-			const shortDescription = subcommand.shortDescription || subcommand.description?.split('\n')[0] || '';
-
-			const fullString = `${subcommand.name.padEnd(widestTopicNameLength)}  ${shortDescription}`;
-
-			const wrapped = wrapAnsi(fullString, getMaxLineWidth() - widestTopicNameLength - 2);
-
-			lines.push(`  ${indentString(wrapped, widestTopicNameLength + 2 + 2).trim()}`);
-		}
-
-		result.push(...lines, '');
+	// Collect top-level (non-hidden, no-parent) commands — leaves and namespaces alike share groups.
+	const topLevelCommands: [typeof BuiltApifyCommand, BaseCommandRenderer][] = [];
+	for (const [command, helpGenerator] of commands) {
+		// Subcommand help generators have a space in their entrypoint ("apify runs"); skip those.
+		if (helpGenerator.entrypoint.includes(' ')) continue;
+		if (command.hidden) continue;
+		topLevelCommands.push([command, helpGenerator]);
 	}
 
-	if (groupedCommands?.length) {
-		result.push(chalk.bold('COMMANDS'));
+	// Group commands by their static `group` field (falling back to OTHER_GROUP)
+	const byGroup = new Map<string, [typeof BuiltApifyCommand, BaseCommandRenderer][]>();
+	for (const entry of topLevelCommands) {
+		const [command] = entry;
+		const group = command.group || OTHER_GROUP;
+		if (!byGroup.has(group)) byGroup.set(group, []);
+		byGroup.get(group)!.push(entry);
+	}
 
-		const lines: string[] = [];
+	// Sort group contents alphabetically
+	for (const entries of byGroup.values()) {
+		entries.sort(sortByName);
+	}
 
-		const widestCommandNameLength = widestLine(groupedCommands.map(([command]) => command.name).join('\n'));
+	// Render groups in canonical order, then any remaining groups (alphabetical), then OTHER last
+	const orderedGroupNames: string[] = [];
+	for (const g of GROUP_ORDER) {
+		if (byGroup.has(g)) orderedGroupNames.push(g);
+	}
+	const extraGroups = [...byGroup.keys()]
+		.filter((g) => !GROUP_ORDER.includes(g as (typeof GROUP_ORDER)[number]) && g !== OTHER_GROUP)
+		.sort();
+	orderedGroupNames.push(...extraGroups);
+	if (byGroup.has(OTHER_GROUP)) orderedGroupNames.push(OTHER_GROUP);
 
-		for (const [command] of groupedCommands) {
-			if (command.hidden) {
-				continue;
-			}
+	// Compute widest command name so description columns align across sections.
+	const allNames = topLevelCommands.map(([c]) => c.name).join('\n');
+	const widestNameLength = widestLine(allNames) || 1;
 
-			const shortDescription = command.shortDescription || command.description?.split('\n')[0] || '';
+	const renderEntry = ([command]: [typeof BuiltApifyCommand, BaseCommandRenderer]): string => {
+		const shortDescription = command.shortDescription || command.description?.split('\n')[0] || '';
+		const label = command.name.padEnd(widestNameLength);
+		const fullString = `${label}  ${shortDescription}`;
+		// -4 = 2 leading spaces on the line + 2 spaces between label and description
+		const wrapped = wrapAnsi(fullString, getMaxLineWidth() - widestNameLength - 4);
+		// Indent so continuation lines line up under the description column (label + 2-space separator + 2 leading)
+		return `  ${indentString(wrapped, widestNameLength + 2 + 2).trim()}`;
+	};
 
-			const fullString = `${command.name.padEnd(widestCommandNameLength)}  ${shortDescription}`;
+	for (const groupName of orderedGroupNames) {
+		const entries = byGroup.get(groupName)!;
+		if (!entries.length) continue;
 
-			const wrapped = wrapAnsi(fullString, getMaxLineWidth() - widestCommandNameLength - 2);
+		result.push(chalk.bold(groupName.toUpperCase()));
+		result.push(...entries.map(renderEntry), '');
+	}
 
-			lines.push(`  ${indentString(wrapped, widestCommandNameLength + 2 + 2).trim()}`);
-		}
-
-		result.push(...lines, '');
+	const examples = entrypoint === 'actor' ? ACTOR_EXAMPLES : APIFY_EXAMPLES;
+	if (examples.length) {
+		result.push(chalk.bold('EXAMPLES'));
+		result.push(...examples.map((ex) => `  $ ${ex}`), '');
 	}
 
 	result.push(
-		chalk.bold('TROUBLESHOOTING'),
-		'  For general support, reach out to us at https://apify.com/contact',
+		chalk.bold('LEARN MORE'),
+		`  Use '${entrypoint} <command> --help' for more information about a command.`,
+		`  Read the docs at https://docs.apify.com/cli.`,
 		'',
-		'  If you believe you are encountering a bug, file it at https://github.com/apify/apify-cli/issues/new',
+	);
+
+	result.push(
+		chalk.bold('TROUBLESHOOTING'),
+		'  For general support, reach out to us at https://apify.com/contact.',
+		'  If you believe you are encountering a bug, file it at https://github.com/apify/apify-cli/issues/new.',
 	);
 
 	return result.join('\n').trim();

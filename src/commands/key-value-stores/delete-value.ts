@@ -13,6 +13,19 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 
 	static override description = 'Delete a value from a key-value store.';
 
+	static override interactive = true;
+
+	static override interactiveNote = 'Prompts for confirmation before deleting the record.';
+
+	static override examples = [
+		{
+			description: 'Delete a single record by key.',
+			command: 'apify key-value-stores delete-value <storeId> OUTPUT',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores-delete-value';
+
 	static override args = {
 		'store id': Args.string({
 			description: 'The key-value store ID to delete the value from.',

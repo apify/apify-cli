@@ -20,6 +20,15 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 
 	static override description = 'Shows information about a key-value store.';
 
+	static override examples = [
+		{
+			description: 'Show metadata about a key-value store.',
+			command: 'apify key-value-stores info <storeId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores-info';
+
 	static override args = {
 		storeId: Args.string({
 			description: 'The key-value store ID to print information about.',

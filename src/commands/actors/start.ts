@@ -24,6 +24,23 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		'Starts Actor remotely and returns run details immediately.\n' +
 		'Uses authenticated account and local key-value store for input.';
 
+	static override examples = [
+		{
+			description: 'Start the Actor defined in the current directory and return immediately.',
+			command: 'apify actors start',
+		},
+		{
+			description: 'Start a specific Actor with inline JSON input.',
+			command: `apify actors start apify/hello-world --input '{"url":"https://example.com"}'`,
+		},
+		{
+			description: 'Start with input from a file and custom memory/timeout.',
+			command: 'apify actors start apify/web-scraper --input-file ./input.json --memory 4096 --timeout 600',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-actors-start';
+
 	static override flags = {
 		...SharedRunOnCloudFlags('Actor'),
 		input: Flags.string({

@@ -46,6 +46,23 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 
 	static override description = 'Get information about an Actor.';
 
+	static override examples = [
+		{
+			description: 'Print summary information about an Actor.',
+			command: 'apify actors info apify/hello-world',
+		},
+		{
+			description: 'Print the Actor README only.',
+			command: 'apify actors info apify/hello-world --readme',
+		},
+		{
+			description: 'Print the Actor input schema as JSON.',
+			command: 'apify actors info apify/hello-world --input',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-actors-info';
+
 	static override flags = {
 		readme: Flags.boolean({
 			description: 'Return the Actor README.',

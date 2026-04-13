@@ -17,6 +17,19 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 
 	static override description = 'Aborts an Actor run.';
 
+	static override examples = [
+		{
+			description: 'Abort a running Actor gracefully (up to 30s drain).',
+			command: 'apify runs abort <runId>',
+		},
+		{
+			description: 'Force-abort a running Actor immediately.',
+			command: 'apify runs abort <runId> --force',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-runs-abort';
+
 	static override args = {
 		runId: Args.string({
 			required: true,

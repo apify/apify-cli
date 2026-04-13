@@ -13,10 +13,23 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 
 	static override description = 'Adds data items to specified dataset. Accepts single object or array of objects.';
 
+	static override examples = [
+		{
+			description: 'Push a single item as an inline JSON argument.',
+			command: `apify datasets push-items my-dataset '{"url":"https://example.com"}'`,
+		},
+		{
+			description: 'Push an array of items from stdin.',
+			command: 'cat ./items.json | apify datasets push-items my-dataset',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-datasets-push-items';
+
 	static override args = {
 		nameOrId: Args.string({
 			required: true,
-			description: 'The dataset ID or name to push the objects to',
+			description: 'The dataset ID or name to push the objects to.',
 			ignoreStdin: true,
 		}),
 		item: Args.string({

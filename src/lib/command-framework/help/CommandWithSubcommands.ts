@@ -48,6 +48,10 @@ export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
 
 		this.pushSubcommands(result);
 
+		this.pushExamples(result);
+
+		this.pushLearnMore(result);
+
 		return result.join('\n').trim();
 	}
 
@@ -64,6 +68,14 @@ export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
 
 		if (options.showSubcommands) {
 			this.pushSubcommands(result);
+		}
+
+		if (options.showExamples) {
+			this.pushExamples(result);
+		}
+
+		if (options.showLearnMore) {
+			this.pushLearnMore(result);
 		}
 
 		return result.join('\n').trim();

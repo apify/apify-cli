@@ -17,6 +17,19 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 
 	static override description = 'Lists all key-value stores on your account.';
 
+	static override examples = [
+		{
+			description: 'List your key-value stores.',
+			command: 'apify key-value-stores ls',
+		},
+		{
+			description: 'List the next page of stores, sorted descending.',
+			command: 'apify key-value-stores ls --limit 50 --offset 50 --desc',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores-ls';
+
 	static override flags = {
 		offset: Flags.integer({
 			description: 'Number of key-value stores that will be skipped.',

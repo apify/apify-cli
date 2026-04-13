@@ -148,7 +148,26 @@ export async function runCLI(entrypoint: string) {
 
 	cliDebugPrint('TopLevelOptions', startingResult);
 
-	const [commandName, maybeSubcommandName] = startingResult.positionals;
+	const commandName = startingResult.positionals[0];
+
+	// Be defensive: support `<cmd> help`, `<cmd> <sub> help`, and `<cmd> help <sub>` as equivalents to `--help`.
+	// Rewrite these by dropping the `help` positional and setting the --help flag. We skip index 0 so the
+	// actual `help` command (e.g. `apify help runs`) is left alone.
+	const helpPositionalIndex = startingResult.positionals.findIndex(
+		(p, i) => i > 0 && p.toLowerCase() === 'help',
+	);
+	if (helpPositionalIndex !== -1) {
+		const helpPositional = startingResult.positionals[helpPositionalIndex];
+		const argvIndex = startingArgs.indexOf(helpPositional);
+		if (argvIndex !== -1) startingArgs.splice(argvIndex, 1);
+		if (!startingArgs.includes('--help') && !startingArgs.includes('-h')) {
+			startingArgs.push('--help');
+		}
+		startingResult.positionals.splice(helpPositionalIndex, 1);
+		startingResult.values.help = true;
+	}
+
+	const maybeSubcommandName = startingResult.positionals[1];
 	let hasSubcommand = false;
 
 	const baseCommand = commandRegistry.get(commandName);

@@ -12,6 +12,8 @@ export interface SelectiveRenderOptions {
 	showDescription?: boolean;
 	showUsageString?: boolean;
 	showSubcommands?: boolean;
+	showExamples?: boolean;
+	showLearnMore?: boolean;
 }
 
 export abstract class BaseCommandRenderer {
@@ -29,11 +31,13 @@ export abstract class BaseCommandRenderer {
 	public abstract selectiveRender(options: SelectiveRenderOptions): string;
 
 	protected pushShortDescription(result: string[]) {
+		const interactiveLabel = this.command.interactive ? `${chalk.yellow('[INTERACTIVE]')} ` : '';
+
 		if (this.command.shortDescription) {
-			result.push(this.command.shortDescription, '');
+			result.push(`${interactiveLabel}${this.command.shortDescription}`, '');
 			// Fallback to first line of description
 		} else if (this.command.description) {
-			result.push(this.command.description.split('\n')[0], '');
+			result.push(`${interactiveLabel}${this.command.description.split('\n')[0]}`, '');
 		}
 	}
 
@@ -49,6 +53,55 @@ export abstract class BaseCommandRenderer {
 		const indented = indent(wrapped, 2);
 
 		result.push(indented);
+		result.push('');
+	}
+
+	protected pushExamples(result: string[]) {
+		const examples = this.command.examples;
+
+		if (!examples?.length) {
+			return;
+		}
+
+		result.push(chalk.bold('EXAMPLES'));
+
+		for (const example of examples) {
+			if (example.description) {
+				const wrapped = wrap(example.description, getMaxLineWidth() - 2, { trim: false });
+				const indented = indent(wrapped, 2);
+				result.push(chalk.dim(indented));
+			}
+
+			result.push(`  $ ${example.command}`);
+			result.push('');
+		}
+	}
+
+	protected pushInteractiveNote(result: string[]) {
+		if (!this.command.interactive) {
+			return;
+		}
+
+		result.push(chalk.bold('NOTE'));
+
+		const defaultNote =
+			'This command prompts the user for input. To run non-interactively (e.g. in CI or from an AI agent), pass all required arguments and flags explicitly.';
+		const note = this.command.interactiveNote || defaultNote;
+
+		const wrapped = wrap(note, getMaxLineWidth() - 2, { trim: false });
+		const indented = indent(wrapped, 2);
+
+		result.push(indented);
+		result.push('');
+	}
+
+	protected pushLearnMore(result: string[]) {
+		if (!this.command.docsUrl) {
+			return;
+		}
+
+		result.push(chalk.bold('LEARN MORE'));
+		result.push(`  ${this.command.docsUrl}`);
 		result.push('');
 	}
 

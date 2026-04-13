@@ -13,6 +13,19 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 
 	static override description = 'Change dataset name or removes name with --unname flag.';
 
+	static override examples = [
+		{
+			description: 'Rename a dataset.',
+			command: 'apify datasets rename old-name new-name',
+		},
+		{
+			description: 'Remove the name from a dataset (makes it unnamed).',
+			command: 'apify datasets rename my-dataset --unname',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-datasets-rename';
+
 	static override flags = {
 		unname: Flags.boolean({
 			description: 'Removes the unique name of the dataset.',
