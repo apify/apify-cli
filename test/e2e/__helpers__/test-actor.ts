@@ -9,7 +9,7 @@ const TestTmpRoot = fileURLToPath(new URL('../../tmp/', import.meta.url));
 const BasicActorPath = fileURLToPath(new URL('../__fixtures__/basic-actor.js', import.meta.url));
 const basicActorSource = await readFile(BasicActorPath, 'utf-8');
 
-const KV_STORE_PATH = 'storage/key_value_stores/default';
+const KV_STORE_PATH = path.join('storage', 'key_value_stores', 'default');
 
 export interface TestActor {
 	/** Absolute path to the actor project directory */
