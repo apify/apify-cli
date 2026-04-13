@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 1.4.2 - **not yet released**
+
+### 🚀 Features
+
+- Add execution context to telemetry events ([#1074](https://github.com/apify/apify-cli/pull/1074)) ([9288ff8](https://github.com/apify/apify-cli/commit/9288ff886864acd78b5e06b5ff13096774bd81f6)) by [@patrikbraborec](https://github.com/patrikbraborec)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [1.4.1](https://github.com/apify/apify-cli/releases/tag/v1.4.1) (2026-04-02)
 
 ### 🐛 Bug Fixes
