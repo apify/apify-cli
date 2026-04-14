@@ -153,9 +153,7 @@ export async function runCLI(entrypoint: string) {
 	// Be defensive: support `<cmd> help`, `<cmd> <sub> help`, and `<cmd> help <sub>` as equivalents to `--help`.
 	// Rewrite these by dropping the `help` positional and setting the --help flag. We skip index 0 so the
 	// actual `help` command (e.g. `apify help runs`) is left alone.
-	const helpPositionalIndex = startingResult.positionals.findIndex(
-		(p, i) => i > 0 && p.toLowerCase() === 'help',
-	);
+	const helpPositionalIndex = startingResult.positionals.findIndex((p, i) => i > 0 && p.toLowerCase() === 'help');
 	if (helpPositionalIndex !== -1) {
 		const helpPositional = startingResult.positionals[helpPositionalIndex];
 		const argvIndex = startingArgs.indexOf(helpPositional);

@@ -13,7 +13,8 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 
 	static override interactive = true;
 
-	static override interactiveNote = 'Prompts for confirmation before deleting. Cannot be bypassed; deletion is irreversible.';
+	static override interactiveNote =
+		'Prompts for confirmation before deleting. Cannot be bypassed; deletion is irreversible.';
 
 	static override examples = [
 		{

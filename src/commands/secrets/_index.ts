@@ -18,8 +18,7 @@ export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand
 			command: 'apify secrets add mySecret TopSecretValue123',
 		},
 		{
-			description:
-				`Reference the secret from .actor/actor.json using the "@" prefix, e.g. "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" }, then push as usual.`,
+			description: `Reference the secret from .actor/actor.json using the "@" prefix, e.g. "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" }, then push as usual.`,
 			command: 'apify push',
 		},
 	];

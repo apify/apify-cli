@@ -57,7 +57,7 @@ export abstract class BaseCommandRenderer {
 	}
 
 	protected pushExamples(result: string[]) {
-		const examples = this.command.examples;
+		const { examples } = this.command;
 
 		if (!examples?.length) {
 			return;
