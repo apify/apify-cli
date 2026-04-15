@@ -69,20 +69,26 @@ const OTHER_GROUP = 'Other';
 
 /**
  * Canonical example invocations shown at the bottom of the main help screen.
- * Kept short and representative of typical user flows.
+ * Kept short and representative of typical user flows. Descriptions render as
+ * shell-style `#` comments above the command (matches the per-command EXAMPLES
+ * rendering) and should be used to flag interactive flows whose bare form might
+ * otherwise look incomplete.
  */
-const APIFY_EXAMPLES = [
-	'apify login',
-	'apify create my-actor',
-	'apify run',
-	'apify push',
-	'apify actors search "web scraper"',
+const APIFY_EXAMPLES: { description?: string; command: string }[] = [
+	{ command: 'apify login' },
+	{
+		description: 'Walks you interactively through the Actor creation flow.',
+		command: 'apify create',
+	},
+	{ command: 'apify run' },
+	{ command: 'apify push' },
+	{ command: 'apify actors search "web scraper"' },
 ];
 
-const ACTOR_EXAMPLES = [
-	'actor get-input',
-	`actor push-data '{"url":"https://example.com"}'`,
-	'actor set-value OUTPUT \'{"done":true}\'',
+const ACTOR_EXAMPLES: { description?: string; command: string }[] = [
+	{ command: 'actor get-input' },
+	{ command: `actor push-data '{"url":"https://example.com"}'` },
+	{ command: `actor set-value OUTPUT '{"done":true}'` },
 ];
 
 export function renderMainHelpMenu(entrypoint: string) {
@@ -168,7 +174,26 @@ export function renderMainHelpMenu(entrypoint: string) {
 	const examples = entrypoint === 'actor' ? ACTOR_EXAMPLES : APIFY_EXAMPLES;
 	if (examples.length) {
 		result.push(chalk.bold('EXAMPLES'));
-		result.push(...examples.map((ex) => `  $ ${ex}`), '');
+		for (let i = 0; i < examples.length; i++) {
+			const ex = examples[i];
+			// Commented entries stand as their own block: blank line before (unless first)
+			// and after (unless last) so the `#` comment clearly pairs with its command
+			// and doesn't visually bleed into neighbouring bare examples.
+			if (ex.description) {
+				if (i > 0) result.push('');
+				// -4 leaves room for the 2-space indent plus the "# " prefix so
+				// continuation lines remain valid shell comments at any terminal width.
+				const wrapped = wrapAnsi(ex.description, getMaxLineWidth() - 4, { trim: false });
+				const commented = wrapped
+					.split('\n')
+					.map((line) => `# ${line}`)
+					.join('\n');
+				result.push(chalk.dim(indentString(commented, 2)));
+			}
+			result.push(`  $ ${ex.command}`);
+			if (ex.description && i < examples.length - 1) result.push('');
+		}
+		result.push('');
 	}
 
 	result.push(

@@ -67,8 +67,16 @@ export abstract class BaseCommandRenderer {
 
 		for (const example of examples) {
 			if (example.description) {
-				const wrapped = wrap(example.description, getMaxLineWidth() - 2, { trim: false });
-				const indented = indent(wrapped, 2);
+				// Render descriptions as shell-style `#` comments so each example is a
+				// self-contained copy-paste block (matches the `gh` CLI convention and
+				// prevents description prose from being mistaken for part of the command).
+				// -4 leaves room for the 2-space indent plus the "# " prefix.
+				const wrapped = wrap(example.description, getMaxLineWidth() - 4, { trim: false });
+				const commented = wrapped
+					.split('\n')
+					.map((line) => `# ${line}`)
+					.join('\n');
+				const indented = indent(commented, 2);
 				result.push(chalk.dim(indented));
 			}
 
