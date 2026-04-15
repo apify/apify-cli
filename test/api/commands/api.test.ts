@@ -5,7 +5,7 @@ import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
 useAuthSetup();
 
-const { lastErrorMessage, logSpy, errorSpy } = useConsoleSpy();
+const { lastErrorMessage, logMessages, errorSpy } = useConsoleSpy();
 
 describe('[api] apify api', () => {
 	it('should fail when not logged in', async () => {
@@ -23,11 +23,9 @@ describe('[api] apify api', () => {
 			args_methodOrEndpoint: 'v2/users/me',
 		});
 
-		const spy = logSpy();
-		expect(spy).toHaveBeenCalled();
+		expect(logMessages.log.length).toBeGreaterThan(0);
 
-		const output = spy.mock.calls[0][0];
-		const parsed = JSON.parse(output);
+		const parsed = JSON.parse(logMessages.log[0]);
 
 		expect(parsed.data).toBeDefined();
 		expect(parsed.data.id).toBeDefined();
@@ -41,11 +39,9 @@ describe('[api] apify api', () => {
 			args_methodOrEndpoint: '/v2/users/me',
 		});
 
-		const spy = logSpy();
-		expect(spy).toHaveBeenCalled();
+		expect(logMessages.log.length).toBeGreaterThan(0);
 
-		const output = spy.mock.calls[0][0];
-		const parsed = JSON.parse(output);
+		const parsed = JSON.parse(logMessages.log[0]);
 
 		expect(parsed.data).toBeDefined();
 		expect(parsed.data.id).toBeDefined();
@@ -58,11 +54,9 @@ describe('[api] apify api', () => {
 			args_methodOrEndpoint: 'users/me',
 		});
 
-		const spy = logSpy();
-		expect(spy).toHaveBeenCalled();
+		expect(logMessages.log.length).toBeGreaterThan(0);
 
-		const output = spy.mock.calls[0][0];
-		const parsed = JSON.parse(output);
+		const parsed = JSON.parse(logMessages.log[0]);
 
 		expect(parsed.data).toBeDefined();
 		expect(parsed.data.id).toBeDefined();
@@ -90,11 +84,9 @@ describe('[api] apify api', () => {
 			flags_header: 'X-Custom-Test:hello',
 		});
 
-		const spy = logSpy();
-		expect(spy).toHaveBeenCalled();
+		expect(logMessages.log.length).toBeGreaterThan(0);
 
-		const output = spy.mock.calls[0][0];
-		const parsed = JSON.parse(output);
+		const parsed = JSON.parse(logMessages.log[0]);
 
 		expect(parsed.data.id).toBeDefined();
 	});
@@ -107,11 +99,9 @@ describe('[api] apify api', () => {
 			args_endpoint: 'v2/users/me',
 		});
 
-		const spy = logSpy();
-		expect(spy).toHaveBeenCalled();
+		expect(logMessages.log.length).toBeGreaterThan(0);
 
-		const output = spy.mock.calls[0][0];
-		const parsed = JSON.parse(output);
+		const parsed = JSON.parse(logMessages.log[0]);
 
 		expect(parsed.data).toBeDefined();
 		expect(parsed.data.id).toBeDefined();
@@ -126,11 +116,9 @@ describe('[api] apify api', () => {
 			flags_params: JSON.stringify({ limit: 1, desc: true }),
 		});
 
-		const spy = logSpy();
-		expect(spy).toHaveBeenCalled();
+		expect(logMessages.log.length).toBeGreaterThan(0);
 
-		const output = spy.mock.calls[0][0];
-		const parsed = JSON.parse(output);
+		const parsed = JSON.parse(logMessages.log[0]);
 
 		expect(parsed.data).toBeDefined();
 		expect(parsed.data.items).toBeDefined();
@@ -151,11 +139,9 @@ describe('[api] apify api', () => {
 				flags_body: JSON.stringify({ name: actorName, title: 'Test API Command' }),
 			});
 
-			const spy = logSpy();
-			expect(spy).toHaveBeenCalled();
+			expect(logMessages.log.length).toBeGreaterThan(0);
 
-			const output = spy.mock.calls[0][0];
-			const parsed = JSON.parse(output);
+			const parsed = JSON.parse(logMessages.log[0]);
 
 			expect(parsed.data).toBeDefined();
 			expect(parsed.data.name).toBe(actorName);
