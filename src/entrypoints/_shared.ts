@@ -150,10 +150,24 @@ export async function runCLI(entrypoint: string) {
 
 	const commandName = startingResult.positionals[0];
 
-	// Be defensive: support `<cmd> help`, `<cmd> <sub> help`, and `<cmd> help <sub>` as equivalents to `--help`.
-	// Rewrite these by dropping the `help` positional and setting the --help flag. We skip index 0 so the
-	// actual `help` command (e.g. `apify help runs`) is left alone.
-	const helpPositionalIndex = startingResult.positionals.findIndex((p, i) => i > 0 && p.toLowerCase() === 'help');
+	// Be defensive: support `<cmd> help`, `<cmd> help <sub>`, and `<cmd> <sub> help` as equivalents to `--help`.
+	// We must not hijack user-provided positional args that happen to be the word "help". A position is only
+	// a "help slot" if it is a subcommand slot for that command — i.e., the command at that level has
+	// subcommands. If the command has its own positional args instead, `help` at that position is a real value
+	// (e.g. `actor set-value help value1` must pass `help` as the key).
+	let helpPositionalIndex = -1;
+	const baseCommandForHelpCheck = commandRegistry.get(commandName);
+	if (baseCommandForHelpCheck?.subcommands?.length) {
+		if (startingResult.positionals[1]?.toLowerCase() === 'help') {
+			helpPositionalIndex = 1;
+		} else if (startingResult.positionals[2]?.toLowerCase() === 'help') {
+			const subcommand = commandRegistry.get(`${commandName} ${startingResult.positionals[1]}`);
+			if (subcommand && !subcommand.args) {
+				helpPositionalIndex = 2;
+			}
+		}
+	}
+
 	if (helpPositionalIndex !== -1) {
 		const helpPositional = startingResult.positionals[helpPositionalIndex];
 		const argvIndex = startingArgs.indexOf(helpPositional);
