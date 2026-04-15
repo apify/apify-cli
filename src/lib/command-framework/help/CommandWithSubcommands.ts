@@ -50,6 +50,8 @@ export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
 
 		this.pushExamples(result);
 
+		this.pushInteractiveNote(result);
+
 		this.pushLearnMore(result);
 
 		return result.join('\n').trim();

@@ -155,6 +155,10 @@ export async function runCLI(entrypoint: string) {
 	// a "help slot" if it is a subcommand slot for that command — i.e., the command at that level has
 	// subcommands. If the command has its own positional args instead, `help` at that position is a real value
 	// (e.g. `actor set-value help value1` must pass `help` as the key).
+	//
+	// Note: in the standalone `actor` entrypoint all registered commands (see `actorCommands` in
+	// `_register.ts`) are leaf commands with no `subcommands`, so the guard below is always falsy
+	// and this rewrite is effectively a no-op there. It only fires under the `apify` entrypoint.
 	let helpPositionalIndex = -1;
 	const baseCommandForHelpCheck = commandRegistry.get(commandName);
 	if (baseCommandForHelpCheck?.subcommands?.length) {

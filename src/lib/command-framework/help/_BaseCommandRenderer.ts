@@ -80,9 +80,34 @@ export abstract class BaseCommandRenderer {
 				result.push(chalk.dim(indented));
 			}
 
-			result.push(`  $ ${example.command}`);
+			result.push(`  $ ${this.normalizeExampleCommand(example.command)}`);
 			result.push('');
 		}
+	}
+
+	/**
+	 * Examples authored on a command may use a short invocation prefix (e.g. "actor push-data")
+	 * that matches the standalone runtime entrypoint. When that same command is reached via a
+	 * longer entrypoint (e.g. "apify actor") the bare form is no longer copy-pasteable. Prepend
+	 * the parent portion of the entrypoint so the example matches the current context. Also
+	 * handles piped invocations like "cat ./items.json | actor push-data".
+	 */
+	protected normalizeExampleCommand(command: string): string {
+		const parts = this.entrypoint.split(' ');
+		if (parts.length < 2) return command;
+
+		const lastWord = parts[parts.length - 1];
+		const parentPrefix = `${parts.slice(0, -1).join(' ')} `;
+		const escapedLastWord = lastWord.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+		let result = command;
+		// Prepend the parent prefix when the command begins with the bare entrypoint tail.
+		if (result.startsWith(`${lastWord} `)) {
+			result = `${parentPrefix}${result}`;
+		}
+		// Also rewrite any piped invocations (e.g. "... | actor foo") to use the full entrypoint.
+		result = result.replace(new RegExp(`\\|\\s+${escapedLastWord}\\s`, 'g'), `| ${parentPrefix}${lastWord} `);
+		return result;
 	}
 
 	protected pushInteractiveNote(result: string[]) {
