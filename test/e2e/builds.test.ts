@@ -6,7 +6,7 @@ import { getApifyClientOptions } from '../../src/lib/utils.js';
 import { runCli } from './__helpers__/run-cli.js';
 import { createTestActor, removeTestActor, type TestActor } from './__helpers__/test-actor.js';
 
-describe('[e2e] builds namespace', () => {
+describe('[e2e][api] builds namespace', () => {
 	let actor: TestActor;
 	let authEnv: Record<string, string>;
 	let client: ApifyClient;
