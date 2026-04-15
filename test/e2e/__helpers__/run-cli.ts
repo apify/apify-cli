@@ -1,13 +1,10 @@
 import { fileURLToPath } from 'node:url';
 
 import { execa } from 'execa';
-import isCI from 'is-ci';
 
 const ProjectRoot = new URL('../../../', import.meta.url);
 const DistApify = fileURLToPath(new URL('./dist/apify.js', ProjectRoot));
 const DistActor = fileURLToPath(new URL('./dist/actor.js', ProjectRoot));
-
-const VALID_MODES = ['dist', 'npx', 'global'] as const;
 
 export interface RunCliOptions {
 	cwd?: string | URL;
@@ -23,41 +20,9 @@ export interface RunCliResult {
 }
 
 /**
- * Resolve the executable and arguments based on the current mode.
- */
-function resolveExec(binary: 'apify' | 'actor', args: string[]): { file: string; args: string[] } {
-	const mode = process.env.APIFY_CLI_E2E_MODE?.toLowerCase() || (isCI ? 'npx' : 'dist');
-
-	switch (mode) {
-		case 'dist': {
-			const distFile = binary === 'actor' ? DistActor : DistApify;
-			return { file: 'node', args: [distFile, ...args] };
-		}
-		case 'npx': {
-			if (binary === 'actor') {
-				return { file: 'npx', args: ['-p', 'apify-cli@beta', 'actor', ...args] };
-			}
-			return { file: 'npx', args: ['apify-cli@beta', ...args] };
-		}
-		case 'global': {
-			return { file: binary, args };
-		}
-		default: {
-			throw new Error(
-				`Invalid APIFY_CLI_E2E_MODE value: "${process.env.APIFY_CLI_E2E_MODE}". Expected one of: ${VALID_MODES.join(', ')}`,
-			);
-		}
-	}
-}
-
-/**
- * Run a CLI command and return { stdout, stderr, exitCode }.
- * Does not throw on non-zero exit codes. May throw on timeout or if the binary is not found.
- *
- * Execution mode controlled by APIFY_CLI_E2E_MODE env var (auto-detects CI when unset):
- *   "dist"           → node ./dist/apify.js <args>    (default locally, after `yarn build`)
- *   "npx"            → npx apify-cli@beta <args>      (default in CI, tests the published package)
- *   "global"         → apify <args>                    (tests globally installed binary)
+ * Run a CLI command against the freshly built `./dist` (requires `yarn build`).
+ * Returns { stdout, stderr, exitCode }. Does not throw on non-zero exit codes.
+ * May throw on timeout or if the binary is not found.
  *
  * @example
  * const result = await runCli('apify', ['help']);
@@ -69,9 +34,9 @@ export async function runCli(
 	args: string[],
 	options: RunCliOptions = {},
 ): Promise<RunCliResult> {
-	const exec = resolveExec(binary, args);
+	const distFile = binary === 'actor' ? DistActor : DistApify;
 
-	const result = await execa(exec.file, exec.args, {
+	const result = await execa('node', [distFile, ...args], {
 		cwd: options.cwd,
 		reject: false,
 		timeout: options.timeout ?? 120_000,

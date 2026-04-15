@@ -11,12 +11,8 @@ on:
     pull_request:
         branches: [master]
 
-    # Manual trigger with optional version override
+    # Manual trigger — pick any branch in the Actions UI to test that branch's build.
     workflow_dispatch:
-        inputs:
-            cli_version:
-                description: "npm version/tag to test (e.g. beta, latest, 1.5.0-beta.1). Leave empty for default (npx apify-cli@beta)."
-                required: false
 
     # Daily fallback at 06:00 UTC
     schedule:
@@ -69,19 +65,11 @@ jobs:
             - name: Install dependencies
               run: yarn
 
-            - name: Install specific CLI version
-              if: ${{ inputs.cli_version }}
-              env:
-                  CLI_VERSION: ${{ inputs.cli_version }}
-              run: npm install -g "apify-cli@${CLI_VERSION}"
-
-            - name: Verify installed CLI version
-              if: ${{ inputs.cli_version }}
-              run: apify --version
+            - name: Build CLI from source
+              run: yarn build
 
             - name: Run E2E tests
               env:
                   APIFY_CLI_DISABLE_TELEMETRY: 1
-                  APIFY_CLI_E2E_MODE: ${{ inputs.cli_version && 'global' || '' }}
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
               run: yarn test:e2e
