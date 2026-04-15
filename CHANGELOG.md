@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 1.4.2 - **not yet released**
+
+### 🚀 Features
+
+- Add execution context to telemetry events ([#1074](https://github.com/apify/apify-cli/pull/1074)) ([9288ff8](https://github.com/apify/apify-cli/commit/9288ff886864acd78b5e06b5ff13096774bd81f6)) by [@patrikbraborec](https://github.com/patrikbraborec)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [1.4.1](https://github.com/apify/apify-cli/releases/tag/v1.4.1) (2026-04-02)
 
 ### 🐛 Bug Fixes
@@ -45,6 +55,10 @@ All notable changes to this project will be documented in this file.
 - Speed up creating archives when pusing big codebases ([#1011](https://github.com/apify/apify-cli/pull/1011)) ([a873e0c](https://github.com/apify/apify-cli/commit/a873e0cb6c1c1f9e3bca61821de2b8373ec92744)) by [@matyascimbulka](https://github.com/matyascimbulka)
 
 ## [1.2.1](https://github.com/apify/apify-cli/releases/tag/v1.2.1) (2026-01-06)
+
+### 🔧 CI/CD
+
+- Fix release flow permissions ([#988](https://github.com/apify/apify-cli/pull/988)) ([a9d0d90](https://github.com/apify/apify-cli/commit/a9d0d9013f42e48bfcdddbc467e995b1655cf853)) by [@vladfrangu](https://github.com/vladfrangu)
 
 ## [1.2.0](https://github.com/apify/apify-cli/releases/tag/v1.2.0) (2026-01-06)
 
