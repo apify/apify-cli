@@ -9,8 +9,10 @@ import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
+import { detectAiAgent, detectCi, detectIsInteractive } from '../hooks/telemetry/detectEnvironment.js';
 import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
 import { trackEvent } from '../hooks/telemetry/trackEvent.js';
+import { checkAndUpdateLastCommand } from '../hooks/telemetry/useTelemetryState.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
 import { error } from '../outputs.js';
@@ -220,6 +222,12 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		this.telemetryData.commandString = commandString;
 		this.telemetryData.entrypoint = entrypoint;
+
+		const ci = detectCi();
+		this.telemetryData.aiAgent = detectAiAgent();
+		this.telemetryData.isCi = ci.isCi;
+		this.telemetryData.ciProvider = ci.ciProvider;
+		this.telemetryData.isInteractive = detectIsInteractive();
 	}
 
 	abstract run(): Awaitable<void>;
@@ -243,6 +251,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	}
 
 	private async _run(parseResult: ParseResult) {
+		const startTime = Date.now();
 		const { values: rawFlags, positionals: rawArgs, tokens: rawTokens } = parseResult;
 
 		if (rawFlags.help) {
@@ -329,9 +338,13 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				});
 			}
 
-			this.telemetryData.flagsUsed = Object.keys(this.flags);
-
 			if (!this.skipTelemetry) {
+				this.telemetryData.flagsUsed = Object.keys(this.flags);
+				this.telemetryData.exitCode = typeof process.exitCode === 'number' ? process.exitCode : 0;
+				this.telemetryData.durationMs = Date.now() - startTime;
+
+				this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString);
+
 				await trackEvent(
 					`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
 					this.telemetryData,
