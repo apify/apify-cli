@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import chalk from 'chalk';
 
 import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.js';
@@ -9,6 +11,89 @@ import { getLoggedClientOrThrow } from '../lib/utils.js';
 import apiEndpoints from './api-endpoints.json' with { type: 'json' };
 
 const HTTP_METHODS: string[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+
+function parseParams(raw: string | undefined): string {
+	if (!raw) {
+		return '';
+	}
+
+	let parsed: unknown;
+
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		throw new Error('Invalid JSON in --params flag. Please provide a valid JSON object, e.g. \'{"limit": 1}\'.');
+	}
+
+	if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+		throw new Error('--params must be a JSON object (e.g. \'{"limit": 1}\').');
+	}
+
+	const searchParams = new URLSearchParams();
+
+	for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+		if (value === undefined || value === null) {
+			continue;
+		}
+
+		if (typeof value === 'object') {
+			throw new Error(
+				`--params value for "${key}" must be a scalar (string, number, or boolean), got ${Array.isArray(value) ? 'array' : 'object'}. ` +
+					'Query parameters cannot contain nested objects or arrays.',
+			);
+		}
+
+		searchParams.append(key, String(value));
+	}
+
+	return searchParams.toString();
+}
+
+function parseHeaders(raw: string | undefined): Record<string, string> {
+	if (!raw) {
+		return {};
+	}
+
+	const trimmed = raw.trim();
+
+	// JSON object form: --header '{"X-Foo": "bar", "X-Baz": "qux"}'
+	if (trimmed.startsWith('{')) {
+		let parsed: unknown;
+
+		try {
+			parsed = JSON.parse(trimmed);
+		} catch {
+			throw new Error('Invalid JSON in --header flag. Provide a JSON object like \'{"X-Foo": "bar"}\'.');
+		}
+
+		if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
+			throw new Error('--header JSON must be an object mapping header names to string values.');
+		}
+
+		const result: Record<string, string> = {};
+
+		for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+			if (typeof value !== 'string') {
+				throw new Error(`--header value for "${key}" must be a string, got ${typeof value}.`);
+			}
+
+			result[key.trim()] = value.trim();
+		}
+
+		return result;
+	}
+
+	// "key:value" form
+	const colonIndex = trimmed.indexOf(':');
+
+	if (colonIndex === -1) {
+		throw new Error('Header must be in "key:value" format, or a JSON object for multiple headers.');
+	}
+
+	return {
+		[trimmed.slice(0, colonIndex).trim()]: trimmed.slice(colonIndex + 1).trim(),
+	};
+}
 
 export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 	static override name = 'api' as const;
@@ -41,9 +126,8 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 	static override flags = {
 		method: Flags.string({
 			char: 'X',
-			description: 'The HTTP method to use.',
+			description: 'The HTTP method to use. Defaults to GET.',
 			choices: HTTP_METHODS,
-			default: 'GET',
 		}),
 		body: Flags.string({
 			char: 'd',
@@ -53,7 +137,9 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		}),
 		header: Flags.string({
 			char: 'H',
-			description: 'Additional HTTP header in "key:value" format (only one header supported).',
+			description:
+				'Additional HTTP header(s). Pass a single "key:value" string, or a JSON object ' +
+				'like \'{"X-Foo": "bar", "X-Baz": "qux"}\' to send multiple headers.',
 			required: false,
 		}),
 		params: Flags.string({
@@ -76,56 +162,66 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 
 		// Support "apify api GET /v2/users/me" syntax — if the first arg is an HTTP method,
 		// use it as the method and the second arg as the endpoint
-		let { method } = this.flags;
+		const explicitMethodFlag = this.flags.method?.toUpperCase();
+		let method: string | undefined;
 		let endpointArg = this.args.methodOrEndpoint;
 
 		if (endpointArg && HTTP_METHODS.includes(endpointArg.toUpperCase())) {
-			method = endpointArg.toUpperCase();
+			const positionalMethod = endpointArg.toUpperCase();
+
+			if (explicitMethodFlag && explicitMethodFlag !== positionalMethod) {
+				throw new Error(
+					`Conflicting HTTP methods: positional "${positionalMethod}" vs --method "${explicitMethodFlag}". ` +
+						'Please specify the method only once.',
+				);
+			}
+
+			method = positionalMethod;
 			endpointArg = this.args.endpoint;
+		} else {
+			method = explicitMethodFlag;
 		}
+
+		method ??= 'GET';
 
 		if (!endpointArg) {
 			this.printHelp();
 			return;
 		}
 
+		// Parse and validate --params before any I/O so bad input fails fast
+		const queryString = parseParams(this.flags.params);
+
+		// Parse and validate --header(s) before any I/O
+		const customHeaders = parseHeaders(this.flags.header);
+
+		// Validate body is valid JSON before sending
+		if (this.flags.body) {
+			try {
+				JSON.parse(this.flags.body);
+			} catch {
+				throw new Error('Invalid JSON in --body flag. Please provide a valid JSON string.');
+			}
+		}
+
 		const apifyClient = await getLoggedClientOrThrow();
 		const token = apifyClient.token!;
 
-		// Normalize endpoint — strip leading slash and ensure v2 prefix
+		// Normalize endpoint — strip leading slash and any "v2/" prefix,
+		// because apifyClient.baseUrl already ends in "/v2".
 		let endpoint = endpointArg;
 
 		if (endpoint.startsWith('/')) {
 			endpoint = endpoint.slice(1);
 		}
 
-		// Auto-prepend "v2/" if the endpoint doesn't already include it,
-		// since all Apify API endpoints are under /v2/
-		if (!endpoint.startsWith('v2/')) {
-			endpoint = `v2/${endpoint}`;
-		}
+		endpoint = endpoint.replace(/^v2\/?/, '');
 
-		const baseUrl = process.env.APIFY_CLIENT_BASE_URL || 'https://api.apify.com';
-		let url = `${baseUrl}/${endpoint}`;
+		let url = `${apifyClient.baseUrl}/${endpoint}`;
 
-		// Append query params from --params flag
-		if (this.flags.params) {
-			let paramsObj: Record<string, unknown>;
-
-			try {
-				paramsObj = JSON.parse(this.flags.params);
-			} catch {
-				throw new Error('Invalid JSON in --params flag. Please provide a valid JSON object, e.g. \'{"limit": 1}\'.');
-			}
-
-			const searchParams = new URLSearchParams();
-
-			for (const [key, value] of Object.entries(paramsObj)) {
-				searchParams.append(key, String(value));
-			}
-
+		if (queryString) {
 			const separator = url.includes('?') ? '&' : '?';
-			url = `${url}${separator}${searchParams.toString()}`;
+			url = `${url}${separator}${queryString}`;
 		}
 
 		// Build headers
@@ -138,24 +234,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			headers['Content-Type'] = 'application/json';
 		}
 
-		if (this.flags.header) {
-			const colonIndex = this.flags.header.indexOf(':');
-
-			if (colonIndex === -1) {
-				throw new Error('Header must be in "key:value" format.');
-			}
-
-			headers[this.flags.header.slice(0, colonIndex).trim()] = this.flags.header.slice(colonIndex + 1).trim();
-		}
-
-		// Validate body is valid JSON before sending
-		if (this.flags.body) {
-			try {
-				JSON.parse(this.flags.body);
-			} catch {
-				throw new Error('Invalid JSON in --body flag. Please provide a valid JSON string.');
-			}
-		}
+		Object.assign(headers, customHeaders);
 
 		// Make the request
 		const response = await fetch(url, {
@@ -175,6 +254,13 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 				simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: false });
 			} catch {
 				error({ message: `${response.status} ${response.statusText}: ${responseText}` });
+			}
+
+			if (response.status === 404) {
+				simpleLog({
+					message: `\nRun ${chalk.cyan('apify api --list-endpoints')} to see all available Apify API endpoints.`,
+					stdout: false,
+				});
 			}
 
 			return;
