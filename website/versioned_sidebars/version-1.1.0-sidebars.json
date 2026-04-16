@@ -1,5 +1,5 @@
-[
-    [
+{
+    "docs": [
         {
             "type": "doc",
             "id": "index",
@@ -42,4 +42,4 @@
             "label": "Troubleshooting"
         }
     ]
-]
+}
