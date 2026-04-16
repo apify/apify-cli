@@ -41,10 +41,5 @@ module.exports = [
             id: 'troubleshooting',
             label: 'Troubleshooting',
         },
-        {
-            type: 'doc',
-            id: 'changelog',
-            label: 'Changelog',
-        },
-    ],
+   ],
 ];
