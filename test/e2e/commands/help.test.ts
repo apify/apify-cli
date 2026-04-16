@@ -1,4 +1,4 @@
-import { runCli } from './__helpers__/run-cli.js';
+import { runCli } from '../__helpers__/run-cli.js';
 
 describe.concurrent('[e2e] help command', () => {
 	it('apify help prints the full help message', async () => {
