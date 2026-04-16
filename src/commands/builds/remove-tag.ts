@@ -2,7 +2,7 @@ import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
-import { Flags } from '../../lib/command-framework/flags.js';
+import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
@@ -23,11 +23,7 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 			description: 'The tag to remove from the build.',
 			required: true,
 		}),
-		yes: Flags.boolean({
-			char: 'y',
-			description: 'Automatic yes to prompts; assume "yes" as answer to all prompts.',
-			default: false,
-		}),
+		...YesFlag,
 	};
 
 	async run() {

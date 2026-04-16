@@ -3,6 +3,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { YesFlag } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
@@ -20,8 +21,13 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 		}),
 	};
 
+	static override flags = {
+		...YesFlag,
+	};
+
 	async run() {
 		const { keyValueStoreNameOrId } = this.args;
+		const { yes } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
 
@@ -37,6 +43,7 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 
 		const confirmed = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Key-value store?`,
+			providedConfirmFromStdin: yes || undefined,
 		});
 
 		if (!confirmed) {

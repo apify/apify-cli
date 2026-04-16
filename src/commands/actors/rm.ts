@@ -2,6 +2,7 @@ import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { YesFlag } from '../../lib/command-framework/flags.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
@@ -18,8 +19,13 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 		}),
 	};
 
+	static override flags = {
+		...YesFlag,
+	};
+
 	async run() {
 		const { actorId } = this.args;
+		const { yes } = this.flags;
 
 		const apifyClient = await getLoggedClientOrThrow();
 
@@ -32,6 +38,7 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 
 		const confirmedDelete = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Actor?`,
+			providedConfirmFromStdin: yes || undefined,
 		});
 
 		if (!confirmedDelete) {
