@@ -1,5 +1,5 @@
-import { runCli } from './__helpers__/run-cli.js';
-import { corruptActorJson, createTestActor, removeTestActor, type TestActor } from './__helpers__/test-actor.js';
+import { runCli } from '../__helpers__/run-cli.js';
+import { corruptActorJson, createTestActor, removeTestActor, type TestActor } from '../__helpers__/test-actor.js';
 
 describe('[e2e] invalid actor.json', () => {
 	let actor: TestActor;

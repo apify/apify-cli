@@ -1,14 +1,14 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { runCli } from './__helpers__/run-cli.js';
+import { runCli } from '../../__helpers__/run-cli.js';
 import {
 	cleanRunResults,
 	createTestActor,
 	getRunResults,
 	removeTestActor,
 	type TestActor,
-} from './__helpers__/test-actor.js';
+} from '../../__helpers__/test-actor.js';
 
 describe('[e2e] actor run input', () => {
 	let actor: TestActor;

@@ -1,8 +1,8 @@
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
-import { runCli } from './__helpers__/run-cli.js';
-import { createTestActor, removeTestActor, type TestActor } from './__helpers__/test-actor.js';
+import { runCli } from '../__helpers__/run-cli.js';
+import { createTestActor, removeTestActor, type TestActor } from '../__helpers__/test-actor.js';
 
 describe('[e2e] apify validate-schema', () => {
 	let actor: TestActor;

@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 
-import { runCli } from './__helpers__/run-cli.js';
+import { runCli } from '../__helpers__/run-cli.js';
 
 describe('[e2e] apify logout', () => {
 	const authEnv = { __APIFY_INTERNAL_TEST_AUTH_PATH__: `e2e-logout-${randomBytes(6).toString('hex')}` };
