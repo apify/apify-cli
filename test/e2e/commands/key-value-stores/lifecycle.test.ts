@@ -119,13 +119,12 @@ describe('[e2e][api] key-value-stores namespace', () => {
 	});
 
 	it('lists all stores (--json)', async () => {
-		const result = await runCli('apify', ['kvs', 'ls', '--json', '--desc'], { env: authEnv });
+		const result = await runCli('apify', ['kvs', 'ls', '--json'], { env: authEnv });
 		expect(result.exitCode).toBe(0);
 		const list = JSON.parse(result.stdout);
 		expect(list).toHaveProperty('items');
 		const found = list.items.some((s: { id: string }) => s.id === storeId);
-		const returnedIds = list.items.map((s: { id: string }) => s.id);
-		expect(found, `Store ${storeId} not found in listed IDs: ${returnedIds.join(', ')}`).toBe(true);
+		expect(found).toBe(true);
 	});
 
 	it('renames the store', async () => {
