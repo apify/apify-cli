@@ -29,9 +29,13 @@ describe('[e2e] apify create', () => {
 		const actorDir = path.join(tmpDir, actorName);
 		createdDirs.push(actorDir);
 
-		const result = await runCli('apify', ['create', actorName, '--template', 'project_empty', '--skip-dependency-install'], {
-			cwd: tmpDir,
-		});
+		const result = await runCli(
+			'apify',
+			['create', actorName, '--template', 'project_empty', '--skip-dependency-install'],
+			{
+				cwd: tmpDir,
+			},
+		);
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		expect(result.stderr).toContain('created successfully');
@@ -48,15 +52,23 @@ describe('[e2e] apify create', () => {
 		createdDirs.push(actorDir);
 
 		// First create succeeds
-		const first = await runCli('apify', ['create', actorName, '--template', 'project_empty', '--skip-dependency-install'], {
-			cwd: tmpDir,
-		});
+		const first = await runCli(
+			'apify',
+			['create', actorName, '--template', 'project_empty', '--skip-dependency-install'],
+			{
+				cwd: tmpDir,
+			},
+		);
 		expect(first.exitCode, `stderr: ${first.stderr}`).toBe(0);
 
 		// Second create in same dir should fail
-		const second = await runCli('apify', ['create', actorName, '--template', 'project_empty', '--skip-dependency-install'], {
-			cwd: tmpDir,
-		});
+		const second = await runCli(
+			'apify',
+			['create', actorName, '--template', 'project_empty', '--skip-dependency-install'],
+			{
+				cwd: tmpDir,
+			},
+		);
 		expect(second.exitCode).not.toBe(0);
 	});
 });

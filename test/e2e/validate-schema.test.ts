@@ -27,10 +27,7 @@ describe('[e2e] apify validate-schema', () => {
 			},
 		};
 
-		await writeFile(
-			path.join(actor.dir, '.actor', 'INPUT_SCHEMA.json'),
-			JSON.stringify(inputSchema, null, 2),
-		);
+		await writeFile(path.join(actor.dir, '.actor', 'INPUT_SCHEMA.json'), JSON.stringify(inputSchema, null, 2));
 	});
 
 	afterAll(async () => {
