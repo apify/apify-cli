@@ -113,12 +113,13 @@ describe('[e2e][api] datasets namespace', () => {
 	});
 
 	it('lists datasets (--json)', async () => {
-		const result = await runCli('apify', ['datasets', 'ls', '--json'], { env: authEnv });
+		const result = await runCli('apify', ['datasets', 'ls', '--json', '--desc'], { env: authEnv });
 		expect(result.exitCode).toBe(0);
 		const list = JSON.parse(result.stdout);
 		expect(list).toHaveProperty('items');
 		const found = list.items.some((d: { id: string }) => d.id === datasetId);
-		expect(found).toBe(true);
+		const returnedIds = list.items.map((d: { id: string }) => d.id);
+		expect(found, `Dataset ${datasetId} not found in listed IDs: ${returnedIds.join(', ')}`).toBe(true);
 	});
 
 	it('renames the dataset', async () => {
