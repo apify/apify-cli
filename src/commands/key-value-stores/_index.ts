@@ -12,7 +12,12 @@ import { KeyValueStoresSetValueCommand } from './set-value.js';
 export class KeyValueStoresIndexCommand extends ApifyCommand<typeof KeyValueStoresIndexCommand> {
 	static override name = 'key-value-stores' as const;
 
-	static override description = 'Manages persistent key-value storage.\n\nAlias: kvs';
+	static override description =
+		'Manage Apify key-value stores — create, list, rename, delete stores, and get/set/delete individual records.\n\nAvailable as alias: kvs.';
+
+	static override group = 'Apify Console';
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores';
 
 	static override hiddenAliases = ['kvs'];
 

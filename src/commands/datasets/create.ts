@@ -11,6 +11,19 @@ export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCom
 
 	static override description = 'Creates a new dataset for storing structured data on your account.';
 
+	static override examples = [
+		{
+			description: 'Create an unnamed dataset.',
+			command: 'apify datasets create',
+		},
+		{
+			description: 'Create a named dataset.',
+			command: 'apify datasets create my-dataset',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-datasets-create';
+
 	static override args = {
 		datasetName: Args.string({
 			description: 'Optional name for the Dataset',

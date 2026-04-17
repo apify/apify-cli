@@ -21,25 +21,44 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 
 	static override description = 'Charge for a specific event in the pay-per-event Actor run.';
 
+	static override group = 'Actor Runtime';
+
+	static override examples = [
+		{
+			description: 'Charge one event of the given type.',
+			command: 'actor charge result-item',
+		},
+		{
+			description: 'Charge 5 events with an idempotency key.',
+			command: 'actor charge result-item --count 5 --idempotency-key req-123',
+		},
+		{
+			description: 'Test locally without actually charging.',
+			command: 'actor charge result-item --test-pay-per-event',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#actor-charge';
+
 	static override args = {
 		eventName: Args.string({
-			description: 'Name of the event to charge for',
+			description: 'Name of the event to charge for.',
 			required: true,
 		}),
 	};
 
 	static override flags = {
 		'count': Flags.integer({
-			description: 'Number of events to charge',
+			description: 'Number of events to charge.',
 			required: false,
 			default: 1,
 		}),
 		'idempotency-key': Flags.string({
-			description: 'Idempotency key for the charge request',
+			description: 'Idempotency key for the charge request.',
 			required: false,
 		}),
 		'test-pay-per-event': Flags.boolean({
-			description: 'Test pay-per-event charging without actually charging',
+			description: 'Test pay-per-event charging without actually charging.',
 			required: false,
 			default: false,
 		}),

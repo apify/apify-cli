@@ -7,14 +7,23 @@ export class SecretsAddCommand extends ApifyCommand<typeof SecretsAddCommand> {
 
 	static override description = `Adds a new secret to '~/.apify' for use in Actor environment variables.`;
 
+	static override examples = [
+		{
+			description: 'Add a secret named "mySecret". Reference it in .actor/actor.json as "@mySecret".',
+			command: 'apify secrets add mySecret TopSecretValue123',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-secrets-add';
+
 	static override args = {
 		name: Args.string({
 			required: true,
-			description: 'Name of the secret',
+			description: 'Name of the secret.',
 		}),
 		value: Args.string({
 			required: true,
-			description: 'Value of the secret',
+			description: 'Value of the secret.',
 		}),
 	};
 

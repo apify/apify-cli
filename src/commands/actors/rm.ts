@@ -11,6 +11,20 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 
 	static override description = 'Permanently removes an Actor from your account.';
 
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for confirmation before deleting. Cannot be bypassed; deletion is irreversible.';
+
+	static override examples = [
+		{
+			description: 'Delete an Actor by its full name (prompts for confirmation).',
+			command: 'apify actors rm my-username/my-actor',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-actors-rm';
+
 	static override args = {
 		actorId: Args.string({
 			description: 'The Actor ID to delete.',

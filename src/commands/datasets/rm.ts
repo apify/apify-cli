@@ -13,6 +13,20 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 
 	static override description = 'Permanently removes a dataset.';
 
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for confirmation before deleting. Cannot be bypassed; deletion is irreversible.';
+
+	static override examples = [
+		{
+			description: 'Delete a dataset by name or ID (prompts for confirmation).',
+			command: 'apify datasets rm my-dataset',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-datasets-rm';
+
 	static override args = {
 		datasetNameOrId: Args.string({
 			description: 'The dataset ID or name to delete',
