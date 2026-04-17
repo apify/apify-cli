@@ -15,7 +15,8 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 
 	static override interactive = true;
 
-	static override interactiveNote = 'Prompts for confirmation before deleting.';
+	static override interactiveNote =
+		'Prompts for confirmation before deleting. Cannot be bypassed; deletion is irreversible.';
 
 	static override examples = [
 		{

@@ -15,7 +15,8 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 
 	static override interactive = true;
 
-	static override interactiveNote = 'Prompts for confirmation before deleting the record.';
+	static override interactiveNote =
+		'Prompts for confirmation before deleting the record. Cannot be bypassed; deletion is irreversible.';
 
 	static override examples = [
 		{

@@ -62,16 +62,12 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 
 	static override examples = [
 		{
-			description: 'Log in interactively (opens a browser to complete the flow).',
+			description: 'Log in interactively (prompts to choose a method, then completes the flow accordingly).',
 			command: 'apify login',
 		},
 		{
 			description: 'Log in non-interactively with an API token.',
 			command: 'apify login --token apify_api_xxxxx',
-		},
-		{
-			description: 'Log in by manually pasting a token instead of opening a browser.',
-			command: 'apify login --method manual',
 		},
 	];
 
