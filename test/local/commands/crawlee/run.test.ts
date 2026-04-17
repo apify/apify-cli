@@ -68,22 +68,25 @@ describe('apify run', () => {
 		expect(lastErrorMessage()).toMatch(/Field awesome is required/i);
 	});
 
-	it('prefills input with defaults', async () => {
+	it('validates input without modifying file', async () => {
 		await writeFile(inputPath, originalInput);
 
 		await testRunCommand(RunCommand, {});
 
 		const output = JSON.parse(await readFile(outputPath, 'utf8'));
 		expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you' });
+
+		const inputAfterRun = await readFile(inputPath, 'utf8');
+		expect(inputAfterRun).toBe(originalInput);
 	});
 
-	it('should restore the original input file after run', async () => {
+	it('does not modify input file during run', async () => {
 		await writeFile(inputPath, originalInputWithExtraField);
 
 		await testRunCommand(RunCommand, {});
 
-		const input = JSON.parse(await readFile(inputPath, 'utf8'));
-		expect(input).toStrictEqual({ awesome: true, extra: 'field' });
+		const inputAfterRun = await readFile(inputPath, 'utf8');
+		expect(inputAfterRun).toBe(originalInputWithExtraField);
 
 		const output = JSON.parse(await readFile(outputPath, 'utf8'));
 		expect(output).toStrictEqual({ awesome: true, help: 'this_maze_is_not_meant_for_you', extra: 'field' });

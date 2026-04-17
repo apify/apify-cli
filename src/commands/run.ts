@@ -7,7 +7,7 @@ import type { ExecaError } from 'execa';
 import mime from 'mime';
 import { minVersion } from 'semver';
 
-import { APIFY_ENV_VARS } from '@apify/consts';
+import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 
 import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.js';
@@ -26,6 +26,7 @@ import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { useModuleVersion } from '../lib/hooks/useModuleVersion.js';
 import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
+import { CRAWLEE_INPUT_KEY_ENV, resolveInputKey, TEMP_INPUT_KEY_PREFIX } from '../lib/input-key.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
@@ -41,6 +42,19 @@ import {
 	purgeDefaultKeyValueStore,
 	purgeDefaultQueue,
 } from '../lib/utils.js';
+
+interface TempInputResult {
+	tempInputKey: string;
+	tempInputFilePath: string;
+}
+
+interface OverwrittenInputResult {
+	existingInput: ReturnType<typeof getLocalInput>;
+	inputFilePath: string;
+	writtenAt: number;
+}
+
+type ValidateAndStoreInputResult = TempInputResult | OverwrittenInputResult;
 
 enum RunType {
 	DirectFile = 0,
@@ -124,6 +138,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const { config: localConfig } = localConfigResult.unwrap();
 
 		const actualStoragePath = getLocalStorageDir();
+		const resolvedInputKey = resolveInputKey();
 
 		const projectRuntimeResult = await useCwdProject({ cwd });
 
@@ -233,13 +248,17 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			CRAWLEE_PURGE_ON_START = '1';
 
 			if (crawleeVersion.isNone()) {
-				await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(), purgeDefaultDataset()]);
+				await Promise.all([
+					purgeDefaultQueue(),
+					purgeDefaultKeyValueStore(resolvedInputKey),
+					purgeDefaultDataset(),
+				]);
 				info({ message: 'All default local stores were purged.' });
 			}
 		}
 
 		if (!this.flags.purge) {
-			const isStorageEmpty = await checkIfStorageIsEmpty();
+			const isStorageEmpty = await checkIfStorageIsEmpty(resolvedInputKey);
 
 			if (!isStorageEmpty && !this.flags.resurrect) {
 				warning({
@@ -258,13 +277,35 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			return;
 		}
 
-		const storedInputResults = await this.validateAndStoreInput(inputOverride);
+		const storedInputResults = await this.validateAndStoreInput(inputOverride, resolvedInputKey);
 
-		// Attach env vars from local config files
+		// When a temp input file was created, disable crawlee's purge so it doesn't
+		// delete the temp file (its name doesn't match the input key regex that purge skips).
+		// Also determine the effective input key for env vars (temp key overrides resolved key).
+		let effectiveInputKey = resolvedInputKey;
+		if (storedInputResults && 'tempInputKey' in storedInputResults) {
+			if (this.flags.purge && crawleeVersion.isSome()) {
+				// Crawlee would have purged on start, but we need to disable that to protect
+				// the temp file. Purge from CLI side instead, preserving both input files.
+				await Promise.all([
+					purgeDefaultQueue(),
+					purgeDefaultKeyValueStore(resolvedInputKey, storedInputResults.tempInputKey),
+					purgeDefaultDataset(),
+				]);
+			}
+			CRAWLEE_PURGE_ON_START = '0';
+			effectiveInputKey = storedInputResults.tempInputKey;
+		}
+
+		// Attach env vars from local config files.
+		// Set all three input key env vars so both Node.js and Python SDKs pick up the resolved key.
 		const localEnvVars: Record<string, string> = {
 			[APIFY_ENV_VARS.LOCAL_STORAGE_DIR]: actualStoragePath,
 			CRAWLEE_STORAGE_DIR: actualStoragePath,
 			CRAWLEE_PURGE_ON_START,
+			[ACTOR_ENV_VARS.INPUT_KEY]: effectiveInputKey,
+			[APIFY_ENV_VARS.INPUT_KEY]: effectiveInputKey,
+			[CRAWLEE_INPUT_KEY_ENV]: effectiveInputKey,
 		};
 
 		if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
@@ -279,8 +320,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			Object.assign(localEnvVars, updatedEnv);
 		}
 
-		// NOTE: User can overwrite env vars
-		const env = Object.assign(localEnvVars, process.env);
+		// localEnvVars must take priority so the CLI can redirect the SDK to temp input files
+		const env = { ...process.env, ...localEnvVars };
 
 		if (!userId) {
 			warning({
@@ -393,7 +434,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			}
 		} finally {
 			if (storedInputResults) {
-				if (storedInputResults.existingInput) {
+				if ('tempInputKey' in storedInputResults) {
+					// Temp input file: just delete it, user's INPUT.json was never touched
+					await deleteFile(storedInputResults.tempInputFilePath);
+				} else if (storedInputResults.existingInput) {
 					// Check if the input file was modified since we modified it. If it was, we abort the re-overwrite and warn the user
 					const stats = await stat(storedInputResults.inputFilePath);
 
@@ -420,10 +464,17 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	}
 
 	/**
-	 * Ensures the input that the actor will be ran with locally matches the input schema (and prefills default values if missing)
+	 * Validates the input against the input schema and writes to disk only when necessary.
+	 * When the user already has an input file and no override is provided, it writes the
+	 * merged defaults to a separate temp file so the user's file is never touched.
+	 * The caller redirects the SDK to the temp file via the ACTOR_INPUT_KEY env var.
 	 * @param inputOverride Optional input received through command flags
+	 * @param resolvedInputKey The input key resolved from env vars (default "INPUT")
 	 */
-	private async validateAndStoreInput(inputOverride?: { input: Record<string, unknown>; source: string }) {
+	private async validateAndStoreInput(
+		inputOverride?: { input: Record<string, unknown>; source: string },
+		resolvedInputKey = 'INPUT',
+	): Promise<ValidateAndStoreInputResult | null> {
 		const { inputSchema } = await readInputSchema({ cwd: process.cwd() });
 
 		if (!inputSchema) {
@@ -432,22 +483,18 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			}
 
 			// We cannot validate input schema if it is not found -> default to no validation and overriding if flags are given
-			const existingInput = getLocalInput(process.cwd());
+			// Write the override to a temp file so the user's input file is never touched.
+			const defaultStorePath = join(process.cwd(), getLocalKeyValueStorePath());
+			await mkdir(defaultStorePath, { recursive: true });
 
-			// Prepare the file path for where we'll temporarily store the validated input
-			const inputFilePath = join(
-				process.cwd(),
-				getLocalKeyValueStorePath(),
-				existingInput?.fileName ?? 'INPUT.json',
-			);
+			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
+			const tempInputFilePath = join(defaultStorePath, `${tempInputKey}.json`);
 
-			await mkdir(dirname(inputFilePath), { recursive: true });
-			await writeFile(inputFilePath, JSON.stringify(inputOverride.input, null, 2));
+			await writeFile(tempInputFilePath, JSON.stringify(inputOverride.input, null, 2));
 
 			return {
-				existingInput,
-				inputFilePath,
-				writtenAt: Date.now(),
+				tempInputKey,
+				tempInputFilePath,
 			};
 		}
 
@@ -458,11 +505,15 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const defaults = getDefaultsFromInputSchema(inputSchema);
 		const compiledInputSchema = getAjvValidator(inputSchema, validator);
 
-		// Step 2: try to fetch the existing INPUT from the local storage
-		const existingInput = getLocalInput(process.cwd());
+		// Step 2: try to fetch the existing input from the local storage
+		const existingInput = getLocalInput(process.cwd(), resolvedInputKey);
 
 		// Prepare the file path for where we'll temporarily store the validated input
-		const inputFilePath = join(process.cwd(), getLocalKeyValueStorePath(), existingInput?.fileName ?? 'INPUT.json');
+		const inputFilePath = join(
+			process.cwd(),
+			getLocalKeyValueStorePath(),
+			existingInput?.fileName ?? `${resolvedInputKey}.json`,
+		);
 
 		let errorHeader: string;
 
@@ -501,13 +552,16 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				);
 			}
 
+			// Write to a temp file so the user's input file is never touched.
+			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
+			const tempInputFilePath = join(dirname(inputFilePath), `${tempInputKey}.json`);
+
 			await mkdir(dirname(inputFilePath), { recursive: true });
-			await writeFile(inputFilePath, JSON.stringify(fullInputOverride, null, 2));
+			await writeFile(tempInputFilePath, JSON.stringify(fullInputOverride, null, 2));
 
 			return {
-				existingInput,
-				inputFilePath,
-				writtenAt: Date.now(),
+				tempInputKey,
+				tempInputFilePath,
 			};
 		}
 
@@ -546,14 +600,16 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				);
 			}
 
-			// Step 4: store the input
-			await mkdir(dirname(inputFilePath), { recursive: true });
-			await writeFile(inputFilePath, JSON.stringify(fullInput, null, 2));
+			// Write merged input to a temp file so the user's INPUT.json is never touched.
+			// The SDK is redirected to this file via the ACTOR_INPUT_KEY env var.
+			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
+			const tempInputFilePath = join(dirname(inputFilePath), `${tempInputKey}.json`);
+
+			await writeFile(tempInputFilePath, JSON.stringify(fullInput, null, 2));
 
 			return {
-				existingInput,
-				inputFilePath,
-				writtenAt: Date.now(),
+				tempInputKey,
+				tempInputFilePath,
 			};
 		}
 
