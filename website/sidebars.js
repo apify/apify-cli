@@ -1,5 +1,5 @@
-module.exports = [
-    [
+module.exports = {
+    docs: [
         {
             type: 'doc',
             id: 'index',
@@ -41,5 +41,5 @@ module.exports = [
             id: 'troubleshooting',
             label: 'Troubleshooting',
         },
-   ],
-];
+    ],
+};
