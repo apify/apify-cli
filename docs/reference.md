@@ -44,6 +44,50 @@ FLAGS
                          not provided, the latest version will be used.
 ```
 
+##### `apify api`
+
+```sh
+DESCRIPTION
+  Makes an authenticated HTTP request to the Apify API and prints the response.
+  The endpoint can be a relative path (e.g. "acts", "v2/acts", or "/v2/acts").
+  The "v2/" prefix is added automatically if omitted.
+
+  You can also pass the HTTP method before the endpoint:
+    apify api GET /v2/actor-runs
+    apify api POST /v2/acts -d '{"name": "my-actor"}'
+
+  Use --params/-p to pass query parameters as JSON:
+    apify api actor-runs -p '{"limit": 1, "desc": true}'
+
+  Use --list-endpoints to see all available API endpoints.
+  For full documentation, see https://docs.apify.com/api/v2
+
+USAGE
+  $ apify api [methodOrEndpoint] [endpoint] [-d <value>] [-H <value>]
+              [-l] [-X GET|POST|PUT|PATCH|DELETE] [-p <value>]
+
+ARGUMENTS
+  methodOrEndpoint  The API endpoint path (e.g. "acts",
+                    "v2/acts", "/v2/users/me"), or an HTTP method followed by the
+                    endpoint (e.g. "GET /v2/users/me").
+  endpoint          The API endpoint path when the first
+                    argument is an HTTP method.
+
+FLAGS
+  -d, --body=<value>     The request body (JSON string). Use
+                         "-" to read from stdin.
+      -H, --header=<value>   Additional HTTP header(s). Pass a
+                         single "key:value" string, or a JSON object like '{"X-Foo":
+                         "bar", "X-Baz": "qux"}' to send multiple headers.
+  -l, --list-endpoints   List all available Apify API
+                         endpoints.
+      -X, --method=<option>  The HTTP method to use. Defaults to
+                         GET.
+                         <options: GET|POST|PUT|PATCH|DELETE>
+  -p, --params=<value>   Query parameters as a JSON object,
+                         e.g. '{"limit": 1, "desc": true}'.
+```
+
 ##### `apify telemetry`
 
 ```sh
