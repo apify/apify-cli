@@ -52,11 +52,15 @@ const spawnPromised = async (
 	try {
 		return (await Result.fromAsync(
 			childProcess.catch((execaError: ExecaError) => {
-				const message = execaError.exitCode != null
-					? `${cmd} exited with code ${execaError.exitCode}`
-					: execaError.signal
-						? `${cmd} exited due to signal ${execaError.signal}`
-						: execaError.shortMessage;
+				let message;
+
+				if (execaError.exitCode != null) {
+					message = `${cmd} exited with code ${execaError.exitCode}`;
+				} else if (execaError.signal) {
+					message = `${cmd} exited due to signal ${execaError.signal}`;
+				} else {
+					message = execaError.shortMessage;
+				}
 
 				throw new Error(message, { cause: execaError });
 			}),
