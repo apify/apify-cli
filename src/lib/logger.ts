@@ -20,7 +20,8 @@ export interface LoggerStreams {
 
 /**
  * The full surface of a single output channel. `logger.stdout` and
- * `logger.stderr` both satisfy this shape.
+ * `logger.stderr` both satisfy this shape. Tests plug in custom
+ * implementations via {@link Logger.setOutputs}.
  */
 export interface LoggerOutput {
 	/** Emit `message` as-is, no prefix, followed by a newline. */
@@ -39,6 +40,11 @@ export interface LoggerOutput {
 	link(message: string, url: string): void;
 	/** Emit `data` as pretty-printed JSON (replaces `printJsonToStdout`). */
 	json(data: unknown): void;
+}
+
+export interface LoggerOutputs {
+	stdout: LoggerOutput;
+	stderr: LoggerOutput;
 }
 
 class StreamLoggerOutput implements LoggerOutput {
@@ -86,32 +92,79 @@ class StreamLoggerOutput implements LoggerOutput {
 }
 
 /**
+ * Output that drops every message. Used as the default channel when the
+ * `APIFY_NO_LOGS_IN_TESTS` env var is set (vitest workers) so test runs stay
+ * quiet unless a test opts into capture via `useConsoleSpy`.
+ */
+/* eslint-disable @typescript-eslint/no-empty-function */
+export class NoopLoggerOutput implements LoggerOutput {
+	log(): void {}
+	info(): void {}
+	warning(): void {}
+	success(): void {}
+	error(): void {}
+	run(): void {}
+	link(): void {}
+	json(): void {}
+}
+/* eslint-enable @typescript-eslint/no-empty-function */
+
+function createDefaultOutputs(): LoggerOutputs {
+	if (process.env.APIFY_NO_LOGS_IN_TESTS) {
+		return {
+			stdout: new NoopLoggerOutput(),
+			stderr: new NoopLoggerOutput(),
+		};
+	}
+	return {
+		stdout: new StreamLoggerOutput(process.stdout),
+		stderr: new StreamLoggerOutput(process.stderr),
+	};
+}
+
+/**
  * CLI logger with explicit `stdout` and `stderr` channels. Every channel
  * exposes the same {@link LoggerOutput} surface — call
  * `logger.stdout.info(...)` when the output is meant to be piped or scripted
  * against, and `logger.stderr.info(...)` for progress/diagnostics the user
  * reads but does not consume programmatically.
  *
- * Streams are swappable at runtime (see {@link setStreams}); tests rely on
- * this to capture output without stubbing `console`.
+ * Outputs are swappable at runtime. Production code almost never touches this;
+ * tests use {@link setOutputs} to install a capturing or silent implementation.
  */
 export class Logger {
-	readonly stdout: LoggerOutput;
-	readonly stderr: LoggerOutput;
+	stdout: LoggerOutput;
+	stderr: LoggerOutput;
 
-	constructor(streams: LoggerStreams = { stdout: process.stdout, stderr: process.stderr }) {
+	constructor(outputs: LoggerOutputs = createDefaultOutputs()) {
+		this.stdout = outputs.stdout;
+		this.stderr = outputs.stderr;
+	}
+
+	/**
+	 * Replace the underlying outputs with arbitrary {@link LoggerOutput}
+	 * implementations — e.g. the capturing output used by `useConsoleSpy`, a
+	 * file-backed output, or {@link NoopLoggerOutput} to silence everything.
+	 */
+	setOutputs(outputs: LoggerOutputs): void {
+		this.stdout = outputs.stdout;
+		this.stderr = outputs.stderr;
+	}
+
+	/**
+	 * Convenience shortcut: point the logger at a pair of writable streams.
+	 * Equivalent to `setOutputs` with fresh {@link StreamLoggerOutput}s.
+	 */
+	setStreams(streams: LoggerStreams): void {
 		this.stdout = new StreamLoggerOutput(streams.stdout);
 		this.stderr = new StreamLoggerOutput(streams.stderr);
 	}
 
-	/**
-	 * Replace the underlying stdout/stderr streams. Primarily used by the test
-	 * hook {@link useConsoleSpy} to redirect output into assertable arrays;
-	 * production code almost never needs to call this.
-	 */
-	setStreams(streams: LoggerStreams): void {
-		(this.stdout as StreamLoggerOutput).stream = streams.stdout;
-		(this.stderr as StreamLoggerOutput).stream = streams.stderr;
+	/** Restore the outputs the logger was constructed with (per env defaults). */
+	reset(): void {
+		const defaults = createDefaultOutputs();
+		this.stdout = defaults.stdout;
+		this.stderr = defaults.stderr;
 	}
 }
 
