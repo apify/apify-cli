@@ -4,7 +4,8 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
-import { error, simpleLog } from '../../lib/outputs.js';
+import { useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
+import { error, info, simpleLog } from '../../lib/outputs.js';
 import {
 	getLoggedClientOrThrow,
 	objectGroupBy,
@@ -145,6 +146,47 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		});
 
 		if (log) {
+			// While the log is streaming, forward interrupt signals to a
+			// platform-side abort so the build doesn't keep running after the
+			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
+			// SIGHUP from a closing terminal). The `using` binding guarantees
+			// the listener is removed when the block exits.
+			//
+			// `once: false` keeps the listener registered across repeated
+			// signals so a second Ctrl+C doesn't kill the CLI before the
+			// abort request finishes. The build abort API has no "gracefully"
+			// knob, so the first signal does the work and later signals are
+			// silent no-ops.
+			let abortAttempt = 0;
+
+			using _signalHandler = useSignalHandler({
+				signals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
+				once: false,
+				handler: async (signal) => {
+					abortAttempt += 1;
+
+					if (abortAttempt > 1) {
+						return;
+					}
+
+					info({
+						message: chalk.gray(
+							`Received ${chalk.yellow(signal)}, aborting build "${chalk.yellow(build.id)}" on the Apify platform...`,
+						),
+						stdout: true,
+					});
+
+					try {
+						await client.build(build.id).abort();
+					} catch (abortErr) {
+						error({
+							message: `Failed to abort build "${build.id}": ${(abortErr as Error).message}`,
+							stdout: true,
+						});
+					}
+				},
+			});
+
 			try {
 				await outputJobLog({ job: build, apifyClient: client });
 			} catch (err) {

@@ -315,6 +315,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 							cmd: runtime.executablePath,
 							args: [entrypoint],
 							opts: { env, cwd },
+							forwardSignals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
 						});
 					} else {
 						// Assert the package.json content for scripts
@@ -346,6 +347,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 							args: ['run', entrypoint],
 							opts: { env, cwd },
 							overrideCommand: runtime.pmName,
+							forwardSignals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
 						});
 					}
 
@@ -369,12 +371,14 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 							cmd: runtime.executablePath,
 							args: ['-m', entrypoint],
 							opts: { env, cwd },
+							forwardSignals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
 						});
 					} else {
 						await execWithLog({
 							cmd: runtime.executablePath,
 							args: [entrypoint],
 							opts: { env, cwd },
+							forwardSignals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
 						});
 					}
 
