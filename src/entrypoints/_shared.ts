@@ -14,7 +14,7 @@ import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
-import { error } from '../lib/outputs.js';
+import { logger } from '../lib/logger.js';
 import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
 
 export const cachedStdinInput = await readStdin();
@@ -29,9 +29,9 @@ export function processVersionCheck(cliName: string) {
 	}
 
 	if (!satisfies(process.version, SUPPORTED_NODEJS_VERSION)) {
-		error({
-			message: `${cliName} CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.`,
-		});
+		logger.stderr.error(
+			`${cliName} CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.`,
+		);
 
 		process.exit(1);
 	}
@@ -80,7 +80,7 @@ function handleCommandNotFound(commandName: string): never {
 		message += chalk.gray(`Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`);
 	}
 
-	error({ message });
+	logger.stderr.error(message);
 
 	process.exit(1);
 }
@@ -215,7 +215,7 @@ export async function runCLI(entrypoint: string) {
 	} catch (err) {
 		const commandError = CommandError.into(err, FinalCommand);
 
-		error({ message: commandError.getPrettyMessage() });
+		logger.stderr.error(commandError.getPrettyMessage());
 
 		process.exit(1);
 	}

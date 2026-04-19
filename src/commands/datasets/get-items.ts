@@ -3,7 +3,6 @@ import { type ApifyClient, type Dataset, type DatasetClient, DownloadItemsFormat
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { error, simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const downloadFormatToContentType: Record<DownloadItemsFormat, string> = {
@@ -51,7 +50,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 		const maybeDataset = await this.tryToGetDataset(apifyClient, datasetId);
 
 		if (!maybeDataset) {
-			error({ message: `Dataset with ID "${datasetId}" not found.` });
+			this.logger.stderr.error(`Dataset with ID "${datasetId}" not found.`);
 
 			return;
 		}
@@ -68,7 +67,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 
 		const contentType = downloadFormatToContentType[format] ?? 'application/octet-stream';
 
-		simpleLog({ message: contentType });
+		this.logger.stderr.log(contentType);
 
 		process.stdout.write(result);
 		process.stdout.write('\n');

@@ -2,7 +2,7 @@ import { Result } from '@sapphire/result';
 import { execa, type ExecaError, type Options } from 'execa';
 
 import { normalizeExecutablePath } from './hooks/runtimes/utils.js';
-import { error, run } from './outputs.js';
+import { logger } from './logger.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 const spawnPromised = async (cmd: string, args: string[], opts: Options) => {
@@ -36,12 +36,12 @@ export interface ExecWithLogOptions {
 }
 
 export async function execWithLog({ cmd, args = [], opts = {}, overrideCommand }: ExecWithLogOptions) {
-	run({ message: `${overrideCommand || cmd} ${args.join(' ')}` });
+	logger.stderr.run(`${overrideCommand || cmd} ${args.join(' ')}`);
 	const result = await spawnPromised(cmd, args, opts);
 
 	if (result.isErr()) {
 		const err = result.unwrapErr();
-		error({ message: err.message });
+		logger.stderr.error(err.message);
 
 		if (err.cause) {
 			throw err.cause;

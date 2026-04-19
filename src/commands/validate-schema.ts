@@ -4,7 +4,6 @@ import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { readAndValidateInputSchema } from '../lib/input_schema.js';
-import { success } from '../lib/outputs.js';
 
 export class ValidateInputSchemaCommand extends ApifyCommand<typeof ValidateInputSchemaCommand> {
 	static override name = 'validate-schema' as const;
@@ -36,6 +35,6 @@ Optionally specify custom schema path to validate.`;
 					: `Validating input schema embedded in '${LOCAL_CONFIG_PATH}'`,
 		});
 
-		success({ message: 'Input schema is valid.' });
+		this.logger.stderr.success('Input schema is valid.');
 	}
 }

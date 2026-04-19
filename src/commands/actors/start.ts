@@ -7,14 +7,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { simpleLog } from '../../lib/outputs.js';
-import {
-	getLocalConfig,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
@@ -113,7 +106,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		}
 
 		if (this.flags.json) {
-			printJsonToStdout(run);
+			this.logger.stdout.json(run);
 			return;
 		}
 
@@ -170,9 +163,6 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			`${chalk.blue('View on Apify Console')}: ${url}`,
 		);
 
-		simpleLog({
-			message: message.join('\n'),
-			stdout: true,
-		});
+		this.logger.stdout.log(message.join('\n'));
 	}
 }

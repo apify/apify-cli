@@ -5,7 +5,6 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const deletableStatuses = [
@@ -35,14 +34,14 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			error({ message: `Run with ID "${runId}" was not found on your account.` });
+			this.logger.stderr.error(`Run with ID "${runId}" was not found on your account.`);
 			return;
 		}
 
 		if (!deletableStatuses.includes(run.status as never)) {
-			error({
-				message: `Run with ID "${runId}" cannot be deleted, as it is still running or in the process of aborting.`,
-			});
+			this.logger.stderr.error(
+				`Run with ID "${runId}" cannot be deleted, as it is still running or in the process of aborting.`,
+			);
 
 			return;
 		}
@@ -52,9 +51,7 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		});
 
 		if (!confirmedDelete) {
-			info({
-				message: `Deletion of run "${runId}" was canceled.`,
-			});
+			this.logger.stderr.info(`Deletion of run "${runId}" was canceled.`);
 
 			return;
 		}
@@ -62,12 +59,10 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		try {
 			await apifyClient.run(runId).delete();
 
-			success({
-				message: `Run with ID "${runId}" was deleted.`,
-			});
+			this.logger.stderr.success(`Run with ID "${runId}" was deleted.`);
 		} catch (err) {
 			const casted = err as ApifyApiError;
-			error({ message: `Failed to delete run "${runId}".\n  ${casted.message || casted}` });
+			this.logger.stderr.error(`Failed to delete run "${runId}".\n  ${casted.message || casted}`);
 		}
 	}
 }

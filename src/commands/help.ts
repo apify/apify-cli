@@ -4,7 +4,6 @@ import { ApifyCommand, commandRegistry } from '../lib/command-framework/apify-co
 import { Args } from '../lib/command-framework/args.js';
 import { renderHelpForCommand, renderMainHelpMenu } from '../lib/command-framework/help.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
-import { error } from '../lib/outputs.js';
 
 export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 	static override name = 'help' as const;
@@ -48,9 +47,7 @@ export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 				);
 			}
 
-			error({
-				message,
-			});
+			this.logger.stderr.error(message);
 
 			return;
 		}

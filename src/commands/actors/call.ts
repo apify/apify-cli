@@ -16,14 +16,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLocalConfig,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
@@ -80,7 +73,9 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		if (this.flags.json && this.flags.outputDataset) {
-			error({ message: 'You cannot use both the --json and --output-dataset flags when running this command.' });
+			this.logger.stderr.error(
+				'You cannot use both the --json and --output-dataset flags when running this command.',
+			);
 			process.exitCode = CommandExitCodes.InvalidInput;
 
 			return;
@@ -196,25 +191,24 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					// url
 					message.push(`${chalk.blue('View on Apify Console')}: ${url}`, '');
 
-					simpleLog({ message: message.join('\n'), stdout: !this.flags.json });
+					(!this.flags.json ? this.logger.stdout : this.logger.stderr).log(message.join('\n'));
 				}
 			}
 		}
 
 		if (this.flags.json) {
-			printJsonToStdout(run!);
+			this.logger.stdout.json(run!);
 			return;
 		}
 
 		if (!this.flags.silent) {
-			simpleLog({
-				message: [
+			this.logger.stdout.log(
+				[
 					'',
 					`${chalk.blue('Export results')}: ${datasetUrl!}`,
 					`${chalk.blue('View on Apify Console')}: ${url!}`,
 				].join('\n'),
-				stdout: true,
-			});
+			);
 		}
 
 		if (this.flags.outputDataset) {

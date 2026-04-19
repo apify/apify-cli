@@ -5,8 +5,7 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const runningStatuses = [ACTOR_JOB_STATUSES.READY, ACTOR_JOB_STATUSES.RUNNING];
 
@@ -42,15 +41,15 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			error({ message: `Run with ID "${runId}" was not found on your account.`, stdout: true });
+			this.logger.stdout.error(`Run with ID "${runId}" was not found on your account.`);
 			return;
 		}
 
 		if (!runningStatuses.includes(run.status as never)) {
 			if (abortingStatuses.includes(run.status as never)) {
-				error({ message: `Run with ID "${runId}" is already aborting.`, stdout: true });
+				this.logger.stdout.error(`Run with ID "${runId}" is already aborting.`);
 			} else {
-				error({ message: `Run with ID "${runId}" is already aborted.`, stdout: true });
+				this.logger.stdout.error(`Run with ID "${runId}" is already aborted.`);
 			}
 
 			return;
@@ -60,25 +59,21 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 			const result = await apifyClient.run(runId).abort({ gracefully: !this.flags.force });
 
 			if (this.flags.json) {
-				printJsonToStdout(result);
+				this.logger.stdout.json(result);
 				return;
 			}
 
 			if (this.flags.force) {
-				success({ message: `Triggered the immediate abort of run "${runId}".`, stdout: true });
+				this.logger.stdout.success(`Triggered the immediate abort of run "${runId}".`);
 			} else {
-				success({
-					message: `Triggered the abort of run "${runId}", it should finish aborting in up to 30 seconds.`,
-					stdout: true,
-				});
+				this.logger.stdout.success(
+					`Triggered the abort of run "${runId}", it should finish aborting in up to 30 seconds.`,
+				);
 			}
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to abort run "${runId}".\n  ${casted.message || casted}`,
-				stdout: true,
-			});
+			this.logger.stdout.error(`Failed to abort run "${runId}".\n  ${casted.message || casted}`);
 		}
 	}
 }

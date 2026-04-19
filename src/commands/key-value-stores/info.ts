@@ -7,8 +7,7 @@ import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { getUserPlanPricing } from '../../lib/commands/storage-size.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 const consoleLikeTable = new ResponsiveTable({
 	allColumns: ['Row1', 'Row2'],
@@ -36,9 +35,7 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
 
 		if (!maybeStore) {
-			error({
-				message: `Key-value store with ID or name "${storeId}" not found.`,
-			});
+			this.logger.stderr.error(`Key-value store with ID or name "${storeId}" not found.`);
 
 			return;
 		}
@@ -64,7 +61,7 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 		}
 
 		if (this.flags.json) {
-			printJsonToStdout({
+			this.logger.stdout.json({
 				...info,
 				user,
 				actor: actor || null,
@@ -158,6 +155,6 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 			row3,
 		].join('\n');
 
-		simpleLog({ message, stdout: true });
+		this.logger.stdout.log(message);
 	}
 }

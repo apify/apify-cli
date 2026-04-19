@@ -3,10 +3,13 @@ import { SecretsLsCommand } from '../../../../src/commands/secrets/ls.js';
 import { SecretsRmCommand } from '../../../../src/commands/secrets/rm.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { getSecretsFile } from '../../../../src/lib/secrets.js';
+import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 
 const SECRET_KEY_1 = 'testSecret1';
 const SECRET_KEY_2 = 'testSecret2';
 const SECRET_VALUE = 'testSecretValue';
+
+const { logMessages } = useConsoleSpy();
 
 describe('apify secrets ls', () => {
 	beforeAll(async () => {
@@ -35,16 +38,12 @@ describe('apify secrets ls', () => {
 	});
 
 	it('should list all secrets', async () => {
-		const spy = vitest.spyOn(console, 'log');
-
 		await testRunCommand(SecretsLsCommand, {});
 
 		// Verify the command outputs our test secrets
-		const output = spy.mock.calls.map((call) => call.join(' ')).join('\n');
+		const output = logMessages.log.join('\n');
 		expect(output).to.include(SECRET_KEY_1);
 		expect(output).to.include(SECRET_KEY_2);
-
-		spy.mockRestore();
 	});
 
 	afterAll(async () => {

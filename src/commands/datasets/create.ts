@@ -3,8 +3,7 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
-import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCommand> {
 	static override name = 'create' as const;
@@ -29,7 +28,7 @@ export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCom
 			const existing = await tryToGetDataset(client, datasetName);
 
 			if (existing) {
-				error({ message: 'A Dataset with this name already exists!' });
+				this.logger.stderr.error('A Dataset with this name already exists!');
 				return;
 			}
 		}
@@ -37,13 +36,12 @@ export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCom
 		const newDataset = await client.datasets().getOrCreate(datasetName);
 
 		if (this.flags.json) {
-			printJsonToStdout(newDataset);
+			this.logger.stdout.json(newDataset);
 			return;
 		}
 
-		success({
-			message: `Dataset with ID ${chalk.yellow(newDataset.id)}${datasetName ? ` (called ${chalk.yellow(datasetName)})` : ''} was created.`,
-			stdout: true,
-		});
+		this.logger.stdout.success(
+			`Dataset with ID ${chalk.yellow(newDataset.id)}${datasetName ? ` (called ${chalk.yellow(datasetName)})` : ''} was created.`,
+		);
 	}
 }

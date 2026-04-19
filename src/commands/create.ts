@@ -28,7 +28,6 @@ import { usePythonRuntime } from '../lib/hooks/runtimes/python.js';
 import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
-import { error, info, simpleLog, success, warning } from '../lib/outputs.js';
 import {
 	downloadAndUnzip,
 	getJsonFileContent,
@@ -106,11 +105,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					.catch(() => false));
 
 			if (folderExists?.isDirectory() && folderHasFiles) {
-				error({
-					message:
-						`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.` +
+				this.logger.stderr.error(
+					`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.` +
 						' You can use "apify init" to create a local Actor environment inside an existing directory.',
-				});
+				);
 
 				actorName = await ensureValidActorName();
 				actFolderDir = join(cwd, actorName);
@@ -174,18 +172,17 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				if (!project.runtime) {
 					switch (project.type) {
 						case ProjectLanguage.JavaScript: {
-							warning({
-								message:
-									`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher` +
+							this.logger.stderr.warning(
+								`No Node.js detected! Please install Node.js ${minimumSupportedNodeVersion} or higher` +
 									' to be able to run Node.js Actors locally.',
-							});
+							);
 							break;
 						}
 						case ProjectLanguage.Scrapy:
 						case ProjectLanguage.Python: {
-							warning({
-								message: `No Python detected! Please install Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} or higher to be able to run Python Actors locally.`,
-							});
+							this.logger.stderr.warning(
+								`No Python detected! Please install Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} or higher to be able to run Python Actors locally.`,
+							);
 							break;
 						}
 						default:
@@ -199,11 +196,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				switch (project.type) {
 					case ProjectLanguage.JavaScript: {
 						if (!isNodeVersionSupported(runtime.version)) {
-							warning({
-								message:
-									`You are running Node.js version ${runtime.version}, which is no longer supported. ` +
+							this.logger.stderr.warning(
+								`You are running Node.js version ${runtime.version}, which is no longer supported. ` +
 									`Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
-							});
+							);
 						}
 
 						// If the Actor is a Node.js Actor (has package.json), run `npm install`
@@ -251,20 +247,20 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					case ProjectLanguage.Python:
 					case ProjectLanguage.Scrapy: {
 						if (!isPythonVersionSupported(runtime.version)) {
-							warning({
-								message: `Python Actors require Python 3.9 or higher, but you have Python ${runtime.version}!`,
-							});
-							warning({
-								message: 'Please install Python 3.9 or higher to be able to run Python Actors locally.',
-							});
+							this.logger.stderr.warning(
+								`Python Actors require Python 3.9 or higher, but you have Python ${runtime.version}!`,
+							);
+							this.logger.stderr.warning(
+								'Please install Python 3.9 or higher to be able to run Python Actors locally.',
+							);
 							return;
 						}
 
 						const venvPath = join(actFolderDir, '.venv');
-						info({ message: `Python version ${runtime.version} detected.` });
-						info({
-							message: `Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...`,
-						});
+						this.logger.stderr.info(`Python version ${runtime.version} detected.`);
+						this.logger.stderr.info(
+							`Creating a virtual environment in "${venvPath}" and installing dependencies from "requirements.txt"...`,
+						);
 
 						if (!process.env.VIRTUAL_ENV) {
 							// If Python is not running in a virtual environment, create a new one
@@ -341,22 +337,22 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			: null;
 
 		// Success message with extra empty line
-		simpleLog({ message: '' });
-		success({
-			message: formatCreateSuccessMessage({
+		this.logger.stderr.log('');
+		this.logger.stderr.success(
+			formatCreateSuccessMessage({
 				actorName,
 				dependenciesInstalled,
 				postCreate: messages?.postCreate ?? null,
 				gitRepositoryInitialized: !skipGitInit && !cwdHasGit && gitInitResult.success,
 				installCommandSuggestion,
 			}),
-		});
+		);
 
 		// Report git initialization result only if it failed (success already included in success message)
 		if (!skipGitInit && !cwdHasGit && !gitInitResult.success) {
 			// Git init is not critical, so we just warn if it fails
-			warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
-			warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
+			this.logger.stderr.warning(`Failed to initialize git repository: ${gitInitResult.error!.message}`);
+			this.logger.stderr.warning('You can manually run "git init" in the Actor directory if needed.');
 		}
 	}
 }

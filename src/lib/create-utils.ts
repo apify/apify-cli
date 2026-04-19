@@ -8,7 +8,7 @@ import type { Manifest, Template } from '@apify/actor-templates';
 import type { ChoicesType } from './hooks/user-confirmations/useSelectFromList.js';
 import { useSelectFromList } from './hooks/user-confirmations/useSelectFromList.js';
 import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
-import { warning } from './outputs.js';
+import { logger } from './logger.js';
 import { httpsGet, validateActorName } from './utils.js';
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
@@ -59,9 +59,9 @@ export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestP
 		readmeStream.write('\n\n');
 		await pipeline(suffixStream, readmeStream);
 	} catch (err) {
-		warning({
-			message: `Could not append local development instructions to README.md. Cause: ${(err as Error).message}`,
-		});
+		logger.stderr.warning(
+			`Could not append local development instructions to README.md. Cause: ${(err as Error).message}`,
+		);
 	}
 }
 

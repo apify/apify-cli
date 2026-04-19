@@ -5,7 +5,6 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyValueStoresDeleteValueCommand> {
@@ -31,9 +30,7 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
 
 		if (!maybeStore) {
-			error({
-				message: `Key-value store with ID or name "${storeId}" not found.`,
-			});
+			this.logger.stderr.error(`Key-value store with ID or name "${storeId}" not found.`);
 
 			return;
 		}
@@ -43,9 +40,7 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 		const existing = await client.getRecord(itemKey);
 
 		if (!existing) {
-			error({
-				message: `Item with key "${itemKey}" not found in the key-value store.`,
-			});
+			this.logger.stderr.error(`Item with key "${itemKey}" not found in the key-value store.`);
 			return;
 		}
 
@@ -54,22 +49,19 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 		});
 
 		if (!confirm) {
-			info({ message: 'Key-value store record deletion aborted.', stdout: true });
+			this.logger.stdout.info('Key-value store record deletion aborted.');
 			return;
 		}
 
 		try {
 			await client.deleteRecord(itemKey);
-			info({
-				message: `Record with key "${chalk.yellow(itemKey)}" deleted from the key-value store.`,
-				stdout: true,
-			});
+			this.logger.stdout.info(`Record with key "${chalk.yellow(itemKey)}" deleted from the key-value store.`);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to delete record with key "${itemKey}" from the key-value store.\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(
+				`Failed to delete record with key "${itemKey}" from the key-value store.\n  ${casted.message || casted}`,
+			);
 		}
 	}
 }
