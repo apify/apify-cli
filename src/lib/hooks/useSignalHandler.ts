@@ -13,12 +13,15 @@ export interface UseSignalHandlerInput {
 	 */
 	signals: NodeJS.Signals[];
 	/**
-	 * Invoked the first time any of the registered signals fires. The handler
-	 * is unregistered immediately before being called so a second signal falls
-	 * back to whatever listener is active at that point (by default, Node's
-	 * built-in termination behavior). The returned promise, if any, is not
-	 * awaited — the caller is responsible for holding the process open long
-	 * enough for its work to complete (e.g. via the guarded async body).
+	 * Invoked each time one of the registered signals fires, until the
+	 * returned `Disposable` is disposed. When `once` is `true` (the default),
+	 * the handler fires at most once and the listener is removed immediately
+	 * before it runs, so a follow-up signal falls through to whatever is
+	 * installed next (typically Node's default, which terminates the process).
+	 *
+	 * The returned promise, if any, is not awaited — the caller is responsible
+	 * for holding the process open long enough for the handler's work to
+	 * complete (e.g. via the guarded async body).
 	 */
 	handler: (signal: NodeJS.Signals) => void | Promise<void>;
 	/**
@@ -31,17 +34,34 @@ export interface UseSignalHandlerInput {
 	 * Defaults to `true`.
 	 */
 	cleanTerminalLine?: boolean;
+	/**
+	 * If `true` (default), the handler runs at most once: after it fires, the
+	 * listener is removed so a second signal falls through to Node's default
+	 * behavior, which terminates the process. This is the right choice when
+	 * there is nothing else to escalate and the user's second Ctrl+C is an
+	 * explicit "just quit already".
+	 *
+	 * Set to `false` to keep the listener active after the handler fires so
+	 * the handler can escalate across repeated signals — for example, issuing
+	 * a graceful abort on the first Ctrl+C and an immediate abort on the
+	 * second — without the process being killed while the work is still in
+	 * flight. The caller is responsible for tracking invocation state (e.g.
+	 * a counter in the handler's closure) and for eventually disposing of the
+	 * hook so signals stop being intercepted.
+	 */
+	once?: boolean;
 }
 
 /**
- * Registers a one-off signal handler for the given signals and returns a
- * `Disposable` that removes it. Pair with the `using` keyword so the listener
- * is always cleaned up when the enclosing block exits — whether the guarded
- * code finishes normally, throws, or returns early.
+ * Registers a signal handler for the given signals and returns a `Disposable`
+ * that removes it. Pair with the `using` keyword so the listener is always
+ * cleaned up when the enclosing block exits — whether the guarded code
+ * finishes normally, throws, or returns early.
  *
- * The handler fires at most once. Useful for commands that start work on the
- * Apify platform and want to clean up (e.g. abort a build or a run) when the
- * user interrupts the CLI with Ctrl+C.
+ * Useful for commands that start work on the Apify platform and want to clean
+ * up (e.g. abort a build or a run) when the user interrupts the CLI with
+ * Ctrl+C. See {@link UseSignalHandlerInput.once} for the single-shot vs.
+ * escalating modes.
  *
  * @example
  * ```ts
@@ -62,21 +82,30 @@ export interface UseSignalHandlerInput {
 //             mid-escape-sequence and left the terminal colored.
 const TERMINAL_LINE_RESET = '\r\x1b[2K\x1b[0m';
 
-export function useSignalHandler({ signals, handler, cleanTerminalLine = true }: UseSignalHandlerInput): Disposable {
-	let fired = false;
+export function useSignalHandler({
+	signals,
+	handler,
+	cleanTerminalLine = true,
+	once = true,
+}: UseSignalHandlerInput): Disposable {
+	let disposed = false;
 
 	const wrapped = (signal: NodeJS.Signals) => {
-		if (fired) {
+		if (disposed) {
 			return;
 		}
 
-		fired = true;
+		// In `once` mode, remove listeners before invoking the handler so a
+		// second signal received while the handler is still running uses
+		// default behavior (i.e. terminates the process), giving users an
+		// escape hatch. In persistent mode, the listener stays so the handler
+		// can react to every signal until the hook is explicitly disposed.
+		if (once) {
+			disposed = true;
 
-		// Remove listeners before invoking the handler so a second signal
-		// received while the handler is still running uses default behavior
-		// (i.e. terminates the process), giving users an escape hatch.
-		for (const s of signals) {
-			process.off(s, wrapped);
+			for (const s of signals) {
+				process.off(s, wrapped);
+			}
 		}
 
 		// Synchronously wipe the terminal line before the handler prints
@@ -87,7 +116,7 @@ export function useSignalHandler({ signals, handler, cleanTerminalLine = true }:
 			process.stderr.write(TERMINAL_LINE_RESET);
 		}
 
-		cliDebugPrint('useSignalHandler', { event: 'fired', signal });
+		cliDebugPrint('useSignalHandler', { event: 'fired', signal, once });
 
 		// Intentionally fire-and-forget: the caller decides whether to block
 		// on the handler's work via their own control flow.
@@ -104,15 +133,15 @@ export function useSignalHandler({ signals, handler, cleanTerminalLine = true }:
 		process.on(signal, wrapped);
 	}
 
-	cliDebugPrint('useSignalHandler', { event: 'registered', signals });
+	cliDebugPrint('useSignalHandler', { event: 'registered', signals, once });
 
 	return {
 		[Symbol.dispose]() {
-			if (fired) {
+			if (disposed) {
 				return;
 			}
 
-			fired = true;
+			disposed = true;
 
 			for (const signal of signals) {
 				process.off(signal, wrapped);

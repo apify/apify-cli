@@ -151,9 +151,24 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
 			// SIGHUP from a closing terminal). The `using` binding guarantees
 			// the listener is removed when the block exits.
+			//
+			// `once: false` keeps the listener registered across repeated
+			// signals so a second Ctrl+C doesn't kill the CLI before the
+			// abort request finishes. The build abort API has no "gracefully"
+			// knob, so the first signal does the work and later signals are
+			// silent no-ops.
+			let abortAttempt = 0;
+
 			using _signalHandler = useSignalHandler({
 				signals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
+				once: false,
 				handler: async (signal) => {
+					abortAttempt += 1;
+
+					if (abortAttempt > 1) {
+						return;
+					}
+
 					info({
 						message: chalk.gray(
 							`Received ${chalk.yellow(signal)}, aborting build "${chalk.yellow(build.id)}" on the Apify platform...`,
