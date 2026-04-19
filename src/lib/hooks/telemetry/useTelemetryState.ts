@@ -4,7 +4,7 @@ import { dirname } from 'node:path';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { TELEMETRY_FILE_PATH } from '../../consts.js';
-import { info } from '../../outputs.js';
+import { logger } from '../../logger.js';
 import type { AuthJSON } from '../../types.js';
 import { getLocalUserInfo } from '../../utils.js';
 
@@ -78,7 +78,7 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 			!process.env.APIFY_CLI_DISABLE_TELEMETRY ||
 			['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)
 		) {
-			info({ message: telemetryWarningText });
+			logger.stderr.info(telemetryWarningText);
 		}
 
 		return useTelemetryState();

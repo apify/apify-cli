@@ -4,14 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLoggedClientOrThrow,
-	objectGroupBy,
-	outputJobLog,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLoggedClientOrThrow, objectGroupBy, outputJobLog, TimestampFormatter } from '../../lib/utils.js';
 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
 	static override name = 'create' as const;
@@ -50,10 +43,9 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
-			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
-				stdout: true,
-			});
+			this.logger.stdout.error(
+				`${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
+			);
 
 			return;
 		}
@@ -82,10 +74,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			// This ensures that a --tag and --version match the version and tag the platform knows about
 			// but only when --tag is provided
 			if (tag && (!taggedVersions || !taggedVersions.some((v) => v.versionNumber === version))) {
-				error({
-					message: `The Actor Version "${version}" does not have the tag "${tag}".`,
-					stdout: true,
-				});
+				this.logger.stdout.error(`The Actor Version "${version}" does not have the tag "${tag}".`);
 
 				return;
 			}
@@ -98,10 +87,9 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 			if (taggedVersions.length > 1) {
 				if (!version) {
-					error({
-						message: `Multiple Actor versions with the tag "${tag}" found. Please specify the version number using the "--version" flag.\n  Available versions for this tag: ${taggedVersions.map((v) => chalk.yellow(v.versionNumber)).join(', ')}`,
-						stdout: true,
-					});
+					this.logger.stdout.error(
+						`Multiple Actor versions with the tag "${tag}" found. Please specify the version number using the "--version" flag.\n  Available versions for this tag: ${taggedVersions.map((v) => chalk.yellow(v.versionNumber)).join(', ')}`,
+					);
 
 					return;
 				}
@@ -111,10 +99,9 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		}
 
 		if (!selectedVersion) {
-			error({
-				message: `No Actor versions with the tag "${tag}" found. You can push a new version with this tag by using "apify push --build-tag=${tag}".`,
-				stdout: true,
-			});
+			this.logger.stdout.error(
+				`No Actor versions with the tag "${tag}" found. You can push a new version with this tag by using "apify push --build-tag=${tag}".`,
+			);
 
 			return;
 		}
@@ -122,7 +109,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		const build = await client.actor(ctx.id).build(selectedVersion, { tag });
 
 		if (json) {
-			printJsonToStdout(build);
+			this.logger.stdout.json(build);
 			return;
 		}
 
@@ -139,32 +126,22 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		const url = `https://console.apify.com/actors/${build.actId}/builds/${build.buildNumber}`;
 		const viewMessage = `${chalk.blue('View in Apify Console')}: ${url}`;
 
-		simpleLog({
-			message: message.join('\n'),
-			stdout: true,
-		});
+		this.logger.stdout.log(message.join('\n'));
 
 		if (log) {
 			try {
 				await outputJobLog({ job: build, apifyClient: client });
 			} catch (err) {
 				// This should never happen...
-				error({
-					message: `Failed to print log for build with ID "${build.id}": ${(err as Error).message}`,
-					stdout: true,
-				});
+				this.logger.stdout.error(
+					`Failed to print log for build with ID "${build.id}": ${(err as Error).message}`,
+				);
 			}
 
 			// Print out an empty line
-			simpleLog({
-				message: '',
-				stdout: true,
-			});
+			this.logger.stdout.log('');
 		}
 
-		simpleLog({
-			message: viewMessage,
-			stdout: true,
-		});
+		this.logger.stdout.log(viewMessage);
 	}
 }

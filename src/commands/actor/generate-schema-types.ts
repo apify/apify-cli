@@ -15,7 +15,6 @@ import {
 	readOutputSchema,
 	readStorageSchema,
 } from '../../lib/input_schema.js';
-import { error, info, success, warning } from '../../lib/outputs.js';
 import {
 	clearAllRequired,
 	makePropertiesRequired,
@@ -118,7 +117,7 @@ Optionally specify custom schema path to use.`;
 		const outputFile = path.join(outputDir, `${name}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
-		success({ message: `Generated types written to ${outputFile}` });
+		this.logger.stderr.success(`Generated types written to ${outputFile}`);
 
 		// When no custom path is provided, also generate types from additional schemas
 		if (!this.args.path) {
@@ -134,9 +133,9 @@ Optionally specify custom schema path to use.`;
 			for (const [i, schemaResult] of schemaResults.entries()) {
 				if (schemaResult.status === 'rejected') {
 					anyFailed = true;
-					error({
-						message: `Failed to generate types for ${schemaLabels[i]} schema: ${schemaResult.reason instanceof Error ? schemaResult.reason.message : String(schemaResult.reason)}`,
-					});
+					this.logger.stderr.error(
+						`Failed to generate types for ${schemaLabels[i]} schema: ${schemaResult.reason instanceof Error ? schemaResult.reason.message : String(schemaResult.reason)}`,
+					);
 				}
 			}
 
@@ -164,15 +163,17 @@ Optionally specify custom schema path to use.`;
 		const { datasetSchema, datasetSchemaPath } = datasetResult;
 
 		if (datasetSchemaPath) {
-			info({ message: `[experimental] Generating types from Dataset schema at ${datasetSchemaPath}` });
+			this.logger.stderr.info(`[experimental] Generating types from Dataset schema at ${datasetSchemaPath}`);
 		} else {
-			info({ message: `[experimental] Generating types from Dataset schema embedded in '${LOCAL_CONFIG_PATH}'` });
+			this.logger.stderr.info(
+				`[experimental] Generating types from Dataset schema embedded in '${LOCAL_CONFIG_PATH}'`,
+			);
 		}
 
 		const prepared = prepareFieldsSchemaForCompilation(datasetSchema);
 
 		if (!prepared) {
-			warning({ message: 'Dataset schema has no fields defined, skipping type generation.' });
+			this.logger.stderr.warning('Dataset schema has no fields defined, skipping type generation.');
 			return;
 		}
 
@@ -185,7 +186,7 @@ Optionally specify custom schema path to use.`;
 		const outputFile = path.join(outputDir, `${datasetName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
-		success({ message: `Generated types written to ${outputFile}` });
+		this.logger.stderr.success(`Generated types written to ${outputFile}`);
 	}
 
 	private async generateOutputTypes({
@@ -206,15 +207,17 @@ Optionally specify custom schema path to use.`;
 		const { outputSchema, outputSchemaPath } = outputResult;
 
 		if (outputSchemaPath) {
-			info({ message: `[experimental] Generating types from Output schema at ${outputSchemaPath}` });
+			this.logger.stderr.info(`[experimental] Generating types from Output schema at ${outputSchemaPath}`);
 		} else {
-			info({ message: `[experimental] Generating types from Output schema embedded in '${LOCAL_CONFIG_PATH}'` });
+			this.logger.stderr.info(
+				`[experimental] Generating types from Output schema embedded in '${LOCAL_CONFIG_PATH}'`,
+			);
 		}
 
 		const prepared = prepareOutputSchemaForCompilation(outputSchema);
 
 		if (!prepared) {
-			warning({ message: 'Output schema has no properties defined, skipping type generation.' });
+			this.logger.stderr.warning('Output schema has no properties defined, skipping type generation.');
 			return;
 		}
 
@@ -227,7 +230,7 @@ Optionally specify custom schema path to use.`;
 		const outputFile = path.join(outputDir, `${outputName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
-		success({ message: `Generated types written to ${outputFile}` });
+		this.logger.stderr.success(`Generated types written to ${outputFile}`);
 	}
 
 	private async generateKvsTypes({
@@ -248,19 +251,19 @@ Optionally specify custom schema path to use.`;
 		const { schema: kvsSchema, schemaPath: kvsSchemaPath } = kvsResult;
 
 		if (kvsSchemaPath) {
-			info({ message: `[experimental] Generating types from Key-Value Store schema at ${kvsSchemaPath}` });
+			this.logger.stderr.info(`[experimental] Generating types from Key-Value Store schema at ${kvsSchemaPath}`);
 		} else {
-			info({
-				message: `[experimental] Generating types from Key-Value Store schema embedded in '${LOCAL_CONFIG_PATH}'`,
-			});
+			this.logger.stderr.info(
+				`[experimental] Generating types from Key-Value Store schema embedded in '${LOCAL_CONFIG_PATH}'`,
+			);
 		}
 
 		const collections = prepareKvsCollectionsForCompilation(kvsSchema);
 
 		if (collections.length === 0) {
-			warning({
-				message: 'Key-Value Store schema has no collections with JSON schemas, skipping type generation.',
-			});
+			this.logger.stderr.warning(
+				'Key-Value Store schema has no collections with JSON schemas, skipping type generation.',
+			);
 			return;
 		}
 
@@ -281,6 +284,6 @@ Optionally specify custom schema path to use.`;
 		const outputFile = path.join(outputDir, 'key-value-store.ts');
 		await writeFile(outputFile, parts.join('\n'), 'utf-8');
 
-		success({ message: `Generated types written to ${outputFile}` });
+		this.logger.stderr.success(`Generated types written to ${outputFile}`);
 	}
 }

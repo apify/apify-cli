@@ -4,8 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { DurationFormatter, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 	static override name = 'info' as const;
@@ -29,13 +28,13 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
+			this.logger.stdout.error(`Build with ID "${buildId}" was not found on your account.`);
 			return;
 		}
 
 		// JSON output -> return the object (which is handled by oclif)
 		if (this.flags.json) {
-			printJsonToStdout(build);
+			this.logger.stdout.json(build);
 			return;
 		}
 
@@ -100,6 +99,6 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 
-		simpleLog({ message: message.join('\n'), stdout: true });
+		this.logger.stdout.log(message.join('\n'));
 	}
 }

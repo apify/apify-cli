@@ -15,7 +15,7 @@ import { AUTH_FILE_PATH } from '../../lib/consts.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
-import { error, info, success } from '../../lib/outputs.js';
+import { logger } from '../../lib/logger.js';
 import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
 
 const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
@@ -34,13 +34,11 @@ const tryToLogin = async (token: string) => {
 	if (isUserLogged) {
 		await updateUserId(userInfo.id!);
 
-		success({
-			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored at ${AUTH_FILE_PATH()}.`)}`,
-		});
+		logger.stderr.success(
+			`You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored at ${AUTH_FILE_PATH()}.`)}`,
+		);
 	} else {
-		error({
-			message: 'Login to Apify failed, the provided API token is not valid.',
-		});
+		logger.stderr.error('Login to Apify failed, the provided API token is not valid.');
 	}
 	return isUserLogged;
 };
@@ -154,7 +152,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 					res.end();
 				} catch (err) {
 					const errorMessage = `Login to Apify failed with error: ${(err as Error).message}`;
-					error({ message: errorMessage });
+					this.logger.stderr.error(errorMessage);
 					res.status(500);
 					res.send(errorMessage);
 				}
@@ -163,15 +161,11 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 
 			apiRouter.post('/exit', (req, res) => {
 				if (req.body.isWindowClosed) {
-					error({
-						message: 'Login to Apify failed, the console window was closed.',
-					});
+					this.logger.stderr.error('Login to Apify failed, the console window was closed.');
 				} else if (req.body.actionCanceled) {
-					error({
-						message: 'Login to Apify failed, the action was canceled in the Apify Console.',
-					});
+					this.logger.stderr.error('Login to Apify failed, the action was canceled in the Apify Console.');
 				} else {
-					error({ message: 'Login to Apify failed.' });
+					this.logger.stderr.error('Login to Apify failed.');
 				}
 
 				res.end();
@@ -193,7 +187,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 				// Ignore errors from fetching computer name as it's not critical
 			}
 
-			info({ message: `Opening Apify Console at "${consoleUrl.href}"...` });
+			this.logger.stderr.info(`Opening Apify Console at "${consoleUrl.href}"...`);
 			await open(consoleUrl.href);
 		} else {
 			console.log(

@@ -4,8 +4,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Key', 'Size'],
@@ -44,9 +43,7 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
 
 		if (!maybeStore) {
-			error({
-				message: `Key-value store with ID or name "${storeId}" not found.`,
-			});
+			this.logger.stderr.error(`Key-value store with ID or name "${storeId}" not found.`);
 
 			return;
 		}
@@ -56,7 +53,7 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 		const keys = await client.listKeys({ limit, exclusiveStartKey });
 
 		if (this.flags.json) {
-			printJsonToStdout(keys);
+			this.logger.stdout.json(keys);
 			return;
 		}
 
@@ -67,9 +64,6 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 			});
 		}
 
-		simpleLog({
-			message: table.render(CompactMode.WebLikeCompact),
-			stdout: true,
-		});
+		this.logger.stdout.log(table.render(CompactMode.WebLikeCompact));
 	}
 }

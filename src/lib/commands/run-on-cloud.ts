@@ -7,7 +7,7 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { Flags } from '../command-framework/flags.js';
 import { CommandExitCodes } from '../consts.js';
-import { error, run as runLog, success, warning } from '../outputs.js';
+import { logger } from '../logger.js';
 import { outputJobLog } from '../utils.js';
 import { resolveInput } from './resolve-input.js';
 
@@ -53,17 +53,17 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 
 	if (!silent) {
 		if (type === 'Actor') {
-			runLog({
-				message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${chalk.gray(actorOrTaskData.id)})\n`,
-			});
+			logger.stderr.run(
+				`Calling ${type} ${actorOrTaskData.userFriendlyId} (${chalk.gray(actorOrTaskData.id)})\n`,
+			);
 		} else if (actorOrTaskData.title) {
-			runLog({
-				message: `Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${chalk.gray(actorOrTaskData.id)})\n`,
-			});
+			logger.stderr.run(
+				`Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${chalk.gray(actorOrTaskData.id)})\n`,
+			);
 		} else {
-			runLog({
-				message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${chalk.gray(actorOrTaskData.id)})\n`,
-			});
+			logger.stderr.run(
+				`Calling ${type} ${actorOrTaskData.userFriendlyId} (${chalk.gray(actorOrTaskData.id)})\n`,
+			);
 		}
 	}
 
@@ -103,7 +103,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 				console.error();
 			}
 		} catch (err) {
-			warning({ message: 'Can not get log:' });
+			logger.stderr.warning('Can not get log:');
 			console.error(err);
 		}
 	}
@@ -127,14 +127,14 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 
 	if (!silent) {
 		if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-			success({ message: `${type} finished.` });
+			logger.stderr.success(`${type} finished.`);
 		} else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
-			warning({ message: `${type} is still running!` });
+			logger.stderr.warning(`${type} is still running!`);
 		} else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
-			warning({ message: `${type} was aborted!` });
+			logger.stderr.warning(`${type} was aborted!`);
 			process.exitCode = CommandExitCodes.RunAborted;
 		} else {
-			error({ message: `${type} failed!` });
+			logger.stderr.error(`${type} failed!`);
 			process.exitCode = CommandExitCodes.RunFailed;
 		}
 	}

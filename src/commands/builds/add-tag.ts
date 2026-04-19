@@ -3,7 +3,6 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { error, success, warning } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand> {
@@ -32,22 +31,21 @@ export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
+			this.logger.stdout.error(`Build with ID "${buildId}" was not found on your account.`);
 			return;
 		}
 
 		if (build.status !== 'SUCCEEDED') {
-			error({
-				message: `Build with ID "${buildId}" has status "${build.status}". Only successful builds can be tagged.`,
-				stdout: true,
-			});
+			this.logger.stdout.error(
+				`Build with ID "${buildId}" has status "${build.status}". Only successful builds can be tagged.`,
+			);
 			return;
 		}
 
 		const actor = await apifyClient.actor(build.actId).get();
 
 		if (!actor) {
-			error({ message: `Actor with ID "${build.actId}" was not found.`, stdout: true });
+			this.logger.stdout.error(`Actor with ID "${build.actId}" was not found.`);
 			return;
 		}
 
@@ -56,10 +54,7 @@ export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand
 		const existingTagData = existingTaggedBuilds[tag];
 
 		if (existingTagData?.buildId === buildId) {
-			warning({
-				message: `Build "${buildId}" is already tagged as "${tag}".`,
-				stdout: true,
-			});
+			this.logger.stdout.warning(`Build "${buildId}" is already tagged as "${tag}".`);
 			return;
 		}
 
@@ -77,16 +72,14 @@ export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand
 				? ` (previously pointed to build ${chalk.gray(existingTagData.buildNumber)})`
 				: '';
 
-			success({
-				message: `Tag "${chalk.yellow(tag)}" added to build ${chalk.gray(build.buildNumber)} (${chalk.gray(buildId)})${previousBuildInfo}`,
-				stdout: true,
-			});
+			this.logger.stdout.success(
+				`Tag "${chalk.yellow(tag)}" added to build ${chalk.gray(build.buildNumber)} (${chalk.gray(buildId)})${previousBuildInfo}`,
+			);
 		} catch (err) {
 			const casted = err as ApifyApiError;
-			error({
-				message: `Failed to add tag "${tag}" to build "${buildId}".\n  ${casted.message || casted}`,
-				stdout: true,
-			});
+			this.logger.stdout.error(
+				`Failed to add tag "${tag}" to build "${buildId}".\n  ${casted.message || casted}`,
+			);
 		}
 	}
 }

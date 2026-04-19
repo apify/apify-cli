@@ -4,7 +4,6 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { useInputConfirmation } from '../../lib/hooks/user-confirmations/useInputConfirmation.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
@@ -27,7 +26,7 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
+			this.logger.stdout.error(`Build with ID "${buildId}" was not found on your account.`);
 			return;
 		}
 
@@ -53,10 +52,7 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		});
 
 		if (!confirmed) {
-			info({
-				message: `Deletion of build "${buildId}" was canceled.`,
-				stdout: true,
-			});
+			this.logger.stdout.info(`Deletion of build "${buildId}" was canceled.`);
 
 			return;
 		}
@@ -64,13 +60,10 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		try {
 			await apifyClient.build(buildId).delete();
 
-			success({
-				message: `Build with ID "${buildId}" was deleted.`,
-				stdout: true,
-			});
+			this.logger.stdout.success(`Build with ID "${buildId}" was deleted.`);
 		} catch (err) {
 			const casted = err as ApifyApiError;
-			error({ message: `Failed to delete build "${buildId}".\n  ${casted.message || casted}`, stdout: true });
+			this.logger.stdout.error(`Failed to delete build "${buildId}".\n  ${casted.message || casted}`);
 		}
 	}
 }

@@ -99,6 +99,7 @@
         "handlebars": "~4.7.8",
         "ignore": "^7.0.0",
         "indent-string": "^5.0.0",
+        "intl-messageformat": "^11.2.1",
         "is-ci": "~4.1.0",
         "istextorbinary": "~9.5.0",
         "jju": "~1.4.0",

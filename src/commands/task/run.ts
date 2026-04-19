@@ -4,7 +4,6 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
-import { simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
@@ -65,14 +64,13 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
 		}
 
-		simpleLog({
-			message: [
+		this.logger.stdout.log(
+			[
 				'',
 				`${chalk.blue('Export results')}: ${datasetUrl!}`,
 				`${chalk.blue('View on Apify Console')}: ${url!}`,
 			].join('\n'),
-			stdout: true,
-		});
+		);
 	}
 
 	private async resolveTaskId(client: ApifyClient, usernameOrId: string) {

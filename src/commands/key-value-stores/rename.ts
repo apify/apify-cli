@@ -5,7 +5,6 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
-import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueStoresRenameCommand> {
@@ -34,14 +33,12 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 		const { newName, keyValueStoreNameOrId } = this.args;
 
 		if (!newName && !unname) {
-			error({ message: 'You must provide either a new name or the --unname flag.' });
+			this.logger.stderr.error('You must provide either a new name or the --unname flag.');
 			return;
 		}
 
 		if (newName && unname) {
-			error({
-				message: 'You cannot provide a new name and the --unname flag.',
-			});
+			this.logger.stderr.error('You cannot provide a new name and the --unname flag.');
 			return;
 		}
 
@@ -49,9 +46,7 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 		const existingDataset = await tryToGetKeyValueStore(client, keyValueStoreNameOrId);
 
 		if (!existingDataset) {
-			error({
-				message: `Key-value store with ID or name "${keyValueStoreNameOrId}" not found.`,
-			});
+			this.logger.stderr.error(`Key-value store with ID or name "${keyValueStoreNameOrId}" not found.`);
 
 			return;
 		}
@@ -73,16 +68,13 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 		try {
 			await existingDataset.keyValueStoreClient.update({ name: unname ? (null as never) : newName! });
 
-			success({
-				message: successMessage,
-				stdout: true,
-			});
+			this.logger.stdout.success(successMessage);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to rename key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(
+				`Failed to rename key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+			);
 		}
 	}
 }

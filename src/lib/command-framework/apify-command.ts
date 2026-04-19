@@ -15,7 +15,7 @@ import { trackEvent } from '../hooks/telemetry/trackEvent.js';
 import { checkAndUpdateLastCommand } from '../hooks/telemetry/useTelemetryState.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
-import { error } from '../outputs.js';
+import { logger } from '../logger.js';
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import { CommandError, CommandErrorCode } from './CommandError.js';
 import type { FlagTag, TaggedFlagBuilder } from './flags.js';
@@ -205,6 +205,16 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	protected skipTelemetry = false;
 
+	/**
+	 * Convenience alias for the process-wide {@link logger}. Use
+	 * `this.logger.stdout.<level>(...)` for output meant to be piped /
+	 * scripted against (raw values, JSON) and `this.logger.stderr.<level>(...)`
+	 * for progress, warnings, and errors the user reads but does not consume.
+	 */
+	protected get logger() {
+		return logger;
+	}
+
 	public constructor(entrypoint: string, commandString: string, aliasUsed: string, subcommandAliasUsed?: string) {
 		this.entrypoint = entrypoint;
 		this.commandString = commandString;
@@ -318,7 +328,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		try {
 			await this.run();
 		} catch (err: any) {
-			error({ message: err.message });
+			this.logger.stderr.error(err.message);
 			process.exitCode ||= 1;
 		} finally {
 			// analytics
@@ -637,9 +647,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			messageParts.push('', help);
 		}
 
-		error({
-			message: messageParts.join('\n'),
-		});
+		this.logger.stderr.error(messageParts.join('\n'));
 	}
 
 	private _handleStdin(mode: StdinMode) {
