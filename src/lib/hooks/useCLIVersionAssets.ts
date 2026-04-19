@@ -91,17 +91,10 @@ export async function useCLIVersionAssets(version: string) {
 	const requiresBaseline = isInstalledOnBaseline();
 
 	const assets = body.assets.filter((asset) => {
-		const [
-			//
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			_cliEntrypoint,
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			_version,
-			assetOs,
-			assetArch,
-			assetBaselineOrMusl,
-			assetBaseline,
-		] = asset.name.replace(versionWithoutV, 'version').replace('.exe', '').split('-');
+		const [_cliEntrypoint, _version, assetOs, assetArch, assetBaselineOrMusl, assetBaseline] = asset.name
+			.replace(versionWithoutV, 'version')
+			.replace('.exe', '')
+			.split('-');
 
 		if (assetOs !== metadata.platform) {
 			return false;

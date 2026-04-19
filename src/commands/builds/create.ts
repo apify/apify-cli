@@ -4,7 +4,8 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
-import { error, simpleLog } from '../../lib/outputs.js';
+import { useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
+import { error, info, simpleLog } from '../../lib/outputs.js';
 import {
 	getLoggedClientOrThrow,
 	objectGroupBy,
@@ -145,6 +146,32 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		});
 
 		if (log) {
+			// While the log is streaming, forward interrupt signals to a
+			// platform-side abort so the build doesn't keep running after the
+			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
+			// SIGHUP from a closing terminal). The `using` binding guarantees
+			// the listener is removed when the block exits.
+			using _signalHandler = useSignalHandler({
+				signals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
+				handler: async (signal) => {
+					info({
+						message: chalk.gray(
+							`Received ${chalk.yellow(signal)}, aborting build "${chalk.yellow(build.id)}" on the Apify platform...`,
+						),
+						stdout: true,
+					});
+
+					try {
+						await client.build(build.id).abort();
+					} catch (abortErr) {
+						error({
+							message: `Failed to abort build "${build.id}": ${(abortErr as Error).message}`,
+							stdout: true,
+						});
+					}
+				},
+			});
+
 			try {
 				await outputJobLog({ job: build, apifyClient: client });
 			} catch (err) {
