@@ -14,7 +14,7 @@
 		"features/**/*.js",
 		".github/scripts",
 		"eslint.config.mjs",
-		"tsup.config.ts",
+		"tsdown.config.ts",
 		"website/sidebars.js",
 		"website/src/**/*.js",
 		"website/src/**/*.ts"
