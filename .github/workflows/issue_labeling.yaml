@@ -13,7 +13,7 @@ jobs:
             issues: write
 
         steps:
-            # Add the "t-tooling" label to all new issues
+            # Add the "t-dx" label to all new issues
             - uses: actions/github-script@v8
               with:
                   script: |
@@ -21,5 +21,14 @@ jobs:
                         issue_number: context.issue.number,
                         owner: context.repo.owner,
                         repo: context.repo.repo,
-                        labels: ["t-tooling"]
+                        labels: ["t-dx"]
                       })
+
+    add_to_project:
+        name: Add issue to project
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/add-to-project@v1
+              with:
+                  project-url: https://github.com/orgs/apify/projects/72
+                  github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
