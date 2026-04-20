@@ -1,6 +1,0 @@
-{
-	"default": {
-		"import": ["features/**/*.ts"],
-		"parallel": 4
-	}
-}
