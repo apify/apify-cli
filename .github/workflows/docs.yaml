@@ -29,32 +29,22 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: 24
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Build docs
               run: |
-                  # install project deps
-                  yarn
                   # update next docs reference
-                  yarn update-docs
+                  pnpm run update-docs
                   # go to website dir
                   cd website
                   # install website deps
-                  yarn
+                  pnpm install
                   # install the latest theme version
-                  yarn add @apify/docs-theme@latest
+                  pnpm add @apify/docs-theme@latest
                   # build the docs
-                  yarn build
+                  pnpm run build
               env:
                   SMARTLOOK_PROJECT_KEY: ${{ secrets.SMARTLOOK_DOCS_PROJECT_KEY }}
                   GIT_USER: "apify-service-account:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
@@ -66,7 +56,7 @@ jobs:
               uses: stefanzweifel/git-auto-commit-action@v7
               with:
                   commit_message: "chore: Automatic theme updating workflow [skip ci]"
-                  file_pattern: "website/package*.json website/yarn.lock"
+                  file_pattern: "website/package*.json website/pnpm-lock.yaml"
                   commit_user_name: Apify Bot
                   commit_user_email: my-github-actions-bot@example.org
                   commit_author: Apify Bot <apify@apify.com>

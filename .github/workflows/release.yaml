@@ -86,23 +86,15 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: 24
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Update package version in package.json
-              run: yarn version ${{ needs.release_metadata.outputs.version_number }}
+              run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version
 
             - name: Update README
-              run: yarn pack
+              run: pnpm pack
 
             - name: Update CHANGELOG.md
               uses: DamianReeves/write-file-action@master
@@ -112,7 +104,7 @@ jobs:
                   contents: ${{ needs.release_metadata.outputs.changelog }}
 
             - name: Format
-              run: yarn format:fix
+              run: pnpm run format:fix
 
             - name: Ignore changes to useCLIMetadata.ts
               run: |
@@ -155,20 +147,9 @@ jobs:
               with:
                   node-version: 24
                   registry-url: https://registry.npmjs.org
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Install bun
               uses: oven-sh/setup-bun@v2
@@ -200,10 +181,10 @@ jobs:
                   bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
 
             - name: Set version
-              run: yarn version ${{ needs.release_metadata.outputs.version_number }}
+              run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version
 
             - name: Build Bundles
-              run: yarn insert-cli-metadata && yarn build-bundles
+              run: pnpm run insert-cli-metadata && pnpm run build-bundles
 
             - name: Upload bundles
               uses: actions/upload-artifact@v7

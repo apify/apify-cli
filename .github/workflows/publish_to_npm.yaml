@@ -34,27 +34,16 @@ jobs:
               with:
                   node-version: 24
                   registry-url: "https://registry.npmjs.org"
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Check version consistency and bump pre-release version (beta only)
               if: ${{ inputs.tag == 'beta' }}
-              run: yarn tsx ./.github/scripts/before-beta-release.ts
+              run: pnpm exec tsx ./.github/scripts/before-beta-release.ts
 
             - name: Build module
-              run: yarn build
+              run: pnpm run build
 
             - name: Publish to NPM
-              run: yarn npm publish --provenance --access public --tag ${{ inputs.tag }}
+              run: pnpm publish --provenance --access public --tag ${{ inputs.tag }}
