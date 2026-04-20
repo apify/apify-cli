@@ -19,7 +19,7 @@ import { getLoggedClient } from '../../lib/utils.js';
 export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> {
 	static override name = 'charge' as const;
 
-	static override description = 'Charge for a specific event in the pay-per-event Actor run.';
+	static override description = 'Charge for a specific event in a pay-per-event Actor run.';
 
 	static override group = 'Actor Runtime';
 

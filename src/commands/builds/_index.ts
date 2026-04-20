@@ -11,7 +11,7 @@ export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> 
 	static override name = 'builds' as const;
 
 	static override description =
-		'Inspect, tag, and delete Actor builds on the Apify platform. Also supports starting a new build.';
+		'Create, inspect, tag, and delete Actor builds on the Apify platform.';
 
 	static override group = 'Apify Console';
 

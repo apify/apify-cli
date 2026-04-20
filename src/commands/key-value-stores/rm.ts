@@ -29,7 +29,7 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 
 	static override args = {
 		keyValueStoreNameOrId: Args.string({
-			description: 'The key-value store ID or name to delete',
+			description: 'The key-value store ID or name to delete.',
 			required: true,
 		}),
 	};

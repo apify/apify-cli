@@ -7,7 +7,7 @@ export class ActorSetValueCommand extends ApifyCommand<typeof ActorSetValueComma
 	static override name = 'set-value' as const;
 
 	static override description =
-		'Sets or removes record into the default key-value store associated with the Actor run.';
+		'Sets or removes a record in the default key-value store associated with the Actor run.';
 
 	static override group = 'Actor Runtime';
 

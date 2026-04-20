@@ -26,7 +26,7 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 
 	static override args = {
 		'key-value store name': Args.string({
-			description: 'Optional name for the key-value store',
+			description: 'Optional name for the key-value store.',
 			required: false,
 		}),
 	};

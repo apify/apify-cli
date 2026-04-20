@@ -11,7 +11,7 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCommand> {
 	static override name = 'rename' as const;
 
-	static override description = 'Change dataset name or removes name with --unname flag.';
+	static override description = 'Change the dataset name or remove the name with --unname flag.';
 
 	static override examples = [
 		{

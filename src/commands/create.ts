@@ -97,7 +97,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override args = {
 		actorName: Args.string({
 			required: false,
-			description: 'Name of the Actor and its directory',
+			description: 'Name of the Actor and its directory.',
 		}),
 	};
 

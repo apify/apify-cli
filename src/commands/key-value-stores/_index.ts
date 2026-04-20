@@ -13,7 +13,7 @@ export class KeyValueStoresIndexCommand extends ApifyCommand<typeof KeyValueStor
 	static override name = 'key-value-stores' as const;
 
 	static override description =
-		'Manage Apify key-value stores — create, list, rename, delete stores, and get/set/delete individual records.\n\nAvailable as alias: kvs.';
+		'Manage Apify key-value stores — create, list, rename, delete stores, and get/set/delete individual records.\n\nAlias: kvs.';
 
 	static override group = 'Apify Console';
 

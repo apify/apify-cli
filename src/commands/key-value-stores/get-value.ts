@@ -26,7 +26,7 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 
 	static override flags = {
 		'only-content-type': Flags.boolean({
-			description: 'Only return the content type of the specified key',
+			description: 'Only return the content type of the specified key.',
 			default: false,
 		}),
 	};

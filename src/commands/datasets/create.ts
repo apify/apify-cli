@@ -26,7 +26,7 @@ export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCom
 
 	static override args = {
 		datasetName: Args.string({
-			description: 'Optional name for the Dataset',
+			description: 'Optional name for the Dataset.',
 			required: false,
 		}),
 	};

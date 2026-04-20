@@ -29,7 +29,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 
 	static override args = {
 		datasetNameOrId: Args.string({
-			description: 'The dataset ID or name to delete',
+			description: 'The dataset ID or name to delete.',
 			required: true,
 		}),
 	};

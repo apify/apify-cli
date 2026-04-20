@@ -4,7 +4,7 @@ export class RequestQueuesIndexCommand extends ApifyCommand<typeof RequestQueues
 	static override name = 'request-queues' as const;
 
 	static override description =
-		'Manage Apify request queues. No subcommands are available yet — reserved namespace for future additions.';
+		'Manage Apify request queues. No subcommands are available yet.';
 
 	static override group = 'Apify Console';
 
