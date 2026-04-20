@@ -34,14 +34,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.36.0, @apify/consts@npm:^2.50.0, @apify/consts@npm:^2.51.0, @apify/consts@npm:^2.51.1":
-  version: 2.51.1
-  resolution: "@apify/consts@npm:2.51.1"
-  checksum: 10c0/706fa8e77417e1e55baeeb9ab9e25b71e444fe784466a484f1ca0aec9b8cd7b9252ed6c23cda8afbc87cb063798c6defd7ad2cd35b82c6d7344128e66058aa9e
-  languageName: node
-  linkType: hard
-
-"@apify/consts@npm:^2.52.1":
+"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.36.0, @apify/consts@npm:^2.50.0, @apify/consts@npm:^2.51.0, @apify/consts@npm:^2.51.1, @apify/consts@npm:^2.52.1":
   version: 2.52.1
   resolution: "@apify/consts@npm:2.52.1"
   checksum: 10c0/86d3a6b8a137bfecdb103a34b089c550a3a16d44b9b8b4373b1aec59ceacc91e444c7e121267b9d66363ce47efad650d5a50a1fd0800e0359eb1c67aec9d4b1e
@@ -113,17 +106,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/log@npm:^2.2.6, @apify/log@npm:^2.4.0, @apify/log@npm:^2.4.3, @apify/log@npm:^2.5.33":
-  version: 2.5.33
-  resolution: "@apify/log@npm:2.5.33"
-  dependencies:
-    "@apify/consts": "npm:^2.51.1"
-    ansi-colors: "npm:^4.1.1"
-  checksum: 10c0/ed1ffd3ec451aeb289bcdba2a482e323193d52ebb390ef1e6012fac9c33fbf60400c8aacdf443bfc702863de1e926fe4c50128c55114741f6524c182b118f192
-  languageName: node
-  linkType: hard
-
-"@apify/log@npm:^2.5.35":
+"@apify/log@npm:^2.2.6, @apify/log@npm:^2.4.0, @apify/log@npm:^2.4.3, @apify/log@npm:^2.5.33, @apify/log@npm:^2.5.35":
   version: 2.5.35
   resolution: "@apify/log@npm:2.5.35"
   dependencies:
@@ -8254,17 +8237,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tinyglobby@npm:^0.2.11, tinyglobby@npm:^0.2.12, tinyglobby@npm:^0.2.15, tinyglobby@npm:^0.2.9":
-  version: 0.2.15
-  resolution: "tinyglobby@npm:0.2.15"
-  dependencies:
-    fdir: "npm:^6.5.0"
-    picomatch: "npm:^4.0.3"
-  checksum: 10c0/869c31490d0d88eedb8305d178d4c75e7463e820df5a9b9d388291daf93e8b1eb5de1dad1c1e139767e4269fe75f3b10d5009b2cc14db96ff98986920a186844
-  languageName: node
-  linkType: hard
-
-"tinyglobby@npm:^0.2.16":
+"tinyglobby@npm:^0.2.11, tinyglobby@npm:^0.2.12, tinyglobby@npm:^0.2.15, tinyglobby@npm:^0.2.16, tinyglobby@npm:^0.2.9":
   version: 0.2.16
   resolution: "tinyglobby@npm:0.2.16"
   dependencies:
