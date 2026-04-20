@@ -14,6 +14,19 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 		'Executes predefined Actor task remotely using local key-value store for input.\n' +
 		'Customize with --memory and --timeout flags.\n';
 
+	static override examples = [
+		{
+			description: 'Run a task by name.',
+			command: 'apify task run my-task',
+		},
+		{
+			description: 'Run a task by full ID with custom memory and timeout.',
+			command: 'apify task run username/my-task --memory 4096 --timeout 600',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-task-run';
+
 	static override flags = SharedRunOnCloudFlags('Task');
 
 	static override args = {

@@ -30,6 +30,23 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 	static override description = 'Lists all runs of the Actor.';
 
+	static override examples = [
+		{
+			description: 'List runs of the Actor in the current directory.',
+			command: 'apify runs ls',
+		},
+		{
+			description: 'List runs of a specific Actor.',
+			command: 'apify runs ls apify/hello-world',
+		},
+		{
+			description: 'List the 50 most recent runs in descending order.',
+			command: 'apify runs ls --limit 50 --desc',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-runs-ls';
+
 	static override flags = {
 		offset: Flags.integer({
 			description: 'Number of runs that will be skipped.',

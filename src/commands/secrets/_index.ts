@@ -8,17 +8,22 @@ export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand
 	static override name = 'secrets' as const;
 
 	static override description =
-		`Manages secure environment variables for Actors.\n\n` +
-		`Example:\n` +
-		`$ apify secrets add mySecret TopSecretValue123\n\n` +
-		`The "mySecret" value can be used in an environment variable defined in '${LOCAL_CONFIG_PATH}' file by adding the "@" prefix:\n\n` +
-		`{\n` +
-		`  "actorSpecification": 1,\n` +
-		`  "name": "my_actor",\n` +
-		`  "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" },\n` +
-		`  "version": "0.1"\n` +
-		`}\n\n` +
-		`When the Actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is stored as a secret environment variable of the Actor.`;
+		`Manage locally stored secrets that can be referenced from '${LOCAL_CONFIG_PATH}' environment variables using the "@" prefix (e.g. "@mySecret"). Secrets are uploaded alongside the Actor and stored encrypted on the Apify platform.`;
+
+	static override group = 'Authentication';
+
+	static override examples = [
+		{
+			description: 'Store a secret called "mySecret".',
+			command: 'apify secrets add mySecret TopSecretValue123',
+		},
+		{
+			description: `Reference the secret from .actor/actor.json using the "@" prefix, e.g. "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" }, then push as usual.`,
+			command: 'apify push',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-secrets';
 
 	static override subcommands = [SecretsAddCommand, SecretsLsCommand, SecretsRmCommand];
 

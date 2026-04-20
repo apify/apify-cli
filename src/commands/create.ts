@@ -44,6 +44,30 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override description =
 		'Creates an Actor project from a template in a new directory. The command automatically initializes a git repository in the newly created Actor directory.';
 
+	static override group = 'Local Actor Development';
+
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for an Actor name and template if not provided. To run non-interactively, pass the name as a positional argument and --template.';
+
+	static override examples = [
+		{
+			description: 'Create a new Actor project interactively (prompts for name and template).',
+			command: 'apify create',
+		},
+		{
+			description: 'Create non-interactively with explicit name and template.',
+			command: 'apify create my-actor --template js-crawlee-cheerio',
+		},
+		{
+			description: 'Create without installing dependencies (faster; run install yourself later).',
+			command: 'apify create my-actor --template python-start --skip-dependency-install',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-create';
+
 	static override flags = {
 		template: Flags.string({
 			char: 't',
@@ -73,7 +97,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override args = {
 		actorName: Args.string({
 			required: false,
-			description: 'Name of the Actor and its directory',
+			description: 'Name of the Actor and its directory.',
 		}),
 	};
 

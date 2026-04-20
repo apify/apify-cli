@@ -11,6 +11,19 @@ export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand
 
 	static override description = 'Adds a tag to a specific Actor build.';
 
+	static override examples = [
+		{
+			description: 'Tag a successful build as "latest".',
+			command: 'apify builds add-tag --build <buildId> --tag latest',
+		},
+		{
+			description: 'Tag a build with a custom name like "beta".',
+			command: 'apify builds add-tag --build <buildId> --tag beta',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-builds-add-tag';
+
 	static override flags = {
 		build: Flags.string({
 			char: 'b',

@@ -17,6 +17,19 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 
 	static override description = 'Lists all keys in a key-value store.';
 
+	static override examples = [
+		{
+			description: 'List the first 20 keys in a key-value store.',
+			command: 'apify key-value-stores keys <storeId>',
+		},
+		{
+			description: 'Paginate keys past an exclusive start key.',
+			command: 'apify key-value-stores keys <storeId> --exclusive-start-key last-seen-key --limit 100',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores-keys';
+
 	static override flags = {
 		limit: Flags.integer({
 			description: 'The maximum number of keys to return.',

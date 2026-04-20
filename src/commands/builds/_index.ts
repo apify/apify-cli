@@ -10,7 +10,11 @@ import { BuildsRmCommand } from './rm.js';
 export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> {
 	static override name = 'builds' as const;
 
-	static override description = 'Manages Actor build processes and versioning.';
+	static override description = 'Create, inspect, tag, and delete Actor builds on the Apify platform.';
+
+	static override group = 'Apify Console';
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-builds';
 
 	static override subcommands = [
 		//
