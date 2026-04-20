@@ -8,6 +8,15 @@ export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
 
 	static override description = 'Prints the log of a specific build.';
 
+	static override examples = [
+		{
+			description: 'Print the build log.',
+			command: 'apify builds log <buildId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-builds-log';
+
 	static override args = {
 		buildId: Args.string({
 			required: true,

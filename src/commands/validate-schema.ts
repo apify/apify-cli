@@ -17,6 +17,21 @@ export class ValidateInputSchemaCommand extends ApifyCommand<typeof ValidateInpu
 
 Optionally specify custom schema path to validate.`;
 
+	static override group = 'Local Actor Development';
+
+	static override examples = [
+		{
+			description: 'Validate the input schema discovered from the default locations.',
+			command: 'apify validate-schema',
+		},
+		{
+			description: 'Validate a specific INPUT_SCHEMA.json file.',
+			command: 'apify validate-schema ./my-schema.json',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-validate-schema';
+
 	static override args = {
 		path: Args.string({
 			required: false,

@@ -53,15 +53,35 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 		`All other commands use these stored credentials.\n\n` +
 		`Run 'apify logout' to remove authentication.`;
 
+	static override group = 'Authentication';
+
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for an API token if not provided. To run non-interactively, pass --token <api-token>.';
+
+	static override examples = [
+		{
+			description: 'Log in interactively (prompts to choose a method, then completes the flow accordingly).',
+			command: 'apify login',
+		},
+		{
+			description: 'Log in non-interactively with an API token.',
+			command: 'apify login --token apify_api_xxxxx',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-login';
+
 	static override flags = {
 		token: Flags.string({
 			char: 't',
-			description: 'Apify API token',
+			description: 'Apify API token.',
 			required: false,
 		}),
 		method: Flags.string({
 			char: 'm',
-			description: 'Method of logging in to Apify',
+			description: 'Method of logging in to Apify.',
 			choices: ['console', 'manual'],
 			required: false,
 		}),

@@ -6,7 +6,11 @@ export class TelemetryIndexCommand extends ApifyCommand<typeof TelemetryIndexCom
 	static override name = 'telemetry' as const;
 
 	static override description =
-		'Manages telemetry settings. We use this data to improve the CLI and the Apify platform.\nRead more: https://docs.apify.com/cli/docs/telemetry';
+		'Enable or disable anonymous telemetry. We use this data to improve the CLI and the Apify platform.';
+
+	static override group = 'Utilities';
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/telemetry';
 
 	static override subcommands = [TelemetryEnableCommand, TelemetryDisableCommand];
 

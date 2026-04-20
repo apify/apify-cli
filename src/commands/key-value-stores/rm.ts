@@ -13,9 +13,23 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 
 	static override description = 'Permanently removes a key-value store.';
 
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for confirmation before deleting. Cannot be bypassed; deletion is irreversible.';
+
+	static override examples = [
+		{
+			description: 'Delete a key-value store (prompts for confirmation).',
+			command: 'apify key-value-stores rm my-store',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores-rm';
+
 	static override args = {
 		keyValueStoreNameOrId: Args.string({
-			description: 'The key-value store ID or name to delete',
+			description: 'The key-value store ID or name to delete.',
 			required: true,
 		}),
 	};

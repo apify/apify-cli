@@ -12,6 +12,15 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 
 	static override description = 'Prints information about a specific build.';
 
+	static override examples = [
+		{
+			description: 'Print information about a build.',
+			command: 'apify builds info <buildId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-builds-info';
+
 	static override args = {
 		buildId: Args.string({
 			required: true,

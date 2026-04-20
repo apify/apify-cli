@@ -52,6 +52,25 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.\n` +
 		`Use --force to override newer remote versions.`;
 
+	static override group = 'Local Actor Development';
+
+	static override examples = [
+		{
+			description: 'Deploy the current Actor to the Apify platform.',
+			command: 'apify push',
+		},
+		{
+			description: 'Deploy to a specific Actor by ID, overriding newer remote versions.',
+			command: 'apify push E2jjCZBezvAZnX8Rb --force',
+		},
+		{
+			description: 'Deploy without waiting for the build to finish.',
+			command: 'apify push --no-wait-for-finish',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-push';
+
 	static override enableJsonFlag = true;
 
 	static override flags = {
@@ -62,7 +81,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}),
 		'build-tag': Flags.string({
 			char: 'b',
-			description: `Build tag to be applied to the successful Actor build. By default, it is taken from the '${LOCAL_CONFIG_PATH}' file`,
+			description: `Build tag to be applied to the successful Actor build. By default, it is taken from the '${LOCAL_CONFIG_PATH}' file.`,
 			required: false,
 		}),
 		'wait-for-finish': Flags.string({
@@ -82,7 +101,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			required: false,
 		}),
 		dir: Flags.string({
-			description: 'Directory where the Actor is located',
+			description: 'Directory where the Actor is located.',
 			required: false,
 		}),
 		'allow-missing-secrets': Flags.boolean({

@@ -20,6 +20,19 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 
 	static override description = 'Prints all datasets on your account.';
 
+	static override examples = [
+		{
+			description: 'List your datasets (most recently modified first).',
+			command: 'apify datasets ls --desc',
+		},
+		{
+			description: 'List only unnamed (auto-generated) datasets.',
+			command: 'apify datasets ls --unnamed',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-datasets-ls';
+
 	static override flags = {
 		offset: Flags.integer({
 			description: 'Number of datasets that will be skipped.',
