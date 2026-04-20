@@ -153,4 +153,105 @@ describe('[e2e][api] builds namespace', () => {
 			expect(() => JSON.parse(result.stdout)).not.toThrow();
 		});
 	});
+
+	describe('builds log', () => {
+		let buildId: string;
+
+		beforeAll(async () => {
+			const create = await runCli('apify', ['builds', 'create', '--json'], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			const data = JSON.parse(create.stdout);
+			buildId = data.id;
+		});
+
+		it('prints the build log', async () => {
+			const result = await runCli('apify', ['builds', 'log', buildId], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+			expect(result.stdout).toContain('Log for build with ID');
+		});
+
+		it('fails with invalid build ID', async () => {
+			const result = await runCli('apify', ['builds', 'log', 'invalid-id'], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			expect(result.exitCode).not.toBe(0);
+		});
+	});
+
+	describe('builds add-tag / remove-tag', () => {
+		let buildId: string;
+		const tag = `e2e-tag-${randomBytes(4).toString('hex')}`;
+
+		beforeAll(async () => {
+			const create = await runCli('apify', ['builds', 'create', '--json'], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			const data = JSON.parse(create.stdout);
+			buildId = data.id;
+		});
+
+		it('adds a tag to a build', async () => {
+			const result = await runCli('apify', ['builds', 'add-tag', '--build', buildId, '--tag', tag], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+			expect(result.stdout).toContain(`Tag "${tag}"`);
+		});
+
+		it('removes the tag from the build', async () => {
+			const result = await runCli('apify', ['builds', 'remove-tag', '--build', buildId, '--tag', tag, '--yes'], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+			expect(result.stdout).toContain(`Tag "${tag}"`);
+		});
+	});
+
+	describe('builds rm', () => {
+		let buildId: string;
+
+		beforeAll(async () => {
+			const create = await runCli('apify', ['builds', 'create', '--json'], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			const data = JSON.parse(create.stdout);
+			buildId = data.id;
+		});
+
+		it('deletes a build', async () => {
+			const result = await runCli('apify', ['builds', 'rm', buildId, '--yes'], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+			expect(result.stdout).toContain('was deleted');
+		});
+
+		it('fails with invalid build ID', async () => {
+			const result = await runCli('apify', ['builds', 'rm', 'invalid-id', '--yes'], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			expect(result.exitCode).not.toBe(0);
+		});
+	});
 });
