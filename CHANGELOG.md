@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - Add execution context to telemetry events ([#1074](https://github.com/apify/apify-cli/pull/1074)) ([9288ff8](https://github.com/apify/apify-cli/commit/9288ff886864acd78b5e06b5ff13096774bd81f6)) by [@patrikbraborec](https://github.com/patrikbraborec)
+- Improve --help output for AI agents and humans ([#1080](https://github.com/apify/apify-cli/pull/1080)) ([e9be7ee](https://github.com/apify/apify-cli/commit/e9be7eee232fe4627ee252dc48dc01f2413fbccf)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1060](https://github.com/apify/apify-cli/issues/1060)
 
 <!-- git-cliff-unreleased-end -->
 
