@@ -50,26 +50,15 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: 24
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Build CLI from source
-              run: yarn build
+              run: pnpm run build
 
             - name: Run E2E tests
               env:
                   APIFY_CLI_DISABLE_TELEMETRY: 1
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
-              run: yarn test:e2e
+              run: pnpm run test:e2e

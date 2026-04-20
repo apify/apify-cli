@@ -61,7 +61,7 @@ jobs:
                   registry-url: https://registry.npmjs.org
 
             - name: Install pnpm and dependencies
-              uses: ./.github/actions/pnpm-install
+              uses: apify/workflows/pnpm-install@main
 
             - name: Update package version in package.json
               run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version
@@ -121,7 +121,7 @@ jobs:
                   registry-url: https://registry.npmjs.org
 
             - name: Install pnpm and dependencies
-              uses: ./.github/actions/pnpm-install
+              uses: apify/workflows/pnpm-install@main
 
             - name: Install bun
               uses: oven-sh/setup-bun@v2

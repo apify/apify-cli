@@ -33,7 +33,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: ./.github/actions/pnpm-install
+              uses: apify/workflows/pnpm-install@main
 
             - name: Run TSC
               run: pnpm run build
@@ -57,7 +57,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: ./.github/actions/pnpm-install
+              uses: apify/workflows/pnpm-install@main
 
             - name: Run lint checks
               run: pnpm run lint
@@ -93,7 +93,7 @@ jobs:
                   node-version: ${{ matrix.node-version }}
 
             - name: Install pnpm and dependencies
-              uses: ./.github/actions/pnpm-install
+              uses: apify/workflows/pnpm-install@main
 
             - name: Setup Python 3.12 (Windows)
               if: ${{ matrix.os == 'windows-2025' }}
@@ -126,7 +126,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: ./.github/actions/pnpm-install
+              uses: apify/workflows/pnpm-install@main
 
             - name: Run API tests
               env:
@@ -161,7 +161,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: ./.github/actions/pnpm-install
+              uses: apify/workflows/pnpm-install@main
 
             - name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v6
@@ -189,7 +189,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: ./.github/actions/pnpm-install
+              uses: apify/workflows/pnpm-install@main
 
             - name: Build & deploy docs
               run: |
@@ -226,7 +226,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: ./.github/actions/pnpm-install
+              uses: apify/workflows/pnpm-install@main
 
             - name: Install bun
               uses: oven-sh/setup-bun@v2

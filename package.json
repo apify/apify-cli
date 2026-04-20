@@ -13,7 +13,6 @@
 		"test:e2e:local": "vitest run --testNamePattern \"^(?=.*\\[e2e\\])(?!.*\\[api\\]).*$\" --exclude ./test/api",
 		"test:api": "vitest run --testNamePattern \"\\[api\\]\" --exclude ./test/e2e",
 		"test:python": "vitest run --testNamePattern \"\\[python\\]\"",
-		"test:cucumber": "cross-env NODE_OPTIONS=\"--import tsx\" cucumber-js",
 		"lint": "eslint",
 		"lint:fix": "eslint --fix",
 		"format": "biome format . && prettier --check \"**/*.{md,yml,yaml}\"",

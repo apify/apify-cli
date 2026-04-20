@@ -9,15 +9,7 @@ import apify from '@apify/eslint-config/ts';
 
 export default [
 	{
-		ignores: [
-			'**/dist',
-			'node_modules',
-			'coverage',
-			'website/{build,.docusaurus}',
-			'**/*.d.ts',
-			'test/tmp/**/*',
-			'.yarn/**/*',
-		],
+		ignores: ['**/dist', 'node_modules', 'coverage', 'website/{build,.docusaurus}', '**/*.d.ts', 'test/tmp/**/*'],
 	},
 	...apify,
 	prettier,
