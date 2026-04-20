@@ -23,12 +23,3 @@ jobs:
                         repo: context.repo.repo,
                         labels: ["t-dx"]
                       })
-
-    add_to_project:
-        name: Add issue to project
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/add-to-project@v1
-              with:
-                  project-url: https://github.com/orgs/apify/projects/72
-                  github-token: ${{ secrets.ADD_TO_PROJECT_PAT }}
