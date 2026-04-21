@@ -12,6 +12,19 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 
 	static override description = 'Removes a tag from a specific Actor build.';
 
+	static override examples = [
+		{
+			description: 'Remove a tag from a build (prompts for confirmation).',
+			command: 'apify builds remove-tag --build <buildId> --tag beta',
+		},
+		{
+			description: 'Remove a tag non-interactively.',
+			command: 'apify builds remove-tag --build <buildId> --tag beta --yes',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-builds-remove-tag';
+
 	static override flags = {
 		build: Flags.string({
 			char: 'b',

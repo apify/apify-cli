@@ -7,10 +7,19 @@ export class SecretsRmCommand extends ApifyCommand<typeof SecretsRmCommand> {
 
 	static override description = 'Permanently deletes a secret from your stored credentials.';
 
+	static override examples = [
+		{
+			description: 'Delete a locally stored secret by name.',
+			command: 'apify secrets rm mySecret',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-secrets-rm';
+
 	static override args = {
 		name: Args.string({
 			required: true,
-			description: 'Name of the secret',
+			description: 'Name of the secret.',
 		}),
 	};
 

@@ -31,6 +31,21 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 	static override description =
 		`Calculates the Actor’s dynamic memory usage based on a memory expression from actor.json, input data, and run options.`;
 
+	static override group = 'Actor Runtime';
+
+	static override examples = [
+		{
+			description: 'Calculate memory using the expression and input defaults from actor.json.',
+			command: 'actor calculate-memory',
+		},
+		{
+			description: 'Override the memory expression and input file.',
+			command: 'actor calculate-memory --defaultMemoryMbytes "input.length * 128" --input ./my-input.json',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#actor-calculate-memory';
+
 	/**
 	 * Additional run options exist (e.g., memoryMbytes, disksMbytes, etc.),
 	 * but we intentionally omit them here. These options are rarely needed and

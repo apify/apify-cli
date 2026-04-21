@@ -13,6 +13,20 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 
 	static override description = 'Permanently removes an Actor build from the Apify platform.';
 
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for confirmation before deleting. Tagged builds additionally require typing the tag name.';
+
+	static override examples = [
+		{
+			description: 'Delete a build (prompts for confirmation).',
+			command: 'apify builds rm <buildId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-builds-rm';
+
 	static override args = {
 		buildId: Args.string({
 			description: 'The build ID to delete.',

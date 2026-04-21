@@ -148,7 +148,42 @@ export async function runCLI(entrypoint: string) {
 
 	cliDebugPrint('TopLevelOptions', startingResult);
 
-	const [commandName, maybeSubcommandName] = startingResult.positionals;
+	const commandName = startingResult.positionals[0];
+
+	// Be defensive: support `<cmd> help`, `<cmd> help <sub>`, and `<cmd> <sub> help` as equivalents to `--help`.
+	// We must not hijack user-provided positional args that happen to be the word "help". A position is only
+	// a "help slot" if it is a subcommand slot for that command — i.e., the command at that level has
+	// subcommands. If the command has its own positional args instead, `help` at that position is a real value
+	// (e.g. `actor set-value help value1` must pass `help` as the key).
+	//
+	// Note: in the standalone `actor` entrypoint all registered commands (see `actorCommands` in
+	// `_register.ts`) are leaf commands with no `subcommands`, so the guard below is always falsy
+	// and this rewrite is effectively a no-op there. It only fires under the `apify` entrypoint.
+	let helpPositionalIndex = -1;
+	const baseCommandForHelpCheck = commandRegistry.get(commandName);
+	if (baseCommandForHelpCheck?.subcommands?.length) {
+		if (startingResult.positionals[1]?.toLowerCase() === 'help') {
+			helpPositionalIndex = 1;
+		} else if (startingResult.positionals[2]?.toLowerCase() === 'help') {
+			const subcommand = commandRegistry.get(`${commandName} ${startingResult.positionals[1]}`);
+			if (subcommand && !subcommand.args) {
+				helpPositionalIndex = 2;
+			}
+		}
+	}
+
+	if (helpPositionalIndex !== -1) {
+		const helpPositional = startingResult.positionals[helpPositionalIndex];
+		const argvIndex = startingArgs.indexOf(helpPositional);
+		if (argvIndex !== -1) startingArgs.splice(argvIndex, 1);
+		if (!startingArgs.includes('--help') && !startingArgs.includes('-h')) {
+			startingArgs.push('--help');
+		}
+		startingResult.positionals.splice(helpPositionalIndex, 1);
+		startingResult.values.help = true;
+	}
+
+	const maybeSubcommandName = startingResult.positionals[1];
 	let hasSubcommand = false;
 
 	const baseCommand = commandRegistry.get(commandName);

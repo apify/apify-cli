@@ -8,6 +8,15 @@ export class RunsLogCommand extends ApifyCommand<typeof RunsLogCommand> {
 
 	static override description = 'Prints the log of a specific run.';
 
+	static override examples = [
+		{
+			description: 'Print the log of a specific run to stdout.',
+			command: 'apify runs log <runId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-runs-log';
+
 	static override args = {
 		runId: Args.string({
 			required: true,

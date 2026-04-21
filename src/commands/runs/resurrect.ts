@@ -19,6 +19,15 @@ export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectComma
 
 	static override description = 'Resurrects an aborted or finished Actor Run.';
 
+	static override examples = [
+		{
+			description: 'Resurrect a finished or aborted run.',
+			command: 'apify runs resurrect <runId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-runs-resurrect';
+
 	static override args = {
 		runId: Args.string({
 			required: true,

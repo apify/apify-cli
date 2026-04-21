@@ -44,6 +44,23 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 	static override description = 'Prints information about an Actor run.';
 
+	static override examples = [
+		{
+			description: 'Show a summary of a run.',
+			command: 'apify runs info <runId>',
+		},
+		{
+			description: 'Show verbose details including usage breakdown.',
+			command: 'apify runs info <runId> --verbose',
+		},
+		{
+			description: 'Emit the full run object as JSON.',
+			command: 'apify runs info <runId> --json',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-runs-info';
+
 	static override args = {
 		runId: Args.string({
 			required: true,

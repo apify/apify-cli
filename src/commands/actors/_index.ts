@@ -12,7 +12,13 @@ import { ActorsStartCommand } from './start.js';
 export class ActorsIndexCommand extends ApifyCommand<typeof ActorsIndexCommand> {
 	static override name = 'actors' as const;
 
-	static override description = 'Manages Actor creation, deployment, and execution on the Apify platform.';
+	static override description =
+		`Search, list, deploy, and call Actors on the Apify platform.\n` +
+		`For runtime operations inside a running Actor (push-data, get-input, set-value...), see 'apify actor' (singular).`;
+
+	static override group = 'Apify Console';
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-actors';
 
 	static override subcommands = [
 		//

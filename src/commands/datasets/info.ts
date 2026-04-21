@@ -20,6 +20,15 @@ export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand
 
 	static override description = 'Prints information about a specific dataset.';
 
+	static override examples = [
+		{
+			description: 'Show dataset metadata (item count, size, timestamps).',
+			command: 'apify datasets info <datasetId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-datasets-info';
+
 	static override args = {
 		storeId: Args.string({
 			description: 'The dataset store ID to print information about.',

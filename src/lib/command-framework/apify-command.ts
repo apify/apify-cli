@@ -183,6 +183,29 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	static description?: string;
 
+	static examples?: { description?: string; command: string }[];
+
+	static docsUrl?: string;
+
+	/**
+	 * Marks the command as interactive, meaning it prompts the user for input by default.
+	 * Help output surfaces this so AI agents and CI users can avoid the command or find
+	 * the non-interactive alternative documented in `interactiveNote`.
+	 */
+	static interactive?: boolean;
+
+	/**
+	 * Additional note shown in help for interactive commands, explaining how to run
+	 * non-interactively (e.g. which flags to pass).
+	 */
+	static interactiveNote?: string;
+
+	/**
+	 * Grouping label shown in the main help menu. Commands are grouped by this value
+	 * and rendered as separate sections. Commands without a group fall into "OTHER".
+	 */
+	static group?: string;
+
 	static aliases?: string[];
 
 	static hidden?: boolean;

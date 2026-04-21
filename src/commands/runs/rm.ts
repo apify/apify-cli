@@ -21,6 +21,20 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 
 	static override description = 'Deletes an Actor Run.';
 
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for confirmation before deleting. Cannot be bypassed; deletion is irreversible.';
+
+	static override examples = [
+		{
+			description: 'Delete a finished or aborted run (prompts for confirmation).',
+			command: 'apify runs rm <runId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-runs-rm';
+
 	static override args = {
 		runId: Args.string({
 			description: 'The run ID to delete.',
