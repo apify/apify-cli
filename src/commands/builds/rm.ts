@@ -2,6 +2,7 @@ import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { YesFlag } from '../../lib/command-framework/flags.js';
 import { useInputConfirmation } from '../../lib/hooks/user-confirmations/useInputConfirmation.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
@@ -33,8 +34,13 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		}),
 	};
 
+	static override flags = {
+		...YesFlag,
+	};
+
 	async run() {
 		const { buildId } = this.args;
+		const { yes } = this.flags;
 
 		const apifyClient = await getLoggedClientOrThrow();
 
@@ -60,11 +66,21 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		}
 
 		// If the build is tagged, console asks you to confirm by typing in the tag. Otherwise, it asks you to confirm with a yes/no question.
-		const confirmed = await (confirmationPrompt ? useInputConfirmation : useYesNoConfirm)({
-			message: `Are you sure you want to delete this Actor Build?${confirmationPrompt ? ` If so, please type in "${confirmationPrompt}":` : ''}`,
-			expectedValue: confirmationPrompt ?? '',
-			failureMessage: 'Your provided value does not match the build tag.',
-		});
+		let confirmed: string | boolean;
+
+		if (confirmationPrompt) {
+			confirmed = await useInputConfirmation({
+				message: `Are you sure you want to delete this Actor Build? If so, please type in "${confirmationPrompt}":`,
+				expectedValue: confirmationPrompt,
+				failureMessage: 'Your provided value does not match the build tag.',
+				providedConfirmFromStdin: yes ? confirmationPrompt : undefined,
+			});
+		} else {
+			confirmed = await useYesNoConfirm({
+				message: `Are you sure you want to delete this Actor Build?`,
+				providedConfirmFromStdin: yes || undefined,
+			});
+		}
 
 		if (!confirmed) {
 			info({

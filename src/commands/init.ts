@@ -3,7 +3,7 @@ import process from 'node:process';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
-import { Flags } from '../lib/command-framework/flags.js';
+import { Flags, YesFlag } from '../lib/command-framework/flags.js';
 import { CommandExitCodes, DEFAULT_LOCAL_STORAGE_DIR, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
@@ -55,12 +55,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 	};
 
 	static override flags = {
-		yes: Flags.boolean({
-			char: 'y',
-			description:
-				'Automatic yes to prompts; assume "yes" as answer to all prompts. Note that in some cases, the command may still ask for confirmation.',
-			required: false,
-		}),
+		...YesFlag,
 		dockerfile: Flags.string({
 			description: 'Path to a Dockerfile to use for the Actor (e.g., "./Dockerfile" or "./docker/Dockerfile").',
 			required: false,
