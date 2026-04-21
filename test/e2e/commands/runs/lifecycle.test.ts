@@ -18,7 +18,9 @@ async function waitForRunToFinish(client: ApifyClient, runId: string, timeoutMs 
 		if (run && ['SUCCEEDED', 'FAILED', 'ABORTED', 'TIMED-OUT'].includes(run.status)) {
 			return run;
 		}
-		await new Promise((r) => setTimeout(r, 2000));
+		await new Promise((r) => {
+			setTimeout(r, 2000);
+		});
 	}
 	throw new Error(`Run ${runId} did not finish in ${timeoutMs}ms`);
 }
