@@ -322,7 +322,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				process.env[USER_AGENT_ENV_VAR],
 			);
 			if (resolvedUserAgent) {
-				this.telemetryData.callerAgent = resolvedUserAgent;
+				this.telemetryData.userAgent = resolvedUserAgent;
 			}
 		}
 
