@@ -111,15 +111,38 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 
 	static override description =
 		'Makes an authenticated HTTP request to the Apify API and prints the response.\n' +
-		'The endpoint can be a relative path (e.g. "acts", "v2/acts", or "/v2/acts").\n' +
-		'The "v2/" prefix is added automatically if omitted.\n\n' +
-		'You can also pass the HTTP method before the endpoint:\n' +
-		'  apify api GET /v2/actor-runs\n' +
-		'  apify api POST /v2/acts -d \'{"name": "my-actor"}\'\n\n' +
-		'Use --params/-p to pass query parameters as JSON:\n' +
-		'  apify api actor-runs -p \'{"limit": 1, "desc": true}\'\n\n' +
-		'Use --list-endpoints to see all available API endpoints.\n' +
-		'For full documentation, see https://docs.apify.com/api/v2';
+		'The endpoint can be a relative path (e.g. "acts", "v2/acts", or "/v2/acts"); ' +
+		'the "v2/" prefix is added automatically if omitted.\n\n' +
+		'Use --list-endpoints to see all available API endpoints.';
+
+	static override examples = [
+		{
+			description: 'Make a GET request to an API endpoint (defaults to GET).',
+			command: 'apify api users/me',
+		},
+		{
+			description: 'Pass the HTTP method as a positional argument before the endpoint.',
+			command: 'apify api GET /v2/actor-runs',
+		},
+		{
+			description: 'Create a resource by POSTing a JSON body.',
+			command: `apify api POST acts -d '{"name":"my-actor"}'`,
+		},
+		{
+			description: 'Pass query parameters as a JSON object.',
+			command: `apify api actor-runs -p '{"limit":1,"desc":true}'`,
+		},
+		{
+			description: 'Send one or more custom headers as a JSON object.',
+			command: `apify api acts -H '{"X-Foo":"bar","X-Baz":"qux"}'`,
+		},
+		{
+			description: 'List all available Apify API endpoints.',
+			command: 'apify api --list-endpoints',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/api/v2';
 
 	static override args = {
 		methodOrEndpoint: Args.string({
