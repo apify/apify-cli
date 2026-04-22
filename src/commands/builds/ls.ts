@@ -24,6 +24,19 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 
 	static override description = 'Lists all builds of the Actor.';
 
+	static override examples = [
+		{
+			description: 'List builds of the Actor in the current directory.',
+			command: 'apify builds ls',
+		},
+		{
+			description: 'List builds of a specific Actor.',
+			command: 'apify builds ls apify/hello-world',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-builds-ls';
+
 	static override flags = {
 		offset: Flags.integer({
 			description: 'Number of builds that will be skipped.',

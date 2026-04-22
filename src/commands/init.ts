@@ -3,7 +3,7 @@ import process from 'node:process';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
-import { Flags } from '../lib/command-framework/flags.js';
+import { Flags, YesFlag } from '../lib/command-framework/flags.js';
 import { CommandExitCodes, DEFAULT_LOCAL_STORAGE_DIR, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
@@ -23,6 +23,30 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 		`Creates the '${LOCAL_CONFIG_PATH}' file and the '${DEFAULT_LOCAL_STORAGE_DIR}' directory in the current directory, but does not touch any other existing files or directories.\n\n` +
 		`WARNING: Overwrites existing '${DEFAULT_LOCAL_STORAGE_DIR}' directory.`;
 
+	static override group = 'Local Actor Development';
+
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for an Actor name if not provided. To run non-interactively, pass the Actor name as a positional argument, or pass --yes to accept the default (current directory name).';
+
+	static override examples = [
+		{
+			description: 'Initialize an Actor in the current directory, prompting for a name.',
+			command: 'apify init',
+		},
+		{
+			description: 'Initialize non-interactively with an explicit Actor name.',
+			command: 'apify init my-actor',
+		},
+		{
+			description: 'Initialize non-interactively, accepting the default Actor name.',
+			command: 'apify init --yes',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-init';
+
 	static override args = {
 		actorName: Args.string({
 			required: false,
@@ -31,12 +55,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 	};
 
 	static override flags = {
-		yes: Flags.boolean({
-			char: 'y',
-			description:
-				'Automatic yes to prompts; assume "yes" as answer to all prompts. Note that in some cases, the command may still ask for confirmation.',
-			required: false,
-		}),
+		...YesFlag,
 		dockerfile: Flags.string({
 			description: 'Path to a Dockerfile to use for the Actor (e.g., "./Dockerfile" or "./docker/Dockerfile").',
 			required: false,

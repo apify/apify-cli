@@ -36,6 +36,27 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 	static override description =
 		'Searches Actors in the Apify Store.\n\nSearches the Apify Store for Actors matching the given query. Results can be filtered by category, author, pricing model, and more. This command does not require authentication.';
 
+	static override examples = [
+		{
+			description: 'Search the Apify Store for "web scraper" Actors.',
+			command: 'apify actors search "web scraper"',
+		},
+		{
+			description: 'Search for TikTok Actors sorted by popularity, limit to 5 results.',
+			command: 'apify actors search "tiktok" --limit 5 --sort-by popularity',
+		},
+		{
+			description: 'Find free AI Actors.',
+			command: 'apify actors search "ai" --category AI --pricing-model FREE',
+		},
+		{
+			description: 'Output results as JSON for scripting.',
+			command: 'apify actors search "web scraper" --json',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-actors-search';
+
 	static override args = {
 		query: Args.string({
 			description: 'Search query to find Actors by title, name, description, username, or readme.',
