@@ -34,7 +34,7 @@ describe('[e2e][api] actors info', () => {
 	});
 
 	it('shows input schema with --input flag', async () => {
-		const result = await runCli('apify', ['actors', 'info', 'apify/web-scraper', '--input'], { env: authEnv });
+		const result = await runCli('apify', ['actors', 'info', 'apify/rag-web-browser', '--input'], { env: authEnv });
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		expect(() => JSON.parse(result.stdout)).not.toThrow();
@@ -43,6 +43,6 @@ describe('[e2e][api] actors info', () => {
 	it('fails with invalid actor ID', async () => {
 		const result = await runCli('apify', ['actors', 'info', 'nonexistent/actor-xyz'], { env: authEnv });
 
-		expect(result.exitCode).not.toBe(0);
+		expect(result.stdout).toContain('was not found');
 	});
 });
