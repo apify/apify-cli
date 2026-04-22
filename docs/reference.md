@@ -78,7 +78,9 @@ FLAGS
                          "-" to read from stdin.
       -H, --header=<value>   Additional HTTP header(s). Pass a
                          single "key:value" string, or a JSON object like '{"X-Foo":
-                         "bar", "X-Baz": "qux"}' to send multiple headers.
+                         "bar", "X-Baz": "qux"}' to send multiple headers. The flag
+                         can only be used once; use the JSON form for multiple
+                         headers.
   -l, --list-endpoints   List all available Apify API
                          endpoints.
       -X, --method=<option>  The HTTP method to use. Defaults to

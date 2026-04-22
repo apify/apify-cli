@@ -8,9 +8,20 @@ import { Flags } from '../lib/command-framework/flags.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, CommandExitCodes } from '../lib/consts.js';
 import { error, simpleLog } from '../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../lib/utils.js';
-import apiEndpoints from './api-endpoints.json' with { type: 'json' };
 
 const HTTP_METHODS: string[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
+const METHODS_WITHOUT_BODY = new Set(['GET', 'HEAD']);
+const OPENAPI_SPEC_URL = 'https://docs.apify.com/api/openapi.json';
+
+interface OpenAPISpec {
+	paths: Record<string, Record<string, { summary?: string }>>;
+}
+
+interface Endpoint {
+	method: string;
+	path: string;
+	summary: string;
+}
 
 function parseParams(raw: string | undefined): string {
 	if (!raw) {
@@ -139,7 +150,8 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			char: 'H',
 			description:
 				'Additional HTTP header(s). Pass a single "key:value" string, or a JSON object ' +
-				'like \'{"X-Foo": "bar", "X-Baz": "qux"}\' to send multiple headers.',
+				'like \'{"X-Foo": "bar", "X-Baz": "qux"}\' to send multiple headers. ' +
+				'The flag can only be used once; use the JSON form for multiple headers.',
 			required: false,
 		}),
 		params: Flags.string({
@@ -156,7 +168,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 
 	async run() {
 		if (this.flags.listEndpoints) {
-			this.printEndpoints();
+			await this.printEndpoints();
 			return;
 		}
 
@@ -197,6 +209,12 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 
 		// Validate body is valid JSON before sending
 		if (this.flags.body) {
+			if (METHODS_WITHOUT_BODY.has(method)) {
+				throw new Error(
+					`HTTP ${method} requests cannot have a request body. Use a different method (e.g. POST, PUT, PATCH) or omit --body.`,
+				);
+			}
+
 			try {
 				JSON.parse(this.flags.body);
 			} catch {
@@ -215,7 +233,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			endpoint = endpoint.slice(1);
 		}
 
-		endpoint = endpoint.replace(/^v2\/?/, '');
+		endpoint = endpoint.replace(/^v2\//i, '');
 
 		let url = `${apifyClient.baseUrl}/${endpoint}`;
 
@@ -224,7 +242,8 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			url = `${url}${separator}${queryString}`;
 		}
 
-		// Build headers
+		// Build headers. Custom headers overwrite defaults case-insensitively so
+		// callers can override e.g. Content-Type without creating duplicate entries.
 		const headers: Record<string, string> = {
 			...APIFY_CLIENT_DEFAULT_HEADERS,
 			Authorization: `Bearer ${token}`,
@@ -234,7 +253,14 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			headers['Content-Type'] = 'application/json';
 		}
 
-		Object.assign(headers, customHeaders);
+		for (const [key, value] of Object.entries(customHeaders)) {
+			for (const existingKey of Object.keys(headers)) {
+				if (existingKey.toLowerCase() === key.toLowerCase()) {
+					delete headers[existingKey];
+				}
+			}
+			headers[key] = value;
+		}
 
 		// Make the request
 		const response = await fetch(url, {
@@ -248,12 +274,17 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		if (!response.ok) {
 			process.exitCode = CommandExitCodes.RunFailed;
 
-			try {
-				const parsed = JSON.parse(responseText);
-				error({ message: `${response.status} ${response.statusText}` });
-				simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: false });
-			} catch {
-				error({ message: `${response.status} ${response.statusText}: ${responseText}` });
+			// Print status to stderr but JSON response bodies to stdout so that
+			// pipelines like `apify api ... | jq` still receive the payload on failure.
+			error({ message: `${response.status} ${response.statusText}` });
+
+			if (responseText) {
+				try {
+					const parsed = JSON.parse(responseText);
+					simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
+				} catch {
+					simpleLog({ message: responseText, stdout: true });
+				}
 			}
 
 			if (response.status === 404) {
@@ -276,7 +307,9 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		}
 	}
 
-	private printEndpoints() {
+	private async printEndpoints() {
+		const endpoints = await fetchEndpoints();
+
 		const methodColors: Record<string, (text: string) => string> = {
 			GET: chalk.green,
 			POST: chalk.yellow,
@@ -285,7 +318,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			DELETE: chalk.red,
 		};
 
-		for (const { method, path, summary } of apiEndpoints) {
+		for (const { method, path, summary } of endpoints) {
 			const colorize = methodColors[method] || chalk.white;
 			const methodStr = colorize(method.padEnd(7));
 			const summaryStr = summary ? chalk.gray(` ${summary}`) : '';
@@ -293,4 +326,41 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			console.log(`${methodStr} ${path}${summaryStr}`);
 		}
 	}
+}
+
+async function fetchEndpoints(): Promise<Endpoint[]> {
+	let response: Response;
+
+	try {
+		response = await fetch(OPENAPI_SPEC_URL);
+	} catch (err) {
+		throw new Error(
+			`Failed to download the Apify OpenAPI spec from ${OPENAPI_SPEC_URL}: ${(err as Error).message}`,
+		);
+	}
+
+	if (!response.ok) {
+		throw new Error(
+			`Failed to download the Apify OpenAPI spec from ${OPENAPI_SPEC_URL}: ${response.status} ${response.statusText}`,
+		);
+	}
+
+	const spec = (await response.json()) as OpenAPISpec;
+	const endpoints: Endpoint[] = [];
+
+	for (const [path, methods] of Object.entries(spec.paths)) {
+		for (const [method, details] of Object.entries(methods)) {
+			if (HTTP_METHODS.includes(method.toUpperCase())) {
+				endpoints.push({
+					method: method.toUpperCase(),
+					path,
+					summary: details.summary || '',
+				});
+			}
+		}
+	}
+
+	endpoints.sort((a, b) => a.path.localeCompare(b.path) || a.method.localeCompare(b.method));
+
+	return endpoints;
 }

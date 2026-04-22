@@ -57,6 +57,25 @@ describe('apify api (local)', () => {
 
 			expect(lastErrorMessage()).toMatch(/invalid json in --body/i);
 		});
+
+		it('should error when --body is used with GET (default method)', async () => {
+			await testRunCommand(ApiCommand, {
+				args_methodOrEndpoint: 'v2/users/me',
+				flags_body: '{}',
+			});
+
+			expect(lastErrorMessage()).toMatch(/http get requests cannot have a request body/i);
+		});
+
+		it('should error when --body is used with a positional GET method', async () => {
+			await testRunCommand(ApiCommand, {
+				args_methodOrEndpoint: 'GET',
+				args_endpoint: 'v2/users/me',
+				flags_body: '{}',
+			});
+
+			expect(lastErrorMessage()).toMatch(/http get requests cannot have a request body/i);
+		});
 	});
 
 	describe('--header validation', () => {
@@ -124,15 +143,55 @@ describe('apify api (local)', () => {
 	});
 
 	describe('--list-endpoints', () => {
-		it('should list endpoints without requiring auth', async () => {
-			await testRunCommand(ApiCommand, {
-				flags_listEndpoints: true,
-			});
+		it('should fetch and list endpoints without requiring auth', async () => {
+			const fetchSpy = vitest.spyOn(globalThis, 'fetch').mockResolvedValue(
+				new Response(
+					JSON.stringify({
+						paths: {
+							'/v2/acts': {
+								get: { summary: 'Get list of Actors' },
+								post: { summary: 'Create Actor' },
+							},
+							'/v2/users/me': {
+								get: { summary: 'Get private user data' },
+							},
+						},
+					}),
+					{ status: 200, headers: { 'Content-Type': 'application/json' } },
+				),
+			);
 
-			expect(logMessages.log.length).toBeGreaterThan(0);
-			const combined = logMessages.log.join('\n');
-			expect(combined).toMatch(/\/v2\//);
-			expect(combined).toMatch(/\b(GET|POST|PUT|PATCH|DELETE)\b/);
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_listEndpoints: true,
+				});
+
+				expect(fetchSpy).toHaveBeenCalledWith('https://docs.apify.com/api/openapi.json');
+				expect(logMessages.log.length).toBeGreaterThan(0);
+				const combined = logMessages.log.join('\n');
+				expect(combined).toMatch(/\/v2\/acts/);
+				expect(combined).toMatch(/\/v2\/users\/me/);
+				expect(combined).toMatch(/\b(GET|POST)\b/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+
+		it('should error when the OpenAPI spec download fails', async () => {
+			const fetchSpy = vitest
+				.spyOn(globalThis, 'fetch')
+				.mockResolvedValue(new Response('nope', { status: 503, statusText: 'Service Unavailable' }));
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_listEndpoints: true,
+				});
+
+				expect(lastErrorMessage()).toMatch(/failed to download the apify openapi spec/i);
+				expect(lastErrorMessage()).toMatch(/503/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
 		});
 	});
 });

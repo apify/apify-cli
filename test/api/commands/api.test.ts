@@ -8,6 +8,10 @@ useAuthSetup();
 const { lastErrorMessage, logMessages, errorSpy } = useConsoleSpy();
 
 describe('[api] apify api', () => {
+	beforeEach(() => {
+		process.exitCode = 0;
+	});
+
 	it('should fail when not logged in', async () => {
 		await testRunCommand(ApiCommand, {
 			args_methodOrEndpoint: 'v2/users/me',
@@ -143,10 +147,11 @@ describe('[api] apify api', () => {
 
 			const parsed = JSON.parse(logMessages.log[0]);
 
+			// Capture the id before making assertions so cleanup still runs if one fails.
+			actorId = parsed?.data?.id;
+
 			expect(parsed.data).toBeDefined();
 			expect(parsed.data.name).toBe(actorName);
-
-			actorId = parsed.data.id;
 		} finally {
 			// Cleanup — delete the created actor even if assertions fail
 			if (actorId) {
