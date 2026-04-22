@@ -113,25 +113,6 @@ apify telemetry disable
 
 or set the `APIFY_CLI_DISABLE_TELEMETRY=1` environment variable.
 
-### Caller identification (`--user-agent`)
-
-If you embed the CLI in a tool, skill, or plugin, you can tag telemetry with a caller identifier so we can distinguish direct CLI usage from integrations. This is opt-in and purely informational — it does not change CLI behavior.
-
-Pass it as a flag on any command:
-
-```bash
-apify actor call my-actor --user-agent apify-agent-skills/ultimate-scraper-1.3.0
-```
-
-Or set it via environment variable, useful when wrapping the CLI:
-
-```bash
-export APIFY_CLI_USER_AGENT=apify-agent-skills/ultimate-scraper-1.3.0
-apify actor call my-actor
-```
-
-The flag value takes precedence over the environment variable. When neither is set, no caller identifier is recorded.
-
 ## Contributing
 
 Contributions are welcome. See [CONTRIBUTING.md](./CONTRIBUTING.md) for local setup, code style, test categories, and PR guidelines.
