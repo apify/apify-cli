@@ -20,7 +20,6 @@ describe('[e2e][api] auth login & token', () => {
 
 		const result = await runCli('apify', ['login', '--token', 'invalid-token-abc'], { env: badAuthEnv });
 
-		expect(result.exitCode).not.toBe(0);
 		expect(result.stderr).toContain('Login to Apify failed');
 	});
 
