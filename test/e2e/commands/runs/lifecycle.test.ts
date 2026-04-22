@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { access, mkdir, rm } from 'node:fs/promises';
+import { access, rm } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -10,20 +10,6 @@ import { runCli } from '../../__helpers__/run-cli.js';
 import { createTestActor, removeTestActor, type TestActor } from '../../__helpers__/test-actor.js';
 
 const TestTmpRoot = fileURLToPath(new URL('../../../../tmp/', import.meta.url));
-
-async function waitForRunToFinish(client: ApifyClient, runId: string, timeoutMs = 60_000) {
-	const start = Date.now();
-	while (Date.now() - start < timeoutMs) {
-		const run = await client.run(runId).get();
-		if (run && ['SUCCEEDED', 'FAILED', 'ABORTED', 'TIMED-OUT'].includes(run.status)) {
-			return run;
-		}
-		await new Promise((r) => {
-			setTimeout(r, 2000);
-		});
-	}
-	throw new Error(`Run ${runId} did not finish in ${timeoutMs}ms`);
-}
 
 describe('[e2e][api] runs lifecycle', () => {
 	let actor: TestActor;
@@ -98,7 +84,7 @@ describe('[e2e][api] runs lifecycle', () => {
 	});
 
 	it('runs info — shows run details', async () => {
-		await waitForRunToFinish(client, runId);
+		await client.run(runId).waitForFinish();
 
 		const result = await runCli('apify', ['runs', 'info', runId, '--json'], {
 			env: authEnv,
@@ -106,7 +92,7 @@ describe('[e2e][api] runs lifecycle', () => {
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		const data = JSON.parse(result.stdout);
-		expect(data.run).toHaveProperty('status');
+		expect(data).toHaveProperty('status');
 	});
 
 	it('runs log — prints the run log', async () => {
@@ -140,14 +126,14 @@ describe('[e2e][api] runs lifecycle', () => {
 
 	it('runs rm — deletes a run', async () => {
 		// Wait for abort to settle before deleting
-		await waitForRunToFinish(client, runId);
+		await client.run(runId).waitForFinish();
 
 		const result = await runCli('apify', ['runs', 'rm', runId, '--yes'], {
 			env: authEnv,
 		});
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
-		expect(result.stdout).toContain('was deleted');
+		expect(result.stderr).toContain('was deleted');
 	});
 
 	it('actors call — calls an actor and waits for completion', async () => {
@@ -161,11 +147,12 @@ describe('[e2e][api] runs lifecycle', () => {
 	}, 120_000);
 
 	it('pull — downloads actor source', async () => {
-		const pullDir = path.join(TestTmpRoot, `e2e-pull-${randomBytes(6).toString('hex')}`);
-		await mkdir(pullDir, { recursive: true });
+		const dirName = `e2e-pull-${randomBytes(6).toString('hex')}`;
+		const pullDir = path.join(TestTmpRoot, dirName);
 
 		try {
-			const result = await runCli('apify', ['pull', actorFullName, '--dir', pullDir], {
+			const result = await runCli('apify', ['pull', actorFullName, '--dir', dirName], {
+				cwd: TestTmpRoot,
 				env: authEnv,
 			});
 
@@ -182,7 +169,7 @@ describe('[e2e][api] runs lifecycle', () => {
 		});
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
-		expect(result.stdout).toContain('was deleted');
+		expect(result.stderr).toContain('was deleted');
 
 		// Clear so afterAll doesn't double-delete
 		actorFullName = '';
