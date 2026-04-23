@@ -4,6 +4,7 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { YesFlag } from '../../lib/command-framework/flags.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
@@ -20,6 +21,20 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 
 	static override description = 'Deletes an Actor Run.';
 
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Prompts for confirmation before deleting. Cannot be bypassed; deletion is irreversible.';
+
+	static override examples = [
+		{
+			description: 'Delete a finished or aborted run (prompts for confirmation).',
+			command: 'apify runs rm <runId>',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-runs-rm';
+
 	static override args = {
 		runId: Args.string({
 			description: 'The run ID to delete.',
@@ -27,8 +42,13 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		}),
 	};
 
+	static override flags = {
+		...YesFlag,
+	};
+
 	async run() {
 		const { runId } = this.args;
+		const { yes } = this.flags;
 
 		const apifyClient = await getLoggedClientOrThrow();
 
@@ -49,6 +69,7 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 
 		const confirmedDelete = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Actor Run?`,
+			providedConfirmFromStdin: yes || undefined,
 		});
 
 		if (!confirmedDelete) {

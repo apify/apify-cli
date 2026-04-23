@@ -11,9 +11,22 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 
 	static override description = 'Creates a new key-value store on your account.';
 
+	static override examples = [
+		{
+			description: 'Create an unnamed key-value store.',
+			command: 'apify key-value-stores create',
+		},
+		{
+			description: 'Create a named key-value store.',
+			command: 'apify key-value-stores create my-store',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores-create';
+
 	static override args = {
 		'key-value store name': Args.string({
-			description: 'Optional name for the key-value store',
+			description: 'Optional name for the key-value store.',
 			required: false,
 		}),
 	};

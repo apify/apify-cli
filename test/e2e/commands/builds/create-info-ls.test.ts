@@ -45,7 +45,7 @@ describe('[e2e][api] builds namespace', () => {
 				const me = await client.user('me').get();
 				await client.actor(`${me.username}/${actor.name}`).delete();
 			} catch {
-				// Best-effort cleanup
+				// Do nothing
 			}
 		}
 
