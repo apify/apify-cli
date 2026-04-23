@@ -155,7 +155,7 @@ export const USER_AGENT_ENV_VAR = 'APIFY_CLI_USER_AGENT';
 export const USER_AGENT_MAX_LENGTH = 256;
 // Scope the caller-id flag to the public `apify` entrypoint. The `actor` entrypoint
 // runs inside Actor Docker images where caller-identification is not meaningful.
-const USER_AGENT_SUPPORTED_ENTRYPOINTS = new Set(['apify', 'test-cli']);
+const USER_AGENT_SUPPORTED_ENTRYPOINTS = new Set(['apify']);
 
 function sanitizeUserAgentValue(value: string | undefined): string | undefined {
 	if (typeof value !== 'string') {
