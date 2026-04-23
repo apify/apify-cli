@@ -14,6 +14,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
+import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, info, link, run, success, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
@@ -343,6 +344,17 @@ Skipping push. Use --force to override.`,
 		});
 
 		try {
+			// While the log is streaming, forward interrupt signals to a
+			// platform-side abort so the build doesn't keep running after the
+			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
+			// SIGHUP from a closing terminal). The `using` binding guarantees
+			// the listener is removed before we poll for final status.
+			using _signalHandler = useAbortJobOnSignal({
+				apifyClient,
+				kind: 'build',
+				jobId: build.id,
+			});
+
 			await outputJobLog({ job: build, timeoutMillis: waitForFinishMillis, apifyClient });
 		} catch (err) {
 			warning({ message: 'Can not get log:' });

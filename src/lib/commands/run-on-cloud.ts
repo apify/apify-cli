@@ -7,8 +7,8 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { Flags } from '../command-framework/flags.js';
 import { CommandExitCodes } from '../consts.js';
-import { useSignalHandler } from '../hooks/useSignalHandler.js';
-import { error, info, run as runLog, success, warning } from '../outputs.js';
+import { useAbortJobOnSignal } from '../hooks/useAbortJobOnSignal.js';
+import { error, run as runLog, success, warning } from '../outputs.js';
 import { outputJobLog } from '../utils.js';
 import { resolveInput } from './resolve-input.js';
 
@@ -97,55 +97,12 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 	// from a parent process, SIGHUP from a closing terminal). The `using`
 	// binding removes the listener when this generator finishes or is
 	// terminated by the consumer (e.g. `break` out of `for await`).
-	//
-	// `once: false` keeps the listener registered across repeated signals so
-	// the default Node behavior (terminate the process) is suppressed while
-	// the abort is in flight. We escalate across attempts:
-	//   1st signal → graceful abort, with a hint the user can press again
-	//   2nd signal → immediate abort
-	//   3rd+       → silent no-op, so frantic Ctrl+C doesn't kill the CLI
-	//                before the abort request finishes.
-	let abortAttempt = 0;
-
-	using _signalHandler = useSignalHandler({
-		signals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
-		once: false,
-		handler: async (signal) => {
-			abortAttempt += 1;
-
-			if (abortAttempt > 2) {
-				return;
-			}
-
-			const gracefully = abortAttempt === 1;
-
-			if (!silent) {
-				if (gracefully) {
-					info({
-						message: chalk.gray(
-							`Received ${chalk.yellow(signal)}, gracefully aborting ${type.toLowerCase()} run "${chalk.yellow(run.id)}" on the Apify platform... ${chalk.dim('(press Ctrl+C again to abort immediately)')}`,
-						),
-						stdout: true,
-					});
-				} else {
-					info({
-						message: chalk.gray(
-							`Received ${chalk.yellow(signal)} again, aborting ${type.toLowerCase()} run "${chalk.yellow(run.id)}" immediately...`,
-						),
-						stdout: true,
-					});
-				}
-			}
-
-			try {
-				await apifyClient.run(run.id).abort({ gracefully });
-			} catch (abortErr) {
-				error({
-					message: `Failed to abort run "${run.id}": ${(abortErr as Error).message}`,
-					stdout: true,
-				});
-			}
-		},
+	using _signalHandler = useAbortJobOnSignal({
+		apifyClient,
+		kind: 'run',
+		jobId: run.id,
+		runType: type,
+		silent,
 	});
 
 	// Return the started run right away

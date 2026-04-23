@@ -4,8 +4,8 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
-import { useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
-import { error, info, simpleLog } from '../../lib/outputs.js';
+import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
+import { error, simpleLog } from '../../lib/outputs.js';
 import {
 	getLoggedClientOrThrow,
 	objectGroupBy,
@@ -151,40 +151,10 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
 			// SIGHUP from a closing terminal). The `using` binding guarantees
 			// the listener is removed when the block exits.
-			//
-			// `once: false` keeps the listener registered across repeated
-			// signals so a second Ctrl+C doesn't kill the CLI before the
-			// abort request finishes. The build abort API has no "gracefully"
-			// knob, so the first signal does the work and later signals are
-			// silent no-ops.
-			let abortAttempt = 0;
-
-			using _signalHandler = useSignalHandler({
-				signals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
-				once: false,
-				handler: async (signal) => {
-					abortAttempt += 1;
-
-					if (abortAttempt > 1) {
-						return;
-					}
-
-					info({
-						message: chalk.gray(
-							`Received ${chalk.yellow(signal)}, aborting build "${chalk.yellow(build.id)}" on the Apify platform...`,
-						),
-						stdout: true,
-					});
-
-					try {
-						await client.build(build.id).abort();
-					} catch (abortErr) {
-						error({
-							message: `Failed to abort build "${build.id}": ${(abortErr as Error).message}`,
-							stdout: true,
-						});
-					}
-				},
+			using _signalHandler = useAbortJobOnSignal({
+				apifyClient: client,
+				kind: 'build',
+				jobId: build.id,
 			});
 
 			try {
