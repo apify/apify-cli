@@ -36,7 +36,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 	};
 
 	static override flags = {
-		...YesFlag,
+		...YesFlag(),
 	};
 
 	async run() {
