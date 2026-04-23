@@ -55,7 +55,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 	};
 
 	static override flags = {
-		...YesFlag,
+		...YesFlag(),
 		dockerfile: Flags.string({
 			description: 'Path to a Dockerfile to use for the Actor (e.g., "./Dockerfile" or "./docker/Dockerfile").',
 			required: false,

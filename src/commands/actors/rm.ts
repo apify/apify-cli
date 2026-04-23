@@ -34,7 +34,7 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 	};
 
 	static override flags = {
-		...YesFlag,
+		...YesFlag(),
 	};
 
 	async run() {
