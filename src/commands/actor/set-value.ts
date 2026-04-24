@@ -7,12 +7,26 @@ export class ActorSetValueCommand extends ApifyCommand<typeof ActorSetValueComma
 	static override name = 'set-value' as const;
 
 	static override description =
-		'Sets or removes record into the default key-value store associated with the Actor run.\n\n' +
-		'It is possible to pass data using argument or stdin.\n\n' +
-		'Passing data using argument:\n' +
-		'$ apify actor set-value KEY my-value\n\n' +
-		'Passing data using stdin with pipe:\n' +
-		'$ cat ./my-text-file.txt | apify actor set-value KEY --contentType text/plain';
+		'Sets or removes a record in the default key-value store associated with the Actor run.';
+
+	static override group = 'Actor Runtime';
+
+	static override examples = [
+		{
+			description: 'Store a JSON value under the key "OUTPUT".',
+			command: `actor set-value OUTPUT '{"status":"done"}'`,
+		},
+		{
+			description: 'Store a file as a text record.',
+			command: 'cat ./report.txt | actor set-value REPORT --contentType text/plain',
+		},
+		{
+			description: 'Delete the record stored under the given key.',
+			command: 'actor set-value OUTPUT',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#actor-set-value';
 
 	static override args = {
 		key: Args.string({

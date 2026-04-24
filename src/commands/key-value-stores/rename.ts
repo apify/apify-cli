@@ -13,19 +13,32 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 
 	static override description = 'Renames a key-value store, or removes its unique name.';
 
+	static override examples = [
+		{
+			description: 'Rename a key-value store.',
+			command: 'apify key-value-stores rename old-name new-name',
+		},
+		{
+			description: 'Remove the name from a key-value store.',
+			command: 'apify key-value-stores rename my-store --unname',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores-rename';
+
 	static override flags = {
 		unname: Flags.boolean({
-			description: 'Removes the unique name of the key-value store',
+			description: 'Removes the unique name of the key-value store.',
 		}),
 	};
 
 	static override args = {
 		keyValueStoreNameOrId: Args.string({
-			description: 'The key-value store ID or name to delete',
+			description: 'The key-value store ID or name to delete.',
 			required: true,
 		}),
 		newName: Args.string({
-			description: 'The new name for the key-value store',
+			description: 'The new name for the key-value store.',
 		}),
 	};
 

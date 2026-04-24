@@ -42,6 +42,7 @@ export interface TrackEventMap {
 		exitCode?: number;
 		durationMs?: number;
 		aiAgent?: string;
+		userAgent?: string;
 		isCi?: boolean;
 		ciProvider?: string;
 		isInteractive?: boolean;

@@ -18,6 +18,19 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 	static override description = 'Creates a new build of the Actor.';
 
+	static override examples = [
+		{
+			description: 'Build the Actor in the current directory with the default "latest" tag.',
+			command: 'apify builds create',
+		},
+		{
+			description: 'Build a specific Actor with a custom tag and stream the build log.',
+			command: 'apify builds create apify/hello-world --tag beta --log',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-builds-create';
+
 	static override flags = {
 		tag: Flags.string({
 			description: 'Build tag to be applied to the successful Actor build. By default, this is "latest".',

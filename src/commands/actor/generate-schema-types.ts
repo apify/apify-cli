@@ -56,6 +56,25 @@ Reads the input schema from one of these locations (in priority order):
 
 Optionally specify custom schema path to use.`;
 
+	static override group = 'Actor Runtime';
+
+	static override examples = [
+		{
+			description: 'Generate TypeScript types from the input schema into the default output directory.',
+			command: 'actor generate-schema-types',
+		},
+		{
+			description: 'Generate types from a custom schema path.',
+			command: 'actor generate-schema-types ./schemas/my-input.json',
+		},
+		{
+			description: 'Mark all generated properties as optional.',
+			command: 'actor generate-schema-types --all-optional',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#actor-generate-schema-types';
+
 	static override flags = {
 		output: Flags.string({
 			char: 'o',

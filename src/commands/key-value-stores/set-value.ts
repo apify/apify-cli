@@ -12,6 +12,19 @@ export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueS
 
 	static override description = 'Stores value with specified key. Set content-type with --content-type flag.';
 
+	static override examples = [
+		{
+			description: 'Store a JSON value under a key.',
+			command: `apify key-value-stores set-value <storeId> OUTPUT '{"status":"done"}'`,
+		},
+		{
+			description: 'Store a plain-text file read from stdin.',
+			command: 'cat ./report.txt | apify key-value-stores set-value <storeId> REPORT --content-type text/plain',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores-set-value';
+
 	static override flags = {
 		'content-type': Flags.string({
 			description: 'The MIME content type of the value. By default, "application/json" is assumed.',

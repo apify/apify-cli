@@ -28,6 +28,26 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 	static override description =
 		'Lets you edit your input schema that would be used on the platform in a visual input schema editor.';
 
+	static override group = 'Local Actor Development';
+
+	static override interactive = true;
+
+	static override interactiveNote =
+		'Opens a browser-based schema editor. Requires a local display; cannot be run headlessly.';
+
+	static override examples = [
+		{
+			description: 'Edit the input schema of the Actor in the current directory.',
+			command: 'apify edit-input-schema',
+		},
+		{
+			description: 'Edit a specific INPUT_SCHEMA.json file.',
+			command: 'apify edit-input-schema ./.actor/INPUT_SCHEMA.json',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-edit-input-schema';
+
 	static override args = {
 		path: Args.string({
 			required: false,
