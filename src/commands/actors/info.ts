@@ -142,6 +142,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 			}
 
 			simpleLog({ message: latest.build.readme, stdout: true });
+			return;
 		}
 
 		if (input) {
@@ -164,6 +165,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 			}
 
 			simpleLog({ message: latest.build.inputSchema, stdout: true });
+			return;
 		}
 
 		const message = [
