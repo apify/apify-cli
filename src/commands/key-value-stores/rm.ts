@@ -36,7 +36,7 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 	};
 
 	static override flags = {
-		...YesFlag,
+		...YesFlag(),
 	};
 
 	async run() {

@@ -43,7 +43,7 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 	};
 
 	static override flags = {
-		...YesFlag,
+		...YesFlag(),
 	};
 
 	async run() {

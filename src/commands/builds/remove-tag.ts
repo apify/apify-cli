@@ -36,7 +36,7 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 			description: 'The tag to remove from the build.',
 			required: true,
 		}),
-		...YesFlag,
+		...YesFlag(),
 	};
 
 	async run() {
