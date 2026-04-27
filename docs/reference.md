@@ -492,7 +492,7 @@ FLAGS
       --all-optional    Mark all properties as optional in
                         generated types.
   -o, --output=<value>  Directory where the generated files
-                        should be outputted. Defaults to src/.generated/actor/ to
+                        should be outputted. Defaults to src/__generated__/actor/ to
                         stay within the typical tsconfig rootDir.
       --strict          Whether generated interfaces should be
                         strict (no index signature [key: string]: unknown).
