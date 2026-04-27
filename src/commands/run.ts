@@ -57,6 +57,29 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		`Stores data in local '${DEFAULT_LOCAL_STORAGE_DIR}' directory.\n\n` +
 		`NOTE: For Node.js Actors, customize behavior by modifying the 'start' script in package.json file.`;
 
+	static override group = 'Local Actor Development';
+
+	static override examples = [
+		{
+			description: 'Run the Actor in the current directory with the stored input.',
+			command: 'apify run',
+		},
+		{
+			description: 'Run and purge the default storage first (dataset, request queue, key-value store).',
+			command: 'apify run --purge',
+		},
+		{
+			description: 'Run with inline JSON input (overrides the stored INPUT).',
+			command: `apify run --input '{"startUrls":[{"url":"https://example.com"}]}'`,
+		},
+		{
+			description: 'Run with input from a file.',
+			command: 'apify run --input-file ./input.json',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-run';
+
 	static override flags = {
 		purge: Flags.boolean({
 			char: 'p',

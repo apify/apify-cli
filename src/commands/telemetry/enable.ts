@@ -7,6 +7,15 @@ export class TelemetryEnableCommand extends ApifyCommand<typeof TelemetryEnableC
 
 	static override description = 'Enables telemetry.';
 
+	static override examples = [
+		{
+			description: 'Opt in to anonymous telemetry.',
+			command: 'apify telemetry enable',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/telemetry';
+
 	async run() {
 		const currentState = await useTelemetryState();
 

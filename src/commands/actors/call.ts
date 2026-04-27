@@ -32,6 +32,29 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		'Executes Actor remotely using your authenticated account.\n' +
 		'Reads input from local key-value store by default.';
 
+	static override group = 'Apify Console';
+
+	static override examples = [
+		{
+			description: 'Call the Actor defined in the current directory (from .actor/actor.json).',
+			command: 'apify call',
+		},
+		{
+			description: 'Call a specific Actor by its full name.',
+			command: 'apify call apify/hello-world',
+		},
+		{
+			description: 'Call an Actor with inline JSON input.',
+			command: `apify call apify/hello-world --input '{"url":"https://example.com"}'`,
+		},
+		{
+			description: 'Call an Actor with input from a file and print the dataset on success.',
+			command: 'apify call apify/web-scraper --input-file input.json --output-dataset',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-call';
+
 	static override flags = {
 		...SharedRunOnCloudFlags('Actor'),
 		input: Flags.string({

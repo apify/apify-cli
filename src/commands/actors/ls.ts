@@ -99,6 +99,23 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 
 	static override description = 'Prints a list of recently executed Actors or Actors you own.';
 
+	static override examples = [
+		{
+			description: 'List Actors you recently interacted with.',
+			command: 'apify actors ls',
+		},
+		{
+			description: 'List Actors you own, newest first.',
+			command: 'apify actors ls --my --desc',
+		},
+		{
+			description: 'List the next page of 50 Actors.',
+			command: 'apify actors ls --limit 50 --offset 50',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-actors-ls';
+
 	static override flags = {
 		my: Flags.boolean({
 			description: 'Whether to list Actors made by the logged in user.',

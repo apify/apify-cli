@@ -19,6 +19,15 @@ export class SecretsLsCommand extends ApifyCommand<typeof SecretsLsCommand> {
 
 	static override description = 'Lists all secret keys stored in your local configuration.';
 
+	static override examples = [
+		{
+			description: 'List the names of all locally stored secrets.',
+			command: 'apify secrets ls',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-secrets-ls';
+
 	static override enableJsonFlag = true;
 
 	async run() {

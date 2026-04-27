@@ -13,10 +13,21 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 
 	static override description = 'Get an HTTP URL that allows public access to a key-value store item.';
 
+	static override group = 'Actor Runtime';
+
+	static override examples = [
+		{
+			description: 'Get a public URL for the record stored under the given key.',
+			command: 'actor get-public-url OUTPUT',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#actor-get-public-url';
+
 	static override args = {
 		key: Args.string({
 			required: true,
-			description: 'Key of the record in key-value store',
+			description: 'Key of the record in the key-value store.',
 		}),
 	};
 

@@ -44,13 +44,50 @@ FLAGS
                          not provided, the latest version will be used.
 ```
 
+##### `apify api`
+
+```sh
+DESCRIPTION
+  Makes an authenticated HTTP request to the Apify API and prints the response.
+  The endpoint can be a relative path (e.g. "acts", "v2/acts", or "/v2/acts"); 
+  the "v2/" prefix is added automatically if omitted.
+
+  Use --list-endpoints to see all available API endpoints.
+
+USAGE
+  $ apify api [methodOrEndpoint] [endpoint] [-d <value>] [-H <value>]
+              [-l] [-X GET|POST|PUT|PATCH|DELETE] [-p <value>]
+
+ARGUMENTS
+  methodOrEndpoint  The API endpoint path (e.g. "acts",
+                    "v2/acts", "/v2/users/me"), or an HTTP method followed by the
+                    endpoint (e.g. "GET /v2/users/me").
+  endpoint          The API endpoint path when the first
+                    argument is an HTTP method.
+
+FLAGS
+  -d, --body=<value>     The request body (JSON string). Use
+                         "-" to read from stdin.
+      -H, --header=<value>   Additional HTTP header(s). Pass a
+                         single "key:value" string, or a JSON object like '{"X-Foo":
+                         "bar", "X-Baz": "qux"}' to send multiple headers. The flag
+                         can only be used once; use the JSON form for multiple
+                         headers.
+  -l, --list-endpoints   List all available Apify API
+                         endpoints.
+      -X, --method=<option>  The HTTP method to use. Defaults to
+                         GET.
+                         <options: GET|POST|PUT|PATCH|DELETE>
+  -p, --params=<value>   Query parameters as a JSON object,
+                         e.g. '{"limit": 1, "desc": true}'.
+```
+
 ##### `apify telemetry`
 
 ```sh
 DESCRIPTION
-  Manages telemetry settings. We use this data to improve the CLI and the Apify 
-  platform.
-  Read more: https://docs.apify.com/cli/docs/telemetry
+  Enable or disable anonymous telemetry. We use this data to improve the CLI and
+   the Apify platform.
 
 SUBCOMMANDS
   telemetry enable   Enables telemetry.
@@ -89,7 +126,8 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 ```sh
 DESCRIPTION
-  Manages authentication for Apify CLI.
+  Log in, log out, and inspect your stored Apify API token. Also available as 
+  `apify login` / `apify logout`.
 
 SUBCOMMANDS
   auth login   Authenticates your Apify account and saves credentials
@@ -113,9 +151,9 @@ USAGE
   $ apify auth login [-m console|manual] [-t <value>]
 
 FLAGS
-  -m, --method=<option>  Method of logging in to Apify
+  -m, --method=<option>  Method of logging in to Apify.
                          <options: console|manual>
-  -t, --token=<value>    Apify API token
+  -t, --token=<value>    Apify API token.
 ```
 
 ##### `apify auth logout` / `apify logout`
@@ -154,23 +192,9 @@ USAGE
 
 ```sh
 DESCRIPTION
-  Manages secure environment variables for Actors.
-
-  Example:
-  $ apify secrets add mySecret TopSecretValue123
-
-  The "mySecret" value can be used in an environment variable defined in 
-  '.actor/actor.json' file by adding the "@" prefix:
-
-  {
-    "actorSpecification": 1,
-    "name": "my_actor",
-    "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" },
-    "version": "0.1"
-  }
-
-  When the Actor is pushed to Apify cloud, the "SECRET_ENV_VAR" and its value is
-   stored as a secret environment variable of the Actor.
+  Manage locally stored secrets that can be referenced from '.actor/actor.json' 
+  environment variables using the "@" prefix (e.g. "@mySecret"). Secrets are 
+  uploaded alongside the Actor and stored encrypted on the Apify platform.
 
 SUBCOMMANDS
   secrets add  Adds a new secret to '~/.apify' for use in Actor
@@ -191,8 +215,8 @@ USAGE
   $ apify secrets add <name> <value>
 
 ARGUMENTS
-  name   Name of the secret
-  value  Value of the secret
+  name   Name of the secret.
+  value  Value of the secret.
 ```
 
 ##### `apify secrets ls`
@@ -218,7 +242,7 @@ USAGE
   $ apify secrets rm <name>
 
 ARGUMENTS
-  name  Name of the secret
+  name  Name of the secret.
 ```
 <!-- auth-commands-end -->
 <!-- prettier-ignore-end -->
@@ -242,7 +266,7 @@ USAGE
                  [--skip-dependency-install] [--skip-git-init] [-t <value>]
 
 ARGUMENTS
-  actorName  Name of the Actor and its directory
+  actorName  Name of the Actor and its directory.
 
 FLAGS
       --omit-optional-deps       Skip installing optional
@@ -284,8 +308,7 @@ FLAGS
                             the Actor (e.g., "./Dockerfile" or
                             "./docker/Dockerfile").
   -y, --yes                 Automatic yes to prompts;
-                            assume "yes" as answer to all prompts. Note that in some
-                            cases, the command may still ask for confirmation.
+                            assume "yes" as answer to all prompts.
 ```
 
 ##### `apify run`
@@ -354,12 +377,17 @@ ARGUMENTS
 
 ```sh
 DESCRIPTION
-  Manages runtime data operations inside of a running Actor.
+  Runtime data operations intended to be called from inside a running Actor: 
+  read input, push data, get/set records in the default key-value store, charge 
+  pay-per-event, generate schema types.
+
+  For platform-level management (deploy, list, call Actors), see 'apify actors' 
+  (plural).
 
 SUBCOMMANDS
-  actor set-value              Sets or removes record
-                               into the default key-value store associated with
-                               the Actor run.
+  actor set-value              Sets or removes a
+                               record in the default key-value store associated
+                               with the Actor run.
   actor push-data              Saves data to Actor's
                                run default dataset.
   actor get-value              Gets a value from the
@@ -371,7 +399,7 @@ SUBCOMMANDS
                                value from the default key-value store associated
                                with the Actor run.
   actor charge                 Charge for a specific
-                               event in the pay-per-event Actor run.
+                               event in a pay-per-event Actor run.
   actor calculate-memory       Calculates the Actor’s
                                dynamic memory usage based on a memory expression
                                from actor.json, input data, and run options.
@@ -415,22 +443,22 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Charge for a specific event in the pay-per-event Actor run.
+  Charge for a specific event in a pay-per-event Actor run.
 
 USAGE
   $ apify actor charge <eventName> [--count <value>]
                        [--idempotency-key <value>] [--test-pay-per-event]
 
 ARGUMENTS
-  eventName  Name of the event to charge for
+  eventName  Name of the event to charge for.
 
 FLAGS
       --count=<value>            Number of events to
-                                 charge
+                                 charge.
       --idempotency-key=<value>  Idempotency key for the
-                                 charge request
+                                 charge request.
       --test-pay-per-event       Test pay-per-event
-                                 charging without actually charging
+                                 charging without actually charging.
 ```
 
 ##### `apify actor generate-schema-types`
@@ -464,7 +492,7 @@ FLAGS
       --all-optional    Mark all properties as optional in
                         generated types.
   -o, --output=<value>  Directory where the generated files
-                        should be outputted. Defaults to src/.generated/actor/ to
+                        should be outputted. Defaults to src/__generated__/actor/ to
                         stay within the typical tsconfig rootDir.
       --strict          Whether generated interfaces should be
                         strict (no index signature [key: string]: unknown).
@@ -491,7 +519,7 @@ USAGE
   $ apify actor get-public-url <key>
 
 ARGUMENTS
-  key  Key of the record in key-value store
+  key  Key of the record in the key-value store.
 ```
 
 ##### `apify actor get-value`
@@ -504,7 +532,7 @@ USAGE
   $ apify actor get-value <key>
 
 ARGUMENTS
-  key  Key of the record in key-value store
+  key  Key of the record in the key-value store.
 ```
 
 ##### `apify actor push-data`
@@ -512,12 +540,6 @@ ARGUMENTS
 ```sh
 DESCRIPTION
   Saves data to Actor's run default dataset.
-
-  Accept input as:
-    - JSON argument:
-    $ apify actor push-data {"key": "value"}
-    - Piped stdin:
-    $ cat ./test.json | apify actor push-data
 
 USAGE
   $ apify actor push-data [item]
@@ -531,16 +553,8 @@ ARGUMENTS
 
 ```sh
 DESCRIPTION
-  Sets or removes record into the default key-value store associated with the 
+  Sets or removes a record in the default key-value store associated with the 
   Actor run.
-
-  It is possible to pass data using argument or stdin.
-
-  Passing data using argument:
-  $ apify actor set-value KEY my-value
-
-  Passing data using stdin with pipe:
-  $ cat ./my-text-file.txt | apify actor set-value KEY --contentType text/plain
 
 USAGE
   $ apify actor set-value <key> [value] [-c <value>]
@@ -571,7 +585,9 @@ These commands let you manage Actors on Apify platform. They provide functionali
 
 ```sh
 DESCRIPTION
-  Manages Actor creation, deployment, and execution on the Apify platform.
+  Search, list, deploy, and call Actors on the Apify platform.
+  For runtime operations inside a running Actor (push-data, get-input, 
+  set-value...), see 'apify actor' (singular).
 
 SUBCOMMANDS
   actors start   Starts Actor remotely and returns run details
@@ -651,10 +667,14 @@ DESCRIPTION
   Permanently removes an Actor from your account.
 
 USAGE
-  $ apify actors rm <actorId>
+  $ apify actors rm <actorId> [-y]
 
 ARGUMENTS
   actorId  The Actor ID to delete.
+
+FLAGS
+  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
+             prompts.
 ```
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->
@@ -692,9 +712,9 @@ FLAGS
                                  the local secrets storage.
   -b, --build-tag=<value>        Build tag to be
                                  applied to the successful Actor build. By default,
-                                 it is taken from the '.actor/actor.json' file
+                                 it is taken from the '.actor/actor.json' file.
       --dir=<value>              Directory where the
-                                 Actor is located
+                                 Actor is located.
   -f, --force                    Push an Actor even
                                  when the local files are older than the Actor on
                                  the platform.
@@ -728,9 +748,9 @@ ARGUMENTS
 
 FLAGS
       --dir=<value>      Directory where the Actor should be
-                         pulled to
+                         pulled to.
   -v, --version=<value>  Actor version number which will be
-                         pulled, e.g. 1.2. Default: the highest version
+                         pulled, e.g. 1.2. Default: the highest version.
 ```
 
 ##### `apify actors call` / `apify call`
@@ -835,7 +855,7 @@ Use these commands to manage Actor build processes. They help you create, monito
 
 ```sh
 DESCRIPTION
-  Manages Actor build processes and versioning.
+  Create, inspect, tag, and delete Actor builds on the Apify platform.
 
 SUBCOMMANDS
   builds add-tag     Adds a tag to a specific Actor build.
@@ -961,10 +981,14 @@ DESCRIPTION
   Permanently removes an Actor build from the Apify platform.
 
 USAGE
-  $ apify builds rm <buildId>
+  $ apify builds rm <buildId> [-y]
 
 ARGUMENTS
   buildId  The build ID to delete.
+
+FLAGS
+  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
+             prompts.
 ```
 <!-- actor-build-commands-end -->
 <!-- prettier-ignore-end -->
@@ -979,7 +1003,9 @@ These commands control Actor execution on Apify platform. Use them to start, mon
 
 ```sh
 DESCRIPTION
-  Manages Actor run operations
+  Inspect, abort, resurrect, or delete existing Actor runs.
+  Does not start new runs — use 'apify call' (synchronous) or 'apify actors 
+  start' (asynchronous) for that.
 
 SUBCOMMANDS
   runs abort      Aborts an Actor run.
@@ -1084,10 +1110,14 @@ DESCRIPTION
   Deletes an Actor Run.
 
 USAGE
-  $ apify runs rm <runId>
+  $ apify runs rm <runId> [-y]
 
 ARGUMENTS
   runId  The run ID to delete.
+
+FLAGS
+  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
+             prompts.
 ```
 <!-- actor-run-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1106,7 +1136,8 @@ Use these commands to manage datasets, which provide structured storage for tabu
 
 ```sh
 DESCRIPTION
-  Manages structured data storage and retrieval.
+  Manage Apify datasets — create, list, rename, delete, push items, and download
+   items in various formats.
 
 SUBCOMMANDS
   datasets create      Creates a new dataset for storing
@@ -1117,8 +1148,8 @@ SUBCOMMANDS
   datasets info        Prints information about a specific
                        dataset.
   datasets rm          Permanently removes a dataset.
-  datasets rename      Change dataset name or removes name
-                       with --unname flag.
+  datasets rename      Change the dataset name or remove the
+                       name with --unname flag.
   datasets push-items  Adds data items to specified dataset.
                        Accepts single object or array of objects.
 ```
@@ -1133,7 +1164,7 @@ USAGE
   $ apify datasets create [datasetName] [--json]
 
 ARGUMENTS
-  datasetName  Optional name for the Dataset
+  datasetName  Optional name for the Dataset.
 
 FLAGS
       --json  Format the command output as JSON
@@ -1151,11 +1182,11 @@ USAGE
                              [--limit <value>] [--offset <value>]
 
 ARGUMENTS
-  datasetId  The ID of the Dataset to export the items for
+  datasetId  The ID of the Dataset to export the items for.
 
 FLAGS
       --format=<option>  The format of the returned output. By
-                         default, it is set to 'json'
+                         default, it is set to 'json'.
                          <options: json|jsonl|csv|html|rss|xml|xlsx>
       --limit=<value>    The amount of elements to get from the
                          dataset. By default, it will return all available items.
@@ -1208,7 +1239,7 @@ USAGE
   $ apify datasets push-items <nameOrId> [item]
 
 ARGUMENTS
-  nameOrId  The dataset ID or name to push the objects to
+  nameOrId  The dataset ID or name to push the objects to.
   item      The object or array of objects to be pushed.
 ```
 
@@ -1216,7 +1247,7 @@ ARGUMENTS
 
 ```sh
 DESCRIPTION
-  Change dataset name or removes name with --unname flag.
+  Change the dataset name or remove the name with --unname flag.
 
 USAGE
   $ apify datasets rename <nameOrId> [newName] [--unname]
@@ -1236,10 +1267,14 @@ DESCRIPTION
   Permanently removes a dataset.
 
 USAGE
-  $ apify datasets rm <datasetNameOrId>
+  $ apify datasets rm <datasetNameOrId> [-y]
 
 ARGUMENTS
-  datasetNameOrId  The dataset ID or name to delete
+  datasetNameOrId  The dataset ID or name to delete.
+
+FLAGS
+  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
+             prompts.
 ```
 <!-- dataset-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1254,9 +1289,10 @@ These commands handle key-value store operations. Use them to create stores, man
 
 ```sh
 DESCRIPTION
-  Manages persistent key-value storage.
+  Manage Apify key-value stores — create, list, rename, delete stores, and 
+  get/set/delete individual records.
 
-  Alias: kvs
+  Alias: kvs.
 
 SUBCOMMANDS
   key-value-stores create        Creates a new
@@ -1293,7 +1329,7 @@ USAGE
 
 ARGUMENTS
   key-value store name  Optional name for the key-value
-                        store
+                        store.
 
 FLAGS
       --json  Format the command output as JSON
@@ -1307,11 +1343,15 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores delete-value
-                                        <store id> <itemKey>
+                                        <store id> <itemKey> [-y]
 
 ARGUMENTS
   store id  The key-value store ID to delete the value from.
   itemKey   The key of the item in the key-value store.
+
+FLAGS
+  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
+             prompts.
 ```
 
 ##### `apify key-value-stores get-value`
@@ -1332,7 +1372,7 @@ ARGUMENTS
 
 FLAGS
       --only-content-type  Only return the content type of the
-                           specified key
+                           specified key.
 ```
 
 ##### `apify key-value-stores info`
@@ -1408,12 +1448,12 @@ USAGE
 
 ARGUMENTS
   keyValueStoreNameOrId  The key-value store ID or name to
-                         delete
+                         delete.
   newName                The new name for the key-value
-                         store
+                         store.
 
 FLAGS
-      --unname  Removes the unique name of the key-value store
+      --unname  Removes the unique name of the key-value store.
 ```
 
 ##### `apify key-value-stores rm`
@@ -1424,10 +1464,15 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores rm <keyValueStoreNameOrId>
+                              [-y]
 
 ARGUMENTS
   keyValueStoreNameOrId  The key-value store ID or name to
-                         delete
+                         delete.
+
+FLAGS
+  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
+             prompts.
 ```
 
 ##### `apify key-value-stores set-value`
@@ -1462,7 +1507,7 @@ These commands manage request queues, which handle URL processing for web scrapi
 
 ```sh
 DESCRIPTION
-  Manages URL queues for web scraping and automation tasks.
+  Manage Apify request queues. No subcommands are available yet.
 
 USAGE
   $ apify request-queues
@@ -1480,7 +1525,8 @@ These commands help you manage scheduled and configured Actor runs. Use them to 
 
 ```sh
 DESCRIPTION
-  Manages scheduled and predefined Actor configurations.
+  Run saved Apify tasks (named Actor configurations). Only 'task run' is 
+  available; create and manage tasks in Apify Console.
 
 SUBCOMMANDS
   task run  Executes predefined Actor task remotely using local

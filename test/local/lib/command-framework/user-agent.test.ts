@@ -1,0 +1,224 @@
+/* eslint-disable max-classes-per-file */
+import { parseArgs } from 'node:util';
+
+import {
+	ApifyCommand,
+	type BuiltApifyCommand as _BuiltApifyCommand,
+	resolveUserAgentForTelemetry,
+	USER_AGENT_ENV_VAR,
+	USER_AGENT_FLAG_NAME,
+	USER_AGENT_MAX_LENGTH,
+} from '../../../../src/lib/command-framework/apify-command.js';
+import { Flags } from '../../../../src/lib/command-framework/flags.js';
+
+const BuiltApifyCommand = ApifyCommand as typeof _BuiltApifyCommand;
+
+class NoOpCommand extends BuiltApifyCommand {
+	static override name = 'noop' as const;
+	static override description = 'Does nothing.';
+	async run() {
+		// no-op
+	}
+}
+
+class CommandWithFlags extends BuiltApifyCommand {
+	static override name = 'with-flags' as const;
+	static override description = 'Has flags.';
+	static override flags = {
+		foo: Flags.string({ description: 'foo flag' }),
+	};
+
+	async run() {
+		// no-op
+	}
+}
+
+describe('resolveUserAgentForTelemetry()', () => {
+	test('flag value wins over env value', () => {
+		expect(resolveUserAgentForTelemetry('flag', 'env')).toBe('flag');
+	});
+
+	test('env value used as fallback', () => {
+		expect(resolveUserAgentForTelemetry(undefined, 'env')).toBe('env');
+	});
+
+	test('undefined when neither set', () => {
+		expect(resolveUserAgentForTelemetry(undefined, undefined)).toBeUndefined();
+	});
+
+	test('empty/whitespace flag falls through to env', () => {
+		expect(resolveUserAgentForTelemetry('   ', 'env')).toBe('env');
+		expect(resolveUserAgentForTelemetry('', 'env')).toBe('env');
+	});
+
+	test('empty/whitespace env returns undefined when flag also empty', () => {
+		expect(resolveUserAgentForTelemetry('', '')).toBeUndefined();
+		expect(resolveUserAgentForTelemetry(undefined, '   ')).toBeUndefined();
+	});
+
+	test('trims surrounding whitespace on returned value', () => {
+		expect(resolveUserAgentForTelemetry('  foo  ', undefined)).toBe('foo');
+		expect(resolveUserAgentForTelemetry(undefined, '  bar  ')).toBe('bar');
+	});
+
+	test('strips ASCII control characters silently', () => {
+		expect(resolveUserAgentForTelemetry('plugin\u0000/1.0\u0007', undefined)).toBe('plugin/1.0');
+		expect(resolveUserAgentForTelemetry('line\nbreak\rthing\ttab', undefined)).toBe('linebreakthingtab');
+		expect(resolveUserAgentForTelemetry('\u007f\u0001only-control\u001f', undefined)).toBe('only-control');
+	});
+
+	test('returns undefined when input is only control characters', () => {
+		expect(resolveUserAgentForTelemetry('\u0000\u0001\u001f', undefined)).toBeUndefined();
+	});
+
+	test('caps length at USER_AGENT_MAX_LENGTH', () => {
+		const long = 'x'.repeat(USER_AGENT_MAX_LENGTH + 100);
+		const resolved = resolveUserAgentForTelemetry(long, undefined);
+		expect(resolved).toBeDefined();
+		expect(resolved!.length).toBe(USER_AGENT_MAX_LENGTH);
+	});
+
+	test('does not touch values at or below cap', () => {
+		const exact = 'y'.repeat(USER_AGENT_MAX_LENGTH);
+		expect(resolveUserAgentForTelemetry(exact, undefined)).toBe(exact);
+	});
+});
+
+describe('--user-agent flag registration', () => {
+	test('is parseable on commands with no declared flags', () => {
+		const instance = new NoOpCommand('apify', NoOpCommand.name, NoOpCommand.name);
+		// eslint-disable-next-line dot-notation
+		const parserOptions = instance['_buildParseArgsOption']();
+
+		expect(parserOptions.options).toHaveProperty(USER_AGENT_FLAG_NAME);
+
+		const parsed = parseArgs({
+			...parserOptions,
+			args: ['--user-agent', 'apify-agent-skills/ultimate-scraper-1.3.0'],
+		});
+
+		expect(parsed.values[USER_AGENT_FLAG_NAME]).toBe('apify-agent-skills/ultimate-scraper-1.3.0');
+	});
+
+	test('is parseable alongside command-specific flags', () => {
+		const instance = new CommandWithFlags('apify', CommandWithFlags.name, CommandWithFlags.name);
+		// eslint-disable-next-line dot-notation
+		const parserOptions = instance['_buildParseArgsOption']();
+
+		const parsed = parseArgs({
+			...parserOptions,
+			args: ['--foo', 'hello', '--user-agent', 'my-plugin/1.0.0'],
+		});
+
+		// command-declared string flags use multiple:true, so node returns an array.
+		expect(parsed.values.foo).toEqual(['hello']);
+		expect(parsed.values[USER_AGENT_FLAG_NAME]).toBe('my-plugin/1.0.0');
+	});
+
+	test('is optional — parser does not fail when omitted', () => {
+		const instance = new NoOpCommand('apify', NoOpCommand.name, NoOpCommand.name);
+		// eslint-disable-next-line dot-notation
+		const parserOptions = instance['_buildParseArgsOption']();
+
+		const parsed = parseArgs({
+			...parserOptions,
+			args: [],
+		});
+
+		expect(parsed.values[USER_AGENT_FLAG_NAME]).toBeUndefined();
+	});
+
+	test('treats --user-agent after `--` separator as a positional, not a flag', () => {
+		const instance = new NoOpCommand('apify', NoOpCommand.name, NoOpCommand.name);
+		// eslint-disable-next-line dot-notation
+		const parserOptions = instance['_buildParseArgsOption']();
+
+		const parsed = parseArgs({
+			...parserOptions,
+			args: ['--', '--user-agent', 'forwarded-value'],
+		});
+
+		expect(parsed.values[USER_AGENT_FLAG_NAME]).toBeUndefined();
+		expect(parsed.positionals).toEqual(['--user-agent', 'forwarded-value']);
+	});
+
+	test('is NOT registered under non-apify entrypoints (e.g. actor)', () => {
+		const instance = new NoOpCommand('actor', NoOpCommand.name, NoOpCommand.name);
+		// eslint-disable-next-line dot-notation
+		const parserOptions = instance['_buildParseArgsOption']();
+
+		expect(parserOptions.options).not.toHaveProperty(USER_AGENT_FLAG_NAME);
+
+		// parseArgs with strict:true should now reject --user-agent on this entrypoint.
+		expect(() =>
+			parseArgs({
+				...parserOptions,
+				args: ['--user-agent', 'foo'],
+			}),
+		).toThrow();
+	});
+});
+
+describe('--user-agent end-to-end telemetry wiring', () => {
+	const originalEnv = process.env[USER_AGENT_ENV_VAR];
+
+	afterEach(() => {
+		if (originalEnv === undefined) {
+			delete process.env[USER_AGENT_ENV_VAR];
+		} else {
+			process.env[USER_AGENT_ENV_VAR] = originalEnv;
+		}
+	});
+
+	async function runWith(
+		args: string[],
+		entrypoint = 'apify',
+	): Promise<_BuiltApifyCommand & { telemetryData: Record<string, unknown> }> {
+		const instance = new NoOpCommand(entrypoint, NoOpCommand.name, NoOpCommand.name);
+		// eslint-disable-next-line dot-notation
+		instance['skipTelemetry'] = true;
+		// eslint-disable-next-line dot-notation
+		const parserOptions = instance['_buildParseArgsOption']();
+		const parsed = parseArgs({ ...parserOptions, args });
+		// eslint-disable-next-line dot-notation
+		await instance['_run'](parsed);
+		return instance as unknown as _BuiltApifyCommand & { telemetryData: Record<string, unknown> };
+	}
+
+	test('populates telemetryData.userAgent when flag passed', async () => {
+		delete process.env[USER_AGENT_ENV_VAR];
+		const instance = await runWith(['--user-agent', 'skills/scraper-1.0']);
+		expect(instance.telemetryData.userAgent).toBe('skills/scraper-1.0');
+	});
+
+	test('falls back to APIFY_CLI_USER_AGENT env var', async () => {
+		process.env[USER_AGENT_ENV_VAR] = 'env-caller/2.0';
+		const instance = await runWith([]);
+		expect(instance.telemetryData.userAgent).toBe('env-caller/2.0');
+	});
+
+	test('flag overrides env var', async () => {
+		process.env[USER_AGENT_ENV_VAR] = 'env-caller/2.0';
+		const instance = await runWith(['--user-agent', 'flag-caller/3.0']);
+		expect(instance.telemetryData.userAgent).toBe('flag-caller/3.0');
+	});
+
+	test('leaves userAgent unset when neither flag nor env var provided', async () => {
+		delete process.env[USER_AGENT_ENV_VAR];
+		const instance = await runWith([]);
+		expect(instance.telemetryData.userAgent).toBeUndefined();
+	});
+
+	test('sanitizes oversized flag input before emitting', async () => {
+		delete process.env[USER_AGENT_ENV_VAR];
+		const bigValue = 'a'.repeat(USER_AGENT_MAX_LENGTH + 50);
+		const instance = await runWith(['--user-agent', bigValue]);
+		expect((instance.telemetryData.userAgent as string).length).toBe(USER_AGENT_MAX_LENGTH);
+	});
+
+	test('ignores env var entirely when running under actor entrypoint', async () => {
+		process.env[USER_AGENT_ENV_VAR] = 'env-caller/2.0';
+		const instance = await runWith([], 'actor');
+		expect(instance.telemetryData.userAgent).toBeUndefined();
+	});
+});

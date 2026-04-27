@@ -4,13 +4,23 @@ All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-start -->
 
-## 1.4.2 - **not yet released**
+## 1.5.1 - **not yet released**
+
+### 🚀 Features
+
+- **generate-schema-types:** Change default output path to src&#x2F;**generated**&#x2F;actor&#x2F; ([#1104](https://github.com/apify/apify-cli/pull/1104)) ([9b44152](https://github.com/apify/apify-cli/commit/9b441522eae7c23ff0744e1a903b87664c66f36e)) by [@vladfrangu](https://github.com/vladfrangu)
+
+<!-- git-cliff-unreleased-end -->
+
+## [1.5.0](https://github.com/apify/apify-cli/releases/tag/v1.5.0) (2026-04-27)
 
 ### 🚀 Features
 
 - Add execution context to telemetry events ([#1074](https://github.com/apify/apify-cli/pull/1074)) ([9288ff8](https://github.com/apify/apify-cli/commit/9288ff886864acd78b5e06b5ff13096774bd81f6)) by [@patrikbraborec](https://github.com/patrikbraborec)
-
-<!-- git-cliff-unreleased-end -->
+- Improve --help output for AI agents and humans ([#1080](https://github.com/apify/apify-cli/pull/1080)) ([e9be7ee](https://github.com/apify/apify-cli/commit/e9be7eee232fe4627ee252dc48dc01f2413fbccf)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1060](https://github.com/apify/apify-cli/issues/1060)
+- Add `apify api` subcommand for direct API access ([#1076](https://github.com/apify/apify-cli/pull/1076)) ([da15ae7](https://github.com/apify/apify-cli/commit/da15ae7bb48c353d1b62928b666fd634ee5c2832)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1075](https://github.com/apify/apify-cli/issues/1075)
+- Add --yes flag to commands that prompt users ([#1105](https://github.com/apify/apify-cli/pull/1105)) ([3446b68](https://github.com/apify/apify-cli/commit/3446b688d550e95952c07360f8b5d30894fa83f9)) by [@l2ysho](https://github.com/l2ysho)
+- Add --user-agent flag for caller-identified telemetry ([#1102](https://github.com/apify/apify-cli/pull/1102)) ([5d1fe06](https://github.com/apify/apify-cli/commit/5d1fe06771a5a60d68c6487de092c4f5bdcb5ef2)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1100](https://github.com/apify/apify-cli/issues/1100)
 
 ## [1.4.1](https://github.com/apify/apify-cli/releases/tag/v1.4.1) (2026-04-02)
 

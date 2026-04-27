@@ -41,6 +41,17 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 	static override description = 'Checks that installed Apify CLI version is up to date.';
 
+	static override group = 'Utilities';
+
+	static override examples = [
+		{
+			description: 'Check for a newer CLI version and upgrade if available.',
+			command: 'apify upgrade',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-upgrade';
+
 	static override hidden = true;
 
 	static override aliases = ['cv', 'check-version'];
