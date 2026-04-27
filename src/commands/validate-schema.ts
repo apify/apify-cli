@@ -47,8 +47,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 	static override args = {
 		path: Args.string({
 			required: false,
-			description:
-				`Optional path to your INPUT_SCHEMA.json file. If not provided, validates all schemas in '${LOCAL_CONFIG_PATH}'.`,
+			description: `Optional path to your INPUT_SCHEMA.json file. If not provided, validates all schemas in '${LOCAL_CONFIG_PATH}'.`,
 		}),
 	};
 
