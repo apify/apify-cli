@@ -21,6 +21,23 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 
 	static override description = 'Retrieves dataset items in specified format (JSON, CSV, etc).';
 
+	static override examples = [
+		{
+			description: 'Print all items from a dataset as JSON.',
+			command: 'apify datasets get-items <datasetId>',
+		},
+		{
+			description: 'Export the first 100 items as CSV to a file.',
+			command: 'apify datasets get-items <datasetId> --format csv --limit 100 > items.csv',
+		},
+		{
+			description: 'Paginate: skip the first 500 items, return the next 500.',
+			command: 'apify datasets get-items <datasetId> --offset 500 --limit 500',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-datasets-get-items';
+
 	static override flags = {
 		limit: Flags.integer({
 			description:
@@ -30,7 +47,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 			description: 'The offset in the dataset where to start getting items.',
 		}),
 		format: Flags.string({
-			description: "The format of the returned output. By default, it is set to 'json'",
+			description: "The format of the returned output. By default, it is set to 'json'.",
 			choices: Object.keys(downloadFormatToContentType) as DownloadItemsFormat[],
 			default: DownloadItemsFormat.JSON,
 		}),
@@ -38,7 +55,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 
 	static override args = {
 		datasetId: Args.string({
-			description: 'The ID of the Dataset to export the items for',
+			description: 'The ID of the Dataset to export the items for.',
 			required: true,
 		}),
 	};

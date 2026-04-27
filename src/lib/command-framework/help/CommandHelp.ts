@@ -56,6 +56,12 @@ export class CommandHelp extends BaseCommandRenderer {
 			this.pushDescription(result);
 		}
 
+		this.pushExamples(result);
+
+		this.pushInteractiveNote(result);
+
+		this.pushLearnMore(result);
+
 		return result.join('\n').trim();
 	}
 
@@ -72,6 +78,14 @@ export class CommandHelp extends BaseCommandRenderer {
 
 		if (options.showDescription && this.command.description) {
 			this.pushDescription(result);
+		}
+
+		if (options.showExamples) {
+			this.pushExamples(result);
+		}
+
+		if (options.showLearnMore) {
+			this.pushLearnMore(result);
 		}
 
 		return result.join('\n').trim();

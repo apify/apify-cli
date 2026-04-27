@@ -37,6 +37,16 @@ export interface TrackEventMap {
 
 		// init command
 		actorWrapper?: string;
+
+		// execution context
+		exitCode?: number;
+		durationMs?: number;
+		aiAgent?: string;
+		userAgent?: string;
+		isCi?: boolean;
+		ciProvider?: string;
+		isInteractive?: boolean;
+		wasRetried?: boolean;
 	};
 }
 

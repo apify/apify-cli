@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.5.0](https://github.com/apify/apify-cli/releases/tag/v1.5.0) (2026-04-27)
+
+### 🚀 Features
+
+- Add execution context to telemetry events ([#1074](https://github.com/apify/apify-cli/pull/1074)) ([9288ff8](https://github.com/apify/apify-cli/commit/9288ff886864acd78b5e06b5ff13096774bd81f6)) by [@patrikbraborec](https://github.com/patrikbraborec)
+- Improve --help output for AI agents and humans ([#1080](https://github.com/apify/apify-cli/pull/1080)) ([e9be7ee](https://github.com/apify/apify-cli/commit/e9be7eee232fe4627ee252dc48dc01f2413fbccf)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1060](https://github.com/apify/apify-cli/issues/1060)
+- Add `apify api` subcommand for direct API access ([#1076](https://github.com/apify/apify-cli/pull/1076)) ([da15ae7](https://github.com/apify/apify-cli/commit/da15ae7bb48c353d1b62928b666fd634ee5c2832)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1075](https://github.com/apify/apify-cli/issues/1075)
+- Add --yes flag to commands that prompt users ([#1105](https://github.com/apify/apify-cli/pull/1105)) ([3446b68](https://github.com/apify/apify-cli/commit/3446b688d550e95952c07360f8b5d30894fa83f9)) by [@l2ysho](https://github.com/l2ysho)
+- Add --user-agent flag for caller-identified telemetry ([#1102](https://github.com/apify/apify-cli/pull/1102)) ([5d1fe06](https://github.com/apify/apify-cli/commit/5d1fe06771a5a60d68c6487de092c4f5bdcb5ef2)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1100](https://github.com/apify/apify-cli/issues/1100)
+
 ## [1.4.1](https://github.com/apify/apify-cli/releases/tag/v1.4.1) (2026-04-02)
 
 ### 🐛 Bug Fixes
@@ -45,6 +55,10 @@ All notable changes to this project will be documented in this file.
 - Speed up creating archives when pusing big codebases ([#1011](https://github.com/apify/apify-cli/pull/1011)) ([a873e0c](https://github.com/apify/apify-cli/commit/a873e0cb6c1c1f9e3bca61821de2b8373ec92744)) by [@matyascimbulka](https://github.com/matyascimbulka)
 
 ## [1.2.1](https://github.com/apify/apify-cli/releases/tag/v1.2.1) (2026-01-06)
+
+### 🔧 CI/CD
+
+- Fix release flow permissions ([#988](https://github.com/apify/apify-cli/pull/988)) ([a9d0d90](https://github.com/apify/apify-cli/commit/a9d0d9013f42e48bfcdddbc467e995b1655cf853)) by [@vladfrangu](https://github.com/vladfrangu)
 
 ## [1.2.0](https://github.com/apify/apify-cli/releases/tag/v1.2.0) (2026-01-06)
 
