@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 
 - **generate-schema-types:** Change default output path to src&#x2F;**generated**&#x2F;actor&#x2F; ([#1104](https://github.com/apify/apify-cli/pull/1104)) ([9b44152](https://github.com/apify/apify-cli/commit/9b441522eae7c23ff0744e1a903b87664c66f36e)) by [@vladfrangu](https://github.com/vladfrangu)
 - Forward user signals to builds&#x2F;runs ([#1088](https://github.com/apify/apify-cli/pull/1088)) ([ef4d375](https://github.com/apify/apify-cli/commit/ef4d3755ad725d8ac17b2dbee346391d0f8f547d)) by [@vladfrangu](https://github.com/vladfrangu), closes [#631](https://github.com/apify/apify-cli/issues/631), [#885](https://github.com/apify/apify-cli/issues/885)
+- Support directory path as argument in `generate-schema-types` command ([#1069](https://github.com/apify/apify-cli/pull/1069)) ([a08b242](https://github.com/apify/apify-cli/commit/a08b242101ab82c13bf01162cf586e34169ebd40)) by [@l2ysho](https://github.com/l2ysho), closes [#1033](https://github.com/apify/apify-cli/issues/1033)
 
 ### 🐛 Bug Fixes
 
