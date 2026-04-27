@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -54,7 +54,9 @@ Reads the input schema from one of these locations (in priority order):
   3. .actor/INPUT_SCHEMA.json
   4. INPUT_SCHEMA.json
 
-Optionally specify custom schema path to use.`;
+Optionally specify a custom schema file path, or a directory path.
+When a directory is provided, all schemas are discovered from it
+just as if the command were run from that directory with no argument.`;
 
 	static override group = 'Actor Runtime';
 
@@ -98,16 +100,34 @@ Optionally specify custom schema path to use.`;
 	static override args = {
 		path: Args.string({
 			required: false,
-			description: 'Optional path to the input schema file. If not provided, searches default locations.',
+			description:
+				'Optional path to an input schema file or a directory containing Actor schemas. If a directory is given, all schema types are generated from it. If not provided, searches default locations in the current directory.',
 		}),
 	};
 
 	async run() {
 		const cwd = process.cwd();
 
+		let forcePath: string | undefined;
+		let effectiveCwd = cwd;
+
+		if (this.args.path) {
+			const resolvedPath = path.resolve(cwd, this.args.path);
+			// Ignore stat errors (e.g. path does not exist); downstream will surface a clear message.
+			const isDirectory = await stat(resolvedPath)
+				.then((s) => s.isDirectory())
+				.catch(() => false);
+
+			if (isDirectory) {
+				effectiveCwd = resolvedPath;
+			} else {
+				forcePath = resolvedPath;
+			}
+		}
+
 		const { inputSchema } = await readAndValidateInputSchema({
-			forcePath: this.args.path,
-			cwd,
+			forcePath,
+			cwd: effectiveCwd,
 			getMessage: (schemaPath) =>
 				schemaPath
 					? `Generating types from input schema at ${schemaPath}`
@@ -131,7 +151,7 @@ Optionally specify custom schema path to use.`;
 
 		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, name, compileOptions);
 
-		const outputDir = path.resolve(cwd, this.flags.output);
+		const outputDir = path.resolve(effectiveCwd, this.flags.output);
 		await mkdir(outputDir, { recursive: true });
 
 		const outputFile = path.join(outputDir, `${name}.ts`);
@@ -139,12 +159,13 @@ Optionally specify custom schema path to use.`;
 
 		success({ message: `Generated types written to ${outputFile}` });
 
-		// When no custom path is provided, also generate types from additional schemas
-		if (!this.args.path) {
+		// When no specific file path is provided, also generate types from additional schemas
+		// (this includes both "no argument" and "directory argument" modes)
+		if (!forcePath) {
 			const schemaResults = await Promise.allSettled([
-				this.generateDatasetTypes({ cwd, outputDir, compileOptions }),
-				this.generateOutputTypes({ cwd, outputDir, compileOptions }),
-				this.generateKvsTypes({ cwd, outputDir, compileOptions }),
+				this.generateDatasetTypes({ cwd: effectiveCwd, outputDir, compileOptions }),
+				this.generateOutputTypes({ cwd: effectiveCwd, outputDir, compileOptions }),
+				this.generateKvsTypes({ cwd: effectiveCwd, outputDir, compileOptions }),
 			]);
 
 			const schemaLabels = ['Dataset', 'Output', 'Key-Value Store'];
