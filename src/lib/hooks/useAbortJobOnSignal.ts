@@ -2,7 +2,7 @@ import type { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
 import { INTERRUPT_SIGNALS } from '../consts.js';
-import { error, info } from '../outputs.js';
+import { logger } from '../logger.js';
 import { useSignalHandler } from './useSignalHandler.js';
 
 export type UseAbortJobOnSignalInput = {
@@ -73,21 +73,17 @@ export function useAbortJobOnSignal(input: UseAbortJobOnSignalInput): Disposable
 				}
 
 				if (!silent) {
-					info({
-						message: chalk.gray(
+					logger.stdout.info(
+						chalk.gray(
 							`Received ${chalk.yellow(signal)}, aborting build "${chalk.yellow(input.jobId)}" on the Apify platform...`,
 						),
-						stdout: true,
-					});
+					);
 				}
 
 				try {
 					await apifyClient.build(input.jobId).abort();
 				} catch (abortErr) {
-					error({
-						message: `Failed to abort build "${input.jobId}": ${(abortErr as Error).message}`,
-						stdout: true,
-					});
+					logger.stdout.error(`Failed to abort build "${input.jobId}": ${(abortErr as Error).message}`);
 				}
 
 				return;
@@ -105,16 +101,13 @@ export function useAbortJobOnSignal(input: UseAbortJobOnSignalInput): Disposable
 					? `Received ${chalk.yellow(signal)}, gracefully aborting ${runLabel} "${chalk.yellow(input.jobId)}" on the Apify platform... ${chalk.dim('(press Ctrl+C again to abort immediately)')}`
 					: `Received ${chalk.yellow(signal)} again, aborting ${runLabel} "${chalk.yellow(input.jobId)}" immediately...`;
 
-				info({ message: chalk.gray(message), stdout: true });
+				logger.stdout.info(chalk.gray(message));
 			}
 
 			try {
 				await apifyClient.run(input.jobId).abort({ gracefully });
 			} catch (abortErr) {
-				error({
-					message: `Failed to abort run "${input.jobId}": ${(abortErr as Error).message}`,
-					stdout: true,
-				});
+				logger.stdout.error(`Failed to abort run "${input.jobId}": ${(abortErr as Error).message}`);
 			}
 		},
 	});

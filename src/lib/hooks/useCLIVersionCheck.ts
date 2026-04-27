@@ -1,7 +1,7 @@
 import { gt } from 'semver';
 
 import { CHECK_VERSION_EVERY_MILLIS } from '../consts.js';
-import { warning } from '../outputs.js';
+import { logger } from '../logger.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { useCLIMetadata } from './useCLIMetadata.js';
 import { type LatestState, updateLocalState, useLocalState } from './useLocalState.js';
@@ -66,7 +66,7 @@ async function getLatestVersion(state: LatestState) {
 			body: await res.text(),
 		});
 
-		warning({ message: 'Failed to fetch latest version of Apify CLI, using the cached version instead.' });
+		logger.stderr.warning('Failed to fetch latest version of Apify CLI, using the cached version instead.');
 
 		return null;
 	}

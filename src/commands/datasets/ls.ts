@@ -4,8 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { info, simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Dataset ID', 'Name', 'Items', 'Size', 'Created', 'Modified'],
@@ -63,15 +62,12 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 		const rawDatasetList = await client.datasets().list({ desc, offset, limit, unnamed });
 
 		if (json) {
-			printJsonToStdout(rawDatasetList);
+			this.logger.stdout.json(rawDatasetList);
 			return;
 		}
 
 		if (rawDatasetList.count === 0) {
-			info({
-				message: "You don't have any Datasets on your account",
-				stdout: true,
-			});
+			this.logger.stdout.info("You don't have any Datasets on your account");
 
 			return;
 		}
@@ -93,9 +89,6 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 			});
 		}
 
-		simpleLog({
-			message: table.render(CompactMode.WebLikeCompact),
-			stdout: true,
-		});
+		this.logger.stdout.log(table.render(CompactMode.WebLikeCompact));
 	}
 }

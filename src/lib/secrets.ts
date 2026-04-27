@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import { SECRETS_FILE_PATH } from './consts.js';
-import { warning } from './outputs.js';
+import { logger } from './logger.js';
 import { ensureApifyDirectory } from './utils.js';
 
 const SECRET_KEY_PREFIX = '@';
@@ -83,9 +83,9 @@ export const replaceSecretsValue = (
 		const secretsList = missingSecrets.map((s) => `  - ${s}`).join('\n');
 		if (allowMissing) {
 			for (const secretKey of missingSecrets) {
-				warning({
-					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
-				});
+				logger.stderr.warning(
+					`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
+				);
 			}
 		} else {
 			throw new Error(
@@ -143,9 +143,9 @@ export const transformEnvToEnvVars = (
 		const secretsList = missingSecrets.map((s) => `  - ${s}`).join('\n');
 		if (allowMissing) {
 			for (const secretKey of missingSecrets) {
-				warning({
-					message: `Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
-				});
+				logger.stderr.warning(
+					`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
+				);
 			}
 		} else {
 			throw new Error(

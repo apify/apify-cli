@@ -7,7 +7,6 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
-import { error, info, success } from '../../lib/outputs.js';
 import { getJsonFileContent, getLocalKeyValueStorePath } from '../../lib/utils.js';
 
 const DEFAULT_INPUT_PATH = join(getLocalKeyValueStorePath('default'), 'INPUT.json');
@@ -92,7 +91,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		const inputPath = resolve(process.cwd(), input);
 		const inputJson = getJsonFileContent(inputPath) ?? {};
 
-		info({ message: `Evaluating memory expression: ${memoryExpression}` });
+		this.logger.stderr.info(`Evaluating memory expression: ${memoryExpression}`);
 
 		try {
 			const result = await calculateRunDynamicMemory(memoryExpression, {
@@ -101,9 +100,9 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 			});
 			const clampedResult = Math.min(Math.max(result, minMemory), maxMemory);
 
-			success({ message: `Calculated memory: ${clampedResult} MB`, stdout: true });
+			this.logger.stdout.success(`Calculated memory: ${clampedResult} MB`);
 		} catch (err) {
-			error({ message: `Memory calculation failed: ${(err as Error).message}` });
+			this.logger.stderr.error(`Memory calculation failed: ${(err as Error).message}`);
 		}
 	}
 
@@ -147,7 +146,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		if (localConfigResult.isErr()) {
 			const { message, cause } = localConfigResult.unwrapErr();
 
-			error({ message: `${message}${cause ? `\n  ${cause.message}` : ''}` });
+			this.logger.stderr.error(`${message}${cause ? `\n  ${cause.message}` : ''}`);
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return {};
 		}

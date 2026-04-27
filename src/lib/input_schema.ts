@@ -13,7 +13,7 @@ import {
 } from '@apify/json_schemas';
 
 import { ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_PATH } from './consts.js';
-import { info, warning } from './outputs.js';
+import { logger } from './logger.js';
 import { Ajv2019, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
@@ -64,9 +64,7 @@ export const readInputSchema = async ({
 				throw new Error(`Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`);
 			}
 
-			warning({
-				message: `Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
-			});
+			logger.stderr.warning(`Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`);
 
 			return {
 				inputSchema: null,
@@ -125,7 +123,7 @@ export const readAndValidateInputSchema = async ({
 		throw new Error(`Input schema has not been found at ${inputSchemaPath}.`);
 	}
 
-	info({ message: getMessage(inputSchemaPath) });
+	logger.stderr.info(getMessage(inputSchemaPath));
 
 	const validator = new Ajv2019({ strict: false });
 	validateInputSchema(validator, inputSchema);
@@ -176,9 +174,9 @@ export const readStorageSchema = ({
 				);
 			}
 
-			warning({
-				message: `${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
-			});
+			logger.stderr.warning(
+				`${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			);
 			return null;
 		}
 
@@ -270,11 +268,11 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
 			);
 		}
 	} catch (err) {
-		warning({
-			message: `Could not create default input based on input schema, creating empty input instead. Cause: ${
+		logger.stderr.warning(
+			`Could not create default input based on input schema, creating empty input instead. Cause: ${
 				(err as Error).message
 			}`,
-		});
+		);
 	} finally {
 		const keyValueStorePath = getLocalKeyValueStorePath();
 		const inputJsonPath = join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
