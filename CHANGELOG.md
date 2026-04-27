@@ -2,9 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 1.4.2 - **not yet released**
+## [1.5.0](https://github.com/apify/apify-cli/releases/tag/v1.5.0) (2026-04-27)
 
 ### 🚀 Features
 
@@ -13,8 +11,6 @@ All notable changes to this project will be documented in this file.
 - Add `apify api` subcommand for direct API access ([#1076](https://github.com/apify/apify-cli/pull/1076)) ([da15ae7](https://github.com/apify/apify-cli/commit/da15ae7bb48c353d1b62928b666fd634ee5c2832)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1075](https://github.com/apify/apify-cli/issues/1075)
 - Add --yes flag to commands that prompt users ([#1105](https://github.com/apify/apify-cli/pull/1105)) ([3446b68](https://github.com/apify/apify-cli/commit/3446b688d550e95952c07360f8b5d30894fa83f9)) by [@l2ysho](https://github.com/l2ysho)
 - Add --user-agent flag for caller-identified telemetry ([#1102](https://github.com/apify/apify-cli/pull/1102)) ([5d1fe06](https://github.com/apify/apify-cli/commit/5d1fe06771a5a60d68c6487de092c4f5bdcb5ef2)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1100](https://github.com/apify/apify-cli/issues/1100)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [1.4.1](https://github.com/apify/apify-cli/releases/tag/v1.4.1) (2026-04-02)
 
