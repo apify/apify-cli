@@ -9,6 +9,7 @@ import { ActorGetValueCommand } from './actor/get-value.js';
 import { ActorPushDataCommand } from './actor/push-data.js';
 import { ActorSetValueCommand } from './actor/set-value.js';
 import { ActorsIndexCommand } from './actors/_index.js';
+import { ApiCommand } from './api.js';
 import { AuthIndexCommand } from './auth/_index.js';
 import { BuildsIndexCommand } from './builds/_index.js';
 import { TopLevelCallCommand } from './call.js';
@@ -49,6 +50,7 @@ export const apifyCommands = [
 	TelemetryIndexCommand,
 
 	// top-level
+	ApiCommand,
 	TopLevelCallCommand,
 	UpgradeCommand,
 	InstallCommand,

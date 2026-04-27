@@ -1,5 +1,6 @@
 /* eslint-disable max-classes-per-file */
 
+import process from 'node:process';
 import type { parseArgs, ParseArgsConfig, ParseArgsOptionDescriptor } from 'node:util';
 
 import type { Awaitable } from '@crawlee/types';
@@ -9,8 +10,10 @@ import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
+import { detectAiAgent, detectCi, detectIsInteractive } from '../hooks/telemetry/detectEnvironment.js';
 import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
 import { trackEvent } from '../hooks/telemetry/trackEvent.js';
+import { checkAndUpdateLastCommand } from '../hooks/telemetry/useTelemetryState.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
 import { error } from '../outputs.js';
@@ -142,6 +145,39 @@ const jsonFlagDefinition = {
 	multiple: false,
 } as const satisfies ParseArgsOptionDescriptor;
 
+const userAgentFlagDefinition = {
+	type: 'string',
+	multiple: false,
+} as const satisfies ParseArgsOptionDescriptor;
+
+export const USER_AGENT_FLAG_NAME = 'user-agent';
+export const USER_AGENT_ENV_VAR = 'APIFY_CLI_USER_AGENT';
+export const USER_AGENT_MAX_LENGTH = 256;
+// Scope the caller-id flag to the public `apify` entrypoint. The `actor` entrypoint
+// runs inside Actor Docker images where caller-identification is not meaningful.
+const USER_AGENT_SUPPORTED_ENTRYPOINTS = new Set(['apify']);
+
+function sanitizeUserAgentValue(value: string | undefined): string | undefined {
+	if (typeof value !== 'string') {
+		return undefined;
+	}
+	// Strip ASCII control chars (0x00-0x1F and 0x7F) to keep telemetry payloads clean.
+	// eslint-disable-next-line no-control-regex
+	const stripped = value.replace(/[\u0000-\u001f\u007f]/g, '');
+	const trimmed = stripped.trim();
+	if (!trimmed) {
+		return undefined;
+	}
+	return trimmed.length > USER_AGENT_MAX_LENGTH ? trimmed.slice(0, USER_AGENT_MAX_LENGTH) : trimmed;
+}
+
+export function resolveUserAgentForTelemetry(
+	flagValue: string | undefined,
+	envValue: string | undefined,
+): string | undefined {
+	return sanitizeUserAgentValue(flagValue) ?? sanitizeUserAgentValue(envValue);
+}
+
 export const commandRegistry = new Map<string, typeof BuiltApifyCommand>();
 
 type ParseResult = ReturnType<typeof parseArgs<ReturnType<ApifyCommand['_buildParseArgsOption']>>>;
@@ -180,6 +216,29 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	static shortDescription?: string;
 
 	static description?: string;
+
+	static examples?: { description?: string; command: string }[];
+
+	static docsUrl?: string;
+
+	/**
+	 * Marks the command as interactive, meaning it prompts the user for input by default.
+	 * Help output surfaces this so AI agents and CI users can avoid the command or find
+	 * the non-interactive alternative documented in `interactiveNote`.
+	 */
+	static interactive?: boolean;
+
+	/**
+	 * Additional note shown in help for interactive commands, explaining how to run
+	 * non-interactively (e.g. which flags to pass).
+	 */
+	static interactiveNote?: string;
+
+	/**
+	 * Grouping label shown in the main help menu. Commands are grouped by this value
+	 * and rendered as separate sections. Commands without a group fall into "OTHER".
+	 */
+	static group?: string;
 
 	static aliases?: string[];
 
@@ -220,6 +279,12 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		this.telemetryData.commandString = commandString;
 		this.telemetryData.entrypoint = entrypoint;
+
+		const ci = detectCi();
+		this.telemetryData.aiAgent = detectAiAgent();
+		this.telemetryData.isCi = ci.isCi;
+		this.telemetryData.ciProvider = ci.ciProvider;
+		this.telemetryData.isInteractive = detectIsInteractive();
 	}
 
 	abstract run(): Awaitable<void>;
@@ -243,10 +308,22 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	}
 
 	private async _run(parseResult: ParseResult) {
+		const startTime = Date.now();
 		const { values: rawFlags, positionals: rawArgs, tokens: rawTokens } = parseResult;
 
 		if (rawFlags.help) {
 			this.ctor.printHelp();
+		}
+
+		if (USER_AGENT_SUPPORTED_ENTRYPOINTS.has(this.entrypoint)) {
+			const rawUserAgentFlag = rawFlags[USER_AGENT_FLAG_NAME];
+			const resolvedUserAgent = resolveUserAgentForTelemetry(
+				typeof rawUserAgentFlag === 'string' ? rawUserAgentFlag : undefined,
+				process.env[USER_AGENT_ENV_VAR],
+			);
+			if (resolvedUserAgent) {
+				this.telemetryData.userAgent = resolvedUserAgent;
+			}
 		}
 
 		// Cheating a bit here with the types, but its fine
@@ -329,9 +406,13 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				});
 			}
 
-			this.telemetryData.flagsUsed = Object.keys(this.flags);
-
 			if (!this.skipTelemetry) {
+				this.telemetryData.flagsUsed = Object.keys(this.flags);
+				this.telemetryData.exitCode = typeof process.exitCode === 'number' ? process.exitCode : 0;
+				this.telemetryData.durationMs = Date.now() - startTime;
+
+				this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString);
+
 				await trackEvent(
 					`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
 					this.telemetryData,
@@ -639,14 +720,20 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	}
 
 	protected _buildParseArgsOption() {
+		const baseOptions: Record<string, ParseArgsOptionDescriptor> = {
+			help: helpFlagDefinition,
+		};
+
+		if (USER_AGENT_SUPPORTED_ENTRYPOINTS.has(this.entrypoint)) {
+			baseOptions[USER_AGENT_FLAG_NAME] = userAgentFlagDefinition;
+		}
+
 		const object = {
 			allowNegative: true,
 			allowPositionals: true,
 			strict: true,
 			tokens: true,
-			options: {
-				help: helpFlagDefinition,
-			} as {
+			options: baseOptions as {
 				help: typeof helpFlagDefinition;
 				json: typeof jsonFlagDefinition;
 				[k: string]: ParseArgsOptionDescriptor;

@@ -8,6 +8,17 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 
 	static override description = 'Prints details about your currently authenticated Apify account.';
 
+	static override group = 'Apify Console';
+
+	static override examples = [
+		{
+			description: 'Print the currently logged-in account username and user ID.',
+			command: 'apify info',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-info';
+
 	async run() {
 		await getLoggedClientOrThrow();
 		const info = await getLocalUserInfo();

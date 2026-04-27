@@ -29,6 +29,21 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
   - Output schema (from "output")
   - Key-Value Store schema (from "storages.keyValueStore")`;
 
+	static override group = 'Local Actor Development';
+
+	static override examples = [
+		{
+			description: 'Validate the input schema discovered from the default locations.',
+			command: 'apify validate-schema',
+		},
+		{
+			description: 'Validate a specific INPUT_SCHEMA.json file.',
+			command: 'apify validate-schema ./my-schema.json',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-validate-schema';
+
 	static override args = {
 		path: Args.string({
 			required: false,

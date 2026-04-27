@@ -31,14 +31,33 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 		'Download Actor code to current directory. ' +
 		'Clones Git repositories or fetches Actor files based on the source type.';
 
+	static override group = 'Local Actor Development';
+
+	static override examples = [
+		{
+			description: 'Pull the Actor linked to the current directory from the Apify platform.',
+			command: 'apify pull',
+		},
+		{
+			description: 'Pull a specific Actor by its full name into a target directory.',
+			command: 'apify pull apify/hello-world --dir ./hello-world',
+		},
+		{
+			description: 'Pull a specific version of an Actor.',
+			command: 'apify pull apify/hello-world --version 1.2',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-pull';
+
 	static override flags = {
 		version: Flags.string({
 			char: 'v',
-			description: 'Actor version number which will be pulled, e.g. 1.2. Default: the highest version',
+			description: 'Actor version number which will be pulled, e.g. 1.2. Default: the highest version.',
 			required: false,
 		}),
 		dir: Flags.string({
-			description: 'Directory where the Actor should be pulled to',
+			description: 'Directory where the Actor should be pulled to.',
 			required: false,
 		}),
 	};

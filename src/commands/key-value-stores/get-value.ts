@@ -11,9 +11,22 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 	static override description =
 		'Retrieves stored value for specified key. Use --only-content-type to check MIME type.';
 
+	static override examples = [
+		{
+			description: 'Read a record value and print it to stdout.',
+			command: 'apify key-value-stores get-value <storeId> INPUT',
+		},
+		{
+			description: 'Print only the record content-type.',
+			command: 'apify key-value-stores get-value <storeId> INPUT --only-content-type',
+		},
+	];
+
+	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-key-value-stores-get-value';
+
 	static override flags = {
 		'only-content-type': Flags.boolean({
-			description: 'Only return the content type of the specified key',
+			description: 'Only return the content type of the specified key.',
 			default: false,
 		}),
 	};
