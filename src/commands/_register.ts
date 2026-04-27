@@ -33,7 +33,7 @@ import { RunsIndexCommand } from './runs/_index.js';
 import { SecretsIndexCommand } from './secrets/_index.js';
 import { TasksIndexCommand } from './task/_index.js';
 import { TelemetryIndexCommand } from './telemetry/_index.js';
-import { ValidateInputSchemaCommand } from './validate-schema.js';
+import { ValidateSchemaCommand } from './validate-schema.js';
 
 export const apifyCommands = [
 	// namespaces
@@ -64,7 +64,7 @@ export const apifyCommands = [
 	TopLevelPullCommand,
 	ToplevelPushCommand,
 	RunCommand,
-	ValidateInputSchemaCommand,
+	ValidateSchemaCommand,
 	HelpCommand,
 
 	// test commands
