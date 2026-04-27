@@ -16,6 +16,7 @@ import { getInputOverride } from '../lib/commands/resolve-input.js';
 import {
 	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
+	INTERRUPT_SIGNALS,
 	LEGACY_LOCAL_STORAGE_DIR,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
@@ -315,7 +316,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 							cmd: runtime.executablePath,
 							args: [entrypoint],
 							opts: { env, cwd },
-							forwardSignals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
+							forwardSignals: INTERRUPT_SIGNALS,
 						});
 					} else {
 						// Assert the package.json content for scripts
@@ -347,7 +348,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 							args: ['run', entrypoint],
 							opts: { env, cwd },
 							overrideCommand: runtime.pmName,
-							forwardSignals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
+							forwardSignals: INTERRUPT_SIGNALS,
 						});
 					}
 
@@ -371,14 +372,14 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 							cmd: runtime.executablePath,
 							args: ['-m', entrypoint],
 							opts: { env, cwd },
-							forwardSignals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
+							forwardSignals: INTERRUPT_SIGNALS,
 						});
 					} else {
 						await execWithLog({
 							cmd: runtime.executablePath,
 							args: [entrypoint],
 							opts: { env, cwd },
-							forwardSignals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
+							forwardSignals: INTERRUPT_SIGNALS,
 						});
 					}
 

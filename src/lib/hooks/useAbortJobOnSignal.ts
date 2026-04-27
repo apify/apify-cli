@@ -1,6 +1,7 @@
 import type { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
+import { INTERRUPT_SIGNALS } from '../consts.js';
 import { error, info } from '../outputs.js';
 import { useSignalHandler } from './useSignalHandler.js';
 
@@ -61,7 +62,7 @@ export function useAbortJobOnSignal(input: UseAbortJobOnSignalInput): Disposable
 	let abortAttempt = 0;
 
 	return useSignalHandler({
-		signals: ['SIGINT', 'SIGTERM', 'SIGHUP'],
+		signals: INTERRUPT_SIGNALS,
 		once: false,
 		handler: async (signal) => {
 			abortAttempt += 1;
@@ -100,21 +101,11 @@ export function useAbortJobOnSignal(input: UseAbortJobOnSignalInput): Disposable
 			const runLabel = `${input.runType.toLowerCase()} run`;
 
 			if (!silent) {
-				if (gracefully) {
-					info({
-						message: chalk.gray(
-							`Received ${chalk.yellow(signal)}, gracefully aborting ${runLabel} "${chalk.yellow(input.jobId)}" on the Apify platform... ${chalk.dim('(press Ctrl+C again to abort immediately)')}`,
-						),
-						stdout: true,
-					});
-				} else {
-					info({
-						message: chalk.gray(
-							`Received ${chalk.yellow(signal)} again, aborting ${runLabel} "${chalk.yellow(input.jobId)}" immediately...`,
-						),
-						stdout: true,
-					});
-				}
+				const message = gracefully
+					? `Received ${chalk.yellow(signal)}, gracefully aborting ${runLabel} "${chalk.yellow(input.jobId)}" on the Apify platform... ${chalk.dim('(press Ctrl+C again to abort immediately)')}`
+					: `Received ${chalk.yellow(signal)} again, aborting ${runLabel} "${chalk.yellow(input.jobId)}" immediately...`;
+
+				info({ message: chalk.gray(message), stdout: true });
 			}
 
 			try {
