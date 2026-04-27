@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+<!-- git-cliff-unreleased-start -->
+
+## 1.5.1 - **not yet released**
+
+### 🚀 Features
+
+- **generate-schema-types:** Change default output path to src&#x2F;**generated**&#x2F;actor&#x2F; ([#1104](https://github.com/apify/apify-cli/pull/1104)) ([9b44152](https://github.com/apify/apify-cli/commit/9b441522eae7c23ff0744e1a903b87664c66f36e)) by [@vladfrangu](https://github.com/vladfrangu)
+
+<!-- git-cliff-unreleased-end -->
+
 ## [1.5.0](https://github.com/apify/apify-cli/releases/tag/v1.5.0) (2026-04-27)
 
 ### 🚀 Features
