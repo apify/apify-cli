@@ -48,7 +48,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 		path: Args.string({
 			required: false,
 			description:
-				'Optional path to your INPUT_SCHEMA.json file. If not provided, validates all schemas in actor.json.',
+				`Optional path to your INPUT_SCHEMA.json file. If not provided, validates all schemas in '${LOCAL_CONFIG_PATH}'.`,
 		}),
 	};
 
