@@ -4,6 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
+import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import {
 	getLoggedClientOrThrow,
@@ -158,6 +159,17 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		});
 
 		if (log) {
+			// While the log is streaming, forward interrupt signals to a
+			// platform-side abort so the build doesn't keep running after the
+			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
+			// SIGHUP from a closing terminal). The `using` binding guarantees
+			// the listener is removed when the block exits.
+			using _signalHandler = useAbortJobOnSignal({
+				apifyClient: client,
+				kind: 'build',
+				jobId: build.id,
+			});
+
 			try {
 				await outputJobLog({ job: build, apifyClient: client });
 			} catch (err) {

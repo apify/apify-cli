@@ -139,9 +139,9 @@ describe('apify actor generate-schema-types', () => {
 		});
 
 		expect(lastErrorMessage()).include('Generated types written to');
-		expect(lastErrorMessage()).include(join('.generated', 'actor', 'input.ts'));
+		expect(lastErrorMessage()).include(join('__generated__', 'actor', 'input.ts'));
 
-		const generatedFile = await readFile(joinPath('src', '.generated', 'actor', 'input.ts'), 'utf-8');
+		const generatedFile = await readFile(joinPath('src', '__generated__', 'actor', 'input.ts'), 'utf-8');
 		expect(generatedFile).toContain('export interface');
 	});
 

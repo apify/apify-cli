@@ -55,6 +55,14 @@ export default [
 			// Not ideal, but we still use any for simplicity
 			'@typescript-eslint/no-explicit-any': 'off',
 
+			// Allow underscore-prefixed variables (including `using _name = ...`
+			// bindings kept alive solely for their Symbol.dispose effect) in
+			// addition to the base config's underscore-prefixed args exemption.
+			'@typescript-eslint/no-unused-vars': [
+				'error',
+				{ argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+			],
+
 			// '@typescript-eslint/array-type': 'error',
 			// '@typescript-eslint/no-empty-object-type': 'off',
 		},

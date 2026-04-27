@@ -81,9 +81,9 @@ just as if the command were run from that directory with no argument.`;
 		output: Flags.string({
 			char: 'o',
 			description:
-				'Directory where the generated files should be outputted. Defaults to src/.generated/actor/ to stay within the typical tsconfig rootDir.',
+				'Directory where the generated files should be outputted. Defaults to src/__generated__/actor/ to stay within the typical tsconfig rootDir.',
 			required: false,
-			default: path.join('src', '.generated', 'actor'),
+			default: path.join('src', '__generated__', 'actor'),
 		}),
 		strict: Flags.boolean({
 			description: 'Whether generated interfaces should be strict (no index signature [key: string]: unknown).',
