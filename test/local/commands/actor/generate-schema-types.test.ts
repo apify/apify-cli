@@ -504,7 +504,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			// All schema types should be generated inside the project directory
-			const outputDir = join(projectDir, 'src', '.generated', 'actor');
+			const outputDir = join(projectDir, 'src', '__generated__', 'actor');
 
 			const inputFile = await readFile(join(outputDir, 'input.ts'), 'utf-8');
 			expect(inputFile).toContain('export interface');
@@ -540,7 +540,7 @@ describe('apify actor generate-schema-types', () => {
 				args_path: projectDir,
 			});
 
-			const outputDir = join(projectDir, 'src', '.generated', 'actor');
+			const outputDir = join(projectDir, 'src', '__generated__', 'actor');
 			const generatedFile = await readFile(join(outputDir, 'input.ts'), 'utf-8');
 			expect(generatedFile).toContain('export interface');
 			expect(generatedFile).toContain('query');
@@ -555,7 +555,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			// Output should be inside the project directory, not in cwd
-			const outputFile = join(projectDir, 'src', '.generated', 'actor', 'input.ts');
+			const outputFile = join(projectDir, 'src', '__generated__', 'actor', 'input.ts');
 			const generatedFile = await readFile(outputFile, 'utf-8');
 			expect(generatedFile).toContain('export interface');
 		});
