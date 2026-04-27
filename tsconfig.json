@@ -5,7 +5,7 @@
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
 		"resolveJsonModule": true,
-		"lib": ["ES2022"],
+		"lib": ["ES2022", "ESNext.Disposable"],
 		"allowJs": true,
 		"rootDir": "src",
 		// For now we need this :(
