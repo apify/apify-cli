@@ -1,10 +1,16 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import type { Ajv, ErrorObject } from 'ajv';
 import { cloneDeep } from 'es-toolkit';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { validateInputSchema } from '@apify/input_schema';
+import {
+	getDatasetSchemaValidator,
+	getKeyValueStoreSchemaValidator,
+	getOutputSchemaValidator,
+} from '@apify/json_schemas';
 
 import { ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_PATH } from './consts.js';
 import { info, warning } from './outputs.js';
@@ -24,7 +30,15 @@ const DEFAULT_INPUT_SCHEMA_PATHS = [
  * In such a case, path would be set to the location
  * where the input schema would be expected to be found (and e.g. can be created there).
  */
-export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; cwd: string }) => {
+export const readInputSchema = async ({
+	forcePath,
+	cwd,
+	throwOnMissing = false,
+}: {
+	forcePath?: string;
+	cwd: string;
+	throwOnMissing?: boolean;
+}) => {
 	if (forcePath) {
 		return {
 			inputSchema: getJsonFileContent(forcePath),
@@ -34,7 +48,7 @@ export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; 
 
 	const localConfig = getLocalConfig(cwd);
 
-	if (typeof localConfig?.input === 'object') {
+	if (typeof localConfig?.input === 'object' && localConfig.input !== null) {
 		return {
 			inputSchema: localConfig.input as Record<string, unknown>,
 			inputSchemaPath: null,
@@ -43,8 +57,25 @@ export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; 
 
 	if (typeof localConfig?.input === 'string') {
 		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, localConfig.input);
+		const schema = getJsonFileContent(fullPath);
+
+		if (!schema) {
+			if (throwOnMissing) {
+				throw new Error(`Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`);
+			}
+
+			warning({
+				message: `Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
+
+			return {
+				inputSchema: null,
+				inputSchemaPath: fullPath,
+			};
+		}
+
 		return {
-			inputSchema: getJsonFileContent(fullPath),
+			inputSchema: schema,
 			inputSchemaPath: fullPath,
 		};
 	}
@@ -115,11 +146,13 @@ export const readStorageSchema = ({
 	key,
 	label,
 	getRef,
+	throwOnMissing = false,
 }: {
 	cwd: string;
 	key: string;
 	label: string;
 	getRef?: (config: ReturnType<typeof getLocalConfig>) => unknown;
+	throwOnMissing?: boolean;
 }): { schema: Record<string, unknown>; schemaPath: string | null } | null => {
 	const localConfig = getLocalConfig(cwd);
 
@@ -137,6 +170,12 @@ export const readStorageSchema = ({
 		const schema = getJsonFileContent(fullPath);
 
 		if (!schema) {
+			if (throwOnMissing) {
+				throw new Error(
+					`${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+				);
+			}
+
 			warning({
 				message: `${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
 			});
@@ -255,8 +294,40 @@ export const getDefaultsFromInputSchema = (inputSchema: any) => {
 	return defaults;
 };
 
+function formatSchemaValidationErrors(errors: ErrorObject[], schemaName: string): string {
+	const details = errors
+		.map((err) => {
+			const path = err.instancePath ? ` at ${err.instancePath}` : '';
+			return `  - ${err.message}${path}`;
+		})
+		.join('\n');
+
+	return `${schemaName} schema is not valid:\n${details}`;
+}
+
+export function validateDatasetSchema(schema: Record<string, unknown>): void {
+	const validate = getDatasetSchemaValidator();
+	if (!validate(schema)) {
+		throw new Error(formatSchemaValidationErrors(validate.errors!, 'Dataset'));
+	}
+}
+
+export function validateOutputSchema(schema: Record<string, unknown>): void {
+	const validate = getOutputSchemaValidator();
+	if (!validate(schema)) {
+		throw new Error(formatSchemaValidationErrors(validate.errors!, 'Output'));
+	}
+}
+
+export function validateKvsSchema(schema: Record<string, unknown>): void {
+	const validate = getKeyValueStoreSchemaValidator();
+	if (!validate(schema)) {
+		throw new Error(formatSchemaValidationErrors(validate.errors!, 'Key-Value Store'));
+	}
+}
+
 // Lots of code copied from @apify-packages/actor, this really should be moved to the shared input_schema package
-export const getAjvValidator = (inputSchema: any, ajvInstance: import('ajv').Ajv) => {
+export const getAjvValidator = (inputSchema: any, ajvInstance: Ajv) => {
 	const copyOfSchema = cloneDeep(inputSchema);
 	copyOfSchema.required = [];
 

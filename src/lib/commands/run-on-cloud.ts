@@ -7,6 +7,7 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { Flags } from '../command-framework/flags.js';
 import { CommandExitCodes } from '../consts.js';
+import { useAbortJobOnSignal } from '../hooks/useAbortJobOnSignal.js';
 import { error, run as runLog, success, warning } from '../outputs.js';
 import { outputJobLog } from '../utils.js';
 import { resolveInput } from './resolve-input.js';
@@ -89,6 +90,20 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 
 		throw err;
 	}
+
+	// From this point on the run exists on the platform. Forward interrupt
+	// signals to a platform-side abort so the run does not keep burning
+	// compute units after the user gives up waiting locally (Ctrl+C, SIGTERM
+	// from a parent process, SIGHUP from a closing terminal). The `using`
+	// binding removes the listener when this generator finishes or is
+	// terminated by the consumer (e.g. `break` out of `for await`).
+	using _signalHandler = useAbortJobOnSignal({
+		apifyClient,
+		kind: 'run',
+		jobId: run.id,
+		runType: type,
+		silent,
+	});
 
 	// Return the started run right away
 	yield run;

@@ -1,29 +1,29 @@
 // eslint-disable-next-line import/no-extraneous-dependencies
-import { defineConfig } from 'tsup';
+import { defineConfig } from 'tsdown';
 
 export default [
 	defineConfig({
 		entry: ['src/entrypoints/apify.ts', 'src/entrypoints/actor.ts'],
-		external: [],
-		noExternal: [],
 		platform: 'node',
 		format: ['esm'],
 		target: 'es2022',
-		skipNodeModulesBundle: true,
-		clean: true,
-		minify: true,
-		terserOptions: {
-			mangle: false,
-			keep_classnames: true,
-			keep_fnames: true,
+		deps: {
+			skipNodeModulesBundle: true,
 		},
-		splitting: true,
-		keepNames: true,
+		clean: true,
+		minify: {
+			compress: {
+				keepNames: { function: true, class: true },
+			},
+			mangle: {
+				keepNames: true,
+			},
+		},
 		dts: false,
 		sourcemap: true,
-		bundle: true,
 		treeshake: false,
 		outDir: 'dist',
+		outExtensions: () => ({ js: '.js' }),
 	}),
 	defineConfig({
 		entry: ['src/index.ts'],
@@ -33,5 +33,6 @@ export default [
 		sourcemap: false,
 		dts: false,
 		outDir: 'dist',
+		outExtensions: () => ({ js: '.js' }),
 	}),
 ];

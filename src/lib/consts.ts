@@ -23,6 +23,10 @@ export const EMPTY_LOCAL_CONFIG = {
 
 export const CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
 
+// Signals representing user-initiated interruption that long-running commands
+// should react to (aborting platform jobs, forwarding to local subprocesses).
+export const INTERRUPT_SIGNALS: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP'];
+
 export const GLOBAL_CONFIGS_FOLDER = () => {
 	const base = join(homedir(), '.apify');
 
