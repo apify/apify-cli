@@ -13,7 +13,6 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
-import { error, success } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const extractGitHubZip = async (url: string, directoryPath: string) => {
@@ -77,7 +76,7 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 		const actorConfigResult = await useActorConfig({ cwd });
 
 		if (actorConfigResult.isErr()) {
-			error({ message: actorConfigResult.unwrapErr().message });
+			this.logger.stderr.error(actorConfigResult.unwrapErr().message);
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
@@ -137,7 +136,7 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 		mkdirSync(dirpath, { recursive: true });
 
 		if (!isActorAutomaticallyDetected && !(readdirSync(dirpath).length === 0)) {
-			error({ message: `Directory ${dirpath} is not empty. Please empty it or choose another directory.` });
+			this.logger.stderr.error(`Directory ${dirpath} is not empty. Please empty it or choose another directory.`);
 			return;
 		}
 
@@ -217,8 +216,8 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 				throw new Error(`Unknown source type: ${sourceType}`);
 		}
 
-		success({
-			message: isActorAutomaticallyDetected ? `Actor ${name} updated at ${dirpath}/` : `Pulled to ${dirpath}/`,
-		});
+		this.logger.stderr.success(
+			isActorAutomaticallyDetected ? `Actor ${name} updated at ${dirpath}/` : `Pulled to ${dirpath}/`,
+		);
 	}
 }

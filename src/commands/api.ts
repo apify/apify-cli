@@ -6,7 +6,6 @@ import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.
 import { Args } from '../lib/command-framework/args.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, CommandExitCodes } from '../lib/consts.js';
-import { error, simpleLog } from '../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../lib/utils.js';
 
 const HTTP_METHODS: string[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -299,22 +298,21 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 
 			// Print status to stderr but JSON response bodies to stdout so that
 			// pipelines like `apify api ... | jq` still receive the payload on failure.
-			error({ message: `${response.status} ${response.statusText}` });
+			this.logger.stderr.error(`${response.status} ${response.statusText}`);
 
 			if (responseText) {
 				try {
 					const parsed = JSON.parse(responseText);
-					simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
+					this.logger.stdout.log(JSON.stringify(parsed, null, 2));
 				} catch {
-					simpleLog({ message: responseText, stdout: true });
+					this.logger.stdout.log(responseText);
 				}
 			}
 
 			if (response.status === 404) {
-				simpleLog({
-					message: `\nRun ${chalk.cyan('apify api --list-endpoints')} to see all available Apify API endpoints.`,
-					stdout: false,
-				});
+				this.logger.stderr.log(
+					`\nRun ${chalk.cyan('apify api --list-endpoints')} to see all available Apify API endpoints.`,
+				);
 			}
 
 			return;
@@ -323,9 +321,9 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		if (responseText) {
 			try {
 				const parsed = JSON.parse(responseText);
-				simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
+				this.logger.stdout.log(JSON.stringify(parsed, null, 2));
 			} catch {
-				simpleLog({ message: responseText, stdout: true });
+				this.logger.stdout.log(responseText);
 			}
 		}
 	}

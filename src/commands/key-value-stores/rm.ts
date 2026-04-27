@@ -6,7 +6,6 @@ import { Args } from '../../lib/command-framework/args.js';
 import { YesFlag } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresRmCommand> {
@@ -48,9 +47,7 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 		const existingKvs = await tryToGetKeyValueStore(client, keyValueStoreNameOrId);
 
 		if (!existingKvs) {
-			error({
-				message: `Key-value store with ID or name "${keyValueStoreNameOrId}" not found.`,
-			});
+			this.logger.stderr.error(`Key-value store with ID or name "${keyValueStoreNameOrId}" not found.`);
 
 			return;
 		}
@@ -61,7 +58,7 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 		});
 
 		if (!confirmed) {
-			info({ message: 'Key-value store deletion has been aborted.' });
+			this.logger.stderr.info('Key-value store deletion has been aborted.');
 			return;
 		}
 
@@ -70,16 +67,15 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 		try {
 			await existingKvs.keyValueStoreClient.delete();
 
-			success({
-				message: `Key-value store with ID ${chalk.yellow(id)}${name ? ` (called ${chalk.yellow(name)})` : ''} has been deleted.`,
-				stdout: true,
-			});
+			this.logger.stdout.success(
+				`Key-value store with ID ${chalk.yellow(id)}${name ? ` (called ${chalk.yellow(name)})` : ''} has been deleted.`,
+			);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to delete key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(
+				`Failed to delete key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+			);
 		}
 	}
 }

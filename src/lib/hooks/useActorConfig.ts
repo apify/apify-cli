@@ -6,7 +6,7 @@ import { inspect } from 'node:util';
 import { err, ok, type Result } from '@sapphire/result';
 
 import { ACTOR_SPECIFICATION_VERSION, DEPRECATED_LOCAL_CONFIG_NAME } from '../consts.js';
-import { error, info, warning } from '../outputs.js';
+import { logger } from '../logger.js';
 import { getJsonFileContent, getLocalConfigPath } from '../utils.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { useYesNoConfirm } from './user-confirmations/useYesNoConfirm.js';
@@ -114,10 +114,9 @@ async function handleBothConfigVersionsFound(deprecatedConfigPath: string) {
 
 	// If users refuse to migrate, 🤷
 	if (!confirmed) {
-		warning({
-			message:
-				'The "apify.json" file present in your Actor directory will be ignored, and the new ".actor/actor.json" file will be used instead. Please, either rename or remove the old file.',
-		});
+		logger.stderr.warning(
+			'The "apify.json" file present in your Actor directory will be ignored, and the new ".actor/actor.json" file will be used instead. Please, either rename or remove the old file.',
+		);
 
 		return;
 	}
@@ -125,18 +124,18 @@ async function handleBothConfigVersionsFound(deprecatedConfigPath: string) {
 	try {
 		await rename(deprecatedConfigPath, `${deprecatedConfigPath}.deprecated`);
 
-		info({
-			message: `The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.`,
-		});
+		logger.stderr.info(
+			`The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.`,
+		);
 	} catch (ex) {
 		if (ex instanceof Error) {
-			error({
-				message: `Failed to rename the deprecated "apify.json" file to "apify.json.deprecated".\n  ${ex.message || ex}`,
-			});
+			logger.stderr.error(
+				`Failed to rename the deprecated "apify.json" file to "apify.json.deprecated".\n  ${ex.message || ex}`,
+			);
 		} else {
-			error({
-				message: `Failed to rename the deprecated "apify.json" file to "apify.json.deprecated".\n  ${inspect(ex, { showHidden: false })}`,
-			});
+			logger.stderr.error(
+				`Failed to rename the deprecated "apify.json" file to "apify.json.deprecated".\n  ${inspect(ex, { showHidden: false })}`,
+			);
 		}
 	}
 }
@@ -202,14 +201,14 @@ async function handleMigrationFlow(
 	} catch (ex) {
 		const casted = ex as Error;
 
-		warning({
-			message: `Failed to rename the deprecated "apify.json" file to "apify.json.deprecated".\n  ${casted.message || casted}`,
-		});
+		logger.stderr.warning(
+			`Failed to rename the deprecated "apify.json" file to "apify.json.deprecated".\n  ${casted.message || casted}`,
+		);
 	}
 
-	info({
-		message: `The "apify.json" file has been migrated to ".actor/actor.json" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`,
-	});
+	logger.stderr.info(
+		`The "apify.json" file has been migrated to ".actor/actor.json" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`,
+	);
 
 	return ok(migratedConfig);
 }

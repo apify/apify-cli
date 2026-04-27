@@ -2,7 +2,6 @@ import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
-import { error } from '../../lib/outputs.js';
 
 export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataCommand> {
 	static override name = 'push-data' as const;
@@ -37,7 +36,7 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 		const item = _item || cachedStdinInput;
 
 		if (!item) {
-			error({ message: 'No item was provided.' });
+			this.logger.stderr.error('No item was provided.');
 			return;
 		}
 

@@ -6,8 +6,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { DurationFormatter, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 interface HydratedActorInfo extends Omit<Actor, 'taggedBuilds'> {
 	taggedBuilds?: Record<string, ActorTaggedBuild & { build?: Build }>;
@@ -91,10 +90,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
-			error({
-				message: `${ctx.reason}. Please specify the Actor ID.`,
-				stdout: true,
-			});
+			this.logger.stdout.error(`${ctx.reason}. Please specify the Actor ID.`);
 
 			return;
 		}
@@ -116,7 +112,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		}
 
 		if (json) {
-			printJsonToStdout(actorInfo);
+			this.logger.stdout.json(actorInfo);
 			return;
 		}
 
@@ -124,47 +120,35 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 
 		if (readme) {
 			if (!latest) {
-				error({
-					message: 'No README found for this Actor.',
-					stdout: true,
-				});
+				this.logger.stdout.error('No README found for this Actor.');
 
 				return;
 			}
 
 			if (!latest.build?.readme) {
-				error({
-					message: 'No README found for this Actor.',
-					stdout: true,
-				});
+				this.logger.stdout.error('No README found for this Actor.');
 
 				return;
 			}
 
-			simpleLog({ message: latest.build.readme, stdout: true });
+			this.logger.stdout.log(latest.build.readme);
 			return;
 		}
 
 		if (input) {
 			if (!latest) {
-				error({
-					message: 'No input schema found for this Actor.',
-					stdout: true,
-				});
+				this.logger.stdout.error('No input schema found for this Actor.');
 
 				return;
 			}
 
 			if (!latest.build?.inputSchema) {
-				error({
-					message: 'No input schema found for this Actor.',
-					stdout: true,
-				});
+				this.logger.stdout.error('No input schema found for this Actor.');
 
 				return;
 			}
 
-			simpleLog({ message: latest.build.inputSchema, stdout: true });
+			this.logger.stdout.log(latest.build.inputSchema);
 			return;
 		}
 
@@ -314,6 +298,6 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 			}
 		}
 
-		simpleLog({ message: message.join('\n'), stdout: true });
+		this.logger.stdout.log(message.join('\n'));
 	}
 }

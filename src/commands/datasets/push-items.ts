@@ -5,7 +5,6 @@ import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
-import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDataCommand> {
@@ -44,9 +43,7 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 		const existingDataset = await tryToGetDataset(client, nameOrId);
 
 		if (!existingDataset) {
-			error({
-				message: `Dataset with ID or name "${nameOrId}" not found.`,
-			});
+			this.logger.stderr.error(`Dataset with ID or name "${nameOrId}" not found.`);
 
 			return;
 		}
@@ -58,24 +55,20 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 		const item = _item || cachedStdinInput;
 
 		if (!item) {
-			error({ message: 'No items were provided.' });
+			this.logger.stderr.error('No items were provided.');
 			return;
 		}
 
 		try {
 			parsedData = JSON.parse(item.toString('utf8'));
 		} catch (err) {
-			error({
-				message: `Failed to parse data as JSON string: ${(err as Error).message}`,
-			});
+			this.logger.stderr.error(`Failed to parse data as JSON string: ${(err as Error).message}`);
 
 			return;
 		}
 
 		if (Array.isArray(parsedData) && parsedData.length === 0) {
-			error({
-				message: 'No items were provided.',
-			});
+			this.logger.stderr.error('No items were provided.');
 			return;
 		}
 
@@ -86,15 +79,13 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 		try {
 			await datasetClient.pushItems(parsedData);
 
-			success({
-				message: `${this.pluralString(Array.isArray(parsedData) ? parsedData.length : 1, 'Object', 'Objects')} pushed to ${idMessage} successfully.`,
-			});
+			this.logger.stderr.success(
+				`${this.pluralString(Array.isArray(parsedData) ? parsedData.length : 1, 'Object', 'Objects')} pushed to ${idMessage} successfully.`,
+			);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to push items into ${idMessage}\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(`Failed to push items into ${idMessage}\n  ${casted.message || casted}`);
 		}
 	}
 }

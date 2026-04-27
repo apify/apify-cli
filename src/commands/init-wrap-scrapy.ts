@@ -1,6 +1,5 @@
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
-import { info } from '../lib/outputs.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
 
 export class WrapScrapyCommand extends ApifyCommand<typeof WrapScrapyCommand> {
@@ -27,6 +26,6 @@ It adds the following features:
 	async run() {
 		await wrapScrapyProject({ projectPath: this.args.path });
 
-		info({ message: 'Scrapy project wrapped successfully.' });
+		this.logger.stderr.info('Scrapy project wrapped successfully.');
 	}
 }

@@ -6,7 +6,6 @@ import { Args } from '../../lib/command-framework/args.js';
 import { YesFlag } from '../../lib/command-framework/flags.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
@@ -48,9 +47,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 		const existingDataset = await tryToGetDataset(client, datasetNameOrId);
 
 		if (!existingDataset) {
-			error({
-				message: `Dataset with ID or name "${datasetNameOrId}" not found.`,
-			});
+			this.logger.stderr.error(`Dataset with ID or name "${datasetNameOrId}" not found.`);
 
 			return;
 		}
@@ -61,7 +58,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 		});
 
 		if (!confirmed) {
-			info({ message: 'Dataset deletion has been aborted.' });
+			this.logger.stderr.info('Dataset deletion has been aborted.');
 			return;
 		}
 
@@ -70,16 +67,15 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 		try {
 			await existingDataset.datasetClient.delete();
 
-			success({
-				message: `Dataset with ID ${chalk.yellow(id)}${name ? ` (called ${chalk.yellow(name)})` : ''} has been deleted.`,
-				stdout: true,
-			});
+			this.logger.stdout.success(
+				`Dataset with ID ${chalk.yellow(id)}${name ? ` (called ${chalk.yellow(name)})` : ''} has been deleted.`,
+			);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to delete dataset with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(
+				`Failed to delete dataset with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+			);
 		}
 	}
 }

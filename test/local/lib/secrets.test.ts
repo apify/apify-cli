@@ -1,4 +1,7 @@
 import { replaceSecretsValue, transformEnvToEnvVars } from '../../../src/lib/secrets.js';
+import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
+
+const { logMessages } = useConsoleSpy();
 
 describe('Secrets', () => {
 	describe('replaceSecretsValue()', () => {
@@ -43,8 +46,6 @@ describe('Secrets', () => {
 		});
 
 		it('should warn instead of throwing when allowMissing is true', () => {
-			const spy = vitest.spyOn(console, 'error');
-
 			const secrets = {
 				myProdToken: 'mySecretToken',
 			};
@@ -62,10 +63,8 @@ describe('Secrets', () => {
 				TOKEN: secrets.myProdToken,
 			});
 
-			expect(spy).toHaveBeenCalled();
-			expect(spy.mock.calls.flat().join(' ')).to.include('doesNotExist');
-
-			spy.mockRestore();
+			expect(logMessages.error.length).toBeGreaterThan(0);
+			expect(logMessages.error.join(' ')).to.include('doesNotExist');
 		});
 	});
 
@@ -105,8 +104,6 @@ describe('Secrets', () => {
 		});
 
 		it('should warn instead of throwing when allowMissing is true', () => {
-			const spy = vitest.spyOn(console, 'error');
-
 			const secrets = {};
 			const env = {
 				TOKEN: '@doesNotExist',
@@ -119,10 +116,8 @@ describe('Secrets', () => {
 
 			expect(envVars).toStrictEqual([{ name: 'USER', value: 'plain-value' }]);
 
-			expect(spy).toHaveBeenCalled();
-			expect(spy.mock.calls.flat().join(' ')).to.include('doesNotExist');
-
-			spy.mockRestore();
+			expect(logMessages.error.length).toBeGreaterThan(0);
+			expect(logMessages.error.join(' ')).to.include('doesNotExist');
 		});
 	});
 });

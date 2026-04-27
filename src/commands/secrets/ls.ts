@@ -2,9 +2,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { info, simpleLog } from '../../lib/outputs.js';
 import { getSecretsFile } from '../../lib/secrets.js';
-import { printJsonToStdout } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Secret Name'],
@@ -37,15 +35,14 @@ export class SecretsLsCommand extends ApifyCommand<typeof SecretsLsCommand> {
 		const secretKeys = Object.keys(secrets);
 
 		if (json) {
-			printJsonToStdout({ keys: secretKeys });
+			this.logger.stdout.json({ keys: secretKeys });
 			return;
 		}
 
 		if (secretKeys.length === 0) {
-			info({
-				message: "You don't have any secrets stored locally. Use 'apify secrets add' to add a secret.",
-				stdout: true,
-			});
+			this.logger.stdout.info(
+				"You don't have any secrets stored locally. Use 'apify secrets add' to add a secret.",
+			);
 
 			return;
 		}
@@ -56,9 +53,6 @@ export class SecretsLsCommand extends ApifyCommand<typeof SecretsLsCommand> {
 			});
 		}
 
-		simpleLog({
-			message: table.render(CompactMode.WebLikeCompact),
-			stdout: true,
-		});
+		this.logger.stdout.log(table.render(CompactMode.WebLikeCompact));
 	}
 }

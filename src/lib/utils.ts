@@ -775,10 +775,6 @@ export function mapGroupBy<K, T>(items: Iterable<T>, keySelector: (item: T, inde
 	return map;
 }
 
-export function printJsonToStdout(object: unknown) {
-	console.log(JSON.stringify(object, null, 2));
-}
-
 export const tildify = (path: string) => {
 	if (path.startsWith(homedir())) {
 		return path.replace(homedir(), '~');

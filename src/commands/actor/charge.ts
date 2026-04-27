@@ -4,7 +4,6 @@ import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { info } from '../../lib/outputs.js';
 import { getLoggedClient } from '../../lib/utils.js';
 
 /**
@@ -71,18 +70,16 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 		const isAtHome = Boolean(process.env.APIFY_IS_AT_HOME);
 
 		if (!isAtHome) {
-			info({
-				message: `No platform detected: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
-				stdout: true,
-			});
+			this.logger.stdout.info(
+				`No platform detected: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
+			);
 			return;
 		}
 
 		if (testPayPerEvent) {
-			info({
-				message: `PPE test mode: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
-				stdout: true,
-			});
+			this.logger.stdout.info(
+				`PPE test mode: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
+			);
 			return;
 		}
 
@@ -102,10 +99,9 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 			throw new Error('Charge command can only be used with pay-per-event pricing model.');
 		}
 
-		info({
-			message: `Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}" (runId: ${runId}).`,
-			stdout: true,
-		});
+		this.logger.stdout.info(
+			`Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}" (runId: ${runId}).`,
+		);
 		await apifyClient.run(runId).charge({
 			eventName,
 			count,

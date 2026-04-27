@@ -4,7 +4,7 @@ import { dirname } from 'node:path';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { TELEMETRY_FILE_PATH } from '../../consts.js';
-import { info } from '../../outputs.js';
+import { logger } from '../../logger.js';
 import type { AuthJSON } from '../../types.js';
 import { getLocalUserInfo } from '../../utils.js';
 
@@ -74,8 +74,11 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 
 		// First time we are tracking telemetry, so we want to notify user about it.
 		// Skip the notice if telemetry is disabled via env var — the user already opted out.
-		if (!process.env.APIFY_CLI_DISABLE_TELEMETRY || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)) {
-			info({ message: telemetryWarningText });
+		if (
+			!process.env.APIFY_CLI_DISABLE_TELEMETRY ||
+			['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)
+		) {
+			logger.stderr.info(telemetryWarningText);
 		}
 
 		return useTelemetryState();

@@ -4,7 +4,7 @@ import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
-import { error } from '../outputs.js';
+import { logger } from '../logger.js';
 import type { BuiltApifyCommand } from './apify-command.js';
 import type { BaseCommandRenderer, SelectiveRenderOptions } from './help/_BaseCommandRenderer.js';
 import { CommandHelp } from './help/CommandHelp.js';
@@ -15,9 +15,9 @@ const commands = new Map<typeof BuiltApifyCommand, BaseCommandRenderer>();
 
 export function registerCommandForHelpGeneration(entrypoint: string, command: typeof BuiltApifyCommand) {
 	if (command.name.toLowerCase() !== command.name) {
-		error({
-			message: `Command name "${command.name}" is not correctly set up internally. Make sure you fill out the "name" field in the command class extension.`,
-		});
+		logger.stderr.error(
+			`Command name "${command.name}" is not correctly set up internally. Make sure you fill out the "name" field in the command class extension.`,
+		);
 
 		return;
 	}
