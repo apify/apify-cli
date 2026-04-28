@@ -1,7 +1,7 @@
-import { INPUT_FILE_REG_EXP } from '../../../src/lib/consts.js';
+import { inputFileRegExp } from '../../../src/lib/input-key.js';
 
 describe('Consts', () => {
-	describe('INPUT_FILE_REG_EXP', () => {
+	describe('inputFileRegExp', () => {
 		const testValues = [
 			{
 				text: 'INPUT.json',
@@ -27,7 +27,7 @@ describe('Consts', () => {
 
 		testValues.forEach((value) => {
 			it(`should match ${value.text}`, () => {
-				expect(!!value.text.match(INPUT_FILE_REG_EXP)).toEqual(value.match);
+				expect(!!value.text.match(inputFileRegExp('INPUT'))).toEqual(value.match);
 			});
 		});
 	});
