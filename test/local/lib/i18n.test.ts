@@ -56,9 +56,11 @@ describe('i18n', () => {
 				en: {
 					hello: { markdown: 'Hello', json: () => null },
 				},
+				// @ts-expect-error -- testing locales
 				de: {
 					hello: { markdown: 'Hallo', json: () => null },
 				},
+				// @ts-expect-error -- testing locales
 				cs: {
 					hello: { markdown: 'Ahoj', json: () => null },
 				},
@@ -73,6 +75,7 @@ describe('i18n', () => {
 					hello: { markdown: 'Hello', json: () => null },
 					bye: { markdown: 'Goodbye', json: () => null },
 				},
+				// @ts-expect-error -- testing locales
 				de: {
 					hello: { markdown: 'Hallo', json: () => null },
 				},
@@ -365,6 +368,7 @@ describe('i18n', () => {
 	describe('locale management', () => {
 		it('exposes getLocale / setLocale', () => {
 			expect(getLocale()).toBe('en');
+			// @ts-expect-error -- testing locales
 			setLocale('de');
 			expect(getLocale()).toBe('de');
 		});
@@ -374,11 +378,13 @@ describe('i18n', () => {
 				en: {
 					hello: { markdown: 'Hello {name}', json: () => null },
 				},
+				// @ts-expect-error -- testing locales
 				de: {
 					hello: { markdown: 'Hallo {name}', json: () => null },
 				},
 			});
 
+			// @ts-expect-error -- testing locales
 			setLocale('de');
 			expect(stripAnsi(t(messages.hello, { name: 'Welt' }))).toBe('Hallo Welt');
 		});
@@ -390,6 +396,7 @@ describe('i18n', () => {
 				},
 			});
 
+			// @ts-expect-error -- testing locales
 			setLocale('de');
 			expect(stripAnsi(t(messages.hello, { name: 'Welt' }))).toBe('Hello Welt');
 		});
@@ -399,11 +406,13 @@ describe('i18n', () => {
 				en: {
 					hello: { markdown: 'Hello', json: () => null },
 				},
+				// @ts-expect-error -- testing locales
 				de: {
 					hello: { markdown: 'Hallo', json: () => null },
 				},
 			});
 
+			// @ts-expect-error -- testing locales
 			expect(stripAnsi(t(messages.hello, { format: 'terminal', locale: 'de' }))).toBe('Hallo');
 			expect(getLocale()).toBe('en');
 		});
@@ -417,7 +426,9 @@ describe('i18n', () => {
 		it('accepts any SUPPORTED_LOCALES entry as an optional key', () => {
 			const messages = defineMessages({
 				en: { hello: { markdown: 'Hello', json: () => null } },
+				// @ts-expect-error -- testing locales
 				cs: { hello: { markdown: 'Ahoj', json: () => null } },
+				// @ts-expect-error -- testing locales
 				fr: { hello: { markdown: 'Bonjour', json: () => null } },
 			});
 

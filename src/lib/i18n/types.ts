@@ -8,7 +8,7 @@ import type { md as mdFunction } from './md.js';
  * i18n surface (`defineMessages`, `setLocale`, the `translations` record) will
  * accept the new code automatically.
  */
-export const SUPPORTED_LOCALES = ['en', 'cs', 'de', 'es', 'fr'] as const;
+export const SUPPORTED_LOCALES = ['en'] as const;
 
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 
