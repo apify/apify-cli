@@ -2,6 +2,9 @@
 
 import { homedir } from 'node:os';
 import { join } from 'node:path';
+import process from 'node:process';
+
+import ciInfo from 'ci-info';
 
 import { META_ORIGINS } from '@apify/consts';
 
@@ -55,7 +58,14 @@ export const LOCAL_CONFIG_PATH = join(ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_N
 
 export const SUPPORTED_NODEJS_VERSION = pkg.engines.node;
 
-export const APIFY_CLIENT_DEFAULT_HEADERS = { 'X-Apify-Request-Origin': META_ORIGINS.CLI };
+const githubActionsRunUrl = ciInfo.GITHUB_ACTIONS
+	? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+	: undefined;
+
+export const APIFY_CLIENT_DEFAULT_HEADERS: Record<string, string> = {
+	'X-Apify-Request-Origin': ciInfo.isCI ? META_ORIGINS.CI : META_ORIGINS.CLI,
+	...(githubActionsRunUrl && { 'X-Apify-Github-Actions-Run-Url': githubActionsRunUrl }),
+};
 
 export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.9.0';
 
