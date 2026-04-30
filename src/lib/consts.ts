@@ -56,9 +56,10 @@ export const LOCAL_CONFIG_PATH = join(ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_N
 
 export const SUPPORTED_NODEJS_VERSION = pkg.engines.node;
 
-const githubActionsRunUrl = process.env.GITHUB_ACTIONS === 'true'
-	? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
-	: undefined;
+const githubActionsRunUrl =
+	process.env.GITHUB_ACTIONS === 'true'
+		? `${process.env.GITHUB_SERVER_URL}/${process.env.GITHUB_REPOSITORY}/actions/runs/${process.env.GITHUB_RUN_ID}`
+		: undefined;
 
 export const APIFY_CLIENT_DEFAULT_HEADERS: Record<string, string> = {
 	'X-Apify-Request-Origin': process.env.CI === 'true' ? META_ORIGINS.CI : META_ORIGINS.CLI,
