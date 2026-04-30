@@ -89,7 +89,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		}
 
 		if (err.type === 'full-permission-actor-not-approved') {
-			const approvalUrl: string | undefined = err.data?.approvalUrl
+			const approvalUrl: string | undefined = err.data?.approvalUrl;
 			const lines = [
 				`${type} ${actorOrTaskData.userFriendlyId} requires full access to your Apify account and has not been approved yet.`,
 			];
