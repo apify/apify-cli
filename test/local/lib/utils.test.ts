@@ -1,9 +1,9 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { INPUT_FILE_REG_EXP } from '../../../src/lib/consts.js';
 import { execWithLog } from '../../../src/lib/exec.js';
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
+import { inputFileRegExp } from '../../../src/lib/input-key.js';
 import { createActZip, getActorLocalFilePaths } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 import { withRetries } from '../../__setup__/hooks/withRetries.js';
@@ -93,13 +93,13 @@ describe('Utils', () => {
 
 		validFiles.forEach((file) => {
 			it(`should match ${file}`, () => {
-				expect(!!file.match(INPUT_FILE_REG_EXP)).toBeTruthy();
+				expect(!!file.match(inputFileRegExp('INPUT'))).toBeTruthy();
 			});
 		});
 
 		invalidFiles.forEach((file) => {
 			it(`should not match ${file}`, () => {
-				expect(!!file.match(INPUT_FILE_REG_EXP)).toBeFalsy();
+				expect(!!file.match(inputFileRegExp('INPUT'))).toBeFalsy();
 			});
 		});
 	});

@@ -34,10 +34,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.36.0, @apify/consts@npm:^2.50.0, @apify/consts@npm:^2.51.0, @apify/consts@npm:^2.51.1, @apify/consts@npm:^2.52.1":
+"@apify/consts@npm:^2.20.0, @apify/consts@npm:^2.50.0, @apify/consts@npm:^2.51.0, @apify/consts@npm:^2.51.1, @apify/consts@npm:^2.52.1":
   version: 2.52.1
   resolution: "@apify/consts@npm:2.52.1"
   checksum: 10c0/86d3a6b8a137bfecdb103a34b089c550a3a16d44b9b8b4373b1aec59ceacc91e444c7e121267b9d66363ce47efad650d5a50a1fd0800e0359eb1c67aec9d4b1e
+  languageName: node
+  linkType: hard
+
+"@apify/consts@npm:^2.53.0":
+  version: 2.53.0
+  resolution: "@apify/consts@npm:2.53.0"
+  checksum: 10c0/e2aa4a616d9ce60940fff8c1371cdbefb1aeb1a5408f6261c396efe6119da1c14a6ef3b5cb3f1d8a6247cf8d7c3e85bdf2a2e44302d33d2fa73f5c01d1773e30
   languageName: node
   linkType: hard
 
@@ -2202,7 +2209,7 @@ __metadata:
   dependencies:
     "@apify/actor-memory-expression": "npm:^0.1.12"
     "@apify/actor-templates": "npm:^0.1.5"
-    "@apify/consts": "npm:^2.36.0"
+    "@apify/consts": "npm:^2.53.0"
     "@apify/eslint-config": "npm:^1.0.0"
     "@apify/input_schema": "npm:^3.17.0"
     "@apify/json_schemas": "npm:^0.13.0"

@@ -125,6 +125,7 @@ jobs:
                   author_name: Apify Release Bot
                   author_email: noreply@apify.com
                   message: "chore(release): Update changelog and package version [skip ci]"
+                  pull: "--rebase --autostash"
 
     build-bundles:
         name: Build bundles
