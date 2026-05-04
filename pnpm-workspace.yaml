@@ -1,8 +1,21 @@
+allowBuilds:
+    esbuild: true
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+    - "@apify/*"
+    - "@crawlee/*"
+    - "apify"
+    - "apify-client"
+    - "crawlee"
+    - "got-scraping"
+
 overrides:
     tar: 7.5.13
 
-minimumReleaseAge: 1440
-
 # Unfortunately, several parts of this project expect everything to be hoisted up in the node_modules directory...
 # And fixing it would take longer than just enabling this and shedding a tear
-shamefullyHoist: false
+publicHoistPattern:
+    - "*"
+    # lazystream uses version 2.3.8, all other deps that require it use latest version
+    - "!readable-stream"
