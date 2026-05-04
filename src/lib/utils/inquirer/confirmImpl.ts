@@ -49,7 +49,10 @@ function boolToString(value: boolean): string {
 	return value ? 'Yes' : 'No';
 }
 
-export default createPrompt<boolean, ConfirmOptions>((config, done) => {
+export const confirmImpl: ReturnType<typeof createPrompt<boolean, ConfirmOptions>> = createPrompt<
+	boolean,
+	ConfirmOptions
+>((config, done) => {
 	const transformer = boolToString;
 	const [status, setStatus] = useState<Status>('idle');
 	const [value, setValue] = useState('');

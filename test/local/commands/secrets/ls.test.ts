@@ -37,7 +37,7 @@ describe('apify secrets ls', () => {
 	it('should list all secrets', async () => {
 		const spy = vitest.spyOn(console, 'log');
 
-		await testRunCommand(SecretsLsCommand, {});
+		await testRunCommand(SecretsLsCommand, { flags_json: true });
 
 		// Verify the command outputs our test secrets
 		const output = spy.mock.calls.map((call) => call.join(' ')).join('\n');

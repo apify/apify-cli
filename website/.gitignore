@@ -21,7 +21,3 @@ apify_storage
 crawlee_storage
 storage
 .turbo
-
-# Yarn files
-.yarn/install-state.gz
-.yarn/build-state.yml

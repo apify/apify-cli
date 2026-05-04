@@ -1,5 +1,8 @@
 {
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
 	"extends": ["config:base", ":semanticCommitTypeAll(chore)"],
+	"minimumReleaseAge": "1 day",
+	"internalChecksFilter": "strict",
 	"pinVersions": false,
 	"separateMajorMinor": false,
 	"dependencyDashboard": false,
@@ -35,6 +38,17 @@
 			"automergeType": "branch",
 			"groupSlug": "all-inquirer",
 			"matchPackageNames": ["@inquirer/**"]
+		},
+		{
+			"matchPackageNames": [
+				"@apify/*",
+				"@crawlee/*",
+				"apify",
+				"apify-client",
+				"crawlee",
+				"got-scraping"
+			],
+			"minimumReleaseAge": "0 days"
 		}
 	],
 	"schedule": ["every weekday"]

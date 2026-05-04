@@ -1,17 +1,21 @@
-const { parse } = require('url');
-
 const visit = import('unist-util-visit').then((m) => m.visit);
 
 const internalUrls = ['sdk.apify.com'];
 
+const PLACEHOLDER_BASE = 'http://apify.cli';
+
 /**
- * @param {import('url').UrlWithStringQuery} href
+ * @param {string} href
  */
 function isInternal(href) {
-    return internalUrls.some(
-        (internalUrl) => href.host === internalUrl
-            || (!href.protocol && !href.host && (href.pathname || href.hash)),
-    );
+    const url = new URL(href, PLACEHOLDER_BASE);
+
+    if (url.origin === PLACEHOLDER_BASE) {
+        // Relative URL (no protocol/host) — internal if it has content
+        return href.length > 0;
+    }
+
+    return internalUrls.some((internalUrl) => url.host === internalUrl);
 }
 
 /**
@@ -25,9 +29,7 @@ exports.externalLinkProcessor = () => {
                 && node.properties
                 && typeof node.properties.href === 'string'
             ) {
-                const href = parse(node.properties.href);
-
-                if (!isInternal(href)) {
+                if (!isInternal(node.properties.href)) {
                     node.properties.target = '_blank';
                     node.properties.rel = 'noopener';
                 } else {
