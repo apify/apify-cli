@@ -54,7 +54,7 @@ describe('[e2e][api] builds namespace', () => {
 		});
 
 		await client.build(JSON.parse(create2.stdout).id).waitForFinish();
-	});
+	}, 600_000);
 
 	afterAll(async () => {
 		if (actor?.name && client) {
