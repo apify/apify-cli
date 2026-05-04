@@ -4,8 +4,7 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
-import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const resurrectStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,
@@ -45,15 +44,14 @@ export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectComma
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			error({ message: `Run with ID "${runId}" was not found on your account.`, stdout: true });
+			this.logger.stdout.error(`Run with ID "${runId}" was not found on your account.`);
 			return;
 		}
 
 		if (!resurrectStatuses.includes(run.status as never)) {
-			error({
-				message: `Run with ID "${runId}" cannot be resurrected, as it is still running or in the process of aborting.`,
-				stdout: true,
-			});
+			this.logger.stdout.error(
+				`Run with ID "${runId}" cannot be resurrected, as it is still running or in the process of aborting.`,
+			);
 
 			return;
 		}
@@ -62,18 +60,15 @@ export class RunsResurrectCommand extends ApifyCommand<typeof RunsResurrectComma
 			const result = await apifyClient.run(runId).resurrect();
 
 			if (this.flags.json) {
-				printJsonToStdout(result);
+				this.logger.stdout.json(result);
 				return;
 			}
 
-			success({ message: `Run with ID "${runId}" was resurrected successfully.`, stdout: true });
+			this.logger.stdout.success(`Run with ID "${runId}" was resurrected successfully.`);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to resurrect run "${runId}".\n  ${casted.message || casted}`,
-				stdout: true,
-			});
+			this.logger.stdout.error(`Failed to resurrect run "${runId}".\n  ${casted.message || casted}`);
 		}
 	}
 }

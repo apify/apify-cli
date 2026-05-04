@@ -13,7 +13,6 @@ import {
 	validateKvsSchema,
 	validateOutputSchema,
 } from '../lib/input_schema.js';
-import { error, info, success } from '../lib/outputs.js';
 import { Ajv2019 } from '../lib/utils.js';
 
 export class ValidateSchemaCommand extends ApifyCommand<typeof ValidateSchemaCommand> {
@@ -69,7 +68,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 			getMessage: (path) => `Validating input schema at ${path ?? forcePath}`,
 		});
 
-		success({ message: 'Input schema is valid.' });
+		this.logger.stderr.success('Input schema is valid.');
 	}
 
 	private async validateAllSchemas() {
@@ -87,16 +86,16 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 				foundAny = true;
 
 				const location = inputSchemaPath ? `at ${inputSchemaPath}` : `embedded in '${LOCAL_CONFIG_PATH}'`;
-				info({ message: `Validating input schema ${location}` });
+				this.logger.stderr.info(`Validating input schema ${location}`);
 
 				const validator = new Ajv2019({ strict: false });
 				validateInputSchema(validator, inputSchema);
-				success({ message: 'Input schema is valid.' });
+				this.logger.stderr.success('Input schema is valid.');
 			}
 		} catch (err) {
 			foundAny = true;
 			hasErrors = true;
-			error({ message: (err as Error).message });
+			this.logger.stderr.error((err as Error).message);
 		}
 
 		// Storage schemas (Dataset, Output, Key-Value Store)
@@ -136,15 +135,15 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 					const location = result.schemaPath
 						? `at ${result.schemaPath}`
 						: `embedded in '${LOCAL_CONFIG_PATH}'`;
-					info({ message: `Validating ${label} schema ${location}` });
+					this.logger.stderr.info(`Validating ${label} schema ${location}`);
 
 					validate(result.schema);
-					success({ message: `${label} schema is valid.` });
+					this.logger.stderr.success(`${label} schema is valid.`);
 				}
 			} catch (err) {
 				foundAny = true;
 				hasErrors = true;
-				error({ message: (err as Error).message });
+				this.logger.stderr.error((err as Error).message);
 			}
 		}
 

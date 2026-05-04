@@ -11,7 +11,6 @@ import which from 'which';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info, simpleLog, success, warning } from '../../lib/outputs.js';
 import { detectShell, shellConfigFile, tildify } from '../../lib/utils.js';
 import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
 
@@ -29,7 +28,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		const { installMethod, installPath, version } = useCLIMetadata();
 
 		if (installMethod !== 'bundle') {
-			info({ message: `Apify and Actor CLI are already fully configured! 👍` });
+			this.logger.stderr.info(`Apify and Actor CLI are already fully configured! 👍`);
 			return;
 		}
 
@@ -38,7 +37,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		const installMarkerPath = pathToInstallMarker(installPath);
 
 		if (existsSync(installMarkerPath)) {
-			info({ message: `Apify and Actor CLI are already fully configured! 👍` });
+			this.logger.stderr.info(`Apify and Actor CLI are already fully configured! 👍`);
 			return;
 		}
 
@@ -49,18 +48,18 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			try {
 				await this.promptAddToShell();
 			} catch (err: any) {
-				error({ message: err.message || 'Failed to automatically handle shell integration' });
+				this.logger.stderr.error(err.message || 'Failed to automatically handle shell integration');
 			}
 
-			simpleLog({ message: '' });
+			this.logger.stderr.log('');
 		}
 
 		await writeFile(installMarkerPath, version);
 
 		cliDebugPrint('[install] install marker written to', installMarkerPath);
 
-		simpleLog({
-			message: [
+		this.logger.stderr.log(
+			[
 				'',
 				chalk.green('Apify and Actor CLI were installed successfully!'),
 				'',
@@ -69,11 +68,11 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 					`  Location: ${chalk.bold.white(tildify(join(installPath, 'apify')))} and ${chalk.bold.white(tildify(join(installPath, 'actor')))}`,
 				),
 			].join('\n'),
-		});
+		);
 
-		simpleLog({ message: '' });
-		success({ message: 'To get started, run:' });
-		simpleLog({ message: chalk.white.bold('  apify --help\n  actor --help') });
+		this.logger.stderr.log('');
+		this.logger.stderr.success('To get started, run:');
+		this.logger.stderr.log(chalk.white.bold('  apify --help\n  actor --help'));
 	}
 
 	private async symlinkToLocalBin(installPath: string) {
@@ -84,7 +83,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		if (!userHomeDirectory) {
 			cliDebugPrint('[install -> symlinkToLocalBin] user home directory not found');
 
-			warning({ message: chalk.gray(`User home directory not found, cannot symlink to ~/.local/bin`) });
+			this.logger.stderr.warning(chalk.gray(`User home directory not found, cannot symlink to ~/.local/bin`));
 
 			return;
 		}
@@ -102,7 +101,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			if (!existsSync(originalPath)) {
 				cliDebugPrint('[install] file not found for symlinking', file, originalPath);
 
-				warning({ message: chalk.gray(`Bundle not found for symlinking: ${file}`) });
+				this.logger.stderr.warning(chalk.gray(`Bundle not found for symlinking: ${file}`));
 				continue;
 			}
 
@@ -117,7 +116,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			cliDebugPrint('[install] symlink created for item', file, symlinkPath);
 		}
 
-		info({ message: chalk.gray(`Symlinked apify, actor, and apify-cli to ${tildify(localBinDirectory)}`) });
+		this.logger.stderr.info(chalk.gray(`Symlinked apify, actor, and apify-cli to ${tildify(localBinDirectory)}`));
 	}
 
 	/**
@@ -207,7 +206,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		) {
 			cliDebugPrint('[install -> promptAddToShell] already in PATH', { apifyCliPath, actorCliPath });
 
-			info({ message: chalk.gray(`Apify and Actor CLIs are already in PATH, skipping shell integration`) });
+			this.logger.stderr.info(chalk.gray(`Apify and Actor CLIs are already in PATH, skipping shell integration`));
 			return;
 		}
 
@@ -220,13 +219,13 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		const installDir = process.env.PROVIDED_INSTALL_DIR ?? defaultInstallDir;
 
 		if (!installDir) {
-			warning({ message: chalk.gray(`Install directory not found, cannot add to shell`) });
+			this.logger.stderr.warning(chalk.gray(`Install directory not found, cannot add to shell`));
 			return;
 		}
 
 		const binDir = process.env.FINAL_BIN_DIR ?? defaultBinDir;
 
-		simpleLog({ message: '' });
+		this.logger.stderr.log('');
 
 		const confirmMessage = 'Should the CLI handle adding itself to your shell automatically?';
 
@@ -281,7 +280,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			}
 		}
 
-		simpleLog({ message: '' });
+		this.logger.stderr.log('');
 
 		if (allowedToAutomaticallyDo && configFile) {
 			const oldContent = await readFile(configFile, 'utf-8').catch((err) => {
@@ -312,14 +311,14 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 				);
 			}
 
-			info({
-				message: [
+			this.logger.stderr.info(
+				[
 					chalk.gray(`Added "${tildify(binDir)}" to your PATH in ${tildify(configFile)}.`),
 					chalk.gray(
 						`  You may need to run ${chalk.white.bold(`source ${tildify(configFile)}`)} to reload your shell.`,
 					),
 				].join('\n'),
-			});
+			);
 
 			return;
 		}
@@ -329,23 +328,23 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		if (showOneLiner) {
 			const oneLiner = `echo -e '${linesToAdd.join('\\n')}' >> "${resolvedConfigFile}" && source "${resolvedConfigFile}"`;
 
-			info({
-				message: [
+			this.logger.stderr.info(
+				[
 					//
 					chalk.gray(`The Apify & Actor CLIs are not in your PATH. Run:`),
 					'',
 					chalk.white.bold(`  ${oneLiner}`),
 				].join('\n'),
-			});
+			);
 
 			return;
 		}
 
-		info({
-			message: [
+		this.logger.stderr.info(
+			[
 				chalk.gray(`Manually add the following lines to ${resolvedConfigFile} or similar:`),
 				...linesToAdd.map((line) => chalk.white.bold(`  ${line}`)),
 			].join('\n'),
-		});
+		);
 	}
 }

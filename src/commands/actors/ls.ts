@@ -8,12 +8,10 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { CompactMode, kSkipColumn, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { info, simpleLog } from '../../lib/outputs.js';
 import {
 	DateOnlyTimestampFormatter,
 	getLoggedClientOrThrow,
 	MultilineTimestampFormatter,
-	printJsonToStdout,
 	ShortDurationFormatter,
 } from '../../lib/utils.js';
 
@@ -146,14 +144,11 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 
 		if (rawActorList.count === 0) {
 			if (json) {
-				printJsonToStdout(rawActorList);
+				this.logger.stdout.json(rawActorList);
 				return;
 			}
 
-			info({
-				message: my ? "You don't have any Actors yet!" : 'There are no recent Actors used by you.',
-				stdout: true,
-			});
+			this.logger.stdout.info(my ? "You don't have any Actors yet!" : 'There are no recent Actors used by you.');
 
 			return;
 		}
@@ -193,7 +188,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 		actorList.items = my ? this.sortByModifiedAt(actorList.items) : this.sortByLastRun(actorList.items);
 
 		if (json) {
-			printJsonToStdout(actorList);
+			this.logger.stdout.json(actorList);
 			return;
 		}
 
@@ -298,10 +293,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			});
 		}
 
-		simpleLog({
-			message: table.render(CompactMode.WebLikeCompact),
-			stdout: true,
-		});
+		this.logger.stdout.log(table.render(CompactMode.WebLikeCompact));
 	}
 
 	private sortByModifiedAt(items: HydratedListData[]) {

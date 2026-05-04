@@ -45,6 +45,11 @@ export async function runCli(
 		env: {
 			APIFY_CLI_DISABLE_TELEMETRY: '1',
 			APIFY_CLI_SKIP_UPDATE_CHECK: '1',
+			// Vitest sets `APIFY_NO_LOGS_IN_TESTS=1` for its workers, which makes
+			// the logger default to a noop output. We don't want that leaking
+			// into the CLI child process under test — e2e tests assert on real
+			// stdout / stderr.
+			APIFY_NO_LOGS_IN_TESTS: '',
 			...options.env,
 		},
 	});

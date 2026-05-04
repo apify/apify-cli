@@ -18,7 +18,7 @@ import Handlebars from 'handlebars';
 import { fetchManifest, wrapperManifestUrl } from '@apify/actor-templates';
 
 import { useSelectFromList } from '../../hooks/user-confirmations/useSelectFromList.js';
-import { info, success } from '../../outputs.js';
+import { logger } from '../../logger.js';
 import { downloadAndUnzip, sanitizeActorName } from '../../utils.js';
 import { ScrapyProjectAnalyzer } from './ScrapyProjectAnalyzer.js';
 
@@ -117,7 +117,7 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 
 	const manifest = await fetchManifest(wrapperManifestUrl);
 
-	info({ message: 'Downloading the latest Scrapy wrapper template...' });
+	logger.stderr.info('Downloading the latest Scrapy wrapper template...');
 
 	const { archiveUrl } = manifest.templates.find(({ id }) => id === 'python-scrapy')!;
 
@@ -128,7 +128,7 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 		pathTo: templatePath,
 	});
 
-	info({ message: 'Wrapping the Scrapy project...' });
+	logger.stderr.info('Wrapping the Scrapy project...');
 
 	await merge(templatePath, projectPath, {
 		bindings: templateBindings,
@@ -149,5 +149,5 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 		});
 	});
 
-	success({ message: 'The Scrapy project has been wrapped successfully.' });
+	logger.stderr.success('The Scrapy project has been wrapped successfully.');
 }

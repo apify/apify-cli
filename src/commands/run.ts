@@ -28,7 +28,6 @@ import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { useModuleVersion } from '../lib/hooks/useModuleVersion.js';
 import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
 import { CRAWLEE_INPUT_KEY_ENV, resolveInputKey, TEMP_INPUT_KEY_PREFIX } from '../lib/input-key.js';
-import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
 	Ajv2019,
@@ -154,7 +153,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (localConfigResult.isErr()) {
 			const { message, cause } = localConfigResult.unwrapErr();
 
-			error({ message: `${message}${cause ? `\n  ${cause.message}` : ''}` });
+			this.logger.stderr.error(`${message}${cause ? `\n  ${cause.message}` : ''}`);
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
@@ -167,7 +166,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const projectRuntimeResult = await useCwdProject({ cwd });
 
 		if (projectRuntimeResult.isErr()) {
-			error({ message: projectRuntimeResult.unwrapErr().message });
+			this.logger.stderr.error(projectRuntimeResult.unwrapErr().message);
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
@@ -177,7 +176,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		if (project.warnings?.length) {
 			for (const w of project.warnings) {
-				warning({ message: w });
+				this.logger.stderr.warning(w);
 			}
 		}
 
@@ -191,20 +190,20 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (!runtime) {
 			switch (type) {
 				case ProjectLanguage.JavaScript:
-					error({
-						message: `No Node.js detected! Please install Node.js ${SUPPORTED_NODEJS_VERSION} (or higher) to be able to run Node.js Actors locally.`,
-					});
+					this.logger.stderr.error(
+						`No Node.js detected! Please install Node.js ${SUPPORTED_NODEJS_VERSION} (or higher) to be able to run Node.js Actors locally.`,
+					);
 					break;
 				case ProjectLanguage.Scrapy:
 				case ProjectLanguage.Python:
-					error({
-						message: `No Python detected! Please install Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} (or higher) to be able to run Python Actors locally.`,
-					});
+					this.logger.stderr.error(
+						`No Python detected! Please install Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} (or higher) to be able to run Python Actors locally.`,
+					);
 					break;
 				default:
-					error({
-						message: `No runtime detected! Make sure you have Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} (or higher) or Node.js ${SUPPORTED_NODEJS_VERSION} (or higher) installed.`,
-					});
+					this.logger.stderr.error(
+						`No runtime detected! Make sure you have Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} (or higher) or Node.js ${SUPPORTED_NODEJS_VERSION} (or higher) installed.`,
+					);
 			}
 
 			return;
@@ -239,20 +238,19 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			runType = type !== ProjectLanguage.JavaScript ? RunType.Module : RunType.DirectFile;
 			entrypoint = cwdEntrypoint.path;
 		} else {
-			error({
-				message: `No entrypoint detected! Please provide an entrypoint using the --entrypoint flag, or make sure your project has an entrypoint.`,
-			});
+			this.logger.stderr.error(
+				`No entrypoint detected! Please provide an entrypoint using the --entrypoint flag, or make sure your project has an entrypoint.`,
+			);
 
 			return;
 		}
 
 		if (existsSync(LEGACY_LOCAL_STORAGE_DIR) && !existsSync(actualStoragePath)) {
 			renameSync(LEGACY_LOCAL_STORAGE_DIR, actualStoragePath);
-			warning({
-				message:
-					`The legacy 'apify_storage' directory was renamed to '${actualStoragePath}' to align it with Apify SDK v3.` +
+			this.logger.stderr.warning(
+				`The legacy 'apify_storage' directory was renamed to '${actualStoragePath}' to align it with Apify SDK v3.` +
 					' Contents were left intact.',
-			});
+			);
 		}
 
 		const crawleeVersion = await useModuleVersion({
@@ -277,7 +275,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 					purgeDefaultKeyValueStore(resolvedInputKey),
 					purgeDefaultDataset(),
 				]);
-				info({ message: 'All default local stores were purged.' });
+				this.logger.stderr.info('All default local stores were purged.');
 			}
 		}
 
@@ -285,11 +283,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			const isStorageEmpty = await checkIfStorageIsEmpty(resolvedInputKey);
 
 			if (!isStorageEmpty && !this.flags.resurrect) {
-				warning({
-					message:
-						'The storage directory contains a previous state, the Actor will continue where it left off. ' +
+				this.logger.stderr.warning(
+					'The storage directory contains a previous state, the Actor will continue where it left off. ' +
 						'To start from the initial state, use --purge parameter to clean the storage directory.',
-				});
+				);
 			}
 		}
 
@@ -348,10 +345,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const env = { ...process.env, ...localEnvVars };
 
 		if (!userId) {
-			warning({
-				message:
-					'You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.',
-			});
+			this.logger.stderr.warning(
+				'You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.',
+			);
 		}
 
 		try {
@@ -368,11 +364,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 							? `${env.NODE_OPTIONS} --max-http-header-size=80000`
 							: '--max-http-header-size=80000';
 					} else {
-						warning({
-							message:
-								`You are running Node.js version ${runtime.version}, which is no longer supported. ` +
+						this.logger.stderr.warning(
+							`You are running Node.js version ${runtime.version}, which is no longer supported. ` +
 								`Please upgrade to Node.js version ${minimumSupportedNodeVersion} or later.`,
-						});
+						);
 					}
 
 					if (runType === RunType.DirectFile || runType === RunType.Module) {
@@ -421,12 +416,12 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				case ProjectLanguage.Python:
 				case ProjectLanguage.Scrapy: {
 					if (!isPythonVersionSupported(runtime.version)) {
-						error({
-							message: `Python Actors require Python 3.9 or higher, but you have Python ${runtime.version}!`,
-						});
-						error({
-							message: 'Please install Python 3.9 or higher to be able to run Python Actors locally.',
-						});
+						this.logger.stderr.error(
+							`Python Actors require Python 3.9 or higher, but you have Python ${runtime.version}!`,
+						);
+						this.logger.stderr.error(
+							'Please install Python 3.9 or higher to be able to run Python Actors locally.',
+						);
 
 						return;
 					}
@@ -450,9 +445,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 					break;
 				}
 				default:
-					error({
-						message: `Failed to detect the language of your project. Please report this issue to the Apify team with your project structure over at https://github.com/apify/apify-cli/issues`,
-					});
+					this.logger.stderr.error(
+						`Failed to detect the language of your project. Please report this issue to the Apify team with your project structure over at https://github.com/apify/apify-cli/issues`,
+					);
 			}
 		} catch (err) {
 			const { stderr } = err as ExecaError;
@@ -473,9 +468,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 					// If its in a 5ms range, we assume the file was modified (realistically impossible)
 					if (mtime - storedInputResults.writtenAt >= 5) {
-						warning({
-							message: `The "${storedInputResults.inputFilePath}" file was overwritten during the run. The CLI will not undo the setting of missing default fields from your input schema.`,
-						});
+						this.logger.stderr.warning(
+							`The "${storedInputResults.inputFilePath}" file was overwritten during the run. The CLI will not undo the setting of missing default fields from your input schema.`,
+						);
 
 						// eslint-disable-next-line no-unsafe-finally -- we do not return anything in the commands anyways
 						return;

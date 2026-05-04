@@ -5,7 +5,6 @@ import { Args } from '../../lib/command-framework/args.js';
 import { YesFlag } from '../../lib/command-framework/flags.js';
 import { useInputConfirmation } from '../../lib/hooks/user-confirmations/useInputConfirmation.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
@@ -82,19 +81,13 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		}
 
 		if (!confirmed) {
-			info({
-				message: `Deletion of build "${buildId}" was canceled.`,
-				stdout: true,
-			});
+			this.logger.stdout.info(`Deletion of build "${buildId}" was canceled.`);
 
 			return;
 		}
 
 		await apifyClient.build(buildId).delete();
 
-		success({
-			message: `Build with ID "${buildId}" was deleted.`,
-			stdout: true,
-		});
+		this.logger.stdout.success(`Build with ID "${buildId}" was deleted.`);
 	}
 }

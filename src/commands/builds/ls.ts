@@ -7,8 +7,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, objectGroupBy, printJsonToStdout, ShortDurationFormatter } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, objectGroupBy, ShortDurationFormatter } from '../../lib/utils.js';
 
 const tableFactory = () =>
 	new ResponsiveTable({
@@ -76,10 +75,9 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
-			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
-				stdout: true,
-			});
+			this.logger.stdout.error(
+				`${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
+			);
 
 			return;
 		}
@@ -117,23 +115,19 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 				}
 			}
 
-			printJsonToStdout(allBuilds);
+			this.logger.stdout.json(allBuilds);
 			return;
 		}
 
-		simpleLog({
-			message: `${chalk.reset('Showing')} ${chalk.yellow(allBuilds.items.length)} out of ${chalk.yellow(allBuilds.total)} builds for Actor ${chalk.yellow(ctx.userFriendlyId)} (${chalk.gray(ctx.id)})\n`,
-			stdout: true,
-		});
+		this.logger.stdout.log(
+			`${chalk.reset('Showing')} ${chalk.yellow(allBuilds.items.length)} out of ${chalk.yellow(allBuilds.total)} builds for Actor ${chalk.yellow(ctx.userFriendlyId)} (${chalk.gray(ctx.id)})\n`,
+		);
 
 		const sortedActorVersions = Object.entries(buildsByActorVersion).sort((a, b) => a[0].localeCompare(b[0]));
 
 		for (const [actorVersion, buildsForVersion] of sortedActorVersions) {
 			if (!buildsForVersion?.length) {
-				simpleLog({
-					message: `No builds for version ${actorVersion}`,
-					stdout: true,
-				});
+				this.logger.stdout.log(`No builds for version ${actorVersion}`);
 
 				continue;
 			}
@@ -154,10 +148,7 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 				'',
 			];
 
-			simpleLog({
-				message: message.join('\n'),
-				stdout: true,
-			});
+			this.logger.stdout.log(message.join('\n'));
 		}
 	}
 
