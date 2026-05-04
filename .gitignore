@@ -16,6 +16,7 @@ __generated__
 
 # Package manager files
 package.tgz
+apify-cli-*
 
 **/scrapy-wrapper/templates/*
 
