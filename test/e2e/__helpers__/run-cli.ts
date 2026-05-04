@@ -20,7 +20,7 @@ export interface RunCliResult {
 }
 
 /**
- * Run a CLI command against the freshly built `./dist` (requires `yarn build`).
+ * Run a CLI command against the freshly built `./dist` (requires `pnpm run build`).
  * Returns { stdout, stderr, exitCode }. Does not throw on non-zero exit codes.
  * May throw on timeout or if the binary is not found.
  *

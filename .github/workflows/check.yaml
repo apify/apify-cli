@@ -31,26 +31,15 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install Dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Run TSC
-              run: yarn build
+              run: pnpm run build
 
             - name: Ensure the reference documentation builds
-              run: yarn update-docs
+              run: pnpm run update-docs
 
     lint:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
@@ -66,26 +55,15 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install Dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Run lint checks
-              run: yarn lint
+              run: pnpm run lint
 
             - name: Run format checks
-              run: yarn format
+              run: pnpm run format
 
     test_local:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
@@ -113,22 +91,9 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: ${{ matrix.node-version }}
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for npm
-              uses: actions/setup-node@v6
-              with:
-                  cache: npm
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Setup Python 3.12 (Windows)
               if: ${{ matrix.os == 'windows-2025' }}
@@ -136,11 +101,8 @@ jobs:
               with:
                   python-version: 3.14
 
-            - name: Install Dependencies
-              run: yarn
-
             - name: Run local tests
-              run: yarn test:local
+              run: pnpm run test:local
 
     test_api:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
@@ -162,30 +124,14 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for npm
-              uses: actions/setup-node@v6
-              with:
-                  cache: npm
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install Dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Run API tests
               env:
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
-              run: yarn test:api
+              run: pnpm run test:api
 
     test_python_support:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
@@ -213,25 +159,9 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for npm
-              uses: actions/setup-node@v6
-              with:
-                  cache: npm
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install Dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v6
@@ -241,7 +171,7 @@ jobs:
             - name: Run Python tests
               env:
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
-              run: yarn test:python
+              run: pnpm run test:python
 
     docs:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
@@ -257,26 +187,15 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install Dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Build & deploy docs
               run: |
                   cd website
-                  yarn
-                  yarn build
+                  pnpm install
+                  pnpm run build
 
     build_bundles:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
@@ -305,20 +224,9 @@ jobs:
               uses: actions/setup-node@v6
               with:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
-                  package-manager-cache: false
 
-            - name: Enable corepack
-              run: |
-                  corepack enable
-                  corepack prepare yarn@stable --activate
-
-            - name: Activate cache for yarn
-              uses: actions/setup-node@v6
-              with:
-                  cache: yarn
-
-            - name: Install Dependencies
-              run: yarn
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
 
             - name: Install bun
               uses: oven-sh/setup-bun@v2
@@ -351,7 +259,7 @@ jobs:
                   bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
 
             - name: Build Bundles
-              run: yarn insert-cli-metadata && yarn build-bundles
+              run: pnpm run insert-cli-metadata && pnpm run build-bundles
 
             - name: Upload Bundles
               uses: actions/upload-artifact@v7

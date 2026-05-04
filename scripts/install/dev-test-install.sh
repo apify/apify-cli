@@ -104,10 +104,10 @@ version=$(jq -r '.version' package.json)
 echo "Version: $version"
 
 info "Installing dependencies"
-yarn
+pnpm install
 
 info "Building bundles"
-yarn insert-cli-metadata && yarn build-bundles && git checkout -- src/lib/hooks/useCLIMetadata.ts
+pnpm run insert-cli-metadata && pnpm run build-bundles && git checkout -- src/lib/hooks/useCLIMetadata.ts
 
 info "Installing bundles"
 

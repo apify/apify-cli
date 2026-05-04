@@ -1,5 +1,7 @@
 {
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
 	"extends": ["config:base", ":semanticCommitTypeAll(chore)"],
+	"minimumReleaseAge": "1 day",
 	"pinVersions": false,
 	"separateMajorMinor": false,
 	"dependencyDashboard": false,
