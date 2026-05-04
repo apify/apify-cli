@@ -88,6 +88,17 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 			throw new Error(`${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id}) not found!`);
 		}
 
+		if (err.type === 'full-permission-actor-not-approved') {
+			const approvalUrl: string | undefined = err.data?.approvalUrl;
+			const lines = [
+				`${type} ${actorOrTaskData.userFriendlyId} requires full access to your Apify account and has not been approved yet.`,
+			];
+			if (approvalUrl) {
+				lines.push('', `Approve here: ${chalk.blue(approvalUrl)}`);
+			}
+			throw new Error(lines.join('\n'));
+		}
+
 		throw err;
 	}
 
