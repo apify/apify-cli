@@ -169,12 +169,7 @@
 				"version": ">= 1.2.5",
 				"onFail": "ignore"
 			}
-		],
-		"packageManager": {
-			"name": "pnpm",
-			"version": ">= 10",
-			"onFail": "warn"
-		}
+		]
 	},
 	"lint-staged": {
 		"*": "biome format --write --no-errors-on-unmatched",

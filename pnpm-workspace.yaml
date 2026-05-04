@@ -15,7 +15,6 @@ overrides:
 
 # Unfortunately, several parts of this project expect everything to be hoisted up in the node_modules directory...
 # And fixing it would take longer than just enabling this and shedding a tear
+nodeLinker: hoisted
 publicHoistPattern:
     - "*"
-    # lazystream uses version 2.3.8, all other deps that require it use latest version
-    - "!readable-stream"
