@@ -112,8 +112,10 @@ jobs:
                       label: unix
                     - os: windows-latest
                       label: windows-x64
+                      bun-target-arch: x64
                     - os: windows-11-arm
                       label: windows-arm64
+                      bun-target-arch: arm64
 
         runs-on: ${{ matrix.os }}
 
@@ -146,22 +148,8 @@ jobs:
 
             - name: Install bun
               uses: oven-sh/setup-bun@v2
-              if: ${{ matrix.os != 'windows-11-arm' }}
               with:
                   bun-version-file: .bun-version
-
-            - name: Install bun (Windows ARM)
-              if: ${{ matrix.os == 'windows-11-arm' }}
-              run: |
-                  $bunVersion = (Get-Content .bun-version).Trim()
-                  irm bun.sh/install.ps1 -OutFile install.ps1
-
-                  # Bun doesn't have Windows ARM64 builds, so the setup-bun action fails. The install script however,
-                  # does "support" it.
-
-                  .\install.ps1 -Version $bunVersion
-
-                  Join-Path (Resolve-Path ~).Path ".bun\bin" >> $env:GITHUB_PATH
 
             # https://github.com/oven-sh/bun/issues/11198
             - name: Fix cross-platform building on Actions
@@ -170,8 +158,8 @@ jobs:
                   mkdir C:\test
                   cd C:\test
                   bun init -y
-                  bun build --compile --target=bun-windows-x64 --outfile test index.ts
-                  bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
+                  bun build --compile --target=bun-windows-${{ matrix.bun-target-arch }} --outfile test index.ts
+                  bun build --compile --target=bun-windows-${{ matrix.bun-target-arch }}-baseline --outfile test index.ts
 
             - name: Set pre-release version
               run: yarn version ${{ needs.update_changelog.outputs.pre_release_version }}
