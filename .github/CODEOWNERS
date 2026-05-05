@@ -4,4 +4,4 @@
 
 /docs/*.md @szaganek
 /docs/*.mdx @szaganek
-/docs/changelog.md
+/docs/changelog.md @szaganek
