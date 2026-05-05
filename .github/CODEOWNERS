@@ -2,6 +2,6 @@
 
 * @vladfrangu
 
-/docs/*.md @TC-MO
-/docs/*.mdx @TC-MO
+/docs/*.md @szaganek
+/docs/*.mdx @szaganek
 /docs/changelog.md
