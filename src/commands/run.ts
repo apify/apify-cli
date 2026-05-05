@@ -104,8 +104,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			exclusive: ['resurrect'],
 		}),
 		resurrect: Flags.boolean({
-			description:
-				'Whether to keep the default request queue, dataset and key-value store before the run starts.',
+			description: 'Whether to keep the default request queue, dataset and key-value store before the run starts.',
 			required: false,
 			default: false,
 			exclusive: ['purge'],
@@ -137,8 +136,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			exclusive: ['input'],
 		}),
 		'allow-missing-secrets': Flags.boolean({
-			description:
-				'Allow the command to continue even when secret values are not found in the local secrets storage.',
+			description: 'Allow the command to continue even when secret values are not found in the local secrets storage.',
 			required: false,
 			default: false,
 		}),
@@ -272,11 +270,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			CRAWLEE_PURGE_ON_START = '1';
 
 			if (crawleeVersion.isNone()) {
-				await Promise.all([
-					purgeDefaultQueue(),
-					purgeDefaultKeyValueStore(resolvedInputKey),
-					purgeDefaultDataset(),
-				]);
+				await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(resolvedInputKey), purgeDefaultDataset()]);
 				info({ message: 'All default local stores were purged.' });
 			}
 		}
@@ -336,11 +330,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
 		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
 		if (localConfig!.environmentVariables) {
-			const updatedEnv = replaceSecretsValue(
-				localConfig!.environmentVariables as Record<string, string>,
-				undefined,
-				{ allowMissing: this.flags.allowMissingSecrets },
-			);
+			const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>, undefined, {
+				allowMissing: this.flags.allowMissingSecrets,
+			});
 			Object.assign(localEnvVars, updatedEnv);
 		}
 
@@ -547,12 +539,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		switch (inputOverride?.source) {
 			case 'stdin':
-				errorHeader =
-					'The input provided through standard input is invalid. Please fix the following errors:\n';
+				errorHeader = 'The input provided through standard input is invalid. Please fix the following errors:\n';
 				break;
 			case 'input':
-				errorHeader =
-					'The input provided through the --input flag is invalid. Please fix the following errors:\n';
+				errorHeader = 'The input provided through the --input flag is invalid. Please fix the following errors:\n';
 				break;
 			default:
 				if (inputOverride) {
@@ -574,9 +564,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 			if (errors.length > 0) {
 				throw new Error(
-					`${errorHeader}${errors
-						.map((e) => `  - ${e.message.replace('Field input.', 'Field ')}`)
-						.join('\n')}`,
+					`${errorHeader}${errors.map((e) => `  - ${e.message.replace('Field input.', 'Field ')}`).join('\n')}`,
 				);
 			}
 
@@ -622,9 +610,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 			if (errors.length > 0) {
 				throw new Error(
-					`${errorHeader}${errors
-						.map((e) => `  - ${e.message.replace('Field input.', 'Field ')}`)
-						.join('\n')}`,
+					`${errorHeader}${errors.map((e) => `  - ${e.message.replace('Field input.', 'Field ')}`).join('\n')}`,
 				);
 			}
 

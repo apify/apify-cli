@@ -106,8 +106,7 @@ describe('useCwdProject - Python project detection', () => {
 
 			// ── Valid pkg name + no __init__.py but .py files → near-miss suggesting __init__.py ──
 			{
-				description:
-					'suggests adding __init__.py for flat valid package with .py files in a hyphenated directory',
+				description: 'suggests adding __init__.py for flat valid package with .py files in a hyphenated directory',
 				cwdName: 'my-dir',
 				structure: 'flat',
 				pkgName: 'my_package',
@@ -118,8 +117,7 @@ describe('useCwdProject - Python project detection', () => {
 				expectedErrorContains: 'add __init__.py',
 			},
 			{
-				description:
-					'suggests adding __init__.py for flat valid package with .py files in an underscored directory',
+				description: 'suggests adding __init__.py for flat valid package with .py files in an underscored directory',
 				cwdName: 'my_dir',
 				structure: 'flat',
 				pkgName: 'my_package',
@@ -156,8 +154,7 @@ describe('useCwdProject - Python project detection', () => {
 
 			// ── Valid pkg name + no __init__.py and no .py files → unknown ──
 			{
-				description:
-					'returns unknown for flat valid directory without any Python files in a hyphenated directory',
+				description: 'returns unknown for flat valid directory without any Python files in a hyphenated directory',
 				cwdName: 'my-dir',
 				structure: 'flat',
 				pkgName: 'my_package',
@@ -168,8 +165,7 @@ describe('useCwdProject - Python project detection', () => {
 				expectedErrorContains: null,
 			},
 			{
-				description:
-					'returns unknown for flat valid directory without any Python files in an underscored directory',
+				description: 'returns unknown for flat valid directory without any Python files in an underscored directory',
 				cwdName: 'my_dir',
 				structure: 'flat',
 				pkgName: 'my_package',
@@ -228,8 +224,7 @@ describe('useCwdProject - Python project detection', () => {
 				expectedErrorContains: 'rename to',
 			},
 			{
-				description:
-					'suggests rename for hyphenated package inside src/ with __init__.py in a hyphenated directory',
+				description: 'suggests rename for hyphenated package inside src/ with __init__.py in a hyphenated directory',
 				cwdName: 'my-dir',
 				structure: 'src',
 				pkgName: 'my-package',
@@ -240,8 +235,7 @@ describe('useCwdProject - Python project detection', () => {
 				expectedErrorContains: 'rename to',
 			},
 			{
-				description:
-					'suggests rename for hyphenated package inside src/ with __init__.py in an underscored directory',
+				description: 'suggests rename for hyphenated package inside src/ with __init__.py in an underscored directory',
 				cwdName: 'my_dir',
 				structure: 'src',
 				pkgName: 'my-package',
@@ -304,8 +298,7 @@ describe('useCwdProject - Python project detection', () => {
 
 			// ── Invalid pkg name + no __init__.py and no .py files → unknown ──
 			{
-				description:
-					'returns unknown for flat hyphenated directory without any Python files in a hyphenated directory',
+				description: 'returns unknown for flat hyphenated directory without any Python files in a hyphenated directory',
 				cwdName: 'my-dir',
 				structure: 'flat',
 				pkgName: 'my-package',
@@ -353,47 +346,50 @@ describe('useCwdProject - Python project detection', () => {
 			},
 		];
 
-		it.each(cases)('$description', async ({
-			cwdName,
-			structure,
-			pkgName,
-			fileSetup,
-			expectedOutcome,
-			expectedEntrypoint,
-			expectedActorName,
-			expectedErrorContains,
-		}) => {
-			const projectDir = join(testDir, cwdName);
-			await mkdir(projectDir, { recursive: true });
+		it.each(cases)(
+			'$description',
+			async ({
+				cwdName,
+				structure,
+				pkgName,
+				fileSetup,
+				expectedOutcome,
+				expectedEntrypoint,
+				expectedActorName,
+				expectedErrorContains,
+			}) => {
+				const projectDir = join(testDir, cwdName);
+				await mkdir(projectDir, { recursive: true });
 
-			const pkgPath = structure === 'src' ? `src/${pkgName}` : pkgName;
+				const pkgPath = structure === 'src' ? `src/${pkgName}` : pkgName;
 
-			if (fileSetup === 'init_and_py') {
-				await createPythonPackageIn(projectDir, pkgPath);
-				await createFileIn(projectDir, `${pkgPath}/main.py`, 'print("hello")');
-			} else if (fileSetup === 'py_only') {
-				await createFileIn(projectDir, `${pkgPath}/main.py`, 'print("hello")');
-			} else {
-				// no_py: create directory with a non-Python file
-				await createFileIn(projectDir, `${pkgPath}/readme.txt`, 'not python');
-			}
+				if (fileSetup === 'init_and_py') {
+					await createPythonPackageIn(projectDir, pkgPath);
+					await createFileIn(projectDir, `${pkgPath}/main.py`, 'print("hello")');
+				} else if (fileSetup === 'py_only') {
+					await createFileIn(projectDir, `${pkgPath}/main.py`, 'print("hello")');
+				} else {
+					// no_py: create directory with a non-Python file
+					await createFileIn(projectDir, `${pkgPath}/readme.txt`, 'not python');
+				}
 
-			const result = await useCwdProject({ cwd: projectDir });
+				const result = await useCwdProject({ cwd: projectDir });
 
-			if (expectedOutcome === 'python') {
-				expect(result.isOk()).toBe(true);
-				const project = result.unwrap();
-				expect(project.type).toBe(ProjectLanguage.Python);
-				expect(project.entrypoint?.path).toBe(expectedEntrypoint);
-				expect(deriveActorName(project.entrypoint!.path!)).toBe(expectedActorName);
-			} else if (expectedOutcome === 'error') {
-				expect(result.isErr()).toBe(true);
-				expect(result.unwrapErr().message).toContain(expectedErrorContains!);
-			} else {
-				expect(result.isOk()).toBe(true);
-				expect(result.unwrap().type).toBe(ProjectLanguage.Unknown);
-			}
-		});
+				if (expectedOutcome === 'python') {
+					expect(result.isOk()).toBe(true);
+					const project = result.unwrap();
+					expect(project.type).toBe(ProjectLanguage.Python);
+					expect(project.entrypoint?.path).toBe(expectedEntrypoint);
+					expect(deriveActorName(project.entrypoint!.path!)).toBe(expectedActorName);
+				} else if (expectedOutcome === 'error') {
+					expect(result.isErr()).toBe(true);
+					expect(result.unwrapErr().message).toContain(expectedErrorContains!);
+				} else {
+					expect(result.isOk()).toBe(true);
+					expect(result.unwrap().type).toBe(ProjectLanguage.Unknown);
+				}
+			},
+		);
 	});
 
 	// Individual cases

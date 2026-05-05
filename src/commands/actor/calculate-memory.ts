@@ -28,8 +28,7 @@ interface ActorMemoryConfig {
 export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalculateMemoryCommand> {
 	static override name = 'calculate-memory' as const;
 
-	static override description =
-		`Calculates the Actor’s dynamic memory usage based on a memory expression from actor.json, input data, and run options.`;
+	static override description = `Calculates the Actor’s dynamic memory usage based on a memory expression from actor.json, input data, and run options.`;
 
 	static override group = 'Actor Runtime';
 
@@ -58,8 +57,7 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 			default: DEFAULT_INPUT_PATH,
 		}),
 		defaultMemoryMbytes: Flags.string({
-			description:
-				'Memory-calculation expression (in MB). If omitted, the value is loaded from the actor.json file.',
+			description: 'Memory-calculation expression (in MB). If omitted, the value is loaded from the actor.json file.',
 			required: false,
 		}),
 		build: Flags.string({

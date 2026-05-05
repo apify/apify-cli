@@ -141,7 +141,7 @@ const getTokenWithAuthFileFallback = (existingToken?: string) => {
 	return existingToken;
 };
 
-type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' }}).AxiosRequestConfig['headers'];
+type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
 
 /**
  * Returns options for ApifyClient

@@ -102,8 +102,7 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 			const pricing = getUserPlanPricing(user.plan);
 
 			if (pricing) {
-				const storeCostPerHour =
-					pricing.KEY_VALUE_STORE_TIMED_STORAGE_GBYTE_HOURS * (fullSizeInBytes / 1000 ** 3);
+				const storeCostPerHour = pricing.KEY_VALUE_STORE_TIMED_STORAGE_GBYTE_HOURS * (fullSizeInBytes / 1000 ** 3);
 				const storeCostPerMonth = storeCostPerHour * 24 * 30;
 
 				const usdAmountString =

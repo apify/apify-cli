@@ -106,8 +106,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			required: false,
 		}),
 		'allow-missing-secrets': Flags.boolean({
-			description:
-				'Allow the command to continue even when secret values are not found in the local secrets storage.',
+			description: 'Allow the command to continue even when secret values are not found in the local secrets storage.',
 			required: false,
 			default: false,
 		}),
@@ -179,8 +178,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		let isActorCreatedNow = false;
 
 		// User can override Actor version and build tag, attributes in localConfig will remain same.
-		const version =
-			this.flags.version || (actorConfig?.version as string | undefined) || DEFAULT_ACTOR_VERSION_NUMBER;
+		const version = this.flags.version || (actorConfig?.version as string | undefined) || DEFAULT_ACTOR_VERSION_NUMBER;
 
 		let buildTag = this.flags.buildTag || (actorConfig?.buildTag as string | undefined);
 
@@ -212,8 +210,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			} else {
 				const { templates } = await fetchManifest();
 				const actorTemplate = templates.find((t) => t.name === actorConfig!.template);
-				const defaultRunOptions = (actorTemplate?.defaultRunOptions ||
-					DEFAULT_RUN_OPTIONS) as ActorDefaultRunOptions;
+				const defaultRunOptions = (actorTemplate?.defaultRunOptions || DEFAULT_RUN_OPTIONS) as ActorDefaultRunOptions;
 				const newActor: ActorCollectionCreateOptions = {
 					name: actorConfig!.name as string,
 					title: actorConfig!.title as string | undefined,

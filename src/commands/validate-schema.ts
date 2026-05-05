@@ -120,8 +120,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 			},
 			{
 				label: 'Key-Value Store',
-				read: () =>
-					readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store', throwOnMissing: true }),
+				read: () => readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store', throwOnMissing: true }),
 				validate: validateKvsSchema,
 			},
 		];
@@ -133,9 +132,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 				if (result) {
 					foundAny = true;
 
-					const location = result.schemaPath
-						? `at ${result.schemaPath}`
-						: `embedded in '${LOCAL_CONFIG_PATH}'`;
+					const location = result.schemaPath ? `at ${result.schemaPath}` : `embedded in '${LOCAL_CONFIG_PATH}'`;
 					info({ message: `Validating ${label} schema ${location}` });
 
 					validate(result.schema);
@@ -149,9 +146,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 		}
 
 		if (!foundAny) {
-			throw new Error(
-				`No schemas found. Make sure '${LOCAL_CONFIG_PATH}' exists and defines at least one schema.`,
-			);
+			throw new Error(`No schemas found. Make sure '${LOCAL_CONFIG_PATH}' exists and defines at least one schema.`);
 		}
 
 		if (hasErrors) {
