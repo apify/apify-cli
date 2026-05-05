@@ -357,20 +357,23 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Validates Actor input schema from one of these locations (in priority order):
-    1. Object in '.actor/actor.json' under "input" key
-    2. JSON file path in '.actor/actor.json' "input" key
-    3. .actor/INPUT_SCHEMA.json
-    4. INPUT_SCHEMA.json
+  Validates Actor schemas.
 
-  Optionally specify custom schema path to validate.
+  When a path argument is provided, validates only the input schema at that 
+  path.
+
+  When no path is provided, validates all schemas found in '.actor/actor.json':
+    - Input schema (from "input" key or default locations)
+    - Dataset schema (from "storages.dataset")
+    - Output schema (from "output")
+    - Key-Value Store schema (from "storages.keyValueStore")
 
 USAGE
   $ apify validate-schema [path]
 
 ARGUMENTS
-  path  Optional path to your INPUT_SCHEMA.json file. If not provided
-        ./INPUT_SCHEMA.json is used.
+  path  Optional path to your INPUT_SCHEMA.json file. If not provided,
+        validates all schemas in '.actor/actor.json'.
 ```
 
 ##### `apify actor`
@@ -478,15 +481,19 @@ DESCRIPTION
     3. .actor/INPUT_SCHEMA.json
     4. INPUT_SCHEMA.json
 
-  Optionally specify custom schema path to use.
+  Optionally specify a custom schema file path, or a directory path.
+  When a directory is provided, all schemas are discovered from it
+  just as if the command were run from that directory with no argument.
 
 USAGE
   $ apify actor generate-schema-types [path]
                                       [--all-optional] [-o <value>] [--strict]
 
 ARGUMENTS
-  path  Optional path to the input schema file. If not provided, searches
-        default locations.
+  path  Optional path to an input schema file or a directory containing
+        Actor schemas. If a directory is given, all schema types are generated
+        from it. If not provided, searches default locations in the current
+        directory.
 
 FLAGS
       --all-optional    Mark all properties as optional in

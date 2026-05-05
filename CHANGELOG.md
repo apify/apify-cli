@@ -2,9 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-
-## 1.5.1 - **not yet released**
+## [1.6.0](https://github.com/apify/apify-cli/releases/tag/v1.6.0) (2026-05-05)
 
 ### 🚀 Features
 
@@ -18,8 +16,6 @@ All notable changes to this project will be documented in this file.
 - Validate all schemas in actor.json ([#1071](https://github.com/apify/apify-cli/pull/1071)) ([313feae](https://github.com/apify/apify-cli/commit/313feaeeca40e7ce4705f85d5441f8dac8eb7e93)) by [@l2ysho](https://github.com/l2ysho), closes [#1036](https://github.com/apify/apify-cli/issues/1036)
 - Prevent modifying local input.json file ([#1042](https://github.com/apify/apify-cli/pull/1042)) ([9a042f9](https://github.com/apify/apify-cli/commit/9a042f9cb42c399ba254526d08f37a85b4f7c5e4)) by [@l2ysho](https://github.com/l2ysho), closes [#960](https://github.com/apify/apify-cli/issues/960), [#1035](https://github.com/apify/apify-cli/issues/1035)
 - Add release notes to pre-release GitHub releases and enable changelogFromRoot ([#1119](https://github.com/apify/apify-cli/pull/1119)) ([8e737ac](https://github.com/apify/apify-cli/commit/8e737ac03a5a0ca1c23e8f22e31aa41f04ac3981)) by [@l2ysho](https://github.com/l2ysho), closes [#1108](https://github.com/apify/apify-cli/issues/1108)
-
-<!-- git-cliff-unreleased-end -->
 
 ## [1.5.0](https://github.com/apify/apify-cli/releases/tag/v1.5.0) (2026-04-27)
 
