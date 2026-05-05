@@ -30,11 +30,10 @@ jobs:
                   VERSION=$(jq -r '.version' package.json)
                   MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
                   echo "version=$VERSION" >> $GITHUB_OUTPUT
-                  cd website
-                  rm -rf versioned_docs/version-$MAJOR_MINOR
-                  rm -rf versioned_sidebars/version-$MAJOR_MINOR-sidebars.json
-                  jq --arg v "$MAJOR_MINOR" 'map(select(. != $v))' versions.json > tmp.json && mv tmp.json versions.json
-                  pnpm run docusaurus -- docs:version $MAJOR_MINOR
+                  rm -rf website/versioned_docs/version-$MAJOR_MINOR
+                  rm -rf website/versioned_sidebars/version-$MAJOR_MINOR-sidebars.json
+                  jq --arg v "$MAJOR_MINOR" 'map(select(. != $v))' website/versions.json > website/tmp.json && mv website/tmp.json website/versions.json
+                  pnpm --filter website exec -- docusaurus docs:version $MAJOR_MINOR
 
             - name: Format
               working-directory: website
