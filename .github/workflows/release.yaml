@@ -239,6 +239,12 @@ jobs:
                           "tag": "latest"
                       }
 
+    version_docs:
+        name: Version docs
+        needs: [update_changelog, publish_to_npm]
+        uses: ./.github/workflows/version_docs.yaml
+        secrets: inherit
+
     update_homebrew_formula:
         name: Update Homebrew Formula
         needs: [update_changelog, publish_to_npm]
