@@ -1,0 +1,18 @@
+{
+	"printWidth": 120,
+	"quoteProps": "preserve",
+	"ignorePatterns": [
+		"**/*.md",
+		"**/*.mdx",
+		"**/*.json",
+		"**/*.jsonc",
+		"**/*.yaml",
+		"**/*.yml",
+		"**/node_modules",
+		"**/dist",
+		"coverage",
+		"website",
+		"test/__setup__/input-schemas",
+		"test/tmp"
+	]
+}

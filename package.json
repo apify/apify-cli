@@ -15,8 +15,8 @@
 		"test:python": "vitest run --testNamePattern \"\\[python\\]\"",
 		"lint": "oxlint --type-aware",
 		"lint:fix": "oxlint --type-aware --fix",
-		"format": "biome format . && prettier --check \"**/*.{md,yml,yaml}\"",
-		"format:fix": "biome format --write . && prettier --write \"**/*.{md,yml,yaml}\"",
+		"format": "oxfmt --check",
+		"format:fix": "oxfmt",
 		"clean": "rimraf dist",
 		"build": "pnpm run clean && tsc && tsdown",
 		"build-bundles": "bun run scripts/build-cli-bundles.ts",
@@ -120,7 +120,6 @@
 	"devDependencies": {
 		"@apify/oxlint-config": "^0.2.5",
 		"@apify/tsconfig": "^0.1.2",
-		"@biomejs/biome": "^2.4.10",
 		"@crawlee/types": "^3.16.0",
 		"@types/adm-zip": "^0.5.8",
 		"@types/archiver": "^7.0.0",
@@ -139,9 +138,9 @@
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
 		"mock-stdin": "^1.0.0",
+		"oxfmt": "0.46.0",
 		"oxlint": "1.62.0",
 		"oxlint-tsgolint": "0.22.0",
-		"prettier": "^3.8.1",
 		"tsdown": "^0.21.9",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2",
@@ -172,8 +171,6 @@
 		}
 	},
 	"lint-staged": {
-		"*": "biome format --write --no-errors-on-unmatched",
-		"*.{mjs,js,ts,mts,jsx,tsx}": "oxlint --type-aware --fix",
-		"*.md": "prettier --write"
+		"*.{mjs,js,ts,mts,jsx,tsx}": ["oxfmt", "oxlint --type-aware --fix"]
 	}
 }
