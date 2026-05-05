@@ -23,6 +23,11 @@ jobs:
             - name: Install pnpm and dependencies
               uses: apify/workflows/pnpm-install@main
 
+            - name: Install website dependencies
+              run: |
+                  cd website
+                  pnpm install
+
             - name: Snapshot the current version
               id: version
               run: |
