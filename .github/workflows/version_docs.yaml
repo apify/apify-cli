@@ -34,7 +34,7 @@ jobs:
                   rm -rf versioned_docs/version-$MAJOR_MINOR
                   rm -rf versioned_sidebars/version-$MAJOR_MINOR-sidebars.json
                   jq --arg v "$MAJOR_MINOR" 'map(select(. != $v))' versions.json > tmp.json && mv tmp.json versions.json
-                  pnpm exec docusaurus docs:version $MAJOR_MINOR
+                  pnpm run docusaurus -- docs:version $MAJOR_MINOR
 
             - name: Format
               working-directory: website
