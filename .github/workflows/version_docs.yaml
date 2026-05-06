@@ -35,10 +35,6 @@ jobs:
                   jq --arg v "$MAJOR_MINOR" 'map(select(. != $v))' website/versions.json > website/tmp.json && mv website/tmp.json website/versions.json
                   pnpm --filter apify-cli-website exec -- docusaurus docs:version $MAJOR_MINOR
 
-            # TODO: prettify script references docs/guides/*.md which doesn't exist — check with team
-            # - name: Format
-            #   run: pnpm --filter apify-cli-website run prettify
-
             - name: Commit and push the version snapshot
               uses: EndBug/add-and-commit@v10
               with:
