@@ -171,6 +171,6 @@
 		}
 	},
 	"lint-staged": {
-		"*.{mjs,js,ts,mts,jsx,tsx}": ["oxfmt", "oxlint --type-aware --fix"]
+		"*.{mjs,js,ts,mts,jsx,tsx}": ["oxfmt --no-error-on-unmatched-pattern", "oxlint --type-aware --fix"]
 	}
 }
