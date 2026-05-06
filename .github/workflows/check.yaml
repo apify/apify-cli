@@ -192,7 +192,7 @@ jobs:
               uses: apify/workflows/pnpm-install@main
 
             - name: Build & deploy docs
-              run: pnpm --filter website run build
+              run: pnpm --filter apify-cli-website run build
 
     build_bundles:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}

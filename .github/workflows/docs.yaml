@@ -36,8 +36,8 @@ jobs:
             - name: Build docs
               run: |
                   pnpm run update-docs
-                  pnpm --filter website add @apify/docs-theme@latest
-                  pnpm --filter website run build
+                  pnpm --filter apify-cli-website add @apify/docs-theme@latest
+                  pnpm --filter apify-cli-website run build
               env:
                   SMARTLOOK_PROJECT_KEY: ${{ secrets.SMARTLOOK_DOCS_PROJECT_KEY }}
                   GIT_USER: "apify-service-account:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
