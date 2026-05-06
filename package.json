@@ -1,6 +1,6 @@
 {
 	"name": "apify-cli",
-	"version": "1.6.1",
+	"version": "1.6.2",
 	"description": "Apify command-line interface (CLI) helps you manage the Apify cloud platform and develop, build, and deploy Apify Actors.",
 	"exports": "./dist/index.js",
 	"type": "module",
@@ -13,8 +13,8 @@
 		"test:e2e:local": "vitest run --testNamePattern \"^(?=.*\\[e2e\\])(?!.*\\[api\\]).*$\" --exclude ./test/api",
 		"test:api": "vitest run --testNamePattern \"^(?=.*\\[api\\])(?!.*\\[e2e\\]).*$\" --exclude ./test/e2e",
 		"test:python": "vitest run --testNamePattern \"\\[python\\]\"",
-		"lint": "eslint",
-		"lint:fix": "eslint --fix",
+		"lint": "oxlint --type-aware",
+		"lint:fix": "oxlint --type-aware --fix",
 		"format": "biome format . && prettier --check \"**/*.{md,yml,yaml}\"",
 		"format:fix": "biome format --write . && prettier --write \"**/*.{md,yml,yaml}\"",
 		"clean": "rimraf dist",
@@ -119,8 +119,8 @@
 		"wrap-ansi": "^10.0.0"
 	},
 	"devDependencies": {
-		"@apify/eslint-config": "^1.1.0",
-		"@apify/tsconfig": "^0.1.1",
+		"@apify/oxlint-config": "^0.2.5",
+		"@apify/tsconfig": "^0.1.2",
 		"@biomejs/biome": "^2.4.10",
 		"@crawlee/types": "^3.16.0",
 		"@types/adm-zip": "^0.5.8",
@@ -137,19 +137,15 @@
 		"@types/which": "^3.0.4",
 		"apify": "^3.7.0",
 		"cross-env": "^10.1.0",
-		"eslint": "^9.39.4",
-		"eslint-config-prettier": "^10.1.8",
-		"eslint-plugin-react": "^7.37.5",
-		"eslint-plugin-react-hooks": "^7.0.1",
-		"globals": "^16.2.0",
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
 		"mock-stdin": "^1.0.0",
+		"oxlint": "1.62.0",
+		"oxlint-tsgolint": "0.22.0",
 		"prettier": "^3.8.1",
 		"tsdown": "^0.21.9",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2",
-		"typescript-eslint": "^8.58.0",
 		"vitest": "^4.1.2"
 	},
 	"volta": {
@@ -173,7 +169,7 @@
 	},
 	"lint-staged": {
 		"*": "biome format --write --no-errors-on-unmatched",
-		"*.{mjs,js,ts,mts,jsx,tsx}": "eslint --fix",
+		"*.{mjs,js,ts,mts,jsx,tsx}": "oxlint --type-aware --fix",
 		"*.md": "prettier --write"
 	}
 }
