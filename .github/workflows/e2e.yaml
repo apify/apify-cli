@@ -7,7 +7,6 @@ on:
         types: [completed]
         branches: [master]
 
-    # TODO: Remove after validating the workflow works
     pull_request:
         branches: [master]
 
@@ -23,11 +22,41 @@ concurrency:
     cancel-in-progress: false
 
 jobs:
+    changes:
+        name: Detect changes
+
+        runs-on: ubuntu-latest
+
+        permissions:
+            pull-requests: read
+
+        outputs:
+            source: ${{ steps.filter.outputs.source }}
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: dorny/paths-filter@v3
+              id: filter
+              with:
+                  filters: |
+                      source:
+                        - 'src/**'
+                        - 'test/**'
+                        - 'package.json'
+                        - 'pnpm-lock.yaml'
+                        - 'pnpm-workspace.yaml'
+                        - 'tsconfig*.json'
+                        - 'tsdown.config.*'
+                        - 'vitest.config.*'
+
     e2e:
         if: >
             startsWith(github.repository, 'apify/') &&
-            (github.event_name != 'workflow_run' ||
-             github.event.workflow_run.conclusion == 'success')
+            (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success') &&
+            (github.event_name != 'pull_request' || needs.changes.outputs.source == 'true')
+
+        needs: [changes]
 
         name: E2E Tests (${{ matrix.os }})
         timeout-minutes: 30
