@@ -1,24 +1,65 @@
-# This workflow runs on push to master/renovate to validate the code.
-# For pull requests, see check_pr.yaml which filters jobs by changed paths.
+# This workflow runs for every pull request, filtering jobs by changed paths.
+# For push to master/renovate, see check.yaml which runs everything.
 
-name: Check
+name: "PR Check"
 
 on:
-    push:
-        branches: [master, renovate/**]
+    pull_request:
+        branches: [master]
 
 env:
     LATEST_NODE_VERSION: 24
     APIFY_CLI_DISABLE_TELEMETRY: 1
 
 concurrency:
-    cancel-in-progress: false
+    cancel-in-progress: true
     group: checks-${{ github.ref }}
 
 jobs:
-    build:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    changes:
+        name: Detect changes
 
+        runs-on: ubuntu-latest
+
+        permissions:
+            pull-requests: read
+
+        outputs:
+            source: ${{ steps.filter.outputs.source }}
+            docs: ${{ steps.filter.outputs.docs }}
+            bundles: ${{ steps.filter.outputs.bundles }}
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: dorny/paths-filter@v3
+              id: filter
+              with:
+                  filters: |
+                      source:
+                        - 'src/**'
+                        - 'test/**'
+                        - 'package.json'
+                        - 'pnpm-lock.yaml'
+                        - 'pnpm-workspace.yaml'
+                        - 'tsconfig*.json'
+                        - 'tsdown.config.*'
+                        - 'vitest.config.*'
+                      docs:
+                        - 'website/**'
+                        - 'docs/**'
+                        - 'src/**'
+                        - 'pnpm-workspace.yaml'
+                      bundles:
+                        - 'src/**'
+                        - 'scripts/**'
+                        - 'package.json'
+                        - 'pnpm-lock.yaml'
+                        - 'pnpm-workspace.yaml'
+                        - 'tsdown.config.*'
+                        - '.bun-version'
+
+    build:
         name: Build
 
         runs-on: ubuntu-latest
@@ -41,8 +82,6 @@ jobs:
               run: pnpm run update-docs
 
     lint:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
-
         name: Lint & Format
 
         runs-on: ubuntu-latest
@@ -65,11 +104,11 @@ jobs:
               run: pnpm run format
 
     test_local:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ needs.changes.outputs.source == 'true' }}
 
         name: Local Tests
 
-        needs: [build]
+        needs: [build, changes]
 
         strategy:
             fail-fast: false
@@ -104,11 +143,11 @@ jobs:
               run: pnpm run test:local
 
     test_api:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ needs.changes.outputs.source == 'true' }}
 
         name: API Tests
 
-        needs: [build]
+        needs: [build, changes]
 
         runs-on: ubuntu-latest
 
@@ -133,11 +172,11 @@ jobs:
               run: pnpm run test:api
 
     test_python_support:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ needs.changes.outputs.source == 'true' }}
 
         name: Python Support
 
-        needs: [build]
+        needs: [build, changes]
 
         strategy:
             fail-fast: false
@@ -173,9 +212,11 @@ jobs:
               run: pnpm run test:python
 
     docs:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ needs.changes.outputs.docs == 'true' }}
 
         name: Docs build
+
+        needs: [changes]
 
         runs-on: ubuntu-latest
 
@@ -197,11 +238,11 @@ jobs:
                   pnpm run build
 
     build_bundles:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ needs.changes.outputs.bundles == 'true' }}
 
         name: Bundles (${{ matrix.label }})
 
-        needs: [build]
+        needs: [build, changes]
 
         strategy:
             fail-fast: false
