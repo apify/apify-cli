@@ -45,5 +45,11 @@ jobs:
             - name: Build module
               run: pnpm run build
 
+            # The preinstall script enforces pnpm for local development, but breaks
+            # consumers installing with npm (e.g. npm install -g apify-cli) because
+            # npm runs preinstall for top-level/global installs.
+            - name: Remove preinstall guard
+              run: jq 'del(.scripts.preinstall)' package.json > tmp.json && mv tmp.json package.json
+
             - name: Publish to NPM
               run: pnpm publish --provenance --access public --no-git-checks --tag ${{ inputs.tag }}

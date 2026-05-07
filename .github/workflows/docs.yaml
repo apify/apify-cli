@@ -35,16 +35,9 @@ jobs:
 
             - name: Build docs
               run: |
-                  # update next docs reference
                   pnpm run update-docs
-                  # go to website dir
-                  cd website
-                  # install website deps
-                  pnpm install
-                  # install the latest theme version
-                  pnpm add @apify/docs-theme@latest
-                  # build the docs
-                  pnpm run build
+                  pnpm --filter apify-cli-website add @apify/docs-theme@latest
+                  pnpm --filter apify-cli-website run build
               env:
                   SMARTLOOK_PROJECT_KEY: ${{ secrets.SMARTLOOK_DOCS_PROJECT_KEY }}
                   GIT_USER: "apify-service-account:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
@@ -56,7 +49,7 @@ jobs:
               uses: stefanzweifel/git-auto-commit-action@v7
               with:
                   commit_message: "chore: Automatic theme updating workflow [skip ci]"
-                  file_pattern: "website/package*.json website/pnpm-lock.yaml"
+                  file_pattern: "website/package*.json pnpm-lock.yaml"
                   commit_user_name: Apify Bot
                   commit_user_email: my-github-actions-bot@example.org
                   commit_author: Apify Bot <apify@apify.com>

@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
     build:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
 
         name: Build
 
@@ -42,7 +42,7 @@ jobs:
               run: pnpm run update-docs
 
     lint:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
 
         name: Lint & Format
 
@@ -66,7 +66,7 @@ jobs:
               run: pnpm run format
 
     test_local:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
 
         name: Local Tests
 
@@ -105,7 +105,7 @@ jobs:
               run: pnpm run test:local
 
     test_api:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
 
         name: API Tests
 
@@ -134,7 +134,7 @@ jobs:
               run: pnpm run test:api
 
     test_python_support:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
 
         name: Python Support
 
@@ -174,7 +174,7 @@ jobs:
               run: pnpm run test:python
 
     docs:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
 
         name: Docs build
 
@@ -192,13 +192,10 @@ jobs:
               uses: apify/workflows/pnpm-install@main
 
             - name: Build & deploy docs
-              run: |
-                  cd website
-                  pnpm install
-                  pnpm run build
+              run: pnpm --filter apify-cli-website run build
 
     build_bundles:
-        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+        if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
 
         name: Bundles (${{ matrix.label }})
 

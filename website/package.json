@@ -1,4 +1,6 @@
 {
+	"name": "apify-cli-website",
+	"private": true,
 	"scripts": {
 		"examples": "docusaurus-examples",
 		"start": "rimraf .docusaurus && docusaurus start",
