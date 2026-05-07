@@ -106,6 +106,35 @@ function parseHeaders(raw: string | undefined): Record<string, string> {
 	};
 }
 
+const METHOD_COLORS: Record<string, (text: string) => string> = {
+	GET: chalk.green,
+	POST: chalk.yellow,
+	PUT: chalk.blue,
+	PATCH: chalk.cyan,
+	DELETE: chalk.red,
+};
+
+function formatEndpointLine(ep: Endpoint): string {
+	const colorize = METHOD_COLORS[ep.method] || chalk.white;
+	const methodStr = colorize(ep.method.padEnd(7));
+	const summaryStr = ep.summary ? chalk.gray(` ${ep.summary}`) : '';
+	return `${methodStr} ${ep.path}${summaryStr}`;
+}
+
+const LIST_ENDPOINTS_HINT = `Run ${chalk.cyan('apify api --list-endpoints')} to see all available Apify API endpoints.`;
+
+function printSuggestions(suggestions: Endpoint[]) {
+	if (suggestions.length > 0) {
+		simpleLog({ message: `\nDid you mean:`, stdout: false });
+
+		for (const ep of suggestions) {
+			simpleLog({ message: `  ${formatEndpointLine(ep)}`, stdout: false });
+		}
+	}
+
+	simpleLog({ message: `\n${LIST_ENDPOINTS_HINT}`, stdout: false });
+}
+
 export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 	private cachedEndpoints: Endpoint[] | null = null;
 
@@ -423,35 +452,6 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			simpleLog({ message: `\n${LIST_ENDPOINTS_HINT}`, stdout: false });
 		}
 	}
-}
-
-const METHOD_COLORS: Record<string, (text: string) => string> = {
-	GET: chalk.green,
-	POST: chalk.yellow,
-	PUT: chalk.blue,
-	PATCH: chalk.cyan,
-	DELETE: chalk.red,
-};
-
-function formatEndpointLine(ep: Endpoint): string {
-	const colorize = METHOD_COLORS[ep.method] || chalk.white;
-	const methodStr = colorize(ep.method.padEnd(7));
-	const summaryStr = ep.summary ? chalk.gray(` ${ep.summary}`) : '';
-	return `${methodStr} ${ep.path}${summaryStr}`;
-}
-
-const LIST_ENDPOINTS_HINT = `Run ${chalk.cyan('apify api --list-endpoints')} to see all available Apify API endpoints.`;
-
-function printSuggestions(suggestions: Endpoint[]) {
-	if (suggestions.length > 0) {
-		simpleLog({ message: `\nDid you mean:`, stdout: false });
-
-		for (const ep of suggestions) {
-			simpleLog({ message: `  ${formatEndpointLine(ep)}`, stdout: false });
-		}
-	}
-
-	simpleLog({ message: `\n${LIST_ENDPOINTS_HINT}`, stdout: false });
 }
 
 async function fetchEndpoints(): Promise<Endpoint[]> {
