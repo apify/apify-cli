@@ -4,7 +4,9 @@ import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { MOCK_OPENAPI_SPEC } from '../../__setup__/fixtures/mock-openapi-spec.js';
 
-const mockGetLoggedClientOrThrow = vitest.fn();
+const { mockGetLoggedClientOrThrow } = vitest.hoisted(() => ({
+	mockGetLoggedClientOrThrow: vitest.fn(),
+}));
 
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => {
 	const original = await importOriginal<typeof import('../../../src/lib/utils.js')>();
