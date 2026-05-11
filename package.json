@@ -118,7 +118,7 @@
 		"wrap-ansi": "^10.0.0"
 	},
 	"devDependencies": {
-		"@apify/oxlint-config": "^0.2.5",
+		"@apify/oxlint-config": "^0.2.9",
 		"@apify/tsconfig": "^0.1.2",
 		"@crawlee/types": "^3.16.0",
 		"@types/adm-zip": "^0.5.8",
@@ -138,9 +138,9 @@
 		"husky": "^9.1.7",
 		"lint-staged": "^16.4.0",
 		"mock-stdin": "^1.0.0",
-		"oxfmt": "0.46.0",
-		"oxlint": "1.62.0",
-		"oxlint-tsgolint": "0.22.0",
+		"oxfmt": "0.48.0",
+		"oxlint": "1.63.0",
+		"oxlint-tsgolint": "0.22.1",
 		"tsdown": "^0.21.9",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2",
@@ -171,6 +171,9 @@
 		}
 	},
 	"lint-staged": {
-		"*.{mjs,js,ts,mts,jsx,tsx}": ["oxfmt --no-error-on-unmatched-pattern", "oxlint --type-aware --fix"]
+		"*.{mjs,js,ts,mts,jsx,tsx}": [
+			"oxfmt --no-error-on-unmatched-pattern",
+			"oxlint --type-aware --fix --no-error-on-unmatched-pattern"
+		]
 	}
 }
