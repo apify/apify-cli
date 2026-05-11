@@ -64,26 +64,50 @@ class StreamLoggerOutput implements LoggerOutput {
 	}
 
 	info(message: string): void {
+		if (!message.length) {
+			return;
+		}
+
 		this.emit(`${chalk.white('Info:')} ${message}`);
 	}
 
 	warning(message: string): void {
+		if (!message.length) {
+			return;
+		}
+
 		this.emit(`${chalk.yellow.bold('Warning:')} ${message}`);
 	}
 
 	success(message: string): void {
+		if (!message.length) {
+			return;
+		}
+
 		this.emit(`${chalk.green('Success:')} ${message}`);
 	}
 
 	error(message: string): void {
+		if (!message.length) {
+			return;
+		}
+
 		this.emit(`${chalk.red('Error:')} ${message}`);
 	}
 
 	run(message: string): void {
+		if (!message.length) {
+			return;
+		}
+
 		this.emit(`${chalk.gray('Run:')} ${message}`);
 	}
 
 	link(message: string, url: string): void {
+		if (!message.length) {
+			return;
+		}
+
 		this.emit(`${chalk.blue(message)} ${url}`);
 	}
 

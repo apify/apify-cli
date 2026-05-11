@@ -234,8 +234,18 @@ export class CommandHelp extends BaseCommandRenderer {
 			this.pushArguments(result, args);
 		}
 
-		if (flags.length) {
-			this.pushFlags(result, sortedFlags);
+		const outputFormatFlagNames = new Set(['json', 'markdown']);
+		const commandFlags = new Map([...sortedFlags].filter(([name]) => !outputFormatFlagNames.has(name)));
+		const formatFlags = !this.command.disableFormatOutputDefaults
+			? new Map([...sortedFlags].filter(([name]) => outputFormatFlagNames.has(name)))
+			: new Map();
+
+		if (commandFlags.size) {
+			this.pushFlags(result, commandFlags);
+		}
+
+		if (formatFlags.size) {
+			this.pushFlags(result, formatFlags, 'OUTPUT FORMAT');
 		}
 	}
 
@@ -267,12 +277,13 @@ export class CommandHelp extends BaseCommandRenderer {
 	protected pushFlags(
 		result: string[],
 		flags: Map<string, TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>>,
+		sectionTitle = 'FLAGS',
 	) {
 		if (!flags.size) {
 			return;
 		}
 
-		result.push(chalk.bold('FLAGS'));
+		result.push(chalk.bold(sectionTitle));
 
 		const linesOfFlags = new Map<string, TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>>();
 
