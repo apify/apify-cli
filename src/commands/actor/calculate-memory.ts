@@ -99,11 +99,21 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 			const clampedResult = Math.min(Math.max(result, minMemory), maxMemory);
 
 			this.logger.stdout.success(
-				this.t(ActorCalculateMemoryCommandMessages.calculatedMemory, { result: String(clampedResult) }),
+				this.t(ActorCalculateMemoryCommandMessages.calculatedMemory, {
+					result: String(clampedResult),
+					jsonParams: [
+						{
+							expression: memoryExpression,
+							resultMb: clampedResult,
+						},
+					],
+				}),
 			);
 		} catch (err) {
+			const { message } = err as Error;
+
 			this.logger.stderr.error(
-				this.t(ActorCalculateMemoryCommandMessages.calculationFailed, { message: (err as Error).message }),
+				this.t(ActorCalculateMemoryCommandMessages.calculationFailed, { message, jsonParams: [message] }),
 			);
 		}
 	}
@@ -153,8 +163,9 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 					? this.t(ActorCalculateMemoryCommandMessages.configLoadErrorWithCause, {
 							message,
 							cause: cause.message,
+							jsonParams: [message, cause.message],
 						})
-					: this.t(ActorCalculateMemoryCommandMessages.configLoadError, { message }),
+					: this.t(ActorCalculateMemoryCommandMessages.configLoadError, { message, jsonParams: [message] }),
 			);
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return {};
