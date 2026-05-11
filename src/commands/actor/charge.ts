@@ -78,6 +78,7 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 					count,
 					eventName,
 					idempotencyKey: idempotencyKeyDisplay,
+					jsonParams: [{ count, eventName, idempotencyKey: idempotencyKeyDisplay }],
 				}),
 			);
 			return;
@@ -89,6 +90,7 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 					count,
 					eventName,
 					idempotencyKey: idempotencyKeyDisplay,
+					jsonParams: [{ count, eventName, idempotencyKey: idempotencyKeyDisplay }],
 				}),
 			);
 			return;
@@ -99,6 +101,7 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 		if (!apifyClient) {
 			throw new Error(this.t(ActorChargeCommandMessages.missingApifyToken));
 		}
+
 		const runId = process.env[APIFY_ENV_VARS.ACTOR_RUN_ID];
 
 		if (!runId) {
@@ -106,8 +109,13 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 		}
 
 		const run = await apifyClient.run(runId).get();
+
 		if (run?.pricingInfo?.pricingModel !== 'PAY_PER_EVENT') {
-			throw new Error(this.t(ActorChargeCommandMessages.invalidPricingModel));
+			throw new Error(
+				this.t(ActorChargeCommandMessages.invalidPricingModel, {
+					jsonParams: [run?.pricingInfo?.pricingModel ?? 'N/A'],
+				}),
+			);
 		}
 
 		this.logger.stdout.info(
@@ -116,6 +124,7 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 				eventName,
 				idempotencyKey: idempotencyKeyDisplay,
 				runId,
+				jsonParams: [{ count, eventName, idempotencyKey: idempotencyKeyDisplay, runId }],
 			}),
 		);
 		await apifyClient.run(runId).charge({
