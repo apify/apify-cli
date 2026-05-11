@@ -1,7 +1,7 @@
 import { none, type Option, some } from '@sapphire/result';
 import { execa } from 'execa';
 
-import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { logger } from '../logger.js';
 import { type CwdProject, ProjectLanguage } from './useCwdProject.js';
 
 export interface UseModuleVersionInput {
@@ -78,7 +78,7 @@ const moduleVersionScripts: Record<string, (mod: string) => string[]> = {
 
 export async function useModuleVersion({ moduleName, project }: UseModuleVersionInput): Promise<Option<string>> {
 	if (!project.runtime) {
-		cliDebugPrint('useModuleVersion', { status: 'no_runtime_found', project, moduleName });
+		logger.debug('useModuleVersion', { status: 'no_runtime_found', project, moduleName });
 		return none;
 	}
 
@@ -89,14 +89,14 @@ export async function useModuleVersion({ moduleName, project }: UseModuleVersion
 	} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
 		moduleVersionScriptKey = 'python';
 	} else {
-		cliDebugPrint('useModuleVersion', { status: 'unsupported_project_type', project, moduleName });
+		logger.debug('useModuleVersion', { status: 'unsupported_project_type', project, moduleName });
 		return none;
 	}
 
 	const args = moduleVersionScripts[moduleVersionScriptKey]?.(moduleName);
 
 	if (!args) {
-		cliDebugPrint('useModuleVersion', { status: 'no_version_script_found', project, moduleName });
+		logger.debug('useModuleVersion', { status: 'no_version_script_found', project, moduleName });
 		return none;
 	}
 
@@ -108,15 +108,15 @@ export async function useModuleVersion({ moduleName, project }: UseModuleVersion
 		});
 
 		if (result.stdout.trim() === 'n/a') {
-			cliDebugPrint('useModuleVersion', { status: 'no_version_found', project, moduleName });
+			logger.debug('useModuleVersion', { status: 'no_version_found', project, moduleName });
 			return none;
 		}
 
-		cliDebugPrint('useModuleVersion', { status: 'success', project, moduleName, version: result.stdout.trim() });
+		logger.debug('useModuleVersion', { status: 'success', project, moduleName, version: result.stdout.trim() });
 
 		return some(result.stdout.trim());
 	} catch (ex) {
-		cliDebugPrint('useModuleVersion', { status: 'failed_to_run_version_script', project, moduleName, error: ex });
+		logger.debug('useModuleVersion', { status: 'failed_to_run_version_script', project, moduleName, error: ex });
 		return none;
 	}
 }

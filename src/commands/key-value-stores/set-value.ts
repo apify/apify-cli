@@ -1,3 +1,4 @@
+import { KeyValueStoresSetValueCommandMessages } from '#i18n/commands/key-value-stores/set-value.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -53,7 +54,7 @@ export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueS
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
 
 		if (!maybeStore) {
-			this.logger.stderr.error(`Key-value store with ID or name "${storeId}" not found.`);
+			this.logger.stderr.error(this.t(KeyValueStoresSetValueCommandMessages.storeNotFound, { storeId }));
 
 			return;
 		}
@@ -64,12 +65,15 @@ export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueS
 			// TODO: again, the types need to be fixed -w-
 			await client.setRecord({ key: itemKey, value: (value || process.stdin) as string, contentType });
 
-			this.logger.stdout.success(`Value with key "${itemKey}" set in the key-value store.`);
+			this.logger.stdout.success(this.t(KeyValueStoresSetValueCommandMessages.valueSet, { itemKey }));
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
 			this.logger.stderr.error(
-				`Failed to set value with key "${itemKey}" in the key-value store.\n  ${casted.message || casted}`,
+				this.t(KeyValueStoresSetValueCommandMessages.setFailed, {
+					itemKey,
+					message: String(casted.message || casted),
+				}),
 			);
 		}
 	}

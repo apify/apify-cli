@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import { KeyValueStoresCreateCommandMessages } from '#i18n/commands/key-value-stores/create.js';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -30,8 +30,6 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { keyValueStoreName } = this.args;
 
@@ -41,7 +39,7 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 			const existing = await tryToGetKeyValueStore(client, keyValueStoreName);
 
 			if (existing) {
-				this.logger.stderr.error('Cannot create a key-value store with the same name!');
+				this.logger.stderr.error(this.t(KeyValueStoresCreateCommandMessages.duplicateName));
 				return;
 			}
 		}
@@ -54,7 +52,9 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 		}
 
 		this.logger.stdout.success(
-			`Key-value store with ID ${chalk.yellow(newStore.id)}${keyValueStoreName ? ` (called ${chalk.yellow(keyValueStoreName)})` : ''} was created.`,
+			keyValueStoreName
+				? this.t(KeyValueStoresCreateCommandMessages.createdNamed, { id: newStore.id, name: keyValueStoreName })
+				: this.t(KeyValueStoresCreateCommandMessages.createdUnnamed, { id: newStore.id }),
 		);
 	}
 }

@@ -1,3 +1,4 @@
+import { DatasetsGetItemsMessages } from '#i18n/commands/datasets/get-items.js';
 import { type ApifyClient, type Dataset, type DatasetClient, DownloadItemsFormat } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -66,7 +67,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 		const maybeDataset = await this.tryToGetDataset(apifyClient, datasetId);
 
 		if (!maybeDataset) {
-			this.logger.stderr.error(`Dataset with ID "${datasetId}" not found.`);
+			this.logger.stderr.error(this.t(DatasetsGetItemsMessages.datasetNotFound, { datasetId }));
 
 			return;
 		}
@@ -83,7 +84,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 
 		const contentType = downloadFormatToContentType[format] ?? 'application/octet-stream';
 
-		this.logger.stderr.log(contentType);
+		this.logger.stderr.log(this.t(DatasetsGetItemsMessages.contentType, { contentType }));
 
 		process.stdout.write(result);
 		process.stdout.write('\n');

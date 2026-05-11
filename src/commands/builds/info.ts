@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import { BuildsInfoCommandMessages } from '#i18n/commands/builds/info.js';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -27,8 +27,6 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { buildId } = this.args;
 
@@ -37,7 +35,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			this.logger.stdout.error(`Build with ID "${buildId}" was not found on your account.`);
+			this.logger.stdout.error(this.t(BuildsInfoCommandMessages.buildNotFound, { buildId }));
 			return;
 		}
 
@@ -64,47 +62,68 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 		const exitCode = Reflect.get(build, 'exitCode') as number | undefined;
 
 		const fullActorName = actor?.username ? `${actor.username}/${actor.name}` : (actor?.name ?? 'unknown-actor');
-		const versionTaggedAs = buildTag ? ` (tagged as ${chalk.yellow(buildTag)})` : '';
-		const exitCodeStatus = typeof exitCode !== 'undefined' ? ` (exit code: ${chalk.gray(exitCode)})` : '';
+		const versionTaggedAs = buildTag ? this.t(BuildsInfoCommandMessages.versionTaggedAs, { buildTag }) : '';
+		const exitCodeStatus =
+			typeof exitCode !== 'undefined'
+				? this.t(BuildsInfoCommandMessages.exitCodeStatus, { exitCode: String(exitCode) })
+				: '';
 
 		const message: string[] = [
-			//
-			`${chalk.yellow('Actor')}: ${fullActorName} (${chalk.gray(build.actId)})`,
-			'',
-			`${chalk.yellow('Build Information')} (ID: ${chalk.gray(build.id)})`,
-			`  ${chalk.yellow('Build Number')}: ${build.buildNumber}${versionTaggedAs}`,
-			`  ${chalk.yellow('Status')}: ${prettyPrintStatus(build.status)}${exitCodeStatus}`,
-			`  ${chalk.yellow('Started')}: ${TimestampFormatter.display(build.startedAt)}`,
+			this.t(BuildsInfoCommandMessages.header, {
+				fullActorName,
+				actId: build.actId,
+				buildId: build.id,
+				buildNumber: build.buildNumber!,
+				versionTaggedAs,
+				status: prettyPrintStatus(build.status),
+				exitCodeStatus,
+				startedAt: TimestampFormatter.display(build.startedAt),
+			}),
 		];
 
 		if (build.finishedAt) {
 			message.push(
-				`  ${chalk.yellow('Finished')}: ${TimestampFormatter.display(build.finishedAt)} (took ${chalk.gray(DurationFormatter.format(build.stats?.durationMillis ?? 0))})`,
+				this.t(BuildsInfoCommandMessages.finishedAtLine, {
+					finishedAt: TimestampFormatter.display(build.finishedAt),
+					duration: DurationFormatter.format(build.stats?.durationMillis ?? 0),
+				}),
 			);
 		} else {
 			const diff = Date.now() - build.startedAt.getTime();
-			message.push(`  ${chalk.yellow('Finished')}: ${chalk.gray(`Running for ${DurationFormatter.format(diff)}`)}`);
+			message.push(
+				this.t(BuildsInfoCommandMessages.runningForLine, {
+					duration: DurationFormatter.format(diff),
+				}),
+			);
 		}
 
 		if (build.stats?.computeUnits) {
 			// Platform shows 3 decimal places, so shall we
-			message.push(`  ${chalk.yellow('Compute Units')}: ${build.stats.computeUnits.toFixed(3)}`);
+			message.push(
+				this.t(BuildsInfoCommandMessages.computeUnitsLine, {
+					computeUnits: build.stats.computeUnits.toFixed(3),
+				}),
+			);
 		}
 
 		// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
 		const dockerImageSize = Reflect.get(build.stats ?? {}, 'imageSizeBytes') as number | undefined;
 
 		if (dockerImageSize) {
-			message.push(`  ${chalk.yellow('Docker Image Size')}: ${prettyPrintBytes({ bytes: dockerImageSize })}`);
+			message.push(
+				this.t(BuildsInfoCommandMessages.dockerImageSizeLine, {
+					size: prettyPrintBytes({ bytes: dockerImageSize }),
+				}),
+			);
 		}
 
-		message.push(`  ${chalk.yellow('Origin')}: ${build.meta.origin ?? 'UNKNOWN'}`);
+		message.push(this.t(BuildsInfoCommandMessages.originLine, { origin: build.meta.origin ?? 'UNKNOWN' }));
 
 		message.push('');
 
 		const url = `https://console.apify.com/actors/${build.actId}/builds/${build.buildNumber}`;
 
-		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
+		message.push(this.t(BuildsInfoCommandMessages.viewInConsole, { url }));
 
 		this.logger.stdout.log(message.join('\n'));
 	}

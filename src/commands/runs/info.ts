@@ -1,3 +1,4 @@
+import { RunsInfoCommandMessages } from '#i18n/commands/runs/info.js';
 import type { ActorRun, ActorRunUsage, ActorTaggedBuild } from 'apify-client';
 import chalk from 'chalk';
 
@@ -70,8 +71,6 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { runId } = this.args;
 
@@ -80,7 +79,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			this.logger.stderr.error(`Run with ID "${runId}" was not found on your account.`);
+			this.logger.stderr.error(this.t(RunsInfoCommandMessages.runNotFound, { runId }));
 			return;
 		}
 

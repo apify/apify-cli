@@ -1,7 +1,7 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import chalk from 'chalk';
+import { AuthLoginCommandMessages } from '#i18n/commands/auth/login.js';
 import computerName from 'computer-name';
 import cors from 'cors';
 import express from 'express';
@@ -15,6 +15,7 @@ import { AUTH_FILE_PATH } from '../../lib/consts.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
+import { t } from '../../lib/i18n/index.js';
 import { logger } from '../../lib/logger.js';
 import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
 
@@ -35,10 +36,13 @@ const tryToLogin = async (token: string) => {
 		await updateUserId(userInfo.id!);
 
 		logger.stderr.success(
-			`You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored at ${AUTH_FILE_PATH()}.`)}`,
+			t(AuthLoginCommandMessages.loggedInSuccess, {
+				userName: userInfo.username || userInfo.id!,
+				authFilePath: AUTH_FILE_PATH(),
+			}),
 		);
 	} else {
-		logger.stderr.error('Login to Apify failed, the provided API token is not valid.');
+		logger.stderr.error(t(AuthLoginCommandMessages.invalidTokenLogin));
 	}
 	return isUserLogged;
 };
@@ -167,11 +171,13 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 					if (req.body.apiToken) {
 						await tryToLogin(req.body.apiToken);
 					} else {
-						throw new Error('Request did not contain API token');
+						throw new Error(this.t(AuthLoginCommandMessages.requestMissingApiToken));
 					}
 					res.end();
 				} catch (err) {
-					const errorMessage = `Login to Apify failed with error: ${(err as Error).message}`;
+					const errorMessage = this.t(AuthLoginCommandMessages.loginFailedWithError, {
+						message: (err as Error).message,
+					});
 					this.logger.stderr.error(errorMessage);
 					res.status(500);
 					res.send(errorMessage);
@@ -181,11 +187,11 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 
 			apiRouter.post('/exit', (req, res) => {
 				if (req.body.isWindowClosed) {
-					this.logger.stderr.error('Login to Apify failed, the console window was closed.');
+					this.logger.stderr.error(this.t(AuthLoginCommandMessages.loginFailedWindowClosed));
 				} else if (req.body.actionCanceled) {
-					this.logger.stderr.error('Login to Apify failed, the action was canceled in the Apify Console.');
+					this.logger.stderr.error(this.t(AuthLoginCommandMessages.loginFailedActionCanceled));
 				} else {
-					this.logger.stderr.error('Login to Apify failed.');
+					this.logger.stderr.error(this.t(AuthLoginCommandMessages.loginFailed));
 				}
 
 				res.end();
@@ -207,7 +213,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 				// Ignore errors from fetching computer name as it's not critical
 			}
 
-			this.logger.stderr.info(`Opening Apify Console at "${consoleUrl.href}"...`);
+			this.logger.stderr.info(this.t(AuthLoginCommandMessages.openingConsole, { consoleHref: consoleUrl.href }));
 			await open(consoleUrl.href);
 		} else {
 			console.log('Enter your Apify API token. You can find it at https://console.apify.com/settings/integrations');

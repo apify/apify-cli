@@ -1,6 +1,8 @@
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
+import { ActorCalculateMemoryCommandMessages } from '#i18n/commands/actor/calculate-memory.js';
+
 import { calculateRunDynamicMemory } from '@apify/actor-memory-expression';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -81,15 +83,13 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		const { input, memoryExpression, minMemory, maxMemory, runOptions } = await this.prepareMemoryArguments();
 
 		if (!memoryExpression) {
-			throw new Error(
-				`No memory-calculation expression found. Provide it via the --default-memory-mbytes flag or define defaultMemoryMbytes in actor.json.`,
-			);
+			throw new Error(this.t(ActorCalculateMemoryCommandMessages.missingMemoryExpression));
 		}
 
 		const inputPath = resolve(process.cwd(), input);
 		const inputJson = getJsonFileContent(inputPath) ?? {};
 
-		this.logger.stderr.info(`Evaluating memory expression: ${memoryExpression}`);
+		this.logger.stderr.info(this.t(ActorCalculateMemoryCommandMessages.evaluatingExpression, { memoryExpression }));
 
 		try {
 			const result = await calculateRunDynamicMemory(memoryExpression, {
@@ -98,9 +98,13 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 			});
 			const clampedResult = Math.min(Math.max(result, minMemory), maxMemory);
 
-			this.logger.stdout.success(`Calculated memory: ${clampedResult} MB`);
+			this.logger.stdout.success(
+				this.t(ActorCalculateMemoryCommandMessages.calculatedMemory, { result: String(clampedResult) }),
+			);
 		} catch (err) {
-			this.logger.stderr.error(`Memory calculation failed: ${(err as Error).message}`);
+			this.logger.stderr.error(
+				this.t(ActorCalculateMemoryCommandMessages.calculationFailed, { message: (err as Error).message }),
+			);
 		}
 	}
 
@@ -144,7 +148,14 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		if (localConfigResult.isErr()) {
 			const { message, cause } = localConfigResult.unwrapErr();
 
-			this.logger.stderr.error(`${message}${cause ? `\n  ${cause.message}` : ''}`);
+			this.logger.stderr.error(
+				cause
+					? this.t(ActorCalculateMemoryCommandMessages.configLoadErrorWithCause, {
+							message,
+							cause: cause.message,
+						})
+					: this.t(ActorCalculateMemoryCommandMessages.configLoadError, { message }),
+			);
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return {};
 		}

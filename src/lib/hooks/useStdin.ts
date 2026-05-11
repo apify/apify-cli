@@ -2,7 +2,7 @@ import { constants, fstat as fstat_ } from 'node:fs';
 import process from 'node:process';
 import { promisify } from 'node:util';
 
-import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { logger } from '../logger.js';
 
 const fstat = promisify(fstat_);
 
@@ -34,7 +34,7 @@ export async function useStdin(): Promise<StdinState> {
 
 	const pipedIn = await fstat(0)
 		.then((stat) => {
-			cliDebugPrint('useStdin', {
+			logger.debug('useStdin', {
 				stat,
 				isRegularFile: stat.isFile(),
 				isDirectory: stat.isDirectory(),
@@ -67,7 +67,7 @@ export async function useStdin(): Promise<StdinState> {
 		})
 		.catch(() => false);
 
-	cliDebugPrint('useStdin', {
+	logger.debug('useStdin', {
 		hasData: state.hasData,
 		waitDelay: state.waitDelay,
 		isTTY: state.isTTY,

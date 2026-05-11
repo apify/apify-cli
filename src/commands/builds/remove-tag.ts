@@ -1,3 +1,4 @@
+import { BuildsRemoveTagCommandMessages } from '#i18n/commands/builds/remove-tag.js';
 import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
@@ -46,14 +47,14 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			this.logger.stdout.error(`Build with ID "${buildId}" was not found on your account.`);
+			this.logger.stdout.error(this.t(BuildsRemoveTagCommandMessages.buildNotFound, { buildId }));
 			return;
 		}
 
 		const actor = await apifyClient.actor(build.actId).get();
 
 		if (!actor) {
-			this.logger.stdout.error(`Actor with ID "${build.actId}" was not found.`);
+			this.logger.stdout.error(this.t(BuildsRemoveTagCommandMessages.actorNotFound, { actorId: build.actId }));
 			return;
 		}
 
@@ -62,14 +63,21 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 
 		// Check if the tag exists
 		if (!existingTagData) {
-			this.logger.stdout.error(`Tag "${tag}" does not exist on Actor "${actor.name}".`);
+			this.logger.stdout.error(
+				this.t(BuildsRemoveTagCommandMessages.tagDoesNotExist, { tag, actorName: actor.name }),
+			);
 			return;
 		}
 
 		// Check if the tag points to this build
 		if (existingTagData.buildId !== buildId) {
 			this.logger.stdout.error(
-				`Tag "${tag}" is not associated with build "${buildId}". It points to build "${existingTagData.buildNumber}" (${existingTagData.buildId}).`,
+				this.t(BuildsRemoveTagCommandMessages.tagNotOnBuild, {
+					tag,
+					buildId,
+					otherBuildNumber: existingTagData.buildNumber!,
+					otherBuildId: existingTagData.buildId!,
+				}),
 			);
 			return;
 		}
@@ -81,7 +89,7 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 		});
 
 		if (!confirmed) {
-			this.logger.stdout.info(`Tag removal was canceled.`);
+			this.logger.stdout.info(this.t(BuildsRemoveTagCommandMessages.canceled));
 			return;
 		}
 
@@ -94,12 +102,20 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 			} as never);
 
 			this.logger.stdout.success(
-				`Tag "${chalk.yellow(tag)}" removed from build ${chalk.gray(build.buildNumber)} (${chalk.gray(buildId)})`,
+				this.t(BuildsRemoveTagCommandMessages.tagRemoved, {
+					tag,
+					buildNumber: build.buildNumber!,
+					buildId,
+				}),
 			);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 			this.logger.stdout.error(
-				`Failed to remove tag "${tag}" from build "${buildId}".\n  ${casted.message || casted}`,
+				this.t(BuildsRemoveTagCommandMessages.tagRemoveFailed, {
+					tag,
+					buildId,
+					errorMessage: casted.message || String(casted),
+				}),
 			);
 		}
 	}

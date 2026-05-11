@@ -1,3 +1,4 @@
+import { HelpCommandMessages } from '#i18n/commands/help.js';
 import chalk from 'chalk';
 
 import { ApifyCommand, commandRegistry } from '../lib/command-framework/apify-command.js';
@@ -38,12 +39,12 @@ export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 		if (!command) {
 			const closestMatches = useCommandSuggestions(lowercasedCommandString);
 
-			let message = chalk.gray(`Command ${chalk.whiteBright(commandString)} not found`);
-
-			if (closestMatches.length) {
-				message += '\n  ';
-				message += chalk.gray(`Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`);
-			}
+			const message = closestMatches.length
+				? this.t(HelpCommandMessages.commandNotFoundWithSuggestions, {
+						commandString,
+						suggestions: closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', '),
+					})
+				: this.t(HelpCommandMessages.commandNotFound, { commandString });
 
 			this.logger.stderr.error(message);
 

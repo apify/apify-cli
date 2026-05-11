@@ -1,5 +1,5 @@
+import { KeyValueStoresRmCommandMessages } from '#i18n/commands/key-value-stores/rm.js';
 import type { ApifyApiError } from 'apify-client';
-import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -47,7 +47,9 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 		const existingKvs = await tryToGetKeyValueStore(client, keyValueStoreNameOrId);
 
 		if (!existingKvs) {
-			this.logger.stderr.error(`Key-value store with ID or name "${keyValueStoreNameOrId}" not found.`);
+			this.logger.stderr.error(
+				this.t(KeyValueStoresRmCommandMessages.storeNotFound, { nameOrId: keyValueStoreNameOrId }),
+			);
 
 			return;
 		}
@@ -58,7 +60,7 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 		});
 
 		if (!confirmed) {
-			this.logger.stderr.info('Key-value store deletion has been aborted.');
+			this.logger.stderr.info(this.t(KeyValueStoresRmCommandMessages.deletionAborted));
 			return;
 		}
 
@@ -68,13 +70,15 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 			await existingKvs.keyValueStoreClient.delete();
 
 			this.logger.stdout.success(
-				`Key-value store with ID ${chalk.yellow(id)}${name ? ` (called ${chalk.yellow(name)})` : ''} has been deleted.`,
+				name
+					? this.t(KeyValueStoresRmCommandMessages.deletedNamed, { id, name })
+					: this.t(KeyValueStoresRmCommandMessages.deletedUnnamed, { id }),
 			);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
 			this.logger.stderr.error(
-				`Failed to delete key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+				this.t(KeyValueStoresRmCommandMessages.deleteFailed, { id, message: String(casted.message || casted) }),
 			);
 		}
 	}

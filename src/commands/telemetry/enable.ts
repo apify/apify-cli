@@ -1,3 +1,5 @@
+import { TelemetryEnableCommandMessages } from '#i18n/commands/telemetry/enable.js';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { updateTelemetryEnabled, useTelemetryState } from '../../lib/hooks/telemetry/useTelemetryState.js';
 
@@ -19,11 +21,11 @@ export class TelemetryEnableCommand extends ApifyCommand<typeof TelemetryEnableC
 		const currentState = await useTelemetryState();
 
 		if (currentState.enabled) {
-			this.logger.stderr.info('Telemetry is already enabled.');
+			this.logger.stderr.info(this.t(TelemetryEnableCommandMessages.alreadyEnabled));
 		} else {
 			await updateTelemetryEnabled(true);
 
-			this.logger.stderr.success('Telemetry enabled.');
+			this.logger.stderr.success(this.t(TelemetryEnableCommandMessages.enabled));
 		}
 	}
 }

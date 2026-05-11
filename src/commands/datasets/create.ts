@@ -1,4 +1,4 @@
-import chalk from 'chalk';
+import { DatasetsCreateCommandMessages } from '#i18n/commands/datasets/create.js';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -30,8 +30,6 @@ export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCom
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { datasetName } = this.args;
 
@@ -41,7 +39,7 @@ export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCom
 			const existing = await tryToGetDataset(client, datasetName);
 
 			if (existing) {
-				this.logger.stderr.error('A Dataset with this name already exists!');
+				this.logger.stderr.error(this.t(DatasetsCreateCommandMessages.alreadyExists));
 				return;
 			}
 		}
@@ -54,7 +52,9 @@ export class DatasetsCreateCommand extends ApifyCommand<typeof DatasetsCreateCom
 		}
 
 		this.logger.stdout.success(
-			`Dataset with ID ${chalk.yellow(newDataset.id)}${datasetName ? ` (called ${chalk.yellow(datasetName)})` : ''} was created.`,
+			datasetName
+				? this.t(DatasetsCreateCommandMessages.createdWithName, { id: newDataset.id, name: datasetName })
+				: this.t(DatasetsCreateCommandMessages.created, { id: newDataset.id }),
 		);
 	}
 }

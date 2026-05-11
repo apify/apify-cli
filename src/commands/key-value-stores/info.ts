@@ -1,3 +1,4 @@
+import { KeyValueStoresInfoCommandMessages } from '#i18n/commands/key-value-stores/info.js';
 import type { Task } from 'apify-client';
 import chalk from 'chalk';
 
@@ -35,8 +36,6 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { storeId } = this.args;
 
@@ -44,7 +43,7 @@ export class KeyValueStoresInfoCommand extends ApifyCommand<typeof KeyValueStore
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
 
 		if (!maybeStore) {
-			this.logger.stderr.error(`Key-value store with ID or name "${storeId}" not found.`);
+			this.logger.stderr.error(this.t(KeyValueStoresInfoCommandMessages.storeNotFound, { storeId }));
 
 			return;
 		}

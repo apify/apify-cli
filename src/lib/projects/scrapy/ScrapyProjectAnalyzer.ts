@@ -1,9 +1,11 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
+import { ScrapyProjectAnalyzerMessages } from '#i18n/lib/projects/scrapy/ScrapyProjectAnalyzer.js';
 import ConfigParser from 'configparser';
 
 import { useUserInput } from '../../hooks/user-confirmations/useUserInput.js';
+import { t } from '../../i18n/index.js';
 import { SpiderFileAnalyzer } from './SpiderFileAnalyzer.js';
 
 export class ScrapyProjectAnalyzer {
@@ -30,8 +32,7 @@ export class ScrapyProjectAnalyzer {
 		const scrapyCfgPath = resolve(join(this.pathname, 'scrapy.cfg'));
 
 		if (!existsSync(scrapyCfgPath)) {
-			throw new Error(`scrapy.cfg not found in "${scrapyCfgPath}".
-Are you sure there is a Scrapy project there?`);
+			throw new Error(t(ScrapyProjectAnalyzerMessages.scrapyCfgNotFound, { scrapyCfgPath }));
 		}
 
 		config.read(scrapyCfgPath);
@@ -65,7 +66,7 @@ Are you sure there is a Scrapy project there?`);
 		const spiderPaths = this.settings?.SPIDER_MODULES;
 
 		if (!spiderPaths) {
-			throw new Error('SPIDER_MODULES path not found in settings.');
+			throw new Error(t(ScrapyProjectAnalyzerMessages.spiderModulesMissing));
 		}
 
 		const spiders = [];

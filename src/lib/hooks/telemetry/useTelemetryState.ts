@@ -1,9 +1,12 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
+import { useTelemetryStateMessages } from '#i18n/lib/hooks/telemetry/useTelemetryState.js';
+
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { TELEMETRY_FILE_PATH } from '../../consts.js';
+import { t } from '../../i18n/index.js';
 import { logger } from '../../logger.js';
 import type { AuthJSON } from '../../types.js';
 import { getLocalUserInfo } from '../../utils.js';
@@ -25,12 +28,6 @@ interface TelemetryStateV1 {
 	lastCommand?: string;
 	lastCommandTimestamp?: number;
 }
-
-const telemetryWarningText = [
-	'Apify collects telemetry data about general usage of Apify CLI to help us improve the product.',
-	'This feature is enabled by default, and you can disable it by setting the "APIFY_CLI_DISABLE_TELEMETRY" environment variable to "1", or by running "apify telemetry disable".',
-	'You can find more information about our telemetry in https://docs.apify.com/cli/docs/telemetry.',
-].join('\n');
 
 function createAnonymousId() {
 	return `CLI:${cryptoRandomObjectId()}`;
@@ -78,7 +75,7 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 			!process.env.APIFY_CLI_DISABLE_TELEMETRY ||
 			['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)
 		) {
-			logger.stderr.info(telemetryWarningText);
+			logger.stderr.info(t(useTelemetryStateMessages.telemetryNotice));
 		}
 
 		return useTelemetryState();

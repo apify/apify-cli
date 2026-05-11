@@ -1,6 +1,8 @@
 import { basename } from 'node:path';
 import process from 'node:process';
 
+import { InitCommandMessages } from '#i18n/commands/init.js';
+
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { Flags, YesFlag } from '../lib/command-framework/flags.js';
@@ -69,7 +71,9 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 		// TODO: use direct .unwrap() once we migrate to yargs
 		if (projectResult.isErr()) {
-			this.logger.stderr.error(projectResult.unwrapErr().message);
+			this.logger.stderr.error(
+				this.t(InitCommandMessages.projectError, { message: projectResult.unwrapErr().message }),
+			);
 			process.exit(1);
 		}
 
@@ -77,7 +81,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 		if (project.warnings?.length) {
 			for (const w of project.warnings) {
-				this.logger.stderr.warning(w);
+				this.logger.stderr.warning(this.t(InitCommandMessages.warning, { warning: w }));
 			}
 		}
 
@@ -90,16 +94,14 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 		}
 
 		if (project.type === ProjectLanguage.Scrapy) {
-			this.logger.stderr.info(
-				'The current directory looks like a Scrapy project. Using automatic project wrapping.',
-			);
+			this.logger.stderr.info(this.t(InitCommandMessages.scrapyDetected));
 			this.telemetryData.actorWrapper = 'scrapy';
 
 			return wrapScrapyProject({ projectPath: cwd });
 		}
 
 		if (!this.flags.yes && project.type === ProjectLanguage.Unknown) {
-			this.logger.stderr.warning('The current directory does not look like a Node.js or Python project.');
+			this.logger.stderr.warning(this.t(InitCommandMessages.notJsOrPython));
 
 			const confirmed = await useYesNoConfirm({
 				message: 'Do you want to continue?',
@@ -114,12 +116,12 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 		const actorConfig = await useActorConfig({ cwd });
 
 		if (actorConfig.isOkAnd((cfg) => cfg.exists && !cfg.migrated)) {
-			this.logger.stderr.warning(
-				`Skipping creation of '${LOCAL_CONFIG_PATH}', the file already exists in the current directory.`,
-			);
+			this.logger.stderr.warning(this.t(InitCommandMessages.configExists, { configPath: LOCAL_CONFIG_PATH }));
 		} else {
 			if (actorConfig.isErr()) {
-				this.logger.stderr.error(actorConfig.unwrapErr().message);
+				this.logger.stderr.error(
+					this.t(InitCommandMessages.actorConfigError, { message: actorConfig.unwrapErr().message }),
+				);
 				process.exitCode = CommandExitCodes.InvalidActorJson;
 				return;
 			}
@@ -139,7 +141,9 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 						response = answer;
 					} catch (err) {
-						this.logger.stderr.error((err as Error).message);
+						this.logger.stderr.error(
+							this.t(InitCommandMessages.invalidActorName, { message: (err as Error).message }),
+						);
 					}
 				}
 
@@ -169,6 +173,6 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 		// Create prefilled INPUT.json file from the input schema prefills
 		await createPrefilledInputFileFromInputSchema(cwd);
 
-		this.logger.stderr.success('The Actor has been initialized in the current directory.');
+		this.logger.stderr.success(this.t(InitCommandMessages.initialized));
 	}
 }

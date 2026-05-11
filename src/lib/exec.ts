@@ -1,9 +1,10 @@
 import { Result } from '@sapphire/result';
+import { execMessages } from '#i18n/lib/exec.js';
 import { execa, type ExecaError, type Options } from 'execa';
 
 import { normalizeExecutablePath } from './hooks/runtimes/utils.js';
+import { t } from './i18n/index.js';
 import { logger } from './logger.js';
-import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 interface SpawnPromisedInternalOptions {
 	/**
@@ -23,7 +24,7 @@ const spawnPromised = async (
 ) => {
 	const escapedCommand = normalizeExecutablePath(cmd);
 
-	cliDebugPrint('spawnPromised', { escapedCommand, args, opts, forwardSignals });
+	logger.debug('spawnPromised', { escapedCommand, args, opts, forwardSignals });
 
 	const childProcess = execa(escapedCommand, args, {
 		shell: true,
@@ -55,9 +56,9 @@ const spawnPromised = async (
 				let message;
 
 				if (execaError.exitCode != null) {
-					message = `${cmd} exited with code ${execaError.exitCode}`;
+					message = t(execMessages.exitedWithCode, { cmd, exitCode: execaError.exitCode });
 				} else if (execaError.signal) {
-					message = `${cmd} exited due to signal ${execaError.signal}`;
+					message = t(execMessages.exitedDueToSignal, { cmd, signal: execaError.signal });
 				} else {
 					message = execaError.shortMessage;
 				}
@@ -86,7 +87,7 @@ export interface ExecWithLogOptions {
 }
 
 export async function execWithLog({ cmd, args = [], opts = {}, overrideCommand, forwardSignals }: ExecWithLogOptions) {
-	logger.stderr.run(`${overrideCommand || cmd} ${args.join(' ')}`);
+	logger.stderr.run(t(execMessages.runningCommand, { command: overrideCommand || cmd, args: args.join(' ') }));
 	const result = await spawnPromised(cmd, args, opts, { forwardSignals });
 
 	if (result.isErr()) {

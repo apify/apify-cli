@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
 import { STATE_FILE_PATH } from '../consts.js';
-import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { logger } from '../logger.js';
 
 type LocalState = LocalStateV0 | LocalStateV1;
 
@@ -34,7 +34,7 @@ function migrateStateV0ToV1(state: LocalState) {
 		const lastChecked = new Date(casted.latestNpmVersionCheckedAt).getTime();
 		const lastVersion = casted.latestNpmVersion;
 
-		cliDebugPrint('LocalStateV0ToV1', 'Migrating state from v0 to v1', {
+		logger.debug('LocalStateV0ToV1', 'Migrating state from v0 to v1', {
 			oldState: state,
 			newState: {
 				versionCheck: {

@@ -4,6 +4,7 @@ import process from 'node:process';
 import type { parseArgs, ParseArgsConfig, ParseArgsOptionDescriptor } from 'node:util';
 
 import type { Awaitable } from '@crawlee/types';
+import { apifyCommandMessages } from '#i18n/lib/command-framework/apify-command.js';
 import chalk from 'chalk';
 import indentString from 'indent-string';
 import widestLine from 'widest-line';
@@ -16,6 +17,9 @@ import { trackEvent } from '../hooks/telemetry/trackEvent.js';
 import { checkAndUpdateLastCommand } from '../hooks/telemetry/useTelemetryState.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
+import { t } from '../i18n/index.js';
+import type { TOptions } from '../i18n/t.js';
+import type { ArgsOfDescriptor, HasRequiredArgs, MessageDescriptor, TFormat } from '../i18n/types.js';
 import { logger } from '../logger.js';
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import { CommandError, CommandErrorCode } from './CommandError.js';
@@ -120,6 +124,7 @@ type InferFlagsFromCommand<
 	? Record<string, unknown>
 	: _InferFlagsFromCommand<Exclude<O, undefined>, OptionalIfHasDefault>) & {
 	json: boolean;
+	markdown: boolean;
 };
 
 export function camelCaseString(str: string): string {
@@ -144,6 +149,28 @@ const jsonFlagDefinition = {
 	type: 'boolean',
 	multiple: false,
 } as const satisfies ParseArgsOptionDescriptor;
+
+const markdownFlagDefinition = {
+	type: 'boolean',
+	multiple: false,
+} as const satisfies ParseArgsOptionDescriptor;
+
+/**
+ * Mirrors the runtime disambiguation in `t()`: `--props--` vs `--options--`
+ * collapse onto the same arg slot for messages with no required props, so we
+ * recognise the options bag structurally (only `format` / `locale` keys).
+ */
+function looksLikeOptions(value: unknown): value is TOptions {
+	if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+		return false;
+	}
+	for (const key of Object.keys(value as Record<string, unknown>)) {
+		if (key !== 'format' && key !== 'locale') {
+			return false;
+		}
+	}
+	return true;
+}
 
 const userAgentFlagDefinition = {
 	type: 'string',
@@ -204,12 +231,20 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	};
 
 	static flags?: Record<string, TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>> & {
-		json?: 'Do not use json as the key of a flag, override the enableJsonFlag static property instead';
+		json?: 'Do not use `json` as a flag key — the framework reserves it. Opt out via `static disableFormatOutputDefaults = true` instead';
+		markdown?: 'Do not use `markdown` as a flag key — the framework reserves it. Opt out via `static disableFormatOutputDefaults = true` instead';
 	};
 
 	static subcommands?: (typeof BuiltApifyCommand)[];
 
-	static enableJsonFlag = false;
+	/**
+	 * By default every command gets two mutually-exclusive output flags —
+	 * `--json` and `--markdown` — that `this.t()` reads to pick a
+	 * {@link TFormat} automatically. Set this to `true` to suppress both
+	 * flags (the command will still be able to call `this.t()`, but with no
+	 * automatic format override).
+	 */
+	static disableFormatOutputDefaults = false;
 
 	static name: string;
 
@@ -270,6 +305,47 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	 */
 	protected get logger() {
 		return logger;
+	}
+
+	/**
+	 * Format a message via {@link t}, automatically picking the {@link TFormat}
+	 * from the parsed `--json` / `--markdown` flags (unless the caller passes
+	 * an explicit `format` in the options bag, which always wins). When
+	 * neither flag is set, the call falls through to {@link t}'s own default
+	 * (`'terminal'`).
+	 */
+	protected t<M extends MessageDescriptor>(
+		message: M,
+		...args: HasRequiredArgs<ArgsOfDescriptor<M>> extends true
+			? [props: ArgsOfDescriptor<M>, options?: TOptions]
+			: [options?: TOptions]
+	): string {
+		let formatFromFlags: TFormat | undefined;
+		if (this.flags.json) {
+			formatFromFlags = 'json';
+		} else if (this.flags.markdown) {
+			formatFromFlags = 'markdown';
+		}
+
+		const inject = (options: TOptions | undefined): TOptions => ({
+			...(formatFromFlags != null ? { format: formatFromFlags } : {}),
+			...options,
+		});
+
+		// Disambiguate which slot is options the same way `t()` does, then
+		// inject the format. An explicit `options.format` on the caller's
+		// side takes precedence over the flag-derived default.
+		const _t = t as (message: MessageDescriptor, ...rest: unknown[]) => string;
+		if (args.length >= 2) {
+			return _t(message, args[0], inject(args[1] as TOptions | undefined));
+		}
+		if (args.length === 1) {
+			if (looksLikeOptions(args[0])) {
+				return _t(message, inject(args[0] as TOptions));
+			}
+			return _t(message, args[0], inject(undefined));
+		}
+		return _t(message, inject(undefined));
 	}
 
 	public constructor(entrypoint: string, commandString: string, aliasUsed: string, subcommandAliasUsed?: string) {
@@ -341,13 +417,20 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		this.args = {} as any;
 		this.flags = {} as any;
 
-		// If we have this set, we assume that the user wants only the flag
-		if (this.ctor.enableJsonFlag) {
-			if (typeof rawFlags.json === 'boolean') {
-				this.flags.json = rawFlags.json;
-			} else {
-				this.flags.json = false;
+		if (!this.ctor.disableFormatOutputDefaults) {
+			this.flags.json = typeof rawFlags.json === 'boolean' ? rawFlags.json : false;
+			this.flags.markdown = typeof rawFlags.markdown === 'boolean' ? rawFlags.markdown : false;
+
+			if (this.flags.json && this.flags.markdown) {
+				process.exitCode = 1;
+				this.logger.stderr.error(
+					'The `--json` and `--markdown` output flags are mutually exclusive; pass at most one.',
+				);
+				return;
 			}
+		} else {
+			this.flags.json = false;
+			this.flags.markdown = false;
 		}
 
 		const missingRequiredArgs = new Map<string, TaggedArgBuilder<ArgTag, unknown>>();
@@ -704,9 +787,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		}
 
 		const messageParts = [
-			`Missing ${missingRequiredArgs.size} required ${this.pluralString(missingRequiredArgs.size, 'argument', 'arguments')}:`,
+			t(apifyCommandMessages.missingRequiredArgsHeader, { count: missingRequiredArgs.size }),
 			...missingArgsStrings,
-			chalk.gray('  See more help with --help'),
+			t(apifyCommandMessages.seeMoreHelp),
 		];
 
 		if (help) {
@@ -742,6 +825,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			options: baseOptions as {
 				help: typeof helpFlagDefinition;
 				json: typeof jsonFlagDefinition;
+				markdown: typeof markdownFlagDefinition;
 				[k: string]: ParseArgsOptionDescriptor;
 			},
 		} satisfies ParseArgsConfig;
@@ -751,8 +835,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				if (typeof internalBuilderData === 'string') {
 					throw new RangeError('Do not provide the string for the json flag! It is a type level assertion!');
 				}
-				// Skip the "json" flag, as it is set by enableJsonFlag
-				if (key.toLowerCase() === 'json') {
+				// `json` and `markdown` are reserved framework flags managed via
+				// `disableFormatOutputDefaults` — skip any user-declared entry.
+				const lowered = key.toLowerCase();
+				if (lowered === 'json' || lowered === 'markdown') {
 					continue;
 				}
 
@@ -771,8 +857,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 		}
 
-		if (this.ctor.enableJsonFlag) {
+		if (!this.ctor.disableFormatOutputDefaults) {
 			object.options!.json = jsonFlagDefinition;
+			object.options!.markdown = markdownFlagDefinition;
 		}
 
 		return object;
@@ -907,8 +994,8 @@ type StaticArgsFlagsInput<Cmd extends typeof BuiltApifyCommand> = Omit<
 				ExtractOptionalFlagKeys<Cmd>
 			> as `flags_${string & K}`]: InferFlagsFromCommand<Cmd['flags'], true>[K];
 		},
-		// Omit flags_json as it is used only to throw an error if the user provides it
-		'flags_json'
+		// Omit framework-managed output flags — they are never caller-required
+		'flags_json' | 'flags_markdown'
 	> &
 	Omit<
 		{
@@ -918,11 +1005,12 @@ type StaticArgsFlagsInput<Cmd extends typeof BuiltApifyCommand> = Omit<
 				true
 			>[K];
 		},
-		// Omit flags_json as it is used only to throw an error if the user provides it
-		'flags_json'
+		// Omit framework-managed output flags — they are never caller-required
+		'flags_json' | 'flags_markdown'
 	> & {
-		// Define it at the end exactly like it is
+		// Define them at the end exactly as optional
 		flags_json?: boolean;
+		flags_markdown?: boolean;
 	};
 
 export async function testRunCommand<Cmd extends typeof BuiltApifyCommand>(

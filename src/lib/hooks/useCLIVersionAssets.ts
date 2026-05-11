@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 
 import { USER_AGENT } from '../../entrypoints/_shared.js';
-import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { logger } from '../logger.js';
 import { useCLIMetadata } from './useCLIMetadata.js';
 
 const metadata = useCLIMetadata();
@@ -72,7 +72,7 @@ export async function useCLIVersionAssets(version: string) {
 	});
 
 	if (!release.ok) {
-		cliDebugPrint('useCLIVersionAssets', 'Failed to fetch release', {
+		logger.debug('useCLIVersionAssets', 'Failed to fetch release', {
 			statusCode: release.status,
 			body: await release.text(),
 			version,
@@ -115,7 +115,7 @@ export async function useCLIVersionAssets(version: string) {
 		return !assetBaselineOrMusl && !assetBaseline;
 	});
 
-	cliDebugPrint('useCLIVersionAssets', 'Fetched release', {
+	logger.debug('useCLIVersionAssets', 'Fetched release', {
 		version: body.tag_name,
 		filteredAssets: assets,
 	});

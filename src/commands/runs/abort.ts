@@ -1,3 +1,4 @@
+import { RunsAbortCommandMessages } from '#i18n/commands/runs/abort.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
@@ -44,8 +45,6 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { runId } = this.args;
 
@@ -54,15 +53,15 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			this.logger.stdout.error(`Run with ID "${runId}" was not found on your account.`);
+			this.logger.stdout.error(this.t(RunsAbortCommandMessages.runNotFound, { runId }));
 			return;
 		}
 
 		if (!runningStatuses.includes(run.status as never)) {
 			if (abortingStatuses.includes(run.status as never)) {
-				this.logger.stdout.error(`Run with ID "${runId}" is already aborting.`);
+				this.logger.stdout.error(this.t(RunsAbortCommandMessages.alreadyAborting, { runId }));
 			} else {
-				this.logger.stdout.error(`Run with ID "${runId}" is already aborted.`);
+				this.logger.stdout.error(this.t(RunsAbortCommandMessages.alreadyAborted, { runId }));
 			}
 
 			return;
@@ -77,16 +76,16 @@ export class RunsAbortCommand extends ApifyCommand<typeof RunsAbortCommand> {
 			}
 
 			if (this.flags.force) {
-				this.logger.stdout.success(`Triggered the immediate abort of run "${runId}".`);
+				this.logger.stdout.success(this.t(RunsAbortCommandMessages.triggeredForce, { runId }));
 			} else {
-				this.logger.stdout.success(
-					`Triggered the abort of run "${runId}", it should finish aborting in up to 30 seconds.`,
-				);
+				this.logger.stdout.success(this.t(RunsAbortCommandMessages.triggeredGraceful, { runId }));
 			}
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			this.logger.stdout.error(`Failed to abort run "${runId}".\n  ${casted.message || casted}`);
+			this.logger.stdout.error(
+				this.t(RunsAbortCommandMessages.abortFailed, { runId, message: String(casted.message || casted) }),
+			);
 		}
 	}
 }

@@ -1,3 +1,4 @@
+import { DatasetsLsCommandMessages } from '#i18n/commands/datasets/ls.js';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -51,8 +52,6 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { desc, offset, limit, json, unnamed } = this.flags;
 
@@ -67,7 +66,7 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 		}
 
 		if (rawDatasetList.count === 0) {
-			this.logger.stdout.info("You don't have any Datasets on your account");
+			this.logger.stdout.info(this.t(DatasetsLsCommandMessages.noDatasets));
 
 			return;
 		}
@@ -89,6 +88,8 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 			});
 		}
 
-		this.logger.stdout.log(table.render(CompactMode.WebLikeCompact));
+		this.logger.stdout.log(
+			this.t(DatasetsLsCommandMessages.table, { table: table.render(CompactMode.WebLikeCompact) }),
+		);
 	}
 }

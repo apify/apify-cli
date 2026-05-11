@@ -3,9 +3,11 @@ import { join, resolve } from 'node:path';
 import process from 'node:process';
 
 import { err, ok, type Result } from '@sapphire/result';
+import { useCwdProjectMessages } from '#i18n/lib/hooks/useCwdProject.js';
 
+import { t } from '../i18n/index.js';
+import { logger } from '../logger.js';
 import { ScrapyProjectAnalyzer } from '../projects/scrapy/ScrapyProjectAnalyzer.js';
-import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { useJavaScriptRuntime } from './runtimes/javascript.js';
 import { usePythonRuntime } from './runtimes/python.js';
 
@@ -55,7 +57,7 @@ export async function useCwdProject({
 	const cached = cwdCache.get(cwd);
 
 	if (cached) {
-		cliDebugPrint('useCwdProject', { cacheHit: true, project: cached });
+		logger.debug('useCwdProject', { cacheHit: true, project: cached });
 		return ok(cached);
 	}
 
@@ -170,11 +172,11 @@ export async function useCwdProject({
 	const maybeErr = await check();
 
 	if (maybeErr?.isErr()) {
-		cliDebugPrint('useCwdProject', { cacheHit: false, error: maybeErr });
+		logger.debug('useCwdProject', { cacheHit: false, error: maybeErr });
 		return maybeErr;
 	}
 
-	cliDebugPrint('useCwdProject', { cacheHit: false, project });
+	logger.debug('useCwdProject', { cacheHit: false, project });
 	cwdCache.set(cwd, project);
 
 	return ok(project);
@@ -421,12 +423,7 @@ async function checkPythonProject(cwd: string): Promise<string | null> {
 
 	if (discoveredPackages.length > 1) {
 		const packageList = discoveredPackages.map((pkg) => `  - ${pkg}`).join('\n');
-		throw new Error(
-			`Multiple Python packages found:\n${packageList}\n\n` +
-				'Apify CLI cannot determine which package to run.\n' +
-				'Please specify the package using the --entrypoint flag, e.g.:\n' +
-				'  apify run --entrypoint <package_name>',
-		);
+		throw new Error(t(useCwdProjectMessages.multiplePackagesFound, { packageList }));
 	}
 
 	// No packages found — check for near-miss packages
@@ -450,32 +447,13 @@ async function checkPythonProject(cwd: string): Promise<string | null> {
 			})
 			.join('\n');
 
-		throw new Error(
-			`Found directories that appear to be Python packages but have issues:\n${suggestions}\n\n` +
-				'A valid Python package requires a directory with a valid identifier name ' +
-				'(letters, numbers, underscores) and an __init__.py file.',
-		);
+		throw new Error(t(useCwdProjectMessages.nearMissPackages, { suggestions }));
 	}
 
 	// Check if there are loose .py files (broken Python project)
 	const hasPyFiles = await hasPythonFilesInDirOrSubdirs(cwd);
 	if (hasPyFiles) {
-		throw new Error(
-			'No Python package found. Found Python files, but no valid package structure detected.\n' +
-				'A Python package requires:\n' +
-				'  - A directory with a valid Python identifier name (letters, numbers, underscores)\n' +
-				'  - An __init__.py file inside the directory\n' +
-				'\n' +
-				'Common package structures:\n' +
-				'  my_package/\n' +
-				'    __init__.py\n' +
-				'    main.py\n' +
-				'\n' +
-				'  src/\n' +
-				'    my_package/\n' +
-				'      __init__.py\n' +
-				'      main.py',
-		);
+		throw new Error(t(useCwdProjectMessages.noValidPackageFound));
 	}
 
 	return null; // Not a Python project

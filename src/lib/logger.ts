@@ -1,6 +1,7 @@
 /* eslint-disable max-classes-per-file */
 
 import process from 'node:process';
+import { format as utilFormat } from 'node:util';
 
 import chalk from 'chalk';
 
@@ -165,6 +166,21 @@ export class Logger {
 		const defaults = createDefaultOutputs();
 		this.stdout = defaults.stdout;
 		this.stderr = defaults.stderr;
+	}
+
+	/**
+	 * Diagnostic print gated by `APIFY_CLI_DEBUG`. Emits a gray `[tag]` prefix
+	 * followed by `args` formatted via `util.format` (so objects look like
+	 * `console.error` output) and routes through the stderr channel — that
+	 * way the {@link useConsoleSpy} hook can still capture debug output in
+	 * tests if a suite explicitly opts in.
+	 */
+	debug(tag: string, ...args: unknown[]): void {
+		if (!process.env.APIFY_CLI_DEBUG) {
+			return;
+		}
+		const formatted = args.length ? ` ${utilFormat(...args)}` : '';
+		this.stderr.log(`${chalk.gray(`[${tag}]`)}${formatted}`);
 	}
 }
 

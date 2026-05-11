@@ -6,7 +6,7 @@ import { none, type Option, some } from '@sapphire/result';
 import { execa } from 'execa';
 import which from 'which';
 
-import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
+import { logger } from '../../logger.js';
 import type { Runtime } from '../useCwdProject.js';
 import { normalizeExecutablePath } from './utils.js';
 
@@ -44,7 +44,7 @@ export async function usePythonRuntime({ cwd = process.cwd(), force = false }: U
 	const cached = cwdCache.get(cwd);
 
 	if (cached && !force) {
-		cliDebugPrint('usePythonRuntime', { cacheHit: true, cwd, runtime: cached.unwrapOr(null) });
+		logger.debug('usePythonRuntime', { cacheHit: true, cwd, runtime: cached.unwrapOr(null) });
 		return cached;
 	}
 
@@ -74,7 +74,7 @@ export async function usePythonRuntime({ cwd = process.cwd(), force = false }: U
 				}),
 			);
 
-			cliDebugPrint('usePythonRuntime', { cacheHit: false, cwd, runtime: cwdCache.get(cwd)?.unwrap() });
+			logger.debug('usePythonRuntime', { cacheHit: false, cwd, runtime: cwdCache.get(cwd)?.unwrap() });
 
 			return cwdCache.get(cwd)!;
 		}
@@ -99,7 +99,7 @@ export async function usePythonRuntime({ cwd = process.cwd(), force = false }: U
 					}),
 				);
 
-				cliDebugPrint('usePythonRuntime', { cacheHit: false, cwd, runtime: cwdCache.get(cwd)?.unwrap() });
+				logger.debug('usePythonRuntime', { cacheHit: false, cwd, runtime: cwdCache.get(cwd)?.unwrap() });
 
 				return cwdCache.get(cwd)!;
 			}
@@ -110,7 +110,7 @@ export async function usePythonRuntime({ cwd = process.cwd(), force = false }: U
 
 	cwdCache.set(cwd, none);
 
-	cliDebugPrint('usePythonRuntime', { cacheHit: false, cwd, runtime: null });
+	logger.debug('usePythonRuntime', { cacheHit: false, cwd, runtime: null });
 
 	return none;
 }

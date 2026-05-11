@@ -1,3 +1,4 @@
+import { RunsLsCommandMessages } from '#i18n/commands/runs/ls.js';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -68,8 +69,6 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { desc, limit, offset, compact, json } = this.flags;
 		const { actorId } = this.args;
@@ -80,9 +79,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
-			this.logger.stderr.error(
-				`${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
-			);
+			this.logger.stderr.error(this.t(RunsLsCommandMessages.invalidActor, { reason: ctx.reason }));
 
 			return;
 		}
@@ -95,7 +92,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		}
 
 		if (!allRuns.items.length) {
-			this.logger.stderr.log('There are no recent runs found for this Actor.');
+			this.logger.stderr.log(this.t(RunsLsCommandMessages.noRuns));
 
 			return;
 		}

@@ -1,4 +1,5 @@
 import { Time } from '@sapphire/duration';
+import { ActorsLsCommandMessages } from '#i18n/commands/actors/ls.js';
 import type { Actor, ActorRunListItem, ActorTaggedBuild, PaginatedList } from 'apify-client';
 import chalk from 'chalk';
 
@@ -133,8 +134,6 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { desc, limit, offset, my, json } = this.flags;
 
@@ -148,7 +147,9 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 				return;
 			}
 
-			this.logger.stdout.info(my ? "You don't have any Actors yet!" : 'There are no recent Actors used by you.');
+			this.logger.stdout.info(
+				my ? this.t(ActorsLsCommandMessages.noActorsOwned) : this.t(ActorsLsCommandMessages.noRecentActors),
+			);
 
 			return;
 		}

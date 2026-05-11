@@ -2,6 +2,7 @@ import { readFileSync, statSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
+import { ActorsPushCommandMessages } from '#i18n/commands/actors/push.js';
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
 import open from 'open';
 
@@ -70,8 +71,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-push';
 
-	static override enableJsonFlag = true;
-
 	static override flags = {
 		version: Flags.string({
 			char: 'v',
@@ -127,7 +126,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const filePathsToPush = await getActorLocalFilePaths(cwd);
 
 		if (!filePathsToPush.length) {
-			this.logger.stderr.error('You need to call this command from a folder that has an Actor in it!');
+			this.logger.stderr.error(this.t(ActorsPushCommandMessages.noActorInDirectory));
 			process.exitCode = CommandExitCodes.NoFilesToPush;
 			return;
 		}
@@ -144,12 +143,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				'.actor',
 			].some((filePath) => filePathsToPush.some((fp) => fp === filePath || fp.startsWith(filePath)))
 		) {
-			this.logger.stderr.error(
-				[
-					'A valid Actor could not be found in the current directory. Please make sure you are in the correct directory.',
-					'You can also turn this directory into an Actor by running `apify init`.',
-				].join('\n'),
-			);
+			this.logger.stderr.error(this.t(ActorsPushCommandMessages.noValidActorFound));
 
 			process.exitCode = CommandExitCodes.NoFilesToPush;
 			return;
@@ -160,7 +154,9 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const actorConfigResult = await useActorConfig({ cwd });
 
 		if (actorConfigResult.isErr()) {
-			this.logger.stderr.error(actorConfigResult.unwrapErr().message);
+			this.logger.stderr.error(
+				this.t(ActorsPushCommandMessages.actorConfigError, { message: actorConfigResult.unwrapErr().message }),
+			);
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
@@ -198,7 +194,9 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		if (forceActorId) {
 			actor = (await apifyClient.actor(forceActorId).get())!;
-			if (!actor) throw new Error(`Cannot find Actor with ID '${forceActorId}' in your account.`);
+			if (!actor) {
+				throw new Error(this.t(ActorsPushCommandMessages.cannotFindActorById, { actorId: forceActorId }));
+			}
 			actorId = actor.id;
 		} else {
 			const usernameOrId = userInfo.username || userInfo.id;
@@ -233,13 +231,17 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				actor = await apifyClient.actors().create(newActor);
 				actorId = actor.id;
 				isActorCreatedNow = true;
-				this.logger.stderr.info(`Created Actor with name ${actorConfig!.name} on Apify.`);
+				this.logger.stderr.info(
+					this.t(ActorsPushCommandMessages.createdActor, { name: actorConfig!.name as string }),
+				);
 			}
 		}
 
 		const actorClient = apifyClient.actor(actorId);
 
-		this.logger.stderr.info(`Deploying Actor '${actorConfig!.name}' to Apify.`);
+		this.logger.stderr.info(
+			this.t(ActorsPushCommandMessages.deployingActor, { name: actorConfig!.name as string }),
+		);
 
 		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
 
@@ -268,8 +270,9 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 					(actorConfig?.name || forceActorId)
 				) {
 					throw new Error(
-						`Actor with identifier "${actorConfig?.name || forceActorId}" is already on the platform and was modified there since modified locally.
-Skipping push. Use --force to override.`,
+						this.t(ActorsPushCommandMessages.remoteModifiedNewer, {
+							identifier: (actorConfig?.name || forceActorId) as string,
+						}),
 					);
 				}
 			}
@@ -278,7 +281,7 @@ Skipping push. Use --force to override.`,
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else {
 			// Create zip
-			this.logger.stderr.run('Zipping Actor files');
+			this.logger.stderr.run(this.t(ActorsPushCommandMessages.zippingActorFiles));
 			await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush, cwd);
 
 			// Upload it to Apify.keyValueStores
@@ -325,7 +328,7 @@ Skipping push. Use --force to override.`,
 			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
 			// TODO: fix this type too -.-
 			await actorClient.version(version).update(actorVersionModifier as never);
-			this.logger.stderr.run(`Updated version ${version} for Actor ${actor.name}.`);
+			this.logger.stderr.run(this.t(ActorsPushCommandMessages.updatedVersion, { version, name: actor.name }));
 		} else {
 			const actorNewVersion = {
 				versionNumber: version,
@@ -340,18 +343,23 @@ Skipping push. Use --force to override.`,
 				...actorNewVersion,
 			} as never);
 
-			this.logger.stderr.run(`Created version ${version} for Actor ${actor.name}.`);
+			this.logger.stderr.run(this.t(ActorsPushCommandMessages.createdVersion, { version, name: actor.name }));
 		}
 
 		// Sync standby mode on existing actors with actor.json
 		if (!isActorCreatedNow && !!actorConfig!.usesStandbyMode !== !!actor.actorStandby?.isEnabled) {
 			const isEnabled = !!actorConfig!.usesStandbyMode;
 			await actorClient.update({ actorStandby: { isEnabled } });
-			this.logger.stderr.info(`${isEnabled ? 'Enabled' : 'Disabled'} standby mode for Actor ${actor.name}.`);
+			this.logger.stderr.info(
+				this.t(ActorsPushCommandMessages.standbyToggled, {
+					action: isEnabled ? 'Enabled' : 'Disabled',
+					name: actor.name,
+				}),
+			);
 		}
 
 		// Build Actor on Apify and wait for build to finish
-		this.logger.stderr.run(`Building Actor ${actor.name}`);
+		this.logger.stderr.run(this.t(ActorsPushCommandMessages.buildingActor, { name: actor.name }));
 		let build = await actorClient.build(version, {
 			useCache: true,
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
@@ -371,7 +379,7 @@ Skipping push. Use --force to override.`,
 
 			await outputJobLog({ job: build, timeoutMillis: waitForFinishMillis, apifyClient });
 		} catch (err) {
-			this.logger.stderr.warning('Can not get log:');
+			this.logger.stderr.warning(this.t(ActorsPushCommandMessages.cannotGetLog));
 			console.error(err);
 		}
 
@@ -383,34 +391,37 @@ Skipping push. Use --force to override.`,
 		}
 
 		this.logger.stderr.link(
-			'Actor build detail',
+			this.t(ActorsPushCommandMessages.actorBuildDetailLabel),
 			`https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`,
 		);
 
-		this.logger.stderr.link('Actor detail', `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`);
+		this.logger.stderr.link(
+			this.t(ActorsPushCommandMessages.actorDetailLabel),
+			`https://console.apify.com${redirectUrlPart}/actors/${build.actId}`,
+		);
 
 		if (this.flags.open) {
 			await open(`https://console.apify.com${redirectUrlPart}/actors/${build.actId}`);
 		}
 
 		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-			this.logger.stderr.success('Actor was deployed to Apify cloud and built there.');
+			this.logger.stderr.success(this.t(ActorsPushCommandMessages.deployedSuccess));
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.READY) {
-			this.logger.stderr.warning('Build is waiting for allocation.');
+			this.logger.stderr.warning(this.t(ActorsPushCommandMessages.buildWaitingForAllocation));
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.RUNNING) {
-			this.logger.stderr.warning('Build is still running.');
+			this.logger.stderr.warning(this.t(ActorsPushCommandMessages.buildStillRunning));
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.ABORTED || build.status === ACTOR_JOB_STATUSES.ABORTING) {
-			this.logger.stderr.warning('Build was aborted!');
+			this.logger.stderr.warning(this.t(ActorsPushCommandMessages.buildAborted));
 			process.exitCode = CommandExitCodes.BuildAborted;
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.TIMED_OUT || build.status === ACTOR_JOB_STATUSES.TIMING_OUT) {
-			this.logger.stderr.warning('Build timed out!');
+			this.logger.stderr.warning(this.t(ActorsPushCommandMessages.buildTimedOut));
 			process.exitCode = CommandExitCodes.BuildTimedOut;
 		} else {
-			this.logger.stderr.error('Build failed!');
+			this.logger.stderr.error(this.t(ActorsPushCommandMessages.buildFailed));
 			process.exitCode = CommandExitCodes.BuildFailed;
 		}
 	}

@@ -1,3 +1,4 @@
+import { ActorsSearchCommandMessages } from '#i18n/commands/actors/search.js';
 import { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
@@ -89,8 +90,6 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { query } = this.args;
 		const { json, sortBy, category, username, pricingModel, limit, offset } = this.flags;
@@ -114,7 +113,9 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 		} catch (err) {
 			process.exitCode = CommandExitCodes.RunFailed;
 			this.logger.stdout.error(
-				`Failed to search Apify Store: ${err instanceof Error ? err.message : String(err)}`,
+				this.t(ActorsSearchCommandMessages.searchFailed, {
+					message: err instanceof Error ? err.message : String(err),
+				}),
 			);
 			return;
 		}
@@ -125,7 +126,7 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 				return;
 			}
 
-			this.logger.stdout.info('No Actors found matching your search.');
+			this.logger.stdout.info(this.t(ActorsSearchCommandMessages.noResults));
 			return;
 		}
 

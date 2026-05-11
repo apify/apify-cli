@@ -2,6 +2,7 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
+import { ActorsPullCommandMessages } from '#i18n/commands/actors/pull.js';
 import AdmZip from 'adm-zip';
 import axios from 'axios';
 import jju from 'jju';
@@ -76,7 +77,9 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 		const actorConfigResult = await useActorConfig({ cwd });
 
 		if (actorConfigResult.isErr()) {
-			this.logger.stderr.error(actorConfigResult.unwrapErr().message);
+			this.logger.stderr.error(
+				this.t(ActorsPullCommandMessages.actorConfigError, { message: actorConfigResult.unwrapErr().message }),
+			);
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
@@ -94,34 +97,36 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 			(actorConfig?.id as string | undefined) ||
 			(actorConfig?.name ? `${usernameOrId}/${actorConfig.name}` : undefined);
 
-		if (!actorId) throw new Error('Cannot find Actor in this directory.');
+		if (!actorId) throw new Error(this.t(ActorsPullCommandMessages.cannotFindActorInDirectory));
 
 		let actor;
 		try {
 			actor = await apifyClient.actor(actorId).get();
 		} catch {
-			throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
+			throw new Error(this.t(ActorsPullCommandMessages.cannotFindActorByIdOrName, { actorId }));
 		}
 
 		if (!actor) {
-			throw new Error(`Cannot find Actor with ID/name '${actorId}' in your account.`);
+			throw new Error(this.t(ActorsPullCommandMessages.cannotFindActorByIdOrName, { actorId }));
 		}
 
 		const { name, versions } = actor;
 
 		const throwMissingSourceCodeAccessError = () => {
-			throw new Error(`You cannot pull source code of this Actor because you do not have permission to do so.`);
+			throw new Error(this.t(ActorsPullCommandMessages.missingSourceCodeAccess));
 		};
 
 		if (!actor.versions.length) {
-			throw new Error(`Actor ${actorId} has no versions.`);
+			throw new Error(this.t(ActorsPullCommandMessages.actorHasNoVersions, { actorId }));
 		}
 
 		let correctVersion = null;
 		if (this.flags.version) {
 			correctVersion = versions.find((version) => version.versionNumber === this.flags.version);
 			if (!correctVersion) {
-				throw new Error(`Cannot find version ${this.flags.version} of Actor ${actorId}.`);
+				throw new Error(
+					this.t(ActorsPullCommandMessages.versionNotFound, { version: this.flags.version, actorId }),
+				);
 			}
 		}
 
@@ -136,7 +141,7 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 		mkdirSync(dirpath, { recursive: true });
 
 		if (!isActorAutomaticallyDetected && !(readdirSync(dirpath).length === 0)) {
-			this.logger.stderr.error(`Directory ${dirpath} is not empty. Please empty it or choose another directory.`);
+			this.logger.stderr.error(this.t(ActorsPullCommandMessages.directoryNotEmpty, { dirpath }));
 			return;
 		}
 
@@ -198,7 +203,12 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 				try {
 					await emitter.clone(dirpath);
 				} catch (err) {
-					throw new Error(`Failed to pull Actor from ${gitRepoUrl}. ${(err as Error).message}`);
+					throw new Error(
+						this.t(ActorsPullCommandMessages.gitPullFailed, {
+							gitRepoUrl,
+							message: (err as Error).message,
+						}),
+					);
 				}
 
 				break;
@@ -213,11 +223,13 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 				break;
 			}
 			default:
-				throw new Error(`Unknown source type: ${sourceType}`);
+				throw new Error(this.t(ActorsPullCommandMessages.unknownSourceType, { sourceType }));
 		}
 
 		this.logger.stderr.success(
-			isActorAutomaticallyDetected ? `Actor ${name} updated at ${dirpath}/` : `Pulled to ${dirpath}/`,
+			isActorAutomaticallyDetected
+				? this.t(ActorsPullCommandMessages.actorUpdatedAt, { name, dirpath })
+				: this.t(ActorsPullCommandMessages.pulledTo, { dirpath }),
 		);
 	}
 }

@@ -1,3 +1,5 @@
+import { ActorPushDataCommandMessages } from '#i18n/commands/actor/push-data.js';
+
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -36,7 +38,7 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 		const item = _item || cachedStdinInput;
 
 		if (!item) {
-			this.logger.stderr.error('No item was provided.');
+			this.logger.stderr.error(this.t(ActorPushDataCommandMessages.noItemProvided));
 			return;
 		}
 
@@ -47,7 +49,9 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 		try {
 			parsedData = JSON.parse(item.toString('utf8'));
 		} catch (err) {
-			throw new Error(`Failed to parse data as JSON string: ${(err as Error).message}`);
+			throw new Error(
+				this.t(ActorPushDataCommandMessages.failedToParseJson, { message: (err as Error).message }),
+			);
 		}
 
 		await apifyClient.dataset(defaultStoreId).pushItems(parsedData);

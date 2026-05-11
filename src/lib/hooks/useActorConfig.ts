@@ -4,11 +4,12 @@ import process from 'node:process';
 import { inspect } from 'node:util';
 
 import { err, ok, type Result } from '@sapphire/result';
+import { useActorConfigMessages } from '#i18n/lib/hooks/useActorConfig.js';
 
 import { ACTOR_SPECIFICATION_VERSION, DEPRECATED_LOCAL_CONFIG_NAME } from '../consts.js';
+import { t } from '../i18n/index.js';
 import { logger } from '../logger.js';
 import { getJsonFileContent, getLocalConfigPath } from '../utils.js';
-import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { useYesNoConfirm } from './user-confirmations/useYesNoConfirm.js';
 
 const getDeprecatedLocalConfigPath = (cwd: string) => join(cwd, DEPRECATED_LOCAL_CONFIG_NAME);
@@ -44,7 +45,7 @@ export async function useActorConfig(
 	const cached = cwdCache.get(cwd);
 
 	if (cached) {
-		cliDebugPrint('useActorConfig', { cacheHit: true, config: cached });
+		logger.debug('useActorConfig', { cacheHit: true, config: cached });
 		return ok(cached);
 	}
 
@@ -58,7 +59,7 @@ export async function useActorConfig(
 		config = getJsonFileContent(newConfigPath);
 	} catch (ex) {
 		return err({
-			message: `Failed to read local config at path: '${newConfigPath}':`,
+			message: t(useActorConfigMessages.failedToReadConfig, { configPath: newConfigPath }),
 			cause: ex as Error,
 			exists: false,
 			config: {},
@@ -69,7 +70,7 @@ export async function useActorConfig(
 		deprecatedConfig = getJsonFileContent(deprecatedConfigPath);
 	} catch (ex) {
 		return err({
-			message: `Failed to read local config at path: '${deprecatedConfigPath}':`,
+			message: t(useActorConfigMessages.failedToReadConfig, { configPath: deprecatedConfigPath }),
 			cause: ex as Error,
 			exists: false,
 			config: {},
@@ -102,7 +103,7 @@ export async function useActorConfig(
 
 	cwdCache.set(cwd, { exists: true, migrated, config: config || deprecatedConfig || {} });
 
-	cliDebugPrint('useActorConfig', { cacheHit: false, config: cwdCache.get(cwd) });
+	logger.debug('useActorConfig', { cacheHit: false, config: cwdCache.get(cwd) });
 
 	return ok({ exists: true, migrated, config: config || deprecatedConfig || {} });
 }
@@ -114,9 +115,7 @@ async function handleBothConfigVersionsFound(deprecatedConfigPath: string) {
 
 	// If users refuse to migrate, 🤷
 	if (!confirmed) {
-		logger.stderr.warning(
-			'The "apify.json" file present in your Actor directory will be ignored, and the new ".actor/actor.json" file will be used instead. Please, either rename or remove the old file.',
-		);
+		logger.stderr.warning(t(useActorConfigMessages.ignoringDeprecatedConfig));
 
 		return;
 	}
@@ -124,19 +123,10 @@ async function handleBothConfigVersionsFound(deprecatedConfigPath: string) {
 	try {
 		await rename(deprecatedConfigPath, `${deprecatedConfigPath}.deprecated`);
 
-		logger.stderr.info(
-			`The "apify.json" file has been renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted.`,
-		);
+		logger.stderr.info(t(useActorConfigMessages.renamedDeprecatedConfig));
 	} catch (ex) {
-		if (ex instanceof Error) {
-			logger.stderr.error(
-				`Failed to rename the deprecated "apify.json" file to "apify.json.deprecated".\n  ${ex.message || ex}`,
-			);
-		} else {
-			logger.stderr.error(
-				`Failed to rename the deprecated "apify.json" file to "apify.json.deprecated".\n  ${inspect(ex, { showHidden: false })}`,
-			);
-		}
+		const message = ex instanceof Error ? ex.message || String(ex) : inspect(ex, { showHidden: false });
+		logger.stderr.error(t(useActorConfigMessages.renameDeprecatedConfigFailed, { message }));
 	}
 }
 
@@ -172,8 +162,7 @@ async function handleMigrationFlow(
 
 	if (!confirmed) {
 		return err({
-			message:
-				'Command can not run with old "apify.json" structure. Either let the CLI auto-update it or follow the guide on https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md and update it manually.',
+			message: t(useActorConfigMessages.migrationDeclined),
 			exists: true,
 			config: migratedConfig,
 		});
@@ -188,7 +177,10 @@ async function handleMigrationFlow(
 		const casted = ex as Error;
 
 		return err({
-			message: `Failed to write the new "actor.json" file to path: '${configPath}'.\n  ${casted.message || casted}`,
+			message: t(useActorConfigMessages.writeNewActorJsonFailed, {
+				configPath,
+				message: casted.message || String(casted),
+			}),
 			exists: true,
 			config: migratedConfig,
 		});
@@ -202,13 +194,13 @@ async function handleMigrationFlow(
 		const casted = ex as Error;
 
 		logger.stderr.warning(
-			`Failed to rename the deprecated "apify.json" file to "apify.json.deprecated".\n  ${casted.message || casted}`,
+			t(useActorConfigMessages.renameDeprecatedConfigFailed, {
+				message: casted.message || String(casted),
+			}),
 		);
 	}
 
-	logger.stderr.info(
-		`The "apify.json" file has been migrated to ".actor/actor.json" and the original file renamed to "apify.json.deprecated". The deprecated file is no longer used by the CLI or Apify Console. If you do not need it for some specific purpose, it can be safely deleted. Do not forget to commit the new file to your Git repository.`,
-	);
+	logger.stderr.info(t(useActorConfigMessages.migrationCompleted));
 
 	return ok(migratedConfig);
 }

@@ -1,3 +1,4 @@
+import { ActorsRmCommandMessages } from '#i18n/commands/actors/rm.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -45,7 +46,7 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 		const actor = await apifyClient.actor(actorId).get();
 
 		if (!actor) {
-			this.logger.stderr.error(`Actor with ID "${actorId}" was not found on your account.`);
+			this.logger.stderr.error(this.t(ActorsRmCommandMessages.actorNotFound, { actorId }));
 			return;
 		}
 
@@ -55,17 +56,22 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 		});
 
 		if (!confirmedDelete) {
-			this.logger.stderr.info(`Deletion of Actor "${actorId}" was canceled.`);
+			this.logger.stderr.info(this.t(ActorsRmCommandMessages.deletionCanceled, { actorId }));
 			return;
 		}
 
 		try {
 			await apifyClient.actor(actorId).delete();
 
-			this.logger.stderr.success(`Actor with ID "${actorId}" was deleted.`);
+			this.logger.stderr.success(this.t(ActorsRmCommandMessages.actorDeleted, { actorId }));
 		} catch (err) {
 			const casted = err as ApifyApiError;
-			this.logger.stderr.error(`Failed to delete Actor "${actorId}".\n  ${casted.message || casted}`);
+			this.logger.stderr.error(
+				this.t(ActorsRmCommandMessages.deleteFailed, {
+					actorId,
+					message: casted.message || String(casted),
+				}),
+			);
 		}
 	}
 }

@@ -1,6 +1,9 @@
 import { realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
 
+import { useCLIMetadataMessages } from '#i18n/lib/hooks/useCLIMetadata.js';
+
+import { t } from '../i18n/index.js';
 import { logger } from '../logger.js';
 
 export const DEVELOPMENT_VERSION_MARKER = '0.0.0';
@@ -43,7 +46,7 @@ function detectInstallMethod(): InstallMethod {
 
 	// Should be impossible, but if it is
 	if (!entrypointFilePathRaw) {
-		logger.stderr.warning(`Failed to detect install method of CLI, assuming npm`);
+		logger.stderr.warning(t(useCLIMetadataMessages.failedToDetectInstallMethod));
 		return 'npm';
 	}
 

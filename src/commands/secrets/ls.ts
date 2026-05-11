@@ -1,3 +1,4 @@
+import { SecretsLsCommandMessages } from '#i18n/commands/secrets/ls.js';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -26,8 +27,6 @@ export class SecretsLsCommand extends ApifyCommand<typeof SecretsLsCommand> {
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-secrets-ls';
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { json } = this.flags;
 
@@ -40,9 +39,7 @@ export class SecretsLsCommand extends ApifyCommand<typeof SecretsLsCommand> {
 		}
 
 		if (secretKeys.length === 0) {
-			this.logger.stdout.info(
-				"You don't have any secrets stored locally. Use 'apify secrets add' to add a secret.",
-			);
+			this.logger.stdout.info(this.t(SecretsLsCommandMessages.noSecrets));
 
 			return;
 		}

@@ -5,14 +5,15 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { ReadStream } from 'node:tty';
 
+import { InstallCommandMessages } from '#i18n/commands/cli-management/install.js';
 import chalk from 'chalk';
 import which from 'which';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
+import { logger } from '../../lib/logger.js';
 import { detectShell, shellConfigFile, tildify } from '../../lib/utils.js';
-import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
 
 const pathToInstallMarker = (installPath: string) => join(installPath, '.install-marker');
 const HOMEDIR = () => process.env.HOME ?? homedir();
@@ -28,7 +29,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		const { installMethod, installPath, version } = useCLIMetadata();
 
 		if (installMethod !== 'bundle') {
-			this.logger.stderr.info(`Apify and Actor CLI are already fully configured! 👍`);
+			this.logger.stderr.info(this.t(InstallCommandMessages.alreadyConfigured));
 			return;
 		}
 
@@ -37,7 +38,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		const installMarkerPath = pathToInstallMarker(installPath);
 
 		if (existsSync(installMarkerPath)) {
-			this.logger.stderr.info(`Apify and Actor CLI are already fully configured! 👍`);
+			this.logger.stderr.info(this.t(InstallCommandMessages.alreadyConfigured));
 			return;
 		}
 
@@ -48,7 +49,11 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			try {
 				await this.promptAddToShell();
 			} catch (err: any) {
-				this.logger.stderr.error(err.message || 'Failed to automatically handle shell integration');
+				this.logger.stderr.error(
+					err.message
+						? this.t(InstallCommandMessages.shellIntegrationFailed, { message: err.message })
+						: this.t(InstallCommandMessages.shellIntegrationFailedFallback),
+				);
 			}
 
 			this.logger.stderr.log('');
@@ -56,34 +61,30 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 		await writeFile(installMarkerPath, version);
 
-		cliDebugPrint('[install] install marker written to', installMarkerPath);
+		logger.debug('[install] install marker written to', installMarkerPath);
 
 		this.logger.stderr.log(
-			[
-				'',
-				chalk.green('Apify and Actor CLI were installed successfully!'),
-				'',
-				chalk.gray(`  Version: ${chalk.green(version)}`),
-				chalk.gray(
-					`  Location: ${chalk.bold.white(tildify(join(installPath, 'apify')))} and ${chalk.bold.white(tildify(join(installPath, 'actor')))}`,
-				),
-			].join('\n'),
+			this.t(InstallCommandMessages.installSuccessMessage, {
+				version,
+				apifyLocation: tildify(join(installPath, 'apify')),
+				actorLocation: tildify(join(installPath, 'actor')),
+			}),
 		);
 
 		this.logger.stderr.log('');
-		this.logger.stderr.success('To get started, run:');
-		this.logger.stderr.log(chalk.white.bold('  apify --help\n  actor --help'));
+		this.logger.stderr.success(this.t(InstallCommandMessages.toGetStarted));
+		this.logger.stderr.log(this.t(InstallCommandMessages.helpCommands));
 	}
 
 	private async symlinkToLocalBin(installPath: string) {
 		const userHomeDirectory = HOMEDIR();
 
-		cliDebugPrint('[install -> symlinkToLocalBin] user home directory', userHomeDirectory);
+		logger.debug('[install -> symlinkToLocalBin] user home directory', userHomeDirectory);
 
 		if (!userHomeDirectory) {
-			cliDebugPrint('[install -> symlinkToLocalBin] user home directory not found');
+			logger.debug('[install -> symlinkToLocalBin] user home directory not found');
 
-			this.logger.stderr.warning(chalk.gray(`User home directory not found, cannot symlink to ~/.local/bin`));
+			this.logger.stderr.warning(this.t(InstallCommandMessages.homeDirNotFound));
 
 			return;
 		}
@@ -99,9 +100,9 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			const originalPath = join(installPath, file);
 
 			if (!existsSync(originalPath)) {
-				cliDebugPrint('[install] file not found for symlinking', file, originalPath);
+				logger.debug('[install] file not found for symlinking', file, originalPath);
 
-				this.logger.stderr.warning(chalk.gray(`Bundle not found for symlinking: ${file}`));
+				this.logger.stderr.warning(this.t(InstallCommandMessages.bundleNotFoundForSymlinking, { file }));
 				continue;
 			}
 
@@ -113,10 +114,12 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 			await symlink(originalPath, symlinkPath);
 
-			cliDebugPrint('[install] symlink created for item', file, symlinkPath);
+			logger.debug('[install] symlink created for item', file, symlinkPath);
 		}
 
-		this.logger.stderr.info(chalk.gray(`Symlinked apify, actor, and apify-cli to ${tildify(localBinDirectory)}`));
+		this.logger.stderr.info(
+			this.t(InstallCommandMessages.symlinkedToLocalBin, { localBinDirectory: tildify(localBinDirectory) }),
+		);
 	}
 
 	/**
@@ -135,7 +138,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		};
 
 		try {
-			cliDebugPrint('[install] opening /dev/tty for raw mode');
+			logger.debug('[install] opening /dev/tty for raw mode');
 			fd = openSync('/dev/tty', 'r');
 			ttyStream = new ReadStream(fd);
 
@@ -169,7 +172,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 			return result;
 		} catch (err) {
-			cliDebugPrint('[install] failed to open /dev/tty for raw mode', err);
+			logger.debug('[install] failed to open /dev/tty for raw mode', err);
 			return false;
 		} finally {
 			if (ttyStream) {
@@ -204,22 +207,22 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			apifyCliPath.value &&
 			actorCliPath.value
 		) {
-			cliDebugPrint('[install -> promptAddToShell] already in PATH', { apifyCliPath, actorCliPath });
+			logger.debug('[install -> promptAddToShell] already in PATH', { apifyCliPath, actorCliPath });
 
-			this.logger.stderr.info(chalk.gray(`Apify and Actor CLIs are already in PATH, skipping shell integration`));
+			this.logger.stderr.info(this.t(InstallCommandMessages.alreadyInPath));
 			return;
 		}
 
 		const userHomeDirectory = HOMEDIR();
 
-		cliDebugPrint('[install -> promptAddToShell] user home directory', userHomeDirectory);
+		logger.debug('[install -> promptAddToShell] user home directory', userHomeDirectory);
 
 		const defaultInstallDir = process.env.APIFY_CLI_INSTALL ?? join(userHomeDirectory, '.apify');
 		const defaultBinDir = process.env.FINAL_BIN_DIR ?? join(defaultInstallDir, 'bin');
 		const installDir = process.env.PROVIDED_INSTALL_DIR ?? defaultInstallDir;
 
 		if (!installDir) {
-			this.logger.stderr.warning(chalk.gray(`Install directory not found, cannot add to shell`));
+			this.logger.stderr.warning(this.t(InstallCommandMessages.installDirNotFound));
 			return;
 		}
 
@@ -237,7 +240,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			// Instead, we open /dev/tty directly and read a single keypress ourselves.
 			allowedToAutomaticallyDo = await this.confirmFromTty(confirmMessage);
 		} else {
-			cliDebugPrint('[install] opening /dev/tty for raw mode not requested, falling back to normal flow');
+			logger.debug('[install] opening /dev/tty for raw mode not requested, falling back to normal flow');
 			allowedToAutomaticallyDo = await useYesNoConfirm({
 				message: confirmMessage,
 				// For now, no stdin -> always false
@@ -290,7 +293,11 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 				}
 
 				throw new Error(
-					`Failed to read config file "${tildify(configFile)}". Received error code: ${err.code}; ${err.message}`,
+					this.t(InstallCommandMessages.readConfigFailed, {
+						configFile: tildify(configFile),
+						code: err.code,
+						message: err.message,
+					}),
 				);
 			});
 
@@ -302,22 +309,24 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			} catch (err: any) {
 				if (err.code === 'EACCES') {
 					throw new Error(
-						`Failed to write to config file "${tildify(configFile)}", as the CLI does not have permission to write to it.`,
+						this.t(InstallCommandMessages.writeConfigPermissionDenied, { configFile: tildify(configFile) }),
 					);
 				}
 
 				throw new Error(
-					`Failed to write to config file "${tildify(configFile)}". Received error code: ${err.code}; ${err.message}`,
+					this.t(InstallCommandMessages.writeConfigFailed, {
+						configFile: tildify(configFile),
+						code: err.code,
+						message: err.message,
+					}),
 				);
 			}
 
 			this.logger.stderr.info(
-				[
-					chalk.gray(`Added "${tildify(binDir)}" to your PATH in ${tildify(configFile)}.`),
-					chalk.gray(
-						`  You may need to run ${chalk.white.bold(`source ${tildify(configFile)}`)} to reload your shell.`,
-					),
-				].join('\n'),
+				this.t(InstallCommandMessages.pathAddedSuccess, {
+					binDir: tildify(binDir),
+					configFile: tildify(configFile),
+				}),
 			);
 
 			return;
@@ -328,23 +337,16 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		if (showOneLiner) {
 			const oneLiner = `echo -e '${linesToAdd.join('\\n')}' >> "${resolvedConfigFile}" && source "${resolvedConfigFile}"`;
 
-			this.logger.stderr.info(
-				[
-					//
-					chalk.gray(`The Apify & Actor CLIs are not in your PATH. Run:`),
-					'',
-					chalk.white.bold(`  ${oneLiner}`),
-				].join('\n'),
-			);
+			this.logger.stderr.info(this.t(InstallCommandMessages.notInPathOneLiner, { oneLiner }));
 
 			return;
 		}
 
 		this.logger.stderr.info(
-			[
-				chalk.gray(`Manually add the following lines to ${resolvedConfigFile} or similar:`),
-				...linesToAdd.map((line) => chalk.white.bold(`  ${line}`)),
-			].join('\n'),
+			this.t(InstallCommandMessages.manuallyAdd, {
+				configFile: resolvedConfigFile,
+				linesToAdd: linesToAdd.map((line) => chalk.white.bold(`  ${line}`)).join('\n'),
+			}),
 		);
 	}
 }

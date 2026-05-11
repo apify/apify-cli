@@ -1,5 +1,5 @@
+import { DatasetsRmCommandMessages } from '#i18n/commands/datasets/rm.js';
 import type { ApifyApiError } from 'apify-client';
-import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -47,7 +47,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 		const existingDataset = await tryToGetDataset(client, datasetNameOrId);
 
 		if (!existingDataset) {
-			this.logger.stderr.error(`Dataset with ID or name "${datasetNameOrId}" not found.`);
+			this.logger.stderr.error(this.t(DatasetsRmCommandMessages.datasetNotFound, { datasetNameOrId }));
 
 			return;
 		}
@@ -58,7 +58,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 		});
 
 		if (!confirmed) {
-			this.logger.stderr.info('Dataset deletion has been aborted.');
+			this.logger.stderr.info(this.t(DatasetsRmCommandMessages.deletionAborted));
 			return;
 		}
 
@@ -68,13 +68,15 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 			await existingDataset.datasetClient.delete();
 
 			this.logger.stdout.success(
-				`Dataset with ID ${chalk.yellow(id)}${name ? ` (called ${chalk.yellow(name)})` : ''} has been deleted.`,
+				name
+					? this.t(DatasetsRmCommandMessages.deletedWithName, { id, name })
+					: this.t(DatasetsRmCommandMessages.deletedUnnamed, { id }),
 			);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
 			this.logger.stderr.error(
-				`Failed to delete dataset with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
+				this.t(DatasetsRmCommandMessages.deleteFailed, { id, message: casted.message || String(casted) }),
 			);
 		}
 	}

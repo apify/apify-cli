@@ -64,6 +64,9 @@
 	"engines": {
 		"node": ">=20"
 	},
+	"imports": {
+		"#i18n/*.js": "./src/i18n/*.ts"
+	},
 	"dependencies": {
 		"@apify/actor-memory-expression": "^0.1.12",
 		"@apify/actor-templates": "^0.1.5",

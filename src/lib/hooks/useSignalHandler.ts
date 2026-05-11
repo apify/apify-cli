@@ -1,4 +1,4 @@
-import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { logger } from '../logger.js';
 
 // NOTE: we intentionally use the bare `process` global here instead of
 // `import process from 'node:process'`. Vitest's SSR transformer wraps the
@@ -116,7 +116,7 @@ export function useSignalHandler({
 			process.stderr.write(TERMINAL_LINE_RESET);
 		}
 
-		cliDebugPrint('useSignalHandler', { event: 'fired', signal, once });
+		logger.debug('useSignalHandler', { event: 'fired', signal, once });
 
 		// Intentionally fire-and-forget: the caller decides whether to block
 		// on the handler's work via their own control flow.
@@ -124,7 +124,7 @@ export function useSignalHandler({
 			try {
 				await handler(signal);
 			} catch (err) {
-				cliDebugPrint('useSignalHandler', { event: 'handler-threw', signal, err });
+				logger.debug('useSignalHandler', { event: 'handler-threw', signal, err });
 			}
 		})();
 	};
@@ -133,7 +133,7 @@ export function useSignalHandler({
 		process.on(signal, wrapped);
 	}
 
-	cliDebugPrint('useSignalHandler', { event: 'registered', signals, once });
+	logger.debug('useSignalHandler', { event: 'registered', signals, once });
 
 	return {
 		[Symbol.dispose]() {
@@ -147,7 +147,7 @@ export function useSignalHandler({
 				process.off(signal, wrapped);
 			}
 
-			cliDebugPrint('useSignalHandler', { event: 'disposed', signals });
+			logger.debug('useSignalHandler', { event: 'disposed', signals });
 		},
 	};
 }

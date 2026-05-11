@@ -1,3 +1,5 @@
+import { ActorChargeCommandMessages } from '#i18n/commands/actor/charge.js';
+
 import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';
@@ -66,19 +68,28 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 	async run() {
 		const { eventName } = this.args;
 		const { count, testPayPerEvent, idempotencyKey } = this.flags;
+		const idempotencyKeyDisplay = idempotencyKey ?? 'not-provided';
 
 		const isAtHome = Boolean(process.env.APIFY_IS_AT_HOME);
 
 		if (!isAtHome) {
 			this.logger.stdout.info(
-				`No platform detected: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
+				this.t(ActorChargeCommandMessages.noPlatformDetected, {
+					count,
+					eventName,
+					idempotencyKey: idempotencyKeyDisplay,
+				}),
 			);
 			return;
 		}
 
 		if (testPayPerEvent) {
 			this.logger.stdout.info(
-				`PPE test mode: would charge ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}".`,
+				this.t(ActorChargeCommandMessages.ppeTestMode, {
+					count,
+					eventName,
+					idempotencyKey: idempotencyKeyDisplay,
+				}),
 			);
 			return;
 		}
@@ -86,21 +97,26 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 		const apifyToken = await getApifyTokenFromEnvOrAuthFile();
 		const apifyClient = await getLoggedClient(apifyToken);
 		if (!apifyClient) {
-			throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN.');
+			throw new Error(this.t(ActorChargeCommandMessages.missingApifyToken));
 		}
 		const runId = process.env[APIFY_ENV_VARS.ACTOR_RUN_ID];
 
 		if (!runId) {
-			throw new Error('Charge command must be executed in a running Actor. Run ID not found.');
+			throw new Error(this.t(ActorChargeCommandMessages.notInRunningActor));
 		}
 
 		const run = await apifyClient.run(runId).get();
 		if (run?.pricingInfo?.pricingModel !== 'PAY_PER_EVENT') {
-			throw new Error('Charge command can only be used with pay-per-event pricing model.');
+			throw new Error(this.t(ActorChargeCommandMessages.invalidPricingModel));
 		}
 
 		this.logger.stdout.info(
-			`Charging ${count} events of type "${eventName}" with idempotency key "${idempotencyKey ?? 'not-provided'}" (runId: ${runId}).`,
+			this.t(ActorChargeCommandMessages.charging, {
+				count,
+				eventName,
+				idempotencyKey: idempotencyKeyDisplay,
+				runId,
+			}),
 		);
 		await apifyClient.run(runId).charge({
 			eventName,

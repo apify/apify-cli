@@ -1,3 +1,5 @@
+import { KeyValueStoresKeysCommandMessages } from '#i18n/commands/key-value-stores/keys.js';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -46,8 +48,6 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { storeId } = this.args;
 		const { limit, exclusiveStartKey } = this.flags;
@@ -56,7 +56,7 @@ export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStore
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
 
 		if (!maybeStore) {
-			this.logger.stderr.error(`Key-value store with ID or name "${storeId}" not found.`);
+			this.logger.stderr.error(this.t(KeyValueStoresKeysCommandMessages.storeNotFound, { storeId }));
 
 			return;
 		}

@@ -1,3 +1,5 @@
+import { AuthLogoutCommandMessages } from '#i18n/commands/auth/logout.js';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../lib/consts.js';
 import { rimrafPromised } from '../../lib/files.js';
@@ -27,6 +29,6 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 
 		await updateUserId(null);
 
-		this.logger.stderr.success('You are logged out from your Apify account.');
+		this.logger.stderr.success(this.t(AuthLogoutCommandMessages.loggedOut));
 	}
 }

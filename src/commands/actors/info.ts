@@ -1,3 +1,4 @@
+import { ActorsInfoCommandMessages } from '#i18n/commands/actors/info.js';
 import type { Actor, ActorTaggedBuild, Build, User } from 'apify-client';
 import chalk from 'chalk';
 
@@ -80,8 +81,6 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { actorId } = this.args;
 		const { readme, input, json } = this.flags;
@@ -90,7 +89,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
-			this.logger.stdout.error(`${ctx.reason}. Please specify the Actor ID.`);
+			this.logger.stdout.error(this.t(ActorsInfoCommandMessages.invalidActorContext, { reason: ctx.reason }));
 
 			return;
 		}
@@ -120,13 +119,13 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 
 		if (readme) {
 			if (!latest) {
-				this.logger.stdout.error('No README found for this Actor.');
+				this.logger.stdout.error(this.t(ActorsInfoCommandMessages.noReadme));
 
 				return;
 			}
 
 			if (!latest.build?.readme) {
-				this.logger.stdout.error('No README found for this Actor.');
+				this.logger.stdout.error(this.t(ActorsInfoCommandMessages.noReadme));
 
 				return;
 			}
@@ -137,13 +136,13 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 
 		if (input) {
 			if (!latest) {
-				this.logger.stdout.error('No input schema found for this Actor.');
+				this.logger.stdout.error(this.t(ActorsInfoCommandMessages.noInputSchema));
 
 				return;
 			}
 
 			if (!latest.build?.inputSchema) {
-				this.logger.stdout.error('No input schema found for this Actor.');
+				this.logger.stdout.error(this.t(ActorsInfoCommandMessages.noInputSchema));
 
 				return;
 			}
@@ -153,44 +152,49 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		}
 
 		const message = [
-			`Information about Actor ${chalk.yellow(`${actorInfo.username}/${actorInfo.name}`)} (${chalk.gray(actorInfo.id)})`,
-			'',
+			this.t(ActorsInfoCommandMessages.header, {
+				fullName: `${actorInfo.username}/${actorInfo.name}`,
+				id: actorInfo.id,
+			}),
 		];
 
 		if (actorInfo.title) {
-			message.push(`${chalk.yellow('Title:')} ${chalk.bold(actorInfo.title)}`);
+			message.push(this.t(ActorsInfoCommandMessages.titleLine, { title: actorInfo.title }));
 		}
 
 		if (actorInfo.description) {
-			message.push(`${chalk.yellow('Description:')} ${actorInfo.description}`);
+			message.push(this.t(ActorsInfoCommandMessages.descriptionLine, { description: actorInfo.description }));
 		}
 
 		message.push(
-			`${chalk.yellow('Created at:')} ${chalk.cyan(TimestampFormatter.display(actorInfo.createdAt))} ${chalk.gray('|')} ${chalk.yellow('Updated at:')} ${chalk.cyan(
-				TimestampFormatter.display(actorInfo.modifiedAt),
-			)}`,
+			this.t(ActorsInfoCommandMessages.createdUpdatedLine, {
+				createdAt: TimestampFormatter.display(actorInfo.createdAt),
+				modifiedAt: TimestampFormatter.display(actorInfo.modifiedAt),
+			}),
 		);
 
 		if (actorInfo.actorMaker) {
 			message.push(
 				'',
-				`${chalk.yellow('Made by:')} ${chalk.cyan(actorInfo.actorMaker.profile.name ?? actorInfo.actorMaker.username)}`,
+				this.t(ActorsInfoCommandMessages.madeByLine, {
+					name: actorInfo.actorMaker.profile.name ?? actorInfo.actorMaker.username,
+				}),
 			);
 
 			// Missing types who?
 			if (Reflect.get(actorInfo, 'isCritical')) {
-				message[message.length - 1] += ` ${chalk.bgGray('Maintained by Apify')}`;
+				message[message.length - 1] += ` ${this.t(ActorsInfoCommandMessages.maintainedByApifyBadge)}`;
 			}
 		}
 
 		if (actorInfo.isPublic) {
-			message.push('', `${chalk.yellow('Actor is')} ${chalk.green('PUBLIC')}`);
+			message.push('', this.t(ActorsInfoCommandMessages.actorIsPublic));
 		} else {
-			message.push('', `${chalk.yellow('Actor is')} ${chalk.cyan('PRIVATE')}`);
+			message.push('', this.t(ActorsInfoCommandMessages.actorIsPrivate));
 		}
 
 		if (actorInfo.isDeprecated) {
-			message.push('', `${chalk.yellow('Actor is')} ${chalk.red('DEPRECATED')}`);
+			message.push('', this.t(ActorsInfoCommandMessages.actorIsDeprecated));
 		}
 
 		// Pricing info
@@ -203,14 +207,16 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 			switch (latestPricingInfo.pricingModel) {
 				case 'FLAT_PRICE_PER_MONTH': {
 					message.push(
-						`${chalk.yellow('Pricing information:')} ${chalk.bgGray(`$${latestPricingInfo.pricePerUnitUsd}/month + usage`)}`,
+						this.t(ActorsInfoCommandMessages.pricingFlatPerMonth, {
+							priceLabel: `$${latestPricingInfo.pricePerUnitUsd}/month + usage`,
+						}),
 					);
 
 					if (latestPricingInfo.trialMinutes) {
 						const minutesToMs = latestPricingInfo.trialMinutes * 60 * 1000;
 						const duration = DurationFormatter.format(minutesToMs);
 
-						message.push(`     ${chalk.yellow('Trial duration:')} ${chalk.bold(duration)}`);
+						message.push(this.t(ActorsInfoCommandMessages.pricingTrialDuration, { duration }));
 					}
 
 					break;
@@ -219,13 +225,15 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 					const pricePerOneKItems = latestPricingInfo.pricePerUnitUsd * 1000;
 
 					message.push(
-						`${chalk.yellow('Pricing information:')} ${chalk.bgGray(`$${pricePerOneKItems.toFixed(2)} / 1,000 results`)}`,
+						this.t(ActorsInfoCommandMessages.pricingPerDatasetItem, {
+							priceLabel: `$${pricePerOneKItems.toFixed(2)} / 1,000 results`,
+						}),
 					);
 
 					break;
 				}
 				case 'PAY_PER_EVENT': {
-					message.push(`${chalk.yellow('Pricing information:')} ${chalk.bgGray('Pay per event')}`);
+					message.push(this.t(ActorsInfoCommandMessages.pricingPayPerEvent));
 
 					const events = Object.values(latestPricingInfo.pricingPerEvent?.actorChargeEvents ?? {});
 
@@ -248,42 +256,49 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 				}
 
 				case 'FREE': {
-					message.push(`${chalk.yellow('Pricing information:')} ${chalk.bgGray('Pay for usage')}`);
+					message.push(this.t(ActorsInfoCommandMessages.pricingFree));
 					break;
 				}
 
 				default: {
 					message.push(
-						`${chalk.yellow('Pricing information:')} ${chalk.bgGray(`Unknown pricing model (${chalk.yellow(latestPricingInfo.pricingModel)})`)}`,
+						this.t(ActorsInfoCommandMessages.pricingUnknown, {
+							pricingModel: latestPricingInfo.pricingModel,
+						}),
 					);
 				}
 			}
 		} else {
-			message.push(`${chalk.yellow('Pricing information:')} ${chalk.bgGray('Pay for usage')}`);
+			message.push(this.t(ActorsInfoCommandMessages.pricingFree));
 		}
 
 		// TODO: do we care about this information?
 		if (actorInfo.seoTitle || actorInfo.seoDescription) {
-			message.push('', chalk.yellow('SEO information:'));
+			message.push('', this.t(ActorsInfoCommandMessages.seoHeader));
 
 			if (actorInfo.seoTitle) {
-				message.push(`  ${chalk.yellow('Title:')} ${actorInfo.seoTitle}`);
+				message.push(this.t(ActorsInfoCommandMessages.seoTitleLine, { seoTitle: actorInfo.seoTitle }));
 			}
 
 			if (actorInfo.seoDescription) {
-				message.push(`  ${chalk.yellow('Description:')} ${actorInfo.seoDescription}`);
+				message.push(
+					this.t(ActorsInfoCommandMessages.seoDescriptionLine, { seoDescription: actorInfo.seoDescription }),
+				);
 			}
 		}
 
 		if (actorInfo.taggedBuilds) {
-			message.push('', chalk.yellow('Builds:'));
+			message.push('', this.t(ActorsInfoCommandMessages.buildsHeader));
 
 			// Handle latest first
 			const latestBuild = actorInfo.taggedBuilds.latest;
 
 			if (latestBuild) {
 				message.push(
-					`  ${chalk.yellow('-')} ${chalk.cyan(latestBuild.buildNumber)} ${chalk.gray('/')} ${chalk.yellow('latest')}`,
+					this.t(ActorsInfoCommandMessages.buildEntry, {
+						buildNumber: latestBuild.buildNumber ?? '',
+						tag: 'latest',
+					}),
 				);
 			}
 
@@ -293,7 +308,10 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 				}
 
 				message.push(
-					`  ${chalk.yellow('-')} ${chalk.cyan(build.buildNumber)} ${chalk.gray('/')} ${chalk.yellow(buildTag)}`,
+					this.t(ActorsInfoCommandMessages.buildEntry, {
+						buildNumber: build.buildNumber ?? '',
+						tag: buildTag,
+					}),
 				);
 			}
 		}

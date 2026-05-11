@@ -1,3 +1,4 @@
+import { DatasetsInfoCommandMessages } from '#i18n/commands/datasets/info.js';
 import type { Task } from 'apify-client';
 import chalk from 'chalk';
 
@@ -35,8 +36,6 @@ export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { storeId } = this.args;
 
@@ -44,7 +43,7 @@ export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand
 		const maybeStore = await tryToGetDataset(apifyClient, storeId);
 
 		if (!maybeStore) {
-			this.logger.stderr.error(`Key-value store with ID or name "${storeId}" not found.`);
+			this.logger.stderr.error(this.t(DatasetsInfoCommandMessages.storeNotFound, { storeId }));
 
 			return;
 		}
@@ -161,6 +160,6 @@ export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand
 			row3,
 		].join('\n');
 
-		this.logger.stdout.log(message);
+		this.logger.stdout.log(this.t(DatasetsInfoCommandMessages.message, { message }));
 	}
 }

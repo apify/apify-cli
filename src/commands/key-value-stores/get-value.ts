@@ -1,3 +1,5 @@
+import { KeyValueStoresGetValueCommandMessages } from '#i18n/commands/key-value-stores/get-value.js';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -48,7 +50,9 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, keyValueStoreId);
 
 		if (!maybeStore) {
-			this.logger.stderr.error(`Key-value store with ID "${keyValueStoreId}" not found.`);
+			this.logger.stderr.error(
+				this.t(KeyValueStoresGetValueCommandMessages.storeNotFound, { storeId: keyValueStoreId }),
+			);
 			return;
 		}
 
@@ -57,7 +61,7 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 		const itemRecord = await storeClient.getRecord(itemKey, { stream: true });
 
 		if (!itemRecord) {
-			this.logger.stderr.error(`Item with key "${itemKey}" not found in the key-value store.`);
+			this.logger.stderr.error(this.t(KeyValueStoresGetValueCommandMessages.itemNotFound, { itemKey }));
 			return;
 		}
 

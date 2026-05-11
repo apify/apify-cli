@@ -1,3 +1,4 @@
+import { CommandHelpMessages } from '#i18n/lib/command-framework/help/CommandHelp.js';
 import chalk from 'chalk';
 import indent from 'indent-string';
 import width from 'string-width';
@@ -5,6 +6,7 @@ import stripAnsi from 'strip-ansi';
 import widestLine from 'widest-line';
 import wrap from 'wrap-ansi';
 
+import { t } from '../../i18n/index.js';
 import type { ArgTag, TaggedArgBuilder } from '../args.js';
 import type { FlagTag, TaggedFlagBuilder } from '../flags.js';
 import { BaseCommandRenderer, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
@@ -123,7 +125,7 @@ export class CommandHelp extends BaseCommandRenderer {
 			return !flag.hidden;
 		});
 
-		if (this.command.enableJsonFlag) {
+		if (!this.command.disableFormatOutputDefaults) {
 			flags.push([
 				'json',
 				{
@@ -135,9 +137,25 @@ export class CommandHelp extends BaseCommandRenderer {
 					builder: null as never,
 					aliases: undefined,
 					char: undefined,
-					description: 'Format the command output as JSON',
+					description: 'Format the command output as JSON (mutually exclusive with --markdown)',
 					hidden: undefined,
-					exclusive: undefined,
+					exclusive: ['markdown'],
+				},
+			]);
+			flags.push([
+				'markdown',
+				{
+					choices: null,
+					flagTag: 'boolean',
+					hasDefault: false,
+					required: false,
+					stdin: null as never,
+					builder: null as never,
+					aliases: undefined,
+					char: undefined,
+					description: 'Format the command output as raw markdown (mutually exclusive with --json)',
+					hidden: undefined,
+					exclusive: ['json'],
 				},
 			]);
 		}
@@ -279,7 +297,7 @@ export class CommandHelp extends BaseCommandRenderer {
 					break;
 				}
 				default:
-					throw new Error(`Unhandled flag tag: ${flag.flagTag}`);
+					throw new Error(t(CommandHelpMessages.unhandledFlagTag, { flagTag: flag.flagTag }));
 			}
 
 			linesOfFlags.set(stringParts.join(' '), flag);

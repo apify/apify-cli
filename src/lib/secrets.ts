@@ -1,6 +1,9 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
+import { secretsMessages } from '#i18n/lib/secrets.js';
+
 import { SECRETS_FILE_PATH } from './consts.js';
+import { t } from './i18n/index.js';
 import { logger } from './logger.js';
 import { ensureApifyDirectory } from './utils.js';
 
@@ -26,13 +29,12 @@ const writeSecretsFile = (secrets: Record<string, string>) => {
 export const addSecret = (name: string, value: string) => {
 	const secrets = getSecretsFile();
 
-	if (secrets[name])
-		throw new Error(`Secret with name ${name} already exists. Call "apify secrets rm ${name}" to remove it.`);
+	if (secrets[name]) throw new Error(t(secretsMessages.secretAlreadyExists, { name }));
 	if (typeof name !== 'string' || name.length > MAX_ENV_VAR_NAME_LENGTH) {
-		throw new Error(`Secret name has to be string with maximum length ${MAX_ENV_VAR_NAME_LENGTH}.`);
+		throw new Error(t(secretsMessages.secretNameTooLong, { maxLength: MAX_ENV_VAR_NAME_LENGTH }));
 	}
 	if (typeof value !== 'string' || value.length > MAX_ENV_VAR_VALUE_LENGTH) {
-		throw new Error(`Secret value has to be string with maximum length ${MAX_ENV_VAR_VALUE_LENGTH}.`);
+		throw new Error(t(secretsMessages.secretValueTooLong, { maxLength: MAX_ENV_VAR_VALUE_LENGTH }));
 	}
 
 	secrets[name] = value;
@@ -41,7 +43,7 @@ export const addSecret = (name: string, value: string) => {
 
 export const removeSecret = (name: string) => {
 	const secrets = getSecretsFile();
-	if (!secrets[name]) throw new Error(`Secret with name ${name} doesn't exist.`);
+	if (!secrets[name]) throw new Error(t(secretsMessages.secretNotFound, { name }));
 	delete secrets[name];
 	writeSecretsFile(secrets);
 };
@@ -83,16 +85,10 @@ export const replaceSecretsValue = (
 		const secretsList = missingSecrets.map((s) => `  - ${s}`).join('\n');
 		if (allowMissing) {
 			for (const secretKey of missingSecrets) {
-				logger.stderr.warning(
-					`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
-				);
+				logger.stderr.warning(t(secretsMessages.missingSecretWarning, { secretKey }));
 			}
 		} else {
-			throw new Error(
-				`The following secrets are missing:\n${secretsList}\n\n` +
-					`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>" for each missing secret.\n` +
-					`If you want to skip missing secrets, run the command with the --allow-missing-secrets flag.`,
-			);
+			throw new Error(t(secretsMessages.missingSecretsList, { secretsList }));
 		}
 	}
 
@@ -143,16 +139,10 @@ export const transformEnvToEnvVars = (
 		const secretsList = missingSecrets.map((s) => `  - ${s}`).join('\n');
 		if (allowMissing) {
 			for (const secretKey of missingSecrets) {
-				logger.stderr.warning(
-					`Value for ${secretKey} not found in local secrets. Set it by calling "apify secrets add ${secretKey} [SECRET_VALUE]"`,
-				);
+				logger.stderr.warning(t(secretsMessages.missingSecretWarning, { secretKey }));
 			}
 		} else {
-			throw new Error(
-				`The following secrets are missing:\n${secretsList}\n\n` +
-					`Set them by calling "apify secrets add <SECRET_NAME> <SECRET_VALUE>" for each missing secret.\n` +
-					`If you want to skip missing secrets, run the command with the --allow-missing-secrets flag.`,
-			);
+			throw new Error(t(secretsMessages.missingSecretsList, { secretsList }));
 		}
 	}
 

@@ -1,3 +1,4 @@
+import { RunsRmCommandMessages } from '#i18n/commands/runs/rm.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
@@ -54,14 +55,12 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			this.logger.stderr.error(`Run with ID "${runId}" was not found on your account.`);
+			this.logger.stderr.error(this.t(RunsRmCommandMessages.runNotFound, { runId }));
 			return;
 		}
 
 		if (!deletableStatuses.includes(run.status as never)) {
-			this.logger.stderr.error(
-				`Run with ID "${runId}" cannot be deleted, as it is still running or in the process of aborting.`,
-			);
+			this.logger.stderr.error(this.t(RunsRmCommandMessages.cannotDelete, { runId }));
 
 			return;
 		}
@@ -72,7 +71,7 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		});
 
 		if (!confirmedDelete) {
-			this.logger.stderr.info(`Deletion of run "${runId}" was canceled.`);
+			this.logger.stderr.info(this.t(RunsRmCommandMessages.deletionCanceled, { runId }));
 
 			return;
 		}
@@ -80,10 +79,12 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		try {
 			await apifyClient.run(runId).delete();
 
-			this.logger.stderr.success(`Run with ID "${runId}" was deleted.`);
+			this.logger.stderr.success(this.t(RunsRmCommandMessages.deleted, { runId }));
 		} catch (err) {
 			const casted = err as ApifyApiError;
-			this.logger.stderr.error(`Failed to delete run "${runId}".\n  ${casted.message || casted}`);
+			this.logger.stderr.error(
+				this.t(RunsRmCommandMessages.deleteFailed, { runId, message: String(casted.message || casted) }),
+			);
 		}
 	}
 }

@@ -10,6 +10,7 @@ import { finished } from 'node:stream/promises';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
+import { utilsMessages } from '#i18n/lib/utils.js';
 import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
 import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
@@ -46,9 +47,10 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { t } from './i18n/index.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
+import { logger } from './logger.js';
 import type { AuthJSON } from './types.js';
-import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 // `ignore` is a CJS package; TypeScript sees its default import as the module
 // object rather than the callable factory, so we cast through unknown.
@@ -113,7 +115,7 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	}
 
 	if (!result.username && !result.id) {
-		throw new Error('Corrupted local user info was found. Please run "apify login" to fix it.');
+		throw new Error(t(utilsMessages.corruptedLocalUserInfo));
 	}
 
 	return result;
@@ -127,7 +129,7 @@ export async function getLoggedClientOrThrow() {
 
 	if (!loggedClient) {
 		process.exitCode = CommandExitCodes.MissingAuth;
-		throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
+		throw new Error(t(utilsMessages.notLoggedIn));
 	}
 	return loggedClient;
 }
@@ -180,7 +182,7 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 	try {
 		userInfo = await apifyClient.user('me').get();
 	} catch (err) {
-		cliDebugPrint('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
+		logger.debug('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
 		return null;
 	}
 
@@ -644,13 +646,13 @@ export const checkIfStorageIsEmpty = async (inputKey?: string) => {
  */
 export const validateActorName = (actorName: string) => {
 	if (!ACTOR_NAME.REGEX.test(actorName)) {
-		throw new Error('The Actor name must be a DNS hostname-friendly string (e.g. my-newest-actor).');
+		throw new Error(t(utilsMessages.actorNameInvalidDns));
 	}
 	if (actorName.length < ACTOR_NAME.MIN_LENGTH) {
-		throw new Error('The Actor name must be at least 3 characters long.');
+		throw new Error(t(utilsMessages.actorNameTooShort));
 	}
 	if (actorName.length > ACTOR_NAME.MAX_LENGTH) {
-		throw new Error('The Actor name must be a maximum of 30 characters long.');
+		throw new Error(t(utilsMessages.actorNameTooLong));
 	}
 };
 

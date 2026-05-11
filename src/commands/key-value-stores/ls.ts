@@ -1,3 +1,4 @@
+import { KeyValueStoresLsCommandMessages } from '#i18n/commands/key-value-stores/ls.js';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -48,8 +49,6 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { desc, offset, limit, json, unnamed } = this.flags;
 
@@ -64,7 +63,7 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 		}
 
 		if (rawKvsList.count === 0) {
-			this.logger.stdout.info("You don't have any key-value stores on your account");
+			this.logger.stdout.info(this.t(KeyValueStoresLsCommandMessages.noStores));
 
 			return;
 		}

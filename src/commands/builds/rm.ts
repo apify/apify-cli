@@ -1,3 +1,4 @@
+import { BuildsRmCommandMessages } from '#i18n/commands/builds/rm.js';
 import type { ActorTaggedBuild } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -46,7 +47,7 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			throw new Error(`Build with ID "${buildId}" was not found on your account.`);
+			throw new Error(this.t(BuildsRmCommandMessages.buildNotFound, { buildId }));
 		}
 
 		const actor = await apifyClient.actor(build.actId).get();
@@ -81,13 +82,13 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 		}
 
 		if (!confirmed) {
-			this.logger.stdout.info(`Deletion of build "${buildId}" was canceled.`);
+			this.logger.stdout.info(this.t(BuildsRmCommandMessages.deletionCanceled, { buildId }));
 
 			return;
 		}
 
 		await apifyClient.build(buildId).delete();
 
-		this.logger.stdout.success(`Build with ID "${buildId}" was deleted.`);
+		this.logger.stdout.success(this.t(BuildsRmCommandMessages.buildDeleted, { buildId }));
 	}
 }

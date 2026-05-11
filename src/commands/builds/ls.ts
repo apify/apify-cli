@@ -1,3 +1,4 @@
+import { BuildsLsCommandMessages } from '#i18n/commands/builds/ls.js';
 import type { BuildCollectionClientListItem } from 'apify-client';
 import chalk from 'chalk';
 
@@ -63,8 +64,6 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { desc, limit, offset, compact, json } = this.flags;
 		const { actorId } = this.args;
@@ -75,9 +74,7 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
-			this.logger.stdout.error(
-				`${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
-			);
+			this.logger.stdout.error(this.t(BuildsLsCommandMessages.invalidActorContext, { reason: ctx.reason }));
 
 			return;
 		}
@@ -120,14 +117,19 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 		}
 
 		this.logger.stdout.log(
-			`${chalk.reset('Showing')} ${chalk.yellow(allBuilds.items.length)} out of ${chalk.yellow(allBuilds.total)} builds for Actor ${chalk.yellow(ctx.userFriendlyId)} (${chalk.gray(ctx.id)})\n`,
+			this.t(BuildsLsCommandMessages.showingBuildsHeader, {
+				shown: allBuilds.items.length,
+				total: allBuilds.total,
+				userFriendlyId: ctx.userFriendlyId,
+				actorId: ctx.id,
+			}),
 		);
 
 		const sortedActorVersions = Object.entries(buildsByActorVersion).sort((a, b) => a[0].localeCompare(b[0]));
 
 		for (const [actorVersion, buildsForVersion] of sortedActorVersions) {
 			if (!buildsForVersion?.length) {
-				this.logger.stdout.log(`No builds for version ${actorVersion}`);
+				this.logger.stdout.log(this.t(BuildsLsCommandMessages.noBuildsForVersion, { actorVersion }));
 
 				continue;
 			}
@@ -139,11 +141,11 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 			});
 
 			const latestBuildTagMessage = latestBuildTag
-				? ` (latest build gets tagged with ${chalk.yellow(latestBuildTag)})`
+				? this.t(BuildsLsCommandMessages.latestBuildTagSuffix, { latestBuildTag })
 				: '';
 
 			const message = [
-				chalk.reset(`Builds for Actor Version ${chalk.yellow(actorVersion)}${latestBuildTagMessage}`),
+				this.t(BuildsLsCommandMessages.buildsForVersionHeader, { actorVersion, latestBuildTagMessage }),
 				table.render(compact ? CompactMode.VeryCompact : CompactMode.None),
 				'',
 			];
