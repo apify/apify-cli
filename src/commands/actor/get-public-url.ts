@@ -39,6 +39,7 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 			process.exitCode = CommandExitCodes.NotImplemented;
 			return;
 		}
+
 		const storeId = process.env[ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID];
 
 		// This should never happen, but handle it gracefully to prevent crashes.
@@ -46,6 +47,7 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 			this.logger.stderr.error(
 				this.t(ActorGetPublicUrlCommandMessages.missingEnvVar, {
 					envVar: ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID,
+					jsonParams: [ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID],
 				}),
 			);
 			process.exitCode = CommandExitCodes.InvalidInput;
@@ -60,6 +62,7 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 				this.t(ActorGetPublicUrlCommandMessages.storeNotFound, {
 					storeId,
 					envVar: ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID,
+					jsonParams: [{ storeId, envVar: ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID }],
 				}),
 			);
 			process.exitCode = CommandExitCodes.NotFound;

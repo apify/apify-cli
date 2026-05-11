@@ -3,7 +3,7 @@ import { defineMessages } from '../../../lib/i18n/index.js';
 export const ActorGenerateSchemaTypesCommandMessages = defineMessages({
 	en: {
 		generatingFromInputSchemaAt: {
-			markdown: 'Generating types from input schema at {schemaPath}',
+			markdown: "Generating types from input schema at ''{schemaPath}''",
 			json: () => null,
 		},
 		generatingFromInputSchemaEmbedded: {

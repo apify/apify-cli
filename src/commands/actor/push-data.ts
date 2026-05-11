@@ -29,6 +29,7 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 		item: Args.string({
 			description:
 				'JSON string with one object or array of objects containing data to be stored in the default dataset.',
+			catchAll: true,
 		}),
 	};
 
@@ -49,9 +50,8 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 		try {
 			parsedData = JSON.parse(item.toString('utf8'));
 		} catch (err) {
-			throw new Error(
-				this.t(ActorPushDataCommandMessages.failedToParseJson, { message: (err as Error).message }),
-			);
+			const { message } = err as Error;
+			throw new Error(this.t(ActorPushDataCommandMessages.failedToParseJson, { message, jsonParams: [message] }));
 		}
 
 		await apifyClient.dataset(defaultStoreId).pushItems(parsedData);
