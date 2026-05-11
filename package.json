@@ -20,7 +20,6 @@
 		"clean": "rimraf dist",
 		"build": "pnpm run clean && tsc && tsdown",
 		"build-bundles": "bun run scripts/build-cli-bundles.ts",
-		"preinstall": "npx only-allow pnpm",
 		"prepack": "pnpm run insert-cli-metadata && pnpm run build && pnpm run update-docs",
 		"insert-cli-metadata": "tsx scripts/insert-cli-metadata.ts",
 		"update-docs": "tsx scripts/generate-cli-docs.ts",
@@ -150,9 +149,9 @@
 	},
 	"volta": {
 		"node": "24.14.1",
-		"pnpm": "10.33.0"
+		"pnpm": "10.33.4"
 	},
-	"packageManager": "pnpm@10.33.0",
+	"packageManager": "pnpm@10.33.4",
 	"devEngines": {
 		"runtime": [
 			{
@@ -165,7 +164,12 @@
 				"version": ">= 1.2.5",
 				"onFail": "ignore"
 			}
-		]
+		],
+		"packageManager": {
+			"name": "pnpm",
+			"version": "10.33.4",
+			"onFail": "warn"
+		}
 	},
 	"lint-staged": {
 		"*": "biome format --write --no-errors-on-unmatched",
