@@ -7,8 +7,7 @@ import { SecretsRmCommand } from './rm.js';
 export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand> {
 	static override name = 'secrets' as const;
 
-	static override description =
-		`Manage locally stored secrets that can be referenced from '${LOCAL_CONFIG_PATH}' environment variables using the "@" prefix (e.g. "@mySecret"). Secrets are uploaded alongside the Actor and stored encrypted on the Apify platform.`;
+	static override description = `Manage locally stored secrets that can be referenced from '${LOCAL_CONFIG_PATH}' environment variables using the "@" prefix (e.g. "@mySecret"). Secrets are uploaded alongside the Actor and stored encrypted on the Apify platform.`;
 
 	static override group = 'Authentication';
 

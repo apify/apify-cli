@@ -38,10 +38,9 @@ export interface UsePythonRuntimeInput {
 	force?: boolean;
 }
 
-export async function usePythonRuntime({
-	cwd = process.cwd(),
-	force = false,
-}: UsePythonRuntimeInput = {}): Promise<Option<Runtime>> {
+export async function usePythonRuntime({ cwd = process.cwd(), force = false }: UsePythonRuntimeInput = {}): Promise<
+	Option<Runtime>
+> {
 	const cached = cwdCache.get(cwd);
 
 	if (cached && !force) {

@@ -124,9 +124,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 			}
 
 			if (!actorName) {
-				let response = actorConfig.isOkAnd((cfg) => cfg.exists)
-					? (actorConfig.unwrap().config.name as string)
-					: null;
+				let response = actorConfig.isOkAnd((cfg) => cfg.exists) ? (actorConfig.unwrap().config.name as string) : null;
 
 				// TODO: see if we can use promptActorName instead
 				while (!response) {

@@ -321,15 +321,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 						await execWithLog({
 							cmd: runtime.executablePath,
-							args: [
-								'-m',
-								'pip',
-								'install',
-								'--no-cache-dir',
-								'--no-warn-script-location',
-								'-r',
-								'requirements.txt',
-							],
+							args: ['-m', 'pip', 'install', '--no-cache-dir', '--no-warn-script-location', '-r', 'requirements.txt'],
 							opts: { cwd: actFolderDir },
 						});
 
@@ -360,9 +352,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}
 
 		// Suggest install command if dependencies were not installed
-		const installCommandSuggestion = !dependenciesInstalled
-			? await getInstallCommandSuggestion(actFolderDir)
-			: null;
+		const installCommandSuggestion = !dependenciesInstalled ? await getInstallCommandSuggestion(actFolderDir) : null;
 
 		// Success message with extra empty line
 		simpleLog({ message: '' });

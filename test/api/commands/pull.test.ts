@@ -176,9 +176,7 @@ describe('[api] apify pull', () => {
 
 		await testRunCommand(ActorsPullCommand, { args_actorId: testActor.id });
 
-		const actorJson = JSON.parse(
-			readFileSync(join(originalCwd, testActor.name, DEPRECATED_LOCAL_CONFIG_NAME), 'utf8'),
-		);
+		const actorJson = JSON.parse(readFileSync(join(originalCwd, testActor.name, DEPRECATED_LOCAL_CONFIG_NAME), 'utf8'));
 
 		expect(actorJson.name).to.be.eql('baidu-scraper');
 	});
