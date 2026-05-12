@@ -4,7 +4,6 @@ import process from 'node:process';
 import type { parseArgs, ParseArgsConfig, ParseArgsOptionDescriptor } from 'node:util';
 
 import type { Awaitable } from '@crawlee/types';
-import { apifyCommandMessages } from '#i18n/lib/command-framework/apify-command.js';
 import chalk from 'chalk';
 import indentString from 'indent-string';
 import widestLine from 'widest-line';
@@ -26,6 +25,8 @@ import { CommandError, CommandErrorCode } from './CommandError.js';
 import type { FlagTag, TaggedFlagBuilder } from './flags.js';
 import { registerCommandForHelpGeneration, renderHelpForCommand, selectiveRenderHelpForCommand } from './help.js';
 import { getMaxLineWidth } from './help/consts.js';
+
+import { apifyCommandMessages } from '#i18n/lib/command-framework/apify-command.js';
 
 export enum StdinMode {
 	Raw = 1,

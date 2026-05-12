@@ -1,7 +1,6 @@
 import process from 'node:process';
 import { parseArgs } from 'node:util';
 
-import { sharedEntrypointMessages } from '#i18n/entrypoints/_shared.js';
 import chalk from 'chalk';
 import { satisfies } from 'semver';
 
@@ -17,6 +16,8 @@ import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
 import { t } from '../lib/i18n/index.js';
 import { logger } from '../lib/logger.js';
+
+import { sharedEntrypointMessages } from '#i18n/entrypoints/_shared.js';
 
 export const cachedStdinInput = await readStdin();
 

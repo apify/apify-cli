@@ -3,13 +3,14 @@ import { join, resolve } from 'node:path';
 import process from 'node:process';
 
 import { err, ok, type Result } from '@sapphire/result';
-import { useCwdProjectMessages } from '#i18n/lib/hooks/useCwdProject.js';
 
 import { t } from '../i18n/index.js';
 import { logger } from '../logger.js';
 import { ScrapyProjectAnalyzer } from '../projects/scrapy/ScrapyProjectAnalyzer.js';
 import { useJavaScriptRuntime } from './runtimes/javascript.js';
 import { usePythonRuntime } from './runtimes/python.js';
+
+import { useCwdProjectMessages } from '#i18n/lib/hooks/useCwdProject.js';
 
 export enum ProjectLanguage {
 	JavaScript = 0,

@@ -1,9 +1,9 @@
-import { ActorPushDataCommandMessages } from '#i18n/commands/actor/push-data.js';
-
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+
+import { ActorPushDataCommandMessages } from '#i18n/commands/actor/push-data.js';
 
 export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataCommand> {
 	static override name = 'push-data' as const;

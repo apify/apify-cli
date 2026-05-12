@@ -1,5 +1,4 @@
 import { Time } from '@sapphire/duration';
-import { ActorsLsCommandMessages } from '#i18n/commands/actors/ls.js';
 import type { Actor, ActorRunListItem, ActorTaggedBuild, PaginatedList } from 'apify-client';
 import chalk from 'chalk';
 
@@ -15,6 +14,8 @@ import {
 	MultilineTimestampFormatter,
 	ShortDurationFormatter,
 } from '../../lib/utils.js';
+
+import { ActorsLsCommandMessages } from '#i18n/commands/actors/ls.js';
 
 const statusMap: Record<(typeof ACTOR_JOB_STATUSES)[keyof typeof ACTOR_JOB_STATUSES], string> = {
 	'TIMED-OUT': chalk.gray('after'),

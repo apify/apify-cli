@@ -1,4 +1,3 @@
-import { ActorGetPublicUrlCommandMessages } from '#i18n/commands/actor/get-public-url.js';
 import type { ApifyClient } from 'apify-client';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
@@ -7,6 +6,8 @@ import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { CommandExitCodes } from '../../lib/consts.js';
+
+import { ActorGetPublicUrlCommandMessages } from '#i18n/commands/actor/get-public-url.js';
 
 export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublicUrlCommand> {
 	static override name = 'get-public-url' as const;

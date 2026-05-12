@@ -1,4 +1,3 @@
-import { BuildsRmCommandMessages } from '#i18n/commands/builds/rm.js';
 import type { ActorTaggedBuild } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -7,6 +6,8 @@ import { YesFlag } from '../../lib/command-framework/flags.js';
 import { useInputConfirmation } from '../../lib/hooks/user-confirmations/useInputConfirmation.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { BuildsRmCommandMessages } from '#i18n/commands/builds/rm.js';
 
 export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 	static override name = 'rm' as const;

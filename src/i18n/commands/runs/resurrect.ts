@@ -7,8 +7,7 @@ export const RunsResurrectCommandMessages = defineMessages({
 			json: () => null,
 		},
 		cannotResurrect: {
-			markdown:
-				'Run with ID "{runId}" cannot be resurrected, as it is still running or in the process of aborting.',
+			markdown: 'Run with ID "{runId}" cannot be resurrected, as it is still running or in the process of aborting.',
 			json: () => null,
 		},
 		resurrected: {

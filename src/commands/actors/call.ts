@@ -1,6 +1,5 @@
 import process from 'node:process';
 
-import { ActorsCallCommandMessages } from '#i18n/commands/actors/call.js';
 import {
 	type ActorRun,
 	type ActorStartOptions,
@@ -18,6 +17,8 @@ import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { t } from '../../lib/i18n/index.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+
+import { ActorsCallCommandMessages } from '#i18n/commands/actors/call.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
@@ -217,9 +218,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					);
 
 					// memory limit
-					message.push(
-						this.t(ActorsCallCommandMessages.memoryLine, { memoryMbytes: run.options.memoryMbytes }),
-					);
+					message.push(this.t(ActorsCallCommandMessages.memoryLine, { memoryMbytes: run.options.memoryMbytes }));
 
 					// url
 					message.push(this.t(ActorsCallCommandMessages.viewOnConsoleLine, { url }), '');
@@ -235,9 +234,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		}
 
 		if (!this.flags.silent) {
-			this.logger.stdout.log(
-				this.t(ActorsCallCommandMessages.resultLinks, { datasetUrl: datasetUrl!, url: url! }),
-			);
+			this.logger.stdout.log(this.t(ActorsCallCommandMessages.resultLinks, { datasetUrl: datasetUrl!, url: url! }));
 		}
 
 		if (this.flags.outputDataset) {

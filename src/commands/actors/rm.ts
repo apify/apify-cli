@@ -1,4 +1,3 @@
-import { ActorsRmCommandMessages } from '#i18n/commands/actors/rm.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -6,6 +5,8 @@ import { Args } from '../../lib/command-framework/args.js';
 import { YesFlag } from '../../lib/command-framework/flags.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { ActorsRmCommandMessages } from '#i18n/commands/actors/rm.js';
 
 export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 	static override name = 'rm' as const;

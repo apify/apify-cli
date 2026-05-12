@@ -2,7 +2,6 @@ import { mkdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import { ActorGenerateSchemaTypesCommandMessages } from '#i18n/commands/actor/generate-schema-types.js';
 import type { JSONSchema4 } from 'json-schema';
 import { compile, type Options } from 'json-schema-to-typescript';
 
@@ -24,6 +23,8 @@ import {
 	prepareOutputSchemaForCompilation,
 	stripTitles,
 } from '../../lib/schema-transforms.js';
+
+import { ActorGenerateSchemaTypesCommandMessages } from '#i18n/commands/actor/generate-schema-types.js';
 
 export const BANNER_COMMENT = `
 // biome-ignore-all lint: generated
@@ -159,9 +160,7 @@ just as if the command were run from that directory with no argument.`;
 		const outputFile = path.join(outputDir, `${name}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
-		this.logger.stderr.success(
-			this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }),
-		);
+		this.logger.stderr.success(this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }));
 
 		// When no specific file path is provided, also generate types from additional schemas
 		// (this includes both "no argument" and "directory argument" modes)
@@ -181,10 +180,7 @@ just as if the command were run from that directory with no argument.`;
 					this.logger.stderr.error(
 						this.t(ActorGenerateSchemaTypesCommandMessages.schemaGenerationFailed, {
 							label: schemaLabels[i],
-							message:
-								schemaResult.reason instanceof Error
-									? schemaResult.reason.message
-									: String(schemaResult.reason),
+							message: schemaResult.reason instanceof Error ? schemaResult.reason.message : String(schemaResult.reason),
 						}),
 					);
 				}
@@ -243,9 +239,7 @@ just as if the command were run from that directory with no argument.`;
 		const outputFile = path.join(outputDir, `${datasetName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
-		this.logger.stderr.success(
-			this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }),
-		);
+		this.logger.stderr.success(this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }));
 	}
 
 	private async generateOutputTypes({
@@ -293,9 +287,7 @@ just as if the command were run from that directory with no argument.`;
 		const outputFile = path.join(outputDir, `${outputName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
-		this.logger.stderr.success(
-			this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }),
-		);
+		this.logger.stderr.success(this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }));
 	}
 
 	private async generateKvsTypes({
@@ -351,8 +343,6 @@ just as if the command were run from that directory with no argument.`;
 		const outputFile = path.join(outputDir, 'key-value-store.ts');
 		await writeFile(outputFile, parts.join('\n'), 'utf-8');
 
-		this.logger.stderr.success(
-			this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }),
-		);
+		this.logger.stderr.success(this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }));
 	}
 }

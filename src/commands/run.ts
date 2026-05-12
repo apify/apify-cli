@@ -3,7 +3,6 @@ import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
-import { RunCommandMessages } from '#i18n/commands/run.js';
 import type { ExecaError } from 'execa';
 import mime from 'mime';
 import { minVersion } from 'semver';
@@ -28,6 +27,7 @@ import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { useModuleVersion } from '../lib/hooks/useModuleVersion.js';
 import { CRAWLEE_INPUT_KEY_ENV, resolveInputKey, TEMP_INPUT_KEY_PREFIX } from '../lib/input-key.js';
+import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
 	Ajv2019,
@@ -42,6 +42,8 @@ import {
 	purgeDefaultKeyValueStore,
 	purgeDefaultQueue,
 } from '../lib/utils.js';
+
+import { RunCommandMessages } from '#i18n/commands/run.js';
 
 interface TempInputResult {
 	tempInputKey: string;
@@ -152,9 +154,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			const { message, cause } = localConfigResult.unwrapErr();
 
 			this.logger.stderr.error(
-				cause
-					? this.t(RunCommandMessages.actorConfigErrorWithCause, { message, cause: cause.message })
-					: message,
+				cause ? this.t(RunCommandMessages.actorConfigErrorWithCause, { message, cause: cause.message }) : message,
 			);
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
@@ -249,9 +249,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		if (existsSync(LEGACY_LOCAL_STORAGE_DIR) && !existsSync(actualStoragePath)) {
 			renameSync(LEGACY_LOCAL_STORAGE_DIR, actualStoragePath);
-			this.logger.stderr.warning(
-				this.t(RunCommandMessages.legacyStorageRenamed, { storagePath: actualStoragePath }),
-			);
+			this.logger.stderr.warning(this.t(RunCommandMessages.legacyStorageRenamed, { storagePath: actualStoragePath }));
 		}
 
 		const crawleeVersion = await useModuleVersion({
@@ -271,11 +269,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			CRAWLEE_PURGE_ON_START = '1';
 
 			if (crawleeVersion.isNone()) {
-				await Promise.all([
-					purgeDefaultQueue(),
-					purgeDefaultKeyValueStore(resolvedInputKey),
-					purgeDefaultDataset(),
-				]);
+				await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(resolvedInputKey), purgeDefaultDataset()]);
 				this.logger.stderr.info(this.t(RunCommandMessages.storesPurged));
 			}
 		}

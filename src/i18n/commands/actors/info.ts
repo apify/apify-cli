@@ -15,8 +15,7 @@ export const ActorsInfoCommandMessages = defineMessages({
 			json: () => null,
 		},
 		header: {
-			markdown: (md, colors) =>
-				md(`Information about Actor ${colors.yellow('{fullName}')} (${colors.gray('{id}')})\n`),
+			markdown: (md, colors) => md(`Information about Actor ${colors.yellow('{fullName}')} (${colors.gray('{id}')})\n`),
 			json: () => null,
 		},
 		titleLine: {
@@ -99,9 +98,7 @@ export const ActorsInfoCommandMessages = defineMessages({
 		},
 		buildEntry: {
 			markdown: (md, colors) =>
-				md(
-					`  ${colors.yellow('-')} ${colors.cyan('{buildNumber}')} ${colors.gray('/')} ${colors.yellow('{tag}')}`,
-				),
+				md(`  ${colors.yellow('-')} ${colors.cyan('{buildNumber}')} ${colors.gray('/')} ${colors.yellow('{tag}')}`),
 			json: () => null,
 		},
 	},

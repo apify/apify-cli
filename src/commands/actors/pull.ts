@@ -2,7 +2,6 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
-import { ActorsPullCommandMessages } from '#i18n/commands/actors/pull.js';
 import AdmZip from 'adm-zip';
 import axios from 'axios';
 import jju from 'jju';
@@ -15,6 +14,8 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { ActorsPullCommandMessages } from '#i18n/commands/actors/pull.js';
 
 const extractGitHubZip = async (url: string, directoryPath: string) => {
 	const { data } = await axios.get(url, { responseType: 'arraybuffer' });
@@ -124,9 +125,7 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 		if (this.flags.version) {
 			correctVersion = versions.find((version) => version.versionNumber === this.flags.version);
 			if (!correctVersion) {
-				throw new Error(
-					this.t(ActorsPullCommandMessages.versionNotFound, { version: this.flags.version, actorId }),
-				);
+				throw new Error(this.t(ActorsPullCommandMessages.versionNotFound, { version: this.flags.version, actorId }));
 			}
 		}
 

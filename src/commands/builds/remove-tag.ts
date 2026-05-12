@@ -1,4 +1,3 @@
-import { BuildsRemoveTagCommandMessages } from '#i18n/commands/builds/remove-tag.js';
 import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
@@ -6,6 +5,8 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { BuildsRemoveTagCommandMessages } from '#i18n/commands/builds/remove-tag.js';
 
 export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagCommand> {
 	static override name = 'remove-tag' as const;
@@ -63,9 +64,7 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 
 		// Check if the tag exists
 		if (!existingTagData) {
-			this.logger.stdout.error(
-				this.t(BuildsRemoveTagCommandMessages.tagDoesNotExist, { tag, actorName: actor.name }),
-			);
+			this.logger.stdout.error(this.t(BuildsRemoveTagCommandMessages.tagDoesNotExist, { tag, actorName: actor.name }));
 			return;
 		}
 

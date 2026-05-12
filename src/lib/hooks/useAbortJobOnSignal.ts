@@ -1,10 +1,11 @@
-import { useAbortJobOnSignalMessages } from '#i18n/lib/hooks/useAbortJobOnSignal.js';
 import type { ApifyClient } from 'apify-client';
 
 import { INTERRUPT_SIGNALS } from '../consts.js';
 import { t } from '../i18n/index.js';
 import { logger } from '../logger.js';
 import { useSignalHandler } from './useSignalHandler.js';
+
+import { useAbortJobOnSignalMessages } from '#i18n/lib/hooks/useAbortJobOnSignal.js';
 
 export type UseAbortJobOnSignalInput = {
 	/** Logged-in client used to issue the abort request. */

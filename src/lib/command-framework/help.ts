@@ -1,4 +1,3 @@
-import { helpMessages } from '#i18n/lib/command-framework/help.js';
 import chalk from 'chalk';
 import indentString from 'indent-string';
 import widestLine from 'widest-line';
@@ -12,6 +11,8 @@ import type { BaseCommandRenderer, SelectiveRenderOptions } from './help/_BaseCo
 import { CommandHelp } from './help/CommandHelp.js';
 import { CommandWithSubcommandsHelp } from './help/CommandWithSubcommands.js';
 import { getMaxLineWidth } from './help/consts.js';
+
+import { helpMessages } from '#i18n/lib/command-framework/help.js';
 
 const commands = new Map<typeof BuiltApifyCommand, BaseCommandRenderer>();
 

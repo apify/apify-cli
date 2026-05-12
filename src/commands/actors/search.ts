@@ -1,4 +1,3 @@
-import { ActorsSearchCommandMessages } from '#i18n/commands/actors/search.js';
 import { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
@@ -8,6 +7,8 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { getApifyClientOptions } from '../../lib/utils.js';
+
+import { ActorsSearchCommandMessages } from '#i18n/commands/actors/search.js';
 
 const pricingModelLabels: Record<string, string> = {
 	FREE: 'Free',

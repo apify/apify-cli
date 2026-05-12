@@ -3,8 +3,7 @@ import { defineMessages } from '../../lib/i18n/index.js';
 export const sharedEntrypointMessages = defineMessages({
 	en: {
 		unsupportedNodeVersion: {
-			markdown:
-				'{cliName} CLI requires Node.js version {supportedRange}. Your current version is {currentVersion}.',
+			markdown: '{cliName} CLI requires Node.js version {supportedRange}. Your current version is {currentVersion}.',
 			json: () => null,
 		},
 		commandNotFound: {

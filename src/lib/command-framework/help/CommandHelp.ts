@@ -1,4 +1,3 @@
-import { CommandHelpMessages } from '#i18n/lib/command-framework/help/CommandHelp.js';
 import chalk from 'chalk';
 import indent from 'indent-string';
 import width from 'string-width';
@@ -11,6 +10,8 @@ import type { ArgTag, TaggedArgBuilder } from '../args.js';
 import type { FlagTag, TaggedFlagBuilder } from '../flags.js';
 import { BaseCommandRenderer, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
 import { getMaxLineWidth } from './consts.js';
+
+import { CommandHelpMessages } from '#i18n/lib/command-framework/help/CommandHelp.js';
 
 /*
 Executes Actor remotely using your authenticated account.

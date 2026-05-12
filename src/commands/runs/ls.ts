@@ -1,4 +1,3 @@
-import { RunsLsCommandMessages } from '#i18n/commands/runs/ls.js';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -8,6 +7,8 @@ import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { getLoggedClientOrThrow, MultilineTimestampFormatter, ShortDurationFormatter } from '../../lib/utils.js';
+
+import { RunsLsCommandMessages } from '#i18n/commands/runs/ls.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'],

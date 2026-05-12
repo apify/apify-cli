@@ -1,10 +1,10 @@
-import { BuildsInfoCommandMessages } from '#i18n/commands/builds/info.js';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { DurationFormatter, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+
+import { BuildsInfoCommandMessages } from '#i18n/commands/builds/info.js';
 
 export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 	static override name = 'info' as const;

@@ -1,4 +1,3 @@
-import { DatasetsLsCommandMessages } from '#i18n/commands/datasets/ls.js';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -6,6 +5,8 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+
+import { DatasetsLsCommandMessages } from '#i18n/commands/datasets/ls.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Dataset ID', 'Name', 'Items', 'Size', 'Created', 'Modified'],

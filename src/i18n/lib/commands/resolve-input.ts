@@ -15,8 +15,7 @@ export const resolveInputMessages = defineMessages({
 			json: () => null,
 		},
 		inputFlagIsPath: {
-			markdown:
-				'Providing a JSON file path in the --input flag is not supported. Use the "--input-file=" flag instead',
+			markdown: 'Providing a JSON file path in the --input flag is not supported. Use the "--input-file=" flag instead',
 			json: () => null,
 		},
 		cannotParseInputJson: {
@@ -24,8 +23,7 @@ export const resolveInputMessages = defineMessages({
 			json: () => null,
 		},
 		inputFileDashRequiresPipe: {
-			markdown:
-				'You need to pipe something into standard input when you specify the `-` value to `--input-file`.',
+			markdown: 'You need to pipe something into standard input when you specify the `-` value to `--input-file`.',
 			json: () => null,
 		},
 		cannotReadInputFile: {

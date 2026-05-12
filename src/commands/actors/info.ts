@@ -1,4 +1,3 @@
-import { ActorsInfoCommandMessages } from '#i18n/commands/actors/info.js';
 import type { Actor, ActorTaggedBuild, Build, User } from 'apify-client';
 import chalk from 'chalk';
 
@@ -8,6 +7,8 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { DurationFormatter, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+
+import { ActorsInfoCommandMessages } from '#i18n/commands/actors/info.js';
 
 interface HydratedActorInfo extends Omit<Actor, 'taggedBuilds'> {
 	taggedBuilds?: Record<string, ActorTaggedBuild & { build?: Build }>;

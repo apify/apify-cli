@@ -2,7 +2,6 @@ import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 
 import { Separator } from '@inquirer/core';
-import { createUtilsMessages } from '#i18n/lib/create-utils.js';
 
 import type { Manifest, Template } from '@apify/actor-templates';
 
@@ -12,6 +11,8 @@ import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
 import { t } from './i18n/index.js';
 import { logger } from './logger.js';
 import { httpsGet, validateActorName } from './utils.js';
+
+import { createUtilsMessages } from '#i18n/lib/create-utils.js';
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 

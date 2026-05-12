@@ -3,7 +3,6 @@ import { existsSync } from 'node:fs';
 import { lstat, readdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import { UpgradeCommandMessages } from '#i18n/commands/cli-management/upgrade.js';
 import { gte } from 'semver';
 
 import { USER_AGENT } from '../../entrypoints/_shared.js';
@@ -15,6 +14,8 @@ import type { Asset } from '../../lib/hooks/useCLIVersionAssets.js';
 import { useCLIVersionAssets } from '../../lib/hooks/useCLIVersionAssets.js';
 import { useCLIVersionCheck } from '../../lib/hooks/useCLIVersionCheck.js';
 import { logger } from '../../lib/logger.js';
+
+import { UpgradeCommandMessages } from '#i18n/commands/cli-management/upgrade.js';
 
 const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: string) => string[]> = {
 	bundle: (_, entrypoint) => [`${entrypoint}`, 'upgrade'],

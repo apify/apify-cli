@@ -4,13 +4,14 @@ import process from 'node:process';
 import { inspect } from 'node:util';
 
 import { err, ok, type Result } from '@sapphire/result';
-import { useActorConfigMessages } from '#i18n/lib/hooks/useActorConfig.js';
 
 import { ACTOR_SPECIFICATION_VERSION, DEPRECATED_LOCAL_CONFIG_NAME } from '../consts.js';
 import { t } from '../i18n/index.js';
 import { logger } from '../logger.js';
 import { getJsonFileContent, getLocalConfigPath } from '../utils.js';
 import { useYesNoConfirm } from './user-confirmations/useYesNoConfirm.js';
+
+import { useActorConfigMessages } from '#i18n/lib/hooks/useActorConfig.js';
 
 const getDeprecatedLocalConfigPath = (cwd: string) => join(cwd, DEPRECATED_LOCAL_CONFIG_NAME);
 

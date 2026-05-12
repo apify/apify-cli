@@ -1,6 +1,5 @@
 import process from 'node:process';
 
-import { runOnCloudMessages } from '#i18n/lib/commands/run-on-cloud.js';
 import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
@@ -13,6 +12,8 @@ import { t } from '../i18n/index.js';
 import { logger } from '../logger.js';
 import { outputJobLog } from '../utils.js';
 import { resolveInput } from './resolve-input.js';
+
+import { runOnCloudMessages } from '#i18n/lib/commands/run-on-cloud.js';
 
 const TerminalStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,

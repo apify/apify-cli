@@ -12,9 +12,7 @@ export const KeyValueStoresRmCommandMessages = defineMessages({
 		},
 		deletedNamed: {
 			markdown: (md, colors) =>
-				md(
-					`Key-value store with ID ${colors.yellow('{id}')} (called ${colors.yellow('{name}')}) has been deleted.`,
-				),
+				md(`Key-value store with ID ${colors.yellow('{id}')} (called ${colors.yellow('{name}')}) has been deleted.`),
 			json: () => null,
 		},
 		deletedUnnamed: {
@@ -22,8 +20,7 @@ export const KeyValueStoresRmCommandMessages = defineMessages({
 			json: () => null,
 		},
 		deleteFailed: {
-			markdown: (md, colors) =>
-				md(`Failed to delete key-value store with ID ${colors.yellow('{id}')}\n  {message}`),
+			markdown: (md, colors) => md(`Failed to delete key-value store with ID ${colors.yellow('{id}')}\n  {message}`),
 			json: () => null,
 		},
 	},

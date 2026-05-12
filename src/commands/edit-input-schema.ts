@@ -3,7 +3,6 @@ import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { dirname } from 'node:path';
 
-import { EditInputSchemaCommandMessages } from '#i18n/commands/edit-input-schema.js';
 import cors from 'cors';
 import detectIndent from 'detect-indent';
 import express from 'express';
@@ -15,6 +14,8 @@ import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { readInputSchema } from '../lib/input_schema.js';
+
+import { EditInputSchemaCommandMessages } from '#i18n/commands/edit-input-schema.js';
 
 const INPUT_SCHEMA_EDITOR_BASE_URL = 'https://apify.github.io/input-schema-editor-react/';
 const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
@@ -138,9 +139,7 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 					appendFinalNewline = inputSchemaStr[inputSchemaStr.length - 1] === '\n';
 				}
 				if (existsSync(inputSchemaPath)) {
-					this.logger.stderr.info(
-						this.t(EditInputSchemaCommandMessages.schemaLoaded, { path: inputSchemaPath }),
-					);
+					this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.schemaLoaded, { path: inputSchemaPath }));
 				} else {
 					this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.emptySchemaInitialized));
 				}

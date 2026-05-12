@@ -1,6 +1,5 @@
 import process from 'node:process';
 
-import { ApiCommandMessages } from '#i18n/commands/api.js';
 import chalk from 'chalk';
 
 import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.js';
@@ -9,6 +8,8 @@ import { Flags } from '../lib/command-framework/flags.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, CommandExitCodes } from '../lib/consts.js';
 import { t } from '../lib/i18n/index.js';
 import { getLoggedClientOrThrow } from '../lib/utils.js';
+
+import { ApiCommandMessages } from '#i18n/commands/api.js';
 
 const HTTP_METHODS: string[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const METHODS_WITHOUT_BODY = new Set(['GET', 'HEAD']);
@@ -208,9 +209,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			const positionalMethod = endpointArg.toUpperCase();
 
 			if (explicitMethodFlag && explicitMethodFlag !== positionalMethod) {
-				throw new Error(
-					this.t(ApiCommandMessages.conflictingMethods, { positionalMethod, explicitMethodFlag }),
-				);
+				throw new Error(this.t(ApiCommandMessages.conflictingMethods, { positionalMethod, explicitMethodFlag }));
 			}
 
 			method = positionalMethod;

@@ -1,10 +1,10 @@
-import { AuthLogoutCommandMessages } from '#i18n/commands/auth/logout.js';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../lib/consts.js';
 import { rimrafPromised } from '../../lib/files.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { tildify } from '../../lib/utils.js';
+
+import { AuthLogoutCommandMessages } from '#i18n/commands/auth/logout.js';
 
 export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	static override name = 'logout' as const;

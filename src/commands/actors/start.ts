@@ -1,4 +1,3 @@
-import { ActorsStartCommandMessages } from '#i18n/commands/actors/start.js';
 import type { ActorRun, ActorStartOptions, ActorTaggedBuild } from 'apify-client';
 
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
@@ -9,6 +8,8 @@ import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
+
+import { ActorsStartCommandMessages } from '#i18n/commands/actors/start.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
 	static override name = 'start' as const;

@@ -5,7 +5,6 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { ReadStream } from 'node:tty';
 
-import { InstallCommandMessages } from '#i18n/commands/cli-management/install.js';
 import chalk from 'chalk';
 import which from 'which';
 
@@ -14,6 +13,8 @@ import { useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { logger } from '../../lib/logger.js';
 import { detectShell, shellConfigFile, tildify } from '../../lib/utils.js';
+
+import { InstallCommandMessages } from '#i18n/commands/cli-management/install.js';
 
 const pathToInstallMarker = (installPath: string) => join(installPath, '.install-marker');
 const HOMEDIR = () => process.env.HOME ?? homedir();

@@ -2,7 +2,6 @@ import { readFileSync, statSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
-import { ActorsPushCommandMessages } from '#i18n/commands/actors/push.js';
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
 import open from 'open';
 
@@ -26,6 +25,8 @@ import {
 	getLoggedClientOrThrow,
 	outputJobLog,
 } from '../../lib/utils.js';
+
+import { ActorsPushCommandMessages } from '#i18n/commands/actors/push.js';
 
 const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
 const DEFAULT_RUN_OPTIONS = {
@@ -231,17 +232,13 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				actor = await apifyClient.actors().create(newActor);
 				actorId = actor.id;
 				isActorCreatedNow = true;
-				this.logger.stderr.info(
-					this.t(ActorsPushCommandMessages.createdActor, { name: actorConfig!.name as string }),
-				);
+				this.logger.stderr.info(this.t(ActorsPushCommandMessages.createdActor, { name: actorConfig!.name as string }));
 			}
 		}
 
 		const actorClient = apifyClient.actor(actorId);
 
-		this.logger.stderr.info(
-			this.t(ActorsPushCommandMessages.deployingActor, { name: actorConfig!.name as string }),
-		);
+		this.logger.stderr.info(this.t(ActorsPushCommandMessages.deployingActor, { name: actorConfig!.name as string }));
 
 		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
 

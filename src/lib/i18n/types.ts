@@ -268,9 +268,7 @@ export type DefineMessagesInput<T> = {
 export type DefineMessagesResult<T> = T extends { en: infer E }
 	? E extends Readonly<Record<string, MessageVariants>>
 		? {
-				readonly [K in keyof E & string]: MessageDescriptor<
-					E[K] extends MessageVariants ? E[K] : MessageVariants
-				>;
+				readonly [K in keyof E & string]: MessageDescriptor<E[K] extends MessageVariants ? E[K] : MessageVariants>;
 			}
 		: never
 	: never;

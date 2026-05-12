@@ -1,4 +1,3 @@
-import { useCLIVersionCheckMessages } from '#i18n/lib/hooks/useCLIVersionCheck.js';
 import { gt } from 'semver';
 
 import { CHECK_VERSION_EVERY_MILLIS } from '../consts.js';
@@ -6,6 +5,8 @@ import { t } from '../i18n/index.js';
 import { logger } from '../logger.js';
 import { useCLIMetadata } from './useCLIMetadata.js';
 import { type LatestState, updateLocalState, useLocalState } from './useLocalState.js';
+
+import { useCLIVersionCheckMessages } from '#i18n/lib/hooks/useCLIVersionCheck.js';
 
 const metadata = useCLIMetadata();
 

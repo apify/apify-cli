@@ -1,4 +1,3 @@
-import { DatasetsRenameCommandMessages } from '#i18n/commands/datasets/rename.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -6,6 +5,8 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { DatasetsRenameCommandMessages } from '#i18n/commands/datasets/rename.js';
 
 export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCommand> {
 	static override name = 'rename' as const;

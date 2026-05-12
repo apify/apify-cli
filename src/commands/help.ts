@@ -1,10 +1,11 @@
-import { HelpCommandMessages } from '#i18n/commands/help.js';
 import chalk from 'chalk';
 
 import { ApifyCommand, commandRegistry } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { renderHelpForCommand, renderMainHelpMenu } from '../lib/command-framework/help.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
+
+import { HelpCommandMessages } from '#i18n/commands/help.js';
 
 export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 	static override name = 'help' as const;

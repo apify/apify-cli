@@ -1,4 +1,3 @@
-import { BuildsCreateCommandMessages } from '#i18n/commands/builds/create.js';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -7,6 +6,8 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { getLoggedClientOrThrow, objectGroupBy, outputJobLog, TimestampFormatter } from '../../lib/utils.js';
+
+import { BuildsCreateCommandMessages } from '#i18n/commands/builds/create.js';
 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
 	static override name = 'create' as const;
@@ -82,9 +83,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			// This ensures that a --tag and --version match the version and tag the platform knows about
 			// but only when --tag is provided
 			if (tag && (!taggedVersions || !taggedVersions.some((v) => v.versionNumber === version))) {
-				this.logger.stdout.error(
-					this.t(BuildsCreateCommandMessages.versionDoesNotHaveTag, { version: version!, tag }),
-				);
+				this.logger.stdout.error(this.t(BuildsCreateCommandMessages.versionDoesNotHaveTag, { version: version!, tag }));
 
 				return;
 			}

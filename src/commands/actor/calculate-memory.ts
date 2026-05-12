@@ -1,8 +1,6 @@
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
-import { ActorCalculateMemoryCommandMessages } from '#i18n/commands/actor/calculate-memory.js';
-
 import { calculateRunDynamicMemory } from '@apify/actor-memory-expression';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -10,6 +8,8 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { getJsonFileContent, getLocalKeyValueStorePath } from '../../lib/utils.js';
+
+import { ActorCalculateMemoryCommandMessages } from '#i18n/commands/actor/calculate-memory.js';
 
 const DEFAULT_INPUT_PATH = join(getLocalKeyValueStorePath('default'), 'INPUT.json');
 

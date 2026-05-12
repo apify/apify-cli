@@ -1,9 +1,10 @@
-import { BuildsAddTagCommandMessages } from '#i18n/commands/builds/add-tag.js';
 import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { BuildsAddTagCommandMessages } from '#i18n/commands/builds/add-tag.js';
 
 export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand> {
 	static override name = 'add-tag' as const;

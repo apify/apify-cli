@@ -15,8 +15,7 @@ const messages = defineMessages({
 		// template in `md(...)` so TypeScript preserves the literal across
 		// the `colors.X(...)` interpolations.
 		warn: {
-			markdown: (md, colors) =>
-				md(`${colors.yellow('Warning')}: actor ${colors.bgCyan('{actorName}')} is missing`),
+			markdown: (md, colors) => md(`${colors.yellow('Warning')}: actor ${colors.bgCyan('{actorName}')} is missing`),
 			json: (actor: Actor) => actor,
 		},
 	},

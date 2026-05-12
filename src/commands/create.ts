@@ -2,7 +2,6 @@ import { mkdir, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
-import { CreateCommandMessages } from '#i18n/commands/create.js';
 import { gte, minVersion } from 'semver';
 
 import { fetchManifest, manifestUrl } from '@apify/actor-templates';
@@ -37,6 +36,8 @@ import {
 	setLocalConfig,
 	setLocalEnv,
 } from '../lib/utils.js';
+
+import { CreateCommandMessages } from '#i18n/commands/create.js';
 
 export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override name = 'create' as const;
@@ -274,17 +275,13 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					case ProjectLanguage.Python:
 					case ProjectLanguage.Scrapy: {
 						if (!isPythonVersionSupported(runtime.version)) {
-							this.logger.stderr.warning(
-								this.t(CreateCommandMessages.pythonUnsupported, { version: runtime.version }),
-							);
+							this.logger.stderr.warning(this.t(CreateCommandMessages.pythonUnsupported, { version: runtime.version }));
 							this.logger.stderr.warning(this.t(CreateCommandMessages.pythonUnsupportedHint));
 							return;
 						}
 
 						const venvPath = join(actFolderDir, '.venv');
-						this.logger.stderr.info(
-							this.t(CreateCommandMessages.pythonDetected, { version: runtime.version }),
-						);
+						this.logger.stderr.info(this.t(CreateCommandMessages.pythonDetected, { version: runtime.version }));
 						this.logger.stderr.info(this.t(CreateCommandMessages.creatingVenv, { venvPath }));
 
 						if (!process.env.VIRTUAL_ENV) {

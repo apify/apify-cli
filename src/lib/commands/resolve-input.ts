@@ -2,7 +2,6 @@ import { access, readFile } from 'node:fs/promises';
 import path, { resolve } from 'node:path';
 import process from 'node:process';
 
-import { resolveInputMessages } from '#i18n/lib/commands/resolve-input.js';
 import mime from 'mime';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
@@ -10,6 +9,8 @@ import { CommandExitCodes } from '../consts.js';
 import { t } from '../i18n/index.js';
 import { logger } from '../logger.js';
 import { getLocalInput } from '../utils.js';
+
+import { resolveInputMessages } from '#i18n/lib/commands/resolve-input.js';
 
 export function resolveInput(cwd: string, inputOverride: Record<string, unknown> | undefined) {
 	let inputToUse: Record<string, unknown> | undefined;
@@ -114,9 +115,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					input = parsed;
 					source = 'input';
 				} catch (err) {
-					logger.stderr.error(
-						t(resolveInputMessages.cannotParseInputJson, { message: (err as Error).message }),
-					);
+					logger.stderr.error(t(resolveInputMessages.cannotParseInputJson, { message: (err as Error).message }));
 					process.exitCode = CommandExitCodes.InvalidInput;
 					return false;
 				}

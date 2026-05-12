@@ -1,4 +1,3 @@
-import { KeyValueStoresDeleteValueCommandMessages } from '#i18n/commands/key-value-stores/delete-value.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -7,6 +6,8 @@ import { YesFlag } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresDeleteValueCommandMessages } from '#i18n/commands/key-value-stores/delete-value.js';
 
 export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyValueStoresDeleteValueCommand> {
 	static override name = 'delete-value' as const;

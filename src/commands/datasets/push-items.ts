@@ -1,4 +1,3 @@
-import { DatasetsPushDataCommandMessages } from '#i18n/commands/datasets/push-items.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
@@ -6,6 +5,8 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { DatasetsPushDataCommandMessages } from '#i18n/commands/datasets/push-items.js';
 
 export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDataCommand> {
 	static override name = 'push-items' as const;
@@ -62,9 +63,7 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 		try {
 			parsedData = JSON.parse(item.toString('utf8'));
 		} catch (err) {
-			this.logger.stderr.error(
-				this.t(DatasetsPushDataCommandMessages.parseError, { message: (err as Error).message }),
-			);
+			this.logger.stderr.error(this.t(DatasetsPushDataCommandMessages.parseError, { message: (err as Error).message }));
 
 			return;
 		}

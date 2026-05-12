@@ -25,8 +25,7 @@ export const createUtilsMessages = defineMessages({
 			json: () => null,
 		},
 		gitInitialized: {
-			markdown:
-				'\n🌱 Git repository initialized in `{actorName}`. You can now commit and push your Actor to Git.',
+			markdown: '\n🌱 Git repository initialized in `{actorName}`. You can now commit and push your Actor to Git.',
 			json: () => null,
 		},
 	},

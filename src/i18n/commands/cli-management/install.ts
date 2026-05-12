@@ -42,8 +42,7 @@ export const InstallCommandMessages = defineMessages({
 			json: () => null,
 		},
 		alreadyInPath: {
-			markdown: (md, colors) =>
-				md(colors.gray('Apify and Actor CLIs are already in PATH, skipping shell integration')),
+			markdown: (md, colors) => md(colors.gray('Apify and Actor CLIs are already in PATH, skipping shell integration')),
 			json: () => null,
 		},
 		installDirNotFound: {
@@ -55,8 +54,7 @@ export const InstallCommandMessages = defineMessages({
 			json: () => null,
 		},
 		writeConfigPermissionDenied: {
-			markdown:
-				'Failed to write to config file "{configFile}", as the CLI does not have permission to write to it.',
+			markdown: 'Failed to write to config file "{configFile}", as the CLI does not have permission to write to it.',
 			json: () => null,
 		},
 		writeConfigFailed: {

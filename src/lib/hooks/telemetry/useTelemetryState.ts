@@ -1,8 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { useTelemetryStateMessages } from '#i18n/lib/hooks/telemetry/useTelemetryState.js';
-
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { TELEMETRY_FILE_PATH } from '../../consts.js';
@@ -10,6 +8,8 @@ import { t } from '../../i18n/index.js';
 import { logger } from '../../logger.js';
 import type { AuthJSON } from '../../types.js';
 import { getLocalUserInfo } from '../../utils.js';
+
+import { useTelemetryStateMessages } from '#i18n/lib/hooks/telemetry/useTelemetryState.js';
 
 type TelemetryState = TelemetryStateV0 | TelemetryStateV1;
 
@@ -71,10 +71,7 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 
 		// First time we are tracking telemetry, so we want to notify user about it.
 		// Skip the notice if telemetry is disabled via env var — the user already opted out.
-		if (
-			!process.env.APIFY_CLI_DISABLE_TELEMETRY ||
-			['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)
-		) {
+		if (!process.env.APIFY_CLI_DISABLE_TELEMETRY || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)) {
 			logger.stderr.info(t(useTelemetryStateMessages.telemetryNotice));
 		}
 

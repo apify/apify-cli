@@ -1,4 +1,3 @@
-import { RunsInfoCommandMessages } from '#i18n/commands/runs/info.js';
 import type { ActorRun, ActorRunUsage, ActorTaggedBuild } from 'apify-client';
 import chalk from 'chalk';
 
@@ -9,6 +8,8 @@ import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { getLoggedClientOrThrow, ShortDurationFormatter, TimestampFormatter } from '../../lib/utils.js';
+
+import { RunsInfoCommandMessages } from '#i18n/commands/runs/info.js';
 
 const usageTable = new ResponsiveTable({
 	allColumns: ['', 'Unit', 'USD Amount'],

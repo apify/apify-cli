@@ -1,8 +1,9 @@
-import { stdinCheckWrapperMessages } from '#i18n/lib/hooks/user-confirmations/_stdinCheckWrapper.js';
 import isCI from 'is-ci';
 
 import { t } from '../../i18n/index.js';
 import { useStdin } from '../useStdin.js';
+
+import { stdinCheckWrapperMessages } from '#i18n/lib/hooks/user-confirmations/_stdinCheckWrapper.js';
 
 export interface StdinCheckWrapperInput<ReturnedType> extends StdinCheckWrapperOptions {
 	/**

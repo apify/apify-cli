@@ -1,10 +1,10 @@
-import { KeyValueStoresGetValueCommandMessages } from '#i18n/commands/key-value-stores/get-value.js';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresGetValueCommandMessages } from '#i18n/commands/key-value-stores/get-value.js';
 
 export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueStoresGetValueCommand> {
 	static override name = 'get-value' as const;

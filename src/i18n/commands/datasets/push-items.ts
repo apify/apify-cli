@@ -22,8 +22,7 @@ export const DatasetsPushDataCommandMessages = defineMessages({
 			json: () => null,
 		},
 		pushedUnnamed: {
-			markdown: (md, colors) =>
-				md(`{pluralLabel} pushed to Dataset with ID ${colors.yellow('{id}')} successfully.`),
+			markdown: (md, colors) => md(`{pluralLabel} pushed to Dataset with ID ${colors.yellow('{id}')} successfully.`),
 			json: () => null,
 		},
 		pushFailedNamed: {
@@ -34,8 +33,7 @@ export const DatasetsPushDataCommandMessages = defineMessages({
 			json: () => null,
 		},
 		pushFailedUnnamed: {
-			markdown: (md, colors) =>
-				md(`Failed to push items into Dataset with ID ${colors.yellow('{id}')}\n  {message}`),
+			markdown: (md, colors) => md(`Failed to push items into Dataset with ID ${colors.yellow('{id}')}\n  {message}`),
 			json: () => null,
 		},
 	},

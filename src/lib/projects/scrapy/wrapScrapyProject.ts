@@ -12,7 +12,6 @@ import { basename, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import rootWalk from '@root/walk';
-import { wrapScrapyProjectMessages } from '#i18n/lib/projects/scrapy/wrapScrapyProject.js';
 import ConfigParser from 'configparser';
 import Handlebars from 'handlebars';
 
@@ -23,6 +22,8 @@ import { t } from '../../i18n/index.js';
 import { logger } from '../../logger.js';
 import { downloadAndUnzip, sanitizeActorName } from '../../utils.js';
 import { ScrapyProjectAnalyzer } from './ScrapyProjectAnalyzer.js';
+
+import { wrapScrapyProjectMessages } from '#i18n/lib/projects/scrapy/wrapScrapyProject.js';
 
 /**
  * Files that should be concatenated instead of copied (and overwritten).

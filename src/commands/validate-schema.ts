@@ -1,7 +1,5 @@
 import process from 'node:process';
 
-import { ValidateSchemaCommandMessages } from '#i18n/commands/validate-schema.js';
-
 import { validateInputSchema } from '@apify/input_schema';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
@@ -16,6 +14,8 @@ import {
 	validateOutputSchema,
 } from '../lib/input_schema.js';
 import { Ajv2019 } from '../lib/utils.js';
+
+import { ValidateSchemaCommandMessages } from '#i18n/commands/validate-schema.js';
 
 export class ValidateSchemaCommand extends ApifyCommand<typeof ValidateSchemaCommand> {
 	static override name = 'validate-schema' as const;

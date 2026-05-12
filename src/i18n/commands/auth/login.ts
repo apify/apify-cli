@@ -4,9 +4,7 @@ export const AuthLoginCommandMessages = defineMessages({
 	en: {
 		loggedInSuccess: {
 			markdown: (md, colors) =>
-				md(
-					`You are logged in to Apify as {userName}. ${colors.gray('Your token is stored at {authFilePath}.')}`,
-				),
+				md(`You are logged in to Apify as {userName}. ${colors.gray('Your token is stored at {authFilePath}.')}`),
 			json: () => null,
 		},
 		invalidTokenLogin: {

@@ -1,7 +1,6 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import { AuthLoginCommandMessages } from '#i18n/commands/auth/login.js';
 import computerName from 'computer-name';
 import cors from 'cors';
 import express from 'express';
@@ -18,6 +17,8 @@ import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectF
 import { t } from '../../lib/i18n/index.js';
 import { logger } from '../../lib/logger.js';
 import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
+
+import { AuthLoginCommandMessages } from '#i18n/commands/auth/login.js';
 
 const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
 // const CONSOLE_BASE_URL = 'http://localhost:3000/settings/integrations';

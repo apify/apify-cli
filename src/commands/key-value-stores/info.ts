@@ -1,4 +1,3 @@
-import { KeyValueStoresInfoCommandMessages } from '#i18n/commands/key-value-stores/info.js';
 import type { Task } from 'apify-client';
 import chalk from 'chalk';
 
@@ -9,6 +8,8 @@ import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-tabl
 import { getUserPlanPricing } from '../../lib/commands/storage-size.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+
+import { KeyValueStoresInfoCommandMessages } from '#i18n/commands/key-value-stores/info.js';
 
 const consoleLikeTable = new ResponsiveTable({
 	allColumns: ['Row1', 'Row2'],

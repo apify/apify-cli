@@ -1,10 +1,11 @@
 import { Result } from '@sapphire/result';
-import { execMessages } from '#i18n/lib/exec.js';
 import { execa, type ExecaError, type Options } from 'execa';
 
 import { normalizeExecutablePath } from './hooks/runtimes/utils.js';
 import { t } from './i18n/index.js';
 import { logger } from './logger.js';
+
+import { execMessages } from '#i18n/lib/exec.js';
 
 interface SpawnPromisedInternalOptions {
 	/**

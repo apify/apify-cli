@@ -1,5 +1,3 @@
-import { ActorChargeCommandMessages } from '#i18n/commands/actor/charge.js';
-
 import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';
@@ -7,6 +5,8 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getLoggedClient } from '../../lib/utils.js';
+
+import { ActorChargeCommandMessages } from '#i18n/commands/actor/charge.js';
 
 /**
  * This command can be used to charge for a specific event in the pay-per-event Actor run.

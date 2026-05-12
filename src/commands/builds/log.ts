@@ -1,8 +1,8 @@
-import { BuildsLogCommandMessages } from '#i18n/commands/builds/log.js';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { getLoggedClientOrThrow, outputJobLog } from '../../lib/utils.js';
+
+import { BuildsLogCommandMessages } from '#i18n/commands/builds/log.js';
 
 export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
 	static override name = 'log' as const;

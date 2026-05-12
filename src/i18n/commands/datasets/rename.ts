@@ -16,9 +16,7 @@ export const DatasetsRenameCommandMessages = defineMessages({
 		},
 		nameSet: {
 			markdown: (md, colors) =>
-				md(
-					`The name of the dataset with ID ${colors.yellow('{id}')} has been set to: ${colors.yellow('{newName}')}`,
-				),
+				md(`The name of the dataset with ID ${colors.yellow('{id}')} has been set to: ${colors.yellow('{newName}')}`),
 			json: () => null,
 		},
 		nameRemoved: {

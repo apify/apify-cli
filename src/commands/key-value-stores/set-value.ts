@@ -1,4 +1,3 @@
-import { KeyValueStoresSetValueCommandMessages } from '#i18n/commands/key-value-stores/set-value.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -6,6 +5,8 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresSetValueCommandMessages } from '#i18n/commands/key-value-stores/set-value.js';
 
 export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueStoresSetValueCommand> {
 	static override name = 'set-value' as const;

@@ -1,10 +1,11 @@
-import { DatasetsGetItemsMessages } from '#i18n/commands/datasets/get-items.js';
 import { type ApifyClient, type Dataset, type DatasetClient, DownloadItemsFormat } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { DatasetsGetItemsMessages } from '#i18n/commands/datasets/get-items.js';
 
 const downloadFormatToContentType: Record<DownloadItemsFormat, string> = {
 	[DownloadItemsFormat.JSON]: 'application/json',

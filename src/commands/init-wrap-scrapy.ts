@@ -1,8 +1,8 @@
-import { WrapScrapyCommandMessages } from '#i18n/commands/init-wrap-scrapy.js';
-
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
+
+import { WrapScrapyCommandMessages } from '#i18n/commands/init-wrap-scrapy.js';
 
 export class WrapScrapyCommand extends ApifyCommand<typeof WrapScrapyCommand> {
 	static override name = 'init-wrap-scrapy' as const;

@@ -15,8 +15,7 @@ export const KeyValueStoresDeleteValueCommandMessages = defineMessages({
 			json: () => null,
 		},
 		deleted: {
-			markdown: (md, colors) =>
-				md(`Record with key "${colors.yellow('{itemKey}')}" deleted from the key-value store.`),
+			markdown: (md, colors) => md(`Record with key "${colors.yellow('{itemKey}')}" deleted from the key-value store.`),
 			json: () => null,
 		},
 		deleteFailed: {

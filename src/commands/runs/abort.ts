@@ -1,4 +1,3 @@
-import { RunsAbortCommandMessages } from '#i18n/commands/runs/abort.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
@@ -7,6 +6,8 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { RunsAbortCommandMessages } from '#i18n/commands/runs/abort.js';
 
 const runningStatuses = [ACTOR_JOB_STATUSES.READY, ACTOR_JOB_STATUSES.RUNNING];
 

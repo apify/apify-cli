@@ -15,8 +15,7 @@ export const inputSchemaMessages = defineMessages({
 			json: () => null,
 		},
 		createDefaultInputFailed: {
-			markdown:
-				'Could not create default input based on input schema, creating empty input instead. Cause: {message}',
+			markdown: 'Could not create default input based on input schema, creating empty input instead. Cause: {message}',
 			json: () => null,
 		},
 		schemaInvalid: {

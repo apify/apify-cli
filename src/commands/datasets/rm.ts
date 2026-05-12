@@ -1,4 +1,3 @@
-import { DatasetsRmCommandMessages } from '#i18n/commands/datasets/rm.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -7,6 +6,8 @@ import { YesFlag } from '../../lib/command-framework/flags.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { DatasetsRmCommandMessages } from '#i18n/commands/datasets/rm.js';
 
 export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 	static override name = 'rm' as const;

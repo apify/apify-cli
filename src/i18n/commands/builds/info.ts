@@ -22,8 +22,7 @@ export const BuildsInfoCommandMessages = defineMessages({
 			json: () => null,
 		},
 		finishedAtLine: {
-			markdown: (md, colors) =>
-				md(`  ${colors.yellow('Finished')}: {finishedAt} (took ${colors.gray('{duration}')})`),
+			markdown: (md, colors) => md(`  ${colors.yellow('Finished')}: {finishedAt} (took ${colors.gray('{duration}')})`),
 			json: () => null,
 		},
 		runningForLine: {

@@ -1,10 +1,10 @@
 import { realpathSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { useCLIMetadataMessages } from '#i18n/lib/hooks/useCLIMetadata.js';
-
 import { t } from '../i18n/index.js';
 import { logger } from '../logger.js';
+
+import { useCLIMetadataMessages } from '#i18n/lib/hooks/useCLIMetadata.js';
 
 export const DEVELOPMENT_VERSION_MARKER = '0.0.0';
 export const DEVELOPMENT_HASH_MARKER = '0000000';

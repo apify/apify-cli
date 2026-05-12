@@ -29,9 +29,7 @@ export const ActorsCallCommandMessages = defineMessages({
 		},
 		actorVersionInfo: {
 			markdown: (md, colors) =>
-				md(
-					` | ${colors.gray('Actor version:')} ${colors.cyan('{versionNumber}')} (${colors.yellow('{buildTag}')})`,
-				),
+				md(` | ${colors.gray('Actor version:')} ${colors.cyan('{versionNumber}')} (${colors.yellow('{buildTag}')})`),
 			json: () => null,
 		},
 		timeoutLine: {
@@ -65,8 +63,7 @@ export const ActorsCallCommandMessages = defineMessages({
 			json: () => null,
 		},
 		missingActorIdentifier: {
-			markdown:
-				'Please provide an Actor ID or name, or run this command from a directory with a valid Apify Actor.',
+			markdown: 'Please provide an Actor ID or name, or run this command from a directory with a valid Apify Actor.',
 			json: () => null,
 		},
 	},

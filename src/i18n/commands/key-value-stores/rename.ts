@@ -36,8 +36,7 @@ export const KeyValueStoresRenameCommandMessages = defineMessages({
 			json: () => null,
 		},
 		renameFailed: {
-			markdown: (md, colors) =>
-				md(`Failed to rename key-value store with ID ${colors.yellow('{id}')}\n  {message}`),
+			markdown: (md, colors) => md(`Failed to rename key-value store with ID ${colors.yellow('{id}')}\n  {message}`),
 			json: () => null,
 		},
 	},

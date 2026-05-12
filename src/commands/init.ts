@@ -1,8 +1,6 @@
 import { basename } from 'node:path';
 import process from 'node:process';
 
-import { InitCommandMessages } from '#i18n/commands/init.js';
-
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { Flags, YesFlag } from '../lib/command-framework/flags.js';
@@ -14,6 +12,8 @@ import { useYesNoConfirm } from '../lib/hooks/user-confirmations/useYesNoConfirm
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
 import { sanitizeActorName, setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
+
+import { InitCommandMessages } from '#i18n/commands/init.js';
 
 export class InitCommand extends ApifyCommand<typeof InitCommand> {
 	static override name = 'init' as const;
@@ -141,9 +141,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 						response = answer;
 					} catch (err) {
-						this.logger.stderr.error(
-							this.t(InitCommandMessages.invalidActorName, { message: (err as Error).message }),
-						);
+						this.logger.stderr.error(this.t(InitCommandMessages.invalidActorName, { message: (err as Error).message }));
 					}
 				}
 

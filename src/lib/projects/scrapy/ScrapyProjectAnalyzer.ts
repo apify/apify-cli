@@ -1,12 +1,13 @@
 import { existsSync, readdirSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
-import { ScrapyProjectAnalyzerMessages } from '#i18n/lib/projects/scrapy/ScrapyProjectAnalyzer.js';
 import ConfigParser from 'configparser';
 
 import { useUserInput } from '../../hooks/user-confirmations/useUserInput.js';
 import { t } from '../../i18n/index.js';
 import { SpiderFileAnalyzer } from './SpiderFileAnalyzer.js';
+
+import { ScrapyProjectAnalyzerMessages } from '#i18n/lib/projects/scrapy/ScrapyProjectAnalyzer.js';
 
 export class ScrapyProjectAnalyzer {
 	pathname: string;

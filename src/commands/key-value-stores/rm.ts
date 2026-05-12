@@ -1,4 +1,3 @@
-import { KeyValueStoresRmCommandMessages } from '#i18n/commands/key-value-stores/rm.js';
 import type { ApifyApiError } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -7,6 +6,8 @@ import { YesFlag } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresRmCommandMessages } from '#i18n/commands/key-value-stores/rm.js';
 
 export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresRmCommand> {
 	static override name = 'rm' as const;

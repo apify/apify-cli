@@ -30,9 +30,7 @@ export const ActorsStartCommandMessages = defineMessages({
 		},
 		actorVersionInfo: {
 			markdown: (md, colors) =>
-				md(
-					` | ${colors.gray('Actor version:')} ${colors.cyan('{versionNumber}')} (${colors.yellow('{buildTag}')})`,
-				),
+				md(` | ${colors.gray('Actor version:')} ${colors.cyan('{versionNumber}')} (${colors.yellow('{buildTag}')})`),
 			json: () => null,
 		},
 		timeoutLine: {

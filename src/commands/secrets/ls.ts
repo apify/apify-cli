@@ -1,9 +1,10 @@
-import { SecretsLsCommandMessages } from '#i18n/commands/secrets/ls.js';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { getSecretsFile } from '../../lib/secrets.js';
+
+import { SecretsLsCommandMessages } from '#i18n/commands/secrets/ls.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Secret Name'],

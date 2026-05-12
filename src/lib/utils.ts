@@ -10,7 +10,6 @@ import { finished } from 'node:stream/promises';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
-import { utilsMessages } from '#i18n/lib/utils.js';
 import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
 import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
@@ -51,6 +50,8 @@ import { t } from './i18n/index.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import { logger } from './logger.js';
 import type { AuthJSON } from './types.js';
+
+import { utilsMessages } from '#i18n/lib/utils.js';
 
 // `ignore` is a CJS package; TypeScript sees its default import as the module
 // object rather than the callable factory, so we cast through unknown.

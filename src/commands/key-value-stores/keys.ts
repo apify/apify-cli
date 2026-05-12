@@ -1,5 +1,3 @@
-import { KeyValueStoresKeysCommandMessages } from '#i18n/commands/key-value-stores/keys.js';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -7,6 +5,8 @@ import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresKeysCommandMessages } from '#i18n/commands/key-value-stores/keys.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Key', 'Size'],

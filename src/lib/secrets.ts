@@ -1,11 +1,11 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
-import { secretsMessages } from '#i18n/lib/secrets.js';
-
 import { SECRETS_FILE_PATH } from './consts.js';
 import { t } from './i18n/index.js';
 import { logger } from './logger.js';
 import { ensureApifyDirectory } from './utils.js';
+
+import { secretsMessages } from '#i18n/lib/secrets.js';
 
 const SECRET_KEY_PREFIX = '@';
 // TODO: Moved to shared

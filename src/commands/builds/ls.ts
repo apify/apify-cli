@@ -1,4 +1,3 @@
-import { BuildsLsCommandMessages } from '#i18n/commands/builds/ls.js';
 import type { BuildCollectionClientListItem } from 'apify-client';
 import chalk from 'chalk';
 
@@ -9,6 +8,8 @@ import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { getLoggedClientOrThrow, objectGroupBy, ShortDurationFormatter } from '../../lib/utils.js';
+
+import { BuildsLsCommandMessages } from '#i18n/commands/builds/ls.js';
 
 const tableFactory = () =>
 	new ResponsiveTable({

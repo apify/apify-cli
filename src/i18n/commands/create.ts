@@ -39,8 +39,7 @@ export const CreateCommandMessages = defineMessages({
 			json: () => null,
 		},
 		creatingVenv: {
-			markdown:
-				'Creating a virtual environment in "{venvPath}" and installing dependencies from "requirements.txt"...',
+			markdown: 'Creating a virtual environment in "{venvPath}" and installing dependencies from "requirements.txt"...',
 			json: () => null,
 		},
 		blankLine: {

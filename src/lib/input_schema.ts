@@ -1,7 +1,6 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { inputSchemaMessages } from '#i18n/lib/input_schema.js';
 import type { Ajv, ErrorObject } from 'ajv';
 import { cloneDeep } from 'es-toolkit';
 
@@ -17,6 +16,8 @@ import { ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_PATH } from './consts.js';
 import { t } from './i18n/index.js';
 import { logger } from './logger.js';
 import { Ajv2019, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
+
+import { inputSchemaMessages } from '#i18n/lib/input_schema.js';
 
 const DEFAULT_INPUT_SCHEMA_PATHS = [
 	'.actor/INPUT_SCHEMA.json',
@@ -63,14 +64,10 @@ export const readInputSchema = async ({
 
 		if (!schema) {
 			if (throwOnMissing) {
-				throw new Error(
-					t(inputSchemaMessages.inputSchemaFileMissing, { fullPath, configPath: LOCAL_CONFIG_PATH }),
-				);
+				throw new Error(t(inputSchemaMessages.inputSchemaFileMissing, { fullPath, configPath: LOCAL_CONFIG_PATH }));
 			}
 
-			logger.stderr.warning(
-				t(inputSchemaMessages.inputSchemaFileMissing, { fullPath, configPath: LOCAL_CONFIG_PATH }),
-			);
+			logger.stderr.warning(t(inputSchemaMessages.inputSchemaFileMissing, { fullPath, configPath: LOCAL_CONFIG_PATH }));
 
 			return {
 				inputSchema: null,
