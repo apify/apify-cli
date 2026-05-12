@@ -4,8 +4,9 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
-import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresSetValueCommandMessages } from '#i18n/commands/key-value-stores/set-value.js';
 
 export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueStoresSetValueCommand> {
 	static override name = 'set-value' as const;
@@ -54,9 +55,7 @@ export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueS
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
 
 		if (!maybeStore) {
-			error({
-				message: `Key-value store with ID or name "${storeId}" not found.`,
-			});
+			this.logger.stderr.error(this.t(KeyValueStoresSetValueCommandMessages.storeNotFound, { storeId }));
 
 			return;
 		}
@@ -67,16 +66,16 @@ export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueS
 			// TODO: again, the types need to be fixed -w-
 			await client.setRecord({ key: itemKey, value: (value || process.stdin) as string, contentType });
 
-			success({
-				message: `Value with key "${itemKey}" set in the key-value store.`,
-				stdout: true,
-			});
+			this.logger.stdout.success(this.t(KeyValueStoresSetValueCommandMessages.valueSet, { itemKey }));
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to set value with key "${itemKey}" in the key-value store.\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(
+				this.t(KeyValueStoresSetValueCommandMessages.setFailed, {
+					itemKey,
+					message: String(casted.message || casted),
+				}),
+			);
 		}
 	}
 }

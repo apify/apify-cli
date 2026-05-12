@@ -14,7 +14,8 @@ import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { readInputSchema } from '../lib/input_schema.js';
-import { error, info, success, warning } from '../lib/outputs.js';
+
+import { EditInputSchemaCommandMessages } from '#i18n/commands/edit-input-schema.js';
 
 const INPUT_SCHEMA_EDITOR_BASE_URL = 'https://apify.github.io/input-schema-editor-react/';
 const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
@@ -70,11 +71,13 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 		if (existingSchema && !inputSchemaPath) {
 			// If path is not returned, it means the input schema must be directly embedded as object in actor.json
 			// TODO - allow editing input schema embedded in actor.json
-			throw new Error(`Editing an input schema directly embedded in '${LOCAL_CONFIG_PATH}' is not yet supported.`);
+			throw new Error(
+				this.t(EditInputSchemaCommandMessages.embeddedSchemaUnsupported, { configPath: LOCAL_CONFIG_PATH }),
+			);
 		}
 
-		warning({ message: 'This command is still experimental and might break at any time. Use at your own risk.\n' });
-		info({ message: `Editing input schema at "${inputSchemaPath}"...` });
+		this.logger.stderr.warning(this.t(EditInputSchemaCommandMessages.experimentalWarning));
+		this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.editingSchema, { path: inputSchemaPath }));
 
 		let server: Server;
 		const app = express();
@@ -136,13 +139,15 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 					appendFinalNewline = inputSchemaStr[inputSchemaStr.length - 1] === '\n';
 				}
 				if (existsSync(inputSchemaPath)) {
-					info({ message: `Input schema loaded from "${inputSchemaPath}"` });
+					this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.schemaLoaded, { path: inputSchemaPath }));
 				} else {
-					info({ message: `Empty input schema initialized.` });
+					this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.emptySchemaInitialized));
 				}
 			} catch (err) {
-				const errorMessage = `Reading input schema from disk failed with: ${(err as Error).message}`;
-				error({ message: errorMessage });
+				const errorMessage = this.t(EditInputSchemaCommandMessages.readError, {
+					message: (err as Error).message,
+				});
+				this.logger.stderr.error(errorMessage);
 				res.status(500);
 				res.send(errorMessage);
 				return;
@@ -152,20 +157,22 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 			try {
 				inputSchemaObj = JSON.parse(inputSchemaStr || '{}');
 			} catch (err) {
-				const errorMessage = `Parsing input schema failed with error: ${(err as Error).message}`;
-				error({ message: errorMessage });
+				const errorMessage = this.t(EditInputSchemaCommandMessages.parseError, {
+					message: (err as Error).message,
+				});
+				this.logger.stderr.error(errorMessage);
 				res.status(500);
 				res.send(errorMessage);
 				return;
 			}
 
 			res.send(inputSchemaObj);
-			info({ message: 'Input schema sent to editor.' });
+			this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.schemaSent));
 		});
 
 		apiRouter.post('/input-schema', (req, res) => {
 			try {
-				info({ message: 'Got input schema from editor...' });
+				this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.gotSchema));
 				const inputSchemaObj = req.body;
 				let inputSchemaStr = JSON.stringify(inputSchemaObj, null, jsonIndentation);
 				if (appendFinalNewline) inputSchemaStr += '\n';
@@ -177,10 +184,12 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 
 				writeFileSync(inputSchemaPath, inputSchemaStr, { encoding: 'utf-8', flag: 'w+' });
 				res.end();
-				info({ message: 'Input schema saved to disk.' });
+				this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.schemaSaved));
 			} catch (err) {
-				const errorMessage = `Saving input schema failed with error: ${(err as Error).message}`;
-				error({ message: errorMessage });
+				const errorMessage = this.t(EditInputSchemaCommandMessages.saveError, {
+					message: (err as Error).message,
+				});
+				this.logger.stderr.error(errorMessage);
 				res.status(500);
 				res.send(errorMessage);
 			}
@@ -188,21 +197,21 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 
 		apiRouter.post('/exit', (req, res) => {
 			if (req.body.isWindowClosed) {
-				info({ message: 'Editor closed, finishing...' });
+				this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.editorClosed));
 			} else {
-				info({ message: 'Editing finished, you can close the editor.' });
+				this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.editingFinished));
 			}
 			res.end();
-			server.close(() => success({ message: 'Done.' }));
+			server.close(() => this.logger.stderr.success(this.t(EditInputSchemaCommandMessages.done)));
 		});
 
 		// Listening on port 0 will assign a random available port
 		server = app.listen(0);
 		const { port } = server.address() as AddressInfo;
-		info({ message: `Listening for messages from input schema editor on port ${port}...` });
+		this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.listening, { port }));
 
 		const editorUrl = `${INPUT_SCHEMA_EDITOR_BASE_URL}?localCliPort=${port}&localCliToken=${authToken}&localCliApiVersion=${API_VERSION}`;
-		info({ message: `Opening input schema editor at "${editorUrl}"...` });
+		this.logger.stderr.info(this.t(EditInputSchemaCommandMessages.openingEditor, { url: editorUrl }));
 		await open(editorUrl);
 	}
 }

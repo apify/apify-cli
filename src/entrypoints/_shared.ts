@@ -14,8 +14,10 @@ import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
-import { error } from '../lib/outputs.js';
-import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
+import { t } from '../lib/i18n/index.js';
+import { logger } from '../lib/logger.js';
+
+import { sharedEntrypointMessages } from '#i18n/entrypoints/_shared.js';
 
 export const cachedStdinInput = await readStdin();
 
@@ -29,9 +31,13 @@ export function processVersionCheck(cliName: string) {
 	}
 
 	if (!satisfies(process.version, SUPPORTED_NODEJS_VERSION)) {
-		error({
-			message: `${cliName} CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.`,
-		});
+		logger.stderr.error(
+			t(sharedEntrypointMessages.unsupportedNodeVersion, {
+				cliName,
+				supportedRange: SUPPORTED_NODEJS_VERSION,
+				currentVersion: process.version,
+			}),
+		);
 
 		process.exit(1);
 	}
@@ -73,14 +79,14 @@ type TopLevelValues = ReturnType<
 function handleCommandNotFound(commandName: string): never {
 	const closestMatches = useCommandSuggestions(String(commandName));
 
-	let message = chalk.gray(`Command ${chalk.whiteBright(commandName)} not found`);
+	const message = closestMatches.length
+		? t(sharedEntrypointMessages.commandNotFoundWithSuggestions, {
+				commandName,
+				suggestions: closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', '),
+			})
+		: t(sharedEntrypointMessages.commandNotFound, { commandName });
 
-	if (closestMatches.length) {
-		message += '\n  ';
-		message += chalk.gray(`Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`);
-	}
-
-	error({ message });
+	logger.stderr.error(message);
 
 	process.exit(1);
 }
@@ -93,13 +99,13 @@ async function runVersionCheck(entrypoint: string, maybeCommandName?: string) {
 	const checkVersionsCommandIds = [UpgradeCommand.name, ...(UpgradeCommand.aliases ?? [])];
 
 	if (checkVersionsCommandIds.some((id) => maybeCommandName === id)) {
-		cliDebugPrint('[VersionCheckMiddleware]', 'upgrade command detected, skipping version check');
+		logger.debug('[VersionCheckMiddleware]', 'upgrade command detected, skipping version check');
 		// Skip running the middleware
 		return;
 	}
 
 	if (shouldSkipVersionCheck()) {
-		cliDebugPrint('[VersionCheckMiddleware]', 'skipping version check because APIFY_CLI_SKIP_UPDATE_CHECK is set');
+		logger.debug('[VersionCheckMiddleware]', 'skipping version check because APIFY_CLI_SKIP_UPDATE_CHECK is set');
 		// If the user has configured the `APIFY_CLI_SKIP_UPDATE_CHECK` env variable then skip the check.
 		return;
 	}
@@ -109,7 +115,7 @@ async function runVersionCheck(entrypoint: string, maybeCommandName?: string) {
 }
 
 export async function runCLI(entrypoint: string) {
-	cliDebugPrint('CLIMetadata', {
+	logger.debug('CLIMetadata', {
 		...cliMetadata,
 		fullVersionString: cliMetadata.fullVersionString,
 		argv: process.argv,
@@ -119,7 +125,7 @@ export async function runCLI(entrypoint: string) {
 
 	const startingArgs = process.argv.slice(2);
 
-	cliDebugPrint('ProcessArgv', startingArgs);
+	logger.debug('ProcessArgv', startingArgs);
 
 	const startingResult = parseArgs({
 		allowPositionals: true,
@@ -146,7 +152,7 @@ export async function runCLI(entrypoint: string) {
 
 	// MIDDLEWARE END //
 
-	cliDebugPrint('TopLevelOptions', startingResult);
+	logger.debug('TopLevelOptions', startingResult);
 
 	const commandName = startingResult.positionals[0];
 
@@ -213,17 +219,17 @@ export async function runCLI(entrypoint: string) {
 	const rebuiltArgs: string[] = [...startingArgs];
 
 	const commandNameIndex = rebuiltArgs.indexOf(commandName);
-	cliDebugPrint('CommandNameIndex', commandNameIndex);
+	logger.debug('CommandNameIndex', commandNameIndex);
 	rebuiltArgs.splice(commandNameIndex, 1);
 
 	if (hasSubcommand) {
 		const subcommandNameIndex = rebuiltArgs.indexOf(maybeSubcommandName);
-		cliDebugPrint('SubcommandNameIndex', subcommandNameIndex);
+		logger.debug('SubcommandNameIndex', subcommandNameIndex);
 		rebuiltArgs.splice(subcommandNameIndex, 1);
 	}
 
-	cliDebugPrint('RebuiltArgs', rebuiltArgs);
-	cliDebugPrint('CommandToRun', FinalCommand);
+	logger.debug('RebuiltArgs', rebuiltArgs);
+	logger.debug('CommandToRun', FinalCommand);
 
 	const instance = new FinalCommand(
 		entrypoint,
@@ -235,7 +241,7 @@ export async function runCLI(entrypoint: string) {
 	// eslint-disable-next-line dot-notation
 	const parserOptions = instance['_buildParseArgsOption']();
 
-	cliDebugPrint('ParserOptionsForCommand', parserOptions);
+	logger.debug('ParserOptionsForCommand', parserOptions);
 
 	try {
 		const commandResult = parseArgs({
@@ -246,11 +252,11 @@ export async function runCLI(entrypoint: string) {
 		// eslint-disable-next-line dot-notation
 		await instance['_run'](commandResult);
 
-		cliDebugPrint('CommandArgsResult', commandResult);
+		logger.debug('CommandArgsResult', commandResult);
 	} catch (err) {
 		const commandError = CommandError.into(err, FinalCommand);
 
-		error({ message: commandError.getPrettyMessage() });
+		logger.stderr.error(commandError.getPrettyMessage());
 
 		process.exit(1);
 	}

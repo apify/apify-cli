@@ -1,6 +1,9 @@
 import isCI from 'is-ci';
 
+import { t } from '../../i18n/index.js';
 import { useStdin } from '../useStdin.js';
+
+import { stdinCheckWrapperMessages } from '#i18n/lib/hooks/user-confirmations/_stdinCheckWrapper.js';
 
 export interface StdinCheckWrapperInput<ReturnedType> extends StdinCheckWrapperOptions {
 	/**
@@ -35,7 +38,10 @@ interface StdinCheckWrapperOptions {
 export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 	fn: Fn,
 	{
-		errorMessageForStdin = `Please use the --${ConfirmFlag}/--${NoConfirmFlag} flags to confirm the action.`,
+		errorMessageForStdin = t(stdinCheckWrapperMessages.useConfirmFlags, {
+			confirmFlag: ConfirmFlag,
+			noConfirmFlag: NoConfirmFlag,
+		}),
 	}: StdinCheckWrapperOptions = {},
 ): (...args: NewFunctionArgs<Fn>) => Promise<Awaited<ReturnType<Fn>>> {
 	return async (input, ...rest) => {
@@ -48,7 +54,10 @@ export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 				throw new Error(
 					casted.errorMessageForStdin ??
 						errorMessageForStdin ??
-						`Please use the --${ConfirmFlag}/--${NoConfirmFlag} flags to confirm the action.`,
+						t(stdinCheckWrapperMessages.useConfirmFlags, {
+							confirmFlag: ConfirmFlag,
+							noConfirmFlag: NoConfirmFlag,
+						}),
 				);
 			}
 

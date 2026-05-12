@@ -6,8 +6,10 @@ import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.
 import { Args } from '../lib/command-framework/args.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, CommandExitCodes } from '../lib/consts.js';
-import { error, simpleLog } from '../lib/outputs.js';
+import { t } from '../lib/i18n/index.js';
 import { getLoggedClientOrThrow } from '../lib/utils.js';
+
+import { ApiCommandMessages } from '#i18n/commands/api.js';
 
 const HTTP_METHODS: string[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
 const METHODS_WITHOUT_BODY = new Set(['GET', 'HEAD']);
@@ -33,11 +35,11 @@ function parseParams(raw: string | undefined): string {
 	try {
 		parsed = JSON.parse(raw);
 	} catch {
-		throw new Error('Invalid JSON in --params flag. Please provide a valid JSON object, e.g. \'{"limit": 1}\'.');
+		throw new Error(t(ApiCommandMessages.paramsInvalidJson, { example: '{"limit": 1}' }));
 	}
 
 	if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-		throw new Error('--params must be a JSON object (e.g. \'{"limit": 1}\').');
+		throw new Error(t(ApiCommandMessages.paramsNotObject, { example: '{"limit": 1}' }));
 	}
 
 	const searchParams = new URLSearchParams();
@@ -49,8 +51,10 @@ function parseParams(raw: string | undefined): string {
 
 		if (typeof value === 'object') {
 			throw new Error(
-				`--params value for "${key}" must be a scalar (string, number, or boolean), got ${Array.isArray(value) ? 'array' : 'object'}. ` +
-					'Query parameters cannot contain nested objects or arrays.',
+				t(ApiCommandMessages.paramsNotScalar, {
+					key,
+					kind: Array.isArray(value) ? 'array' : 'object',
+				}),
 			);
 		}
 
@@ -74,18 +78,18 @@ function parseHeaders(raw: string | undefined): Record<string, string> {
 		try {
 			parsed = JSON.parse(trimmed);
 		} catch {
-			throw new Error('Invalid JSON in --header flag. Provide a JSON object like \'{"X-Foo": "bar"}\'.');
+			throw new Error(t(ApiCommandMessages.headerInvalidJson, { example: '{"X-Foo": "bar"}' }));
 		}
 
 		if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-			throw new Error('--header JSON must be an object mapping header names to string values.');
+			throw new Error(t(ApiCommandMessages.headerJsonNotObject));
 		}
 
 		const result: Record<string, string> = {};
 
 		for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
 			if (typeof value !== 'string') {
-				throw new Error(`--header value for "${key}" must be a string, got ${typeof value}.`);
+				throw new Error(t(ApiCommandMessages.headerValueNotString, { key, kind: typeof value }));
 			}
 
 			result[key.trim()] = value.trim();
@@ -98,7 +102,7 @@ function parseHeaders(raw: string | undefined): Record<string, string> {
 	const colonIndex = trimmed.indexOf(':');
 
 	if (colonIndex === -1) {
-		throw new Error('Header must be in "key:value" format, or a JSON object for multiple headers.');
+		throw new Error(t(ApiCommandMessages.headerInvalidFormat));
 	}
 
 	return {
@@ -205,10 +209,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			const positionalMethod = endpointArg.toUpperCase();
 
 			if (explicitMethodFlag && explicitMethodFlag !== positionalMethod) {
-				throw new Error(
-					`Conflicting HTTP methods: positional "${positionalMethod}" vs --method "${explicitMethodFlag}". ` +
-						'Please specify the method only once.',
-				);
+				throw new Error(this.t(ApiCommandMessages.conflictingMethods, { positionalMethod, explicitMethodFlag }));
 			}
 
 			method = positionalMethod;
@@ -233,15 +234,13 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		// Validate body is valid JSON before sending
 		if (this.flags.body) {
 			if (METHODS_WITHOUT_BODY.has(method)) {
-				throw new Error(
-					`HTTP ${method} requests cannot have a request body. Use a different method (e.g. POST, PUT, PATCH) or omit --body.`,
-				);
+				throw new Error(this.t(ApiCommandMessages.methodCannotHaveBody, { method }));
 			}
 
 			try {
 				JSON.parse(this.flags.body);
 			} catch {
-				throw new Error('Invalid JSON in --body flag. Please provide a valid JSON string.');
+				throw new Error(this.t(ApiCommandMessages.bodyInvalidJson));
 			}
 		}
 
@@ -299,22 +298,21 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 
 			// Print status to stderr but JSON response bodies to stdout so that
 			// pipelines like `apify api ... | jq` still receive the payload on failure.
-			error({ message: `${response.status} ${response.statusText}` });
+			this.logger.stderr.error(
+				this.t(ApiCommandMessages.responseStatus, { status: response.status, statusText: response.statusText }),
+			);
 
 			if (responseText) {
 				try {
 					const parsed = JSON.parse(responseText);
-					simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
+					this.logger.stdout.log(JSON.stringify(parsed, null, 2));
 				} catch {
-					simpleLog({ message: responseText, stdout: true });
+					this.logger.stdout.log(responseText);
 				}
 			}
 
 			if (response.status === 404) {
-				simpleLog({
-					message: `\nRun ${chalk.cyan('apify api --list-endpoints')} to see all available Apify API endpoints.`,
-					stdout: false,
-				});
+				this.logger.stderr.log(this.t(ApiCommandMessages.listEndpointsHint));
 			}
 
 			return;
@@ -323,9 +321,9 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		if (responseText) {
 			try {
 				const parsed = JSON.parse(responseText);
-				simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
+				this.logger.stdout.log(JSON.stringify(parsed, null, 2));
 			} catch {
-				simpleLog({ message: responseText, stdout: true });
+				this.logger.stdout.log(responseText);
 			}
 		}
 	}
@@ -357,12 +355,21 @@ async function fetchEndpoints(): Promise<Endpoint[]> {
 	try {
 		response = await fetch(OPENAPI_SPEC_URL);
 	} catch (err) {
-		throw new Error(`Failed to download the Apify OpenAPI spec from ${OPENAPI_SPEC_URL}: ${(err as Error).message}`);
+		throw new Error(
+			t(ApiCommandMessages.specDownloadFailedFetch, {
+				url: OPENAPI_SPEC_URL,
+				message: (err as Error).message,
+			}),
+		);
 	}
 
 	if (!response.ok) {
 		throw new Error(
-			`Failed to download the Apify OpenAPI spec from ${OPENAPI_SPEC_URL}: ${response.status} ${response.statusText}`,
+			t(ApiCommandMessages.specDownloadFailedStatus, {
+				url: OPENAPI_SPEC_URL,
+				status: response.status,
+				statusText: response.statusText,
+			}),
 		);
 	}
 

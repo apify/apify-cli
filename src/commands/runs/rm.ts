@@ -6,8 +6,9 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { YesFlag } from '../../lib/command-framework/flags.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { RunsRmCommandMessages } from '#i18n/commands/runs/rm.js';
 
 const deletableStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,
@@ -55,14 +56,12 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			error({ message: `Run with ID "${runId}" was not found on your account.` });
+			this.logger.stderr.error(this.t(RunsRmCommandMessages.runNotFound, { runId }));
 			return;
 		}
 
 		if (!deletableStatuses.includes(run.status as never)) {
-			error({
-				message: `Run with ID "${runId}" cannot be deleted, as it is still running or in the process of aborting.`,
-			});
+			this.logger.stderr.error(this.t(RunsRmCommandMessages.cannotDelete, { runId }));
 
 			return;
 		}
@@ -73,9 +72,7 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		});
 
 		if (!confirmedDelete) {
-			info({
-				message: `Deletion of run "${runId}" was canceled.`,
-			});
+			this.logger.stderr.info(this.t(RunsRmCommandMessages.deletionCanceled, { runId }));
 
 			return;
 		}
@@ -83,12 +80,12 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 		try {
 			await apifyClient.run(runId).delete();
 
-			success({
-				message: `Run with ID "${runId}" was deleted.`,
-			});
+			this.logger.stderr.success(this.t(RunsRmCommandMessages.deleted, { runId }));
 		} catch (err) {
 			const casted = err as ApifyApiError;
-			error({ message: `Failed to delete run "${runId}".\n  ${casted.message || casted}` });
+			this.logger.stderr.error(
+				this.t(RunsRmCommandMessages.deleteFailed, { runId, message: String(casted.message || casted) }),
+			);
 		}
 	}
 }

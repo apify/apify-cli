@@ -4,8 +4,9 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { BuildsRemoveTagCommandMessages } from '#i18n/commands/builds/remove-tag.js';
 
 export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagCommand> {
 	static override name = 'remove-tag' as const;
@@ -47,14 +48,14 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
+			this.logger.stdout.error(this.t(BuildsRemoveTagCommandMessages.buildNotFound, { buildId }));
 			return;
 		}
 
 		const actor = await apifyClient.actor(build.actId).get();
 
 		if (!actor) {
-			error({ message: `Actor with ID "${build.actId}" was not found.`, stdout: true });
+			this.logger.stdout.error(this.t(BuildsRemoveTagCommandMessages.actorNotFound, { actorId: build.actId }));
 			return;
 		}
 
@@ -63,19 +64,20 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 
 		// Check if the tag exists
 		if (!existingTagData) {
-			error({
-				message: `Tag "${tag}" does not exist on Actor "${actor.name}".`,
-				stdout: true,
-			});
+			this.logger.stdout.error(this.t(BuildsRemoveTagCommandMessages.tagDoesNotExist, { tag, actorName: actor.name }));
 			return;
 		}
 
 		// Check if the tag points to this build
 		if (existingTagData.buildId !== buildId) {
-			error({
-				message: `Tag "${tag}" is not associated with build "${buildId}". It points to build "${existingTagData.buildNumber}" (${existingTagData.buildId}).`,
-				stdout: true,
-			});
+			this.logger.stdout.error(
+				this.t(BuildsRemoveTagCommandMessages.tagNotOnBuild, {
+					tag,
+					buildId,
+					otherBuildNumber: existingTagData.buildNumber!,
+					otherBuildId: existingTagData.buildId!,
+				}),
+			);
 			return;
 		}
 
@@ -86,10 +88,7 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 		});
 
 		if (!confirmed) {
-			info({
-				message: `Tag removal was canceled.`,
-				stdout: true,
-			});
+			this.logger.stdout.info(this.t(BuildsRemoveTagCommandMessages.canceled));
 			return;
 		}
 
@@ -101,16 +100,22 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 				},
 			} as never);
 
-			success({
-				message: `Tag "${chalk.yellow(tag)}" removed from build ${chalk.gray(build.buildNumber)} (${chalk.gray(buildId)})`,
-				stdout: true,
-			});
+			this.logger.stdout.success(
+				this.t(BuildsRemoveTagCommandMessages.tagRemoved, {
+					tag,
+					buildNumber: build.buildNumber!,
+					buildId,
+				}),
+			);
 		} catch (err) {
 			const casted = err as ApifyApiError;
-			error({
-				message: `Failed to remove tag "${tag}" from build "${buildId}".\n  ${casted.message || casted}`,
-				stdout: true,
-			});
+			this.logger.stdout.error(
+				this.t(BuildsRemoveTagCommandMessages.tagRemoveFailed, {
+					tag,
+					buildId,
+					errorMessage: casted.message || String(casted),
+				}),
+			);
 		}
 	}
 }

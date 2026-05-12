@@ -3,7 +3,6 @@ import { existsSync } from 'node:fs';
 import { lstat, readdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
-import chalk from 'chalk';
 import { gte } from 'semver';
 
 import { USER_AGENT } from '../../entrypoints/_shared.js';
@@ -14,8 +13,9 @@ import { DEVELOPMENT_VERSION_MARKER, type InstallMethod, useCLIMetadata } from '
 import type { Asset } from '../../lib/hooks/useCLIVersionAssets.js';
 import { useCLIVersionAssets } from '../../lib/hooks/useCLIVersionAssets.js';
 import { useCLIVersionCheck } from '../../lib/hooks/useCLIVersionCheck.js';
-import { error, info, simpleLog, success, warning } from '../../lib/outputs.js';
-import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
+import { logger } from '../../lib/logger.js';
+
+import { UpgradeCommandMessages } from '#i18n/commands/cli-management/upgrade.js';
 
 const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: string) => string[]> = {
 	bundle: (_, entrypoint) => [`${entrypoint}`, 'upgrade'],
@@ -88,14 +88,14 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		const { installMethod } = useCLIMetadata();
 
 		if (!result.shouldUpdate || result.currentVersion === DEVELOPMENT_VERSION_MARKER) {
-			cliDebugPrint('[upgrade] no update needed', {
+			logger.debug('[upgrade] no update needed', {
 				shouldUpdate: result.shouldUpdate,
 				currentVersion: result.currentVersion,
 			});
 
 			// Always print, unless the command was called automatically by the CLI for a version check
 			if (!this.flags.internalAutomaticCall) {
-				info({ message: `${this.cliName} is up to date 👍 \n` });
+				this.logger.stderr.info(this.t(UpgradeCommandMessages.upToDate, { cliName: this.cliName }));
 			}
 
 			return;
@@ -109,22 +109,22 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		const updateCommand = UPDATE_COMMANDS[installMethod]('latest', this.entrypoint).join(' ');
 
-		simpleLog({ message: '' });
+		this.logger.stderr.log('');
 
-		const message = [
-			`You are using an old version of ${this.cliName}. We strongly recommend you always use the latest available version.`,
-			`       ↪ Run ${chalk.bgWhite(chalk.black(updateCommand))} to update! 👍 \n`,
-		].join('\n');
-
-		warning({ message });
+		this.logger.stderr.warning(
+			this.t(UpgradeCommandMessages.oldVersionWarning, {
+				cliName: this.cliName,
+				updateCommand,
+			}),
+		);
 	}
 
 	async handleInstallSpecificVersion(version: string) {
 		// Technically, we could allow downgrades to older versions, but then users would lose the upgrade command 🤷
 		if (version !== 'latest' && !gte(version, MINIMUM_VERSION_FOR_UPGRADE_COMMAND)) {
-			error({
-				message: `The minimum version of the CLI you can manually downgrade/upgrade to is ${MINIMUM_VERSION_FOR_UPGRADE_COMMAND}.`,
-			});
+			this.logger.stderr.error(
+				this.t(UpgradeCommandMessages.minimumVersion, { minVersion: MINIMUM_VERSION_FOR_UPGRADE_COMMAND }),
+			);
 
 			return;
 		}
@@ -132,7 +132,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		const versionData = await useCLIVersionAssets(version);
 
 		if (!versionData) {
-			error({ message: `The provided version does not exist. Please check the version number and try again.` });
+			this.logger.stderr.error(this.t(UpgradeCommandMessages.versionNotFound));
 			return;
 		}
 
@@ -140,9 +140,9 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		// Check again, in case `latest` returns an older version for whatever reason
 		if (!gte(versionWithoutV, MINIMUM_VERSION_FOR_UPGRADE_COMMAND)) {
-			error({
-				message: `The minimum version of the CLI you can manually downgrade/upgrade to is ${MINIMUM_VERSION_FOR_UPGRADE_COMMAND}.`,
-			});
+			this.logger.stderr.error(
+				this.t(UpgradeCommandMessages.minimumVersion, { minVersion: MINIMUM_VERSION_FOR_UPGRADE_COMMAND }),
+			);
 			return;
 		}
 
@@ -150,33 +150,34 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		if (metadata.installMethod === 'bundle') {
 			if (!assets.length) {
-				error({
-					message: [
-						'Failed to find the assets for your system and the provided version. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:',
-						`- The version you are trying to upgrade to: ${versionWithoutV}`,
-						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
-					].join('\n'),
-				});
+				this.logger.stderr.error(
+					this.t(UpgradeCommandMessages.assetsNotFound, {
+						version: versionWithoutV,
+						platform: metadata.platform,
+						arch: metadata.arch,
+					}),
+				);
 				return;
 			}
 
 			const bundleDirectory = dirname(process.execPath);
 
-			cliDebugPrint('[upgrade] bundleDirectory', bundleDirectory);
+			logger.debug('[upgrade] bundleDirectory', bundleDirectory);
 
 			const directoryEntries = await readdir(bundleDirectory);
 
 			if (!directoryEntries.some((entry) => entry.startsWith('apify') || entry.startsWith('actor'))) {
-				cliDebugPrint('[upgrade] directoryEntries', directoryEntries);
+				logger.debug('[upgrade] directoryEntries', directoryEntries);
 
-				error({
-					message: [
-						`Failed to find the currently installed ${this.cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
-						`- The version you are trying to upgrade to: ${versionWithoutV}`,
-						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
-						`- The directory where the ${this.cliName} bundle is installed: ${bundleDirectory}`,
-					].join('\n'),
-				});
+				this.logger.stderr.error(
+					this.t(UpgradeCommandMessages.bundleNotFound, {
+						cliName: this.cliName,
+						version: versionWithoutV,
+						platform: metadata.platform,
+						arch: metadata.arch,
+						bundleDirectory,
+					}),
+				);
 				return;
 			}
 
@@ -194,7 +195,9 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		const updateCommand = UPDATE_COMMANDS[metadata.installMethod](version, this.entrypoint);
 
 		if (process.env.APIFY_CLI_DEBUG) {
-			info({ message: `Would run command: ${updateCommand.join(' ')}` });
+			this.logger.stderr.info(
+				this.t(UpgradeCommandMessages.wouldRunCommand, { updateCommand: updateCommand.join(' ') }),
+			);
 			return;
 		}
 
@@ -203,14 +206,14 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 			this.successMessage(versionWithoutV);
 		} catch {
-			error({
-				message: `Failed to upgrade the CLI. Please run the following command manually: ${updateCommand.join(' ')}`,
-			});
+			this.logger.stderr.error(
+				this.t(UpgradeCommandMessages.upgradeFailed, { updateCommand: updateCommand.join(' ') }),
+			);
 		}
 	}
 
 	private successMessage(version: string) {
-		success({ message: `Successfully upgraded to ${version} 👍` });
+		this.logger.stderr.success(this.t(UpgradeCommandMessages.successfullyUpgraded, { version }));
 	}
 
 	private async startUpgradeProcess(bundleDirectory: string, version: string, assets: Asset[]) {
@@ -235,9 +238,9 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		args.push('-AllUrls', `"${urls}"`);
 
-		cliDebugPrint('[upgrade] starting upgrade process with args', args);
+		logger.debug('[upgrade] starting upgrade process with args', args);
 
-		info({ message: `Starting upgrade process...` });
+		this.logger.stderr.info(this.t(UpgradeCommandMessages.startingUpgradeProcess));
 
 		const upgradeProcess = spawn('powershell.exe', args, {
 			detached: true,
@@ -248,7 +251,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		});
 
 		upgradeProcess.on('spawn', () => {
-			cliDebugPrint('[upgrade] upgrade process spawned');
+			logger.debug('[upgrade] upgrade process spawned');
 
 			upgradeProcess.unref();
 			// CLI exits, but the upgrade process continues in the background
@@ -256,7 +259,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		});
 
 		upgradeProcess.on('error', (err) => {
-			error({ message: `Failed to start the upgrade process: ${err.message}` });
+			this.logger.stderr.error(this.t(UpgradeCommandMessages.failedToStartUpgrade, { message: err.message }));
 		});
 	}
 
@@ -272,14 +275,14 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		const res = await fetch(WINDOWS_UPGRADE_SCRIPT_URL, { headers: { 'User-Agent': USER_AGENT } });
 
 		if (!res.ok) {
-			error({
-				message: [
-					`Failed to fetch the upgrade script. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
-					`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
-					`- The URL of the asset that failed to fetch: ${WINDOWS_UPGRADE_SCRIPT_URL}`,
-					`- The status code of the response: ${res.status}`,
-				].join('\n'),
-			});
+			this.logger.stderr.error(
+				this.t(UpgradeCommandMessages.fetchScriptFailed, {
+					platform: metadata.platform,
+					arch: metadata.arch,
+					url: WINDOWS_UPGRADE_SCRIPT_URL,
+					status: res.status,
+				}),
+			);
 
 			process.exit(1);
 		}
@@ -288,7 +291,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		await writeFile(filePath, Buffer.from(buffer));
 
-		cliDebugPrint('[upgrade] downloaded upgrade script to', filePath);
+		logger.debug('[upgrade] downloaded upgrade script to', filePath);
 	}
 
 	private async handleUnixUpgrade(bundleDirectory: string, version: string, assets: Asset[]) {
@@ -298,36 +301,37 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			const cliName = asset.name.split('-')[0];
 			const filePath = join(bundleDirectory, cliName);
 
-			info({ message: `Downloading \`${cliName}\` binary of the Apify CLI...` });
+			this.logger.stderr.info(this.t(UpgradeCommandMessages.downloadingBinary, { cliName }));
 
 			const res = await fetch(asset.browser_download_url, { headers: { 'User-Agent': USER_AGENT } });
 
 			if (!res.ok) {
 				const body = await res.text();
 
-				cliDebugPrint('[upgrade] failed to fetch asset', { asset, status: res.status, body });
+				logger.debug('[upgrade] failed to fetch asset', { asset, status: res.status, body });
 
-				error({
-					message: [
-						`Failed to fetch the ${cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
-						`- The version you are trying to upgrade to: ${version}`,
-						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
-						`- The URL of the asset that failed to fetch: ${asset.browser_download_url}`,
-						`- The status code of the response: ${res.status}`,
-						`- The body of the response: ${body}`,
-					].join('\n'),
-				});
+				this.logger.stderr.error(
+					this.t(UpgradeCommandMessages.fetchAssetFailed, {
+						cliName,
+						version,
+						platform: metadata.platform,
+						arch: metadata.arch,
+						url: asset.browser_download_url,
+						status: res.status,
+						body,
+					}),
+				);
 
 				return;
 			}
 
 			if (process.env.APIFY_CLI_DEBUG && !process.env.APIFY_CLI_FORCE) {
-				info({ message: `Would write asset ${cliName} to ${filePath}` });
+				this.logger.stderr.info(this.t(UpgradeCommandMessages.wouldWriteAsset, { cliName, filePath }));
 
 				continue;
 			}
 
-			info({ message: chalk.gray(`Writing ${cliName} to ${filePath}...`) });
+			this.logger.stderr.info(this.t(UpgradeCommandMessages.writingAsset, { cliName, filePath }));
 
 			const buffer = await res.arrayBuffer();
 
@@ -343,19 +347,20 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 					mode: originalFilePerms | 0o700,
 				});
 
-				cliDebugPrint(`[upgrade ${cliName}] wrote asset to`, filePath);
+				logger.debug(`[upgrade ${cliName}] wrote asset to`, filePath);
 			} catch (err: any) {
-				cliDebugPrint('[upgrade] failed to write asset', { error: err });
+				logger.debug('[upgrade] failed to write asset', { error: err });
 
-				error({
-					message: [
-						`Failed to write the ${cliName} bundle. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
-						`- The version you are trying to upgrade to: ${version}`,
-						`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
-						`- The URL of the asset that failed to fetch: ${asset.browser_download_url}`,
-						`- The error: ${err.message}`,
-					].join('\n'),
-				});
+				this.logger.stderr.error(
+					this.t(UpgradeCommandMessages.writeAssetFailed, {
+						cliName,
+						version,
+						platform: metadata.platform,
+						arch: metadata.arch,
+						url: asset.browser_download_url,
+						message: err.message,
+					}),
+				);
 			}
 		}
 	}

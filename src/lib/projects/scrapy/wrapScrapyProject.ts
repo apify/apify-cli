@@ -18,9 +18,12 @@ import Handlebars from 'handlebars';
 import { fetchManifest, wrapperManifestUrl } from '@apify/actor-templates';
 
 import { useSelectFromList } from '../../hooks/user-confirmations/useSelectFromList.js';
-import { info, success } from '../../outputs.js';
+import { t } from '../../i18n/index.js';
+import { logger } from '../../logger.js';
 import { downloadAndUnzip, sanitizeActorName } from '../../utils.js';
 import { ScrapyProjectAnalyzer } from './ScrapyProjectAnalyzer.js';
+
+import { wrapScrapyProjectMessages } from '#i18n/lib/projects/scrapy/wrapScrapyProject.js';
 
 /**
  * Files that should be concatenated instead of copied (and overwritten).
@@ -44,7 +47,7 @@ async function merge(
 					part = part.replace('{', '').replace('}', '');
 					const binding = options.bindings[part];
 					if (!binding) {
-						throw new Error(`Binding for ${part} not found.`);
+						throw new Error(t(wrapScrapyProjectMessages.bindingNotFound, { part }));
 					}
 					return binding;
 				}
@@ -83,9 +86,7 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 	const analyzer = new ScrapyProjectAnalyzer(projectPath);
 
 	if (analyzer.configuration.hasSection('apify')) {
-		throw new Error(
-			`The Scrapy project configuration already contains Apify settings. Are you sure you didn't already wrap this project?`,
-		);
+		throw new Error(t(wrapScrapyProjectMessages.apifySettingsAlreadyPresent));
 	}
 
 	await analyzer.init();
@@ -115,7 +116,7 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 
 	const manifest = await fetchManifest(wrapperManifestUrl);
 
-	info({ message: 'Downloading the latest Scrapy wrapper template...' });
+	logger.stderr.info(t(wrapScrapyProjectMessages.downloadingTemplate));
 
 	const { archiveUrl } = manifest.templates.find(({ id }) => id === 'python-scrapy')!;
 
@@ -126,7 +127,7 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 		pathTo: templatePath,
 	});
 
-	info({ message: 'Wrapping the Scrapy project...' });
+	logger.stderr.info(t(wrapScrapyProjectMessages.wrappingProject));
 
 	await merge(templatePath, projectPath, {
 		bindings: templateBindings,
@@ -147,5 +148,5 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 		});
 	});
 
-	success({ message: 'The Scrapy project has been wrapped successfully.' });
+	logger.stderr.success(t(wrapScrapyProjectMessages.wrappedSuccessfully));
 }

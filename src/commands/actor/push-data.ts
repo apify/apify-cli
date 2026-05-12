@@ -2,7 +2,8 @@ import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
-import { error } from '../../lib/outputs.js';
+
+import { ActorPushDataCommandMessages } from '#i18n/commands/actor/push-data.js';
 
 export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataCommand> {
 	static override name = 'push-data' as const;
@@ -28,6 +29,7 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 		item: Args.string({
 			description:
 				'JSON string with one object or array of objects containing data to be stored in the default dataset.',
+			catchAll: true,
 		}),
 	};
 
@@ -37,7 +39,7 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 		const item = _item || cachedStdinInput;
 
 		if (!item) {
-			error({ message: 'No item was provided.' });
+			this.logger.stderr.error(this.t(ActorPushDataCommandMessages.noItemProvided));
 			return;
 		}
 
@@ -48,7 +50,8 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 		try {
 			parsedData = JSON.parse(item.toString('utf8'));
 		} catch (err) {
-			throw new Error(`Failed to parse data as JSON string: ${(err as Error).message}`);
+			const { message } = err as Error;
+			throw new Error(this.t(ActorPushDataCommandMessages.failedToParseJson, { message, jsonParams: [message] }));
 		}
 
 		await apifyClient.dataset(defaultStoreId).pushItems(parsedData);

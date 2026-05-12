@@ -1,10 +1,12 @@
 import { gt } from 'semver';
 
 import { CHECK_VERSION_EVERY_MILLIS } from '../consts.js';
-import { warning } from '../outputs.js';
-import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { t } from '../i18n/index.js';
+import { logger } from '../logger.js';
 import { useCLIMetadata } from './useCLIMetadata.js';
 import { type LatestState, updateLocalState, useLocalState } from './useLocalState.js';
+
+import { useCLIVersionCheckMessages } from '#i18n/lib/hooks/useCLIVersionCheck.js';
 
 const metadata = useCLIMetadata();
 
@@ -34,13 +36,13 @@ async function isOnline(timeout = 500) {
 	clearTimeout(timeoutId);
 
 	if (!res) {
-		cliDebugPrint('isOnline', { state: 'timeout' });
+		logger.debug('isOnline', { state: 'timeout' });
 
 		return false;
 	}
 
 	if (res.ok) {
-		cliDebugPrint('isOnline', {
+		logger.debug('isOnline', {
 			state: 'online',
 			site: res.url,
 		});
@@ -48,7 +50,7 @@ async function isOnline(timeout = 500) {
 		return true;
 	}
 
-	cliDebugPrint('isOnline', { state: 'offline' });
+	logger.debug('isOnline', { state: 'offline' });
 
 	return false;
 }
@@ -61,12 +63,12 @@ async function getLatestVersion(state: LatestState) {
 	});
 
 	if (!res.ok) {
-		cliDebugPrint('useCLIVersionCheck', 'Failed to fetch latest version', {
+		logger.debug('useCLIVersionCheck', 'Failed to fetch latest version', {
 			statusCode: res.status,
 			body: await res.text(),
 		});
 
-		warning({ message: 'Failed to fetch latest version of Apify CLI, using the cached version instead.' });
+		logger.stderr.warning(t(useCLIVersionCheckMessages.failedToFetchLatestVersion));
 
 		return null;
 	}
@@ -75,7 +77,7 @@ async function getLatestVersion(state: LatestState) {
 
 	const version = body.tag_name.replace(/^v/, '');
 
-	cliDebugPrint('useCLIVersionCheck', 'Fetched latest version', { version });
+	logger.debug('useCLIVersionCheck', 'Fetched latest version', { version });
 
 	updateLocalState(state, (stateToUpdate) => {
 		stateToUpdate.versionCheck = {

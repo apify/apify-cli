@@ -8,9 +8,12 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { Flags } from '../command-framework/flags.js';
 import { CommandExitCodes } from '../consts.js';
 import { useAbortJobOnSignal } from '../hooks/useAbortJobOnSignal.js';
-import { error, run as runLog, success, warning } from '../outputs.js';
+import { t } from '../i18n/index.js';
+import { logger } from '../logger.js';
 import { outputJobLog } from '../utils.js';
 import { resolveInput } from './resolve-input.js';
+
+import { runOnCloudMessages } from '#i18n/lib/commands/run-on-cloud.js';
 
 const TerminalStatuses = [
 	ACTOR_JOB_STATUSES.SUCCEEDED,
@@ -54,17 +57,30 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 
 	if (!silent) {
 		if (type === 'Actor') {
-			runLog({
-				message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${chalk.gray(actorOrTaskData.id)})\n`,
-			});
+			logger.stderr.run(
+				t(runOnCloudMessages.callingActorOrTask, {
+					type,
+					userFriendlyId: actorOrTaskData.userFriendlyId,
+					id: actorOrTaskData.id,
+				}),
+			);
 		} else if (actorOrTaskData.title) {
-			runLog({
-				message: `Calling ${type} ${actorOrTaskData.title} (${actorOrTaskData.userFriendlyId}, ${chalk.gray(actorOrTaskData.id)})\n`,
-			});
+			logger.stderr.run(
+				t(runOnCloudMessages.callingTaskWithTitle, {
+					type,
+					title: actorOrTaskData.title,
+					userFriendlyId: actorOrTaskData.userFriendlyId,
+					id: actorOrTaskData.id,
+				}),
+			);
 		} else {
-			runLog({
-				message: `Calling ${type} ${actorOrTaskData.userFriendlyId} (${chalk.gray(actorOrTaskData.id)})\n`,
-			});
+			logger.stderr.run(
+				t(runOnCloudMessages.callingActorOrTask, {
+					type,
+					userFriendlyId: actorOrTaskData.userFriendlyId,
+					id: actorOrTaskData.id,
+				}),
+			);
 		}
 	}
 
@@ -85,7 +101,13 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 	} catch (err: any) {
 		// TODO: Better error message in apify-client-js
 		if (err.type === 'record-not-found') {
-			throw new Error(`${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id}) not found!`);
+			throw new Error(
+				t(runOnCloudMessages.notFound, {
+					type,
+					userFriendlyId: actorOrTaskData.userFriendlyId,
+					id: actorOrTaskData.id,
+				}),
+			);
 		}
 
 		throw err;
@@ -118,7 +140,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 				console.error();
 			}
 		} catch (err) {
-			warning({ message: 'Can not get log:' });
+			logger.stderr.warning(t(runOnCloudMessages.cannotGetLog));
 			console.error(err);
 		}
 	}
@@ -142,14 +164,14 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 
 	if (!silent) {
 		if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-			success({ message: `${type} finished.` });
+			logger.stderr.success(t(runOnCloudMessages.jobSucceeded, { type }));
 		} else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
-			warning({ message: `${type} is still running!` });
+			logger.stderr.warning(t(runOnCloudMessages.jobStillRunning, { type }));
 		} else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
-			warning({ message: `${type} was aborted!` });
+			logger.stderr.warning(t(runOnCloudMessages.jobAborted, { type }));
 			process.exitCode = CommandExitCodes.RunAborted;
 		} else {
-			error({ message: `${type} failed!` });
+			logger.stderr.error(t(runOnCloudMessages.jobFailed, { type }));
 			process.exitCode = CommandExitCodes.RunFailed;
 		}
 	}

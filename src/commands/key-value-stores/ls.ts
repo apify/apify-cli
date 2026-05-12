@@ -4,8 +4,9 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { info, simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+
+import { KeyValueStoresLsCommandMessages } from '#i18n/commands/key-value-stores/ls.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Store ID', 'Name', 'Size', 'Created', 'Modified'],
@@ -49,8 +50,6 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { desc, offset, limit, json, unnamed } = this.flags;
 
@@ -60,15 +59,12 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 		const rawKvsList = await client.keyValueStores().list({ desc, offset, limit, unnamed });
 
 		if (json) {
-			printJsonToStdout(rawKvsList);
+			this.logger.stdout.json(rawKvsList);
 			return;
 		}
 
 		if (rawKvsList.count === 0) {
-			info({
-				message: "You don't have any key-value stores on your account",
-				stdout: true,
-			});
+			this.logger.stdout.info(this.t(KeyValueStoresLsCommandMessages.noStores));
 
 			return;
 		}
@@ -90,9 +86,6 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 			});
 		}
 
-		simpleLog({
-			message: table.render(CompactMode.WebLikeCompact),
-			stdout: true,
-		});
+		this.logger.stdout.log(table.render(CompactMode.WebLikeCompact));
 	}
 }

@@ -13,8 +13,9 @@ import {
 	validateKvsSchema,
 	validateOutputSchema,
 } from '../lib/input_schema.js';
-import { error, info, success } from '../lib/outputs.js';
 import { Ajv2019 } from '../lib/utils.js';
+
+import { ValidateSchemaCommandMessages } from '#i18n/commands/validate-schema.js';
 
 export class ValidateSchemaCommand extends ApifyCommand<typeof ValidateSchemaCommand> {
 	static override name = 'validate-schema' as const;
@@ -66,10 +67,11 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 		await readAndValidateInputSchema({
 			forcePath,
 			cwd: process.cwd(),
-			getMessage: (path) => `Validating input schema at ${path ?? forcePath}`,
+			getMessage: (path) =>
+				this.t(ValidateSchemaCommandMessages.validatingInputSchemaAtPath, { path: path ?? forcePath }),
 		});
 
-		success({ message: 'Input schema is valid.' });
+		this.logger.stderr.success(this.t(ValidateSchemaCommandMessages.inputSchemaValid));
 	}
 
 	private async validateAllSchemas() {
@@ -86,17 +88,28 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 			if (inputSchema) {
 				foundAny = true;
 
-				const location = inputSchemaPath ? `at ${inputSchemaPath}` : `embedded in '${LOCAL_CONFIG_PATH}'`;
-				info({ message: `Validating input schema ${location}` });
+				if (inputSchemaPath) {
+					this.logger.stderr.info(
+						this.t(ValidateSchemaCommandMessages.validatingInputSchemaAtLocation, {
+							location: inputSchemaPath,
+						}),
+					);
+				} else {
+					this.logger.stderr.info(
+						this.t(ValidateSchemaCommandMessages.validatingInputSchemaEmbedded, {
+							configPath: LOCAL_CONFIG_PATH,
+						}),
+					);
+				}
 
 				const validator = new Ajv2019({ strict: false });
 				validateInputSchema(validator, inputSchema);
-				success({ message: 'Input schema is valid.' });
+				this.logger.stderr.success(this.t(ValidateSchemaCommandMessages.inputSchemaValid));
 			}
 		} catch (err) {
 			foundAny = true;
 			hasErrors = true;
-			error({ message: (err as Error).message });
+			this.logger.stderr.error((err as Error).message);
 		}
 
 		// Storage schemas (Dataset, Output, Key-Value Store)
@@ -132,21 +145,34 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 				if (result) {
 					foundAny = true;
 
-					const location = result.schemaPath ? `at ${result.schemaPath}` : `embedded in '${LOCAL_CONFIG_PATH}'`;
-					info({ message: `Validating ${label} schema ${location}` });
+					if (result.schemaPath) {
+						this.logger.stderr.info(
+							this.t(ValidateSchemaCommandMessages.validatingNamedSchemaAtLocation, {
+								label,
+								location: result.schemaPath,
+							}),
+						);
+					} else {
+						this.logger.stderr.info(
+							this.t(ValidateSchemaCommandMessages.validatingNamedSchemaEmbedded, {
+								label,
+								configPath: LOCAL_CONFIG_PATH,
+							}),
+						);
+					}
 
 					validate(result.schema);
-					success({ message: `${label} schema is valid.` });
+					this.logger.stderr.success(this.t(ValidateSchemaCommandMessages.namedSchemaValid, { label }));
 				}
 			} catch (err) {
 				foundAny = true;
 				hasErrors = true;
-				error({ message: (err as Error).message });
+				this.logger.stderr.error((err as Error).message);
 			}
 		}
 
 		if (!foundAny) {
-			throw new Error(`No schemas found. Make sure '${LOCAL_CONFIG_PATH}' exists and defines at least one schema.`);
+			throw new Error(this.t(ValidateSchemaCommandMessages.noSchemasFound, { configPath: LOCAL_CONFIG_PATH }));
 		}
 
 		if (hasErrors) {

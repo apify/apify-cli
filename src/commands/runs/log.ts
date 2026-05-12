@@ -1,7 +1,8 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
-import { error, info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, outputJobLog } from '../../lib/utils.js';
+
+import { RunsLogCommandMessages } from '#i18n/commands/runs/log.js';
 
 export class RunsLogCommand extends ApifyCommand<typeof RunsLogCommand> {
 	static override name = 'log' as const;
@@ -32,17 +33,19 @@ export class RunsLogCommand extends ApifyCommand<typeof RunsLogCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			error({ message: `Run with ID "${runId}" was not found on your account.`, stdout: true });
+			this.logger.stdout.error(this.t(RunsLogCommandMessages.runNotFound, { runId }));
 			return;
 		}
 
-		info({ message: `Log for run with ID "${runId}":\n`, stdout: true });
+		this.logger.stdout.info(this.t(RunsLogCommandMessages.logHeader, { runId }));
 
 		try {
 			await outputJobLog({ job: run, apifyClient });
 		} catch (err) {
 			// This should never happen...
-			error({ message: `Failed to get log for run with ID "${runId}": ${(err as Error).message}` });
+			this.logger.stderr.error(
+				this.t(RunsLogCommandMessages.logFetchFailed, { runId, message: (err as Error).message }),
+			);
 		}
 	}
 }

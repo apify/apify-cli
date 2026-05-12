@@ -1,10 +1,9 @@
-import chalk from 'chalk';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
-import { error, success } from '../../lib/outputs.js';
-import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresCreateCommandMessages } from '#i18n/commands/key-value-stores/create.js';
 
 export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueStoresCreateCommand> {
 	static override name = 'create' as const;
@@ -31,8 +30,6 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { keyValueStoreName } = this.args;
 
@@ -42,7 +39,7 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 			const existing = await tryToGetKeyValueStore(client, keyValueStoreName);
 
 			if (existing) {
-				error({ message: 'Cannot create a key-value store with the same name!' });
+				this.logger.stderr.error(this.t(KeyValueStoresCreateCommandMessages.duplicateName));
 				return;
 			}
 		}
@@ -50,13 +47,14 @@ export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueSto
 		const newStore = await client.keyValueStores().getOrCreate(keyValueStoreName);
 
 		if (this.flags.json) {
-			printJsonToStdout(newStore);
+			this.logger.stdout.json(newStore);
 			return;
 		}
 
-		success({
-			message: `Key-value store with ID ${chalk.yellow(newStore.id)}${keyValueStoreName ? ` (called ${chalk.yellow(keyValueStoreName)})` : ''} was created.`,
-			stdout: true,
-		});
+		this.logger.stdout.success(
+			keyValueStoreName
+				? this.t(KeyValueStoresCreateCommandMessages.createdNamed, { id: newStore.id, name: keyValueStoreName })
+				: this.t(KeyValueStoresCreateCommandMessages.createdUnnamed, { id: newStore.id }),
+		);
 	}
 }

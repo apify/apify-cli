@@ -2,7 +2,7 @@ import { jaroWinkler } from '@skyra/jaro-winkler';
 import levenshtein from 'js-levenshtein';
 
 import { commandRegistry } from '../command-framework/apify-command.js';
-import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { logger } from '../logger.js';
 
 export function useCommandSuggestions(inputString: string) {
 	const allCommands = [...commandRegistry.entries()].sort(([a], [b]) => a.localeCompare(b));
@@ -23,7 +23,7 @@ export function useCommandSuggestions(inputString: string) {
 			const matches = levenshteinDistance <= 2 || jaroWinklerDistance >= 0.975;
 
 			if (matches) {
-				cliDebugPrint('useCommandSuggestions', {
+				logger.debug('useCommandSuggestions', {
 					inputString: lowercasedCommandString,
 					lowercased,
 					matches,

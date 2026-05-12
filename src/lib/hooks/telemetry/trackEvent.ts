@@ -1,5 +1,5 @@
 import { USER_AGENT } from '../../../entrypoints/_shared.js';
-import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
+import { logger } from '../../logger.js';
 import type { InstallMethod } from '../useCLIMetadata.js';
 import { useCLIMetadata } from '../useCLIMetadata.js';
 import { useTelemetryEnabled } from './useTelemetryEnabled.js';
@@ -83,11 +83,11 @@ export async function trackEvent<Event extends keyof TrackEventMap>(event: Event
 		writeKey: SEGMENT_WRITE_KEY,
 	};
 
-	cliDebugPrint('trackEvent', segmentPayload);
+	logger.debug('trackEvent', segmentPayload);
 	const telemetryEnabled = await useTelemetryEnabled();
 
 	if (!telemetryEnabled) {
-		cliDebugPrint('trackEvent', 'telemetry disabled');
+		logger.debug('trackEvent', 'telemetry disabled');
 		return;
 	}
 
@@ -98,12 +98,12 @@ export async function trackEvent<Event extends keyof TrackEventMap>(event: Event
 		});
 
 		if (!res.ok) {
-			cliDebugPrint('trackEvent', 'failed to send event', await res.text());
+			logger.debug('trackEvent', 'failed to send event', await res.text());
 			return;
 		}
 
-		cliDebugPrint('trackEvent', 'event sent');
+		logger.debug('trackEvent', 'event sent');
 	} catch (error) {
-		cliDebugPrint('trackEvent', 'failed to send event', error);
+		logger.debug('trackEvent', 'failed to send event', error);
 	}
 }

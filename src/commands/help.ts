@@ -4,7 +4,8 @@ import { ApifyCommand, commandRegistry } from '../lib/command-framework/apify-co
 import { Args } from '../lib/command-framework/args.js';
 import { renderHelpForCommand, renderMainHelpMenu } from '../lib/command-framework/help.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
-import { error } from '../lib/outputs.js';
+
+import { HelpCommandMessages } from '#i18n/commands/help.js';
 
 export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 	static override name = 'help' as const;
@@ -39,16 +40,14 @@ export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 		if (!command) {
 			const closestMatches = useCommandSuggestions(lowercasedCommandString);
 
-			let message = chalk.gray(`Command ${chalk.whiteBright(commandString)} not found`);
+			const message = closestMatches.length
+				? this.t(HelpCommandMessages.commandNotFoundWithSuggestions, {
+						commandString,
+						suggestions: closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', '),
+					})
+				: this.t(HelpCommandMessages.commandNotFound, { commandString });
 
-			if (closestMatches.length) {
-				message += '\n  ';
-				message += chalk.gray(`Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`);
-			}
-
-			error({
-				message,
-			});
+			this.logger.stderr.error(message);
 
 			return;
 		}

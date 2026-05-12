@@ -1,13 +1,13 @@
 import type { ApifyApiError } from 'apify-client';
-import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { YesFlag } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresDeleteValueCommandMessages } from '#i18n/commands/key-value-stores/delete-value.js';
 
 export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyValueStoresDeleteValueCommand> {
 	static override name = 'delete-value' as const;
@@ -51,9 +51,7 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
 
 		if (!maybeStore) {
-			error({
-				message: `Key-value store with ID or name "${storeId}" not found.`,
-			});
+			this.logger.stderr.error(this.t(KeyValueStoresDeleteValueCommandMessages.storeNotFound, { storeId }));
 
 			return;
 		}
@@ -63,9 +61,7 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 		const existing = await client.getRecord(itemKey);
 
 		if (!existing) {
-			error({
-				message: `Item with key "${itemKey}" not found in the key-value store.`,
-			});
+			this.logger.stderr.error(this.t(KeyValueStoresDeleteValueCommandMessages.itemNotFound, { itemKey }));
 			return;
 		}
 
@@ -75,22 +71,22 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 		});
 
 		if (!confirm) {
-			info({ message: 'Key-value store record deletion aborted.', stdout: true });
+			this.logger.stdout.info(this.t(KeyValueStoresDeleteValueCommandMessages.deletionAborted));
 			return;
 		}
 
 		try {
 			await client.deleteRecord(itemKey);
-			info({
-				message: `Record with key "${chalk.yellow(itemKey)}" deleted from the key-value store.`,
-				stdout: true,
-			});
+			this.logger.stdout.info(this.t(KeyValueStoresDeleteValueCommandMessages.deleted, { itemKey }));
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to delete record with key "${itemKey}" from the key-value store.\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(
+				this.t(KeyValueStoresDeleteValueCommandMessages.deleteFailed, {
+					itemKey,
+					message: String(casted.message || casted),
+				}),
+			);
 		}
 	}
 }

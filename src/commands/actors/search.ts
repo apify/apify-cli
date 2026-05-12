@@ -6,8 +6,9 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { CommandExitCodes } from '../../lib/consts.js';
-import { error, info, simpleLog } from '../../lib/outputs.js';
-import { getApifyClientOptions, printJsonToStdout } from '../../lib/utils.js';
+import { getApifyClientOptions } from '../../lib/utils.js';
+
+import { ActorsSearchCommandMessages } from '#i18n/commands/actors/search.js';
 
 const pricingModelLabels: Record<string, string> = {
 	FREE: 'Free',
@@ -90,8 +91,6 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { query } = this.args;
 		const { json, sortBy, category, username, pricingModel, limit, offset } = this.flags;
@@ -114,25 +113,26 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 			});
 		} catch (err) {
 			process.exitCode = CommandExitCodes.RunFailed;
-			error({
-				message: `Failed to search Apify Store: ${err instanceof Error ? err.message : String(err)}`,
-				stdout: true,
-			});
+			this.logger.stdout.error(
+				this.t(ActorsSearchCommandMessages.searchFailed, {
+					message: err instanceof Error ? err.message : String(err),
+				}),
+			);
 			return;
 		}
 
 		if (result.count === 0) {
 			if (json) {
-				printJsonToStdout(result);
+				this.logger.stdout.json(result);
 				return;
 			}
 
-			info({ message: 'No Actors found matching your search.', stdout: true });
+			this.logger.stdout.info(this.t(ActorsSearchCommandMessages.noResults));
 			return;
 		}
 
 		if (json) {
-			printJsonToStdout(result);
+			this.logger.stdout.json(result);
 			return;
 		}
 
@@ -154,9 +154,6 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 			});
 		}
 
-		simpleLog({
-			message: table.render(CompactMode.WebLikeCompact),
-			stdout: true,
-		});
+		this.logger.stdout.log(table.render(CompactMode.WebLikeCompact));
 	}
 }

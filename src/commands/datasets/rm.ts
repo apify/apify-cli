@@ -1,13 +1,13 @@
 import type { ApifyApiError } from 'apify-client';
-import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { YesFlag } from '../../lib/command-framework/flags.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { error, info, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { DatasetsRmCommandMessages } from '#i18n/commands/datasets/rm.js';
 
 export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 	static override name = 'rm' as const;
@@ -48,9 +48,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 		const existingDataset = await tryToGetDataset(client, datasetNameOrId);
 
 		if (!existingDataset) {
-			error({
-				message: `Dataset with ID or name "${datasetNameOrId}" not found.`,
-			});
+			this.logger.stderr.error(this.t(DatasetsRmCommandMessages.datasetNotFound, { datasetNameOrId }));
 
 			return;
 		}
@@ -61,7 +59,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 		});
 
 		if (!confirmed) {
-			info({ message: 'Dataset deletion has been aborted.' });
+			this.logger.stderr.info(this.t(DatasetsRmCommandMessages.deletionAborted));
 			return;
 		}
 
@@ -70,16 +68,17 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 		try {
 			await existingDataset.datasetClient.delete();
 
-			success({
-				message: `Dataset with ID ${chalk.yellow(id)}${name ? ` (called ${chalk.yellow(name)})` : ''} has been deleted.`,
-				stdout: true,
-			});
+			this.logger.stdout.success(
+				name
+					? this.t(DatasetsRmCommandMessages.deletedWithName, { id, name })
+					: this.t(DatasetsRmCommandMessages.deletedUnnamed, { id }),
+			);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to delete dataset with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(
+				this.t(DatasetsRmCommandMessages.deleteFailed, { id, message: casted.message || String(casted) }),
+			);
 		}
 	}
 }

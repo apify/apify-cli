@@ -8,8 +8,11 @@ import type { Manifest, Template } from '@apify/actor-templates';
 import type { ChoicesType } from './hooks/user-confirmations/useSelectFromList.js';
 import { useSelectFromList } from './hooks/user-confirmations/useSelectFromList.js';
 import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
-import { warning } from './outputs.js';
+import { t } from './i18n/index.js';
+import { logger } from './logger.js';
 import { httpsGet, validateActorName } from './utils.js';
+
+import { createUtilsMessages } from '#i18n/lib/create-utils.js';
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 
@@ -33,9 +36,9 @@ export async function getTemplateDefinition(
 	if (manifest instanceof Error) throw manifest;
 
 	if (maybeTemplateName) {
-		const templateDefinition = manifest.templates.find((t) => t.name === maybeTemplateName);
+		const templateDefinition = manifest.templates.find((tmpl) => tmpl.name === maybeTemplateName);
 		if (!templateDefinition) {
-			throw new Error(`Could not find the selected template: ${maybeTemplateName} in the list of templates.`);
+			throw new Error(t(createUtilsMessages.templateNotFound, { templateName: maybeTemplateName }));
 		}
 		return templateDefinition;
 	}
@@ -59,9 +62,7 @@ export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestP
 		readmeStream.write('\n\n');
 		await pipeline(suffixStream, readmeStream);
 	} catch (err) {
-		warning({
-			message: `Could not append local development instructions to README.md. Cause: ${(err as Error).message}`,
-		});
+		logger.stderr.warning(t(createUtilsMessages.readmeSuffixFailed, { message: (err as Error).message }));
 	}
 }
 
@@ -74,19 +75,15 @@ export function formatCreateSuccessMessage(params: {
 }) {
 	const { actorName, dependenciesInstalled, postCreate, gitRepositoryInitialized, installCommandSuggestion } = params;
 
-	let message = `✅ Actor '${actorName}' created successfully!`;
-
-	if (dependenciesInstalled) {
-		message += `\n\nNext steps:\n\ncd "${actorName}"\napify run`;
-	} else {
-		const installLine = installCommandSuggestion || 'install dependencies with your package manager';
-		message += `\n\nNext steps:\n\ncd "${actorName}"\n${installLine}\napify run`;
-	}
-
-	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
+	let message = dependenciesInstalled
+		? t(createUtilsMessages.actorCreatedWithInstall, { actorName })
+		: t(createUtilsMessages.actorCreatedWithoutInstall, {
+				actorName,
+				installLine: installCommandSuggestion || t(createUtilsMessages.installCommandFallback),
+			});
 
 	if (gitRepositoryInitialized) {
-		message += `\n🌱 Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`;
+		message += t(createUtilsMessages.gitInitialized, { actorName });
 	}
 
 	if (postCreate) {
@@ -145,13 +142,13 @@ async function promptProgrammingLanguage() {
 async function promptTemplateDefinition(manifest: Manifest, programmingLanguage: string): Promise<Template | false> {
 	const choices: ChoicesType<Template | false> = [
 		...manifest.templates
-			.filter((t) => {
-				return t.category.toLowerCase() === programmingLanguage.toLowerCase();
+			.filter((tmpl) => {
+				return tmpl.category.toLowerCase() === programmingLanguage.toLowerCase();
 			})
-			.map((t) => {
+			.map((tmpl) => {
 				return {
-					name: t.label,
-					value: t,
+					name: tmpl.label,
+					value: tmpl,
 				};
 			}),
 

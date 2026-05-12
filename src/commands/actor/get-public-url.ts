@@ -6,7 +6,8 @@ import { getApifyStorageClient } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { CommandExitCodes } from '../../lib/consts.js';
-import { error } from '../../lib/outputs.js';
+
+import { ActorGetPublicUrlCommandMessages } from '#i18n/commands/actor/get-public-url.js';
 
 export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublicUrlCommand> {
 	static override name = 'get-public-url' as const;
@@ -35,17 +36,21 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 		const { key } = this.args;
 
 		if ([undefined, 'false', ''].includes(process.env[APIFY_ENV_VARS.IS_AT_HOME])) {
-			error({ message: 'get-public-url is not yet implemented for local development' });
+			this.logger.stderr.error(this.t(ActorGetPublicUrlCommandMessages.notImplementedLocally));
 			process.exitCode = CommandExitCodes.NotImplemented;
 			return;
 		}
+
 		const storeId = process.env[ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID];
 
 		// This should never happen, but handle it gracefully to prevent crashes.
 		if (!storeId) {
-			error({
-				message: `Missing environment variable: ${ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID}. Please set it before running the command.`,
-			});
+			this.logger.stderr.error(
+				this.t(ActorGetPublicUrlCommandMessages.missingEnvVar, {
+					envVar: ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID,
+					jsonParams: [ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID],
+				}),
+			);
 			process.exitCode = CommandExitCodes.InvalidInput;
 			return;
 		}
@@ -54,9 +59,13 @@ export class ActorGetPublicUrlCommand extends ApifyCommand<typeof ActorGetPublic
 		const store = await apifyClient.keyValueStore(storeId).get();
 
 		if (!store) {
-			error({
-				message: `Key-Value store with ID '${storeId}' was not found. Ensure the store exists and that the correct ID is set in ${ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID}.`,
-			});
+			this.logger.stderr.error(
+				this.t(ActorGetPublicUrlCommandMessages.storeNotFound, {
+					storeId,
+					envVar: ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID,
+					jsonParams: [{ storeId, envVar: ACTOR_ENV_VARS.DEFAULT_KEY_VALUE_STORE_ID }],
+				}),
+			);
 			process.exitCode = CommandExitCodes.NotFound;
 			return;
 		}

@@ -64,6 +64,9 @@
 	"engines": {
 		"node": ">=20"
 	},
+	"imports": {
+		"#i18n/*.js": "./src/i18n/*.ts"
+	},
 	"dependencies": {
 		"@apify/actor-memory-expression": "^0.1.12",
 		"@apify/actor-templates": "^0.1.5",
@@ -100,6 +103,7 @@
 		"handlebars": "~4.7.9",
 		"ignore": "^7.0.5",
 		"indent-string": "^5.0.0",
+		"intl-messageformat": "^11.2.1",
 		"is-ci": "~4.1.0",
 		"istextorbinary": "~9.5.0",
 		"jju": "~1.4.0",

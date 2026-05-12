@@ -7,13 +7,9 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	ShortDurationFormatter,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLoggedClientOrThrow, ShortDurationFormatter, TimestampFormatter } from '../../lib/utils.js';
+
+import { RunsInfoCommandMessages } from '#i18n/commands/runs/info.js';
 
 const usageTable = new ResponsiveTable({
 	allColumns: ['', 'Unit', 'USD Amount'],
@@ -76,8 +72,6 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { runId } = this.args;
 
@@ -86,7 +80,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		const run = await apifyClient.run(runId).get();
 
 		if (!run) {
-			error({ message: `Run with ID "${runId}" was not found on your account.` });
+			this.logger.stderr.error(this.t(RunsInfoCommandMessages.runNotFound, { runId }));
 			return;
 		}
 
@@ -100,7 +94,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		]);
 
 		if (this.flags.json) {
-			printJsonToStdout({
+			this.logger.stdout.json({
 				...run,
 				actor,
 				build,
@@ -266,7 +260,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 		message.push(`${chalk.blue('View saved items')}: ${keyValueStoreUrl}`);
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 
-		simpleLog({ message: message.join('\n'), stdout: true });
+		this.logger.stdout.log(message.join('\n'));
 	}
 
 	private addDetailedUsage(run: ActorRun) {

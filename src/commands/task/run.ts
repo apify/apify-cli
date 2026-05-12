@@ -1,11 +1,11 @@
 import type { ApifyClient, TaskStartOptions } from 'apify-client';
-import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
-import { simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { TaskRunCommandMessages } from '#i18n/commands/task/run.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override name = 'run' as const;
@@ -78,14 +78,12 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
 		}
 
-		simpleLog({
-			message: [
-				'',
-				`${chalk.blue('Export results')}: ${datasetUrl!}`,
-				`${chalk.blue('View on Apify Console')}: ${url!}`,
-			].join('\n'),
-			stdout: true,
-		});
+		this.logger.stdout.log(
+			this.t(TaskRunCommandMessages.resultLinks, {
+				datasetUrl: datasetUrl!,
+				url: url!,
+			}),
+		);
 	}
 
 	private async resolveTaskId(client: ApifyClient, usernameOrId: string) {
@@ -95,7 +93,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 		if (taskId?.includes('/')) {
 			const task = await client.task(taskId).get();
 			if (!task) {
-				throw new Error(`Cannot find Task with ID '${taskId}' in your account.`);
+				throw new Error(this.t(TaskRunCommandMessages.taskNotFoundById, { taskId }));
 			}
 
 			return {
@@ -111,7 +109,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			const task = await client.task(`${usernameOrId}/${taskId.toLowerCase()}`).get();
 
 			if (!task) {
-				throw new Error(`Cannot find Task with name '${taskId}' in your account.`);
+				throw new Error(this.t(TaskRunCommandMessages.taskNotFoundByName, { taskId }));
 			}
 
 			return {
@@ -122,6 +120,6 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			};
 		}
 
-		throw new Error('Please provide a valid Task ID or name.');
+		throw new Error(this.t(TaskRunCommandMessages.invalidTaskIdentifier));
 	}
 }

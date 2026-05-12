@@ -4,20 +4,21 @@ import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
-import { error } from '../outputs.js';
+import { t } from '../i18n/index.js';
+import { logger } from '../logger.js';
 import type { BuiltApifyCommand } from './apify-command.js';
 import type { BaseCommandRenderer, SelectiveRenderOptions } from './help/_BaseCommandRenderer.js';
 import { CommandHelp } from './help/CommandHelp.js';
 import { CommandWithSubcommandsHelp } from './help/CommandWithSubcommands.js';
 import { getMaxLineWidth } from './help/consts.js';
 
+import { helpMessages } from '#i18n/lib/command-framework/help.js';
+
 const commands = new Map<typeof BuiltApifyCommand, BaseCommandRenderer>();
 
 export function registerCommandForHelpGeneration(entrypoint: string, command: typeof BuiltApifyCommand) {
 	if (command.name.toLowerCase() !== command.name) {
-		error({
-			message: `Command name "${command.name}" is not correctly set up internally. Make sure you fill out the "name" field in the command class extension.`,
-		});
+		logger.stderr.error(t(helpMessages.commandNameMisconfigured, { commandName: command.name }));
 
 		return;
 	}
@@ -37,7 +38,7 @@ export function renderHelpForCommand(command: typeof BuiltApifyCommand) {
 	const renderer = commands.get(command);
 
 	if (!renderer) {
-		throw new Error(`No help renderer found for command ${command.name}`);
+		throw new Error(t(helpMessages.noHelpRenderer, { commandName: command.name }));
 	}
 
 	return renderer.render();
@@ -47,7 +48,7 @@ export function selectiveRenderHelpForCommand(command: typeof BuiltApifyCommand,
 	const renderer = commands.get(command);
 
 	if (!renderer) {
-		throw new Error(`No help renderer found for command ${command.name}`);
+		throw new Error(t(helpMessages.noHelpRenderer, { commandName: command.name }));
 	}
 
 	return renderer.selectiveRender(options);

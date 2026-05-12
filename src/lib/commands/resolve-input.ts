@@ -6,8 +6,11 @@ import mime from 'mime';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { CommandExitCodes } from '../consts.js';
-import { error } from '../outputs.js';
+import { t } from '../i18n/index.js';
+import { logger } from '../logger.js';
 import { getLocalInput } from '../utils.js';
+
+import { resolveInputMessages } from '#i18n/lib/commands/resolve-input.js';
 
 export function resolveInput(cwd: string, inputOverride: Record<string, unknown> | undefined) {
 	let inputToUse: Record<string, unknown> | undefined;
@@ -52,7 +55,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 				const parsed = JSON.parse(stdin.toString('utf8'));
 
 				if (Array.isArray(parsed)) {
-					error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+					logger.stderr.error(t(resolveInputMessages.inputMustBeObject));
 					process.exitCode = CommandExitCodes.InvalidInput;
 					return false;
 				}
@@ -60,7 +63,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 				input = parsed;
 				source = 'stdin';
 			} catch (err) {
-				error({ message: `Cannot parse JSON input from standard input.\n  ${(err as Error).message}` });
+				logger.stderr.error(t(resolveInputMessages.cannotParseStdinJson, { message: (err as Error).message }));
 				process.exitCode = CommandExitCodes.InvalidInput;
 				return false;
 			}
@@ -70,9 +73,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 	if (inputFlag) {
 		switch (inputFlag[0]) {
 			case '-': {
-				error({
-					message: 'You need to pipe something into standard input when you specify the `-` value to `--input`.',
-				});
+				logger.stderr.error(t(resolveInputMessages.stdinDashRequiresPipe));
 				process.exitCode = CommandExitCodes.InvalidInput;
 				return false;
 			}
@@ -97,9 +98,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					inputFlag.startsWith('..\\');
 
 				if (fileExists || inputLooksLikePath) {
-					error({
-						message: `Providing a JSON file path in the --input flag is not supported. Use the "--input-file=" flag instead`,
-					});
+					logger.stderr.error(t(resolveInputMessages.inputFlagIsPath));
 					process.exitCode = CommandExitCodes.InvalidInput;
 					return false;
 				}
@@ -108,7 +107,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					const parsed = JSON.parse(inputFlag);
 
 					if (Array.isArray(parsed)) {
-						error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+						logger.stderr.error(t(resolveInputMessages.inputMustBeObject));
 						process.exitCode = CommandExitCodes.InvalidInput;
 						return false;
 					}
@@ -116,7 +115,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					input = parsed;
 					source = 'input';
 				} catch (err) {
-					error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
+					logger.stderr.error(t(resolveInputMessages.cannotParseInputJson, { message: (err as Error).message }));
 					process.exitCode = CommandExitCodes.InvalidInput;
 					return false;
 				}
@@ -125,9 +124,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 	} else if (inputFileFlag) {
 		switch (inputFileFlag[0]) {
 			case '-': {
-				error({
-					message: 'You need to pipe something into standard input when you specify the `-` value to `--input-file`.',
-				});
+				logger.stderr.error(t(resolveInputMessages.inputFileDashRequiresPipe));
 				process.exitCode = CommandExitCodes.InvalidInput;
 				return false;
 			}
@@ -143,7 +140,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					const parsed = JSON.parse(fileContent);
 
 					if (Array.isArray(parsed)) {
-						error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+						logger.stderr.error(t(resolveInputMessages.inputMustBeObject));
 						process.exitCode = CommandExitCodes.InvalidInput;
 						return false;
 					}
@@ -159,7 +156,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 						const parsed = JSON.parse(inputFileFlag);
 
 						if (Array.isArray(parsed)) {
-							error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+							logger.stderr.error(t(resolveInputMessages.inputMustBeObject));
 							process.exitCode = CommandExitCodes.InvalidInput;
 							return false;
 						}
@@ -167,9 +164,12 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 						input = parsed;
 						source = inputFileFlag;
 					} catch {
-						error({
-							message: `Cannot read input file at path "${fullPath}".\n  ${(fsError as Error).message}`,
-						});
+						logger.stderr.error(
+							t(resolveInputMessages.cannotReadInputFile, {
+								fullPath,
+								message: (fsError as Error).message,
+							}),
+						);
 						process.exitCode = CommandExitCodes.InvalidInput;
 						return false;
 					}

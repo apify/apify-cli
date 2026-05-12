@@ -4,9 +4,12 @@ import { dirname } from 'node:path';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { TELEMETRY_FILE_PATH } from '../../consts.js';
-import { info } from '../../outputs.js';
+import { t } from '../../i18n/index.js';
+import { logger } from '../../logger.js';
 import type { AuthJSON } from '../../types.js';
 import { getLocalUserInfo } from '../../utils.js';
+
+import { useTelemetryStateMessages } from '#i18n/lib/hooks/telemetry/useTelemetryState.js';
 
 type TelemetryState = TelemetryStateV0 | TelemetryStateV1;
 
@@ -25,12 +28,6 @@ interface TelemetryStateV1 {
 	lastCommand?: string;
 	lastCommandTimestamp?: number;
 }
-
-const telemetryWarningText = [
-	'Apify collects telemetry data about general usage of Apify CLI to help us improve the product.',
-	'This feature is enabled by default, and you can disable it by setting the "APIFY_CLI_DISABLE_TELEMETRY" environment variable to "1", or by running "apify telemetry disable".',
-	'You can find more information about our telemetry in https://docs.apify.com/cli/docs/telemetry.',
-].join('\n');
 
 function createAnonymousId() {
 	return `CLI:${cryptoRandomObjectId()}`;
@@ -75,7 +72,7 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 		// First time we are tracking telemetry, so we want to notify user about it.
 		// Skip the notice if telemetry is disabled via env var — the user already opted out.
 		if (!process.env.APIFY_CLI_DISABLE_TELEMETRY || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)) {
-			info({ message: telemetryWarningText });
+			logger.stderr.info(t(useTelemetryStateMessages.telemetryNotice));
 		}
 
 		return useTelemetryState();

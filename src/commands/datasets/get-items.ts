@@ -3,8 +3,9 @@ import { type ApifyClient, type Dataset, type DatasetClient, DownloadItemsFormat
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { error, simpleLog } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { DatasetsGetItemsMessages } from '#i18n/commands/datasets/get-items.js';
 
 const downloadFormatToContentType: Record<DownloadItemsFormat, string> = {
 	[DownloadItemsFormat.JSON]: 'application/json',
@@ -67,7 +68,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 		const maybeDataset = await this.tryToGetDataset(apifyClient, datasetId);
 
 		if (!maybeDataset) {
-			error({ message: `Dataset with ID "${datasetId}" not found.` });
+			this.logger.stderr.error(this.t(DatasetsGetItemsMessages.datasetNotFound, { datasetId }));
 
 			return;
 		}
@@ -84,7 +85,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 
 		const contentType = downloadFormatToContentType[format] ?? 'application/octet-stream';
 
-		simpleLog({ message: contentType });
+		this.logger.stderr.log(this.t(DatasetsGetItemsMessages.contentType, { contentType }));
 
 		process.stdout.write(result);
 		process.stdout.write('\n');

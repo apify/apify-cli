@@ -1,5 +1,4 @@
 import type { ActorRun, ActorStartOptions, ActorTaggedBuild } from 'apify-client';
-import chalk from 'chalk';
 
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -7,15 +6,10 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { simpleLog } from '../../lib/outputs.js';
-import {
-	getLocalConfig,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
+
+import { ActorsStartCommandMessages } from '#i18n/commands/actors/start.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
 	static override name = 'start' as const;
@@ -59,8 +53,6 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			exclusive: ['input'],
 		}),
 	};
-
-	static override enableJsonFlag = true;
 
 	static override args = {
 		actorId: Args.string({
@@ -130,7 +122,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		}
 
 		if (this.flags.json) {
-			printJsonToStdout(run);
+			this.logger.stdout.json(run);
 			return;
 		}
 
@@ -138,14 +130,16 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		const datasetUrl = `https://console.apify.com/storage/datasets/${run.defaultDatasetId}`;
 
 		const message: string[] = [
-			`${chalk.gray('Run:')} Calling Actor ${userFriendlyId} (${chalk.gray(actorId)})`,
+			this.t(ActorsStartCommandMessages.callingActor, { userFriendlyId, actorId }),
 			'',
-			`${chalk.yellow('Started')}: ${TimestampFormatter.display(run.startedAt)}`,
+			this.t(ActorsStartCommandMessages.runStartedHeader, {
+				startedAt: TimestampFormatter.display(run.startedAt),
+			}),
 		];
 
 		if (run.containerUrl) {
 			// container url
-			message.push(`${chalk.yellow('Container URL')}: ${chalk.blue(run.containerUrl)}`);
+			message.push(this.t(ActorsStartCommandMessages.containerUrlLine, { containerUrl: run.containerUrl }));
 		}
 
 		// basic version info
@@ -158,38 +152,38 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			([, data]) => data.buildNumber === run.buildNumber,
 		)?.[0];
 
-		const messageParts = [`${chalk.yellow('Build')}:`, chalk.cyan(run.buildNumber)];
+		const buildTagText = runVersionTaggedAs
+			? this.t(ActorsStartCommandMessages.buildTagValue, { tag: runVersionTaggedAs })
+			: this.t(ActorsStartCommandMessages.buildTagNa);
 
-		if (runVersionTaggedAs) {
-			messageParts.push(`(${chalk.yellow(runVersionTaggedAs)})`);
-		} else {
-			messageParts.push(`(${chalk.gray('N/A')})`);
-		}
+		const actorVersionInfo = actorVersion
+			? this.t(ActorsStartCommandMessages.actorVersionInfo, {
+					versionNumber: actorVersion.versionNumber ?? '',
+					buildTag: actorVersion.buildTag ?? '',
+				})
+			: '';
 
-		if (actorVersion) {
-			messageParts.push(
-				`| ${chalk.gray('Actor version:')} ${chalk.cyan(actorVersion.versionNumber)} (${chalk.yellow(actorVersion.buildTag)})`,
-			);
-		}
-
-		message.push(messageParts.join(' '));
-
-		// timeout
-		message.push(`${chalk.yellow('Timeout')}: ${run.options.timeoutSecs.toLocaleString('en-US')} seconds`);
-
-		// memory limit
-		message.push(`${chalk.yellow('Memory')}: ${run.options.memoryMbytes} MB`);
-
-		// url
 		message.push(
-			'',
-			`${chalk.blue('Export results')}: ${datasetUrl!}`,
-			`${chalk.blue('View on Apify Console')}: ${url}`,
+			this.t(ActorsStartCommandMessages.buildLine, {
+				buildNumber: run.buildNumber,
+				buildTag: buildTagText,
+				actorVersionInfo,
+			}),
 		);
 
-		simpleLog({
-			message: message.join('\n'),
-			stdout: true,
-		});
+		// timeout
+		message.push(
+			this.t(ActorsStartCommandMessages.timeoutLine, {
+				timeoutSecs: run.options.timeoutSecs.toLocaleString('en-US'),
+			}),
+		);
+
+		// memory limit
+		message.push(this.t(ActorsStartCommandMessages.memoryLine, { memoryMbytes: run.options.memoryMbytes }));
+
+		// url
+		message.push(this.t(ActorsStartCommandMessages.resultLinks, { datasetUrl: datasetUrl!, url }));
+
+		this.logger.stdout.log(message.join('\n'));
 	}
 }

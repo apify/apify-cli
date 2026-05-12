@@ -2,8 +2,9 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
-import { error, simpleLog } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresGetValueCommandMessages } from '#i18n/commands/key-value-stores/get-value.js';
 
 export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueStoresGetValueCommand> {
 	static override name = 'get-value' as const;
@@ -49,7 +50,9 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, keyValueStoreId);
 
 		if (!maybeStore) {
-			error({ message: `Key-value store with ID "${keyValueStoreId}" not found.` });
+			this.logger.stderr.error(
+				this.t(KeyValueStoresGetValueCommandMessages.storeNotFound, { storeId: keyValueStoreId }),
+			);
 			return;
 		}
 
@@ -58,12 +61,12 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 		const itemRecord = await storeClient.getRecord(itemKey, { stream: true });
 
 		if (!itemRecord) {
-			error({ message: `Item with key "${itemKey}" not found in the key-value store.` });
+			this.logger.stderr.error(this.t(KeyValueStoresGetValueCommandMessages.itemNotFound, { itemKey }));
 			return;
 		}
 
 		// Print out the content-type on stderr (default to octet-stream for unknown content types)
-		simpleLog({ message: itemRecord.contentType ?? 'application/octet-stream' });
+		this.logger.stderr.log(itemRecord.contentType ?? 'application/octet-stream');
 
 		if (onlyContentType) {
 			// Close the stream as otherwise the process hangs
@@ -85,10 +88,10 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 
 			try {
 				const parsed = JSON.parse(concatenated);
-				simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
+				this.logger.stdout.log(JSON.stringify(parsed, null, 2));
 			} catch {
 				// Print out as is directly to stdout
-				simpleLog({ message: concatenated, stdout: true });
+				this.logger.stdout.log(concatenated);
 			}
 
 			return;

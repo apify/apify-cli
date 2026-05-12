@@ -1,12 +1,12 @@
 import type { ApifyApiError } from 'apify-client';
-import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
-import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { DatasetsRenameCommandMessages } from '#i18n/commands/datasets/rename.js';
 
 export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCommand> {
 	static override name = 'rename' as const;
@@ -47,14 +47,12 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 		const { newName, nameOrId } = this.args;
 
 		if (!newName && !unname) {
-			error({ message: 'You must provide either a new name or the --unname flag.' });
+			this.logger.stderr.error(this.t(DatasetsRenameCommandMessages.mustProvideNameOrUnname));
 			return;
 		}
 
 		if (newName && unname) {
-			error({
-				message: 'You cannot provide a new name and the --unname flag.',
-			});
+			this.logger.stderr.error(this.t(DatasetsRenameCommandMessages.cannotProvideBoth));
 			return;
 		}
 
@@ -62,9 +60,7 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 		const existingDataset = await tryToGetDataset(client, nameOrId);
 
 		if (!existingDataset) {
-			error({
-				message: `Dataset with ID or name "${nameOrId}" not found.`,
-			});
+			this.logger.stderr.error(this.t(DatasetsRenameCommandMessages.datasetNotFound, { nameOrId }));
 
 			return;
 		}
@@ -73,29 +69,26 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 
 		const successMessage = (() => {
 			if (!name) {
-				return `The name of the dataset with ID ${chalk.yellow(id)} has been set to: ${chalk.yellow(newName)}`;
+				return this.t(DatasetsRenameCommandMessages.nameSet, { id, newName: newName! });
 			}
 
 			if (unname) {
-				return `The name of the dataset with ID ${chalk.yellow(id)} has been removed (was ${chalk.yellow(name)} previously).`;
+				return this.t(DatasetsRenameCommandMessages.nameRemoved, { id, previousName: name });
 			}
 
-			return `The name of the dataset with ID ${chalk.yellow(id)} was changed from ${chalk.yellow(name)} to ${chalk.yellow(newName)}.`;
+			return this.t(DatasetsRenameCommandMessages.nameChanged, { id, previousName: name, newName: newName! });
 		})();
 
 		try {
 			await existingDataset.datasetClient.update({ name: unname ? (null as never) : newName! });
 
-			success({
-				message: successMessage,
-				stdout: true,
-			});
+			this.logger.stdout.success(successMessage);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to rename dataset with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(
+				this.t(DatasetsRenameCommandMessages.renameFailed, { id, message: casted.message || String(casted) }),
+			);
 		}
 	}
 }

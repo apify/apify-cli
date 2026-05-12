@@ -1,12 +1,12 @@
 import type { ApifyApiError } from 'apify-client';
-import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { tryToGetKeyValueStore } from '../../lib/commands/storages.js';
-import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
+
+import { KeyValueStoresRenameCommandMessages } from '#i18n/commands/key-value-stores/rename.js';
 
 export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueStoresRenameCommand> {
 	static override name = 'rename' as const;
@@ -47,14 +47,12 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 		const { newName, keyValueStoreNameOrId } = this.args;
 
 		if (!newName && !unname) {
-			error({ message: 'You must provide either a new name or the --unname flag.' });
+			this.logger.stderr.error(this.t(KeyValueStoresRenameCommandMessages.missingNameOrUnname));
 			return;
 		}
 
 		if (newName && unname) {
-			error({
-				message: 'You cannot provide a new name and the --unname flag.',
-			});
+			this.logger.stderr.error(this.t(KeyValueStoresRenameCommandMessages.conflictingNameAndUnname));
 			return;
 		}
 
@@ -62,9 +60,9 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 		const existingDataset = await tryToGetKeyValueStore(client, keyValueStoreNameOrId);
 
 		if (!existingDataset) {
-			error({
-				message: `Key-value store with ID or name "${keyValueStoreNameOrId}" not found.`,
-			});
+			this.logger.stderr.error(
+				this.t(KeyValueStoresRenameCommandMessages.storeNotFound, { nameOrId: keyValueStoreNameOrId }),
+			);
 
 			return;
 		}
@@ -73,29 +71,29 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 
 		const successMessage = (() => {
 			if (!name) {
-				return `The name of the key-value store with ID ${chalk.yellow(id)} has been set to: ${chalk.yellow(newName)}`;
+				return this.t(KeyValueStoresRenameCommandMessages.nameSet, { id, newName: newName! });
 			}
 
 			if (unname) {
-				return `The name of the key-value store with ID ${chalk.yellow(id)} has been removed (was ${chalk.yellow(name)} previously).`;
+				return this.t(KeyValueStoresRenameCommandMessages.nameRemoved, { id, name });
 			}
 
-			return `The name of the key-value store with ID ${chalk.yellow(id)} was changed from ${chalk.yellow(name)} to ${chalk.yellow(newName)}.`;
+			return this.t(KeyValueStoresRenameCommandMessages.nameChanged, { id, name, newName: newName! });
 		})();
 
 		try {
 			await existingDataset.keyValueStoreClient.update({ name: unname ? (null as never) : newName! });
 
-			success({
-				message: successMessage,
-				stdout: true,
-			});
+			this.logger.stdout.success(successMessage);
 		} catch (err) {
 			const casted = err as ApifyApiError;
 
-			error({
-				message: `Failed to rename key-value store with ID ${chalk.yellow(id)}\n  ${casted.message || casted}`,
-			});
+			this.logger.stderr.error(
+				this.t(KeyValueStoresRenameCommandMessages.renameFailed, {
+					id,
+					message: String(casted.message || casted),
+				}),
+			);
 		}
 	}
 }

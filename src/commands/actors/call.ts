@@ -8,7 +8,6 @@ import {
 	type Dataset,
 	DownloadItemsFormat,
 } from 'apify-client';
-import chalk from 'chalk';
 
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -16,14 +15,10 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLocalConfig,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { t } from '../../lib/i18n/index.js';
+import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+
+import { ActorsCallCommandMessages } from '#i18n/commands/actors/call.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
@@ -84,8 +79,6 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		// TODO: do we want to do the --stream-x flags? Can we even do them?
 	};
 
-	static override enableJsonFlag = true;
-
 	static override args = {
 		actorId: Args.string({
 			required: false,
@@ -103,7 +96,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		if (this.flags.json && this.flags.outputDataset) {
-			error({ message: 'You cannot use both the --json and --output-dataset flags when running this command.' });
+			this.logger.stderr.error(this.t(ActorsCallCommandMessages.conflictingJsonAndOutputDataset));
 			process.exitCode = CommandExitCodes.InvalidInput;
 
 			return;
@@ -173,11 +166,19 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					url = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
 					datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
 
-					const message: string[] = [`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`];
+					const message: string[] = [
+						this.t(ActorsCallCommandMessages.runStartedHeader, {
+							startedAt: TimestampFormatter.display(yieldedRun.startedAt),
+						}),
+					];
 
 					// container url
 					if (yieldedRun.containerUrl) {
-						message.push(`${chalk.yellow('Container URL')}: ${chalk.blue(yieldedRun.containerUrl)}`);
+						message.push(
+							this.t(ActorsCallCommandMessages.containerUrlLine, {
+								containerUrl: yieldedRun.containerUrl,
+							}),
+						);
 					}
 
 					// basic version info
@@ -190,50 +191,50 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 						(actorData.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>,
 					).find(([, data]) => data.buildNumber === yieldedRun.buildNumber)?.[0];
 
-					const messageParts = [`${chalk.yellow('Build')}:`, chalk.cyan(run.buildNumber)];
+					const buildTagText = runVersionTaggedAs
+						? this.t(ActorsCallCommandMessages.buildTagValue, { tag: runVersionTaggedAs })
+						: this.t(ActorsCallCommandMessages.buildTagNa);
 
-					if (runVersionTaggedAs) {
-						messageParts.push(`(${chalk.yellow(runVersionTaggedAs)})`);
-					} else {
-						messageParts.push(`(${chalk.gray('N/A')})`);
-					}
+					const actorVersionInfo = actorVersion
+						? this.t(ActorsCallCommandMessages.actorVersionInfo, {
+								versionNumber: actorVersion.versionNumber ?? '',
+								buildTag: actorVersion.buildTag ?? '',
+							})
+						: '';
 
-					if (actorVersion) {
-						messageParts.push(
-							`| ${chalk.gray('Actor version:')} ${chalk.cyan(actorVersion.versionNumber)} (${chalk.yellow(actorVersion.buildTag)})`,
-						);
-					}
-
-					message.push(messageParts.join(' '));
+					message.push(
+						this.t(ActorsCallCommandMessages.buildLine, {
+							buildNumber: run.buildNumber,
+							buildTag: buildTagText,
+							actorVersionInfo,
+						}),
+					);
 
 					// timeout
-					message.push(`${chalk.yellow('Timeout')}: ${run.options.timeoutSecs.toLocaleString('en-US')} seconds`);
+					message.push(
+						this.t(ActorsCallCommandMessages.timeoutLine, {
+							timeoutSecs: run.options.timeoutSecs.toLocaleString('en-US'),
+						}),
+					);
 
 					// memory limit
-					message.push(`${chalk.yellow('Memory')}: ${run.options.memoryMbytes} MB`);
+					message.push(this.t(ActorsCallCommandMessages.memoryLine, { memoryMbytes: run.options.memoryMbytes }));
 
 					// url
-					message.push(`${chalk.blue('View on Apify Console')}: ${url}`, '');
+					message.push(this.t(ActorsCallCommandMessages.viewOnConsoleLine, { url }), '');
 
-					simpleLog({ message: message.join('\n'), stdout: !this.flags.json });
+					(!this.flags.json ? this.logger.stdout : this.logger.stderr).log(message.join('\n'));
 				}
 			}
 		}
 
 		if (this.flags.json) {
-			printJsonToStdout(run!);
+			this.logger.stdout.json(run!);
 			return;
 		}
 
 		if (!this.flags.silent) {
-			simpleLog({
-				message: [
-					'',
-					`${chalk.blue('Export results')}: ${datasetUrl!}`,
-					`${chalk.blue('View on Apify Console')}: ${url!}`,
-				].join('\n'),
-				stdout: true,
-			});
+			this.logger.stdout.log(this.t(ActorsCallCommandMessages.resultLinks, { datasetUrl: datasetUrl!, url: url! }));
 		}
 
 		if (this.flags.outputDataset) {
@@ -279,7 +280,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		if (providedActorNameOrId?.includes('/')) {
 			const actor = await client.actor(providedActorNameOrId).get();
 			if (!actor) {
-				throw new Error(`Cannot find Actor with ID '${providedActorNameOrId}' in your account.`);
+				throw new Error(t(ActorsCallCommandMessages.actorNotFoundByFullId, { actorId: providedActorNameOrId }));
 			}
 
 			return {
@@ -311,7 +312,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 				};
 			}
 
-			throw new Error(`Cannot find Actor with name or ID '${providedActorNameOrId}' in your account.`);
+			throw new Error(t(ActorsCallCommandMessages.actorNotFoundByNameOrId, { actorId: providedActorNameOrId }));
 		}
 
 		if (localActorName) {
@@ -319,8 +320,9 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 			if (!actor) {
 				throw new Error(
-					`Cannot find Actor with ID '${usernameOrId}/${localActorName}' ` +
-						'in your account. Call "apify push" to push this Actor to Apify platform.',
+					t(ActorsCallCommandMessages.actorNotFoundFromLocalConfig, {
+						actorId: `${usernameOrId}/${localActorName}`,
+					}),
 				);
 			}
 
@@ -331,8 +333,6 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			};
 		}
 
-		throw new Error(
-			'Please provide an Actor ID or name, or run this command from a directory with a valid Apify Actor.',
-		);
+		throw new Error(t(ActorsCallCommandMessages.missingActorIdentifier));
 	}
 }

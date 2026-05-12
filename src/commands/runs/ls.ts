@@ -6,13 +6,9 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLoggedClientOrThrow,
-	MultilineTimestampFormatter,
-	printJsonToStdout,
-	ShortDurationFormatter,
-} from '../../lib/utils.js';
+import { getLoggedClientOrThrow, MultilineTimestampFormatter, ShortDurationFormatter } from '../../lib/utils.js';
+
+import { RunsLsCommandMessages } from '#i18n/commands/runs/ls.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'],
@@ -74,8 +70,6 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { desc, limit, offset, compact, json } = this.flags;
 		const { actorId } = this.args;
@@ -86,9 +80,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
-			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
-			});
+			this.logger.stderr.error(this.t(RunsLsCommandMessages.invalidActor, { reason: ctx.reason }));
 
 			return;
 		}
@@ -96,14 +88,12 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		const allRuns = await client.actor(ctx.id).runs().list({ desc, limit, offset });
 
 		if (json) {
-			printJsonToStdout(allRuns);
+			this.logger.stdout.json(allRuns);
 			return;
 		}
 
 		if (!allRuns.items.length) {
-			simpleLog({
-				message: 'There are no recent runs found for this Actor.',
-			});
+			this.logger.stderr.log(this.t(RunsLsCommandMessages.noRuns));
 
 			return;
 		}
@@ -153,9 +143,6 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 		message.push(table.render(compact ? CompactMode.VeryCompact : CompactMode.WebLikeCompact));
 
-		simpleLog({
-			message: message.join('\n'),
-			stdout: true,
-		});
+		this.logger.stdout.log(message.join('\n'));
 	}
 }

@@ -5,14 +5,9 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
-import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLoggedClientOrThrow,
-	objectGroupBy,
-	outputJobLog,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLoggedClientOrThrow, objectGroupBy, outputJobLog, TimestampFormatter } from '../../lib/utils.js';
+
+import { BuildsCreateCommandMessages } from '#i18n/commands/builds/create.js';
 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
 	static override name = 'create' as const;
@@ -53,8 +48,6 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		}),
 	};
 
-	static override enableJsonFlag = true;
-
 	async run() {
 		const { tag, version, json, log } = this.flags;
 		const { actorId } = this.args;
@@ -64,10 +57,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		const ctx = await resolveActorContext({ providedActorNameOrId: actorId, client });
 
 		if (!ctx.valid) {
-			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
-				stdout: true,
-			});
+			this.logger.stdout.error(this.t(BuildsCreateCommandMessages.invalidActorContext, { reason: ctx.reason }));
 
 			return;
 		}
@@ -93,10 +83,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			// This ensures that a --tag and --version match the version and tag the platform knows about
 			// but only when --tag is provided
 			if (tag && (!taggedVersions || !taggedVersions.some((v) => v.versionNumber === version))) {
-				error({
-					message: `The Actor Version "${version}" does not have the tag "${tag}".`,
-					stdout: true,
-				});
+				this.logger.stdout.error(this.t(BuildsCreateCommandMessages.versionDoesNotHaveTag, { version: version!, tag }));
 
 				return;
 			}
@@ -109,10 +96,12 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 			if (taggedVersions.length > 1) {
 				if (!version) {
-					error({
-						message: `Multiple Actor versions with the tag "${tag}" found. Please specify the version number using the "--version" flag.\n  Available versions for this tag: ${taggedVersions.map((v) => chalk.yellow(v.versionNumber)).join(', ')}`,
-						stdout: true,
-					});
+					this.logger.stdout.error(
+						this.t(BuildsCreateCommandMessages.multipleVersionsForTag, {
+							tag: tag!,
+							availableVersions: taggedVersions.map((v) => chalk.yellow(v.versionNumber)).join(', '),
+						}),
+					);
 
 					return;
 				}
@@ -122,10 +111,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		}
 
 		if (!selectedVersion) {
-			error({
-				message: `No Actor versions with the tag "${tag}" found. You can push a new version with this tag by using "apify push --build-tag=${tag}".`,
-				stdout: true,
-			});
+			this.logger.stdout.error(this.t(BuildsCreateCommandMessages.noVersionsForTag, { tag: tag! }));
 
 			return;
 		}
@@ -133,27 +119,26 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		const build = await client.actor(ctx.id).build(selectedVersion, { tag });
 
 		if (json) {
-			printJsonToStdout(build);
+			this.logger.stdout.json(build);
 			return;
 		}
 
-		const message: string[] = [
-			`${chalk.yellow('Actor')}: ${actorInfo?.username ? `${actorInfo.username}/` : ''}${actorInfo?.name ?? 'unknown-actor'} (${chalk.gray(build.actId)})`,
-			`  ${chalk.yellow('Version')}: ${selectedVersion} (tagged with ${chalk.yellow(actualTag)})`,
-			'',
-			`${chalk.greenBright('Build Started')} (ID: ${chalk.gray(build.id)})`,
-			`  ${chalk.yellow('Build Number')}: ${build.buildNumber} (will get tagged once finished)`,
-			`  ${chalk.yellow('Started')}: ${TimestampFormatter.display(build.startedAt)}`,
-			'',
-		];
+		const fullActorName = `${actorInfo?.username ? `${actorInfo.username}/` : ''}${actorInfo?.name ?? 'unknown-actor'}`;
+
+		this.logger.stdout.log(
+			this.t(BuildsCreateCommandMessages.buildStartedMessage, {
+				fullActorName,
+				actId: build.actId,
+				selectedVersion,
+				actualTag: actualTag!,
+				buildId: build.id,
+				buildNumber: build.buildNumber!,
+				startedAt: TimestampFormatter.display(build.startedAt),
+			}),
+		);
 
 		const url = `https://console.apify.com/actors/${build.actId}/builds/${build.buildNumber}`;
-		const viewMessage = `${chalk.blue('View in Apify Console')}: ${url}`;
-
-		simpleLog({
-			message: message.join('\n'),
-			stdout: true,
-		});
+		const viewMessage = this.t(BuildsCreateCommandMessages.viewInConsole, { url });
 
 		if (log) {
 			// While the log is streaming, forward interrupt signals to a
@@ -171,22 +156,18 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				await outputJobLog({ job: build, apifyClient: client });
 			} catch (err) {
 				// This should never happen...
-				error({
-					message: `Failed to print log for build with ID "${build.id}": ${(err as Error).message}`,
-					stdout: true,
-				});
+				this.logger.stdout.error(
+					this.t(BuildsCreateCommandMessages.logFailed, {
+						buildId: build.id,
+						message: (err as Error).message,
+					}),
+				);
 			}
 
 			// Print out an empty line
-			simpleLog({
-				message: '',
-				stdout: true,
-			});
+			this.logger.stdout.log('');
 		}
 
-		simpleLog({
-			message: viewMessage,
-			stdout: true,
-		});
+		this.logger.stdout.log(viewMessage);
 	}
 }

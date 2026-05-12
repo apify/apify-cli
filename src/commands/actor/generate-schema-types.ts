@@ -15,7 +15,6 @@ import {
 	readOutputSchema,
 	readStorageSchema,
 } from '../../lib/input_schema.js';
-import { error, info, success, warning } from '../../lib/outputs.js';
 import {
 	clearAllRequired,
 	makePropertiesRequired,
@@ -24,6 +23,8 @@ import {
 	prepareOutputSchemaForCompilation,
 	stripTitles,
 } from '../../lib/schema-transforms.js';
+
+import { ActorGenerateSchemaTypesCommandMessages } from '#i18n/commands/actor/generate-schema-types.js';
 
 export const BANNER_COMMENT = `
 // biome-ignore-all lint: generated
@@ -130,8 +131,10 @@ just as if the command were run from that directory with no argument.`;
 			cwd: effectiveCwd,
 			getMessage: (schemaPath) =>
 				schemaPath
-					? `Generating types from input schema at ${schemaPath}`
-					: `Generating types from input schema embedded in '${LOCAL_CONFIG_PATH}'`,
+					? this.t(ActorGenerateSchemaTypesCommandMessages.generatingFromInputSchemaAt, { schemaPath })
+					: this.t(ActorGenerateSchemaTypesCommandMessages.generatingFromInputSchemaEmbedded, {
+							configPath: LOCAL_CONFIG_PATH,
+						}),
 		});
 
 		const name = 'input';
@@ -157,7 +160,7 @@ just as if the command were run from that directory with no argument.`;
 		const outputFile = path.join(outputDir, `${name}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
-		success({ message: `Generated types written to ${outputFile}` });
+		this.logger.stderr.success(this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }));
 
 		// When no specific file path is provided, also generate types from additional schemas
 		// (this includes both "no argument" and "directory argument" modes)
@@ -174,9 +177,12 @@ just as if the command were run from that directory with no argument.`;
 			for (const [i, schemaResult] of schemaResults.entries()) {
 				if (schemaResult.status === 'rejected') {
 					anyFailed = true;
-					error({
-						message: `Failed to generate types for ${schemaLabels[i]} schema: ${schemaResult.reason instanceof Error ? schemaResult.reason.message : String(schemaResult.reason)}`,
-					});
+					this.logger.stderr.error(
+						this.t(ActorGenerateSchemaTypesCommandMessages.schemaGenerationFailed, {
+							label: schemaLabels[i],
+							message: schemaResult.reason instanceof Error ? schemaResult.reason.message : String(schemaResult.reason),
+						}),
+					);
 				}
 			}
 
@@ -204,15 +210,23 @@ just as if the command were run from that directory with no argument.`;
 		const { datasetSchema, datasetSchemaPath } = datasetResult;
 
 		if (datasetSchemaPath) {
-			info({ message: `[experimental] Generating types from Dataset schema at ${datasetSchemaPath}` });
+			this.logger.stderr.info(
+				this.t(ActorGenerateSchemaTypesCommandMessages.experimentalDatasetAt, {
+					schemaPath: datasetSchemaPath,
+				}),
+			);
 		} else {
-			info({ message: `[experimental] Generating types from Dataset schema embedded in '${LOCAL_CONFIG_PATH}'` });
+			this.logger.stderr.info(
+				this.t(ActorGenerateSchemaTypesCommandMessages.experimentalDatasetEmbedded, {
+					configPath: LOCAL_CONFIG_PATH,
+				}),
+			);
 		}
 
 		const prepared = prepareFieldsSchemaForCompilation(datasetSchema);
 
 		if (!prepared) {
-			warning({ message: 'Dataset schema has no fields defined, skipping type generation.' });
+			this.logger.stderr.warning(this.t(ActorGenerateSchemaTypesCommandMessages.datasetHasNoFields));
 			return;
 		}
 
@@ -225,7 +239,7 @@ just as if the command were run from that directory with no argument.`;
 		const outputFile = path.join(outputDir, `${datasetName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
-		success({ message: `Generated types written to ${outputFile}` });
+		this.logger.stderr.success(this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }));
 	}
 
 	private async generateOutputTypes({
@@ -246,15 +260,21 @@ just as if the command were run from that directory with no argument.`;
 		const { outputSchema, outputSchemaPath } = outputResult;
 
 		if (outputSchemaPath) {
-			info({ message: `[experimental] Generating types from Output schema at ${outputSchemaPath}` });
+			this.logger.stderr.info(
+				this.t(ActorGenerateSchemaTypesCommandMessages.experimentalOutputAt, { schemaPath: outputSchemaPath }),
+			);
 		} else {
-			info({ message: `[experimental] Generating types from Output schema embedded in '${LOCAL_CONFIG_PATH}'` });
+			this.logger.stderr.info(
+				this.t(ActorGenerateSchemaTypesCommandMessages.experimentalOutputEmbedded, {
+					configPath: LOCAL_CONFIG_PATH,
+				}),
+			);
 		}
 
 		const prepared = prepareOutputSchemaForCompilation(outputSchema);
 
 		if (!prepared) {
-			warning({ message: 'Output schema has no properties defined, skipping type generation.' });
+			this.logger.stderr.warning(this.t(ActorGenerateSchemaTypesCommandMessages.outputHasNoProperties));
 			return;
 		}
 
@@ -267,7 +287,7 @@ just as if the command were run from that directory with no argument.`;
 		const outputFile = path.join(outputDir, `${outputName}.ts`);
 		await writeFile(outputFile, result, 'utf-8');
 
-		success({ message: `Generated types written to ${outputFile}` });
+		this.logger.stderr.success(this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }));
 	}
 
 	private async generateKvsTypes({
@@ -288,19 +308,21 @@ just as if the command were run from that directory with no argument.`;
 		const { schema: kvsSchema, schemaPath: kvsSchemaPath } = kvsResult;
 
 		if (kvsSchemaPath) {
-			info({ message: `[experimental] Generating types from Key-Value Store schema at ${kvsSchemaPath}` });
+			this.logger.stderr.info(
+				this.t(ActorGenerateSchemaTypesCommandMessages.experimentalKvsAt, { schemaPath: kvsSchemaPath }),
+			);
 		} else {
-			info({
-				message: `[experimental] Generating types from Key-Value Store schema embedded in '${LOCAL_CONFIG_PATH}'`,
-			});
+			this.logger.stderr.info(
+				this.t(ActorGenerateSchemaTypesCommandMessages.experimentalKvsEmbedded, {
+					configPath: LOCAL_CONFIG_PATH,
+				}),
+			);
 		}
 
 		const collections = prepareKvsCollectionsForCompilation(kvsSchema);
 
 		if (collections.length === 0) {
-			warning({
-				message: 'Key-Value Store schema has no collections with JSON schemas, skipping type generation.',
-			});
+			this.logger.stderr.warning(this.t(ActorGenerateSchemaTypesCommandMessages.kvsHasNoCollections));
 			return;
 		}
 
@@ -321,6 +343,6 @@ just as if the command were run from that directory with no argument.`;
 		const outputFile = path.join(outputDir, 'key-value-store.ts');
 		await writeFile(outputFile, parts.join('\n'), 'utf-8');
 
-		success({ message: `Generated types written to ${outputFile}` });
+		this.logger.stderr.success(this.t(ActorGenerateSchemaTypesCommandMessages.generatedTypesWritten, { outputFile }));
 	}
 }
