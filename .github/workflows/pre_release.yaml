@@ -45,7 +45,7 @@ jobs:
         name: Update changelog
         runs-on: ubuntu-latest
         outputs:
-            changelog_commitish: ${{ steps.commit.outputs.commit_long_sha || github.sha }}
+            changelog_commitish: ${{ steps.commit.outputs.commit-sha || github.sha }}
             pre_release_version: ${{ steps.get-pre-release-version.outputs.pre_release_version }}
 
         steps:
@@ -76,14 +76,24 @@ jobs:
             - name: Format
               run: pnpm install && pnpm run format:fix
 
+            - name: Stage changes
+              id: stage
+              run: |
+                  git pull --rebase --autostash
+                  git add -A
+                  if git diff --cached --quiet; then
+                    echo "has-changes=false" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "has-changes=true" >> "$GITHUB_OUTPUT"
+                  fi
+
             - name: Commit changes
               id: commit
-              uses: EndBug/add-and-commit@v10
+              if: steps.stage.outputs.has-changes == 'true'
+              uses: apify/workflows/commit@v0.44.0
               with:
-                  author_name: Apify Release Bot
-                  author_email: noreply@apify.com
-                  message: "chore(release): Update changelog and package version [skip ci]"
-                  pull: "--rebase --autostash"
+                  commit-message: "chore(release): Update changelog and package version [skip ci]"
+                  github-token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Get pre-release version
               id: get-pre-release-version
