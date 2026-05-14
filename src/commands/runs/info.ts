@@ -180,9 +180,7 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 			);
 		} else {
 			const diff = Date.now() - run.startedAt.getTime();
-			message.push(
-				`${chalk.yellow('Finished')}: ${chalk.gray(`Running for ${ShortDurationFormatter.format(diff)}`)}`,
-			);
+			message.push(`${chalk.yellow('Finished')}: ${chalk.gray(`Running for ${ShortDurationFormatter.format(diff)}`)}`);
 		}
 
 		// Separator
@@ -212,9 +210,9 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 			const actorVersion = actor.versions.find((item) => item.versionNumber === expectedActorVersion);
 
-			const runVersionTaggedAs = Object.entries(
-				(actor.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>,
-			).find(([, data]) => data.buildNumber === run.buildNumber)?.[0];
+			const runVersionTaggedAs = Object.entries((actor.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>).find(
+				([, data]) => data.buildNumber === run.buildNumber,
+			)?.[0];
 
 			const messageParts = [`${chalk.yellow('Build')}:`, chalk.cyan(run.buildNumber)];
 

@@ -173,9 +173,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					url = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
 					datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
 
-					const message: string[] = [
-						`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`,
-					];
+					const message: string[] = [`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`];
 
 					// container url
 					if (yieldedRun.containerUrl) {
@@ -209,9 +207,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					message.push(messageParts.join(' '));
 
 					// timeout
-					message.push(
-						`${chalk.yellow('Timeout')}: ${run.options.timeoutSecs.toLocaleString('en-US')} seconds`,
-					);
+					message.push(`${chalk.yellow('Timeout')}: ${run.options.timeoutSecs.toLocaleString('en-US')} seconds`);
 
 					// memory limit
 					message.push(`${chalk.yellow('Memory')}: ${run.options.memoryMbytes} MB`);

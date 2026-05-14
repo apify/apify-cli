@@ -216,9 +216,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 			info({ message: `Opening Apify Console at "${consoleUrl.href}"...` });
 			await open(consoleUrl.href);
 		} else {
-			console.log(
-				'Enter your Apify API token. You can find it at https://console.apify.com/settings/integrations',
-			);
+			console.log('Enter your Apify API token. You can find it at https://console.apify.com/settings/integrations');
 
 			const tokenAnswer = await useMaskedInput({ message: 'token:' });
 			await tryToLogin(tokenAnswer);

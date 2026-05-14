@@ -74,10 +74,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		const actorInfo = (await client.actor(ctx.id).get())!;
 
-		const versionsByBuildTag = objectGroupBy(
-			actorInfo.versions,
-			(actorVersion) => actorVersion.buildTag ?? 'latest',
-		);
+		const versionsByBuildTag = objectGroupBy(actorInfo.versions, (actorVersion) => actorVersion.buildTag ?? 'latest');
 
 		const taggedVersions = versionsByBuildTag[tag ?? 'latest'];
 		const specificVersionExists = actorInfo.versions.find((v) => v.versionNumber === version);
