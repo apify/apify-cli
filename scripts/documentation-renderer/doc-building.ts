@@ -48,9 +48,7 @@ export async function renderDocs(categories: Record<string, CommandsInCategory[]
 		}
 
 		if (templateFile.includes(startString) && !templateFile.includes(endString)) {
-			throw new Error(
-				`Category ${category} has a start placeholder but no end placeholder in reference template!`,
-			);
+			throw new Error(`Category ${category} has a start placeholder but no end placeholder in reference template!`);
 		}
 
 		const commandList: string[] = [];

@@ -1,0 +1,28 @@
+packages:
+    - website
+
+allowBuilds:
+    "@apify/ui-icons": true
+    "@swc/core": true
+    core-js: true
+    core-js-pure: true
+    esbuild: true
+    unrs-resolver: true
+
+minimumReleaseAge: 1440
+minimumReleaseAgeExclude:
+    - "@apify/*"
+    - "@crawlee/*"
+    - "apify"
+    - "apify-client"
+    - "crawlee"
+    - "got-scraping"
+
+overrides:
+    tar: 7.5.13
+
+# Unfortunately, several parts of this project expect everything to be hoisted up in the node_modules directory...
+# And fixing it would take longer than just enabling this and shedding a tear
+nodeLinker: hoisted
+publicHoistPattern:
+    - "*"

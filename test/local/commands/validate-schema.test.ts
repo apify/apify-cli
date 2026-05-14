@@ -118,10 +118,7 @@ describe('apify validate-schema', () => {
 				args_path: unparsableInputSchemaPath,
 			});
 
-			expect(lastErrorMessage()).to.contain.oneOf([
-				'Unexpected token }',
-				"Expected ',' or ']' after array element",
-			]);
+			expect(lastErrorMessage()).to.contain.oneOf(['Unexpected token }', "Expected ',' or ']' after array element"]);
 		});
 	});
 

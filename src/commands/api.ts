@@ -106,7 +106,38 @@ function parseHeaders(raw: string | undefined): Record<string, string> {
 	};
 }
 
+const METHOD_COLORS: Record<string, (text: string) => string> = {
+	GET: chalk.green,
+	POST: chalk.yellow,
+	PUT: chalk.blue,
+	PATCH: chalk.cyan,
+	DELETE: chalk.red,
+};
+
+function formatEndpointLine(ep: Endpoint): string {
+	const colorize = METHOD_COLORS[ep.method] || chalk.white;
+	const methodStr = colorize(ep.method.padEnd(7));
+	const summaryStr = ep.summary ? chalk.gray(` ${ep.summary}`) : '';
+	return `${methodStr} ${ep.path}${summaryStr}`;
+}
+
+const LIST_ENDPOINTS_HINT = `Run ${chalk.cyan('apify api --list-endpoints')} to see all available Apify API endpoints.`;
+
+function printSuggestions(suggestions: Endpoint[]) {
+	if (suggestions.length > 0) {
+		simpleLog({ message: `\nDid you mean:`, stdout: false });
+
+		for (const ep of suggestions) {
+			simpleLog({ message: `  ${formatEndpointLine(ep)}`, stdout: false });
+		}
+	}
+
+	simpleLog({ message: `\n${LIST_ENDPOINTS_HINT}`, stdout: false });
+}
+
 export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
+	private cachedEndpoints: Endpoint[] | null = null;
+
 	static override name = 'api' as const;
 
 	static override description =
@@ -139,6 +170,14 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		{
 			description: 'List all available Apify API endpoints.',
 			command: 'apify api --list-endpoints',
+		},
+		{
+			description: 'Search for endpoints matching a query.',
+			command: 'apify api --list-endpoints --search "actor run"',
+		},
+		{
+			description: 'Print a reference for an endpoint (methods, summary, path params).',
+			command: 'apify api --describe actor-runs/{runId}',
 		},
 	];
 
@@ -186,12 +225,38 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			char: 'l',
 			description: 'List all available Apify API endpoints.',
 			default: false,
+			exclusive: ['describe'],
+		}),
+		search: Flags.string({
+			char: 's',
+			description:
+				'Filter results returned by --list-endpoints. The query is case-insensitive and split into tokens by spaces. ' +
+				"For an endpoint to be returned, every token must appear in that endpoint's method, path, or summary.",
+			required: false,
+			exclusive: ['describe'],
+		}),
+		describe: Flags.string({
+			description:
+				'Print a reference for an endpoint path: its HTTP methods, summary, and path parameters. ' +
+				'Leading slashes and a version prefix in the path are optional. ' +
+				'For example, "actor-runs/{runId}" and "/v2/actor-runs/{runId}" are both accepted.',
+			required: false,
+			exclusive: ['list-endpoints', 'search'],
 		}),
 	};
 
 	async run() {
+		if (this.flags.search && !this.flags.listEndpoints) {
+			throw new Error('The --search flag can only be used together with --list-endpoints.');
+		}
+
+		if (this.flags.describe) {
+			await this.describeEndpoint(this.flags.describe);
+			return;
+		}
+
 		if (this.flags.listEndpoints) {
-			await this.printEndpoints();
+			await this.printEndpoints(this.flags.search);
 			return;
 		}
 
@@ -248,15 +313,8 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		const apifyClient = await getLoggedClientOrThrow();
 		const token = apifyClient.token!;
 
-		// Normalize endpoint — strip leading slash and any "v2/" prefix,
-		// because apifyClient.baseUrl already ends in "/v2".
-		let endpoint = endpointArg;
-
-		if (endpoint.startsWith('/')) {
-			endpoint = endpoint.slice(1);
-		}
-
-		endpoint = endpoint.replace(/^v2\//i, '');
+		// apifyClient.baseUrl already ends in "/v2"
+		const endpoint = normalizePath(endpointArg);
 
 		let url = `${apifyClient.baseUrl}/${endpoint}`;
 
@@ -311,10 +369,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			}
 
 			if (response.status === 404) {
-				simpleLog({
-					message: `\nRun ${chalk.cyan('apify api --list-endpoints')} to see all available Apify API endpoints.`,
-					stdout: false,
-				});
+				await this.print404Suggestions(endpoint);
 			}
 
 			return;
@@ -330,23 +385,72 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		}
 	}
 
-	private async printEndpoints() {
-		const endpoints = await fetchEndpoints();
+	private async getEndpoints(): Promise<Endpoint[]> {
+		this.cachedEndpoints ??= await fetchEndpoints();
+		return this.cachedEndpoints;
+	}
 
-		const methodColors: Record<string, (text: string) => string> = {
-			GET: chalk.green,
-			POST: chalk.yellow,
-			PUT: chalk.blue,
-			PATCH: chalk.cyan,
-			DELETE: chalk.red,
-		};
+	private async printEndpoints(search?: string) {
+		let endpoints = await this.getEndpoints();
 
-		for (const { method, path, summary } of endpoints) {
-			const colorize = methodColors[method] || chalk.white;
-			const methodStr = colorize(method.padEnd(7));
-			const summaryStr = summary ? chalk.gray(` ${summary}`) : '';
+		if (search) {
+			endpoints = filterEndpoints(endpoints, search);
 
-			console.log(`${methodStr} ${path}${summaryStr}`);
+			if (endpoints.length === 0) {
+				simpleLog({ message: `No endpoints matched the query "${search}".`, stdout: false });
+				return;
+			}
+		}
+
+		for (const ep of endpoints) {
+			console.log(formatEndpointLine(ep));
+		}
+	}
+
+	private async describeEndpoint(input: string) {
+		const normalized = normalizePath(input);
+		const endpoints = await this.getEndpoints();
+
+		const matches = endpoints.filter((ep) => normalizePath(ep.path) === normalized);
+
+		if (matches.length > 0) {
+			const pathParams = extractPathParams(matches[0].path);
+
+			console.log(chalk.bold(matches[0].path));
+			console.log('');
+
+			for (const ep of matches) {
+				const colorize = METHOD_COLORS[ep.method] || chalk.white;
+				console.log(`  ${colorize(ep.method.padEnd(7))} ${ep.summary || chalk.gray('(no summary)')}`);
+			}
+
+			if (pathParams.length > 0) {
+				console.log('');
+				console.log(chalk.bold('Path parameters:'));
+				for (const param of pathParams) {
+					console.log(`  ${chalk.yellow(`{${param}}`)}`);
+				}
+			}
+
+			console.log('');
+			console.log(chalk.gray(`Docs: https://docs.apify.com/api/v2`));
+			return;
+		}
+
+		simpleLog({ message: `No endpoint found for "${input}".`, stdout: false });
+
+		const suggestions = findClosestEndpoints(endpoints, normalized);
+		printSuggestions(suggestions);
+	}
+
+	private async print404Suggestions(endpoint: string) {
+		try {
+			const endpoints = await this.getEndpoints();
+			const suggestions = findClosestEndpoints(endpoints, endpoint);
+			printSuggestions(suggestions);
+		} catch {
+			// Silently ignore if we can't fetch the spec for suggestions
+			simpleLog({ message: `\n${LIST_ENDPOINTS_HINT}`, stdout: false });
 		}
 	}
 }
@@ -357,9 +461,7 @@ async function fetchEndpoints(): Promise<Endpoint[]> {
 	try {
 		response = await fetch(OPENAPI_SPEC_URL);
 	} catch (err) {
-		throw new Error(
-			`Failed to download the Apify OpenAPI spec from ${OPENAPI_SPEC_URL}: ${(err as Error).message}`,
-		);
+		throw new Error(`Failed to download the Apify OpenAPI spec from ${OPENAPI_SPEC_URL}: ${(err as Error).message}`);
 	}
 
 	if (!response.ok) {
@@ -386,4 +488,98 @@ async function fetchEndpoints(): Promise<Endpoint[]> {
 	endpoints.sort((a, b) => a.path.localeCompare(b.path) || a.method.localeCompare(b.method));
 
 	return endpoints;
+}
+
+function normalizePath(input: string): string {
+	let path = input;
+
+	if (path.startsWith('/')) {
+		path = path.slice(1);
+	}
+
+	path = path.replace(/^v2\//i, '');
+
+	return path;
+}
+
+function filterEndpoints(endpoints: Endpoint[], query: string): Endpoint[] {
+	const tokens = query.toLowerCase().split(/\s+/).filter(Boolean);
+
+	if (tokens.length === 0) {
+		return endpoints;
+	}
+
+	return endpoints.filter((ep) => {
+		const haystack = `${ep.method} ${ep.path} ${ep.summary}`.toLowerCase();
+		return tokens.every((token) => haystack.includes(token));
+	});
+}
+
+function extractPathParams(path: string): string[] {
+	const matches = path.match(/\{([^}]+)\}/g);
+
+	if (!matches) {
+		return [];
+	}
+
+	return matches.map((m) => m.slice(1, -1));
+}
+
+function findClosestEndpoints(endpoints: Endpoint[], input: string, maxPaths = 5): Endpoint[] {
+	const normalized = input.toLowerCase();
+	const inputSegments = normalized.split('/').filter(Boolean);
+
+	const pathScores = new Map<string, number>();
+
+	for (const ep of endpoints) {
+		if (pathScores.has(ep.path)) {
+			continue;
+		}
+
+		const normalizedEpPath = normalizePath(ep.path).toLowerCase();
+
+		let score = 0;
+
+		if (normalizedEpPath.includes(normalized) || normalized.includes(normalizedEpPath)) {
+			score += 10;
+		}
+
+		const epSegments = normalizedEpPath.split('/').filter(Boolean);
+
+		const len = Math.min(inputSegments.length, epSegments.length);
+
+		for (let i = 0; i < len; i++) {
+			if (epSegments[i] === inputSegments[i]) {
+				score += 2;
+			} else if (epSegments[i].startsWith('{')) {
+				score += 1;
+			}
+		}
+
+		if (inputSegments.length === epSegments.length) {
+			score += 1;
+		}
+
+		if (score > 0) {
+			pathScores.set(ep.path, score);
+		}
+	}
+
+	const sortedPaths = [...pathScores.entries()]
+		.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+		.slice(0, maxPaths)
+		.map(([path]) => path);
+
+	const pathSet = new Set(sortedPaths);
+	const matchedByPath = new Map<string, Endpoint[]>();
+
+	for (const ep of endpoints) {
+		if (pathSet.has(ep.path)) {
+			const list = matchedByPath.get(ep.path) || [];
+			list.push(ep);
+			matchedByPath.set(ep.path, list);
+		}
+	}
+
+	return sortedPaths.flatMap((path) => matchedByPath.get(path) || []);
 }

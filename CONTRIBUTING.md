@@ -5,7 +5,7 @@ Thanks for your interest in contributing! This guide covers local setup, code st
 ## Prerequisites
 
 - **Node.js** 22 or higher
-- **Yarn 4** (enabled via Corepack — do not install Yarn globally with npm)
+- **pnpm 10** (enabled via Corepack — do not install pnpm globally with npm)
 - **Bun** ≥ 1.2.5 (optional; only needed if you want to build the standalone bundles locally)
 - An [Apify account](https://console.apify.com/) and an API token if you want to run the API test suite
 
@@ -20,18 +20,18 @@ corepack enable
 ```bash
 git clone https://github.com/apify/apify-cli.git
 cd apify-cli
-yarn
-yarn build
+pnpm install
+pnpm run build
 ```
 
 Run the CLI straight from source in dev mode (no global install required):
 
 ```bash
-yarn dev:apify --version
-yarn dev:apify create my-actor
+pnpm run dev:apify --version
+pnpm run dev:apify create my-actor
 ```
 
-`yarn dev:actor` does the same for the in-Actor `actor` binary.
+`pnpm run dev:actor` does the same for the in-Actor `actor` binary.
 
 ## Code style
 
@@ -44,10 +44,10 @@ The repo uses three tools, wired together via a pre-commit hook (`husky` + `lint
 Run checks manually:
 
 ```bash
-yarn lint        # ESLint
-yarn format      # Biome + Prettier (check only)
-yarn lint:fix    # Auto-fix ESLint issues
-yarn format:fix  # Auto-format with Biome + Prettier
+pnpm run lint        # ESLint
+pnpm run format      # Biome + Prettier (check only)
+pnpm run lint:fix    # Auto-fix ESLint issues
+pnpm run format:fix  # Auto-format with Biome + Prettier
 ```
 
 The pre-commit hook runs these on staged files automatically. Do not bypass it with `--no-verify` — if a hook fails, fix the underlying issue and create a new commit.
@@ -56,15 +56,15 @@ The pre-commit hook runs these on staged files automatically. Do not bypass it w
 
 Run the full local gauntlet before pushing:
 
-1. `yarn lint`
-2. `yarn format`
-3. `yarn build`
-4. `yarn test:local` (and `yarn test:api` if relevant — see below)
+1. `pnpm run lint`
+2. `pnpm run format`
+3. `pnpm run build`
+4. `pnpm run test:local` (and `pnpm run test:api` if relevant — see below)
 
 If you added, removed, or changed a command's signature, regenerate the reference docs:
 
 ```bash
-yarn update-docs
+pnpm run update-docs
 ```
 
 Commit the updated `docs/` output alongside your change.
@@ -73,18 +73,18 @@ Commit the updated `docs/` output alongside your change.
 
 Tests use [Vitest](https://vitest.dev/). They fall into four categories:
 
-| Script               | What it runs                                                             | When to run                                        |
-| -------------------- | ------------------------------------------------------------------------ | -------------------------------------------------- |
-| `yarn test:local`    | Everything except tests named `[api]` and everything outside `test/api/` | Always, on every change                            |
-| `yarn test:api`      | Only tests tagged `[api]` — hits the real Apify API                      | When you touch API-facing code                     |
-| `yarn test:python`   | Tests tagged `[python]` — exercises Python Actor templates               | When you touch Python template / integration code  |
-| `yarn test:cucumber` | Cucumber features in `features/`                                         | When you touch anything covered by a `.feature.md` |
-| `yarn test:all`      | `test:local` then `test:api`                                             | Full pre-release check                             |
+| Script                   | What it runs                                                             | When to run                                        |
+| ------------------------ | ------------------------------------------------------------------------ | -------------------------------------------------- |
+| `pnpm run test:local`    | Everything except tests named `[api]` and everything outside `test/api/` | Always, on every change                            |
+| `pnpm run test:api`      | Only tests tagged `[api]` — hits the real Apify API                      | When you touch API-facing code                     |
+| `pnpm run test:python`   | Tests tagged `[python]` — exercises Python Actor templates               | When you touch Python template / integration code  |
+| `pnpm run test:cucumber` | Cucumber features in `features/`                                         | When you touch anything covered by a `.feature.md` |
+| `pnpm run test:all`      | `test:local` then `test:api`                                             | Full pre-release check                             |
 
 API tests need a token:
 
 ```bash
-TEST_USER_TOKEN=<your-apify-token> yarn test:api
+TEST_USER_TOKEN=<your-apify-token> pnpm run test:api
 ```
 
 Use a dedicated test account — API tests create and destroy Actors, datasets, and other resources.
@@ -154,7 +154,7 @@ Use `testRunCommand` from the command framework to invoke CLI commands in tests 
 - Write [Conventional Commit](https://www.conventionalcommits.org/) messages: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `test:`. The changelog generator (`git-cliff`) groups entries by prefix, so this matters.
 - Keep PRs focused. Unrelated cleanup is easier to review in a separate PR.
 - Include tests when you fix a bug or add behavior.
-- Update `docs/` via `yarn update-docs` if you changed any command.
+- Update `docs/` via `pnpm run update-docs` if you changed any command.
 
 Open PRs against `master`. Code owners are configured in [`.github/CODEOWNERS`](./.github/CODEOWNERS) and will be requested automatically.
 

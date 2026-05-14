@@ -5,9 +5,8 @@ const isWindows = process.platform === 'win32';
 const multiplierFactor = isWindows ? 3 : 2;
 
 export default defineConfig({
-	esbuild: {
+	oxc: {
 		target: 'es2022',
-		keepNames: true,
 	},
 	test: {
 		globals: true,

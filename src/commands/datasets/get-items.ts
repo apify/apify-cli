@@ -40,8 +40,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 
 	static override flags = {
 		limit: Flags.integer({
-			description:
-				'The amount of elements to get from the dataset. By default, it will return all available items.',
+			description: 'The amount of elements to get from the dataset. By default, it will return all available items.',
 		}),
 		offset: Flags.integer({
 			description: 'The offset in the dataset where to start getting items.',

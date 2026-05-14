@@ -154,9 +154,9 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 
 		const actorVersion = actorData.versions.find((item) => item.versionNumber === expectedActorVersion);
 
-		const runVersionTaggedAs = Object.entries(
-			(actorData.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>,
-		).find(([, data]) => data.buildNumber === run.buildNumber)?.[0];
+		const runVersionTaggedAs = Object.entries((actorData.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>).find(
+			([, data]) => data.buildNumber === run.buildNumber,
+		)?.[0];
 
 		const messageParts = [`${chalk.yellow('Build')}:`, chalk.cyan(run.buildNumber)];
 

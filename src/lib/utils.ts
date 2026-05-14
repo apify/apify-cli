@@ -141,7 +141,7 @@ const getTokenWithAuthFileFallback = (existingToken?: string) => {
 	return existingToken;
 };
 
-type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' }}).AxiosRequestConfig['headers'];
+type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
 
 /**
  * Returns options for ApifyClient
@@ -621,7 +621,7 @@ export const outputJobLog = async ({
  * NOTE: For window we have to returns npm.cmd instead of npm, otherwise it doesn't work
  */
 export const getNpmCmd = (): string => {
-	return /^win/.test(process.platform) ? 'npm.cmd' : 'npm';
+	return process.platform.startsWith('win') ? 'npm.cmd' : 'npm';
 };
 
 /**

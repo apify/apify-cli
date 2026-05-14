@@ -1,5 +1,6 @@
 import { ApiCommand } from '../../../src/commands/api.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { mockFetchSpec } from '../../__setup__/fixtures/mock-openapi-spec.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
@@ -144,22 +145,7 @@ describe('apify api (local)', () => {
 
 	describe('--list-endpoints', () => {
 		it('should fetch and list endpoints without requiring auth', async () => {
-			const fetchSpy = vitest.spyOn(globalThis, 'fetch').mockResolvedValue(
-				new Response(
-					JSON.stringify({
-						paths: {
-							'/v2/acts': {
-								get: { summary: 'Get list of Actors' },
-								post: { summary: 'Create Actor' },
-							},
-							'/v2/users/me': {
-								get: { summary: 'Get private user data' },
-							},
-						},
-					}),
-					{ status: 200, headers: { 'Content-Type': 'application/json' } },
-				),
-			);
+			const fetchSpy = mockFetchSpec();
 
 			try {
 				await testRunCommand(ApiCommand, {
@@ -189,6 +175,183 @@ describe('apify api (local)', () => {
 
 				expect(lastErrorMessage()).toMatch(/failed to download the apify openapi spec/i);
 				expect(lastErrorMessage()).toMatch(/503/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+	});
+
+	describe('--search', () => {
+		it('should error when used without --list-endpoints', async () => {
+			await testRunCommand(ApiCommand, {
+				args_methodOrEndpoint: 'v2/users/me',
+				flags_search: 'actor',
+			});
+
+			expect(lastErrorMessage()).toMatch(/--search.*--list-endpoints/i);
+		});
+
+		it('should filter endpoints matching a single token', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_listEndpoints: true,
+					flags_search: 'dataset',
+				});
+
+				const combined = logMessages.log.join('\n');
+				expect(combined).toMatch(/\/v2\/datasets/);
+				expect(combined).not.toMatch(/\/v2\/acts\b/);
+				expect(combined).not.toMatch(/\/v2\/users/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+
+		it('should filter endpoints matching multiple tokens (AND logic)', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_listEndpoints: true,
+					flags_search: 'GET actor run',
+				});
+
+				const combined = logMessages.log.join('\n');
+				// Should match "GET /v2/acts/{actorId}/runs" (summary: "Get list of Actor runs")
+				// and "GET /v2/actor-runs/{runId}" (summary: "Get run")
+				expect(combined).toMatch(/\/v2\/acts\/\{actorId\}\/runs/);
+				// Should NOT match POST endpoints or unrelated ones
+				expect(combined).not.toMatch(/\/v2\/datasets/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+
+		it('should print a message when no endpoints match', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_listEndpoints: true,
+					flags_search: 'nonexistent-xyz',
+				});
+
+				expect(logMessages.log.length).toBe(0);
+				expect(lastErrorMessage()).toMatch(/no endpoints matched/i);
+				expect(lastErrorMessage()).toContain('nonexistent-xyz');
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+
+		it('should be case-insensitive', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_listEndpoints: true,
+					flags_search: 'DELETE Dataset',
+				});
+
+				const combined = logMessages.log.join('\n');
+				expect(combined).toMatch(/DELETE/);
+				expect(combined).toMatch(/\/v2\/datasets\/\{datasetId\}/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+	});
+
+	describe('--describe', () => {
+		it('should describe an endpoint with exact path match', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_describe: 'acts/{actorId}',
+				});
+
+				const combined = logMessages.log.join('\n');
+				expect(combined).toMatch(/\/v2\/acts\/\{actorId\}/);
+				expect(combined).toMatch(/GET/);
+				expect(combined).toMatch(/PUT/);
+				expect(combined).toMatch(/DELETE/);
+				expect(combined).toMatch(/Get Actor/);
+				expect(combined).toMatch(/Update Actor/);
+				expect(combined).toMatch(/Path parameters/);
+				expect(combined).toMatch(/actorId/);
+				expect(combined).toMatch(/docs\.apify\.com/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+
+		it('should normalize input by stripping /v2/ prefix', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_describe: '/v2/actor-runs/{runId}',
+				});
+
+				const combined = logMessages.log.join('\n');
+				expect(combined).toMatch(/\/v2\/actor-runs\/\{runId\}/);
+				expect(combined).toMatch(/Get run/);
+				expect(combined).toMatch(/Delete run/);
+				expect(combined).toMatch(/runId/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+
+		it('should show "did you mean" suggestions on no match', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_describe: 'actors',
+				});
+
+				const combined = logMessages.error.join('\n');
+				expect(combined).toMatch(/no endpoint found/i);
+				expect(combined).toMatch(/did you mean/i);
+				expect(combined).toMatch(/--list-endpoints/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+
+		it('should show path params for endpoints with parameters', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_describe: 'acts/{actorId}/runs/{runId}',
+				});
+
+				const combined = logMessages.log.join('\n');
+				expect(combined).toMatch(/actorId/);
+				expect(combined).toMatch(/runId/);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+
+		it('should describe an endpoint without path params', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_describe: 'users/me',
+				});
+
+				const combined = logMessages.log.join('\n');
+				expect(combined).toMatch(/\/v2\/users\/me/);
+				expect(combined).toMatch(/GET/);
+				expect(combined).toMatch(/Get private user data/);
+				expect(combined).not.toMatch(/Path parameters/);
 			} finally {
 				fetchSpy.mockRestore();
 			}

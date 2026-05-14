@@ -1,0 +1,44 @@
+name: Version docs
+
+on:
+    workflow_dispatch:
+    workflow_call:
+
+jobs:
+    version_docs:
+        name: Version docs
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v6
+              with:
+                  ref: ${{ github.event.repository.default_branch }}
+                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
+
+            - name: Use Node.js
+              uses: actions/setup-node@v6
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/workflows/pnpm-install@main
+
+            - name: Snapshot the current version
+              id: version
+              run: |
+                  VERSION=$(jq -r '.version' package.json)
+                  MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
+                  echo "version=$VERSION" >> $GITHUB_OUTPUT
+                  rm -rf website/versioned_docs/version-$MAJOR_MINOR
+                  rm -rf website/versioned_sidebars/version-$MAJOR_MINOR-sidebars.json
+                  jq --arg v "$MAJOR_MINOR" 'map(select(. != $v))' website/versions.json > website/tmp.json && mv website/tmp.json website/versions.json
+                  pnpm --filter apify-cli-website exec -- docusaurus docs:version $MAJOR_MINOR
+
+            - name: Commit and push the version snapshot
+              uses: EndBug/add-and-commit@v10
+              with:
+                  author_name: Apify Release Bot
+                  author_email: noreply@apify.com
+                  message: "docs: version docs for ${{ steps.version.outputs.version }} [docs build]"
+                  pull: "--rebase --autostash"

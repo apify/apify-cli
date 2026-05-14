@@ -82,18 +82,14 @@ export class CommandError extends Error {
 					name: match.groups!.flagName,
 					expectsValue: match.groups!.noArg === undefined,
 					ambiguousFlag: match.groups!.ambiguous ? match.groups!.ambiguous : undefined,
-					ambiguousMessage: match.groups!.ambiguousMessage
-						? match.groups!.ambiguousMessage.trim()
-						: undefined,
+					ambiguousMessage: match.groups!.ambiguousMessage ? match.groups!.ambiguousMessage.trim() : undefined,
 				};
 
 				return flagData;
 			}
 
 			case CommandErrorCode.NODEJS_ERR_PARSE_ARGS_UNKNOWN_OPTION: {
-				const match = /Unknown option '-(?<longForm>-)?(?<optionName>.+)'\.(?<nodeSuggestion>.*)/gi.exec(
-					this.message,
-				);
+				const match = /Unknown option '-(?<longForm>-)?(?<optionName>.+)'\.(?<nodeSuggestion>.*)/gi.exec(this.message);
 
 				if (!match) {
 					throw new Error(
@@ -134,9 +130,7 @@ export class CommandError extends Error {
 					chalk.gray(
 						`Unknown flag provided: ${chalk.white.bold(flagData.shortForm ? `-${flagData.name}` : `--${flagData.name}`)}`,
 					),
-					flagData.unknownOptionSuggestion
-						? chalk.gray(`  ${flagData.unknownOptionSuggestion.trim()}`)
-						: null,
+					flagData.unknownOptionSuggestion ? chalk.gray(`  ${flagData.unknownOptionSuggestion.trim()}`) : null,
 					'',
 					helpMessage,
 				]
@@ -190,9 +184,7 @@ export class CommandError extends Error {
 
 				for (const [a, b] of flagPairs) {
 					messageParts.push(
-						chalk.gray(
-							`${redArrow}${chalk.white.bold(a)} cannot also be provided when using ${chalk.white.bold(b)}`,
-						),
+						chalk.gray(`${redArrow}${chalk.white.bold(a)} cannot also be provided when using ${chalk.white.bold(b)}`),
 					);
 				}
 
