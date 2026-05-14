@@ -8,6 +8,7 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - **api:** Add search, describe, and intelligent suggestions ([#1128](https://github.com/apify/apify-cli/pull/1128)) ([216ede4](https://github.com/apify/apify-cli/commit/216ede40073b4715b1d6576e40870443ec0921bc)) by [@l2ysho](https://github.com/l2ysho), closes [#1094](https://github.com/apify/apify-cli/issues/1094)
+- Surface approval URL when calling unapproved Actor ([#1111](https://github.com/apify/apify-cli/pull/1111)) ([53dc481](https://github.com/apify/apify-cli/commit/53dc481aa3a5023eada87dc7bde28704749194bd)) by [@raethlo](https://github.com/raethlo)
 
 ### 🐛 Bug Fixes
 
