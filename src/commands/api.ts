@@ -176,7 +176,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			command: 'apify api --list-endpoints --search "actor run"',
 		},
 		{
-			description: 'Describe an endpoint (methods, summary, path params).',
+			description: 'Print a reference for an endpoint (methods, summary, path params).',
 			command: 'apify api --describe actor-runs/{runId}',
 		},
 	];
@@ -230,15 +230,16 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		search: Flags.string({
 			char: 's',
 			description:
-				'Filter --list-endpoints by a space-separated query. ' +
-				'Each token must appear (case-insensitive) in method, path, or summary.',
+				'Filter results returned by --list-endpoints. The query is case-insensitive and split into tokens by spaces. ' +
+				"For an endpoint to be returned, every token must appear in that endpoint's method, path, or summary.",
 			required: false,
 			exclusive: ['describe'],
 		}),
 		describe: Flags.string({
 			description:
-				'Describe an endpoint: print every HTTP method on a path, its summary, ' +
-				'and path parameters. Accepts a path like "actor-runs/{runId}" or "/v2/actor-runs/{runId}".',
+				'Print a reference for an endpoint path: its HTTP methods, summary, and path parameters. ' +
+				'Leading slashes and a version prefix in the path are optional. ' +
+				'For example, "actor-runs/{runId}" and "/v2/actor-runs/{runId}" are both accepted.',
 			required: false,
 			exclusive: ['list-endpoints', 'search'],
 		}),
