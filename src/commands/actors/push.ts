@@ -190,9 +190,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			buildTag = DEFAULT_BUILD_TAG;
 		}
 
-		const waitForFinishMillis = Number.isNaN(this.flags.waitForFinish)
-			? undefined
-			: Number.parseInt(this.flags.waitForFinish!, 10) * 1000;
+		const parsedWaitForFinish = this.flags.waitForFinish ? Number.parseInt(this.flags.waitForFinish, 10) : Number.NaN;
+		const waitForFinishMillis = Number.isFinite(parsedWaitForFinish) ? parsedWaitForFinish * 1000 : undefined;
 
 		// User can override actorId of pushing Actor.
 		// It causes that we push Actor to this id but attributes in localConfig will remain same.
