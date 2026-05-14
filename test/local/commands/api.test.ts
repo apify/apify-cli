@@ -1,8 +1,8 @@
 import { ApiCommand } from '../../../src/commands/api.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { mockFetchSpec } from '../../__setup__/fixtures/mock-openapi-spec.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
-import { mockFetchSpec } from '../../__setup__/fixtures/mock-openapi-spec.js';
 
 useAuthSetup();
 
