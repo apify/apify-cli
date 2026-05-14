@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file.
 <!-- git-cliff-unreleased-start -->
 ## 1.6.2 - **not yet released**
 
+### 🚀 Features
+
+- **api:** Add search, describe, and intelligent suggestions ([#1128](https://github.com/apify/apify-cli/pull/1128)) ([216ede4](https://github.com/apify/apify-cli/commit/216ede40073b4715b1d6576e40870443ec0921bc)) by [@l2ysho](https://github.com/l2ysho), closes [#1094](https://github.com/apify/apify-cli/issues/1094)
+
 ### 🐛 Bug Fixes
 
 - Drop only-allow preinstall, enforce pnpm via devEngines ([#1129](https://github.com/apify/apify-cli/pull/1129)) ([19f0c2d](https://github.com/apify/apify-cli/commit/19f0c2d09d8c43b39187104bfea37f89d2b1f2f6)) by [@B4nan](https://github.com/B4nan)
