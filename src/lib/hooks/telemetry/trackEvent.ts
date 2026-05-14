@@ -12,42 +12,45 @@ const SEGMENT_API_URL = 'https://api.segment.io/v1/track';
 
 const SEGMENT_WRITE_KEY = metadata.isBeta ? 'rT67mFpIQD5qS9bJBoIYSFbZucrt2DZC' : '2uPK6yhPqjC0eNUFhaY78S26cRKyaa6t';
 
+interface CliCommandEvent {
+	installMethod: InstallMethod;
+	osArch: typeof process.arch;
+	runtime: typeof metadata.runtime.runtime;
+	runtimeVersion: typeof metadata.runtime.version;
+	runtimeNodeVersion: typeof metadata.runtime.nodeVersion;
+
+	commandString: string;
+	entrypoint: string;
+
+	flagsUsed: string[];
+
+	actorLanguage?: 'javascript' | 'python';
+	actorRuntime?: string;
+	actorRuntimeVersion?: string;
+
+	// create command
+	fromArchiveUrl?: boolean;
+	templateId?: string;
+	templateName?: string;
+	templateLanguage?: string;
+
+	// init command
+	actorWrapper?: string;
+
+	// execution context
+	exitCode?: number;
+	durationMs?: number;
+	aiAgent?: string;
+	userAgent?: string;
+	isCi?: boolean;
+	ciProvider?: string;
+	isInteractive?: boolean;
+	wasRetried?: boolean;
+}
+
 export interface TrackEventMap {
-	[key: `cli_command_${string}`]: {
-		installMethod: InstallMethod;
-		osArch: typeof process.arch;
-		runtime: typeof metadata.runtime.runtime;
-		runtimeVersion: typeof metadata.runtime.version;
-		runtimeNodeVersion: typeof metadata.runtime.nodeVersion;
-
-		commandString: string;
-		entrypoint: string;
-
-		flagsUsed: string[];
-
-		actorLanguage?: 'javascript' | 'python';
-		actorRuntime?: string;
-		actorRuntimeVersion?: string;
-
-		// create command
-		fromArchiveUrl?: boolean;
-		templateId?: string;
-		templateName?: string;
-		templateLanguage?: string;
-
-		// init command
-		actorWrapper?: string;
-
-		// execution context
-		exitCode?: number;
-		durationMs?: number;
-		aiAgent?: string;
-		userAgent?: string;
-		isCi?: boolean;
-		ciProvider?: string;
-		isInteractive?: boolean;
-		wasRetried?: boolean;
-	};
+	cli_command: CliCommandEvent;
+	[key: `cli_command_${string}`]: CliCommandEvent;
 }
 
 export async function trackEvent<Event extends keyof TrackEventMap>(event: Event, eventData: TrackEventMap[Event]) {

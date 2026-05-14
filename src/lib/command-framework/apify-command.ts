@@ -246,7 +246,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	static hiddenAliases?: string[];
 
-	protected telemetryData: TrackEventMap[`cli_command_${string}`] = {} as never;
+	protected telemetryData: TrackEventMap['cli_command'] = {} as never;
 
 	protected flags!: InferFlagsFromCommand<T['flags']>;
 
@@ -413,10 +413,12 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 				this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString);
 
-				await trackEvent(
-					`cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const,
-					this.telemetryData,
-				);
+				const legacyEventName = `cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const;
+
+				await Promise.allSettled([
+					trackEvent('cli_command', this.telemetryData),
+					trackEvent(legacyEventName, this.telemetryData),
+				]);
 			}
 		}
 	}
