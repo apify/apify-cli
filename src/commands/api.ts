@@ -461,9 +461,7 @@ async function fetchEndpoints(): Promise<Endpoint[]> {
 	try {
 		response = await fetch(OPENAPI_SPEC_URL);
 	} catch (err) {
-		throw new Error(
-			`Failed to download the Apify OpenAPI spec from ${OPENAPI_SPEC_URL}: ${(err as Error).message}`,
-		);
+		throw new Error(`Failed to download the Apify OpenAPI spec from ${OPENAPI_SPEC_URL}: ${(err as Error).message}`);
 	}
 
 	if (!response.ok) {

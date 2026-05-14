@@ -84,9 +84,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 			);
 		} else {
 			const diff = Date.now() - build.startedAt.getTime();
-			message.push(
-				`  ${chalk.yellow('Finished')}: ${chalk.gray(`Running for ${DurationFormatter.format(diff)}`)}`,
-			);
+			message.push(`  ${chalk.yellow('Finished')}: ${chalk.gray(`Running for ${DurationFormatter.format(diff)}`)}`);
 		}
 
 		if (build.stats?.computeUnits) {

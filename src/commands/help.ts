@@ -43,9 +43,7 @@ export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 
 			if (closestMatches.length) {
 				message += '\n  ';
-				message += chalk.gray(
-					`Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`,
-				);
+				message += chalk.gray(`Did you mean: ${closestMatches.map((cmd) => chalk.whiteBright(cmd)).join(', ')}?`);
 			}
 
 			error({

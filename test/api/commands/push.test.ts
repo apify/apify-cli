@@ -289,8 +289,7 @@ describe('[api] apify push', () => {
 			if (createdActor) await createdActorClient.delete();
 
 			expect(
-				(createdActorVersion as any).sourceFiles.find((file: any) => file.name === 'some-typescript-file.ts')
-					.format,
+				(createdActorVersion as any).sourceFiles.find((file: any) => file.name === 'some-typescript-file.ts').format,
 			).to.be.equal(SOURCE_FILE_FORMATS.TEXT);
 		},
 		TEST_TIMEOUT,
@@ -465,9 +464,7 @@ describe('[api] apify push', () => {
 
 			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true });
 
-			expect(lastErrorMessage()).to.include(
-				'You need to call this command from a folder that has an Actor in it',
-			);
+			expect(lastErrorMessage()).to.include('You need to call this command from a folder that has an Actor in it');
 		},
 		TEST_TIMEOUT,
 	);

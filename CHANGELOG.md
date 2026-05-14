@@ -3,8 +3,12 @@
 All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-start -->
-
 ## 1.6.2 - **not yet released**
+
+### 🐛 Bug Fixes
+
+- Drop only-allow preinstall, enforce pnpm via devEngines ([#1129](https://github.com/apify/apify-cli/pull/1129)) ([19f0c2d](https://github.com/apify/apify-cli/commit/19f0c2d09d8c43b39187104bfea37f89d2b1f2f6)) by [@B4nan](https://github.com/B4nan)
+
 
 <!-- git-cliff-unreleased-end -->
 
