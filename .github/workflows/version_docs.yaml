@@ -35,13 +35,9 @@ jobs:
                   jq --arg v "$MAJOR_MINOR" 'map(select(. != $v))' website/versions.json > website/tmp.json && mv website/tmp.json website/versions.json
                   pnpm --filter apify-cli-website exec -- docusaurus docs:version $MAJOR_MINOR
 
-            - name: Stage the version snapshot
-              run: |
-                  git pull --rebase --autostash
-                  git add -A
-
             - name: Commit and push the version snapshot
-              uses: apify/workflows/commit@v0.44.0
+              uses: apify/actions/signed-commit@v1.0.0
               with:
-                  commit-message: "docs: version docs for ${{ steps.version.outputs.version }} [docs build]"
+                  message: "docs: version docs for ${{ steps.version.outputs.version }} [docs build]"
+                  pull: '--rebase --autostash'
                   github-token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}

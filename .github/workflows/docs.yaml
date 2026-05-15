@@ -45,21 +45,11 @@ jobs:
                   APIFY_SIGNING_TOKEN: ${{ secrets.APIFY_SIGNING_TOKEN }}
                   SEGMENT_TOKEN: ${{ secrets.SEGMENT_TOKEN }}
 
-            - name: Stage updated package(-lock).json
-              id: stage-package
-              run: |
-                  git add website/package.json website/package-lock.json pnpm-lock.yaml 2>/dev/null || true
-                  if git diff --cached --quiet; then
-                    echo "has-changes=false" >> "$GITHUB_OUTPUT"
-                  else
-                    echo "has-changes=true" >> "$GITHUB_OUTPUT"
-                  fi
-
             - name: Commit the updated package(-lock).json
-              if: steps.stage-package.outputs.has-changes == 'true'
-              uses: apify/workflows/commit@v0.44.0
+              uses: apify/actions/signed-commit@v1.0.0
               with:
-                  commit-message: "chore: Automatic theme updating workflow [skip ci]"
+                  message: "chore: Automatic theme updating workflow [skip ci]"
+                  add: 'website/package.json website/package-lock.json pnpm-lock.yaml'
                   github-token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Set up GitHub Pages
