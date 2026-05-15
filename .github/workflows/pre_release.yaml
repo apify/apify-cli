@@ -45,7 +45,7 @@ jobs:
         name: Update changelog
         runs-on: ubuntu-latest
         outputs:
-            changelog_commitish: ${{ steps.commit.outputs.commit_sha || github.sha }}
+            changelog_commitish: ${{ steps.commit.outputs.commit_sha }}
             pre_release_version: ${{ steps.get-pre-release-version.outputs.pre_release_version }}
 
         steps:
