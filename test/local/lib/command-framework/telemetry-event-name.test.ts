@@ -30,7 +30,7 @@ class NoOpCommand extends BuiltApifyCommand {
 }
 
 describe('command telemetry event naming', () => {
-	test('emits both unified and legacy command telemetry events', async () => {
+	test('emits only the unified command telemetry event', async () => {
 		const instance = new NoOpCommand('apify', 'datasets ls', 'datasets');
 		// eslint-disable-next-line dot-notation
 		const parserOptions = instance['_buildParseArgsOption']();
@@ -46,12 +46,6 @@ describe('command telemetry event naming', () => {
 				entrypoint: 'apify',
 			}),
 		);
-		expect(trackEventMock).toHaveBeenCalledWith(
-			'cli_command_datasets_ls',
-			expect.objectContaining({
-				commandString: 'datasets ls',
-				entrypoint: 'apify',
-			}),
-		);
+		expect(trackEventMock).toHaveBeenCalledTimes(1);
 	});
 });

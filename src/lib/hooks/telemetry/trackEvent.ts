@@ -50,7 +50,6 @@ interface CliCommandEvent {
 
 export interface TrackEventMap {
 	cli_command: CliCommandEvent;
-	[key: `cli_command_${string}`]: CliCommandEvent;
 }
 
 export async function trackEvent<Event extends keyof TrackEventMap>(event: Event, eventData: TrackEventMap[Event]) {

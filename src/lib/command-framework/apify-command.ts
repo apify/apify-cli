@@ -413,12 +413,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 				this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString);
 
-				const legacyEventName = `cli_command_${this.commandString.replaceAll(' ', '_').toLowerCase()}` as const;
-
-				await Promise.allSettled([
-					trackEvent('cli_command', this.telemetryData),
-					trackEvent(legacyEventName, this.telemetryData),
-				]);
+				await trackEvent('cli_command', this.telemetryData);
 			}
 		}
 	}
