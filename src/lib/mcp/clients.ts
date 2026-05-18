@@ -43,7 +43,6 @@ interface InstallResult {
 	serverUrl: string;
 	authDescription: string;
 	configPath?: string;
-	nextSteps: string[];
 }
 
 function printResult(result: InstallResult): void {
@@ -56,10 +55,6 @@ function printResult(result: InstallResult): void {
 	];
 	if (result.configPath) {
 		lines.push(`  ${chalk.yellow('Config:')}     ${tildify(result.configPath)}`);
-	}
-	lines.push('', `  ${chalk.yellow('Next steps:')}`);
-	for (const [index, step] of result.nextSteps.entries()) {
-		lines.push(`    ${index + 1}. ${step}`);
 	}
 
 	simpleLog({ message: lines.join('\n') });
@@ -109,7 +104,6 @@ const claudeCodeHandler: ClientHandler = async ({ url, token }) => {
 		clientLabel: 'Claude Code',
 		serverUrl: url,
 		authDescription: `Bearer ${maskToken(token)} (stored by Claude Code)`,
-		nextSteps: [`Run 'claude mcp list' to confirm the apify server is registered.`],
 	});
 };
 
@@ -125,11 +119,6 @@ const cursorHandler: ClientHandler = async ({ url, token, yes }) => {
 		serverUrl: url,
 		authDescription: `Bearer ${maskToken(token)}`,
 		configPath: filePath,
-		nextSteps: [
-			'Restart Cursor.',
-			'Open Cursor Settings → Features → Model Context Protocol.',
-			`Verify '${SERVER_KEY}' is listed and enabled.`,
-		],
 	});
 };
 
@@ -191,7 +180,6 @@ async function addMcpViaCli({
 		clientLabel,
 		serverUrl: url,
 		authDescription: `Bearer ${maskToken(token)} (stored by ${clientLabel})`,
-		nextSteps: [`Restart ${clientLabel} if it's running so the new entry is picked up.`],
 	});
 }
 
@@ -233,11 +221,6 @@ const codexHandler: ClientHandler = async ({ url }) => {
 		serverUrl: url,
 		authDescription: `Bearer token from APIFY_TOKEN environment variable`,
 		configPath: tomlPath,
-		nextSteps: [
-			`Export your Apify token in your shell rc: export APIFY_TOKEN=<your-token>`,
-			`Run 'codex mcp' to list configured servers.`,
-			`Start Codex and run /mcp to confirm Apify is connected.`,
-		],
 	});
 };
 
@@ -258,7 +241,6 @@ const kiroHandler: ClientHandler = async ({ url, token, yes }) => {
 		serverUrl: url,
 		authDescription: `Bearer ${maskToken(token)}`,
 		configPath: filePath,
-		nextSteps: ['Restart Kiro.', 'Open Kiro → MCP Servers and verify the apify entry is enabled.'],
 	});
 };
 
@@ -275,10 +257,6 @@ const antigravityHandler: ClientHandler = async ({ url, token, yes }) => {
 		serverUrl: url,
 		authDescription: `Bearer ${maskToken(token)}`,
 		configPath: filePath,
-		nextSteps: [
-			'Restart Antigravity or reload the agent panel.',
-			'Open the MCP Store to confirm the apify entry is loaded.',
-		],
 	});
 };
 
