@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import process from 'node:process';
 
 // Force `useYesNoConfirm` down its non-interactive path so the overwrite prompt errors out
@@ -115,6 +115,34 @@ describe('apify mcp install', () => {
 		expect((config.mcpServers as { apify: { url: string } }).apify.url).toBe(
 			'https://mcp.apify.com?tools=search-actors,apify/rag-web-browser',
 		);
+	});
+
+	it('cursor: preserves comments and other servers when re-installing (JSONC round-trip)', async () => {
+		// Pre-seed a hand-edited config with comments, a trailing comma, and an unrelated server.
+		const cursorPath = joinPath('.cursor', 'mcp.json');
+		await mkdir(joinPath('.cursor'), { recursive: true });
+		const originalJsonc = [
+			'// User-added top-of-file comment',
+			'{',
+			'\t"mcpServers": {',
+			'\t\t"github": {',
+			'\t\t\t// PAT expires 2026-01',
+			'\t\t\t"url": "https://api.githubcopilot.com/mcp",',
+			'\t\t\t"headers": { "Authorization": "Bearer github_pat_XYZ" }',
+			'\t\t},',
+			'\t},',
+			'}',
+			'',
+		].join('\n');
+		await writeFile(cursorPath, originalJsonc, 'utf-8');
+
+		await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_token: TEST_TOKEN });
+
+		const updated = await readFile(cursorPath, 'utf-8');
+		expect(updated).toContain('// User-added top-of-file comment');
+		expect(updated).toContain('// PAT expires 2026-01');
+		expect(updated).toContain('github_pat_XYZ');
+		expect(updated).toContain(`Bearer ${TEST_TOKEN}`);
 	});
 
 	it('cursor: falls back to APIFY_TOKEN env when no --token is given', async () => {

@@ -9,7 +9,7 @@ import { CommandExitCodes } from '../consts.js';
 import { error, run, simpleLog, success } from '../outputs.js';
 import { tildify, userHomeDir } from '../utils.js';
 import { describeExecaError } from './exec-helpers.js';
-import { confirmOverwrite, readJsonConfig, writeJsonConfig } from './file-config.js';
+import { mergeServerEntry } from './file-config.js';
 import { maskToken } from './url.js';
 
 export const SUPPORTED_CLIENTS = [
@@ -65,58 +65,6 @@ function printResult(result: InstallResult): void {
 	simpleLog({ message: lines.join('\n') });
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-	return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/**
- * Load the JSON config and confirm an overwrite if an entry under SERVER_KEY already exists.
- * Returns null if the user declined; otherwise returns the parsed config and the (possibly empty) servers map at topLevelKey.
- */
-async function readConfigForOverwrite({
-	filePath,
-	topLevelKey,
-	yes,
-}: {
-	filePath: string;
-	topLevelKey: string;
-	yes: boolean;
-}): Promise<{ config: Record<string, unknown>; servers: Record<string, unknown> } | null> {
-	const config = await readJsonConfig(filePath);
-	const servers = isRecord(config[topLevelKey]) ? (config[topLevelKey] as Record<string, unknown>) : {};
-
-	if (SERVER_KEY in servers) {
-		const ok = await confirmOverwrite({ filePath, entryKey: SERVER_KEY, yes });
-		if (!ok) {
-			simpleLog({ message: 'No changes written.' });
-			return null;
-		}
-	}
-
-	return { config, servers };
-}
-
-/** Convenience for the common shape: read+confirm, write a single server entry, return whether the write happened. */
-async function mergeServerEntry({
-	filePath,
-	topLevelKey,
-	serverEntry,
-	yes,
-}: {
-	filePath: string;
-	topLevelKey: string;
-	serverEntry: Record<string, unknown>;
-	yes: boolean;
-}): Promise<boolean> {
-	const result = await readConfigForOverwrite({ filePath, topLevelKey, yes });
-	if (!result) return false;
-
-	result.servers[SERVER_KEY] = serverEntry;
-	result.config[topLevelKey] = result.servers;
-	await writeJsonConfig(filePath, result.config);
-	return true;
-}
-
 const claudeCodeHandler: ClientHandler = async ({ url, token }) => {
 	const claudeBin = await which('claude', { nothrow: true });
 
@@ -169,7 +117,7 @@ const cursorHandler: ClientHandler = async ({ url, token, yes }) => {
 	const filePath = join(userHomeDir(), '.cursor', 'mcp.json');
 	const serverEntry = { url, headers: { Authorization: `Bearer ${token}` } };
 
-	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'mcpServers', serverEntry, yes });
+	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'mcpServers', entryKey: SERVER_KEY, serverEntry, yes });
 	if (!wrote) return;
 
 	printResult({
@@ -302,7 +250,7 @@ const kiroHandler: ClientHandler = async ({ url, token, yes }) => {
 		autoApprove: [] as string[],
 	};
 
-	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'mcpServers', serverEntry, yes });
+	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'mcpServers', entryKey: SERVER_KEY, serverEntry, yes });
 	if (!wrote) return;
 
 	printResult({
@@ -319,7 +267,7 @@ const antigravityHandler: ClientHandler = async ({ url, token, yes }) => {
 	// Antigravity uses 'serverUrl' (not 'url'); see https://antigravity.google/docs/mcp.
 	const serverEntry = { serverUrl: url, headers: { Authorization: `Bearer ${token}` } };
 
-	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'mcpServers', serverEntry, yes });
+	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'mcpServers', entryKey: SERVER_KEY, serverEntry, yes });
 	if (!wrote) return;
 
 	printResult({
