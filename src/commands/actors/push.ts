@@ -414,8 +414,10 @@ Skipping push. Use --force to override.`,
 			// Platform updates `taggedBuilds[buildTag]` asynchronously after the
 			// build finishes. Wait until the tag points at this build so callers
 			// that immediately `actor.start({ build: buildTag })` don't race it.
+			// Capped at 30s so an unknown platform delay can't stall push forever.
 			if (buildTag) {
-				while (Date.now() < deadline) {
+				const tagDeadline = Math.min(deadline, Date.now() + 30_000);
+				while (Date.now() < tagDeadline) {
 					const a = await actorClient.get();
 					if (a?.taggedBuilds?.[buildTag]?.buildId === build.id) break;
 					await new Promise((resolve) => setTimeout(resolve, 1000));
