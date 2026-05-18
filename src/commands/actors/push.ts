@@ -391,6 +391,32 @@ Skipping push. Use --force to override.`,
 			build = (await apifyClient.build(build.id).get())!;
 		}
 
+		// Platform updates `taggedBuilds[buildTag]` asynchronously after the
+		// build finishes. Wait until the tag points at this build so callers
+		// (including --json automation) that immediately
+		// `actor.start({ build: buildTag })` don't race it. Capped at 30s so an
+		// unknown platform delay can't stall push forever.
+		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED && buildTag) {
+			// 30s budget is independent of --wait-for-finish: the build is already
+			// done, we're only waiting on the platform to update the tag pointer.
+			const tagDeadline = Date.now() + 30_000;
+			let tagApplied = false;
+			while (Date.now() < tagDeadline) {
+				const a = await actorClient.get();
+				if (a?.taggedBuilds?.[buildTag]?.buildId === build.id) {
+					tagApplied = true;
+					break;
+				}
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			}
+			if (!tagApplied) {
+				warning({
+					message: `Build succeeded but tag "${buildTag}" did not update within 30s; subsequent calls referencing this tag may race.`,
+				});
+				process.exitCode = CommandExitCodes.BuildTimedOut;
+			}
+		}
+
 		if (this.flags.json) {
 			printJsonToStdout(build);
 			return;
@@ -411,18 +437,6 @@ Skipping push. Use --force to override.`,
 		}
 
 		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-			// Platform updates `taggedBuilds[buildTag]` asynchronously after the
-			// build finishes. Wait until the tag points at this build so callers
-			// that immediately `actor.start({ build: buildTag })` don't race it.
-			// Capped at 30s so an unknown platform delay can't stall push forever.
-			if (buildTag) {
-				const tagDeadline = Math.min(deadline, Date.now() + 30_000);
-				while (Date.now() < tagDeadline) {
-					const a = await actorClient.get();
-					if (a?.taggedBuilds?.[buildTag]?.buildId === build.id) break;
-					await new Promise((resolve) => setTimeout(resolve, 1000));
-				}
-			}
 			success({ message: 'Actor was deployed to Apify cloud and built there.' });
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.READY) {
