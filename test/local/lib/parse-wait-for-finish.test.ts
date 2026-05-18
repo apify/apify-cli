@@ -9,8 +9,8 @@ describe('parseWaitForFinishMillis()', () => {
 		expect(parseWaitForFinishMillis('abc')).toBeUndefined();
 	});
 
-	it('returns undefined for zero', () => {
-		expect(parseWaitForFinishMillis('0')).toBeUndefined();
+	it('returns 0 for zero (no wait)', () => {
+		expect(parseWaitForFinishMillis('0')).toBe(0);
 	});
 
 	it('returns undefined for negative values', () => {
