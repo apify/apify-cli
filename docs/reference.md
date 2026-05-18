@@ -1573,3 +1573,51 @@ FLAGS
 ```
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->
+
+### MCP
+
+Use these commands to configure the Apify MCP server in your favorite AI client (Claude Code, Cursor, VS Code, Codex CLI, Kiro, Antigravity).
+
+<!-- prettier-ignore-start -->
+<!-- mcp-commands-start -->
+##### `apify mcp`
+
+```sh
+DESCRIPTION
+  Configure the Apify MCP server in your favorite AI client (Claude Code, 
+  Cursor, VS Code, ...).
+
+SUBCOMMANDS
+  mcp install  Configure a local MCP client to use the Apify MCP
+               server. Writes (or merges) a server entry named 'apify' into the
+               client's config file, or runs the client's own 'mcp add' command
+               when available.
+```
+
+##### `apify mcp install`
+
+```sh
+DESCRIPTION
+  Configure a local MCP client to use the Apify MCP server. Writes (or merges) a
+   server entry named 'apify' into the client's config file, or runs the 
+  client's own 'mcp add' command when available.
+
+USAGE
+  $ apify mcp install <client> [-t <value>] [--tools <value>]
+                      [--url <value>] [-y]
+
+ARGUMENTS
+  client  Target MCP client. One of: claude-code, cursor, vscode, codex,
+          kiro, antigravity.
+
+FLAGS
+  -t, --token=<value>  Apify API token to embed in the config.
+                       Defaults to the token from 'apify login'.
+      --tools=<value>  Comma-separated tool IDs or Actor full names
+                       to expose (forwarded as a '?tools=' query parameter).
+      --url=<value>    Apify MCP server URL.
+  -y, --yes            Overwrite an existing 'apify' entry
+                       without prompting.
+```
+<!-- mcp-commands-end -->
+<!-- prettier-ignore-end -->

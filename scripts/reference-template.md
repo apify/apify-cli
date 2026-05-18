@@ -110,3 +110,12 @@ These commands help you manage scheduled and configured Actor runs. Use them to 
 <!-- task-commands-start -->
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->
+
+### MCP
+
+Use these commands to configure the Apify MCP server in your favorite AI client (Claude Code, Cursor, VS Code, Codex CLI, Kiro, Antigravity).
+
+<!-- prettier-ignore-start -->
+<!-- mcp-commands-start -->
+<!-- mcp-commands-end -->
+<!-- prettier-ignore-end -->

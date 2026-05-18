@@ -779,6 +779,9 @@ export function printJsonToStdout(object: unknown) {
 	console.log(JSON.stringify(object, null, 2));
 }
 
+/** Like `os.homedir()` but honors an explicit `$HOME` override on Windows (where `homedir()` reads `USERPROFILE` instead). */
+export const userHomeDir = () => process.env.HOME ?? homedir();
+
 export const tildify = (path: string) => {
 	if (path.startsWith(homedir())) {
 		return path.replace(homedir(), '~');
