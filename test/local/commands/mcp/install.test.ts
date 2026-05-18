@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm } from 'node:fs/promises';
 import process from 'node:process';
 
@@ -52,7 +51,7 @@ describe('apify mcp install', () => {
 		expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
 		const stderr = logMessages.error.join('\n');
 		expect(stderr).toMatch(/Unknown MCP client 'foo'/);
-		for (const client of ['claude-code', 'cursor', 'vscode', 'codex', 'kiro', 'antigravity']) {
+		for (const client of ['claude-code', 'cursor', 'vscode', 'vscode-insiders', 'codex', 'kiro', 'antigravity']) {
 			expect(stderr).toContain(client);
 		}
 	});
@@ -138,27 +137,26 @@ describe('apify mcp install', () => {
 		expect(entry).not.toHaveProperty('url');
 	});
 
-	it('vscode: writes servers.apify with the literal Bearer token (matches other clients)', async () => {
-		await testRunCommand(MCPInstallCommand, { args_client: 'vscode', flags_token: TEST_TOKEN });
+	// vscode and vscode-insiders shell out to '<bin> --add-mcp <json>'; with PATH='' the binary is missing.
+	describe.each([
+		{ client: 'vscode', binary: 'code', label: 'VS Code' },
+		{ client: 'vscode-insiders', binary: 'code-insiders', label: 'VS Code Insiders' },
+	])(
+		'$client: friendly error with copy-pastable command (no token leak) when binary is not on PATH',
+		({ client, binary, label }) => {
+			it('emits the right snippet and exits with NotFound', async () => {
+				await testRunCommand(MCPInstallCommand, { args_client: client, flags_token: TEST_TOKEN });
 
-		const vsCodePath = findExistingPath([
-			`${tmpPath}/.config/Code/User/mcp.json`,
-			`${tmpPath}/Library/Application Support/Code/User/mcp.json`,
-			`${tmpPath}/AppData/Roaming/Code/User/mcp.json`,
-		]);
-		if (!vsCodePath) throw new Error('expected VS Code mcp.json to exist after install');
-		const config = await readJson(vsCodePath);
-
-		expect(config).toEqual({
-			servers: {
-				apify: {
-					type: 'http',
-					url: 'https://mcp.apify.com',
-					headers: { Authorization: `Bearer ${TEST_TOKEN}` },
-				},
-			},
-		});
-	});
+				expect(process.exitCode).toBe(CommandExitCodes.NotFound);
+				const stderr = logMessages.error.join('\n');
+				expect(stderr).toContain(`'${binary}' CLI was not found on PATH`);
+				expect(stderr).toContain(`Install ${label}`);
+				expect(stderr).toContain(`${binary} --add-mcp '`);
+				expect(stderr).toContain('"Authorization":"Bearer <your-token>"');
+				expect(stderr).not.toContain(TEST_TOKEN);
+			});
+		},
+	);
 
 	it('claude-code: emits a friendly error with a copy-pastable command (no token leak) when claude is not on PATH', async () => {
 		await testRunCommand(MCPInstallCommand, { args_client: 'claude-code', flags_token: TEST_TOKEN });
@@ -186,7 +184,3 @@ describe('apify mcp install', () => {
 		expect(stderr).not.toContain(TEST_TOKEN);
 	});
 });
-
-function findExistingPath(candidates: string[]): string | null {
-	return candidates.find((path) => existsSync(path)) ?? null;
-}

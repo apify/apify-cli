@@ -12,7 +12,15 @@ import { describeExecaError } from './exec-helpers.js';
 import { confirmOverwrite, readJsonConfig, writeJsonConfig } from './file-config.js';
 import { maskToken } from './url.js';
 
-export const SUPPORTED_CLIENTS = ['claude-code', 'cursor', 'vscode', 'codex', 'kiro', 'antigravity'] as const;
+export const SUPPORTED_CLIENTS = [
+	'claude-code',
+	'cursor',
+	'vscode',
+	'vscode-insiders',
+	'codex',
+	'kiro',
+	'antigravity',
+] as const;
 
 export type ClientName = (typeof SUPPORTED_CLIENTS)[number];
 
@@ -181,39 +189,88 @@ const cursorHandler: ClientHandler = async ({ url, token, yes }) => {
 	});
 };
 
-function vscodeConfigPath(): string {
-	switch (process.platform) {
-		case 'darwin':
-			return join(userHomeDir(), 'Library', 'Application Support', 'Code', 'User', 'mcp.json');
-		case 'win32': {
-			const appData = process.env.APPDATA ?? join(userHomeDir(), 'AppData', 'Roaming');
-			return join(appData, 'Code', 'User', 'mcp.json');
-		}
-		default:
-			return join(userHomeDir(), '.config', 'Code', 'User', 'mcp.json');
-	}
-}
+/**
+ * Install via the client's own '--add-mcp <json>' CLI. The client owns the config format,
+ * comments, and overwrite semantics — we just shell out and let it handle the rest.
+ */
+async function addMcpViaCli({
+	binary,
+	clientLabel,
+	docsUrl,
+	url,
+	token,
+}: {
+	binary: string;
+	clientLabel: string;
+	docsUrl: string;
+	url: string;
+	token: string;
+}): Promise<void> {
+	const bin = await which(binary, { nothrow: true });
 
-const vscodeHandler: ClientHandler = async ({ url, token, yes }) => {
-	const filePath = vscodeConfigPath();
-	const serverEntry = {
+	if (!bin) {
+		const placeholderJson = JSON.stringify({
+			name: SERVER_KEY,
+			type: 'http',
+			url,
+			headers: { Authorization: 'Bearer <your-token>' },
+		});
+		error({
+			message: `The '${binary}' CLI was not found on PATH. Install ${clientLabel} and re-run, or add the server manually:\n\n    ${binary} --add-mcp '${placeholderJson}'`,
+		});
+		process.exitCode = CommandExitCodes.NotFound;
+		return;
+	}
+
+	const serverJson = JSON.stringify({
+		name: SERVER_KEY,
 		type: 'http',
 		url,
 		headers: { Authorization: `Bearer ${token}` },
-	};
+	});
+	const maskedJson = JSON.stringify({
+		name: SERVER_KEY,
+		type: 'http',
+		url,
+		headers: { Authorization: `Bearer ${maskToken(token)}` },
+	});
 
-	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'servers', serverEntry, yes });
-	if (!wrote) return;
+	run({ message: `${binary} --add-mcp '${maskedJson}'` });
+
+	try {
+		await execa(binary, ['--add-mcp', serverJson], { stdio: ['ignore', 'ignore', 'inherit'] });
+	} catch (err) {
+		error({ message: `Failed to add the MCP server via ${clientLabel}: ${describeExecaError(err, binary)}` });
+		process.exitCode = CommandExitCodes.RunFailed;
+		return;
+	}
 
 	printResult({
-		clientLabel: 'VS Code',
+		clientLabel,
 		serverUrl: url,
-		authDescription: `Bearer ${maskToken(token)}`,
-		configPath: filePath,
-		nextSteps: ['Restart VS Code.', 'Open the Chat view and confirm Apify tools appear.'],
-		docsUrl: 'https://code.visualstudio.com/docs/copilot/customization/mcp-servers',
+		authDescription: `Bearer ${maskToken(token)} (stored by ${clientLabel})`,
+		nextSteps: [`Restart ${clientLabel} if it's running so the new entry is picked up.`],
+		docsUrl,
 	});
-};
+}
+
+const vscodeHandler: ClientHandler = async ({ url, token }) =>
+	addMcpViaCli({
+		binary: 'code',
+		clientLabel: 'VS Code',
+		docsUrl: 'https://code.visualstudio.com/docs/copilot/customization/mcp-servers',
+		url,
+		token,
+	});
+
+const vscodeInsidersHandler: ClientHandler = async ({ url, token }) =>
+	addMcpViaCli({
+		binary: 'code-insiders',
+		clientLabel: 'VS Code Insiders',
+		docsUrl: 'https://code.visualstudio.com/docs/copilot/customization/mcp-servers',
+		url,
+		token,
+	});
 
 const codexHandler: ClientHandler = async ({ url }) => {
 	const codexBin = await which('codex', { nothrow: true });
@@ -303,6 +360,7 @@ const HANDLERS: Record<ClientName, ClientHandler> = {
 	'claude-code': claudeCodeHandler,
 	cursor: cursorHandler,
 	vscode: vscodeHandler,
+	'vscode-insiders': vscodeInsidersHandler,
 	codex: codexHandler,
 	kiro: kiroHandler,
 	antigravity: antigravityHandler,

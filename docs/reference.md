@@ -1576,7 +1576,7 @@ FLAGS
 
 ### MCP
 
-Use these commands to configure the Apify MCP server in your favorite AI client (Claude Code, Cursor, VS Code, Codex CLI, Kiro, Antigravity).
+Use these commands to configure the Apify MCP server in your favorite AI client (Claude Code, Cursor, VS Code, VS Code Insiders, Codex CLI, Kiro, Antigravity).
 
 <!-- prettier-ignore-start -->
 <!-- mcp-commands-start -->
@@ -1607,8 +1607,8 @@ USAGE
                       [--url <value>] [-y]
 
 ARGUMENTS
-  client  Target MCP client. One of: claude-code, cursor, vscode, codex,
-          kiro, antigravity.
+  client  Target MCP client. One of: claude-code, cursor, vscode,
+          vscode-insiders, codex, kiro, antigravity.
 
 FLAGS
   -t, --token=<value>  Apify API token to embed in the config.
