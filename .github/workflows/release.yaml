@@ -112,7 +112,7 @@ jobs:
 
             - name: Commit changes
               id: commit
-              uses: apify/actions/signed-commit@v1.0.0
+              uses: apify/actions/signed-commit@v1.1.2
               with:
                   message: "chore(release): Update changelog and package version [skip ci]"
                   pull: '--rebase --autostash'

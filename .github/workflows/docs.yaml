@@ -46,7 +46,7 @@ jobs:
                   SEGMENT_TOKEN: ${{ secrets.SEGMENT_TOKEN }}
 
             - name: Commit the updated package(-lock).json
-              uses: apify/actions/signed-commit@v1.0.0
+              uses: apify/actions/signed-commit@v1.1.2
               with:
                   message: "chore: Automatic theme updating workflow [skip ci]"
                   add: 'website/package.json website/package-lock.json pnpm-lock.yaml'
