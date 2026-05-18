@@ -33,7 +33,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.1.1
+              uses: apify/actions/pnpm-install@v1.1.2
 
             - name: Run TSC
               run: pnpm run build
@@ -57,7 +57,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.1.1
+              uses: apify/actions/pnpm-install@v1.1.2
 
             - name: Run lint checks
               run: pnpm run lint
@@ -93,7 +93,7 @@ jobs:
                   node-version: ${{ matrix.node-version }}
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.1.1
+              uses: apify/actions/pnpm-install@v1.1.2
 
             - name: Setup Python 3.12 (Windows)
               if: ${{ matrix.os == 'windows-2025' }}
@@ -126,7 +126,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.1.1
+              uses: apify/actions/pnpm-install@v1.1.2
 
             - name: Run API tests
               env:
@@ -161,7 +161,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.1.1
+              uses: apify/actions/pnpm-install@v1.1.2
 
             - name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v6
@@ -189,7 +189,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.1.1
+              uses: apify/actions/pnpm-install@v1.1.2
 
             - name: Build & deploy docs
               run: pnpm --filter apify-cli-website run build
@@ -223,7 +223,7 @@ jobs:
                   node-version: ${{ env.LATEST_NODE_VERSION }}
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.1.1
+              uses: apify/actions/pnpm-install@v1.1.2
 
             - name: Install bun
               uses: oven-sh/setup-bun@v2
