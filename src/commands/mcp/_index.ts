@@ -4,7 +4,7 @@ import { MCPInstallCommand } from './install.js';
 export class MCPIndexCommand extends ApifyCommand<typeof MCPIndexCommand> {
 	static override name = 'mcp' as const;
 
-	static override description = `Configure the Apify MCP server in your favorite AI client (Claude Code, Cursor, VS Code, ...).`;
+	static override description = `Configure the Apify MCP server in your AI client: Claude Code, Cursor, VS Code, Codex CLI, Kiro, or Antigravity.`;
 
 	static override group = 'MCP';
 

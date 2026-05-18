@@ -12,7 +12,7 @@ import { error } from '../../lib/outputs.js';
 export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override name = 'install' as const;
 
-	static override description = `Configure a local MCP client to use the Apify MCP server. Writes (or merges) a server entry named 'apify' into the client's config file, or runs the client's own 'mcp add' command when available.`;
+	static override description = `Configure a local MCP client to use the Apify MCP server. Writes or merges a server entry named 'apify' into the client's config file, or runs the client's own 'mcp add' command when available.`;
 
 	static override group = 'MCP';
 
@@ -60,7 +60,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 			default: DEFAULT_MCP_URL,
 		}),
 		tools: Flags.string({
-			description: `Comma-separated tool IDs or Actor full names to expose (forwarded as a '?tools=' query parameter).`,
+			description: `Comma-separated tool IDs or Actor full names to expose. Forwarded as a '?tools=' query parameter.`,
 		}),
 	};
 

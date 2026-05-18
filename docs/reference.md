@@ -1576,7 +1576,7 @@ FLAGS
 
 ### MCP
 
-Use these commands to configure the Apify MCP server in your favorite AI client (Claude Code, Cursor, VS Code, VS Code Insiders, Codex CLI, Kiro, Antigravity).
+Use these commands to configure the Apify MCP server in your AI client.
 
 <!-- prettier-ignore-start -->
 <!-- mcp-commands-start -->
@@ -1584,12 +1584,12 @@ Use these commands to configure the Apify MCP server in your favorite AI client 
 
 ```sh
 DESCRIPTION
-  Configure the Apify MCP server in your favorite AI client (Claude Code, 
-  Cursor, VS Code, ...).
+  Configure the Apify MCP server in your AI client: Claude Code, Cursor, VS 
+  Code, Codex CLI, Kiro, or Antigravity.
 
 SUBCOMMANDS
   mcp install  Configure a local MCP client to use the Apify MCP
-               server. Writes (or merges) a server entry named 'apify' into the
+               server. Writes or merges a server entry named 'apify' into the
                client's config file, or runs the client's own 'mcp add' command
                when available.
 ```
@@ -1598,9 +1598,9 @@ SUBCOMMANDS
 
 ```sh
 DESCRIPTION
-  Configure a local MCP client to use the Apify MCP server. Writes (or merges) a
-   server entry named 'apify' into the client's config file, or runs the 
-  client's own 'mcp add' command when available.
+  Configure a local MCP client to use the Apify MCP server. Writes or merges a 
+  server entry named 'apify' into the client's config file, or runs the client's
+   own 'mcp add' command when available.
 
 USAGE
   $ apify mcp install <client> [-t <value>] [--tools <value>]
@@ -1614,7 +1614,7 @@ FLAGS
   -t, --token=<value>  Apify API token to embed in the config.
                        Defaults to the token from 'apify login'.
       --tools=<value>  Comma-separated tool IDs or Actor full names
-                       to expose (forwarded as a '?tools=' query parameter).
+                       to expose. Forwarded as a '?tools=' query parameter.
       --url=<value>    Apify MCP server URL.
   -y, --yes            Overwrite an existing 'apify' entry
                        without prompting.
