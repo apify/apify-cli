@@ -25,6 +25,7 @@ import {
 	getLocalUserInfo,
 	getLoggedClientOrThrow,
 	outputJobLog,
+	parseWaitForFinishMillis,
 	printJsonToStdout,
 } from '../../lib/utils.js';
 
@@ -190,8 +191,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			buildTag = DEFAULT_BUILD_TAG;
 		}
 
-		const parsedWaitForFinish = this.flags.waitForFinish ? Number.parseInt(this.flags.waitForFinish, 10) : Number.NaN;
-		const waitForFinishMillis = Number.isFinite(parsedWaitForFinish) ? parsedWaitForFinish * 1000 : undefined;
+		const waitForFinishMillis = parseWaitForFinishMillis(this.flags.waitForFinish);
 
 		// User can override actorId of pushing Actor.
 		// It causes that we push Actor to this id but attributes in localConfig will remain same.

@@ -840,3 +840,10 @@ export function shellConfigFile(userHomeDirectory: string, shell: ReturnType<typ
 		}
 	}
 }
+
+export function parseWaitForFinishMillis(flag: string | undefined): number | undefined {
+	if (flag === undefined) return undefined;
+	const parsed = Number.parseInt(flag, 10);
+	if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+	return parsed * 1000;
+}
