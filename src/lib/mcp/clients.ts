@@ -44,7 +44,6 @@ interface InstallResult {
 	authDescription: string;
 	configPath?: string;
 	nextSteps: string[];
-	docsUrl: string;
 }
 
 function printResult(result: InstallResult): void {
@@ -62,7 +61,6 @@ function printResult(result: InstallResult): void {
 	for (const [index, step] of result.nextSteps.entries()) {
 		lines.push(`    ${index + 1}. ${step}`);
 	}
-	lines.push('', `  ${chalk.yellow('Docs:')} ${result.docsUrl}`);
 
 	simpleLog({ message: lines.join('\n') });
 }
@@ -164,7 +162,6 @@ const claudeCodeHandler: ClientHandler = async ({ url, token }) => {
 		serverUrl: url,
 		authDescription: `Bearer ${maskToken(token)} (stored by Claude Code)`,
 		nextSteps: [`Run 'claude mcp list' to confirm the apify server is registered.`],
-		docsUrl: 'https://docs.anthropic.com/en/docs/claude-code/mcp',
 	});
 };
 
@@ -185,7 +182,6 @@ const cursorHandler: ClientHandler = async ({ url, token, yes }) => {
 			'Open Cursor Settings → Features → Model Context Protocol.',
 			`Verify '${SERVER_KEY}' is listed and enabled.`,
 		],
-		docsUrl: 'https://cursor.com/docs/mcp',
 	});
 };
 
@@ -196,13 +192,11 @@ const cursorHandler: ClientHandler = async ({ url, token, yes }) => {
 async function addMcpViaCli({
 	binary,
 	clientLabel,
-	docsUrl,
 	url,
 	token,
 }: {
 	binary: string;
 	clientLabel: string;
-	docsUrl: string;
 	url: string;
 	token: string;
 }): Promise<void> {
@@ -250,27 +244,14 @@ async function addMcpViaCli({
 		serverUrl: url,
 		authDescription: `Bearer ${maskToken(token)} (stored by ${clientLabel})`,
 		nextSteps: [`Restart ${clientLabel} if it's running so the new entry is picked up.`],
-		docsUrl,
 	});
 }
 
 const vscodeHandler: ClientHandler = async ({ url, token }) =>
-	addMcpViaCli({
-		binary: 'code',
-		clientLabel: 'VS Code',
-		docsUrl: 'https://code.visualstudio.com/docs/copilot/customization/mcp-servers',
-		url,
-		token,
-	});
+	addMcpViaCli({ binary: 'code', clientLabel: 'VS Code', url, token });
 
 const vscodeInsidersHandler: ClientHandler = async ({ url, token }) =>
-	addMcpViaCli({
-		binary: 'code-insiders',
-		clientLabel: 'VS Code Insiders',
-		docsUrl: 'https://code.visualstudio.com/docs/copilot/customization/mcp-servers',
-		url,
-		token,
-	});
+	addMcpViaCli({ binary: 'code-insiders', clientLabel: 'VS Code Insiders', url, token });
 
 const codexHandler: ClientHandler = async ({ url }) => {
 	const codexBin = await which('codex', { nothrow: true });
@@ -309,7 +290,6 @@ const codexHandler: ClientHandler = async ({ url }) => {
 			`Run 'codex mcp' to list configured servers.`,
 			`Start Codex and run /mcp to confirm Apify is connected.`,
 		],
-		docsUrl: 'https://developers.openai.com/codex/mcp',
 	});
 };
 
@@ -331,7 +311,6 @@ const kiroHandler: ClientHandler = async ({ url, token, yes }) => {
 		authDescription: `Bearer ${maskToken(token)}`,
 		configPath: filePath,
 		nextSteps: ['Restart Kiro.', 'Open Kiro → MCP Servers and verify the apify entry is enabled.'],
-		docsUrl: 'https://kiro.dev/docs/mcp/configuration/',
 	});
 };
 
@@ -352,7 +331,6 @@ const antigravityHandler: ClientHandler = async ({ url, token, yes }) => {
 			'Restart Antigravity or reload the agent panel.',
 			'Open the MCP Store to confirm the apify entry is loaded.',
 		],
-		docsUrl: 'https://antigravity.google/docs/mcp',
 	});
 };
 
