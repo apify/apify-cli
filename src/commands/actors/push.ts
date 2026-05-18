@@ -6,7 +6,12 @@ import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
-import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
+import {
+	ACTOR_JOB_STATUSES,
+	ACTOR_JOB_TERMINAL_STATUSES,
+	ACTOR_SOURCE_TYPES,
+	MAX_MULTIFILE_BYTES,
+} from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -358,18 +363,16 @@ Skipping push. Use --force to override.`,
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
 		});
 
-		try {
-			// While the log is streaming, forward interrupt signals to a
-			// platform-side abort so the build doesn't keep running after the
-			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
-			// SIGHUP from a closing terminal). The `using` binding guarantees
-			// the listener is removed before we poll for final status.
-			using _signalHandler = useAbortJobOnSignal({
-				apifyClient,
-				kind: 'build',
-				jobId: build.id,
-			});
+		// Forward interrupt signals (Ctrl+C, SIGTERM, SIGHUP) to a platform-side
+		// abort for the lifetime of log streaming AND status polling, so the
+		// build doesn't keep running after the user gives up waiting.
+		using _signalHandler = useAbortJobOnSignal({
+			apifyClient,
+			kind: 'build',
+			jobId: build.id,
+		});
 
+		try {
 			await outputJobLog({ job: build, timeoutMillis: waitForFinishMillis, apifyClient });
 		} catch (err) {
 			warning({ message: 'Can not get log:' });
@@ -377,6 +380,17 @@ Skipping push. Use --force to override.`,
 		}
 
 		build = (await apifyClient.build(build.id).get())!;
+
+		// `outputJobLog` can return before the build is actually terminal (stream
+		// ended early, timeout hit). Poll so the status branches below see the
+		// real outcome.
+		if (waitForFinishMillis !== undefined) {
+			const deadline = Date.now() + waitForFinishMillis;
+			while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+				build = (await apifyClient.build(build.id).get())!;
+			}
+		}
 
 		if (this.flags.json) {
 			printJsonToStdout(build);
@@ -402,9 +416,11 @@ Skipping push. Use --force to override.`,
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.READY) {
 			warning({ message: 'Build is waiting for allocation.' });
+			process.exitCode = CommandExitCodes.BuildTimedOut;
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.RUNNING) {
 			warning({ message: 'Build is still running.' });
+			process.exitCode = CommandExitCodes.BuildTimedOut;
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.ABORTED || build.status === ACTOR_JOB_STATUSES.ABORTING) {
 			warning({ message: 'Build was aborted!' });
