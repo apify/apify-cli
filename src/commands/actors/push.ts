@@ -383,13 +383,12 @@ Skipping push. Use --force to override.`,
 
 		// `outputJobLog` can return before the build is actually terminal (stream
 		// ended early, timeout hit). Poll so the status branches below see the
-		// real outcome.
-		if (waitForFinishMillis !== undefined) {
-			const deadline = Date.now() + waitForFinishMillis;
-			while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
-				await new Promise((resolve) => setTimeout(resolve, 1000));
-				build = (await apifyClient.build(build.id).get())!;
-			}
+		// real outcome. With no --wait-for-finish, the flag documents "waits
+		// forever", so poll without a deadline.
+		const deadline = waitForFinishMillis === undefined ? Infinity : Date.now() + waitForFinishMillis;
+		while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			build = (await apifyClient.build(build.id).get())!;
 		}
 
 		if (this.flags.json) {
