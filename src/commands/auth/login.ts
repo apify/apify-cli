@@ -12,6 +12,7 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { AUTH_FILE_PATH } from '../../lib/consts.js';
+import { getBackend } from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
@@ -34,8 +35,13 @@ const tryToLogin = async (token: string) => {
 	if (isUserLogged) {
 		await updateUserId(userInfo.id!);
 
+		const backend = await getBackend();
+		const tokenLocation =
+			backend === 'keyring'
+				? 'your OS keyring'
+				: `${AUTH_FILE_PATH()} (OS keyring unavailable; set APIFY_DISABLE_KEYRING=1 to silence)`;
 		success({
-			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored at ${AUTH_FILE_PATH()}.`)}`,
+			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored in ${tokenLocation}.`)}`,
 		});
 	} else {
 		error({
