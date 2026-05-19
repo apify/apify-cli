@@ -53,7 +53,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 		...YesFlag(`Overwrite an existing 'apify' entry without prompting.`),
 		token: Flags.string({
 			char: 't',
-			description: `Apify API token to embed in the config. Defaults to the token from 'apify login'.`,
+			description: `Apify API token to embed in the config. Defaults to the token from 'apify auth token'.`,
 		}),
 		url: Flags.string({
 			description: 'Apify MCP server URL.',
