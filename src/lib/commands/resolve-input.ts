@@ -71,8 +71,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 		switch (inputFlag[0]) {
 			case '-': {
 				error({
-					message:
-						'You need to pipe something into standard input when you specify the `-` value to `--input`.',
+					message: 'You need to pipe something into standard input when you specify the `-` value to `--input`.',
 				});
 				process.exitCode = CommandExitCodes.InvalidInput;
 				return false;
@@ -127,8 +126,7 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 		switch (inputFileFlag[0]) {
 			case '-': {
 				error({
-					message:
-						'You need to pipe something into standard input when you specify the `-` value to `--input-file`.',
+					message: 'You need to pipe something into standard input when you specify the `-` value to `--input-file`.',
 				});
 				process.exitCode = CommandExitCodes.InvalidInput;
 				return false;

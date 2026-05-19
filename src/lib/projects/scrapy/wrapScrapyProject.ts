@@ -109,9 +109,7 @@ export async function wrapScrapyProject({ projectPath }: { projectPath?: string 
 		scrapy_settings_module: analyzer.configuration.get('settings', 'default')!,
 		apify_module_path: `${analyzer.settings!.BOT_NAME}.apify`,
 		spider_class_name: analyzer.getAvailableSpiders()[spiderIndex].class_name,
-		spider_module_name: `${translatePathToRelativeModuleName(
-			analyzer.getAvailableSpiders()[spiderIndex].pathname,
-		)}`,
+		spider_module_name: `${translatePathToRelativeModuleName(analyzer.getAvailableSpiders()[spiderIndex].pathname)}`,
 		projectFolder: analyzer.settings!.BOT_NAME,
 	};
 

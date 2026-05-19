@@ -7,6 +7,5 @@
 		"noEmit": true,
 		"rootDir": "."
 	},
-	"include": ["./**/*.ts", "./**/*.js", "../src"],
-	"references": [{ "path": ".." }]
+	"include": ["./**/*.ts", "./**/*.js", "../src"]
 }

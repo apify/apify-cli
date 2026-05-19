@@ -64,9 +64,7 @@ describe('apify create', () => {
 		expect(existsSync(actorJsonPath)).toBeTruthy();
 		expect(JSON.parse(readFileSync(actorJsonPath, 'utf8')).name).to.be.eql(actName);
 		expect(
-			JSON.parse(
-				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
-			),
+			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
 		).to.be.eql(expectedInput);
 	});
 
@@ -95,9 +93,7 @@ describe('apify create', () => {
 		expect(existsSync(actorJsonPath)).toBeTruthy();
 		expect(JSON.parse(readFileSync(actorJsonPath, 'utf8')).name).to.be.eql(actName);
 		expect(
-			JSON.parse(
-				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
-			),
+			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
 		).to.be.eql(expectedInput);
 	});
 
