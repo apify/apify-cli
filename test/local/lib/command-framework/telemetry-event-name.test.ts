@@ -44,6 +44,17 @@ describe('command telemetry event naming', () => {
 			expect.objectContaining({
 				commandString: 'datasets ls',
 				entrypoint: 'apify',
+				installMethod: expect.any(String),
+				osArch: expect.any(String),
+				runtime: expect.any(String),
+				runtimeVersion: expect.any(String),
+				runtimeNodeVersion: expect.anything(),
+				flagsUsed: expect.any(Array),
+				exitCode: expect.any(Number),
+				durationMs: expect.any(Number),
+				isCi: expect.any(Boolean),
+				isInteractive: expect.any(Boolean),
+				wasRetried: expect.any(Boolean),
 			}),
 		);
 		expect(trackEventMock).toHaveBeenCalledTimes(1);
