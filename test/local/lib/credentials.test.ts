@@ -121,17 +121,19 @@ describe('credentials', () => {
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 		});
 
-		it('proxy password always lives in auth.json, not the keyring', async () => {
+		it('round-trips the proxy password through the keyring and keeps it out of auth.json', async () => {
 			await setProxyPassword('pw_abc');
 			expect(await getProxyPassword()).toBe('pw_abc');
-			expect(readAuthFile().proxy).toEqual({ password: 'pw_abc' });
-			expect(keyringStore.get('com.apify.cli:proxy-password')).toBeUndefined();
+			expect(keyringStore.get('com.apify.cli:proxy-password')).toBe('pw_abc');
+			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 		});
 
-		it('clearSecrets() removes the token entry from the keyring', async () => {
+		it('clearSecrets() removes the token and proxy entries from the keyring', async () => {
 			await setToken('tok_123');
+			await setProxyPassword('pw_abc');
 			await clearSecrets();
 			expect(await getToken()).toBeUndefined();
+			expect(await getProxyPassword()).toBeUndefined();
 		});
 	});
 
@@ -174,15 +176,15 @@ describe('credentials', () => {
 			expect(file.secretsBackend).toBe('file');
 		});
 
-		it('on the keyring backend, moves the token out of auth.json but leaves proxy in place', async () => {
+		it('on the keyring backend, moves the token and proxy password out of auth.json', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			writeAuthFile({ token: 'tok', proxy: { password: 'pw' }, username: 'u' });
 			await ensureMigrated();
 			expect(keyringStore.get('com.apify.cli:token')).toBe('tok');
-			expect(keyringStore.get('com.apify.cli:proxy-password')).toBeUndefined();
+			expect(keyringStore.get('com.apify.cli:proxy-password')).toBe('pw');
 			const file = readAuthFile();
 			expect(file.token).toBeUndefined();
-			expect(file.proxy).toEqual({ password: 'pw' });
+			expect(file.proxy).toBeUndefined();
 			expect(file.username).toBe('u');
 			expect(file.secretsBackend).toBe('keyring');
 		});

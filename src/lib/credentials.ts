@@ -7,6 +7,7 @@ import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 const KEYRING_SERVICE = 'com.apify.cli';
 const TOKEN_ACCOUNT = 'token';
+const PROXY_PASSWORD_ACCOUNT = 'proxy-password';
 const PROBE_ACCOUNT = '__probe__';
 
 export type CredentialsBackend = 'keyring' | 'file';
@@ -153,6 +154,8 @@ export async function getToken(): Promise<string | undefined> {
 }
 
 export async function getProxyPassword(): Promise<string | undefined> {
+	const backend = await getBackend();
+	if (backend === 'keyring') return readKeyring(PROXY_PASSWORD_ACCOUNT);
 	return readAuthFile().proxy?.password;
 }
 
@@ -179,10 +182,20 @@ export async function setToken(token: string, opts: { skipIfUnchanged?: boolean 
 }
 
 export async function setProxyPassword(password: string, opts: { skipIfUnchanged?: boolean } = {}): Promise<void> {
-	if (opts.skipIfUnchanged && readAuthFile().proxy?.password === password) return;
+	const backend = await getBackend();
+	if (opts.skipIfUnchanged) {
+		const existing = backend === 'keyring' ? await readKeyring(PROXY_PASSWORD_ACCOUNT) : readAuthFile().proxy?.password;
+		if (existing === password) return;
+	}
+
+	if (backend === 'keyring') {
+		await writeKeyring(PROXY_PASSWORD_ACCOUNT, password);
+		return;
+	}
 
 	const data = readAuthFile();
 	data.proxy = { password };
+	data.secretsBackend = 'file';
 	writeAuthFile(data);
 }
 
@@ -193,16 +206,17 @@ export async function setProxyPassword(password: string, opts: { skipIfUnchanged
  */
 export async function clearSecrets(): Promise<void> {
 	await deleteKeyring(TOKEN_ACCOUNT);
+	await deleteKeyring(PROXY_PASSWORD_ACCOUNT);
 }
 
 /**
  * One-shot, idempotent migration of legacy plaintext auth.json to the keyring.
  *
- * Only the API token is moved into the keyring; proxy password stays in auth.json.
+ * Both the API token and the proxy password are moved into the keyring on the keyring backend.
  *
  * - `secretsBackend` marker in auth.json makes re-entry a no-op.
- * - On `file` backend the marker is written but the token stays in auth.json.
- * - On `keyring` backend the token is moved out of auth.json.
+ * - On `file` backend the marker is written but secrets stay in auth.json.
+ * - On `keyring` backend the token and proxy password are moved out of auth.json.
  * - Wrapped in try/catch so a migration failure never blocks the CLI.
  */
 export async function ensureMigrated(): Promise<void> {
@@ -222,6 +236,10 @@ export async function ensureMigrated(): Promise<void> {
 
 			await writeKeyring(TOKEN_ACCOUNT, file.token);
 			delete file.token;
+			if (file.proxy?.password) {
+				await writeKeyring(PROXY_PASSWORD_ACCOUNT, file.proxy.password);
+				delete file.proxy;
+			}
 			file.secretsBackend = 'keyring';
 			writeAuthFile(file);
 		} catch (err) {

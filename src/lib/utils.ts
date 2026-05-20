@@ -44,7 +44,7 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { ensureMigrated, getBackend, getToken, setToken } from './credentials.js';
+import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import type { AuthJSON } from './types.js';
@@ -101,8 +101,8 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 };
 
 /**
- * Returns object from auth file or empty object. The token is pulled from the keyring
- * when that backend is active; all other fields (including proxy) live in auth.json.
+ * Returns object from auth file or empty object. Secrets (token, proxy password) are
+ * pulled from the keyring when that backend is active; user metadata lives in auth.json.
  */
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	await ensureMigrated();
@@ -117,6 +117,9 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 
 	const token = await getToken();
 	if (token) result.token = token;
+
+	const proxyPassword = await getProxyPassword();
+	if (proxyPassword) result.proxy = { password: proxyPassword };
 
 	const hasSomething = result.username || result.id || result.token;
 	if (!hasSomething) return {};
@@ -195,6 +198,11 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 		await setToken(apifyClient.token, { skipIfUnchanged: true });
 	}
 
+	const proxyPassword = (userInfo as { proxy?: { password?: string } } | undefined)?.proxy?.password;
+	if (proxyPassword) {
+		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
+	}
+
 	ensureApifyDirectory(AUTH_FILE_PATH());
 	const existingFile = (() => {
 		try {
@@ -205,7 +213,10 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 	})();
 	const backend = await getBackend();
 	const fileContents: Record<string, unknown> = { ...existingFile, ...userInfo, secretsBackend: backend };
-	if (backend === 'keyring') delete fileContents.token;
+	if (backend === 'keyring') {
+		delete fileContents.token;
+		delete fileContents.proxy;
+	}
 	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'));
 
 	return apifyClient;
