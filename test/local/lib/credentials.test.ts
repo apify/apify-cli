@@ -121,26 +121,24 @@ describe('credentials', () => {
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 		});
 
-		it('round-trips the proxy password through the keyring', async () => {
+		it('proxy password always lives in auth.json, not the keyring', async () => {
 			await setProxyPassword('pw_abc');
 			expect(await getProxyPassword()).toBe('pw_abc');
-			expect(keyringStore.get('com.apify.cli:proxy-password')).toBe('pw_abc');
+			expect(readAuthFile().proxy).toEqual({ password: 'pw_abc' });
+			expect(keyringStore.get('com.apify.cli:proxy-password')).toBeUndefined();
 		});
 
-		it('clearSecrets() removes both entries', async () => {
+		it('clearSecrets() removes the token entry from the keyring', async () => {
 			await setToken('tok_123');
-			await setProxyPassword('pw_abc');
 			await clearSecrets();
 			expect(await getToken()).toBeUndefined();
-			expect(await getProxyPassword()).toBeUndefined();
 		});
 	});
 
 	describe('clearSecrets()', () => {
-		it('clears keyring entries even when APIFY_DISABLE_KEYRING=1 is set at logout time', async () => {
+		it('clears the keyring token entry even when APIFY_DISABLE_KEYRING=1 is set at logout time', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			await setToken('tok_123');
-			await setProxyPassword('pw_abc');
 			expect(keyringStore.get('com.apify.cli:token')).toBe('tok_123');
 
 			__resetCredentialsForTests();
@@ -149,7 +147,6 @@ describe('credentials', () => {
 
 			await clearSecrets();
 			expect(keyringStore.get('com.apify.cli:token')).toBeUndefined();
-			expect(keyringStore.get('com.apify.cli:proxy-password')).toBeUndefined();
 		});
 	});
 
@@ -177,15 +174,15 @@ describe('credentials', () => {
 			expect(file.secretsBackend).toBe('file');
 		});
 
-		it('on the keyring backend, moves secrets out of auth.json', async () => {
+		it('on the keyring backend, moves the token out of auth.json but leaves proxy in place', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			writeAuthFile({ token: 'tok', proxy: { password: 'pw' }, username: 'u' });
 			await ensureMigrated();
 			expect(keyringStore.get('com.apify.cli:token')).toBe('tok');
-			expect(keyringStore.get('com.apify.cli:proxy-password')).toBe('pw');
+			expect(keyringStore.get('com.apify.cli:proxy-password')).toBeUndefined();
 			const file = readAuthFile();
 			expect(file.token).toBeUndefined();
-			expect(file.proxy).toBeUndefined();
+			expect(file.proxy).toEqual({ password: 'pw' });
 			expect(file.username).toBe('u');
 			expect(file.secretsBackend).toBe('keyring');
 		});
