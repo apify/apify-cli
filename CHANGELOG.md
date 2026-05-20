@@ -13,6 +13,7 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - Drop only-allow preinstall, enforce pnpm via devEngines ([#1129](https://github.com/apify/apify-cli/pull/1129)) ([19f0c2d](https://github.com/apify/apify-cli/commit/19f0c2d09d8c43b39187104bfea37f89d2b1f2f6)) by [@B4nan](https://github.com/B4nan)
+- Send unified CLI telemetry events ([#1133](https://github.com/apify/apify-cli/pull/1133)) ([985bb18](https://github.com/apify/apify-cli/commit/985bb1852e83adb92e70e8274d50b25c5bacb533)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1132](https://github.com/apify/apify-cli/issues/1132)
 
 
 <!-- git-cliff-unreleased-end -->

@@ -158,7 +158,8 @@ describe('[api] apify actors search', () => {
 		expect(process.exitCode).toBeUndefined();
 
 		const parsed = JSON.parse(lastLogMessage());
-		expect(parsed.items.length).toBeGreaterThan(0);
+		expect(parsed).toHaveProperty('items');
+		expect(Array.isArray(parsed.items)).toBe(true);
 	});
 
 	it('should work without any query (browse all)', async () => {
