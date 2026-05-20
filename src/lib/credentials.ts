@@ -199,13 +199,14 @@ export async function setProxyPassword(password: string, opts: { skipIfUnchanged
 	writeAuthFile(data);
 }
 
-/** Remove all stored secrets from the active backend. */
+/**
+ * Remove all stored secrets. Always attempts to clear the keyring even when the
+ * current backend is `file`, so toggling `APIFY_DISABLE_KEYRING=1` between login
+ * and logout does not orphan entries the user has no in-CLI way to discover.
+ */
 export async function clearSecrets(): Promise<void> {
-	const backend = await getBackend();
-	if (backend === 'keyring') {
-		await deleteKeyring(TOKEN_ACCOUNT);
-		await deleteKeyring(PROXY_PASSWORD_ACCOUNT);
-	}
+	await deleteKeyring(TOKEN_ACCOUNT);
+	await deleteKeyring(PROXY_PASSWORD_ACCOUNT);
 }
 
 /**

@@ -136,6 +136,23 @@ describe('credentials', () => {
 		});
 	});
 
+	describe('clearSecrets()', () => {
+		it('clears keyring entries even when APIFY_DISABLE_KEYRING=1 is set at logout time', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			await setToken('tok_123');
+			await setProxyPassword('pw_abc');
+			expect(keyringStore.get('com.apify.cli:token')).toBe('tok_123');
+
+			__resetCredentialsForTests();
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			expect(await getBackend()).toBe('file');
+
+			await clearSecrets();
+			expect(keyringStore.get('com.apify.cli:token')).toBeUndefined();
+			expect(keyringStore.get('com.apify.cli:proxy-password')).toBeUndefined();
+		});
+	});
+
 	describe('ensureMigrated()', () => {
 		it('is a no-op when secretsBackend marker is already set', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
