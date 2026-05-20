@@ -1,5 +1,6 @@
 import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import process from 'node:process';
 
 import chalk from 'chalk';
 import computerName from 'computer-name';
@@ -36,10 +37,14 @@ const tryToLogin = async (token: string) => {
 		await updateUserId(userInfo.id!);
 
 		const backend = await getBackend();
-		const tokenLocation =
-			backend === 'keyring'
-				? 'your OS keyring'
-				: `${AUTH_FILE_PATH()} (OS keyring unavailable; set APIFY_DISABLE_KEYRING=1 to silence)`;
+		let tokenLocation: string;
+		if (backend === 'keyring') {
+			tokenLocation = 'your OS keyring';
+		} else if (process.env.APIFY_DISABLE_KEYRING === '1') {
+			tokenLocation = `${AUTH_FILE_PATH()} (OS keyring disabled via APIFY_DISABLE_KEYRING)`;
+		} else {
+			tokenLocation = `${AUTH_FILE_PATH()} (OS keyring unavailable; set APIFY_DISABLE_KEYRING=1 to silence)`;
+		}
 		success({
 			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored in ${tokenLocation}.`)}`,
 		});
