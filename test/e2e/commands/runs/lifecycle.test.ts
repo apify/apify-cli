@@ -30,7 +30,7 @@ describe('[e2e][api] runs lifecycle', () => {
 			throw new Error(`Failed to login:\n${loginResult.stderr}`);
 		}
 
-		client = new ApifyClient(getApifyClientOptions(token));
+		client = new ApifyClient(await getApifyClientOptions(token));
 		const me = await client.user('me').get();
 
 		actor = await createTestActor('e2e-runs');
