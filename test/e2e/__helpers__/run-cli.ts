@@ -45,6 +45,8 @@ export async function runCli(
 		env: {
 			APIFY_CLI_DISABLE_TELEMETRY: '1',
 			APIFY_CLI_SKIP_UPDATE_CHECK: '1',
+			// Pin the file backend so e2e subprocesses don't share the host's OS keyring across tests.
+			APIFY_DISABLE_KEYRING: '1',
 			...options.env,
 		},
 	});
