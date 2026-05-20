@@ -30,13 +30,13 @@ interface StoredAuthFile {
 }
 
 let cachedKeyringModule: KeyringModule | null | undefined;
-let cachedBackend: CredentialsBackend | undefined;
+let backendPromise: Promise<CredentialsBackend> | undefined;
 let migrationPromise: Promise<void> | undefined;
 
 /** Test-only: clear cached module/backend/migration so each test starts fresh. */
 export function __resetCredentialsForTests() {
 	cachedKeyringModule = undefined;
-	cachedBackend = undefined;
+	backendPromise = undefined;
 	migrationPromise = undefined;
 }
 
@@ -53,11 +53,20 @@ async function loadKeyringModule(): Promise<KeyringModule | null> {
 	return cachedKeyringModule;
 }
 
+/**
+ * Full write/read-back/delete round-trip on a unique random account.
+ * A read-only probe would pass on Secret Service backends that reject writes
+ * (e.g. read-only sessions), giving us a false positive at login time.
+ */
 function probeKeyring(mod: KeyringModule): boolean {
+	const probeAccount = `${PROBE_ACCOUNT}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+	const probeValue = `probe-${Date.now()}`;
 	try {
-		const entry = new mod.Entry(KEYRING_SERVICE, PROBE_ACCOUNT);
-		entry.getPassword();
-		return true;
+		const entry = new mod.Entry(KEYRING_SERVICE, probeAccount);
+		entry.setPassword(probeValue);
+		const readBack = entry.getPassword();
+		entry.deletePassword();
+		return readBack === probeValue;
 	} catch (err) {
 		cliDebugPrint('credentials', 'keyring probe failed', err);
 		return false;
@@ -66,35 +75,26 @@ function probeKeyring(mod: KeyringModule): boolean {
 
 /**
  * Picks a backend the first time it's called and caches the result for the rest of the process.
- * Order: APIFY_DISABLE_KEYRING env override -> persisted marker in auth.json -> module load -> read-only probe.
+ * Single-flight via a promise so concurrent callers share the same probe.
+ * Order: APIFY_DISABLE_KEYRING env override -> persisted marker in auth.json -> module load -> probe.
  */
 export async function getBackend(): Promise<CredentialsBackend> {
-	if (cachedBackend) return cachedBackend;
+	if (backendPromise) return backendPromise;
+	backendPromise = (async (): Promise<CredentialsBackend> => {
+		if (process.env.APIFY_DISABLE_KEYRING === '1') return 'file';
 
-	if (process.env.APIFY_DISABLE_KEYRING === '1') {
-		cachedBackend = 'file';
-		return cachedBackend;
-	}
+		const marker = readAuthFile().secretsBackend;
+		if (marker === 'file') return 'file';
+		if (marker === 'keyring') {
+			const mod = await loadKeyringModule();
+			return mod ? 'keyring' : 'file';
+		}
 
-	const marker = readAuthFile().secretsBackend;
-	if (marker === 'file') {
-		cachedBackend = 'file';
-		return cachedBackend;
-	}
-	if (marker === 'keyring') {
 		const mod = await loadKeyringModule();
-		cachedBackend = mod ? 'keyring' : 'file';
-		return cachedBackend;
-	}
-
-	const mod = await loadKeyringModule();
-	if (!mod) {
-		cachedBackend = 'file';
-		return cachedBackend;
-	}
-
-	cachedBackend = probeKeyring(mod) ? 'keyring' : 'file';
-	return cachedBackend;
+		if (!mod) return 'file';
+		return probeKeyring(mod) ? 'keyring' : 'file';
+	})();
+	return backendPromise;
 }
 
 function readAuthFile(): StoredAuthFile {
@@ -109,7 +109,7 @@ function readAuthFile(): StoredAuthFile {
 
 function writeAuthFile(data: StoredAuthFile) {
 	ensureApifyDirectory(AUTH_FILE_PATH());
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(data, null, '\t'));
+	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(data, null, '\t'), { mode: 0o600 });
 }
 
 async function getKeyringEntry(account: string): Promise<KeyringEntry | null> {

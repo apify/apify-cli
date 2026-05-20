@@ -217,7 +217,7 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 		delete fileContents.token;
 		delete fileContents.proxy;
 	}
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'));
+	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
 
 	return apifyClient;
 }
