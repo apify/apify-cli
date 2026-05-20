@@ -44,7 +44,7 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { ensureMigrated, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
+import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import type { AuthJSON } from './types.js';
@@ -210,9 +210,10 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 			return {};
 		}
 	})();
+	const backend = await getBackend();
 	writeFileSync(
 		AUTH_FILE_PATH(),
-		JSON.stringify({ ...existingFile, ...metadataOnly, secretsBackend: existingFile.secretsBackend }, null, '\t'),
+		JSON.stringify({ ...existingFile, ...metadataOnly, secretsBackend: backend }, null, '\t'),
 	);
 
 	return apifyClient;

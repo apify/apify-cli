@@ -56,9 +56,7 @@ async function loadKeyringModule(): Promise<KeyringModule | null> {
 function probeKeyring(mod: KeyringModule): boolean {
 	try {
 		const entry = new mod.Entry(KEYRING_SERVICE, PROBE_ACCOUNT);
-		entry.setPassword('1');
 		entry.getPassword();
-		entry.deletePassword();
 		return true;
 	} catch (err) {
 		cliDebugPrint('credentials', 'keyring probe failed', err);
@@ -68,13 +66,24 @@ function probeKeyring(mod: KeyringModule): boolean {
 
 /**
  * Picks a backend the first time it's called and caches the result for the rest of the process.
- * Order: APIFY_DISABLE_KEYRING env override -> module load -> runtime probe.
+ * Order: APIFY_DISABLE_KEYRING env override -> persisted marker in auth.json -> module load -> read-only probe.
  */
 export async function getBackend(): Promise<CredentialsBackend> {
 	if (cachedBackend) return cachedBackend;
 
 	if (process.env.APIFY_DISABLE_KEYRING === '1') {
 		cachedBackend = 'file';
+		return cachedBackend;
+	}
+
+	const marker = readAuthFile().secretsBackend;
+	if (marker === 'file') {
+		cachedBackend = 'file';
+		return cachedBackend;
+	}
+	if (marker === 'keyring') {
+		const mod = await loadKeyringModule();
+		cachedBackend = mod ? 'keyring' : 'file';
 		return cachedBackend;
 	}
 
