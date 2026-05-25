@@ -1,0 +1,10 @@
+// User-added top-of-file comment
+{
+	"mcpServers": {
+		"github": {
+			// PAT expires 2026-01
+			"url": "https://api.githubcopilot.com/mcp",
+			"headers": { "Authorization": "Bearer github_pat_XYZ" }
+		},
+	},
+}

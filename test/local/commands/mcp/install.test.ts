@@ -8,7 +8,7 @@ vitest.mock('is-ci', () => ({ default: true }));
 import { MCPInstallCommand } from '../../../../src/commands/mcp/install.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { CommandExitCodes } from '../../../../src/lib/consts.js';
-import { CURSOR_MCP_JSONC_WITH_COMMENTS } from '../../../__setup__/fixtures/mcp-install-fixtures.js';
+import { cursorMcpJsoncWithCommentsPath } from '../../../__setup__/fixtures/mcp-install-fixtures.js';
 import { useAuthSetup } from '../../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
@@ -122,7 +122,7 @@ describe('apify mcp install', () => {
 		// Pre-seed a hand-edited config with comments, a trailing comma, and an unrelated server.
 		const cursorPath = joinPath('.cursor', 'mcp.json');
 		await mkdir(joinPath('.cursor'), { recursive: true });
-		await writeFile(cursorPath, CURSOR_MCP_JSONC_WITH_COMMENTS, 'utf-8');
+		await writeFile(cursorPath, await readFile(cursorMcpJsoncWithCommentsPath, 'utf-8'), 'utf-8');
 
 		await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_token: TEST_TOKEN });
 
