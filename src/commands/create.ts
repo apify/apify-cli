@@ -151,14 +151,16 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		let messages = null;
 
-		this.telemetryData.fromArchiveUrl = !!templateArchiveUrl;
+		this.telemetryData.create = {
+			fromArchiveUrl: !!templateArchiveUrl,
+		};
 
 		if (!templateArchiveUrl) {
 			const templateDefinition = await getTemplateDefinition(templateName, manifestPromise);
 			({ archiveUrl: templateArchiveUrl, messages } = templateDefinition);
-			this.telemetryData.templateId = templateDefinition.id;
-			this.telemetryData.templateName = templateDefinition.name;
-			this.telemetryData.templateLanguage = templateDefinition.category;
+			this.telemetryData.create.templateId = templateDefinition.id;
+			this.telemetryData.create.templateName = templateDefinition.name;
+			this.telemetryData.create.templateLanguage = templateDefinition.category;
 
 			// This "exists"
 			if ('skipOptionalDeps' in templateDefinition) {
