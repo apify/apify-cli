@@ -46,13 +46,11 @@ jobs:
                   SEGMENT_TOKEN: ${{ secrets.SEGMENT_TOKEN }}
 
             - name: Commit the updated package(-lock).json
-              uses: stefanzweifel/git-auto-commit-action@v7
+              uses: apify/actions/signed-commit@v1.1.2
               with:
-                  commit_message: "chore: Automatic theme updating workflow [skip ci]"
-                  file_pattern: "website/package*.json pnpm-lock.yaml"
-                  commit_user_name: Apify Bot
-                  commit_user_email: my-github-actions-bot@example.org
-                  commit_author: Apify Bot <apify@apify.com>
+                  message: "chore: Automatic theme updating workflow [skip ci]"
+                  add: 'website/package.json pnpm-lock.yaml'
+                  github-token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Set up GitHub Pages
               uses: actions/configure-pages@v6

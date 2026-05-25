@@ -74,7 +74,7 @@ jobs:
         name: Update changelog
         runs-on: ubuntu-latest
         outputs:
-            changelog_commitish: ${{ steps.commit.outputs.commit_long_sha || github.sha }}
+            changelog_commitish: ${{ steps.commit.outputs.commit_long_sha }}
 
         steps:
             - name: Checkout repository
@@ -112,12 +112,11 @@ jobs:
 
             - name: Commit changes
               id: commit
-              uses: EndBug/add-and-commit@v10
+              uses: apify/actions/signed-commit@v1.1.2
               with:
-                  author_name: Apify Release Bot
-                  author_email: noreply@apify.com
                   message: "chore(release): Update changelog and package version [skip ci]"
-                  pull: "--rebase --autostash"
+                  pull: '--rebase --autostash'
+                  github-token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
     build-bundles:
         name: Build bundles

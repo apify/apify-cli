@@ -36,9 +36,8 @@ jobs:
                   pnpm --filter apify-cli-website exec -- docusaurus docs:version $MAJOR_MINOR
 
             - name: Commit and push the version snapshot
-              uses: EndBug/add-and-commit@v10
+              uses: apify/actions/signed-commit@v1.1.2
               with:
-                  author_name: Apify Release Bot
-                  author_email: noreply@apify.com
                   message: "docs: version docs for ${{ steps.version.outputs.version }} [docs build]"
-                  pull: "--rebase --autostash"
+                  pull: '--rebase --autostash'
+                  github-token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
