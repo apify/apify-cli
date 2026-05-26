@@ -89,12 +89,10 @@ describe('[api] apify push', () => {
 			};
 			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 
-			const pushInstance = (await testRunCommand(ActorsPushCommand, {
+			const pushInstance = await testRunCommand(ActorsPushCommand, {
 				flags_noPrompt: true,
 				flags_force: true,
-			})) as unknown as {
-				telemetryData: { push?: { actorId?: string; wasCreated?: boolean } };
-			};
+			});
 
 			const userInfo = await getLocalUserInfo();
 			const { name } = actorJson;
@@ -121,7 +119,8 @@ describe('[api] apify push', () => {
 			expect((createdActorVersion as any)!.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
 			expect(createdActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 
-			expect(pushInstance.telemetryData.push).to.be.eql({
+			// eslint-disable-next-line dot-notation
+			expect(pushInstance['telemetryData'].push).to.be.eql({
 				actorId: createdActor!.id,
 				wasCreated: true,
 			});
@@ -136,13 +135,11 @@ describe('[api] apify push', () => {
 			const testActorClient = testUserClient.actor(testActor.id);
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 
-			const pushInstance = (await testRunCommand(ActorsPushCommand, {
+			const pushInstance = await testRunCommand(ActorsPushCommand, {
 				args_actorId: testActor.id,
 				flags_noPrompt: true,
 				flags_force: true,
-			})) as unknown as {
-				telemetryData: { push?: { actorId?: string; wasCreated?: boolean } };
-			};
+			});
 
 			actorsForCleanup.add(testActor.id);
 
@@ -165,7 +162,8 @@ describe('[api] apify push', () => {
 			expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
 			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 
-			expect(pushInstance.telemetryData.push).to.be.eql({
+			// eslint-disable-next-line dot-notation
+			expect(pushInstance['telemetryData'].push).to.be.eql({
 				actorId: testActor.id,
 				wasCreated: false,
 			});
