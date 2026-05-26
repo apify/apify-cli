@@ -959,6 +959,8 @@ export async function internalRunCommand<Cmd extends typeof BuiltApifyCommand>(
 
 	// eslint-disable-next-line dot-notation
 	await instance['_run'](rawObject);
+
+	return instance;
 }
 
 export declare class BuiltApifyCommand extends ApifyCommand {
