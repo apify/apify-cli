@@ -40,9 +40,12 @@ beforeEach(async () => {
 	vitest.stubEnv('APIFY_TOKEN', '');
 });
 
+// useAuthSetup() already calls vitest.unstubAllEnvs() in its own afterEach. Calling it again
+// here races with useAuthSetup's cleanup — if our afterEach runs first, HOME is restored to
+// the real value before useAuthSetup computes GLOBAL_CONFIGS_FOLDER() and rm()s it, wiping
+// the developer's real ~/.apify (auth.json, secrets.json, telemetry).
 afterEach(() => {
 	process.exitCode = undefined;
-	vitest.unstubAllEnvs();
 });
 
 describe('apify mcp install', () => {
