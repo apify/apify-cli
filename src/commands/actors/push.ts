@@ -93,7 +93,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}),
 		'wait-for-finish': Flags.string({
 			char: 'w',
-			description: 'Seconds for waiting to build to finish, if no value passed, it waits forever.',
+			description:
+				'Seconds for waiting to build to finish, if no value passed, it waits forever. Pass 0 to return as soon as the build is queued (fire-and-forget).',
 			required: false,
 		}),
 		'open': Flags.boolean({
@@ -397,8 +398,9 @@ Skipping push. Use --force to override.`,
 		// Platform updates `taggedBuilds[buildTag]` asynchronously after the
 		// build finishes. Wait until the tag points at this build so callers
 		// (including --json automation) that immediately
-		// `actor.start({ build: buildTag })` don't race it.
-		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED && buildTag) {
+		// `actor.start({ build: buildTag })` don't race it. Skipped when
+		// --wait-for-finish=0 (fire-and-forget).
+		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED && buildTag && waitForFinishMillis !== 0) {
 			run({ message: `Applying build tag "${buildTag}"...` });
 			const tagDeadline = Date.now() + 5_000;
 			let tagApplied = false;
