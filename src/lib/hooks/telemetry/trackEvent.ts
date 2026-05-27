@@ -35,6 +35,11 @@ interface CliCommandEvent {
 		templateLanguage?: string;
 	};
 
+	push?: {
+		actorId?: string;
+		wasCreated?: boolean;
+	};
+
 	// init command
 	actorWrapper?: string;
 
