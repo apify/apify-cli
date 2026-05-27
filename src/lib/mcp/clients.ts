@@ -43,6 +43,7 @@ interface InstallResult {
 	serverUrl: string;
 	authDescription: string;
 	configPath?: string;
+	nextSteps?: string;
 }
 
 function printResult(result: InstallResult): void {
@@ -55,6 +56,9 @@ function printResult(result: InstallResult): void {
 	];
 	if (result.configPath) {
 		lines.push(`  ${chalk.yellow('Config:')}     ${tildify(result.configPath)}`);
+	}
+	if (result.nextSteps) {
+		lines.push('', result.nextSteps);
 	}
 
 	simpleLog({ message: lines.join('\n') });
@@ -198,7 +202,7 @@ const codexHandler: ClientHandler = async ({ url }) => {
 			'\n',
 		);
 		error({
-			message: `The 'codex' CLI was not found on PATH. Install Codex (https://developers.openai.com/codex) and re-run, or add this entry manually to ${tildify(tomlPath)}:\n\n${tomlSnippet}\n\nThen export your token in your shell rc:\n\n    export APIFY_TOKEN=<your-token>`,
+			message: `The 'codex' CLI was not found on PATH. Install Codex (https://developers.openai.com/codex) and re-run, or add this entry manually to ${tildify(tomlPath)}:\n\n${tomlSnippet}\n\nThen, before launching codex, export your Apify token in the same shell:\n\n    export APIFY_TOKEN=<your-token>`,
 		});
 		process.exitCode = CommandExitCodes.NotFound;
 		return;
@@ -221,6 +225,7 @@ const codexHandler: ClientHandler = async ({ url }) => {
 		serverUrl: url,
 		authDescription: `Bearer token from APIFY_TOKEN environment variable`,
 		configPath: tomlPath,
+		nextSteps: `  ${chalk.yellow('Next:')}      Codex reads APIFY_TOKEN from the environment. Before launching codex, run:\n\n    export APIFY_TOKEN=<your-token>`,
 	});
 };
 

@@ -19,7 +19,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts before overwriting an existing config entry. Pass --yes to overwrite without prompting.';
+		'Prompts before overwriting an existing JSON config entry (cursor, kiro, antigravity). Pass --yes to overwrite without prompting. For clients delegated to their own CLI (claude-code, vscode, vscode-insiders, codex), overwrite behavior is controlled by that CLI.';
 
 	static override examples = [
 		{
@@ -53,7 +53,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 		...YesFlag(`Overwrite an existing 'apify' entry without prompting.`),
 		token: Flags.string({
 			char: 't',
-			description: `Apify API token to embed in the config. Defaults to the token from 'apify auth token'.`,
+			description: `Apify API token to embed in the config. Defaults to the token from 'apify login'.`,
 		}),
 		url: Flags.string({
 			description: 'Apify MCP server URL.',
