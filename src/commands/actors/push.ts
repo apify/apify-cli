@@ -94,7 +94,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		'wait-for-finish': Flags.string({
 			char: 'w',
 			description:
-				'Seconds for waiting to build to finish, if no value passed, it waits forever. Pass 0 to return as soon as the build is queued (fire-and-forget).',
+				'In seconds, how long to wait for the build to finish. If no value passed, it waits forever. To return as soon as the build is queued (fire-and-forget), pass 0.',
 			required: false,
 		}),
 		'open': Flags.boolean({
