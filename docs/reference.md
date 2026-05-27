@@ -69,10 +69,11 @@ ARGUMENTS
 FLAGS
   -d, --body=<value>      The request body (JSON string).
                           Use "-" to read from stdin.
-      --describe=<value>  Describe an endpoint: print every HTTP
-                          method on a path, its summary, and path parameters.
-                          Accepts a path like "actor-runs/{runId}" or
-                          "/v2/actor-runs/{runId}".
+      --describe=<value>  Print a reference for an endpoint
+                          path: its HTTP methods, summary, and path parameters.
+                          Leading slashes and a version prefix in the path are
+                          optional. For example, "actor-runs/{runId}" and
+                          "/v2/actor-runs/{runId}" are both accepted.
       -H, --header=<value>    Additional HTTP header(s). Pass a
                           single "key:value" string, or a JSON object like
                           '{"X-Foo": "bar", "X-Baz": "qux"}' to send multiple
@@ -85,9 +86,11 @@ FLAGS
                           <options: GET|POST|PUT|PATCH|DELETE>
   -p, --params=<value>    Query parameters as a JSON object,
                           e.g. '{"limit": 1, "desc": true}'.
-  -s, --search=<value>    Filter --list-endpoints by a
-                          space-separated query. Each token must appear
-                          (case-insensitive) in method, path, or summary.
+  -s, --search=<value>    Filter results returned by
+                          --list-endpoints. The query is case-insensitive and split
+                          into tokens by spaces. For an endpoint to be returned,
+                          every token must appear in that endpoint's method, path,
+                          or summary.
 ```
 
 ##### `apify telemetry`
