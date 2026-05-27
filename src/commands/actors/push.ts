@@ -448,13 +448,13 @@ Skipping push. Use --force to override.`,
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.READY) {
 			warning({ message: 'Build is waiting for allocation.' });
-			// User opted into a bounded wait via --wait-for-finish; the build is
-			// still progressing platform-side, so don't surface that as a failure.
-			if (this.flags.waitForFinish === undefined) process.exitCode = CommandExitCodes.BuildTimedOut;
+			// Skip exit code for --wait-for-finish=0 (fire-and-forget): READY is
+			// the expected outcome when the user asked to return immediately.
+			if (waitForFinishMillis !== 0) process.exitCode = CommandExitCodes.BuildTimedOut;
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.RUNNING) {
 			warning({ message: 'Build is still running.' });
-			if (this.flags.waitForFinish === undefined) process.exitCode = CommandExitCodes.BuildTimedOut;
+			if (waitForFinishMillis !== 0) process.exitCode = CommandExitCodes.BuildTimedOut;
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.ABORTED || build.status === ACTOR_JOB_STATUSES.ABORTING) {
 			warning({ message: 'Build was aborted!' });
