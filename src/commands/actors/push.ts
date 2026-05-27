@@ -244,6 +244,11 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			}
 		}
 
+		this.telemetryData.push = {
+			actorId,
+			wasCreated: isActorCreatedNow,
+		};
+
 		const actorClient = apifyClient.actor(actorId);
 
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
