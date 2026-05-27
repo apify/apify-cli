@@ -358,6 +358,10 @@ Skipping push. Use --force to override.`,
 
 		// Build Actor on Apify and wait for build to finish
 		run({ message: `Building Actor ${actor.name}` });
+		// Anchor the deadline at build start so log streaming + status polling
+		// share one budget. Without this, a log stream that dies near the cap
+		// would let the poll loop wait another full --wait-for-finish on top.
+		const deadline = waitForFinishMillis === undefined ? Infinity : Date.now() + waitForFinishMillis;
 		let build = await actorClient.build(version, {
 			useCache: true,
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
@@ -373,7 +377,8 @@ Skipping push. Use --force to override.`,
 		});
 
 		try {
-			await outputJobLog({ job: build, timeoutMillis: waitForFinishMillis, apifyClient });
+			const logBudgetMs = Number.isFinite(deadline) ? Math.max(0, deadline - Date.now()) : undefined;
+			await outputJobLog({ job: build, timeoutMillis: logBudgetMs, apifyClient });
 		} catch (err) {
 			warning({ message: 'Can not get log:' });
 			console.error(err);
@@ -382,10 +387,8 @@ Skipping push. Use --force to override.`,
 		build = (await apifyClient.build(build.id).get())!;
 
 		// `outputJobLog` can return before the build is actually terminal (stream
-		// ended early, timeout hit). Poll so the status branches below see the
-		// real outcome. With no --wait-for-finish, the flag documents "waits
-		// forever", so poll without a deadline.
-		const deadline = waitForFinishMillis === undefined ? Infinity : Date.now() + waitForFinishMillis;
+		// ended early, timeout hit). Poll the remaining budget so the status
+		// branches below see the real outcome.
 		while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 			build = (await apifyClient.build(build.id).get())!;
