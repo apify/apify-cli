@@ -22,7 +22,7 @@ jobs:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.2.0
+              uses: apify/actions/pnpm-install@v1.1.2
 
             - name: Snapshot the current version
               id: version
@@ -36,7 +36,7 @@ jobs:
                   pnpm --filter apify-cli-website exec -- docusaurus docs:version $MAJOR_MINOR
 
             - name: Commit and push the version snapshot
-              uses: apify/actions/signed-commit@v1.2.0
+              uses: apify/actions/signed-commit@v1.1.2
               with:
                   message: "docs: version docs for ${{ steps.version.outputs.version }} [docs build]"
                   pull: '--rebase --autostash'
