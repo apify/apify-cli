@@ -31,7 +31,7 @@ jobs:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.1.2
+              uses: apify/actions/pnpm-install@v1.2.0
 
             - name: Build docs
               run: |
@@ -46,7 +46,7 @@ jobs:
                   SEGMENT_TOKEN: ${{ secrets.SEGMENT_TOKEN }}
 
             - name: Commit the updated package(-lock).json
-              uses: apify/actions/signed-commit@v1.1.2
+              uses: apify/actions/signed-commit@v1.2.0
               with:
                   message: "chore: Automatic theme updating workflow [skip ci]"
                   add: 'website/package.json pnpm-lock.yaml'
