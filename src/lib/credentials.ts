@@ -2,13 +2,12 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
 import { AUTH_FILE_PATH } from './consts.js';
-import { ensureApifyDirectory } from './utils.js';
+import { ensureApifyDirectory } from './files.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 const KEYRING_SERVICE = 'com.apify.cli';
 const TOKEN_ACCOUNT = 'token';
 const PROXY_PASSWORD_ACCOUNT = 'proxy-password';
-const PROBE_ACCOUNT = '__probe__';
 
 export type CredentialsBackend = 'keyring' | 'file';
 
@@ -54,29 +53,13 @@ async function loadKeyringModule(): Promise<KeyringModule | null> {
 }
 
 /**
- * Full write/read-back/delete round-trip on a unique random account.
- * A read-only probe would pass on Secret Service backends that reject writes
- * (e.g. read-only sessions), giving us a false positive at login time.
- */
-function probeKeyring(mod: KeyringModule): boolean {
-	const probeAccount = `${PROBE_ACCOUNT}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-	const probeValue = `probe-${Date.now()}`;
-	try {
-		const entry = new mod.Entry(KEYRING_SERVICE, probeAccount);
-		entry.setPassword(probeValue);
-		const readBack = entry.getPassword();
-		entry.deletePassword();
-		return readBack === probeValue;
-	} catch (err) {
-		cliDebugPrint('credentials', 'keyring probe failed', err);
-		return false;
-	}
-}
-
-/**
  * Picks a backend the first time it's called and caches the result for the rest of the process.
- * Single-flight via a promise so concurrent callers share the same probe.
- * Order: APIFY_DISABLE_KEYRING env override -> persisted marker in auth.json -> module load -> probe.
+ * Single-flight via a promise so concurrent callers share the same lookup.
+ * Order: APIFY_DISABLE_KEYRING env override -> persisted marker in auth.json -> module load.
+ *
+ * No write-probe runs here: on macOS that would pop a keychain prompt before the user has
+ * authorized one. The first real write is the probe — failure is caught and downgraded
+ * via `downgradeBackendToFile()`, persisting the file marker so future runs skip the keyring.
  */
 export async function getBackend(): Promise<CredentialsBackend> {
 	if (backendPromise) return backendPromise;
@@ -91,10 +74,17 @@ export async function getBackend(): Promise<CredentialsBackend> {
 		}
 
 		const mod = await loadKeyringModule();
-		if (!mod) return 'file';
-		return probeKeyring(mod) ? 'keyring' : 'file';
+		return mod ? 'keyring' : 'file';
 	})();
 	return backendPromise;
+}
+
+/**
+ * Called when a keyring write fails at runtime. Flips the cached backend so subsequent
+ * reads/writes use the file path immediately, without waiting for the marker on disk.
+ */
+function downgradeBackendToFile() {
+	backendPromise = Promise.resolve('file');
 }
 
 function readAuthFile(): StoredAuthFile {
@@ -171,8 +161,13 @@ export async function setToken(token: string, opts: { skipIfUnchanged?: boolean 
 	}
 
 	if (backend === 'keyring') {
-		await writeKeyring(TOKEN_ACCOUNT, token);
-		return;
+		try {
+			await writeKeyring(TOKEN_ACCOUNT, token);
+			return;
+		} catch (err) {
+			cliDebugPrint('credentials', 'keyring write failed; falling back to file', err);
+			downgradeBackendToFile();
+		}
 	}
 
 	const data = readAuthFile();
@@ -189,8 +184,13 @@ export async function setProxyPassword(password: string, opts: { skipIfUnchanged
 	}
 
 	if (backend === 'keyring') {
-		await writeKeyring(PROXY_PASSWORD_ACCOUNT, password);
-		return;
+		try {
+			await writeKeyring(PROXY_PASSWORD_ACCOUNT, password);
+			return;
+		} catch (err) {
+			cliDebugPrint('credentials', 'keyring write failed; falling back to file', err);
+			downgradeBackendToFile();
+		}
 	}
 
 	const data = readAuthFile();
@@ -234,7 +234,15 @@ export async function ensureMigrated(): Promise<void> {
 				return;
 			}
 
-			await writeKeyring(TOKEN_ACCOUNT, file.token);
+			try {
+				await writeKeyring(TOKEN_ACCOUNT, file.token);
+			} catch (err) {
+				cliDebugPrint('credentials', 'keyring write failed during migration; falling back to file', err);
+				downgradeBackendToFile();
+				file.secretsBackend = 'file';
+				writeAuthFile(file);
+				return;
+			}
 			delete file.token;
 			if (file.proxy?.password) {
 				await writeKeyring(PROXY_PASSWORD_ACCOUNT, file.proxy.password);

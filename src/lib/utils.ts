@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createWriteStream, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
@@ -45,7 +45,7 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
-import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { deleteFile, ensureApifyDirectory, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -125,7 +125,7 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	if (!hasSomething) return {};
 
 	if (!result.username && !result.id) {
-		throw new Error('Corrupted local user info was found. Please run "apify login" to fix it.');
+		throw new Error('Stale credentials found without user metadata. Please run "apify login" again.');
 	}
 
 	return result;
@@ -715,15 +715,6 @@ export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: s
 	const zip = new AdmZip(Buffer.concat(chunks));
 	zip.extractAllTo(pathTo, true);
 };
-
-/**
- * Ensures the Apify directory exists, as well as nested folders (for tests)
- */
-export function ensureApifyDirectory(file: string) {
-	const path = dirname(file);
-
-	mkdirSync(path, { recursive: true });
-}
 
 export const TimestampFormatter = new Timestamp('YYYY-MM-DD [at] HH:mm:ss');
 
