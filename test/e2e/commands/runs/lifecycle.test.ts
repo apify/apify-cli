@@ -115,13 +115,23 @@ describe('[e2e][api] runs lifecycle', () => {
 	});
 
 	it('runs abort — aborts a running run', async () => {
-		const result = await runCli('apify', ['runs', 'abort', runId, '--json'], {
+		// Start a dedicated long-running run so abort always wins the race against
+		// the hello-world actor finishing on its own.
+		const startResult = await runCli(
+			'apify',
+			['actors', 'start', actorFullName, '--input', JSON.stringify({ sleepMs: 30_000 }), '--json'],
+			{ cwd: actor.dir, env: authEnv },
+		);
+		expect(startResult.exitCode, `stderr: ${startResult.stderr}`).toBe(0);
+		const { id: abortRunId } = JSON.parse(startResult.stdout);
+
+		const result = await runCli('apify', ['runs', 'abort', abortRunId, '--json'], {
 			env: authEnv,
 		});
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		const data = JSON.parse(result.stdout);
-		expect(data.id).toBe(runId);
+		expect(data.id).toBe(abortRunId);
 	});
 
 	it('runs rm — deletes a run', async () => {
