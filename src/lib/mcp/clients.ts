@@ -141,39 +141,24 @@ async function addMcpViaCli({
 	url: string;
 	token: string;
 }): Promise<void> {
+	// VS Code's '--add-mcp' takes one JSON server descriptor; only the bearer value differs between the real, masked, and placeholder forms.
+	const buildServerJson = (authValue: string) =>
+		JSON.stringify({ name: SERVER_KEY, type: 'http', url, headers: { Authorization: authValue } });
+
 	const bin = await which(binary, { nothrow: true });
 
 	if (!bin) {
-		const placeholderJson = JSON.stringify({
-			name: SERVER_KEY,
-			type: 'http',
-			url,
-			headers: { Authorization: 'Bearer <your-token>' },
-		});
 		error({
-			message: `The '${binary}' CLI was not found on PATH. Install ${clientLabel} and re-run, or add the server manually:\n\n    ${binary} --add-mcp '${placeholderJson}'`,
+			message: `The '${binary}' CLI was not found on PATH. Install ${clientLabel} and re-run, or add the server manually:\n\n    ${binary} --add-mcp '${buildServerJson('Bearer <your-token>')}'`,
 		});
 		process.exitCode = CommandExitCodes.NotFound;
 		return;
 	}
 
-	const serverJson = JSON.stringify({
-		name: SERVER_KEY,
-		type: 'http',
-		url,
-		headers: { Authorization: `Bearer ${token}` },
-	});
-	const maskedJson = JSON.stringify({
-		name: SERVER_KEY,
-		type: 'http',
-		url,
-		headers: { Authorization: `Bearer ${maskToken(token)}` },
-	});
-
-	run({ message: `${binary} --add-mcp '${maskedJson}'` });
+	run({ message: `${binary} --add-mcp '${buildServerJson(`Bearer ${maskToken(token)}`)}'` });
 
 	try {
-		await execa(binary, ['--add-mcp', serverJson], { stdio: ['ignore', 'ignore', 'inherit'] });
+		await execa(binary, ['--add-mcp', buildServerJson(`Bearer ${token}`)], { stdio: ['ignore', 'ignore', 'inherit'] });
 	} catch (err) {
 		error({ message: `Failed to add the MCP server via ${clientLabel}: ${describeExecaError(err, binary)}` });
 		process.exitCode = CommandExitCodes.RunFailed;
