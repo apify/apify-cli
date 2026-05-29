@@ -42,6 +42,10 @@ const tryToLogin = async (token: string) => {
 			tokenLocation = 'your OS keyring';
 		} else if (process.env.APIFY_DISABLE_KEYRING === '1') {
 			tokenLocation = `${AUTH_FILE_PATH()} (OS keyring disabled via APIFY_DISABLE_KEYRING)`;
+		} else if (process.env.APIFY_CLI_BUNDLE) {
+			// Bundle distributions ship without the OS keyring native module — see
+			// https://github.com/apify/apify-cli/issues for the tracking issue.
+			tokenLocation = `${AUTH_FILE_PATH()} (OS keyring not available in bundle installs; install via npm for keyring storage, or set APIFY_DISABLE_KEYRING=1 to silence)`;
 		} else {
 			tokenLocation = `${AUTH_FILE_PATH()} (OS keyring unavailable; set APIFY_DISABLE_KEYRING=1 to silence)`;
 		}
