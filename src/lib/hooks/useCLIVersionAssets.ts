@@ -91,7 +91,14 @@ export async function useCLIVersionAssets(version: string) {
 	const requiresBaseline = isInstalledOnBaseline();
 
 	const assets = body.assets.filter((asset) => {
-		const [_cliEntrypoint, _version, assetOs, assetArch, assetBaselineOrMusl, assetBaseline] = asset.name
+		// We now ship a single `apify-cli` bundle. The legacy `apify-*`/`actor-*` assets are kept only as a
+		// backwards-compatible backup for old installs and must be ignored by the current upgrade flow.
+		if (!asset.name.startsWith('apify-cli-')) {
+			return false;
+		}
+
+		const [_version, assetOs, assetArch, assetBaselineOrMusl, assetBaseline] = asset.name
+			.slice('apify-cli-'.length)
 			.replace(versionWithoutV, 'version')
 			.replace('.exe', '')
 			.split('-');

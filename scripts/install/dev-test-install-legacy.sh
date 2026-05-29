@@ -1,7 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# This script should be used from the repo root like so: `cat scripts/install/dev-test-install.sh | bash`
+# This script installs the CLI in the OLD layout (three full binaries: apify, actor, apify-cli) so you
+# can test the single-bundle self-migration locally. It is identical to dev-test-install.sh except for
+# the install section.
+#
+# After running it, your bin directory will hold the legacy 3-binary state. Run `apify` (or `actor`)
+# afterwards to trigger the migration to the new single-bundle layout (set APIFY_CLI_DEBUG=1 to watch).
+#
+# This script should be used from the repo root like so: `cat scripts/install/dev-test-install-legacy.sh | bash`
 
 # Reset
 Color_Off=''
@@ -109,31 +116,30 @@ pnpm install
 info "Building bundles"
 pnpm run insert-cli-metadata && pnpm run build-bundles && git checkout -- src/lib/hooks/useCLIMetadata.ts
 
-info "Installing bundle"
+info "Installing bundles in the legacy 3-binary layout"
 
-# We now ship a single `apify-cli` bundle. The `apify` and `actor` commands are tiny wrapper scripts
-# that invoke it with APIFY_CLI_ENTRYPOINT set, instead of dropping the same binary three times.
-info "Installing apify-cli bundle for version $version and target $target"
+# Reproduce the OLD install layout: `apify` and `actor` are full binaries, and `apify-cli` is a copy of
+# `apify` (the alias the old install scripts created). The build now emits backwards-compatible
+# `apify-*`/`actor-*` copies of the single bundle, so we use those to populate apify and actor.
+for executable_name in apify actor; do
+    info "Installing $executable_name bundle for version $version and target $target"
 
-cp "bundles/apify-cli-$version-$target" "$bin_dir/apify-cli"
-chmod +x "$bin_dir/apify-cli"
-
-# Create the `apify` and `actor` wrapper scripts
-for entrypoint in apify actor; do
-    script_path="$bin_dir/$entrypoint"
-
-    cat >"$script_path" <<EOF
-#!/bin/sh
-DIR="\$(CDPATH= cd -- "\$(dirname -- "\$0")" && pwd)"
-APIFY_CLI_ENTRYPOINT=$entrypoint exec "\$DIR/apify-cli" "\$@"
-EOF
-
-    chmod +x "$script_path" ||
-        error "Failed to set permissions on $entrypoint script"
+    cp "bundles/$executable_name-$version-$target" "$bin_dir/$executable_name"
+    chmod +x "$bin_dir/$executable_name"
 done
 
-if ! [ -t 0 ] && [ -r /dev/tty ]; then
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_OPEN_TTY=1 "$bin_dir/apify" install
-else
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install
-fi
+# Alias apify to apify-cli, as the old install scripts did
+cp "$bin_dir/apify" "$bin_dir/apify-cli"
+chmod +x "$bin_dir/apify-cli"
+
+# NOTE: we intentionally do NOT run `apify install` here. The freshly built bundle contains the
+# self-migration logic, which runs on the first invocation of any command and would immediately convert
+# this legacy layout into the new single-bundle layout - defeating the purpose of this script.
+info "Legacy 3-binary layout installed:"
+ls -la "$bin_dir/apify" "$bin_dir/actor" "$bin_dir/apify-cli"
+
+echo ""
+info "To test the migration, run a command and watch the debug output, e.g.:"
+echo "  APIFY_CLI_DEBUG=1 \"$bin_dir/apify\" --version"
+echo ""
+info "Afterwards, apify and actor should become small wrapper scripts and apify-cli the only binary."

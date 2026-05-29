@@ -1,12 +1,14 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
-import { lstat, readdir, writeFile } from 'node:fs/promises';
+import { readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import process from 'node:process';
 
 import chalk from 'chalk';
 import { gte } from 'semver';
 
 import { USER_AGENT } from '../../entrypoints/_shared.js';
+import { writeUnixWrapperScripts } from '../../lib/bundleMigration.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { execWithLog } from '../../lib/exec.js';
@@ -34,7 +36,8 @@ const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '1.0.1';
  * Unix-based systems do not require a similar script as they allow the executing process to override itself
  * (so we can replace the binary while it is running)
  */
-const WINDOWS_UPGRADE_SCRIPT_URL = 'https://raw.githubusercontent.com/apify/apify-cli/main/scripts/install/upgrade.ps1';
+const WINDOWS_UPGRADE_SCRIPT_URL =
+	'https://raw.githubusercontent.com/apify/apify-cli/refs/heads/master/scripts/install/upgrade.ps1';
 
 export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	static override name = 'upgrade' as const;
@@ -295,7 +298,8 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		const metadata = useCLIMetadata();
 
 		for (const asset of assets) {
-			const cliName = asset.name.split('-')[0];
+			// A single `apify-cli` bundle now powers both the `apify` and `actor` CLIs (via wrapper scripts).
+			const cliName = 'apify-cli';
 			const filePath = join(bundleDirectory, cliName);
 
 			info({ message: `Downloading \`${cliName}\` binary of the Apify CLI...` });
@@ -330,21 +334,23 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 			info({ message: chalk.gray(`Writing ${cliName} to ${filePath}...`) });
 
 			const buffer = await res.arrayBuffer();
+			const tmpPath = `${filePath}.${process.pid}.tmp`;
 
 			try {
-				const originalFilePerms = await lstat(filePath)
-					.then((stat) => stat.mode)
-					// Default to rwx for current user and rx for group and others
-					.catch(() => 0o755);
+				// Write to a temp file and rename it into place. The running process is the `apify-cli`
+				// binary itself (invoked via the wrapper scripts), and overwriting it in place would fail
+				// with ETXTBSY on Linux. A rename swaps the directory entry, leaving the running inode intact.
+				await writeFile(tmpPath, Buffer.from(buffer), { mode: 0o755 });
+				await rename(tmpPath, filePath);
 
-				await writeFile(filePath, Buffer.from(buffer), {
-					// Make the file executable again on unix systems, by always making the current user have rwx
-					// eslint-disable-next-line no-bitwise -- intentionally using bitwise operators
-					mode: originalFilePerms | 0o700,
-				});
+				// (Re)create the apify/actor wrapper scripts, in case they are missing (e.g. an upgrade right
+				// after an interrupted migration). They are tiny and depend only on the apify-cli binary.
+				writeUnixWrapperScripts(bundleDirectory);
 
 				cliDebugPrint(`[upgrade ${cliName}] wrote asset to`, filePath);
 			} catch (err: any) {
+				await rm(tmpPath, { force: true }).catch(() => {});
+
 				cliDebugPrint('[upgrade] failed to write asset', { error: err });
 
 				error({

@@ -8,7 +8,7 @@ When node stabilizes SEA (https://nodejs.org/api/single-executable-applications.
 */
 
 import { readFileSync } from 'node:fs';
-import { readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, readFile, rm, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
 import { $, type Build, build, fileURLToPath } from 'bun';
@@ -57,11 +57,16 @@ const targets = (() => {
 	] satisfies Build.CompileTarget[];
 })();
 
+// We now build a single `apify-cli` bundle. The `apify` and `actor` CLIs are wrapper scripts (created on
+// install/upgrade) that invoke this bundle with `APIFY_CLI_ENTRYPOINT` set to pick the command set.
 const entryPoints = [
 	//
-	fileURLToPath(new URL('../src/entrypoints/apify.ts', import.meta.url)),
-	fileURLToPath(new URL('../src/entrypoints/actor.ts', import.meta.url)),
+	fileURLToPath(new URL('../src/entrypoints/apify-cli.ts', import.meta.url)),
 ];
+
+// Names under which a copy of the single bundle is also published, so that installs using the old
+// two-bundle upgrade flow can still pull the new bundle. These can be dropped once everyone has migrated.
+const backupBundleNames = ['apify', 'actor'];
 
 await rm(new URL('../bundles/', import.meta.url), { recursive: true, force: true });
 
@@ -135,7 +140,8 @@ for (const entryPoint of entryPoints) {
 			}
 		}
 
-		const fileName = `${cliName}-${version}-${os}-${arch}${musl ? '-musl' : ''}${baseline ? '-baseline' : ''}`;
+		const versionSuffix = `${version}-${os}-${arch}${musl ? '-musl' : ''}${baseline ? '-baseline' : ''}`;
+		const fileName = `${cliName}-${versionSuffix}`;
 
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
 
@@ -155,6 +161,19 @@ for (const entryPoint of entryPoints) {
 			},
 			bytecode: true,
 		});
+
+		// Bun appends `.exe` to the output file for Windows targets
+		const isWindowsTarget = os === 'windows';
+		const compiledFile = `${outFile}${isWindowsTarget ? '.exe' : ''}`;
+
+		// Publish copies of the single bundle under the legacy `apify`/`actor` names as a backup
+		for (const backupName of backupBundleNames) {
+			const backupFile = fileURLToPath(
+				new URL(`../bundles/${backupName}-${versionSuffix}${isWindowsTarget ? '.exe' : ''}`, import.meta.url),
+			);
+
+			await copyFile(compiledFile, backupFile);
+		}
 
 		// Remove the arch override
 		await writeFile(metadataFile, newContent);
