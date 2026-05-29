@@ -32,8 +32,7 @@ const targets = (() => {
 			'bun-darwin-arm64-baseline',
 			'bun-linux-x64-musl',
 			'bun-linux-arm64-musl',
-			'bun-linux-x64-musl-baseline' as never,
-			'bun-linux-arm64-musl-baseline' as never,
+			'bun-linux-x64-baseline-musl',
 		] satisfies Build.CompileTarget[];
 	}
 
@@ -56,8 +55,7 @@ const targets = (() => {
 		'bun-darwin-arm64-baseline',
 		'bun-linux-x64-musl',
 		'bun-linux-arm64-musl',
-		'bun-linux-x64-musl-baseline' as never,
-		'bun-linux-arm64-musl-baseline' as never,
+		'bun-linux-x64-baseline-musl',
 	] satisfies Build.CompileTarget[];
 })();
 
@@ -118,15 +116,15 @@ for (const entryPoint of entryPoints) {
 	}
 
 	for (const target of targets) {
-		// eslint-disable-next-line prefer-const -- somehow it cannot tell that os and arch cannot be "const" while the rest are let
-		let [, os, arch, musl, baseline] = target.split('-');
+		// `target` is a bun compile target like `bun-linux-x64-baseline-musl`. The trailing modifiers (libc
+		// and/or SIMD level) can appear in any order, so collect them and emit the asset suffix in a stable
+		// `-musl-baseline` order (which the install/upgrade asset matchers rely on).
+		const [, os, arch, ...modifiers] = target.split('-');
 
-		if (musl === 'baseline') {
-			musl = '';
-			baseline = 'baseline';
-		}
+		const isMusl = modifiers.includes('musl');
+		const isBaseline = modifiers.includes('baseline');
 
-		const versionSuffix = `${version}-${os}-${arch}${musl ? '-musl' : ''}${baseline ? '-baseline' : ''}`;
+		const versionSuffix = `${version}-${os}-${arch}${isMusl ? '-musl' : ''}${isBaseline ? '-baseline' : ''}`;
 		const fileName = `${cliName}-${versionSuffix}`;
 
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
