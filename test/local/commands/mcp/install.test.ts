@@ -1,5 +1,6 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 
 // Force `useYesNoConfirm` down its non-interactive path so the overwrite prompt errors out
 // instead of blocking the test on stdin. See src/lib/hooks/user-confirmations/_stdinCheckWrapper.ts.
@@ -8,10 +9,15 @@ vitest.mock('is-ci', () => ({ default: true }));
 import { MCPInstallCommand } from '../../../../src/commands/mcp/install.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
 import { CommandExitCodes } from '../../../../src/lib/consts.js';
-import { cursorMcpJsoncWithCommentsPath } from '../../../__setup__/fixtures/mcp-install-fixtures.js';
 import { useAuthSetup } from '../../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
+
+// Hand-edited Cursor mcp.json (comments, trailing comma, an unrelated server) — used to
+// verify `apify mcp install` round-trips JSONC without clobbering what the user typed.
+const cursorMcpJsoncWithCommentsPath = fileURLToPath(
+	new URL('../../../__setup__/fixtures/mcp-install-fixtures.jsonc', import.meta.url),
+);
 
 const TEST_TOKEN = 'apify_api_TEST_xxxxxxxxxxxxxxxxxxxxxx';
 const OTHER_TEST_TOKEN = 'apify_api_OTHER_yyyyyyyyyyyyyyyyyyyy';

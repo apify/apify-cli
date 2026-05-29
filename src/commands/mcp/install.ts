@@ -4,10 +4,28 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
-import { resolveApifyToken } from '../../lib/mcp/auth.js';
 import { getClientHandler, isSupportedClient, SUPPORTED_CLIENTS } from '../../lib/mcp/clients.js';
 import { buildMcpUrl, DEFAULT_MCP_URL } from '../../lib/mcp/url.js';
 import { error } from '../../lib/outputs.js';
+import { getLocalUserInfo } from '../../lib/utils.js';
+
+/**
+ * Resolution order: --token flag → APIFY_TOKEN env → stored login.
+ * Prints a user-facing error and sets process.exitCode when no token is available.
+ */
+async function resolveApifyToken(tokenFlag: string | undefined): Promise<string | null> {
+	if (tokenFlag) return tokenFlag;
+	if (process.env.APIFY_TOKEN) return process.env.APIFY_TOKEN;
+
+	const userInfo = await getLocalUserInfo();
+	if (userInfo.token) return userInfo.token;
+
+	error({
+		message: `You are not logged in to Apify. Run 'apify login' first, or pass --token <api-token>.`,
+	});
+	process.exitCode = CommandExitCodes.MissingAuth;
+	return null;
+}
 
 export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override name = 'install' as const;

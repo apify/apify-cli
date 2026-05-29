@@ -2,31 +2,17 @@ import { join } from 'node:path';
 import process from 'node:process';
 
 import chalk from 'chalk';
-import { execa } from 'execa';
+import { execa, type ExecaError } from 'execa';
 import which from 'which';
 
 import { CommandExitCodes } from '../consts.js';
 import { error, run, simpleLog, success } from '../outputs.js';
 import { tildify, userHomeDir } from '../utils.js';
-import { describeExecaError } from './exec-helpers.js';
 import { mergeServerEntry } from './file-config.js';
 import { maskToken } from './url.js';
 
-export const SUPPORTED_CLIENTS = [
-	'claude-code',
-	'cursor',
-	'vscode',
-	'vscode-insiders',
-	'codex',
-	'kiro',
-	'antigravity',
-] as const;
-
-export type ClientName = (typeof SUPPORTED_CLIENTS)[number];
-
-export function isSupportedClient(value: string): value is ClientName {
-	return (SUPPORTED_CLIENTS as readonly string[]).includes(value);
-}
+const SERVER_KEY = 'apify';
+const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
 
 export interface InstallContext {
 	url: string;
@@ -35,8 +21,6 @@ export interface InstallContext {
 }
 
 type ClientHandler = (ctx: InstallContext) => Promise<void>;
-
-const SERVER_KEY = 'apify';
 
 interface InstallResult {
 	clientLabel: string;
@@ -64,45 +48,107 @@ function printResult(result: InstallResult): void {
 	simpleLog({ message: lines.join('\n') });
 }
 
-const claudeCodeHandler: ClientHandler = async ({ url, token }) => {
-	const claudeBin = await which('claude', { nothrow: true });
+function isExecaError(err: unknown): err is ExecaError {
+	return typeof err === 'object' && err !== null && 'shortMessage' in err && 'command' in err;
+}
 
-	if (!claudeBin) {
-		// --scope user matches the other clients' user-wide config locations; <your-token> placeholder avoids printing the real token.
-		const manualCommand = `claude mcp add --transport http --scope user ${SERVER_KEY} "${url}" --header "Authorization: Bearer <your-token>"`;
-		error({
-			message: `The 'claude' CLI was not found on PATH. Install Claude Code (https://docs.anthropic.com/en/docs/claude-code) and re-run, or add the server manually:\n\n    ${manualCommand}`,
-		});
+/** Build a user-facing description of an execa failure, falling back to signal / shortMessage when exitCode is null. */
+function describeExecaError(err: unknown, cmd: string): string {
+	if (!isExecaError(err)) return err instanceof Error ? err.message : String(err);
+	if (err.exitCode != null) return `${cmd} exited with code ${err.exitCode}`;
+	if (err.signal) return `${cmd} exited due to signal ${err.signal}`;
+	return err.shortMessage ?? err.message;
+}
+
+/**
+ * Shell out to a client's own CLI to register the server. Child stdout is discarded —
+ * these CLIs echo the bearer token on success; stderr stays inherited for live errors.
+ * Returns false (and sets process.exitCode) when the binary is missing or the run fails.
+ */
+async function runCliInstall({
+	binary,
+	clientLabel,
+	args,
+	maskedCommand,
+	missingMessage,
+}: {
+	binary: string;
+	clientLabel: string;
+	args: string[];
+	maskedCommand: string;
+	missingMessage: string;
+}): Promise<boolean> {
+	if (!(await which(binary, { nothrow: true }))) {
+		error({ message: missingMessage });
 		process.exitCode = CommandExitCodes.NotFound;
-		return;
+		return false;
 	}
 
-	// Raw execa (no shell:true) — execWithLog joins args into a shell string, which breaks values with spaces (e.g. 'Authorization: Bearer …').
-	// Per Anthropic docs, all options must come before the server name.
-	const args = [
-		'mcp',
-		'add',
-		'--transport',
-		'http',
-		'--scope',
-		'user',
-		SERVER_KEY,
-		url,
-		'--header',
-		`Authorization: Bearer ${token}`,
-	];
-	run({
-		message: `claude mcp add --transport http --scope user ${SERVER_KEY} "${url}" --header "Authorization: Bearer ${maskToken(token)}"`,
-	});
-
+	run({ message: maskedCommand });
 	try {
-		// Discard child stdout — 'claude mcp add' echoes the Authorization header on success. stderr stays inherited for live error output.
-		await execa('claude', args, { stdio: ['ignore', 'ignore', 'inherit'] });
+		await execa(binary, args, { stdio: ['ignore', 'ignore', 'inherit'] });
 	} catch (err) {
-		error({ message: `Failed to add the MCP server via Claude Code: ${describeExecaError(err, 'claude')}` });
+		error({ message: `Failed to add the MCP server via ${clientLabel}: ${describeExecaError(err, binary)}` });
 		process.exitCode = CommandExitCodes.RunFailed;
-		return;
+		return false;
 	}
+	return true;
+}
+
+/** Merge an 'apify' entry into a client's JSONC config file at ~/<segments>. */
+function fileClient({
+	label,
+	segments,
+	entry,
+}: {
+	label: string;
+	segments: string[];
+	entry: (url: string, token: string) => Record<string, unknown>;
+}): ClientHandler {
+	return async ({ url, token, yes }) => {
+		const filePath = join(userHomeDir(), ...segments);
+		const wrote = await mergeServerEntry({
+			filePath,
+			topLevelKey: 'mcpServers',
+			entryKey: SERVER_KEY,
+			serverEntry: entry(url, token),
+			yes,
+		});
+		if (!wrote) return;
+
+		printResult({
+			clientLabel: label,
+			serverUrl: url,
+			authDescription: `Bearer ${maskToken(token)}`,
+			configPath: filePath,
+		});
+	};
+}
+
+const claudeCodeHandler: ClientHandler = async ({ url, token }) => {
+	// Per Anthropic docs, all options must come before the server name. <your-token> placeholder avoids printing the real token.
+	const command = (auth: string) =>
+		`claude mcp add --transport http --scope user ${SERVER_KEY} "${url}" --header "Authorization: Bearer ${auth}"`;
+
+	const ok = await runCliInstall({
+		binary: 'claude',
+		clientLabel: 'Claude Code',
+		args: [
+			'mcp',
+			'add',
+			'--transport',
+			'http',
+			'--scope',
+			'user',
+			SERVER_KEY,
+			url,
+			'--header',
+			`Authorization: Bearer ${token}`,
+		],
+		maskedCommand: command(maskToken(token)),
+		missingMessage: `The 'claude' CLI was not found on PATH. Install Claude Code (https://docs.anthropic.com/en/docs/claude-code) and re-run, or add the server manually:\n\n    ${command('<your-token>')}`,
+	});
+	if (!ok) return;
 
 	printResult({
 		clientLabel: 'Claude Code',
@@ -111,99 +157,45 @@ const claudeCodeHandler: ClientHandler = async ({ url, token }) => {
 	});
 };
 
-const cursorHandler: ClientHandler = async ({ url, token, yes }) => {
-	const filePath = join(userHomeDir(), '.cursor', 'mcp.json');
-	const serverEntry = { url, headers: { Authorization: `Bearer ${token}` } };
+/** VS Code (stable + insiders): register via '<bin> --add-mcp <json>'. */
+function vscodeHandler(binary: string, clientLabel: string): ClientHandler {
+	return async ({ url, token }) => {
+		const serverJson = (auth: string) =>
+			JSON.stringify({ name: SERVER_KEY, type: 'http', url, headers: { Authorization: auth } });
 
-	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'mcpServers', entryKey: SERVER_KEY, serverEntry, yes });
-	if (!wrote) return;
-
-	printResult({
-		clientLabel: 'Cursor',
-		serverUrl: url,
-		authDescription: `Bearer ${maskToken(token)}`,
-		configPath: filePath,
-	});
-};
-
-/**
- * Install via the client's own '--add-mcp <json>' CLI. The client owns the config format,
- * comments, and overwrite semantics — we just shell out and let it handle the rest.
- */
-async function addMcpViaCli({
-	binary,
-	clientLabel,
-	url,
-	token,
-}: {
-	binary: string;
-	clientLabel: string;
-	url: string;
-	token: string;
-}): Promise<void> {
-	// VS Code's '--add-mcp' takes one JSON server descriptor; only the bearer value differs between the real, masked, and placeholder forms.
-	const buildServerJson = (authValue: string) =>
-		JSON.stringify({ name: SERVER_KEY, type: 'http', url, headers: { Authorization: authValue } });
-
-	const bin = await which(binary, { nothrow: true });
-
-	if (!bin) {
-		error({
-			message: `The '${binary}' CLI was not found on PATH. Install ${clientLabel} and re-run, or add the server manually:\n\n    ${binary} --add-mcp '${buildServerJson('Bearer <your-token>')}'`,
+		const ok = await runCliInstall({
+			binary,
+			clientLabel,
+			args: ['--add-mcp', serverJson(`Bearer ${token}`)],
+			maskedCommand: `${binary} --add-mcp '${serverJson(`Bearer ${maskToken(token)}`)}'`,
+			missingMessage: `The '${binary}' CLI was not found on PATH. Install ${clientLabel} and re-run, or add the server manually:\n\n    ${binary} --add-mcp '${serverJson('Bearer <your-token>')}'`,
 		});
-		process.exitCode = CommandExitCodes.NotFound;
-		return;
-	}
+		if (!ok) return;
 
-	run({ message: `${binary} --add-mcp '${buildServerJson(`Bearer ${maskToken(token)}`)}'` });
-
-	try {
-		await execa(binary, ['--add-mcp', buildServerJson(`Bearer ${token}`)], { stdio: ['ignore', 'ignore', 'inherit'] });
-	} catch (err) {
-		error({ message: `Failed to add the MCP server via ${clientLabel}: ${describeExecaError(err, binary)}` });
-		process.exitCode = CommandExitCodes.RunFailed;
-		return;
-	}
-
-	printResult({
-		clientLabel,
-		serverUrl: url,
-		authDescription: `Bearer ${maskToken(token)} (stored by ${clientLabel})`,
-	});
+		printResult({
+			clientLabel,
+			serverUrl: url,
+			authDescription: `Bearer ${maskToken(token)} (stored by ${clientLabel})`,
+		});
+	};
 }
 
-const vscodeHandler: ClientHandler = async ({ url, token }) =>
-	addMcpViaCli({ binary: 'code', clientLabel: 'VS Code', url, token });
-
-const vscodeInsidersHandler: ClientHandler = async ({ url, token }) =>
-	addMcpViaCli({ binary: 'code-insiders', clientLabel: 'VS Code Insiders', url, token });
-
 const codexHandler: ClientHandler = async ({ url }) => {
-	const codexBin = await which('codex', { nothrow: true });
 	const tomlPath = join(userHomeDir(), '.codex', 'config.toml');
-
-	if (!codexBin) {
-		const tomlSnippet = [`[mcp_servers.${SERVER_KEY}]`, `url = "${url}"`, `bearer_token_env_var = "APIFY_TOKEN"`].join(
-			'\n',
-		);
-		error({
-			message: `The 'codex' CLI was not found on PATH. Install Codex (https://developers.openai.com/codex) and re-run, or add this entry manually to ${tildify(tomlPath)}:\n\n${tomlSnippet}\n\nThen, before launching codex, export your Apify token in the same shell:\n\n    export APIFY_TOKEN=<your-token>`,
-		});
-		process.exitCode = CommandExitCodes.NotFound;
-		return;
-	}
-
+	// codex rejects a literal bearer_token (openai/codex#19275), so auth goes through the APIFY_TOKEN env var.
 	const args = ['mcp', 'add', SERVER_KEY, '--url', url, '--bearer-token-env-var', 'APIFY_TOKEN'];
-	run({ message: `codex ${args.join(' ')}` });
+	const tomlSnippet = [`[mcp_servers.${SERVER_KEY}]`, `url = "${url}"`, `bearer_token_env_var = "APIFY_TOKEN"`].join(
+		'\n',
+	);
 
-	try {
-		// Discard child stdout — codex echoes the configured entry on success. stderr stays inherited for live error output.
-		await execa('codex', args, { stdio: ['ignore', 'ignore', 'inherit'] });
-	} catch (err) {
-		error({ message: `Failed to add the MCP server via Codex: ${describeExecaError(err, 'codex')}` });
-		process.exitCode = CommandExitCodes.RunFailed;
-		return;
-	}
+	const ok = await runCliInstall({
+		binary: 'codex',
+		clientLabel: 'Codex CLI',
+		args,
+		maskedCommand: `codex ${args.join(' ')}`,
+		missingMessage: `The 'codex' CLI was not found on PATH. Install Codex (https://developers.openai.com/codex) and re-run, or add this entry manually to ${tildify(tomlPath)}:\n\n${tomlSnippet}\n\nThen, before launching codex, export your Apify token in the same shell:\n\n    export APIFY_TOKEN=<your-token>`,
+	});
+	if (!ok) return;
 
 	printResult({
 		clientLabel: 'Codex CLI',
@@ -214,51 +206,36 @@ const codexHandler: ClientHandler = async ({ url }) => {
 	});
 };
 
-const kiroHandler: ClientHandler = async ({ url, token, yes }) => {
-	const filePath = join(userHomeDir(), '.kiro', 'settings', 'mcp.json');
-	const serverEntry = {
-		url,
-		headers: { Authorization: `Bearer ${token}` },
-		disabled: false,
-		autoApprove: [] as string[],
-	};
-
-	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'mcpServers', entryKey: SERVER_KEY, serverEntry, yes });
-	if (!wrote) return;
-
-	printResult({
-		clientLabel: 'Kiro',
-		serverUrl: url,
-		authDescription: `Bearer ${maskToken(token)}`,
-		configPath: filePath,
-	});
-};
-
-const antigravityHandler: ClientHandler = async ({ url, token, yes }) => {
-	const filePath = join(userHomeDir(), '.gemini', 'antigravity', 'mcp_config.json');
-	// Antigravity uses 'serverUrl' (not 'url'); see https://antigravity.google/docs/mcp.
-	const serverEntry = { serverUrl: url, headers: { Authorization: `Bearer ${token}` } };
-
-	const wrote = await mergeServerEntry({ filePath, topLevelKey: 'mcpServers', entryKey: SERVER_KEY, serverEntry, yes });
-	if (!wrote) return;
-
-	printResult({
-		clientLabel: 'Antigravity',
-		serverUrl: url,
-		authDescription: `Bearer ${maskToken(token)}`,
-		configPath: filePath,
-	});
-};
-
-const HANDLERS: Record<ClientName, ClientHandler> = {
+const HANDLERS = {
 	'claude-code': claudeCodeHandler,
-	cursor: cursorHandler,
-	vscode: vscodeHandler,
-	'vscode-insiders': vscodeInsidersHandler,
+	cursor: fileClient({
+		label: 'Cursor',
+		segments: ['.cursor', 'mcp.json'],
+		entry: (url, token) => ({ url, headers: bearer(token) }),
+	}),
+	vscode: vscodeHandler('code', 'VS Code'),
+	'vscode-insiders': vscodeHandler('code-insiders', 'VS Code Insiders'),
 	codex: codexHandler,
-	kiro: kiroHandler,
-	antigravity: antigravityHandler,
-};
+	kiro: fileClient({
+		label: 'Kiro',
+		segments: ['.kiro', 'settings', 'mcp.json'],
+		entry: (url, token) => ({ url, headers: bearer(token), disabled: false, autoApprove: [] as string[] }),
+	}),
+	antigravity: fileClient({
+		label: 'Antigravity',
+		segments: ['.gemini', 'antigravity', 'mcp_config.json'],
+		// Antigravity uses 'serverUrl' (not 'url'); see https://antigravity.google/docs/mcp.
+		entry: (url, token) => ({ serverUrl: url, headers: bearer(token) }),
+	}),
+} satisfies Record<string, ClientHandler>;
+
+export type ClientName = keyof typeof HANDLERS;
+
+export const SUPPORTED_CLIENTS = Object.keys(HANDLERS) as ClientName[];
+
+export function isSupportedClient(value: string): value is ClientName {
+	return value in HANDLERS;
+}
 
 export function getClientHandler(name: ClientName): ClientHandler {
 	return HANDLERS[name];
