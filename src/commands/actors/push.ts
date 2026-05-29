@@ -12,7 +12,12 @@ import { createHmacSignature } from '@apify/utilities';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { exitCodeForJobStatus, fetchLogTail, formatResultSummary } from '../../lib/commands/agent-output.js';
+import {
+	exitCodeForJobStatus,
+	fetchLogTail,
+	formatResultSummary,
+	isTerminalStatus,
+} from '../../lib/commands/agent-output.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -399,18 +404,15 @@ Skipping push. Use --force to override.`,
 		}
 
 		const buildStatus = build.status as string;
-		const isTerminal =
-			buildStatus === ACTOR_JOB_STATUSES.SUCCEEDED ||
-			buildStatus === ACTOR_JOB_STATUSES.FAILED ||
-			buildStatus === ACTOR_JOB_STATUSES.ABORTED ||
-			buildStatus === ACTOR_JOB_STATUSES.TIMED_OUT;
-
-		const ok = build.status === ACTOR_JOB_STATUSES.SUCCEEDED;
-		const exitCode = exitCodeForJobStatus(build.status, 'build');
+		const isTerminal = isTerminalStatus(buildStatus);
+		const buildSucceeded = buildStatus === ACTOR_JOB_STATUSES.SUCCEEDED;
+		// A non-terminal status (RUNNING/READY) means the push succeeded — only a terminal-but-not-SUCCEEDED status is a failure.
+		const ok = buildSucceeded || !isTerminal;
+		const exitCode = ok ? 0 : exitCodeForJobStatus(build.status, 'build');
 		const logTail = ok ? [] : await fetchLogTail(apifyClient, build.id);
 
-		const buildStatusLabel = isTerminal ? (build.status as string) : 'RUNNING';
-		const overallStatus = ok ? 'SUCCEEDED' : (buildStatusLabel as never);
+		const buildStatusLabel = isTerminal ? buildStatus : 'RUNNING';
+		const overallStatus = buildSucceeded ? 'SUCCEEDED' : (buildStatusLabel as never);
 
 		if (this.flags.json) {
 			printJsonToStdout({
@@ -431,7 +433,7 @@ Skipping push. Use --force to override.`,
 					: {
 							error: {
 								phase: 'build',
-								message: isTerminal ? 'Actor build did not succeed' : 'Actor build did not reach a terminal status',
+								message: 'Actor build did not succeed',
 								logTail,
 							},
 						}),
