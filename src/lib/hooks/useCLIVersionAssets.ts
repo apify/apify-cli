@@ -29,9 +29,9 @@ function isInstalledOnBaseline() {
 	}
 
 	if (metadata.platform === 'windows') {
-		// Windows ARM64 always needs baseline
+		// Windows ARM64 has a native bundle, which is never a baseline build
 		if (metadata.arch === 'arm64') {
-			return true;
+			return false;
 		}
 
 		// Get AVX2 support like the install script does
