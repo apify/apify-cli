@@ -69,10 +69,11 @@ ARGUMENTS
 FLAGS
   -d, --body=<value>      The request body (JSON string).
                           Use "-" to read from stdin.
-      --describe=<value>  Describe an endpoint: print every HTTP
-                          method on a path, its summary, and path parameters.
-                          Accepts a path like "actor-runs/{runId}" or
-                          "/v2/actor-runs/{runId}".
+      --describe=<value>  Print a reference for an endpoint
+                          path: its HTTP methods, summary, and path parameters.
+                          Leading slashes and a version prefix in the path are
+                          optional. For example, "actor-runs/{runId}" and
+                          "/v2/actor-runs/{runId}" are both accepted.
       -H, --header=<value>    Additional HTTP header(s). Pass a
                           single "key:value" string, or a JSON object like
                           '{"X-Foo": "bar", "X-Baz": "qux"}' to send multiple
@@ -85,9 +86,11 @@ FLAGS
                           <options: GET|POST|PUT|PATCH|DELETE>
   -p, --params=<value>    Query parameters as a JSON object,
                           e.g. '{"limit": 1, "desc": true}'.
-  -s, --search=<value>    Filter --list-endpoints by a
-                          space-separated query. Each token must appear
-                          (case-insensitive) in method, path, or summary.
+  -s, --search=<value>    Filter results returned by
+                          --list-endpoints. The query is case-insensitive and split
+                          into tokens by spaces. For an endpoint to be returned,
+                          every token must appear in that endpoint's method, path,
+                          or summary.
 ```
 
 ##### `apify telemetry`
@@ -881,6 +884,8 @@ SUBCOMMANDS
   builds log         Prints the log of a specific build.
   builds info        Prints information about a specific build.
   builds create      Creates a new build of the Actor.
+  builds wait        Waits for an Actor build to reach a
+                     terminal status (SUCCEEDED, FAILED, ABORTED, TIMED-OUT).
 ```
 
 ##### `apify builds add-tag`
@@ -905,7 +910,7 @@ DESCRIPTION
 
 USAGE
   $ apify builds create [actorId] [--json] [--log]
-                        [--tag <value>] [--version <value>]
+                        [--tag <value>] [--version <value>] [--wait]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to trigger a build for. By default,
@@ -920,6 +925,8 @@ FLAGS
       --version=<value>  Optional Actor Version to build. By
                          default, this will be inferred from the tag, but this flag
                          is required when multiple versions have the same tag.
+      --wait             Wait for the build to reach a terminal
+                         status. Returns exit code 0 only when the build SUCCEEDED.
 ```
 
 ##### `apify builds info`
@@ -1005,6 +1012,32 @@ FLAGS
   -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
              prompts.
 ```
+
+##### `apify builds wait`
+
+```sh
+DESCRIPTION
+  Waits for an Actor build to reach a terminal status (SUCCEEDED, FAILED, 
+  ABORTED, TIMED-OUT).
+  Returns exit code 0 only when the build SUCCEEDED. Designed for CI and agentic
+   workflows.
+
+USAGE
+  $ apify builds wait <buildId> [--json]
+                      [--poll-interval <value>] [-t <value>]
+
+ARGUMENTS
+  buildId  The build ID to wait for.
+
+FLAGS
+      --json                   Format the command output as
+                               JSON
+      --poll-interval=<value>  How often to poll the
+                               platform, in seconds. Defaults to 2.
+  -t, --timeout=<value>        Maximum seconds to wait
+                               before giving up. Without this flag the command waits
+                               indefinitely.
+```
 <!-- actor-build-commands-end -->
 <!-- prettier-ignore-end -->
 
@@ -1029,6 +1062,8 @@ SUBCOMMANDS
   runs ls         Lists all runs of the Actor.
   runs resurrect  Resurrects an aborted or finished Actor Run.
   runs rm         Deletes an Actor Run.
+  runs wait       Waits for an Actor run to reach a terminal
+                  status (SUCCEEDED, FAILED, ABORTED, TIMED-OUT).
 ```
 
 ##### `apify runs abort`
@@ -1133,6 +1168,32 @@ ARGUMENTS
 FLAGS
   -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
              prompts.
+```
+
+##### `apify runs wait`
+
+```sh
+DESCRIPTION
+  Waits for an Actor run to reach a terminal status (SUCCEEDED, FAILED, ABORTED,
+   TIMED-OUT).
+  Returns exit code 0 only when the run SUCCEEDED. Designed for CI and agentic 
+  workflows.
+
+USAGE
+  $ apify runs wait <runId> [--json] [--poll-interval <value>]
+                    [-t <value>]
+
+ARGUMENTS
+  runId  The run ID to wait for.
+
+FLAGS
+      --json                   Format the command output as
+                               JSON
+      --poll-interval=<value>  How often to poll the
+                               platform, in seconds. Defaults to 2.
+  -t, --timeout=<value>        Maximum seconds to wait
+                               before giving up. Without this flag the command waits
+                               indefinitely.
 ```
 <!-- actor-run-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1556,7 +1617,7 @@ DESCRIPTION
   Customize with --memory and --timeout flags.
 
 USAGE
-  $ apify task run <taskId> [-b <value>] [-m <value>]
+  $ apify task run <taskId> [-b <value>] [--json] [-m <value>]
                    [-t <value>]
 
 ARGUMENTS
@@ -1566,6 +1627,7 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>    Tag or number of the build to run
                          (e.g. "latest" or "1.2.34").
+      --json             Format the command output as JSON
   -m, --memory=<value>   Amount of memory allocated for the
                          Task run, in megabytes.
   -t, --timeout=<value>  Timeout for the Task run in seconds.

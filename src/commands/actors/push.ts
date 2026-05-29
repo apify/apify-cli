@@ -12,11 +12,12 @@ import { createHmacSignature } from '@apify/utilities';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { exitCodeForJobStatus, fetchLogTail, formatResultSummary } from '../../lib/commands/agent-output.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
-import { error, info, link, run, success, warning } from '../../lib/outputs.js';
+import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
 	createActZip,
@@ -382,46 +383,91 @@ Skipping push. Use --force to override.`,
 			console.error(err);
 		}
 
-		build = (await apifyClient.build(build.id).get())!;
+		const refreshedBuild = await apifyClient.build(build.id).get();
+		if (!refreshedBuild) {
+			error({ message: `Could not fetch build with ID "${build.id}" after deployment.` });
+			process.exitCode = CommandExitCodes.BuildFailed;
+			return;
+		}
+		build = refreshedBuild;
+
+		const actorUrl = `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`;
+		const buildUrl = `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`;
+
+		if (this.flags.open) {
+			await open(actorUrl);
+		}
+
+		const buildStatus = build.status as string;
+		const isTerminal =
+			buildStatus === ACTOR_JOB_STATUSES.SUCCEEDED ||
+			buildStatus === ACTOR_JOB_STATUSES.FAILED ||
+			buildStatus === ACTOR_JOB_STATUSES.ABORTED ||
+			buildStatus === ACTOR_JOB_STATUSES.TIMED_OUT;
+
+		const ok = build.status === ACTOR_JOB_STATUSES.SUCCEEDED;
+		const exitCode = exitCodeForJobStatus(build.status, 'build');
+		const logTail = ok ? [] : await fetchLogTail(apifyClient, build.id);
+
+		const buildStatusLabel = isTerminal ? (build.status as string) : 'RUNNING';
+		const overallStatus = ok ? 'SUCCEEDED' : (buildStatusLabel as never);
 
 		if (this.flags.json) {
-			printJsonToStdout(build);
+			printJsonToStdout({
+				ok,
+				operation: 'push',
+				actor: {
+					id: build.actId,
+					url: actorUrl,
+				},
+				build: {
+					id: build.id,
+					number: build.buildNumber,
+					status: build.status,
+					url: buildUrl,
+				},
+				...(ok
+					? {}
+					: {
+							error: {
+								phase: 'build',
+								message: isTerminal ? 'Actor build did not succeed' : 'Actor build did not reach a terminal status',
+								logTail,
+							},
+						}),
+				exitCode,
+			});
+			process.exitCode = exitCode;
 			return;
 		}
 
-		link({
-			message: 'Actor build detail',
-			url: `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`,
+		simpleLog({
+			message: formatResultSummary({
+				resultLabel: 'Apify push result',
+				overallStatus,
+				lines: [
+					{ label: 'Upload', value: 'SUCCEEDED' },
+					{ label: 'Build', value: build.status as string },
+					{ label: 'Actor ID', value: build.actId },
+					{ label: 'Build ID', value: build.id },
+					{ label: 'Build number', value: build.buildNumber },
+					{ label: 'Exit code', value: String(exitCode) },
+				],
+				links: [
+					{ label: 'Actor URL', url: actorUrl },
+					{ label: 'Build URL', url: buildUrl },
+				],
+				errorReason: ok ? undefined : logTail,
+			}),
+			stdout: true,
 		});
 
-		link({
-			message: 'Actor detail',
-			url: `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`,
-		});
-
-		if (this.flags.open) {
-			await open(`https://console.apify.com${redirectUrlPart}/actors/${build.actId}`);
+		if (!isTerminal) {
+			warning({ message: `Build did not finish; current status is ${build.status}.` });
+		} else if (!ok) {
+			error({ message: `Build ended with status ${build.status}.` });
 		}
 
-		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-			success({ message: 'Actor was deployed to Apify cloud and built there.' });
-			// @ts-expect-error FIX THESE TYPES 😢
-		} else if (build.status === ACTOR_JOB_STATUSES.READY) {
-			warning({ message: 'Build is waiting for allocation.' });
-			// @ts-expect-error FIX THESE TYPES 😢
-		} else if (build.status === ACTOR_JOB_STATUSES.RUNNING) {
-			warning({ message: 'Build is still running.' });
-			// @ts-expect-error FIX THESE TYPES 😢
-		} else if (build.status === ACTOR_JOB_STATUSES.ABORTED || build.status === ACTOR_JOB_STATUSES.ABORTING) {
-			warning({ message: 'Build was aborted!' });
-			process.exitCode = CommandExitCodes.BuildAborted;
-			// @ts-expect-error FIX THESE TYPES 😢
-		} else if (build.status === ACTOR_JOB_STATUSES.TIMED_OUT || build.status === ACTOR_JOB_STATUSES.TIMING_OUT) {
-			warning({ message: 'Build timed out!' });
-			process.exitCode = CommandExitCodes.BuildTimedOut;
-		} else {
-			error({ message: 'Build failed!' });
-			process.exitCode = CommandExitCodes.BuildFailed;
-		}
+		process.exitCode = exitCode;
 	}
 }
