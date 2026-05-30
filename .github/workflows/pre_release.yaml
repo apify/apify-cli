@@ -138,7 +138,9 @@ jobs:
                   cd C:\test
                   bun init -y
                   bun build --compile --target=bun-windows-${{ matrix.bun-target-arch }} --outfile test index.ts
-                  bun build --compile --target=bun-windows-${{ matrix.bun-target-arch }}-baseline --outfile test index.ts
+                  if ("${{ matrix.bun-target-arch }}" -eq "x64") {
+                      bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
+                  }
 
             - name: Set pre-release version
               run: pnpm version ${{ needs.update_changelog.outputs.pre_release_version }} --no-git-tag-version --allow-same-version
