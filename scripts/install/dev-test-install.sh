@@ -118,22 +118,9 @@ info "Installing apify-cli bundle for version $version and target $target"
 cp "bundles/apify-cli-$version-$target" "$bin_dir/apify-cli"
 chmod +x "$bin_dir/apify-cli"
 
-# Create the `apify` and `actor` wrapper scripts
-for entrypoint in apify actor; do
-    script_path="$bin_dir/$entrypoint"
-
-    cat >"$script_path" <<EOF
-#!/bin/sh
-DIR="\$(CDPATH= cd -- "\$(dirname -- "\$0")" && pwd)"
-APIFY_CLI_ENTRYPOINT=$entrypoint exec "\$DIR/apify-cli" "\$@"
-EOF
-
-    chmod +x "$script_path" ||
-        error "Failed to set permissions on $entrypoint script"
-done
-
+# Invoke the bundle to create the `apify`/`actor` wrapper scripts and handle shell integration.
 if ! [ -t 0 ] && [ -r /dev/tty ]; then
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_OPEN_TTY=1 "$bin_dir/apify" install
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_CLI_SKIP_UPDATE_CHECK=1 APIFY_OPEN_TTY=1 "$bin_dir/apify-cli" install
 else
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_CLI_SKIP_UPDATE_CHECK=1 "$bin_dir/apify-cli" install
 fi

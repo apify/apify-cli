@@ -8,7 +8,8 @@ import { cliDebugPrint } from './utils/cliDebugPrint.js';
 const ENTRYPOINTS = ['apify', 'actor'] as const;
 
 /**
- * Content of the Unix wrapper script that invokes the `apify-cli` bundle with the right entrypoint.
+ * POSIX `sh` wrapper that invokes the `apify-cli` bundle with the right entrypoint. Used directly on Unix,
+ * and by Git Bash / MSYS2 / Cygwin on Windows (those resolve the bare, extensionless name, not `.cmd`).
  */
 export function unixWrapperScript(entrypoint: string) {
 	return [
@@ -20,10 +21,33 @@ export function unixWrapperScript(entrypoint: string) {
 }
 
 /**
- * Content of the Windows wrapper script (`.cmd`) that invokes the `apify-cli` bundle with the right entrypoint.
+ * Windows `.cmd` wrapper (for `cmd.exe`). `setlocal` keeps `APIFY_CLI_ENTRYPOINT` from leaking into the
+ * caller's shell; the implicit `endlocal` at end-of-file preserves the bundle's exit code.
  */
-export function windowsWrapperScript(entrypoint: string) {
-	return ['@echo off', `set "APIFY_CLI_ENTRYPOINT=${entrypoint}"`, '"%~dp0apify-cli.exe" %*', ''].join('\r\n');
+export function windowsCmdWrapperScript(entrypoint: string) {
+	return ['@echo off', 'setlocal', `set "APIFY_CLI_ENTRYPOINT=${entrypoint}"`, '"%~dp0apify-cli.exe" %*', ''].join(
+		'\r\n',
+	);
+}
+
+/**
+ * Windows PowerShell wrapper (`.ps1`). PowerShell can run the `.cmd` via PATHEXT, but a native `.ps1`
+ * avoids spawning `cmd.exe` and is what some tools look for. The env var is restored afterwards so it does
+ * not leak into the caller's session, and the bundle's exit code is propagated.
+ */
+export function windowsPowershellWrapperScript(entrypoint: string) {
+	return [
+		'#!/usr/bin/env pwsh',
+		'$prev = $env:APIFY_CLI_ENTRYPOINT',
+		`$env:APIFY_CLI_ENTRYPOINT = "${entrypoint}"`,
+		'try {',
+		'    & "$PSScriptRoot\\apify-cli.exe" @args',
+		'} finally {',
+		'    $env:APIFY_CLI_ENTRYPOINT = $prev',
+		'}',
+		'exit $LASTEXITCODE',
+		'',
+	].join('\r\n');
 }
 
 /**
@@ -81,12 +105,20 @@ function atomicCopySync(srcPath: string, targetPath: string, mode?: number) {
 }
 
 /**
- * (Re)creates the `apify` and `actor` Unix wrapper scripts in `binDir`, pointing at the `apify-cli` bundle.
- * Each script is written atomically and independently, so one failure does not prevent the other.
+ * (Re)creates the `apify` and `actor` wrapper scripts in `binDir`, pointing at the `apify-cli` bundle.
+ *
+ * Always writes the extensionless POSIX `sh` shim; on Windows it additionally writes a `.cmd` (for cmd.exe)
+ * and a `.ps1` (for PowerShell) so the command resolves from every shell. Each file is written atomically
+ * and independently, so one failure does not prevent the others.
  */
-export function writeUnixWrapperScripts(binDir: string) {
+export function writeEntrypointShims(binDir: string, isWindows: boolean) {
 	for (const entrypoint of ENTRYPOINTS) {
 		atomicWriteSync(join(binDir, entrypoint), unixWrapperScript(entrypoint), 0o755);
+
+		if (isWindows) {
+			atomicWriteSync(join(binDir, `${entrypoint}.cmd`), windowsCmdWrapperScript(entrypoint));
+			atomicWriteSync(join(binDir, `${entrypoint}.ps1`), windowsPowershellWrapperScript(entrypoint));
+		}
 	}
 }
 
@@ -163,37 +195,42 @@ export function migrateLegacyBundleInstallIfNeeded() {
 		return;
 	}
 
-	// 2. Replace the `apify` and `actor` bundles with small wrapper scripts. Each entrypoint is handled in
-	//    isolation so a failure on one does not abort the other.
-	for (const entrypoint of ENTRYPOINTS) {
-		try {
-			if (isWindows) {
-				atomicWriteSync(join(binDir, `${entrypoint}.cmd`), windowsWrapperScript(entrypoint));
+	// 2. Replace the `apify` and `actor` bundles with wrapper scripts. On Unix this atomically overwrites the
+	//    running bundle (a rename swaps the inode, avoiding ETXTBSY); on Windows the wrappers are separate
+	//    `.cmd`/`.ps1`/sh files alongside the legacy `.exe`, which is cleaned up below.
+	try {
+		writeEntrypointShims(binDir, isWindows);
+		cliDebugPrint('[migration] wrote entrypoint shims');
+	} catch (err) {
+		cliDebugPrint('[migration] failed to write entrypoint shims, will retry on next run', { err });
+	}
 
-				const legacyBinaryPath = join(binDir, `${entrypoint}.exe`);
+	// 3. On Windows, remove the legacy full bundles so the wrappers (not the `.exe`) resolve on PATH. Each is
+	//    isolated; the currently-running `.exe` cannot be deleted, only renamed (cleaned up on a later run).
+	if (isWindows) {
+		for (const entrypoint of ENTRYPOINTS) {
+			const legacyBinaryPath = join(binDir, `${entrypoint}.exe`);
 
-				if (existsSync(legacyBinaryPath)) {
-					if (resolve(legacyBinaryPath) === resolve(process.execPath)) {
-						// Windows forbids deleting a running executable but allows renaming it.
-						renameSync(legacyBinaryPath, `${legacyBinaryPath}.old`);
-						cliDebugPrint('[migration] renamed running legacy binary', legacyBinaryPath);
-					} else {
-						try {
-							rmSync(legacyBinaryPath, { force: true });
-						} catch {
-							renameSync(legacyBinaryPath, `${legacyBinaryPath}.old`);
-						}
-					}
-				}
-			} else {
-				// Write the wrapper atomically (temp file + rename) so we never truncate the running
-				// executable in place, which would fail with ETXTBSY on Linux.
-				atomicWriteSync(join(binDir, entrypoint), unixWrapperScript(entrypoint), 0o755);
+			if (!existsSync(legacyBinaryPath)) {
+				continue;
 			}
 
-			cliDebugPrint('[migration] installed wrapper for', entrypoint);
-		} catch (err) {
-			cliDebugPrint('[migration] failed to install wrapper, will retry on next run', { entrypoint, err });
+			try {
+				if (resolve(legacyBinaryPath) === resolve(process.execPath)) {
+					renameSync(legacyBinaryPath, `${legacyBinaryPath}.old`);
+					cliDebugPrint('[migration] renamed running legacy binary', legacyBinaryPath);
+				} else {
+					rmSync(legacyBinaryPath, { force: true });
+				}
+			} catch (err) {
+				try {
+					renameSync(legacyBinaryPath, `${legacyBinaryPath}.old`);
+				} catch {
+					// leave it; a later run will retry
+				}
+
+				cliDebugPrint('[migration] failed to remove legacy binary', { legacyBinaryPath, err });
+			}
 		}
 	}
 

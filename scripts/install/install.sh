@@ -155,26 +155,12 @@ curl --fail --location --progress-bar --output "$bin_dir/apify-cli" "$download_u
 chmod +x "$bin_dir/apify-cli" ||
     error "Failed to set permissions on apify-cli executable"
 
-# Create the `apify` and `actor` wrapper scripts
-for entrypoint in apify actor; do
-    script_path="$bin_dir/$entrypoint"
-
-    cat >"$script_path" <<EOF
-#!/bin/sh
-DIR="\$(CDPATH= cd -- "\$(dirname -- "\$0")" && pwd)"
-APIFY_CLI_ENTRYPOINT=$entrypoint exec "\$DIR/apify-cli" "\$@"
-EOF
-
-    chmod +x "$script_path" ||
-        error "Failed to set permissions on $entrypoint script"
-done
-
-# Invoke the CLI to handle shell integrations nicely
+# Invoke the bundle to create the `apify`/`actor` wrapper scripts and handle shell integration.
 # When running the script via `curl xxx | bash`, stdin is the script that gets consumed by bash.
 # If stdin is not a tty and we have a readable /dev/tty, tell Node.js to open /dev/tty itself
 # (shell-level redirects don't support raw mode properly for Node.js/Inquirer).
 if ! [ -t 0 ] && [ -r /dev/tty ]; then
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_OPEN_TTY=1 "$bin_dir/apify" install
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_CLI_SKIP_UPDATE_CHECK=1 APIFY_OPEN_TTY=1 "$bin_dir/apify-cli" install
 else
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_CLI_SKIP_UPDATE_CHECK=1 "$bin_dir/apify-cli" install
 fi

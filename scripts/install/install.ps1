@@ -221,15 +221,20 @@ function Install-Apify {
         return 1
     }
 
-    # Create the `apify` and `actor` wrapper scripts
-    foreach ($Entrypoint in $ExecutableNames) {
-        $ScriptContent = @"
-@echo off
-set "APIFY_CLI_ENTRYPOINT=$Entrypoint"
-"%~dp0apify-cli.exe" %*
-"@
-
-        Set-Content -Path "${ApifyBin}\${Entrypoint}.cmd" -Value $ScriptContent -Encoding ascii
+    # Let the bundle create the `apify`/`actor` wrapper scripts (.cmd, .ps1 and a POSIX shim for Git Bash).
+    # Keeping the shim content in the bundle avoids duplicating it across the install/upgrade scripts.
+    # Skip the bundle's automatic version check here - we just downloaded the requested version.
+    $prevSkipCheck = $env:APIFY_CLI_SKIP_UPDATE_CHECK
+    $env:APIFY_CLI_SKIP_UPDATE_CHECK = "1"
+    try {
+        & "${ApifyBin}\${FileName}" install --shims-only
+    }
+    finally {
+        $env:APIFY_CLI_SKIP_UPDATE_CHECK = $prevSkipCheck
+    }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output "Install Failed - could not create the apify/actor wrapper scripts (exit code ${LASTEXITCODE})`n"
+        return 1
     }
 
     $UpgradeScriptPath = "${ApifyBin}\upgrade.ps1"

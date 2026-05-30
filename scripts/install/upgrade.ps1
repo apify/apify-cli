@@ -120,17 +120,14 @@ function Download-File-To-Location {
 # backup URLs too, but they are all copies of the same bundle, so the first one is enough).
 Download-File-To-Location -URL $URLArray[0] -FileName "apify-cli" -Location $InstallLocation -Type 0 -Version $Version
 
-# Ensure the `apify` and `actor` wrapper scripts exist, and clean up any legacy full bundles they replace.
+# Let the freshly downloaded bundle (re)create the `apify`/`actor` wrapper scripts (.cmd, .ps1 and a POSIX
+# shim), so the shim content lives in one place rather than being duplicated here.
+# Skip the bundle's automatic version check - we just downloaded the requested version.
+$env:APIFY_CLI_SKIP_UPDATE_CHECK = "1"
+& (Join-Path $InstallLocation "apify-cli.exe") install --shims-only
+
+# Clean up any legacy full bundles the wrappers replace, so the wrappers (not the `.exe`) resolve on PATH.
 foreach ($Entrypoint in @("apify", "actor")) {
-    $ScriptContent = @"
-@echo off
-set "APIFY_CLI_ENTRYPOINT=$Entrypoint"
-"%~dp0apify-cli.exe" %*
-"@
-
-    Set-Content -Path (Join-Path $InstallLocation "${Entrypoint}.cmd") -Value $ScriptContent -Encoding ascii
-
-    # Remove the legacy full bundle (and any `.old` leftover) so the `.cmd` wrapper is what resolves on PATH
     Remove-Item -Path (Join-Path $InstallLocation "${Entrypoint}.exe") -Force -ErrorAction Ignore
     Remove-Item -Path (Join-Path $InstallLocation "${Entrypoint}.exe.old") -Force -ErrorAction Ignore
 }

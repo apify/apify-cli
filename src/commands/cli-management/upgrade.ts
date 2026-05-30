@@ -8,7 +8,7 @@ import chalk from 'chalk';
 import { gte } from 'semver';
 
 import { USER_AGENT } from '../../entrypoints/_shared.js';
-import { writeUnixWrapperScripts } from '../../lib/bundleMigration.js';
+import { writeEntrypointShims } from '../../lib/bundleMigration.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { execWithLog } from '../../lib/exec.js';
@@ -345,7 +345,8 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 				// (Re)create the apify/actor wrapper scripts, in case they are missing (e.g. an upgrade right
 				// after an interrupted migration). They are tiny and depend only on the apify-cli binary.
-				writeUnixWrapperScripts(bundleDirectory);
+				// This is the Unix upgrade path; Windows upgrades run `apify-cli install --shims-only` instead.
+				writeEntrypointShims(bundleDirectory, false);
 
 				cliDebugPrint(`[upgrade ${cliName}] wrote asset to`, filePath);
 			} catch (err: any) {
