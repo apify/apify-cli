@@ -94,7 +94,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		'wait-for-finish': Flags.string({
 			char: 'w',
 			description:
-				'In seconds, how long to wait for the build to finish. If no value passed, it waits forever. To return as soon as the build is queued (fire-and-forget), pass 0.',
+				'In seconds, how long to wait for the build to finish. If no value passed, it waits forever. To return as soon as the build is queued (fire-and-forget), pass 0. The exit code reflects the build outcome only — if the wait elapses with the build still running, the command exits 0; check status via the printed link or --json output.',
 			required: false,
 		}),
 		'open': Flags.boolean({
@@ -448,13 +448,9 @@ Skipping push. Use --force to override.`,
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.READY) {
 			warning({ message: 'Build is waiting for allocation.' });
-			// Skip exit code for --wait-for-finish=0 (fire-and-forget): READY is
-			// the expected outcome when the user asked to return immediately.
-			if (waitForFinishMillis !== 0) process.exitCode = CommandExitCodes.BuildTimedOut;
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.RUNNING) {
 			warning({ message: 'Build is still running.' });
-			if (waitForFinishMillis !== 0) process.exitCode = CommandExitCodes.BuildTimedOut;
 			// @ts-expect-error FIX THESE TYPES 😢
 		} else if (build.status === ACTOR_JOB_STATUSES.ABORTED || build.status === ACTOR_JOB_STATUSES.ABORTING) {
 			warning({ message: 'Build was aborted!' });
