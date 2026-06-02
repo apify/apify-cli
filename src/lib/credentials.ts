@@ -68,11 +68,6 @@ export async function getBackend(): Promise<CredentialsBackend> {
 
 		const marker = readAuthFile().secretsBackend;
 		if (marker === 'file') return 'file';
-		if (marker === 'keyring') {
-			const mod = await loadKeyringModule();
-			return mod ? 'keyring' : 'file';
-		}
-
 		const mod = await loadKeyringModule();
 		return mod ? 'keyring' : 'file';
 	})();
