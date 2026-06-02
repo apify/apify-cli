@@ -217,7 +217,14 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 	const fileContents: Record<string, unknown> = { ...existingFile, ...userInfo, secretsBackend: backend };
 	if (backend === 'keyring') {
 		delete fileContents.token;
-		delete fileContents.proxy;
+		if (fileContents.proxy && typeof fileContents.proxy === 'object') {
+			const { password: _password, ...rest } = fileContents.proxy as { password?: string };
+			if (Object.keys(rest).length > 0) {
+				fileContents.proxy = rest;
+			} else {
+				delete fileContents.proxy;
+			}
+		}
 	}
 	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
 
