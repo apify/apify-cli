@@ -20,6 +20,12 @@ minimumReleaseAgeExclude:
 
 overrides:
     tar: 7.5.15
+    basic-ftp: ^5.3.1
+    brace-expansion: ^5.0.6
+    fast-uri: ^3.1.2
+    ip-address: ^10.1.1
+    qs: ^6.15.2
+    vite: ^8.0.5
 
 # Unfortunately, several parts of this project expect everything to be hoisted up in the node_modules directory...
 # And fixing it would take longer than just enabling this and shedding a tear
