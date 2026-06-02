@@ -200,7 +200,7 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 		await setToken(apifyClient.token, { skipIfUnchanged: true });
 	}
 
-	const proxyPassword = (userInfo as { proxy?: { password?: string } } | undefined)?.proxy?.password;
+	const proxyPassword = userInfo.proxy?.password;
 	if (proxyPassword) {
 		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
 	}
