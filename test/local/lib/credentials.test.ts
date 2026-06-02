@@ -6,7 +6,7 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import {
 	__resetCredentialsForTests,
-	clearSecrets,
+	clearKeyringSecrets,
 	ensureMigrated,
 	getBackend,
 	getProxyPassword,
@@ -134,16 +134,16 @@ describe('credentials', () => {
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 		});
 
-		it('clearSecrets() removes the token and proxy entries from the keyring', async () => {
+		it('clearKeyringSecrets() removes the token and proxy entries from the keyring', async () => {
 			await setToken('tok_123');
 			await setProxyPassword('pw_abc');
-			await clearSecrets();
+			await clearKeyringSecrets();
 			expect(await getToken()).toBeUndefined();
 			expect(await getProxyPassword()).toBeUndefined();
 		});
 	});
 
-	describe('clearSecrets()', () => {
+	describe('clearKeyringSecrets()', () => {
 		it('clears the keyring token entry even when APIFY_DISABLE_KEYRING=1 is set at logout time', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			await setToken('tok_123');
@@ -153,7 +153,7 @@ describe('credentials', () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
 			expect(await getBackend()).toBe('file');
 
-			await clearSecrets();
+			await clearKeyringSecrets();
 			expect(keyringStore.get('com.apify.cli:token')).toBeUndefined();
 		});
 	});

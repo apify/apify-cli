@@ -195,11 +195,13 @@ export async function setProxyPassword(password: string, opts: { skipIfUnchanged
 }
 
 /**
- * Remove all stored secrets. Always attempts to clear the keyring even when the
- * current backend is `file`, so toggling `APIFY_DISABLE_KEYRING=1` between login
- * and logout does not orphan entries the user has no in-CLI way to discover.
+ * Remove the token and proxy-password entries from the OS keyring. Always attempts the
+ * keyring deletes even when the current backend is `file`, so toggling
+ * `APIFY_DISABLE_KEYRING=1` between login and logout does not orphan entries the user
+ * has no in-CLI way to discover. Plaintext secrets in `auth.json` are the caller's
+ * responsibility (e.g. `logout` removes the whole file).
  */
-export async function clearSecrets(): Promise<void> {
+export async function clearKeyringSecrets(): Promise<void> {
 	await deleteKeyring(TOKEN_ACCOUNT);
 	await deleteKeyring(PROXY_PASSWORD_ACCOUNT);
 }

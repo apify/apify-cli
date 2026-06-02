@@ -1,6 +1,6 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../lib/consts.js';
-import { clearSecrets } from '../../lib/credentials.js';
+import { clearKeyringSecrets } from '../../lib/credentials.js';
 import { rimrafPromised } from '../../lib/files.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { success } from '../../lib/outputs.js';
@@ -25,7 +25,7 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-logout';
 
 	async run() {
-		await clearSecrets();
+		await clearKeyringSecrets();
 		await rimrafPromised(AUTH_FILE_PATH());
 
 		await updateUserId(null);
