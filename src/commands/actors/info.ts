@@ -22,6 +22,14 @@ type ChargeEventShape = Omit<ActorChargeEvent, 'eventPriceUsd'> & {
 	eventTieredPricingUsd?: Record<string, { tieredEventPriceUsd: number }>;
 };
 
+// Event prices are routinely sub-cent (e.g. $0.005, $0.00079) so plain toFixed(2) rounds them to
+// "$0.00" and hides the real cost. Use 2 decimals at >= $0.01, otherwise 2 significant figures.
+function formatEventPrice(price: number): string {
+	if (price === 0) return '$0.00';
+	if (price >= 0.01) return `$${price.toFixed(2)}`;
+	return `$${Number(price.toPrecision(2))}`;
+}
+
 const eventTitleColumn = '\u200b';
 const eventPriceUsdColumn = '\u200b\u200b';
 
@@ -243,10 +251,10 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 						const tiered = eventInfo.eventTieredPricingUsd;
 						let priceLabel: string;
 						if (typeof flat === 'number') {
-							priceLabel = `$${flat.toFixed(2)}`;
+							priceLabel = formatEventPrice(flat);
 						} else if (tiered && Object.keys(tiered).length > 0) {
 							const minPrice = Math.min(...Object.values(tiered).map((t) => t.tieredEventPriceUsd));
-							priceLabel = `from $${minPrice.toFixed(2)} (tiered)`;
+							priceLabel = `from ${formatEventPrice(minPrice)} (tiered)`;
 						} else {
 							priceLabel = 'N/A';
 						}
