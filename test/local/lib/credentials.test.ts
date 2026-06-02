@@ -16,6 +16,7 @@ import {
 } from '../../../src/lib/credentials.js';
 
 const keyringStore = new Map<string, string>();
+const keyringFailures = new Set<string>();
 
 vi.mock('@napi-rs/keyring', () => {
 	class Entry {
@@ -27,6 +28,7 @@ vi.mock('@napi-rs/keyring', () => {
 			return keyringStore.get(this.key) ?? null;
 		}
 		setPassword(password: string): void {
+			if (keyringFailures.has(this.key)) throw new Error('simulated keyring failure');
 			keyringStore.set(this.key, password);
 		}
 		deletePassword(): boolean {
@@ -47,6 +49,7 @@ describe('credentials', () => {
 	beforeEach(() => {
 		vitest.stubEnv('__APIFY_INTERNAL_TEST_AUTH_PATH__', cryptoRandomObjectId(12));
 		keyringStore.clear();
+		keyringFailures.clear();
 		__resetCredentialsForTests();
 	});
 
@@ -213,6 +216,18 @@ describe('credentials', () => {
 			const file = readAuthFile();
 			expect(file.secretsBackend).toBe('file');
 			expect(file.proxy?.password).toBe('pw');
+		});
+
+		it('falls back to file backend when the proxy keyring write fails after token succeeds', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			keyringFailures.add('com.apify.cli:proxy-password');
+			writeAuthFile({ token: 'tok', proxy: { password: 'pw' }, username: 'u' });
+			await ensureMigrated();
+			const file = readAuthFile();
+			expect(file.secretsBackend).toBe('file');
+			expect(file.token).toBe('tok');
+			expect(file.proxy?.password).toBe('pw');
+			expect(file.username).toBe('u');
 		});
 
 		it('is memoized within a process', async () => {

@@ -231,22 +231,19 @@ export async function ensureMigrated(): Promise<void> {
 				return;
 			}
 
-			if (file.token) {
-				try {
-					await writeKeyring(TOKEN_ACCOUNT, file.token);
-				} catch (err) {
-					cliDebugPrint('credentials', 'keyring write failed during migration; falling back to file', err);
-					downgradeBackendToFile();
-					file.secretsBackend = 'file';
-					writeAuthFile(file);
-					return;
-				}
-				delete file.token;
+			try {
+				if (file.token) await writeKeyring(TOKEN_ACCOUNT, file.token);
+				if (file.proxy?.password) await writeKeyring(PROXY_PASSWORD_ACCOUNT, file.proxy.password);
+			} catch (err) {
+				cliDebugPrint('credentials', 'keyring write failed during migration; falling back to file', err);
+				downgradeBackendToFile();
+				file.secretsBackend = 'file';
+				writeAuthFile(file);
+				return;
 			}
-			if (file.proxy?.password) {
-				await writeKeyring(PROXY_PASSWORD_ACCOUNT, file.proxy.password);
-				delete file.proxy;
-			}
+
+			delete file.token;
+			delete file.proxy;
 			file.secretsBackend = 'keyring';
 			writeAuthFile(file);
 		} catch (err) {
