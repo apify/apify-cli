@@ -123,10 +123,10 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 		if (proxyPassword) result.proxy = { ...result.proxy, password: proxyPassword };
 	}
 
-	const hasSomething = result.username || result.id || result.token;
-	if (!hasSomething) return {};
-
-	if (!result.username && !result.id) {
+	const hasUserMetadata = !!(result.username || result.id);
+	const isComplete = hasUserMetadata || !!result.token;
+	if (!isComplete) return {};
+	if (!hasUserMetadata) {
 		throw new Error('Stale credentials found without user metadata. Please run "apify login" again.');
 	}
 
