@@ -24,8 +24,8 @@ importers:
         specifier: ^3.27.1
         version: 3.27.1(ajv@8.20.0)
       '@apify/json_schemas':
-        specifier: ^0.13.0
-        version: 0.13.0
+        specifier: ^0.16.0
+        version: 0.16.8
       '@apify/utilities':
         specifier: ^2.25.6
         version: 2.25.6
@@ -470,6 +470,9 @@ packages:
   '@apify/consts@2.53.0':
     resolution: {integrity: sha512-gYAPOL24Wry6d8dFJ/0qdzx1BgkEmrUTqhHZ70zmMY99/to47D8utpteUQDOMXMsMCrRP8c/z/dNTGDls1wWKA==}
 
+  '@apify/consts@2.53.2':
+    resolution: {integrity: sha512-N1dLECMJTNlILszptsQMlbZmj032NYqtlFvik99PcwDv2eMSKd4l/fgroXuocdtMUDrvNzn7wmpaORt6wKnAkw==}
+
   '@apify/datastructures@2.0.3':
     resolution: {integrity: sha512-E6yQyc/XZDqJopbaGmhzZXMJqwGf96ELtDANZa0t68jcOAJZS+pF7YUfQOLszXq6JQAdnRvTH2caotL6urX7HA==}
 
@@ -494,11 +497,11 @@ packages:
   '@apify/input_secrets@1.2.27':
     resolution: {integrity: sha512-mBSG2mBwY7QFp9j93DGTz3+hMxBf3Jk+d6/bIa7FeLgJ8DzCKBwuud9bUm/uOomw3NbpAeLPX1tCnPQjJEqNOw==}
 
-  '@apify/json_schemas@0.13.0':
-    resolution: {integrity: sha512-Hj1TSdNcdigzXASG3+deY6juv9L83cYC5fcVVA03VfDEseieGbFB4+SNAXGS6D/oxjhf7QjPx3uHqzMYafYJnA==}
-
   '@apify/json_schemas@0.15.1':
     resolution: {integrity: sha512-z71iAYFpkXPDxfsLaW8CHCfcCUFeNL25zG74BrMMs6IZAkX2eyF4pWeJ4KWPn2nO+ia7yL1hpjwDnj/YAJR64Q==}
+
+  '@apify/json_schemas@0.16.8':
+    resolution: {integrity: sha512-S8WgeuyLUfqMopBERtG1Bwl6+9fwSqDOpBifQ1L4TFWehtJ+fz80gdj6Ntiz7O4oj9JRQtAUzAlLSQsvIaRV4A==}
 
   '@apify/log@2.5.34':
     resolution: {integrity: sha512-H6vGSvH9lgchpaKkTMtlhF1BI+FaFOyumBox2dEH84oGJpHYVdhj3065ZpvIVcOODntrrrY9176OTURnUvgG7A==}
@@ -9359,6 +9362,8 @@ snapshots:
 
   '@apify/consts@2.53.0': {}
 
+  '@apify/consts@2.53.2': {}
+
   '@apify/datastructures@2.0.3': {}
 
   '@apify/docs-search-modal@1.3.6(@algolia/client-search@5.52.0)(@babel/core@7.29.0)(@types/react@19.2.14)(react-dom@19.2.5(react@19.2.5))(react-is@16.13.1)(react@19.2.5)(search-insights@2.17.3)':
@@ -9436,14 +9441,14 @@ snapshots:
       '@apify/utilities': 2.25.6
       ow: 0.28.2
 
-  '@apify/json_schemas@0.13.0':
+  '@apify/json_schemas@0.15.1':
     dependencies:
       '@apify/consts': 2.53.0
       ajv: 8.20.0
 
-  '@apify/json_schemas@0.15.1':
+  '@apify/json_schemas@0.16.8':
     dependencies:
-      '@apify/consts': 2.53.0
+      '@apify/consts': 2.53.2
       ajv: 8.20.0
 
   '@apify/log@2.5.34':
