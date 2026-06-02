@@ -194,7 +194,7 @@ export async function setProxyPassword(password: string, opts: { skipIfUnchanged
 	}
 
 	const data = readAuthFile();
-	data.proxy = { password };
+	data.proxy = { ...data.proxy, password };
 	data.secretsBackend = 'file';
 	writeAuthFile(data);
 }

@@ -94,6 +94,12 @@ describe('credentials', () => {
 			expect(readAuthFile().proxy).toEqual({ password: 'pw_abc' });
 		});
 
+		it('preserves other proxy fields when only the password changes', async () => {
+			writeAuthFile({ proxy: { password: 'old', groups: [{ name: 'g' }] } } as never);
+			await setProxyPassword('new');
+			expect(readAuthFile().proxy).toEqual({ password: 'new', groups: [{ name: 'g' }] });
+		});
+
 		it('skipIfUnchanged is a no-op when the stored value matches', async () => {
 			await setToken('tok_123');
 			const before = readFileSync(AUTH_FILE_PATH(), 'utf-8');
