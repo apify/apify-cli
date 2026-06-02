@@ -115,11 +115,13 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 		// auth.json may not exist yet (fresh keyring-only state); fall through
 	}
 
-	const token = await getToken();
-	if (token) result.token = token;
+	if ((await getBackend()) === 'keyring') {
+		const token = await getToken();
+		if (token) result.token = token;
 
-	const proxyPassword = await getProxyPassword();
-	if (proxyPassword) result.proxy = { password: proxyPassword };
+		const proxyPassword = await getProxyPassword();
+		if (proxyPassword) result.proxy = { ...result.proxy, password: proxyPassword };
+	}
 
 	const hasSomething = result.username || result.id || result.token;
 	if (!hasSomething) return {};

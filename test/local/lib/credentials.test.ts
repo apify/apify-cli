@@ -14,6 +14,7 @@ import {
 	setProxyPassword,
 	setToken,
 } from '../../../src/lib/credentials.js';
+import { getLocalUserInfo } from '../../../src/lib/utils.js';
 
 const keyringStore = new Map<string, string>();
 const keyringFailures = new Set<string>();
@@ -240,6 +241,31 @@ describe('credentials', () => {
 			writeAuthFile({ token: 'tok2' });
 			await ensureMigrated();
 			expect(readAuthFile().secretsBackend).toBeUndefined();
+		});
+	});
+
+	describe('getLocalUserInfo()', () => {
+		it('on file backend, preserves non-secret proxy fields', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			writeAuthFile({
+				username: 'me',
+				id: 'uid',
+				token: 'tok',
+				proxy: { password: 'pw', groups: [{ name: 'g' }] },
+				secretsBackend: 'file',
+			});
+			const info = await getLocalUserInfo();
+			expect(info.proxy).toEqual({ password: 'pw', groups: [{ name: 'g' }] });
+		});
+
+		it('on keyring backend, overlays token and proxy password from keyring', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			keyringStore.set('com.apify.cli:token', 'tok_kr');
+			keyringStore.set('com.apify.cli:proxy-password', 'pw_kr');
+			writeAuthFile({ username: 'me', id: 'uid', secretsBackend: 'keyring' });
+			const info = await getLocalUserInfo();
+			expect(info.token).toBe('tok_kr');
+			expect(info.proxy?.password).toBe('pw_kr');
 		});
 	});
 });
