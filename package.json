@@ -69,7 +69,7 @@
 		"@apify/actor-templates": "^0.1.5",
 		"@apify/consts": "^2.53.0",
 		"@apify/input_schema": "^3.27.1",
-		"@apify/json_schemas": "^0.13.0",
+		"@apify/json_schemas": "^0.16.0",
 		"@apify/utilities": "^2.25.6",
 		"@crawlee/memory-storage": "^3.16.0",
 		"@inquirer/core": "^11.1.7",
