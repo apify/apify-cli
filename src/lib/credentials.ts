@@ -222,7 +222,7 @@ export async function ensureMigrated(): Promise<void> {
 		try {
 			const file = readAuthFile();
 			if (file.secretsBackend) return;
-			if (!file.token) return;
+			if (!file.token && !file.proxy?.password) return;
 
 			const backend = await getBackend();
 			if (backend === 'file') {
@@ -231,16 +231,18 @@ export async function ensureMigrated(): Promise<void> {
 				return;
 			}
 
-			try {
-				await writeKeyring(TOKEN_ACCOUNT, file.token);
-			} catch (err) {
-				cliDebugPrint('credentials', 'keyring write failed during migration; falling back to file', err);
-				downgradeBackendToFile();
-				file.secretsBackend = 'file';
-				writeAuthFile(file);
-				return;
+			if (file.token) {
+				try {
+					await writeKeyring(TOKEN_ACCOUNT, file.token);
+				} catch (err) {
+					cliDebugPrint('credentials', 'keyring write failed during migration; falling back to file', err);
+					downgradeBackendToFile();
+					file.secretsBackend = 'file';
+					writeAuthFile(file);
+					return;
+				}
+				delete file.token;
 			}
-			delete file.token;
 			if (file.proxy?.password) {
 				await writeKeyring(PROXY_PASSWORD_ACCOUNT, file.proxy.password);
 				delete file.proxy;
