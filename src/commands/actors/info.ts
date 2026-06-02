@@ -1,4 +1,4 @@
-import type { Actor, ActorTaggedBuild, Build, User } from 'apify-client';
+import type { Actor, ActorChargeEvent, ActorTaggedBuild, Build, User } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -14,20 +14,13 @@ interface HydratedActorInfo extends Omit<Actor, 'taggedBuilds'> {
 	actorMaker?: User;
 }
 
-interface PricingInfo {
-	pricingModel: 'PRICE_PER_DATASET_ITEM' | 'FLAT_PRICE_PER_MONTH' | 'PAY_PER_EVENT' | 'FREE';
-	pricePerUnitUsd: number;
-	unitName: string;
-	startedAt: string;
-	createdAt: string;
-	apifyMarginPercentage: number;
-	notifiedAboutFutureChangeAt: string;
-	notifiedAboutChangeAt: string;
-	trialMinutes?: number;
-	pricingPerEvent?: {
-		actorChargeEvents: Record<string, { eventTitle: string; eventDescription: string; eventPriceUsd: number }>;
-	};
-}
+// apify-client's ActorChargeEvent declares eventPriceUsd as required and is missing
+// eventTieredPricingUsd. Tiered pay-per-event pricing shipped on the platform after the SDK type
+// was last updated; remodel locally until upstream catches up: https://github.com/apify/apify-client-js
+type ChargeEventShape = Omit<ActorChargeEvent, 'eventPriceUsd'> & {
+	eventPriceUsd?: number;
+	eventTieredPricingUsd?: Record<string, { tieredEventPriceUsd: number }>;
+};
 
 const eventTitleColumn = '\u200b';
 const eventPriceUsdColumn = '\u200b\u200b';
@@ -210,7 +203,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 		}
 
 		// Pricing info
-		const pricingInfo = Reflect.get(actorInfo, 'pricingInfos') as PricingInfo[] | undefined;
+		const pricingInfo = actorInfo.pricingInfos;
 
 		if (pricingInfo?.length) {
 			// We only print the latest pricing info
@@ -245,10 +238,21 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 
 					const events = Object.values(latestPricingInfo.pricingPerEvent?.actorChargeEvents ?? {});
 
-					for (const eventInfo of events) {
+					for (const eventInfo of events as ChargeEventShape[]) {
+						const flat = eventInfo.eventPriceUsd;
+						const tiered = eventInfo.eventTieredPricingUsd;
+						let priceLabel: string;
+						if (typeof flat === 'number') {
+							priceLabel = `$${flat.toFixed(2)}`;
+						} else if (tiered && Object.keys(tiered).length > 0) {
+							const minPrice = Math.min(...Object.values(tiered).map((t) => t.tieredEventPriceUsd));
+							priceLabel = `from $${minPrice.toFixed(2)} (tiered)`;
+						} else {
+							priceLabel = 'N/A';
+						}
 						payPerEventTable.pushRow({
 							[eventTitleColumn]: eventInfo.eventTitle,
-							[eventPriceUsdColumn]: chalk.bold(`$${eventInfo.eventPriceUsd.toFixed(2)}`),
+							[eventPriceUsdColumn]: chalk.bold(priceLabel),
 						});
 					}
 
@@ -269,8 +273,10 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 				}
 
 				default: {
+					// Runtime fallback for pricing models the SDK union doesn't know about yet.
+					const unknownModel = (latestPricingInfo as { pricingModel: string }).pricingModel;
 					message.push(
-						`${chalk.yellow('Pricing information:')} ${chalk.bgGray(`Unknown pricing model (${chalk.yellow(latestPricingInfo.pricingModel)})`)}`,
+						`${chalk.yellow('Pricing information:')} ${chalk.bgGray(`Unknown pricing model (${chalk.yellow(unknownModel)})`)}`,
 					);
 				}
 			}

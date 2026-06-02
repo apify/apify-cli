@@ -45,4 +45,19 @@ describe('[e2e][api] actors info', () => {
 
 		expect(result.stdout).toContain('was not found');
 	});
+
+	// Regression test for https://github.com/apify/apify-cli/issues/1171
+	// The human-readable renderer crashed with "Cannot read properties of undefined (reading 'toFixed')"
+	// on PAY_PER_EVENT actors that use tiered pricing (eventTieredPricingUsd) instead of a flat
+	// eventPriceUsd. --json bypasses the renderer, so the bug only surfaces on the default output.
+	it('renders pricing for a tiered PAY_PER_EVENT actor without crashing', async () => {
+		const result = await runCli('apify', ['actors', 'info', 'lukaskrivka/google-maps-with-contact-details'], {
+			env: authEnv,
+		});
+
+		expect(result.exitCode, `stderr: ${result.stderr}\nstdout: ${result.stdout}`).toBe(0);
+		expect(result.stderr).not.toContain('toFixed');
+		expect(result.stdout).toContain('Pricing information');
+		expect(result.stdout).toContain('Pay per event');
+	});
 });
