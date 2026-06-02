@@ -158,10 +158,10 @@ type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } 
  * Returns options for ApifyClient
  */
 export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => {
-	token = await resolveToken(token);
+	const resolvedToken = await resolveToken(token);
 
 	return {
-		token,
+		token: resolvedToken,
 		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
 		requestInterceptors: [
 			(config) => {
@@ -184,9 +184,9 @@ export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string)
  * get written when their value actually changes — avoids macOS Keychain prompts on every command.
  */
 export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
-	token = await resolveToken(token);
+	const resolvedToken = await resolveToken(token);
 
-	const apifyClient = new ApifyClient(await getApifyClientOptions(token, apiBaseUrl));
+	const apifyClient = new ApifyClient(await getApifyClientOptions(resolvedToken, apiBaseUrl));
 
 	let userInfo;
 	try {
