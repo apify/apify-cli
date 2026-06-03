@@ -413,6 +413,7 @@ describe('[api] apify push', () => {
 				build: 'latest',
 				memoryMbytes: 1024,
 				shouldPassActorInput: false,
+				hostedBy: 'user',
 			});
 
 			if (createdActor) await createdActorClient.delete();
