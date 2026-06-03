@@ -20,7 +20,6 @@ minimumReleaseAgeExclude:
 
 overrides:
     tar: 7.5.15
-    vite: ^8.0.5
 
 # Unfortunately, several parts of this project expect everything to be hoisted up in the node_modules directory...
 # And fixing it would take longer than just enabling this and shedding a tear
