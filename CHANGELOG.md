@@ -2,8 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-<!-- git-cliff-unreleased-start -->
-## 1.6.2 - **not yet released**
+## [1.6.2](https://github.com/apify/apify-cli/releases/tag/v1.6.2) (2026-06-03)
 
 ### 🚀 Features
 
@@ -19,7 +18,6 @@ All notable changes to this project will be documented in this file.
 - **push:** Prevent hang and tag race in apify push (#1131) ([#1134](https://github.com/apify/apify-cli/pull/1134)) ([c68e963](https://github.com/apify/apify-cli/commit/c68e963dd6bf1bad716818cd1c08f121a5907098)) by [@l2ysho](https://github.com/l2ysho), closes [#1131](https://github.com/apify/apify-cli/issues/1131)
 
 
-<!-- git-cliff-unreleased-end -->
 
 ## [1.6.1](https://github.com/apify/apify-cli/releases/tag/v1.6.1) (2026-05-06)
 
