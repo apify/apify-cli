@@ -419,7 +419,7 @@ Skipping push. Use --force to override.`,
 			}
 			if (!tagApplied) {
 				warning({
-					message: `Build succeeded but tag "${buildTag}" did not update within 5s; subsequent calls referencing this tag may race.`,
+					message: `Build succeeded but tag "${buildTag}" was not set after 5 seconds; subsequent calls referencing this tag may not find it.`,
 				});
 			}
 		}
