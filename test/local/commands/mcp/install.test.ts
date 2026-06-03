@@ -73,6 +73,26 @@ describe('apify mcp install', () => {
 		expect(logMessages.error.join('\n')).toMatch(/not logged in to Apify.*apify login.*--token/s);
 	});
 
+	it('errors with InvalidInput when user home directory cannot be determined', async () => {
+		vitest.stubEnv('HOME', '');
+		await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_token: TEST_TOKEN });
+
+		expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
+		expect(logMessages.error.join('\n')).toMatch(/User home directory could not be determined/i);
+	});
+
+	it('cursor: errors clearly if existing config root is not a JSON object', async () => {
+		const cursorPath = joinPath('.cursor', 'mcp.json');
+		await mkdir(joinPath('.cursor'), { recursive: true });
+		await writeFile(cursorPath, '[]', 'utf-8'); // root array is invalid for mcpServers merge
+
+		await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_token: TEST_TOKEN });
+
+		expect(process.exitCode).toBe(1);
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toMatch(/Cannot install: .*mcp\.json is not a JSON object/);
+	});
+
 	it('cursor: writes mcp.json from --token', async () => {
 		await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_token: TEST_TOKEN });
 
@@ -85,6 +105,13 @@ describe('apify mcp install', () => {
 				},
 			},
 		});
+
+		// Regression test for tildify() using userHomeDir() (bug4): with HOME stubbed to tmpPath,
+		// success output should show tildified ~/.cursor/... (not raw /tmp path). This exercises
+		// the shared HOME override logic used by MCP path construction + display.
+		const logs = logMessages.error.join('\n');
+		expect(logs).toContain('Success: Apify MCP server configured for Cursor.');
+		expect(logs).toContain('Config:     ~/.cursor/mcp.json');
 	});
 
 	it('cursor: re-run without --yes in non-TTY exits with "Re-run with --yes"', async () => {
@@ -123,7 +150,21 @@ describe('apify mcp install', () => {
 
 		const config = await readJson(joinPath('.cursor', 'mcp.json'));
 		expect((config.mcpServers as { apify: { url: string } }).apify.url).toBe(
-			'https://mcp.apify.com?tools=search-actors,apify/rag-web-browser',
+			'https://mcp.apify.com/?tools=search-actors%2Capify%2Frag-web-browser',
+		);
+	});
+
+	it('cursor: --tools value is URL-encoded and merged with existing query on --url', async () => {
+		await testRunCommand(MCPInstallCommand, {
+			args_client: 'cursor',
+			flags_token: TEST_TOKEN,
+			flags_url: 'https://mcp.apify.com/v1?foo=bar',
+			flags_tools: 'search-actors,foo&bar=baz quux',
+		});
+
+		const config = await readJson(joinPath('.cursor', 'mcp.json'));
+		expect((config.mcpServers as { apify: { url: string } }).apify.url).toBe(
+			'https://mcp.apify.com/v1?foo=bar&tools=search-actors%2Cfoo%26bar%3Dbaz+quux',
 		);
 	});
 
@@ -207,5 +248,8 @@ describe('apify mcp install', () => {
 		expect(stderr).toContain('bearer_token_env_var = "APIFY_TOKEN"');
 		expect(stderr).toContain('export APIFY_TOKEN=<your-token>');
 		expect(stderr).not.toContain(TEST_TOKEN);
+		// Regression for tildify + userHomeDir consistency (bug4): missingMessage uses tildify(tomlPath)
+		// built from the effective home (HOME stub); should show ~ not raw tmp path.
+		expect(stderr).toContain('~/.codex/config.toml');
 	});
 });

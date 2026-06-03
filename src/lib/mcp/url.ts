@@ -14,8 +14,11 @@ export function buildMcpUrl(baseUrl: string, tools?: string): string {
 
 	if (!normalized) return baseUrl;
 
-	const separator = baseUrl.includes('?') ? '&' : '?';
-	return `${baseUrl}${separator}tools=${normalized}`;
+	// Use URL constructor so the tools value is properly encoded (handles &, =, #, spaces, etc.)
+	// and existing query params / fragments on baseUrl are preserved.
+	const url = new URL(baseUrl);
+	url.searchParams.set('tools', normalized);
+	return url.toString();
 }
 
 /** Token shorter than visible prefix + suffix is masked entirely to avoid leaking it whole. */

@@ -57,6 +57,10 @@ export async function mergeServerEntry({
 	} else {
 		const document = jju.parse(text) as Record<string, unknown>;
 
+		if (typeof document !== 'object' || document === null || Array.isArray(document)) {
+			throw new Error(`Cannot install: ${tildify(filePath)} is not a JSON object. Fix the file manually and re-run.`);
+		}
+
 		const existingTopLevel = document[topLevelKey];
 		if (existingTopLevel != null && (typeof existingTopLevel !== 'object' || Array.isArray(existingTopLevel))) {
 			throw new Error(

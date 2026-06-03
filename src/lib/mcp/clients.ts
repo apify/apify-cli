@@ -106,7 +106,13 @@ function fileClient({
 	entry: (url: string, token: string) => Record<string, unknown>;
 }): ClientHandler {
 	return async ({ url, token, yes }) => {
-		const filePath = join(userHomeDir(), ...segments);
+		const home = userHomeDir();
+		if (!home) {
+			error({ message: 'User home directory could not be determined. Set the HOME environment variable and re-run.' });
+			process.exitCode = CommandExitCodes.InvalidInput;
+			return;
+		}
+		const filePath = join(home, ...segments);
 		const wrote = await mergeServerEntry({
 			filePath,
 			topLevelKey: 'mcpServers',
@@ -181,7 +187,13 @@ function vscodeHandler(binary: string, clientLabel: string): ClientHandler {
 }
 
 const codexHandler: ClientHandler = async ({ url }) => {
-	const tomlPath = join(userHomeDir(), '.codex', 'config.toml');
+	const home = userHomeDir();
+	if (!home) {
+		error({ message: 'User home directory could not be determined. Set the HOME environment variable and re-run.' });
+		process.exitCode = CommandExitCodes.InvalidInput;
+		return;
+	}
+	const tomlPath = join(home, '.codex', 'config.toml');
 	// codex rejects a literal bearer_token (openai/codex#19275), so auth goes through the APIFY_TOKEN env var.
 	const args = ['mcp', 'add', SERVER_KEY, '--url', url, '--bearer-token-env-var', 'APIFY_TOKEN'];
 	const tomlSnippet = [`[mcp_servers.${SERVER_KEY}]`, `url = "${url}"`, `bearer_token_env_var = "APIFY_TOKEN"`].join(
