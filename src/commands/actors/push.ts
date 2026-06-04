@@ -6,7 +6,12 @@ import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
-import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
+import {
+	ACTOR_JOB_STATUSES,
+	ACTOR_JOB_TERMINAL_STATUSES,
+	ACTOR_SOURCE_TYPES,
+	MAX_MULTIFILE_BYTES,
+} from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -25,6 +30,7 @@ import {
 	getLocalUserInfo,
 	getLoggedClientOrThrow,
 	outputJobLog,
+	parseWaitForFinishMillis,
 	printJsonToStdout,
 } from '../../lib/utils.js';
 
@@ -87,7 +93,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}),
 		'wait-for-finish': Flags.string({
 			char: 'w',
-			description: 'Seconds for waiting to build to finish, if no value passed, it waits forever.',
+			description:
+				'In seconds, how long to wait for the build to finish. If no value passed, it waits forever. To return as soon as the build is queued (fire-and-forget), pass 0. The exit code reflects the build outcome only — if the wait elapses with the build still running, the command exits 0; check status via the printed link or --json output.',
 			required: false,
 		}),
 		'open': Flags.boolean({
@@ -190,9 +197,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			buildTag = DEFAULT_BUILD_TAG;
 		}
 
-		const waitForFinishMillis = Number.isNaN(this.flags.waitForFinish)
-			? undefined
-			: Number.parseInt(this.flags.waitForFinish!, 10) * 1000;
+		const waitForFinishMillis = parseWaitForFinishMillis(this.flags.waitForFinish);
 
 		// User can override actorId of pushing Actor.
 		// It causes that we push Actor to this id but attributes in localConfig will remain same.
@@ -359,30 +364,65 @@ Skipping push. Use --force to override.`,
 
 		// Build Actor on Apify and wait for build to finish
 		run({ message: `Building Actor ${actor.name}` });
+		// Anchor the deadline at build start so log streaming + status polling
+		// share one budget. Without this, a log stream that dies near the cap
+		// would let the poll loop wait another full --wait-for-finish on top.
+		const deadline = waitForFinishMillis === undefined ? Infinity : Date.now() + waitForFinishMillis;
 		let build = await actorClient.build(version, {
 			useCache: true,
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
 		});
 
-		try {
-			// While the log is streaming, forward interrupt signals to a
-			// platform-side abort so the build doesn't keep running after the
-			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
-			// SIGHUP from a closing terminal). The `using` binding guarantees
-			// the listener is removed before we poll for final status.
-			using _signalHandler = useAbortJobOnSignal({
-				apifyClient,
-				kind: 'build',
-				jobId: build.id,
-			});
+		// Forward interrupt signals (Ctrl+C, SIGTERM, SIGHUP) to a platform-side
+		// abort for the lifetime of log streaming AND status polling, so the
+		// build doesn't keep running after the user gives up waiting.
+		using _signalHandler = useAbortJobOnSignal({
+			apifyClient,
+			kind: 'build',
+			jobId: build.id,
+		});
 
-			await outputJobLog({ job: build, timeoutMillis: waitForFinishMillis, apifyClient });
+		try {
+			const logBudgetMs = Number.isFinite(deadline) ? Math.max(0, deadline - Date.now()) : undefined;
+			await outputJobLog({ job: build, timeoutMillis: logBudgetMs, apifyClient });
 		} catch (err) {
 			warning({ message: 'Can not get log:' });
 			console.error(err);
 		}
 
 		build = (await apifyClient.build(build.id).get())!;
+
+		// `outputJobLog` can return before the build is actually terminal (stream
+		// ended early, timeout hit). Poll the remaining budget so the status
+		// branches below see the real outcome.
+		while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			build = (await apifyClient.build(build.id).get())!;
+		}
+
+		// Platform updates `taggedBuilds[buildTag]` asynchronously after the
+		// build finishes. Wait until the tag points at this build so callers
+		// (including --json automation) that immediately
+		// `actor.start({ build: buildTag })` don't race it. Skipped when
+		// --wait-for-finish=0 (fire-and-forget).
+		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED && buildTag && waitForFinishMillis !== 0) {
+			run({ message: `Applying build tag "${buildTag}"...` });
+			const tagDeadline = Date.now() + 5_000;
+			let tagApplied = false;
+			while (Date.now() < tagDeadline) {
+				const a = await actorClient.get();
+				if (a?.taggedBuilds?.[buildTag]?.buildId === build.id) {
+					tagApplied = true;
+					break;
+				}
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			}
+			if (!tagApplied) {
+				warning({
+					message: `Build succeeded but tag "${buildTag}" was not set after 5 seconds; subsequent calls referencing this tag may not find it.`,
+				});
+			}
+		}
 
 		if (this.flags.json) {
 			printJsonToStdout(build);
