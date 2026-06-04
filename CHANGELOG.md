@@ -26,6 +26,10 @@ All notable changes to this project will be documented in this file.
 
 ## [1.6.1](https://github.com/apify/apify-cli/releases/tag/v1.6.1) (2026-05-06)
 
+### 🐛 Bug Fixes
+
+- Remove preinstall script from the published package, fixing `npm install` for consumers ([#1125](https://github.com/apify/apify-cli/pull/1125)) ([4b569eb](https://github.com/apify/apify-cli/commit/4b569ebe1667eb47b3f440897e836b931ad54545)) by [@l2ysho](https://github.com/l2ysho)
+
 ## [1.6.0](https://github.com/apify/apify-cli/releases/tag/v1.6.0) (2026-05-05)
 
 ### 🚀 Features
