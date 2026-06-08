@@ -1,15 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import { access, rm } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { ApifyClient } from 'apify-client';
 
 import { getApifyClientOptions } from '../../../../src/lib/utils.js';
 import { runCli } from '../../__helpers__/run-cli.js';
 import { createTestActor, removeTestActor, type TestActor } from '../../__helpers__/test-actor.js';
-
-const TestTmpRoot = fileURLToPath(new URL('../../../../tmp/', import.meta.url));
+import { TestTmpRoot } from '../../__helpers__/tmp.js';
 
 describe('[e2e][api] runs lifecycle', () => {
 	let actor: TestActor;
