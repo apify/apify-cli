@@ -243,7 +243,7 @@ export async function ensureMigrated(): Promise<void> {
 			}
 
 			delete file.token;
-			delete file.proxy;
+			delete file.proxy?.password;
 			file.secretsBackend = 'keyring';
 			writeAuthFile(file);
 		} catch (err) {
