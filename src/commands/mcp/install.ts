@@ -4,7 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
-import { getClientHandler, isSupportedClient, SUPPORTED_CLIENTS } from '../../lib/mcp/clients.js';
+import { clientNeedsToken, getClientHandler, isSupportedClient, SUPPORTED_CLIENTS } from '../../lib/mcp/clients.js';
 import { buildMcpUrl, DEFAULT_MCP_URL } from '../../lib/mcp/url.js';
 import { error } from '../../lib/outputs.js';
 import { getLocalUserInfo } from '../../lib/utils.js';
@@ -94,8 +94,12 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 			return;
 		}
 
-		const token = await resolveApifyToken(tokenFlag);
-		if (!token) return;
+		let token = '';
+		if (clientNeedsToken(client)) {
+			const resolved = await resolveApifyToken(tokenFlag);
+			if (!resolved) return;
+			token = resolved;
+		}
 
 		await getClientHandler(client)({ url: buildMcpUrl(baseUrl, tools), token, yes });
 	}

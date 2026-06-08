@@ -81,6 +81,36 @@ describe('apify mcp install', () => {
 		expect(logMessages.error.join('\n')).toMatch(/User home directory could not be determined/i);
 	});
 
+	it('codex: does not require a token (auth is via the APIFY_TOKEN env var the user sets)', async () => {
+		// No --token, no APIFY_TOKEN, not logged in. Without the tokenless-client carve-out this would
+		// abort with MissingAuth; codex reads APIFY_TOKEN at runtime, so the install itself needs no token.
+		await testRunCommand(MCPInstallCommand, { args_client: 'codex' });
+
+		// codex isn't on PATH (PATH=''), so we land on the not-found hint — not the missing-auth error.
+		expect(process.exitCode).toBe(CommandExitCodes.NotFound);
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toMatch(/'codex' CLI was not found on PATH/);
+		expect(stderr).not.toMatch(/not logged in to Apify/);
+	});
+
+	it('cursor: malformed JSON config errors without leaking an embedded token', async () => {
+		const cursorPath = joinPath('.cursor', 'mcp.json');
+		await mkdir(joinPath('.cursor'), { recursive: true });
+		// Syntactically broken JSONC whose offending line holds another server's secret.
+		await writeFile(
+			cursorPath,
+			'{\n  "mcpServers": { "other": { "headers": { "Authorization": "Bearer github_pat_SECRET123" } } } OOPS\n}',
+			'utf-8',
+		);
+
+		await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_token: TEST_TOKEN });
+
+		expect(process.exitCode).toBe(1);
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toMatch(/is not valid JSON/);
+		expect(stderr).not.toContain('github_pat_SECRET123');
+	});
+
 	it('cursor: errors clearly if existing config root is not a JSON object', async () => {
 		const cursorPath = joinPath('.cursor', 'mcp.json');
 		await mkdir(joinPath('.cursor'), { recursive: true });

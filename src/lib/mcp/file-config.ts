@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import process from 'node:process';
 
 import jju from 'jju';
 
@@ -55,7 +56,16 @@ export async function mergeServerEntry({
 		const document = { [topLevelKey]: { [entryKey]: serverEntry } };
 		newText = `${jju.stringify(document, { mode: 'json', indent: 2 })}\n`;
 	} else {
-		const document = jju.parse(text) as Record<string, unknown>;
+		let document: Record<string, unknown>;
+		try {
+			document = jju.parse(text) as Record<string, unknown>;
+		} catch (err) {
+			// jju's message embeds a code frame of the offending line, which may hold another server's token — keep only the position.
+			const reason = err instanceof Error ? err.message.split('\n')[0] : 'invalid JSON';
+			throw new Error(
+				`Cannot install: ${tildify(filePath)} is not valid JSON (${reason}). Fix the file manually and re-run.`,
+			);
+		}
 
 		if (typeof document !== 'object' || document === null || Array.isArray(document)) {
 			throw new Error(`Cannot install: ${tildify(filePath)} is not a JSON object. Fix the file manually and re-run.`);
@@ -83,6 +93,14 @@ export async function mergeServerEntry({
 	}
 
 	await mkdir(dirname(filePath), { recursive: true });
-	await writeFile(filePath, newText, 'utf-8');
+	// Write to a temp sibling and rename so a crash / ENOSPC mid-write can't leave the user's config half-written.
+	const tmpPath = `${filePath}.${process.pid}.tmp`;
+	try {
+		await writeFile(tmpPath, newText, 'utf-8');
+		await rename(tmpPath, filePath);
+	} catch (err) {
+		await rm(tmpPath, { force: true });
+		throw err;
+	}
 	return true;
 }

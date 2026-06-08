@@ -9,7 +9,7 @@ import { CommandExitCodes } from '../consts.js';
 import { error, run, simpleLog, success } from '../outputs.js';
 import { tildify, userHomeDir } from '../utils.js';
 import { mergeServerEntry } from './file-config.js';
-import { maskToken } from './url.js';
+import { maskSecret, maskToken } from './url.js';
 
 const SERVER_KEY = 'apify';
 const bearer = (token: string) => ({ Authorization: `Bearer ${token}` });
@@ -61,19 +61,21 @@ function describeExecaError(err: unknown, cmd: string): string {
 }
 
 /**
- * Shell out to a client's own CLI to register the server. Child stdout is discarded —
- * these CLIs echo the bearer token on success; stderr stays inherited for live errors.
+ * Shell out to a client's own CLI to register the server. Child stdout/stderr are captured, not
+ * inherited — these CLIs echo the bearer token, so any failure output is scrubbed before display.
  * Returns false (and sets process.exitCode) when the binary is missing or the run fails.
  */
 async function runCliInstall({
 	binary,
 	clientLabel,
+	token,
 	args,
 	maskedCommand,
 	missingMessage,
 }: {
 	binary: string;
 	clientLabel: string;
+	token: string;
 	args: string[];
 	maskedCommand: string;
 	missingMessage: string;
@@ -86,9 +88,11 @@ async function runCliInstall({
 
 	run({ message: maskedCommand });
 	try {
-		await execa(binary, args, { stdio: ['ignore', 'ignore', 'inherit'] });
+		await execa(binary, args, { stdio: ['ignore', 'ignore', 'pipe'] });
 	} catch (err) {
-		error({ message: `Failed to add the MCP server via ${clientLabel}: ${describeExecaError(err, binary)}` });
+		const childStderr = isExecaError(err) ? String(err.stderr ?? '').trim() : '';
+		const reason = childStderr ? `${describeExecaError(err, binary)}\n${childStderr}` : describeExecaError(err, binary);
+		error({ message: maskSecret(`Failed to add the MCP server via ${clientLabel}: ${reason}`, token) });
 		process.exitCode = CommandExitCodes.RunFailed;
 		return false;
 	}
@@ -139,6 +143,7 @@ const claudeCodeHandler: ClientHandler = async ({ url, token }) => {
 	const ok = await runCliInstall({
 		binary: 'claude',
 		clientLabel: 'Claude Code',
+		token,
 		args: [
 			'mcp',
 			'add',
@@ -172,6 +177,7 @@ function vscodeHandler(binary: string, clientLabel: string): ClientHandler {
 		const ok = await runCliInstall({
 			binary,
 			clientLabel,
+			token,
 			args: ['--add-mcp', serverJson(`Bearer ${token}`)],
 			maskedCommand: `${binary} --add-mcp '${serverJson(`Bearer ${maskToken(token)}`)}'`,
 			missingMessage: `The '${binary}' CLI was not found on PATH. Install ${clientLabel} and re-run, or add the server manually:\n\n    ${binary} --add-mcp '${serverJson('Bearer <your-token>')}'`,
@@ -203,6 +209,7 @@ const codexHandler: ClientHandler = async ({ url }) => {
 	const ok = await runCliInstall({
 		binary: 'codex',
 		clientLabel: 'Codex CLI',
+		token: '',
 		args,
 		maskedCommand: `codex ${args.join(' ')}`,
 		missingMessage: `The 'codex' CLI was not found on PATH. Install Codex (https://developers.openai.com/codex) and re-run, or add this entry manually to ${tildify(tomlPath)}:\n\n${tomlSnippet}\n\nThen, before launching codex, export your Apify token in the same shell:\n\n    export APIFY_TOKEN=<your-token>`,
@@ -247,6 +254,13 @@ export const SUPPORTED_CLIENTS = Object.keys(HANDLERS) as ClientName[];
 
 export function isSupportedClient(value: string): value is ClientName {
 	return value in HANDLERS;
+}
+
+/** codex authenticates via the APIFY_TOKEN env var the user sets themselves, so the install needs no token. */
+const TOKENLESS_CLIENTS = new Set<ClientName>(['codex']);
+
+export function clientNeedsToken(name: ClientName): boolean {
+	return !TOKENLESS_CLIENTS.has(name);
 }
 
 export function getClientHandler(name: ClientName): ClientHandler {

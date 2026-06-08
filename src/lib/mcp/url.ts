@@ -26,3 +26,9 @@ export function maskToken(token: string): string {
 	if (token.length <= MASK_VISIBLE_PREFIX_CHARS + MASK_VISIBLE_SUFFIX_CHARS) return '***';
 	return `${token.slice(0, MASK_VISIBLE_PREFIX_CHARS)}...${token.slice(-MASK_VISIBLE_SUFFIX_CHARS)}`;
 }
+
+/** Replace every literal occurrence of the raw token with its masked form, so child output / error text can't leak it. */
+export function maskSecret(text: string, token: string): string {
+	if (!token) return text;
+	return text.split(token).join(maskToken(token));
+}
