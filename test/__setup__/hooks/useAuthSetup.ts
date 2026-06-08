@@ -8,6 +8,7 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 import { LoginCommand } from '../../../src/commands/login.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
+import { __resetCredentialsForTests } from '../../../src/lib/credentials.js';
 import { getLocalUserInfo } from '../../../src/lib/utils.js';
 
 export interface UseAuthSetupOptions {
@@ -39,6 +40,10 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 
 	before(() => {
 		vitest.stubEnv(envVariable, envValue());
+		// Tests pin to the file backend so they don't touch the real OS keyring.
+		// Unit tests for credentials.ts override this explicitly.
+		vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+		__resetCredentialsForTests();
 	});
 
 	after(async () => {
@@ -46,6 +51,7 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 			await rm(GLOBAL_CONFIGS_FOLDER(), { recursive: true, force: true });
 		}
 
+		__resetCredentialsForTests();
 		vitest.unstubAllEnvs();
 	});
 }

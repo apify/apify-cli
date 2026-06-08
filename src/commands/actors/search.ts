@@ -96,7 +96,7 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 		const { query } = this.args;
 		const { json, sortBy, category, username, pricingModel, limit, offset } = this.flags;
 
-		const clientOptions = getApifyClientOptions();
+		const clientOptions = await getApifyClientOptions();
 		delete clientOptions.token;
 		const client = new ApifyClient(clientOptions);
 
