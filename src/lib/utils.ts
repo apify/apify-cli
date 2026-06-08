@@ -814,11 +814,9 @@ export const userHomeDir = () => process.env.HOME ?? homedir();
 
 export const tildify = (path: string) => {
 	const home = userHomeDir();
-	if (home && path.startsWith(home)) {
-		return path.replace(home, '~');
-	}
-
-	return path;
+	const tildified = home && path.startsWith(home) ? path.replace(home, '~') : path;
+	// Display-only string: render with forward slashes so output is consistent across platforms (Windows joins with '\').
+	return tildified.replaceAll('\\', '/');
 };
 
 export function detectShell() {
