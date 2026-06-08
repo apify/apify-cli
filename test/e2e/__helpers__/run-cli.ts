@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { execa } from 'execa';
@@ -36,6 +37,10 @@ export async function runCli(
 ): Promise<RunCliResult> {
 	const distFile = binary === 'actor' ? DistActor : DistApify;
 
+	// Spawning into a non-existent cwd fails with an opaque ENOENT before the CLI
+	// even runs, so ensure it exists first — every caller's cwd is a scratch dir.
+	if (options.cwd) await mkdir(options.cwd, { recursive: true });
+
 	const result = await execa('node', [distFile, ...args], {
 		cwd: options.cwd,
 		reject: false,
@@ -45,13 +50,17 @@ export async function runCli(
 		env: {
 			APIFY_CLI_DISABLE_TELEMETRY: '1',
 			APIFY_CLI_SKIP_UPDATE_CHECK: '1',
+			// Pin the file backend so e2e subprocesses don't share the host's OS keyring across tests.
+			APIFY_DISABLE_KEYRING: '1',
 			...options.env,
 		},
 	});
 
 	return {
 		stdout: result.stdout ?? '',
-		stderr: result.stderr ?? '',
+		// Fall back to execa's error message so spawn failures surface instead of
+		// an empty string + bare exit code 1.
+		stderr: result.stderr || result.shortMessage || '',
 		exitCode: result.exitCode ?? 1,
 	};
 }
