@@ -199,6 +199,16 @@ describe('credentials', () => {
 			expect(file.secretsBackend).toBe('keyring');
 		});
 
+		it('on the keyring backend, strips only the proxy password and keeps other proxy fields', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeAuthFile({ token: 'tok', proxy: { password: 'pw', groups: [{ name: 'g' }] }, username: 'u' });
+			await ensureMigrated();
+			expect(keyringStore.get('com.apify.cli:proxy-password')).toBe('pw');
+			const file = readAuthFile();
+			expect(file.proxy).toEqual({ groups: [{ name: 'g' }] });
+			expect(file.secretsBackend).toBe('keyring');
+		});
+
 		it('migrates proxy password to the keyring when token is absent', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			writeAuthFile({ proxy: { password: 'pw' }, username: 'u' });

@@ -23,7 +23,7 @@ interface KeyringModule {
 
 interface StoredAuthFile {
 	token?: string;
-	proxy?: { password: string };
+	proxy?: { password?: string; [k: string]: unknown };
 	secretsBackend?: CredentialsBackend;
 	[k: string]: unknown;
 }
@@ -243,7 +243,12 @@ export async function ensureMigrated(): Promise<void> {
 			}
 
 			delete file.token;
-			delete file.proxy?.password;
+			if (file.proxy) {
+				delete file.proxy.password;
+				// Drop the proxy object entirely when only the password lived there,
+				// but keep it (minus the secret) when it carries other fields like `groups`.
+				if (Object.keys(file.proxy).length === 0) delete file.proxy;
+			}
 			file.secretsBackend = 'keyring';
 			writeAuthFile(file);
 		} catch (err) {
