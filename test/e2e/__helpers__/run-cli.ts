@@ -1,3 +1,4 @@
+import { mkdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { execa } from 'execa';
@@ -36,6 +37,10 @@ export async function runCli(
 ): Promise<RunCliResult> {
 	const distFile = binary === 'actor' ? DistActor : DistApify;
 
+	// Spawning into a non-existent cwd fails with an opaque ENOENT before the CLI
+	// even runs, so ensure it exists first — every caller's cwd is a scratch dir.
+	if (options.cwd) await mkdir(options.cwd, { recursive: true });
+
 	const result = await execa('node', [distFile, ...args], {
 		cwd: options.cwd,
 		reject: false,
@@ -53,7 +58,9 @@ export async function runCli(
 
 	return {
 		stdout: result.stdout ?? '',
-		stderr: result.stderr ?? '',
+		// Fall back to execa's error message so spawn failures surface instead of
+		// an empty string + bare exit code 1.
+		stderr: result.stderr || result.shortMessage || '',
 		exitCode: result.exitCode ?? 1,
 	};
 }

@@ -1,11 +1,11 @@
 import { randomBytes } from 'node:crypto';
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { runCli } from './run-cli.js';
+import { TestTmpRoot } from './tmp.js';
 
-const TestTmpRoot = fileURLToPath(new URL('../../tmp/', import.meta.url));
 const BasicActorPath = fileURLToPath(new URL('../__fixtures__/basic-actor.js', import.meta.url));
 const basicActorSource = await readFile(BasicActorPath, 'utf-8');
 
@@ -24,8 +24,6 @@ export interface TestActor {
  */
 export async function createTestActor(prefix = 'e2e'): Promise<TestActor> {
 	const name = `${prefix}-${randomBytes(6).toString('hex')}`;
-
-	await mkdir(TestTmpRoot, { recursive: true });
 
 	const result = await runCli('apify', ['create', name, '--template', 'project_empty'], {
 		cwd: TestTmpRoot,
