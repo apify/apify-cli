@@ -1,8 +1,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
 import { SECRETS_FILE_PATH } from './consts.js';
+import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
-import { ensureApifyDirectory } from './utils.js';
 
 const SECRET_KEY_PREFIX = '@';
 // TODO: Moved to shared

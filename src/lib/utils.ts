@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { createWriteStream, existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createWriteStream, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import type { IncomingMessage } from 'node:http';
 import { get } from 'node:https';
@@ -40,12 +40,12 @@ import {
 	AUTH_FILE_PATH,
 	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
-	GLOBAL_CONFIGS_FOLDER,
 	LOCAL_CONFIG_PATH,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
+import { deleteFile, ensureApifyDirectory, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -101,19 +101,33 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 };
 
 /**
- * Returns object from auth file or empty object.
+ * Returns object from auth file or empty object. Secrets (token, proxy password) are
+ * pulled from the keyring when that backend is active; user metadata lives in auth.json.
  */
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
+	await ensureMigrated();
+
 	let result: AuthJSON = {};
 	try {
 		const raw = await readFile(AUTH_FILE_PATH(), 'utf-8');
 		result = JSON.parse(raw) as AuthJSON;
 	} catch {
-		return {};
+		// auth.json may not exist yet (fresh keyring-only state); fall through
 	}
 
-	if (!result.username && !result.id) {
-		throw new Error('Corrupted local user info was found. Please run "apify login" to fix it.');
+	if ((await getBackend()) === 'keyring') {
+		const token = await getToken();
+		if (token) result.token = token;
+
+		const proxyPassword = await getProxyPassword();
+		if (proxyPassword) result.proxy = { ...result.proxy, password: proxyPassword };
+	}
+
+	const hasUserMetadata = !!(result.username || result.id);
+	const isComplete = hasUserMetadata || !!result.token;
+	if (!isComplete) return {};
+	if (!hasUserMetadata) {
+		throw new Error('Stale credentials found without user metadata. Please run "apify login" again.');
 	}
 
 	return result;
@@ -132,13 +146,10 @@ export async function getLoggedClientOrThrow() {
 	return loggedClient;
 }
 
-const getTokenWithAuthFileFallback = (existingToken?: string) => {
-	if (!existingToken && existsSync(GLOBAL_CONFIGS_FOLDER()) && existsSync(AUTH_FILE_PATH())) {
-		const raw = readFileSync(AUTH_FILE_PATH(), 'utf-8');
-		return JSON.parse(raw).token;
-	}
-
-	return existingToken;
+const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
+	if (existingToken) return existingToken;
+	await ensureMigrated();
+	return getToken();
 };
 
 type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
@@ -146,11 +157,11 @@ type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } 
 /**
  * Returns options for ApifyClient
  */
-export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): ApifyClientOptions => {
-	token = getTokenWithAuthFileFallback(token);
+export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => {
+	const resolvedToken = await resolveToken(token);
 
 	return {
-		token,
+		token: resolvedToken,
 		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
 		requestInterceptors: [
 			(config) => {
@@ -168,13 +179,14 @@ export const getApifyClientOptions = (token?: string, apiBaseUrl?: string): Apif
 
 /**
  * Gets instance of ApifyClient for token or for params from global auth file.
- * NOTE: It refreshes global auth file each run
- * @param [token]
+ *
+ * Refreshes the user metadata in auth.json each run. Secrets (token, proxy.password) only
+ * get written when their value actually changes — avoids macOS Keychain prompts on every command.
  */
 export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
-	token = getTokenWithAuthFileFallback(token);
+	const resolvedToken = await resolveToken(token);
 
-	const apifyClient = new ApifyClient(getApifyClientOptions(token, apiBaseUrl));
+	const apifyClient = new ApifyClient(await getApifyClientOptions(resolvedToken, apiBaseUrl));
 
 	let userInfo;
 	try {
@@ -184,10 +196,37 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 		return null;
 	}
 
-	// Always refresh Auth file
-	ensureApifyDirectory(AUTH_FILE_PATH());
+	if (apifyClient.token) {
+		await setToken(apifyClient.token, { skipIfUnchanged: true });
+	}
 
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify({ token: apifyClient.token, ...userInfo }, null, '\t'));
+	const proxyPassword = userInfo.proxy?.password;
+	if (proxyPassword) {
+		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
+	}
+
+	ensureApifyDirectory(AUTH_FILE_PATH());
+	const existingFile = (() => {
+		try {
+			return JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8')) as Record<string, unknown>;
+		} catch {
+			return {};
+		}
+	})();
+	const backend = await getBackend();
+	const fileContents: Record<string, unknown> = { ...existingFile, ...userInfo, secretsBackend: backend };
+	if (backend === 'keyring') {
+		delete fileContents.token;
+		if (fileContents.proxy && typeof fileContents.proxy === 'object') {
+			const { password: _password, ...rest } = fileContents.proxy as { password?: string };
+			if (Object.keys(rest).length > 0) {
+				fileContents.proxy = rest;
+			} else {
+				delete fileContents.proxy;
+			}
+		}
+	}
+	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
 
 	return apifyClient;
 }
@@ -685,15 +724,6 @@ export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: s
 	const zip = new AdmZip(Buffer.concat(chunks));
 	zip.extractAllTo(pathTo, true);
 };
-
-/**
- * Ensures the Apify directory exists, as well as nested folders (for tests)
- */
-export function ensureApifyDirectory(file: string) {
-	const path = dirname(file);
-
-	mkdirSync(path, { recursive: true });
-}
 
 export const TimestampFormatter = new Timestamp('YYYY-MM-DD [at] HH:mm:ss');
 

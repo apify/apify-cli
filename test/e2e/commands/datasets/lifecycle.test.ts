@@ -24,7 +24,7 @@ describe('[e2e][api] datasets namespace', () => {
 			throw new Error(`Failed to login:\n${loginResult.stderr}`);
 		}
 
-		client = new ApifyClient(getApifyClientOptions(token));
+		client = new ApifyClient(await getApifyClientOptions(token));
 	});
 
 	afterAll(async () => {

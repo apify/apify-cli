@@ -51,6 +51,7 @@ describe('[api] apify login and logout', () => {
 			currentBillingPeriod: _4,
 			plan: _5,
 			createdAt: _6,
+			secretsBackend: _7,
 			...userInfoFromConfigWithoutFloatFields
 		} = userInfoFromConfig;
 
@@ -101,6 +102,7 @@ describe('[api] apify login and logout', () => {
 			currentBillingPeriod: _4,
 			plan: _5,
 			createdAt: _6,
+			secretsBackend: _7,
 			...userInfoFromConfigWithoutFloatFields
 		} = userInfoFromConfig;
 

@@ -76,6 +76,7 @@
 		"@inquirer/input": "^5.0.10",
 		"@inquirer/password": "^5.0.10",
 		"@inquirer/select": "^5.1.2",
+		"@napi-rs/keyring": "^1.3.0",
 		"@root/walk": "~1.1.0",
 		"@sapphire/duration": "^1.2.0",
 		"@sapphire/result": "^2.8.0",
