@@ -43,7 +43,10 @@ importers:
         version: 5.1.1(@types/node@24.12.4)
       '@inquirer/select':
         specifier: ^5.1.2
+        version: 5.2.1(@types/node@24.12.4)
       '@napi-rs/keyring':
+        specifier: ^1.3.0
+        version: 1.3.0
       '@root/walk':
         specifier: ~1.1.0
         version: 1.1.0
