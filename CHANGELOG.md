@@ -3,7 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-start -->
-## 1.6.2 - **not yet released**
+<!-- git-cliff-unreleased-end -->
+## [1.6.2](https://github.com/apify/apify-cli/releases/tag/v1.6.2) (2026-06-03)
 
 ### 🚀 Features
 
@@ -15,11 +16,16 @@ All notable changes to this project will be documented in this file.
 
 - Drop only-allow preinstall, enforce pnpm via devEngines ([#1129](https://github.com/apify/apify-cli/pull/1129)) ([19f0c2d](https://github.com/apify/apify-cli/commit/19f0c2d09d8c43b39187104bfea37f89d2b1f2f6)) by [@B4nan](https://github.com/B4nan)
 - Send unified CLI telemetry events ([#1133](https://github.com/apify/apify-cli/pull/1133)) ([985bb18](https://github.com/apify/apify-cli/commit/985bb1852e83adb92e70e8274d50b25c5bacb533)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1132](https://github.com/apify/apify-cli/issues/1132)
+- **actors info:** Handle tiered pay-per-event pricing ([#1173](https://github.com/apify/apify-cli/pull/1173)) ([8a2a064](https://github.com/apify/apify-cli/commit/8a2a06489e68ff0c8cbce59d48474196512f7448)) by [@l2ysho](https://github.com/l2ysho), closes [#1171](https://github.com/apify/apify-cli/issues/1171)
+- **push:** Prevent hang and tag race in apify push (#1131) ([#1134](https://github.com/apify/apify-cli/pull/1134)) ([c68e963](https://github.com/apify/apify-cli/commit/c68e963dd6bf1bad716818cd1c08f121a5907098)) by [@l2ysho](https://github.com/l2ysho), closes [#1131](https://github.com/apify/apify-cli/issues/1131)
 
 
-<!-- git-cliff-unreleased-end -->
 
 ## [1.6.1](https://github.com/apify/apify-cli/releases/tag/v1.6.1) (2026-05-06)
+
+### 🐛 Bug Fixes
+
+- Remove preinstall script from the published package, fixing `npm install` for consumers ([#1125](https://github.com/apify/apify-cli/pull/1125)) ([4b569eb](https://github.com/apify/apify-cli/commit/4b569ebe1667eb47b3f440897e836b931ad54545)) by [@l2ysho](https://github.com/l2ysho)
 
 ## [1.6.0](https://github.com/apify/apify-cli/releases/tag/v1.6.0) (2026-05-05)
 

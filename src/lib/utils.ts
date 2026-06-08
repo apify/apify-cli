@@ -646,7 +646,7 @@ export const outputJobLog = async ({
 			}
 		});
 
-		if (timeoutMillis) {
+		if (timeoutMillis !== undefined) {
 			nodeTimeout = setTimeout(() => {
 				stream.destroy();
 				resolve('timeouts');
@@ -869,4 +869,11 @@ export function shellConfigFile(userHomeDirectory: string, shell: ReturnType<typ
 			return null;
 		}
 	}
+}
+
+export function parseWaitForFinishMillis(flag: string | undefined): number | undefined {
+	if (flag === undefined) return undefined;
+	const parsed = Number.parseInt(flag, 10);
+	if (!Number.isFinite(parsed) || parsed < 0) return undefined;
+	return parsed * 1000;
 }
