@@ -152,13 +152,6 @@
 		"pnpm": "10.33.4"
 	},
 	"packageManager": "pnpm@10.33.4",
-	"pnpm": {
-		"supportedArchitectures": {
-			"os": ["linux", "darwin", "win32"],
-			"cpu": ["x64", "arm64"],
-			"libc": ["glibc", "musl"]
-		}
-	},
 	"devEngines": {
 		"runtime": [
 			{
