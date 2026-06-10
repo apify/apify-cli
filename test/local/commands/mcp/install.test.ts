@@ -1,4 +1,5 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
@@ -141,7 +142,8 @@ describe('apify mcp install', () => {
 		// the shared HOME override logic used by MCP path construction + display.
 		const logs = logMessages.error.join('\n');
 		expect(logs).toContain('Success: Apify MCP server configured for Cursor.');
-		expect(logs).toContain('Config:     ~/.cursor/mcp.json');
+		// tildify renders native separators (backslashes on Windows), so build the expected suffix with path.join.
+		expect(logs).toContain(`Config:     ${join('~', '.cursor', 'mcp.json')}`);
 	});
 
 	it('cursor: re-run without --yes in non-TTY exits with "Re-run with --yes"', async () => {
@@ -280,6 +282,6 @@ describe('apify mcp install', () => {
 		expect(stderr).not.toContain(TEST_TOKEN);
 		// Regression for tildify + userHomeDir consistency (bug4): missingMessage uses tildify(tomlPath)
 		// built from the effective home (HOME stub); should show ~ not raw tmp path.
-		expect(stderr).toContain('~/.codex/config.toml');
+		expect(stderr).toContain(join('~', '.codex', 'config.toml'));
 	});
 });
