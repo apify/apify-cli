@@ -11,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { basename } from 'node:path';
 
-import { $, type Build, build, fileURLToPath } from 'bun';
+import { type Build, build, fileURLToPath } from 'bun';
 
 import { version } from '../package.json' with { type: 'json' };
 
@@ -21,6 +21,7 @@ const targets = (() => {
 			//
 			'bun-windows-x64',
 			'bun-windows-x64-baseline',
+			'bun-windows-arm64',
 			'bun-linux-x64',
 			'bun-linux-x64-baseline',
 			'bun-linux-arm64',
@@ -31,13 +32,16 @@ const targets = (() => {
 			'bun-darwin-arm64-baseline',
 			'bun-linux-x64-musl',
 			'bun-linux-arm64-musl',
-			// TODO: when adding native windows arm64 builds, remove these too
 			'bun-linux-x64-musl-baseline' as never,
 			'bun-linux-arm64-musl-baseline' as never,
 		] satisfies Build.CompileTarget[];
 	}
 
 	if (process.platform === 'win32') {
+		if (process.arch === 'arm64') {
+			return ['bun-windows-arm64'] satisfies Build.CompileTarget[];
+		}
+
 		return ['bun-windows-x64', 'bun-windows-x64-baseline'] satisfies Build.CompileTarget[];
 	}
 
@@ -117,24 +121,6 @@ for (const entryPoint of entryPoints) {
 			baseline = 'baseline';
 		}
 
-		// If we are building on Windows ARM64, even though the target is x64, we mark it as "arm64" (there are some weird errors when compiling on x64
-		// and running on arm64). Hopefully bun will get arm64 native builds
-		// TODO: Vlad remove this in a subsequent PR as Bun now has native arm64 windows builds
-		if (os === 'windows' && process.platform === 'win32') {
-			const systemType = await $`pwsh -c "(Get-CimInstance Win32_ComputerSystem).SystemType"`.text();
-
-			if (systemType.toLowerCase().includes('arm')) {
-				arch = 'arm64';
-
-				// On arm, process.arch will still return x64, which will break the upgrade command.
-				// So we override the arch to arm64
-
-				const newNewContent = newContent.replace('process.env.APIFY_BUNDLE_ARCH', '"arm64"');
-
-				await writeFile(metadataFile, newNewContent);
-			}
-		}
-
 		const fileName = `${cliName}-${version}-${os}-${arch}${musl ? '-musl' : ''}${baseline ? '-baseline' : ''}`;
 
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
@@ -155,9 +141,6 @@ for (const entryPoint of entryPoints) {
 			},
 			bytecode: true,
 		});
-
-		// Remove the arch override
-		await writeFile(metadataFile, newContent);
 	}
 }
 
