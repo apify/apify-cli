@@ -77,6 +77,7 @@ export enum CommandExitCodes {
 	MissingAuth = 1,
 
 	BuildTimedOut = 2,
+	RunTimedOut = 2,
 
 	BuildAborted = 3,
 	RunAborted = 3,

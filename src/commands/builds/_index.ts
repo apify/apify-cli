@@ -6,6 +6,7 @@ import { BuildsLogCommand } from './log.js';
 import { BuildsLsCommand } from './ls.js';
 import { BuildsRemoveTagCommand } from './remove-tag.js';
 import { BuildsRmCommand } from './rm.js';
+import { BuildsWaitCommand } from './wait.js';
 
 export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> {
 	static override name = 'builds' as const;
@@ -25,6 +26,7 @@ export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> 
 		BuildsLogCommand,
 		BuildsInfoCommand,
 		BuildsCreateCommand,
+		BuildsWaitCommand,
 	];
 
 	async run() {

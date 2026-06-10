@@ -1,8 +1,17 @@
+import process from 'node:process';
+
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import {
+	consoleBuildUrl,
+	exitCodeForJobStatus,
+	fetchLogTail,
+	formatResultSummary,
+	waitForTerminalStatus,
+} from '../../lib/commands/agent-output.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { error, simpleLog } from '../../lib/outputs.js';
@@ -44,6 +53,10 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		log: Flags.boolean({
 			description: 'Whether to print out the build log after the build is triggered.',
 		}),
+		wait: Flags.boolean({
+			description: 'Wait for the build to reach a terminal status. Returns exit code 0 only when the build SUCCEEDED.',
+			default: false,
+		}),
 	};
 
 	static override args = {
@@ -56,7 +69,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 	static override enableJsonFlag = true;
 
 	async run() {
-		const { tag, version, json, log } = this.flags;
+		const { tag, version, json, log, wait } = this.flags;
 		const { actorId } = this.args;
 
 		const client = await getLoggedClientOrThrow();
@@ -130,30 +143,10 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			return;
 		}
 
-		const build = await client.actor(ctx.id).build(selectedVersion, { tag });
+		let build = await client.actor(ctx.id).build(selectedVersion, { tag });
 
-		if (json) {
-			printJsonToStdout(build);
-			return;
-		}
-
-		const message: string[] = [
-			`${chalk.yellow('Actor')}: ${actorInfo?.username ? `${actorInfo.username}/` : ''}${actorInfo?.name ?? 'unknown-actor'} (${chalk.gray(build.actId)})`,
-			`  ${chalk.yellow('Version')}: ${selectedVersion} (tagged with ${chalk.yellow(actualTag)})`,
-			'',
-			`${chalk.greenBright('Build Started')} (ID: ${chalk.gray(build.id)})`,
-			`  ${chalk.yellow('Build Number')}: ${build.buildNumber} (will get tagged once finished)`,
-			`  ${chalk.yellow('Started')}: ${TimestampFormatter.display(build.startedAt)}`,
-			'',
-		];
-
-		const url = `https://console.apify.com/actors/${build.actId}/builds/${build.buildNumber}`;
-		const viewMessage = `${chalk.blue('View in Apify Console')}: ${url}`;
-
-		simpleLog({
-			message: message.join('\n'),
-			stdout: true,
-		});
+		const actorFullName = `${actorInfo?.username ? `${actorInfo.username}/` : ''}${actorInfo?.name ?? 'unknown-actor'}`;
+		const url = consoleBuildUrl(build.actId, build.buildNumber);
 
 		if (log) {
 			// While the log is streaming, forward interrupt signals to a
@@ -177,15 +170,136 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				});
 			}
 
-			// Print out an empty line
-			simpleLog({
-				message: '',
-				stdout: true,
+			// Refresh build after log stream ends to capture the terminal status.
+			const refreshed = await client.build(build.id).get();
+			if (!refreshed) {
+				error({ message: `Could not refresh build status for build "${build.id}".` });
+				process.exitCode = 1;
+				return;
+			}
+			build = refreshed;
+		} else if (wait) {
+			using _signalHandler = useAbortJobOnSignal({
+				apifyClient: client,
+				kind: 'build',
+				jobId: build.id,
 			});
+
+			build = (await waitForTerminalStatus({
+				apifyClient: client,
+				jobId: build.id,
+				kind: 'build',
+			})) as typeof build;
 		}
 
+		const reachedTerminal = log || wait;
+
+		if (reachedTerminal) {
+			const ok = build.status === 'SUCCEEDED';
+			const exitCode = exitCodeForJobStatus(build.status, 'build');
+			const logTail = ok ? [] : await fetchLogTail(client, build.id);
+
+			if (json) {
+				printJsonToStdout({
+					ok,
+					operation: 'builds.create',
+					waited: true,
+					actor: {
+						id: build.actId,
+						name: actorFullName,
+					},
+					build: {
+						id: build.id,
+						number: build.buildNumber,
+						status: build.status,
+						url,
+					},
+					...(ok
+						? {}
+						: {
+								error: {
+									phase: 'build',
+									message: 'Actor build did not succeed',
+									logTail,
+								},
+							}),
+					exitCode,
+				});
+				process.exitCode = exitCode;
+				return;
+			}
+
+			simpleLog({
+				message: formatResultSummary({
+					resultLabel: 'Apify build result',
+					overallStatus: build.status as never,
+					lines: [
+						{ label: 'Build', value: build.status },
+						{ label: 'Build ID', value: build.id },
+						{ label: 'Build number', value: build.buildNumber },
+						{ label: 'Actor ID', value: build.actId },
+					],
+					links: [{ label: 'Build URL', url }],
+					errorReason: ok ? undefined : logTail,
+				}),
+				stdout: true,
+			});
+
+			process.exitCode = exitCode;
+			return;
+		}
+
+		// Async path (no --wait, no --log)
+		if (json) {
+			printJsonToStdout({
+				ok: true,
+				operation: 'builds.create',
+				waited: false,
+				actor: {
+					id: build.actId,
+					name: actorFullName,
+				},
+				build: {
+					id: build.id,
+					number: build.buildNumber,
+					status: build.status,
+					url,
+				},
+				next: {
+					wait: `apify builds wait ${build.id} --json`,
+					log: `apify builds log ${build.id}`,
+					info: `apify builds info ${build.id} --json`,
+				},
+				exitCode: 0,
+			});
+			return;
+		}
+
+		const message: string[] = [
+			`${chalk.yellow('Actor')}: ${actorFullName} (${chalk.gray(build.actId)})`,
+			`  ${chalk.yellow('Version')}: ${selectedVersion} (tagged with ${chalk.yellow(actualTag)})`,
+			'',
+			`${chalk.greenBright('Build Started')} (ID: ${chalk.gray(build.id)})`,
+			`  ${chalk.yellow('Build Number')}: ${build.buildNumber} (will get tagged once finished)`,
+			`  ${chalk.yellow('Status')}: ${build.status}`,
+			`  ${chalk.yellow('Started')}: ${TimestampFormatter.display(build.startedAt)}`,
+			'',
+			`${chalk.blue('View in Apify Console')}: ${url}`,
+			'',
+			chalk.gray('This command does not wait for the build to finish.'),
+			'',
+			'To wait for the final status:',
+			`  apify builds wait ${build.id} --json`,
+			'',
+			'To inspect logs:',
+			`  apify builds log ${build.id}`,
+			'',
+			'To inspect build metadata:',
+			`  apify builds info ${build.id} --json`,
+		];
+
 		simpleLog({
-			message: viewMessage,
+			message: message.join('\n'),
 			stdout: true,
 		});
 	}
