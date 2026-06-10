@@ -447,11 +447,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 					});
 			}
 		} catch (err) {
-			const { stderr } = err as ExecaError;
-
-			if (stderr) {
-				// TODO: maybe throw in helpful tips for debugging issues (missing scripts, trying to start a ts file with old node, etc)
-			}
+			// Propagate the child's failure so the CLI exits non-zero (e.g. for CI/shell chains).
+			// The command framework only defaults exitCode to 1; preserve the Actor's own code when present.
+			process.exitCode = (err as ExecaError).exitCode ?? 1;
 		} finally {
 			if (storedInputResults) {
 				if ('tempInputKey' in storedInputResults) {
