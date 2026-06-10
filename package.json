@@ -114,7 +114,7 @@
 		"strip-ansi": "^7.2.0",
 		"tiged": "~2.12.7",
 		"tinyglobby": "^0.2.15",
-		"which": "^6.0.1",
+		"which": "^7.0.0",
 		"widest-line": "^6.0.0",
 		"wrap-ansi": "^10.0.0"
 	},
