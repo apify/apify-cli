@@ -55,8 +55,9 @@ DESCRIPTION
   Use --list-endpoints to see all available API endpoints.
 
 USAGE
-  $ apify api [methodOrEndpoint] [endpoint] [-d <value>] [-H <value>]
-              [-l] [-X GET|POST|PUT|PATCH|DELETE] [-p <value>]
+  $ apify api [methodOrEndpoint] [endpoint] [-d <value>]
+              [--describe <value> | -l | -s <value>] [-H <value>]
+              [-X GET|POST|PUT|PATCH|DELETE] [-p <value>]
 
 ARGUMENTS
   methodOrEndpoint  The API endpoint path (e.g. "acts",
@@ -66,20 +67,30 @@ ARGUMENTS
                     argument is an HTTP method.
 
 FLAGS
-  -d, --body=<value>     The request body (JSON string). Use
-                         "-" to read from stdin.
-      -H, --header=<value>   Additional HTTP header(s). Pass a
-                         single "key:value" string, or a JSON object like '{"X-Foo":
-                         "bar", "X-Baz": "qux"}' to send multiple headers. The flag
-                         can only be used once; use the JSON form for multiple
-                         headers.
-  -l, --list-endpoints   List all available Apify API
-                         endpoints.
-      -X, --method=<option>  The HTTP method to use. Defaults to
-                         GET.
-                         <options: GET|POST|PUT|PATCH|DELETE>
-  -p, --params=<value>   Query parameters as a JSON object,
-                         e.g. '{"limit": 1, "desc": true}'.
+  -d, --body=<value>      The request body (JSON string).
+                          Use "-" to read from stdin.
+      --describe=<value>  Print a reference for an endpoint
+                          path: its HTTP methods, summary, and path parameters.
+                          Leading slashes and a version prefix in the path are
+                          optional. For example, "actor-runs/{runId}" and
+                          "/v2/actor-runs/{runId}" are both accepted.
+      -H, --header=<value>    Additional HTTP header(s). Pass a
+                          single "key:value" string, or a JSON object like
+                          '{"X-Foo": "bar", "X-Baz": "qux"}' to send multiple
+                          headers. The flag can only be used once; use the JSON form
+                          for multiple headers.
+  -l, --list-endpoints    List all available Apify API
+                          endpoints.
+      -X, --method=<option>   The HTTP method to use. Defaults
+                          to GET.
+                          <options: GET|POST|PUT|PATCH|DELETE>
+  -p, --params=<value>    Query parameters as a JSON object,
+                          e.g. '{"limit": 1, "desc": true}'.
+  -s, --search=<value>    Filter results returned by
+                          --list-endpoints. The query is case-insensitive and split
+                          into tokens by spaces. For an endpoint to be returned,
+                          every token must appear in that endpoint's method, path,
+                          or summary.
 ```
 
 ##### `apify telemetry`
@@ -732,9 +743,14 @@ FLAGS
   -v, --version=<value>          Actor version number
                                  to which the files should be pushed. By default, it
                                  is taken from the '.actor/actor.json' file.
-  -w, --wait-for-finish=<value>  Seconds for waiting
-                                 to build to finish, if no value passed, it waits
-                                 forever.
+  -w, --wait-for-finish=<value>  In seconds, how long
+                                 to wait for the build to finish. If no value
+                                 passed, it waits forever. To return as soon as the
+                                 build is queued (fire-and-forget), pass 0. The exit
+                                 code reflects the build outcome only — if the wait
+                                 elapses with the build still running, the command
+                                 exits 0; check status via the printed link or
+                                 --json output.
 ```
 
 ##### `apify actors pull` / `apify pull`
