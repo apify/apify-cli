@@ -140,7 +140,7 @@
 		"lint-staged": "^17.0.0",
 		"mock-stdin": "^1.0.0",
 		"oxfmt": "0.52.0",
-		"oxlint": "1.67.0",
+		"oxlint": "1.69.0",
 		"oxlint-tsgolint": "0.22.1",
 		"tsdown": "^0.21.9",
 		"tsx": "^4.21.0",
