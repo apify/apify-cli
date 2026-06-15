@@ -63,7 +63,7 @@ interface PushResult {
 // Maps the final build status to the overall push outcome. `ok` mirrors command
 // success (true iff exitCode is 0): a still-running fire-and-forget build is not
 // a failure — its pending state is conveyed by the build status, not by `ok`.
-function resolvePushOutcome(buildStatus: string): {
+export function resolvePushOutcome(buildStatus: string): {
 	resultLabel: string;
 	exitCode: number;
 	ok: boolean;
