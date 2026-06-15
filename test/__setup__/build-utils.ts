@@ -1,18 +1,10 @@
 import type { ApifyClient } from 'apify-client';
 
-import { ACTOR_JOB_STATUSES } from '@apify/consts';
-
 /**
  * Waits for the build to finish
  */
 export const waitForBuildToFinish = async (client: ApifyClient, buildId: string) => {
-	while (true) {
-		const build = await client.build(buildId).get();
-		if (build!.status !== (ACTOR_JOB_STATUSES.RUNNING as unknown)) return build;
-		await new Promise((resolve) => {
-			setTimeout(resolve, 2500);
-		});
-	}
+	return client.build(buildId).waitForFinish();
 };
 
 /**
