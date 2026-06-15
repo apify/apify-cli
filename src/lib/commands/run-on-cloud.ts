@@ -6,9 +6,8 @@ import chalk from 'chalk';
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { Flags } from '../command-framework/flags.js';
-import { CommandExitCodes } from '../consts.js';
 import { useAbortJobOnSignal } from '../hooks/useAbortJobOnSignal.js';
-import { error, run as runLog, success, warning } from '../outputs.js';
+import { run as runLog, warning } from '../outputs.js';
 import { outputJobLog } from '../utils.js';
 import { resolveInput } from './resolve-input.js';
 
@@ -151,21 +150,8 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		}
 	}
 
-	if (!silent) {
-		if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-			success({ message: `${type} finished.` });
-		} else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
-			warning({ message: `${type} is still running!` });
-		} else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
-			warning({ message: `${type} was aborted!` });
-			process.exitCode = CommandExitCodes.RunAborted;
-		} else {
-			error({ message: `${type} failed!` });
-			process.exitCode = CommandExitCodes.RunFailed;
-		}
-	}
-
-	// Return the finished run
+	// Return the finished run. Presenting the final status and setting the exit code is the
+	// caller's responsibility.
 	yield run;
 }
 

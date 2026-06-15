@@ -1564,7 +1564,7 @@ DESCRIPTION
   Customize with --memory and --timeout flags.
 
 USAGE
-  $ apify task run <taskId> [-b <value>] [-m <value>]
+  $ apify task run <taskId> [-b <value>] [--json] [-m <value>]
                    [-t <value>]
 
 ARGUMENTS
@@ -1574,6 +1574,7 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>    Tag or number of the build to run
                          (e.g. "latest" or "1.2.34").
+      --json             Format the command output as JSON
   -m, --memory=<value>   Amount of memory allocated for the
                          Task run, in megabytes.
   -t, --timeout=<value>  Timeout for the Task run in seconds.
