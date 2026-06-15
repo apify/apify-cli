@@ -12,4 +12,8 @@ if (input) {
 	await Actor.setValue('RECEIVED_INPUT', input);
 }
 
+if (input && typeof input.sleepMs === 'number') {
+	await new Promise((resolve) => setTimeout(resolve, input.sleepMs));
+}
+
 await Actor.exit();

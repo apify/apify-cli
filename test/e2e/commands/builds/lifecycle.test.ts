@@ -25,7 +25,7 @@ describe('[e2e][api] builds namespace', () => {
 			throw new Error(`Failed to login:\n${loginResult.stderr}`);
 		}
 
-		client = new ApifyClient(getApifyClientOptions(token));
+		client = new ApifyClient(await getApifyClientOptions(token));
 
 		actor = await createTestActor('e2e-builds');
 

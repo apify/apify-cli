@@ -743,9 +743,14 @@ FLAGS
   -v, --version=<value>          Actor version number
                                  to which the files should be pushed. By default, it
                                  is taken from the '.actor/actor.json' file.
-  -w, --wait-for-finish=<value>  Seconds for waiting
-                                 to build to finish, if no value passed, it waits
-                                 forever.
+  -w, --wait-for-finish=<value>  In seconds, how long
+                                 to wait for the build to finish. If no value
+                                 passed, it waits forever. To return as soon as the
+                                 build is queued (fire-and-forget), pass 0. The exit
+                                 code reflects the build outcome only — if the wait
+                                 elapses with the build still running, the command
+                                 exits 0; check status via the printed link or
+                                 --json output.
 ```
 
 ##### `apify actors pull` / `apify pull`
