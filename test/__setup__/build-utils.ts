@@ -3,7 +3,7 @@ import type { ApifyClient } from 'apify-client';
 /**
  * Waits for the build to finish
  */
-export const waitForBuildToFinish = async (client: ApifyClient, buildId: string) => {
+export const waitForBuildToFinish = (client: ApifyClient, buildId: string) => {
 	return client.build(buildId).waitForFinish();
 };
 
