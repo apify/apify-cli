@@ -28,6 +28,12 @@ export function exitCodeForJobStatus(status: string | undefined, kind: 'build' |
 	}
 }
 
+export function exitCodeForWaitResult(result: WaitForJobResult, kind: 'build' | 'run'): number {
+	// A client-side wait give-up is not a platform timeout, so report it with a distinct exit
+	// code rather than mislabelling the still-running job as having timed out on the platform.
+	return result.timedOutWaiting ? CommandExitCodes.WaitTimedOut : exitCodeForJobStatus(result.job.status, kind);
+}
+
 export interface WaitForJobOptions {
 	apifyClient: ApifyClient;
 	jobId: string;
@@ -38,7 +44,17 @@ export interface WaitForJobOptions {
 	maxWaitMillis?: number;
 }
 
-export async function waitForTerminalStatus(options: WaitForJobOptions): Promise<Build | ActorRun> {
+export interface WaitForJobResult {
+	job: Build | ActorRun;
+	/**
+	 * True when the wait gave up because `maxWaitMillis` elapsed before the job reached a terminal
+	 * status. In that case `job.status` is the real, still-non-terminal platform status (e.g. RUNNING) —
+	 * the client gave up waiting, the job itself did not time out.
+	 */
+	timedOutWaiting: boolean;
+}
+
+export async function waitForTerminalStatus(options: WaitForJobOptions): Promise<WaitForJobResult> {
 	const { apifyClient, jobId, kind, pollIntervalMillis = 2000, maxWaitMillis } = options;
 	const startedAt = Date.now();
 
@@ -53,11 +69,11 @@ export async function waitForTerminalStatus(options: WaitForJobOptions): Promise
 		}
 
 		if (isTerminalStatus(job.status)) {
-			return job;
+			return { job, timedOutWaiting: false };
 		}
 
 		if (maxWaitMillis && Date.now() - startedAt >= maxWaitMillis) {
-			return { ...job, status: 'TIMED-OUT' } as typeof job;
+			return { job, timedOutWaiting: true };
 		}
 
 		const sleepMillis = maxWaitMillis
@@ -79,10 +95,6 @@ export async function fetchLogTail(apifyClient: ApifyClient, jobId: string, maxL
 	}
 }
 
-export function consoleActorUrl(actorId: string): string {
-	return `https://console.apify.com/actors/${actorId}`;
-}
-
 export function consoleRunUrl(actorId: string, runId: string): string {
 	return `https://console.apify.com/actors/${actorId}/runs/${runId}`;
 }
@@ -93,10 +105,6 @@ export function consoleBuildUrl(actorId: string, buildNumber: string): string {
 
 export function consoleDatasetUrl(datasetId: string): string {
 	return `https://console.apify.com/storage/datasets/${datasetId}`;
-}
-
-export function consoleKeyValueStoreUrl(storeId: string): string {
-	return `https://console.apify.com/storage/key-value-stores/${storeId}`;
 }
 
 function statusColor(status: string): string {

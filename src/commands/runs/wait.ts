@@ -7,7 +7,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import {
 	consoleRunUrl,
-	exitCodeForJobStatus,
+	exitCodeForWaitResult,
 	fetchLogTail,
 	formatResultSummary,
 	waitForTerminalStatus,
@@ -32,7 +32,8 @@ export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 			command: 'apify runs wait <runId> --json',
 		},
 		{
-			description: 'Give up waiting after 5 minutes (still returns current status).',
+			description:
+				'Give up waiting after 5 minutes. Reports the real current status and exits with code 6 if the run is still running.',
 			command: 'apify runs wait <runId> --timeout 300',
 		},
 	];
@@ -66,17 +67,19 @@ export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 
 		const apifyClient = await getLoggedClientOrThrow();
 
-		const run = (await waitForTerminalStatus({
+		const { job, timedOutWaiting } = await waitForTerminalStatus({
 			apifyClient,
 			jobId: runId,
 			kind: 'run',
 			maxWaitMillis: timeout ? timeout * 1000 : undefined,
 			pollIntervalMillis: pollInterval ? pollInterval * 1000 : undefined,
-		})) as ActorRun;
+		});
+		const run = job as ActorRun;
 
 		const url = consoleRunUrl(run.actId, run.id);
-		const exitCode = exitCodeForJobStatus(run.status, 'run');
 		const ok = run.status === 'SUCCEEDED';
+		const exitCode = exitCodeForWaitResult({ job, timedOutWaiting }, 'run');
+		const giveUpMessage = `Gave up waiting after ${timeout}s; run is still ${run.status}`;
 
 		let logTail: string[] = [];
 		if (!ok) {
@@ -87,6 +90,7 @@ export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 			printJsonToStdout({
 				ok,
 				operation: 'runs.wait',
+				timedOutWaiting,
 				run: {
 					id: run.id,
 					status: run.status,
@@ -98,7 +102,7 @@ export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 					: {
 							error: {
 								phase: 'run',
-								message: 'Actor run did not succeed',
+								message: timedOutWaiting ? giveUpMessage : 'Actor run did not succeed',
 								logTail,
 							},
 						}),
@@ -135,7 +139,9 @@ export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 			stdout: true,
 		});
 
-		if (!ok) {
+		if (timedOutWaiting) {
+			error({ message: `${giveUpMessage}.` });
+		} else if (!ok) {
 			error({ message: `Run ended with status ${run.status}.` });
 		}
 		process.exitCode = exitCode;

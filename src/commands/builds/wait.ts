@@ -7,7 +7,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import {
 	consoleBuildUrl,
-	exitCodeForJobStatus,
+	exitCodeForWaitResult,
 	fetchLogTail,
 	formatResultSummary,
 	waitForTerminalStatus,
@@ -62,17 +62,19 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 
 		const apifyClient = await getLoggedClientOrThrow();
 
-		const build = (await waitForTerminalStatus({
+		const { job, timedOutWaiting } = await waitForTerminalStatus({
 			apifyClient,
 			jobId: buildId,
 			kind: 'build',
 			maxWaitMillis: timeout ? timeout * 1000 : undefined,
 			pollIntervalMillis: pollInterval ? pollInterval * 1000 : undefined,
-		})) as Build;
+		});
+		const build = job as Build;
 
 		const url = consoleBuildUrl(build.actId, build.buildNumber);
-		const exitCode = exitCodeForJobStatus(build.status, 'build');
 		const ok = build.status === 'SUCCEEDED';
+		const exitCode = exitCodeForWaitResult({ job, timedOutWaiting }, 'build');
+		const giveUpMessage = `Gave up waiting after ${timeout}s; build is still ${build.status}`;
 
 		let logTail: string[] = [];
 		if (!ok) {
@@ -83,6 +85,7 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 			printJsonToStdout({
 				ok,
 				operation: 'builds.wait',
+				timedOutWaiting,
 				build: {
 					id: build.id,
 					status: build.status,
@@ -94,7 +97,7 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 					: {
 							error: {
 								phase: 'build',
-								message: 'Actor build did not succeed',
+								message: timedOutWaiting ? giveUpMessage : 'Actor build did not succeed',
 								logTail,
 							},
 						}),
@@ -124,7 +127,9 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 			stdout: true,
 		});
 
-		if (!ok) {
+		if (timedOutWaiting) {
+			error({ message: `${giveUpMessage}.` });
+		} else if (!ok) {
 			error({ message: `Build ended with status ${build.status}.` });
 		}
 		process.exitCode = exitCode;

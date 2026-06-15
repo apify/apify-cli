@@ -185,11 +185,12 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				jobId: build.id,
 			});
 
-			build = (await waitForTerminalStatus({
+			const { job } = await waitForTerminalStatus({
 				apifyClient: client,
 				jobId: build.id,
 				kind: 'build',
-			})) as typeof build;
+			});
+			build = job as typeof build;
 		}
 
 		const reachedTerminal = log || wait;
