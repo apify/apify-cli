@@ -120,7 +120,7 @@
 	},
 	"devDependencies": {
 		"@apify/oxlint-config": "^0.2.9",
-		"@apify/tsconfig": "^0.1.2",
+		"@apify/tsconfig": "^0.2.0",
 		"@crawlee/types": "^3.16.0",
 		"@types/adm-zip": "^0.5.8",
 		"@types/archiver": "^7.0.0",
