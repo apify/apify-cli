@@ -809,9 +809,13 @@ export function printJsonToStdout(object: unknown) {
 	console.log(JSON.stringify(object, null, 2));
 }
 
+/** Like `os.homedir()` but honors an explicit `$HOME` override on Windows (where `homedir()` reads `USERPROFILE` instead). */
+export const userHomeDir = () => process.env.HOME ?? homedir();
+
 export const tildify = (path: string) => {
-	if (path.startsWith(homedir())) {
-		return path.replace(homedir(), '~');
+	const home = userHomeDir();
+	if (home && path.startsWith(home)) {
+		return path.replace(home, '~');
 	}
 
 	return path;
@@ -859,7 +863,8 @@ export function shellConfigFile(userHomeDirectory: string, shell: ReturnType<typ
 			return null;
 		}
 		case 'zsh': {
-			const zshBaseDir = process.env.ZDOTDIR || homedir();
+			// Honor explicit $HOME (via userHomeDir) for ~ consistency with other shells and MCP paths.
+			const zshBaseDir = process.env.ZDOTDIR || userHomeDirectory || userHomeDir();
 			return join(zshBaseDir, '.zshrc');
 		}
 		case 'fish': {
