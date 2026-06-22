@@ -5,7 +5,7 @@ declare module '@root/walk' {
 		callback: (err: Error | null, pathname: string, dirent: Dirent) => void,
 	): Promise<void>;
 
-	declare const rootWalk: {
+	const rootWalk: {
 		skipDir: typeof skipDir;
 		walk: typeof walk;
 	};
