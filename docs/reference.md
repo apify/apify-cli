@@ -240,7 +240,7 @@ USAGE
   $ apify secrets ls [--json]
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify secrets rm`
@@ -636,7 +636,7 @@ USAGE
 
 FLAGS
       --desc            Sort Actors in descending order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of Actors that will be listed.
       --my              Whether to list Actors made by the logged
                         in user.
@@ -667,7 +667,7 @@ FLAGS
       --category=<value>       Filter by category (e.g.
                                AI).
       --json                   Format the command output as
-                               JSON
+                               JSON.
       --limit=<value>          Maximum number of results to
                                return.
       --offset=<value>         Number of results to skip
@@ -737,7 +737,7 @@ FLAGS
                                  when the local files are older than the Actor on
                                  the platform.
       --json                     Format the command
-                                 output as JSON
+                                 output as JSON.
       --open                     Whether to open the
                                  browser automatically to the Actor details page.
   -v, --version=<value>          Actor version number
@@ -803,7 +803,7 @@ FLAGS
                             JSON input to be given to the Actor. The file must be a
                             valid JSON file. You can also specify `-` to read from
                             standard input.
-      --json                Format the command output as JSON
+      --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
   -o, --output-dataset      Prints out the entire default
@@ -841,7 +841,7 @@ FLAGS
                             input to be given to the Actor. The file must be a valid
                             JSON file. You can also specify `-` to read from
                             standard input.
-      --json                Format the command output as JSON
+      --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
   -t, --timeout=<value>     Timeout for the Actor run in
@@ -862,7 +862,7 @@ ARGUMENTS
 
 FLAGS
       --input   Return the Actor input schema.
-      --json    Format the command output as JSON
+      --json    Format the command output as JSON.
       --readme  Return the Actor README.
 ```
 <!-- actor-deploy-commands-end -->
@@ -922,7 +922,7 @@ ARGUMENTS
            it will use the Actor from the current directory.
 
 FLAGS
-      --json             Format the command output as JSON
+      --json             Format the command output as JSON.
       --log              Whether to print out the build log after
                          the build is triggered.
       --tag=<value>      Build tag to be applied to the
@@ -947,7 +947,7 @@ ARGUMENTS
   buildId  The build ID to get information about.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify builds log`
@@ -980,7 +980,7 @@ ARGUMENTS
 FLAGS
   -c, --compact         Display a compact table.
       --desc            Sort builds in descending order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of builds that will be listed.
       --offset=<value>  Number of builds that will be skipped.
 ```
@@ -1036,7 +1036,7 @@ ARGUMENTS
 
 FLAGS
       --json                   Format the command output as
-                               JSON
+                               JSON.
       --poll-interval=<value>  How often to poll the
                                platform, in seconds. Defaults to 2.
   -t, --timeout=<value>        Maximum seconds to wait
@@ -1086,7 +1086,7 @@ ARGUMENTS
 FLAGS
   -f, --force  Whether to force the run to abort immediately, instead
                of gracefully.
-      --json   Format the command output as JSON
+      --json   Format the command output as JSON.
 ```
 
 ##### `apify runs info`
@@ -1102,7 +1102,7 @@ ARGUMENTS
   runId  The run ID to print information about.
 
 FLAGS
-      --json     Format the command output as JSON
+      --json     Format the command output as JSON.
   -v, --verbose  Prints more in-depth information about the Actor
                  run.
 ```
@@ -1137,7 +1137,7 @@ ARGUMENTS
 FLAGS
   -c, --compact         Display a compact table.
       --desc            Sort runs in descending order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of runs that will be listed.
       --offset=<value>  Number of runs that will be skipped.
 ```
@@ -1155,7 +1155,7 @@ ARGUMENTS
   runId  The run ID to resurrect.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify runs rm`
@@ -1193,7 +1193,7 @@ ARGUMENTS
 
 FLAGS
       --json                   Format the command output as
-                               JSON
+                               JSON.
       --poll-interval=<value>  How often to poll the
                                platform, in seconds. Defaults to 2.
   -t, --timeout=<value>        Maximum seconds to wait
@@ -1248,7 +1248,7 @@ ARGUMENTS
   datasetName  Optional name for the Dataset.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify datasets get-items`
@@ -1288,7 +1288,7 @@ ARGUMENTS
   storeId  The dataset store ID to print information about.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify datasets ls`
@@ -1303,7 +1303,7 @@ USAGE
 
 FLAGS
       --desc            Sorts datasets in descending order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of datasets that will be listed.
       --offset=<value>  Number of datasets that will be skipped.
       --unnamed         Lists datasets that don't have a name set.
@@ -1413,7 +1413,7 @@ ARGUMENTS
                         store.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify key-value-stores delete-value`
@@ -1469,7 +1469,7 @@ ARGUMENTS
   storeId  The key-value store ID to print information about.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify key-value-stores keys`
@@ -1490,7 +1490,7 @@ FLAGS
       --exclusive-start-key=<value>  The key to start
                                      the list from.
       --json                         Format the
-                                     command output as JSON
+                                     command output as JSON.
       --limit=<value>                The maximum
                                      number of keys to return.
 ```
@@ -1508,7 +1508,7 @@ USAGE
 FLAGS
       --desc            Sorts key-value stores in descending
                         order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of key-value stores that will be
                         listed.
       --offset=<value>  Number of key-value stores that will be
@@ -1632,7 +1632,7 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>    Tag or number of the build to run
                          (e.g. "latest" or "1.2.34").
-      --json             Format the command output as JSON
+      --json             Format the command output as JSON.
   -m, --memory=<value>   Amount of memory allocated for the
                          Task run, in megabytes.
   -t, --timeout=<value>  Timeout for the Task run in seconds.
