@@ -33,7 +33,7 @@ jobs:
         name: Wait for code checks to pass
         runs-on: ubuntu-latest
         steps:
-            - uses: lewagon/wait-on-check-action@v1.7.0
+            - uses: lewagon/wait-on-check-action@v1.8.0
               with:
                   ref: ${{ github.ref }}
                   repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -50,7 +50,7 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
@@ -109,7 +109,7 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
                   fetch-depth: 0

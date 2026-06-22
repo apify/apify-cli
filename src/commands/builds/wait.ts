@@ -47,11 +47,11 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 	static override flags = {
 		timeout: Flags.integer({
 			char: 't',
-			description: 'Maximum seconds to wait before giving up. Without this flag the command waits indefinitely.',
+			description: 'In seconds, how long to wait before giving up. If skipped, it waits indefinitely.',
 			required: false,
 		}),
 		'poll-interval': Flags.integer({
-			description: 'How often to poll the platform, in seconds. Defaults to 2.',
+			description: 'In seconds, how often to poll the platform. Defaults to 2.',
 			required: false,
 		}),
 	};
