@@ -19,7 +19,7 @@ minimumReleaseAgeExclude:
     - "got-scraping"
 
 overrides:
-    tar: 7.5.15
+    tar: 7.5.16
 
 supportedArchitectures:
     os:
