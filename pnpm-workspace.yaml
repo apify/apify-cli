@@ -21,6 +21,8 @@ minimumReleaseAgeExclude:
 overrides:
     tar: 7.5.16
 
+# Install native deps for all platforms, not just the current machine's, so the
+# cross-platform bundle builds (scripts/build-cli-bundles.ts) can embed them.
 supportedArchitectures:
     os:
         - linux
