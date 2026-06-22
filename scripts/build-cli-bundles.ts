@@ -169,6 +169,12 @@ for (const entryPoint of entryPoints) {
 		// `.node`. Skip the rewrite when the on-disk file already targets this subpackage.
 		const subpackage = keyringSubpackage(os, arch, Boolean(musl));
 		if (subpackage !== writtenSubpackage) {
+			// `replaceAll` is silent if the placeholder is gone, shipping a bundle that falls back to
+			// plaintext storage. Fail loud instead.
+			if (!fatEntrypointContent.includes(KEYRING_PLACEHOLDER)) {
+				throw new Error(`Keyring placeholder "${KEYRING_PLACEHOLDER}" not found in the fat JS for ${cliName}.`);
+			}
+
 			await writeFile(entrypointResultFilePath, fatEntrypointContent.replaceAll(KEYRING_PLACEHOLDER, subpackage));
 			writtenSubpackage = subpackage;
 		}
