@@ -70,7 +70,7 @@ const entryPoints = [
 const KEYRING_PLACEHOLDER = '__APIFY_KEYRING_NATIVE_SUBPACKAGE__';
 
 // Maps the compiled (os, arch, libc) to the napi-rs keyring subpackage that ships its `.node`.
-// `pnpm.supportedArchitectures` (package.json) forces all of these into node_modules at build
+// `supportedArchitectures` (pnpm-workspace.yaml) forces all of these into node_modules at build
 // time so each target can resolve its own, regardless of the build machine's platform.
 function keyringSubpackage(os: string, arch: string, musl: boolean): string {
 	switch (os) {
