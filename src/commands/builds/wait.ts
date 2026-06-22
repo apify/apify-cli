@@ -51,7 +51,7 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 			required: false,
 		}),
 		'poll-interval': Flags.integer({
-			description: 'How often to poll the platform, in seconds. Defaults to 2.',
+			description: 'In seconds, how often to poll the platform. Defaults to 2.',
 			required: false,
 		}),
 	};
