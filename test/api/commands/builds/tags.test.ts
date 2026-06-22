@@ -51,7 +51,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 
 		// Build the actor and wait for it to finish
 		const buildStarted = await testUserClient.actor(testActor.id).build('0.0');
-		testBuild = (await waitForBuildToFinish(testUserClient, buildStarted.id))!;
+		testBuild = await waitForBuildToFinish(testUserClient, buildStarted.id);
 	}, TEST_TIMEOUT);
 
 	afterAll(async () => {
@@ -110,7 +110,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 
 				// Create another build
 				const buildStarted2 = await testUserClient.actor(testActor.id).build('0.0');
-				const testBuild2 = (await waitForBuildToFinish(testUserClient, buildStarted2.id))!;
+				const testBuild2 = await waitForBuildToFinish(testUserClient, buildStarted2.id);
 
 				// Reassign the tag to the new build
 				await testRunCommand(BuildsAddTagCommand, {
@@ -169,7 +169,7 @@ describe('[api] apify builds add-tag / remove-tag', () => {
 			async () => {
 				// Create another build and tag it
 				const buildStarted2 = await testUserClient.actor(testActor.id).build('0.0');
-				const testBuild2 = (await waitForBuildToFinish(testUserClient, buildStarted2.id))!;
+				const testBuild2 = await waitForBuildToFinish(testUserClient, buildStarted2.id);
 
 				await testRunCommand(BuildsAddTagCommand, {
 					flags_build: testBuild2.id,
