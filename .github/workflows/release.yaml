@@ -51,7 +51,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
             - name: Check if the head commit contains [skip ci]
               id: check_skip
               run: |
@@ -61,7 +61,7 @@ jobs:
                     echo 'skipped=false' >> $GITHUB_OUTPUT
                   fi
 
-            - uses: lewagon/wait-on-check-action@v1.7.0
+            - uses: lewagon/wait-on-check-action@v1.8.0
               if: ${{ steps.check_skip.outputs.skipped == 'false' }}
               with:
                   ref: ${{ github.ref }}
@@ -78,7 +78,7 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
@@ -137,7 +137,7 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
                   fetch-depth: 0
@@ -250,7 +250,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v6
+              uses: actions/checkout@v7
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
 
