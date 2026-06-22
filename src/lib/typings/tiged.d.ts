@@ -1,5 +1,5 @@
 declare module 'tiged' {
-	declare class Tiged {
+	class Tiged {
 		// https://www.youtube.com/watch?v=Dm5Uvwlpb0g
 		clone(destinationUnknown: string): Promise<void>;
 	}

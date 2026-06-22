@@ -13,7 +13,7 @@ import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
 import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import ignoreModule, { type Ignore } from 'ignore';
@@ -530,7 +530,7 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 
 	const writeStream = createWriteStream(zipName);
 	// Use compression level 6 for better balance between speed and compression ratio (default is 9)
-	const archive = archiver('zip', {
+	const archive = new ZipArchive({
 		zlib: { level: 6 },
 	});
 	archive.pipe(writeStream);
