@@ -78,26 +78,46 @@ export function resolvePushOutcome(buildStatus: string): PushOutcome {
 		case ACTOR_JOB_STATUSES.SUCCEEDED:
 			return { resultLabel: 'SUCCEEDED', exitCode: 0, ok: true };
 		case ACTOR_JOB_STATUSES.READY:
+			return { resultLabel: 'PENDING', exitCode: 0, ok: true };
 		case ACTOR_JOB_STATUSES.RUNNING:
 			return { resultLabel: 'RUNNING', exitCode: 0, ok: true };
-		case ACTOR_JOB_STATUSES.ABORTED:
 		case ACTOR_JOB_STATUSES.ABORTING:
+			return {
+				resultLabel: 'ABORTING',
+				exitCode: CommandExitCodes.BuildAborted,
+				ok: false,
+				errorMessage: 'Build is aborting',
+			};
+		case ACTOR_JOB_STATUSES.ABORTED:
 			return {
 				resultLabel: 'ABORTED',
 				exitCode: CommandExitCodes.BuildAborted,
 				ok: false,
 				errorMessage: 'Build aborted',
 			};
-		case ACTOR_JOB_STATUSES.TIMED_OUT:
 		case ACTOR_JOB_STATUSES.TIMING_OUT:
+			return {
+				resultLabel: 'TIMING_OUT',
+				exitCode: CommandExitCodes.BuildTimedOut,
+				ok: false,
+				errorMessage: 'Build is timing out',
+			};
+		case ACTOR_JOB_STATUSES.TIMED_OUT:
 			return {
 				resultLabel: 'TIMED_OUT',
 				exitCode: CommandExitCodes.BuildTimedOut,
 				ok: false,
 				errorMessage: 'Build timed out',
 			};
-		default:
+		case ACTOR_JOB_STATUSES.FAILED:
 			return { resultLabel: 'FAILED', exitCode: CommandExitCodes.BuildFailed, ok: false, errorMessage: 'Build failed' };
+		default:
+			return {
+				resultLabel: 'UNKNOWN',
+				exitCode: CommandExitCodes.BuildFailed,
+				ok: false,
+				errorMessage: `Build finished with unexpected status "${buildStatus}"`,
+			};
 	}
 }
 
