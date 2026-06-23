@@ -30,7 +30,8 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 	static override description =
 		'Executes Actor remotely using your authenticated account.\n' +
-		'Reads input from local key-value store by default.';
+		'Reads input from local key-value store by default.\n' +
+		'Inspect the input schema first with "apify actors info <actor> --input".';
 
 	static override group = 'Apify Console';
 
@@ -42,6 +43,10 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		{
 			description: 'Call a specific Actor by its full name.',
 			command: 'apify call apify/hello-world',
+		},
+		{
+			description: 'Inspect the Actor input schema before preparing JSON input.',
+			command: 'apify actors info apify/hello-world --input',
 		},
 		{
 			description: 'Call an Actor with inline JSON input.',
@@ -59,7 +64,8 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		...SharedRunOnCloudFlags('Actor'),
 		input: Flags.string({
 			char: 'i',
-			description: 'Optional JSON input to be given to the Actor.',
+			description:
+				'Optional inline JSON object input for the Actor. Wrap the JSON in quotes to avoid shell parsing issues. For JSON files, use --input-file.',
 			required: false,
 			stdin: StdinMode.Stringified,
 			exclusive: ['input-file'],
@@ -103,7 +109,10 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		if (this.flags.json && this.flags.outputDataset) {
-			error({ message: 'You cannot use both the --json and --output-dataset flags when running this command.' });
+			error({
+				message:
+					'You cannot use both --json and --output-dataset. Use --json for run details or --output-dataset for dataset items.',
+			});
 			process.exitCode = CommandExitCodes.InvalidInput;
 
 			return;
@@ -136,7 +145,9 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			runOpts.memory = this.flags.memory;
 		}
 
-		const inputOverride = await getInputOverride(cwd, this.flags.input, this.flags.inputFile);
+		const inputOverride = await getInputOverride(cwd, this.flags.input, this.flags.inputFile, {
+			schemaHint: `Run "apify actors info ${userFriendlyId} --input" to inspect the Actor input schema.`,
+		});
 
 		// Means we couldn't resolve input, so we should exit
 		if (inputOverride === false) {

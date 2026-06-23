@@ -9,6 +9,14 @@ import { CommandExitCodes } from '../consts.js';
 import { error } from '../outputs.js';
 import { getLocalInput } from '../utils.js';
 
+interface InputOverrideOptions {
+	schemaHint?: string;
+}
+
+function withSchemaHint(message: string, schemaHint?: string) {
+	return schemaHint ? `${message}\n${schemaHint}` : message;
+}
+
 export function resolveInput(cwd: string, inputOverride: Record<string, unknown> | undefined) {
 	let inputToUse: Record<string, unknown> | undefined;
 	let contentType!: string;
@@ -39,9 +47,15 @@ export function resolveInput(cwd: string, inputOverride: Record<string, unknown>
 	return { inputToUse, contentType };
 }
 
-export async function getInputOverride(cwd: string, inputFlag: string | undefined, inputFileFlag: string | undefined) {
+export async function getInputOverride(
+	cwd: string,
+	inputFlag: string | undefined,
+	inputFileFlag: string | undefined,
+	options: InputOverrideOptions = {},
+) {
 	let input: Record<string, unknown> | undefined;
 	let source: 'stdin' | 'input' | string;
+	const { schemaHint } = options;
 
 	if (!inputFlag && !inputFileFlag) {
 		// Try reading stdin
@@ -52,7 +66,9 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 				const parsed = JSON.parse(stdin.toString('utf8'));
 
 				if (Array.isArray(parsed)) {
-					error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+					error({
+						message: withSchemaHint('The provided input is invalid. It should be an object, not an array.', schemaHint),
+					});
 					process.exitCode = CommandExitCodes.InvalidInput;
 					return false;
 				}
@@ -60,7 +76,12 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 				input = parsed;
 				source = 'stdin';
 			} catch (err) {
-				error({ message: `Cannot parse JSON input from standard input.\n  ${(err as Error).message}` });
+				error({
+					message: withSchemaHint(
+						`Cannot parse JSON input from standard input.\n  ${(err as Error).message}`,
+						schemaHint,
+					),
+				});
 				process.exitCode = CommandExitCodes.InvalidInput;
 				return false;
 			}
@@ -98,7 +119,10 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 
 				if (fileExists || inputLooksLikePath) {
 					error({
-						message: `Providing a JSON file path in the --input flag is not supported. Use the "--input-file=" flag instead`,
+						message: withSchemaHint(
+							`Providing a JSON file path in the --input flag is not supported. Use the "--input-file=" flag instead`,
+							schemaHint,
+						),
 					});
 					process.exitCode = CommandExitCodes.InvalidInput;
 					return false;
@@ -108,7 +132,12 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					const parsed = JSON.parse(inputFlag);
 
 					if (Array.isArray(parsed)) {
-						error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+						error({
+							message: withSchemaHint(
+								'The provided input is invalid. It should be an object, not an array.',
+								schemaHint,
+							),
+						});
 						process.exitCode = CommandExitCodes.InvalidInput;
 						return false;
 					}
@@ -116,7 +145,9 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					input = parsed;
 					source = 'input';
 				} catch (err) {
-					error({ message: `Cannot parse JSON input.\n  ${(err as Error).message}` });
+					error({
+						message: withSchemaHint(`Cannot parse JSON input.\n  ${(err as Error).message}`, schemaHint),
+					});
 					process.exitCode = CommandExitCodes.InvalidInput;
 					return false;
 				}
@@ -143,7 +174,12 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 					const parsed = JSON.parse(fileContent);
 
 					if (Array.isArray(parsed)) {
-						error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+						error({
+							message: withSchemaHint(
+								'The provided input is invalid. It should be an object, not an array.',
+								schemaHint,
+							),
+						});
 						process.exitCode = CommandExitCodes.InvalidInput;
 						return false;
 					}
@@ -159,7 +195,12 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 						const parsed = JSON.parse(inputFileFlag);
 
 						if (Array.isArray(parsed)) {
-							error({ message: 'The provided input is invalid. It should be an object, not an array.' });
+							error({
+								message: withSchemaHint(
+									'The provided input is invalid. It should be an object, not an array.',
+									schemaHint,
+								),
+							});
 							process.exitCode = CommandExitCodes.InvalidInput;
 							return false;
 						}
@@ -167,8 +208,10 @@ export async function getInputOverride(cwd: string, inputFlag: string | undefine
 						input = parsed;
 						source = inputFileFlag;
 					} catch {
+						const message = `Cannot read input file at path "${fullPath}".\n  ${(fsError as Error).message}`;
+
 						error({
-							message: `Cannot read input file at path "${fullPath}".\n  ${(fsError as Error).message}`,
+							message: withSchemaHint(message, fsError instanceof SyntaxError ? schemaHint : undefined),
 						});
 						process.exitCode = CommandExitCodes.InvalidInput;
 						return false;
