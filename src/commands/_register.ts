@@ -25,6 +25,7 @@ import { InitCommand } from './init.js';
 import { KeyValueStoresIndexCommand } from './key-value-stores/_index.js';
 import { LoginCommand } from './login.js';
 import { LogoutCommand } from './logout.js';
+import { MCPIndexCommand } from './mcp/_index.js';
 import { TopLevelPullCommand } from './pull.js';
 import { ToplevelPushCommand } from './push.js';
 import { RequestQueuesIndexCommand } from './request-queues/_index.js';
@@ -43,6 +44,7 @@ export const apifyCommands = [
 	BuildsIndexCommand,
 	DatasetsIndexCommand,
 	KeyValueStoresIndexCommand,
+	MCPIndexCommand,
 	RequestQueuesIndexCommand,
 	RunsIndexCommand,
 	SecretsIndexCommand,
