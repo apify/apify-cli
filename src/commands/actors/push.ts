@@ -63,15 +63,17 @@ interface PushResult {
 	exitCode: number;
 }
 
-// Maps the final build status to the overall push outcome. `ok` mirrors command
-// success (true iff exitCode is 0): a still-running fire-and-forget build is not
-// a failure — its pending state is conveyed by the build status, not by `ok`.
-export function resolvePushOutcome(buildStatus: string): {
+interface PushOutcome {
 	resultLabel: string;
 	exitCode: number;
 	ok: boolean;
 	errorMessage?: string;
-} {
+}
+
+// Maps the final build status to the overall push outcome. `ok` mirrors command
+// success (true iff exitCode is 0): a still-running fire-and-forget build is not
+// a failure — its pending state is conveyed by the build status, not by `ok`.
+export function resolvePushOutcome(buildStatus: string): PushOutcome {
 	switch (buildStatus) {
 		case ACTOR_JOB_STATUSES.SUCCEEDED:
 			return { resultLabel: 'SUCCEEDED', exitCode: 0, ok: true };
