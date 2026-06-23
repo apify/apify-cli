@@ -51,6 +51,9 @@ const DEFAULT_BUILD_TAG = 'latest';
 // How many trailing log lines to surface as the failure reason.
 const BUILD_LOG_TAIL_LINES = 10;
 
+// TODO: switch to `type` once the `consistent-type-definitions` lint rule is
+// aligned with the Apify Coding Standards (tracked in
+// https://github.com/apify/apify-cli/issues/1211).
 interface PushResult {
 	ok: boolean;
 	operation: 'push';
