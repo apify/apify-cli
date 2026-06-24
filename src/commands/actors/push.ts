@@ -411,6 +411,14 @@ Skipping push. Use --force to override.`,
 			await open(actorUrl);
 		}
 
+		// `outputJobLog` can return before the build is actually terminal (stream
+		// ended early, timeout hit). Poll the remaining budget so the status
+		// branches below see the real outcome.
+		while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			build = (await apifyClient.build(build.id).get())!;
+		}
+
 		const buildStatus = build.status as string;
 		const isTerminal = isTerminalStatus(buildStatus);
 		const buildSucceeded = buildStatus === ACTOR_JOB_STATUSES.SUCCEEDED;
@@ -421,14 +429,6 @@ Skipping push. Use --force to override.`,
 
 		const buildStatusLabel = isTerminal ? buildStatus : 'RUNNING';
 		const overallStatus = buildSucceeded ? 'SUCCEEDED' : (buildStatusLabel as never);
-
-		// `outputJobLog` can return before the build is actually terminal (stream
-		// ended early, timeout hit). Poll the remaining budget so the status
-		// branches below see the real outcome.
-		while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-			build = (await apifyClient.build(build.id).get())!;
-		}
 
 		// Platform updates `taggedBuilds[buildTag]` asynchronously after the
 		// build finishes. Wait until the tag points at this build so callers
