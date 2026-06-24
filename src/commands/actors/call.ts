@@ -65,7 +65,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		input: Flags.string({
 			char: 'i',
 			description:
-				'Optional inline JSON object input for the Actor. Wrap the JSON in quotes to avoid shell parsing issues. For JSON files, use --input-file.',
+				'Optional inline JSON object input for the Actor. To avoid shell parsing issues, wrap the JSON in quotes. For JSON files, use --input-file.',
 			required: false,
 			stdin: StdinMode.Stringified,
 			exclusive: ['input-file'],
