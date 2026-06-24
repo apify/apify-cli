@@ -60,27 +60,29 @@ interface PushResult {
 	actor: { id: string; url: string };
 	build: { id: string; number: string; status: string; url: string };
 	error?: { phase: 'build'; message: string; logTail: string[] };
-	exitCode: number;
+	exitCode?: number;
 }
 
 interface PushOutcome {
 	resultLabel: string;
-	exitCode: number;
+	// Omitted while the build is still in progress (READY/RUNNING): there is no
+	// definitive exit code yet. Present for terminal success (0) and failures.
+	exitCode?: number;
 	ok: boolean;
 	errorMessage?: string;
 }
 
-// Maps the final build status to the overall push outcome. `ok` mirrors command
-// success (true iff exitCode is 0): a still-running fire-and-forget build is not
-// a failure — its pending state is conveyed by the build status, not by `ok`.
+// Maps the final build status to the overall push outcome. A still-running
+// fire-and-forget build is not a failure (`ok: true`) — its pending state is
+// conveyed by the build status, and it carries no exit code yet.
 export function resolvePushOutcome(buildStatus: string): PushOutcome {
 	switch (buildStatus) {
 		case ACTOR_JOB_STATUSES.SUCCEEDED:
 			return { resultLabel: 'SUCCEEDED', exitCode: 0, ok: true };
 		case ACTOR_JOB_STATUSES.READY:
-			return { resultLabel: 'PENDING', exitCode: 0, ok: true };
+			return { resultLabel: 'PENDING', ok: true };
 		case ACTOR_JOB_STATUSES.RUNNING:
-			return { resultLabel: 'RUNNING', exitCode: 0, ok: true };
+			return { resultLabel: 'RUNNING', ok: true };
 		case ACTOR_JOB_STATUSES.ABORTING:
 			return {
 				resultLabel: 'ABORTING',
@@ -521,7 +523,7 @@ Skipping push. Use --force to override.`,
 			}
 		}
 
-		if (outcome.exitCode !== 0) {
+		if (outcome.exitCode) {
 			process.exitCode = outcome.exitCode;
 		}
 
@@ -530,8 +532,10 @@ Skipping push. Use --force to override.`,
 			operation: 'push',
 			actor: { id: build.actId, url: actorUrl },
 			build: { id: build.id, number: build.buildNumber, status: buildStatus, url: buildUrl },
-			exitCode: outcome.exitCode,
 		};
+		if (outcome.exitCode !== undefined) {
+			result.exitCode = outcome.exitCode;
+		}
 		if (outcome.errorMessage) {
 			result.error = { phase: 'build', message: outcome.errorMessage, logTail };
 		}
@@ -549,7 +553,7 @@ Skipping push. Use --force to override.`,
 			`Actor ID: ${build.actId}`,
 			`Build ID: ${build.id}`,
 			`Build number: ${build.buildNumber}`,
-			...(outcome.exitCode !== 0 ? [`Exit code: ${outcome.exitCode}`] : []),
+			...(outcome.exitCode ? [`Exit code: ${outcome.exitCode}`] : []),
 			'',
 			`Actor URL: ${actorUrl}`,
 			`Build URL: ${buildUrl}`,
