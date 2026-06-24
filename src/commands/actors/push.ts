@@ -65,8 +65,6 @@ interface PushResult {
 
 interface PushOutcome {
 	resultLabel: string;
-	// Omitted while the build is still in progress (READY/RUNNING): there is no
-	// definitive exit code yet. Present for terminal success (0) and failures.
 	exitCode?: number;
 	ok: boolean;
 	errorMessage?: string;
