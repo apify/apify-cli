@@ -115,6 +115,11 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.task },
 		{ command: Commands.taskRun },
 	],
+	'mcp': [
+		//
+		{ command: Commands.mcp },
+		{ command: Commands.mcpInstall },
+	],
 };
 
 await renderDocs(categories);
