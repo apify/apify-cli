@@ -128,9 +128,11 @@ for (const entryPoint of entryPoints) {
 		`Promise.resolve().then(() => import_proxy_agent)`,
 	);
 
-	// The on-disk fat JS only varies by keyring subpackage, so we rewrite it once per subpackage
-	// rather than once per target (baseline variants share their sibling's subpackage).
-	let writtenSubpackage: string | undefined;
+	// `replaceAll` is silent if the placeholder is gone, shipping a bundle that falls back to
+	// plaintext storage. Validate once up front and fail loud.
+	if (!fatEntrypointContent.includes(KEYRING_PLACEHOLDER)) {
+		throw new Error(`Keyring placeholder "${KEYRING_PLACEHOLDER}" not found in the fat JS for ${cliName}.`);
+	}
 
 	for (const target of targets) {
 		// eslint-disable-next-line prefer-const -- somehow it cannot tell that os and arch cannot be "const" while the rest are let
@@ -166,18 +168,10 @@ for (const entryPoint of entryPoints) {
 		console.log(`Building ${cliName} for ${target} (result: ${fileName})...`);
 
 		// Point the keyring import at this target's native subpackage so --compile embeds its
-		// `.node`. Skip the rewrite when the on-disk file already targets this subpackage.
+		// `.node`. Rewrite every iteration so the compiled file is never the stale, unpatched
+		// Bun output — the proxy-agent fix above lands on disk here too, not just the keyring swap.
 		const subpackage = keyringSubpackage(os, arch, Boolean(musl));
-		if (subpackage !== writtenSubpackage) {
-			// `replaceAll` is silent if the placeholder is gone, shipping a bundle that falls back to
-			// plaintext storage. Fail loud instead.
-			if (!fatEntrypointContent.includes(KEYRING_PLACEHOLDER)) {
-				throw new Error(`Keyring placeholder "${KEYRING_PLACEHOLDER}" not found in the fat JS for ${cliName}.`);
-			}
-
-			await writeFile(entrypointResultFilePath, fatEntrypointContent.replaceAll(KEYRING_PLACEHOLDER, subpackage));
-			writtenSubpackage = subpackage;
-		}
+		await writeFile(entrypointResultFilePath, fatEntrypointContent.replaceAll(KEYRING_PLACEHOLDER, subpackage));
 
 		// Step 2: create the final executable bundle
 		await build({
