@@ -17,8 +17,8 @@ $UpgradeScriptURL = "https://raw.githubusercontent.com/apify/apify-cli/refs/head
 
 $URLArray = $AllUrls -split ','
 
-if ($URLArray.Count -lt 1) {
-    Write-Error "URL parameter must contain at least 1 URL"
+if ($URLArray.Count -ne 2) {
+    Write-Error "URL parameter must contain exactly 2 comma-delimited URLs"
     exit 1
 }
 
@@ -116,20 +116,13 @@ function Download-File-To-Location {
 
 }
 
-# We now ship a single `apify-cli` bundle. Download it (the URL list may contain backwards-compatible
-# backup URLs too, but they are all copies of the same bundle, so the first one is enough).
-Download-File-To-Location -URL $URLArray[0] -FileName "apify-cli" -Location $InstallLocation -Type 0 -Version $Version
+foreach ($URL in $URLArray) {
+    $URLSplit = $URL -split '/'
+    $FullCLIName = $URLSplit[-1]
 
-# Let the freshly downloaded bundle (re)create the `apify`/`actor` wrapper scripts (.cmd, .ps1 and a POSIX
-# shim), so the shim content lives in one place rather than being duplicated here.
-# Skip the bundle's automatic version check - we just downloaded the requested version.
-$env:APIFY_CLI_SKIP_UPDATE_CHECK = "1"
-& (Join-Path $InstallLocation "apify-cli.exe") install --shims-only
+    $CLIName = $FullCLIName.Split('-')[0]
 
-# Clean up any legacy full bundles the wrappers replace, so the wrappers (not the `.exe`) resolve on PATH.
-foreach ($Entrypoint in @("apify", "actor")) {
-    Remove-Item -Path (Join-Path $InstallLocation "${Entrypoint}.exe") -Force -ErrorAction Ignore
-    Remove-Item -Path (Join-Path $InstallLocation "${Entrypoint}.exe.old") -Force -ErrorAction Ignore
+    Download-File-To-Location -URL $URL -FileName $CLIName -Location $InstallLocation -Type 0 -Version $Version
 }
 
 # Download the updated upgrade script (should rarely change but just in case)
