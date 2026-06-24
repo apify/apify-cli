@@ -98,6 +98,7 @@
 		"escape-string-regexp": "~5.0.0",
 		"execa": "^9.6.1",
 		"express": "~5.2.1",
+		"giget": "^3.3.0",
 		"handlebars": "~4.7.9",
 		"ignore": "^7.0.5",
 		"indent-string": "^5.0.0",
@@ -112,7 +113,6 @@
 		"semver": "~7.8.0",
 		"string-width": "^8.2.0",
 		"strip-ansi": "^7.2.0",
-		"tiged": "~2.12.7",
 		"tinyglobby": "^0.2.15",
 		"which": "^7.0.0",
 		"widest-line": "^6.0.0",
@@ -140,7 +140,7 @@
 		"lint-staged": "^17.0.0",
 		"mock-stdin": "^1.0.0",
 		"oxfmt": "0.56.0",
-		"oxlint": "1.70.0",
+		"oxlint": "1.71.0",
 		"oxlint-tsgolint": "0.22.1",
 		"tsdown": "^0.22.0",
 		"tsx": "^4.21.0",
@@ -148,7 +148,7 @@
 		"vitest": "^4.1.8"
 	},
 	"volta": {
-		"node": "24.17.0",
+		"node": "24.18.0",
 		"pnpm": "11.8.0"
 	},
 	"packageManager": "pnpm@11.8.0",
