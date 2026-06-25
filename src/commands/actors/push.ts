@@ -17,12 +17,6 @@ import { createHmacSignature } from '@apify/utilities';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import {
-	exitCodeForJobStatus,
-	fetchLogTail,
-	formatResultSummary,
-	isTerminalStatus,
-} from '../../lib/commands/agent-output.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -53,6 +47,79 @@ const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 // Actor does not have a build with a `latest` tag, so until
 // that changes, we have to add it.
 const DEFAULT_BUILD_TAG = 'latest';
+
+// How many trailing log lines to surface as the failure reason.
+const BUILD_LOG_TAIL_LINES = 10;
+
+// TODO: switch to `type` once the `consistent-type-definitions` lint rule is
+// aligned with the Apify Coding Standards (tracked in
+// https://github.com/apify/apify-cli/issues/1211).
+interface PushResult {
+	ok: boolean;
+	operation: 'push';
+	actor: { id: string; url: string };
+	build: { id: string; number: string; status: string; url: string };
+	error?: { phase: 'build'; message: string; logTail: string[] };
+	exitCode?: number;
+}
+
+interface PushOutcome {
+	resultLabel: string;
+	exitCode?: number;
+	ok: boolean;
+	errorMessage?: string;
+}
+
+// Maps the final build status to the overall push outcome. A still-running
+// fire-and-forget build is not a failure (`ok: true`) — its pending state is
+// conveyed by the build status, and it carries no exit code yet.
+export function resolvePushOutcome(buildStatus: string): PushOutcome {
+	switch (buildStatus) {
+		case ACTOR_JOB_STATUSES.SUCCEEDED:
+			return { resultLabel: 'SUCCEEDED', exitCode: 0, ok: true };
+		case ACTOR_JOB_STATUSES.READY:
+			return { resultLabel: 'PENDING', ok: true };
+		case ACTOR_JOB_STATUSES.RUNNING:
+			return { resultLabel: 'RUNNING', ok: true };
+		case ACTOR_JOB_STATUSES.ABORTING:
+			return {
+				resultLabel: 'ABORTING',
+				exitCode: CommandExitCodes.BuildAborted,
+				ok: false,
+				errorMessage: 'Build is aborting',
+			};
+		case ACTOR_JOB_STATUSES.ABORTED:
+			return {
+				resultLabel: 'ABORTED',
+				exitCode: CommandExitCodes.BuildAborted,
+				ok: false,
+				errorMessage: 'Build aborted',
+			};
+		case ACTOR_JOB_STATUSES.TIMING_OUT:
+			return {
+				resultLabel: 'TIMING_OUT',
+				exitCode: CommandExitCodes.BuildTimedOut,
+				ok: false,
+				errorMessage: 'Build is timing out',
+			};
+		case ACTOR_JOB_STATUSES.TIMED_OUT:
+			return {
+				resultLabel: 'TIMED_OUT',
+				exitCode: CommandExitCodes.BuildTimedOut,
+				ok: false,
+				errorMessage: 'Build timed out',
+			};
+		case ACTOR_JOB_STATUSES.FAILED:
+			return { resultLabel: 'FAILED', exitCode: CommandExitCodes.BuildFailed, ok: false, errorMessage: 'Build failed' };
+		default:
+			return {
+				resultLabel: 'UNKNOWN',
+				exitCode: CommandExitCodes.BuildFailed,
+				ok: false,
+				errorMessage: `Build finished with unexpected status "${buildStatus}"`,
+			};
+	}
+}
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	static override name = 'push' as const;
@@ -404,13 +471,6 @@ Skipping push. Use --force to override.`,
 		}
 		build = refreshedBuild;
 
-		const actorUrl = `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`;
-		const buildUrl = `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`;
-
-		if (this.flags.open) {
-			await open(actorUrl);
-		}
-
 		// `outputJobLog` can return before the build is actually terminal (stream
 		// ended early, timeout hit). Poll the remaining budget so the status
 		// branches below see the real outcome.
@@ -418,17 +478,6 @@ Skipping push. Use --force to override.`,
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 			build = (await apifyClient.build(build.id).get())!;
 		}
-
-		const buildStatus = build.status as string;
-		const isTerminal = isTerminalStatus(buildStatus);
-		const buildSucceeded = buildStatus === ACTOR_JOB_STATUSES.SUCCEEDED;
-		// A non-terminal status (RUNNING/READY) means the push succeeded — only a terminal-but-not-SUCCEEDED status is a failure.
-		const ok = buildSucceeded || !isTerminal;
-		const exitCode = ok ? 0 : exitCodeForJobStatus(build.status, 'build');
-		const logTail = ok ? [] : await fetchLogTail(apifyClient, build.id);
-
-		const buildStatusLabel = isTerminal ? buildStatus : 'RUNNING';
-		const overallStatus = buildSucceeded ? 'SUCCEEDED' : (buildStatusLabel as never);
 
 		// Platform updates `taggedBuilds[buildTag]` asynchronously after the
 		// build finishes. Wait until the tag points at this build so callers
@@ -454,62 +503,70 @@ Skipping push. Use --force to override.`,
 			}
 		}
 
+		const buildStatus = build.status as string;
+		const outcome = resolvePushOutcome(buildStatus);
+
+		const actorUrl = `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`;
+		const buildUrl = `${actorUrl}#/builds/${build.buildNumber}`;
+
+		// Surface the tail of the build log as the failure reason. Best-effort:
+		// the build status already conveys the outcome if the log can't be read.
+		let logTail: string[] = [];
+		if (outcome.errorMessage) {
+			try {
+				const log = await apifyClient.log(build.id).get();
+				if (log) {
+					logTail = log
+						.split('\n')
+						.map((line) => line.trimEnd())
+						.filter((line) => line.length > 0)
+						.slice(-BUILD_LOG_TAIL_LINES);
+				}
+			} catch {
+				// ignore — reason block is optional
+			}
+		}
+
+		if (outcome.exitCode) {
+			process.exitCode = outcome.exitCode;
+		}
+
+		const result: PushResult = {
+			ok: outcome.ok,
+			operation: 'push',
+			actor: { id: build.actId, url: actorUrl },
+			build: { id: build.id, number: build.buildNumber, status: buildStatus, url: buildUrl },
+		};
+		if (outcome.exitCode !== undefined) {
+			result.exitCode = outcome.exitCode;
+		}
+		if (outcome.errorMessage) {
+			result.error = { phase: 'build', message: outcome.errorMessage, logTail };
+		}
+
 		if (this.flags.json) {
-			printJsonToStdout({
-				ok,
-				operation: 'push',
-				actor: {
-					id: build.actId,
-					url: actorUrl,
-				},
-				build: {
-					id: build.id,
-					number: build.buildNumber,
-					status: build.status,
-					url: buildUrl,
-				},
-				...(ok
-					? {}
-					: {
-							error: {
-								phase: 'build',
-								message: 'Actor build did not succeed',
-								logTail,
-							},
-						}),
-				exitCode,
-			});
-			process.exitCode = exitCode;
+			printJsonToStdout(result);
 			return;
 		}
 
-		simpleLog({
-			message: formatResultSummary({
-				resultLabel: 'Apify push result',
-				overallStatus,
-				lines: [
-					{ label: 'Upload', value: 'SUCCEEDED' },
-					{ label: 'Build', value: build.status as string },
-					{ label: 'Actor ID', value: build.actId },
-					{ label: 'Build ID', value: build.id },
-					{ label: 'Build number', value: build.buildNumber },
-					{ label: 'Exit code', value: String(exitCode) },
-				],
-				links: [
-					{ label: 'Actor URL', url: actorUrl },
-					{ label: 'Build URL', url: buildUrl },
-				],
-				errorReason: ok ? undefined : logTail,
-			}),
-			stdout: true,
-		});
+		const lines = [
+			`Apify push result: ${outcome.resultLabel}`,
+			'',
+			'Upload: SUCCEEDED',
+			`Build: ${buildStatus}`,
+			`Actor ID: ${build.actId}`,
+			`Build ID: ${build.id}`,
+			`Build number: ${build.buildNumber}`,
+			...(outcome.exitCode ? [`Exit code: ${outcome.exitCode}`] : []),
+			'',
+			`Actor URL: ${actorUrl}`,
+			`Build URL: ${buildUrl}`,
+			...(outcome.errorMessage && logTail.length ? ['', 'Reason:', ...logTail] : []),
+		];
+		simpleLog({ stdout: true, message: lines.join('\n') });
 
-		if (!isTerminal) {
-			warning({ message: `Build did not finish; current status is ${build.status}.` });
-		} else if (!ok) {
-			error({ message: `Build ended with status ${build.status}.` });
+		if (this.flags.open) {
+			await open(actorUrl);
 		}
-
-		process.exitCode = exitCode;
 	}
 }
