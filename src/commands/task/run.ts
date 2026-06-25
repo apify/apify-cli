@@ -1,19 +1,10 @@
-import process from 'node:process';
-
 import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
-import {
-	consoleDatasetUrl,
-	consoleRunUrl,
-	exitCodeForJobStatus,
-	fetchLogTail,
-	formatResultSummary,
-} from '../../lib/commands/agent-output.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
-import { simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { finalizeRun } from '../../lib/commands/run-result.js';
+import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override name = 'run' as const;
@@ -69,7 +60,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			runOpts.memory = this.flags.memory;
 		}
 
-		let run: ActorRun | undefined;
+		let run!: ActorRun;
 
 		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
@@ -79,9 +70,8 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			},
 			runOptions: runOpts,
 			type: 'Task',
-			printRunLogs: true,
 			waitForRunToFinish: true,
-			silent: this.flags.json,
+			printRunLogs: true,
 			suppressFinalStatus: true,
 		});
 
@@ -89,81 +79,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			run = yieldedRun;
 		}
 
-		if (!run) {
-			simpleLog({ message: 'Task run did not start.', stdout: false });
-			process.exitCode = 1;
-			return;
-		}
-		const finalRun = run;
-		const finalUrl = consoleRunUrl(finalRun.actId, finalRun.id);
-		const finalDatasetUrl = consoleDatasetUrl(finalRun.defaultDatasetId);
-		const ok = finalRun.status === 'SUCCEEDED';
-		const exitCode = exitCodeForJobStatus(finalRun.status, 'run');
-		const logTail = ok ? [] : await fetchLogTail(apifyClient, finalRun.id);
-
-		if (this.flags.json) {
-			printJsonToStdout({
-				ok,
-				operation: 'task.run',
-				task: {
-					id: taskId,
-					name: userFriendlyId,
-					title,
-				},
-				actor: {
-					id: finalRun.actId,
-					url: `https://console.apify.com/actors/${finalRun.actId}`,
-				},
-				run: {
-					id: finalRun.id,
-					status: finalRun.status,
-					exitCode: finalRun.exitCode ?? null,
-					url: finalUrl,
-				},
-				storage: {
-					defaultDatasetId: finalRun.defaultDatasetId,
-					defaultKeyValueStoreId: finalRun.defaultKeyValueStoreId,
-					datasetUrl: finalDatasetUrl,
-				},
-				...(ok
-					? {}
-					: {
-							error: {
-								phase: 'run',
-								message: 'Task run did not succeed',
-								logTail,
-							},
-						}),
-				exitCode,
-			});
-			process.exitCode = exitCode;
-			return;
-		}
-
-		simpleLog({
-			message: formatResultSummary({
-				resultLabel: 'Apify task run result',
-				overallStatus: finalRun.status as never,
-				lines: [
-					{ label: 'Run', value: finalRun.status as string },
-					{ label: 'Task ID', value: taskId },
-					{ label: 'Actor ID', value: finalRun.actId },
-					{ label: 'Run ID', value: finalRun.id },
-					{ label: 'Build number', value: finalRun.buildNumber },
-					...(typeof finalRun.exitCode === 'number' ? [{ label: 'Exit code', value: String(finalRun.exitCode) }] : []),
-					{ label: 'Dataset ID', value: finalRun.defaultDatasetId },
-					{ label: 'Key-value store ID', value: finalRun.defaultKeyValueStoreId },
-				],
-				links: [
-					{ label: 'Run URL', url: finalUrl },
-					{ label: 'Dataset URL', url: finalDatasetUrl },
-				],
-				errorReason: ok ? undefined : logTail,
-			}),
-			stdout: true,
-		});
-
-		process.exitCode = exitCode;
+		await finalizeRun({ apifyClient, run, operation: 'task-run', json: this.flags.json });
 	}
 
 	private async resolveTaskId(client: ApifyClient, usernameOrId: string) {

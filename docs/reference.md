@@ -1037,10 +1037,10 @@ ARGUMENTS
 FLAGS
       --json                   Format the command output as
                                JSON.
-      --poll-interval=<value>  How often to poll the
-                               platform, in seconds. Defaults to 2.
-  -t, --timeout=<value>        Maximum seconds to wait
-                               before giving up. Without this flag the command waits
+      --poll-interval=<value>  In seconds, how often to
+                               poll the platform. Defaults to 2.
+  -t, --timeout=<value>        In seconds, how long to
+                               wait before giving up. If skipped, it waits
                                indefinitely.
 ```
 <!-- actor-build-commands-end -->

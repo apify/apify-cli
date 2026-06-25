@@ -153,7 +153,10 @@ describe('[e2e][api] runs lifecycle', () => {
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		const data = JSON.parse(result.stdout);
+		expect(data.ok).toBe(true);
+		expect(data.operation).toBe('call');
 		expect(data.run.status).toBe('SUCCEEDED');
+		expect(data.exitCode).toBe(0);
 	}, 120_000);
 
 	it('pull — downloads actor source', async () => {
