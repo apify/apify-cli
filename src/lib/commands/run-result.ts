@@ -188,14 +188,16 @@ export interface FinalizeRunOptions {
 export async function finalizeRun({ apifyClient, run, operation, json, silent }: FinalizeRunOptions) {
 	process.exitCode = getRunExitCode(run);
 
+	if (silent) {
+		return;
+	}
+
+	const logTail = await fetchRunLogTail(apifyClient, run);
+
 	if (json) {
-		const logTail = await fetchRunLogTail(apifyClient, run);
 		printJsonToStdout(buildRunResultJson({ run, operation, logTail }));
 		return;
 	}
 
-	if (!silent) {
-		const logTail = await fetchRunLogTail(apifyClient, run);
-		printRunResultSummary({ run, operation, logTail });
-	}
+	printRunResultSummary({ run, operation, logTail });
 }
