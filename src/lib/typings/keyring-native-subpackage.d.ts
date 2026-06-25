@@ -3,16 +3,11 @@
 // compiled bundle, so Bun's `--compile` embeds that one native `.node`. Outside bundles
 // the import is never executed. This declaration just keeps tsc/oxlint happy.
 //
-// Declared by hand rather than re-exported from `@napi-rs/keyring`: the placeholder
-// resolves to the `@napi-rs/keyring-<platform>` native subpackage (the module the bundle
-// actually imports, bypassing the wrapper), and those subpackages ship only the `.node`
-// binary with no `.d.ts`. We pin just the sync methods `credentials.ts` uses; the
-// structural contract there is what guards against upstream drift.
+// The type is sourced from the `@napi-rs/keyring` wrapper, which is decoupled from runtime
+// resolution (the bundle rewrites the specifier in the fat JS; the `.d.ts` is never read by
+// the bundler). The wrapper re-exports the same NAPI `Entry` the native subpackage binds, so
+// this stays accurate for free. Re-exporting from the subpackage itself wouldn't work — those
+// ship only the `.node` binary with no `.d.ts`, so `Entry` would silently degrade to `any`.
 declare module '__APIFY_KEYRING_NATIVE_SUBPACKAGE__' {
-	export class Entry {
-		constructor(service: string, account: string);
-		getPassword(): string | null;
-		setPassword(password: string): void;
-		deletePassword(): boolean;
-	}
+	export type { Entry } from '@napi-rs/keyring';
 }
