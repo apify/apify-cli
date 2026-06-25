@@ -8,6 +8,8 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - **auth:** Use os keyring for secure credential storage ([#1148](https://github.com/apify/apify-cli/pull/1148)) ([bbfea42](https://github.com/apify/apify-cli/commit/bbfea4286345aa5f15429d20d9d52013e7adc637)) by [@l2ysho](https://github.com/l2ysho), closes [#1115](https://github.com/apify/apify-cli/issues/1115)
+- **mcp:** Add &#x27;apify mcp install &lt;client&gt;&#x27; command ([#1145](https://github.com/apify/apify-cli/pull/1145)) ([f7bcd58](https://github.com/apify/apify-cli/commit/f7bcd585c474be1cff6578802939adceced33c15)) by [@MQ37](https://github.com/MQ37)
+- **push:** Add final status block and structured JSON output ([#1199](https://github.com/apify/apify-cli/pull/1199)) ([71560dd](https://github.com/apify/apify-cli/commit/71560dd8aa8de6bbb5e0c2db7a6b9e9d48abd4b8)) by [@l2ysho](https://github.com/l2ysho), closes [#1136](https://github.com/apify/apify-cli/issues/1136)
 
 ### 🐛 Bug Fixes
 
