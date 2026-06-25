@@ -64,8 +64,8 @@ describe('[e2e][api] runs lifecycle', () => {
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		const data = JSON.parse(result.stdout);
-		expect(data.id).toBeTruthy();
-		runId = data.id;
+		expect(data.run.id).toBeTruthy();
+		runId = data.run.id;
 	});
 
 	it('runs ls — lists runs', async () => {
@@ -121,7 +121,9 @@ describe('[e2e][api] runs lifecycle', () => {
 			{ cwd: actor.dir, env: authEnv },
 		);
 		expect(startResult.exitCode, `stderr: ${startResult.stderr}`).toBe(0);
-		const { id: abortRunId } = JSON.parse(startResult.stdout);
+		const {
+			run: { id: abortRunId },
+		} = JSON.parse(startResult.stdout);
 
 		const result = await runCli('apify', ['runs', 'abort', abortRunId, '--json'], {
 			env: authEnv,

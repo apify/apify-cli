@@ -154,6 +154,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			silent: this.flags.silent,
 			waitForRunToFinish: true,
 			printRunLogs: true,
+			suppressFinalStatus: true,
 		});
 
 		for await (const yieldedRun of iterator) {

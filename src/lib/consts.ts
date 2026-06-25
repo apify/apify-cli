@@ -87,6 +87,10 @@ export enum CommandExitCodes {
 	InvalidInput = 5,
 	InvalidActorJson = 5,
 
+	// The client gave up waiting (--timeout elapsed) before the job reached a terminal status.
+	// Distinct from BuildTimedOut/RunTimedOut, which mean the platform job itself timed out.
+	WaitTimedOut = 6,
+
 	NotFound = 250,
 	NotImplemented = 255,
 }

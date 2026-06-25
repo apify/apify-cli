@@ -72,6 +72,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			type: 'Task',
 			waitForRunToFinish: true,
 			printRunLogs: true,
+			suppressFinalStatus: true,
 		});
 
 		for await (const yieldedRun of iterator) {

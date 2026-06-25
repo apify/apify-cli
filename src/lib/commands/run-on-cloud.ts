@@ -6,8 +6,9 @@ import chalk from 'chalk';
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { Flags } from '../command-framework/flags.js';
+import { CommandExitCodes } from '../consts.js';
 import { useAbortJobOnSignal } from '../hooks/useAbortJobOnSignal.js';
-import { run as runLog, warning } from '../outputs.js';
+import { error, run as runLog, success, warning } from '../outputs.js';
 import { outputJobLog } from '../utils.js';
 import { resolveInput } from './resolve-input.js';
 
@@ -31,6 +32,12 @@ export interface RunOnCloudOptions {
 	silent?: boolean;
 	waitForRunToFinish?: boolean;
 	printRunLogs?: boolean;
+	/**
+	 * When true, suppresses the final "Actor finished/failed" status line and the
+	 * implicit `process.exitCode` write at the end of the generator. Use this when
+	 * the caller renders its own final result summary and owns the exit code.
+	 */
+	suppressFinalStatus?: boolean;
 }
 
 export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: RunOnCloudOptions) {
@@ -44,6 +51,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		silent,
 		waitForRunToFinish,
 		printRunLogs,
+		suppressFinalStatus,
 	} = options;
 
 	const clientMethod = type === 'Actor' ? 'actor' : 'task';
@@ -150,8 +158,21 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		}
 	}
 
-	// Return the finished run. Presenting the final status and setting the exit code is the
-	// caller's responsibility.
+	if (!suppressFinalStatus) {
+		if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
+			if (!silent) success({ message: `${type} finished.` });
+		} else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
+			if (!silent) warning({ message: `${type} is still running!` });
+		} else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
+			if (!silent) warning({ message: `${type} was aborted!` });
+			process.exitCode = CommandExitCodes.RunAborted;
+		} else {
+			if (!silent) error({ message: `${type} failed!` });
+			process.exitCode = CommandExitCodes.RunFailed;
+		}
+	}
+
+	// Return the finished run
 	yield run;
 }
 
