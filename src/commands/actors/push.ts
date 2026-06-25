@@ -463,7 +463,13 @@ Skipping push. Use --force to override.`,
 			console.error(err);
 		}
 
-		build = (await apifyClient.build(build.id).get())!;
+		const refreshedBuild = await apifyClient.build(build.id).get();
+		if (!refreshedBuild) {
+			error({ message: `Could not fetch build with ID "${build.id}" after deployment.` });
+			process.exitCode = CommandExitCodes.BuildFailed;
+			return;
+		}
+		build = refreshedBuild;
 
 		// `outputJobLog` can return before the build is actually terminal (stream
 		// ended early, timeout hit). Poll the remaining budget so the status
