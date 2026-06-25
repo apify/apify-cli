@@ -110,7 +110,7 @@ interface RunResultJson {
 	ok: boolean;
 	operation: RunResultOperation;
 	actor: { id: string; url: string };
-	run: { id: string; status: string; exitCode: number | null; url: string };
+	run: { id: string; status: string; url: string };
 	storage: { defaultDatasetId: string; defaultKeyValueStoreId: string; datasetUrl: string };
 	error?: { phase: 'run'; message: string; logTail: string[] };
 	exitCode: number;
@@ -130,7 +130,6 @@ export function buildRunResultJson({ run, operation, logTail }: RunResultOptions
 		run: {
 			id: run.id,
 			status: run.status,
-			exitCode: run.exitCode ?? null,
 			url: runUrl(run.actId, run.id),
 		},
 		storage: {
