@@ -70,9 +70,9 @@ describe('buildRunResultJson', () => {
 			actor: { id: 'actor456', url: 'https://console.apify.com/actors/actor456' },
 			run: { id: 'run123', status: 'SUCCEEDED', url: 'https://console.apify.com/actors/actor456/runs/run123' },
 			storage: { defaultDatasetId: 'dataset789', defaultKeyValueStoreId: 'kvs012' },
-			error: null,
 			exitCode: 0,
 		});
+		expect(json.error).toBeUndefined();
 	});
 
 	it('reports a failed run with the error block and log tail', () => {
