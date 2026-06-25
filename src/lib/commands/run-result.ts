@@ -106,11 +106,21 @@ export interface RunResultOptions {
 	logTail: string[];
 }
 
+interface RunResultJson {
+	ok: boolean;
+	operation: RunResultOperation;
+	actor: { id: string; url: string };
+	run: { id: string; status: string; exitCode: number | null; url: string };
+	storage: { defaultDatasetId: string; defaultKeyValueStoreId: string; datasetUrl: string };
+	error?: { phase: 'run'; message: string; logTail: string[] };
+	exitCode: number;
+}
+
 /** Builds the structured `--json` payload so agents can reliably branch on the final status. */
-export function buildRunResultJson({ run, operation, logTail }: RunResultOptions) {
+export function buildRunResultJson({ run, operation, logTail }: RunResultOptions): RunResultJson {
 	const ok = isSucceeded(run);
 
-	return {
+	const result: RunResultJson = {
 		ok,
 		operation,
 		actor: {
@@ -128,15 +138,18 @@ export function buildRunResultJson({ run, operation, logTail }: RunResultOptions
 			defaultKeyValueStoreId: run.defaultKeyValueStoreId,
 			datasetUrl: datasetUrl(run.defaultDatasetId),
 		},
-		error: ok
-			? null
-			: {
-					phase: 'run',
-					message: run.statusMessage || genericReason(run),
-					logTail,
-				},
 		exitCode: getRunExitCode(run),
 	};
+
+	if (!ok) {
+		result.error = {
+			phase: 'run',
+			message: run.statusMessage || genericReason(run),
+			logTail,
+		};
+	}
+
+	return result;
 }
 
 /** Prints the human-readable final result summary to stdout. */
