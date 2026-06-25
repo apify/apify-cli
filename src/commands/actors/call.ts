@@ -13,6 +13,13 @@ import chalk from 'chalk';
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import {
+	consoleDatasetUrl,
+	consoleRunUrl,
+	exitCodeForJobStatus,
+	fetchLogTail,
+	formatResultSummary,
+} from '../../lib/commands/agent-output.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
@@ -144,10 +151,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		}
 
 		let runStarted = false;
-		let run: ActorRun;
-
-		let url: string;
-		let datasetUrl: string;
+		let run: ActorRun | undefined;
 
 		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
@@ -160,6 +164,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			silent: this.flags.silent,
 			waitForRunToFinish: true,
 			printRunLogs: true,
+			suppressFinalStatus: true,
 		});
 
 		for await (const yieldedRun of iterator) {
@@ -170,8 +175,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 				// A *lot* is copied from `runs info`
 				if (!this.flags.silent) {
-					url = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
-					datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
+					const startedUrl = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
 
 					const message: string[] = [`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`];
 
@@ -213,28 +217,86 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					message.push(`${chalk.yellow('Memory')}: ${run.options.memoryMbytes} MB`);
 
 					// url
-					message.push(`${chalk.blue('View on Apify Console')}: ${url}`, '');
+					message.push(`${chalk.blue('View on Apify Console')}: ${startedUrl}`, '');
 
 					simpleLog({ message: message.join('\n'), stdout: !this.flags.json });
 				}
 			}
 		}
 
+		if (!run) {
+			error({ message: 'Actor run did not start.' });
+			process.exitCode = CommandExitCodes.RunFailed;
+			return;
+		}
+		const finalRun = run;
+		const finalUrl = consoleRunUrl(actorId, finalRun.id);
+		const finalDatasetUrl = consoleDatasetUrl(finalRun.defaultDatasetId);
+		const ok = finalRun.status === 'SUCCEEDED';
+		const exitCode = exitCodeForJobStatus(finalRun.status, 'run');
+		const logTail = ok ? [] : await fetchLogTail(apifyClient, finalRun.id);
+
 		if (this.flags.json) {
-			printJsonToStdout(run!);
+			printJsonToStdout({
+				ok,
+				operation: 'call',
+				actor: {
+					id: actorId,
+					url: `https://console.apify.com/actors/${actorId}`,
+				},
+				run: {
+					id: finalRun.id,
+					status: finalRun.status,
+					exitCode: finalRun.exitCode ?? null,
+					url: finalUrl,
+				},
+				storage: {
+					defaultDatasetId: finalRun.defaultDatasetId,
+					defaultKeyValueStoreId: finalRun.defaultKeyValueStoreId,
+					datasetUrl: finalDatasetUrl,
+				},
+				...(ok
+					? {}
+					: {
+							error: {
+								phase: 'run',
+								message: 'Actor run did not succeed',
+								logTail,
+							},
+						}),
+				exitCode,
+			});
+			process.exitCode = exitCode;
 			return;
 		}
 
 		if (!this.flags.silent) {
 			simpleLog({
-				message: [
-					'',
-					`${chalk.blue('Export results')}: ${datasetUrl!}`,
-					`${chalk.blue('View on Apify Console')}: ${url!}`,
-				].join('\n'),
+				message: formatResultSummary({
+					resultLabel: 'Apify call result',
+					overallStatus: finalRun.status as never,
+					lines: [
+						{ label: 'Run', value: finalRun.status as string },
+						{ label: 'Actor ID', value: actorId },
+						{ label: 'Run ID', value: finalRun.id },
+						{ label: 'Build number', value: finalRun.buildNumber },
+						...(typeof finalRun.exitCode === 'number'
+							? [{ label: 'Exit code', value: String(finalRun.exitCode) }]
+							: []),
+						{ label: 'Dataset ID', value: finalRun.defaultDatasetId },
+						{ label: 'Key-value store ID', value: finalRun.defaultKeyValueStoreId },
+					],
+					links: [
+						{ label: 'Run URL', url: finalUrl },
+						{ label: 'Dataset URL', url: finalDatasetUrl },
+					],
+					errorReason: ok ? undefined : logTail,
+				}),
 				stdout: true,
 			});
 		}
+
+		process.exitCode = exitCode;
 
 		if (this.flags.outputDataset) {
 			const datasetId = run!.defaultDatasetId;

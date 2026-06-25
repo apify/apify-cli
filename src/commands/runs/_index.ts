@@ -5,6 +5,7 @@ import { RunsLogCommand } from './log.js';
 import { RunsLsCommand } from './ls.js';
 import { RunsResurrectCommand } from './resurrect.js';
 import { RunsRmCommand } from './rm.js';
+import { RunsWaitCommand } from './wait.js';
 
 export class RunsIndexCommand extends ApifyCommand<typeof RunsIndexCommand> {
 	static override name = 'runs' as const;
@@ -24,6 +25,7 @@ export class RunsIndexCommand extends ApifyCommand<typeof RunsIndexCommand> {
 		RunsLsCommand,
 		RunsResurrectCommand,
 		RunsRmCommand,
+		RunsWaitCommand,
 	];
 
 	async run() {
