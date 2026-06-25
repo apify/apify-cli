@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-duplicate-enum-values */
-
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
@@ -71,20 +69,34 @@ export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.9.0';
 
 export const PYTHON_VENV_PATH = '.venv';
 
+/**
+ * Exit codes emitted by `apify-cli` for distinct failure categories.
+ *
+ * Each category gets a distinct code so callers (CI scripts, agent harnesses,
+ * MCP servers, eval pipelines) can decide whether to retry, re-authenticate,
+ * fix config, etc. without parsing prose from stderr.
+ *
+ * Codes 1-5 are preserved for the categories that already had them; previously-
+ * colliding categories now use:
+ *  - `RunFailed = 6` (was 1; distinct from BuildFailed)
+ *  - `RunAborted = 7` (was 3; distinct from BuildAborted)
+ *  - `MissingAuth = 77` — BSD `sysexits.h` `EX_NOPERM` (was 1)
+ *  - `InvalidActorJson = 78` — BSD `sysexits.h` `EX_CONFIG` (was 5)
+ *
+ * Callers checking only `exitCode !== 0` are unaffected.
+ */
 export enum CommandExitCodes {
 	BuildFailed = 1,
-	RunFailed = 1,
-	MissingAuth = 1,
-
 	BuildTimedOut = 2,
-
 	BuildAborted = 3,
-	RunAborted = 3,
-
 	NoFilesToPush = 4,
-
 	InvalidInput = 5,
-	InvalidActorJson = 5,
+
+	RunFailed = 6,
+	RunAborted = 7,
+
+	MissingAuth = 77,
+	InvalidActorJson = 78,
 
 	NotFound = 250,
 	NotImplemented = 255,
