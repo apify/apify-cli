@@ -403,8 +403,10 @@ describe('[api] apify push', () => {
 			const createdActorClient = testUserClient.actor(actorId);
 			const createdActor = await createdActorClient.get();
 
-			// Verify all standby options are set to default values
-			expect(createdActor?.actorStandby).to.be.eql({
+			// Verify all standby options are set to default values. Match a subset so the
+			// assertion doesn't break when the API adds/renames server-owned fields it doesn't
+			// document (e.g. hostedBy -> tenancy).
+			expect(createdActor?.actorStandby).to.deep.include({
 				isEnabled: true,
 				disableStandbyFieldsOverride: false,
 				maxRequestsPerActorRun: 4,
@@ -413,7 +415,6 @@ describe('[api] apify push', () => {
 				build: 'latest',
 				memoryMbytes: 1024,
 				shouldPassActorInput: false,
-				hostedBy: 'user',
 			});
 
 			if (createdActor) await createdActorClient.delete();
