@@ -29,11 +29,6 @@ export interface CLIMetadata {
 }
 
 function detectInstallMethod(): InstallMethod {
-	// Will be useful once npm versions move to running from bundles (and for testing)
-	if (process.env.APIFY_CLI_MARKED_INSTALL_METHOD) {
-		return process.env.APIFY_CLI_MARKED_INSTALL_METHOD as InstallMethod;
-	}
-
 	// This if check is special, and gets replaced with an always-true branch when running from bun bundles
 	if (process.env.APIFY_CLI_BUNDLE) {
 		return 'bundle';
