@@ -133,12 +133,13 @@ jobs:
               if: ${{ matrix.os == 'windows-11-arm' }}
               run: |
                   $bunVersion = (Get-Content .bun-version).Trim()
-                  irm bun.sh/install.ps1 -OutFile install.ps1
+                  $installer = Join-Path $env:RUNNER_TEMP install.ps1
+                  irm bun.sh/install.ps1 -OutFile $installer
 
                   # Bun doesn't have Windows ARM64 builds, so the setup-bun action fails. The install script however,
                   # does "support" it.
 
-                  .\install.ps1 -Version $bunVersion
+                  & $installer -Version $bunVersion
 
                   Join-Path (Resolve-Path ~).Path ".bun\bin" >> $env:GITHUB_PATH
 
