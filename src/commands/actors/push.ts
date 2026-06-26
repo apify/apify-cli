@@ -287,7 +287,9 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				actorId = actor.id;
 			} else {
 				const { templates } = await fetchManifest();
-				const actorTemplate = templates.find((t) => t.name === actorConfig!.template);
+				const actorTemplate = templates.find(
+					(t) => t.name === actorConfig!.template || t.aliases?.includes(actorConfig!.template as string),
+				);
 				const defaultRunOptions = (actorTemplate?.defaultRunOptions || DEFAULT_RUN_OPTIONS) as ActorDefaultRunOptions;
 				const newActor: ActorCollectionCreateOptions = {
 					name: actorConfig!.name as string,

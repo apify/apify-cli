@@ -33,7 +33,9 @@ export async function getTemplateDefinition(
 	if (manifest instanceof Error) throw manifest;
 
 	if (maybeTemplateName) {
-		const templateDefinition = manifest.templates.find((t) => t.name === maybeTemplateName);
+		const templateDefinition = manifest.templates.find(
+			(t) => t.name === maybeTemplateName || t.aliases?.includes(maybeTemplateName),
+		);
 		if (!templateDefinition) {
 			throw new Error(`Could not find the selected template: ${maybeTemplateName} in the list of templates.`);
 		}
