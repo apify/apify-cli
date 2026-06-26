@@ -148,7 +148,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 				waited: false,
 				actor: {
 					id: actorId,
-					name: userFriendlyId,
+					url: `https://console.apify.com/actors/${actorId}`,
 				},
 				run: {
 					id: run.id,
