@@ -1,11 +1,9 @@
 import { randomBytes } from 'node:crypto';
 import { access, mkdir, rm } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { runCli } from '../__helpers__/run-cli.js';
-
-const TestTmpRoot = fileURLToPath(new URL('../../../tmp/', import.meta.url));
+import { TestTmpRoot } from '../__helpers__/tmp.js';
 
 describe('[e2e] apify init', () => {
 	let tmpDir: string;

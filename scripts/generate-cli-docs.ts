@@ -60,6 +60,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.buildsLs },
 		{ command: Commands.buildsRemoveTag },
 		{ command: Commands.buildsRm },
+		{ command: Commands.buildsWait },
 	],
 	'actor-run': [
 		//
@@ -70,6 +71,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.runsLs },
 		{ command: Commands.runsResurrect },
 		{ command: Commands.runsRm },
+		{ command: Commands.runsWait },
 	],
 	'general': [
 		//
@@ -112,6 +114,11 @@ const categories: Record<string, CommandsInCategory[]> = {
 		//
 		{ command: Commands.task },
 		{ command: Commands.taskRun },
+	],
+	'mcp': [
+		//
+		{ command: Commands.mcp },
+		{ command: Commands.mcpInstall },
 	],
 };
 

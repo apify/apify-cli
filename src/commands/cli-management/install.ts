@@ -1,7 +1,6 @@
 import assert from 'node:assert';
 import { existsSync, openSync } from 'node:fs';
 import { mkdir, readFile, symlink, unlink, writeFile } from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 import { ReadStream } from 'node:tty';
@@ -15,11 +14,10 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, simpleLog, success, warning } from '../../lib/outputs.js';
-import { detectShell, shellConfigFile, tildify } from '../../lib/utils.js';
+import { detectShell, shellConfigFile, tildify, userHomeDir } from '../../lib/utils.js';
 import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
 
 const pathToInstallMarker = (installPath: string) => join(installPath, '.install-marker');
-const HOMEDIR = () => process.env.HOME ?? homedir();
 
 export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	static override name = 'install' as const;
@@ -100,7 +98,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 	}
 
 	private async symlinkToLocalBin(installPath: string) {
-		const userHomeDirectory = HOMEDIR();
+		const userHomeDirectory = userHomeDir();
 
 		cliDebugPrint('[install -> symlinkToLocalBin] user home directory', userHomeDirectory);
 
@@ -234,7 +232,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			return;
 		}
 
-		const userHomeDirectory = HOMEDIR();
+		const userHomeDirectory = userHomeDir();
 
 		cliDebugPrint('[install -> promptAddToShell] user home directory', userHomeDirectory);
 

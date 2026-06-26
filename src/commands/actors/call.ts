@@ -10,20 +10,17 @@ import {
 } from 'apify-client';
 import chalk from 'chalk';
 
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
+
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
+import { finalizeRun, runUrl } from '../../lib/commands/run-result.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLocalConfig,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
@@ -146,9 +143,6 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		let runStarted = false;
 		let run: ActorRun;
 
-		let url: string;
-		let datasetUrl: string;
-
 		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
 				id: actorId,
@@ -160,6 +154,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			silent: this.flags.silent,
 			waitForRunToFinish: true,
 			printRunLogs: true,
+			suppressFinalStatus: true,
 		});
 
 		for await (const yieldedRun of iterator) {
@@ -170,8 +165,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 				// A *lot* is copied from `runs info`
 				if (!this.flags.silent) {
-					url = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
-					datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
+					const url = runUrl(actorId, yieldedRun.id);
 
 					const message: string[] = [`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`];
 
@@ -220,23 +214,19 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			}
 		}
 
+		await finalizeRun({
+			apifyClient,
+			run: run!,
+			operation: 'call',
+			json: this.flags.json,
+			silent: this.flags.silent,
+		});
+
 		if (this.flags.json) {
-			printJsonToStdout(run!);
 			return;
 		}
 
-		if (!this.flags.silent) {
-			simpleLog({
-				message: [
-					'',
-					`${chalk.blue('Export results')}: ${datasetUrl!}`,
-					`${chalk.blue('View on Apify Console')}: ${url!}`,
-				].join('\n'),
-				stdout: true,
-			});
-		}
-
-		if (this.flags.outputDataset) {
+		if (this.flags.outputDataset && run!.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
 			const datasetId = run!.defaultDatasetId;
 
 			let info: Dataset;

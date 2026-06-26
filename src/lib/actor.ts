@@ -57,7 +57,7 @@ export const getApifyStorageClient = async (
 	const apifyToken = await getApifyTokenFromEnvOrAuthFile();
 
 	return new ApifyClient({
-		...getApifyClientOptions(apifyToken),
+		...(await getApifyClientOptions(apifyToken)),
 		...options,
 	});
 };

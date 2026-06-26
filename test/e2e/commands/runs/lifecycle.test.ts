@@ -1,15 +1,13 @@
 import { randomBytes } from 'node:crypto';
 import { access, rm } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { ApifyClient } from 'apify-client';
 
 import { getApifyClientOptions } from '../../../../src/lib/utils.js';
 import { runCli } from '../../__helpers__/run-cli.js';
 import { createTestActor, removeTestActor, type TestActor } from '../../__helpers__/test-actor.js';
-
-const TestTmpRoot = fileURLToPath(new URL('../../../../tmp/', import.meta.url));
+import { TestTmpRoot } from '../../__helpers__/tmp.js';
 
 describe('[e2e][api] runs lifecycle', () => {
 	let actor: TestActor;
@@ -30,7 +28,7 @@ describe('[e2e][api] runs lifecycle', () => {
 			throw new Error(`Failed to login:\n${loginResult.stderr}`);
 		}
 
-		client = new ApifyClient(getApifyClientOptions(token));
+		client = new ApifyClient(await getApifyClientOptions(token));
 		const me = await client.user('me').get();
 
 		actor = await createTestActor('e2e-runs');
@@ -66,8 +64,8 @@ describe('[e2e][api] runs lifecycle', () => {
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		const data = JSON.parse(result.stdout);
-		expect(data.id).toBeTruthy();
-		runId = data.id;
+		expect(data.run.id).toBeTruthy();
+		runId = data.run.id;
 	});
 
 	it('runs ls — lists runs', async () => {
@@ -115,13 +113,25 @@ describe('[e2e][api] runs lifecycle', () => {
 	});
 
 	it('runs abort — aborts a running run', async () => {
-		const result = await runCli('apify', ['runs', 'abort', runId, '--json'], {
+		// Start a dedicated long-running run so abort always wins the race against
+		// the hello-world actor finishing on its own.
+		const startResult = await runCli(
+			'apify',
+			['actors', 'start', actorFullName, '--input', JSON.stringify({ sleepMs: 30_000 }), '--json'],
+			{ cwd: actor.dir, env: authEnv },
+		);
+		expect(startResult.exitCode, `stderr: ${startResult.stderr}`).toBe(0);
+		const {
+			run: { id: abortRunId },
+		} = JSON.parse(startResult.stdout);
+
+		const result = await runCli('apify', ['runs', 'abort', abortRunId, '--json'], {
 			env: authEnv,
 		});
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		const data = JSON.parse(result.stdout);
-		expect(data.id).toBe(runId);
+		expect(data.id).toBe(abortRunId);
 	});
 
 	it('runs rm — deletes a run', async () => {
@@ -143,7 +153,10 @@ describe('[e2e][api] runs lifecycle', () => {
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		const data = JSON.parse(result.stdout);
-		expect(data.status).toBe('SUCCEEDED');
+		expect(data.ok).toBe(true);
+		expect(data.operation).toBe('call');
+		expect(data.run.status).toBe('SUCCEEDED');
+		expect(data.exitCode).toBe(0);
 	}, 120_000);
 
 	it('pull — downloads actor source', async () => {

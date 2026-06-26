@@ -1,9 +1,12 @@
+import process from 'node:process';
+
 import type { ActorRun, ActorStartOptions, ActorTaggedBuild } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { consoleRunUrl } from '../../lib/commands/agent-output.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
@@ -123,23 +126,50 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			printRunLogs: false,
 		});
 
-		let run!: ActorRun;
+		let run: ActorRun | undefined;
 
 		for await (const yieldedRun of iterator) {
 			run = yieldedRun;
 		}
 
-		if (this.flags.json) {
-			printJsonToStdout(run);
+		if (!run) {
+			simpleLog({ message: 'Actor run did not start.', stdout: false });
+			process.exitCode = 1;
 			return;
 		}
 
-		const url = `https://console.apify.com/actors/${actorId}/runs/${run.id}`;
+		const url = consoleRunUrl(actorId, run.id);
 		const datasetUrl = `https://console.apify.com/storage/datasets/${run.defaultDatasetId}`;
+
+		if (this.flags.json) {
+			printJsonToStdout({
+				ok: true,
+				operation: 'actors.start',
+				waited: false,
+				actor: {
+					id: actorId,
+					name: userFriendlyId,
+				},
+				run: {
+					id: run.id,
+					status: run.status,
+					url,
+				},
+				next: {
+					wait: `apify runs wait ${run.id} --json`,
+					log: `apify runs log ${run.id}`,
+					info: `apify runs info ${run.id} --json`,
+				},
+				exitCode: 0,
+			});
+			return;
+		}
 
 		const message: string[] = [
 			`${chalk.gray('Run:')} Calling Actor ${userFriendlyId} (${chalk.gray(actorId)})`,
 			'',
+			`${chalk.yellow('Run ID')}: ${run.id}`,
+			`${chalk.yellow('Status')}: ${run.status}`,
 			`${chalk.yellow('Started')}: ${TimestampFormatter.display(run.startedAt)}`,
 		];
 
@@ -183,8 +213,19 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		// url
 		message.push(
 			'',
-			`${chalk.blue('Export results')}: ${datasetUrl!}`,
+			`${chalk.blue('Export results')}: ${datasetUrl}`,
 			`${chalk.blue('View on Apify Console')}: ${url}`,
+			'',
+			chalk.gray('This command does not wait for the run to finish.'),
+			'',
+			'To wait for the final status:',
+			`  apify runs wait ${run.id} --json`,
+			'',
+			'To stream or inspect logs:',
+			`  apify runs log ${run.id}`,
+			'',
+			'To inspect run metadata:',
+			`  apify runs info ${run.id} --json`,
 		);
 
 		simpleLog({

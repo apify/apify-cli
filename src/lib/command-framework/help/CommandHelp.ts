@@ -135,7 +135,7 @@ export class CommandHelp extends BaseCommandRenderer {
 					builder: null as never,
 					aliases: undefined,
 					char: undefined,
-					description: 'Format the command output as JSON',
+					description: 'Format the command output as JSON.',
 					hidden: undefined,
 					exclusive: undefined,
 				},

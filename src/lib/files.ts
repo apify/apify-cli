@@ -1,6 +1,6 @@
 import { existsSync, mkdirSync } from 'node:fs';
 import { readFile, stat, unlink, writeFile } from 'node:fs/promises';
-import { join, sep } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 
 import { rimraf } from 'rimraf';
 
@@ -60,6 +60,15 @@ export const deleteFile = async (filePath: string) => {
 		await unlink(filePath);
 	}
 };
+
+/**
+ * Ensures the Apify directory exists, as well as nested folders (for tests)
+ */
+export function ensureApifyDirectory(file: string) {
+	const path = dirname(file);
+
+	mkdirSync(path, { recursive: true });
+}
 
 export const sumFilesSizeInBytes = async (pathToFiles: string[], cwd: string) => {
 	const filesStats = await Promise.all(pathToFiles.map(async (filePath) => stat(join(cwd, filePath))));

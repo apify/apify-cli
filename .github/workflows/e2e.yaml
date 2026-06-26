@@ -44,7 +44,7 @@ jobs:
               run: |
                   echo "::add-mask::${{ secrets.APIFY_TEST_USER_API_TOKEN }}"
 
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
 
             - name: Use Node.js 24
               uses: actions/setup-node@v6
@@ -52,7 +52,7 @@ jobs:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.2.0
+              uses: apify/actions/pnpm-install@v1.3.0
 
             - name: Build CLI from source
               run: pnpm run build

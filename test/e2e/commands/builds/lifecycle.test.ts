@@ -25,7 +25,7 @@ describe('[e2e][api] builds namespace', () => {
 			throw new Error(`Failed to login:\n${loginResult.stderr}`);
 		}
 
-		client = new ApifyClient(getApifyClientOptions(token));
+		client = new ApifyClient(await getApifyClientOptions(token));
 
 		actor = await createTestActor('e2e-builds');
 
@@ -45,7 +45,7 @@ describe('[e2e][api] builds namespace', () => {
 			env: authEnv,
 		});
 
-		buildId = JSON.parse(create.stdout).id;
+		buildId = JSON.parse(create.stdout).build.id;
 		await client.build(buildId).waitForFinish();
 
 		const create2 = await runCli('apify', ['builds', 'create', '--json'], {
@@ -53,7 +53,7 @@ describe('[e2e][api] builds namespace', () => {
 			env: authEnv,
 		});
 
-		await client.build(JSON.parse(create2.stdout).id).waitForFinish();
+		await client.build(JSON.parse(create2.stdout).build.id).waitForFinish();
 	}, 600_000);
 
 	afterAll(async () => {

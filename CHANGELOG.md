@@ -3,7 +3,24 @@
 All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-start -->
-## 1.6.2 - **not yet released**
+## 1.6.3 - **not yet released**
+
+### 🚀 Features
+
+- **auth:** Use os keyring for secure credential storage ([#1148](https://github.com/apify/apify-cli/pull/1148)) ([bbfea42](https://github.com/apify/apify-cli/commit/bbfea4286345aa5f15429d20d9d52013e7adc637)) by [@l2ysho](https://github.com/l2ysho), closes [#1115](https://github.com/apify/apify-cli/issues/1115)
+- **mcp:** Add &#x27;apify mcp install &lt;client&gt;&#x27; command ([#1145](https://github.com/apify/apify-cli/pull/1145)) ([f7bcd58](https://github.com/apify/apify-cli/commit/f7bcd585c474be1cff6578802939adceced33c15)) by [@MQ37](https://github.com/MQ37)
+- **push:** Add final status block and structured JSON output ([#1199](https://github.com/apify/apify-cli/pull/1199)) ([71560dd](https://github.com/apify/apify-cli/commit/71560dd8aa8de6bbb5e0c2db7a6b9e9d48abd4b8)) by [@l2ysho](https://github.com/l2ysho), closes [#1136](https://github.com/apify/apify-cli/issues/1136)
+- **cli:** Add wait commands and enhance agentic output for builds and runs ([#1168](https://github.com/apify/apify-cli/pull/1168)) ([d3c3e5b](https://github.com/apify/apify-cli/commit/d3c3e5b16a29029acdbb3252622a56a587cf8829)) by [@l2ysho](https://github.com/l2ysho), closes [#1140](https://github.com/apify/apify-cli/issues/1140)
+- **call:** Emit explicit final run status and JSON output (#1139) ([#1198](https://github.com/apify/apify-cli/pull/1198)) ([ce8c287](https://github.com/apify/apify-cli/commit/ce8c287c862d03b42e8fe3be77fca65aa03f438d)) by [@l2ysho](https://github.com/l2ysho), closes [#1139](https://github.com/apify/apify-cli/issues/1139)
+- **auth:** Use OS keyring in bundle distributions ([#1197](https://github.com/apify/apify-cli/pull/1197)) ([7f4e4ae](https://github.com/apify/apify-cli/commit/7f4e4aec787053f06ed454303a2456915a33eace)) by [@l2ysho](https://github.com/l2ysho), closes [#1170](https://github.com/apify/apify-cli/issues/1170)
+
+### 🐛 Bug Fixes
+
+- **run:** Propagate the Actor&#x27;s non-zero exit code ([#1195](https://github.com/apify/apify-cli/pull/1195)) ([ca1c009](https://github.com/apify/apify-cli/commit/ca1c00987995a7495eb4f8c4bb74c6c010ec7ee9)) by [@l2ysho](https://github.com/l2ysho), closes [#1180](https://github.com/apify/apify-cli/issues/1180), [#1190](https://github.com/apify/apify-cli/issues/1190)
+
+
+<!-- git-cliff-unreleased-end -->
+## [1.6.2](https://github.com/apify/apify-cli/releases/tag/v1.6.2) (2026-06-03)
 
 ### 🚀 Features
 
@@ -15,11 +32,16 @@ All notable changes to this project will be documented in this file.
 
 - Drop only-allow preinstall, enforce pnpm via devEngines ([#1129](https://github.com/apify/apify-cli/pull/1129)) ([19f0c2d](https://github.com/apify/apify-cli/commit/19f0c2d09d8c43b39187104bfea37f89d2b1f2f6)) by [@B4nan](https://github.com/B4nan)
 - Send unified CLI telemetry events ([#1133](https://github.com/apify/apify-cli/pull/1133)) ([985bb18](https://github.com/apify/apify-cli/commit/985bb1852e83adb92e70e8274d50b25c5bacb533)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1132](https://github.com/apify/apify-cli/issues/1132)
+- **actors info:** Handle tiered pay-per-event pricing ([#1173](https://github.com/apify/apify-cli/pull/1173)) ([8a2a064](https://github.com/apify/apify-cli/commit/8a2a06489e68ff0c8cbce59d48474196512f7448)) by [@l2ysho](https://github.com/l2ysho), closes [#1171](https://github.com/apify/apify-cli/issues/1171)
+- **push:** Prevent hang and tag race in apify push (#1131) ([#1134](https://github.com/apify/apify-cli/pull/1134)) ([c68e963](https://github.com/apify/apify-cli/commit/c68e963dd6bf1bad716818cd1c08f121a5907098)) by [@l2ysho](https://github.com/l2ysho), closes [#1131](https://github.com/apify/apify-cli/issues/1131)
 
 
-<!-- git-cliff-unreleased-end -->
 
 ## [1.6.1](https://github.com/apify/apify-cli/releases/tag/v1.6.1) (2026-05-06)
+
+### 🐛 Bug Fixes
+
+- Remove preinstall script from the published package, fixing `npm install` for consumers ([#1125](https://github.com/apify/apify-cli/pull/1125)) ([4b569eb](https://github.com/apify/apify-cli/commit/4b569ebe1667eb47b3f440897e836b931ad54545)) by [@l2ysho](https://github.com/l2ysho)
 
 ## [1.6.0](https://github.com/apify/apify-cli/releases/tag/v1.6.0) (2026-05-05)
 

@@ -69,10 +69,11 @@ ARGUMENTS
 FLAGS
   -d, --body=<value>      The request body (JSON string).
                           Use "-" to read from stdin.
-      --describe=<value>  Describe an endpoint: print every HTTP
-                          method on a path, its summary, and path parameters.
-                          Accepts a path like "actor-runs/{runId}" or
-                          "/v2/actor-runs/{runId}".
+      --describe=<value>  Print a reference for an endpoint
+                          path: its HTTP methods, summary, and path parameters.
+                          Leading slashes and a version prefix in the path are
+                          optional. For example, "actor-runs/{runId}" and
+                          "/v2/actor-runs/{runId}" are both accepted.
       -H, --header=<value>    Additional HTTP header(s). Pass a
                           single "key:value" string, or a JSON object like
                           '{"X-Foo": "bar", "X-Baz": "qux"}' to send multiple
@@ -85,9 +86,11 @@ FLAGS
                           <options: GET|POST|PUT|PATCH|DELETE>
   -p, --params=<value>    Query parameters as a JSON object,
                           e.g. '{"limit": 1, "desc": true}'.
-  -s, --search=<value>    Filter --list-endpoints by a
-                          space-separated query. Each token must appear
-                          (case-insensitive) in method, path, or summary.
+  -s, --search=<value>    Filter results returned by
+                          --list-endpoints. The query is case-insensitive and split
+                          into tokens by spaces. For an endpoint to be returned,
+                          every token must appear in that endpoint's method, path,
+                          or summary.
 ```
 
 ##### `apify telemetry`
@@ -237,7 +240,7 @@ USAGE
   $ apify secrets ls [--json]
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify secrets rm`
@@ -633,7 +636,7 @@ USAGE
 
 FLAGS
       --desc            Sort Actors in descending order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of Actors that will be listed.
       --my              Whether to list Actors made by the logged
                         in user.
@@ -664,7 +667,7 @@ FLAGS
       --category=<value>       Filter by category (e.g.
                                AI).
       --json                   Format the command output as
-                               JSON
+                               JSON.
       --limit=<value>          Maximum number of results to
                                return.
       --offset=<value>         Number of results to skip
@@ -734,15 +737,20 @@ FLAGS
                                  when the local files are older than the Actor on
                                  the platform.
       --json                     Format the command
-                                 output as JSON
+                                 output as JSON.
       --open                     Whether to open the
                                  browser automatically to the Actor details page.
   -v, --version=<value>          Actor version number
                                  to which the files should be pushed. By default, it
                                  is taken from the '.actor/actor.json' file.
-  -w, --wait-for-finish=<value>  Seconds for waiting
-                                 to build to finish, if no value passed, it waits
-                                 forever.
+  -w, --wait-for-finish=<value>  In seconds, how long
+                                 to wait for the build to finish. If no value
+                                 passed, it waits forever. To return as soon as the
+                                 build is queued (fire-and-forget), pass 0. The exit
+                                 code reflects the build outcome only — if the wait
+                                 elapses with the build still running, the command
+                                 exits 0; check status via the printed link or
+                                 --json output.
 ```
 
 ##### `apify actors pull` / `apify pull`
@@ -795,7 +803,7 @@ FLAGS
                             JSON input to be given to the Actor. The file must be a
                             valid JSON file. You can also specify `-` to read from
                             standard input.
-      --json                Format the command output as JSON
+      --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
   -o, --output-dataset      Prints out the entire default
@@ -833,7 +841,7 @@ FLAGS
                             input to be given to the Actor. The file must be a valid
                             JSON file. You can also specify `-` to read from
                             standard input.
-      --json                Format the command output as JSON
+      --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
   -t, --timeout=<value>     Timeout for the Actor run in
@@ -854,7 +862,7 @@ ARGUMENTS
 
 FLAGS
       --input   Return the Actor input schema.
-      --json    Format the command output as JSON
+      --json    Format the command output as JSON.
       --readme  Return the Actor README.
 ```
 <!-- actor-deploy-commands-end -->
@@ -881,6 +889,8 @@ SUBCOMMANDS
   builds log         Prints the log of a specific build.
   builds info        Prints information about a specific build.
   builds create      Creates a new build of the Actor.
+  builds wait        Waits for an Actor build to reach a
+                     terminal status (SUCCEEDED, FAILED, ABORTED, TIMED-OUT).
 ```
 
 ##### `apify builds add-tag`
@@ -905,14 +915,14 @@ DESCRIPTION
 
 USAGE
   $ apify builds create [actorId] [--json] [--log]
-                        [--tag <value>] [--version <value>]
+                        [--tag <value>] [--version <value>] [--wait]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to trigger a build for. By default,
            it will use the Actor from the current directory.
 
 FLAGS
-      --json             Format the command output as JSON
+      --json             Format the command output as JSON.
       --log              Whether to print out the build log after
                          the build is triggered.
       --tag=<value>      Build tag to be applied to the
@@ -920,6 +930,8 @@ FLAGS
       --version=<value>  Optional Actor Version to build. By
                          default, this will be inferred from the tag, but this flag
                          is required when multiple versions have the same tag.
+      --wait             Wait for the build to reach a terminal
+                         status. Returns exit code 0 only when the build SUCCEEDED.
 ```
 
 ##### `apify builds info`
@@ -935,7 +947,7 @@ ARGUMENTS
   buildId  The build ID to get information about.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify builds log`
@@ -968,7 +980,7 @@ ARGUMENTS
 FLAGS
   -c, --compact         Display a compact table.
       --desc            Sort builds in descending order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of builds that will be listed.
       --offset=<value>  Number of builds that will be skipped.
 ```
@@ -1005,6 +1017,32 @@ FLAGS
   -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
              prompts.
 ```
+
+##### `apify builds wait`
+
+```sh
+DESCRIPTION
+  Waits for an Actor build to reach a terminal status (SUCCEEDED, FAILED, 
+  ABORTED, TIMED-OUT).
+  Returns exit code 0 only when the build SUCCEEDED. Designed for CI and agentic
+   workflows.
+
+USAGE
+  $ apify builds wait <buildId> [--json]
+                      [--poll-interval <value>] [-t <value>]
+
+ARGUMENTS
+  buildId  The build ID to wait for.
+
+FLAGS
+      --json                   Format the command output as
+                               JSON.
+      --poll-interval=<value>  In seconds, how often to
+                               poll the platform. Defaults to 2.
+  -t, --timeout=<value>        In seconds, how long to
+                               wait before giving up. If skipped, it waits
+                               indefinitely.
+```
 <!-- actor-build-commands-end -->
 <!-- prettier-ignore-end -->
 
@@ -1029,6 +1067,8 @@ SUBCOMMANDS
   runs ls         Lists all runs of the Actor.
   runs resurrect  Resurrects an aborted or finished Actor Run.
   runs rm         Deletes an Actor Run.
+  runs wait       Waits for an Actor run to reach a terminal
+                  status (SUCCEEDED, FAILED, ABORTED, TIMED-OUT).
 ```
 
 ##### `apify runs abort`
@@ -1046,7 +1086,7 @@ ARGUMENTS
 FLAGS
   -f, --force  Whether to force the run to abort immediately, instead
                of gracefully.
-      --json   Format the command output as JSON
+      --json   Format the command output as JSON.
 ```
 
 ##### `apify runs info`
@@ -1062,7 +1102,7 @@ ARGUMENTS
   runId  The run ID to print information about.
 
 FLAGS
-      --json     Format the command output as JSON
+      --json     Format the command output as JSON.
   -v, --verbose  Prints more in-depth information about the Actor
                  run.
 ```
@@ -1097,7 +1137,7 @@ ARGUMENTS
 FLAGS
   -c, --compact         Display a compact table.
       --desc            Sort runs in descending order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of runs that will be listed.
       --offset=<value>  Number of runs that will be skipped.
 ```
@@ -1115,7 +1155,7 @@ ARGUMENTS
   runId  The run ID to resurrect.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify runs rm`
@@ -1133,6 +1173,32 @@ ARGUMENTS
 FLAGS
   -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
              prompts.
+```
+
+##### `apify runs wait`
+
+```sh
+DESCRIPTION
+  Waits for an Actor run to reach a terminal status (SUCCEEDED, FAILED, ABORTED,
+   TIMED-OUT).
+  Returns exit code 0 only when the run SUCCEEDED. Designed for CI and agentic 
+  workflows.
+
+USAGE
+  $ apify runs wait <runId> [--json] [--poll-interval <value>]
+                    [-t <value>]
+
+ARGUMENTS
+  runId  The run ID to wait for.
+
+FLAGS
+      --json                   Format the command output as
+                               JSON.
+      --poll-interval=<value>  How often to poll the
+                               platform, in seconds. Defaults to 2.
+  -t, --timeout=<value>        Maximum seconds to wait
+                               before giving up. Without this flag the command waits
+                               indefinitely.
 ```
 <!-- actor-run-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1182,7 +1248,7 @@ ARGUMENTS
   datasetName  Optional name for the Dataset.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify datasets get-items`
@@ -1222,7 +1288,7 @@ ARGUMENTS
   storeId  The dataset store ID to print information about.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify datasets ls`
@@ -1237,7 +1303,7 @@ USAGE
 
 FLAGS
       --desc            Sorts datasets in descending order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of datasets that will be listed.
       --offset=<value>  Number of datasets that will be skipped.
       --unnamed         Lists datasets that don't have a name set.
@@ -1347,7 +1413,7 @@ ARGUMENTS
                         store.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify key-value-stores delete-value`
@@ -1403,7 +1469,7 @@ ARGUMENTS
   storeId  The key-value store ID to print information about.
 
 FLAGS
-      --json  Format the command output as JSON
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify key-value-stores keys`
@@ -1424,7 +1490,7 @@ FLAGS
       --exclusive-start-key=<value>  The key to start
                                      the list from.
       --json                         Format the
-                                     command output as JSON
+                                     command output as JSON.
       --limit=<value>                The maximum
                                      number of keys to return.
 ```
@@ -1442,7 +1508,7 @@ USAGE
 FLAGS
       --desc            Sorts key-value stores in descending
                         order.
-      --json            Format the command output as JSON
+      --json            Format the command output as JSON.
       --limit=<value>   Number of key-value stores that will be
                         listed.
       --offset=<value>  Number of key-value stores that will be
@@ -1556,7 +1622,7 @@ DESCRIPTION
   Customize with --memory and --timeout flags.
 
 USAGE
-  $ apify task run <taskId> [-b <value>] [-m <value>]
+  $ apify task run <taskId> [-b <value>] [--json] [-m <value>]
                    [-t <value>]
 
 ARGUMENTS
@@ -1566,10 +1632,59 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>    Tag or number of the build to run
                          (e.g. "latest" or "1.2.34").
+      --json             Format the command output as JSON.
   -m, --memory=<value>   Amount of memory allocated for the
                          Task run, in megabytes.
   -t, --timeout=<value>  Timeout for the Task run in seconds.
                          Zero value means there is no timeout.
 ```
 <!-- task-commands-end -->
+<!-- prettier-ignore-end -->
+
+### MCP
+
+Use these commands to configure the Apify MCP server in your AI client.
+
+<!-- prettier-ignore-start -->
+<!-- mcp-commands-start -->
+##### `apify mcp`
+
+```sh
+DESCRIPTION
+  Configure the Apify MCP server in your AI client: Claude Code, Cursor, VS 
+  Code, Codex CLI, Kiro, or Antigravity.
+
+SUBCOMMANDS
+  mcp install  Configure a local MCP client to use the Apify MCP
+               server. Writes or merges a server entry named 'apify' into the
+               client's config file, or runs the client's own 'mcp add' command
+               when available.
+```
+
+##### `apify mcp install`
+
+```sh
+DESCRIPTION
+  Configure a local MCP client to use the Apify MCP server. Writes or merges a 
+  server entry named 'apify' into the client's config file, or runs the client's
+   own 'mcp add' command when available.
+
+USAGE
+  $ apify mcp install <client> [-t <value>] [--tools <value>]
+                      [--url <value>] [-y]
+
+ARGUMENTS
+  client  Target MCP client. One of: claude-code, cursor, vscode,
+          vscode-insiders, codex, kiro, antigravity.
+
+FLAGS
+  -t, --token=<value>  Apify API token to embed in the config.
+                       Defaults to the token from 'apify login'.
+      --tools=<value>  Comma-separated tool IDs or Actor full names
+                       to expose. Forwarded as a '?tools=' query parameter.
+      --url=<value>    Apify MCP server URL.
+  -y, --yes            Overwrite an existing 'apify' entry
+                       without prompting.
+```
+<!-- mcp-commands-end -->
 <!-- prettier-ignore-end -->

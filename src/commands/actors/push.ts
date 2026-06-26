@@ -6,7 +6,12 @@ import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
-import { ACTOR_JOB_STATUSES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
+import {
+	ACTOR_JOB_STATUSES,
+	ACTOR_JOB_TERMINAL_STATUSES,
+	ACTOR_SOURCE_TYPES,
+	MAX_MULTIFILE_BYTES,
+} from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -16,7 +21,7 @@ import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } fro
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
-import { error, info, link, run, success, warning } from '../../lib/outputs.js';
+import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
 	createActZip,
@@ -25,6 +30,7 @@ import {
 	getLocalUserInfo,
 	getLoggedClientOrThrow,
 	outputJobLog,
+	parseWaitForFinishMillis,
 	printJsonToStdout,
 } from '../../lib/utils.js';
 
@@ -41,6 +47,79 @@ const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 // Actor does not have a build with a `latest` tag, so until
 // that changes, we have to add it.
 const DEFAULT_BUILD_TAG = 'latest';
+
+// How many trailing log lines to surface as the failure reason.
+const BUILD_LOG_TAIL_LINES = 10;
+
+// TODO: switch to `type` once the `consistent-type-definitions` lint rule is
+// aligned with the Apify Coding Standards (tracked in
+// https://github.com/apify/apify-cli/issues/1211).
+interface PushResult {
+	ok: boolean;
+	operation: 'push';
+	actor: { id: string; url: string };
+	build: { id: string; number: string; status: string; url: string };
+	error?: { phase: 'build'; message: string; logTail: string[] };
+	exitCode?: number;
+}
+
+interface PushOutcome {
+	resultLabel: string;
+	exitCode?: number;
+	ok: boolean;
+	errorMessage?: string;
+}
+
+// Maps the final build status to the overall push outcome. A still-running
+// fire-and-forget build is not a failure (`ok: true`) — its pending state is
+// conveyed by the build status, and it carries no exit code yet.
+export function resolvePushOutcome(buildStatus: string): PushOutcome {
+	switch (buildStatus) {
+		case ACTOR_JOB_STATUSES.SUCCEEDED:
+			return { resultLabel: 'SUCCEEDED', exitCode: 0, ok: true };
+		case ACTOR_JOB_STATUSES.READY:
+			return { resultLabel: 'PENDING', ok: true };
+		case ACTOR_JOB_STATUSES.RUNNING:
+			return { resultLabel: 'RUNNING', ok: true };
+		case ACTOR_JOB_STATUSES.ABORTING:
+			return {
+				resultLabel: 'ABORTING',
+				exitCode: CommandExitCodes.BuildAborted,
+				ok: false,
+				errorMessage: 'Build is aborting',
+			};
+		case ACTOR_JOB_STATUSES.ABORTED:
+			return {
+				resultLabel: 'ABORTED',
+				exitCode: CommandExitCodes.BuildAborted,
+				ok: false,
+				errorMessage: 'Build aborted',
+			};
+		case ACTOR_JOB_STATUSES.TIMING_OUT:
+			return {
+				resultLabel: 'TIMING_OUT',
+				exitCode: CommandExitCodes.BuildTimedOut,
+				ok: false,
+				errorMessage: 'Build is timing out',
+			};
+		case ACTOR_JOB_STATUSES.TIMED_OUT:
+			return {
+				resultLabel: 'TIMED_OUT',
+				exitCode: CommandExitCodes.BuildTimedOut,
+				ok: false,
+				errorMessage: 'Build timed out',
+			};
+		case ACTOR_JOB_STATUSES.FAILED:
+			return { resultLabel: 'FAILED', exitCode: CommandExitCodes.BuildFailed, ok: false, errorMessage: 'Build failed' };
+		default:
+			return {
+				resultLabel: 'UNKNOWN',
+				exitCode: CommandExitCodes.BuildFailed,
+				ok: false,
+				errorMessage: `Build finished with unexpected status "${buildStatus}"`,
+			};
+	}
+}
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	static override name = 'push' as const;
@@ -87,7 +166,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}),
 		'wait-for-finish': Flags.string({
 			char: 'w',
-			description: 'Seconds for waiting to build to finish, if no value passed, it waits forever.',
+			description:
+				'In seconds, how long to wait for the build to finish. If no value passed, it waits forever. To return as soon as the build is queued (fire-and-forget), pass 0. The exit code reflects the build outcome only — if the wait elapses with the build still running, the command exits 0; check status via the printed link or --json output.',
 			required: false,
 		}),
 		'open': Flags.boolean({
@@ -190,9 +270,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			buildTag = DEFAULT_BUILD_TAG;
 		}
 
-		const waitForFinishMillis = Number.isNaN(this.flags.waitForFinish)
-			? undefined
-			: Number.parseInt(this.flags.waitForFinish!, 10) * 1000;
+		const waitForFinishMillis = parseWaitForFinishMillis(this.flags.waitForFinish);
 
 		// User can override actorId of pushing Actor.
 		// It causes that we push Actor to this id but attributes in localConfig will remain same.
@@ -359,69 +437,136 @@ Skipping push. Use --force to override.`,
 
 		// Build Actor on Apify and wait for build to finish
 		run({ message: `Building Actor ${actor.name}` });
+		// Anchor the deadline at build start so log streaming + status polling
+		// share one budget. Without this, a log stream that dies near the cap
+		// would let the poll loop wait another full --wait-for-finish on top.
+		const deadline = waitForFinishMillis === undefined ? Infinity : Date.now() + waitForFinishMillis;
 		let build = await actorClient.build(version, {
 			useCache: true,
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
 		});
 
-		try {
-			// While the log is streaming, forward interrupt signals to a
-			// platform-side abort so the build doesn't keep running after the
-			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
-			// SIGHUP from a closing terminal). The `using` binding guarantees
-			// the listener is removed before we poll for final status.
-			using _signalHandler = useAbortJobOnSignal({
-				apifyClient,
-				kind: 'build',
-				jobId: build.id,
-			});
+		// Forward interrupt signals (Ctrl+C, SIGTERM, SIGHUP) to a platform-side
+		// abort for the lifetime of log streaming AND status polling, so the
+		// build doesn't keep running after the user gives up waiting.
+		using _signalHandler = useAbortJobOnSignal({
+			apifyClient,
+			kind: 'build',
+			jobId: build.id,
+		});
 
-			await outputJobLog({ job: build, timeoutMillis: waitForFinishMillis, apifyClient });
+		try {
+			const logBudgetMs = Number.isFinite(deadline) ? Math.max(0, deadline - Date.now()) : undefined;
+			await outputJobLog({ job: build, timeoutMillis: logBudgetMs, apifyClient });
 		} catch (err) {
 			warning({ message: 'Can not get log:' });
 			console.error(err);
 		}
 
-		build = (await apifyClient.build(build.id).get())!;
+		const refreshedBuild = await apifyClient.build(build.id).get();
+		if (!refreshedBuild) {
+			error({ message: `Could not fetch build with ID "${build.id}" after deployment.` });
+			process.exitCode = CommandExitCodes.BuildFailed;
+			return;
+		}
+		build = refreshedBuild;
+
+		// `outputJobLog` can return before the build is actually terminal (stream
+		// ended early, timeout hit). Poll the remaining budget so the status
+		// branches below see the real outcome.
+		while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
+			await new Promise((resolve) => setTimeout(resolve, 1000));
+			build = (await apifyClient.build(build.id).get())!;
+		}
+
+		// Platform updates `taggedBuilds[buildTag]` asynchronously after the
+		// build finishes. Wait until the tag points at this build so callers
+		// (including --json automation) that immediately
+		// `actor.start({ build: buildTag })` don't race it. Skipped when
+		// --wait-for-finish=0 (fire-and-forget).
+		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED && buildTag && waitForFinishMillis !== 0) {
+			run({ message: `Applying build tag "${buildTag}"...` });
+			const tagDeadline = Date.now() + 5_000;
+			let tagApplied = false;
+			while (Date.now() < tagDeadline) {
+				const a = await actorClient.get();
+				if (a?.taggedBuilds?.[buildTag]?.buildId === build.id) {
+					tagApplied = true;
+					break;
+				}
+				await new Promise((resolve) => setTimeout(resolve, 1000));
+			}
+			if (!tagApplied) {
+				warning({
+					message: `Build succeeded but tag "${buildTag}" was not set after 5 seconds; subsequent calls referencing this tag may not find it.`,
+				});
+			}
+		}
+
+		const buildStatus = build.status as string;
+		const outcome = resolvePushOutcome(buildStatus);
+
+		const actorUrl = `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`;
+		const buildUrl = `${actorUrl}#/builds/${build.buildNumber}`;
+
+		// Surface the tail of the build log as the failure reason. Best-effort:
+		// the build status already conveys the outcome if the log can't be read.
+		let logTail: string[] = [];
+		if (outcome.errorMessage) {
+			try {
+				const log = await apifyClient.log(build.id).get();
+				if (log) {
+					logTail = log
+						.split('\n')
+						.map((line) => line.trimEnd())
+						.filter((line) => line.length > 0)
+						.slice(-BUILD_LOG_TAIL_LINES);
+				}
+			} catch {
+				// ignore — reason block is optional
+			}
+		}
+
+		if (outcome.exitCode) {
+			process.exitCode = outcome.exitCode;
+		}
+
+		const result: PushResult = {
+			ok: outcome.ok,
+			operation: 'push',
+			actor: { id: build.actId, url: actorUrl },
+			build: { id: build.id, number: build.buildNumber, status: buildStatus, url: buildUrl },
+		};
+		if (outcome.exitCode !== undefined) {
+			result.exitCode = outcome.exitCode;
+		}
+		if (outcome.errorMessage) {
+			result.error = { phase: 'build', message: outcome.errorMessage, logTail };
+		}
 
 		if (this.flags.json) {
-			printJsonToStdout(build);
+			printJsonToStdout(result);
 			return;
 		}
 
-		link({
-			message: 'Actor build detail',
-			url: `https://console.apify.com${redirectUrlPart}/actors/${build.actId}#/builds/${build.buildNumber}`,
-		});
-
-		link({
-			message: 'Actor detail',
-			url: `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`,
-		});
+		const lines = [
+			`Apify push result: ${outcome.resultLabel}`,
+			'',
+			'Upload: SUCCEEDED',
+			`Build: ${buildStatus}`,
+			`Actor ID: ${build.actId}`,
+			`Build ID: ${build.id}`,
+			`Build number: ${build.buildNumber}`,
+			...(outcome.exitCode ? [`Exit code: ${outcome.exitCode}`] : []),
+			'',
+			`Actor URL: ${actorUrl}`,
+			`Build URL: ${buildUrl}`,
+			...(outcome.errorMessage && logTail.length ? ['', 'Reason:', ...logTail] : []),
+		];
+		simpleLog({ stdout: true, message: lines.join('\n') });
 
 		if (this.flags.open) {
-			await open(`https://console.apify.com${redirectUrlPart}/actors/${build.actId}`);
-		}
-
-		if (build.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-			success({ message: 'Actor was deployed to Apify cloud and built there.' });
-			// @ts-expect-error FIX THESE TYPES 😢
-		} else if (build.status === ACTOR_JOB_STATUSES.READY) {
-			warning({ message: 'Build is waiting for allocation.' });
-			// @ts-expect-error FIX THESE TYPES 😢
-		} else if (build.status === ACTOR_JOB_STATUSES.RUNNING) {
-			warning({ message: 'Build is still running.' });
-			// @ts-expect-error FIX THESE TYPES 😢
-		} else if (build.status === ACTOR_JOB_STATUSES.ABORTED || build.status === ACTOR_JOB_STATUSES.ABORTING) {
-			warning({ message: 'Build was aborted!' });
-			process.exitCode = CommandExitCodes.BuildAborted;
-			// @ts-expect-error FIX THESE TYPES 😢
-		} else if (build.status === ACTOR_JOB_STATUSES.TIMED_OUT || build.status === ACTOR_JOB_STATUSES.TIMING_OUT) {
-			warning({ message: 'Build timed out!' });
-			process.exitCode = CommandExitCodes.BuildTimedOut;
-		} else {
-			error({ message: 'Build failed!' });
-			process.exitCode = CommandExitCodes.BuildFailed;
+			await open(actorUrl);
 		}
 	}
 }
