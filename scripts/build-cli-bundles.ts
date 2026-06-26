@@ -156,7 +156,7 @@ for (const entryPoint of entryPoints) {
 		// Point the keyring import at this target's native subpackage so --compile embeds its
 		// `.node`. Rewrite every iteration so the compiled file is never the stale, unpatched
 		// Bun output — the proxy-agent fix above lands on disk here too, not just the keyring swap.
-		const subpackage = keyringSubpackage(os, arch, Boolean(musl));
+		const subpackage = keyringSubpackage(os, arch, isMusl);
 		await writeFile(entrypointResultFilePath, fatEntrypointContent.replaceAll(KEYRING_PLACEHOLDER, subpackage));
 
 		// Step 2: create the final executable bundle
