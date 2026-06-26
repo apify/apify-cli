@@ -2,12 +2,15 @@ import assert from 'node:assert';
 import { existsSync, openSync } from 'node:fs';
 import { mkdir, readFile, symlink, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import process from 'node:process';
 import { ReadStream } from 'node:tty';
 
 import chalk from 'chalk';
 import which from 'which';
 
+import { writeEntrypointShims } from '../../lib/bundleMigration.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { Flags } from '../../lib/command-framework/flags.js';
 import { useCLIMetadata } from '../../lib/hooks/useCLIMetadata.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, simpleLog, success, warning } from '../../lib/outputs.js';
@@ -23,6 +26,15 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 
 	static override hidden = true;
 
+	static override flags = {
+		'shims-only': Flags.boolean({
+			description:
+				'Only (re)create the apify/actor wrapper scripts next to the bundle, then exit. Used by the install/upgrade scripts.',
+			hidden: true,
+			default: false,
+		}),
+	};
+
 	async run() {
 		const { installMethod, installPath, version } = useCLIMetadata();
 
@@ -32,6 +44,17 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 		}
 
 		assert(installPath, 'When CLI is installed via bundles, the install path must be set');
+
+		// Always (re)create the wrapper scripts so `apify`/`actor` resolve from cmd.exe, PowerShell and POSIX
+		// shells. This is the single source of truth for shim content, shared by install, upgrade and migration.
+		writeEntrypointShims(installPath, process.platform === 'win32');
+
+		cliDebugPrint('[install] wrote entrypoint shims to', installPath);
+
+		// The install/upgrade scripts invoke us purely to (re)write the shims; nothing else applies to them.
+		if (this.flags.shimsOnly) {
+			return;
+		}
 
 		const installMarkerPath = pathToInstallMarker(installPath);
 
