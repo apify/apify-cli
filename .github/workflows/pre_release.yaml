@@ -66,13 +66,6 @@ jobs:
             - name: Update package version in package.json
               run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version
 
-            - name: Update CHANGELOG.md
-              uses: DamianReeves/write-file-action@master
-              with:
-                  path: CHANGELOG.md
-                  write-mode: overwrite
-                  contents: ${{ needs.release_metadata.outputs.changelog }}
-
             - name: Format
               run: pnpm install && pnpm run format:fix
 
