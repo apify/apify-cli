@@ -119,10 +119,7 @@ export async function getInputOverride(
 
 				if (fileExists || inputLooksLikePath) {
 					error({
-						message: withSchemaHint(
-							`Providing a JSON file path in the --input flag is not supported. Use the "--input-file=" flag instead`,
-							schemaHint,
-						),
+						message: `Providing a JSON file path in the --input flag is not supported. Use the "--input-file=" flag instead`,
 					});
 					process.exitCode = CommandExitCodes.InvalidInput;
 					return false;
