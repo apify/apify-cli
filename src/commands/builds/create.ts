@@ -13,6 +13,7 @@ import {
 	waitForTerminalStatus,
 } from '../../lib/commands/agent-output.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
+import { CommandExitCodes } from '../../lib/consts.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import {
@@ -71,6 +72,16 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 	async run() {
 		const { tag, version, json, log, wait } = this.flags;
 		const { actorId } = this.args;
+
+		if (log && wait) {
+			error({
+				message:
+					'The --log and --wait flags cannot be used together. --log already waits for the build to finish while streaming its log.',
+			});
+			process.exitCode = CommandExitCodes.InvalidInput;
+
+			return;
+		}
 
 		const client = await getLoggedClientOrThrow();
 
@@ -148,43 +159,32 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		const actorFullName = `${actorInfo?.username ? `${actorInfo.username}/` : ''}${actorInfo?.name ?? 'unknown-actor'}`;
 		const url = consoleBuildUrl(build.actId, build.buildNumber);
 
-		if (log) {
-			// While the log is streaming, forward interrupt signals to a
-			// platform-side abort so the build doesn't keep running after the
-			// user gives up waiting (Ctrl+C, SIGTERM from a parent process,
-			// SIGHUP from a closing terminal). The `using` binding guarantees
-			// the listener is removed when the block exits.
+		if (log || wait) {
+			// Forward interrupt signals to a platform-side abort so the build
+			// doesn't keep running after the user gives up waiting (Ctrl+C,
+			// SIGTERM from a parent process, SIGHUP from a closing terminal).
+			// The `using` binding removes the listener when the block exits.
 			using _signalHandler = useAbortJobOnSignal({
 				apifyClient: client,
 				kind: 'build',
 				jobId: build.id,
 			});
 
-			try {
-				await outputJobLog({ job: build, apifyClient: client });
-			} catch (err) {
-				// This should never happen...
-				error({
-					message: `Failed to print log for build with ID "${build.id}": ${(err as Error).message}`,
-					stdout: true,
-				});
+			if (log) {
+				try {
+					await outputJobLog({ job: build, apifyClient: client });
+				} catch (err) {
+					// This should never happen...
+					error({
+						message: `Failed to print log for build with ID "${build.id}": ${(err as Error).message}`,
+						stdout: true,
+					});
+				}
 			}
 
-			// Refresh build after log stream ends to capture the terminal status.
-			const refreshed = await client.build(build.id).get();
-			if (!refreshed) {
-				error({ message: `Could not refresh build status for build "${build.id}".` });
-				process.exitCode = 1;
-				return;
-			}
-			build = refreshed;
-		} else if (wait) {
-			using _signalHandler = useAbortJobOnSignal({
-				apifyClient: client,
-				kind: 'build',
-				jobId: build.id,
-			});
-
+			// The log stream (or wait) can return before the build is terminal
+			// (closed early, connection dropped). Poll to a terminal status so the
+			// outcome below isn't mislabeled as a failure while still running.
 			const { job } = await waitForTerminalStatus({
 				apifyClient: client,
 				jobId: build.id,
