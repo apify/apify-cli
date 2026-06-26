@@ -63,6 +63,28 @@ const entryPoints = [
 	fileURLToPath(new URL('../src/entrypoints/actor.ts', import.meta.url)),
 ];
 
+// Placeholder specifier that `credentials.ts` imports for the OS keyring in bundle mode.
+// Kept external in the fat-JS step so the literal `import()` survives, then rewritten per
+// target below to the matching `@napi-rs/keyring-<platform>` subpackage so Bun's `--compile`
+// embeds that one native `.node`. Must match the specifier in `src/lib/credentials.ts`.
+const KEYRING_PLACEHOLDER = '__APIFY_KEYRING_NATIVE_SUBPACKAGE__';
+
+// Maps the compiled (os, arch, libc) to the napi-rs keyring subpackage that ships its `.node`.
+// `supportedArchitectures` (pnpm-workspace.yaml) forces all of these into node_modules at build
+// time so each target can resolve its own, regardless of the build machine's platform.
+function keyringSubpackage(os: string, arch: string, musl: boolean): string {
+	switch (os) {
+		case 'linux':
+			return `@napi-rs/keyring-linux-${arch}-${musl ? 'musl' : 'gnu'}`;
+		case 'darwin':
+			return `@napi-rs/keyring-darwin-${arch}`;
+		case 'windows':
+			return `@napi-rs/keyring-win32-${arch}-msvc`;
+		default:
+			throw new Error(`No @napi-rs/keyring subpackage known for ${os}-${arch}`);
+	}
+}
+
 await rm(new URL('../bundles/', import.meta.url), { recursive: true, force: true });
 
 // #region Inject the fact the CLI is ran in a bundle, instead of installed through npm/volta
@@ -92,20 +114,24 @@ for (const entryPoint of entryPoints) {
 		conditions: 'node',
 		target: 'bun',
 		sourcemap: 'none',
+		// Keep the keyring placeholder literal `import()` intact so it can be rewritten and
+		// resolved per target in step 2 (Bun only embeds a `.node` when --compile resolves it).
+		external: [KEYRING_PLACEHOLDER],
 	});
 
 	const entrypointResultFilePath = result.outputs[0]!.path;
 
-	// Fix apify client js (it now lazy loads proxy-agent, which makes bun skip it from the bundle)
-	{
-		const entrypointResultFileContent = await result.outputs[0]!.text();
+	// Fix apify client js (it now lazy loads proxy-agent, which makes bun skip it from the bundle).
+	// Kept in memory only — the per-target write below is what lands on disk before each compile.
+	const fatEntrypointContent = (await result.outputs[0]!.text()).replace(
+		`(0, utils_1.dynamicNodeImport)("proxy-agent")`,
+		`Promise.resolve().then(() => import_proxy_agent)`,
+	);
 
-		const newEntrypointResultFileContent = entrypointResultFileContent.replace(
-			`(0, utils_1.dynamicNodeImport)("proxy-agent")`,
-			`Promise.resolve().then(() => import_proxy_agent)`,
-		);
-
-		await writeFile(entrypointResultFilePath, newEntrypointResultFileContent);
+	// `replaceAll` is silent if the placeholder is gone, shipping a bundle that falls back to
+	// plaintext storage. Validate once up front and fail loud.
+	if (!fatEntrypointContent.includes(KEYRING_PLACEHOLDER)) {
+		throw new Error(`Keyring placeholder "${KEYRING_PLACEHOLDER}" not found in the fat JS for ${cliName}.`);
 	}
 
 	for (const target of targets) {
@@ -140,6 +166,12 @@ for (const entryPoint of entryPoints) {
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
 
 		console.log(`Building ${cliName} for ${target} (result: ${fileName})...`);
+
+		// Point the keyring import at this target's native subpackage so --compile embeds its
+		// `.node`. Rewrite every iteration so the compiled file is never the stale, unpatched
+		// Bun output — the proxy-agent fix above lands on disk here too, not just the keyring swap.
+		const subpackage = keyringSubpackage(os, arch, Boolean(musl));
+		await writeFile(entrypointResultFilePath, fatEntrypointContent.replaceAll(KEYRING_PLACEHOLDER, subpackage));
 
 		// Step 2: create the final executable bundle
 		await build({

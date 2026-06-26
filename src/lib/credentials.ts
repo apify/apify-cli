@@ -3,6 +3,7 @@ import process from 'node:process';
 
 import { AUTH_FILE_PATH } from './consts.js';
 import { ensureApifyDirectory } from './files.js';
+import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 const KEYRING_SERVICE = 'com.apify.cli';
@@ -41,15 +42,36 @@ export function __resetCredentialsForTests() {
 
 async function loadKeyringModule(): Promise<KeyringModule | null> {
 	if (cachedKeyringModule !== undefined) return cachedKeyringModule;
+	cachedKeyringModule = await importKeyringModule();
+	return cachedKeyringModule;
+}
+
+async function importKeyringModule(): Promise<KeyringModule | null> {
+	// Bundle distributions can't load the `@napi-rs/keyring` wrapper: its createRequire-based
+	// platform loader isn't followed by Bun's `--compile`, so the native module never makes it
+	// into the binary. Instead each bundle embeds exactly one platform subpackage, and the
+	// specifier below is rewritten to it at build time (see scripts/build-cli-bundles.ts).
+	if (useCLIMetadata().installMethod === 'bundle') {
+		try {
+			const mod = (await import('__APIFY_KEYRING_NATIVE_SUBPACKAGE__')) as Partial<KeyringModule> & {
+				default?: Partial<KeyringModule>;
+			};
+			const Entry = mod.Entry ?? mod.default?.Entry;
+			return Entry ? { Entry } : null;
+		} catch (err) {
+			cliDebugPrint('credentials', 'failed to load bundled keyring', err);
+			return null;
+		}
+	}
+
 	try {
 		// Indirect specifier so tsc doesn't try to resolve the module at compile time.
 		const specifier = '@napi-rs/keyring';
-		cachedKeyringModule = (await import(specifier)) as KeyringModule;
+		return (await import(specifier)) as KeyringModule;
 	} catch (err) {
 		cliDebugPrint('credentials', 'failed to load @napi-rs/keyring', err);
-		cachedKeyringModule = null;
+		return null;
 	}
-	return cachedKeyringModule;
 }
 
 /**
