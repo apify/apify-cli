@@ -8,19 +8,12 @@ param(
 # The following script is adapted from the bun.sh install script
 # Licensed under the MIT License (https://github.com/oven-sh/bun/blob/main/LICENSE.md)
 
-$allowedSystemTypes = @("x64-based", "ARM64-based")
-$currentSystemType = (Get-CimInstance Win32_ComputerSystem).SystemType
-
+$Arch = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment').PROCESSOR_ARCHITECTURE
 # filter out 32 bit
-if (-not ($allowedSystemTypes | Where-Object { $currentSystemType -match $_ })) {
+if (-not ($Arch -eq "AMD64" -or $Arch -eq "ARM64")) {
     Write-Output "Install Failed:"
     Write-Output "Apify CLI for Windows is currently only available for 64-bit Windows and ARM64 Windows.`n"
     return 1
-}
-
-if ($currentSystemType -match "ARM64") {
-    Write-Warning "Warning:"
-    Write-Warning "ARM64-based systems are not natively supported yet.`nThe install will still continue but Apify CLI might not work as intended.`n"
 }
 
 # This corresponds to .win10_rs5 in build.zig
@@ -114,13 +107,18 @@ function Install-Apify {
         return 1
     }
 
-    $Arch = if ($currentSystemType -match "ARM64") { "arm64" } else { "x64" }
-    $IsBaseline = $ForceBaseline
+    $IsARM64 = $Arch -eq "ARM64"
+    $Arch = if ($IsARM64) { "arm64" } else { "x64" }
+    $IsBaseline = $false
 
-    if (-not $IsBaseline) {
-        $IsBaseline = !(
-            Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern bool IsProcessorFeaturePresent(int ProcessorFeature);' -Name 'Kernel32' -Namespace 'Win32' -PassThru
-        )::IsProcessorFeaturePresent(40)
+    if (-not $IsARM64) {
+        $IsBaseline = $ForceBaseline
+        if (-not $IsBaseline) {
+            $IsBaseline = !( `
+                    Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern bool IsProcessorFeaturePresent(int ProcessorFeature);' `
+                    -Name 'Kernel32' -Namespace 'Win32' -PassThru `
+            )::IsProcessorFeaturePresent(40);
+        }
     }
 
     $ApifyRoot = if ($env:APIFY_CLI_INSTALL) { $env:APIFY_CLI_INSTALL } else { "${Home}\.apify" }
