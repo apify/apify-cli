@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 
 <!-- git-cliff-unreleased-start -->
-## 1.6.3 - **not yet released**
+## 1.6.3
 
 ### 🚀 Features
 

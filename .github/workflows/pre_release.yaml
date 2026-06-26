@@ -28,6 +28,7 @@ jobs:
               with:
                   release_type: prerelease
                   existing_changelog_path: CHANGELOG.md
+                  cliff_config_path: cliff.toml
 
     wait_for_checks:
         name: Wait for code checks to pass

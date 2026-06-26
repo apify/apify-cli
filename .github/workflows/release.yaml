@@ -42,6 +42,7 @@ jobs:
                   release_type: ${{ inputs.release_type }}
                   custom_version: ${{ inputs.custom_version }}
                   existing_changelog_path: CHANGELOG.md
+                  cliff_config_path: cliff.toml
 
     # If github.ref points to a [skip ci] commit, we assume that it was added by the pre_release workflow,
     # which doesn't push the commit if code checks don't pass.
