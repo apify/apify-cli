@@ -8,14 +8,14 @@ All notable changes to this project will be documented in this file.
 ### 🚀 Features
 
 - **auth:** Use os keyring for secure credential storage ([#1148](https://github.com/apify/apify-cli/pull/1148)) ([bbfea42](https://github.com/apify/apify-cli/commit/bbfea4286345aa5f15429d20d9d52013e7adc637)) by [@l2ysho](https://github.com/l2ysho), closes [#1115](https://github.com/apify/apify-cli/issues/1115)
-- **mcp:** Add &#x27;apify mcp install &lt;client&gt;&#x27; command ([#1145](https://github.com/apify/apify-cli/pull/1145)) ([f7bcd58](https://github.com/apify/apify-cli/commit/f7bcd585c474be1cff6578802939adceced33c15)) by [@MQ37](https://github.com/MQ37)
+- **mcp:** Add 'apify mcp install <client>' command ([#1145](https://github.com/apify/apify-cli/pull/1145)) ([f7bcd58](https://github.com/apify/apify-cli/commit/f7bcd585c474be1cff6578802939adceced33c15)) by [@MQ37](https://github.com/MQ37)
 - **push:** Add final status block and structured JSON output ([#1199](https://github.com/apify/apify-cli/pull/1199)) ([71560dd](https://github.com/apify/apify-cli/commit/71560dd8aa8de6bbb5e0c2db7a6b9e9d48abd4b8)) by [@l2ysho](https://github.com/l2ysho), closes [#1136](https://github.com/apify/apify-cli/issues/1136)
 - **cli:** Add wait commands and enhance agentic output for builds and runs ([#1168](https://github.com/apify/apify-cli/pull/1168)) ([d3c3e5b](https://github.com/apify/apify-cli/commit/d3c3e5b16a29029acdbb3252622a56a587cf8829)) by [@l2ysho](https://github.com/l2ysho), closes [#1140](https://github.com/apify/apify-cli/issues/1140)
 - **call:** Emit explicit final run status and JSON output (#1139) ([#1198](https://github.com/apify/apify-cli/pull/1198)) ([ce8c287](https://github.com/apify/apify-cli/commit/ce8c287c862d03b42e8fe3be77fca65aa03f438d)) by [@l2ysho](https://github.com/l2ysho), closes [#1139](https://github.com/apify/apify-cli/issues/1139)
 
 ### 🐛 Bug Fixes
 
-- **run:** Propagate the Actor&#x27;s non-zero exit code ([#1195](https://github.com/apify/apify-cli/pull/1195)) ([ca1c009](https://github.com/apify/apify-cli/commit/ca1c00987995a7495eb4f8c4bb74c6c010ec7ee9)) by [@l2ysho](https://github.com/l2ysho), closes [#1180](https://github.com/apify/apify-cli/issues/1180), [#1190](https://github.com/apify/apify-cli/issues/1190)
+- **run:** Propagate the Actor's non-zero exit code ([#1195](https://github.com/apify/apify-cli/pull/1195)) ([ca1c009](https://github.com/apify/apify-cli/commit/ca1c00987995a7495eb4f8c4bb74c6c010ec7ee9)) by [@l2ysho](https://github.com/l2ysho), closes [#1180](https://github.com/apify/apify-cli/issues/1180), [#1190](https://github.com/apify/apify-cli/issues/1190)
 
 
 <!-- git-cliff-unreleased-end -->
@@ -180,7 +180,7 @@ All notable changes to this project will be documented in this file.
 ### 🐛 Bug Fixes
 
 - Pick the start script for node projects before main property ([#787](https://github.com/apify/apify-cli/pull/787)) ([0e2a9d3](https://github.com/apify/apify-cli/commit/0e2a9d375f3b977b6f1a588fe5bbce5527b7505b)) by [@vladfrangu](https://github.com/vladfrangu)
-- Non-&quot;migrated&quot; scrapy not working anymore ([#800](https://github.com/apify/apify-cli/pull/800)) ([9eaf76c](https://github.com/apify/apify-cli/commit/9eaf76cfe455c08b93511e985419182a6549d37e)) by [@vladfrangu](https://github.com/vladfrangu), closes [#796](https://github.com/apify/apify-cli/issues/796)
+- Non-"migrated" scrapy not working anymore ([#800](https://github.com/apify/apify-cli/pull/800)) ([9eaf76c](https://github.com/apify/apify-cli/commit/9eaf76cfe455c08b93511e985419182a6549d37e)) by [@vladfrangu](https://github.com/vladfrangu), closes [#796](https://github.com/apify/apify-cli/issues/796)
 
 ## [0.21.6](https://github.com/apify/apify-cli/releases/tag/v0.21.6) (2025-04-24)
 
@@ -232,7 +232,7 @@ All notable changes to this project will be documented in this file.
 - `runs abort` ([#643](https://github.com/apify/apify-cli/pull/643)) ([96e5a34](https://github.com/apify/apify-cli/commit/96e5a3435cca08d87dc8d39659a7a6524f18be0e)) by [@vladfrangu](https://github.com/vladfrangu)
 - `runs resurrect` ([#644](https://github.com/apify/apify-cli/pull/644)) ([7dbf4fb](https://github.com/apify/apify-cli/commit/7dbf4fb06c657246563c1c64e76ad83f283ea275)) by [@vladfrangu](https://github.com/vladfrangu)
 - `runs log` ([#645](https://github.com/apify/apify-cli/pull/645)) ([dd6af5e](https://github.com/apify/apify-cli/commit/dd6af5ece79f4399fc5065483b650c71c61114cf)) by [@vladfrangu](https://github.com/vladfrangu)
-- `runs rm` &amp; `builds rm` &amp; `actors rm` ([#648](https://github.com/apify/apify-cli/pull/648)) ([566f8c5](https://github.com/apify/apify-cli/commit/566f8c5d1482f150f4d61229524c7672c2af666d)) by [@vladfrangu](https://github.com/vladfrangu)
+- `runs rm` & `builds rm` & `actors rm` ([#648](https://github.com/apify/apify-cli/pull/648)) ([566f8c5](https://github.com/apify/apify-cli/commit/566f8c5d1482f150f4d61229524c7672c2af666d)) by [@vladfrangu](https://github.com/vladfrangu)
 - `runs info` ([#657](https://github.com/apify/apify-cli/pull/657)) ([827767c](https://github.com/apify/apify-cli/commit/827767cfc988b7d587adceb825765e553deeed77)) by [@vladfrangu](https://github.com/vladfrangu)
 - `actors build` ([#661](https://github.com/apify/apify-cli/pull/661)) ([4605cda](https://github.com/apify/apify-cli/commit/4605cda7f3a4f5a35160ba69bf4a454c889dd813)) by [@vladfrangu](https://github.com/vladfrangu)
 - `actors pull` ([#662](https://github.com/apify/apify-cli/pull/662)) ([26d5cb3](https://github.com/apify/apify-cli/commit/26d5cb356fbb38a789e9b88f4d4b01468e38bd26)) by [@vladfrangu](https://github.com/vladfrangu)
@@ -267,7 +267,7 @@ All notable changes to this project will be documented in this file.
 - `runs abort` ([#643](https://github.com/apify/apify-cli/pull/643)) ([96e5a34](https://github.com/apify/apify-cli/commit/96e5a3435cca08d87dc8d39659a7a6524f18be0e)) by [@vladfrangu](https://github.com/vladfrangu)
 - `runs resurrect` ([#644](https://github.com/apify/apify-cli/pull/644)) ([7dbf4fb](https://github.com/apify/apify-cli/commit/7dbf4fb06c657246563c1c64e76ad83f283ea275)) by [@vladfrangu](https://github.com/vladfrangu)
 - `runs log` ([#645](https://github.com/apify/apify-cli/pull/645)) ([dd6af5e](https://github.com/apify/apify-cli/commit/dd6af5ece79f4399fc5065483b650c71c61114cf)) by [@vladfrangu](https://github.com/vladfrangu)
-- `runs rm` &amp; `builds rm` &amp; `actors rm` ([#648](https://github.com/apify/apify-cli/pull/648)) ([566f8c5](https://github.com/apify/apify-cli/commit/566f8c5d1482f150f4d61229524c7672c2af666d)) by [@vladfrangu](https://github.com/vladfrangu)
+- `runs rm` & `builds rm` & `actors rm` ([#648](https://github.com/apify/apify-cli/pull/648)) ([566f8c5](https://github.com/apify/apify-cli/commit/566f8c5d1482f150f4d61229524c7672c2af666d)) by [@vladfrangu](https://github.com/vladfrangu)
 - `runs info` ([#657](https://github.com/apify/apify-cli/pull/657)) ([827767c](https://github.com/apify/apify-cli/commit/827767cfc988b7d587adceb825765e553deeed77)) by [@vladfrangu](https://github.com/vladfrangu)
 - `actors build` ([#661](https://github.com/apify/apify-cli/pull/661)) ([4605cda](https://github.com/apify/apify-cli/commit/4605cda7f3a4f5a35160ba69bf4a454c889dd813)) by [@vladfrangu](https://github.com/vladfrangu)
 - `actors pull` ([#662](https://github.com/apify/apify-cli/pull/662)) ([26d5cb3](https://github.com/apify/apify-cli/commit/26d5cb356fbb38a789e9b88f4d4b01468e38bd26)) by [@vladfrangu](https://github.com/vladfrangu)
