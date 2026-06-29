@@ -29,7 +29,7 @@ If a command's help shows an "interactive note", it lists exactly which flags ma
 
 - `--json` is supported on most list/info commands (`apify actors ls --json`, `apify actors info <id> --json`, `apify datasets info <id> --json`, `apify runs ls --json`, etc.). Use it and parse with `jq`; don't scrape the human table.
 - List commands paginate — control with `--limit` / `--offset` (and `--desc`).
-- Dataset items: `apify datasets get-items <datasetId> --format json` (also `jsonl`, `csv`, `xlsx`, `html`, `rss`, `xml`). Use `--limit` / `--offset`.
+- Dataset items: `apify datasets get-items <datasetId> --format json`. Use `--limit` / `--offset`.
 
 ## Core workflows
 
