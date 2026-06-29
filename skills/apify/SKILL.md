@@ -1,11 +1,15 @@
 ---
 name: apify
-description: Drive the Apify CLI (`apify`) reliably from automation — authenticate, create/run/push Actors, call Actors in the cloud, and read results from datasets and key-value stores. Use when a task involves the Apify CLI, Apify Actors, Apify storage (datasets, key-value stores, request queues), or the Apify platform from the terminal.
+description: Patterns for invoking the Apify CLI (`apify`) from agents. Covers authentication, creating/running/pushing Actors, calling Actors in the cloud, and reading results from datasets and key-value stores.
 ---
 
 # Apify CLI
 
-The `apify` CLI manages the Apify platform and develops, runs, and deploys Actors (serverless cloud programs). This guide covers the non-obvious operational knowledge for driving it from automation. For the exhaustive command list, run `apify help` or read `docs/reference.md`; for any flag, run `apify help <command>`.
+The `apify` CLI manages the Apify platform and develops, runs, and deploys Actors (serverless cloud programs). This guide covers the non-obvious operational knowledge for driving it from automation.
+
+## Start here
+
+Run `apify -h` first to see the available commands and global options, then `apify <command> -h` (e.g. `apify call -h`) for the args and flags of a specific command. This is the source of truth — prefer it over assumptions.
 
 ## Non-interactive use
 
