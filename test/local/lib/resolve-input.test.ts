@@ -15,14 +15,14 @@ describe('getInputOverride', () => {
 		process.exitCode = undefined;
 	});
 
-	it('appends schema hint to --input file path errors when provided', async () => {
+	it('does not append schema hint to --input file path errors', async () => {
 		const result = await getInputOverride(process.cwd(), './input.json', undefined, { schemaHint: SCHEMA_HINT });
 
 		expect(result).toBe(false);
 		expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
 		const stderr = logMessages.error.join('\n');
 		expect(stderr).toContain('Use the "--input-file=" flag instead');
-		expect(stderr).toContain(SCHEMA_HINT);
+		expect(stderr).not.toContain(SCHEMA_HINT);
 	});
 
 	it('keeps --input file path errors unchanged when schema hint is omitted', async () => {
