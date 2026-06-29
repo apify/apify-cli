@@ -15,7 +15,7 @@ Apify CLI is the command-line tool for creating, developing, and deploying [Apif
 
 ## Agent skill
 
-This repo ships an [agent skill](./skills/apify/SKILL.md) that teaches AI coding agents (Claude Code, Cursor, etc.) how to drive the Apify CLI reliably. Install it into your project with the [`skills`](https://www.npmjs.com/package/skills) CLI:
+This repo ships an [agent skill](./skills/apify/SKILL.md) that teaches AI coding agents (Claude Code, Cursor, etc.) how to work with the Apify CLI reliably. Install it into your project with the [`skills`](https://www.npmjs.com/package/skills) CLI:
 
 ```bash
 # install into the current project
@@ -24,8 +24,6 @@ npx skills add apify/apify-cli
 # or install globally for all projects
 npx skills add apify/apify-cli --global
 ```
-
-This is optional — the CLI works the same with or without it. The skill just gives your agent the operational know-how (non-interactive flags, `--json` output, auth, common workflows) so it uses the CLI correctly.
 
 ## Quick start
 
