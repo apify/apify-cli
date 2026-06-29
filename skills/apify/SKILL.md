@@ -1,5 +1,5 @@
 ---
-name: apify
+name: apify-cli
 description: Patterns for invoking the Apify CLI (`apify`) from agents. Covers authentication, creating/running/pushing Actors, calling Actors in the cloud, and reading results from datasets and key-value stores.
 ---
 
