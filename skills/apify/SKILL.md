@@ -51,7 +51,7 @@ apify call apify/website-content-crawler -i '{"startUrls":[{"url":"https://examp
 # inspect input schema first: apify actors info <actor> --input
 ```
 
-`apify call` flags: `-i`/`--input` inline JSON, `-f`/`--input-file` (use `-` for stdin), `-o`/`--output-dataset` to print the result dataset, `-s`/`--silent`, `-m`/`--memory`, `-t`/`--timeout`, `-b`/`--build`.
+Non-obvious `apify call` flags: `-f -` reads input from stdin; `-o`/`--output-dataset` prints the result dataset. Run `apify call -h` for the full list.
 
 **Wait for and inspect runs/builds**
 
