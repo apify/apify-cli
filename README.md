@@ -94,6 +94,20 @@ The table below lists the most common commands. For the full reference, see the 
 
 Actor configuration lives in `.actor/actor.json`. See the [Actor configuration docs](https://docs.apify.com/platform/actors/development/actor-definition/actor-json) for the full schema (name, version, build tag, environment variables, Dockerfile, input schema, storages).
 
+## Agent skill
+
+This repo ships an [agent skill](./skills/apify/SKILL.md) that teaches AI coding agents (Claude Code, Cursor, etc.) how to drive the Apify CLI reliably. Install it into your project with the [`skills`](https://www.npmjs.com/package/skills) CLI:
+
+```bash
+# install into the current project
+npx skills add apify/apify-cli
+
+# or install globally for all projects
+npx skills add apify/apify-cli --global
+```
+
+This is optional — the CLI works the same with or without it. The skill just gives your agent the operational know-how (non-interactive flags, `--json` output, auth, common workflows) so it uses the CLI correctly.
+
 ## Documentation
 
 - [Apify CLI documentation](https://docs.apify.com/cli)
