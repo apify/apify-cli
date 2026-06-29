@@ -88,8 +88,3 @@ apify api POST acts -d '<json>' -p '{"limit":1}'   # -d body (use - for stdin), 
 ```
 
 The `v2/` prefix and leading slash are optional.
-
-## Notes
-
-- A second binary, `actor`, is the in-Actor runtime CLI (used inside a running Actor for `get-input`, `push-data`, `set-value`, etc.), not for managing the platform from your machine.
-- Override the API base URL with `APIFY_CLIENT_BASE_URL` (e.g. for staging).
