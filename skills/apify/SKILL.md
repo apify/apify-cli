@@ -12,7 +12,7 @@ Run `apify -h` first to see the available commands and global options, then `api
 Many commands prompt when run interactively. To run without prompts, pass every required argument and flag explicitly:
 
 - `apify create <name> --template <template>` — skip the create wizard.
-- `apify init <name>` or `apify init --yes` — skip the init prompt.
+- `apify init <name>` — skip the init prompt.
 - `-y` / `--yes` on destructive commands (`apify actors rm`, etc.) — auto-confirm.
 - `apify login --token <token>` — log in without the interactive token prompt.
 
