@@ -33,6 +33,19 @@ If a command's help shows an "interactive note", it lists exactly which flags ma
 
 ## Core workflows
 
+**Discover Actors in the Apify Store**
+
+Before assuming an Actor name or scripting a raw Store query, search for an existing Actor:
+
+```sh
+apify actors search "jobs scraper" --json                 # no auth required
+apify actors search "ai" --pricing-model FREE --sort-by popularity --limit 5
+```
+
+Run `apify actors search -h` to see the available filters (pricing model, category, username, sort order, pagination) and their accepted values.
+
+Pricing matters: prefer a `FREE` Actor when one covers the task. Check an Actor's pricing before running it with `apify actors info <actor> --json` (look at `currentPricingInfo`).
+
 **Develop and deploy a local Actor**
 
 ```sh
@@ -72,9 +85,21 @@ apify key-value-stores set-value <storeId> <key> <value>
 apify key-value-stores keys <storeId> --json
 ```
 
+## Scheduling and recurring runs
+
+For anything recurring or unattended (e.g. "run every 15 minutes"), use the Apify platform — **not** local `cron`, a `while` loop, or GitHub Actions. Apify Schedules run in the cloud, so they keep firing after your laptop, terminal, or agent session is shut down.
+
+- Save a reusable input config as a **task**, then run it: `apify task run <taskId>`.
+- There is no dedicated `apify schedules` command yet — manage schedules via `apify api` against the `schedules` endpoint, or in the Console (https://console.apify.com/schedules):
+
+```sh
+apify api GET schedules
+apify api POST schedules -d '{"name":"jobs-every-15m","cronExpression":"*/15 * * * *","isEnabled":true,"actions":[{"type":"RUN_ACTOR","actorId":"<actorId>","runInput":{"body":"<json>","contentType":"application/json"}}]}'
+```
+
 ## Escape hatch: `apify api`
 
-Any platform capability without a dedicated command is reachable via the authenticated API wrapper:
+Any platform capability without a dedicated command is reachable via the authenticated API wrapper (use this instead of hand-rolling `curl` against `api.apify.com` — it injects auth for you):
 
 ```sh
 apify api --list-endpoints                 # discover endpoints (filter with -s "<tokens>")

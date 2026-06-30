@@ -15,15 +15,31 @@ Apify CLI is the command-line tool for creating, developing, and deploying [Apif
 
 ## Agent skill
 
-This repo ships an [agent skill](./skills/apify/SKILL.md) that teaches AI coding agents (Claude Code, Cursor, etc.) how to work with the Apify CLI reliably. Install it into your project with the [`skills`](https://www.npmjs.com/package/skills) CLI:
+This repo ships an [agent skill](./skills/apify/SKILL.md) that teaches AI coding agents (Claude Code, Cursor, etc.) how to work with the Apify CLI reliably. You can print the skill straight from the CLI — it always matches your installed version:
 
 ```bash
-# install into the current project
-npx skills add apify/apify-cli
-
-# or install globally for all projects
-npx skills add apify/apify-cli --global
+apify help --skills
 ```
+
+If you'd rather have the skill installed persistently, `apify help --skills` prints a valid `SKILL.md` that you can redirect into your agent's skills directory. The location depends on the agent:
+
+### Claude Code
+
+```bash
+mkdir -p ~/.claude/skills/apify
+apify help --skills > ~/.claude/skills/apify/SKILL.md
+```
+
+### Codex and other agents
+
+Codex and most other agents follow the [Agent Skills open standard](https://developers.openai.com/codex/skills), which loads skills from `.agents/skills` (per repo) or `~/.agents/skills` (per user):
+
+```bash
+mkdir -p ~/.agents/skills/apify
+apify help --skills > ~/.agents/skills/apify/SKILL.md
+```
+
+That copy is a snapshot; re-run it after upgrading the Apify CLI to refresh it.
 
 ## Quick start
 
