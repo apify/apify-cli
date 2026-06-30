@@ -11,11 +11,15 @@ import { renderHelpForCommand, renderMainHelpMenu } from '../lib/command-framewo
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
 import { error, simpleLog } from '../lib/outputs.js';
 
+declare const __APIFY_CLI_SKILL__: string | undefined;
+
 const SKILL_RELATIVE_PATH = join('skills', 'apify', 'SKILL.md');
 
-// Walk up from this file until we find the `skills/apify/SKILL.md` shipped with the package.
-// This resolves both when running from source (`src/commands`) and from the built `dist`.
 function readApifySkill(): string | null {
+	if (typeof __APIFY_CLI_SKILL__ === 'string' && __APIFY_CLI_SKILL__) {
+		return __APIFY_CLI_SKILL__;
+	}
+
 	let dir = dirname(fileURLToPath(import.meta.url));
 
 	while (true) {
