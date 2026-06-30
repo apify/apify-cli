@@ -16,13 +16,7 @@ import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js
 import { CommandExitCodes } from '../../lib/consts.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLoggedClientOrThrow,
-	objectGroupBy,
-	outputJobLog,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLoggedClientOrThrow, objectGroupBy, outputJobLog, printJsonToStdout } from '../../lib/utils.js';
 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
 	static override name = 'create' as const;
@@ -104,7 +98,6 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		const specificVersionExists = actorInfo.versions.find((v) => v.versionNumber === version);
 
 		let selectedVersion: string | undefined;
-		let actualTag = tag;
 
 		// --version takes precedence over tagged versions (but if --tag is also specified, it will be checked again)
 		if (specificVersionExists) {
@@ -126,10 +119,8 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			}
 
 			selectedVersion = version!;
-			actualTag = specificVersionExists.buildTag ?? 'latest';
 		} else if (taggedVersions) {
 			selectedVersion = taggedVersions[0].versionNumber!;
-			actualTag = tag ?? 'latest';
 
 			if (taggedVersions.length > 1) {
 				if (!version) {
@@ -156,7 +147,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		let build = await client.actor(ctx.id).build(selectedVersion, { tag });
 
-		const actorFullName = `${actorInfo?.username ? `${actorInfo.username}/` : ''}${actorInfo?.name ?? 'unknown-actor'}`;
+		const actorName = actorInfo?.name ?? 'unknown-actor';
 		const url = consoleBuildUrl(build.actId, build.buildNumber);
 
 		if (log || wait) {
@@ -207,7 +198,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 					waited: true,
 					actor: {
 						id: build.actId,
-						name: actorFullName,
+						name: actorName,
 					},
 					build: {
 						id: build.id,
@@ -258,7 +249,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				waited: false,
 				actor: {
 					id: build.actId,
-					name: actorFullName,
+					name: actorName,
 				},
 				build: {
 					id: build.id,
@@ -277,15 +268,12 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 		}
 
 		const message: string[] = [
-			`${chalk.yellow('Actor')}: ${actorFullName} (${chalk.gray(build.actId)})`,
-			`  ${chalk.yellow('Version')}: ${selectedVersion} (tagged with ${chalk.yellow(actualTag)})`,
+			chalk.greenBright('Build started.'),
 			'',
-			`${chalk.greenBright('Build Started')} (ID: ${chalk.gray(build.id)})`,
-			`  ${chalk.yellow('Build Number')}: ${build.buildNumber} (will get tagged once finished)`,
-			`  ${chalk.yellow('Status')}: ${build.status}`,
-			`  ${chalk.yellow('Started')}: ${TimestampFormatter.display(build.startedAt)}`,
-			'',
-			`${chalk.blue('View in Apify Console')}: ${url}`,
+			`${chalk.yellow('Actor')}: ${actorName} (${chalk.gray(build.actId)})`,
+			`${chalk.yellow('Build ID')}: ${build.id}`,
+			`${chalk.yellow('Build number')}: ${build.buildNumber}`,
+			`${chalk.yellow('Status')}: ${build.status}`,
 			'',
 			chalk.gray('This command does not wait for the build to finish.'),
 			'',
