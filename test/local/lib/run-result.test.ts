@@ -192,4 +192,21 @@ describe('finalizeRun', () => {
 		expect(process.exitCode).toBe(3);
 		expect(spy).not.toHaveBeenCalled();
 	});
+
+	it('gates the JSON output on silent (prints nothing when both are set)', async () => {
+		const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+		await finalizeRun({
+			apifyClient: fakeClientWithLog(undefined),
+			run: makeRun({ status: 'FAILED', exitCode: 1 }),
+			operation: 'call',
+			json: true,
+			silent: true,
+		});
+
+		spy.mockRestore();
+
+		expect(process.exitCode).toBe(1);
+		expect(spy).not.toHaveBeenCalled();
+	});
 });
