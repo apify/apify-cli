@@ -161,13 +161,12 @@ jobs:
               if: ${{ matrix.os == 'windows-11-arm' }}
               run: |
                   $bunVersion = (Get-Content .bun-version).Trim()
-                  $installer = Join-Path $env:RUNNER_TEMP install.ps1
-                  irm bun.sh/install.ps1 -OutFile $installer
+                  irm bun.sh/install.ps1 -OutFile install.ps1
 
                   # Bun doesn't have Windows ARM64 builds, so the setup-bun action fails. The install script however,
                   # does "support" it.
 
-                  & $installer -Version $bunVersion
+                  .\install.ps1 -Version $bunVersion
 
                   Join-Path (Resolve-Path ~).Path ".bun\bin" >> $env:GITHUB_PATH
 
@@ -182,7 +181,7 @@ jobs:
                   bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
 
             - name: Set version
-              run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version
+              run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version --no-git-checks
 
             - name: Build Bundles
               run: pnpm run insert-cli-metadata && pnpm run build-bundles
