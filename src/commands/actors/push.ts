@@ -42,6 +42,11 @@ const DEFAULT_RUN_OPTIONS = {
 };
 const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 
+// Actor versions on the platform are MAJOR.MINOR (both non-negative integers).
+// TODO: import from @apify/consts / apify-shared-js once the shared regex lands
+// (see apify-shared-js #655).
+const MAJOR_MINOR_VERSION_REGEX = /^(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+
 // It would be better to use `version-0.0` or similar,
 // or even have no default tag, but the platform complains when
 // Actor does not have a build with a `latest` tag, so until
@@ -248,6 +253,22 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
+
+		// Client-side guard: the platform rejects `.version` values that are not
+		// exactly MAJOR.MINOR (e.g. `1.0.0` fails during the build step with a
+		// cryptic admission error). Catch it here so agents/users get a fast,
+		// actionable message pointing at the field.
+		const rawVersion = (actorConfig?.version as string | undefined) ?? this.flags.version;
+		if (rawVersion !== undefined && !MAJOR_MINOR_VERSION_REGEX.test(rawVersion)) {
+			error({
+				message:
+					`Invalid Actor version '${rawVersion}' in ${LOCAL_CONFIG_PATH}. ` +
+					`Actor versions must be MAJOR.MINOR (e.g. "0.0", "1.2") — patch versions like "1.0.0" are not supported. ` +
+					`Fix the \`version\` field in ${LOCAL_CONFIG_PATH} and retry.`,
+			});
+			process.exitCode = CommandExitCodes.InvalidActorJson;
+			return;
+		}
 
 		const userInfo = await getLocalUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
