@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.3](https://github.com/apify/apify-cli/releases/tag/v1.6.3) (2026-07-01)
+
+### 🚀 Features
+
+- **auth:** Use os keyring for secure credential storage ([#1148](https://github.com/apify/apify-cli/pull/1148)) ([bbfea42](https://github.com/apify/apify-cli/commit/bbfea4286345aa5f15429d20d9d52013e7adc637)) by [@l2ysho](https://github.com/l2ysho), closes [#1115](https://github.com/apify/apify-cli/issues/1115)
+- **mcp:** Add &#x27;apify mcp install &lt;client&gt;&#x27; command ([#1145](https://github.com/apify/apify-cli/pull/1145)) ([f7bcd58](https://github.com/apify/apify-cli/commit/f7bcd585c474be1cff6578802939adceced33c15)) by [@MQ37](https://github.com/MQ37)
+- **push:** Add final status block and structured JSON output ([#1199](https://github.com/apify/apify-cli/pull/1199)) ([71560dd](https://github.com/apify/apify-cli/commit/71560dd8aa8de6bbb5e0c2db7a6b9e9d48abd4b8)) by [@l2ysho](https://github.com/l2ysho), closes [#1136](https://github.com/apify/apify-cli/issues/1136)
+- **cli:** Add wait commands and enhance agentic output for builds and runs ([#1168](https://github.com/apify/apify-cli/pull/1168)) ([d3c3e5b](https://github.com/apify/apify-cli/commit/d3c3e5b16a29029acdbb3252622a56a587cf8829)) by [@l2ysho](https://github.com/l2ysho), closes [#1140](https://github.com/apify/apify-cli/issues/1140)
+- **call:** Emit explicit final run status and JSON output (#1139) ([#1198](https://github.com/apify/apify-cli/pull/1198)) ([ce8c287](https://github.com/apify/apify-cli/commit/ce8c287c862d03b42e8fe3be77fca65aa03f438d)) by [@l2ysho](https://github.com/l2ysho), closes [#1139](https://github.com/apify/apify-cli/issues/1139)
+- **auth:** Use OS keyring in bundle distributions ([#1197](https://github.com/apify/apify-cli/pull/1197)) ([7f4e4ae](https://github.com/apify/apify-cli/commit/7f4e4aec787053f06ed454303a2456915a33eace)) by [@l2ysho](https://github.com/l2ysho), closes [#1170](https://github.com/apify/apify-cli/issues/1170)
+
+### 🐛 Bug Fixes
+
+- **run:** Propagate the Actor&#x27;s non-zero exit code ([#1195](https://github.com/apify/apify-cli/pull/1195)) ([ca1c009](https://github.com/apify/apify-cli/commit/ca1c00987995a7495eb4f8c4bb74c6c010ec7ee9)) by [@l2ysho](https://github.com/l2ysho), closes [#1180](https://github.com/apify/apify-cli/issues/1180), [#1190](https://github.com/apify/apify-cli/issues/1190)
+- **changelog:** Don&#x27;t write unreleased preview on pre-release ([#1231](https://github.com/apify/apify-cli/pull/1231)) ([bb5b454](https://github.com/apify/apify-cli/commit/bb5b454eb550cde0a59b6996e3f2a112bca03f1d)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1230](https://github.com/apify/apify-cli/issues/1230)
+
+
 ## [1.6.2](https://github.com/apify/apify-cli/releases/tag/v1.6.2) (2026-06-03)
 
 ### 🚀 Features
