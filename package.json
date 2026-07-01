@@ -27,7 +27,8 @@
 		"prepare": "husky"
 	},
 	"files": [
-		"dist"
+		"dist",
+		"skills"
 	],
 	"bin": {
 		"actor": "./dist/actor.js",
