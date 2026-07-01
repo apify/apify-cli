@@ -45,7 +45,7 @@ apify actors search "ai" --pricing-model FREE --sort-by popularity --limit 5
 
 Run `apify actors search -h` to see the available filters (pricing model, category, username, sort order, pagination) and their accepted values.
 
-Pricing matters: prefer a `FREE` Actor when one covers the task. Check an Actor's pricing before running it with `apify actors info <actor> --json` (look at `currentPricingInfo`).
+Pricing matters, but weigh it alongside popularity, rating, and how well-maintained the Actor is — don't pick a `FREE` Actor over a well-supported, popular, highly-rated one just because it's free. Check an Actor's pricing before running it with `apify actors info <actor> --json` (look at `currentPricingInfo`).
 
 **Develop and deploy a local Actor**
 
