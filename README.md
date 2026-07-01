@@ -18,16 +18,16 @@ Apify CLI is the command-line tool for creating, developing, and deploying [Apif
 This repo ships an [agent skill](./skills/apify/SKILL.md) that teaches AI coding agents (Claude Code, Cursor, etc.) how to work with the Apify CLI reliably. You can print the skill straight from the CLI — it always matches your installed version:
 
 ```bash
-apify help --skills
+apify help --skill
 ```
 
-If you'd rather have the skill installed persistently, `apify help --skills` prints a valid `SKILL.md` that you can redirect into your agent's skills directory. The location depends on the agent:
+If you'd rather have the skill installed persistently, `apify help --skill` prints a valid `SKILL.md` that you can redirect into your agent's skills directory. The location depends on the agent:
 
 ### Claude Code
 
 ```bash
 mkdir -p ~/.claude/skills/apify
-apify help --skills > ~/.claude/skills/apify/SKILL.md
+apify help --skill > ~/.claude/skills/apify/SKILL.md
 ```
 
 ### Codex and other agents
@@ -36,7 +36,7 @@ Codex and most other agents follow the [Agent Skills open standard](https://deve
 
 ```bash
 mkdir -p ~/.agents/skills/apify
-apify help --skills > ~/.agents/skills/apify/SKILL.md
+apify help --skill > ~/.agents/skills/apify/SKILL.md
 ```
 
 That copy is a snapshot; re-run it after upgrading the Apify CLI to refresh it.

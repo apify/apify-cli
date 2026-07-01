@@ -55,7 +55,7 @@ export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 	};
 
 	static override flags = {
-		skills: Flags.boolean({
+		skill: Flags.boolean({
 			description: 'Print the Apify CLI agent skill (guidance for driving `apify` from agents).',
 			default: false,
 		}),
@@ -64,7 +64,7 @@ export class HelpCommand extends ApifyCommand<typeof HelpCommand> {
 	async run() {
 		const { commandString } = this.args;
 
-		if (this.flags.skills) {
+		if (this.flags.skill) {
 			const skill = readApifySkill();
 
 			if (!skill) {

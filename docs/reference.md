@@ -21,14 +21,14 @@ DESCRIPTION
   Prints out help about a command, or all available commands.
 
 USAGE
-  $ apify help [commandString] [--skills]
+  $ apify help [commandString] [--skill]
 
 ARGUMENTS
   commandString  The command to get help for.
 
 FLAGS
-      --skills  Print the Apify CLI agent skill (guidance for driving
-                `apify` from agents).
+      --skill  Print the Apify CLI agent skill (guidance for driving
+               `apify` from agents).
 ```
 
 ##### `apify upgrade`

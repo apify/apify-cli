@@ -37,8 +37,8 @@ describe.concurrent('[e2e] help command', () => {
 		expect(result.stdout).toContain('Executes Actor locally with simulated Apify environment variables.');
 	});
 
-	it('apify help --skills prints the Apify CLI agent skill', async () => {
-		const result = await runCli('apify', ['help', '--skills']);
+	it('apify help --skill prints the Apify CLI agent skill', async () => {
+		const result = await runCli('apify', ['help', '--skill']);
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		expect(result.stdout).toContain('name: apify-cli');
 	});
