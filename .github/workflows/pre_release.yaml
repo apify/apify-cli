@@ -146,7 +146,7 @@ jobs:
                   bun build --compile --target=bun-windows-x64-baseline --outfile test index.ts
 
             - name: Set pre-release version
-              run: pnpm version ${{ needs.update_changelog.outputs.pre_release_version }} --no-git-tag-version --allow-same-version
+              run: pnpm version ${{ needs.update_changelog.outputs.pre_release_version }} --no-git-tag-version --allow-same-version --no-git-checks
 
             - name: Build Bundles
               run: pnpm run insert-cli-metadata && pnpm run build-bundles
