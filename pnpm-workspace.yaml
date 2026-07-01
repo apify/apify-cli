@@ -21,6 +21,20 @@ minimumReleaseAgeExclude:
 overrides:
     tar: 7.5.16
 
+# Install native deps for all platforms, not just the current machine's, so the
+# cross-platform bundle builds (scripts/build-cli-bundles.ts) can embed them.
+supportedArchitectures:
+    os:
+        - linux
+        - darwin
+        - win32
+    cpu:
+        - x64
+        - arm64
+    libc:
+        - glibc
+        - musl
+
 # Unfortunately, several parts of this project expect everything to be hoisted up in the node_modules directory...
 # And fixing it would take longer than just enabling this and shedding a tear
 nodeLinker: hoisted

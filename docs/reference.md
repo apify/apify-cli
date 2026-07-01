@@ -21,10 +21,14 @@ DESCRIPTION
   Prints out help about a command, or all available commands.
 
 USAGE
-  $ apify help [commandString]
+  $ apify help [commandString] [--skill]
 
 ARGUMENTS
   commandString  The command to get help for.
+
+FLAGS
+      --skill  Print the Apify CLI agent skill (guidance for driving
+               `apify` from agents).
 ```
 
 ##### `apify upgrade`
@@ -782,6 +786,8 @@ FLAGS
 DESCRIPTION
   Executes Actor remotely using your authenticated account.
   Reads input from local key-value store by default.
+  To inspect the input schema before creating a JSON input, use "apify actors 
+  info <actor> --input".
 
 USAGE
   $ apify actors call [actorId] [-b <value>]
@@ -797,8 +803,9 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>       Tag or number of the build to
                             run (e.g. "latest" or "1.2.34").
-  -i, --input=<value>       Optional JSON input to be
-                            given to the Actor.
+  -i, --input=<value>       Optional inline JSON object
+                            input for the Actor. To avoid shell parsing issues, wrap
+                            the JSON in quotes. For JSON files, use --input-file.
   -f, --input-file=<value>  Optional path to a file with
                             JSON input to be given to the Actor. The file must be a
                             valid JSON file. You can also specify `-` to read from
