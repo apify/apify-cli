@@ -31,6 +31,7 @@ function readApifySkill(): string | null {
 
 		const parent = dirname(dir);
 
+		// dirname of the root ("/" on UNIX, "C:\" on Windows) returns the root itself
 		if (parent === dir) {
 			return null;
 		}
