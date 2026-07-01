@@ -20,8 +20,9 @@ If a command's help shows an "interactive note", it lists exactly which flags ma
 
 ## Auth
 
-- Preferred for automation: set `APIFY_TOKEN` in the environment (no `apify login` needed). Get a token at https://console.apify.com/settings/integrations.
-- Or persist a session once: `apify login --token <token>`.
+See https://apify.com/auth.md for how to authenticate. Do not assume `APIFY_TOKEN` is already set in the environment and use it implicitly — confirm with the user first.
+
+- Persist a session explicitly: `apify login --token <token>`.
 - Verify auth: `apify info` (prints the logged-in user; non-zero exit / error if not authenticated).
 - Print the stored token: `apify auth token`.
 
