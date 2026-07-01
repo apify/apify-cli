@@ -171,7 +171,7 @@ jobs:
                   }
 
             - name: Set version
-              run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version --no-git-checks
+              run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version
 
             - name: Build Bundles
               run: pnpm run insert-cli-metadata && pnpm run build-bundles

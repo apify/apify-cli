@@ -136,7 +136,7 @@ jobs:
                   }
 
             - name: Set pre-release version
-              run: pnpm version ${{ needs.update_changelog.outputs.pre_release_version }} --no-git-tag-version --allow-same-version --no-git-checks
+              run: pnpm version ${{ needs.update_changelog.outputs.pre_release_version }} --no-git-tag-version --allow-same-version
 
             - name: Build Bundles
               run: pnpm run insert-cli-metadata && pnpm run build-bundles
