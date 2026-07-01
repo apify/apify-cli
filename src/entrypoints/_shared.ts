@@ -11,6 +11,7 @@ import { CommandError } from '../lib/command-framework/CommandError.js';
 import { renderMainHelpMenu } from '../lib/command-framework/help.js';
 import { readStdin } from '../lib/commands/read-stdin.js';
 import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
+import { AuthError } from '../lib/errors/AuthError.js';
 import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
@@ -248,10 +249,40 @@ export async function runCLI(entrypoint: string) {
 
 		cliDebugPrint('CommandArgsResult', commandResult);
 	} catch (err) {
+		// Auth failures deserve a machine-readable envelope when the caller opted into
+		// structured output with --json; otherwise scripts piping `apify ... --json | jq`
+		// blow up on the human-facing prose that would normally go to stderr.
+		if (err instanceof AuthError && jsonFlagRequested(FinalCommand, rebuiltArgs)) {
+			const envelope = {
+				error: {
+					type: err.type,
+					message: err.message,
+					exitCode: err.exitCode,
+				},
+			};
+
+			console.log(JSON.stringify(envelope, null, 2));
+			process.exit(err.exitCode);
+		}
+
 		const commandError = CommandError.into(err, FinalCommand);
 
 		error({ message: commandError.getPrettyMessage() });
 
-		process.exit(1);
+		// AuthError sets process.exitCode via CommandExitCodes.MissingAuth upstream — surface it
+		// (rather than the hard-coded 1) so callers can distinguish auth failures from other errors.
+		const exitCode = err instanceof AuthError ? err.exitCode : 1;
+		process.exit(exitCode);
 	}
+}
+
+/**
+ * Best-effort check for whether `--json` was requested for this invocation. We can't rely on
+ * `instance.flags.json` because errors can be thrown from `parseArgs` itself (before flags are
+ * populated) or from inside `_run` before the flags object is fully hydrated. Scanning the raw
+ * argv slice is cheap and matches the user's actual intent to receive structured output.
+ */
+function jsonFlagRequested(command: typeof BuiltApifyCommand, args: string[]): boolean {
+	if (!command.enableJsonFlag) return false;
+	return args.includes('--json') || args.includes('--json=true');
 }
