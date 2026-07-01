@@ -58,6 +58,9 @@ case $platform in
 'Linux aarch64' | 'Linux arm64')
     target=linux-arm64
     ;;
+'MINGW64'*'ARM64'* | 'MINGW64'*'aarch64'*)
+    target=windows-arm64
+    ;;
 'MINGW64'*)
     target=windows-x64
     ;;
@@ -117,8 +120,6 @@ fetch_latest_version() {
     echo "$version"
 }
 
-executable_names=("apify" "actor")
-
 if [[ $# = 0 || $1 = "latest" ]]; then
     version=$(fetch_latest_version)
 else
@@ -133,14 +134,6 @@ else
     version=${version#v}
 fi
 
-# Function to construct download URL
-construct_download_url() {
-    local cli_name="$1"
-    local edition="$2"
-
-    echo "https://github.com/apify/apify-cli/releases/download/v${version}/${cli_name}-${version}-${edition}"
-}
-
 install_env=APIFY_CLI_INSTALL
 install_dir=${!install_env:-$HOME/.apify}
 bin_dir=$install_dir/bin
@@ -150,30 +143,24 @@ if [[ ! -d $bin_dir ]]; then
         error "Failed to create install directory \"$bin_dir\""
 fi
 
-for executable_name in "${executable_names[@]}"; do
-    download_url=$(construct_download_url "$executable_name" "$target")
-    output_filename="${executable_name}"
+# We now ship a single `apify-cli` bundle. The `apify` and `actor` commands are tiny wrapper scripts
+# that invoke it with APIFY_CLI_ENTRYPOINT set, instead of dropping the same binary three times.
+download_url="https://github.com/apify/apify-cli/releases/download/v${version}/apify-cli-${version}-${target}"
 
-    info "Downloading $executable_name bundle for version $version and target $target"
+info "Downloading apify-cli bundle for version $version and target $target"
 
-    curl --fail --location --progress-bar --output "$bin_dir/$output_filename" "$download_url" ||
-        error "Failed to download $executable_name bundle for version $version and target $target (might not exist for this platform/arch combination)"
+curl --fail --location --progress-bar --output "$bin_dir/apify-cli" "$download_url" ||
+    error "Failed to download apify-cli bundle for version $version and target $target (might not exist for this platform/arch combination)"
 
-    chmod +x "$bin_dir/$output_filename" ||
-        error "Failed to set permissions on $executable_name executable"
+chmod +x "$bin_dir/apify-cli" ||
+    error "Failed to set permissions on apify-cli executable"
 
-    # Alias apify to apify-cli, as npm does (because otherwise npx apify-cli wouldn't work)
-    if [[ $executable_name = "apify" ]]; then
-        cp "$bin_dir/$output_filename" "$bin_dir/apify-cli"
-    fi
-done
-
-# Invoke the CLI to handle shell integrations nicely
+# Invoke the bundle to create the `apify`/`actor` wrapper scripts and handle shell integration.
 # When running the script via `curl xxx | bash`, stdin is the script that gets consumed by bash.
 # If stdin is not a tty and we have a readable /dev/tty, tell Node.js to open /dev/tty itself
 # (shell-level redirects don't support raw mode properly for Node.js/Inquirer).
 if ! [ -t 0 ] && [ -r /dev/tty ]; then
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_OPEN_TTY=1 "$bin_dir/apify" install
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_CLI_SKIP_UPDATE_CHECK=1 APIFY_OPEN_TTY=1 "$bin_dir/apify-cli" install
 else
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_CLI_SKIP_UPDATE_CHECK=1 "$bin_dir/apify-cli" install
 fi

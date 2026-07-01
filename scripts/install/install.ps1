@@ -8,19 +8,13 @@ param(
 # The following script is adapted from the bun.sh install script
 # Licensed under the MIT License (https://github.com/oven-sh/bun/blob/main/LICENSE.md)
 
-$allowedSystemTypes = @("x64-based", "ARM64-based")
-$currentSystemType = (Get-CimInstance Win32_ComputerSystem).SystemType
+$Arch = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment').PROCESSOR_ARCHITECTURE
 
 # filter out 32 bit
-if (-not ($allowedSystemTypes | Where-Object { $currentSystemType -match $_ })) {
+if (-not ($Arch -eq "AMD64" -or $Arch -eq "ARM64")) {
     Write-Output "Install Failed:"
     Write-Output "Apify CLI for Windows is currently only available for 64-bit Windows and ARM64 Windows.`n"
     return 1
-}
-
-if ($currentSystemType -match "ARM64") {
-    Write-Warning "Warning:"
-    Write-Warning "ARM64-based systems are not natively supported yet.`nThe install will still continue but Apify CLI might not work as intended.`n"
 }
 
 # This corresponds to .win10_rs5 in build.zig
@@ -114,31 +108,45 @@ function Install-Apify {
         return 1
     }
 
-    $Arch = if ($currentSystemType -match "ARM64") { "arm64" } else { "x64" }
-    $IsBaseline = $ForceBaseline
+    $IsARM64 = $Arch -eq "ARM64"
+    $Arch = if ($IsARM64) { "arm64" } else { "x64" }
+    $IsBaseline = $false
 
-    if (-not $IsBaseline) {
-        $IsBaseline = !(
-            Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern bool IsProcessorFeaturePresent(int ProcessorFeature);' -Name 'Kernel32' -Namespace 'Win32' -PassThru
-        )::IsProcessorFeaturePresent(40)
+    # Baseline (non-AVX2) builds only exist for x64; native ARM64 bundles never need them.
+    if (-not $IsARM64) {
+        $IsBaseline = $ForceBaseline
+
+        if (-not $IsBaseline) {
+            $IsBaseline = !(
+                Add-Type -MemberDefinition '[DllImport("kernel32.dll")] public static extern bool IsProcessorFeaturePresent(int ProcessorFeature);' -Name 'Kernel32' -Namespace 'Win32' -PassThru
+            )::IsProcessorFeaturePresent(40)
+        }
     }
 
     $ApifyRoot = if ($env:APIFY_CLI_INSTALL) { $env:APIFY_CLI_INSTALL } else { "${Home}\.apify" }
     $ApifyBin = mkdir -Force "${ApifyRoot}\bin"
 
     try {
+        # Remove any previously installed binaries and wrapper scripts (including legacy ones from the
+        # old two-bundle layout, and `.old` leftovers from a self-migration).
         foreach ($ExecutableName in $ExecutableNames) {
-            Remove-Item "${ApifyBin}\${ExecutableName}.exe" -Force
+            Remove-Item "${ApifyBin}\${ExecutableName}.exe" -Force -ErrorAction Ignore
+            Remove-Item "${ApifyBin}\${ExecutableName}.exe.old" -Force -ErrorAction Ignore
+            Remove-Item "${ApifyBin}\${ExecutableName}.cmd" -Force -ErrorAction Ignore
         }
 
-        # Alias apify to apify-cli, as npm does (because otherwise npx apify-cli wouldn't work)
-        Remove-Item "${ApifyBin}\apify-cli.exe" -Force
+        # apify-cli.exe is the canonical binary. We guard the removal with Test-Path so a fresh install
+        # doesn't error on a missing file, but deliberately let a lock error surface (no -ErrorAction
+        # Ignore) so the UnauthorizedAccessException handler below can tell the user to close the running CLI.
+        if (Test-Path "${ApifyBin}\apify-cli.exe") {
+            Remove-Item "${ApifyBin}\apify-cli.exe" -Force
+        }
     }
     catch [System.Management.Automation.ItemNotFoundException] {
         # ignore
     }
     catch [System.UnauthorizedAccessException] {
-        $openProcesses = Get-Process -Name apify | Where-Object { $_.Path -eq "${ApifyBin}\apify.exe" }
+        $openProcesses = Get-Process -Name apify, apify-cli -ErrorAction Ignore | Where-Object { $_.Path -like "${ApifyBin}\*" }
         if ($openProcesses.Count -gt 0) {
             Write-Output "Install Failed - An older installation exists and is open. Please close open Apify CLI processes and try again."
             return 1
@@ -167,55 +175,66 @@ function Install-Apify {
 
     $null = mkdir -Force $ApifyBin
 
-    foreach ($ExecutableName in $ExecutableNames) {
-        $FileName = "${ExecutableName}.exe"
-        $Target = "${ExecutableName}-${Version}-windows-${Arch}${IsBaseline ? '-baseline' : ''}"
+    # We now ship a single `apify-cli.exe` bundle. The `apify` and `actor` commands are `.cmd` wrapper
+    # scripts that invoke it with APIFY_CLI_ENTRYPOINT set, instead of dropping the same binary three times.
+    $FileName = "apify-cli.exe"
+    $Target = "apify-cli-${Version}-windows-${Arch}${IsBaseline ? '-baseline' : ''}"
 
-        $DownloadURL = "${BaseURL}${Target}.exe"
-        $DownloadPath = "${ApifyBin}\${FileName}"
+    $DownloadURL = "${BaseURL}${Target}.exe"
+    $DownloadPath = "${ApifyBin}\${FileName}"
 
-        curl.exe "-#SfLo" "$DownloadPath" "$DownloadURL"
+    curl.exe "-#SfLo" "$DownloadPath" "$DownloadURL"
 
-        if ($LASTEXITCODE -ne 0) {
-            Write-Warning "The command 'curl.exe $DownloadURL -o $DownloadPath' exited with code ${LASTEXITCODE}`nTrying an alternative download method..."
+    if ($LASTEXITCODE -ne 0) {
+        Write-Warning "The command 'curl.exe $DownloadURL -o $DownloadPath' exited with code ${LASTEXITCODE}`nTrying an alternative download method..."
 
-            try {
-                # Use Invoke-RestMethod instead of Invoke-WebRequest because Invoke-WebRequest breaks on
-                # some machines
-                Invoke-RestMethod -Uri $DownloadURL -OutFile $DownloadPath
-            }
-            catch {
-                Write-Output "Install Failed - could not download $DownloadURL"
-                Write-Output "The command 'Invoke-RestMethod $DownloadURL -OutFile $DownloadPath' exited with code ${LASTEXITCODE}`n"
-                return 1
-            }
+        try {
+            # Use Invoke-RestMethod instead of Invoke-WebRequest because Invoke-WebRequest breaks on
+            # some machines
+            Invoke-RestMethod -Uri $DownloadURL -OutFile $DownloadPath
         }
+        catch {
+            Write-Output "Install Failed - could not download $DownloadURL"
+            Write-Output "The command 'Invoke-RestMethod $DownloadURL -OutFile $DownloadPath' exited with code ${LASTEXITCODE}`n"
+            return 1
+        }
+    }
 
-        $ApifyVersion = "$(& "${ApifyBin}\${FileName}" --version)"
-        if ($LASTEXITCODE -eq 1073741795) {
-            # STATUS_ILLEGAL_INSTRUCTION
-            if ($IsBaseline) {
-                Write-Output "Install Failed - apify.exe (baseline) is not compatible with your CPU.`n"
-                return 1
-            }
-
-            Write-Output "Install Failed - apify.exe is not compatible with your CPU. This should have been detected before downloading.`n"
-            Write-Output "Attempting to download apify.exe (baseline) instead.`n"
-
-            Install-Apify -Version $Version -ForceBaseline $True
+    $ApifyVersion = "$(& "${ApifyBin}\${FileName}" --version)"
+    if ($LASTEXITCODE -eq 1073741795) {
+        # STATUS_ILLEGAL_INSTRUCTION
+        if ($IsBaseline) {
+            Write-Output "Install Failed - apify-cli.exe (baseline) is not compatible with your CPU.`n"
             return 1
         }
 
-        if ($LASTEXITCODE -ne 0) {
-            Write-Output "Install Failed - could not verify apify.exe"
-            Write-Output "The command '${ApifyBin}\apify.exe --version' exited with code ${LASTEXITCODE}`n"
-            return 1
-        }
+        Write-Output "Install Failed - apify-cli.exe is not compatible with your CPU. This should have been detected before downloading.`n"
+        Write-Output "Attempting to download apify-cli.exe (baseline) instead.`n"
 
-        if ($ExecutableName -eq "apify") {
-            # Alias apify to apify-cli, as npm does (because otherwise npx apify-cli wouldn't work)
-            Copy-Item -Path "${ApifyBin}\${FileName}" -Destination "${ApifyBin}\apify-cli.exe" -Force
-        }
+        Install-Apify -Version $Version -ForceBaseline $True
+        return 1
+    }
+
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output "Install Failed - could not verify apify-cli.exe"
+        Write-Output "The command '${ApifyBin}\apify-cli.exe --version' exited with code ${LASTEXITCODE}`n"
+        return 1
+    }
+
+    # Let the bundle create the `apify`/`actor` wrapper scripts (.cmd, .ps1 and a POSIX shim for Git Bash).
+    # Keeping the shim content in the bundle avoids duplicating it across the install/upgrade scripts.
+    # Skip the bundle's automatic version check here - we just downloaded the requested version.
+    $prevSkipCheck = $env:APIFY_CLI_SKIP_UPDATE_CHECK
+    $env:APIFY_CLI_SKIP_UPDATE_CHECK = "1"
+    try {
+        & "${ApifyBin}\${FileName}" install --shims-only
+    }
+    finally {
+        $env:APIFY_CLI_SKIP_UPDATE_CHECK = $prevSkipCheck
+    }
+    if ($LASTEXITCODE -ne 0) {
+        Write-Output "Install Failed - could not create the apify/actor wrapper scripts (exit code ${LASTEXITCODE})`n"
+        return 1
     }
 
     $UpgradeScriptPath = "${ApifyBin}\upgrade.ps1"
@@ -241,20 +260,20 @@ function Install-Apify {
     $C_DIM = [char]27 + "[0;2m"
 
     Write-Output "${C_GREEN}Apify and Actor CLI ${ApifyVersion} were installed successfully!${C_RESET}"
-    Write-Output "${C_DIM}The binaries are located at ${ApifyBin}\apify.exe and ${ApifyBin}\actor.exe${C_RESET}`n"
+    Write-Output "${C_DIM}The bundle is located at ${ApifyBin}\apify-cli.exe (invoked via the apify.cmd and actor.cmd wrappers)${C_RESET}`n"
 
     $hasExistingOther = $false;
     try {
         $existing = Get-Command apify -ErrorAction
-        if ($existing.Source -ne "${ApifyBin}\apify.exe") {
-            Write-Warning "Note: Another apify.exe is already in %PATH% at $($existing.Source)`nTyping 'apify' in your terminal will not use what was just installed.`n"
+        if ($existing.Source -ne "${ApifyBin}\apify.cmd") {
+            Write-Warning "Note: Another apify is already in %PATH% at $($existing.Source)`nTyping 'apify' in your terminal will not use what was just installed.`n"
             $hasExistingOther = $true;
         }
     }
     catch {}
 
     if (!$hasExistingOther) {
-        # Only try adding to path if there isn't already a apify.exe in the path
+        # Only try adding to path if there isn't already an apify in the path
         $Path = (Get-Env -Key "Path") -split ';'
         if ($Path -notcontains $ApifyBin) {
             $Path += $ApifyBin
