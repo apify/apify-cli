@@ -28,7 +28,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override description =
 		'Executes Actor remotely using your authenticated account.\n' +
 		'Reads input from local key-value store by default.\n' +
-		'Input schema can be inspected with "apify actors info <actor> --input" before creating a JSON input.';
+		'To inspect the input schema before creating a JSON input, use "apify actors info <actor> --input".';
 
 	static override group = 'Apify Console';
 
