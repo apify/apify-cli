@@ -71,22 +71,35 @@ export function formatCreateSuccessMessage(params: {
 	postCreate?: string | null;
 	gitRepositoryInitialized?: boolean;
 	installCommandSuggestion?: string | null;
+	scaffoldedIntoCwd?: boolean;
 }) {
-	const { actorName, dependenciesInstalled, postCreate, gitRepositoryInitialized, installCommandSuggestion } = params;
+	const {
+		actorName,
+		dependenciesInstalled,
+		postCreate,
+		gitRepositoryInitialized,
+		installCommandSuggestion,
+		scaffoldedIntoCwd,
+	} = params;
 
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
+	// When scaffolded into the current directory, skip the `cd` hint.
+	const cdLine = scaffoldedIntoCwd ? '' : `cd "${actorName}"\n`;
+
 	if (dependenciesInstalled) {
-		message += `\n\nNext steps:\n\ncd "${actorName}"\napify run`;
+		message += `\n\nNext steps:\n\n${cdLine}apify run`;
 	} else {
 		const installLine = installCommandSuggestion || 'install dependencies with your package manager';
-		message += `\n\nNext steps:\n\ncd "${actorName}"\n${installLine}\napify run`;
+		message += `\n\nNext steps:\n\n${cdLine}${installLine}\napify run`;
 	}
 
 	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
 
 	if (gitRepositoryInitialized) {
-		message += `\n🌱 Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`;
+		message += scaffoldedIntoCwd
+			? `\n🌱 Git repository initialized in the current directory. You can now commit and push your Actor to Git.`
+			: `\n🌱 Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`;
 	}
 
 	if (postCreate) {

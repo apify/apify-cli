@@ -1,5 +1,5 @@
 import { mkdir, readdir, stat } from 'node:fs/promises';
-import { join } from 'node:path';
+import { basename, join } from 'node:path';
 import process from 'node:process';
 
 import { gte, minVersion } from 'semver';
@@ -34,6 +34,7 @@ import {
 	getJsonFileContent,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
+	sanitizeActorName,
 	setLocalConfig,
 	setLocalEnv,
 } from '../lib/utils.js';
@@ -64,6 +65,15 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Create without installing dependencies (faster; run install yourself later).',
 			command: 'apify create my-actor --template python-start --skip-dependency-install',
 		},
+		{
+			description:
+				'Scaffold into the current directory (no wrapper subdirectory). The Actor name is derived from the cwd basename.',
+			command: 'apify create . --template js-crawlee-cheerio',
+		},
+		{
+			description: 'Same as above, using the --here flag explicitly.',
+			command: 'apify create --here --template js-crawlee-cheerio',
+		},
 	];
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-create';
@@ -92,6 +102,20 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Skip initializing a git repository in the Actor directory.',
 			required: false,
 		}),
+		here: Flags.boolean({
+			description:
+				'Scaffold the Actor into the current directory instead of creating a subdirectory. ' +
+				'The Actor name is derived from the current directory basename unless explicitly provided. ' +
+				'Refuses to overwrite a non-empty directory unless --force is set. ' +
+				'You can also pass "." as the positional argument for the same effect.',
+			required: false,
+		}),
+		force: Flags.boolean({
+			description:
+				'Allow scaffolding into a non-empty current directory when combined with --here (or "."). ' +
+				'Existing files will not be deleted, but template files may overwrite them.',
+			required: false,
+		}),
 	};
 
 	static override args = {
@@ -103,7 +127,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 	async run() {
 		let { actorName } = this.args;
-		const { template: templateName, skipDependencyInstall, skipGitInit } = this.flags;
+		const { template: templateName, skipDependencyInstall, skipGitInit, here, force } = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
 		// for testing of templates that are not yet published in the manifest
@@ -116,37 +140,73 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
 		});
 
-		actorName = await ensureValidActorName(actorName);
-
 		const cwd = process.cwd();
-		let actFolderDir = join(cwd, actorName);
 
-		while (true) {
-			const folderExists = await stat(actFolderDir).catch(() => null);
-			const folderHasFiles =
-				folderExists &&
-				(await readdir(actFolderDir)
-					.then((files) => files.length > 0)
-					.catch(() => false));
+		// Detect "scaffold into current directory" mode: either `apify create .` or `--here`.
+		const scaffoldHere = here || actorName === '.';
 
-			if (folderExists?.isDirectory() && folderHasFiles) {
+		let actFolderDir: string;
+
+		if (scaffoldHere) {
+			// When scaffolding into cwd, derive the Actor name from the cwd basename
+			// unless an explicit non-"." name was provided.
+			if (!actorName || actorName === '.') {
+				const derived = sanitizeActorName(basename(cwd));
+				actorName = await ensureValidActorName(derived);
+			} else {
+				actorName = await ensureValidActorName(actorName);
+			}
+
+			actFolderDir = cwd;
+
+			const cwdFiles = await readdir(cwd).catch(() => [] as string[]);
+			if (cwdFiles.length > 0 && !force) {
 				error({
 					message:
-						`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.` +
-						' You can use "apify init" to create a local Actor environment inside an existing directory.',
+						`Cannot scaffold into '${cwd}': directory is not empty. ` +
+						'Re-run with --force to scaffold anyway (template files may overwrite existing files), ' +
+						'or use "apify init" to add Actor scaffolding to an existing project.',
 				});
-
-				actorName = await ensureValidActorName();
-				actFolderDir = join(cwd, actorName);
-
-				continue;
+				return;
 			}
-
-			// Create Actor directory structure
-			if (!folderExists) {
-				await mkdir(actFolderDir, { recursive: true });
+			if (cwdFiles.length > 0 && force) {
+				warning({
+					message:
+						`Scaffolding into non-empty directory '${cwd}' because --force was set. ` +
+						'Template files may overwrite existing files.',
+				});
 			}
-			break;
+		} else {
+			actorName = await ensureValidActorName(actorName);
+			actFolderDir = join(cwd, actorName);
+
+			while (true) {
+				const folderExists = await stat(actFolderDir).catch(() => null);
+				const folderHasFiles =
+					folderExists &&
+					(await readdir(actFolderDir)
+						.then((files) => files.length > 0)
+						.catch(() => false));
+
+				if (folderExists?.isDirectory() && folderHasFiles) {
+					error({
+						message:
+							`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.` +
+							' You can use "apify init" to create a local Actor environment inside an existing directory.',
+					});
+
+					actorName = await ensureValidActorName();
+					actFolderDir = join(cwd, actorName);
+
+					continue;
+				}
+
+				// Create Actor directory structure
+				if (!folderExists) {
+					await mkdir(actFolderDir, { recursive: true });
+				}
+				break;
+			}
 		}
 
 		let messages = null;
@@ -339,9 +399,12 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		// Initialize git repository before reporting success, but store result for later
 		let gitInitResult: { success: boolean; error?: Error } = { success: true };
+		// Check whether git is already initialized in a parent (for subdir mode) or in cwd itself.
+		// When scaffolding into cwd, checking `cwd/.git` correctly detects an existing repo.
 		const cwdHasGit = await stat(join(cwd, '.git')).catch(() => null);
+		const actFolderHasGit = scaffoldHere ? cwdHasGit : await stat(join(actFolderDir, '.git')).catch(() => null);
 
-		if (!skipGitInit && !cwdHasGit) {
+		if (!skipGitInit && !cwdHasGit && !actFolderHasGit) {
 			try {
 				await execWithLog({
 					cmd: 'git',
@@ -363,13 +426,14 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				actorName,
 				dependenciesInstalled,
 				postCreate: messages?.postCreate ?? null,
-				gitRepositoryInitialized: !skipGitInit && !cwdHasGit && gitInitResult.success,
+				gitRepositoryInitialized: !skipGitInit && !cwdHasGit && !actFolderHasGit && gitInitResult.success,
 				installCommandSuggestion,
+				scaffoldedIntoCwd: scaffoldHere,
 			}),
 		});
 
 		// Report git initialization result only if it failed (success already included in success message)
-		if (!skipGitInit && !cwdHasGit && !gitInitResult.success) {
+		if (!skipGitInit && !cwdHasGit && !actFolderHasGit && !gitInitResult.success) {
 			// Git init is not critical, so we just warn if it fails
 			warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
 			warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
