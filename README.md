@@ -26,8 +26,8 @@ If you'd rather have the skill installed persistently, `apify help --skill` prin
 ### Claude Code
 
 ```bash
-mkdir -p ~/.claude/skills/apify
-apify help --skill > ~/.claude/skills/apify/SKILL.md
+mkdir -p ~/.claude/skills/apify-cli
+apify help --skill > ~/.claude/skills/apify-cli/SKILL.md
 ```
 
 ### Codex and other agents
@@ -35,8 +35,8 @@ apify help --skill > ~/.claude/skills/apify/SKILL.md
 Codex and most other agents follow the [Agent Skills open standard](https://developers.openai.com/codex/skills), which loads skills from `.agents/skills` (per repo) or `~/.agents/skills` (per user):
 
 ```bash
-mkdir -p ~/.agents/skills/apify
-apify help --skill > ~/.agents/skills/apify/SKILL.md
+mkdir -p ~/.agents/skills/apify-cli
+apify help --skill > ~/.agents/skills/apify-cli/SKILL.md
 ```
 
 That copy is a snapshot; re-run it after upgrading the Apify CLI to refresh it.
