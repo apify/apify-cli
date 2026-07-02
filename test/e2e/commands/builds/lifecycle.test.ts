@@ -98,7 +98,7 @@ describe('[e2e][api] builds namespace', () => {
 				env: authEnv,
 			});
 
-			expect(result.stdout).toContain('Build Started');
+			expect(result.stdout).toContain('Build started.');
 			expect(result.stdout).toContain(actor.name);
 		});
 
