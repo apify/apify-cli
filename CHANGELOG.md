@@ -2,6 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.0](https://github.com/apify/apify-cli/releases/tag/v1.7.0) (2026-07-02)
+
+
 ## [1.6.3](https://github.com/apify/apify-cli/releases/tag/v1.6.3) (2026-07-01)
 
 ### 🚀 Features
