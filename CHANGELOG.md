@@ -4,9 +4,6 @@ All notable changes to this project will be documented in this file.
 
 ## [1.7.0](https://github.com/apify/apify-cli/releases/tag/v1.7.0) (2026-07-02)
 
-
-## [1.6.3](https://github.com/apify/apify-cli/releases/tag/v1.6.3) (2026-07-01)
-
 ### 🚀 Features
 
 - **auth:** Use os keyring for secure credential storage ([#1148](https://github.com/apify/apify-cli/pull/1148)) ([bbfea42](https://github.com/apify/apify-cli/commit/bbfea4286345aa5f15429d20d9d52013e7adc637)) by [@l2ysho](https://github.com/l2ysho), closes [#1115](https://github.com/apify/apify-cli/issues/1115)
