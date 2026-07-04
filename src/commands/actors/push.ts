@@ -57,7 +57,7 @@ const BUILD_LOG_TAIL_LINES = 10;
 interface PushResult {
 	ok: boolean;
 	operation: 'push';
-	actor: { id: string; url: string };
+	actor: { id: string; url: string; standbyUrl?: string };
 	build: { id: string; number: string; status: string; url: string };
 	error?: { phase: 'build'; message: string; logTail: string[] };
 	exitCode?: number;
@@ -508,6 +508,14 @@ Skipping push. Use --force to override.`,
 
 		const actorUrl = `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`;
 		const buildUrl = `${actorUrl}#/builds/${build.buildNumber}`;
+		// Standby actors expose an HTTP endpoint at https://<username>--<name>.apify.actor.
+		// Surface it in the push summary so callers don't have to guess the host or
+		// dig through the Console UI. Guarded on the local config flag rather than
+		// the platform response so it's shown consistently right after enabling
+		// standby via actor.json (before the platform record has been re-fetched).
+		const standbyUrl = actorConfig!.usesStandbyMode
+			? `https://${actor.username}--${actor.name}.apify.actor`
+			: undefined;
 
 		// Surface the tail of the build log as the failure reason. Best-effort:
 		// the build status already conveys the outcome if the log can't be read.
@@ -534,7 +542,7 @@ Skipping push. Use --force to override.`,
 		const result: PushResult = {
 			ok: outcome.ok,
 			operation: 'push',
-			actor: { id: build.actId, url: actorUrl },
+			actor: { id: build.actId, url: actorUrl, ...(standbyUrl ? { standbyUrl } : {}) },
 			build: { id: build.id, number: build.buildNumber, status: buildStatus, url: buildUrl },
 		};
 		if (outcome.exitCode !== undefined) {
@@ -561,6 +569,7 @@ Skipping push. Use --force to override.`,
 			'',
 			`Actor URL: ${actorUrl}`,
 			`Build URL: ${buildUrl}`,
+			...(standbyUrl ? [`Standby URL: ${standbyUrl}`] : []),
 			...(outcome.errorMessage && logTail.length ? ['', 'Reason:', ...logTail] : []),
 		];
 		simpleLog({ stdout: true, message: lines.join('\n') });
