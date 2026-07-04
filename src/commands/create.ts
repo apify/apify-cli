@@ -19,6 +19,7 @@ import {
 import {
 	enhanceReadmeWithLocalSuffix,
 	ensureValidActorName,
+	findMissingRunnerBinary,
 	formatCreateSuccessMessage,
 	getTemplateDefinition,
 } from '../lib/create-utils.js';
@@ -343,9 +344,12 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		if (!skipGitInit && !cwdHasGit) {
 			try {
+				// -c init.defaultBranch=main avoids the "using master as the initial
+				// branch" hint on Git 2.28+. -q silences the remaining "Initialized
+				// empty Git repository" line so scaffolding output stays compact.
 				await execWithLog({
 					cmd: 'git',
-					args: ['init'],
+					args: ['-c', 'init.defaultBranch=main', 'init', '-q'],
 					opts: { cwd: actFolderDir },
 				});
 			} catch (err) {
@@ -356,6 +360,11 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Suggest install command if dependencies were not installed
 		const installCommandSuggestion = !dependenciesInstalled ? await getInstallCommandSuggestion(actFolderDir) : null;
 
+		// If we ran install but the start-script runner binary (tsx/ts-node/etc.)
+		// is missing from node_modules/.bin, dev dependencies were skipped. Warn
+		// so the Next-steps hint doesn't lead the user into `sh: tsx: not found`.
+		const missingRunnerBinary = dependenciesInstalled ? await findMissingRunnerBinary(actFolderDir) : null;
+
 		// Success message with extra empty line
 		simpleLog({ message: '' });
 		success({
@@ -365,6 +374,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				postCreate: messages?.postCreate ?? null,
 				gitRepositoryInitialized: !skipGitInit && !cwdHasGit && gitInitResult.success,
 				installCommandSuggestion,
+				missingRunnerBinary,
 			}),
 		});
 

@@ -1,7 +1,6 @@
 import { gt } from 'semver';
 
 import { CHECK_VERSION_EVERY_MILLIS } from '../consts.js';
-import { warning } from '../outputs.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { useCLIMetadata } from './useCLIMetadata.js';
 import { type LatestState, updateLocalState, useLocalState } from './useLocalState.js';
@@ -58,15 +57,30 @@ async function getLatestVersion(state: LatestState) {
 		headers: {
 			'User-Agent': USER_AGENT,
 		},
+	}).catch((err) => {
+		cliDebugPrint('useCLIVersionCheck', 'Failed to fetch latest version', { error: (err as Error).message });
+		return null;
 	});
 
-	if (!res.ok) {
-		cliDebugPrint('useCLIVersionCheck', 'Failed to fetch latest version', {
-			statusCode: res.status,
-			body: await res.text(),
-		});
+	if (!res || !res.ok) {
+		if (res) {
+			cliDebugPrint('useCLIVersionCheck', 'Failed to fetch latest version', {
+				statusCode: res.status,
+				body: await res.text(),
+			});
+		}
 
-		warning({ message: 'Failed to fetch latest version of Apify CLI, using the cached version instead.' });
+		// The version check is a best-effort background courtesy — the CLI still
+		// works without it. Record the attempt so we honour the 24h debounce
+		// window even on failure (previously every subsequent command re-tried
+		// and re-printed a warning). We intentionally do not surface the failure
+		// to the user; transient network errors here are not actionable.
+		updateLocalState(state, (stateToUpdate) => {
+			stateToUpdate.versionCheck = {
+				lastChecked: Date.now(),
+				lastVersion: state.versionCheck?.lastVersion,
+			};
+		});
 
 		return null;
 	}
