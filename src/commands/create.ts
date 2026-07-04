@@ -239,6 +239,28 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 						// For efficiency, don't install Puppeteer for templates that don't use it
 						const cmdArgs = ['install'];
 
+						// Force devDependencies to be installed even if the caller's
+						// NODE_ENV is "production" or they've configured npm to omit dev deps.
+						// Scaffolded projects rely on devDependencies (tsx, typescript, etc.)
+						// to be runnable via `apify run` immediately after `apify create`.
+						switch (runtime.pmName) {
+							case 'npm': {
+								if (gte(runtime.pmVersion!, '7.0.0')) {
+									cmdArgs.push('--include=dev');
+								} else {
+									cmdArgs.push('--no-production');
+								}
+								break;
+							}
+							case 'bun': {
+								// bun install skips devDependencies only when --production is passed;
+								// nothing to force by default, but we still override NODE_ENV below.
+								break;
+							}
+							default:
+							// pnpm / yarn / deno respect NODE_ENV; overriding it below is enough.
+						}
+
 						if (skipOptionalDeps) {
 							switch (runtime.pmName) {
 								case 'npm': {
@@ -263,10 +285,17 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 							}
 						}
 
+						// Override NODE_ENV so package managers that key devDependency
+						// installation off it (pnpm, yarn, bun, npm) still install
+						// devDependencies even when the parent shell has
+						// NODE_ENV=production set (common in Dockerfiles, CI, and shells
+						// that persist env from previous `apify push` invocations).
+						const installEnv = { ...process.env, NODE_ENV: 'development' };
+
 						await execWithLog({
 							cmd: runtime.pmPath!,
 							args: cmdArgs,
-							opts: { cwd: actFolderDir },
+							opts: { cwd: actFolderDir, env: installEnv },
 							overrideCommand: runtime.pmName,
 						});
 
@@ -343,11 +372,22 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		if (!skipGitInit && !cwdHasGit) {
 			try {
-				await execWithLog({
-					cmd: 'git',
-					args: ['init'],
-					opts: { cwd: actFolderDir },
-				});
+				// Use -b main so newly scaffolded projects start on `main` regardless
+				// of the host's `init.defaultBranch` git config. Fall back to plain
+				// `git init` for older git versions that don't support -b.
+				try {
+					await execWithLog({
+						cmd: 'git',
+						args: ['init', '-b', 'main'],
+						opts: { cwd: actFolderDir },
+					});
+				} catch {
+					await execWithLog({
+						cmd: 'git',
+						args: ['init'],
+						opts: { cwd: actFolderDir },
+					});
+				}
 			} catch (err) {
 				gitInitResult = { success: false, error: err as Error };
 			}
