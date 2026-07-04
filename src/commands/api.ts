@@ -6,7 +6,7 @@ import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.
 import { Args } from '../lib/command-framework/args.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, CommandExitCodes } from '../lib/consts.js';
-import { error, simpleLog } from '../lib/outputs.js';
+import { error, simpleLog, warning } from '../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../lib/utils.js';
 
 const HTTP_METHODS: string[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -144,6 +144,8 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		'Makes an authenticated HTTP request to the Apify API and prints the response.\n' +
 		'The endpoint can be a relative path (e.g. "acts", "v2/acts", or "/v2/acts"); ' +
 		'the "v2/" prefix is added automatically if omitted.\n\n' +
+		'Prefer --params to pass query parameters. If you must include a "?" inline, ' +
+		'quote the whole endpoint so the shell does not treat "&" as a background operator.\n\n' +
 		'Use --list-endpoints to see all available API endpoints.';
 
 	static override examples = [
@@ -287,6 +289,26 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		if (!endpointArg) {
 			this.printHelp();
 			return;
+		}
+
+		// The endpoint arrives as a single argv entry. If the user typed something like
+		//   apify api /v2/acts?my=1&limit=100
+		// without quotes, the shell interpreted "&" as a background operator and the CLI
+		// only ever received "/v2/acts?my=1" — the rest was silently lost. We cannot see
+		// the missing "&" (the shell consumed it), but the leftover "?" in the endpoint
+		// is a strong signal that inline query params were being passed. Warn the user
+		// so the truncation is never silent, and point them at safer forms.
+		if (endpointArg.includes('?')) {
+			warning({
+				message:
+					'The endpoint contains a "?". If the command line was not fully quoted, ' +
+					'the shell may have silently dropped everything after an unquoted "&" or ' +
+					'expanded "?" as a glob. Prefer --params to pass query parameters, e.g.\n' +
+					`  ${chalk.cyan(`apify api /v2/acts -p '{"my":1,"limit":100}'`)}\n` +
+					'or quote the whole endpoint:\n' +
+					`  ${chalk.cyan(`apify api '/v2/acts?my=1&limit=100'`)}`,
+				stdout: false,
+			});
 		}
 
 		// Parse and validate --params before any I/O so bad input fails fast
