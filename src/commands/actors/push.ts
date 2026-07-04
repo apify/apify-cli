@@ -22,7 +22,7 @@ import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
-import { transformEnvToEnvVars } from '../../lib/secrets.js';
+import { transformEnvToEnvVars, validateEnvironmentVariablesShape } from '../../lib/secrets.js';
 import {
 	createActZip,
 	createSourceFiles,
@@ -248,6 +248,17 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
+
+		// Preflight: reject an `environmentVariables` that isn't a key-value object.
+		// A common mistake is to use the API-wire shape `[{ name, value }]`, which
+		// the CLI would otherwise pass through unchanged — `@secret` references
+		// would never be resolved and the build would ship the literal string.
+		const envShapeError = validateEnvironmentVariablesShape(actorConfig?.environmentVariables);
+		if (envShapeError) {
+			error({ message: envShapeError });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
+			return;
+		}
 
 		const userInfo = await getLocalUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
