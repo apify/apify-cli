@@ -1,9 +1,9 @@
 ---
-title: Agent skill
-description: Learn about the available agent skill for the Apify CLI.
+title: Agent Skill
+description: Learn about the available Agent Skill for the Apify CLI.
 ---
 
-An agent skill is a Markdown file that contains guidance for coding agents. The Apify CLI ships its own skill that your agent loads automatically when a task involves the CLI.
+An Agent Skill is a Markdown file that contains guidance for coding agents. The Apify CLI ships its own skill that your agent can use when a task involves the CLI.
 
 ## View the skill
 
