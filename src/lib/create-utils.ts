@@ -1,4 +1,6 @@
 import { createWriteStream } from 'node:fs';
+import { stat } from 'node:fs/promises';
+import { join } from 'node:path';
 import { pipeline } from 'node:stream/promises';
 
 import { Separator } from '@inquirer/core';
@@ -9,7 +11,7 @@ import type { ChoicesType } from './hooks/user-confirmations/useSelectFromList.j
 import { useSelectFromList } from './hooks/user-confirmations/useSelectFromList.js';
 import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
 import { warning } from './outputs.js';
-import { httpsGet, validateActorName } from './utils.js';
+import { getJsonFileContent, httpsGet, validateActorName } from './utils.js';
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 
@@ -71,13 +73,31 @@ export function formatCreateSuccessMessage(params: {
 	postCreate?: string | null;
 	gitRepositoryInitialized?: boolean;
 	installCommandSuggestion?: string | null;
+	missingRunnerBinary?: string | null;
 }) {
-	const { actorName, dependenciesInstalled, postCreate, gitRepositoryInitialized, installCommandSuggestion } = params;
+	const {
+		actorName,
+		dependenciesInstalled,
+		postCreate,
+		gitRepositoryInitialized,
+		installCommandSuggestion,
+		missingRunnerBinary,
+	} = params;
 
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
-	if (dependenciesInstalled) {
+	if (dependenciesInstalled && !missingRunnerBinary) {
 		message += `\n\nNext steps:\n\ncd "${actorName}"\napify run`;
+	} else if (missingRunnerBinary) {
+		// The install finished but the runner declared in package.json's start
+		// script is missing from node_modules/.bin — most commonly because
+		// NODE_ENV=production (or --omit=dev) caused npm to skip devDependencies.
+		// Point the user at that root cause instead of the misleading run hint,
+		// which would fail with "<runner>: not found".
+		message +=
+			`\n\n⚠️  Dev dependencies do not appear to be fully installed ` +
+			`(missing '${missingRunnerBinary}' in node_modules/.bin).` +
+			`\n\nNext steps:\n\ncd "${actorName}"\nnpm install --include=dev\napify run`;
 	} else {
 		const installLine = installCommandSuggestion || 'install dependencies with your package manager';
 		message += `\n\nNext steps:\n\ncd "${actorName}"\n${installLine}\napify run`;
@@ -94,6 +114,48 @@ export function formatCreateSuccessMessage(params: {
 	}
 
 	return message;
+}
+
+/**
+ * Detect the runner binary that the project's `npm start` script expects
+ * (e.g. `tsx`, `ts-node`) and check whether it landed in `node_modules/.bin`.
+ * Returns the runner name if it is expected but missing — a heuristic signal
+ * that devDependencies were skipped during install.
+ */
+export async function findMissingRunnerBinary(actorDir: string): Promise<string | null> {
+	const pkg = getJsonFileContent<{
+		scripts?: Record<string, string>;
+		devDependencies?: Record<string, string>;
+	}>(join(actorDir, 'package.json'));
+
+	if (!pkg?.scripts?.start) {
+		return null;
+	}
+
+	// First non-shell token of `start`. Skip env-var assignments like FOO=bar.
+	const tokens = pkg.scripts.start.split(/\s+/).filter((t) => t && !t.includes('='));
+	const runner = tokens[0];
+
+	if (!runner) {
+		return null;
+	}
+
+	// Absolute/relative paths and Node itself don't live in node_modules/.bin.
+	if (runner === 'node' || runner.startsWith('.') || runner.includes('/') || runner.includes('\\')) {
+		return null;
+	}
+
+	// Only flag runners the template declared as (dev)Dependencies — otherwise a
+	// missing binary is expected (system-provided command).
+	const declared = { ...pkg.devDependencies, ...(pkg as { dependencies?: Record<string, string> }).dependencies };
+	if (!Object.hasOwn(declared, runner)) {
+		return null;
+	}
+
+	const binPath = join(actorDir, 'node_modules', '.bin', runner);
+	const exists = await stat(binPath).catch(() => null);
+
+	return exists ? null : runner;
 }
 
 /**
