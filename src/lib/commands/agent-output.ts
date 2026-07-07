@@ -5,7 +5,7 @@ import { ACTOR_JOB_TERMINAL_STATUSES } from '@apify/consts';
 
 import { CommandExitCodes } from '../consts.js';
 
-export type TerminalStatus = 'SUCCEEDED' | 'FAILED' | 'ABORTED' | 'TIMED-OUT';
+export type TerminalStatus = (typeof ACTOR_JOB_TERMINAL_STATUSES)[number];
 
 const TERMINAL_STATUSES = new Set<string>(ACTOR_JOB_TERMINAL_STATUSES as readonly string[]);
 
