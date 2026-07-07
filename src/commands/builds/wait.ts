@@ -2,6 +2,8 @@ import process from 'node:process';
 
 import type { Build } from 'apify-client';
 
+import { ACTOR_JOB_TYPES } from '@apify/consts';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -65,7 +67,7 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 		const { job, timedOutWaiting } = await waitForTerminalStatus({
 			apifyClient,
 			jobId: buildId,
-			kind: 'build',
+			kind: ACTOR_JOB_TYPES.BUILD,
 			maxWaitMillis: timeout ? timeout * 1000 : undefined,
 			pollIntervalMillis: pollInterval ? pollInterval * 1000 : undefined,
 		});
@@ -73,7 +75,7 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 
 		const url = consoleBuildUrl(build.actId, build.buildNumber);
 		const ok = build.status === 'SUCCEEDED';
-		const exitCode = exitCodeForWaitResult({ job, timedOutWaiting }, 'build');
+		const exitCode = exitCodeForWaitResult({ job, timedOutWaiting }, ACTOR_JOB_TYPES.BUILD);
 		const giveUpMessage = `Gave up waiting after ${timeout}s; build is still ${build.status}`;
 
 		let logTail: string[] = [];

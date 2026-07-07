@@ -3,7 +3,7 @@ import process from 'node:process';
 import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
-import { ACTOR_JOB_STATUSES } from '@apify/consts';
+import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
 
 import { Flags } from '../command-framework/flags.js';
 import { CommandExitCodes } from '../consts.js';
@@ -117,7 +117,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 	// terminated by the consumer (e.g. `break` out of `for await`).
 	using _signalHandler = useAbortJobOnSignal({
 		apifyClient,
-		kind: 'run',
+		kind: ACTOR_JOB_TYPES.RUN,
 		jobId: run.id,
 		runType: type,
 		silent,

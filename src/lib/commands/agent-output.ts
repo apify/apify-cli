@@ -1,32 +1,36 @@
 import type { ActorRun, ApifyClient, Build } from 'apify-client';
 import chalk from 'chalk';
 
-import { ACTOR_JOB_STATUSES, ACTOR_JOB_TERMINAL_STATUSES } from '@apify/consts';
+import { ACTOR_JOB_STATUSES, ACTOR_JOB_TERMINAL_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
 
 import { CommandExitCodes } from '../consts.js';
 
 export type TerminalStatus = (typeof ACTOR_JOB_TERMINAL_STATUSES)[number];
 
-export function isTerminalStatus(status: string | undefined): status is TerminalStatus {
+export type JobStatus = (typeof ACTOR_JOB_STATUSES)[keyof typeof ACTOR_JOB_STATUSES];
+
+export type JobType = (typeof ACTOR_JOB_TYPES)[keyof typeof ACTOR_JOB_TYPES];
+
+export function isTerminalStatus(status: JobStatus | undefined): status is TerminalStatus {
 	return !!status && (ACTOR_JOB_TERMINAL_STATUSES as readonly string[]).includes(status);
 }
 
-export function exitCodeForJobStatus(status: string | undefined, kind: 'build' | 'run'): number {
+export function exitCodeForJobStatus(status: JobStatus | undefined, kind: JobType): number {
 	switch (status) {
 		case ACTOR_JOB_STATUSES.SUCCEEDED:
 			return 0;
 		case ACTOR_JOB_STATUSES.TIMED_OUT:
 		case ACTOR_JOB_STATUSES.TIMING_OUT:
-			return kind === 'build' ? CommandExitCodes.BuildTimedOut : CommandExitCodes.RunTimedOut;
+			return kind === ACTOR_JOB_TYPES.BUILD ? CommandExitCodes.BuildTimedOut : CommandExitCodes.RunTimedOut;
 		case ACTOR_JOB_STATUSES.ABORTED:
 		case ACTOR_JOB_STATUSES.ABORTING:
-			return kind === 'build' ? CommandExitCodes.BuildAborted : CommandExitCodes.RunAborted;
+			return kind === ACTOR_JOB_TYPES.BUILD ? CommandExitCodes.BuildAborted : CommandExitCodes.RunAborted;
 		default:
-			return kind === 'build' ? CommandExitCodes.BuildFailed : CommandExitCodes.RunFailed;
+			return kind === ACTOR_JOB_TYPES.BUILD ? CommandExitCodes.BuildFailed : CommandExitCodes.RunFailed;
 	}
 }
 
-export function exitCodeForWaitResult(result: WaitForJobResult, kind: 'build' | 'run'): number {
+export function exitCodeForWaitResult(result: WaitForJobResult, kind: JobType): number {
 	// A client-side wait give-up is not a platform timeout, so report it with a distinct exit
 	// code rather than mislabelling the still-running job as having timed out on the platform.
 	return result.timedOutWaiting ? CommandExitCodes.WaitTimedOut : exitCodeForJobStatus(result.job.status, kind);
@@ -35,7 +39,7 @@ export function exitCodeForWaitResult(result: WaitForJobResult, kind: 'build' | 
 export interface WaitForJobOptions {
 	apifyClient: ApifyClient;
 	jobId: string;
-	kind: 'build' | 'run';
+	kind: JobType;
 	/** Poll interval in milliseconds. Defaults to 2000. */
 	pollIntervalMillis?: number;
 	/** Maximum time to wait before giving up. Defaults to no limit. */
@@ -58,12 +62,12 @@ export async function waitForTerminalStatus(options: WaitForJobOptions): Promise
 
 	while (true) {
 		const job =
-			kind === 'build'
+			kind === ACTOR_JOB_TYPES.BUILD
 				? ((await apifyClient.build(jobId).get()) as Build | undefined)
 				: ((await apifyClient.run(jobId).get()) as ActorRun | undefined);
 
 		if (!job) {
-			throw new Error(`${kind === 'build' ? 'Build' : 'Run'} with ID "${jobId}" was not found.`);
+			throw new Error(`${kind === ACTOR_JOB_TYPES.BUILD ? 'Build' : 'Run'} with ID "${jobId}" was not found.`);
 		}
 
 		if (isTerminalStatus(job.status)) {
@@ -105,9 +109,9 @@ export function consoleDatasetUrl(datasetId: string): string {
 	return `https://console.apify.com/storage/datasets/${datasetId}`;
 }
 
-function statusColor(status: string): string {
-	if (status === 'SUCCEEDED') return chalk.green(status);
-	if (status === 'RUNNING' || status === 'READY') return chalk.blue(status);
+function statusColor(status: JobStatus): string {
+	if (status === ACTOR_JOB_STATUSES.SUCCEEDED) return chalk.green(status);
+	if (status === ACTOR_JOB_STATUSES.RUNNING || status === ACTOR_JOB_STATUSES.READY) return chalk.blue(status);
 	return chalk.red(status);
 }
 

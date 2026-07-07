@@ -6,6 +6,7 @@ import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
+import { ACTOR_JOB_TYPES } from '@apify/consts';
 import {
 	ACTOR_JOB_STATUSES,
 	ACTOR_JOB_TERMINAL_STATUSES,
@@ -451,7 +452,7 @@ Skipping push. Use --force to override.`,
 		// build doesn't keep running after the user gives up waiting.
 		using _signalHandler = useAbortJobOnSignal({
 			apifyClient,
-			kind: 'build',
+			kind: ACTOR_JOB_TYPES.BUILD,
 			jobId: build.id,
 		});
 
