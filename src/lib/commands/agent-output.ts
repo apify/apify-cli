@@ -7,10 +7,8 @@ import { CommandExitCodes } from '../consts.js';
 
 export type TerminalStatus = (typeof ACTOR_JOB_TERMINAL_STATUSES)[number];
 
-const TERMINAL_STATUSES = new Set<string>(ACTOR_JOB_TERMINAL_STATUSES as readonly string[]);
-
 export function isTerminalStatus(status: string | undefined): status is TerminalStatus {
-	return !!status && TERMINAL_STATUSES.has(status);
+	return !!status && (ACTOR_JOB_TERMINAL_STATUSES as readonly string[]).includes(status);
 }
 
 export function exitCodeForJobStatus(status: string | undefined, kind: 'build' | 'run'): number {
