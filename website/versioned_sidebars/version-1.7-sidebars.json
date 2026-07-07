@@ -1,20 +1,28 @@
 [
   [
     {
-      "type": "doc",
-      "id": "index",
-      "label": "Overview"
-    },
-    {
-      "type": "doc",
-      "id": "installation",
-      "label": "Installation"
-    },
-    {
-      "type": "doc",
-      "id": "quick-start",
-      "label": "Quick start"
-    },
+	  "type": "category",
+	  "collapsed": false,
+	  "label": "Overview",
+	  "link": {"type": "doc", "id": "index"},
+	  "items": [
+		{
+		  "type": "doc",
+		  "id": "installation",
+		  "label": "Installation"
+		},
+		{
+		  "type": "doc",
+		  "id": "quick-start",
+		  "label": "Quick start"
+		},
+		{
+		  "type": "doc",
+		  "id": "agent-skill",
+		  "label": "Agent skill"
+		}
+	  ]
+	},
     {
       "type": "doc",
       "id": "reference",
