@@ -1,7 +1,7 @@
 import type { ActorRun, ApifyClient, Build } from 'apify-client';
 import chalk from 'chalk';
 
-import { ACTOR_JOB_TERMINAL_STATUSES } from '@apify/consts';
+import { ACTOR_JOB_STATUSES, ACTOR_JOB_TERMINAL_STATUSES } from '@apify/consts';
 
 import { CommandExitCodes } from '../consts.js';
 
@@ -13,13 +13,13 @@ export function isTerminalStatus(status: string | undefined): status is Terminal
 
 export function exitCodeForJobStatus(status: string | undefined, kind: 'build' | 'run'): number {
 	switch (status) {
-		case 'SUCCEEDED':
+		case ACTOR_JOB_STATUSES.SUCCEEDED:
 			return 0;
-		case 'TIMED-OUT':
-		case 'TIMING-OUT':
+		case ACTOR_JOB_STATUSES.TIMED_OUT:
+		case ACTOR_JOB_STATUSES.TIMING_OUT:
 			return kind === 'build' ? CommandExitCodes.BuildTimedOut : CommandExitCodes.RunTimedOut;
-		case 'ABORTED':
-		case 'ABORTING':
+		case ACTOR_JOB_STATUSES.ABORTED:
+		case ACTOR_JOB_STATUSES.ABORTING:
 			return kind === 'build' ? CommandExitCodes.BuildAborted : CommandExitCodes.RunAborted;
 		default:
 			return kind === 'build' ? CommandExitCodes.BuildFailed : CommandExitCodes.RunFailed;
