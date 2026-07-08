@@ -183,7 +183,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 				jobId: build.id,
 				kind: ACTOR_JOB_TYPES.BUILD,
 			});
-			build = job as typeof build;
+			build = job;
 		}
 
 		const reachedTerminal = log || wait;

@@ -1,7 +1,5 @@
 import process from 'node:process';
 
-import type { ActorRun } from 'apify-client';
-
 import { ACTOR_JOB_TYPES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -76,7 +74,7 @@ export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 			maxWaitMillis: timeout ? timeout * 1000 : undefined,
 			pollIntervalMillis: pollInterval ? pollInterval * 1000 : undefined,
 		});
-		const run = job as ActorRun;
+		const run = job;
 
 		const url = consoleRunUrl(run.actId, run.id);
 		const ok = run.status === 'SUCCEEDED';

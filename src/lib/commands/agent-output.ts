@@ -46,8 +46,8 @@ export interface WaitForJobOptions {
 	maxWaitMillis?: number;
 }
 
-export interface WaitForJobResult {
-	job: Build | ActorRun;
+export interface WaitForJobResult<T extends Build | ActorRun = Build | ActorRun> {
+	job: T;
 	/**
 	 * True when the wait gave up because `maxWaitMillis` elapsed before the job reached a terminal
 	 * status. In that case `job.status` is the real, still-non-terminal platform status (e.g. RUNNING) —
@@ -56,6 +56,14 @@ export interface WaitForJobResult {
 	timedOutWaiting: boolean;
 }
 
+interface JobTypeMap {
+	BUILD: Build;
+	RUN: ActorRun;
+}
+
+export async function waitForTerminalStatus<K extends JobType>(
+	options: WaitForJobOptions & { kind: K },
+): Promise<WaitForJobResult<JobTypeMap[K]>>;
 export async function waitForTerminalStatus(options: WaitForJobOptions): Promise<WaitForJobResult> {
 	const { apifyClient, jobId, kind, pollIntervalMillis = 2000, maxWaitMillis } = options;
 	const startedAt = Date.now();

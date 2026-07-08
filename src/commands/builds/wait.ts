@@ -1,7 +1,5 @@
 import process from 'node:process';
 
-import type { Build } from 'apify-client';
-
 import { ACTOR_JOB_TYPES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -71,7 +69,7 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 			maxWaitMillis: timeout ? timeout * 1000 : undefined,
 			pollIntervalMillis: pollInterval ? pollInterval * 1000 : undefined,
 		});
-		const build = job as Build;
+		const build = job;
 
 		const url = consoleBuildUrl(build.actId, build.buildNumber);
 		const ok = build.status === 'SUCCEEDED';
