@@ -226,7 +226,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			simpleLog({
 				message: formatResultSummary({
 					resultLabel: 'Apify build result',
-					overallStatus: build.status as never,
+					overallStatus: build.status,
 					lines: [
 						{ label: 'Build', value: build.status },
 						{ label: 'Build ID', value: build.id },

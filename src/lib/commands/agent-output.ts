@@ -118,7 +118,7 @@ function statusColor(status: JobStatus): string {
 
 export interface ResultSummaryOptions {
 	resultLabel: string; // e.g. "Apify push result"
-	overallStatus: 'SUCCEEDED' | 'FAILED' | 'ABORTED' | 'TIMED-OUT' | 'RUNNING';
+	overallStatus: JobStatus;
 	lines: { label: string; value: string }[];
 	links?: { label: string; url: string }[];
 	errorReason?: string[];

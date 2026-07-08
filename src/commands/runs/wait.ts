@@ -133,7 +133,7 @@ export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 		simpleLog({
 			message: formatResultSummary({
 				resultLabel: 'Apify run result',
-				overallStatus: run.status as never,
+				overallStatus: run.status,
 				lines,
 				links,
 				errorReason: ok ? undefined : logTail,

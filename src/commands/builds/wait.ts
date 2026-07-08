@@ -121,7 +121,7 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 		simpleLog({
 			message: formatResultSummary({
 				resultLabel: 'Apify build result',
-				overallStatus: build.status as never,
+				overallStatus: build.status,
 				lines,
 				links,
 				errorReason: ok ? undefined : logTail,
