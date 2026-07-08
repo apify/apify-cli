@@ -62,9 +62,7 @@ export async function waitForTerminalStatus(options: WaitForJobOptions): Promise
 
 	while (true) {
 		const job =
-			kind === ACTOR_JOB_TYPES.BUILD
-				? ((await apifyClient.build(jobId).get()) as Build | undefined)
-				: ((await apifyClient.run(jobId).get()) as ActorRun | undefined);
+			kind === ACTOR_JOB_TYPES.BUILD ? await apifyClient.build(jobId).get() : await apifyClient.run(jobId).get();
 
 		if (!job) {
 			throw new Error(`${kind === ACTOR_JOB_TYPES.BUILD ? 'Build' : 'Run'} with ID "${jobId}" was not found.`);
