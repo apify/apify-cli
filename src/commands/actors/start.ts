@@ -6,7 +6,7 @@ import chalk from 'chalk';
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { consoleRunUrl } from '../../lib/commands/agent-output.js';
+import { consoleActorUrl, consoleRunUrl } from '../../lib/commands/agent-output.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
@@ -141,7 +141,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 				waited: false,
 				actor: {
 					id: actorId,
-					url: `https://console.apify.com/actors/${actorId}`,
+					url: consoleActorUrl(actorId),
 				},
 				run: {
 					id: run.id,

@@ -508,7 +508,7 @@ Skipping push. Use --force to override.`,
 		const outcome = resolvePushOutcome(buildStatus);
 
 		const actorUrl = `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`;
-		const buildUrl = `${actorUrl}#/builds/${build.buildNumber}`;
+		const buildUrl = `${actorUrl}/builds/${build.buildNumber}`;
 
 		// Surface the tail of the build log as the failure reason. Best-effort:
 		// the build status already conveys the outcome if the log can't be read.

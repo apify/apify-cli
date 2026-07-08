@@ -98,16 +98,24 @@ export async function fetchLogTail(apifyClient: ApifyClient, jobId: string, maxL
 	}
 }
 
+export function consoleActorUrl(actorId: string): string {
+	return `https://console.apify.com/actors/${actorId}`;
+}
+
 export function consoleRunUrl(actorId: string, runId: string): string {
 	return `https://console.apify.com/actors/${actorId}/runs/${runId}`;
 }
 
 export function consoleBuildUrl(actorId: string, buildNumber: string): string {
-	return `https://console.apify.com/actors/${actorId}#/builds/${buildNumber}`;
+	return `https://console.apify.com/actors/${actorId}/builds/${buildNumber}`;
 }
 
 export function consoleDatasetUrl(datasetId: string): string {
 	return `https://console.apify.com/storage/datasets/${datasetId}`;
+}
+
+export function consoleKeyValueStoreUrl(keyValueStoreId: string): string {
+	return `https://console.apify.com/storage/key-value-stores/${keyValueStoreId}`;
 }
 
 function statusColor(status: JobStatus): string {
