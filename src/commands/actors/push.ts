@@ -2,7 +2,7 @@ import { readFileSync, statSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
-import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
+import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, Build } from 'apify-client';
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
@@ -442,7 +442,7 @@ Skipping push. Use --force to override.`,
 		// share one budget. Without this, a log stream that dies near the cap
 		// would let the poll loop wait another full --wait-for-finish on top.
 		const deadline = waitForFinishMillis === undefined ? Infinity : Date.now() + waitForFinishMillis;
-		let build = await actorClient.build(version, {
+		let build: Build | undefined = await actorClient.build(version, {
 			useCache: true,
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
 		});
@@ -464,13 +464,13 @@ Skipping push. Use --force to override.`,
 			console.error(err);
 		}
 
-		const refreshedBuild = await apifyClient.build(build.id).get();
-		if (!refreshedBuild) {
-			error({ message: `Could not fetch build with ID "${build.id}" after deployment.` });
+		const buildId = build.id;
+		build = await apifyClient.build(buildId).get();
+		if (!build) {
+			error({ message: `Could not fetch build with ID "${buildId}" after deployment.` });
 			process.exitCode = CommandExitCodes.BuildFailed;
 			return;
 		}
-		build = refreshedBuild;
 
 		// `outputJobLog` can return before the build is actually terminal (stream
 		// ended early, timeout hit). Poll the remaining budget so the status
