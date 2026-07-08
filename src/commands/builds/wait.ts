@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import { ACTOR_JOB_TYPES } from '@apify/consts';
+import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -72,7 +72,7 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 		const build = job;
 
 		const url = consoleBuildUrl(build.actId, build.buildNumber);
-		const ok = build.status === 'SUCCEEDED';
+		const ok = build.status === ACTOR_JOB_STATUSES.SUCCEEDED;
 		const exitCode = exitCodeForWaitResult({ job, timedOutWaiting }, ACTOR_JOB_TYPES.BUILD);
 		const giveUpMessage = `Gave up waiting after ${timeout}s; build is still ${build.status}`;
 

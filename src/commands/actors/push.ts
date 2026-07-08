@@ -6,18 +6,13 @@ import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, Build
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
-import { ACTOR_JOB_TYPES } from '@apify/consts';
-import {
-	ACTOR_JOB_STATUSES,
-	ACTOR_JOB_TERMINAL_STATUSES,
-	ACTOR_SOURCE_TYPES,
-	MAX_MULTIFILE_BYTES,
-} from '@apify/consts';
+import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { isTerminalStatus } from '../../lib/commands/agent-output.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -475,7 +470,7 @@ Skipping push. Use --force to override.`,
 		// `outputJobLog` can return before the build is actually terminal (stream
 		// ended early, timeout hit). Poll the remaining budget so the status
 		// branches below see the real outcome.
-		while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
+		while (!isTerminalStatus(build.status) && Date.now() < deadline) {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 			build = (await apifyClient.build(build.id).get())!;
 		}
