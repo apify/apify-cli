@@ -8,6 +8,7 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { CommandExitCodes } from '../consts.js';
 import { simpleLog } from '../outputs.js';
 import { printJsonToStdout } from '../utils.js';
+import { fetchLogTail } from './agent-output.js';
 
 /** Which command produced the run, used for labels and the JSON `operation` field. */
 export type RunResultOperation = 'call' | 'task-run';
@@ -81,23 +82,7 @@ export async function fetchRunLogTail(apifyClient: ApifyClient, run: ActorRun): 
 		return [];
 	}
 
-	let log: string | undefined;
-
-	try {
-		log = await apifyClient.log(run.id).get();
-	} catch {
-		return [];
-	}
-
-	if (!log) {
-		return [];
-	}
-
-	return log
-		.split('\n')
-		.map((line) => line.trimEnd())
-		.filter((line) => line.length > 0)
-		.slice(-LOG_TAIL_LINES);
+	return fetchLogTail(apifyClient, run.id, LOG_TAIL_LINES);
 }
 
 export interface RunResultOptions {

@@ -88,7 +88,10 @@ export async function fetchLogTail(apifyClient: ApifyClient, jobId: string, maxL
 		const log = await apifyClient.log(jobId).get();
 		if (!log) return [];
 
-		const lines = log.split('\n').filter((line) => line.length > 0);
+		const lines = log
+			.split('\n')
+			.map((line) => line.trimEnd())
+			.filter((line) => line.length > 0);
 		return lines.slice(-maxLines);
 	} catch {
 		return [];
