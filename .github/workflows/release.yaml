@@ -64,7 +64,7 @@ jobs:
             - uses: lewagon/wait-on-check-action@v1.8.0
               if: ${{ steps.check_skip.outputs.skipped == 'false' }}
               with:
-                  ref: ${{ github.ref }}
+                  ref: ${{ github.sha }}
                   repo-token: ${{ secrets.GITHUB_TOKEN }}
                   check-regexp: (Build|(Local|API) Tests.*|Python Support.*|Docs build)
                   wait-interval: 5
