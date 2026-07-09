@@ -1,10 +1,12 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import axios from 'axios';
+
 import { execWithLog } from '../../../src/lib/exec.js';
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { inputFileRegExp } from '../../../src/lib/input-key.js';
-import { createActZip, getActorLocalFilePaths } from '../../../src/lib/utils.js';
+import { createActZip, downloadAndUnzip, getActorLocalFilePaths } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 import { withRetries } from '../../__setup__/hooks/withRetries.js';
 
@@ -82,6 +84,22 @@ describe('Utils', () => {
 			FILES.forEach((file) => expect(existsSync(join(tempFolder, file))).toBeTruthy());
 			FILES_IN_IGNORED_DIR.concat(FILES_TO_IGNORE).forEach((file) =>
 				expect(existsSync(join(tempFolder, file))).toBeFalsy(),
+			);
+		});
+	});
+
+	describe('downloadAndUnzip()', () => {
+		it('should throw on non-2xx responses', async () => {
+			vitest.spyOn(axios, 'get').mockResolvedValue({ status: 403, data: Buffer.from('blocked') });
+
+			await expect(downloadAndUnzip({ url: 'https://example.com/a.zip', pathTo: '.' })).rejects.toThrow(/HTTP 403/);
+		});
+
+		it('should throw an actionable error when the response body is not a zip', async () => {
+			vitest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: Buffer.from('<html>block page</html>') });
+
+			await expect(downloadAndUnzip({ url: 'https://example.com/a.zip', pathTo: '.' })).rejects.toThrow(
+				/not a valid zip archive/,
 			);
 		});
 	});
