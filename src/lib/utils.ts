@@ -43,6 +43,7 @@ import {
 } from './consts.js';
 import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
 import { deleteFile, ensureApifyDirectory, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -699,7 +700,11 @@ export const isNodeVersionSupported = (installedNodeVersion: string) => {
 };
 
 export const downloadZip = async (url: string) => {
-	const response = await axios.get(url, { responseType: 'arraybuffer', validateStatus: () => true });
+	const response = await axios.get(url, {
+		responseType: 'arraybuffer',
+		validateStatus: () => true,
+		headers: { 'User-Agent': `Apify CLI/${useCLIMetadata().version} (https://github.com/apify/apify-cli)` },
+	});
 
 	if (response.status < 200 || response.status >= 300) {
 		throw new Error(`Failed to download the archive from ${url} (HTTP ${response.status}).`);
