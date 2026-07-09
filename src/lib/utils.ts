@@ -1,12 +1,9 @@
 import { execSync } from 'node:child_process';
 import { createWriteStream, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
-import type { IncomingMessage } from 'node:http';
-import { get } from 'node:https';
 import { homedir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import process from 'node:process';
-import { finished } from 'node:stream/promises';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
@@ -57,21 +54,6 @@ const makeIg = ignoreModule as unknown as () => Ignore;
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
 // Welcome to the state of JavaScript/TypeScript and CJS/ESM interop.
 export const Ajv2019 = _Ajv2019 as unknown as typeof import('ajv/dist/2019.js').default;
-
-export const httpsGet = async (url: string) => {
-	return new Promise<IncomingMessage>((resolve, reject) => {
-		get(url, (response) => {
-			// Handle redirects
-			if (response.statusCode === 301 || response.statusCode === 302) {
-				resolve(httpsGet(response.headers.location!));
-				// Destroy the response to close the HTTP connection, otherwise this hangs for a long time with Node 19+ (due to HTTP keep-alive).
-				response.destroy();
-			} else {
-				resolve(response);
-			}
-		}).on('error', reject);
-	});
-};
 
 export const getLocalStorageDir = () => {
 	const envVar = APIFY_ENV_VARS.LOCAL_STORAGE_DIR;
@@ -717,11 +699,23 @@ export const isNodeVersionSupported = (installedNodeVersion: string) => {
 };
 
 export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: string }) => {
-	const zipStream = await httpsGet(url);
-	const chunks: Buffer[] = [];
-	zipStream.on('data', (chunk) => chunks.push(chunk));
-	await finished(zipStream);
-	const zip = new AdmZip(Buffer.concat(chunks));
+	const response = await fetch(url);
+
+	if (!response.ok) {
+		throw new Error(`Failed to download the archive from ${url} (HTTP ${response.status}).`);
+	}
+
+	const data = Buffer.from(await response.arrayBuffer());
+
+	// Zip magic bytes - anything else is a block page or error body served instead of the archive
+	if (data.subarray(0, 2).toString() !== 'PK') {
+		throw new Error(
+			`The file downloaded from ${url} is not a valid zip archive - ` +
+				`a proxy or firewall likely intercepted the download. Check your network or try a different one.`,
+		);
+	}
+
+	const zip = new AdmZip(data);
 	zip.extractAllTo(pathTo, true);
 };
 
