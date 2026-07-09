@@ -42,6 +42,36 @@ const DEFAULT_RUN_OPTIONS = {
 };
 const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
 
+// Actor versions on the platform are MAJOR.MINOR (both non-negative integers).
+// TODO: import from @apify/consts / apify-shared-js once the shared regex lands
+// (see apify-shared-js #655).
+const MAJOR_MINOR_VERSION_REGEX = /^(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+
+// Matches SemVer-style versions we can safely rewrite to MAJOR.MINOR — i.e.
+// non-negative integers for MAJOR and MINOR, with an optional PATCH, optional
+// pre-release identifiers (`-beta`, `-rc.1`), and optional build metadata
+// (`+build.7`). Leading zeros on numeric identifiers are rejected (per SemVer)
+// so we don't silently rewrite something we don't understand.
+//   1.0.0            -> 1.0
+//   0.0.1            -> 0.0
+//   1.0.0-beta       -> 1.0
+//   2.3.4-rc.1+abc   -> 2.3
+const NORMALIZABLE_SEMVER_REGEX =
+	/^(0|[1-9]\d*)\.(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+
+/**
+ * If `raw` is a SemVer-style string that the platform would reject (e.g. `1.0.0`,
+ * `0.0.1-beta`), return the equivalent MAJOR.MINOR pair the platform accepts.
+ * Returns `undefined` if the input is already MAJOR.MINOR (no rewrite needed)
+ * or if it's not a shape we're willing to auto-normalize.
+ */
+export function normalizeToMajorMinor(raw: string): string | undefined {
+	if (MAJOR_MINOR_VERSION_REGEX.test(raw)) return undefined;
+	const match = NORMALIZABLE_SEMVER_REGEX.exec(raw);
+	if (!match) return undefined;
+	return `${match[1]}.${match[2]}`;
+}
+
 // It would be better to use `version-0.0` or similar,
 // or even have no default tag, but the platform complains when
 // Actor does not have a build with a `latest` tag, so until
@@ -258,7 +288,26 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		let isActorCreatedNow = false;
 
 		// User can override Actor version and build tag, attributes in localConfig will remain same.
-		const version = this.flags.version || (actorConfig?.version as string | undefined) || DEFAULT_ACTOR_VERSION_NUMBER;
+		let version = this.flags.version || (actorConfig?.version as string | undefined) || DEFAULT_ACTOR_VERSION_NUMBER;
+
+		// Auto-normalize SemVer-style versions (`1.0.0`, `0.0.1-beta`) to the
+		// MAJOR.MINOR shape the platform accepts. Node/npm scaffolding defaults
+		// to three-part SemVer, and the `version` field in actor.json is
+		// frequently copied from `package.json` — without this the upload
+		// succeeds but the subsequent build is rejected with a cryptic 400.
+		// We only rewrite versions we can unambiguously read as SemVer; other
+		// invalid inputs (e.g. `latest`, `v1`) fall through to the strict
+		// validator below.
+		const normalizedVersion = normalizeToMajorMinor(version);
+		if (normalizedVersion !== undefined) {
+			warning({
+				message:
+					`Actor version '${version}' is not the strict MAJOR.MINOR format the platform expects; ` +
+					`auto-normalizing to '${normalizedVersion}' for this upload. ` +
+					`Update the \`version\` field in ${LOCAL_CONFIG_PATH} to '${normalizedVersion}' to make this permanent.`,
+			});
+			version = normalizedVersion;
+		}
 
 		let buildTag = this.flags.buildTag || (actorConfig?.buildTag as string | undefined);
 
