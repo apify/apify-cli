@@ -54,14 +54,7 @@ export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestP
 	if (manifest instanceof Error) throw manifest;
 
 	try {
-		const response = await axios.get<string>(manifest.localReadmeSuffixUrl!, {
-			responseType: 'text',
-			validateStatus: () => true,
-		});
-
-		if (response.status < 200 || response.status >= 300) {
-			throw new Error(`Failed to fetch the readme suffix (HTTP ${response.status}).`);
-		}
+		const response = await axios.get<string>(manifest.localReadmeSuffixUrl!, { responseType: 'text' });
 
 		await appendFile(readmePath, `\n\n${response.data}`);
 	} catch (err) {
