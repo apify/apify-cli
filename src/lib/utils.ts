@@ -707,7 +707,10 @@ export const downloadZip = async (url: string) => {
 	});
 
 	if (response.status < 200 || response.status >= 300) {
-		throw new Error(`Failed to download the archive from ${url} (HTTP ${response.status}).`);
+		const body = Buffer.from(response.data).toString('utf8').trim().slice(0, 500);
+		throw new Error(
+			`Failed to download the archive from ${url} (HTTP ${response.status}).${body ? `\nServer response: ${body}` : ''}`,
+		);
 	}
 
 	const data = Buffer.from(response.data);
