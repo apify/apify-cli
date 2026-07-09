@@ -1,6 +1,8 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import axios from 'axios';
+
 import { execWithLog } from '../../../src/lib/exec.js';
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { inputFileRegExp } from '../../../src/lib/input-key.js';
@@ -87,18 +89,14 @@ describe('Utils', () => {
 	});
 
 	describe('downloadAndUnzip()', () => {
-		afterEach(() => {
-			vitest.restoreAllMocks();
-		});
-
 		it('should throw on non-2xx responses', async () => {
-			vitest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('blocked', { status: 403 }));
+			vitest.spyOn(axios, 'get').mockResolvedValue({ status: 403, data: Buffer.from('blocked') });
 
 			await expect(downloadAndUnzip({ url: 'https://example.com/a.zip', pathTo: '.' })).rejects.toThrow(/HTTP 403/);
 		});
 
 		it('should throw an actionable error when the response body is not a zip', async () => {
-			vitest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('<html>block page</html>'));
+			vitest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: Buffer.from('<html>block page</html>') });
 
 			await expect(downloadAndUnzip({ url: 'https://example.com/a.zip', pathTo: '.' })).rejects.toThrow(
 				/not a valid zip archive/,

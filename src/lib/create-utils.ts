@@ -1,6 +1,7 @@
 import { appendFile } from 'node:fs/promises';
 
 import { Separator } from '@inquirer/core';
+import axios from 'axios';
 
 import type { Manifest, Template } from '@apify/actor-templates';
 
@@ -53,13 +54,16 @@ export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestP
 	if (manifest instanceof Error) throw manifest;
 
 	try {
-		const response = await fetch(manifest.localReadmeSuffixUrl!);
+		const response = await axios.get<string>(manifest.localReadmeSuffixUrl!, {
+			responseType: 'text',
+			validateStatus: () => true,
+		});
 
-		if (!response.ok) {
+		if (response.status < 200 || response.status >= 300) {
 			throw new Error(`Failed to fetch the readme suffix (HTTP ${response.status}).`);
 		}
 
-		await appendFile(readmePath, `\n\n${await response.text()}`);
+		await appendFile(readmePath, `\n\n${response.data}`);
 	} catch (err) {
 		warning({
 			message: `Could not append local development instructions to README.md. Cause: ${(err as Error).message}`,

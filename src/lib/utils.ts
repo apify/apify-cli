@@ -11,7 +11,7 @@ import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
 import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
 import { ZipArchive } from 'archiver';
-import { AxiosHeaders } from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import ignoreModule, { type Ignore } from 'ignore';
 import { getEncoding } from 'istextorbinary';
@@ -698,14 +698,14 @@ export const isNodeVersionSupported = (installedNodeVersion: string) => {
 	return gte(installedNodeVersion, minimumSupportedNodeVersion);
 };
 
-export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: string }) => {
-	const response = await fetch(url);
+export const downloadZip = async (url: string) => {
+	const response = await axios.get(url, { responseType: 'arraybuffer', validateStatus: () => true });
 
-	if (!response.ok) {
+	if (response.status < 200 || response.status >= 300) {
 		throw new Error(`Failed to download the archive from ${url} (HTTP ${response.status}).`);
 	}
 
-	const data = Buffer.from(await response.arrayBuffer());
+	const data = Buffer.from(response.data);
 
 	// Zip magic bytes - anything else is a block page or error body served instead of the archive
 	if (data.subarray(0, 2).toString() !== 'PK') {
@@ -715,7 +715,11 @@ export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: s
 		);
 	}
 
-	const zip = new AdmZip(data);
+	return new AdmZip(data);
+};
+
+export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: string }) => {
+	const zip = await downloadZip(url);
 	zip.extractAllTo(pathTo, true);
 };
 
