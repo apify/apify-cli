@@ -549,6 +549,21 @@ Skipping push. Use --force to override.`,
 			return;
 		}
 
+		// After a successful build, guide the caller to the next step. `apify push`
+		// deploys but does not run — users (and agents driving the CLI) frequently
+		// read the Actor URL as "job done" and stop there without ever invoking
+		// the Actor. A short hint block removes that ambiguity.
+		const actorSlug = `${userInfo.username || userInfo.id}/${actorConfig!.name}`;
+		const nextStepsLines =
+			outcome.ok && buildStatus === ACTOR_JOB_STATUSES.SUCCEEDED
+				? [
+						'',
+						'Next: run it once to verify the build.',
+						`  apify call ${actorSlug}                   # blocks and prints run summary`,
+						`  apify actors start ${actorSlug}           # non-blocking`,
+					]
+				: [];
+
 		const lines = [
 			`Apify push result: ${outcome.resultLabel}`,
 			'',
@@ -562,6 +577,7 @@ Skipping push. Use --force to override.`,
 			`Actor URL: ${actorUrl}`,
 			`Build URL: ${buildUrl}`,
 			...(outcome.errorMessage && logTail.length ? ['', 'Reason:', ...logTail] : []),
+			...nextStepsLines,
 		];
 		simpleLog({ stdout: true, message: lines.join('\n') });
 
