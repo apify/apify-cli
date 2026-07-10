@@ -3,6 +3,7 @@ import chalk from 'chalk';
 
 import { ACTOR_JOB_TERMINAL_STATUSES } from '@apify/consts';
 
+import { getConsoleUrl } from '../console-url.js';
 import { CommandExitCodes } from '../consts.js';
 
 export type TerminalStatus = 'SUCCEEDED' | 'FAILED' | 'ABORTED' | 'TIMED-OUT';
@@ -96,15 +97,15 @@ export async function fetchLogTail(apifyClient: ApifyClient, jobId: string, maxL
 }
 
 export function consoleRunUrl(actorId: string, runId: string): string {
-	return `https://console.apify.com/actors/${actorId}/runs/${runId}`;
+	return `${getConsoleUrl()}/actors/${actorId}/runs/${runId}`;
 }
 
 export function consoleBuildUrl(actorId: string, buildNumber: string): string {
-	return `https://console.apify.com/actors/${actorId}#/builds/${buildNumber}`;
+	return `${getConsoleUrl()}/actors/${actorId}#/builds/${buildNumber}`;
 }
 
 export function consoleDatasetUrl(datasetId: string): string {
-	return `https://console.apify.com/storage/datasets/${datasetId}`;
+	return `${getConsoleUrl()}/storage/datasets/${datasetId}`;
 }
 
 function statusColor(status: string): string {
