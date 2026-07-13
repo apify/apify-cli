@@ -23,42 +23,11 @@ import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
 
 const CONSOLE_INTEGRATIONS_PATH = '/settings/integrations';
 
-// When the Console is a local instance (local platform development), token validation should hit
-// the local API on this port rather than production — unless an explicit API URL is provided.
-const LOCAL_API_BASE_URL = 'http://localhost:3333';
-
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
-function isLocalhostUrl(url: string): boolean {
-	try {
-		const { hostname } = new URL(url);
-		return hostname === 'localhost' || hostname === '127.0.0.1';
-	} catch {
-		return false;
-	}
-}
-
-/**
- * Resolves the API base URL used to validate the token during login. An explicit
- * `APIFY_CLIENT_BASE_URL` always wins; otherwise a localhost Console defaults to the local API so
- * the token is checked against the same environment the browser flow points at. Returning
- * `undefined` lets the client fall back to its default (production) API.
- */
-export function getLoginApiBaseUrl(): string | undefined {
-	if (process.env.APIFY_CLIENT_BASE_URL) {
-		return process.env.APIFY_CLIENT_BASE_URL;
-	}
-
-	if (isLocalhostUrl(getConsoleUrl())) {
-		return LOCAL_API_BASE_URL;
-	}
-
-	return undefined;
-}
-
 const tryToLogin = async (token: string) => {
-	const isUserLogged = await getLoggedClient(token, getLoginApiBaseUrl());
+	const isUserLogged = await getLoggedClient(token);
 	const userInfo = await getLocalUserInfo();
 
 	if (isUserLogged) {

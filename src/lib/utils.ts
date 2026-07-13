@@ -32,6 +32,7 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
+import { getApiBaseUrl } from './console-url.js';
 import {
 	APIFY_CLIENT_DEFAULT_HEADERS,
 	AUTH_FILE_PATH,
@@ -145,7 +146,7 @@ export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string)
 
 	return {
 		token: resolvedToken,
-		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
+		baseUrl: apiBaseUrl || getApiBaseUrl(),
 		requestInterceptors: [
 			(config) => {
 				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
@@ -586,7 +587,7 @@ export const outputJobLog = async ({
 	apifyClient?: ApifyClient;
 }) => {
 	const { id: logId, status } = job;
-	const client = apifyClient || new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
+	const client = apifyClient || new ApifyClient({ baseUrl: getApiBaseUrl() });
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {

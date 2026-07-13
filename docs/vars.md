@@ -80,7 +80,6 @@ Set it explicitly when the automatic derivation does not apply, for example a lo
 
 ```bash
 export APIFY_CONSOLE_URL=http://localhost:3000
-export APIFY_CLIENT_BASE_URL=http://localhost:3333
 ```
 
-With a localhost Console, `apify login` also validates your token against the local API (`http://localhost:3333`) unless `APIFY_CLIENT_BASE_URL` points somewhere else.
+When the resolved Console is a localhost instance, the CLI also talks to the local API at `http://localhost:3333` by default, so you do not have to set `APIFY_CLIENT_BASE_URL` separately. Set `APIFY_CLIENT_BASE_URL` only to point the API somewhere other than that default.
