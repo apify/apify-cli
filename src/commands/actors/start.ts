@@ -9,7 +9,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { consoleRunUrl } from '../../lib/commands/agent-output.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
-import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { getConsoleBaseUrl, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { simpleLog } from '../../lib/outputs.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
@@ -141,7 +141,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 				waited: false,
 				actor: {
 					id: actorId,
-					url: `https://console.apify.com/actors/${actorId}`,
+					url: `${getConsoleBaseUrl()}/actors/${actorId}`,
 				},
 				run: {
 					id: run.id,

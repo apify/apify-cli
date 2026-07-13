@@ -12,19 +12,22 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { AUTH_FILE_PATH } from '../../lib/consts.js';
+import { AUTH_FILE_PATH, getConsoleBaseUrl } from '../../lib/consts.js';
 import { getBackend } from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { error, info, success } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
+import { getLocalUserInfo, getLoggedClient, resolveLoginApiBaseUrl, tildify } from '../../lib/utils.js';
 
-const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
-// const CONSOLE_BASE_URL = 'http://localhost:3000/settings/integrations';
+// `getConsoleBaseUrl()` resolves to the origin only (e.g. from `APIFY_CONSOLE_BASE_URL`); the
+// `/settings/integrations` path is appended here rather than baked into the env-driven origin.
+const CONSOLE_BASE_URL = `${getConsoleBaseUrl()}/settings/integrations`;
 const CONSOLE_URL_ORIGIN = new URL(CONSOLE_BASE_URL).origin;
 
-const API_BASE_URL = CONSOLE_BASE_URL.includes('localhost') ? 'http://localhost:3333' : undefined;
+// Preserves the historical "Console on localhost implies API on :3333" workflow, but always
+// overridable by an explicit `APIFY_API_BASE_URL` (or, further up the chain, an explicit flag).
+const API_BASE_URL = resolveLoginApiBaseUrl(CONSOLE_URL_ORIGIN);
 
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
@@ -227,7 +230,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 			info({ message: `Opening Apify Console at "${consoleUrl.href}"...` });
 			await open(consoleUrl.href);
 		} else {
-			console.log('Enter your Apify API token. You can find it at https://console.apify.com/settings/integrations');
+			console.log(`Enter your Apify API token. You can find it at ${CONSOLE_BASE_URL}`);
 
 			const tokenAnswer = await useMaskedInput({ message: 'token:' });
 			await tryToLogin(tokenAnswer);

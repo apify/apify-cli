@@ -7,6 +7,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
+import { getConsoleBaseUrl } from '../../lib/consts.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import {
 	getLoggedClientOrThrow,
@@ -258,9 +259,10 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 		message.push('');
 
-		const url = `https://console.apify.com/actors/${run.actId}/runs/${run.id}`;
-		const datasetUrl = `https://console.apify.com/storage/datasets/${run.defaultDatasetId}`;
-		const keyValueStoreUrl = `https://console.apify.com/storage/key-value-stores/${run.defaultKeyValueStoreId}`;
+		const consoleBaseUrl = getConsoleBaseUrl();
+		const url = `${consoleBaseUrl}/actors/${run.actId}/runs/${run.id}`;
+		const datasetUrl = `${consoleBaseUrl}/storage/datasets/${run.defaultDatasetId}`;
+		const keyValueStoreUrl = `${consoleBaseUrl}/storage/key-value-stores/${run.defaultKeyValueStoreId}`;
 
 		message.push(`${chalk.blue('Export results')}: ${datasetUrl}`);
 		message.push(`${chalk.blue('View saved items')}: ${keyValueStoreUrl}`);

@@ -67,6 +67,22 @@ export const APIFY_CLIENT_DEFAULT_HEADERS: Record<string, string> = {
 	...(githubActionsRunUrl && { 'X-Apify-Github-Actions-Run-Url': githubActionsRunUrl }),
 };
 
+export const DEFAULT_CONSOLE_BASE_URL = 'https://console.apify.com';
+
+/**
+ * Resolves the Apify Console base URL (origin only), following the precedence:
+ * `APIFY_CONSOLE_BASE_URL` (if set) > the default `https://console.apify.com`.
+ *
+ * Every place the CLI prints or opens a Console link should compose its path/fragment onto this
+ * origin rather than hardcoding `https://console.apify.com`, so `APIFY_CONSOLE_BASE_URL` reaches
+ * all of them uniformly.
+ */
+export const getConsoleBaseUrl = (): string => {
+	const envValue = process.env.APIFY_CONSOLE_BASE_URL;
+
+	return envValue ? envValue.replace(/\/+$/, '') : DEFAULT_CONSOLE_BASE_URL;
+};
+
 export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.9.0';
 
 export const PYTHON_VENV_PATH = '.venv';

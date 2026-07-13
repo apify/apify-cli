@@ -5,7 +5,7 @@ import chalk from 'chalk';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import { CommandExitCodes } from '../consts.js';
+import { CommandExitCodes, getConsoleBaseUrl } from '../consts.js';
 import { simpleLog } from '../outputs.js';
 import { printJsonToStdout } from '../utils.js';
 
@@ -20,18 +20,16 @@ const OPERATION_LABELS: Record<RunResultOperation, string> = {
 /** How many trailing log lines to surface as the failure reason. */
 const LOG_TAIL_LINES = 10;
 
-const CONSOLE_BASE_URL = 'https://console.apify.com';
-
 function actorUrl(actorId: string) {
-	return `${CONSOLE_BASE_URL}/actors/${actorId}`;
+	return `${getConsoleBaseUrl()}/actors/${actorId}`;
 }
 
 export function runUrl(actorId: string, runId: string) {
-	return `${CONSOLE_BASE_URL}/actors/${actorId}/runs/${runId}`;
+	return `${getConsoleBaseUrl()}/actors/${actorId}/runs/${runId}`;
 }
 
 function datasetUrl(datasetId: string) {
-	return `${CONSOLE_BASE_URL}/storage/datasets/${datasetId}`;
+	return `${getConsoleBaseUrl()}/storage/datasets/${datasetId}`;
 }
 
 function isSucceeded(run: ActorRun): boolean {

@@ -138,14 +138,48 @@ const resolveToken = async (existingToken?: string): Promise<string | undefined>
 type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
 
 /**
+ * Resolves the API base URL following the precedence: explicit flag/option > `APIFY_API_BASE_URL` >
+ * `APIFY_CLIENT_BASE_URL` (existing, lower-priority fallback) > the `apify-client` default.
+ */
+export const resolveApiBaseUrl = (explicitApiBaseUrl?: string): string | undefined =>
+	explicitApiBaseUrl || process.env.APIFY_API_BASE_URL || process.env.APIFY_CLIENT_BASE_URL || undefined;
+
+/**
+ * Resolves the public API base URL following the precedence: explicit flag/option >
+ * `APIFY_API_PUBLIC_BASE_URL` > the `apify-client` default. Independent of the API base URL.
+ */
+export const resolveApiPublicBaseUrl = (explicitApiPublicBaseUrl?: string): string | undefined =>
+	explicitApiPublicBaseUrl || process.env.APIFY_API_PUBLIC_BASE_URL || undefined;
+
+/**
+ * Resolves the API base URL the `login` command should default to. When the resolved Console origin
+ * is a localhost address and no API base URL env var (`APIFY_API_BASE_URL` or the legacy
+ * `APIFY_CLIENT_BASE_URL`) is set, the API defaults to `http://localhost:3333` so a local Console can
+ * authenticate against a local API. Any env override (or, further up the chain, an explicit flag/option)
+ * always wins over this default.
+ */
+export const resolveLoginApiBaseUrl = (
+	consoleOrigin: string,
+	envApiBaseUrl: string | undefined = resolveApiBaseUrl(),
+): string | undefined => {
+	if (envApiBaseUrl) return undefined;
+	return consoleOrigin.includes('localhost') ? 'http://localhost:3333' : undefined;
+};
+
+/**
  * Returns options for ApifyClient
  */
-export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => {
+export const getApifyClientOptions = async (
+	token?: string,
+	apiBaseUrl?: string,
+	publicApiBaseUrl?: string,
+): Promise<ApifyClientOptions> => {
 	const resolvedToken = await resolveToken(token);
 
 	return {
 		token: resolvedToken,
-		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
+		baseUrl: resolveApiBaseUrl(apiBaseUrl),
+		publicBaseUrl: resolveApiPublicBaseUrl(publicApiBaseUrl),
 		requestInterceptors: [
 			(config) => {
 				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
@@ -586,7 +620,8 @@ export const outputJobLog = async ({
 	apifyClient?: ApifyClient;
 }) => {
 	const { id: logId, status } = job;
-	const client = apifyClient || new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
+	const client =
+		apifyClient ?? new ApifyClient({ baseUrl: resolveApiBaseUrl(), publicBaseUrl: resolveApiPublicBaseUrl() });
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
