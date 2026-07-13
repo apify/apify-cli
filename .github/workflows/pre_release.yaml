@@ -35,7 +35,7 @@ jobs:
         steps:
             - uses: lewagon/wait-on-check-action@v1.8.0
               with:
-                  ref: ${{ github.ref }}
+                  ref: ${{ github.sha }}
                   repo-token: ${{ secrets.GITHUB_TOKEN }}
                   check-regexp: (Build|Lint.*|(Local|API) Tests.*|Python Support.*|Docs build)
                   wait-interval: 5
