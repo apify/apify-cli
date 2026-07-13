@@ -58,3 +58,29 @@ After adding a new secret you can use the secret in `.actor/actor.json`.
     ...
 }
 ```
+
+## Environment variables that configure the CLI
+
+The variables above configure your **Actors** on the Apify platform. The following variables instead configure the **`apify` CLI itself**. Most users never need them — they are useful when pointing the CLI at a non-production Apify environment, such as a staging deployment or a local instance during development.
+
+### `APIFY_CLIENT_BASE_URL`
+
+Overrides the base URL of the Apify API the CLI talks to. When unset, the CLI uses the production API at `https://api.apify.com`. The Apify Console links the CLI prints follow this value (see `APIFY_CONSOLE_URL` below).
+
+### `APIFY_CONSOLE_URL`
+
+Overrides the base URL of [Apify Console](https://console.apify.com) used whenever the CLI prints links — run, build, dataset and key-value store URLs, the `apify login` browser flow, and so on.
+
+When unset, the Console URL is derived automatically:
+
+- If `APIFY_CLIENT_BASE_URL` is set, its `api.` host is swapped for `console.` (for example `https://api.apify-staging.com` becomes `https://console.apify-staging.com`).
+- Otherwise the production Console at `https://console.apify.com` is used.
+
+Set it explicitly when the automatic derivation does not apply, for example a local Console instance during development:
+
+```bash
+export APIFY_CONSOLE_URL=http://localhost:3000
+export APIFY_CLIENT_BASE_URL=http://localhost:3333
+```
+
+With a localhost Console, `apify login` also validates your token against the local API (`http://localhost:3333`) unless `APIFY_CLIENT_BASE_URL` points somewhere else.
