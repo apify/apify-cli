@@ -23,11 +23,16 @@ import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
 
 const CONSOLE_INTEGRATIONS_PATH = '/settings/integrations';
 
+// When logging in against a local Console instance (local platform development), validate the token
+// against the local API rather than production.
+const LOCAL_API_BASE_URL = 'http://localhost:3333';
+
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
 const tryToLogin = async (token: string) => {
-	const isUserLogged = await getLoggedClient(token);
+	const apiBaseUrl = getConsoleUrl().includes('localhost') ? LOCAL_API_BASE_URL : undefined;
+	const isUserLogged = await getLoggedClient(token, apiBaseUrl);
 	const userInfo = await getLocalUserInfo();
 
 	if (isUserLogged) {
