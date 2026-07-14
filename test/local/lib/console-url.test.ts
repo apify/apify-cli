@@ -21,23 +21,9 @@ describe('getConsoleUrl', () => {
 		expect(getConsoleUrl()).toBe('https://console.apify.com');
 	});
 
-	it('derives the Console URL from APIFY_CLIENT_BASE_URL by swapping the api host', () => {
-		delete process.env.APIFY_CONSOLE_URL;
-		process.env.APIFY_CLIENT_BASE_URL = 'https://api.apify-staging.com';
-
-		expect(getConsoleUrl()).toBe('https://console.apify-staging.com');
-	});
-
-	it('drops the API path (such as /v2) when deriving from APIFY_CLIENT_BASE_URL', () => {
-		delete process.env.APIFY_CONSOLE_URL;
-		process.env.APIFY_CLIENT_BASE_URL = 'https://api.apify.com/v2';
-
-		expect(getConsoleUrl()).toBe('https://console.apify.com');
-	});
-
-	it('prefers the explicit APIFY_CONSOLE_URL override', () => {
+	it('uses the explicit APIFY_CONSOLE_URL override', () => {
 		process.env.APIFY_CONSOLE_URL = 'http://localhost:3000';
-		process.env.APIFY_CLIENT_BASE_URL = 'http://localhost:3333';
+		delete process.env.APIFY_CLIENT_BASE_URL;
 
 		expect(getConsoleUrl()).toBe('http://localhost:3000');
 	});
@@ -49,9 +35,9 @@ describe('getConsoleUrl', () => {
 		expect(getConsoleUrl()).toBe('https://console.apify.com');
 	});
 
-	it('falls back to the production Console when APIFY_CLIENT_BASE_URL is malformed', () => {
+	it('ignores APIFY_CLIENT_BASE_URL (the Console URL is not derived from the API URL)', () => {
 		delete process.env.APIFY_CONSOLE_URL;
-		process.env.APIFY_CLIENT_BASE_URL = 'not a url';
+		process.env.APIFY_CLIENT_BASE_URL = 'https://api.apify-staging.com';
 
 		expect(getConsoleUrl()).toBe('https://console.apify.com');
 	});

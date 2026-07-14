@@ -65,18 +65,13 @@ The variables above configure your **Actors** on the Apify platform. The followi
 
 ### `APIFY_CLIENT_BASE_URL`
 
-Overrides the base URL of the Apify API the CLI talks to. When unset, the CLI uses the production API at `https://api.apify.com`. The Apify Console links the CLI prints follow this value (see `APIFY_CONSOLE_URL` below).
+Overrides the base URL of the Apify API the CLI talks to. When unset, the CLI uses the production API at `https://api.apify.com`.
 
 ### `APIFY_CONSOLE_URL`
 
-Overrides the base URL of [Apify Console](https://console.apify.com) used whenever the CLI prints links — run, build, dataset and key-value store URLs, the `apify login` browser flow, and so on.
+Overrides the base URL of [Apify Console](https://console.apify.com) used whenever the CLI prints links — run, build, dataset and key-value store URLs, the `apify login` browser flow, and so on. When unset, the production Console at `https://console.apify.com` is used.
 
-When unset, the Console URL is derived automatically:
-
-- If `APIFY_CLIENT_BASE_URL` is set, its `api.` host is swapped for `console.` (for example `https://api.apify-staging.com` becomes `https://console.apify-staging.com`).
-- Otherwise the production Console at `https://console.apify.com` is used.
-
-Set it explicitly when the automatic derivation does not apply, for example a local Console instance during development:
+Set it to point at a local Console instance during development:
 
 ```bash
 export APIFY_CONSOLE_URL=http://localhost:3000
