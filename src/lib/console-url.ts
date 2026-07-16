@@ -10,7 +10,13 @@ const DEFAULT_CONSOLE_URL = 'https://console.apify.com';
 export function getConsoleUrl(): string {
 	const explicit = process.env.APIFY_CONSOLE_URL;
 	if (explicit) {
-		return stripTrailingSlash(explicit);
+		const stripped = stripTrailingSlash(explicit);
+		if (!URL.canParse(stripped)) {
+			throw new Error(
+				`Invalid APIFY_CONSOLE_URL environment variable: "${explicit}" is not a valid URL.`,
+			);
+		}
+		return stripped;
 	}
 
 	return DEFAULT_CONSOLE_URL;
