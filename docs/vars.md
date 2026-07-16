@@ -61,11 +61,11 @@ After adding a new secret you can use the secret in `.actor/actor.json`.
 
 ## Environment variables that configure the CLI
 
-The variables above configure your **Actors** on the Apify platform. The following variable instead configures the **`apify` CLI itself**. Most users never need it — it is useful when pointing the CLI at a non-production Apify Console, such as a staging deployment or a local instance during development.
+Use the following environment variable to point the CLI at a non-production Apify Console, such as a staging deployment or a local instance during development.
 
 ### `APIFY_CONSOLE_URL`
 
-Overrides the base URL of [Apify Console](https://console.apify.com) used whenever the CLI prints links — run, build, dataset and key-value store URLs, the `apify login` browser flow, and so on. When unset, the production Console at `https://console.apify.com` is used.
+Overrides the base URL of [Apify Console](https://console.apify.com) used when the CLI prints links. For example, run, build, dataset and key-value store URLs, or the `apify login` browser flow. When unset, the production Console at `https://console.apify.com` is used.
 
 Set it to point at a local Console instance during development:
 
