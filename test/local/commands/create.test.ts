@@ -18,7 +18,7 @@ const { beforeAllCalls, afterAllCalls, joinPath, joinCwdPath, toggleCwdBetweenFu
 		cwdParent: true,
 	});
 
-const { lastErrorMessage } = useConsoleSpy();
+const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 
@@ -124,6 +124,42 @@ describe('apify create', () => {
 		expect(
 			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
 		).to.be.eql(expectedInput);
+	});
+
+	it('prints a machine-readable contract with --json', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_skipGitInit: true,
+			flags_json: true,
+		});
+
+		const jsonLine = logMessages.log.find((message) => message.trim().startsWith('{'));
+		expect(jsonLine).toBeDefined();
+
+		const output = JSON.parse(jsonLine!);
+		expect(output.source).toBe('apify');
+		expect(typeof output.template).toBe('string');
+		expect(output.dir.endsWith(actName)).toBe(true);
+		expect(output.actorJsonPath.endsWith(LOCAL_CONFIG_PATH)).toBe(true);
+		expect(output.nextSteps[0]).toBe(`cd "${actName}"`);
+		expect(output.nextSteps).toContain('apify run');
+	});
+
+	it('accepts the hidden --origin flag and still emits the --json contract', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_skipGitInit: true,
+			flags_origin: 'console',
+			flags_json: true,
+		});
+
+		const jsonLine = logMessages.log.find((message) => message.trim().startsWith('{'));
+		expect(jsonLine).toBeDefined();
+		expect(JSON.parse(jsonLine!).source).toBe('apify');
 	});
 
 	it('should skip installing optional dependencies', async () => {

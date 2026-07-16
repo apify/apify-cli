@@ -18,6 +18,7 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
 import {
+	buildNextSteps,
 	enhanceReadmeWithLocalSuffix,
 	ensureValidActorName,
 	formatCreateSuccessMessage,
@@ -36,6 +37,7 @@ import {
 	getJsonFileContent,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
+	printJsonToStdout,
 	setLocalConfig,
 	setLocalEnv,
 } from '../lib/utils.js';
@@ -111,6 +113,13 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Skip initializing a git repository in the Actor directory.',
 			required: false,
 		}),
+		origin: Flags.string({
+			description: 'Where the command was invoked from. Used for funnel telemetry.',
+			choices: ['console', 'cli'],
+			default: 'cli',
+			required: false,
+			hidden: true,
+		}),
 	};
 
 	static override args = {
@@ -120,9 +129,11 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}),
 	};
 
+	static override enableJsonFlag = true;
+
 	async run() {
 		let { actorName } = this.args;
-		const { template: templateName, useCase, language, skipDependencyInstall, skipGitInit } = this.flags;
+		const { template: templateName, useCase, language, skipDependencyInstall, skipGitInit, origin, json } = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
 		// for testing of templates that are not yet published in the manifest
@@ -169,14 +180,17 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}
 
 		let messages = null;
+		let templateId: string | null = null;
 
 		this.telemetryData.create = {
 			fromArchiveUrl: !!templateArchiveUrl,
+			origin: origin as 'console' | 'cli',
 		};
 
 		if (!templateArchiveUrl) {
 			const templateDefinition = await getTemplateDefinition(templateName, manifestPromise, { useCase, language });
 			({ archiveUrl: templateArchiveUrl, messages } = templateDefinition);
+			templateId = templateDefinition.id;
 			this.telemetryData.create.templateId = templateDefinition.id;
 			this.telemetryData.create.templateName = templateDefinition.name;
 			this.telemetryData.create.templateLanguage = templateDefinition.category;
@@ -405,6 +419,20 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Suggest install command if dependencies were not installed
 		const installCommandSuggestion = !dependenciesInstalled ? await getInstallCommandSuggestion(actFolderDir) : null;
 
+		const gitRepositoryInitialized = !skipGitInit && !cwdHasGit && gitInitResult.success;
+
+		// Machine-readable output for agents and other non-interactive callers.
+		if (json) {
+			printJsonToStdout({
+				dir: actFolderDir,
+				actorJsonPath: join(actFolderDir, LOCAL_CONFIG_PATH),
+				template: templateId,
+				source: 'apify',
+				nextSteps: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion }),
+			});
+			return;
+		}
+
 		// Success message with extra empty line
 		simpleLog({ message: '' });
 		success({
@@ -412,7 +440,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				actorName,
 				dependenciesInstalled,
 				postCreate: messages?.postCreate ?? null,
-				gitRepositoryInitialized: !skipGitInit && !cwdHasGit && gitInitResult.success,
+				gitRepositoryInitialized,
 				installCommandSuggestion,
 			}),
 		});
