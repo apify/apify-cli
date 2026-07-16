@@ -277,13 +277,19 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName] [--omit-optional-deps]
+  $ apify create [actorName]
+                 [-l javascript|typescript|python|other] [--omit-optional-deps]
                  [--skip-dependency-install] [--skip-git-init] [-t <value>]
+                 [-u web-scraping|ai-agent|api-pipeline|browser-automation]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
+  -l, --language=<option>        Filter templates by
+                                 programming language. Ignored when --template is
+                                 provided.
+                                 <options: javascript|typescript|python|other>
       --omit-optional-deps       Skip installing optional
                                  dependencies.
       --skip-dependency-install  Skip installing Actor
@@ -295,6 +301,37 @@ FLAGS
                                  it. Visit
                                  https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json
                                  to find available template names.
+  -u, --use-case=<option>        Filter templates by
+                                 what you want to build. Ignored when --template is
+                                 provided. Run "apify templates ls" to see the use
+                                 cases each template supports.
+                                 <options:
+                                 web-scraping|ai-agent|api-pipeline|browser-automation>
+```
+
+##### `apify templates`
+
+```sh
+DESCRIPTION
+  Explore the Actor templates used by "apify create".
+
+SUBCOMMANDS
+  templates ls  Prints all available Actor templates, including the
+                use cases and language each one supports.
+```
+
+##### `apify templates ls`
+
+```sh
+DESCRIPTION
+  Prints all available Actor templates, including the use cases and language 
+  each one supports.
+
+USAGE
+  $ apify templates ls [--json]
+
+FLAGS
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify init`

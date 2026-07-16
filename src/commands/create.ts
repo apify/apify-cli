@@ -29,6 +29,7 @@ import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, simpleLog, success, warning } from '../lib/outputs.js';
+import { LANGUAGE_FLAG_CHOICES, USE_CASE_FLAG_CHOICES } from '../lib/templates/consts.js';
 import {
 	downloadAndUnzip,
 	getJsonFileContent,
@@ -74,6 +75,19 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: `Template for the Actor. If not provided, the command will prompt for it. Visit ${manifestUrl} to find available template names.`,
 			required: false,
 		}),
+		'use-case': Flags.string({
+			char: 'u',
+			description:
+				'Filter templates by what you want to build. Ignored when --template is provided. Run "apify templates ls" to see the use cases each template supports.',
+			choices: USE_CASE_FLAG_CHOICES,
+			required: false,
+		}),
+		language: Flags.string({
+			char: 'l',
+			description: 'Filter templates by programming language. Ignored when --template is provided.',
+			choices: LANGUAGE_FLAG_CHOICES,
+			required: false,
+		}),
 		'skip-dependency-install': Flags.boolean({
 			description: 'Skip installing Actor dependencies.',
 			required: false,
@@ -103,7 +117,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 	async run() {
 		let { actorName } = this.args;
-		const { template: templateName, skipDependencyInstall, skipGitInit } = this.flags;
+		const { template: templateName, useCase, language, skipDependencyInstall, skipGitInit } = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
 		// for testing of templates that are not yet published in the manifest
@@ -156,7 +170,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		};
 
 		if (!templateArchiveUrl) {
-			const templateDefinition = await getTemplateDefinition(templateName, manifestPromise);
+			const templateDefinition = await getTemplateDefinition(templateName, manifestPromise, { useCase, language });
 			({ archiveUrl: templateArchiveUrl, messages } = templateDefinition);
 			this.telemetryData.create.templateId = templateDefinition.id;
 			this.telemetryData.create.templateName = templateDefinition.name;
