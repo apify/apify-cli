@@ -12,9 +12,7 @@ export function getConsoleUrl(): string {
 	if (explicit) {
 		const stripped = stripTrailingSlash(explicit);
 		if (!URL.canParse(stripped)) {
-			throw new Error(
-				`Invalid APIFY_CONSOLE_URL environment variable: "${explicit}" is not a valid URL.`,
-			);
+			throw new Error(`Invalid APIFY_CONSOLE_URL environment variable: "${explicit}" is not a valid URL.`);
 		}
 		return stripped;
 	}
