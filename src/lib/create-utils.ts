@@ -70,6 +70,22 @@ export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestP
 	}
 }
 
+export function buildNextSteps(params: {
+	actorName: string;
+	dependenciesInstalled: boolean;
+	installCommandSuggestion?: string | null;
+}): string[] {
+	const { actorName, dependenciesInstalled, installCommandSuggestion } = params;
+
+	const steps = [`cd "${actorName}"`];
+	if (!dependenciesInstalled) {
+		steps.push(installCommandSuggestion || 'install dependencies with your package manager');
+	}
+	steps.push('apify run');
+
+	return steps;
+}
+
 export function formatCreateSuccessMessage(params: {
 	actorName: string;
 	dependenciesInstalled: boolean;
@@ -81,12 +97,8 @@ export function formatCreateSuccessMessage(params: {
 
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
-	if (dependenciesInstalled) {
-		message += `\n\nNext steps:\n\ncd "${actorName}"\napify run`;
-	} else {
-		const installLine = installCommandSuggestion || 'install dependencies with your package manager';
-		message += `\n\nNext steps:\n\ncd "${actorName}"\n${installLine}\napify run`;
-	}
+	const nextSteps = buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
+	message += `\n\nNext steps:\n\n${nextSteps.join('\n')}`;
 
 	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
 
