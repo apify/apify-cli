@@ -277,7 +277,7 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName]
+  $ apify create [actorName] [--json]
                  [-l javascript|typescript|python|other] [--omit-optional-deps]
                  [--skip-dependency-install] [--skip-git-init] [-t <value>]
                  [-u web-scraping|ai-agent|api-pipeline|browser-automation]
@@ -286,6 +286,8 @@ ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
+      --json                     Format the command
+                                 output as JSON.
   -l, --language=<option>        Filter templates by
                                  programming language. Ignored when --template is
                                  provided.

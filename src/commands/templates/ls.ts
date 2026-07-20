@@ -3,6 +3,7 @@ import { fetchManifest } from '@apify/actor-templates';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { info, simpleLog } from '../../lib/outputs.js';
+import { languageLabel } from '../../lib/templates/consts.js';
 import { printJsonToStdout } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
@@ -50,7 +51,7 @@ export class TemplatesLsCommand extends ApifyCommand<typeof TemplatesLsCommand> 
 			table.pushRow({
 				Template: template.name,
 				Label: template.label,
-				Language: template.category,
+				Language: languageLabel(template.category),
 				'Use cases': (template.useCases ?? []).join(', '),
 			});
 		}

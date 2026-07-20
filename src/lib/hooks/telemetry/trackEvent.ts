@@ -33,6 +33,7 @@ interface CliCommandEvent {
 		templateId?: string;
 		templateName?: string;
 		templateLanguage?: string;
+		origin?: 'console' | 'cli';
 	};
 
 	push?: {
