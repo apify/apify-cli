@@ -83,7 +83,7 @@
 		"@sapphire/result": "^2.8.0",
 		"@sapphire/timestamp": "^1.0.5",
 		"@skyra/jaro-winkler": "^1.1.1",
-		"adm-zip": "~0.5.17",
+		"adm-zip": "~0.6.0",
 		"ajv": "~8.20.0",
 		"apify-client": "^2.23.3",
 		"archiver": "~8.0.0",
