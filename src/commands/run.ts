@@ -414,10 +414,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				case ProjectLanguage.Scrapy: {
 					if (!isPythonVersionSupported(runtime.version)) {
 						error({
-							message: `Python Actors require Python 3.9 or higher, but you have Python ${runtime.version}!`,
+							message: `Python Actors require Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} or higher, but you have Python ${runtime.version}!`,
 						});
 						error({
-							message: 'Please install Python 3.9 or higher to be able to run Python Actors locally.',
+							message: `Please install Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} or higher to be able to run Python Actors locally.`,
 						});
 
 						return;
