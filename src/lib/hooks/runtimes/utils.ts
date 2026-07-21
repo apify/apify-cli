@@ -59,7 +59,8 @@ export async function getInstallCommandSuggestion(actFolderDir: string) {
 				installCommandSuggestion = 'npm install';
 			}
 		} else if (project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy) {
-			installCommandSuggestion = 'python -m pip install -r requirements.txt';
+			installCommandSuggestion =
+				project.packageManager === 'uv' ? 'uv sync' : 'python -m pip install -r requirements.txt';
 		}
 	});
 

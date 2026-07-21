@@ -203,11 +203,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				// pip + requirements.txt flow. uv provides the Python pinned in `.python-version` on its own,
 				// so this runs even when no system Python is detected.
 				const isPythonProject = project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy;
-				const hasUvLock = await stat(join(actFolderDir, 'uv.lock'))
-					.then(() => true)
-					.catch(() => false);
 
-				if (isPythonProject && hasUvLock) {
+				if (isPythonProject && project.packageManager === 'uv') {
 					const uvPath = await which('uv', { nothrow: true });
 
 					if (!uvPath) {
