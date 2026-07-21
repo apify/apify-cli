@@ -216,6 +216,33 @@ describe('apify run', () => {
 		expect(actOutput2).toStrictEqual('can play');
 	});
 
+	// Regression: an inherited APIFY_TOKEN must reach the Actor unchanged, not be clobbered by the stored login token.
+	it(`[api] does not override an inherited ${APIFY_ENV_VARS.TOKEN} with the stored token`, async () => {
+		await safeLogin();
+
+		const auth = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
+		const inheritedToken = `${auth.token}_inherited`;
+		vitest.stubEnv(APIFY_ENV_VARS.TOKEN, inheritedToken);
+
+		const actCode = `
+        import { Actor } from 'apify';
+
+        Actor.main(async () => {
+            await Actor.setValue('OUTPUT', process.env);
+            console.log('Done.');
+        });
+        `;
+		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
+
+		await testRunCommand(RunCommand, {});
+
+		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
+		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
+
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(inheritedToken);
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).not.toStrictEqual(auth.token);
+	});
+
 	it('run purge stores', async () => {
 		const input = {
 			myInput: 'value',

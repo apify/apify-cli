@@ -14,7 +14,7 @@ import {
 	setProxyPassword,
 	setToken,
 } from '../../../src/lib/credentials.js';
-import { getLocalUserInfo } from '../../../src/lib/utils.js';
+import { getApifyClientOptions, getLocalUserInfo } from '../../../src/lib/utils.js';
 
 const keyringStore = new Map<string, string>();
 const keyringFailures = new Set<string>();
@@ -276,6 +276,32 @@ describe('credentials', () => {
 			const info = await getLocalUserInfo();
 			expect(info.token).toBe('tok_kr');
 			expect(info.proxy?.password).toBe('pw_kr');
+		});
+	});
+
+	// Precedence: explicit token arg (e.g. --token) > APIFY_TOKEN env var > stored login token.
+	// Regression guard for the env var being ignored in favour of the stored token.
+	describe('token resolution precedence (getApifyClientOptions)', () => {
+		it('prefers the APIFY_TOKEN env var over the stored token', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			await setToken('stored_tok');
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok');
+			const { token } = await getApifyClientOptions();
+			expect(token).toBe('env_tok');
+		});
+
+		it('prefers an explicitly passed token over the APIFY_TOKEN env var', async () => {
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok');
+			const { token } = await getApifyClientOptions('explicit_tok');
+			expect(token).toBe('explicit_tok');
+		});
+
+		it('falls back to the stored token when APIFY_TOKEN is not set', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			vitest.stubEnv('APIFY_TOKEN', '');
+			await setToken('stored_tok');
+			const { token } = await getApifyClientOptions();
+			expect(token).toBe('stored_tok');
 		});
 	});
 });
