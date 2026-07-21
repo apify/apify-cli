@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import type { Build } from 'apify-client';
+import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -65,15 +65,15 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 		const { job, timedOutWaiting } = await waitForTerminalStatus({
 			apifyClient,
 			jobId: buildId,
-			kind: 'build',
+			kind: ACTOR_JOB_TYPES.BUILD,
 			maxWaitMillis: timeout ? timeout * 1000 : undefined,
 			pollIntervalMillis: pollInterval ? pollInterval * 1000 : undefined,
 		});
-		const build = job as Build;
+		const build = job;
 
 		const url = consoleBuildUrl(build.actId, build.buildNumber);
-		const ok = build.status === 'SUCCEEDED';
-		const exitCode = exitCodeForWaitResult({ job, timedOutWaiting }, 'build');
+		const ok = build.status === ACTOR_JOB_STATUSES.SUCCEEDED;
+		const exitCode = exitCodeForWaitResult({ job, timedOutWaiting }, ACTOR_JOB_TYPES.BUILD);
 		const giveUpMessage = `Gave up waiting after ${timeout}s; build is still ${build.status}`;
 
 		let logTail: string[] = [];
@@ -119,7 +119,7 @@ export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 		simpleLog({
 			message: formatResultSummary({
 				resultLabel: 'Apify build result',
-				overallStatus: build.status as never,
+				overallStatus: build.status,
 				lines,
 				links,
 				errorReason: ok ? undefined : logTail,

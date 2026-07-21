@@ -2,6 +2,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { consoleBuildUrl } from '../../lib/commands/agent-output.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { error, simpleLog } from '../../lib/outputs.js';
@@ -103,7 +104,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 
 		message.push('');
 
-		const url = `https://console.apify.com/actors/${build.actId}/builds/${build.buildNumber}`;
+		const url = consoleBuildUrl(build.actId, build.buildNumber);
 
 		message.push(`${chalk.blue('View in Apify Console')}: ${url}`);
 

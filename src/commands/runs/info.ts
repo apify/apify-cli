@@ -4,6 +4,7 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { consoleDatasetUrl, consoleKeyValueStoreUrl, consoleRunUrl } from '../../lib/commands/agent-output.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
@@ -258,9 +259,9 @@ export class RunsInfoCommand extends ApifyCommand<typeof RunsInfoCommand> {
 
 		message.push('');
 
-		const url = `https://console.apify.com/actors/${run.actId}/runs/${run.id}`;
-		const datasetUrl = `https://console.apify.com/storage/datasets/${run.defaultDatasetId}`;
-		const keyValueStoreUrl = `https://console.apify.com/storage/key-value-stores/${run.defaultKeyValueStoreId}`;
+		const url = consoleRunUrl(run.actId, run.id);
+		const datasetUrl = consoleDatasetUrl(run.defaultDatasetId);
+		const keyValueStoreUrl = consoleKeyValueStoreUrl(run.defaultKeyValueStoreId);
 
 		message.push(`${chalk.blue('Export results')}: ${datasetUrl}`);
 		message.push(`${chalk.blue('View saved items')}: ${keyValueStoreUrl}`);
