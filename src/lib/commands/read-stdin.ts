@@ -23,7 +23,7 @@ export async function readStdin() {
 		}, waitDelay).unref();
 	}
 
-	stream.on('data', (chunk) => {
+	const onData = (chunk: Buffer) => {
 		bufferChunks.push(chunk);
 
 		// If we got some data already, we can clear the timeout, as we will get more
@@ -31,7 +31,9 @@ export async function readStdin() {
 			clearTimeout(timeout);
 			timeout = null;
 		}
-	});
+	};
+
+	stream.on('data', onData);
 
 	try {
 		await once(stream, 'end', { signal: controller.signal });
@@ -41,6 +43,14 @@ export async function readStdin() {
 		if (casted.name === 'AbortError') {
 			return;
 		}
+	} finally {
+		// Stop reading from stdin so its open handle can't keep the event loop (and
+		// the CLI) alive after the command finishes (#1206). This only helps when the
+		// await above settles ('end' or the no-data abort). A writer that sends data
+		// but never closes stdin still hangs up there; that needs the lazy stdin
+		// reading discussed in #1206.
+		stream.off('data', onData);
+		stream.pause();
 	}
 
 	if (timeout) {
