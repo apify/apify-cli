@@ -34,6 +34,7 @@ import {
 	getJsonFileContent,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
+	printJsonToStdout,
 	setLocalConfig,
 	setLocalEnv,
 } from '../lib/utils.js';
@@ -64,6 +65,14 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Create without installing dependencies (faster; run install yourself later).',
 			command: 'apify create my-actor --template python-start --skip-dependency-install',
 		},
+		{
+			description: 'List available template ids (non-interactive; useful for discovery in agent contexts).',
+			command: 'apify create --list',
+		},
+		{
+			description: 'List available templates as JSON for machine parsing.',
+			command: 'apify create --list --json',
+		},
 	];
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-create';
@@ -92,7 +101,15 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Skip initializing a git repository in the Actor directory.',
 			required: false,
 		}),
+		list: Flags.boolean({
+			description:
+				'Print available template ids (name, language, description) instead of creating an Actor. ' +
+				'Combine with --json for machine-parseable output. Useful for non-interactive discovery.',
+			required: false,
+		}),
 	};
+
+	static override enableJsonFlag = true;
 
 	static override args = {
 		actorName: Args.string({
@@ -103,7 +120,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 	async run() {
 		let { actorName } = this.args;
-		const { template: templateName, skipDependencyInstall, skipGitInit } = this.flags;
+		const { template: templateName, skipDependencyInstall, skipGitInit, list, json } = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
 		// for testing of templates that are not yet published in the manifest
@@ -115,6 +132,33 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		const manifestPromise = fetchManifest().catch((err) => {
 			return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
 		});
+
+		// --list: print available templates and exit without creating anything.
+		// This provides a non-interactive discovery path (agent contexts,
+		// non-TTY shells) for template ids that would otherwise require
+		// visiting the actor-templates repo or running the interactive picker.
+		if (list) {
+			const manifest = await manifestPromise;
+			if (manifest instanceof Error) throw manifest;
+
+			if (json) {
+				printJsonToStdout({
+					templates: manifest.templates.map((t) => ({
+						id: t.name,
+						label: t.label,
+						category: t.category,
+						description: t.description,
+					})),
+				});
+				return;
+			}
+
+			for (const t of manifest.templates) {
+				// Tab-separated for easy piping: `<id>\t<language>\t<description>`
+				simpleLog({ message: `${t.name}\t${t.category}\t${t.description}`, stdout: true });
+			}
+			return;
+		}
 
 		actorName = await ensureValidActorName(actorName);
 
