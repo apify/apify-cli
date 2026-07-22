@@ -286,6 +286,15 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			actor = (await apifyClient.actor(`${usernameOrId}/${actorConfig!.name}`).get())!;
 			if (actor) {
 				actorId = actor.id;
+				// Previously this branch silently reused the existing Actor, which
+				// looked identical in the CLI output to creating a new one. When a
+				// user (or an agent) intended to create a fresh Actor and forgot
+				// they had already used that name, their prior version would be
+				// overwritten without any visible signal. Log it explicitly so the
+				// destination is obvious in the transcript.
+				info({
+					message: `Updating existing Actor ${usernameOrId}/${actorConfig!.name} (id=${actor.id}).`,
+				});
 			} else {
 				const { templates } = await fetchManifest();
 				const actorTemplate = templates.find((t) => t.name === actorConfig!.template);
@@ -311,7 +320,32 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 					newActor.actorStandby = { isEnabled: true };
 				}
 
-				actor = await apifyClient.actors().create(newActor);
+				try {
+					actor = await apifyClient.actors().create(newActor);
+				} catch (err) {
+					// The pre-flight `apify.actor("<user>/<name>").get()` above misses
+					// two cases: (1) the name is reserved / conflicts with a global
+					// Actor (e.g. `apify/hello-world`); (2) a race where a parallel
+					// process claimed the name between the `.get()` and the create.
+					// The raw API error is opaque ("Actor name is already used"), so
+					// rewrite it with actionable next steps.
+					const message = (err as Error)?.message ?? String(err);
+					const looksLikeNameConflict =
+						/already\s+us(ed|es)/i.test(message) ||
+						/name\s+is\s+not\s+available/i.test(message) ||
+						/duplicate/i.test(message);
+					if (looksLikeNameConflict) {
+						throw new Error(
+							`Cannot create Actor "${actorConfig!.name}": the name is unavailable on the Apify platform (${message}).\n` +
+								`Next steps:\n` +
+								`  - Rename the Actor: edit the "name" field in ${LOCAL_CONFIG_PATH} and run 'apify push' again.\n` +
+								`  - Push to an existing Actor: 'apify push <actor-id-or-username/name>'.\n` +
+								`  - List names you already own: 'apify actors ls --my --name-only'.\n` +
+								`  - Check whether a name is free: 'apify actors exists <name>'.`,
+						);
+					}
+					throw err;
+				}
 				actorId = actor.id;
 				isActorCreatedNow = true;
 				info({ message: `Created Actor with name ${actorConfig!.name} on Apify.` });
