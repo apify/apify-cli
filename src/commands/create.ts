@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import process from 'node:process';
 
 import { gte, minVersion } from 'semver';
+import which from 'which';
 
 import { fetchManifest, manifestUrl } from '@apify/actor-templates';
 
@@ -196,6 +197,36 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 			await cwdProjectResult.inspectAsync(async (project) => {
 				const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
+
+				// uv-managed Python projects (recognized by a committed `uv.lock`) manage their own virtual
+				// environment, dependencies, and Python version. Install them with `uv sync` instead of the
+				// pip + requirements.txt flow. uv provides the Python pinned in `.python-version` on its own,
+				// so this runs even when no system Python is detected.
+				const isPythonProject = project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy;
+
+				if (isPythonProject && project.packageManager === 'uv') {
+					const uvPath = await which('uv', { nothrow: true });
+
+					if (!uvPath) {
+						warning({
+							message:
+								'This Actor uses uv to manage its dependencies, but the uv executable was not found. ' +
+								'Install uv (https://docs.astral.sh/uv/getting-started/installation/), then run "uv sync" in the Actor directory.',
+						});
+						return;
+					}
+
+					info({ message: 'Installing dependencies with "uv sync"...' });
+
+					await execWithLog({
+						cmd: uvPath,
+						args: ['sync'],
+						opts: { cwd: actFolderDir },
+					});
+
+					dependenciesInstalled = true;
+					return;
+				}
 
 				if (!project.runtime) {
 					switch (project.type) {

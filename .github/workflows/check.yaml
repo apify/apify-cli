@@ -173,6 +173,26 @@ jobs:
                   TEST_USER_TOKEN: ${{ secrets.APIFY_TEST_USER_API_TOKEN }}
               run: pnpm run test:python
 
+    # Aggregate gate for the whole Python Support matrix. Branch protection requires only this single
+    # check, so the matrix versions can change without having to update the required checks in lockstep.
+    test_python_support_result:
+        if: ${{ always() && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
+
+        name: Python Support Result
+
+        needs: [test_python_support]
+
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Verify the Python Support matrix succeeded
+              run: |
+                  result="${{ needs.test_python_support.result }}"
+                  echo "Python Support matrix result: ${result}"
+                  if [ "${result}" != "success" ]; then
+                      exit 1
+                  fi
+
     docs:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
 
