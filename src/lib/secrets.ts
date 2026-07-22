@@ -1,6 +1,6 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 
-import { SECRETS_FILE_PATH } from './consts.js';
+import { LOCAL_CONFIG_PATH, SECRETS_FILE_PATH } from './consts.js';
 import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
 
@@ -8,6 +8,69 @@ const SECRET_KEY_PREFIX = '@';
 // TODO: Moved to shared
 const MAX_ENV_VAR_NAME_LENGTH = 100;
 const MAX_ENV_VAR_VALUE_LENGTH = 50000;
+
+const isSecretKey = (envValue: string) => {
+	return new RegExp(`^${SECRET_KEY_PREFIX}.{1}`).test(envValue);
+};
+
+/**
+ * Ensures that `environmentVariables` in `.actor/actor.json` is shaped as a
+ * JSON object (key → value map). It is a common mistake to write it as an
+ * array of `{ name, value }` entries (the shape used by the Apify API on the
+ * wire), which the CLI would then silently pass through unresolved.
+ *
+ * Returns a human-readable error message when the shape is invalid, or `null`
+ * when it is valid (including when it is absent — the caller decides whether
+ * that is allowed).
+ */
+export const validateEnvironmentVariablesShape = (env: unknown): string | null => {
+	if (env === undefined || env === null) return null;
+
+	if (Array.isArray(env)) {
+		return (
+			`"environmentVariables" in ${LOCAL_CONFIG_PATH} must be a JSON object (key-value map), not an array.\n` +
+			`\n` +
+			`Change it from:\n` +
+			`  "environmentVariables": [{ "name": "MY_TOKEN", "value": "@mySecret" }]\n` +
+			`to:\n` +
+			`  "environmentVariables": { "MY_TOKEN": "@mySecret" }\n` +
+			`\n` +
+			`See https://docs.apify.com/platform/actors/development/actor-definition/actor-json#fields for the expected schema.`
+		);
+	}
+
+	if (typeof env !== 'object') {
+		return `"environmentVariables" in ${LOCAL_CONFIG_PATH} must be a JSON object (key-value map); got ${typeof env}.`;
+	}
+
+	const badEntries = Object.entries(env as Record<string, unknown>).filter(([, value]) => typeof value !== 'string');
+	if (badEntries.length > 0) {
+		const listing = badEntries
+			.map(([key, value]) => `  - ${key}: expected string, got ${Array.isArray(value) ? 'array' : typeof value}`)
+			.join('\n');
+		return (
+			`"environmentVariables" in ${LOCAL_CONFIG_PATH} has non-string values:\n${listing}\n` +
+			`Each value must be a string (use "@secretName" to reference a locally stored secret).`
+		);
+	}
+
+	return null;
+};
+
+/**
+ * Returns every `@name` secret reference found in an `environmentVariables`
+ * map, along with the env-var key it appears under. Values that don't start
+ * with `@` are ignored.
+ */
+export const findSecretReferences = (env: Record<string, string>): { envKey: string; name: string }[] => {
+	const refs: { envKey: string; name: string }[] = [];
+	for (const [envKey, value] of Object.entries(env)) {
+		if (typeof value === 'string' && isSecretKey(value)) {
+			refs.push({ envKey, name: value.replace(new RegExp(`^${SECRET_KEY_PREFIX}`), '') });
+		}
+	}
+	return refs;
+};
 
 export const getSecretsFile = () => {
 	try {
@@ -44,10 +107,6 @@ export const removeSecret = (name: string) => {
 	if (!secrets[name]) throw new Error(`Secret with name ${name} doesn't exist.`);
 	delete secrets[name];
 	writeSecretsFile(secrets);
-};
-
-const isSecretKey = (envValue: string) => {
-	return new RegExp(`^${SECRET_KEY_PREFIX}.{1}`).test(envValue);
 };
 
 /**
