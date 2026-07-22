@@ -1,4 +1,4 @@
-import { readFileSync, statSync, unlinkSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
@@ -120,6 +120,70 @@ export function resolvePushOutcome(buildStatus: string): PushOutcome {
 				errorMessage: `Build finished with unexpected status "${buildStatus}"`,
 			};
 	}
+}
+
+// Best-effort pre-upload check for a common TypeScript packaging trap: a
+// single-stage Dockerfile that runs `npm install --omit=dev` (or
+// `--production`) and a package.json build script that shells out to `tsc`,
+// while `typescript` sits in devDependencies. The platform-side Docker build
+// will fail because tsc is dropped before `npm run build` runs. This is a
+// warning only — the source of truth is the platform build.
+export function detectOmitDevTscTrap(cwd: string): string | null {
+	const dockerfileCandidates = [join(cwd, '.actor', 'Dockerfile'), join(cwd, 'Dockerfile')];
+	let dockerfileContent: string | null = null;
+	for (const candidate of dockerfileCandidates) {
+		if (existsSync(candidate)) {
+			try {
+				dockerfileContent = readFileSync(candidate, 'utf8');
+				break;
+			} catch {
+				// unreadable — ignore, this check is best-effort
+			}
+		}
+	}
+	if (!dockerfileContent) return null;
+
+	// Match `npm ci|install|i` followed anywhere on the same command by
+	// `--omit=dev` or `--production` (with optional `=true`). Line-based to
+	// avoid crossing RUN boundaries. Backslash continuations are handled by
+	// checking each logical `\` -joined chunk.
+	const commandChunks = dockerfileContent
+		.replace(/\\\n/g, ' ') // fold backslash-continuations onto one line
+		.split('\n');
+	const dropsDevDeps = commandChunks.some(
+		(line) => /\bnpm\s+(ci|install|i)\b/.test(line) && /(--omit[= ]dev|--production(?:[= ]true)?)/.test(line),
+	);
+	if (!dropsDevDeps) return null;
+
+	// package.json lookup
+	const packageJsonPath = join(cwd, 'package.json');
+	if (!existsSync(packageJsonPath)) return null;
+	let pkg: {
+		scripts?: Record<string, string>;
+		dependencies?: Record<string, string>;
+		devDependencies?: Record<string, string>;
+	};
+	try {
+		pkg = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
+	} catch {
+		// malformed package.json — not our problem to diagnose here
+		return null;
+	}
+
+	const buildScript = pkg.scripts?.build ?? '';
+	// Match a standalone `tsc` invocation (not `tsc-alias`, `tsconfig`, etc.).
+	const buildUsesTsc = /(^|[\s&|;])tsc($|[\s&|;])/.test(buildScript);
+	if (!buildUsesTsc) return null;
+
+	const tsInDev = !!pkg.devDependencies?.typescript;
+	const tsInProd = !!pkg.dependencies?.typescript;
+	if (!tsInDev || tsInProd) return null;
+
+	return [
+		'npm --omit=dev drops typescript (in devDependencies); the build stage needs tsc.',
+		'Either (a) use a multi-stage Dockerfile where the build stage installs devDeps then',
+		'copies dist/ to the runtime stage, or (b) drop --omit=dev.',
+	].join('\n  ');
 }
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
@@ -326,6 +390,14 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const actorClient = apifyClient.actor(actorId);
 
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
+
+		// Best-effort local sanity check: warn (never block) if the Dockerfile
+		// drops devDependencies before running a tsc-based build script. See
+		// detectOmitDevTscTrap for the full heuristic.
+		const trapWarning = detectOmitDevTscTrap(cwd);
+		if (trapWarning) {
+			warning({ message: trapWarning });
+		}
 
 		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
 
