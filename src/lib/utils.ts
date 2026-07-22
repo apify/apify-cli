@@ -131,6 +131,7 @@ export async function getLoggedClientOrThrow() {
 
 const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
 	if (existingToken) return existingToken;
+	if (process.env[APIFY_ENV_VARS.TOKEN]) return process.env[APIFY_ENV_VARS.TOKEN];
 	await ensureMigrated();
 	return getToken();
 };
