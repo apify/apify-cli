@@ -34,6 +34,7 @@ import { RunsIndexCommand } from './runs/_index.js';
 import { SecretsIndexCommand } from './secrets/_index.js';
 import { TasksIndexCommand } from './task/_index.js';
 import { TelemetryIndexCommand } from './telemetry/_index.js';
+import { TemplatesIndexCommand } from './templates/_index.js';
 import { ValidateSchemaCommand } from './validate-schema.js';
 
 export const apifyCommands = [
@@ -50,6 +51,7 @@ export const apifyCommands = [
 	SecretsIndexCommand,
 	TasksIndexCommand,
 	TelemetryIndexCommand,
+	TemplatesIndexCommand,
 
 	// top-level
 	ApiCommand,

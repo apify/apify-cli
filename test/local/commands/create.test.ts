@@ -97,6 +97,35 @@ describe('apify create', () => {
 		).to.be.eql(expectedInput);
 	});
 
+	it('ignores --use-case and --language when --template is provided', async () => {
+		// A TypeScript template, deliberately paired with conflicting python/ai filters.
+		const ACT_TEMPLATE = 'getting_started_typescript';
+		const expectedInput = { url: 'https://www.apify.com' };
+
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: ACT_TEMPLATE,
+			flags_useCase: 'ai-agent',
+			flags_language: 'python',
+			flags_skipDependencyInstall: true,
+		});
+
+		expect(existsSync(tmpPath)).toBeTruthy();
+
+		toggleCwdBetweenFullAndParentPath();
+
+		const actorJsonPath = joinPath(LOCAL_CONFIG_PATH);
+
+		expect(existsSync(joinPath('package.json'))).toBeTruthy();
+		expect(existsSync(actorJsonPath)).toBeTruthy();
+		expect(JSON.parse(readFileSync(actorJsonPath, 'utf8')).name).to.be.eql(actName);
+		// The TypeScript template's prefilled input proves the --template value was used verbatim,
+		// not a template chosen by the (conflicting) --use-case / --language filters.
+		expect(
+			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
+		).to.be.eql(expectedInput);
+	});
+
 	it('should skip installing optional dependencies', async () => {
 		const ACT_TEMPLATE = 'project_cheerio_crawler_js';
 
