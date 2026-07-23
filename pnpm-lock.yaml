@@ -211,8 +211,8 @@ importers:
   .:
     dependencies:
       '@apify/actor-memory-expression':
-        specifier: ^0.1.12
-        version: 0.1.18
+        specifier: ^0.2.0
+        version: 0.2.6
       '@apify/actor-templates':
         specifier: ^0.1.5
         version: 0.1.5
@@ -660,14 +660,17 @@ packages:
     resolution: {integrity: sha512-60vepv88RwcJtSHrD6MjIL6Ta3SOYbgfnkHb+ppAVK+o9mXprRtulx7VlRl3lN3bbvysAfCS7WMVfhUYemB0IQ==}
     engines: {node: '>= 16'}
 
-  '@apify/actor-memory-expression@0.1.18':
-    resolution: {integrity: sha512-eQZciQnVTTIwBqmV0PHu7lpOwRENjRvN4I21/M0ITrj3wLXSKiDkZ78mq7Nz2SBY08g/8Zr3dpEyBwMjoS2bnw==}
+  '@apify/actor-memory-expression@0.2.6':
+    resolution: {integrity: sha512-Pojlz80VrWyzk1exBWcV6QljFmKHbX9OfEQSaGTvSL4/0jg/CkvUjxedQ2xNSKLHj9sqHRY2K+k00O8ypV0KSA==}
 
   '@apify/actor-templates@0.1.5':
     resolution: {integrity: sha512-Ztgubaqke9PUpm4urzLcZl+avptbMd0haH3w7qu57ZKGNbH1fL4SGg8PXPHTnxFKRQLe0PVYZ41DT2OA4ihRig==}
 
   '@apify/consts@2.53.3':
     resolution: {integrity: sha512-X26SC8d6kLMSWzBcYldKgzKFJXGnTAka/bRmvL+iYHJEabFzVYupj64kGhar6QTPeGKNt6WR/hNE+dToNqHZQA==}
+
+  '@apify/consts@2.54.2':
+    resolution: {integrity: sha512-ypdLZcGR0F+MwG+kOsvXar9JjZ32c7Vh086bywgNX31uVlIrnmDtOS0uWDG1VWPu4g2u0x1iA1tTtdMzRtyPpw==}
 
   '@apify/datastructures@2.0.6':
     resolution: {integrity: sha512-hI/Q5cCjXXI/g4OPwX+/xuk+JsOtXRhKNXl2wnq/nKmdrji3nYCc9vGsAEc1iXVbs16xQMZy5uRhoY3XTABovA==}
@@ -698,6 +701,9 @@ packages:
 
   '@apify/log@2.5.41':
     resolution: {integrity: sha512-c826B4jhfF6CBOgyGyZyiT4GrhPaFWrZegFbY6bk/ffQc5BCPqAOT315qEEpFE4d6hP0d86tdcsiRknxkEFO0A==}
+
+  '@apify/log@2.5.44':
+    resolution: {integrity: sha512-gDB4hkNfvDDkRRCMmYpY75twdCK2rFI88WBJoSTLpMpjHtFu3IU02gmYRj47aWOBIV/362Rc0c51ZuqBEBaSrw==}
 
   '@apify/oxlint-config@0.3.0':
     resolution: {integrity: sha512-njNpYIfowurrM3+TDhhb/LLADAPzozs9+hTTMB/OiRAKrUHOqF6KIsUCYI8IGZAB1hl9vXQnFmKQzTysbAJ7mA==}
@@ -9611,15 +9617,17 @@ snapshots:
       '@types/json-schema': 7.0.15
       js-yaml: 4.2.0
 
-  '@apify/actor-memory-expression@0.1.18':
+  '@apify/actor-memory-expression@0.2.6':
     dependencies:
-      '@apify/consts': 2.53.3
-      '@apify/log': 2.5.41
+      '@apify/consts': 2.54.2
+      '@apify/log': 2.5.44
       mathjs: 15.2.0
 
   '@apify/actor-templates@0.1.5': {}
 
   '@apify/consts@2.53.3': {}
+
+  '@apify/consts@2.54.2': {}
 
   '@apify/datastructures@2.0.6': {}
 
@@ -9714,6 +9722,11 @@ snapshots:
   '@apify/log@2.5.41':
     dependencies:
       '@apify/consts': 2.53.3
+      ansi-colors: 4.1.3
+
+  '@apify/log@2.5.44':
+    dependencies:
+      '@apify/consts': 2.54.2
       ansi-colors: 4.1.3
 
   '@apify/oxlint-config@0.3.0(oxlint@1.71.0(oxlint-tsgolint@0.22.1))':
