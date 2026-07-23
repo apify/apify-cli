@@ -142,7 +142,7 @@
 		"mock-stdin": "^1.0.0",
 		"oxfmt": "0.56.0",
 		"oxlint": "1.71.0",
-		"oxlint-tsgolint": "0.22.1",
+		"oxlint-tsgolint": "7.0.2001",
 		"tsdown": "^0.22.0",
 		"tsx": "^4.21.0",
 		"typescript": "^6.0.2",
