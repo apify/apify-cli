@@ -97,7 +97,7 @@
 		"detect-indent": "~7.0.2",
 		"es-toolkit": "^1.45.1",
 		"escape-string-regexp": "~5.0.0",
-		"execa": "^9.6.1",
+		"execa": "^10.0.0",
 		"express": "~5.2.1",
 		"giget": "^3.3.0",
 		"handlebars": "~4.7.9",
