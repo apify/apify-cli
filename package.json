@@ -141,7 +141,7 @@
 		"lint-staged": "^17.0.0",
 		"mock-stdin": "^1.0.0",
 		"oxfmt": "0.56.0",
-		"oxlint": "1.71.0",
+		"oxlint": "1.75.0",
 		"oxlint-tsgolint": "0.22.1",
 		"tsdown": "^0.22.0",
 		"tsx": "^4.21.0",
@@ -150,9 +150,9 @@
 	},
 	"volta": {
 		"node": "24.18.0",
-		"pnpm": "11.8.0"
+		"pnpm": "11.16.0"
 	},
-	"packageManager": "pnpm@11.8.0",
+	"packageManager": "pnpm@11.16.0",
 	"devEngines": {
 		"runtime": [
 			{
