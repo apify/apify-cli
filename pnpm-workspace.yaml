@@ -21,7 +21,7 @@ minimumReleaseAgeExclude:
   - adm-zip@0.6.0
 
 overrides:
-  tar: 7.5.16
+  tar: 7.5.21
 
 # Install native deps for all platforms, not just the current machine's, so the
 # cross-platform bundle builds (scripts/build-cli-bundles.ts) can embed them.
