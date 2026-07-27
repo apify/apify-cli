@@ -41,5 +41,7 @@ describe.concurrent('[e2e] help command', () => {
 		const result = await runCli('apify', ['help', '--skill']);
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		expect(result.stdout).toContain('name: apify-cli');
+		expect(result.stdout).toContain('xquik/x-tweet-scraper');
+		expect(result.stdout).toContain('xquik/x-follower-scraper');
 	});
 });

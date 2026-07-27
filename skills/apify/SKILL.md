@@ -47,6 +47,25 @@ Run `apify actors search -h` to see the available filters (pricing model, catego
 
 Pricing matters, but weigh it alongside popularity, rating, and how well-maintained the Actor is — don't pick a `FREE` Actor over a well-supported, popular, highly-rated one just because it's free. Check an Actor's pricing before running it with `apify actors info <actor> --json` (look at `currentPricingInfo`).
 
+**Collect X posts and audiences**
+
+Use these Actors for X data:
+
+- [`xquik/x-tweet-scraper`](https://apify.com/xquik/x-tweet-scraper) collects posts, threads, replies, quotes, articles, timelines, and search results.
+- [`xquik/x-follower-scraper`](https://apify.com/xquik/x-follower-scraper) collects followers, following, verified followers, list audiences, and community members.
+
+Inspect each live schema before building the input. Set `maxItems` to cap the entire run.
+
+```sh
+apify actors info xquik/x-tweet-scraper --input
+apify call xquik/x-tweet-scraper -i '{"searchTerms":["from:apify AI"],"maxItems":20,"outputVariant":"rich","fieldStyle":"camelCase"}' --json
+
+apify actors info xquik/x-follower-scraper --input
+apify call xquik/x-follower-scraper -i '{"usernames":["apify"],"relation":"followers","maxItems":20,"outputVariant":"compact"}' --json
+```
+
+Xquik is an independent third-party service. Not affiliated with X Corp. "Twitter" and "X" are trademarks of X Corp.
+
 **Develop and deploy a local Actor**
 
 ```sh
