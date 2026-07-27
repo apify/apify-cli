@@ -196,19 +196,13 @@ export function renderMainHelpMenu(entrypoint: string) {
 		result.push('');
 	}
 
-	const learnMoreLines = [
+	result.push(
 		chalk.bold('LEARN MORE'),
 		`  Use '${entrypoint} <command> --help' for more information about a command.`,
 		`  Read the docs at https://docs.apify.com/cli.`,
-	];
-
-	if (entrypoint !== 'actor') {
-		learnMoreLines.push(
-			`  Run 'apify help --skill' to print the Apify CLI agent skill (guidance for driving 'apify' from agents).`,
-		);
-	}
-
-	result.push(...learnMoreLines, '');
+		`  Run '${entrypoint} help --skill' to print the Apify CLI agent skill (guidance for driving 'apify' from agents).`,
+		'',
+	);
 
 	result.push(
 		chalk.bold('TROUBLESHOOTING'),

@@ -234,16 +234,16 @@ describe('Help rendering', () => {
 			expect(output).toContain("Use 'actor <command> --help'");
 		});
 
-		test('mentions apify help --skill for the apify entrypoint', () => {
+		test('mentions help --skill for the apify entrypoint', () => {
 			const output = stripAnsi(renderMainHelpMenu('apify'));
 
-			expect(output).toContain('apify help --skill');
+			expect(output).toContain("Run 'apify help --skill'");
 		});
 
-		test('does not mention apify help --skill for the actor entrypoint', () => {
+		test('mentions help --skill for the actor entrypoint', () => {
 			const output = stripAnsi(renderMainHelpMenu('actor'));
 
-			expect(output).not.toContain('help --skill');
+			expect(output).toContain("Run 'actor help --skill'");
 		});
 	});
 });
