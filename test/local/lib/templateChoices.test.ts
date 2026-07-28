@@ -1,6 +1,6 @@
 import type { Template } from '@apify/actor-templates';
 
-import { ANY_TEMPLATE_LANGUAGE, TEMPLATE_USE_CASES } from '../../../src/lib/templates/consts.js';
+import { ANY_TEMPLATE_LANGUAGE, ANY_TEMPLATE_USE_CASE, TEMPLATE_USE_CASES } from '../../../src/lib/templates/consts.js';
 import { getTemplateRecommendation } from '../../../src/lib/templates/getTemplateRecommendation.js';
 import { buildTemplateChoiceList, NON_EXACT_SEPARATOR_LABEL } from '../../../src/lib/templates/templateChoices.js';
 
@@ -27,7 +27,7 @@ const templates: Template[] = [
 	makeTemplate('js-empty', 'javascript', 'Empty JavaScript project', [STARTER]),
 ];
 
-function buildFor(useCaseId: string | undefined, languageId: string) {
+function buildFor(useCaseId: string, languageId: string) {
 	return buildTemplateChoiceList(getTemplateRecommendation(templates, useCaseId, languageId), useCaseId, languageId);
 }
 
@@ -62,7 +62,7 @@ describe('buildTemplateChoiceList', () => {
 	});
 
 	it('has no separator when every template is an exact match', () => {
-		const list = buildFor(undefined, ANY_TEMPLATE_LANGUAGE);
+		const list = buildFor(ANY_TEMPLATE_USE_CASE, ANY_TEMPLATE_LANGUAGE);
 
 		expect(list.separatorIndex).toBeNull();
 		expect(list.noExactMatchHint).toBeNull();

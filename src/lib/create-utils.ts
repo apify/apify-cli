@@ -11,6 +11,7 @@ import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
 import { info, warning } from './outputs.js';
 import {
 	ANY_TEMPLATE_LANGUAGE,
+	ANY_TEMPLATE_USE_CASE,
 	LANGUAGE_OPTIONS,
 	languageFlagToTag,
 	USE_CASE_OPTIONS,
@@ -112,7 +113,9 @@ export function formatCreateSuccessMessage(params: {
  * flags), then present the best-matching templates ordered by fit.
  */
 async function executePrompts(manifest: Manifest, filters: TemplateFilters) {
-	const useCaseId = filters.useCase ? useCaseFlagToId(filters.useCase) : await promptUseCase();
+	const useCaseId = filters.useCase
+		? (useCaseFlagToId(filters.useCase) ?? ANY_TEMPLATE_USE_CASE)
+		: await promptUseCase();
 	const languageId = filters.language
 		? (languageFlagToTag(filters.language) ?? filters.language)
 		: await promptLanguage();
@@ -136,22 +139,20 @@ async function promptActorName() {
 	return answer;
 }
 
-async function promptUseCase(): Promise<string | undefined> {
-	const choices: ChoicesType<string | null> = [
+async function promptUseCase(): Promise<string> {
+	const choices: ChoicesType<string> = [
 		...USE_CASE_OPTIONS.map((option) => ({ name: option.label, value: option.templateTag })),
 		new Separator(),
-		{ name: 'Skip (show all)', value: null },
+		// "Skip (show all)" maps to the marker the algorithm reads as "no use-case filter".
+		{ name: 'Skip (show all)', value: ANY_TEMPLATE_USE_CASE },
 	];
 
-	const useCaseId = await useSelectFromList<string | null>({
+	return useSelectFromList<string>({
 		message: 'What do you want to build?',
 		choices,
 		default: USE_CASE_OPTIONS[0].templateTag,
 		loop: false,
 	});
-
-	// `null` is the "Skip (show all)" choice — the algorithm treats a missing use case as no filter.
-	return useCaseId ?? undefined;
 }
 
 async function promptLanguage(): Promise<string> {
@@ -174,11 +175,7 @@ async function promptLanguage(): Promise<string> {
  * non-selectable separator, then the closest alternatives. When nothing matches exactly, an info
  * line explains that the closest alternatives are shown instead.
  */
-async function promptTemplate(
-	manifest: Manifest,
-	useCaseId: string | undefined,
-	languageId: string,
-): Promise<Template> {
+async function promptTemplate(manifest: Manifest, useCaseId: string, languageId: string): Promise<Template> {
 	const recommendations = getTemplateRecommendation(manifest.templates, useCaseId, languageId);
 	const { rows, separatorIndex, noExactMatchHint } = buildTemplateChoiceList(recommendations, useCaseId, languageId);
 

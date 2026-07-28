@@ -34,6 +34,9 @@ export const TEMPLATE_LANGUAGES = {
 /** Marker value representing "no specific language". */
 export const ANY_TEMPLATE_LANGUAGE = 'any-language';
 
+/** Marker value representing "no specific use case" (mirrors {@link ANY_TEMPLATE_LANGUAGE}). */
+export const ANY_TEMPLATE_USE_CASE = 'any-use-case';
+
 export const QUICK_START_TEMPLATE_IDS: Record<string, string | undefined> = {
 	[TEMPLATE_LANGUAGES.TYPESCRIPT]: 'ts-crawlee-cheerio',
 	[TEMPLATE_LANGUAGES.JAVASCRIPT]: 'js-crawlee-cheerio',
@@ -62,20 +65,31 @@ export const USE_CASE_OPTIONS = [
 export type UseCaseOption = (typeof USE_CASE_OPTIONS)[number];
 
 /**
- * The three concrete languages, in prompt order. `templateTag` is the manifest `category` (also the
- * canonical `--language` value); `aliases` are extra accepted spellings for the flag.
+ * The three concrete languages, in prompt order. For languages the `cliFlag` and `templateTag`
+ * (manifest `category`) are the same value — kept as separate fields to mirror {@link UseCaseOption}.
+ * `aliases` are extra accepted spellings for the flag.
  */
 export const LANGUAGE_OPTIONS = [
-	{ templateTag: TEMPLATE_LANGUAGES.JAVASCRIPT, label: 'JavaScript', aliases: ['js'] },
-	{ templateTag: TEMPLATE_LANGUAGES.TYPESCRIPT, label: 'TypeScript', aliases: ['ts'] },
-	{ templateTag: TEMPLATE_LANGUAGES.PYTHON, label: 'Python', aliases: ['py'] },
+	{
+		cliFlag: TEMPLATE_LANGUAGES.JAVASCRIPT,
+		templateTag: TEMPLATE_LANGUAGES.JAVASCRIPT,
+		label: 'JavaScript',
+		aliases: ['js'],
+	},
+	{
+		cliFlag: TEMPLATE_LANGUAGES.TYPESCRIPT,
+		templateTag: TEMPLATE_LANGUAGES.TYPESCRIPT,
+		label: 'TypeScript',
+		aliases: ['ts'],
+	},
+	{ cliFlag: TEMPLATE_LANGUAGES.PYTHON, templateTag: TEMPLATE_LANGUAGES.PYTHON, label: 'Python', aliases: ['py'] },
 ] as const;
 
 export type LanguageOption = (typeof LANGUAGE_OPTIONS)[number];
 
-/** Every accepted `--language` flag value (canonical tags plus their aliases). */
+/** Every accepted `--language` flag value (canonical values plus their aliases). */
 export const LANGUAGE_FLAG_CHOICES: string[] = LANGUAGE_OPTIONS.flatMap((option) => [
-	option.templateTag,
+	option.cliFlag,
 	...option.aliases,
 ]);
 
@@ -90,7 +104,7 @@ export function useCaseFlagToId(flag: string): string | undefined {
 /** Maps a `--language` flag value (canonical or alias, e.g. `js`) to its manifest tag, or `undefined` when unknown. */
 export function languageFlagToTag(flag: string): string | undefined {
 	return LANGUAGE_OPTIONS.find(
-		(option) => option.templateTag === flag || (option.aliases as readonly string[]).includes(flag),
+		(option) => option.cliFlag === flag || (option.aliases as readonly string[]).includes(flag),
 	)?.templateTag;
 }
 

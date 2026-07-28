@@ -1,6 +1,11 @@
 import type { Template } from '@apify/actor-templates';
 
-import { ANY_TEMPLATE_LANGUAGE, EMPTY_TEMPLATE_IDS, QUICK_START_TEMPLATE_IDS } from './consts.js';
+import {
+	ANY_TEMPLATE_LANGUAGE,
+	ANY_TEMPLATE_USE_CASE,
+	EMPTY_TEMPLATE_IDS,
+	QUICK_START_TEMPLATE_IDS,
+} from './consts.js';
 
 export interface TemplateRecommendation {
 	template: Template;
@@ -15,9 +20,8 @@ export interface TemplateRecommendation {
  *
  * - The return shape is a flat, priority-ordered `Array<{ template, isExactMatch }>` — a
  *   per-template flag rather than the upstream aggregate `{ templates, isExactMatch }`.
- * - `useCaseId` is optional: `undefined` means "no use-case filter" (the wizard's
- *   "Skip (show all)" choice), mirroring how {@link ANY_TEMPLATE_LANGUAGE} means
- *   "no language filter".
+ * - `useCaseId` accepts `ANY_TEMPLATE_USE_CASE` to mean "no use-case filter" (the wizard's
+ *   "Skip (show all)" choice), mirroring how `ANY_TEMPLATE_LANGUAGE` means "no language filter".
  *
  * Templates are returned most- to least-fitting: exact matches first (in manifest order),
  * then the language quick-start and empty templates, then same-language, then same-use-case,
@@ -25,11 +29,11 @@ export interface TemplateRecommendation {
  */
 export function getTemplateRecommendation(
 	templates: Template[],
-	useCaseId: string | undefined,
+	useCaseId: string,
 	languageId: string,
 ): TemplateRecommendation[] {
 	const hasLanguageFilter = languageId !== ANY_TEMPLATE_LANGUAGE;
-	const hasUseCaseFilter = useCaseId !== undefined;
+	const hasUseCaseFilter = useCaseId !== ANY_TEMPLATE_USE_CASE;
 
 	const matchesLanguage = (template: Template) => !hasLanguageFilter || template.category === languageId;
 	const matchesUseCase = (template: Template) => !hasUseCaseFilter || !!template.useCases?.includes(useCaseId);

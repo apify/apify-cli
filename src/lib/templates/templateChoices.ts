@@ -1,6 +1,12 @@
 import type { Template } from '@apify/actor-templates';
 
-import { ANY_TEMPLATE_LANGUAGE, LANGUAGE_OPTIONS, languageLabel, useCaseLabel } from './consts.js';
+import {
+	ANY_TEMPLATE_LANGUAGE,
+	ANY_TEMPLATE_USE_CASE,
+	LANGUAGE_OPTIONS,
+	languageLabel,
+	useCaseLabel,
+} from './consts.js';
 import type { TemplateRecommendation } from './getTemplateRecommendation.js';
 
 /** Label of the non-selectable row that separates exact matches from the closest alternatives. */
@@ -31,7 +37,7 @@ export interface TemplateChoiceList {
  */
 export function buildTemplateChoiceList(
 	recommendations: TemplateRecommendation[],
-	useCaseId: string | undefined,
+	useCaseId: string,
 	languageId: string,
 ): TemplateChoiceList {
 	const hasExactMatch = recommendations.some((recommendation) => recommendation.isExactMatch);
@@ -62,9 +68,9 @@ function formatTemplateLabel(template: Template, selectedLanguageId: string): st
 }
 
 /** Human-readable "<use case> + <language>" description for the "no exact match" hint. */
-function describeSelection(useCaseId: string | undefined, languageId: string): string {
+function describeSelection(useCaseId: string, languageId: string): string {
 	const parts: string[] = [];
-	if (useCaseId) parts.push(useCaseLabel(useCaseId));
+	if (useCaseId !== ANY_TEMPLATE_USE_CASE) parts.push(useCaseLabel(useCaseId));
 	parts.push(languageLabel(languageId));
 
 	return parts.join(' + ');

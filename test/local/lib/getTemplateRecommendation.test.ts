@@ -1,6 +1,6 @@
 import type { Template } from '@apify/actor-templates';
 
-import { ANY_TEMPLATE_LANGUAGE, TEMPLATE_USE_CASES } from '../../../src/lib/templates/consts.js';
+import { ANY_TEMPLATE_LANGUAGE, ANY_TEMPLATE_USE_CASE, TEMPLATE_USE_CASES } from '../../../src/lib/templates/consts.js';
 import { getTemplateRecommendation } from '../../../src/lib/templates/getTemplateRecommendation.js';
 
 function makeTemplate(id: string, category: string, useCases?: string[]): Template {
@@ -130,13 +130,13 @@ describe('getTemplateRecommendation', () => {
 
 	describe('skip use case (show all)', () => {
 		it('treats a language-only match as exact when the use case is skipped', () => {
-			const result = getTemplateRecommendation(templates, undefined, 'typescript');
+			const result = getTemplateRecommendation(templates, ANY_TEMPLATE_USE_CASE, 'typescript');
 
 			expect(exactIds(result)).toEqual(['ts-crawlee-cheerio', 'ts-empty', 'ts-automation']);
 		});
 
 		it('marks everything exact when both filters are skipped', () => {
-			const result = getTemplateRecommendation(templates, undefined, ANY_TEMPLATE_LANGUAGE);
+			const result = getTemplateRecommendation(templates, ANY_TEMPLATE_USE_CASE, ANY_TEMPLATE_LANGUAGE);
 
 			expect(result.every((r) => r.isExactMatch)).toBe(true);
 			expect(ids(result)).toEqual(templates.map((t) => t.id));
