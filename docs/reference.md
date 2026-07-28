@@ -280,7 +280,7 @@ USAGE
   $ apify create [actorName]
                  [-l javascript|typescript|python|other] [--omit-optional-deps]
                  [--skip-dependency-install] [--skip-git-init] [-t <value>]
-                 [-u web-scraping|ai-agent|api-pipeline|browser-automation]
+                 [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory.
@@ -302,11 +302,11 @@ FLAGS
                                  https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json
                                  to find available template names.
   -u, --use-case=<option>        Filter templates by
-                                 what you want to build. Ignored when --template is
-                                 provided. Run "apify templates ls" to see the use
-                                 cases each template supports.
+                                 category. Ignored when --template is provided. To
+                                 see the use cases each template supports, run
+                                 "apify templates ls".
                                  <options:
-                                 web-scraping|ai-agent|api-pipeline|browser-automation>
+                                 web-scraper|ai-agent|data-pipeline|browser-automation>
 ```
 
 ##### `apify templates`

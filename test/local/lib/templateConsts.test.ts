@@ -9,9 +9,9 @@ import {
 
 describe('template flag mappings', () => {
 	it('maps each --use-case flag value to its manifest id', () => {
-		expect(useCaseFlagToId('web-scraping')).toBe(TEMPLATE_USE_CASES.WEB_SCRAPING);
+		expect(useCaseFlagToId('web-scraper')).toBe(TEMPLATE_USE_CASES.WEB_SCRAPING);
 		expect(useCaseFlagToId('ai-agent')).toBe(TEMPLATE_USE_CASES.AI);
-		expect(useCaseFlagToId('api-pipeline')).toBe(TEMPLATE_USE_CASES.INTEGRATION);
+		expect(useCaseFlagToId('data-pipeline')).toBe(TEMPLATE_USE_CASES.INTEGRATION);
 		expect(useCaseFlagToId('browser-automation')).toBe(TEMPLATE_USE_CASES.AUTOMATION);
 	});
 

@@ -52,9 +52,9 @@ export interface UseCaseOption {
  * omitted — it only tags quick-start/empty templates so they surface via the fallback tiers.
  */
 export const USE_CASE_OPTIONS: UseCaseOption[] = [
-	{ flag: 'web-scraping', id: TEMPLATE_USE_CASES.WEB_SCRAPING, label: 'Web scraping' },
+	{ flag: 'web-scraper', id: TEMPLATE_USE_CASES.WEB_SCRAPING, label: 'Web scraping' },
 	{ flag: 'ai-agent', id: TEMPLATE_USE_CASES.AI, label: 'AI agent' },
-	{ flag: 'api-pipeline', id: TEMPLATE_USE_CASES.INTEGRATION, label: 'API & data pipeline' },
+	{ flag: 'data-pipeline', id: TEMPLATE_USE_CASES.INTEGRATION, label: 'API & data pipeline' },
 	{ flag: 'browser-automation', id: TEMPLATE_USE_CASES.AUTOMATION, label: 'Browser automation' },
 ];
 
