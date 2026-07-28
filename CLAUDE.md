@@ -25,7 +25,7 @@ If you modified a command's flags, args, description, or added/removed a command
 
 The CLI is installed globally by many users and in Actors, so keep the npm install footprint lean. Always look for opportunities to shrink it:
 
-- Prefer Node.js built-ins over dependencies (`fs.rm` over rimraf, `structuredClone` over cloneDeep, `fetch`, `node:util` helpers), and prefer dependencies already in the tree over new ones.
+- Prefer Node.js built-ins over dependencies, and prefer dependencies already in the tree over new ones.
 - Before adding a dependency, check what it drags in: `npm install <pkg>` in an empty temp dir, then `du -sh node_modules`. Mention the install-size impact in the PR description.
 - When touching code that uses a dependency, check whether the dependency is still pulling its weight — a single small helper from a large package is a candidate for replacement or removal.
 - To measure the CLI's own footprint, run `node scripts/report-install-size.mjs` — it packs the current tree and compares tarball, unpacked, and full-install sizes against the latest published version. The release workflows run it and embed the report in the GitHub release notes.
