@@ -297,9 +297,6 @@ importers:
       detect-indent:
         specifier: ~7.0.2
         version: 7.0.2
-      es-toolkit:
-        specifier: ^1.45.1
-        version: 1.48.1
       escape-string-regexp:
         specifier: ~5.0.0
         version: 5.0.0
@@ -308,7 +305,7 @@ importers:
         version: 9.6.1
       express:
         specifier: ~5.2.1
-        version: 5.2.1
+        version: 5.2.1(supports-color@5.5.0)
       giget:
         specifier: ^3.3.0
         version: 3.3.0
@@ -321,9 +318,6 @@ importers:
       indent-string:
         specifier: ^5.0.0
         version: 5.0.0
-      is-ci:
-        specifier: ~4.1.0
-        version: 4.1.0
       istextorbinary:
         specifier: ~9.5.0
         version: 9.5.0
@@ -342,9 +336,6 @@ importers:
       open:
         specifier: ~11.0.0
         version: 11.0.0
-      rimraf:
-        specifier: ~6.1.3
-        version: 6.1.3
       semver:
         specifier: ~7.8.0
         version: 7.8.5
@@ -436,6 +427,9 @@ importers:
       oxlint-tsgolint:
         specifier: 0.22.1
         version: 0.22.1
+      rimraf:
+        specifier: ~6.1.3
+        version: 6.1.3
       tsdown:
         specifier: ^0.22.0
         version: 0.22.3(tsx@4.22.4)(typescript@6.0.3)
@@ -5452,9 +5446,6 @@ packages:
     resolution: {integrity: sha512-j6vWzfrGVfyXxge+O0x5sh6cvxAog0a/4Rdd2K36zCMV5eJ+/+tOAngRO8cODMNWbVRdVlmGZQL2YS3yR8bIUA==}
     engines: {node: '>= 0.4'}
 
-  es-toolkit@1.48.1:
-    resolution: {integrity: sha512-wfnXlwd5I75eXRtdD2vuEs50xHHESECDsGD7yiQnfFVNoa5522NwXEbmgo98LfiukSQHs+mBM7/YG3qKJB9/mQ==}
-
   esast-util-from-estree@2.0.0:
     resolution: {integrity: sha512-4CyanoAudUSBAn5K13H4JhsMH6L9ZP7XbLVe/dKybkxMO7eDyLsT8UHl9TRNrU2Gr9nz+FovfSIjuXWJ81uVwQ==}
 
@@ -6204,10 +6195,6 @@ packages:
 
   is-ci@3.0.1:
     resolution: {integrity: sha512-ZYvCgrefwqoQ6yTyYUbQu64HsITZ3NfKX1lzaEYdkTDcfKzzCI/wthRRYKkdjHKFVgNiXKAKm65Zo1pk2as/QQ==}
-    hasBin: true
-
-  is-ci@4.1.0:
-    resolution: {integrity: sha512-Ab9bQDQ11lWootZUI5qxgN2ZXwxNI5hTwnsvOc1wyxQ7zQ8OkEDw79mI0+9jI3x432NfwbVRru+3noJfXF6lSQ==}
     hasBin: true
 
   is-core-module@2.16.2:
@@ -11425,7 +11412,7 @@ snapshots:
       combine-promises: 1.2.0
       commander: 5.1.0
       core-js: 3.49.0
-      detect-port: 1.6.1
+      detect-port: 1.6.1(supports-color@5.5.0)
       escape-html: 1.0.3
       eta: 2.2.0
       eval: 0.1.8
@@ -14586,7 +14573,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  body-parser@2.3.0:
+  body-parser@2.3.0(supports-color@5.5.0):
     dependencies:
       bytes: 3.1.2
       content-type: 2.0.0
@@ -15265,7 +15252,7 @@ snapshots:
 
   detect-node@2.1.0: {}
 
-  detect-port@1.6.1:
+  detect-port@1.6.1(supports-color@5.5.0):
     dependencies:
       address: 1.2.2
       debug: 4.4.3(supports-color@5.5.0)
@@ -15413,8 +15400,6 @@ snapshots:
       get-intrinsic: 1.3.0
       has-tostringtag: 1.0.2
       hasown: 2.0.4
-
-  es-toolkit@1.48.1: {}
 
   esast-util-from-estree@2.0.0:
     dependencies:
@@ -15631,10 +15616,10 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  express@5.2.1:
+  express@5.2.1(supports-color@5.5.0):
     dependencies:
       accepts: 2.0.0
-      body-parser: 2.3.0
+      body-parser: 2.3.0(supports-color@5.5.0)
       content-disposition: 1.1.0
       content-type: 1.0.5
       cookie: 0.7.2
@@ -15644,7 +15629,7 @@ snapshots:
       encodeurl: 2.0.0
       escape-html: 1.0.3
       etag: 1.8.1
-      finalhandler: 2.1.1
+      finalhandler: 2.1.1(supports-color@5.5.0)
       fresh: 2.0.0
       http-errors: 2.0.1
       merge-descriptors: 2.0.0
@@ -15655,8 +15640,8 @@ snapshots:
       proxy-addr: 2.0.7
       qs: 6.15.3
       range-parser: 1.2.1
-      router: 2.2.0
-      send: 1.2.1
+      router: 2.2.0(supports-color@5.5.0)
+      send: 1.2.1(supports-color@5.5.0)
       serve-static: 2.2.1
       statuses: 2.0.2
       type-is: 2.1.0
@@ -15755,7 +15740,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  finalhandler@2.1.1:
+  finalhandler@2.1.1(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
       encodeurl: 2.0.0
@@ -16447,10 +16432,6 @@ snapshots:
   is-ci@3.0.1:
     dependencies:
       ci-info: 3.9.0
-
-  is-ci@4.1.0:
-    dependencies:
-      ci-info: 4.4.0
 
   is-core-module@2.16.2:
     dependencies:
@@ -18981,7 +18962,7 @@ snapshots:
       '@rolldown/binding-win32-arm64-msvc': 1.1.3
       '@rolldown/binding-win32-x64-msvc': 1.1.3
 
-  router@2.2.0:
+  router@2.2.0(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
       depd: 2.0.0
@@ -19071,7 +19052,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  send@1.2.1:
+  send@1.2.1(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
       encodeurl: 2.0.0
@@ -19127,7 +19108,7 @@ snapshots:
       encodeurl: 2.0.0
       escape-html: 1.0.3
       parseurl: 1.3.3
-      send: 1.2.1
+      send: 1.2.1(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -19268,7 +19249,7 @@ snapshots:
 
   space-separated-tokens@2.0.2: {}
 
-  spdy-transport@3.0.0:
+  spdy-transport@3.0.0(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
       detect-node: 2.1.0
@@ -19279,13 +19260,13 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  spdy@4.0.2:
+  spdy@4.0.2(supports-color@5.5.0):
     dependencies:
       debug: 4.4.3(supports-color@5.5.0)
       handle-thing: 2.0.1
       http-deceiver: 1.2.7
       select-hose: 2.0.0
-      spdy-transport: 3.0.0
+      spdy-transport: 3.0.0(supports-color@5.5.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -19938,7 +19919,7 @@ snapshots:
       selfsigned: 5.5.0
       serve-index: 1.9.2(supports-color@8.1.1)
       sockjs: 0.3.24
-      spdy: 4.0.2
+      spdy: 4.0.2(supports-color@5.5.0)
       webpack-dev-middleware: 7.4.5(tslib@2.8.1)(webpack@5.107.2(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15))
       ws: 8.21.0
     optionalDependencies:

@@ -1,8 +1,6 @@
 import { existsSync, mkdirSync } from 'node:fs';
-import { readFile, stat, unlink, writeFile } from 'node:fs/promises';
+import { readFile, rm, stat, unlink, writeFile } from 'node:fs/promises';
 import { dirname, join, sep } from 'node:path';
-
-import { rimraf } from 'rimraf';
 
 export const updateLocalJson = async (
 	jsonFilePath: string,
@@ -51,7 +49,8 @@ export const ensureFolderExistsSync = (rootPath: string, folderPath?: string) =>
 };
 
 export const rimrafPromised = async (pathToBeRemoved: string | string[]) => {
-	await rimraf(pathToBeRemoved);
+	const paths = Array.isArray(pathToBeRemoved) ? pathToBeRemoved : [pathToBeRemoved];
+	await Promise.all(paths.map(async (path) => rm(path, { recursive: true, force: true })));
 };
 
 export const deleteFile = async (filePath: string) => {
