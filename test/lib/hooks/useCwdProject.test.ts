@@ -514,4 +514,43 @@ describe('useCwdProject - Python project detection', () => {
 			expect(project.warnings ?? []).toHaveLength(0);
 		});
 	});
+
+	describe('uv package manager detection', () => {
+		it('should mark a Python project as uv-managed when uv.lock is present', async () => {
+			await createPythonPackageIn(testDir, 'my_package');
+			await createFileIn(testDir, 'my_package/__main__.py', 'print("hello")');
+			await createFileIn(testDir, 'uv.lock', '');
+
+			const result = await useCwdProject({ cwd: testDir });
+
+			expect(result.isOk()).toBe(true);
+			const project = result.unwrap();
+			expect(project.type).toBe(ProjectLanguage.Python);
+			expect(project.packageManager).toBe('uv');
+		});
+
+		it('should not set packageManager for a Python project without uv.lock', async () => {
+			await createPythonPackageIn(testDir, 'my_package');
+			await createFileIn(testDir, 'my_package/__main__.py', 'print("hello")');
+
+			const result = await useCwdProject({ cwd: testDir });
+
+			expect(result.isOk()).toBe(true);
+			const project = result.unwrap();
+			expect(project.type).toBe(ProjectLanguage.Python);
+			expect(project.packageManager).toBeUndefined();
+		});
+
+		it('should not mark a JavaScript project as uv-managed even when uv.lock is present', async () => {
+			await createFileIn(testDir, 'package.json', '{"name": "test", "scripts": {"start": "node index.js"}}');
+			await createFileIn(testDir, 'uv.lock', '');
+
+			const result = await useCwdProject({ cwd: testDir });
+
+			expect(result.isOk()).toBe(true);
+			const project = result.unwrap();
+			expect(project.type).toBe(ProjectLanguage.JavaScript);
+			expect(project.packageManager).toBeUndefined();
+		});
+	});
 });

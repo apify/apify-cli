@@ -58,3 +58,19 @@ After adding a new secret you can use the secret in `.actor/actor.json`.
     ...
 }
 ```
+
+## Environment variables that configure the CLI
+
+Use the following environment variable to point the CLI at a non-production Apify Console, such as a staging deployment or a local instance during development.
+
+### `APIFY_CONSOLE_URL`
+
+Overrides the base URL of [Apify Console](https://console.apify.com) used when the CLI prints links. For example, run, build, dataset and key-value store URLs, or the `apify login` browser flow. When unset, the production Console at `https://console.apify.com` is used.
+
+Set it to point at a local Console instance during development:
+
+```bash
+export APIFY_CONSOLE_URL=http://localhost:3000
+```
+
+With a localhost Console, `apify login` also validates your token against the local API at `http://localhost:3333`.
