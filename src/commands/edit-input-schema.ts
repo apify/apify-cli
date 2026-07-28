@@ -82,8 +82,6 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 		let jsonIndentation = '    ';
 		let appendFinalNewline = true;
 
-		// Deliberately a minimal node:http server instead of express + cors — they added
-		// ~2.6 MB and 59 packages to the CLI's install size for a few tiny endpoints.
 		const server = createLocalApiServer({
 			corsOrigin: INPUT_SCHEMA_EDITOR_ORIGIN,
 			authToken,

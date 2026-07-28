@@ -37,8 +37,8 @@ const wrapResponse = (res: ServerResponse): LocalApiResponse => ({
 
 /**
  * Minimal replacement for the express + cors servers the CLI spins up to talk to a browser page
- * (Apify Console login, input schema editor). Handles CORS preflight, token authorization and
- * JSON bodies, and dispatches to the given routes.
+ * (Apify Console login, input schema editor), kept dependency-free for install size. Handles CORS
+ * preflight, token authorization and JSON bodies, and dispatches to the given routes.
  */
 export function createLocalApiServer({ corsOrigin, authToken, routes }: LocalApiServerOptions): Server {
 	return createServer(async (req, res) => {
