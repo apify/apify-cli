@@ -80,12 +80,6 @@ describe('buildTemplateChoiceList', () => {
 		);
 	});
 
-	it('describes a skipped use case with only the language in the hint', () => {
-		const list = buildFor(undefined, 'other');
-
-		expect(list.noExactMatchHint).toBe('No template matches other exactly — showing the closest alternatives.');
-	});
-
 	it('uses the agreed separator label', () => {
 		expect(NON_EXACT_SEPARATOR_LABEL).toContain("don't exactly match your selection");
 	});

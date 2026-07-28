@@ -62,28 +62,22 @@ export const USE_CASE_OPTIONS = [
 export type UseCaseOption = (typeof USE_CASE_OPTIONS)[number];
 
 /**
- * The three concrete languages, in prompt order. `templateTag` is the manifest `category`, which is
- * also the value accepted by the `--language` flag.
+ * The three concrete languages, in prompt order. `templateTag` is the manifest `category` (also the
+ * canonical `--language` value); `aliases` are extra accepted spellings for the flag.
  */
 export const LANGUAGE_OPTIONS = [
-	{ templateTag: TEMPLATE_LANGUAGES.JAVASCRIPT, label: 'JavaScript' },
-	{ templateTag: TEMPLATE_LANGUAGES.TYPESCRIPT, label: 'TypeScript' },
-	{ templateTag: TEMPLATE_LANGUAGES.PYTHON, label: 'Python' },
+	{ templateTag: TEMPLATE_LANGUAGES.JAVASCRIPT, label: 'JavaScript', aliases: ['js'] },
+	{ templateTag: TEMPLATE_LANGUAGES.TYPESCRIPT, label: 'TypeScript', aliases: ['ts'] },
+	{ templateTag: TEMPLATE_LANGUAGES.PYTHON, label: 'Python', aliases: ['py'] },
 ] as const;
 
 export type LanguageOption = (typeof LANGUAGE_OPTIONS)[number];
 
-/**
- * BYO-Docker escape hatch. Kept as a valid `--language` value even though no manifest
- * template matches it today; the recommendation falls through to showing all templates.
- */
-export const OTHER_LANGUAGE = 'other';
-
-/** Every accepted `--language` flag value. */
-export const LANGUAGE_FLAG_CHOICES: string[] = [
-	...LANGUAGE_OPTIONS.map((option) => option.templateTag),
-	OTHER_LANGUAGE,
-];
+/** Every accepted `--language` flag value (canonical tags plus their aliases). */
+export const LANGUAGE_FLAG_CHOICES: string[] = LANGUAGE_OPTIONS.flatMap((option) => [
+	option.templateTag,
+	...option.aliases,
+]);
 
 /** Every accepted `--use-case` flag value. */
 export const USE_CASE_FLAG_CHOICES: string[] = USE_CASE_OPTIONS.map((option) => option.cliFlag);
@@ -91,6 +85,13 @@ export const USE_CASE_FLAG_CHOICES: string[] = USE_CASE_OPTIONS.map((option) => 
 /** Maps a `--use-case` flag value to its manifest tag, or `undefined` when unknown. */
 export function useCaseFlagToId(flag: string): string | undefined {
 	return USE_CASE_OPTIONS.find((option) => option.cliFlag === flag)?.templateTag;
+}
+
+/** Maps a `--language` flag value (canonical or alias, e.g. `js`) to its manifest tag, or `undefined` when unknown. */
+export function languageFlagToTag(flag: string): string | undefined {
+	return LANGUAGE_OPTIONS.find(
+		(option) => option.templateTag === flag || (option.aliases as readonly string[]).includes(flag),
+	)?.templateTag;
 }
 
 /** Human-readable label for a use-case tag (used in the "no exact match" hint). */
@@ -101,6 +102,5 @@ export function useCaseLabel(id: string): string {
 /** Human-readable label for a language tag (used in the "no exact match" hint). */
 export function languageLabel(id: string): string {
 	if (id === ANY_TEMPLATE_LANGUAGE) return 'any language';
-	if (id === OTHER_LANGUAGE) return 'other';
 	return LANGUAGE_OPTIONS.find((option) => option.templateTag === id)?.label ?? id;
 }

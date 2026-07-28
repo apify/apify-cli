@@ -143,22 +143,6 @@ describe('getTemplateRecommendation', () => {
 		});
 	});
 
-	describe('BYO-Docker / other language', () => {
-		it('finds no exact match and falls through to use-case then all templates', () => {
-			const result = getTemplateRecommendation(templates, WEB_SCRAPING, 'other');
-
-			expect(exactIds(result)).toEqual([]);
-			// use-case matches (any language) come before the remaining templates.
-			expect(ids(result).slice(0, 4)).toEqual([
-				'js-crawlee-cheerio',
-				'js-scraper',
-				'ts-crawlee-cheerio',
-				'python-crawlee-beautifulsoup',
-			]);
-			expect(result).toHaveLength(templates.length);
-		});
-	});
-
 	it('never treats a template without useCases as an exact match', () => {
 		const result = getTemplateRecommendation(templates, WEB_SCRAPING, 'python');
 		const noUseCases = result.find((r) => r.template.id === 'no-usecases');

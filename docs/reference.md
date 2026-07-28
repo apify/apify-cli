@@ -278,8 +278,9 @@ DESCRIPTION
 
 USAGE
   $ apify create [actorName]
-                 [-l javascript|typescript|python|other] [--omit-optional-deps]
-                 [--skip-dependency-install] [--skip-git-init] [-t <value>]
+                 [-l javascript|js|typescript|ts|python|py]
+                 [--omit-optional-deps] [--skip-dependency-install]
+                 [--skip-git-init] [-t <value>]
                  [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
@@ -289,7 +290,7 @@ FLAGS
   -l, --language=<option>        Filter templates by
                                  programming language. Ignored when --template is
                                  provided.
-                                 <options: javascript|typescript|python|other>
+                                 <options: javascript|js|typescript|ts|python|py>
       --omit-optional-deps       Skip installing optional
                                  dependencies.
       --skip-dependency-install  Skip installing Actor

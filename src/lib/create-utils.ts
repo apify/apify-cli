@@ -9,7 +9,13 @@ import type { ChoicesType } from './hooks/user-confirmations/useSelectFromList.j
 import { useSelectFromList } from './hooks/user-confirmations/useSelectFromList.js';
 import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
 import { info, warning } from './outputs.js';
-import { ANY_TEMPLATE_LANGUAGE, LANGUAGE_OPTIONS, USE_CASE_OPTIONS, useCaseFlagToId } from './templates/consts.js';
+import {
+	ANY_TEMPLATE_LANGUAGE,
+	LANGUAGE_OPTIONS,
+	languageFlagToTag,
+	USE_CASE_OPTIONS,
+	useCaseFlagToId,
+} from './templates/consts.js';
 import { getTemplateRecommendation } from './templates/getTemplateRecommendation.js';
 import { buildTemplateChoiceList, NON_EXACT_SEPARATOR_LABEL } from './templates/templateChoices.js';
 import { validateActorName } from './utils.js';
@@ -107,8 +113,9 @@ export function formatCreateSuccessMessage(params: {
  */
 async function executePrompts(manifest: Manifest, filters: TemplateFilters) {
 	const useCaseId = filters.useCase ? useCaseFlagToId(filters.useCase) : await promptUseCase();
-	// A provided `--language` value is already a manifest `category` (or the `other` marker).
-	const languageId = filters.language ?? (await promptLanguage());
+	const languageId = filters.language
+		? (languageFlagToTag(filters.language) ?? filters.language)
+		: await promptLanguage();
 
 	return promptTemplate(manifest, useCaseId, languageId);
 }
