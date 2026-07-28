@@ -1,7 +1,7 @@
-import { createWriteStream } from 'node:fs';
-import { pipeline } from 'node:stream/promises';
+import { appendFile } from 'node:fs/promises';
 
 import { Separator } from '@inquirer/core';
+import axios from 'axios';
 
 import type { Manifest, Template } from '@apify/actor-templates';
 
@@ -9,7 +9,7 @@ import type { ChoicesType } from './hooks/user-confirmations/useSelectFromList.j
 import { useSelectFromList } from './hooks/user-confirmations/useSelectFromList.js';
 import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
 import { warning } from './outputs.js';
-import { httpsGet, validateActorName } from './utils.js';
+import { validateActorName } from './utils.js';
 
 const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
 
@@ -54,10 +54,9 @@ export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestP
 	if (manifest instanceof Error) throw manifest;
 
 	try {
-		const suffixStream = await httpsGet(manifest.localReadmeSuffixUrl!);
-		const readmeStream = createWriteStream(readmePath, { flags: 'a' });
-		readmeStream.write('\n\n');
-		await pipeline(suffixStream, readmeStream);
+		const response = await axios.get<string>(manifest.localReadmeSuffixUrl!, { responseType: 'text' });
+
+		await appendFile(readmePath, `\n\n${response.data}`);
 	} catch (err) {
 		warning({
 			message: `Could not append local development instructions to README.md. Cause: ${(err as Error).message}`,

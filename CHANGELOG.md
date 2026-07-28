@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.7.1](https://github.com/apify/apify-cli/releases/tag/v1.7.1) (2026-07-09)
+
+### 🐛 Bug Fixes
+
+- **create:** Fail with actionable error when template download is not a zip  ([#1272](https://github.com/apify/apify-cli/pull/1272)) ([ea3223e](https://github.com/apify/apify-cli/commit/ea3223ecbc3ab6c8c62e92f30a059054b5fabf98)) by [@l2ysho](https://github.com/l2ysho), closes [#1271](https://github.com/apify/apify-cli/issues/1271)
+
+
 ## [1.7.0](https://github.com/apify/apify-cli/releases/tag/v1.7.0) (2026-07-02)
 
 ### 🚀 Features

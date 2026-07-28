@@ -3,6 +3,7 @@ import chalk from 'chalk';
 
 import { ACTOR_JOB_STATUSES, ACTOR_JOB_TERMINAL_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
 
+import { getConsoleUrl } from '../console-url.js';
 import { CommandExitCodes } from '../consts.js';
 
 export type TerminalStatus = (typeof ACTOR_JOB_TERMINAL_STATUSES)[number];
@@ -107,23 +108,23 @@ export async function fetchLogTail(apifyClient: ApifyClient, jobId: string, maxL
 }
 
 export function consoleActorUrl(actorId: string): string {
-	return `https://console.apify.com/actors/${actorId}`;
+	return `${getConsoleUrl()}/actors/${actorId}`;
 }
 
 export function consoleRunUrl(actorId: string, runId: string): string {
-	return `https://console.apify.com/actors/${actorId}/runs/${runId}`;
+	return `${getConsoleUrl()}/actors/${actorId}/runs/${runId}`;
 }
 
 export function consoleBuildUrl(actorId: string, buildNumber: string): string {
-	return `https://console.apify.com/actors/${actorId}/builds/${buildNumber}`;
+	return `${getConsoleUrl()}/actors/${actorId}/builds/${buildNumber}`;
 }
 
 export function consoleDatasetUrl(datasetId: string): string {
-	return `https://console.apify.com/storage/datasets/${datasetId}`;
+	return `${getConsoleUrl()}/storage/datasets/${datasetId}`;
 }
 
 export function consoleKeyValueStoreUrl(keyValueStoreId: string): string {
-	return `https://console.apify.com/storage/key-value-stores/${keyValueStoreId}`;
+	return `${getConsoleUrl()}/storage/key-value-stores/${keyValueStoreId}`;
 }
 
 function statusColor(status: JobStatus): string {
