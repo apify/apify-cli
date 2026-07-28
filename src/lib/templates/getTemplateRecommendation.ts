@@ -58,10 +58,11 @@ export function getTemplateRecommendation(
 		addCandidates(templates.filter((template) => ids.includes(template.id)));
 	};
 
-	// 1. Exact matches: everything the active filters accept.
-    if (hasLanguageFilter || matchesUseCase) {
-	    addCandidates(templates.filter(isExactMatch));
-    }
+	// 1. Exact matches: everything the active filters accept. Skipped when no filter is active, so the
+	// "show all" path leads with the curated quick-start/empty tiers instead of raw manifest order.
+	if (hasLanguageFilter || hasUseCaseFilter) {
+		addCandidates(templates.filter(isExactMatch));
+	}
 
 	// 2. Quick-start starter(s), then 3. empty template(s): curated per-language fallbacks.
 	addCuratedTemplates(QUICK_START_TEMPLATE_IDS);

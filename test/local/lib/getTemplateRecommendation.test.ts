@@ -135,11 +135,21 @@ describe('getTemplateRecommendation', () => {
 			expect(exactIds(result)).toEqual(['ts-crawlee-cheerio', 'ts-empty', 'ts-automation']);
 		});
 
-		it('marks everything exact when both filters are skipped', () => {
+		it('marks everything exact and leads with curated templates when both filters are skipped', () => {
 			const result = getTemplateRecommendation(templates, ANY_TEMPLATE_USE_CASE, ANY_TEMPLATE_LANGUAGE);
 
+			// Everything is trivially an exact match, and all templates are present...
 			expect(result.every((r) => r.isExactMatch)).toBe(true);
-			expect(ids(result)).toEqual(templates.map((t) => t.id));
+			expect(new Set(ids(result))).toEqual(new Set(templates.map((t) => t.id)));
+			// ...but the list leads with the quick-starts then empties, not raw manifest order.
+			expect(ids(result).slice(0, 6)).toEqual([
+				'js-crawlee-cheerio',
+				'ts-crawlee-cheerio',
+				'python-crawlee-beautifulsoup',
+				'js-empty',
+				'ts-empty',
+				'python-empty',
+			]);
 		});
 	});
 
