@@ -6,13 +6,21 @@
  * https://github.com/apify/actor-templates (the `category` and `useCases` fields).
  */
 
-/** Use-case ids as they appear in the manifest's `useCases[]` (SCREAMING_SNAKE). */
+/**
+ * Canonical use-case tags for Actor templates (as they appear in the manifest's `useCases[]`,
+ * SCREAMING_SNAKE). Templates should be tagged for what they ARE (their primary purpose), not
+ * for what they COULD become — that keeps the wizard filters meaningful.
+ */
 export const TEMPLATE_USE_CASES = {
-	/** Entry-level scaffold for a user's first Actor. Not exposed as a wizard option; used by the fallback tiers. */
+	/** Entry-level scaffold for a user's first Actor — language quickstarts, empty projects, standby starters, generic wrappers (e.g. cli-start). Not a wizard option; surfaces via the fallback tiers. */
 	STARTER: 'STARTER',
+	/** Extracting structured data from websites — HTTP scrapers, browser scrapers, crawlers. The template's primary output is scraped data. */
 	WEB_SCRAPING: 'WEB_SCRAPING',
+	/** Bridges Apify with external systems — Standby mode (serves HTTP), MCP servers (callable by AI clients), or templates that call out to external APIs, services, or CLIs. */
 	INTEGRATION: 'INTEGRATION',
+	/** Performs actions rather than extracting data — test runners, browser automation (Playwright/Selenium/Cypress used for interaction), CLI orchestration. */
 	AUTOMATION: 'AUTOMATION',
+	/** LLM-powered agents, AI tool servers (MCP), and AI framework integration demos (LangChain, CrewAI, etc.). */
 	AI: 'AI',
 } as const;
 
@@ -38,39 +46,32 @@ export const EMPTY_TEMPLATE_IDS: Record<string, string | undefined> = {
 	[TEMPLATE_LANGUAGES.PYTHON]: 'python-empty',
 };
 
-export interface UseCaseOption {
-	/** kebab-case value accepted by the `--use-case` flag. */
-	flag: string;
-	/** Manifest id this maps to (value in `useCases[]`). */
-	id: string;
-	/** Human-readable label shown in the interactive prompt. */
-	label: string;
-}
+/**
+ * The four use cases exposed by the wizard, in prompt order. Each maps a `cliFlag` (what the user
+ * types after `--use-case`) to a `templateTag` (the manifest `useCases[]` value it matches).
+ * `STARTER` is intentionally absent — it only tags quick-start/empty templates so they surface via
+ * the fallback tiers.
+ */
+export const USE_CASE_OPTIONS = [
+	{ cliFlag: 'web-scraper', templateTag: TEMPLATE_USE_CASES.WEB_SCRAPING, label: 'Web scraping' },
+	{ cliFlag: 'ai-agent', templateTag: TEMPLATE_USE_CASES.AI, label: 'AI agent' },
+	{ cliFlag: 'data-pipeline', templateTag: TEMPLATE_USE_CASES.INTEGRATION, label: 'API & data pipeline' },
+	{ cliFlag: 'browser-automation', templateTag: TEMPLATE_USE_CASES.AUTOMATION, label: 'Browser automation' },
+] as const;
+
+export type UseCaseOption = (typeof USE_CASE_OPTIONS)[number];
 
 /**
- * The four use cases exposed by the wizard, in prompt order. `STARTER` is intentionally
- * omitted — it only tags quick-start/empty templates so they surface via the fallback tiers.
+ * The three concrete languages, in prompt order. `templateTag` is the manifest `category`, which is
+ * also the value accepted by the `--language` flag.
  */
-export const USE_CASE_OPTIONS: UseCaseOption[] = [
-	{ flag: 'web-scraper', id: TEMPLATE_USE_CASES.WEB_SCRAPING, label: 'Web scraping' },
-	{ flag: 'ai-agent', id: TEMPLATE_USE_CASES.AI, label: 'AI agent' },
-	{ flag: 'data-pipeline', id: TEMPLATE_USE_CASES.INTEGRATION, label: 'API & data pipeline' },
-	{ flag: 'browser-automation', id: TEMPLATE_USE_CASES.AUTOMATION, label: 'Browser automation' },
-];
+export const LANGUAGE_OPTIONS = [
+	{ templateTag: TEMPLATE_LANGUAGES.JAVASCRIPT, label: 'JavaScript' },
+	{ templateTag: TEMPLATE_LANGUAGES.TYPESCRIPT, label: 'TypeScript' },
+	{ templateTag: TEMPLATE_LANGUAGES.PYTHON, label: 'Python' },
+] as const;
 
-export interface LanguageOption {
-	/** Manifest `category`, which is also the value accepted by the `--language` flag. */
-	id: string;
-	/** Human-readable label shown in the interactive prompt. */
-	label: string;
-}
-
-/** The three concrete languages, in prompt order. */
-export const LANGUAGE_OPTIONS: LanguageOption[] = [
-	{ id: TEMPLATE_LANGUAGES.JAVASCRIPT, label: 'JavaScript' },
-	{ id: TEMPLATE_LANGUAGES.TYPESCRIPT, label: 'TypeScript' },
-	{ id: TEMPLATE_LANGUAGES.PYTHON, label: 'Python' },
-];
+export type LanguageOption = (typeof LANGUAGE_OPTIONS)[number];
 
 /**
  * BYO-Docker escape hatch. Kept as a valid `--language` value even though no manifest
@@ -79,24 +80,27 @@ export const LANGUAGE_OPTIONS: LanguageOption[] = [
 export const OTHER_LANGUAGE = 'other';
 
 /** Every accepted `--language` flag value. */
-export const LANGUAGE_FLAG_CHOICES: string[] = [...LANGUAGE_OPTIONS.map((option) => option.id), OTHER_LANGUAGE];
+export const LANGUAGE_FLAG_CHOICES: string[] = [
+	...LANGUAGE_OPTIONS.map((option) => option.templateTag),
+	OTHER_LANGUAGE,
+];
 
 /** Every accepted `--use-case` flag value. */
-export const USE_CASE_FLAG_CHOICES: string[] = USE_CASE_OPTIONS.map((option) => option.flag);
+export const USE_CASE_FLAG_CHOICES: string[] = USE_CASE_OPTIONS.map((option) => option.cliFlag);
 
-/** Maps a `--use-case` flag value to its manifest id, or `undefined` when unknown. */
+/** Maps a `--use-case` flag value to its manifest tag, or `undefined` when unknown. */
 export function useCaseFlagToId(flag: string): string | undefined {
-	return USE_CASE_OPTIONS.find((option) => option.flag === flag)?.id;
+	return USE_CASE_OPTIONS.find((option) => option.cliFlag === flag)?.templateTag;
 }
 
-/** Human-readable label for a use-case id (used in the "no exact match" hint). */
+/** Human-readable label for a use-case tag (used in the "no exact match" hint). */
 export function useCaseLabel(id: string): string {
-	return USE_CASE_OPTIONS.find((option) => option.id === id)?.label ?? id;
+	return USE_CASE_OPTIONS.find((option) => option.templateTag === id)?.label ?? id;
 }
 
-/** Human-readable label for a language id (used in the "no exact match" hint). */
+/** Human-readable label for a language tag (used in the "no exact match" hint). */
 export function languageLabel(id: string): string {
 	if (id === ANY_TEMPLATE_LANGUAGE) return 'any language';
 	if (id === OTHER_LANGUAGE) return 'other';
-	return LANGUAGE_OPTIONS.find((option) => option.id === id)?.label ?? id;
+	return LANGUAGE_OPTIONS.find((option) => option.templateTag === id)?.label ?? id;
 }

@@ -32,7 +32,7 @@ export function getTemplateRecommendation(
 	const hasUseCaseFilter = useCaseId !== undefined;
 
 	const matchesLanguage = (template: Template) => !hasLanguageFilter || template.category === languageId;
-	const matchesUseCase = (template: Template) => !hasUseCaseFilter || (template.useCases?.includes(useCaseId) ?? false);
+	const matchesUseCase = (template: Template) => !hasUseCaseFilter || !!template.useCases?.includes(useCaseId);
 	const isExactMatch = (template: Template) => matchesLanguage(template) && matchesUseCase(template);
 
 	const pickedIds = new Set<string>();

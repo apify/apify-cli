@@ -131,7 +131,7 @@ async function promptActorName() {
 
 async function promptUseCase(): Promise<string | undefined> {
 	const choices: ChoicesType<string | null> = [
-		...USE_CASE_OPTIONS.map((option) => ({ name: option.label, value: option.id })),
+		...USE_CASE_OPTIONS.map((option) => ({ name: option.label, value: option.templateTag })),
 		new Separator(),
 		{ name: 'Skip (show all)', value: null },
 	];
@@ -139,7 +139,7 @@ async function promptUseCase(): Promise<string | undefined> {
 	const useCaseId = await useSelectFromList<string | null>({
 		message: 'What do you want to build?',
 		choices,
-		default: USE_CASE_OPTIONS[0].id,
+		default: USE_CASE_OPTIONS[0].templateTag,
 		loop: false,
 	});
 
@@ -149,7 +149,7 @@ async function promptUseCase(): Promise<string | undefined> {
 
 async function promptLanguage(): Promise<string> {
 	const choices: ChoicesType<string> = [
-		...LANGUAGE_OPTIONS.map((option) => ({ name: option.label, value: option.id })),
+		...LANGUAGE_OPTIONS.map((option) => ({ name: option.label, value: option.templateTag })),
 		new Separator(),
 		{ name: 'Any language', value: ANY_TEMPLATE_LANGUAGE },
 	];
@@ -157,7 +157,7 @@ async function promptLanguage(): Promise<string> {
 	return useSelectFromList<string>({
 		message: 'Choose the programming language of your new Actor:',
 		choices,
-		default: LANGUAGE_OPTIONS[0].id,
+		default: LANGUAGE_OPTIONS[0].templateTag,
 		loop: false,
 	});
 }

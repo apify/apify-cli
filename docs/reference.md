@@ -302,7 +302,7 @@ FLAGS
                                  https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json
                                  to find available template names.
   -u, --use-case=<option>        Filter templates by
-                                 category. Ignored when --template is provided. To
+                                 use case. Ignored when --template is provided. To
                                  see the use cases each template supports, run
                                  "apify templates ls".
                                  <options:

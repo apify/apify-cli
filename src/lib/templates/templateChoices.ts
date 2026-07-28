@@ -55,7 +55,7 @@ export function buildTemplateChoiceList(
 
 /** Appends a `(Language)` suffix when the template's language differs from the user's selection. */
 function formatTemplateLabel(template: Template, selectedLanguageId: string): string {
-	const label = LANGUAGE_OPTIONS.find((option) => option.id === template.category)?.label;
+	const label = LANGUAGE_OPTIONS.find((option) => option.templateTag === template.category)?.label;
 	const differentLanguage = selectedLanguageId === ANY_TEMPLATE_LANGUAGE || template.category !== selectedLanguageId;
 
 	return label && differentLanguage ? `${template.label} (${label})` : template.label;
