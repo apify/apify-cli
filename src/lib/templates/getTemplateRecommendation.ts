@@ -59,7 +59,9 @@ export function getTemplateRecommendation(
 	};
 
 	// 1. Exact matches: everything the active filters accept.
-	addCandidates(templates.filter(isExactMatch));
+    if (hasLanguageFilter || matchesUseCase) {
+	    addCandidates(templates.filter(isExactMatch));
+    }
 
 	// 2. Quick-start starter(s), then 3. empty template(s): curated per-language fallbacks.
 	addCuratedTemplates(QUICK_START_TEMPLATE_IDS);
