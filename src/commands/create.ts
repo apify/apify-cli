@@ -78,7 +78,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		'use-case': Flags.string({
 			char: 'u',
 			description:
-				'Filter templates by what you want to build. Ignored when --template is provided. Run "apify templates ls" to see the use cases each template supports.',
+				'Filter templates by category. Ignored when --template is provided. To see the use cases each template supports, run "apify templates ls".',
 			choices: USE_CASE_FLAG_CHOICES,
 			required: false,
 		}),
