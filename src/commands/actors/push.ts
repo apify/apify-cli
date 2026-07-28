@@ -17,6 +17,7 @@ import { createHmacSignature } from '@apify/utilities';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { getConsoleUrl } from '../../lib/console-url.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -506,7 +507,7 @@ Skipping push. Use --force to override.`,
 		const buildStatus = build.status as string;
 		const outcome = resolvePushOutcome(buildStatus);
 
-		const actorUrl = `https://console.apify.com${redirectUrlPart}/actors/${build.actId}`;
+		const actorUrl = `${getConsoleUrl()}${redirectUrlPart}/actors/${build.actId}`;
 		const buildUrl = `${actorUrl}#/builds/${build.buildNumber}`;
 
 		// Surface the tail of the build log as the failure reason. Best-effort:

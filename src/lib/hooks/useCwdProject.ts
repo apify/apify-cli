@@ -39,6 +39,9 @@ export interface CwdProject {
 	entrypoint?: Entrypoint;
 	runtime?: Runtime;
 	warnings?: string[];
+	// Package manager for Python projects. Set to 'uv' when a committed `uv.lock` is present,
+	// meaning dependencies should be installed with `uv sync` instead of the pip + requirements.txt flow.
+	packageManager?: 'uv';
 }
 
 export interface CwdProjectError {
@@ -72,6 +75,10 @@ export async function useCwdProject({
 			const runtime = await usePythonRuntime({ cwd });
 
 			project.runtime = runtime.unwrapOr(undefined);
+
+			if (await fileExists(join(cwd, 'uv.lock'))) {
+				project.packageManager = 'uv';
+			}
 
 			const scrapyProject = new ScrapyProjectAnalyzer(cwd);
 			scrapyProject.loadScrapyCfg();
@@ -128,6 +135,10 @@ export async function useCwdProject({
 				};
 
 				project.runtime = runtime.unwrapOr(undefined);
+
+				if (await fileExists(join(cwd, 'uv.lock'))) {
+					project.packageManager = 'uv';
+				}
 
 				// Check if the detected package has __main__.py (required for `python -m <package>`)
 				const packageDir = join(cwd, isPython.replace(/\./g, '/'));
