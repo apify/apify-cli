@@ -138,6 +138,8 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 			// and that sends it back via the `token` query param, or `Authorization` header
 			const authToken = cryptoRandomObjectId();
 
+			// Deliberately a minimal node:http server instead of express + cors — they added
+			// ~2.6 MB and 59 packages to the CLI's install size for two tiny endpoints.
 			const server = createLocalApiServer({
 				corsOrigin: consoleOrigin,
 				authToken,

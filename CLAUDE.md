@@ -23,7 +23,7 @@ If you modified a command's flags, args, description, or added/removed a command
 
 ## Install size
 
-The CLI is installed globally by many users, so keep the npm install footprint lean. Always look for opportunities to shrink it:
+The CLI is installed globally by many users and in Actors, so keep the npm install footprint lean. Always look for opportunities to shrink it:
 
 - Prefer Node.js built-ins over dependencies (`fs.rm` over rimraf, `structuredClone` over cloneDeep, `fetch`, `node:util` helpers), and prefer dependencies already in the tree over new ones.
 - Before adding a dependency, check what it drags in: `npm install <pkg>` in an empty temp dir, then `du -sh node_modules`. Mention the install-size impact in the PR description.
@@ -35,6 +35,10 @@ The CLI is installed globally by many users, so keep the npm install footprint l
 - Tests use **Vitest**. See [CONTRIBUTING.md](./CONTRIBUTING.md#writing-tests) for `useAuthSetup` and `useTempPath` hook usage.
 - API tests must include `[api]` in the test name and live in `test/api/`.
 - Always `import process from 'node:process'` in command/lib code — never use `globalThis.process`. This is required for test cwd mocks to work.
+
+## Pull requests
+
+Keep PR descriptions concise: what changed and why, key numbers, follow-ups. Short bullet points over narration; don't restate the diff or describe the process.
 
 ## Things to avoid
 
