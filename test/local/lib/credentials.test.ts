@@ -14,7 +14,27 @@ import {
 	setProxyPassword,
 	setToken,
 } from '../../../src/lib/credentials.js';
-import { getApifyClientOptions, getLocalUserInfo } from '../../../src/lib/utils.js';
+import { getApifyClientOptions, getLocalUserInfo, getLoggedClient } from '../../../src/lib/utils.js';
+
+// Stubs out the `user('me').get()` round-trip so getLoggedClient() can be tested without the API.
+vi.mock('apify-client', () => {
+	class ApifyClient {
+		token?: string;
+		constructor(options: { token?: string }) {
+			this.token = options.token;
+		}
+		user() {
+			return {
+				get: async () => ({
+					id: `id_for_${this.token}`,
+					username: `user_for_${this.token}`,
+					proxy: { password: `pw_for_${this.token}` },
+				}),
+			};
+		}
+	}
+	return { ApifyClient };
+});
 
 const keyringStore = new Map<string, string>();
 const keyringFailures = new Set<string>();
@@ -302,6 +322,43 @@ describe('credentials', () => {
 			await setToken('stored_tok');
 			const { token } = await getApifyClientOptions();
 			expect(token).toBe('stored_tok');
+		});
+	});
+
+	// A one-time token override (APIFY_TOKEN / --token) must never be written over the durable
+	// `apify login` credentials — only `apify login` itself persists.
+	describe('getLoggedClient() credential persistence', () => {
+		beforeEach(async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			await setToken('stored_tok');
+			writeAuthFile({ ...readAuthFile(), username: 'stored_user', id: 'stored_id' });
+		});
+
+		it('uses APIFY_TOKEN without overwriting the stored login', async () => {
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok');
+
+			const client = await getLoggedClient();
+
+			expect(client?.token).toBe('env_tok');
+			expect(await getToken()).toBe('stored_tok');
+			expect(readAuthFile().username).toBe('stored_user');
+			expect(readAuthFile().id).toBe('stored_id');
+		});
+
+		it('uses an explicitly passed token without overwriting the stored login', async () => {
+			const client = await getLoggedClient('flag_tok');
+
+			expect(client?.token).toBe('flag_tok');
+			expect(await getToken()).toBe('stored_tok');
+			expect(readAuthFile().username).toBe('stored_user');
+		});
+
+		it('persists the token and user metadata when persistCredentials is set (apify login)', async () => {
+			const client = await getLoggedClient('login_tok', undefined, { persistCredentials: true });
+
+			expect(client?.token).toBe('login_tok');
+			expect(await getToken()).toBe('login_tok');
+			expect(readAuthFile().username).toBe('user_for_login_tok');
 		});
 	});
 });

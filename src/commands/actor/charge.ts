@@ -1,6 +1,6 @@
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { getApifyTokenFromEnvOrAuthFile } from '../../lib/actor.js';
+import { getApifyToken } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -86,7 +86,7 @@ export class ActorChargeCommand extends ApifyCommand<typeof ActorChargeCommand> 
 			return;
 		}
 
-		const apifyToken = await getApifyTokenFromEnvOrAuthFile();
+		const apifyToken = await getApifyToken();
 		const apifyClient = await getLoggedClient(apifyToken);
 		if (!apifyClient) {
 			throw new Error('Apify token is not set. Please set it using the environment variable APIFY_TOKEN.');

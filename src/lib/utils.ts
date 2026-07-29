@@ -129,7 +129,14 @@ export async function getLoggedClientOrThrow() {
 	return loggedClient;
 }
 
-const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
+/**
+ * Resolves the token to use, in order: explicitly passed token (e.g. `--token`) >
+ * `APIFY_TOKEN` env var > the token stored by `apify login`.
+ *
+ * The first two are one-time overrides and must never be written over the stored login —
+ * see the `persistCredentials` option of {@link getLoggedClient}.
+ */
+export const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
 	if (existingToken) return existingToken;
 	if (process.env[APIFY_ENV_VARS.TOKEN]) return process.env[APIFY_ENV_VARS.TOKEN];
 	await ensureMigrated();
@@ -164,10 +171,17 @@ export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string)
 /**
  * Gets instance of ApifyClient for token or for params from global auth file.
  *
- * Refreshes the user metadata in auth.json each run. Secrets (token, proxy.password) only
- * get written when their value actually changes — avoids macOS Keychain prompts on every command.
+ * Secrets (token, proxy.password) and user metadata are only written when `persistCredentials`
+ * is set — i.e. from `apify login`. Every other caller resolves a possibly-overridden token
+ * (`--token`, `APIFY_TOKEN`), and persisting that would silently replace the stored login.
+ * When writing, secrets only change on disk if their value differs — avoids macOS Keychain
+ * prompts on every command.
  */
-export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
+export async function getLoggedClient(
+	token?: string,
+	apiBaseUrl?: string,
+	{ persistCredentials = false }: { persistCredentials?: boolean } = {},
+) {
 	const resolvedToken = await resolveToken(token);
 
 	const apifyClient = new ApifyClient(await getApifyClientOptions(resolvedToken, apiBaseUrl));
@@ -178,6 +192,10 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 	} catch (err) {
 		cliDebugPrint('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
 		return null;
+	}
+
+	if (!persistCredentials) {
+		return apifyClient;
 	}
 
 	if (apifyClient.token) {
