@@ -200,6 +200,7 @@ export function renderMainHelpMenu(entrypoint: string) {
 		chalk.bold('LEARN MORE'),
 		`  Use '${entrypoint} <command> --help' for more information about a command.`,
 		`  Read the docs at https://docs.apify.com/cli.`,
+		`  Run '${entrypoint} help --skill' to print the Apify CLI agent skill (guidance for driving 'apify' from agents).`,
 		'',
 	);
 
