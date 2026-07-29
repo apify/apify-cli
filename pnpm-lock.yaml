@@ -434,8 +434,8 @@ importers:
   website:
     dependencies:
       '@apify/docs-theme':
-        specifier: ^1.0.267
-        version: 1.0.267(@algolia/client-search@5.55.1)(@babel/core@7.29.7)(@docusaurus/plugin-content-docs@3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(esbuild@0.28.1)(postcss@8.5.15))(@mdx-js/react@3.1.1(@types/react@19.2.17)(react@19.2.7))(@rspack/core@1.7.12)(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3))(@rspack/core@1.7.12)(@swc/core@1.15.43)(@types/react@19.2.17)(clsx@2.1.1)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react-is@16.13.1)(react@19.2.7)(search-insights@2.17.3)(styled-components@6.4.4(css-to-react-native@3.2.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(webpack@5.107.2(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15))
+        specifier: ^1.0.268
+        version: 1.0.268(@algolia/client-search@5.55.1)(@babel/core@7.29.7)(@docusaurus/plugin-content-docs@3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(esbuild@0.28.1)(postcss@8.5.15))(@mdx-js/react@3.1.1(@types/react@19.2.17)(react@19.2.7))(@rspack/core@1.7.12)(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3))(@rspack/core@1.7.12)(@swc/core@1.15.43)(@types/react@19.2.17)(clsx@2.1.1)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react-is@16.13.1)(react@19.2.7)(search-insights@2.17.3)(styled-components@6.4.4(css-to-react-native@3.2.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(webpack@5.107.2(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15))
       '@docusaurus/core':
         specifier: ^3.10.0
         version: 3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(esbuild@0.28.1)(postcss@8.5.15))(@mdx-js/react@3.1.1(@types/react@19.2.17)(react@19.2.7))(@rspack/core@1.7.12)(@swc/core@1.15.43)(@swc/html@1.15.43)(csso@5.0.5)(esbuild@0.28.1)(lightningcss@1.32.0)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(supports-color@8.1.1)(typescript@6.0.3)(uglify-js@3.19.3)
@@ -660,8 +660,8 @@ packages:
       react: '> 18.0.0'
       react-dom: '> 18.0.0'
 
-  '@apify/docs-theme@1.0.267':
-    resolution: {integrity: sha512-jBt0CJRg+dOGDOO8t769WYX3BRQj57P8YGJJnhkMBkCiCoILdpM36ANHYGjKnvicWI672T1kz8X+ER3u6o2n8A==}
+  '@apify/docs-theme@1.0.268':
+    resolution: {integrity: sha512-Xh4Ijrx11oM8YCkenfVRyHWbD6uT5/VjdF79O+35pmUaOZNtMHjMRUEmxn6eQUA3Z3Zk6lxAA6qv3YGlkGuGfQ==}
     peerDependencies:
       clsx: '*'
       react: '*'
@@ -9532,7 +9532,7 @@ snapshots:
       - search-insights
       - supports-color
 
-  '@apify/docs-theme@1.0.267(@algolia/client-search@5.55.1)(@babel/core@7.29.7)(@docusaurus/plugin-content-docs@3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(esbuild@0.28.1)(postcss@8.5.15))(@mdx-js/react@3.1.1(@types/react@19.2.17)(react@19.2.7))(@rspack/core@1.7.12)(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3))(@rspack/core@1.7.12)(@swc/core@1.15.43)(@types/react@19.2.17)(clsx@2.1.1)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react-is@16.13.1)(react@19.2.7)(search-insights@2.17.3)(styled-components@6.4.4(css-to-react-native@3.2.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(webpack@5.107.2(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15))':
+  '@apify/docs-theme@1.0.268(@algolia/client-search@5.55.1)(@babel/core@7.29.7)(@docusaurus/plugin-content-docs@3.10.1(@docusaurus/faster@3.10.1(@docusaurus/types@3.10.1(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(esbuild@0.28.1)(postcss@8.5.15))(@mdx-js/react@3.1.1(@types/react@19.2.17)(react@19.2.7))(@rspack/core@1.7.12)(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)(typescript@6.0.3))(@rspack/core@1.7.12)(@swc/core@1.15.43)(@types/react@19.2.17)(clsx@2.1.1)(esbuild@0.28.1)(postcss@8.5.15)(react-dom@19.2.7(react@19.2.7))(react-is@16.13.1)(react@19.2.7)(search-insights@2.17.3)(styled-components@6.4.4(css-to-react-native@3.2.0)(react-dom@19.2.7(react@19.2.7))(react@19.2.7))(webpack@5.107.2(@swc/core@1.15.43)(esbuild@0.28.1)(postcss@8.5.15))':
     dependencies:
       '@apify/docs-search-modal': 1.4.0(@algolia/client-search@5.55.1)(@babel/core@7.29.7)(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react-is@16.13.1)(react@19.2.7)(search-insights@2.17.3)
       '@apify/ui-icons': 1.48.0(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
