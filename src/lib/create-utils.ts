@@ -143,8 +143,8 @@ async function promptUseCase(): Promise<string> {
 	const choices: ChoicesType<string> = [
 		...USE_CASE_OPTIONS.map((option) => ({ name: option.label, value: option.templateTag })),
 		new Separator(),
-		// "Skip (show all)" maps to the marker the algorithm reads as "no use-case filter".
-		{ name: 'Skip (show all)', value: ANY_TEMPLATE_USE_CASE },
+		// "Any use case" maps to the marker the algorithm reads as "no use-case filter".
+		{ name: 'Any use case', value: ANY_TEMPLATE_USE_CASE },
 	];
 
 	return useSelectFromList<string>({

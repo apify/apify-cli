@@ -51,12 +51,16 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for an Actor name and template if not provided. To run non-interactively, pass the name as a positional argument and --template.';
+		'Prompts for an Actor name, then guides you through what you want to build, a language, and a template when they are not provided. To run non-interactively, pass the name and --template. Use --use-case and --language to narrow the template list.';
 
 	static override examples = [
 		{
-			description: 'Create a new Actor project interactively (prompts for name and template).',
+			description: 'Create a new Actor project interactively (guided name, use case, language, and template prompts).',
 			command: 'apify create',
+		},
+		{
+			description: 'Narrow the guided template list by use case and language.',
+			command: 'apify create my-actor --use-case web-scraper --language python',
 		},
 		{
 			description: 'Create non-interactively with explicit name and template.',
