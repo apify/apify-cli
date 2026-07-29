@@ -86,9 +86,18 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 /**
  * Returns object from auth file or empty object. Secrets (token, proxy password) are
  * pulled from the keyring when that backend is active; user metadata lives in auth.json.
+ *
+ * auth.json only ever describes the account `apify login` stored, and `APIFY_TOKEN` exists to act
+ * as a different one (typically an organization), so the identity is read from the API whenever it
+ * is set.
  */
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	await ensureMigrated();
+
+	const overrideToken = process.env[APIFY_ENV_VARS.TOKEN];
+	if (overrideToken) {
+		return { ...(await fetchActiveUserInfo(overrideToken)), token: overrideToken };
+	}
 
 	let result: AuthJSON = {};
 	try {
@@ -98,10 +107,10 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 		// auth.json may not exist yet (fresh keyring-only state); fall through
 	}
 
-	if ((await getBackend()) === 'keyring') {
-		const token = await getToken();
-		if (token) result.token = token;
+	const storedToken = await getToken();
+	if (storedToken) result.token = storedToken;
 
+	if ((await getBackend()) === 'keyring') {
 		const proxyPassword = await getProxyPassword();
 		if (proxyPassword) result.proxy = { ...result.proxy, password: proxyPassword };
 	}
@@ -169,6 +178,27 @@ export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string)
 };
 
 /**
+ * User info of the account the process authenticates as, keyed by the token it was fetched with.
+ * Seeded by {@link getLoggedClient} from the user info it fetches anyway, so commands that get a
+ * client first (nearly all of them) pay no extra API call.
+ */
+let activeUserInfo: { token: string; info: AuthJSON } | undefined;
+
+async function fetchActiveUserInfo(token: string): Promise<AuthJSON> {
+	if (activeUserInfo?.token !== token) {
+		const client = new ApifyClient(await getApifyClientOptions(token));
+		try {
+			activeUserInfo = { token, info: await client.user('me').get() };
+		} catch (err) {
+			cliDebugPrint('[fetchActiveUserInfo] error getting user info', { error: err });
+			throw new Error(`The token in ${APIFY_ENV_VARS.TOKEN} was rejected by the Apify API. Is it still valid?`);
+		}
+	}
+
+	return activeUserInfo.info;
+}
+
+/**
  * Gets instance of ApifyClient for token or for params from global auth file.
  *
  * Secrets (token, proxy.password) and user metadata are only written when `persistCredentials`
@@ -192,6 +222,10 @@ export async function getLoggedClient(
 	} catch (err) {
 		cliDebugPrint('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
 		return null;
+	}
+
+	if (apifyClient.token) {
+		activeUserInfo = { token: apifyClient.token, info: userInfo };
 	}
 
 	if (!persistCredentials) {

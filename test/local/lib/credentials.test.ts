@@ -69,6 +69,7 @@ const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
 describe('credentials', () => {
 	beforeEach(() => {
 		vitest.stubEnv('__APIFY_INTERNAL_TEST_AUTH_PATH__', cryptoRandomObjectId(12));
+		vitest.stubEnv('APIFY_TOKEN', undefined);
 		keyringStore.clear();
 		keyringFailures.clear();
 		__resetCredentialsForTests();
@@ -296,6 +297,27 @@ describe('credentials', () => {
 			const info = await getLocalUserInfo();
 			expect(info.token).toBe('tok_kr');
 			expect(info.proxy?.password).toBe('pw_kr');
+		});
+
+		it('describes the APIFY_TOKEN account, not the stored login', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			writeAuthFile({ username: 'stored', id: 'stored_id', token: 'stored_tok', secretsBackend: 'file' });
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok_a');
+
+			const info = await getLocalUserInfo();
+			expect(info).toMatchObject({
+				username: 'user_for_env_tok_a',
+				id: 'id_for_env_tok_a',
+				token: 'env_tok_a',
+			});
+			expect(info.proxy?.password).toBe('pw_for_env_tok_a');
+		});
+
+		it('describes the APIFY_TOKEN account when there is no stored login at all', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok_b');
+
+			expect(await getLocalUserInfo()).toMatchObject({ username: 'user_for_env_tok_b', id: 'id_for_env_tok_b' });
 		});
 	});
 
