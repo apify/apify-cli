@@ -184,7 +184,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		this.telemetryData.create = {
 			fromArchiveUrl: !!templateArchiveUrl,
-			origin: origin as 'console' | 'cli',
+			origin,
 		};
 
 		if (!templateArchiveUrl) {
@@ -403,8 +403,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Initialize git repository before reporting success, but store result for later
 		let gitInitResult: { success: boolean; error?: Error } = { success: true };
 		const cwdHasGit = await stat(join(cwd, '.git')).catch(() => null);
+		const gitInitAttempted = !skipGitInit && !cwdHasGit;
 
-		if (!skipGitInit && !cwdHasGit) {
+		if (gitInitAttempted) {
 			try {
 				await execWithLog({
 					cmd: 'git',
@@ -419,9 +420,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Suggest install command if dependencies were not installed
 		const installCommandSuggestion = !dependenciesInstalled ? await getInstallCommandSuggestion(actFolderDir) : null;
 
-		const gitRepositoryInitialized = !skipGitInit && !cwdHasGit && gitInitResult.success;
+		const gitRepositoryInitialized = gitInitAttempted && gitInitResult.success;
 
-		// Machine-readable output for agents and other non-interactive callers.
 		if (json) {
 			printJsonToStdout({
 				dir: actFolderDir,
@@ -429,24 +429,24 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				template: templateId,
 				source: 'apify',
 				nextSteps: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion }),
-			});
-			return;
-		}
-
-		// Success message with extra empty line
-		simpleLog({ message: '' });
-		success({
-			message: formatCreateSuccessMessage({
-				actorName,
-				dependenciesInstalled,
+				// Some templates need extra setup (e.g. "playwright install") before "apify run" works.
 				postCreate: messages?.postCreate ?? null,
 				gitRepositoryInitialized,
-				installCommandSuggestion,
-			}),
-		});
+			});
+		} else {
+			simpleLog({ message: '' });
+			success({
+				message: formatCreateSuccessMessage({
+					actorName,
+					dependenciesInstalled,
+					postCreate: messages?.postCreate ?? null,
+					gitRepositoryInitialized,
+					installCommandSuggestion,
+				}),
+			});
+		}
 
-		// Report git initialization result only if it failed (success already included in success message)
-		if (!skipGitInit && !cwdHasGit && !gitInitResult.success) {
+		if (gitInitAttempted && !gitInitResult.success) {
 			// Git init is not critical, so we just warn if it fails
 			warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
 			warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });

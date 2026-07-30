@@ -135,31 +135,53 @@ describe('apify create', () => {
 			flags_json: true,
 		});
 
-		const jsonLine = logMessages.log.find((message) => message.trim().startsWith('{'));
-		expect(jsonLine).toBeDefined();
+		// Nothing but the payload may reach stdout, otherwise callers cannot parse it.
+		expect(logMessages.log).toHaveLength(1);
 
-		const output = JSON.parse(jsonLine!);
+		const output = JSON.parse(logMessages.log[0]);
 		expect(output.source).toBe('apify');
 		expect(typeof output.template).toBe('string');
 		expect(output.dir.endsWith(actName)).toBe(true);
 		expect(output.actorJsonPath.endsWith(LOCAL_CONFIG_PATH)).toBe(true);
 		expect(output.nextSteps[0]).toBe(`cd "${actName}"`);
 		expect(output.nextSteps).toContain('apify run');
+		expect(output.postCreate).toBeNull();
+		expect(output.gitRepositoryInitialized).toBe(false);
 	});
 
-	it('accepts the hidden --origin flag and still emits the --json contract', async () => {
+	it('reports a successful git init in the --json contract', async () => {
 		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_json: true,
+		});
+
+		expect(logMessages.log).toHaveLength(1);
+		expect(JSON.parse(logMessages.log[0]).gitRepositoryInitialized).toBe(true);
+	});
+
+	it('records the hidden --origin flag in telemetry', async () => {
+		const instance = await testRunCommand(CreateCommand, {
 			args_actorName: actName,
 			flags_template: 'project_empty',
 			flags_skipDependencyInstall: true,
 			flags_skipGitInit: true,
 			flags_origin: 'console',
-			flags_json: true,
 		});
 
-		const jsonLine = logMessages.log.find((message) => message.trim().startsWith('{'));
-		expect(jsonLine).toBeDefined();
-		expect(JSON.parse(jsonLine!).source).toBe('apify');
+		expect(instance['telemetryData'].create!.origin).toBe('console');
+	});
+
+	it('defaults --origin to cli', async () => {
+		const instance = await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_skipGitInit: true,
+		});
+
+		expect(instance['telemetryData'].create!.origin).toBe('cli');
 	});
 
 	it('should skip installing optional dependencies', async () => {

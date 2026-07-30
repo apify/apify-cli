@@ -113,7 +113,7 @@ export function useCaseLabel(id: string): string {
 	return USE_CASE_OPTIONS.find((option) => option.templateTag === id)?.label ?? id;
 }
 
-/** Human-readable label for a language tag (used in the "no exact match" hint). */
+/** Human-readable label for a language tag. */
 export function languageLabel(id: string): string {
 	if (id === ANY_TEMPLATE_LANGUAGE) return 'any language';
 	return LANGUAGE_OPTIONS.find((option) => option.templateTag === id)?.label ?? id;
