@@ -1,7 +1,7 @@
 import { EOL } from 'node:os';
 
 import { ApifyClient } from 'apify-client';
-import isCI from 'is-ci';
+import { isCI } from 'ci-info';
 
 import { getApifyClientOptions } from '../../src/lib/utils.js';
 
