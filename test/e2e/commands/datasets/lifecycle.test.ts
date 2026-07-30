@@ -99,6 +99,32 @@ describe('[e2e][api] datasets namespace', () => {
 		expect(result.stdout).toContain(',');
 	});
 
+	it('gets items with --fields and --clean', async () => {
+		const result = await runCli(
+			'apify',
+			['datasets', 'get-items', datasetId, '--fields', 'foo', '--clean', '--limit', '10'],
+			{ env: authEnv },
+		);
+		expect(result.exitCode).toBe(0);
+		const items = JSON.parse(result.stdout);
+		expect(Array.isArray(items)).toBe(true);
+		for (const item of items) {
+			expect(Object.keys(item)).toEqual(['foo']);
+		}
+	});
+
+	it('writes items to --output file', async () => {
+		const outPath = `/tmp/e2e-ds-out-${randomBytes(4).toString('hex')}.json`;
+		const result = await runCli('apify', ['datasets', 'get-items', datasetId, '--output', outPath], {
+			env: authEnv,
+		});
+		expect(result.exitCode).toBe(0);
+		const { readFileSync } = await import('node:fs');
+		const items = JSON.parse(readFileSync(outPath, 'utf8'));
+		expect(Array.isArray(items)).toBe(true);
+		expect(items.length).toBeGreaterThanOrEqual(3);
+	});
+
 	it('shows dataset info (--json)', async () => {
 		const result = await runCli('apify', ['datasets', 'info', datasetId, '--json'], { env: authEnv });
 		expect(result.exitCode).toBe(0);

@@ -1,5 +1,7 @@
 import chalk from 'chalk';
 
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -13,6 +15,8 @@ import {
 	printJsonToStdout,
 	ShortDurationFormatter,
 } from '../../lib/utils.js';
+
+const jobStatusChoices = Object.values(ACTOR_JOB_STATUSES);
 
 const table = new ResponsiveTable({
 	allColumns: ['ID', 'Status', 'Results', 'Usage', 'Started At', 'Took', 'Build No.', 'Origin'],
@@ -40,6 +44,10 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 			command: 'apify runs ls apify/hello-world',
 		},
 		{
+			description: 'List only running runs for an Actor.',
+			command: 'apify runs ls apify/hello-world --status RUNNING',
+		},
+		{
 			description: 'List the 50 most recent runs in descending order.',
 			command: 'apify runs ls --limit 50 --desc',
 		},
@@ -65,6 +73,10 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 			default: false,
 			char: 'c',
 		}),
+		status: Flags.string({
+			description: 'Filter runs by status (e.g. RUNNING, SUCCEEDED, FAILED).',
+			choices: jobStatusChoices,
+		}),
 	};
 
 	static override args = {
@@ -77,7 +89,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 	static override enableJsonFlag = true;
 
 	async run() {
-		const { desc, limit, offset, compact, json } = this.flags;
+		const { desc, limit, offset, compact, json, status } = this.flags;
 		const { actorId } = this.args;
 
 		const client = await getLoggedClientOrThrow();
@@ -93,7 +105,15 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 			return;
 		}
 
-		const allRuns = await client.actor(ctx.id).runs().list({ desc, limit, offset });
+		const allRuns = await client
+			.actor(ctx.id)
+			.runs()
+			.list({
+				desc,
+				limit,
+				offset,
+				...(status ? { status } : {}),
+			});
 
 		if (json) {
 			printJsonToStdout(allRuns);
@@ -102,7 +122,9 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 		if (!allRuns.items.length) {
 			simpleLog({
-				message: 'There are no recent runs found for this Actor.',
+				message: status
+					? `There are no recent runs with status ${status} found for this Actor.`
+					: 'There are no recent runs found for this Actor.',
 			});
 
 			return;

@@ -112,6 +112,26 @@ describe('[e2e][api] builds namespace', () => {
 		});
 	});
 
+	describe('builds abort', () => {
+		it('fails with invalid build ID', async () => {
+			const result = await runCli('apify', ['builds', 'abort', 'invalid-id'], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			expect(result.stdout).toContain('Build with ID "invalid-id" was not found');
+		});
+
+		it('fails for an already finished build', async () => {
+			const result = await runCli('apify', ['builds', 'abort', buildId], {
+				cwd: actor.dir,
+				env: authEnv,
+			});
+
+			expect(result.stdout).toMatch(/cannot be aborted|already aborted/i);
+		});
+	});
+
 	describe('builds info', () => {
 		it('fails with invalid build ID', async () => {
 			const result = await runCli('apify', ['builds', 'info', 'invalid-id'], {
@@ -160,7 +180,7 @@ describe('[e2e][api] builds namespace', () => {
 			});
 
 			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
-			expect(result.stderr).toContain('Log for build with ID');
+			expect(result.stdout).toContain('Log for build with ID');
 		});
 
 		it('fails with invalid build ID', async () => {
@@ -170,6 +190,7 @@ describe('[e2e][api] builds namespace', () => {
 			});
 
 			expect(result.exitCode).not.toBe(0);
+			expect(result.stdout).toContain('Build with ID "invalid-id" was not found');
 		});
 	});
 

@@ -1,6 +1,6 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
-import { info } from '../../lib/outputs.js';
+import { error, info } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, outputJobLog } from '../../lib/utils.js';
 
 export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
@@ -32,11 +32,16 @@ export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
 		const build = await apifyClient.build(buildId).get();
 
 		if (!build) {
-			throw new Error(`Build with ID "${buildId}" was not found on your account.`);
+			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
+			return;
 		}
 
-		info({ message: `Log for build with ID "${buildId}":\n` });
+		info({ message: `Log for build with ID "${buildId}":\n`, stdout: true });
 
-		await outputJobLog({ job: build, apifyClient });
+		try {
+			await outputJobLog({ job: build, apifyClient });
+		} catch (err) {
+			error({ message: `Failed to get log for build with ID "${buildId}": ${(err as Error).message}` });
+		}
 	}
 }

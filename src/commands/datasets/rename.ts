@@ -34,7 +34,7 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 
 	static override args = {
 		nameOrId: Args.string({
-			description: 'The dataset ID or name to delete.',
+			description: 'The dataset ID or name to rename.',
 			required: true,
 		}),
 		newName: Args.string({

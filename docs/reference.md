@@ -885,9 +885,11 @@ Use these commands to manage Actor build processes. They help you create, monito
 
 ```sh
 DESCRIPTION
-  Create, inspect, tag, and delete Actor builds on the Apify platform.
+  Create, inspect, abort, tag, and delete Actor builds on the Apify platform.
 
 SUBCOMMANDS
+  builds abort       Aborts an Actor build that is currently in
+                     progress.
   builds add-tag     Adds a tag to a specific Actor build.
   builds remove-tag  Removes a tag from a specific Actor build.
   builds rm          Permanently removes an Actor build from
@@ -898,6 +900,22 @@ SUBCOMMANDS
   builds create      Creates a new build of the Actor.
   builds wait        Waits for an Actor build to reach a
                      terminal status (SUCCEEDED, FAILED, ABORTED, TIMED-OUT).
+```
+
+##### `apify builds abort`
+
+```sh
+DESCRIPTION
+  Aborts an Actor build that is currently in progress.
+
+USAGE
+  $ apify builds abort <buildId> [--json]
+
+ARGUMENTS
+  buildId  The build ID to abort.
+
+FLAGS
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify builds add-tag`
@@ -981,7 +999,7 @@ USAGE
                     [--limit <value>] [--offset <value>]
 
 ARGUMENTS
-  actorId  Optional Actor ID or Name to list runs for. By default, it
+  actorId  Optional Actor ID or Name to list builds for. By default, it
            will use the Actor from the current directory.
 
 FLAGS
@@ -1136,17 +1154,23 @@ DESCRIPTION
 USAGE
   $ apify runs ls [actorId] [-c] [--desc] [--json]
                   [--limit <value>] [--offset <value>]
+                  [--status
+                  READY|RUNNING|SUCCEEDED|FAILED|TIMING-OUT|TIMED-OUT|ABORTING|ABORTED]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to list runs for. By default, it
            will use the Actor from the current directory.
 
 FLAGS
-  -c, --compact         Display a compact table.
-      --desc            Sort runs in descending order.
-      --json            Format the command output as JSON.
-      --limit=<value>   Number of runs that will be listed.
-      --offset=<value>  Number of runs that will be skipped.
+  -c, --compact          Display a compact table.
+      --desc             Sort runs in descending order.
+      --json             Format the command output as JSON.
+      --limit=<value>    Number of runs that will be listed.
+      --offset=<value>   Number of runs that will be skipped.
+      --status=<option>  Filter runs by status (e.g. RUNNING,
+                         SUCCEEDED, FAILED).
+                         <options:
+                         READY|RUNNING|SUCCEEDED|FAILED|TIMING-OUT|TIMED-OUT|ABORTING|ABORTED>
 ```
 
 ##### `apify runs resurrect`
@@ -1230,7 +1254,7 @@ DESCRIPTION
 SUBCOMMANDS
   datasets create      Creates a new dataset for storing
                        structured data on your account.
-  datasets get-items   Retrieves dataset items in specified
+  datasets get-items   Retrieves dataset items in a specified
                        format (JSON, CSV, etc).
   datasets ls          Prints all datasets on your account.
   datasets info        Prints information about a specific
@@ -1262,17 +1286,27 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Retrieves dataset items in specified format (JSON, CSV, etc).
+  Retrieves dataset items in a specified format (JSON, CSV, etc).
+  Supports field selection, cleaning empty/hidden values, and writing directly 
+  to a file.
 
 USAGE
-  $ apify datasets get-items <datasetId>
+  $ apify datasets get-items <datasetId> [--clean]
+                             [--desc] [--fields <value>]
                              [--format json|jsonl|csv|html|rss|xml|xlsx]
                              [--limit <value>] [--offset <value>]
+                             [--omit <value>] [-o <value>] [--unwind <value>]
 
 ARGUMENTS
   datasetId  The ID of the Dataset to export the items for.
 
 FLAGS
+      --clean            Return only non-empty items and skip
+                         hidden fields (fields starting with #).
+      --desc             Return items in descending order (newest
+                         first).
+      --fields=<value>   Comma-separated list of fields to
+                         include in each item (all other fields are omitted).
       --format=<option>  The format of the returned output. By
                          default, it is set to 'json'.
                          <options: json|jsonl|csv|html|rss|xml|xlsx>
@@ -1280,6 +1314,13 @@ FLAGS
                          dataset. By default, it will return all available items.
       --offset=<value>   The offset in the dataset where to start
                          getting items.
+      --omit=<value>     Comma-separated list of fields to
+                         exclude from each item.
+  -o, --output=<value>   Write items to this file path
+                         instead of stdout. Content-Type still goes to stderr.
+      --unwind=<value>   Comma-separated list of fields to
+                         unwind. Each array value creates a separate item (same as
+                         the Dataset API).
 ```
 
 ##### `apify datasets info`
@@ -1341,7 +1382,7 @@ USAGE
   $ apify datasets rename <nameOrId> [newName] [--unname]
 
 ARGUMENTS
-  nameOrId  The dataset ID or name to delete.
+  nameOrId  The dataset ID or name to rename.
   newName   The new name for the dataset.
 
 FLAGS
@@ -1536,7 +1577,7 @@ USAGE
 
 ARGUMENTS
   keyValueStoreNameOrId  The key-value store ID or name to
-                         delete.
+                         rename.
   newName                The new name for the key-value
                          store.
 
