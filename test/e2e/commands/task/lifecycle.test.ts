@@ -1,21 +1,20 @@
 import { randomBytes } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 import { ApifyClient } from 'apify-client';
 
 import { getApifyClientOptions } from '../../../../src/lib/utils.js';
 import { runCli } from '../../__helpers__/run-cli.js';
-import { createTestActor, removeTestActor, type TestActor } from '../../__helpers__/test-actor.js';
 
 describe('[e2e][api] task namespace', () => {
-	let actor: TestActor;
 	let authEnv: Record<string, string>;
 	let client: ApifyClient;
-	let actorFullName: string;
 	let taskId: string;
 	const taskName = `e2e-task-${randomBytes(6).toString('hex')}`;
 	const renamedTitle = 'E2E updated task title';
+	const actorFullName = 'apify/hello-world';
 
 	beforeAll(async () => {
 		const token = process.env.TEST_USER_TOKEN;
@@ -30,20 +29,7 @@ describe('[e2e][api] task namespace', () => {
 		}
 
 		client = new ApifyClient(await getApifyClientOptions(token));
-		const me = await client.user('me').get();
-
-		actor = await createTestActor('e2e-task');
-		actorFullName = `${me.username}/${actor.name}`;
-
-		const pushResult = await runCli('apify', ['push'], {
-			cwd: actor.dir,
-			env: authEnv,
-		});
-
-		if (pushResult.exitCode !== 0) {
-			throw new Error(`Push failed:\n${pushResult.stderr}\n${pushResult.stdout}`);
-		}
-	}, 300_000);
+	}, 60_000);
 
 	afterAll(async () => {
 		if (taskId && client) {
@@ -53,20 +39,11 @@ describe('[e2e][api] task namespace', () => {
 				// Do nothing
 			}
 		}
-
-		if (actorFullName && client) {
-			try {
-				await client.actor(actorFullName).delete();
-			} catch {
-				// Do nothing
-			}
-		}
-
-		if (actor) await removeTestActor(actor);
 	});
 
 	it('creates a task', async () => {
-		const inputPath = join(actor.dir, 'task-input.json');
+		const inputDir = mkdtempSync(join(tmpdir(), 'apify-cli-task-'));
+		const inputPath = join(inputDir, 'task-input.json');
 		writeFileSync(inputPath, JSON.stringify({ hello: 'world' }));
 
 		const result = await runCli(
@@ -117,7 +94,7 @@ describe('[e2e][api] task namespace', () => {
 	it('deletes a task', async () => {
 		const result = await runCli('apify', ['task', 'rm', taskName, '--yes'], { env: authEnv });
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
-		expect(result.stdout + result.stderr).toMatch(/deleted/i);
+		expect(result.stdout).toContain('was deleted');
 
 		const gone = await client.task(taskId).get();
 		expect(gone).toBeUndefined();

@@ -1638,8 +1638,8 @@ DESCRIPTION
 USAGE
   $ apify task create <taskName> --actor <value>
                       [--build <value>] [--description <value>]
-                      [--input <value> | --input-file <value>] [--json]
-                      [--memory <value>] [--timeout <value>] [--title <value>]
+                      [-i <value> | -f <value>] [--json] [--memory <value>]
+                      [--timeout <value>] [--title <value>]
 
 ARGUMENTS
   taskName  Name for the new Task (unique under your account).
@@ -1651,10 +1651,10 @@ FLAGS
                              for the task (e.g. "latest" or "1.2.3").
       --description=<value>  Optional description for the
                              task.
-      --input=<value>        Saved task input as a JSON
+  -i, --input=<value>        Saved task input as a JSON
                              string.
-      --input-file=<value>   Path to a JSON file with saved
-                             task input.
+  -f, --input-file=<value>   Path to a JSON file with
+                             saved task input.
       --json                 Format the command output as
                              JSON.
       --memory=<value>       Memory limit for the task run,
@@ -1749,8 +1749,7 @@ DESCRIPTION
 
 USAGE
   $ apify task update <taskId> [--build <value>]
-                      [--description <value>]
-                      [--input <value> | --input-file <value>] [--json]
+                      [--description <value>] [-i <value> | -f <value>] [--json]
                       [--memory <value>] [--name <value>] [--timeout <value>]
                       [--title <value>]
 
@@ -1761,10 +1760,10 @@ FLAGS
       --build=<value>        Actor build tag or number to use
                              for the task.
       --description=<value>  New description for the task.
-      --input=<value>        Replace saved task input with
-                             this JSON string.
-      --input-file=<value>   Replace saved task input with
-                             JSON from this file.
+  -i, --input=<value>        Replace saved task input
+                             with this JSON string.
+  -f, --input-file=<value>   Replace saved task input
+                             with JSON from this file.
       --json                 Format the command output as
                              JSON.
       --memory=<value>       Memory limit for the task run,

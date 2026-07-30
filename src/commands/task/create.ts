@@ -1,23 +1,15 @@
-import { readFileSync } from 'node:fs';
+import process from 'node:process';
 
-import type { Dictionary } from 'apify-client';
+import type { ApifyApiError, Dictionary } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
-import { tryToGetTask } from '../../lib/commands/resolve-task.js';
+import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
-
-function parseJsonInput(raw: string, sourceLabel: string): Dictionary | Dictionary[] {
-	try {
-		return JSON.parse(raw) as Dictionary | Dictionary[];
-	} catch {
-		throw new Error(`Failed to parse ${sourceLabel} as JSON.`);
-	}
-}
 
 export class TaskCreateCommand extends ApifyCommand<typeof TaskCreateCommand> {
 	static override name = 'create' as const;
@@ -63,10 +55,12 @@ export class TaskCreateCommand extends ApifyCommand<typeof TaskCreateCommand> {
 			description: 'Optional description for the task.',
 		}),
 		input: Flags.string({
+			char: 'i',
 			description: 'Saved task input as a JSON string.',
 			exclusive: ['input-file'],
 		}),
 		'input-file': Flags.string({
+			char: 'f',
 			description: 'Path to a JSON file with saved task input.',
 			exclusive: ['input'],
 		}),
@@ -88,15 +82,7 @@ export class TaskCreateCommand extends ApifyCommand<typeof TaskCreateCommand> {
 		const { actor: actorIdOrName, title, description, input, inputFile, memory, timeout, build, json } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
-
-		const existing = await tryToGetTask(client, taskName);
-		if (existing) {
-			error({
-				message: `A Task with name or ID "${taskName}" already exists (${existing.userFriendlyId}).`,
-				stdout: true,
-			});
-			return;
-		}
+		const cwd = process.cwd();
 
 		const actorCtx = await resolveActorContext({ providedActorNameOrId: actorIdOrName, client });
 		if (!actorCtx.valid) {
@@ -104,20 +90,16 @@ export class TaskCreateCommand extends ApifyCommand<typeof TaskCreateCommand> {
 				message: `${actorCtx.reason}. Please specify a valid Actor ID or name.`,
 				stdout: true,
 			});
+			process.exitCode ||= 1;
 			return;
 		}
 
-		let parsedInput: Dictionary | Dictionary[] | undefined;
-		try {
-			if (input) {
-				parsedInput = parseJsonInput(input, '--input');
-			} else if (inputFile) {
-				parsedInput = parseJsonInput(readFileSync(inputFile, 'utf8'), `--input-file ${inputFile}`);
-			}
-		} catch (err) {
-			error({ message: (err as Error).message, stdout: true });
+		const inputOverride = await getInputOverride(cwd, input, inputFile);
+		if (inputOverride === false) {
 			return;
 		}
+
+		const parsedInput = inputOverride?.input as Dictionary | undefined;
 
 		const options =
 			memory != null || timeout != null || build
@@ -128,23 +110,32 @@ export class TaskCreateCommand extends ApifyCommand<typeof TaskCreateCommand> {
 					}
 				: undefined;
 
-		const newTask = await client.tasks().create({
-			actId: actorCtx.id,
-			name: taskName,
-			...(title ? { title } : {}),
-			...(description ? { description } : {}),
-			...(parsedInput !== undefined ? { input: parsedInput } : {}),
-			...(options ? { options } : {}),
-		});
+		try {
+			const newTask = await client.tasks().create({
+				actId: actorCtx.id,
+				name: taskName,
+				...(title ? { title } : {}),
+				...(description ? { description } : {}),
+				...(parsedInput !== undefined ? { input: parsedInput } : {}),
+				...(options ? { options } : {}),
+			});
 
-		if (json) {
-			printJsonToStdout(newTask);
-			return;
+			if (json) {
+				printJsonToStdout(newTask);
+				return;
+			}
+
+			success({
+				message: `Task with ID ${chalk.yellow(newTask.id)} (called ${chalk.yellow(newTask.name)}) was created for Actor ${chalk.yellow(actorCtx.userFriendlyId)}.`,
+				stdout: true,
+			});
+		} catch (err) {
+			const casted = err as ApifyApiError;
+			error({
+				message: `Failed to create Task "${taskName}".\n  ${casted.message || casted}`,
+				stdout: true,
+			});
+			process.exitCode ||= 1;
 		}
-
-		success({
-			message: `Task with ID ${chalk.yellow(newTask.id)} (called ${chalk.yellow(newTask.name)}) was created for Actor ${chalk.yellow(actorCtx.userFriendlyId)}.`,
-			stdout: true,
-		});
 	}
 }

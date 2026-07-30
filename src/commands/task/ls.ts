@@ -4,7 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { info, simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Task ID', 'Name', 'Actor ID', 'Runs', 'Created', 'Modified'],
@@ -53,7 +53,6 @@ export class TaskLsCommand extends ApifyCommand<typeof TaskLsCommand> {
 		const { desc, offset, limit, json } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
-		const user = await getLocalUserInfo();
 
 		const rawTaskList = await client.tasks().list({ desc, offset, limit });
 
@@ -74,7 +73,7 @@ export class TaskLsCommand extends ApifyCommand<typeof TaskLsCommand> {
 		for (const task of rawTaskList.items) {
 			table.pushRow({
 				'Task ID': task.id,
-				Name: task.name ? `${user.username ?? task.username}/${task.name}` : chalk.italic('Unnamed'),
+				Name: `${task.username}/${task.name}`,
 				'Actor ID': chalk.gray(task.actId),
 				Runs: chalk.cyan(`${task.stats?.totalRuns ?? 0}`),
 				Created: TimestampFormatter.display(task.createdAt),

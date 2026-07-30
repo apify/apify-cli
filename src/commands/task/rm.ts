@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
@@ -49,13 +51,7 @@ export class TaskRmCommand extends ApifyCommand<typeof TaskRmCommand> {
 
 		const apifyClient = await getLoggedClientOrThrow();
 
-		let resolved;
-		try {
-			resolved = await resolveTaskId(apifyClient, taskId);
-		} catch (err) {
-			error({ message: (err as Error).message, stdout: true });
-			return;
-		}
+		const resolved = await resolveTaskId(apifyClient, taskId);
 
 		const confirmed = await useYesNoConfirm({
 			message: `Are you sure you want to delete Task "${resolved.userFriendlyId}"?`,
@@ -82,6 +78,7 @@ export class TaskRmCommand extends ApifyCommand<typeof TaskRmCommand> {
 				message: `Failed to delete Task "${resolved.userFriendlyId}".\n  ${casted.message || casted}`,
 				stdout: true,
 			});
+			process.exitCode ||= 1;
 		}
 	}
 }

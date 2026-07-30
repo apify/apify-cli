@@ -4,7 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { resolveTaskId } from '../../lib/commands/resolve-task.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { error, simpleLog } from '../../lib/outputs.js';
+import { simpleLog } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 const consoleLikeTable = new ResponsiveTable({
@@ -43,15 +43,7 @@ export class TaskInfoCommand extends ApifyCommand<typeof TaskInfoCommand> {
 		const { taskId } = this.args;
 		const apifyClient = await getLoggedClientOrThrow();
 
-		let resolved;
-		try {
-			resolved = await resolveTaskId(apifyClient, taskId);
-		} catch (err) {
-			error({ message: (err as Error).message, stdout: true });
-			return;
-		}
-
-		const { task, userFriendlyId } = resolved;
+		const { task, userFriendlyId } = await resolveTaskId(apifyClient, taskId);
 
 		const [user, actor, input] = await Promise.all([
 			apifyClient

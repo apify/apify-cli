@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import process from 'node:process';
 
 import type { Dictionary } from 'apify-client';
 import chalk from 'chalk';
@@ -6,17 +6,10 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { resolveTaskId } from '../../lib/commands/resolve-task.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
-
-function parseJsonInput(raw: string, sourceLabel: string): Dictionary | Dictionary[] {
-	try {
-		return JSON.parse(raw) as Dictionary | Dictionary[];
-	} catch {
-		throw new Error(`Failed to parse ${sourceLabel} as JSON.`);
-	}
-}
 
 export class TaskUpdateCommand extends ApifyCommand<typeof TaskUpdateCommand> {
 	static override name = 'update' as const;
@@ -56,10 +49,12 @@ export class TaskUpdateCommand extends ApifyCommand<typeof TaskUpdateCommand> {
 			description: 'New description for the task.',
 		}),
 		input: Flags.string({
+			char: 'i',
 			description: 'Replace saved task input with this JSON string.',
 			exclusive: ['input-file'],
 		}),
 		'input-file': Flags.string({
+			char: 'f',
 			description: 'Replace saved task input with JSON from this file.',
 			exclusive: ['input'],
 		}),
@@ -81,30 +76,20 @@ export class TaskUpdateCommand extends ApifyCommand<typeof TaskUpdateCommand> {
 		const { name, title, description, input, inputFile, memory, timeout, build, json } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
+		const cwd = process.cwd();
 
-		let resolved;
-		try {
-			resolved = await resolveTaskId(client, taskId);
-		} catch (err) {
-			error({ message: (err as Error).message, stdout: true });
+		const resolved = await resolveTaskId(client, taskId);
+
+		const inputOverride = await getInputOverride(cwd, input, inputFile);
+		if (inputOverride === false) {
 			return;
 		}
 
-		let parsedInput: Dictionary | Dictionary[] | undefined;
-		try {
-			if (input) {
-				parsedInput = parseJsonInput(input, '--input');
-			} else if (inputFile) {
-				parsedInput = parseJsonInput(readFileSync(inputFile, 'utf8'), `--input-file ${inputFile}`);
-			}
-		} catch (err) {
-			error({ message: (err as Error).message, stdout: true });
-			return;
-		}
+		const parsedInput = inputOverride?.input as Dictionary | undefined;
+		const hasInputUpdate = input != null || inputFile != null;
 
 		const hasOptionUpdate = memory != null || timeout != null || build != null;
-		const hasAnyUpdate =
-			name != null || title != null || description != null || parsedInput !== undefined || hasOptionUpdate;
+		const hasAnyUpdate = name != null || title != null || description != null || hasInputUpdate || hasOptionUpdate;
 
 		if (!hasAnyUpdate) {
 			error({
@@ -112,6 +97,7 @@ export class TaskUpdateCommand extends ApifyCommand<typeof TaskUpdateCommand> {
 					'Provide at least one of --name, --title, --description, --input/--input-file, --memory, --timeout, or --build.',
 				stdout: true,
 			});
+			process.exitCode ||= 1;
 			return;
 		}
 
@@ -128,7 +114,7 @@ export class TaskUpdateCommand extends ApifyCommand<typeof TaskUpdateCommand> {
 			...(name != null ? { name } : {}),
 			...(title != null ? { title } : {}),
 			...(description != null ? { description } : {}),
-			...(parsedInput !== undefined ? { input: parsedInput } : {}),
+			...(hasInputUpdate ? { input: parsedInput } : {}),
 			...(nextOptions ? { options: nextOptions } : {}),
 		});
 
@@ -138,7 +124,7 @@ export class TaskUpdateCommand extends ApifyCommand<typeof TaskUpdateCommand> {
 		}
 
 		success({
-			message: `Task ${chalk.yellow(resolved.userFriendlyId)} (${chalk.gray(updated.id)}) was updated.`,
+			message: `Task ${chalk.yellow(updated.name)} (${chalk.gray(updated.id)}) was updated.`,
 			stdout: true,
 		});
 	}
