@@ -1613,12 +1613,106 @@ These commands help you manage scheduled and configured Actor runs. Use them to 
 
 ```sh
 DESCRIPTION
-  Run saved Apify tasks (named Actor configurations). Only 'task run' is 
-  available; create and manage tasks in Apify Console.
+  Manage and run saved Apify tasks (named Actor configurations with input and 
+  options).
 
 SUBCOMMANDS
-  task run  Executes predefined Actor task remotely using local
-            key-value store for input.
+  task create  Creates a new Actor task with optional saved input and
+               run options.
+  task info    Prints information about a specific Actor task.
+  task ls      Lists Actor tasks on your account.
+  task rm      Permanently removes an Actor task from your account.
+  task run     Executes predefined Actor task remotely using local
+               key-value store for input.
+  task update  Updates an existing Actor task (title, description,
+               input, or run options).
+```
+
+##### `apify task create`
+
+```sh
+DESCRIPTION
+  Creates a new Actor task with optional saved input and run options.
+  Provide input via --input (inline JSON) or --input-file.
+
+USAGE
+  $ apify task create <taskName> --actor <value>
+                      [--build <value>] [--description <value>]
+                      [--input <value> | --input-file <value>] [--json]
+                      [--memory <value>] [--timeout <value>] [--title <value>]
+
+ARGUMENTS
+  taskName  Name for the new Task (unique under your account).
+
+FLAGS
+      --actor=<value>        Actor ID or name the task should
+                             run (e.g. "apify/hello-world" or "my-actor").
+      --build=<value>        Actor build tag or number to use
+                             for the task (e.g. "latest" or "1.2.3").
+      --description=<value>  Optional description for the
+                             task.
+      --input=<value>        Saved task input as a JSON
+                             string.
+      --input-file=<value>   Path to a JSON file with saved
+                             task input.
+      --json                 Format the command output as
+                             JSON.
+      --memory=<value>       Memory limit for the task run,
+                             in megabytes.
+      --timeout=<value>      Timeout for the task run, in
+                             seconds. Use 0 for no timeout.
+      --title=<value>        Optional human-readable title
+                             for the task.
+```
+
+##### `apify task info`
+
+```sh
+DESCRIPTION
+  Prints information about a specific Actor task.
+
+USAGE
+  $ apify task info <taskId> [--json]
+
+ARGUMENTS
+  taskId  Name or ID of the Task (e.g. "my-task" or "username/my-task").
+
+FLAGS
+      --json  Format the command output as JSON.
+```
+
+##### `apify task ls`
+
+```sh
+DESCRIPTION
+  Lists Actor tasks on your account.
+
+USAGE
+  $ apify task ls [--desc] [--json] [--limit <value>]
+                  [--offset <value>]
+
+FLAGS
+      --desc            Sort tasks in descending order.
+      --json            Format the command output as JSON.
+      --limit=<value>   Number of tasks that will be listed.
+      --offset=<value>  Number of tasks that will be skipped.
+```
+
+##### `apify task rm`
+
+```sh
+DESCRIPTION
+  Permanently removes an Actor task from your account.
+
+USAGE
+  $ apify task rm <taskId> [-y]
+
+ARGUMENTS
+  taskId  Name or ID of the Task to delete.
+
+FLAGS
+  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
+             prompts.
 ```
 
 ##### `apify task run`
@@ -1644,6 +1738,42 @@ FLAGS
                          Task run, in megabytes.
   -t, --timeout=<value>  Timeout for the Task run in seconds.
                          Zero value means there is no timeout.
+```
+
+##### `apify task update`
+
+```sh
+DESCRIPTION
+  Updates an existing Actor task (title, description, input, or run options).
+  Only the flags you pass are changed; omitted fields keep their current values.
+
+USAGE
+  $ apify task update <taskId> [--build <value>]
+                      [--description <value>]
+                      [--input <value> | --input-file <value>] [--json]
+                      [--memory <value>] [--name <value>] [--timeout <value>]
+                      [--title <value>]
+
+ARGUMENTS
+  taskId  Name or ID of the Task to update.
+
+FLAGS
+      --build=<value>        Actor build tag or number to use
+                             for the task.
+      --description=<value>  New description for the task.
+      --input=<value>        Replace saved task input with
+                             this JSON string.
+      --input-file=<value>   Replace saved task input with
+                             JSON from this file.
+      --json                 Format the command output as
+                             JSON.
+      --memory=<value>       Memory limit for the task run,
+                             in megabytes.
+      --name=<value>         New unique name for the task.
+      --timeout=<value>      Timeout for the task run, in
+                             seconds. Use 0 for no timeout.
+      --title=<value>        New human-readable title for the
+                             task.
 ```
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->

@@ -113,7 +113,12 @@ const categories: Record<string, CommandsInCategory[]> = {
 	'task': [
 		//
 		{ command: Commands.task },
+		{ command: Commands.taskCreate },
+		{ command: Commands.taskInfo },
+		{ command: Commands.taskLs },
+		{ command: Commands.taskRm },
 		{ command: Commands.taskRun },
+		{ command: Commands.taskUpdate },
 	],
 	'mcp': [
 		//
