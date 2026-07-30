@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { error, info } from '../../lib/outputs.js';
@@ -33,6 +35,7 @@ export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
 
 		if (!build) {
 			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
+			process.exitCode = 1;
 			return;
 		}
 
@@ -41,7 +44,11 @@ export class BuildsLogCommand extends ApifyCommand<typeof BuildsLogCommand> {
 		try {
 			await outputJobLog({ job: build, apifyClient });
 		} catch (err) {
-			error({ message: `Failed to get log for build with ID "${buildId}": ${(err as Error).message}` });
+			error({
+				message: `Failed to get log for build with ID "${buildId}": ${(err as Error).message}`,
+				stdout: true,
+			});
+			process.exitCode = 1;
 		}
 	}
 }
