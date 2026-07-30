@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getUserPlanPricing } from '../../../src/lib/commands/storage-size.js';
+import { getUserPlanPricing } from '../../src/lib/commands/storage-size.js';
 
 describe('getUserPlanPricing', () => {
 	it('exposes distinct dataset and key-value store storage rates', () => {
