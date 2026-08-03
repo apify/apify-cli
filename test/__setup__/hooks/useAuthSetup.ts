@@ -1,7 +1,7 @@
 import { rm } from 'node:fs/promises';
 import { EOL } from 'node:os';
 
-import isCI from 'is-ci';
+import { isCI } from 'ci-info';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 

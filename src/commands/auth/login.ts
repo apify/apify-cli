@@ -1,36 +1,36 @@
-import type { Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import process from 'node:process';
 
 import chalk from 'chalk';
 import computerName from 'computer-name';
-import cors from 'cors';
-import express from 'express';
 import open from 'open';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { getConsoleUrl } from '../../lib/console-url.js';
 import { AUTH_FILE_PATH } from '../../lib/consts.js';
 import { getBackend } from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
+import { createLocalApiServer } from '../../lib/local-api-server.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
 
-const CONSOLE_BASE_URL = 'https://console.apify.com/settings/integrations';
-// const CONSOLE_BASE_URL = 'http://localhost:3000/settings/integrations';
-const CONSOLE_URL_ORIGIN = new URL(CONSOLE_BASE_URL).origin;
+const CONSOLE_INTEGRATIONS_PATH = '/settings/integrations';
 
-const API_BASE_URL = CONSOLE_BASE_URL.includes('localhost') ? 'http://localhost:3333' : undefined;
+// When logging in against a local Console instance (local platform development), validate the token
+// against the local API rather than production.
+const LOCAL_API_BASE_URL = 'http://localhost:3333';
 
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
 const tryToLogin = async (token: string) => {
-	const isUserLogged = await getLoggedClient(token, API_BASE_URL);
+	const apiBaseUrl = getConsoleUrl().includes('localhost') ? LOCAL_API_BASE_URL : undefined;
+	const isUserLogged = await getLoggedClient(token, apiBaseUrl);
 	const userInfo = await getLocalUserInfo();
 
 	if (isUserLogged) {
@@ -106,6 +106,10 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 			return;
 		}
 
+		const consoleUrl = getConsoleUrl();
+		const consoleOrigin = new URL(consoleUrl).origin;
+		const consoleIntegrationsUrl = `${consoleUrl}${CONSOLE_INTEGRATIONS_PATH}`;
+
 		let selectedMethod = method;
 
 		if (!method) {
@@ -130,104 +134,68 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 		}
 
 		if (selectedMethod === 'console') {
-			let server: Server;
-			const app = express();
-
-			// To send requests from browser to localhost, CORS has to be configured properly
-			app.use(
-				cors({
-					origin: CONSOLE_URL_ORIGIN,
-					allowedHeaders: ['Content-Type', 'Authorization'],
-				}),
-			);
-
-			// Turn off keepalive, otherwise closing the server when command is finished is lagging
-			app.use((_, res, next) => {
-				res.set('Connection', 'close');
-				next();
-			});
-
-			app.use(express.json());
-
 			// Basic authorization via a random token, which is passed to the Apify Console,
 			// and that sends it back via the `token` query param, or `Authorization` header
 			const authToken = cryptoRandomObjectId();
-			app.use((req, res, next) => {
-				let { token: serverToken } = req.query;
-				if (!serverToken) {
-					const authorizationHeader = req.get('Authorization');
-					if (authorizationHeader) {
-						const [schema, tokenFromHeader, ...extra] = authorizationHeader.trim().split(/\s+/);
-						if (schema.toLowerCase() === 'bearer' && tokenFromHeader && extra.length === 0) {
-							serverToken = tokenFromHeader;
+
+			const server = createLocalApiServer({
+				corsOrigin: consoleOrigin,
+				authToken,
+				routes: {
+					[`POST /api/${API_VERSION}/login-token`]: async (body, res) => {
+						try {
+							if (body.apiToken) {
+								await tryToLogin(body.apiToken);
+							} else {
+								throw new Error('Request did not contain API token');
+							}
+							res.end();
+						} catch (err) {
+							const errorMessage = `Login to Apify failed with error: ${(err as Error).message}`;
+							error({ message: errorMessage });
+							res.status(500);
+							res.send(errorMessage);
 						}
-					}
-				}
+						server.close();
+					},
+					[`POST /api/${API_VERSION}/exit`]: (body, res) => {
+						if (body.isWindowClosed) {
+							error({
+								message: 'Login to Apify failed, the console window was closed.',
+							});
+						} else if (body.actionCanceled) {
+							error({
+								message: 'Login to Apify failed, the action was canceled in the Apify Console.',
+							});
+						} else {
+							error({ message: 'Login to Apify failed.' });
+						}
 
-				if (serverToken !== authToken) {
-					res.status(401);
-					res.send('Authorization failed');
-				} else {
-					next();
-				}
-			});
-
-			const apiRouter = express.Router();
-			app.use(`/api/${API_VERSION}`, apiRouter);
-
-			apiRouter.post('/login-token', async (req, res) => {
-				try {
-					if (req.body.apiToken) {
-						await tryToLogin(req.body.apiToken);
-					} else {
-						throw new Error('Request did not contain API token');
-					}
-					res.end();
-				} catch (err) {
-					const errorMessage = `Login to Apify failed with error: ${(err as Error).message}`;
-					error({ message: errorMessage });
-					res.status(500);
-					res.send(errorMessage);
-				}
-				server.close();
-			});
-
-			apiRouter.post('/exit', (req, res) => {
-				if (req.body.isWindowClosed) {
-					error({
-						message: 'Login to Apify failed, the console window was closed.',
-					});
-				} else if (req.body.actionCanceled) {
-					error({
-						message: 'Login to Apify failed, the action was canceled in the Apify Console.',
-					});
-				} else {
-					error({ message: 'Login to Apify failed.' });
-				}
-
-				res.end();
-				server.close();
+						res.end();
+						server.close();
+					},
+				},
 			});
 
 			// Listening on port 0 will assign a random available port
-			server = app.listen(0);
+			server.listen(0);
 			const { port } = server.address() as AddressInfo;
 
-			const consoleUrl = new URL(CONSOLE_BASE_URL);
-			consoleUrl.searchParams.set('localCliCommand', 'login');
-			consoleUrl.searchParams.set('localCliPort', `${port}`);
-			consoleUrl.searchParams.set('localCliToken', authToken);
-			consoleUrl.searchParams.set('localCliApiVersion', API_VERSION);
+			const loginUrl = new URL(consoleIntegrationsUrl);
+			loginUrl.searchParams.set('localCliCommand', 'login');
+			loginUrl.searchParams.set('localCliPort', `${port}`);
+			loginUrl.searchParams.set('localCliToken', authToken);
+			loginUrl.searchParams.set('localCliApiVersion', API_VERSION);
 			try {
-				consoleUrl.searchParams.set('localCliComputerName', encodeURIComponent(computerName()));
+				loginUrl.searchParams.set('localCliComputerName', encodeURIComponent(computerName()));
 			} catch {
 				// Ignore errors from fetching computer name as it's not critical
 			}
 
-			info({ message: `Opening Apify Console at "${consoleUrl.href}"...` });
-			await open(consoleUrl.href);
+			info({ message: `Opening Apify Console at "${loginUrl.href}"...` });
+			await open(loginUrl.href);
 		} else {
-			console.log('Enter your Apify API token. You can find it at https://console.apify.com/settings/integrations');
+			console.log(`Enter your Apify API token. You can find it at ${consoleIntegrationsUrl}`);
 
 			const tokenAnswer = await useMaskedInput({ message: 'token:' });
 			await tryToLogin(tokenAnswer);

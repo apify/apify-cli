@@ -35,7 +35,7 @@ jobs:
         steps:
             - uses: lewagon/wait-on-check-action@v1.8.0
               with:
-                  ref: ${{ github.ref }}
+                  ref: ${{ github.sha }}
                   repo-token: ${{ secrets.GITHUB_TOKEN }}
                   check-regexp: (Build|Lint.*|(Local|API) Tests.*|Python Support.*|Docs build)
                   wait-interval: 5
@@ -55,7 +55,7 @@ jobs:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Use Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: 24
                   registry-url: https://registry.npmjs.org
@@ -110,7 +110,7 @@ jobs:
                   fetch-depth: 0
 
             - name: Use Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: 24
                   registry-url: https://registry.npmjs.org
@@ -156,6 +156,11 @@ jobs:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         steps:
+            - name: Checkout repository
+              uses: actions/checkout@v7
+              with:
+                  ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
+
             # This step also deals with unzipping the archive from GitHub, so we get a big folder with all the bundles!
             - name: Download bundles
               uses: actions/download-artifact@v8
@@ -168,13 +173,31 @@ jobs:
               run: |
                   ls -la bundles
 
+            - name: Use Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: 24
+
+            - name: Install pnpm and dependencies
+              uses: apify/actions/pnpm-install@v1.3.1
+
+            - name: Set pre-release version
+              run: pnpm version ${{ needs.update_changelog.outputs.pre_release_version }} --no-git-tag-version --allow-same-version --no-git-checks
+
+            - name: Report install size
+              id: install-size
+              run: node scripts/report-install-size.mjs
+
             - name: Create release
               uses: softprops/action-gh-release@v3
               with:
                   tag_name: v${{ needs.update_changelog.outputs.pre_release_version }}
                   name: ${{ needs.update_changelog.outputs.pre_release_version }}
                   target_commitish: ${{ needs.update_changelog.outputs.changelog_commitish }}
-                  body: ${{ needs.release_metadata.outputs.release_notes }}
+                  body: |
+                      ${{ needs.release_metadata.outputs.release_notes }}
+
+                      ${{ steps.install-size.outputs.report }}
                   prerelease: true
                   files: |
                       bundles/*

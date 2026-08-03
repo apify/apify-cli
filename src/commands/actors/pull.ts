@@ -2,8 +2,6 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
-import AdmZip from 'adm-zip';
-import axios from 'axios';
 import { downloadTemplate } from 'giget';
 import jju from 'jju';
 import { gt } from 'semver';
@@ -14,12 +12,10 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { downloadZip, getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const extractGitHubZip = async (url: string, directoryPath: string) => {
-	const { data } = await axios.get(url, { responseType: 'arraybuffer' });
-
-	const zipFile = new AdmZip(Buffer.from(data, 'binary'));
+	const zipFile = await downloadZip(url);
 
 	zipFile.extractEntryTo(zipFile.getEntries()[0].entryName, directoryPath, false);
 };

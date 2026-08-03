@@ -3,84 +3,81 @@ title: Installation
 description: Learn how to install Apify CLI using installation scripts, Homebrew, or NPM.
 ---
 
-Learn how to install Apify CLI using installation scripts, Homebrew, or NPM.
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
 
----
+
+Learn how to install Apify CLI.
 
 ## Installation scripts
 
-### MacOS / Linux
+Installation scripts use [Bun](https://bun.sh/) to create a standalone executable file, so you don't need Node.js.
 
-```bash
-curl -fsSL https://apify.com/install-cli.sh | bash
-```
+This approach eliminates Node.js dependency management, which is useful if you're a Python developer or work in non-Node.js environments.
 
-### Windows
-
-```powershell
-irm https://apify.com/install-cli.ps1 | iex
-```
-
-:::tip No need for Node.js
-
-If you install Apify CLI using our installation scripts, you don't need Node.js. The scripts use [Bun](https://bun.sh/) to create a standalone executable file.
-
-This approach eliminates Node.js dependency management, which is useful for Python developers or users working in non-Node.js environments.
-
-:::
+<Tabs>
+  <TabItem value="MacOS/Linux">
+    ```bash
+    curl -fsSL https://apify.com/install-cli.sh | bash
+    ```
+  </TabItem>
+  <TabItem value="Windows">
+    ```powershell
+    irm https://apify.com/install-cli.ps1 | iex
+    ```
+  </TabItem>
+</Tabs>
 
 ## Homebrew
+
+Homebrew automatically installs Node.js as a dependency.
+
+If you already have Node.js installed through another method, for example, `nvm`, it might create version conflicts. To fix it, modify your `PATH` environment variable to prioritize your preferred Node.js installation over Homebrew's version.
 
 ```bash
 brew install apify-cli
 ```
 
-:::tip Homebrew and Node.js dependency
-
-When you install Apify CLI using Homebrew, it automatically installs Node.js as a dependency. If you already have Node.js installed through another method (e.g., `nvm`), this may create version conflicts.
-
-If you experience Node.js version conflicts, modify your `PATH` environment variable to prioritize your preferred Node.js installation over Homebrew's version.
-
-:::
-
 ## NPM
 
-First, make sure you have [Node.js](https://nodejs.org) version 22 or higher with NPM installed on your computer:
+1. Make sure you have [Node.js](https://nodejs.org) version 22 or higher with NPM installed:
 
-```bash showLineNumbers
-node --version
-npm --version
-```
+    ```bash
+    node --version
+    npm --version
+    ```
 
-Install or upgrade Apify CLI by running:
+1. Install or upgrade Apify CLI:
 
-```bash
-npm install -g apify-cli
-```
+    ```bash
+    npm install -g apify-cli
+    ```
+
+<br/>
 
 :::tip Troubleshooting
 
-If you receive a permission error, read npm's [official guide](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally) on installing packages globally.
+If you receive a permission error, read npm's [guide on installing packages globally](https://docs.npmjs.com/resolving-eacces-permissions-errors-when-installing-packages-globally).
 
 :::
 
 ## Verify installation
 
-You can verify the installation process by running the following command:
+To verify the installation process, run:
 
 ```bash
 apify --version
 ```
 
-The output should resemble the following (exact details like version or platform may vary):
+The output includes installation details, for example:
 
 ```bash
 apify-cli/1.0.1 (0dfcfd8) running on darwin-arm64 with bun-1.2.19 (emulating node 24.3.0), installed via bundle
 ```
 
-## Upgrading
+## Upgrade version
 
-Upgrading Apify CLI is as simple as running the following command:
+To upgrade Apify CLI to the latest version, run:
 
 ```bash
 apify upgrade
