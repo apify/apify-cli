@@ -114,6 +114,8 @@ const categories: Record<string, CommandsInCategory[]> = {
 		//
 		{ command: Commands.task },
 		{ command: Commands.taskRun },
+		{ command: Commands.taskPublish },
+		{ command: Commands.taskUnpublish },
 	],
 	'mcp': [
 		//

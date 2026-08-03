@@ -1613,12 +1613,15 @@ These commands help you manage scheduled and configured Actor runs. Use them to 
 
 ```sh
 DESCRIPTION
-  Run saved Apify tasks (named Actor configurations). Only 'task run' is 
-  available; create and manage tasks in Apify Console.
+  Run and publish saved Apify tasks (named Actor configurations). Create and 
+  manage tasks in Apify Console.
 
 SUBCOMMANDS
-  task run  Executes predefined Actor task remotely using local
-            key-value store for input.
+  task run        Executes predefined Actor task remotely using
+                  local key-value store for input.
+  task publish    Publishes the task on its public landing page.
+  task unpublish  Unpublishes the task from its public landing
+                  page.
 ```
 
 ##### `apify task run`
@@ -1644,6 +1647,38 @@ FLAGS
                          Task run, in megabytes.
   -t, --timeout=<value>  Timeout for the Task run in seconds.
                          Zero value means there is no timeout.
+```
+
+##### `apify task publish`
+
+```sh
+DESCRIPTION
+  Publishes the task on its public landing page.
+  The task must belong to a public Actor and have its public display 
+  configuration set up (in Apify Console, on the task Publication tab).
+
+USAGE
+  $ apify task publish <taskId>
+
+ARGUMENTS
+  taskId  Name or ID of the Task to publish (e.g. "my-task" or
+          "E2jjCZBezvAZnX8Rb").
+```
+
+##### `apify task unpublish`
+
+```sh
+DESCRIPTION
+  Unpublishes the task from its public landing page.
+  The public display configuration is preserved, so the task can be published 
+  again later.
+
+USAGE
+  $ apify task unpublish <taskId>
+
+ARGUMENTS
+  taskId  Name or ID of the Task to unpublish (e.g. "my-task" or
+          "E2jjCZBezvAZnX8Rb").
 ```
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->
