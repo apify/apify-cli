@@ -5,7 +5,10 @@ import { fileURLToPath } from 'node:url';
 
 // Force `useYesNoConfirm` down its non-interactive path so the overwrite prompt errors out
 // instead of blocking the test on stdin. See src/lib/hooks/user-confirmations/_stdinCheckWrapper.ts.
-vitest.mock('is-ci', () => ({ default: true }));
+vitest.mock('ci-info', async (importOriginal) => {
+	const original = await importOriginal<typeof import('ci-info')>();
+	return { ...original, isCI: true };
+});
 
 import { MCPInstallCommand } from '../../../../src/commands/mcp/install.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
