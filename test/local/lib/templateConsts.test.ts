@@ -4,26 +4,26 @@ import {
 	languageLabel,
 	TEMPLATE_USE_CASES,
 	USE_CASE_FLAG_CHOICES,
-	useCaseFlagToId,
+	useCaseFlagToTag,
 	useCaseLabel,
 } from '../../../src/lib/templates/consts.js';
 
 describe('template flag mappings', () => {
-	it('maps each --use-case flag value to its manifest id', () => {
-		expect(useCaseFlagToId('web-scraper')).toBe(TEMPLATE_USE_CASES.WEB_SCRAPING);
-		expect(useCaseFlagToId('ai-agent')).toBe(TEMPLATE_USE_CASES.AI);
-		expect(useCaseFlagToId('data-pipeline')).toBe(TEMPLATE_USE_CASES.INTEGRATION);
-		expect(useCaseFlagToId('browser-automation')).toBe(TEMPLATE_USE_CASES.AUTOMATION);
+	it('maps each --use-case flag value to its manifest tag', () => {
+		expect(useCaseFlagToTag('web-scraper')).toBe(TEMPLATE_USE_CASES.WEB_SCRAPING);
+		expect(useCaseFlagToTag('ai-agent')).toBe(TEMPLATE_USE_CASES.AI);
+		expect(useCaseFlagToTag('data-pipeline')).toBe(TEMPLATE_USE_CASES.INTEGRATION);
+		expect(useCaseFlagToTag('browser-automation')).toBe(TEMPLATE_USE_CASES.AUTOMATION);
 	});
 
 	it('returns undefined for an unknown use-case flag', () => {
-		expect(useCaseFlagToId('nonsense')).toBeUndefined();
+		expect(useCaseFlagToTag('nonsense')).toBeUndefined();
 	});
 
-	it('never exposes STARTER as a use-case flag, and every choice maps to a real id', () => {
+	it('never exposes STARTER as a use-case flag, and every choice maps to a real tag', () => {
 		expect(USE_CASE_FLAG_CHOICES).not.toContain('starter');
 		for (const flag of USE_CASE_FLAG_CHOICES) {
-			expect(useCaseFlagToId(flag)).toBeDefined();
+			expect(useCaseFlagToTag(flag)).toBeDefined();
 		}
 	});
 

@@ -15,7 +15,7 @@ import {
 	LANGUAGE_OPTIONS,
 	languageFlagToTag,
 	USE_CASE_OPTIONS,
-	useCaseFlagToId,
+	useCaseFlagToTag,
 } from './templates/consts.js';
 import { getTemplateRecommendation } from './templates/getTemplateRecommendation.js';
 import { buildTemplateChoiceList, NON_EXACT_SEPARATOR_LABEL } from './templates/templateChoices.js';
@@ -114,7 +114,7 @@ export function formatCreateSuccessMessage(params: {
  */
 async function executePrompts(manifest: Manifest, filters: TemplateFilters) {
 	const useCaseId = filters.useCase
-		? (useCaseFlagToId(filters.useCase) ?? ANY_TEMPLATE_USE_CASE)
+		? (useCaseFlagToTag(filters.useCase) ?? ANY_TEMPLATE_USE_CASE)
 		: await promptUseCase();
 	const languageId = filters.language
 		? (languageFlagToTag(filters.language) ?? filters.language)

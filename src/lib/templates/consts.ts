@@ -97,7 +97,7 @@ export const LANGUAGE_FLAG_CHOICES: string[] = LANGUAGE_OPTIONS.flatMap((option)
 export const USE_CASE_FLAG_CHOICES: string[] = USE_CASE_OPTIONS.map((option) => option.cliFlag);
 
 /** Maps a `--use-case` flag value to its manifest tag, or `undefined` when unknown. */
-export function useCaseFlagToId(flag: string): string | undefined {
+export function useCaseFlagToTag(flag: string): string | undefined {
 	return USE_CASE_OPTIONS.find((option) => option.cliFlag === flag)?.templateTag;
 }
 
