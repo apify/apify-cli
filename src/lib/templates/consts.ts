@@ -56,7 +56,7 @@ export const EMPTY_TEMPLATE_IDS: Record<string, string | undefined> = {
  * the fallback tiers.
  */
 export const USE_CASE_OPTIONS = [
-	{ cliFlag: 'web-scraper', templateTag: TEMPLATE_USE_CASES.WEB_SCRAPING, label: 'Web scraping' },
+	{ cliFlag: 'web-scraper', templateTag: TEMPLATE_USE_CASES.WEB_SCRAPING, label: 'Web scraper' },
 	{ cliFlag: 'ai-agent', templateTag: TEMPLATE_USE_CASES.AI, label: 'AI agent' },
 	{ cliFlag: 'data-pipeline', templateTag: TEMPLATE_USE_CASES.INTEGRATION, label: 'API & data pipeline' },
 	{ cliFlag: 'browser-automation', templateTag: TEMPLATE_USE_CASES.AUTOMATION, label: 'Browser automation' },
