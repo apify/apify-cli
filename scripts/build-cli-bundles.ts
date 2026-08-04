@@ -9,7 +9,6 @@ When node stabilizes SEA (https://nodejs.org/api/single-executable-applications.
 
 import { readFileSync } from 'node:fs';
 import { copyFile, readFile, rm, writeFile } from 'node:fs/promises';
-import { basename } from 'node:path';
 
 import { type Build, build, fileURLToPath } from 'bun';
 
@@ -59,7 +58,7 @@ const targets = (() => {
 // install/upgrade) that invoke this bundle with `APIFY_CLI_ENTRYPOINT` set to pick the command set.
 const entryPoints = [
 	//
-	fileURLToPath(new URL('../src/entrypoints/apify-cli.ts', import.meta.url)),
+	fileURLToPath(new URL('../src/entrypoints/bundle.ts', import.meta.url)),
 ];
 
 // Names under which a copy of the single bundle is also published, so that installs using the old
@@ -103,7 +102,9 @@ await writeFile(metadataFile, newContent);
 // #endregion
 
 for (const entryPoint of entryPoints) {
-	const cliName = basename(entryPoint, '.ts');
+	// The published asset prefix (`apify-cli-<version>-<target>`) is intentionally decoupled from the
+	// entrypoint file name (`bundle.ts`) - install/upgrade and the asset matcher all key off `apify-cli`.
+	const cliName = 'apify-cli';
 
 	const lines = readFileSync(entryPoint, 'utf-8').split('\n');
 	lines.splice(1, 0, 'import "proxy-agent";');
