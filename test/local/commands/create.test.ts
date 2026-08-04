@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
@@ -159,6 +159,44 @@ describe('apify create', () => {
 
 		expect(logMessages.log).toHaveLength(1);
 		expect(JSON.parse(logMessages.log[0]).gitRepositoryInitialized).toBe(true);
+	});
+
+	it('--json without --template fails before creating the directory', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_skipDependencyInstall: true,
+			flags_json: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/--template/);
+		expect(logMessages.log).toHaveLength(0);
+		expect(existsSync(tmpPath)).toBe(false);
+	});
+
+	it('--json without an Actor name fails instead of prompting', async () => {
+		await testRunCommand(CreateCommand, {
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_json: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/name/i);
+		expect(logMessages.log).toHaveLength(0);
+	});
+
+	it('--json reports an existing directory once instead of reprompting', async () => {
+		await mkdir(tmpPath, { recursive: true });
+		await writeFile(joinPath('placeholder.txt'), '');
+
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_json: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/already exists/);
+		expect(logMessages.log).toHaveLength(0);
 	});
 
 	it('records the hidden --origin flag in telemetry', async () => {

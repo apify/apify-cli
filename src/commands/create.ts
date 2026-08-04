@@ -140,6 +140,18 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		let { templateArchiveUrl } = this.flags;
 		let skipOptionalDeps = false;
 
+		// `--json` implies non-interactive: a caller parsing stdout cannot answer a prompt. Reject
+		// before creating any directories so a failed run leaves nothing behind.
+		if (json && !actorName) {
+			throw new Error('--json runs non-interactively. Pass the Actor name as an argument.');
+		}
+
+		if (json && !templateName && !templateArchiveUrl) {
+			throw new Error(
+				'--json runs non-interactively. Pass --template <name>; run `apify templates ls` to list values.',
+			);
+		}
+
 		// Start fetching manifest immediately to prevent
 		// annoying delays that sometimes happen on CLI startup.
 		const manifestPromise = fetchManifest().catch((err) => {
@@ -160,11 +172,15 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					.catch(() => false));
 
 			if (folderExists?.isDirectory() && folderHasFiles) {
-				error({
-					message:
-						`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.` +
-						' You can use "apify init" to create a local Actor environment inside an existing directory.',
-				});
+				const message =
+					`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.` +
+					' You can use "apify init" to create a local Actor environment inside an existing directory.';
+
+				if (json) {
+					throw new Error(message);
+				}
+
+				error({ message });
 
 				actorName = await ensureValidActorName();
 				actFolderDir = join(cwd, actorName);
