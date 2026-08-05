@@ -74,22 +74,3 @@ You can use the CLI to manage secrets environment variables:
         ...
     }
     ```
-
-## CLI environment variables
-
-Use the following environment variables to configure the CLI.
-
-### `APIFY_CONSOLE_URL`
-
-Changes the base URL of Apify Console that the CLI prints and opens. For example, the run, build, dataset and key-value store URLs, or the browser page for the `apify login` flow.
-
-The default value is `https://console.apify.com`.
-
-To point the CLI at a local Console instance during development, use:
-
-```bash
-export APIFY_CONSOLE_URL=http://localhost:3000
-```
-
-Note that if `APIFY_CONSOLE_URL` points at `localhost`, `apify login` validates your token against `http://localhost:3333`. All other commands still call the production API at `https://api.apify.com`.
-
