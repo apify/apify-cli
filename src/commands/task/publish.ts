@@ -3,6 +3,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { CommandExitCodes } from '../../lib/consts.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
@@ -12,7 +13,8 @@ export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> 
 	static override description =
 		'Publishes the task on its public landing page.\n' +
 		'The task must belong to a public Actor and have its public display configuration set up ' +
-		'(in Apify Console, on the task Publication tab).';
+		'(in Apify Console, on the task Publication tab). ' +
+		'Requires write access to the task and to its Actor.';
 
 	static override examples = [
 		{
@@ -20,8 +22,8 @@ export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> 
 			command: 'apify task publish my-task',
 		},
 		{
-			description: 'Publish a task by full ID.',
-			command: 'apify task publish E2jjCZBezvAZnX8Rb',
+			description: 'Publish a task by its full name.',
+			command: 'apify task publish username/my-task',
 		},
 	];
 
@@ -30,7 +32,7 @@ export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> 
 	static override args = {
 		taskId: Args.string({
 			required: true,
-			description: 'Name or ID of the Task to publish (e.g. "my-task" or "E2jjCZBezvAZnX8Rb").',
+			description: 'Name of the Task to publish, or its full name (e.g. "my-task" or "username/my-task").',
 		}),
 	};
 
@@ -45,7 +47,8 @@ export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> 
 
 		const task = await taskClient.get();
 		if (!task) {
-			error({ message: `Cannot find Task with ID or name '${taskId}' in your account.` });
+			error({ message: `Cannot find Task with name '${taskId}' in your account.` });
+			process.exitCode = CommandExitCodes.NotFound;
 			return;
 		}
 
@@ -62,6 +65,7 @@ export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> 
 			error({
 				message: `Failed to publish Task ${chalk.yellow(task.name)}\n  ${casted.message || casted}`,
 			});
+			process.exitCode = CommandExitCodes.RunFailed;
 		}
 	}
 }

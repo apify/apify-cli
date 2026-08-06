@@ -1655,14 +1655,15 @@ FLAGS
 DESCRIPTION
   Publishes the task on its public landing page.
   The task must belong to a public Actor and have its public display 
-  configuration set up (in Apify Console, on the task Publication tab).
+  configuration set up (in Apify Console, on the task Publication tab). Requires
+   write access to the task and to its Actor.
 
 USAGE
   $ apify task publish <taskId>
 
 ARGUMENTS
-  taskId  Name or ID of the Task to publish (e.g. "my-task" or
-          "E2jjCZBezvAZnX8Rb").
+  taskId  Name of the Task to publish, or its full name (e.g. "my-task" or
+          "username/my-task").
 ```
 
 ##### `apify task unpublish`
@@ -1671,14 +1672,14 @@ ARGUMENTS
 DESCRIPTION
   Unpublishes the task from its public landing page.
   The public display configuration is preserved, so the task can be published 
-  again later.
+  again later. Requires write access to the task and to its Actor.
 
 USAGE
   $ apify task unpublish <taskId>
 
 ARGUMENTS
-  taskId  Name or ID of the Task to unpublish (e.g. "my-task" or
-          "E2jjCZBezvAZnX8Rb").
+  taskId  Name of the Task to unpublish, or its full name (e.g. "my-task"
+          or "username/my-task").
 ```
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->

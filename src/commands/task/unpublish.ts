@@ -3,6 +3,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { CommandExitCodes } from '../../lib/consts.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
@@ -11,7 +12,8 @@ export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishComma
 
 	static override description =
 		'Unpublishes the task from its public landing page.\n' +
-		'The public display configuration is preserved, so the task can be published again later.';
+		'The public display configuration is preserved, so the task can be published again later. ' +
+		'Requires write access to the task and to its Actor.';
 
 	static override examples = [
 		{
@@ -19,8 +21,8 @@ export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishComma
 			command: 'apify task unpublish my-task',
 		},
 		{
-			description: 'Unpublish a task by full ID.',
-			command: 'apify task unpublish E2jjCZBezvAZnX8Rb',
+			description: 'Unpublish a task by its full name.',
+			command: 'apify task unpublish username/my-task',
 		},
 	];
 
@@ -29,7 +31,7 @@ export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishComma
 	static override args = {
 		taskId: Args.string({
 			required: true,
-			description: 'Name or ID of the Task to unpublish (e.g. "my-task" or "E2jjCZBezvAZnX8Rb").',
+			description: 'Name of the Task to unpublish, or its full name (e.g. "my-task" or "username/my-task").',
 		}),
 	};
 
@@ -44,7 +46,8 @@ export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishComma
 
 		const task = await taskClient.get();
 		if (!task) {
-			error({ message: `Cannot find Task with ID or name '${taskId}' in your account.` });
+			error({ message: `Cannot find Task with name '${taskId}' in your account.` });
+			process.exitCode = CommandExitCodes.NotFound;
 			return;
 		}
 
@@ -61,6 +64,7 @@ export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishComma
 			error({
 				message: `Failed to unpublish Task ${chalk.yellow(task.name)}\n  ${casted.message || casted}`,
 			});
+			process.exitCode = CommandExitCodes.RunFailed;
 		}
 	}
 }
