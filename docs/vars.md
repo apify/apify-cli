@@ -1,13 +1,19 @@
 ---
-description: Learn how use environment variables for Apify CLI
+description: Learn how to define environment variables for your Actors using the Apify CLI.
 title: Environment variables
 ---
 
-There are two options how you can set up environment variables for Actors.
+You can use the CLI to set environment variables for your Actors.
 
-### Set up environment variables in `.actor/actor.json`
+For the list of the system variables that Apify provides, see [Environment variables](https://docs.apify.com/actors/development/programming-interface/environment-variables).
 
-All keys from `environmentVariables` will be set as environment variables into Apify platform after you push Actor to Apify. Current values on Apify will be overridden.
+## Custom environment variables
+
+To pass additional configuration to your Actor, define custom environment variables.
+
+### Define in `.actor/actor.json`
+
+To set custom variables, add them to the `environmentVariables` object in `.actor/actor.json` and push the Actor to Apify:
 
 ```json
 {
@@ -22,10 +28,19 @@ All keys from `environmentVariables` will be set as environment variables into A
 }
 ```
 
-### Set up environment variables in Apify Console
+Variables defined in `.actor/actor.json` override the ones defined in Apify Console.
 
-In [Apify Console](https://console.apify.com/actors) select your Actor, you can set up variables into Source tab.
-After setting up variables in the app, remove the `environmentVariables` from `.actor/actor.json`. Otherwise, variables from `.actor/actor.json` will override variables in the app.
+### Define in Apify Console
+
+To set custom variables in Apify Console:
+
+1. Log in to [Apify Console](https://console.apify.com).
+1. In the left-side panel, go to **Development** > **My Actors**.
+1. From the table, select the Actor you want to configure.
+1. Go to the **Source** tab > **Code**.
+1. Expand the **Environment variables** section.
+
+Once done, delete `environmentVariables` from `.actor/actor.json`. Variables defined in that file override the ones defined in Apify Console.
 
 ```json
 {
@@ -36,41 +51,26 @@ After setting up variables in the app, remove the `environmentVariables` from `.
 }
 ```
 
-#### How to set secret environment variables in `.actor/actor.json`
+### Define secrets
 
-CLI provides commands to manage secrets environment variables. Secrets are stored to the `~/.apify` directory.
-You can add a new secret using the command:
+You can use the CLI to manage secrets environment variables:
 
-```bash
-apify secrets add mySecretPassword pwd1234
-```
+1. To add a secret, use the `apify secrets add` command. All secrets are stored in the `~/.apify` directory.
 
-After adding a new secret you can use the secret in `.actor/actor.json`.
+    ```bash
+    apify secrets add mySecretPassword pwd1234
+    ```
 
-```text
-{
-    "actorSpecification": 1,
-    "name": "dataset-to-mysql",
-    ...
-    "environmentVariables": {
-      "MYSQL_PASSWORD": "@mySecretPassword"
-    },
-    ...
-}
-```
+1. To reference the secret in `.actor/actor.json`, use the `@` prefix:
 
-## Environment variables that configure the CLI
-
-Use the following environment variable to point the CLI at a non-production Apify Console, such as a staging deployment or a local instance during development.
-
-### `APIFY_CONSOLE_URL`
-
-Overrides the base URL of [Apify Console](https://console.apify.com) used when the CLI prints links. For example, run, build, dataset and key-value store URLs, or the `apify login` browser flow. When unset, the production Console at `https://console.apify.com` is used.
-
-Set it to point at a local Console instance during development:
-
-```bash
-export APIFY_CONSOLE_URL=http://localhost:3000
-```
-
-With a localhost Console, `apify login` also validates your token against the local API at `http://localhost:3333`.
+    ```text
+    {
+        "actorSpecification": 1,
+        "name": "dataset-to-mysql",
+        ...
+        "environmentVariables": {
+          "MYSQL_PASSWORD": "@mySecretPassword"
+        },
+        ...
+    }
+    ```
