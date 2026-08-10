@@ -29,9 +29,9 @@ function isInstalledOnBaseline() {
 	}
 
 	if (metadata.platform === 'windows') {
-		// Windows ARM64 always needs baseline
+		// Windows ARM64 has a native bundle, which is never a baseline build
 		if (metadata.arch === 'arm64') {
-			return true;
+			return false;
 		}
 
 		// Get AVX2 support like the install script does
@@ -91,28 +91,27 @@ export async function useCLIVersionAssets(version: string) {
 	const requiresBaseline = isInstalledOnBaseline();
 
 	const assets = body.assets.filter((asset) => {
-		const [_cliEntrypoint, _version, assetOs, assetArch, assetBaselineOrMusl, assetBaseline] = asset.name
+		// We now ship a single `apify-cli` bundle. The legacy `apify-*`/`actor-*` assets are kept only as a
+		// backwards-compatible backup for old installs and must be ignored by the current upgrade flow.
+		if (!asset.name.startsWith('apify-cli-')) {
+			return false;
+		}
+
+		// Mirrors how the build script (scripts/build-cli-bundles.ts) emits the asset suffix: the trailing
+		// modifiers are booleans, so require an exact match on both. Anything looser can match a wrong-libc
+		// asset (e.g. a glibc machine without AVX2 matching `-musl-baseline`).
+		const [_version, assetOs, assetArch, ...modifiers] = asset.name
+			.slice('apify-cli-'.length)
 			.replace(versionWithoutV, 'version')
 			.replace('.exe', '')
 			.split('-');
 
-		if (assetOs !== metadata.platform) {
-			return false;
-		}
-
-		if (assetArch !== metadata.arch) {
-			return false;
-		}
-
-		if (requiresMusl) {
-			return assetBaselineOrMusl === 'musl';
-		}
-
-		if (requiresBaseline) {
-			return assetBaseline === 'baseline' || assetBaselineOrMusl === 'baseline';
-		}
-
-		return !assetBaselineOrMusl && !assetBaseline;
+		return (
+			assetOs === metadata.platform &&
+			assetArch === metadata.arch &&
+			modifiers.includes('musl') === requiresMusl &&
+			modifiers.includes('baseline') === requiresBaseline
+		);
 	});
 
 	cliDebugPrint('useCLIVersionAssets', 'Fetched release', {
