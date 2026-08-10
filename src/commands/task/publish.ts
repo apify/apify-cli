@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
