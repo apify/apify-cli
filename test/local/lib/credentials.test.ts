@@ -16,6 +16,9 @@ import {
 } from '../../../src/lib/credentials.js';
 import { getApifyClientOptions, getLocalUserInfo, getLoggedClient } from '../../../src/lib/utils.js';
 
+/** `user('me').get()` failures for the mock below to simulate, keyed by the token used. */
+const userFetchFailures = new Map<string, { statusCode?: number }>();
+
 // Stubs out the `user('me').get()` round-trip so getLoggedClient() can be tested without the API.
 vi.mock('apify-client', () => {
 	class ApifyClient {
@@ -25,11 +28,16 @@ vi.mock('apify-client', () => {
 		}
 		user() {
 			return {
-				get: async () => ({
-					id: `id_for_${this.token}`,
-					username: `user_for_${this.token}`,
-					proxy: { password: `pw_for_${this.token}` },
-				}),
+				get: async () => {
+					const failure = userFetchFailures.get(this.token!);
+					if (failure) throw Object.assign(new Error('simulated API failure'), failure);
+
+					return {
+						id: `id_for_${this.token}`,
+						username: `user_for_${this.token}`,
+						proxy: { password: `pw_for_${this.token}` },
+					};
+				},
 			};
 		}
 	}
@@ -72,6 +80,7 @@ describe('credentials', () => {
 		vitest.stubEnv('APIFY_TOKEN', undefined);
 		keyringStore.clear();
 		keyringFailures.clear();
+		userFetchFailures.clear();
 		__resetCredentialsForTests();
 	});
 
@@ -318,6 +327,28 @@ describe('credentials', () => {
 			vitest.stubEnv('APIFY_TOKEN', 'env_tok_b');
 
 			expect(await getLocalUserInfo()).toMatchObject({ username: 'user_for_env_tok_b', id: 'id_for_env_tok_b' });
+		});
+
+		// `apify run` needs no network, so an unreachable API must not stop it — only a refused token is fatal.
+		it.each([[undefined], [500], [502]])(
+			'degrades to no identity when the identity lookup fails with statusCode %s',
+			async (statusCode) => {
+				const token = `env_tok_soft_${statusCode}`;
+				vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+				vitest.stubEnv('APIFY_TOKEN', token);
+				userFetchFailures.set(token, { statusCode });
+
+				expect(await getLocalUserInfo()).toEqual({ token });
+			},
+		);
+
+		it.each([[401], [403], [409]])('throws when the API refuses the APIFY_TOKEN with %i', async (statusCode) => {
+			const token = `env_tok_refused_${statusCode}`;
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			vitest.stubEnv('APIFY_TOKEN', token);
+			userFetchFailures.set(token, { statusCode });
+
+			await expect(getLocalUserInfo()).rejects.toThrow(`refused by the Apify API (HTTP ${statusCode})`);
 		});
 	});
 

@@ -191,7 +191,15 @@ async function fetchActiveUserInfo(token: string): Promise<AuthJSON> {
 			activeUserInfo = { token, info: await client.user('me').get() };
 		} catch (err) {
 			cliDebugPrint('[fetchActiveUserInfo] error getting user info', { error: err });
-			throw new Error(`The token in ${APIFY_ENV_VARS.TOKEN} was rejected by the Apify API. Is it still valid?`);
+			// The token itself being refused is worth failing on. Anything else (offline, API hiccup) must not
+			// break commands that work locally — `apify run` needs no network, so it degrades to no identity.
+			const { statusCode } = err as { statusCode?: number };
+			if (statusCode && [401, 403, 409].includes(statusCode)) {
+				throw new Error(
+					`The token in ${APIFY_ENV_VARS.TOKEN} was refused by the Apify API (HTTP ${statusCode}). Check that it is valid and has the required permissions.`,
+				);
+			}
+			return {};
 		}
 	}
 
