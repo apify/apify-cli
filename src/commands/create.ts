@@ -173,7 +173,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 			if (folderExists?.isDirectory() && folderHasFiles) {
 				const message =
-					`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.` +
+					`Cannot create new Actor, directory '${actorName}' already exists. Provide a different name.` +
 					' You can use "apify init" to create a local Actor environment inside an existing directory.';
 
 				if (json) {
