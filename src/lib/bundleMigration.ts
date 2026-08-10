@@ -232,6 +232,19 @@ export function migrateLegacyBundleInstallIfNeeded() {
 				cliDebugPrint('[migration] failed to remove legacy binary', { legacyBinaryPath, err });
 			}
 		}
+
+		// 4. Drop the `upgrade.ps1` helper. The legacy version demands exactly two download URLs, while the
+		//    single-bundle upgrade sends one, so a stale copy (its self-update at the end of an upgrade is
+		//    best-effort and fails silently) would refuse to run forever. `upsertUpgradeScript` in the upgrade
+		//    command re-downloads the current script whenever it is missing.
+		const upgradeScriptPath = join(binDir, 'upgrade.ps1');
+
+		try {
+			rmSync(upgradeScriptPath, { force: true });
+			cliDebugPrint('[migration] removed upgrade script, it will be re-downloaded on the next upgrade');
+		} catch (err) {
+			cliDebugPrint('[migration] failed to remove upgrade script', { upgradeScriptPath, err });
+		}
 	}
 
 	cliDebugPrint('[migration] migration to single bundle complete');
