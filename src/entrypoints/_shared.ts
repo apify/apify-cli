@@ -1,3 +1,4 @@
+import { basename } from 'node:path';
 import process from 'node:process';
 import { parseArgs } from 'node:util';
 
@@ -5,6 +6,7 @@ import chalk from 'chalk';
 import { satisfies } from 'semver';
 
 import type { UpgradeCommand as TypeUpgradeCommand } from '../commands/cli-management/upgrade.js';
+import { migrateLegacyBundleInstallIfNeeded } from '../lib/bundleMigration.js';
 import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.js';
 import { commandRegistry, internalRunCommand } from '../lib/command-framework/apify-command.js';
 import { CommandError } from '../lib/command-framework/CommandError.js';
@@ -22,6 +24,31 @@ export const cachedStdinInput = await readStdin();
 const cliMetadata = useCLIMetadata();
 
 export const USER_AGENT = `Apify CLI/${cliMetadata.version} (https://github.com/apify/apify-cli)`;
+
+/**
+ * Resolves which CLI command set ("apify" or "actor") the single bundle should expose.
+ *
+ * The wrapper scripts created during install/upgrade set `APIFY_CLI_ENTRYPOINT`. As a fallback (e.g.
+ * a legacy `apify`/`actor` bundle that has not been migrated to a wrapper script yet), we infer the
+ * entrypoint from the name the executable was invoked as.
+ */
+export function resolveEntrypoint(): 'apify' | 'actor' {
+	const fromEnv = process.env.APIFY_CLI_ENTRYPOINT?.toLowerCase();
+
+	if (fromEnv === 'actor') {
+		return 'actor';
+	}
+
+	if (fromEnv === 'apify') {
+		return 'apify';
+	}
+
+	const execName = basename(process.execPath)
+		.replace(/\.exe$/i, '')
+		.toLowerCase();
+
+	return execName === 'actor' ? 'actor' : 'apify';
+}
 
 export function processVersionCheck(cliName: string) {
 	if (cliMetadata.installMethod === 'bundle') {
@@ -109,6 +136,10 @@ async function runVersionCheck(entrypoint: string, maybeCommandName?: string) {
 }
 
 export async function runCLI(entrypoint: string) {
+	// Clean up a legacy multi-bundle install (apify + actor + apify-cli) into the new single-bundle
+	// layout (apify-cli binary + apify/actor wrapper scripts) on the first run after an upgrade.
+	migrateLegacyBundleInstallIfNeeded();
+
 	cliDebugPrint('CLIMetadata', {
 		...cliMetadata,
 		fullVersionString: cliMetadata.fullVersionString,
