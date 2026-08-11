@@ -23,7 +23,7 @@ export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishComma
 			command: 'apify task unpublish my-task',
 		},
 		{
-			description: 'Unpublish a task by its full name.',
+			description: 'Unpublish a task by full name.',
 			command: 'apify task unpublish username/my-task',
 		},
 	];
@@ -33,7 +33,7 @@ export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishComma
 	static override args = {
 		taskId: Args.string({
 			required: true,
-			description: 'Name of the Task to unpublish, or its full name (e.g. "my-task" or "username/my-task").',
+			description: 'Name of the task to unpublish. For example, "my-task" or "username/my-task".',
 		}),
 	};
 
@@ -64,7 +64,7 @@ export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishComma
 			const casted = err as ApifyApiError;
 
 			error({
-				message: `Failed to unpublish Task ${chalk.yellow(task.name)}\n  ${casted.message || casted}`,
+				message: `Failed to unpublish task ${chalk.yellow(task.name)}\n  ${casted.message || casted}`,
 			});
 			process.exitCode = CommandExitCodes.RunFailed;
 		}

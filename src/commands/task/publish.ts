@@ -15,7 +15,7 @@ export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> 
 	static override description =
 		'Publishes the task on its public landing page.\n' +
 		'The task must belong to a public Actor and have its public display configuration set up ' +
-		'(in Apify Console, on the task Publication tab). ' +
+		'on the task Publication tab in Apify Console. ' +
 		'Requires write access to the task and to its Actor.';
 
 	static override examples = [
@@ -24,7 +24,7 @@ export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> 
 			command: 'apify task publish my-task',
 		},
 		{
-			description: 'Publish a task by its full name.',
+			description: 'Publish a task by full name.',
 			command: 'apify task publish username/my-task',
 		},
 	];
@@ -34,7 +34,7 @@ export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> 
 	static override args = {
 		taskId: Args.string({
 			required: true,
-			description: 'Name of the Task to publish, or its full name (e.g. "my-task" or "username/my-task").',
+			description: 'Name of the task to publish. For example, "my-task" or "username/my-task".',
 		}),
 	};
 
@@ -65,7 +65,7 @@ export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> 
 			const casted = err as ApifyApiError;
 
 			error({
-				message: `Failed to publish Task ${chalk.yellow(task.name)}\n  ${casted.message || casted}`,
+				message: `Failed to publish task ${chalk.yellow(task.name)}\n  ${casted.message || casted}`,
 			});
 			process.exitCode = CommandExitCodes.RunFailed;
 		}
