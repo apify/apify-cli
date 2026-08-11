@@ -10,27 +10,25 @@ import {
 } from 'apify-client';
 import chalk from 'chalk';
 
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
+
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
+import { finalizeRun, runUrl } from '../../lib/commands/run-result.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import {
-	getLocalConfig,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
 
 	static override description =
 		'Executes Actor remotely using your authenticated account.\n' +
-		'Reads input from local key-value store by default.';
+		'Reads input from local key-value store by default.\n' +
+		'To inspect the input schema before creating a JSON input, use "apify actors info <actor> --input".';
 
 	static override group = 'Apify Console';
 
@@ -42,6 +40,10 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		{
 			description: 'Call a specific Actor by its full name.',
 			command: 'apify call apify/hello-world',
+		},
+		{
+			description: 'Inspect the Actor input schema before preparing JSON input.',
+			command: 'apify actors info apify/hello-world --input',
 		},
 		{
 			description: 'Call an Actor with inline JSON input.',
@@ -59,7 +61,8 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		...SharedRunOnCloudFlags('Actor'),
 		input: Flags.string({
 			char: 'i',
-			description: 'Optional JSON input to be given to the Actor.',
+			description:
+				'Optional inline JSON object input for the Actor. To avoid shell parsing issues, wrap the JSON in quotes. For JSON files, use --input-file.',
 			required: false,
 			stdin: StdinMode.Stringified,
 			exclusive: ['input-file'],
@@ -103,7 +106,10 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		if (this.flags.json && this.flags.outputDataset) {
-			error({ message: 'You cannot use both the --json and --output-dataset flags when running this command.' });
+			error({
+				message:
+					'You cannot use both --json and --output-dataset. Use --json for run details or --output-dataset for dataset items.',
+			});
 			process.exitCode = CommandExitCodes.InvalidInput;
 
 			return;
@@ -136,7 +142,9 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			runOpts.memory = this.flags.memory;
 		}
 
-		const inputOverride = await getInputOverride(cwd, this.flags.input, this.flags.inputFile);
+		const inputOverride = await getInputOverride(cwd, this.flags.input, this.flags.inputFile, {
+			schemaHint: `Run "apify actors info ${userFriendlyId} --input" to inspect the Actor input schema.`,
+		});
 
 		// Means we couldn't resolve input, so we should exit
 		if (inputOverride === false) {
@@ -145,9 +153,6 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 		let runStarted = false;
 		let run: ActorRun;
-
-		let url: string;
-		let datasetUrl: string;
 
 		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
@@ -160,6 +165,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			silent: this.flags.silent,
 			waitForRunToFinish: true,
 			printRunLogs: true,
+			suppressFinalStatus: true,
 		});
 
 		for await (const yieldedRun of iterator) {
@@ -170,8 +176,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 				// A *lot* is copied from `runs info`
 				if (!this.flags.silent) {
-					url = `https://console.apify.com/actors/${actorId}/runs/${yieldedRun.id}`;
-					datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
+					const url = runUrl(actorId, yieldedRun.id);
 
 					const message: string[] = [`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`];
 
@@ -220,23 +225,19 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			}
 		}
 
+		await finalizeRun({
+			apifyClient,
+			run: run!,
+			operation: 'call',
+			json: this.flags.json,
+			silent: this.flags.silent,
+		});
+
 		if (this.flags.json) {
-			printJsonToStdout(run!);
 			return;
 		}
 
-		if (!this.flags.silent) {
-			simpleLog({
-				message: [
-					'',
-					`${chalk.blue('Export results')}: ${datasetUrl!}`,
-					`${chalk.blue('View on Apify Console')}: ${url!}`,
-				].join('\n'),
-				stdout: true,
-			});
-		}
-
-		if (this.flags.outputDataset) {
+		if (this.flags.outputDataset && run!.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
 			const datasetId = run!.defaultDatasetId;
 
 			let info: Dataset;

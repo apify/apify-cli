@@ -2,11 +2,9 @@ import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
-import AdmZip from 'adm-zip';
-import axios from 'axios';
+import { downloadTemplate } from 'giget';
 import jju from 'jju';
 import { gt } from 'semver';
-import tiged from 'tiged';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -14,12 +12,10 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { downloadZip, getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const extractGitHubZip = async (url: string, directoryPath: string) => {
-	const { data } = await axios.get(url, { responseType: 'arraybuffer' });
-
-	const zipFile = new AdmZip(Buffer.from(data, 'binary'));
+	const zipFile = await downloadZip(url);
 
 	zipFile.extractEntryTo(zipFile.getEntries()[0].entryName, directoryPath, false);
 };
@@ -186,18 +182,10 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 				}
 
 				const { gitRepoUrl } = correctVersion;
-				const [repoUrl, branchDirPart] = gitRepoUrl.split('#');
 
-				let branch;
-				let dir;
-				if (branchDirPart) [branch, dir] = branchDirPart.split(':');
-				let branchDirRepoUrl = repoUrl;
-				if (dir) branchDirRepoUrl += `/${dir}`;
-				if (branch) branchDirRepoUrl += `#${branch}`;
-
-				const emitter = tiged(branchDirRepoUrl);
+				// giget's git: provider parses `<url>#<branch>:<subdir>` natively, matching gitRepoUrl.
 				try {
-					await emitter.clone(dirpath);
+					await downloadTemplate(`git:${gitRepoUrl}`, { dir: dirpath });
 				} catch (err) {
 					throw new Error(`Failed to pull Actor from ${gitRepoUrl}. ${(err as Error).message}`);
 				}

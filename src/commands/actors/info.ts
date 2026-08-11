@@ -305,6 +305,18 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 			}
 		}
 
+		// Usage stats. The actor GET response already carries `stats`, so this mirrors the
+		// popularity numbers `apify actors search` surfaces without an extra API call.
+		const { stats } = actorInfo;
+
+		message.push(
+			'',
+			chalk.yellow('Actor stats:'),
+			`  ${chalk.yellow('Total users:')} ${chalk.cyan(`${stats.totalUsers}`)}`,
+			`  ${chalk.yellow('Users (30d):')} ${chalk.cyan(`${stats.totalUsers30Days}`)}`,
+			`  ${chalk.yellow('Total runs:')} ${chalk.cyan(`${stats.totalRuns}`)}`,
+		);
+
 		if (actorInfo.taggedBuilds) {
 			message.push('', chalk.yellow('Builds:'));
 

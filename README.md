@@ -13,6 +13,34 @@ Apify CLI is the command-line tool for creating, developing, and deploying [Apif
 - Manage secret environment variables used by your Actors
 - Works with any programming language — Actors run as Docker containers on the platform
 
+## Agent skill
+
+This repo ships an [agent skill](./skills/apify/SKILL.md) that teaches AI coding agents (Claude Code, Cursor, etc.) how to work with the Apify CLI reliably. You can print the skill straight from the CLI — it always matches your installed version:
+
+```bash
+apify help --skill
+```
+
+If you'd rather have the skill installed persistently, `apify help --skill` prints a valid `SKILL.md` that you can redirect into your agent's skills directory. The location depends on the agent:
+
+### Claude Code
+
+```bash
+mkdir -p ~/.claude/skills/apify-cli
+apify help --skill > ~/.claude/skills/apify-cli/SKILL.md
+```
+
+### Codex and other agents
+
+Codex and most other agents follow the [Agent Skills open standard](https://developers.openai.com/codex/skills), which loads skills from `.agents/skills` (per repo) or `~/.agents/skills` (per user):
+
+```bash
+mkdir -p ~/.agents/skills/apify-cli
+apify help --skill > ~/.agents/skills/apify-cli/SKILL.md
+```
+
+That copy is a snapshot; re-run it after upgrading the Apify CLI to refresh it.
+
 ## Quick start
 
 1. **Install the CLI** (macOS / Linux):
@@ -29,14 +57,13 @@ Apify CLI is the command-line tool for creating, developing, and deploying [Apif
    apify login
    ```
 
-3. **Create, run, and deploy** your first Actor:
+3. **Run an Actor** on the Apify cloud:
 
    ```bash
-   apify create # it will walk you through an interactive wizard
-   cd my-actor
-   apify run
-   apify push
+   apify call apify/hello-world --output-dataset
    ```
+
+   This runs the public [`apify/hello-world`](https://apify.com/apify/hello-world) Actor and prints its results. To build your own Actor instead, run `apify create` and follow the interactive wizard.
 
 ## Installation
 

@@ -21,6 +21,8 @@ const categories: Record<string, CommandsInCategory[]> = {
 	'actor-dev': [
 		//
 		{ command: Commands.create },
+		{ command: Commands.templates },
+		{ command: Commands.templatesLs },
 		{ command: Commands.init },
 		{ command: Commands.run },
 		{ command: Commands.validateSchema },
@@ -60,6 +62,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.buildsLs },
 		{ command: Commands.buildsRemoveTag },
 		{ command: Commands.buildsRm },
+		{ command: Commands.buildsWait },
 	],
 	'actor-run': [
 		//
@@ -70,6 +73,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.runsLs },
 		{ command: Commands.runsResurrect },
 		{ command: Commands.runsRm },
+		{ command: Commands.runsWait },
 	],
 	'general': [
 		//

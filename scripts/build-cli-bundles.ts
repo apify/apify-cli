@@ -8,10 +8,9 @@ When node stabilizes SEA (https://nodejs.org/api/single-executable-applications.
 */
 
 import { readFileSync } from 'node:fs';
-import { readFile, rm, writeFile } from 'node:fs/promises';
-import { basename } from 'node:path';
+import { copyFile, readFile, rm, writeFile } from 'node:fs/promises';
 
-import { $, type Build, build, fileURLToPath } from 'bun';
+import { type Build, build, fileURLToPath } from 'bun';
 
 import { version } from '../package.json' with { type: 'json' };
 
@@ -21,23 +20,24 @@ const targets = (() => {
 			//
 			'bun-windows-x64',
 			'bun-windows-x64-baseline',
+			'bun-windows-arm64',
 			'bun-linux-x64',
 			'bun-linux-x64-baseline',
 			'bun-linux-arm64',
-			'bun-linux-arm64-baseline',
 			'bun-darwin-x64',
 			'bun-darwin-x64-baseline',
 			'bun-darwin-arm64',
-			'bun-darwin-arm64-baseline',
 			'bun-linux-x64-musl',
 			'bun-linux-arm64-musl',
-			// TODO: when adding native windows arm64 builds, remove these too
-			'bun-linux-x64-musl-baseline' as never,
-			'bun-linux-arm64-musl-baseline' as never,
+			'bun-linux-x64-baseline-musl',
 		] satisfies Build.CompileTarget[];
 	}
 
 	if (process.platform === 'win32') {
+		if (process.arch === 'arm64') {
+			return ['bun-windows-arm64'] satisfies Build.CompileTarget[];
+		}
+
 		return ['bun-windows-x64', 'bun-windows-x64-baseline'] satisfies Build.CompileTarget[];
 	}
 
@@ -45,23 +45,48 @@ const targets = (() => {
 		'bun-linux-x64',
 		'bun-linux-x64-baseline',
 		'bun-linux-arm64',
-		'bun-linux-arm64-baseline',
 		'bun-darwin-x64',
 		'bun-darwin-x64-baseline',
 		'bun-darwin-arm64',
-		'bun-darwin-arm64-baseline',
 		'bun-linux-x64-musl',
 		'bun-linux-arm64-musl',
-		'bun-linux-x64-musl-baseline' as never,
-		'bun-linux-arm64-musl-baseline' as never,
+		'bun-linux-x64-baseline-musl',
 	] satisfies Build.CompileTarget[];
 })();
 
+// We now build a single `apify-cli` bundle. The `apify` and `actor` CLIs are wrapper scripts (created on
+// install/upgrade) that invoke this bundle with `APIFY_CLI_ENTRYPOINT` set to pick the command set.
 const entryPoints = [
 	//
-	fileURLToPath(new URL('../src/entrypoints/apify.ts', import.meta.url)),
-	fileURLToPath(new URL('../src/entrypoints/actor.ts', import.meta.url)),
+	fileURLToPath(new URL('../src/entrypoints/bundle.ts', import.meta.url)),
 ];
+
+// Names under which a copy of the single bundle is also published, so that installs using the old
+// two-bundle upgrade flow can still pull the new bundle. These can be dropped once everyone has migrated.
+const backupBundleNames = ['apify', 'actor'];
+
+// Placeholder specifier that `credentials.ts` imports for the OS keyring in bundle mode.
+// Kept external in the fat-JS step so the literal `import()` survives, then rewritten per
+// target below to the matching `@napi-rs/keyring-<platform>` subpackage so Bun's `--compile`
+// embeds that one native `.node`. Must match the specifier in `src/lib/credentials.ts`.
+const KEYRING_PLACEHOLDER = '__APIFY_KEYRING_NATIVE_SUBPACKAGE__';
+const APIFY_CLI_SKILL = readFileSync(new URL('../skills/apify/SKILL.md', import.meta.url), 'utf-8');
+
+// Maps the compiled (os, arch, libc) to the napi-rs keyring subpackage that ships its `.node`.
+// `supportedArchitectures` (pnpm-workspace.yaml) forces all of these into node_modules at build
+// time so each target can resolve its own, regardless of the build machine's platform.
+function keyringSubpackage(os: string, arch: string, musl: boolean): string {
+	switch (os) {
+		case 'linux':
+			return `@napi-rs/keyring-linux-${arch}-${musl ? 'musl' : 'gnu'}`;
+		case 'darwin':
+			return `@napi-rs/keyring-darwin-${arch}`;
+		case 'windows':
+			return `@napi-rs/keyring-win32-${arch}-msvc`;
+		default:
+			throw new Error(`No @napi-rs/keyring subpackage known for ${os}-${arch}`);
+	}
+}
 
 await rm(new URL('../bundles/', import.meta.url), { recursive: true, force: true });
 
@@ -77,7 +102,9 @@ await writeFile(metadataFile, newContent);
 // #endregion
 
 for (const entryPoint of entryPoints) {
-	const cliName = basename(entryPoint, '.ts');
+	// The published asset prefix (`apify-cli-<version>-<target>`) is intentionally decoupled from the
+	// entrypoint file name (`bundle.ts`) - install/upgrade and the asset matcher all key off `apify-cli`.
+	const cliName = 'apify-cli';
 
 	const lines = readFileSync(entryPoint, 'utf-8').split('\n');
 	lines.splice(1, 0, 'import "proxy-agent";');
@@ -88,58 +115,54 @@ for (const entryPoint of entryPoints) {
 		files: {
 			[entryPoint]: lines.join('\n'),
 		},
+		define: {
+			__APIFY_CLI_SKILL__: JSON.stringify(APIFY_CLI_SKILL),
+		},
 		outdir: fileURLToPath(new URL(`../bundles/fat-clis`, import.meta.url)),
 		conditions: 'node',
 		target: 'bun',
 		sourcemap: 'none',
+		// Keep the keyring placeholder literal `import()` intact so it can be rewritten and
+		// resolved per target in step 2 (Bun only embeds a `.node` when --compile resolves it).
+		external: [KEYRING_PLACEHOLDER],
 	});
 
 	const entrypointResultFilePath = result.outputs[0]!.path;
 
-	// Fix apify client js (it now lazy loads proxy-agent, which makes bun skip it from the bundle)
-	{
-		const entrypointResultFileContent = await result.outputs[0]!.text();
+	// Fix apify client js (it now lazy loads proxy-agent, which makes bun skip it from the bundle).
+	// Kept in memory only — the per-target write below is what lands on disk before each compile.
+	const fatEntrypointContent = (await result.outputs[0]!.text()).replace(
+		`(0, utils_1.dynamicNodeImport)("proxy-agent")`,
+		`Promise.resolve().then(() => import_proxy_agent)`,
+	);
 
-		const newEntrypointResultFileContent = entrypointResultFileContent.replace(
-			`(0, utils_1.dynamicNodeImport)("proxy-agent")`,
-			`Promise.resolve().then(() => import_proxy_agent)`,
-		);
-
-		await writeFile(entrypointResultFilePath, newEntrypointResultFileContent);
+	// `replaceAll` is silent if the placeholder is gone, shipping a bundle that falls back to
+	// plaintext storage. Validate once up front and fail loud.
+	if (!fatEntrypointContent.includes(KEYRING_PLACEHOLDER)) {
+		throw new Error(`Keyring placeholder "${KEYRING_PLACEHOLDER}" not found in the fat JS for ${cliName}.`);
 	}
 
 	for (const target of targets) {
-		// eslint-disable-next-line prefer-const -- somehow it cannot tell that os and arch cannot be "const" while the rest are let
-		let [, os, arch, musl, baseline] = target.split('-');
+		// `target` is a bun compile target like `bun-linux-x64-baseline-musl`. The trailing modifiers (libc
+		// and/or SIMD level) can appear in any order, so collect them and emit the asset suffix in a stable
+		// `-musl-baseline` order (which the install/upgrade asset matchers rely on).
+		const [, os, arch, ...modifiers] = target.split('-');
 
-		if (musl === 'baseline') {
-			musl = '';
-			baseline = 'baseline';
-		}
+		const isMusl = modifiers.includes('musl');
+		const isBaseline = modifiers.includes('baseline');
 
-		// If we are building on Windows ARM64, even though the target is x64, we mark it as "arm64" (there are some weird errors when compiling on x64
-		// and running on arm64). Hopefully bun will get arm64 native builds
-		// TODO: Vlad remove this in a subsequent PR as Bun now has native arm64 windows builds
-		if (os === 'windows' && process.platform === 'win32') {
-			const systemType = await $`pwsh -c "(Get-CimInstance Win32_ComputerSystem).SystemType"`.text();
-
-			if (systemType.toLowerCase().includes('arm')) {
-				arch = 'arm64';
-
-				// On arm, process.arch will still return x64, which will break the upgrade command.
-				// So we override the arch to arm64
-
-				const newNewContent = newContent.replace('process.env.APIFY_BUNDLE_ARCH', '"arm64"');
-
-				await writeFile(metadataFile, newNewContent);
-			}
-		}
-
-		const fileName = `${cliName}-${version}-${os}-${arch}${musl ? '-musl' : ''}${baseline ? '-baseline' : ''}`;
+		const versionSuffix = `${version}-${os}-${arch}${isMusl ? '-musl' : ''}${isBaseline ? '-baseline' : ''}`;
+		const fileName = `${cliName}-${versionSuffix}`;
 
 		const outFile = fileURLToPath(new URL(`../bundles/${fileName}`, import.meta.url));
 
 		console.log(`Building ${cliName} for ${target} (result: ${fileName})...`);
+
+		// Point the keyring import at this target's native subpackage so --compile embeds its
+		// `.node`. Rewrite every iteration so the compiled file is never the stale, unpatched
+		// Bun output — the proxy-agent fix above lands on disk here too, not just the keyring swap.
+		const subpackage = keyringSubpackage(os, arch, isMusl);
+		await writeFile(entrypointResultFilePath, fatEntrypointContent.replaceAll(KEYRING_PLACEHOLDER, subpackage));
 
 		// Step 2: create the final executable bundle
 		await build({
@@ -156,8 +179,18 @@ for (const entryPoint of entryPoints) {
 			bytecode: true,
 		});
 
-		// Remove the arch override
-		await writeFile(metadataFile, newContent);
+		// Bun appends `.exe` to the output file for Windows targets
+		const isWindowsTarget = os === 'windows';
+		const compiledFile = `${outFile}${isWindowsTarget ? '.exe' : ''}`;
+
+		// Publish copies of the single bundle under the legacy `apify`/`actor` names as a backup
+		for (const backupName of backupBundleNames) {
+			const backupFile = fileURLToPath(
+				new URL(`../bundles/${backupName}-${versionSuffix}${isWindowsTarget ? '.exe' : ''}`, import.meta.url),
+			);
+
+			await copyFile(compiledFile, backupFile);
+		}
 	}
 }
 

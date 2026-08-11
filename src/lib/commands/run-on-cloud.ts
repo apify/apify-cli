@@ -32,6 +32,12 @@ export interface RunOnCloudOptions {
 	silent?: boolean;
 	waitForRunToFinish?: boolean;
 	printRunLogs?: boolean;
+	/**
+	 * When true, suppresses the final "Actor finished/failed" status line and the
+	 * implicit `process.exitCode` write at the end of the generator. Use this when
+	 * the caller renders its own final result summary and owns the exit code.
+	 */
+	suppressFinalStatus?: boolean;
 }
 
 export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: RunOnCloudOptions) {
@@ -45,6 +51,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		silent,
 		waitForRunToFinish,
 		printRunLogs,
+		suppressFinalStatus,
 	} = options;
 
 	const clientMethod = type === 'Actor' ? 'actor' : 'task';
@@ -151,16 +158,16 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		}
 	}
 
-	if (!silent) {
+	if (!suppressFinalStatus) {
 		if (run.status === ACTOR_JOB_STATUSES.SUCCEEDED) {
-			success({ message: `${type} finished.` });
+			if (!silent) success({ message: `${type} finished.` });
 		} else if (run.status === ACTOR_JOB_STATUSES.RUNNING) {
-			warning({ message: `${type} is still running!` });
+			if (!silent) warning({ message: `${type} is still running!` });
 		} else if (run.status === ACTOR_JOB_STATUSES.ABORTED || run.status === ACTOR_JOB_STATUSES.ABORTING) {
-			warning({ message: `${type} was aborted!` });
+			if (!silent) warning({ message: `${type} was aborted!` });
 			process.exitCode = CommandExitCodes.RunAborted;
 		} else {
-			error({ message: `${type} failed!` });
+			if (!silent) error({ message: `${type} failed!` });
 			process.exitCode = CommandExitCodes.RunFailed;
 		}
 	}

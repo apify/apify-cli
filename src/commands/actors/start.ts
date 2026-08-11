@@ -1,20 +1,18 @@
-import type { ActorRun, ActorStartOptions, ActorTaggedBuild } from 'apify-client';
+import process from 'node:process';
+
+import type { ActorRun, ActorStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { consoleRunUrl } from '../../lib/commands/agent-output.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
+import { getConsoleUrl } from '../../lib/console-url.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { simpleLog } from '../../lib/outputs.js';
-import {
-	getLocalConfig,
-	getLocalUserInfo,
-	getLoggedClientOrThrow,
-	printJsonToStdout,
-	TimestampFormatter,
-} from '../../lib/utils.js';
+import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
@@ -123,69 +121,62 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			printRunLogs: false,
 		});
 
-		let run!: ActorRun;
+		let run: ActorRun | undefined;
 
 		for await (const yieldedRun of iterator) {
 			run = yieldedRun;
 		}
 
-		if (this.flags.json) {
-			printJsonToStdout(run);
+		if (!run) {
+			simpleLog({ message: 'Actor run did not start.', stdout: false });
+			process.exitCode = 1;
 			return;
 		}
 
-		const url = `https://console.apify.com/actors/${actorId}/runs/${run.id}`;
-		const datasetUrl = `https://console.apify.com/storage/datasets/${run.defaultDatasetId}`;
+		const url = consoleRunUrl(actorId, run.id);
 
-		const message: string[] = [
-			`${chalk.gray('Run:')} Calling Actor ${userFriendlyId} (${chalk.gray(actorId)})`,
+		if (this.flags.json) {
+			printJsonToStdout({
+				ok: true,
+				operation: 'actors.start',
+				waited: false,
+				actor: {
+					id: actorId,
+					url: `${getConsoleUrl()}/actors/${actorId}`,
+				},
+				run: {
+					id: run.id,
+					status: run.status,
+					url,
+				},
+				next: {
+					wait: `apify runs wait ${run.id} --json`,
+					log: `apify runs log ${run.id}`,
+					info: `apify runs info ${run.id} --json`,
+				},
+				exitCode: 0,
+			});
+			return;
+		}
+
+		const message = [
+			chalk.greenBright('Run started.'),
 			'',
-			`${chalk.yellow('Started')}: ${TimestampFormatter.display(run.startedAt)}`,
+			`${chalk.yellow('Actor')}: ${actorData.name} (${chalk.gray(actorId)})`,
+			`${chalk.yellow('Run ID')}: ${run.id}`,
+			`${chalk.yellow('Status')}: ${run.status}`,
+			'',
+			chalk.gray('This command does not wait for the run to finish.'),
+			'',
+			'To wait for the final status:',
+			`  apify runs wait ${run.id} --json`,
+			'',
+			'To stream or inspect logs:',
+			`  apify runs log ${run.id}`,
+			'',
+			'To inspect run metadata:',
+			`  apify runs info ${run.id} --json`,
 		];
-
-		if (run.containerUrl) {
-			// container url
-			message.push(`${chalk.yellow('Container URL')}: ${chalk.blue(run.containerUrl)}`);
-		}
-
-		// basic version info
-
-		const expectedActorVersion = run.buildNumber.split('.').slice(0, 2).join('.');
-
-		const actorVersion = actorData.versions.find((item) => item.versionNumber === expectedActorVersion);
-
-		const runVersionTaggedAs = Object.entries((actorData.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>).find(
-			([, data]) => data.buildNumber === run.buildNumber,
-		)?.[0];
-
-		const messageParts = [`${chalk.yellow('Build')}:`, chalk.cyan(run.buildNumber)];
-
-		if (runVersionTaggedAs) {
-			messageParts.push(`(${chalk.yellow(runVersionTaggedAs)})`);
-		} else {
-			messageParts.push(`(${chalk.gray('N/A')})`);
-		}
-
-		if (actorVersion) {
-			messageParts.push(
-				`| ${chalk.gray('Actor version:')} ${chalk.cyan(actorVersion.versionNumber)} (${chalk.yellow(actorVersion.buildTag)})`,
-			);
-		}
-
-		message.push(messageParts.join(' '));
-
-		// timeout
-		message.push(`${chalk.yellow('Timeout')}: ${run.options.timeoutSecs.toLocaleString('en-US')} seconds`);
-
-		// memory limit
-		message.push(`${chalk.yellow('Memory')}: ${run.options.memoryMbytes} MB`);
-
-		// url
-		message.push(
-			'',
-			`${chalk.blue('Export results')}: ${datasetUrl!}`,
-			`${chalk.blue('View on Apify Console')}: ${url}`,
-		);
 
 		simpleLog({
 			message: message.join('\n'),

@@ -26,12 +26,12 @@ jobs:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Use Node.js
-              uses: actions/setup-node@v6
+              uses: actions/setup-node@v7
               with:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.2.0
+              uses: apify/actions/pnpm-install@v1.3.1
 
             - name: Build docs
               run: |
@@ -46,7 +46,7 @@ jobs:
                   SEGMENT_TOKEN: ${{ secrets.SEGMENT_TOKEN }}
 
             - name: Commit the updated package(-lock).json
-              uses: apify/actions/signed-commit@v1.2.0
+              uses: apify/actions/signed-commit@v1.3.0
               with:
                   message: "chore: Automatic theme updating workflow [skip ci]"
                   add: 'website/package.json pnpm-lock.yaml'

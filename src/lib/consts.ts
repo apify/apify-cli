@@ -67,7 +67,7 @@ export const APIFY_CLIENT_DEFAULT_HEADERS: Record<string, string> = {
 	...(githubActionsRunUrl && { 'X-Apify-Github-Actions-Run-Url': githubActionsRunUrl }),
 };
 
-export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.9.0';
+export const MINIMUM_SUPPORTED_PYTHON_VERSION = '3.11.0';
 
 export const PYTHON_VENV_PATH = '.venv';
 
@@ -77,6 +77,7 @@ export enum CommandExitCodes {
 	MissingAuth = 1,
 
 	BuildTimedOut = 2,
+	RunTimedOut = 2,
 
 	BuildAborted = 3,
 	RunAborted = 3,
@@ -85,6 +86,10 @@ export enum CommandExitCodes {
 
 	InvalidInput = 5,
 	InvalidActorJson = 5,
+
+	// The client gave up waiting (--timeout elapsed) before the job reached a terminal status.
+	// Distinct from BuildTimedOut/RunTimedOut, which mean the platform job itself timed out.
+	WaitTimedOut = 6,
 
 	NotFound = 250,
 	NotImplemented = 255,

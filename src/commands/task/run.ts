@@ -1,10 +1,9 @@
-import type { ApifyClient, TaskStartOptions } from 'apify-client';
-import chalk from 'chalk';
+import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
-import { simpleLog } from '../../lib/outputs.js';
+import { finalizeRun } from '../../lib/commands/run-result.js';
 import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
@@ -28,6 +27,8 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-task-run';
 
 	static override flags = SharedRunOnCloudFlags('Task');
+
+	static override enableJsonFlag = true;
 
 	static override args = {
 		taskId: Args.string({
@@ -59,8 +60,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			runOpts.memory = this.flags.memory;
 		}
 
-		let url: string;
-		let datasetUrl: string;
+		let run!: ActorRun;
 
 		const iterator = runActorOrTaskOnCloud(apifyClient, {
 			actorOrTaskData: {
@@ -70,22 +70,16 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			},
 			runOptions: runOpts,
 			type: 'Task',
+			waitForRunToFinish: true,
 			printRunLogs: true,
+			suppressFinalStatus: true,
 		});
 
 		for await (const yieldedRun of iterator) {
-			url = `https://console.apify.com/actors/${yieldedRun.actId}/runs/${yieldedRun.id}`;
-			datasetUrl = `https://console.apify.com/storage/datasets/${yieldedRun.defaultDatasetId}`;
+			run = yieldedRun;
 		}
 
-		simpleLog({
-			message: [
-				'',
-				`${chalk.blue('Export results')}: ${datasetUrl!}`,
-				`${chalk.blue('View on Apify Console')}: ${url!}`,
-			].join('\n'),
-			stdout: true,
-		});
+		await finalizeRun({ apifyClient, run, operation: 'task-run', json: this.flags.json });
 	}
 
 	private async resolveTaskId(client: ApifyClient, usernameOrId: string) {

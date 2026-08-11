@@ -1,12 +1,9 @@
 import { execSync } from 'node:child_process';
 import { createWriteStream, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
-import type { IncomingMessage } from 'node:http';
-import { get } from 'node:https';
 import { homedir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import process from 'node:process';
-import { finished } from 'node:stream/promises';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
@@ -14,7 +11,7 @@ import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
 import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
 import { ZipArchive } from 'archiver';
-import { AxiosHeaders } from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import ignoreModule, { type Ignore } from 'ignore';
 import { getEncoding } from 'istextorbinary';
@@ -46,6 +43,7 @@ import {
 } from './consts.js';
 import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
 import { deleteFile, ensureApifyDirectory, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -57,21 +55,6 @@ const makeIg = ignoreModule as unknown as () => Ignore;
 // Export AJV properly: https://github.com/ajv-validator/ajv/issues/2132
 // Welcome to the state of JavaScript/TypeScript and CJS/ESM interop.
 export const Ajv2019 = _Ajv2019 as unknown as typeof import('ajv/dist/2019.js').default;
-
-export const httpsGet = async (url: string) => {
-	return new Promise<IncomingMessage>((resolve, reject) => {
-		get(url, (response) => {
-			// Handle redirects
-			if (response.statusCode === 301 || response.statusCode === 302) {
-				resolve(httpsGet(response.headers.location!));
-				// Destroy the response to close the HTTP connection, otherwise this hangs for a long time with Node 19+ (due to HTTP keep-alive).
-				response.destroy();
-			} else {
-				resolve(response);
-			}
-		}).on('error', reject);
-	});
-};
 
 export const getLocalStorageDir = () => {
 	const envVar = APIFY_ENV_VARS.LOCAL_STORAGE_DIR;
@@ -716,12 +699,35 @@ export const isNodeVersionSupported = (installedNodeVersion: string) => {
 	return gte(installedNodeVersion, minimumSupportedNodeVersion);
 };
 
+export const downloadZip = async (url: string) => {
+	const response = await axios.get(url, {
+		responseType: 'arraybuffer',
+		validateStatus: () => true,
+		headers: { 'User-Agent': `Apify CLI/${useCLIMetadata().version} (https://github.com/apify/apify-cli)` },
+	});
+
+	if (response.status < 200 || response.status >= 300) {
+		const body = Buffer.from(response.data).toString('utf8').trim().slice(0, 500);
+		throw new Error(
+			`Failed to download the archive from ${url} (HTTP ${response.status}).${body ? `\nServer response: ${body}` : ''}`,
+		);
+	}
+
+	const data = Buffer.from(response.data);
+
+	// Zip magic bytes - anything else is a block page or error body served instead of the archive
+	if (data.subarray(0, 2).toString() !== 'PK') {
+		throw new Error(
+			`The file downloaded from ${url} is not a valid zip archive - ` +
+				`a proxy or firewall likely intercepted the download. Check your network or try a different one.`,
+		);
+	}
+
+	return new AdmZip(data);
+};
+
 export const downloadAndUnzip = async ({ url, pathTo }: { url: string; pathTo: string }) => {
-	const zipStream = await httpsGet(url);
-	const chunks: Buffer[] = [];
-	zipStream.on('data', (chunk) => chunks.push(chunk));
-	await finished(zipStream);
-	const zip = new AdmZip(Buffer.concat(chunks));
+	const zip = await downloadZip(url);
 	zip.extractAllTo(pathTo, true);
 };
 

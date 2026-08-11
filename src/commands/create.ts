@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import process from 'node:process';
 
 import { gte, minVersion } from 'semver';
+import which from 'which';
 
 import { fetchManifest, manifestUrl } from '@apify/actor-templates';
 
@@ -29,6 +30,7 @@ import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, simpleLog, success, warning } from '../lib/outputs.js';
+import { LANGUAGE_FLAG_CHOICES, USE_CASE_FLAG_CHOICES } from '../lib/templates/consts.js';
 import {
 	downloadAndUnzip,
 	getJsonFileContent,
@@ -49,12 +51,16 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for an Actor name and template if not provided. To run non-interactively, pass the name as a positional argument and --template.';
+		'Prompts for an Actor name, then guides you through what you want to build, a language, and a template when they are not provided. To run non-interactively, pass the name and --template. Use --use-case and --language to narrow the template list.';
 
 	static override examples = [
 		{
-			description: 'Create a new Actor project interactively (prompts for name and template).',
+			description: 'Create a new Actor project interactively (guided name, use case, language, and template prompts).',
 			command: 'apify create',
+		},
+		{
+			description: 'Narrow the guided template list by use case and language.',
+			command: 'apify create my-actor --use-case web-scraper --language python',
 		},
 		{
 			description: 'Create non-interactively with explicit name and template.',
@@ -72,6 +78,19 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		template: Flags.string({
 			char: 't',
 			description: `Template for the Actor. If not provided, the command will prompt for it. Visit ${manifestUrl} to find available template names.`,
+			required: false,
+		}),
+		'use-case': Flags.string({
+			char: 'u',
+			description:
+				'Filter templates by use case. Ignored when --template is provided. To see the use cases each template supports, run "apify templates ls".',
+			choices: USE_CASE_FLAG_CHOICES,
+			required: false,
+		}),
+		language: Flags.string({
+			char: 'l',
+			description: 'Filter templates by programming language. Ignored when --template is provided.',
+			choices: LANGUAGE_FLAG_CHOICES,
 			required: false,
 		}),
 		'skip-dependency-install': Flags.boolean({
@@ -103,7 +122,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 	async run() {
 		let { actorName } = this.args;
-		const { template: templateName, skipDependencyInstall, skipGitInit } = this.flags;
+		const { template: templateName, useCase, language, skipDependencyInstall, skipGitInit } = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
 		// for testing of templates that are not yet published in the manifest
@@ -156,7 +175,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		};
 
 		if (!templateArchiveUrl) {
-			const templateDefinition = await getTemplateDefinition(templateName, manifestPromise);
+			const templateDefinition = await getTemplateDefinition(templateName, manifestPromise, { useCase, language });
 			({ archiveUrl: templateArchiveUrl, messages } = templateDefinition);
 			this.telemetryData.create.templateId = templateDefinition.id;
 			this.telemetryData.create.templateName = templateDefinition.name;
@@ -196,6 +215,36 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 			await cwdProjectResult.inspectAsync(async (project) => {
 				const minimumSupportedNodeVersion = minVersion(SUPPORTED_NODEJS_VERSION);
+
+				// uv-managed Python projects (recognized by a committed `uv.lock`) manage their own virtual
+				// environment, dependencies, and Python version. Install them with `uv sync` instead of the
+				// pip + requirements.txt flow. uv provides the Python pinned in `.python-version` on its own,
+				// so this runs even when no system Python is detected.
+				const isPythonProject = project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy;
+
+				if (isPythonProject && project.packageManager === 'uv') {
+					const uvPath = await which('uv', { nothrow: true });
+
+					if (!uvPath) {
+						warning({
+							message:
+								'This Actor uses uv to manage its dependencies, but the uv executable was not found. ' +
+								'Install uv (https://docs.astral.sh/uv/getting-started/installation/), then run "uv sync" in the Actor directory.',
+						});
+						return;
+					}
+
+					info({ message: 'Installing dependencies with "uv sync"...' });
+
+					await execWithLog({
+						cmd: uvPath,
+						args: ['sync'],
+						opts: { cwd: actFolderDir },
+					});
+
+					dependenciesInstalled = true;
+					return;
+				}
 
 				if (!project.runtime) {
 					switch (project.type) {
@@ -278,10 +327,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					case ProjectLanguage.Scrapy: {
 						if (!isPythonVersionSupported(runtime.version)) {
 							warning({
-								message: `Python Actors require Python 3.9 or higher, but you have Python ${runtime.version}!`,
+								message: `Python Actors require Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} or higher, but you have Python ${runtime.version}!`,
 							});
 							warning({
-								message: 'Please install Python 3.9 or higher to be able to run Python Actors locally.',
+								message: `Please install Python ${MINIMUM_SUPPORTED_PYTHON_VERSION} or higher to be able to run Python Actors locally.`,
 							});
 							return;
 						}

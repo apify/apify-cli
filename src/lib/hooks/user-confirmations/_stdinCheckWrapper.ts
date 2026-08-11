@@ -1,4 +1,4 @@
-import isCI from 'is-ci';
+import { isCI } from 'ci-info';
 
 import { useStdin } from '../useStdin.js';
 
