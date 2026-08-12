@@ -1,10 +1,11 @@
-import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
+import type { ActorRun, TaskStartOptions } from 'apify-client';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { resolveTaskId } from '../../lib/commands/resolve-task.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { finalizeRun } from '../../lib/commands/run-result.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override name = 'run' as const;
@@ -39,10 +40,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 
 	async run() {
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getLocalUserInfo();
-		const usernameOrId = userInfo.username || (userInfo.id as string);
-
-		const { id: taskId, userFriendlyId, title } = await this.resolveTaskId(apifyClient, usernameOrId);
+		const { id: taskId, userFriendlyId, title } = await resolveTaskId(apifyClient, this.args.taskId);
 
 		const runOpts: TaskStartOptions = {
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
@@ -80,42 +78,5 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 		}
 
 		await finalizeRun({ apifyClient, run, operation: 'task-run', json: this.flags.json });
-	}
-
-	private async resolveTaskId(client: ApifyClient, usernameOrId: string) {
-		const { taskId } = this.args;
-
-		// Full ID
-		if (taskId?.includes('/')) {
-			const task = await client.task(taskId).get();
-			if (!task) {
-				throw new Error(`Cannot find Task with ID '${taskId}' in your account.`);
-			}
-
-			return {
-				id: task.id,
-				userFriendlyId: `${usernameOrId}/${task.name}`,
-				title: task.title,
-				task,
-			};
-		}
-
-		// Try fetching task directly by name
-		if (taskId) {
-			const task = await client.task(`${usernameOrId}/${taskId.toLowerCase()}`).get();
-
-			if (!task) {
-				throw new Error(`Cannot find Task with name '${taskId}' in your account.`);
-			}
-
-			return {
-				id: task.id,
-				userFriendlyId: `${usernameOrId}/${task.name}`,
-				title: task.title,
-				task,
-			};
-		}
-
-		throw new Error('Please provide a valid Task ID or name.');
 	}
 }
