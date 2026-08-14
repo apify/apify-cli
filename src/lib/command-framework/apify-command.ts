@@ -9,7 +9,7 @@ import indentString from 'indent-string';
 import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
-import { cachedStdinInput } from '../../entrypoints/_shared.js';
+import { readStdin } from '../commands/read-stdin.js';
 import { detectAiAgent, detectCi, detectIsInteractive } from '../hooks/telemetry/detectEnvironment.js';
 import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
 import { trackEvent } from '../hooks/telemetry/trackEvent.js';
@@ -360,7 +360,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 							this.args[camelCasedName] = String(rawArg);
 
 							if (rawArg === '-' && builderData.stdin) {
-								this.args[camelCasedName] = this._handleStdin(builderData.stdin);
+								this.args[camelCasedName] = await this._handleStdin(builderData.stdin);
 							}
 
 							if (builderData.catchAll) {
@@ -381,7 +381,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			return;
 		}
 
-		this._parseFlags(rawFlags, rawTokens);
+		await this._parseFlags(rawFlags, rawTokens);
 
 		try {
 			await this.run();
@@ -450,7 +450,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		return flagKey;
 	}
 
-	private _parseFlags(rawFlags: ParseResult['values'], rawTokens: ParseResult['tokens']) {
+	private async _parseFlags(rawFlags: ParseResult['values'], rawTokens: ParseResult['tokens']) {
 		if (!this.ctor.flags) {
 			return;
 		}
@@ -580,7 +580,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 							flagThatUsedStdin = baseFlagName;
 
-							this.flags[camelCasedName] = this._handleStdin(builderData.stdin);
+							this.flags[camelCasedName] = await this._handleStdin(builderData.stdin);
 						}
 
 						break;
@@ -705,12 +705,14 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		});
 	}
 
-	private _handleStdin(mode: StdinMode) {
+	private async _handleStdin(mode: StdinMode) {
+		const input = await readStdin();
+
 		switch (mode) {
 			case StdinMode.Stringified:
-				return (cachedStdinInput?.toString('utf8') ?? '').trim();
+				return (input?.toString('utf8') ?? '').trim();
 			default:
-				return cachedStdinInput;
+				return input;
 		}
 	}
 
