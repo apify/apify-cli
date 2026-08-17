@@ -29,6 +29,7 @@ See https://apify.com/auth.md for how to authenticate. Do not assume `APIFY_TOKE
 ## Structured output
 
 - `--json` is supported on most list/info commands (`apify actors ls --json`, `apify actors info <id> --json`, `apify datasets info <id> --json`, `apify runs ls --json`, etc.). Use it and parse with `jq`; don't scrape the human table.
+- `apify create <name> --template <template> --json` prints `{ dir, actorJsonPath, template, source, nextSteps, postCreate, gitRepositoryInitialized }` on stdout. Everything else goes to stderr, so stdout is safe to pipe into `jq`. `postCreate` is non-null when the template needs extra setup before `apify run` works.
 - List commands paginate — control with `--limit` / `--offset` (and `--desc`).
 - Dataset items: `apify datasets get-items <datasetId> --format json`. Use `--limit` / `--offset`.
 

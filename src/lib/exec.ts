@@ -1,9 +1,18 @@
+import process from 'node:process';
+
 import { Result } from '@sapphire/result';
 import { execa, type ExecaError, type Options } from 'execa';
 
 import { normalizeExecutablePath } from './hooks/runtimes/utils.js';
 import { error, run } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
+
+let childStdout: 'inherit' | typeof process.stderr = 'inherit';
+
+/** Route child process stdout to our stderr, so it cannot corrupt a machine-readable payload. */
+export function keepStdoutClean() {
+	childStdout = process.stderr;
+}
 
 interface SpawnPromisedInternalOptions {
 	/**
@@ -31,7 +40,7 @@ const spawnPromised = async (
 		env: opts.env,
 		cwd: opts.cwd,
 		// Pipe means it gets collected by the parent process, inherit means it gets collected by the parent process and printed out to the console
-		stdout: process.env.APIFY_NO_LOGS_IN_TESTS ? ['pipe'] : ['pipe', 'inherit'],
+		stdout: process.env.APIFY_NO_LOGS_IN_TESTS ? ['pipe'] : ['pipe', childStdout],
 		stderr: process.env.APIFY_NO_LOGS_IN_TESTS ? ['pipe'] : ['pipe', 'inherit'],
 		verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 	});

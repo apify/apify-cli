@@ -10,6 +10,7 @@ import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
+import { keepStdoutClean } from '../exec.js';
 import { detectAiAgent, detectCi, detectIsInteractive } from '../hooks/telemetry/detectEnvironment.js';
 import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
 import { trackEvent } from '../hooks/telemetry/trackEvent.js';
@@ -337,6 +338,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				this.flags.json = rawFlags.json;
 			} else {
 				this.flags.json = false;
+			}
+
+			if (this.flags.json) {
+				keepStdoutClean();
 			}
 		}
 
