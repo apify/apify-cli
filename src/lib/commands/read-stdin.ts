@@ -2,10 +2,32 @@ import { once } from 'node:events';
 
 import { useStdin } from '../hooks/useStdin.js';
 
-export async function readStdin() {
-	const dataRef = await useStdin();
+let readPromise: Promise<Buffer | undefined> | undefined;
+let readResult: Buffer | undefined;
 
-	const { hasData, waitDelay, stream } = dataRef;
+/**
+ * Reads stdin to its end, at most once per process. Callers must only call this when the command
+ * actually wants stdin data — a pipe that stays open never ends, so this waits for as long as the
+ * writer keeps it open (#1206).
+ */
+export async function readStdin() {
+	readPromise ??= _readStdin().then((data) => {
+		readResult = data;
+		return data;
+	});
+
+	return readPromise;
+}
+
+/**
+ * Stdin data read so far, without triggering a read. For diagnostics only.
+ */
+export function peekStdin() {
+	return readResult;
+}
+
+async function _readStdin() {
+	const { hasData, waitDelay, stream } = await useStdin();
 
 	if (!hasData) {
 		return;
@@ -45,10 +67,7 @@ export async function readStdin() {
 		}
 	} finally {
 		// Stop reading from stdin so its open handle can't keep the event loop (and
-		// the CLI) alive after the command finishes (#1206). This only helps when the
-		// await above settles ('end' or the no-data abort). A writer that sends data
-		// but never closes stdin still hangs up there; that needs the lazy stdin
-		// reading discussed in #1206.
+		// the CLI) alive after the command finishes (#1206).
 		stream.off('data', onData);
 		stream.pause();
 	}
@@ -56,9 +75,6 @@ export async function readStdin() {
 	if (timeout) {
 		clearTimeout(timeout);
 	}
-
-	// Mark further uses of useStdin / readStdin as having no more data since we've read it all
-	dataRef.hasData = false;
 
 	const concat = Buffer.concat(bufferChunks);
 

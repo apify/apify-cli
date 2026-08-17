@@ -1,5 +1,6 @@
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, open, rm } from 'node:fs/promises';
 import path from 'node:path';
+import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 
 import { execa } from 'execa';
@@ -54,5 +55,37 @@ describe('[e2e] stdin held open (#1206)', () => {
 		// handle and would mask the regression.
 		expect(result.exitCode).toBe(1);
 		expect(result.stderr).toContain('Actor is of an unknown format');
+	});
+
+	// A named pipe is the harsher case: unlike the socket a spawned child gets, it has no wait
+	// deadline, so the old eager startup read blocked forever and the command never even ran.
+	// Opening the FIFO read-write keeps a writer attached, so it never reaches EOF, with no
+	// second process to manage. Windows has no mkfifo.
+	it.skipIf(process.platform === 'win32')('exits on its own when stdin is a named pipe with no writer', async () => {
+		const fifo = path.join(emptyDir, 'stdin.fifo');
+		await execa('mkfifo', [fifo]);
+
+		const handle = await open(fifo, 'r+');
+
+		try {
+			const result = await execa('node', [DistApify, 'run'], {
+				cwd: emptyDir,
+				reject: false,
+				timeout: EXIT_DEADLINE_MS,
+				stdin: handle.fd,
+				env: {
+					APIFY_CLI_DISABLE_TELEMETRY: '1',
+					APIFY_CLI_SKIP_UPDATE_CHECK: '1',
+					APIFY_DISABLE_KEYRING: '1',
+				},
+			});
+
+			expect(result.timedOut, `stderr: ${result.stderr}`).toBe(false);
+			expect(result.exitCode).toBe(1);
+			expect(result.stderr).toContain('Actor is of an unknown format');
+		} finally {
+			await handle.close();
+			await rm(fifo, { force: true });
+		}
 	});
 });

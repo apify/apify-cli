@@ -39,11 +39,13 @@ export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 	}: StdinCheckWrapperOptions = {},
 ): (...args: NewFunctionArgs<Fn>) => Promise<Awaited<ReturnType<Fn>>> {
 	return async (input, ...rest) => {
-		const { isTTY, hasData } = await useStdin();
+		const { isTTY } = await useStdin();
 
 		const casted = input as StdinCheckWrapperInput<Awaited<ReturnType<Fn>>>;
 
-		if (isCI || (!isTTY && !hasData)) {
+		// Prompts need a terminal to read the answer from. Piped stdin is command input, not an
+		// answer source — before stdin became lazy (#1206) it was always drained by then anyway.
+		if (isCI || !isTTY) {
 			if (typeof casted.providedConfirmFromStdin === 'undefined') {
 				throw new Error(
 					casted.errorMessageForStdin ??
