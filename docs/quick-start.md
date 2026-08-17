@@ -35,7 +35,7 @@ The CLI creates a new directory with the boilerplate code and installs all proje
 
 ## 2. Run your Actor
 
-You can run the code locally, with simulated Apify [environment variables](https://docs.apify.com/actors/development/environment-variables). The results of the Actor run are saved to your disk.
+When you run the code locally, the results of the Actor run are saved to your disk.
 
 1. Navigate to the Actor directory:
 
