@@ -268,8 +268,8 @@ importers:
         specifier: ~8.20.0
         version: 8.20.0
       apify-client:
-        specifier: ^2.23.3
-        version: 2.24.0
+        specifier: ^2.25.0
+        version: 2.25.0
       archiver:
         specifier: ~8.0.0
         version: 8.0.0
@@ -4562,8 +4562,8 @@ packages:
     resolution: {integrity: sha512-KMReFUr0B4t+D+OBkjR3KYqvocp2XaSzO55UcB6mgQMd3KbcE+mWTyvVV7D/zsdEbNnV6acZUutkiHQXvTr1Rw==}
     engines: {node: '>= 8'}
 
-  apify-client@2.24.0:
-    resolution: {integrity: sha512-z82DywSpMc6djz+HwEO9YFPAdxChOCKVWpzF0p8rH7hp5rXk5KuPqpmtwC9c3LiiRwTPRC/6y0JxbMqD2ndvwQ==}
+  apify-client@2.25.0:
+    resolution: {integrity: sha512-g6ttHJ4Au/Gg0iDHIevN3CvTbJfey9DUXUXJxe0ORF6JIYaVVfKdyJjINGb6/49gOpt/62ZFPw+HSEVIzrwR5w==}
 
   apify@3.7.2:
     resolution: {integrity: sha512-I4R5Qd1X11vk5/1U0CxKSsMhNwER/3MntePEQb9Pbtf942OhQLh5IURrJZufqtpimkqRy44SlQMU6UhPdoFXhA==}
@@ -14527,7 +14527,7 @@ snapshots:
       normalize-path: 3.0.0
       picomatch: 2.3.2
 
-  apify-client@2.24.0:
+  apify-client@2.25.0:
     dependencies:
       '@apify/consts': 2.56.1
       '@apify/log': 2.5.47
@@ -14555,7 +14555,7 @@ snapshots:
       '@crawlee/core': 3.17.0
       '@crawlee/types': 3.17.0
       '@crawlee/utils': 3.17.0
-      apify-client: 2.24.0
+      apify-client: 2.25.0
       fs-extra: 11.4.0
       ow: 0.28.2
       semver: 7.8.5
