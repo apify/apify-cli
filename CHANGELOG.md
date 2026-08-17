@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.8.0](https://github.com/apify/apify-cli/releases/tag/v1.8.0) (2026-08-11)
+
+### 🚀 Features
+
+- **cli:** Display actor usage stats in actors info command ([#1243](https://github.com/apify/apify-cli/pull/1243)) ([4d13d89](https://github.com/apify/apify-cli/commit/4d13d89f40ae4b87459fb9e134b6c7529a2e3f7b)) by [@MQ37](https://github.com/MQ37)
+- Add `APIFY_CONSOLE_URL` env variable for local actor runtime ([#1276](https://github.com/apify/apify-cli/pull/1276)) ([79ad1a0](https://github.com/apify/apify-cli/commit/79ad1a0dd4631ca404462601ffea916eac204352)) by [@Pijukatel](https://github.com/Pijukatel)
+- Support uv-managed Python Actors in apify create ([#1274](https://github.com/apify/apify-cli/pull/1274)) ([6deabe6](https://github.com/apify/apify-cli/commit/6deabe6ac91da6269136bd00fe6970062a5d9e6d)) by [@vdusek](https://github.com/vdusek)
+- Surface `apify help --skill` in the main help menu ([#1302](https://github.com/apify/apify-cli/pull/1302)) ([d9d3807](https://github.com/apify/apify-cli/commit/d9d3807dd1e4ca30e527418acc93454eb867c975)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1301](https://github.com/apify/apify-cli/issues/1301)
+- Reduce npm install size (69.4 → 57.9 MB) and report install size on releases ([#1304](https://github.com/apify/apify-cli/pull/1304)) ([5368bc7](https://github.com/apify/apify-cli/commit/5368bc7a034f8df6475dd0742fb84cdd00345f69)) by [@jancurn](https://github.com/jancurn), closes [#1306](https://github.com/apify/apify-cli/issues/1306)
+- **create:** Guided wizard with use-case and language filters ([#1278](https://github.com/apify/apify-cli/pull/1278)) ([84647b9](https://github.com/apify/apify-cli/commit/84647b9022d1838232d050bad626e0b25db2bfa7)) by [@l2ysho](https://github.com/l2ysho), closes [#1236](https://github.com/apify/apify-cli/issues/1236)
+- Single apify-cli bundle + native Windows ARM64 (supersedes #1057) ([#1169](https://github.com/apify/apify-cli/pull/1169)) ([aab5d58](https://github.com/apify/apify-cli/commit/aab5d584ceb2cf7f4568f3dcbfc47e2ade5adc18)) by [@vladfrangu](https://github.com/vladfrangu), closes [#1221](https://github.com/apify/apify-cli/issues/1221)
+
+### 🐛 Bug Fixes
+
+- **cli:** Exit cleanly when stdin is an open pipe that never closes ([#1294](https://github.com/apify/apify-cli/pull/1294)) ([8a3ef6b](https://github.com/apify/apify-cli/commit/8a3ef6b7ef36e198f5306ccb5902a12d8542a443)) by [@artogahr](https://github.com/artogahr)
+
+
 ## [1.7.1](https://github.com/apify/apify-cli/releases/tag/v1.7.1) (2026-07-09)
 
 ### 🐛 Bug Fixes
