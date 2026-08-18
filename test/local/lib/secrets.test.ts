@@ -1,6 +1,59 @@
-import { replaceSecretsValue, transformEnvToEnvVars } from '../../../src/lib/secrets.js';
+import {
+	findSecretReferences,
+	replaceSecretsValue,
+	transformEnvToEnvVars,
+	validateEnvironmentVariablesShape,
+} from '../../../src/lib/secrets.js';
 
 describe('Secrets', () => {
+	describe('validateEnvironmentVariablesShape()', () => {
+		it('accepts undefined / null (nothing declared)', () => {
+			expect(validateEnvironmentVariablesShape(undefined)).toBeNull();
+			expect(validateEnvironmentVariablesShape(null)).toBeNull();
+		});
+
+		it('accepts an object of string values', () => {
+			expect(validateEnvironmentVariablesShape({ TOKEN: '@mySecret', PLAIN: 'value' })).toBeNull();
+		});
+
+		it('rejects an array-shaped environmentVariables', () => {
+			const err = validateEnvironmentVariablesShape([{ name: 'TOKEN', value: '@mySecret' }]);
+			expect(err).toMatch(/must be a JSON object/i);
+			expect(err).toMatch(/not an array/i);
+			expect(err).toContain('"MY_TOKEN": "@mySecret"');
+		});
+
+		it('rejects a scalar', () => {
+			expect(validateEnvironmentVariablesShape('foo')).toMatch(/must be a JSON object/i);
+		});
+
+		it('rejects an object with non-string values', () => {
+			const err = validateEnvironmentVariablesShape({ TOKEN: 123, NESTED: { a: 1 } });
+			expect(err).toMatch(/non-string values/i);
+			expect(err).toContain('TOKEN: expected string, got number');
+			expect(err).toContain('NESTED: expected string, got object');
+		});
+	});
+
+	describe('findSecretReferences()', () => {
+		it('returns every @name reference with its env key', () => {
+			expect(
+				findSecretReferences({
+					TOKEN: '@myProdToken',
+					PLAIN: 'literal',
+					MONGO_URL: '@mongoUrl',
+				}),
+			).toEqual([
+				{ envKey: 'TOKEN', name: 'myProdToken' },
+				{ envKey: 'MONGO_URL', name: 'mongoUrl' },
+			]);
+		});
+
+		it('returns an empty array when nothing is secret', () => {
+			expect(findSecretReferences({ PLAIN: 'value', OTHER: 'email@apify.com' })).toEqual([]);
+		});
+	});
+
 	describe('replaceSecretsValue()', () => {
 		it('should replace secret references with their values', () => {
 			const secrets = {
