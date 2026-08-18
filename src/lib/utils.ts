@@ -86,9 +86,18 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 /**
  * Returns object from auth file or empty object. Secrets (token, proxy password) are
  * pulled from the keyring when that backend is active; user metadata lives in auth.json.
+ *
+ * auth.json only ever describes the account `apify login` stored, and `APIFY_TOKEN` exists to act
+ * as a different one (typically an organization), so the identity is read from the API whenever it
+ * is set.
  */
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	await ensureMigrated();
+
+	const overrideToken = process.env[APIFY_ENV_VARS.TOKEN];
+	if (overrideToken) {
+		return { ...(await fetchActiveUserInfo(overrideToken)), token: overrideToken };
+	}
 
 	let result: AuthJSON = {};
 	try {
@@ -98,10 +107,10 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 		// auth.json may not exist yet (fresh keyring-only state); fall through
 	}
 
-	if ((await getBackend()) === 'keyring') {
-		const token = await getToken();
-		if (token) result.token = token;
+	const storedToken = await getToken();
+	if (storedToken) result.token = storedToken;
 
+	if ((await getBackend()) === 'keyring') {
 		const proxyPassword = await getProxyPassword();
 		if (proxyPassword) result.proxy = { ...result.proxy, password: proxyPassword };
 	}
@@ -129,8 +138,16 @@ export async function getLoggedClientOrThrow() {
 	return loggedClient;
 }
 
-const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
+/**
+ * Resolves the token to use, in order: explicitly passed token (e.g. `--token`) >
+ * `APIFY_TOKEN` env var > the token stored by `apify login`.
+ *
+ * The first two are one-time overrides and must never be written over the stored login —
+ * see the `persistCredentials` option of {@link getLoggedClient}.
+ */
+export const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
 	if (existingToken) return existingToken;
+	if (process.env[APIFY_ENV_VARS.TOKEN]) return process.env[APIFY_ENV_VARS.TOKEN];
 	await ensureMigrated();
 	return getToken();
 };
@@ -161,12 +178,48 @@ export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string)
 };
 
 /**
+ * User info of the account the process authenticates as, keyed by the token it was fetched with.
+ * Seeded by {@link getLoggedClient} from the user info it fetches anyway, so commands that get a
+ * client first (nearly all of them) pay no extra API call.
+ */
+let activeUserInfo: { token: string; info: AuthJSON } | undefined;
+
+async function fetchActiveUserInfo(token: string): Promise<AuthJSON> {
+	if (activeUserInfo?.token !== token) {
+		const client = new ApifyClient(await getApifyClientOptions(token));
+		try {
+			activeUserInfo = { token, info: await client.user('me').get() };
+		} catch (err) {
+			cliDebugPrint('[fetchActiveUserInfo] error getting user info', { error: err });
+			// The token itself being refused is worth failing on. Anything else (offline, API hiccup) must not
+			// break commands that work locally — `apify run` needs no network, so it degrades to no identity.
+			const { statusCode } = err as { statusCode?: number };
+			if (statusCode && [401, 403, 409].includes(statusCode)) {
+				throw new Error(
+					`The token in ${APIFY_ENV_VARS.TOKEN} was refused by the Apify API (HTTP ${statusCode}). Check that it is valid and has the required permissions.`,
+				);
+			}
+			return {};
+		}
+	}
+
+	return activeUserInfo.info;
+}
+
+/**
  * Gets instance of ApifyClient for token or for params from global auth file.
  *
- * Refreshes the user metadata in auth.json each run. Secrets (token, proxy.password) only
- * get written when their value actually changes — avoids macOS Keychain prompts on every command.
+ * Secrets (token, proxy.password) and user metadata are only written when `persistCredentials`
+ * is set — i.e. from `apify login`. Every other caller resolves a possibly-overridden token
+ * (`--token`, `APIFY_TOKEN`), and persisting that would silently replace the stored login.
+ * When writing, secrets only change on disk if their value differs — avoids macOS Keychain
+ * prompts on every command.
  */
-export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
+export async function getLoggedClient(
+	token?: string,
+	apiBaseUrl?: string,
+	{ persistCredentials = false }: { persistCredentials?: boolean } = {},
+) {
 	const resolvedToken = await resolveToken(token);
 
 	const apifyClient = new ApifyClient(await getApifyClientOptions(resolvedToken, apiBaseUrl));
@@ -177,6 +230,14 @@ export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
 	} catch (err) {
 		cliDebugPrint('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
 		return null;
+	}
+
+	if (apifyClient.token) {
+		activeUserInfo = { token: apifyClient.token, info: userInfo };
+	}
+
+	if (!persistCredentials) {
+		return apifyClient;
 	}
 
 	if (apifyClient.token) {

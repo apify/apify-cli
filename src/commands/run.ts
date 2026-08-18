@@ -328,7 +328,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
-		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
+		// Don't clobber an explicitly-set APIFY_TOKEN inherited from the environment — it must win over the stored login.
+		if (token && !process.env[APIFY_ENV_VARS.TOKEN]) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
 		if (localConfig!.environmentVariables) {
 			const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>, undefined, {
 				allowMissing: this.flags.allowMissingSecrets,

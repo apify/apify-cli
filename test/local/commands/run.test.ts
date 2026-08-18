@@ -1,10 +1,15 @@
-import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path/win32';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
-import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import {
+	AUTH_FILE_PATH,
+	EMPTY_LOCAL_CONFIG,
+	GLOBAL_CONFIGS_FOLDER,
+	LOCAL_CONFIG_PATH,
+} from '../../../src/lib/consts.js';
 import { rimrafPromised } from '../../../src/lib/files.js';
 import {
 	getLocalDatasetPath,
@@ -214,6 +219,50 @@ describe('apify run', () => {
 		const actOutputPath2 = joinPath(getLocalKeyValueStorePath(), 'two.json');
 		const actOutput2 = JSON.parse(readFileSync(actOutputPath2, 'utf8'));
 		expect(actOutput2).toStrictEqual('can play');
+	});
+
+	// Regression: an inherited APIFY_TOKEN must reach the Actor unchanged, not be clobbered by the stored login token.
+	// The *stored* token is the fake one: APIFY_TOKEN is validated against the API now, so the env token has to be
+	// the real one, and CI only has the one. The stored login is never validated when APIFY_TOKEN is set.
+	it(`[api] does not override an inherited ${APIFY_ENV_VARS.TOKEN} with the stored token`, async () => {
+		const { TEST_USER_TOKEN } = await import('../../__setup__/config.js');
+		const storedToken = 'apify_api_stored_login_that_must_not_win';
+
+		mkdirSync(GLOBAL_CONFIGS_FOLDER(), { recursive: true });
+		writeFileSync(
+			AUTH_FILE_PATH(),
+			JSON.stringify({
+				token: storedToken,
+				id: 'stored-user-id',
+				username: 'stored-user',
+				secretsBackend: 'file',
+			}),
+		);
+		vitest.stubEnv(APIFY_ENV_VARS.TOKEN, TEST_USER_TOKEN);
+
+		const actCode = `
+        import { Actor } from 'apify';
+
+        Actor.main(async () => {
+            await Actor.setValue('OUTPUT', process.env);
+            console.log('Done.');
+        });
+        `;
+		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
+
+		// An earlier test in this file writes the same OUTPUT.json, and the command framework swallows errors
+		// from run(). Without clearing it first, a run that aborts reads the previous test's dump and reports a
+		// value mismatch instead of the real failure.
+		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
+		rmSync(actOutputPath, { force: true });
+
+		await testRunCommand(RunCommand, {});
+
+		expect(existsSync(actOutputPath)).toBe(true);
+		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
+
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(TEST_USER_TOKEN);
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).not.toStrictEqual(storedToken);
 	});
 
 	it('run purge stores', async () => {
