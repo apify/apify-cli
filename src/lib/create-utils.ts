@@ -47,7 +47,10 @@ export async function getTemplateDefinition(
 	if (manifest instanceof Error) throw manifest;
 
 	if (maybeTemplateName) {
-		const templateDefinition = manifest.templates.find((t) => t.name === maybeTemplateName);
+		// Accept both the template name and its id — `--json` output and older docs reference the id.
+		const templateDefinition = manifest.templates.find(
+			(t) => t.name === maybeTemplateName || t.id === maybeTemplateName,
+		);
 		if (!templateDefinition) {
 			throw new Error(`Could not find the selected template: ${maybeTemplateName} in the list of templates.`);
 		}
@@ -77,6 +80,22 @@ export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestP
 	}
 }
 
+export function buildNextSteps(params: {
+	actorName: string;
+	dependenciesInstalled: boolean;
+	installCommandSuggestion?: string | null;
+}): string[] {
+	const { actorName, dependenciesInstalled, installCommandSuggestion } = params;
+
+	const steps = [`cd "${actorName}"`];
+	if (!dependenciesInstalled) {
+		steps.push(installCommandSuggestion || 'install dependencies with your package manager');
+	}
+	steps.push('apify run');
+
+	return steps;
+}
+
 export function formatCreateSuccessMessage(params: {
 	actorName: string;
 	dependenciesInstalled: boolean;
@@ -88,12 +107,8 @@ export function formatCreateSuccessMessage(params: {
 
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
-	if (dependenciesInstalled) {
-		message += `\n\nNext steps:\n\ncd "${actorName}"\napify run`;
-	} else {
-		const installLine = installCommandSuggestion || 'install dependencies with your package manager';
-		message += `\n\nNext steps:\n\ncd "${actorName}"\n${installLine}\napify run`;
-	}
+	const nextSteps = buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
+	message += `\n\nNext steps:\n\n${nextSteps.join('\n')}`;
 
 	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
 

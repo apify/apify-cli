@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, rm } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
@@ -18,7 +18,7 @@ const { beforeAllCalls, afterAllCalls, joinPath, joinCwdPath, toggleCwdBetweenFu
 		cwdParent: true,
 	});
 
-const { lastErrorMessage } = useConsoleSpy();
+const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 
@@ -124,6 +124,102 @@ describe('apify create', () => {
 		expect(
 			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
 		).to.be.eql(expectedInput);
+	});
+
+	it('prints a machine-readable contract with --json', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_skipGitInit: true,
+			flags_json: true,
+		});
+
+		// Nothing but the payload may reach stdout, otherwise callers cannot parse it.
+		expect(logMessages.log).toHaveLength(1);
+
+		const output = JSON.parse(logMessages.log[0]);
+		expect(output.source).toBe('apify');
+		expect(typeof output.template).toBe('string');
+		expect(output.dir.endsWith(actName)).toBe(true);
+		expect(output.actorJsonPath.endsWith(LOCAL_CONFIG_PATH)).toBe(true);
+		expect(output.nextSteps[0]).toBe(`cd "${actName}"`);
+		expect(output.nextSteps).toContain('apify run');
+		expect(output.postCreate).toBeNull();
+		expect(output.gitRepositoryInitialized).toBe(false);
+	});
+
+	it('reports a successful git init in the --json contract', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_json: true,
+		});
+
+		expect(logMessages.log).toHaveLength(1);
+		expect(JSON.parse(logMessages.log[0]).gitRepositoryInitialized).toBe(true);
+	});
+
+	it('--json without --template fails before creating the directory', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_skipDependencyInstall: true,
+			flags_json: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/--template/);
+		expect(logMessages.log).toHaveLength(0);
+		expect(existsSync(tmpPath)).toBe(false);
+	});
+
+	it('--json without an Actor name fails instead of prompting', async () => {
+		await testRunCommand(CreateCommand, {
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_json: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/name/i);
+		expect(logMessages.log).toHaveLength(0);
+	});
+
+	it('--json reports an existing directory once instead of reprompting', async () => {
+		await mkdir(tmpPath, { recursive: true });
+		await writeFile(joinPath('placeholder.txt'), '');
+
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_json: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/already exists/);
+		expect(logMessages.log).toHaveLength(0);
+	});
+
+	it('records the hidden --origin flag in telemetry', async () => {
+		const instance = await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_skipGitInit: true,
+			flags_origin: 'console',
+		});
+
+		expect(instance['telemetryData'].create!.origin).toBe('console');
+	});
+
+	it('defaults --origin to cli', async () => {
+		const instance = await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_skipGitInit: true,
+		});
+
+		expect(instance['telemetryData'].create!.origin).toBe('cli');
 	});
 
 	it('should skip installing optional dependencies', async () => {

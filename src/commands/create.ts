@@ -18,6 +18,7 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
 import {
+	buildNextSteps,
 	enhanceReadmeWithLocalSuffix,
 	ensureValidActorName,
 	formatCreateSuccessMessage,
@@ -36,6 +37,7 @@ import {
 	getJsonFileContent,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
+	printJsonToStdout,
 	setLocalConfig,
 	setLocalEnv,
 } from '../lib/utils.js';
@@ -111,6 +113,13 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Skip initializing a git repository in the Actor directory.',
 			required: false,
 		}),
+		origin: Flags.string({
+			description: 'Where the command was invoked from. Used for funnel telemetry.',
+			choices: ['console', 'cli'],
+			default: 'cli',
+			required: false,
+			hidden: true,
+		}),
 	};
 
 	static override args = {
@@ -120,14 +129,28 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}),
 	};
 
+	static override enableJsonFlag = true;
+
 	async run() {
 		let { actorName } = this.args;
-		const { template: templateName, useCase, language, skipDependencyInstall, skipGitInit } = this.flags;
+		const { template: templateName, useCase, language, skipDependencyInstall, skipGitInit, origin, json } = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
 		// for testing of templates that are not yet published in the manifest
 		let { templateArchiveUrl } = this.flags;
 		let skipOptionalDeps = false;
+
+		// `--json` implies non-interactive: a caller parsing stdout cannot answer a prompt. Reject
+		// before creating any directories so a failed run leaves nothing behind.
+		if (json && !actorName) {
+			throw new Error('--json runs non-interactively. Pass the Actor name as an argument.');
+		}
+
+		if (json && !templateName && !templateArchiveUrl) {
+			throw new Error(
+				'--json runs non-interactively. Pass --template <name>; run `apify templates ls` to list values.',
+			);
+		}
 
 		// Start fetching manifest immediately to prevent
 		// annoying delays that sometimes happen on CLI startup.
@@ -149,11 +172,15 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					.catch(() => false));
 
 			if (folderExists?.isDirectory() && folderHasFiles) {
-				error({
-					message:
-						`Cannot create new Actor, directory '${actorName}' already exists. Please provide a different name.` +
-						' You can use "apify init" to create a local Actor environment inside an existing directory.',
-				});
+				const message =
+					`Cannot create new Actor, directory '${actorName}' already exists. Provide a different name.` +
+					' To create a local Actor environment inside an existing directory, use "apify init".';
+
+				if (json) {
+					throw new Error(message);
+				}
+
+				error({ message });
 
 				actorName = await ensureValidActorName();
 				actFolderDir = join(cwd, actorName);
@@ -169,14 +196,17 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}
 
 		let messages = null;
+		let templateId: string | null = null;
 
 		this.telemetryData.create = {
 			fromArchiveUrl: !!templateArchiveUrl,
+			origin,
 		};
 
 		if (!templateArchiveUrl) {
 			const templateDefinition = await getTemplateDefinition(templateName, manifestPromise, { useCase, language });
 			({ archiveUrl: templateArchiveUrl, messages } = templateDefinition);
+			templateId = templateDefinition.id;
 			this.telemetryData.create.templateId = templateDefinition.id;
 			this.telemetryData.create.templateName = templateDefinition.name;
 			this.telemetryData.create.templateLanguage = templateDefinition.category;
@@ -389,8 +419,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Initialize git repository before reporting success, but store result for later
 		let gitInitResult: { success: boolean; error?: Error } = { success: true };
 		const cwdHasGit = await stat(join(cwd, '.git')).catch(() => null);
+		const gitInitAttempted = !skipGitInit && !cwdHasGit;
 
-		if (!skipGitInit && !cwdHasGit) {
+		if (gitInitAttempted) {
 			try {
 				await execWithLog({
 					cmd: 'git',
@@ -405,20 +436,33 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Suggest install command if dependencies were not installed
 		const installCommandSuggestion = !dependenciesInstalled ? await getInstallCommandSuggestion(actFolderDir) : null;
 
-		// Success message with extra empty line
-		simpleLog({ message: '' });
-		success({
-			message: formatCreateSuccessMessage({
-				actorName,
-				dependenciesInstalled,
-				postCreate: messages?.postCreate ?? null,
-				gitRepositoryInitialized: !skipGitInit && !cwdHasGit && gitInitResult.success,
-				installCommandSuggestion,
-			}),
-		});
+		const gitRepositoryInitialized = gitInitAttempted && gitInitResult.success;
 
-		// Report git initialization result only if it failed (success already included in success message)
-		if (!skipGitInit && !cwdHasGit && !gitInitResult.success) {
+		if (json) {
+			printJsonToStdout({
+				dir: actFolderDir,
+				actorJsonPath: join(actFolderDir, LOCAL_CONFIG_PATH),
+				template: templateId,
+				source: 'apify',
+				nextSteps: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion }),
+				// Some templates need extra setup (e.g. "playwright install") before "apify run" works.
+				postCreate: messages?.postCreate ?? null,
+				gitRepositoryInitialized,
+			});
+		} else {
+			simpleLog({ message: '' });
+			success({
+				message: formatCreateSuccessMessage({
+					actorName,
+					dependenciesInstalled,
+					postCreate: messages?.postCreate ?? null,
+					gitRepositoryInitialized,
+					installCommandSuggestion,
+				}),
+			});
+		}
+
+		if (gitInitAttempted && !gitInitResult.success) {
 			// Git init is not critical, so we just warn if it fails
 			warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
 			warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });

@@ -1,6 +1,6 @@
 import select from '@inquirer/select';
 
-import { stdinCheckWrapper } from './_stdinCheckWrapper.js';
+import { promptContext, stdinCheckWrapper } from './_stdinCheckWrapper.js';
 
 export type ChoicesType<T = unknown> = Parameters<typeof select<T>>[0]['choices'];
 
@@ -14,8 +14,11 @@ interface UseSelectFromListInput<T> {
 
 export const useSelectFromList = stdinCheckWrapper(
 	async ({ message, choices, pageSize, loop, default: defaultValue }: UseSelectFromListInput<unknown>) => {
-		const result = await select({ message, choices, pageSize, loop, default: defaultValue });
+		const result = await select({ message, choices, pageSize, loop, default: defaultValue }, promptContext);
 
 		return result;
+	},
+	{
+		errorMessageForStdin: 'Please provide the selection using the command options.',
 	},
 ) as <T>(input: UseSelectFromListInput<T>) => Promise<T>;

@@ -1,6 +1,14 @@
+import process from 'node:process';
+
 import { isCI } from 'ci-info';
 
 import { useStdin } from '../useStdin.js';
+
+/**
+ * Inquirer renders to stdout by default. Prompts are UI, not command output, so they must stay off
+ * stdout, otherwise they corrupt the payload of commands invoked with `--json`.
+ */
+export const promptContext = { output: process.stderr };
 
 export interface StdinCheckWrapperInput<ReturnedType> extends StdinCheckWrapperOptions {
 	/**
@@ -45,11 +53,7 @@ export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 
 		if (isCI || (!isTTY && !hasData)) {
 			if (typeof casted.providedConfirmFromStdin === 'undefined') {
-				throw new Error(
-					casted.errorMessageForStdin ??
-						errorMessageForStdin ??
-						`Please use the --${ConfirmFlag}/--${NoConfirmFlag} flags to confirm the action.`,
-				);
+				throw new Error(casted.errorMessageForStdin ?? errorMessageForStdin);
 			}
 
 			return casted.providedConfirmFromStdin;
