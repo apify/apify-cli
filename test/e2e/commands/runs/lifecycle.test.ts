@@ -81,6 +81,20 @@ describe('[e2e][api] runs lifecycle', () => {
 		expect(found).toBe(true);
 	});
 
+	it('runs ls --status — filters runs by status', async () => {
+		const result = await runCli('apify', ['runs', 'ls', actorFullName, '--status', 'READY', '--json'], {
+			cwd: actor.dir,
+			env: authEnv,
+		});
+
+		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+		const data = JSON.parse(result.stdout);
+		expect(data).toHaveProperty('items');
+		for (const item of data.items) {
+			expect(item.status).toBe('READY');
+		}
+	});
+
 	it('runs info — shows run details', async () => {
 		await client.run(runId).waitForFinish();
 

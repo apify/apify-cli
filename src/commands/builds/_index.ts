@@ -1,4 +1,5 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { BuildsAbortCommand } from './abort.js';
 import { BuildsAddTagCommand } from './add-tag.js';
 import { BuildsCreateCommand } from './create.js';
 import { BuildsInfoCommand } from './info.js';
@@ -11,7 +12,7 @@ import { BuildsWaitCommand } from './wait.js';
 export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> {
 	static override name = 'builds' as const;
 
-	static override description = 'Create, inspect, tag, and delete Actor builds on the Apify platform.';
+	static override description = 'Create, inspect, abort, tag, and delete Actor builds on the Apify platform.';
 
 	static override group = 'Apify Console';
 
@@ -19,6 +20,7 @@ export class BuildsIndexCommand extends ApifyCommand<typeof BuildsIndexCommand> 
 
 	static override subcommands = [
 		//
+		BuildsAbortCommand,
 		BuildsAddTagCommand,
 		BuildsRemoveTagCommand,
 		BuildsRmCommand,

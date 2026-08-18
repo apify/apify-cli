@@ -60,7 +60,7 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 	static override args = {
 		actorId: Args.string({
 			description:
-				'Optional Actor ID or Name to list runs for. By default, it will use the Actor from the current directory.',
+				'Optional Actor ID or Name to list builds for. By default, it will use the Actor from the current directory.',
 		}),
 	};
 

@@ -46,7 +46,7 @@ export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand
 
 		if (!maybeStore) {
 			error({
-				message: `Key-value store with ID or name "${storeId}" not found.`,
+				message: `Dataset with ID or name "${storeId}" not found.`,
 			});
 
 			return;
@@ -100,7 +100,7 @@ export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand
 			const pricing = getUserPlanPricing(user.plan);
 
 			if (pricing) {
-				const storeCostPerHour = pricing.KEY_VALUE_STORE_TIMED_STORAGE_GBYTE_HOURS * (fullSizeInBytes / 1000 ** 3);
+				const storeCostPerHour = pricing.DATASET_TIMED_STORAGE_GBYTE_HOURS * (fullSizeInBytes / 1000 ** 3);
 				const storeCostPerMonth = storeCostPerHour * 24 * 30;
 
 				const usdAmountString =

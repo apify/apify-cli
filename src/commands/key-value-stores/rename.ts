@@ -34,7 +34,7 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 
 	static override args = {
 		keyValueStoreNameOrId: Args.string({
-			description: 'The key-value store ID or name to delete.',
+			description: 'The key-value store ID or name to rename.',
 			required: true,
 		}),
 		newName: Args.string({
