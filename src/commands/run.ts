@@ -271,7 +271,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 			if (crawleeVersion.isNone()) {
 				await Promise.all([purgeDefaultQueue(), purgeDefaultKeyValueStore(resolvedInputKey), purgeDefaultDataset()]);
-				info({ message: 'All default local stores were purged.' });
+				info({
+					message: `All default local stores were purged (the "${resolvedInputKey}" key-value store entry was preserved; pass --no-purge to keep everything).`,
+				});
 			}
 		}
 
@@ -546,7 +548,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 				if (inputOverride) {
 					errorHeader = `The input provided through the ${inputOverride.source} file is invalid. Please fix the following errors:\n`;
 				} else {
-					errorHeader = 'The input in your storage is invalid. Please fix the following errors:\n';
+					errorHeader =
+						'The input in your storage is invalid. Please fix the following errors' +
+						' (or override the stored input for this run with `--input \'{"...":"..."}\'` or `--input-file ./input.json`):\n';
 				}
 				break;
 		}
