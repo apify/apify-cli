@@ -15,9 +15,10 @@ import { ACTOR_JOB_STATUSES } from '@apify/consts';
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { consoleRunUrl } from '../../lib/commands/agent-output.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
-import { finalizeRun, runUrl } from '../../lib/commands/run-result.js';
+import { finalizeRun } from '../../lib/commands/run-result.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
@@ -176,7 +177,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 				// A *lot* is copied from `runs info`
 				if (!this.flags.silent) {
-					const url = runUrl(actorId, yieldedRun.id);
+					const url = consoleRunUrl(actorId, yieldedRun.id);
 
 					const message: string[] = [`${chalk.yellow('Started')}: ${TimestampFormatter.display(yieldedRun.startedAt)}`];
 
