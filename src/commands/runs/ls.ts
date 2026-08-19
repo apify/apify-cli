@@ -4,7 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
-import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
+import { formatActorContextError, resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import {
@@ -87,7 +87,7 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
+				message: formatActorContextError(ctx.reason, actorId),
 			});
 
 			return;

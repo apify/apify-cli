@@ -4,7 +4,7 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
+import { formatActorContextError, resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
@@ -93,7 +93,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please specify the Actor ID.`,
+				message: formatActorContextError(ctx.reason, actorId),
 				stdout: true,
 			});
 
