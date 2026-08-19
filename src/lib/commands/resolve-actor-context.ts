@@ -4,6 +4,14 @@ import type { ApifyClient } from 'apify-client';
 
 import { getLocalConfig, getLocalUserInfo } from '../utils.js';
 
+export function formatActorContextError(reason: string, providedActorNameOrId?: string) {
+	if (providedActorNameOrId) {
+		return `${reason}. Check that the Actor ID or name is correct and that your API token has permission to access it.`;
+	}
+
+	return `${reason}. Please run this command in an Actor directory, or specify the Actor ID.`;
+}
+
 /**
  * Tries to resolve what actor the command ran points to. If an actor id is provided via command line, attempt to resolve it,
  * thus assuming the actor is the one the command should be ran on. If no actor id is provided, try to resolve the actor from the local
