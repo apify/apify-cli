@@ -595,7 +595,9 @@ export const outputJobLog = async ({
 		}
 
 		const log = await client.log(logId).get();
-		process.stderr.write(log!);
+		if (log != null) {
+			process.stderr.write(log);
+		}
 		return;
 	}
 
