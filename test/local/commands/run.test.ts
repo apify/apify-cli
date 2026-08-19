@@ -1,5 +1,5 @@
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path/win32';
+import { dirname } from 'node:path';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 
@@ -304,6 +304,18 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 			await testRunCommand(RunCommand, {});
 
 			expect(lastErrorMessage()).toMatch(/Field awesome must be boolean/i);
+		});
+
+		it('throws with the input file path when stored input JSON is malformed', async () => {
+			writeFileSync(inputPath, '{"awesome": ', { flag: 'w' });
+			copyFileSync(defaultsInputSchemaPath, inputSchemaPath);
+
+			await testRunCommand(RunCommand, {});
+
+			const stderr = lastErrorMessage();
+			expect(stderr).toContain('Cannot parse JSON input file at path');
+			expect(stderr).toContain('INPUT.json');
+			expect(stderr).toContain('Unexpected end of JSON input');
 		});
 
 		it('throws when passing manual input, but local file has correct input', async () => {

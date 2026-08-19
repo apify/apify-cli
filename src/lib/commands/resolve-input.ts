@@ -7,7 +7,7 @@ import mime from 'mime';
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { CommandExitCodes } from '../consts.js';
 import { error } from '../outputs.js';
-import { getLocalInput } from '../utils.js';
+import { getLocalInput, getLocalKeyValueStorePath } from '../utils.js';
 
 interface InputOverrideOptions {
 	schemaHint?: string;
@@ -31,7 +31,12 @@ export function resolveInput(cwd: string, inputOverride: Record<string, unknown>
 			const ext = mime.getExtension(localInput.contentType!);
 
 			if (ext === 'json') {
-				inputToUse = JSON.parse(localInput.body.toString('utf8'));
+				try {
+					inputToUse = JSON.parse(localInput.body.toString('utf8'));
+				} catch (err) {
+					const filePath = path.join(cwd, getLocalKeyValueStorePath(), localInput.fileName!);
+					throw new Error(`Cannot parse JSON input file at path "${filePath}".\n  ${(err as Error).message}`);
+				}
 				contentType = 'application/json';
 			} else {
 				inputToUse = localInput.body as never;
@@ -165,26 +170,41 @@ export async function getInputOverride(
 				// Try reading the file, and if that fails, try reading it as JSON
 
 				let fsError: unknown;
+				let fileContent: string | undefined;
 
 				try {
-					const fileContent = await readFile(fullPath, 'utf8');
-					const parsed = JSON.parse(fileContent);
+					fileContent = await readFile(fullPath, 'utf8');
+				} catch (err) {
+					fsError = err;
+				}
 
-					if (Array.isArray(parsed)) {
+				if (fileContent !== undefined) {
+					try {
+						const parsed = JSON.parse(fileContent);
+
+						if (Array.isArray(parsed)) {
+							error({
+								message: withSchemaHint(
+									'The provided input is invalid. It should be an object, not an array.',
+									schemaHint,
+								),
+							});
+							process.exitCode = CommandExitCodes.InvalidInput;
+							return false;
+						}
+
+						input = parsed;
+						source = inputFileFlag;
+					} catch (err) {
 						error({
 							message: withSchemaHint(
-								'The provided input is invalid. It should be an object, not an array.',
+								`Cannot parse JSON input file at path "${fullPath}".\n  ${(err as Error).message}`,
 								schemaHint,
 							),
 						});
 						process.exitCode = CommandExitCodes.InvalidInput;
 						return false;
 					}
-
-					input = parsed;
-					source = inputFileFlag;
-				} catch (err) {
-					fsError = err;
 				}
 
 				if (fsError) {
