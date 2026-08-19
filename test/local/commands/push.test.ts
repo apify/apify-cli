@@ -1,6 +1,10 @@
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import { resolvePushOutcome } from '../../../src/commands/actors/push.js';
+import { detectOmitDevTscTrap, resolvePushOutcome } from '../../../src/commands/actors/push.js';
 import { CommandExitCodes } from '../../../src/lib/consts.js';
 
 describe('resolvePushOutcome', () => {
@@ -35,5 +39,113 @@ describe('resolvePushOutcome', () => {
 		expect(resolvePushOutcome(ACTOR_JOB_STATUSES.TIMING_OUT).errorMessage).toBe('Build is timing out');
 		expect(resolvePushOutcome(ACTOR_JOB_STATUSES.TIMED_OUT).errorMessage).toBe('Build timed out');
 		expect(resolvePushOutcome(ACTOR_JOB_STATUSES.FAILED).errorMessage).toBe('Build failed');
+	});
+});
+
+describe('detectOmitDevTscTrap', () => {
+	function makeProject(files: Record<string, string>): string {
+		const root = mkdtempSync(join(tmpdir(), 'apify-cli-push-trap-'));
+		for (const [rel, content] of Object.entries(files)) {
+			const abs = join(root, rel);
+			mkdirSync(join(abs, '..'), { recursive: true });
+			writeFileSync(abs, content);
+		}
+		return root;
+	}
+
+	test('warns when Dockerfile omits dev deps and build uses tsc with typescript only in devDependencies', () => {
+		const root = makeProject({
+			Dockerfile: 'FROM node:20\nRUN npm install --omit=dev\nCMD ["node", "dist/main.js"]\n',
+			'package.json': JSON.stringify({
+				scripts: { build: 'tsc' },
+				devDependencies: { typescript: '^5.0.0' },
+			}),
+		});
+		expect(detectOmitDevTscTrap(root)).toMatch(/npm --omit=dev/);
+	});
+
+	test('warns for .actor/Dockerfile as well', () => {
+		const root = makeProject({
+			'.actor/Dockerfile': 'FROM node:20\nRUN npm ci --omit=dev\n',
+			'package.json': JSON.stringify({
+				scripts: { build: 'tsc -p tsconfig.build.json' },
+				devDependencies: { typescript: '^5.0.0' },
+			}),
+		});
+		expect(detectOmitDevTscTrap(root)).not.toBeNull();
+	});
+
+	test('also recognizes --production as dev-drop flag', () => {
+		const root = makeProject({
+			Dockerfile: 'FROM node:20\nRUN npm install --production\n',
+			'package.json': JSON.stringify({
+				scripts: { build: 'tsc' },
+				devDependencies: { typescript: '^5.0.0' },
+			}),
+		});
+		expect(detectOmitDevTscTrap(root)).not.toBeNull();
+	});
+
+	test('does not warn when typescript is also in dependencies (already available at build time)', () => {
+		const root = makeProject({
+			Dockerfile: 'FROM node:20\nRUN npm install --omit=dev\n',
+			'package.json': JSON.stringify({
+				scripts: { build: 'tsc' },
+				dependencies: { typescript: '^5.0.0' },
+				devDependencies: { typescript: '^5.0.0' },
+			}),
+		});
+		expect(detectOmitDevTscTrap(root)).toBeNull();
+	});
+
+	test('does not warn when Dockerfile does not drop dev deps', () => {
+		const root = makeProject({
+			Dockerfile: 'FROM node:20\nRUN npm install\n',
+			'package.json': JSON.stringify({
+				scripts: { build: 'tsc' },
+				devDependencies: { typescript: '^5.0.0' },
+			}),
+		});
+		expect(detectOmitDevTscTrap(root)).toBeNull();
+	});
+
+	test('does not warn when build script does not use tsc', () => {
+		const root = makeProject({
+			Dockerfile: 'FROM node:20\nRUN npm install --omit=dev\n',
+			'package.json': JSON.stringify({
+				scripts: { build: 'tsdown' },
+				devDependencies: { typescript: '^5.0.0' },
+			}),
+		});
+		expect(detectOmitDevTscTrap(root)).toBeNull();
+	});
+
+	test('does not confuse tsc-alias / tsconfig-paths for a tsc invocation', () => {
+		const root = makeProject({
+			Dockerfile: 'FROM node:20\nRUN npm install --omit=dev\n',
+			'package.json': JSON.stringify({
+				scripts: { build: 'tsc-alias' },
+				devDependencies: { typescript: '^5.0.0' },
+			}),
+		});
+		expect(detectOmitDevTscTrap(root)).toBeNull();
+	});
+
+	test('returns null when there is no Dockerfile', () => {
+		const root = makeProject({
+			'package.json': JSON.stringify({
+				scripts: { build: 'tsc' },
+				devDependencies: { typescript: '^5.0.0' },
+			}),
+		});
+		expect(detectOmitDevTscTrap(root)).toBeNull();
+	});
+
+	test('returns null when package.json is missing or malformed', () => {
+		const root = makeProject({
+			Dockerfile: 'FROM node:20\nRUN npm install --omit=dev\n',
+			'package.json': '{ this is not valid json',
+		});
+		expect(detectOmitDevTscTrap(root)).toBeNull();
 	});
 });
