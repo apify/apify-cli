@@ -179,6 +179,23 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			description: 'Print a reference for an endpoint (methods, summary, path params).',
 			command: 'apify api --describe actor-runs/{runId}',
 		},
+		{
+			description: 'Log the resolved outbound method + URL (and response status) to stderr.',
+			command: 'apify api users/me --verbose',
+		},
+		{
+			description: 'Follow pagination automatically and print all items as a single JSON array.',
+			command: 'apify api acts --paginate',
+		},
+		{
+			description: 'Follow pagination but cap at 200 items.',
+			command: 'apify api acts --paginate --paginate-max 200',
+		},
+		{
+			description: 'Hit an unauthenticated URL through the same escape hatch.',
+			command:
+				'apify api --no-auth https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json',
+		},
 	];
 
 	static override docsUrl = 'https://docs.apify.com/api/v2';
@@ -242,6 +259,31 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 				'For example, "actor-runs/{runId}" and "/v2/actor-runs/{runId}" are both accepted.',
 			required: false,
 			exclusive: ['list-endpoints', 'search'],
+		}),
+		verbose: Flags.boolean({
+			char: 'v',
+			description:
+				'Print the resolved outbound request (method + URL) to stderr before the fetch, and the ' +
+				'HTTP status + Content-Type after. Useful for debugging what the CLI actually sends.',
+			default: false,
+		}),
+		paginate: Flags.boolean({
+			description:
+				'For endpoints returning { data: { items, total, offset, limit } }, automatically follow ' +
+				'pagination by advancing offset until all items are fetched, then emit the collected items ' +
+				'as a single JSON array on stdout. Combine with --paginate-max to cap the number of items.',
+			default: false,
+		}),
+		'paginate-max': Flags.integer({
+			description: 'When used with --paginate, stop after collecting this many items. Ignored without --paginate.',
+			required: false,
+		}),
+		'no-auth': Flags.boolean({
+			description:
+				'Skip the Authorization header. Useful for hitting public / auth-less endpoints via the ' +
+				'same escape hatch. When the endpoint is an absolute URL (e.g. https://raw.githubusercontent.com/...), ' +
+				'the request is sent verbatim; otherwise the endpoint is resolved against the Apify API base URL.',
+			default: false,
 		}),
 	};
 
@@ -310,25 +352,48 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			}
 		}
 
-		const apifyClient = await getLoggedClientOrThrow();
-		const token = apifyClient.token!;
+		const { noAuth, verbose, paginate, paginateMax } = this.flags;
 
-		// apifyClient.baseUrl already ends in "/v2"
-		const endpoint = normalizePath(endpointArg);
+		// Resolve the base URL and token. When --no-auth is set we don't require a login;
+		// we also allow the endpoint to be an absolute URL so agents can hit auth-less
+		// resources (e.g. raw GitHub) through the same escape hatch.
+		let token: string | undefined;
+		let baseUrl = `${(process.env.APIFY_CLIENT_BASE_URL || 'https://api.apify.com').replace(/\/$/, '')}/v2`;
 
-		let url = `${apifyClient.baseUrl}/${endpoint}`;
-
-		if (queryString) {
-			const separator = url.includes('?') ? '&' : '?';
-			url = `${url}${separator}${queryString}`;
+		if (!noAuth) {
+			const apifyClient = await getLoggedClientOrThrow();
+			token = apifyClient.token!;
+			// apifyClient.baseUrl already ends in "/v2"
+			baseUrl = apifyClient.baseUrl;
 		}
+
+		const endpointIsAbsolute = /^https?:\/\//i.test(endpointArg);
+		const endpointForSuggestions = endpointIsAbsolute ? endpointArg : normalizePath(endpointArg);
+
+		const buildUrl = (extraQuery?: string): string => {
+			let url = endpointIsAbsolute ? endpointArg! : `${baseUrl}/${normalizePath(endpointArg!)}`;
+
+			const parts: string[] = [];
+			if (queryString) parts.push(queryString);
+			if (extraQuery) parts.push(extraQuery);
+
+			if (parts.length > 0) {
+				const separator = url.includes('?') ? '&' : '?';
+				url = `${url}${separator}${parts.join('&')}`;
+			}
+
+			return url;
+		};
 
 		// Build headers. Custom headers overwrite defaults case-insensitively so
 		// callers can override e.g. Content-Type without creating duplicate entries.
 		const headers: Record<string, string> = {
 			...APIFY_CLIENT_DEFAULT_HEADERS,
-			Authorization: `Bearer ${token}`,
 		};
+
+		if (token) {
+			headers.Authorization = `Bearer ${token}`;
+		}
 
 		if (this.flags.body) {
 			headers['Content-Type'] = 'application/json';
@@ -343,16 +408,31 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			headers[key] = value;
 		}
 
-		// Make the request
-		const response = await fetch(url, {
-			method,
-			headers,
-			body: this.flags.body || undefined,
-		});
+		const doFetch = async (url: string): Promise<{ response: Response; responseText: string }> => {
+			if (verbose) {
+				simpleLog({ message: chalk.gray(`→ ${method} ${url}`), stdout: false });
+			}
 
-		const responseText = await response.text();
+			const response = await fetch(url, {
+				method,
+				headers,
+				body: this.flags.body || undefined,
+			});
 
-		if (!response.ok) {
+			const responseText = await response.text();
+
+			if (verbose) {
+				const contentType = response.headers.get('content-type') || '';
+				simpleLog({
+					message: chalk.gray(`← ${response.status} ${response.statusText}${contentType ? ` (${contentType})` : ''}`),
+					stdout: false,
+				});
+			}
+
+			return { response, responseText };
+		};
+
+		const handleErrorResponse = async (response: Response, responseText: string): Promise<void> => {
 			process.exitCode = CommandExitCodes.RunFailed;
 
 			// Print status to stderr but JSON response bodies to stdout so that
@@ -368,10 +448,96 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 				}
 			}
 
-			if (response.status === 404) {
-				await this.print404Suggestions(endpoint);
+			if (response.status === 404 && !endpointIsAbsolute) {
+				await this.print404Suggestions(endpointForSuggestions);
+			}
+		};
+
+		// --paginate: only meaningful for GET requests on endpoints that return
+		// { data: { items, total, offset, limit } }. Any other shape falls back to
+		// a single response and we warn on stderr so callers aren't silently misled.
+		if (paginate) {
+			if (method !== 'GET') {
+				throw new Error('--paginate can only be used with GET requests.');
 			}
 
+			const collected: unknown[] = [];
+			let offset = 0;
+			let limit: number | undefined;
+			let total: number | undefined;
+
+			// eslint-disable-next-line no-constant-condition
+			while (true) {
+				const extra = new URLSearchParams();
+				extra.set('offset', String(offset));
+				if (limit !== undefined) extra.set('limit', String(limit));
+				const url = buildUrl(extra.toString());
+
+				const { response, responseText } = await doFetch(url);
+
+				if (!response.ok) {
+					await handleErrorResponse(response, responseText);
+					return;
+				}
+
+				let parsed: unknown;
+				try {
+					parsed = JSON.parse(responseText);
+				} catch {
+					throw new Error('--paginate requires a JSON response body, but got non-JSON content.');
+				}
+
+				const data = (parsed as { data?: unknown } | null)?.data as
+					| { items?: unknown[]; total?: number; offset?: number; limit?: number; count?: number }
+					| undefined;
+
+				if (!data || !Array.isArray(data.items)) {
+					throw new Error(
+						'--paginate expected a { data: { items: [...] } } response shape from the endpoint. ' +
+							'This endpoint does not appear to be paginated — retry without --paginate.',
+					);
+				}
+
+				const { items } = data;
+				const pageCount = items.length;
+
+				for (const item of items) {
+					if (paginateMax !== undefined && collected.length >= paginateMax) break;
+					collected.push(item);
+				}
+
+				if (typeof data.total === 'number') total = data.total;
+				if (typeof data.limit === 'number' && limit === undefined) limit = data.limit;
+
+				const nextOffset = offset + (pageCount || (limit ?? 0));
+
+				const reachedCap = paginateMax !== undefined && collected.length >= paginateMax;
+				const exhausted = total !== undefined ? nextOffset >= total : pageCount === 0;
+
+				if (reachedCap || exhausted || pageCount === 0) break;
+
+				offset = nextOffset;
+			}
+
+			// Emit collected items as one JSON array. This matches the intent
+			// documented in the flag description ("emit all items as one JSON array").
+			simpleLog({ message: JSON.stringify(collected, null, 2), stdout: true });
+			if (verbose) {
+				simpleLog({
+					message: chalk.gray(
+						`  collected ${collected.length}${total !== undefined ? ` of ${total}` : ''} item(s) across pagination`,
+					),
+					stdout: false,
+				});
+			}
+			return;
+		}
+
+		// Single-request path.
+		const { response, responseText } = await doFetch(buildUrl());
+
+		if (!response.ok) {
+			await handleErrorResponse(response, responseText);
 			return;
 		}
 
