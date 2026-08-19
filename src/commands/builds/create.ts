@@ -12,7 +12,7 @@ import {
 	formatResultSummary,
 	waitForTerminalStatus,
 } from '../../lib/commands/agent-output.js';
-import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
+import { formatActorContextError, resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { error, simpleLog } from '../../lib/outputs.js';
@@ -83,7 +83,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
+				message: formatActorContextError(ctx.reason, actorId),
 				stdout: true,
 			});
 
