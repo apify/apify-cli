@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile, lstat } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -15,7 +15,7 @@ import {
 	readOutputSchema,
 	readStorageSchema,
 } from '../../lib/input_schema.js';
-import { error, info, success, warning } from '../../lib/outputs.js';
+import { error, info, simpleLog, success, warning } from '../../lib/outputs.js';
 import {
 	clearAllRequired,
 	makePropertiesRequired,
@@ -24,6 +24,7 @@ import {
 	prepareOutputSchemaForCompilation,
 	stripTitles,
 } from '../../lib/schema-transforms.js';
+import { getJsonFileContent, getLocalConfig, getLocalConfigPath, isLocalConfigPath } from '../../lib/utils.js';
 
 export const BANNER_COMMENT = `
 // biome-ignore-all lint: generated
@@ -85,22 +86,9 @@ Optionally specify custom schema path to use.`;
 
 	async run() {
 		const cwd = process.cwd();
-
-		const { inputSchema } = await readAndValidateInputSchema({
-			forcePath: this.args.path,
-			cwd,
-			getMessage: (schemaPath) =>
-				schemaPath
-					? `Generating types from input schema at ${schemaPath}`
-					: `Generating types from input schema embedded in '${LOCAL_CONFIG_PATH}'`,
-		});
-
-		const name = 'input';
-
-		const schemaToCompile = this.flags.allOptional
-			? clearAllRequired(inputSchema)
-			: makePropertiesRequired(inputSchema);
-
+		const targetSchemas = await this.getTargetSchemas(this.args.path);
+		await this.prepareOutputPath(cwd, this.flags.output);
+		
 		const compileOptions: Partial<Options> = {
 			bannerComment: BANNER_COMMENT,
 			maxItems: -1,
@@ -110,177 +98,164 @@ Optionally specify custom schema path to use.`;
 			$refOptions: { resolve: { external: false, file: false, http: false } },
 		};
 
-		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, name, compileOptions);
+		const [
+			inputResult,
+			datasetResult,
+			kvsResult,
+			outputResult,
+		] = await Promise.allSettled([
+			this.generateInputTypes({schema: targetSchemas.input.inputSchema, compileOptions, allOptional: this.flags.allOptional}),
+			this.generateDatasetTypes({schema: targetSchemas.dataset?.datasetSchema, compileOptions, allOptional: this.flags.allOptional}),
+			this.generateKvsTypes({schema: targetSchemas.kvs?.schema, compileOptions, allOptional: this.flags.allOptional}),
+			this.generateOutputTypes({schema: targetSchemas.output?.schema, compileOptions, allOptional: this.flags.allOptional}),
+		]);
+	}
 
-		const outputDir = path.resolve(cwd, this.flags.output);
+	private async prepareOutputPath(cwd: string, output: string) {
+		const outputDir = path.resolve(cwd, output);
 		await mkdir(outputDir, { recursive: true });
+	}
 
-		const outputFile = path.join(outputDir, `${name}.ts`);
-		await writeFile(outputFile, result, 'utf-8');
-
-		success({ message: `Generated types written to ${outputFile}` });
-
-		// When no custom path is provided, also generate types from additional schemas
-		if (!this.args.path) {
-			const schemaResults = await Promise.allSettled([
-				this.generateDatasetTypes({ cwd, outputDir, compileOptions }),
-				this.generateOutputTypes({ cwd, outputDir, compileOptions }),
-				this.generateKvsTypes({ cwd, outputDir, compileOptions }),
-			]);
-
-			const schemaLabels = ['Dataset', 'Output', 'Key-Value Store'];
-			let anyFailed = false;
-
-			for (const [i, schemaResult] of schemaResults.entries()) {
-				if (schemaResult.status === 'rejected') {
-					anyFailed = true;
-					error({
-						message: `Failed to generate types for ${schemaLabels[i]} schema: ${schemaResult.reason instanceof Error ? schemaResult.reason.message : String(schemaResult.reason)}`,
-					});
-				}
+	/**
+	 * @param targetPath path to target file or directory
+	 * @returns "file" if targetPath is a file, "directory" if targetPath is a directory
+	 * @throws if targetPath is neither a file nor a directory or if targetPath does not exist
+	 */
+	private async getPathType(targetPath: string) {
+		const stats = await lstat(targetPath).catch((err) => {
+			if (err.code === 'ENOENT') {
+				throw new Error(`File or directory not found: ${targetPath}`);
 			}
+			throw err;
+		});
+		if (stats.isDirectory()) {
+			return 'directory';
+		}
+		if (stats.isFile()) {
+			return 'file';
+		}
+		throw new Error(`Could not determine type of path: ${targetPath} is neither a file nor a directory`);
+	}
 
-			if (anyFailed) {
-				process.exitCode = CommandExitCodes.BuildFailed;
+	private notifySchemaFileResolution(schemaName: string, filePath: string | null | undefined) {
+		return filePath
+			? info({ message: `✅ Resolution of ${schemaName} schema found ${filePath}` })
+			: info({ message: `❌ Resolution of ${schemaName} schema did not find a definition` });
+	}
+
+	/**
+	 * @param inputPath path to .actor/actor.json, actor root folder or input schema file
+	 * @throws if inputPath is neither a file nor a directory, inputPath does not exist, or inputPath is not a valid input schema file
+	 */
+	private async getTargetSchemas(inputPath = '.') {
+		const pathType = await this.getPathType(inputPath);
+		simpleLog({ message: `\n[Schema Resolution]: resolving path of type ${pathType}` });
+
+		// assume its inputSchema file if file and not localConfig
+		if (pathType === 'file' && !isLocalConfigPath(inputPath)) {
+			const inputResult = await readAndValidateInputSchema({
+				forcePath: inputPath,
+				cwd: process.cwd(),
+				getMessage: (schemaPath) => `✅ Resolution of input schema found ${schemaPath}`,
+			});
+			return { input: inputResult };
+		}
+		const actorRootPath =
+			pathType === 'file'
+				? inputPath.replace(LOCAL_CONFIG_PATH, '').replace(/\/$/, '') // get rid of /.actor/actor.json
+				: inputPath;
+
+		const localConfig = pathType === 'file' ? getJsonFileContent(inputPath) : getLocalConfig(inputPath);
+
+		const datasetResult = readDatasetSchema({ cwd: actorRootPath, localConfig });
+		const kvsResult = readStorageSchema({
+			cwd: actorRootPath,
+			key: 'keyValueStore',
+			label: 'Key-Value Store',
+			localConfig,
+		});
+		const outputResult = readOutputSchema({ cwd: actorRootPath, localConfig });
+		const inputResult = await readAndValidateInputSchema({
+			cwd: actorRootPath,
+			localConfig,
+			getMessage: (schemaPath) => `Validating input schema at ${schemaPath ?? 'NULL'}`,
+		});
+		this.notifySchemaFileResolution('input', inputResult?.inputSchemaPath);
+		this.notifySchemaFileResolution('dataset', datasetResult?.datasetSchemaPath);
+		this.notifySchemaFileResolution('kvs', kvsResult?.schemaPath);
+		this.notifySchemaFileResolution('output', outputResult?.schemaPath);
+		simpleLog({ message: `[Schema Resolution]: done\n` });
+		return {
+			input: inputResult,
+			dataset: datasetResult,
+			kvs: kvsResult,
+			output: outputResult,
+		};
+	}
+
+	private async generateInputTypes({
+		schema,
+		compileOptions,
+		allOptional,
+	}: {
+		schema: Record<string, unknown> | null | undefined;
+		compileOptions: Partial<Options>;
+		allOptional: boolean;
+	}) {
+		if (!schema) return null;
+		const preprocessedSchema: JSONSchema4 = stripTitles(allOptional ? clearAllRequired(schema) : schema);
+		const result = await compile(preprocessedSchema, 'input', compileOptions);
+		info({ message: '✅ Input schema compiled successfully.' });
+		return result;
+	}
+
+	private async generateDatasetTypes({ schema, compileOptions, allOptional }: {schema: Record<string, unknown> | null | undefined; compileOptions: Partial<Options>; allOptional: boolean} ) {
+		if (!schema) return null;
+		let preprocessedSchema = prepareFieldsSchemaForCompilation(schema);
+		if (!preprocessedSchema) return null;
+		if (allOptional) {
+			preprocessedSchema = clearAllRequired(preprocessedSchema);
+		}
+		preprocessedSchema = stripTitles(preprocessedSchema);
+		const result = await compile(preprocessedSchema, 'dataset', compileOptions);
+		info({ message: '✅ Dataset schema compiled successfully.' });
+		return result;
+	}
+	
+	private async generateOutputTypes({ schema, compileOptions, allOptional }: {schema: Record<string, unknown> | null | undefined; compileOptions: Partial<Options>; allOptional: boolean} ) {
+		if (!schema) return null;
+		let preprocessedSchema = prepareOutputSchemaForCompilation(schema);
+		if (!preprocessedSchema) return null;
+		if (allOptional) {
+			preprocessedSchema = clearAllRequired(preprocessedSchema);
+		}
+		preprocessedSchema = stripTitles(preprocessedSchema);
+		const result = await compile(preprocessedSchema, 'output', compileOptions);
+		info({ message: '✅ Output schema compiled successfully.' });
+		return result;
+	}
+
+	private async generateKvsTypes({ schema, compileOptions, allOptional }: { schema: Record<string, unknown> | null | undefined; compileOptions: Partial<Options>; allOptional: boolean; }) {
+		if (!schema) return null;
+		const preparedCollections = prepareKvsCollectionsForCompilation(schema);
+		if (preparedCollections.length === 0) return null;
+		
+		const resultParts = [];
+		for (const { name, schema: collectionSchema } of preparedCollections) {
+			let preprocessedSchema = collectionSchema;
+			if (allOptional) {
+				preprocessedSchema = clearAllRequired(preprocessedSchema);
 			}
+			preprocessedSchema = stripTitles(preprocessedSchema);
+
+			const types = await compile(preprocessedSchema, name, compileOptions);
+			resultParts.push(types);
 		}
-	}
-
-	private async generateDatasetTypes({
-		cwd,
-		outputDir,
-		compileOptions,
-	}: {
-		cwd: string;
-		outputDir: string;
-		compileOptions: Partial<Options>;
-	}) {
-		const datasetResult = readDatasetSchema({ cwd });
-
-		if (!datasetResult) {
-			return;
-		}
-
-		const { datasetSchema, datasetSchemaPath } = datasetResult;
-
-		if (datasetSchemaPath) {
-			info({ message: `[experimental] Generating types from Dataset schema at ${datasetSchemaPath}` });
-		} else {
-			info({ message: `[experimental] Generating types from Dataset schema embedded in '${LOCAL_CONFIG_PATH}'` });
-		}
-
-		const prepared = prepareFieldsSchemaForCompilation(datasetSchema);
-
-		if (!prepared) {
-			warning({ message: 'Dataset schema has no fields defined, skipping type generation.' });
-			return;
-		}
-
-		const datasetName = 'dataset';
-
-		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
-
-		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, datasetName, compileOptions);
-
-		const outputFile = path.join(outputDir, `${datasetName}.ts`);
-		await writeFile(outputFile, result, 'utf-8');
-
-		success({ message: `Generated types written to ${outputFile}` });
-	}
-
-	private async generateOutputTypes({
-		cwd,
-		outputDir,
-		compileOptions,
-	}: {
-		cwd: string;
-		outputDir: string;
-		compileOptions: Partial<Options>;
-	}) {
-		const outputResult = readOutputSchema({ cwd });
-
-		if (!outputResult) {
-			return;
-		}
-
-		const { outputSchema, outputSchemaPath } = outputResult;
-
-		if (outputSchemaPath) {
-			info({ message: `[experimental] Generating types from Output schema at ${outputSchemaPath}` });
-		} else {
-			info({ message: `[experimental] Generating types from Output schema embedded in '${LOCAL_CONFIG_PATH}'` });
-		}
-
-		const prepared = prepareOutputSchemaForCompilation(outputSchema);
-
-		if (!prepared) {
-			warning({ message: 'Output schema has no properties defined, skipping type generation.' });
-			return;
-		}
-
-		const outputName = 'output';
-
-		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
-
-		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, outputName, compileOptions);
-
-		const outputFile = path.join(outputDir, `${outputName}.ts`);
-		await writeFile(outputFile, result, 'utf-8');
-
-		success({ message: `Generated types written to ${outputFile}` });
-	}
-
-	private async generateKvsTypes({
-		cwd,
-		outputDir,
-		compileOptions,
-	}: {
-		cwd: string;
-		outputDir: string;
-		compileOptions: Partial<Options>;
-	}) {
-		const kvsResult = readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store' });
-
-		if (!kvsResult) {
-			return;
-		}
-
-		const { schema: kvsSchema, schemaPath: kvsSchemaPath } = kvsResult;
-
-		if (kvsSchemaPath) {
-			info({ message: `[experimental] Generating types from Key-Value Store schema at ${kvsSchemaPath}` });
-		} else {
-			info({
-				message: `[experimental] Generating types from Key-Value Store schema embedded in '${LOCAL_CONFIG_PATH}'`,
-			});
-		}
-
-		const collections = prepareKvsCollectionsForCompilation(kvsSchema);
-
-		if (collections.length === 0) {
-			warning({
-				message: 'Key-Value Store schema has no collections with JSON schemas, skipping type generation.',
-			});
-			return;
-		}
-
-		const parts: string[] = [];
-
-		for (const { name, schema } of collections) {
-			const schemaToCompile = this.flags.allOptional ? clearAllRequired(schema) : schema;
-
-			const compiled = await compile(stripTitles(schemaToCompile) as JSONSchema4, name, {
-				...compileOptions,
-				// Only the first collection gets the banner comment
-				bannerComment: parts.length === 0 ? (compileOptions.bannerComment as string) : '',
-			});
-
-			parts.push(compiled);
-		}
-
-		const outputFile = path.join(outputDir, 'key-value-store.ts');
-		await writeFile(outputFile, parts.join('\n'), 'utf-8');
-
-		success({ message: `Generated types written to ${outputFile}` });
+		info({ message: '✅ Key-Value Store schema compiled successfully.' });
+		
+		// should never happen, but just in case
+		if (resultParts.length === 0) return null; 
+		
+		return resultParts.join('\n');
 	}
 }

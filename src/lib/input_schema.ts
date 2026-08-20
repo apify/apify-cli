@@ -24,7 +24,15 @@ const DEFAULT_INPUT_SCHEMA_PATHS = [
  * In such a case, path would be set to the location
  * where the input schema would be expected to be found (and e.g. can be created there).
  */
-export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; cwd: string }) => {
+export const readInputSchema = async ({
+	forcePath,
+	cwd,
+	localConfig,
+}: {
+	forcePath?: string;
+	cwd: string;
+	localConfig?: Record<string, unknown>;
+}) => {
 	if (forcePath) {
 		return {
 			inputSchema: getJsonFileContent(forcePath),
@@ -32,7 +40,7 @@ export const readInputSchema = async ({ forcePath, cwd }: { forcePath?: string; 
 		};
 	}
 
-	const localConfig = getLocalConfig(cwd);
+	localConfig ??= getLocalConfig(cwd);
 
 	if (typeof localConfig?.input === 'object') {
 		return {
@@ -80,14 +88,17 @@ export const readAndValidateInputSchema = async ({
 	forcePath,
 	cwd,
 	getMessage,
+	localConfig,
 }: {
 	forcePath?: string;
 	cwd: string;
 	getMessage: (path: string | null) => string;
+	localConfig?: Record<string, unknown>;
 }): Promise<{ inputSchema: Record<string, unknown>; inputSchemaPath: string | null }> => {
 	const { inputSchema, inputSchemaPath } = await readInputSchema({
 		forcePath,
 		cwd,
+		localConfig,
 	});
 
 	if (!inputSchema) {
@@ -115,13 +126,15 @@ export const readStorageSchema = ({
 	key,
 	label,
 	getRef,
+	localConfig,
 }: {
 	cwd: string;
 	key: string;
 	label: string;
 	getRef?: (config: ReturnType<typeof getLocalConfig>) => unknown;
+	localConfig?: Record<string, unknown>;
 }): { schema: Record<string, unknown>; schemaPath: string | null } | null => {
-	const localConfig = getLocalConfig(cwd);
+	localConfig ??= getLocalConfig(cwd);
 
 	const ref = getRef ? getRef(localConfig) : (localConfig?.storages as Record<string, unknown> | undefined)?.[key];
 
@@ -158,10 +171,12 @@ export const readStorageSchema = ({
  */
 export const readDatasetSchema = ({
 	cwd,
+	localConfig,
 }: {
 	cwd: string;
+	localConfig?: Record<string, unknown>;
 }): { datasetSchema: Record<string, unknown>; datasetSchemaPath: string | null } | null => {
-	const result = readStorageSchema({ cwd, key: 'dataset', label: 'Dataset' });
+	const result = readStorageSchema({ cwd, key: 'dataset', label: 'Dataset', localConfig });
 
 	if (!result) {
 		return null;
@@ -178,21 +193,8 @@ export const readDatasetSchema = ({
  * Thin wrapper around `readStorageSchema` — reads `output` from the top-level config
  * rather than `storages.<key>`.
  */
-export const readOutputSchema = ({
-	cwd,
-}: {
-	cwd: string;
-}): { outputSchema: Record<string, unknown>; outputSchemaPath: string | null } | null => {
-	const result = readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output });
-
-	if (!result) {
-		return null;
-	}
-
-	return {
-		outputSchema: result.schema,
-		outputSchemaPath: result.schemaPath,
-	};
+export const readOutputSchema = ({ cwd, localConfig }: { cwd: string; localConfig?: Record<string, unknown> }) => {
+	return readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output, localConfig });
 };
 
 /**
