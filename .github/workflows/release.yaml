@@ -97,7 +97,7 @@ jobs:
               run: pnpm pack
 
             - name: Update CHANGELOG.md
-              uses: DamianReeves/write-file-action@{"message":"Not # master
+              uses: DamianReeves/write-file-action@d4ee8a06aec5db0c57a036b86f2f428e1f8b00e7 # master
               with:
                   path: CHANGELOG.md
                   write-mode: overwrite
@@ -270,7 +270,7 @@ jobs:
                   git config --global user.email 'apify-service-account@users.noreply.github.com'
 
             - name: Set up Homebrew
-              uses: Homebrew/actions/setup-homebrew@{"message":"Not # master
+              uses: Homebrew/actions/setup-homebrew@8f3d1ec8a696b3b9d9a6c3696b6c73033cab69e4 # master
 
             # It can happen that the updated package version is not available right after the `npm publish` command finishes
             # Try waiting 3 minutes until the updated package version is available
