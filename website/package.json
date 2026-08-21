@@ -37,8 +37,8 @@
 		"unist-util-visit": "^5.1.0"
 	},
 	"volta": {
-		"node": "24.18.0",
-		"pnpm": "11.8.0"
+		"node": "24.19.0",
+		"pnpm": "11.22.0"
 	},
-	"packageManager": "pnpm@11.8.0"
+	"packageManager": "pnpm@11.22.0"
 }
