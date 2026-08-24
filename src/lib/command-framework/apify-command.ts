@@ -500,7 +500,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 
 			// If you have a flag a, with alias b, and you pass --a and --b, it's not allowed
-			const matchingFlags = allMatchers.filter((matcher) => rawFlags[matcher]);
+			// Check for presence, not truthiness: the real CLI path always yields arrays (`multiple: true`), but
+			// internalRunCommand/testRunCommand inject scalar values, where an explicit `false` must match too
+			const matchingFlags = allMatchers.filter((matcher) => typeof rawFlags[matcher] !== 'undefined');
 
 			if (matchingFlags.length > 1) {
 				throw new CommandError({
@@ -514,7 +516,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			let rawFlag = rawFlags[matchingFlags[0]];
 
-			if (!rawFlag && builderData.required) {
+			if (typeof rawFlag === 'undefined' && builderData.required) {
 				throw new CommandError({
 					code: CommandErrorCode.APIFY_MISSING_FLAG,
 					command: this.ctor,
