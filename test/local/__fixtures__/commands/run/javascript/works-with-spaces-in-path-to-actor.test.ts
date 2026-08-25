@@ -35,6 +35,7 @@ describe('[javascript] spaces in path to actor', () => {
 		await testRunCommand(CreateCommand, {
 			flags_template: 'project_cheerio_crawler_js',
 			args_actorName: actorName,
+			flags_source: 'apify',
 		});
 
 		forceNewCwd(actorName);

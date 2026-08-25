@@ -25,6 +25,7 @@ describe('[javascript] propagates the non-zero exit code when the Actor fails', 
 		await testRunCommand(CreateCommand, {
 			flags_template: 'project_empty',
 			args_actorName: actorName,
+			flags_source: 'apify',
 		});
 		toggleCwdBetweenFullAndParentPath();
 

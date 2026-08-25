@@ -26,6 +26,7 @@ describe('[javascript] prints error message on project with no detected start', 
 		await testRunCommand(CreateCommand, {
 			flags_template: 'project_cheerio_crawler_js',
 			args_actorName: actorName,
+			flags_source: 'apify',
 		});
 		toggleCwdBetweenFullAndParentPath();
 

@@ -1,11 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
 	buildGitSourceNextSteps,
 	getAddWorkspaceUrl,
 	getGitConnectUrl,
 	type GitProviderIntegration,
+	type GitSourceResult,
 	isGitProvider,
+	logGitSourceOutcome,
 	parseGitRepoFlag,
 	chooseWorkspace,
 } from '../../../src/lib/git-source/gitSource.js';
@@ -115,7 +117,8 @@ describe('buildGitSourceNextSteps', () => {
 		repoName: 'my-scraper',
 	};
 
-	// The scaffold is already on disk whenever these run, so a stop must never be a dead end.
+	// Every stop has to leave the user something actionable — recovery steps after the clone, a re-run
+	// before it — so none of them is a dead end.
 	it.each([
 		'lookupFailed',
 		'notAuthorized',
@@ -148,5 +151,49 @@ describe('buildGitSourceNextSteps', () => {
 
 		expect(steps).toContainEqual(expect.stringContaining(`git remote add origin ${base.remoteUrl}`));
 		expect(steps).toContainEqual(expect.stringContaining('git fetch origin'));
+	});
+});
+
+describe('logGitSourceOutcome', () => {
+	const result = (scaffolded: boolean): GitSourceResult => ({
+		remoteUrl: null,
+		actorId: null,
+		workspaces: null,
+		stopReason: 'notAuthorized',
+		error: 'Apify is not authorized to access your github account.',
+		scaffolded,
+	});
+
+	// A stop before the clone is the only outcome the user gets — no success banner — so its wording
+	// must not imply anything was created.
+	it('says nothing was created when the stop came before the clone', () => {
+		const lines: string[] = [];
+		const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => lines.push(args.map(String).join(' ')));
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+		try {
+			logGitSourceOutcome(result(false), ['Re-run apify create']);
+		} finally {
+			errorSpy.mockRestore();
+			logSpy.mockRestore();
+		}
+
+		expect(lines[0]).toContain('The Actor was not created');
+		expect(lines[0]).not.toContain('scaffolded');
+	});
+
+	it('keeps the scaffold wording when the clone had already landed', () => {
+		const lines: string[] = [];
+		const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => lines.push(args.map(String).join(' ')));
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+		try {
+			logGitSourceOutcome(result(true), ['Re-run apify create']);
+		} finally {
+			errorSpy.mockRestore();
+			logSpy.mockRestore();
+		}
+
+		expect(lines[0]).toContain('Actor scaffolded');
 	});
 });

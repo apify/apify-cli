@@ -22,6 +22,9 @@ const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 
+// `--source` is passed explicitly below because it has no default: left out, the wizard asks where the
+// source should live, and a non-TTY run has nothing to answer it with. The `--json` tests do not need it,
+// since `--json` already means "do not ask".
 describe('apify create', () => {
 	beforeEach(async () => {
 		await beforeAllCalls();
@@ -47,6 +50,7 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
+			flags_source: 'apify',
 		});
 
 		// check files structure
@@ -76,6 +80,7 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
+			flags_source: 'apify',
 		});
 
 		// check files structure
@@ -108,6 +113,7 @@ describe('apify create', () => {
 			flags_useCase: 'ai-agent',
 			flags_language: 'python',
 			flags_skipDependencyInstall: true,
+			flags_source: 'apify',
 		});
 
 		expect(existsSync(tmpPath)).toBeTruthy();
@@ -206,6 +212,7 @@ describe('apify create', () => {
 			flags_skipDependencyInstall: true,
 			flags_skipGitInit: true,
 			flags_origin: 'console',
+			flags_source: 'apify',
 		});
 
 		expect(instance['telemetryData'].create!.origin).toBe('console');
@@ -217,6 +224,7 @@ describe('apify create', () => {
 			flags_template: 'project_empty',
 			flags_skipDependencyInstall: true,
 			flags_skipGitInit: true,
+			flags_source: 'apify',
 		});
 
 		expect(instance['telemetryData'].create!.origin).toBe('cli');
@@ -229,6 +237,7 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_omitOptionalDeps: true,
+			flags_source: 'apify',
 		});
 
 		// check files structure
@@ -249,6 +258,7 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
+			flags_source: 'apify',
 		});
 
 		toggleCwdBetweenFullAndParentPath();
@@ -266,6 +276,7 @@ describe('apify create', () => {
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
 			flags_skipGitInit: true,
+			flags_source: 'apify',
 		});
 
 		toggleCwdBetweenFullAndParentPath();
@@ -284,6 +295,7 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
+			flags_source: 'apify',
 		});
 
 		toggleCwdBetweenFullAndParentPath();

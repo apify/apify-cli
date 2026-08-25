@@ -43,6 +43,8 @@ export interface GitSourceResult {
 	stopReason: GitSourceStopReason | null;
 	/** Present only when we stopped; null on success. */
 	error: string | null;
+	/** Whether the clone put the template on disk — false means the Actor directory is still empty. */
+	scaffolded: boolean;
 }
 
 /**
@@ -442,6 +444,10 @@ export const runGitSourceFlow = async ({
 	isInteractive,
 	customize,
 }: RunGitSourceFlowOptions): Promise<GitSourceResult> => {
+	// The clone is what puts the template on disk, so once this is true a stop leaves a scaffold behind
+	// rather than an empty directory.
+	let scaffolded = false;
+
 	const stopped = (
 		stopReason: GitSourceStopReason,
 		err: unknown,
@@ -450,6 +456,7 @@ export const runGitSourceFlow = async ({
 		remoteUrl: null,
 		actorId: null,
 		workspaces: null,
+		scaffolded,
 		...extra,
 		stopReason,
 		error: err instanceof Error ? err.message : String(err),
@@ -504,6 +511,7 @@ export const runGitSourceFlow = async ({
 	try {
 		await cloneRepo(actorDir, repo.httpsUrl, isInteractive);
 		info({ message: `Cloned ${repo.httpsUrl}.` });
+		scaffolded = true;
 
 		await customize(actorDir);
 	} catch (err) {
@@ -515,7 +523,7 @@ export const runGitSourceFlow = async ({
 		// own credentials rather than the user's.
 		const actor = await createGitActor({ client, actorName, gitRepoUrl: repo.sshUrl });
 		info({ message: `Created Actor ${actor.name} on Apify.` });
-		return { remoteUrl: repo.sshUrl, actorId: actor.id, workspaces, stopReason: null, error: null };
+		return { remoteUrl: repo.sshUrl, actorId: actor.id, workspaces, stopReason: null, error: null, scaffolded: true };
 	} catch (err) {
 		return stopped('actorCreateFailed', err, { workspaces, remoteUrl: repo.sshUrl });
 	}
@@ -544,8 +552,9 @@ export interface GitSourceNextStepsOptions {
 }
 
 /**
- * What to tell the user (or hand an agent in `--json`) once the Git wiring has stopped. The scaffold is
- * on disk either way, so a stop is never a dead end.
+ * What to tell the user (or hand an agent in `--json`) once the Git wiring has stopped. After the clone
+ * the scaffold is on disk and the steps recover it; before it they re-run the command in place — so a
+ * stop is never a dead end either way.
  */
 export const buildGitSourceNextSteps = ({
 	actorName,
@@ -583,6 +592,11 @@ export const buildGitSourceNextSteps = ({
 export const logGitSourceOutcome = (result: GitSourceResult, nextSteps: string[]) => {
 	if (!result.stopReason) return;
 
-	warning({ message: `Actor scaffolded, but the Git setup did not finish: ${result.error}` });
+	// A stop before the clone replaces the success banner entirely, so this line is then the only
+	// outcome the user sees — it has to say nothing was created, not imply a scaffold exists.
+	const headline = result.scaffolded
+		? 'Actor scaffolded, but the Git setup did not finish'
+		: 'The Actor was not created: the Git setup stopped';
+	warning({ message: `${headline}: ${result.error}` });
 	info({ message: `Next steps:\n${nextSteps.map((step) => `  ${step}`).join('\n')}` });
 };

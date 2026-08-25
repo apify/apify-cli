@@ -26,7 +26,11 @@ describe('[python] [api] scrapy template works', () => {
 
 		await safeLogin();
 
-		await testRunCommand(CreateCommand, { flags_template: 'python-scrapy', args_actorName: actorName });
+		await testRunCommand(CreateCommand, {
+			flags_template: 'python-scrapy',
+			args_actorName: actorName,
+			flags_source: 'apify',
+		});
 		toggleCwdBetweenFullAndParentPath();
 	});
 

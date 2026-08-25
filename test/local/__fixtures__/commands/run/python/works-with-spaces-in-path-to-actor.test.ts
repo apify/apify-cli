@@ -33,6 +33,7 @@ describe('[python] spaces in path to actor', () => {
 		await testRunCommand(CreateCommand, {
 			flags_template: 'python-start',
 			args_actorName: actorName,
+			flags_source: 'apify',
 		});
 
 		forceNewCwd(actorName);

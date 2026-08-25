@@ -62,6 +62,7 @@ describe('[api] apify push', () => {
 			args_actorName: ACTOR_NAME,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
+			flags_source: 'apify',
 		});
 
 		toggleCwdBetweenFullAndParentPath();

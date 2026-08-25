@@ -26,7 +26,11 @@ describe.runIf(process.env.FORCE_WINDOWS_TESTS || process.platform === 'win32')(
 
 		it('should work', async () => {
 			const ACT_TEMPLATE = 'python-playwright';
-			await testRunCommand(CreateCommand, { args_actorName: actName, flags_template: ACT_TEMPLATE });
+			await testRunCommand(CreateCommand, {
+				args_actorName: actName,
+				flags_template: ACT_TEMPLATE,
+				flags_source: 'apify',
+			});
 
 			// check files structure
 			expect(existsSync(joinPath(actName))).toBeTruthy();
