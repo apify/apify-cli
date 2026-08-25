@@ -105,7 +105,12 @@ export const promptGitSource = async (): Promise<GitSource> =>
 		message: 'Where will the source code live?',
 		choices: [
 			{ name: 'Apify', value: 'apify', description: 'Deploy with "apify push". No Git provider involved.' },
-			{ name: 'GitHub', value: 'github', description: 'Apify creates the repository and builds the Actor from it.' },
+			{
+				name: 'GitHub',
+				value: 'github',
+				description:
+					'Apify creates a public repository and builds the Actor from it. Add --git-private for a private one.',
+			},
 		],
 		default: 'apify',
 		loop: false,
@@ -500,7 +505,11 @@ export const runGitSourceFlow = async ({
 			isPrivate,
 			templateArchiveUrl,
 		});
-		info({ message: `Created repository ${workspace}/${repoName} from the template.` });
+		// Visibility is stated because it is what a wizard user never chose: the flag help says public by
+		// default, and the choice they picked cannot repeat every flag.
+		info({
+			message: `Created ${isPrivate ? 'private' : 'public'} repository ${workspace}/${repoName} from the template.`,
+		});
 	} catch (err) {
 		const stopReason = err instanceof CreateRemoteRepoError ? err.stopReason : 'repoCreateFailed';
 		return stopped(stopReason, err, { workspaces });

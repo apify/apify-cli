@@ -149,7 +149,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			required: false,
 		}),
 		...YesFlag(
-			'Answer prompts automatically. Runs the command non-interactively, so anything not passed as a flag takes its default.',
+			'Run without prompts. Pass the Actor name and --template, which have no default; everything else takes its default.',
 		),
 		origin: Flags.string({
 			description: 'Where the command was invoked from. Used for funnel telemetry.',
@@ -189,15 +189,19 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		let { templateArchiveUrl } = this.flags;
 		let skipOptionalDeps = false;
 
-		// `--json` implies non-interactive: a caller parsing stdout cannot answer a prompt. Reject
-		// before creating any directories so a failed run leaves nothing behind.
-		if (json && !actorName) {
-			throw new Error('--json runs non-interactively. Pass the Actor name as an argument.');
+		// Both flags mean "do not ask": a caller parsing stdout cannot answer a prompt, and --yes says not
+		// to bother. The Actor name and the template have no default to fall back on, so a run missing
+		// either is rejected here — before any directory is created, so it leaves nothing behind.
+		const nonInteractive = json || yes;
+		const nonInteractiveFlag = json ? '--json' : '--yes';
+
+		if (nonInteractive && !actorName) {
+			throw new Error(`${nonInteractiveFlag} runs non-interactively. Pass the Actor name as an argument.`);
 		}
 
-		if (json && !templateName && !templateArchiveUrl) {
+		if (nonInteractive && !templateName && !templateArchiveUrl) {
 			throw new Error(
-				'--json runs non-interactively. Pass --template <name>; run `apify templates ls` to list values.',
+				`${nonInteractiveFlag} runs non-interactively. Pass --template <name>; run \`apify templates ls\` to list values.`,
 			);
 		}
 
@@ -228,7 +232,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					`Cannot create new Actor, directory '${actorName}' already exists. Provide a different name.` +
 					' To create a local Actor environment inside an existing directory, use "apify init".';
 
-				if (json) {
+				if (nonInteractive) {
 					throw new Error(message);
 				}
 
@@ -279,7 +283,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// The prompt helpers cannot be relied on for this: `useStdin` marks any non-TTY stdin as having
 		// data, so their non-interactive fallback only fires under CI.
 		const { isTTY } = await useStdin();
-		const isInteractive = isTTY && !isCI && !json && !yes;
+		const isInteractive = isTTY && !isCI && !nonInteractive;
 
 		// Last wizard step, matching the Console: "Where will the source code live?" Anything that cannot
 		// be asked gets the previous behaviour — the Apify path — rather than a prompt nothing can answer.

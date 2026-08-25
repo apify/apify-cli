@@ -328,9 +328,9 @@ FLAGS
                                  "apify templates ls".
                                  <options:
                                  web-scraper|ai-agent|data-pipeline|browser-automation>
-  -y, --yes                      Answer prompts
-                                 automatically. Runs the command non-interactively,
-                                 so anything not passed as a flag takes its default.
+  -y, --yes                      Run without prompts.
+                                 Pass the Actor name and --template, which have no
+                                 default; everything else takes its default.
 ```
 
 ##### `apify templates`

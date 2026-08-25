@@ -199,6 +199,42 @@ describe('apify create', () => {
 		expect(logMessages.log).toHaveLength(0);
 	});
 
+	// --yes means the same as --json for anything with no default: say what is missing rather than ask.
+	it('--yes without --template fails before creating the directory', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_skipDependencyInstall: true,
+			flags_yes: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/--template/);
+		expect(existsSync(tmpPath)).toBe(false);
+	});
+
+	it('--yes without an Actor name fails instead of prompting', async () => {
+		await testRunCommand(CreateCommand, {
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_yes: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/name/i);
+	});
+
+	it('--yes reports an existing directory instead of reprompting', async () => {
+		await mkdir(tmpPath, { recursive: true });
+		await writeFile(joinPath('placeholder.txt'), '');
+
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_skipDependencyInstall: true,
+			flags_yes: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/already exists/);
+	});
+
 	// The Git path validates before it downloads a template or asks the platform for a token, so these
 	// need no network. The Actor directory is made before the check, so what has to hold is that it stays
 	// empty — nothing to clean up, and a re-run is not blocked by it.
