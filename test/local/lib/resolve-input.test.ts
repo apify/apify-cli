@@ -81,7 +81,7 @@ describe('getInputOverride', () => {
 		expect(stderr).not.toContain('Use the "--input-file=" flag instead');
 	});
 
-	it.each(['~/input.json', '~some-user/input.json'])(
+	it.each(['~/input', '~some-user/input'])(
 		'still rejects a home-directory path starting with ~: %s',
 		async (inputFlag) => {
 			const result = await getInputOverride(process.cwd(), inputFlag, undefined);
