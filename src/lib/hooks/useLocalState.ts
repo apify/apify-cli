@@ -22,7 +22,7 @@ export interface LocalStateV1 {
 	};
 	rentalSunset?: {
 		lastChecked: number;
-		username?: string;
+		username: string;
 		rentalActorCount: number;
 		lastNotifiedAt?: number;
 	};

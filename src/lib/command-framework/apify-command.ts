@@ -424,7 +424,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				await trackEvent('cli_command', this.telemetryData);
 			}
 
-			if (!this.skipNotices) {
+			// A notice stacked on top of an error message is noise the user did not ask for, and it
+			// would also make an interrupted command wait on the Store lookup before exiting.
+			if (!this.skipNotices && !process.exitCode) {
 				await useRentalSunsetNotice();
 			}
 		}
