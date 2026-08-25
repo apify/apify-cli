@@ -1,6 +1,6 @@
 import password from '@inquirer/password';
 
-import { stdinCheckWrapper } from './_stdinCheckWrapper.js';
+import { promptContext, stdinCheckWrapper } from './_stdinCheckWrapper.js';
 
 interface UseMaskedInputInput {
 	message: string;
@@ -8,7 +8,7 @@ interface UseMaskedInputInput {
 }
 
 export const useMaskedInput = stdinCheckWrapper(async ({ message, mask }: UseMaskedInputInput) => {
-	const result = await password({ message, mask: mask ?? '*' });
+	const result = await password({ message, mask: mask ?? '*' }, promptContext);
 
 	return result;
 });

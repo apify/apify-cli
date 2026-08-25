@@ -31,5 +31,6 @@ Actors run in Docker containers on the Apify platform. With an appropriate `Dock
 Learn everything you need to use the Apify CLI effectively:
 
 - Learn how to [install](./installation.md) the CLI on your system
+- Get started with your [first Actor project](./quick-start.md)
 - See the complete [reference of all CLI commands](./reference.md) and options
 - Find [solutions to common issues](./troubleshooting.md)

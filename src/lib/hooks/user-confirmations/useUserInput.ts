@@ -1,6 +1,6 @@
 import input from '@inquirer/input';
 
-import { stdinCheckWrapper } from './_stdinCheckWrapper.js';
+import { promptContext, stdinCheckWrapper } from './_stdinCheckWrapper.js';
 
 interface UseUserInputInput {
 	message: string;
@@ -10,7 +10,7 @@ interface UseUserInputInput {
 
 export const useUserInput = stdinCheckWrapper(
 	async ({ message, validate, default: defaultValue }: UseUserInputInput) => {
-		const result = await input({ message, validate, default: defaultValue });
+		const result = await input({ message, validate, default: defaultValue }, promptContext);
 
 		return result;
 	},

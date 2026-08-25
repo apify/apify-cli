@@ -277,13 +277,22 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName] [--omit-optional-deps]
-                 [--skip-dependency-install] [--skip-git-init] [-t <value>]
+  $ apify create [actorName] [--json]
+                 [-l javascript|js|typescript|ts|python|py]
+                 [--omit-optional-deps] [--skip-dependency-install]
+                 [--skip-git-init] [-t <value>]
+                 [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
+      --json                     Format the command
+                                 output as JSON.
+  -l, --language=<option>        Filter templates by
+                                 programming language. Ignored when --template is
+                                 provided.
+                                 <options: javascript|js|typescript|ts|python|py>
       --omit-optional-deps       Skip installing optional
                                  dependencies.
       --skip-dependency-install  Skip installing Actor
@@ -295,6 +304,37 @@ FLAGS
                                  it. Visit
                                  https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json
                                  to find available template names.
+  -u, --use-case=<option>        Filter templates by
+                                 use case. Ignored when --template is provided. To
+                                 see the use cases each template supports, run
+                                 "apify templates ls".
+                                 <options:
+                                 web-scraper|ai-agent|data-pipeline|browser-automation>
+```
+
+##### `apify templates`
+
+```sh
+DESCRIPTION
+  Explore the Actor templates used by "apify create".
+
+SUBCOMMANDS
+  templates ls  Prints all available Actor templates, including the
+                use cases and language each one supports.
+```
+
+##### `apify templates ls`
+
+```sh
+DESCRIPTION
+  Prints all available Actor templates, including the use cases and language 
+  each one supports.
+
+USAGE
+  $ apify templates ls [--json]
+
+FLAGS
+      --json  Format the command output as JSON.
 ```
 
 ##### `apify init`
@@ -660,7 +700,9 @@ DESCRIPTION
 USAGE
   $ apify actors search [query] [--category <value>]
                         [--json] [--limit <value>] [--offset <value>]
-                        [--pricing-model <value>] [--sort-by <value>]
+                        [--pricing-model
+                        FREE|FLAT_PRICE_PER_MONTH|PRICE_PER_DATASET_ITEM|PAY_PER_EVENT]
+                        [--sort-by relevance|popularity|newest|lastUpdate]
                         [--username <value>]
 
 ARGUMENTS
@@ -668,18 +710,22 @@ ARGUMENTS
          or readme.
 
 FLAGS
-      --category=<value>       Filter by category (e.g.
-                               AI).
-      --json                   Format the command output as
-                               JSON.
-      --limit=<value>          Maximum number of results to
-                               return.
-      --offset=<value>         Number of results to skip
-                               for pagination.
-      --pricing-model=<value>  Filter by pricing model.
-      --sort-by=<value>        Sort order for the results.
-      --username=<value>       Filter by Actor author
-                               username.
+      --category=<value>        Filter by category (e.g.
+                                AI).
+      --json                    Format the command output
+                                as JSON.
+      --limit=<value>           Maximum number of results
+                                to return.
+      --offset=<value>          Number of results to skip
+                                for pagination.
+      --pricing-model=<option>  Filter by pricing model.
+                                <options:
+                                FREE|FLAT_PRICE_PER_MONTH|PRICE_PER_DATASET_ITEM|PAY_PER_EVENT>
+      --sort-by=<option>        Sort order for the
+                                results.
+                                <options: relevance|popularity|newest|lastUpdate>
+      --username=<value>        Filter by Actor author
+                                username.
 ```
 
 ##### `apify actors rm`
@@ -1613,12 +1659,15 @@ These commands help you manage scheduled and configured Actor runs. Use them to 
 
 ```sh
 DESCRIPTION
-  Run saved Apify tasks (named Actor configurations). Only 'task run' is 
-  available; create and manage tasks in Apify Console.
+  Run and publish saved Apify tasks (named Actor configurations). Create and 
+  manage tasks in Apify Console.
 
 SUBCOMMANDS
-  task run  Executes predefined Actor task remotely using local
-            key-value store for input.
+  task run        Executes predefined Actor task remotely using
+                  local key-value store for input.
+  task publish    Publishes the task on its public landing page.
+  task unpublish  Unpublishes the task from its public landing
+                  page.
 ```
 
 ##### `apify task run`
@@ -1644,6 +1693,39 @@ FLAGS
                          Task run, in megabytes.
   -t, --timeout=<value>  Timeout for the Task run in seconds.
                          Zero value means there is no timeout.
+```
+
+##### `apify task publish`
+
+```sh
+DESCRIPTION
+  Publishes the task on its public landing page.
+  The task must belong to a public Actor and have its public display 
+  configuration set up on the task Publication tab in Apify Console. Requires 
+  write access to the task and to its Actor.
+
+USAGE
+  $ apify task publish <taskId>
+
+ARGUMENTS
+  taskId  Name of the task to publish. For example, "my-task" or
+          "username/my-task".
+```
+
+##### `apify task unpublish`
+
+```sh
+DESCRIPTION
+  Unpublishes the task from its public landing page.
+  The public display configuration is preserved, so the task can be published 
+  again later. Requires write access to the task and to its Actor.
+
+USAGE
+  $ apify task unpublish <taskId>
+
+ARGUMENTS
+  taskId  Name of the task to unpublish. For example, "my-task" or
+          "username/my-task".
 ```
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->

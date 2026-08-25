@@ -233,5 +233,17 @@ describe('Help rendering', () => {
 			expect(output).toContain('$ actor get-input');
 			expect(output).toContain("Use 'actor <command> --help'");
 		});
+
+		test('mentions help --skill for the apify entrypoint', () => {
+			const output = stripAnsi(renderMainHelpMenu('apify'));
+
+			expect(output).toContain("Run 'apify help --skill'");
+		});
+
+		test('mentions help --skill for the actor entrypoint', () => {
+			const output = stripAnsi(renderMainHelpMenu('actor'));
+
+			expect(output).toContain("Run 'actor help --skill'");
+		});
 	});
 });

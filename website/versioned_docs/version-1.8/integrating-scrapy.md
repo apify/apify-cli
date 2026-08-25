@@ -6,29 +6,15 @@ sidebar_label: Integrating Scrapy projects
 
 [Scrapy](https://scrapy.org/) is a widely used open-source web scraping framework for Python. Scrapy projects can now be executed on the Apify platform using our dedicated wrapping tool. This tool allows users to transform their Scrapy projects into [Apify Actors](https://docs.apify.com/platform/actors) with just a few simple commands.
 
-## Getting started
+## Prerequisites
 
-### Install Apify CLI
-
-To run the migration tool, you need to have the Apify CLI installed. You can install it using Homebrew with the following command:
-
-```bash showLineNumbers
-brew install apify-cli
-```
-
-Alternatively, you can install it using NPM with the following command:
-
-```bash showLineNumbers
-npm i -g apify-cli
-```
-
-In case of any issues, please refer to the [installation guide](./installation.md).
+Before you begin, make sure you have the Apify CLI installed on your system. If you haven't installed it yet, follow the [installation guide](./installation.md).
 
 ## Actorization of your existing Scrapy spider
 
 Assuming your Scrapy project is set up, navigate to the project root where the `scrapy.cfg` file is located.
 
-```bash showLineNumbers
+```bash
 cd your_scraper
 ```
 
@@ -48,7 +34,7 @@ your_spider.py  __init__.py
 
 To convert your Scrapy project into an Apify Actor, initiate the wrapping process by executing the following command:
 
-```bash showLineNumbers
+```bash
 apify init
 ```
 
@@ -70,25 +56,25 @@ For example, here is a [source code](https://github.com/apify/actor-scrapy-books
 
 Create a Python virtual environment by running:
 
-```bash showLineNumbers
+```bash
 python -m virtualenv .venv
 ```
 
 Activate the virtual environment:
 
-```bash showLineNumbers
+```bash
 source .venv/bin/activate
 ```
 
 Install Python dependencies using the provided requirements file named `requirements_apify.txt`. Ensure these requirements are installed before executing your project as an Apify Actor locally. You can put your own dependencies there as well.
 
-```bash showLineNumbers
+```bash
 pip install -r requirements-apify.txt [-r requirements.txt]
 ```
 
 Finally execute the Apify Actor.
 
-```bash showLineNumbers
+```bash
 apify run [--purge]
 ```
 
@@ -98,7 +84,7 @@ If [ActorDatasetPushPipeline](https://github.com/apify/apify-sdk-python/blob/mas
 
 The project remains executable as a Scrapy project.
 
-```bash showLineNumbers
+```bash
 scrapy crawl your_spider -o books.json
 ```
 
@@ -108,7 +94,7 @@ scrapy crawl your_spider -o books.json
 
 You will need to provide your [Apify API Token](https://console.apify.com/settings/integrations) to complete this action.
 
-```bash showLineNumbers
+```bash
 apify login
 ```
 
@@ -116,7 +102,7 @@ apify login
 
 This command will deploy and build the Actor on the Apify platform. You can find your newly created Actor under [Actors -> My Actors](https://console.apify.com/actors?tab=my).
 
-```bash showLineNumbers
+```bash
 apify push
 ```
 
@@ -166,9 +152,8 @@ it is recommended to use Apify's instance of the nested event loop. Refer to the
 inspiration from Apify's Scrapy components, such as the
 [ApifyScheduler](https://github.com/apify/apify-sdk-python/blob/v1.5.0/src/apify/scrapy/scheduler.py#L114).
 
-```python showLineNumbers
+```python
 from apify.scrapy.utils import nested_event_loop
-
 ...
 
 # Coroutine execution inside a spider

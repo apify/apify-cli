@@ -21,6 +21,8 @@ const categories: Record<string, CommandsInCategory[]> = {
 	'actor-dev': [
 		//
 		{ command: Commands.create },
+		{ command: Commands.templates },
+		{ command: Commands.templatesLs },
 		{ command: Commands.init },
 		{ command: Commands.run },
 		{ command: Commands.validateSchema },
@@ -114,6 +116,8 @@ const categories: Record<string, CommandsInCategory[]> = {
 		//
 		{ command: Commands.task },
 		{ command: Commands.taskRun },
+		{ command: Commands.taskPublish },
+		{ command: Commands.taskUnpublish },
 	],
 	'mcp': [
 		//

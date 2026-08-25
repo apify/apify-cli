@@ -109,21 +109,18 @@ pnpm install
 info "Building bundles"
 pnpm run insert-cli-metadata && pnpm run build-bundles && git checkout -- src/lib/hooks/useCLIMetadata.ts
 
-info "Installing bundles"
+info "Installing bundle"
 
-executable_names=("apify" "actor")
+# We now ship a single `apify-cli` bundle. The `apify` and `actor` commands are tiny wrapper scripts
+# that invoke it with APIFY_CLI_ENTRYPOINT set, instead of dropping the same binary three times.
+info "Installing apify-cli bundle for version $version and target $target"
 
-for executable_name in "${executable_names[@]}"; do
-    output_filename="${executable_name}"
+cp "bundles/apify-cli-$version-$target" "$bin_dir/apify-cli"
+chmod +x "$bin_dir/apify-cli"
 
-    info "Installing $executable_name bundle for version $version and target $target"
-
-    cp "bundles/$executable_name-$version-$target" "$bin_dir/$output_filename"
-    chmod +x "$bin_dir/$output_filename"
-done
-
+# Invoke the bundle to create the `apify`/`actor` wrapper scripts and handle shell integration.
 if ! [ -t 0 ] && [ -r /dev/tty ]; then
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_OPEN_TTY=1 "$bin_dir/apify" install
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_CLI_SKIP_UPDATE_CHECK=1 APIFY_OPEN_TTY=1 "$bin_dir/apify-cli" install
 else
-    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" "$bin_dir/apify" install
+    PROVIDED_INSTALL_DIR="$install_dir" FINAL_BIN_DIR="$bin_dir" APIFY_CLI_SKIP_UPDATE_CHECK=1 "$bin_dir/apify-cli" install
 fi

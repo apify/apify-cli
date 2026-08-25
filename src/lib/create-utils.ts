@@ -8,10 +8,24 @@ import type { Manifest, Template } from '@apify/actor-templates';
 import type { ChoicesType } from './hooks/user-confirmations/useSelectFromList.js';
 import { useSelectFromList } from './hooks/user-confirmations/useSelectFromList.js';
 import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
-import { warning } from './outputs.js';
+import { info, warning } from './outputs.js';
+import {
+	ANY_TEMPLATE_LANGUAGE,
+	ANY_TEMPLATE_USE_CASE,
+	LANGUAGE_OPTIONS,
+	languageFlagToTag,
+	USE_CASE_OPTIONS,
+	useCaseFlagToTag,
+} from './templates/consts.js';
+import { getTemplateRecommendation } from './templates/getTemplateRecommendation.js';
+import { buildTemplateChoiceList, NON_EXACT_SEPARATOR_LABEL } from './templates/templateChoices.js';
 import { validateActorName } from './utils.js';
 
-const PROGRAMMING_LANGUAGES = ['JavaScript', 'TypeScript', 'Python'];
+/** Filters coming from the `--use-case` / `--language` flags. `undefined` means "not provided". */
+export interface TemplateFilters {
+	useCase?: string;
+	language?: string;
+}
 
 export async function ensureValidActorName(maybeActorName?: string) {
 	if (maybeActorName) {
@@ -22,10 +36,10 @@ export async function ensureValidActorName(maybeActorName?: string) {
 	return promptActorName();
 }
 
-// TODO: this isn't even used anymore
 export async function getTemplateDefinition(
 	maybeTemplateName: string | undefined,
 	manifestPromise: Promise<Manifest | Error>,
+	filters: TemplateFilters = {},
 ) {
 	const manifest = await manifestPromise;
 	// If the fetch failed earlier, the resolve value of
@@ -33,17 +47,19 @@ export async function getTemplateDefinition(
 	if (manifest instanceof Error) throw manifest;
 
 	if (maybeTemplateName) {
-		const templateDefinition = manifest.templates.find((t) => t.name === maybeTemplateName);
+		// Accept both the template name and its id — `--json` output and older docs reference the id.
+		const templateDefinition = manifest.templates.find(
+			(t) => t.name === maybeTemplateName || t.id === maybeTemplateName,
+		);
 		if (!templateDefinition) {
 			throw new Error(`Could not find the selected template: ${maybeTemplateName} in the list of templates.`);
 		}
 		return templateDefinition;
 	}
 
-	return executePrompts(manifest);
+	return executePrompts(manifest, filters);
 }
 
-// TODO: this isn't even used anymore
 /**
  * Fetch local readme suffix from the manifest and append it to the readme.
  */
@@ -64,6 +80,22 @@ export async function enhanceReadmeWithLocalSuffix(readmePath: string, manifestP
 	}
 }
 
+export function buildNextSteps(params: {
+	actorName: string;
+	dependenciesInstalled: boolean;
+	installCommandSuggestion?: string | null;
+}): string[] {
+	const { actorName, dependenciesInstalled, installCommandSuggestion } = params;
+
+	const steps = [`cd "${actorName}"`];
+	if (!dependenciesInstalled) {
+		steps.push(installCommandSuggestion || 'install dependencies with your package manager');
+	}
+	steps.push('apify run');
+
+	return steps;
+}
+
 export function formatCreateSuccessMessage(params: {
 	actorName: string;
 	dependenciesInstalled: boolean;
@@ -75,12 +107,8 @@ export function formatCreateSuccessMessage(params: {
 
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
-	if (dependenciesInstalled) {
-		message += `\n\nNext steps:\n\ncd "${actorName}"\napify run`;
-	} else {
-		const installLine = installCommandSuggestion || 'install dependencies with your package manager';
-		message += `\n\nNext steps:\n\ncd "${actorName}"\n${installLine}\napify run`;
-	}
+	const nextSteps = buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
+	message += `\n\nNext steps:\n\n${nextSteps.join('\n')}`;
 
 	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
 
@@ -96,22 +124,18 @@ export function formatCreateSuccessMessage(params: {
 }
 
 /**
- * Inquirer does not have a native way to "go back" between prompts.
+ * Guided wizard: ask what the user wants to build and in which language (unless supplied via
+ * flags), then present the best-matching templates ordered by fit.
  */
-async function executePrompts(manifest: Manifest) {
-	const programmingLanguage = await promptProgrammingLanguage();
+async function executePrompts(manifest: Manifest, filters: TemplateFilters) {
+	const useCaseId = filters.useCase
+		? (useCaseFlagToTag(filters.useCase) ?? ANY_TEMPLATE_USE_CASE)
+		: await promptUseCase();
+	const languageId = filters.language
+		? (languageFlagToTag(filters.language) ?? filters.language)
+		: await promptLanguage();
 
-	while (true) {
-		const templateDefinition = await promptTemplateDefinition(manifest, programmingLanguage);
-		if (templateDefinition) {
-			const shouldInstall = await promptTemplateInstallation();
-			if (shouldInstall) {
-				return templateDefinition;
-			}
-		} else {
-			return executePrompts(manifest);
-		}
-	}
+	return promptTemplate(manifest, useCaseId, languageId);
 }
 
 async function promptActorName() {
@@ -130,62 +154,68 @@ async function promptActorName() {
 	return answer;
 }
 
-async function promptProgrammingLanguage() {
-	const language = await useSelectFromList<string>({
-		message: 'Choose the programming language of your new Actor:',
-		choices: PROGRAMMING_LANGUAGES,
-		loop: false,
-		default: PROGRAMMING_LANGUAGES[0],
-	});
-
-	return language;
-}
-
-async function promptTemplateDefinition(manifest: Manifest, programmingLanguage: string): Promise<Template | false> {
-	const choices: ChoicesType<Template | false> = [
-		...manifest.templates
-			.filter((t) => {
-				return t.category.toLowerCase() === programmingLanguage.toLowerCase();
-			})
-			.map((t) => {
-				return {
-					name: t.label,
-					value: t,
-				};
-			}),
-
+async function promptUseCase(): Promise<string> {
+	const choices: ChoicesType<string> = [
+		...USE_CASE_OPTIONS.map((option) => ({ name: option.label, value: option.templateTag })),
 		new Separator(),
-
-		{
-			name: 'Go back',
-			value: false,
-		},
+		// "Any use case" maps to the marker the algorithm reads as "no use-case filter".
+		{ name: 'Any use case', value: ANY_TEMPLATE_USE_CASE },
 	];
 
-	const templateDefinition = await useSelectFromList({
-		message: 'Choose a template for your new Actor. You can check more information at https://apify.com/templates.',
-		default: choices[0],
+	return useSelectFromList<string>({
+		message: 'What do you want to build?',
 		choices,
+		default: USE_CASE_OPTIONS[0].templateTag,
+		loop: false,
+	});
+}
+
+async function promptLanguage(): Promise<string> {
+	const choices: ChoicesType<string> = [
+		...LANGUAGE_OPTIONS.map((option) => ({ name: option.label, value: option.templateTag })),
+		new Separator(),
+		{ name: 'Any language', value: ANY_TEMPLATE_LANGUAGE },
+	];
+
+	return useSelectFromList<string>({
+		message: 'Choose the programming language of your new Actor:',
+		choices,
+		default: LANGUAGE_OPTIONS[0].templateTag,
+		loop: false,
+	});
+}
+
+/**
+ * Renders one scrollable list ordered by fit: exact matches first (top one preselected), then a
+ * non-selectable separator, then the closest alternatives. When nothing matches exactly, an info
+ * line explains that the closest alternatives are shown instead.
+ */
+async function promptTemplate(manifest: Manifest, useCaseId: string, languageId: string): Promise<Template> {
+	const recommendations = getTemplateRecommendation(manifest.templates, useCaseId, languageId);
+	const { rows, separatorIndex, noExactMatchHint } = buildTemplateChoiceList(recommendations, useCaseId, languageId);
+
+	if (rows.length === 0) {
+		throw new Error('No Actor templates are available right now. Please try again later.');
+	}
+
+	const choices: NonNullable<ChoicesType<Template>>[number][] = [];
+	rows.forEach((row, index) => {
+		if (index === separatorIndex) {
+			choices.push(new Separator(NON_EXACT_SEPARATOR_LABEL));
+		}
+
+		choices.push({ name: row.label, value: row.template });
+	});
+
+	if (noExactMatchHint) {
+		info({ message: noExactMatchHint, stdout: false });
+	}
+
+	return useSelectFromList<Template>({
+		message: 'Choose a template for your new Actor. More info at https://apify.com/templates',
+		choices,
+		default: rows[0].template,
 		loop: false,
 		pageSize: 8,
 	});
-
-	return templateDefinition;
-}
-
-async function promptTemplateInstallation() {
-	const choices: ChoicesType<boolean> = [
-		{ name: `Install dependencies`, value: true },
-		new Separator(),
-		{ name: 'Go back', value: false },
-	];
-
-	const answer = await useSelectFromList<boolean>({
-		message: 'Almost done! Last step is to install dependencies.',
-		default: choices[0],
-		choices,
-		loop: false,
-	});
-
-	return answer;
 }

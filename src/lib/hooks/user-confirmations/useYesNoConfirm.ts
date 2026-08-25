@@ -1,5 +1,5 @@
 import { confirmImpl } from '../../utils/inquirer/confirmImpl.js';
-import { stdinCheckWrapper } from './_stdinCheckWrapper.js';
+import { promptContext, stdinCheckWrapper } from './_stdinCheckWrapper.js';
 
 interface UseYesNoConfirmInput {
 	message: string;
@@ -7,7 +7,7 @@ interface UseYesNoConfirmInput {
 }
 
 export const useYesNoConfirm = stdinCheckWrapper(async ({ message, default: defaultValue }: UseYesNoConfirmInput) => {
-	const result = await confirmImpl({ message, default: defaultValue });
+	const result = await confirmImpl({ message, default: defaultValue }, promptContext);
 
 	return result;
 });
