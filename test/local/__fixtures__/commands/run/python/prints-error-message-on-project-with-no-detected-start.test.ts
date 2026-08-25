@@ -26,7 +26,6 @@ describe('[python] prints error message on project with no detected start', () =
 		await testRunCommand(CreateCommand, {
 			flags_template: 'python-start',
 			args_actorName: actorName,
-			flags_source: 'apify',
 		});
 		toggleCwdBetweenFullAndParentPath();
 

@@ -58,7 +58,6 @@ describe('apify run', () => {
 		await testRunCommand(CreateCommand, {
 			args_actorName: actName,
 			flags_template: 'project_empty',
-			flags_source: 'apify',
 		});
 
 		toggleCwdBetweenFullAndParentPath();

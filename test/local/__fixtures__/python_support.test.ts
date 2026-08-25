@@ -52,7 +52,6 @@ describe('[python] Python support', () => {
 		await testRunCommand(CreateCommand, {
 			args_actorName: actorName,
 			flags_template: PYTHON_START_TEMPLATE_ID,
-			flags_source: 'apify',
 		});
 
 		// Check file structure

@@ -109,8 +109,6 @@ export const promptGitSource = async (): Promise<GitSource> =>
 		],
 		default: 'apify',
 		loop: false,
-		// Agents and CI never see this prompt; they opt into a Git source with --source.
-		providedConfirmFromStdin: 'apify',
 	});
 
 /**

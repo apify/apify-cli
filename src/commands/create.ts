@@ -134,8 +134,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description:
 				'Where the Actor source code will live. With "github", Apify creates the repository on your connected GitHub account from the template, clones it here, and creates an Actor that builds from it.',
 			choices: [...GIT_SOURCE_CHOICES],
-			// No default on purpose: an omitted flag is what triggers the wizard prompt. Non-interactive
-			// runs fall back to "apify" inside promptGitSource.
+			// No default on purpose: an omitted flag is what triggers the wizard prompt. Runs that cannot
+			// answer it — no terminal, CI, --json, --yes — take "apify" without asking.
 			required: false,
 		}),
 		'git-repo': Flags.string({
@@ -274,20 +274,33 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			skipOptionalDeps = true;
 		}
 
-		// Last wizard step, matching the Console: "Where will the source code live?"
-		// `--json` and `--yes` both mean "do not ask", so neither prompts for the source. Pass --source
-		// explicitly to opt into a Git provider.
-		source ??= json || yes ? 'apify' : await promptGitSource();
+		// One notion of interactive for the whole command: a real terminal, not CI, and neither --json nor
+		// --yes. Both of those mean "do not ask me", and a caller parsing stdout could not answer anyway.
+		// The prompt helpers cannot be relied on for this: `useStdin` marks any non-TTY stdin as having
+		// data, so their non-interactive fallback only fires under CI.
+		const { isTTY } = await useStdin();
+		const isInteractive = isTTY && !isCI && !json && !yes;
+
+		// Last wizard step, matching the Console: "Where will the source code live?" Anything that cannot
+		// be asked gets the previous behaviour — the Apify path — rather than a prompt nothing can answer.
+		source ??= isInteractive ? await promptGitSource() : 'apify';
 		// Captured as a const so the narrowed provider type survives; `source` itself stays the wider union
 		// for telemetry and the --json payload.
 		const gitProvider = isGitProvider(source) ? source : null;
 		const usesGitProvider = gitProvider !== null;
 		this.telemetryData.create.source = source;
 
-		// Everything below writes to disk or talks to the platform, so validate the Git path first — a
-		// failure here should cost the user nothing.
+		// Validate the Git path before anything downloads a template or asks the platform for a token, so a
+		// bad combination of flags costs the user nothing more than the empty directory made above.
 		if (usesGitProvider && skipGitInit) {
 			throw new Error(`--source ${source} clones a git repository, so --skip-git-init cannot apply.`);
+		}
+
+		// The repository flags describe a repository to create, so without a Git source there is nothing
+		// for them to describe. A non-interactive run that named one and omitted --source lands here too,
+		// rather than silently getting the Apify path.
+		if (!usesGitProvider && (gitRepo || gitPrivate)) {
+			throw new Error('--git-repo and --git-private only apply to a Git source, so add --source github or drop them.');
 		}
 
 		// The platform reads the template itself and only accepts archive URLs listed in the official
@@ -331,14 +344,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		let gitResult: GitSourceResult | null = null;
 		cliDebugPrint('create', 'source =', source, '| git flow will run:', Boolean(gitProvider));
 		if (gitProvider) {
-			// One notion of interactive for the whole Git flow: a real terminal, not CI, and neither
-			// --json nor --yes. Both of those mean "do not ask me", and a caller parsing stdout could not
-			// answer anyway. This is deliberately stricter than the prompt helpers, which also accept
-			// piped stdin: an account to create a repository in should be stated with --git-repo, not
+			// The Git flow asks for a workspace, so it needs the same notion of interactive as the source
+			// step above: an account to create a repository in should be stated with --git-repo, not
 			// answered by whatever happens to be on the pipe.
-			const { isTTY } = await useStdin();
-			const isInteractive = isTTY && !isCI && !json && !yes;
-
 			gitResult = await runGitSourceFlow({
 				provider: gitProvider,
 				actorDir: actFolderDir,

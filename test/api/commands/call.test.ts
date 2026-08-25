@@ -52,7 +52,6 @@ describe('[api] apify call', () => {
 			args_actorName: ACTOR_NAME,
 			flags_template: 'project_empty',
 			flags_skipDependencyInstall: true,
-			flags_source: 'apify',
 		});
 
 		const actCode = `

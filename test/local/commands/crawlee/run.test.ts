@@ -45,7 +45,6 @@ describe('apify run', () => {
 		await testRunCommand(CreateCommand, {
 			args_actorName: actorName,
 			flags_template: 'project_cheerio_crawler_js',
-			flags_source: 'apify',
 		});
 
 		toggleCwdBetweenFullAndParentPath();

@@ -43,7 +43,6 @@ describe('[api] apify task run', () => {
 			args_actorName: actName,
 			flags_template: 'project_empty',
 			flags_skipDependencyInstall: true,
-			flags_source: 'apify',
 		});
 
 		const actCode = `

@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
@@ -22,9 +22,6 @@ const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 
-// `--source` is passed explicitly below because it has no default: left out, the wizard asks where the
-// source should live, and a non-TTY run has nothing to answer it with. The `--json` tests do not need it,
-// since `--json` already means "do not ask".
 describe('apify create', () => {
 	beforeEach(async () => {
 		await beforeAllCalls();
@@ -50,7 +47,6 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
-			flags_source: 'apify',
 		});
 
 		// check files structure
@@ -80,7 +76,6 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
-			flags_source: 'apify',
 		});
 
 		// check files structure
@@ -113,7 +108,6 @@ describe('apify create', () => {
 			flags_useCase: 'ai-agent',
 			flags_language: 'python',
 			flags_skipDependencyInstall: true,
-			flags_source: 'apify',
 		});
 
 		expect(existsSync(tmpPath)).toBeTruthy();
@@ -205,6 +199,45 @@ describe('apify create', () => {
 		expect(logMessages.log).toHaveLength(0);
 	});
 
+	// The Git path validates before it downloads a template or asks the platform for a token, so these
+	// need no network. The Actor directory is made before the check, so what has to hold is that it stays
+	// empty — nothing to clean up, and a re-run is not blocked by it.
+	it('--source github with --skip-git-init fails without scaffolding anything', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_source: 'github',
+			flags_skipGitInit: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/--skip-git-init/);
+		await expect(readdir(tmpPath)).resolves.toEqual([]);
+	});
+
+	it('--source github with --template-archive-url fails without scaffolding anything', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_source: 'github',
+			flags_templateArchiveUrl: 'https://example.com/template.zip',
+		});
+
+		expect(lastErrorMessage()).toMatch(/--template-archive-url/);
+		await expect(readdir(tmpPath)).resolves.toEqual([]);
+	});
+
+	// Without a terminal the source step cannot be asked, so it takes the Apify path — which is not what
+	// a caller passing --git-repo wanted. Say so instead of creating a plain Actor.
+	it('--git-repo without a Git source fails without scaffolding anything', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_gitRepo: 'acme/my-scraper',
+		});
+
+		expect(lastErrorMessage()).toMatch(/--git-repo/);
+		await expect(readdir(tmpPath)).resolves.toEqual([]);
+	});
+
 	it('records the hidden --origin flag in telemetry', async () => {
 		const instance = await testRunCommand(CreateCommand, {
 			args_actorName: actName,
@@ -212,7 +245,6 @@ describe('apify create', () => {
 			flags_skipDependencyInstall: true,
 			flags_skipGitInit: true,
 			flags_origin: 'console',
-			flags_source: 'apify',
 		});
 
 		expect(instance['telemetryData'].create!.origin).toBe('console');
@@ -224,7 +256,6 @@ describe('apify create', () => {
 			flags_template: 'project_empty',
 			flags_skipDependencyInstall: true,
 			flags_skipGitInit: true,
-			flags_source: 'apify',
 		});
 
 		expect(instance['telemetryData'].create!.origin).toBe('cli');
@@ -237,7 +268,6 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_omitOptionalDeps: true,
-			flags_source: 'apify',
 		});
 
 		// check files structure
@@ -258,7 +288,6 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
-			flags_source: 'apify',
 		});
 
 		toggleCwdBetweenFullAndParentPath();
@@ -276,7 +305,6 @@ describe('apify create', () => {
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
 			flags_skipGitInit: true,
-			flags_source: 'apify',
 		});
 
 		toggleCwdBetweenFullAndParentPath();
@@ -295,7 +323,6 @@ describe('apify create', () => {
 			args_actorName: actName,
 			flags_template: ACT_TEMPLATE,
 			flags_skipDependencyInstall: true,
-			flags_source: 'apify',
 		});
 
 		toggleCwdBetweenFullAndParentPath();
