@@ -272,10 +272,12 @@ export class CommandHelp extends BaseCommandRenderer {
 					stringParts.push(`--${this.kebabFlagName(flagName)}`);
 					break;
 				case 'string':
+				case 'strings':
 				case 'integer': {
 					const flagValues = flag.choices ? '<option>' : '<value>';
+					const repeatableSuffix = flag.flagTag === 'strings' ? '...' : '';
 
-					stringParts.push(`--${this.kebabFlagName(flagName)}=${chalk.underline(flagValues)}`);
+					stringParts.push(`--${this.kebabFlagName(flagName)}=${chalk.underline(flagValues)}${repeatableSuffix}`);
 					break;
 				}
 				default:

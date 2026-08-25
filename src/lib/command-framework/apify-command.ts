@@ -25,6 +25,7 @@ import { registerCommandForHelpGeneration, renderHelpForCommand, selectiveRender
 import { getMaxLineWidth } from './help/consts.js';
 
 export enum StdinMode {
+	None = 0,
 	Raw = 1,
 	Stringified = 2,
 }
@@ -35,6 +36,7 @@ interface ArgTagToTSType {
 
 interface FlagTagToTSType {
 	string: string;
+	strings: string[];
 	boolean: boolean;
 	integer: number;
 }
@@ -476,7 +478,14 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			const camelCasedName = camelCaseString(rawBaseFlagName);
 
-			const usedShortFormOfTheFlag = rawTokens.some((token) => token.kind === 'option' && token.name === baseFlagName);
+			// parseArgs reports the canonical long name in token.name for both forms; only rawName shows the short form
+			const usedShortFormOfTheFlag = rawTokens.some(
+				(token) =>
+					token.kind === 'option' &&
+					token.name === baseFlagName &&
+					token.rawName.startsWith('-') &&
+					!token.rawName.startsWith('--'),
+			);
 
 			if (builderData.exclusive?.length) {
 				const existingExclusiveFlags = exclusiveFlagMap.get(baseFlagName) ?? new Set();
@@ -527,8 +536,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				});
 			}
 
-			// If you provide --a 1 --a 2, it's <currently> not allowed
-			if (Array.isArray(rawFlag)) {
+			// If you provide --a 1 --a 2, it's not allowed unless the flag opted into multiple values
+			if (Array.isArray(rawFlag) && builderData.flagTag !== 'strings') {
 				if (rawFlag.length > 1) {
 					throw new CommandError({
 						code: CommandErrorCode.APIFY_FLAG_PROVIDED_MULTIPLE_TIMES,
@@ -545,10 +554,19 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			// -i='{"foo":"bar"}'
 			if (usedShortFormOfTheFlag && typeof rawFlag === 'string' && rawFlag.startsWith('=')) {
 				rawFlag = rawFlag.slice(1);
+			} else if (usedShortFormOfTheFlag && Array.isArray(rawFlag)) {
+				// Same strip for multi-value flags, where values arrive as an array
+				rawFlag = rawFlag.map((value) => (typeof value === 'string' && value.startsWith('=') ? value.slice(1) : value));
 			}
 
 			if (typeof rawFlag !== 'undefined') {
 				switch (builderData.flagTag) {
+					case 'strings': {
+						// The parser always yields arrays; scalars only come from internalRunCommand injection
+						this.flags[camelCasedName] = Array.isArray(rawFlag) ? rawFlag : [rawFlag];
+
+						break;
+					}
 					case 'boolean': {
 						this.flags[camelCasedName] = rawBaseFlagName.startsWith('no-') ? !rawFlag : rawFlag;
 
