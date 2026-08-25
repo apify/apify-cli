@@ -721,7 +721,9 @@ DESCRIPTION
 USAGE
   $ apify actors search [query] [--category <value>]
                         [--json] [--limit <value>] [--offset <value>]
-                        [--pricing-model <value>] [--sort-by <value>]
+                        [--pricing-model
+                        FREE|FLAT_PRICE_PER_MONTH|PRICE_PER_DATASET_ITEM|PAY_PER_EVENT]
+                        [--sort-by relevance|popularity|newest|lastUpdate]
                         [--username <value>]
 
 ARGUMENTS
@@ -729,18 +731,22 @@ ARGUMENTS
          or readme.
 
 FLAGS
-      --category=<value>       Filter by category (e.g.
-                               AI).
-      --json                   Format the command output as
-                               JSON.
-      --limit=<value>          Maximum number of results to
-                               return.
-      --offset=<value>         Number of results to skip
-                               for pagination.
-      --pricing-model=<value>  Filter by pricing model.
-      --sort-by=<value>        Sort order for the results.
-      --username=<value>       Filter by Actor author
-                               username.
+      --category=<value>        Filter by category (e.g.
+                                AI).
+      --json                    Format the command output
+                                as JSON.
+      --limit=<value>           Maximum number of results
+                                to return.
+      --offset=<value>          Number of results to skip
+                                for pagination.
+      --pricing-model=<option>  Filter by pricing model.
+                                <options:
+                                FREE|FLAT_PRICE_PER_MONTH|PRICE_PER_DATASET_ITEM|PAY_PER_EVENT>
+      --sort-by=<option>        Sort order for the
+                                results.
+                                <options: relevance|popularity|newest|lastUpdate>
+      --username=<value>        Filter by Actor author
+                                username.
 ```
 
 ##### `apify actors rm`

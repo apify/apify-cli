@@ -500,7 +500,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 
 			// If you have a flag a, with alias b, and you pass --a and --b, it's not allowed
-			const matchingFlags = allMatchers.filter((matcher) => rawFlags[matcher]);
+			const matchingFlags = allMatchers.filter((matcher) => Object.hasOwn(rawFlags, matcher));
 
 			if (matchingFlags.length > 1) {
 				throw new CommandError({
@@ -598,7 +598,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			// Validate choices
 			if (
 				// We have the flag
-				this.flags[camelCasedName] &&
+				this.flags[camelCasedName] != null &&
 				// And we have a list of choices
 				builderData.choices &&
 				// And the flag is not one of the choices
