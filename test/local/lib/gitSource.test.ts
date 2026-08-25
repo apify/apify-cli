@@ -1,0 +1,152 @@
+import { afterEach, describe, expect, it } from 'vitest';
+
+import {
+	buildGitSourceNextSteps,
+	getAddWorkspaceUrl,
+	getGitConnectUrl,
+	type GitProviderIntegration,
+	isGitProvider,
+	parseGitRepoFlag,
+	chooseWorkspace,
+} from '../../../src/lib/git-source/gitSource.js';
+
+describe('parseGitRepoFlag', () => {
+	it('falls back to the Actor name and an unset workspace when the flag is omitted', () => {
+		expect(parseGitRepoFlag(undefined, 'my-scraper')).toEqual({ workspace: undefined, repoName: 'my-scraper' });
+	});
+
+	it('treats a bare value as a repo name, leaving the workspace to be resolved', () => {
+		expect(parseGitRepoFlag('other-name', 'my-scraper')).toEqual({ workspace: undefined, repoName: 'other-name' });
+	});
+
+	it('splits workspace/name', () => {
+		expect(parseGitRepoFlag('acme-inc/my-scraper', 'ignored')).toEqual({
+			workspace: 'acme-inc',
+			repoName: 'my-scraper',
+		});
+	});
+
+	it.each(['acme-inc/', '/my-scraper', 'a/b/c'])('rejects %s', (value) => {
+		expect(() => parseGitRepoFlag(value, 'my-scraper')).toThrow(/Use "workspace\/name" or just "name"/);
+	});
+});
+
+describe('isGitProvider', () => {
+	it('separates the Git-backed sources from the default one', () => {
+		expect(isGitProvider('github')).toBe(true);
+		expect(isGitProvider('apify')).toBe(false);
+	});
+});
+
+describe('getGitConnectUrl', () => {
+	afterEach(() => {
+		delete process.env.APIFY_GITHUB_APP_CLIENT_ID;
+		delete process.env.APIFY_CONSOLE_URL;
+	});
+
+	// Must stay byte-identical to what Console's authorizeGitHubApp() builds, since the callback page
+	// that completes the exchange is Console's.
+	it('points GitHub at the Console page that completes the exchange', () => {
+		const url = new URL(getGitConnectUrl('github'));
+
+		expect(url.origin + url.pathname).toBe('https://github.com/login/oauth/authorize');
+		expect(url.searchParams.get('client_id')).toBe('Iv1.e39b3ed87e74885f');
+		expect(url.searchParams.get('redirect_uri')).toBe(
+			'https://console.apify.com/actors/new/git/connected?service=github',
+		);
+	});
+
+	it('honours the environment overrides, so staging is reachable', () => {
+		process.env.APIFY_GITHUB_APP_CLIENT_ID = 'Iv1.staging';
+		process.env.APIFY_CONSOLE_URL = 'https://console.staging.example.com';
+
+		const url = new URL(getGitConnectUrl('github'));
+
+		expect(url.searchParams.get('client_id')).toBe('Iv1.staging');
+		expect(url.searchParams.get('redirect_uri')).toBe(
+			'https://console.staging.example.com/actors/new/git/connected?service=github',
+		);
+	});
+});
+
+describe('getAddWorkspaceUrl', () => {
+	// The API only reports addWorkspaceUrl when an installation already exists, so the CLI needs its own
+	// value for the one case that actually needs the link.
+	it('builds the app installation URL', () => {
+		expect(getAddWorkspaceUrl('github')).toBe('https://github.com/apps/apify/installations/new');
+	});
+});
+
+describe('chooseWorkspace', () => {
+	const two: GitProviderIntegration = {
+		id: 'github-app',
+		provider: 'github',
+		workspaces: [
+			{ id: 'apify', label: 'apify' },
+			{ id: 'l2ysho', label: 'l2ysho' },
+		],
+	};
+	const one: GitProviderIntegration = { ...two, workspaces: [{ id: 'l2ysho', label: 'l2ysho' }] };
+
+	it('uses the only workspace when there is just one', async () => {
+		expect(await chooseWorkspace(one, undefined, false)).toEqual({ workspace: 'l2ysho' });
+	});
+
+	it('matches a requested workspace case-insensitively, since provider logins are', async () => {
+		expect(await chooseWorkspace(two, 'L2YSHO', false)).toEqual({ workspace: 'l2ysho' });
+	});
+
+	it('rejects a workspace the user has not connected', async () => {
+		expect(await chooseWorkspace(two, 'someone-else', false)).toEqual({ stopReason: 'unknownWorkspace' });
+	});
+
+	// Workspace order is not meaningful — a personal account can sort behind an employer's org — so
+	// guessing would risk creating a repository in the wrong place.
+	it('refuses to guess between several workspaces when it cannot ask', async () => {
+		expect(await chooseWorkspace(two, undefined, false)).toEqual({ stopReason: 'ambiguousWorkspace' });
+	});
+});
+
+describe('buildGitSourceNextSteps', () => {
+	const base = {
+		actorName: 'my-scraper',
+		provider: 'github' as const,
+		remoteUrl: 'git@github.com:acme-inc/my-scraper.git',
+		repoName: 'my-scraper',
+	};
+
+	// The scaffold is already on disk whenever these run, so a stop must never be a dead end.
+	it.each([
+		'lookupFailed',
+		'notAuthorized',
+		'noWorkspace',
+		'unknownWorkspace',
+		'ambiguousWorkspace',
+		'repoNameTaken',
+		'repoCreateFailed',
+		'gitSetupFailed',
+		'actorCreateFailed',
+	] as const)('leaves something actionable after %s', (stopReason) => {
+		const steps = buildGitSourceNextSteps({ ...base, stopReason });
+
+		expect(steps.length).toBeGreaterThan(0);
+		expect(steps.every((step) => step.trim().length > 0)).toBe(true);
+	});
+
+	// Authorizing again cannot fix a missing installation, so these two must not send the user to the
+	// same place.
+	it('distinguishes "never connected" from "connected but no account"', () => {
+		const notAuthorized = buildGitSourceNextSteps({ ...base, stopReason: 'notAuthorized' });
+		const noWorkspace = buildGitSourceNextSteps({ ...base, stopReason: 'noWorkspace' });
+
+		expect(notAuthorized).toContainEqual(expect.stringContaining('login/oauth/authorize'));
+		expect(noWorkspace).toContainEqual(expect.stringContaining('installations/new'));
+	});
+
+	it('hands back the remote when only the local git setup failed', () => {
+		const steps = buildGitSourceNextSteps({ ...base, stopReason: 'gitSetupFailed' });
+
+		expect(steps).toContainEqual(expect.stringContaining(`git remote add origin ${base.remoteUrl}`));
+		expect(steps).toContainEqual(expect.stringContaining('git fetch origin'));
+	});
+});

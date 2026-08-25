@@ -277,16 +277,28 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName] [--json]
-                 [-l javascript|js|typescript|ts|python|py]
+  $ apify create [actorName] [--git-private] [--git-repo <value>]
+                 [--json] [-l javascript|js|typescript|ts|python|py]
                  [--omit-optional-deps] [--skip-dependency-install]
-                 [--skip-git-init] [-t <value>]
-                 [-u web-scraper|ai-agent|data-pipeline|browser-automation]
+                 [--skip-git-init] [--source apify|github] [-t <value>]
+                 [-u web-scraper|ai-agent|data-pipeline|browser-automation] [-y]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
+      --git-private              Create a private
+                                 repository. Private repositories need an Apify
+                                 deploy key before builds can read them, so
+                                 repositories are public by default.
+      --git-repo=<value>         Repository to create, as
+                                 "workspace/name" — a workspace being an account or
+                                 organization you have given Apify access to. A bare
+                                 value is read as the name, not the workspace. The
+                                 name defaults to the Actor name, and the workspace
+                                 is asked for when you have more than one. List
+                                 yours with "apify api integrations/git". Only used
+                                 when --source is a Git provider.
       --json                     Format the command
                                  output as JSON.
   -l, --language=<option>        Filter templates by
@@ -299,6 +311,12 @@ FLAGS
                                  dependencies.
       --skip-git-init            Skip initializing a git
                                  repository in the Actor directory.
+      --source=<option>          Where the Actor source
+                                 code will live. With "github", Apify creates the
+                                 repository on your connected GitHub account from
+                                 the template, clones it here, and creates an Actor
+                                 that builds from it.
+                                 <options: apify|github>
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
                                  it. Visit
@@ -310,6 +328,9 @@ FLAGS
                                  "apify templates ls".
                                  <options:
                                  web-scraper|ai-agent|data-pipeline|browser-automation>
+  -y, --yes                      Answer prompts
+                                 automatically. Runs the command non-interactively,
+                                 so anything not passed as a flag takes its default.
 ```
 
 ##### `apify templates`
