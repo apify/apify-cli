@@ -544,9 +544,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Skip when the Actor directory is already a repository — which the Git path's clone has made it —
 		// rather than testing which path we took, so any future way of arriving with one is covered.
 		const actorDirHasGit = await stat(join(actFolderDir, '.git')).catch(() => null);
-		// A Git-flow stop before the clone leaves the Actor directory empty: nothing to initialize, and
-		// no success to report — the banner's `cd` and `apify run` steps would point at an empty directory,
-		// so the outcome warning stands in for it.
+		// A Git-flow stop before the clone leaves the Actor directory empty, so there is nothing to
+		// initialize.
 		const stoppedEmpty = gitResult !== null && !gitResult.scaffolded;
 		const gitInitAttempted = !skipGitInit && !cwdHasGit && !actorDirHasGit && !stoppedEmpty;
 
@@ -605,6 +604,11 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				})
 			: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
 
+		// No stop is a success, so none of them gets the banner: it would contradict the outcome warning
+		// below it and the exit code, and its generic `cd` / `apify run` steps would contradict the
+		// recovery steps the warning carries.
+		const reportSuccess = !gitResult?.stopReason;
+
 		if (json) {
 			printJsonToStdout({
 				dir: actFolderDir,
@@ -624,7 +628,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				gitConnectUrl: gitProvider ? getGitStopUrl(gitProvider, gitResult?.stopReason ?? null) : null,
 				workspaces: gitResult?.workspaces ?? null,
 			});
-		} else if (!stoppedEmpty) {
+		} else if (reportSuccess) {
 			simpleLog({ message: '' });
 			success({
 				message: formatCreateSuccessMessage({
@@ -647,8 +651,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
 		}
 
-		// Where a stop gets reported: after the banner when a scaffold landed, and in place of it when
-		// nothing did.
+		// A stop replaces the success banner, so this is the whole report — headline, then the recovery
+		// steps or the re-run, depending on how far the flow got.
 		if (gitResult && !json) logGitSourceOutcome(gitResult, gitNextSteps);
 	}
 }
