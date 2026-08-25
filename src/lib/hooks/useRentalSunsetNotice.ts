@@ -25,7 +25,9 @@ const DEFAULT_API_BASE_URL = 'https://api.apify.com';
 /** The notice runs after the command the user actually asked for, so the lookup gets one short attempt. */
 const STORE_LOOKUP_TIMEOUT_MILLIS = 3_000;
 
-const APIFY_DISCORD_URL = 'https://discord.gg/crawlee-apify-801163717915574323';
+const APIFY_DISCORD_URL = 'https://apify.com/discord';
+
+const PAY_PER_EVENT_MIGRATION_URL = 'https://blog.apify.com/migrating-to-pay-per-event-pricing/';
 
 export interface RentalSunsetGateInput {
 	now: number;
@@ -77,7 +79,11 @@ export function renderRentalSunsetNotice(rentalActorCount: number) {
 		`  ${chalk.bold('April 1, 2026')}     Publishing new rental Actors and pricing changes on existing ones were disabled.`,
 		`  ${chalk.bold('October 1, 2026')}   Rental Actors are fully retired. All remaining Actors move to pay-per-usage pricing.`,
 		'',
-		`For more information, visit the ${chalk.cyan('#project-rentals')} channel on Apify Discord:`,
+		`Switch your ${actorWord} to pay-per-event before October 1 to keep control over what you charge.`,
+		`This guide walks through picking events, setting prices, and shipping the change:`,
+		`  ${chalk.cyan(PAY_PER_EVENT_MIGRATION_URL)}`,
+		'',
+		`Questions? Ask in the ${chalk.cyan('#project-rentals')} channel on Apify Discord:`,
 		`  ${chalk.cyan(APIFY_DISCORD_URL)}`,
 		'',
 		chalk.dim('To silence this notice, set APIFY_CLI_SKIP_RENTAL_SUNSET_NOTICE=1.'),

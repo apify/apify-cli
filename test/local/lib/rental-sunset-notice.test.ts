@@ -127,6 +127,10 @@ describe('renderRentalSunsetNotice', () => {
 		expect(message).toContain('#project-rentals');
 	});
 
+	it('links the pay-per-event migration guide', () => {
+		expect(renderRentalSunsetNotice(3)).toContain('https://blog.apify.com/migrating-to-pay-per-event-pricing/');
+	});
+
 	it('says how to silence itself', () => {
 		expect(renderRentalSunsetNotice(3)).toContain('APIFY_CLI_SKIP_RENTAL_SUNSET_NOTICE=1');
 	});
