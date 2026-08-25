@@ -593,7 +593,13 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		if (mime.getExtension(existingInput.contentType!) === 'json') {
 			// Step 4: validate the input
-			const inputJson = JSON.parse(existingInput.body.toString('utf-8'));
+			let inputJson: unknown;
+
+			try {
+				inputJson = JSON.parse(existingInput.body.toString('utf-8'));
+			} catch (err) {
+				throw new Error(`Cannot parse JSON input file at path "${inputFilePath}".\n  ${(err as Error).message}`);
+			}
 
 			if (Array.isArray(inputJson)) {
 				throw new Error('The input in your storage is invalid. It should be an object, not an array.');
@@ -601,7 +607,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 			const fullInput = {
 				...defaults,
-				...inputJson,
+				...(inputJson as Record<string, unknown>),
 			};
 
 			const errors = validateInputUsingValidator(compiledInputSchema, inputSchema, fullInput);
