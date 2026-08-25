@@ -607,9 +607,10 @@ export const buildGitSourceNextSteps = ({
 			return ['Re-run apify create to try again'];
 		case 'gitSetupFailed':
 			// The repository exists either way; only the local half differs. A failed clone left the
-			// directory empty, so there is nothing to attach a remote to — clone it again instead.
+			// directory empty, so there is nothing to attach a remote to — clone it again instead. A
+			// clone that landed is complete, remote and all: only the local files it holds need a hand.
 			return scaffolded
-				? [enter, `git remote add origin ${httpsUrl}`, 'git fetch origin', 'git reset --mixed origin/HEAD']
+				? [enter, 'Apply the local configuration by hand: the error above says what failed']
 				: [`git clone ${httpsUrl} "${actorName}"`, enter];
 		case 'actorCreateFailed':
 			return [enter, `Create an Actor from ${remoteUrl} in Apify Console`];

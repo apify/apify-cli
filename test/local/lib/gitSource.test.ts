@@ -148,13 +148,14 @@ describe('buildGitSourceNextSteps', () => {
 		expect(noWorkspace).toContainEqual(expect.stringContaining('installations/new'));
 	});
 
-	// The recovery runs on the user's machine, which may have no SSH key — the same reason the flow
-	// clones over HTTPS in the first place.
-	it('hands back the remote over HTTPS when only the local git setup failed', () => {
+	// A clone that landed already has its remote, so re-adding one would exit with "remote origin
+	// already exists" — the only thing left undone is the local configuration.
+	it('does not rebuild the clone when only the local configuration failed', () => {
 		const steps = buildGitSourceNextSteps({ ...base, stopReason: 'gitSetupFailed' });
 
-		expect(steps).toContainEqual(expect.stringContaining(`git remote add origin ${base.httpsUrl}`));
-		expect(steps).toContainEqual(expect.stringContaining('git fetch origin'));
+		expect(steps).toContainEqual(`cd "${base.actorName}"`);
+		expect(steps.join('\n')).not.toContain('git remote add');
+		expect(steps.join('\n')).not.toContain('git clone');
 	});
 
 	// A failed clone leaves no local repository, so `git remote add` there would exit with "not a git

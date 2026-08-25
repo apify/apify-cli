@@ -139,6 +139,6 @@ describe('apify create --source github, stopped after the clone', () => {
 		expect(output).not.toContain('created successfully');
 		expect(output).toContain('Actor scaffolded, but the Git setup did not finish');
 		expect(output.match(/Next steps:/g)).toHaveLength(1);
-		expect(output).toContain('git remote add origin');
+		expect(output).toContain(`cd "${actName}"`);
 	});
 });
