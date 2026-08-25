@@ -70,7 +70,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for an Actor name, then guides you through what you want to build, a language, and a template when they are not provided. To run non-interactively, pass the name and --template. Use --use-case and --language to narrow the template list.';
+		'Prompts for an Actor name, then guides you through what you want to build, a language, a template, and where the source code lives when they are not provided. To run non-interactively, pass the name, --template and --source, or pass --yes to take the defaults. Use --use-case and --language to narrow the template list.';
 
 	static override examples = [
 		{
@@ -604,7 +604,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					stopReason: gitResult.stopReason,
 					provider: gitProvider!,
 					remoteUrl: gitResult.remoteUrl,
+					httpsUrl: gitResult.httpsUrl,
 					repoName: gitRepoParts!.repoName,
+					scaffolded: gitResult.scaffolded,
 				})
 			: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
 

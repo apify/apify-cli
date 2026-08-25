@@ -114,7 +114,9 @@ describe('buildGitSourceNextSteps', () => {
 		actorName: 'my-scraper',
 		provider: 'github' as const,
 		remoteUrl: 'git@github.com:acme-inc/my-scraper.git',
+		httpsUrl: 'https://github.com/acme-inc/my-scraper.git',
 		repoName: 'my-scraper',
+		scaffolded: true,
 	};
 
 	// Every stop has to leave the user something actionable — recovery steps after the clone, a re-run
@@ -146,17 +148,29 @@ describe('buildGitSourceNextSteps', () => {
 		expect(noWorkspace).toContainEqual(expect.stringContaining('installations/new'));
 	});
 
-	it('hands back the remote when only the local git setup failed', () => {
+	// The recovery runs on the user's machine, which may have no SSH key — the same reason the flow
+	// clones over HTTPS in the first place.
+	it('hands back the remote over HTTPS when only the local git setup failed', () => {
 		const steps = buildGitSourceNextSteps({ ...base, stopReason: 'gitSetupFailed' });
 
-		expect(steps).toContainEqual(expect.stringContaining(`git remote add origin ${base.remoteUrl}`));
+		expect(steps).toContainEqual(expect.stringContaining(`git remote add origin ${base.httpsUrl}`));
 		expect(steps).toContainEqual(expect.stringContaining('git fetch origin'));
+	});
+
+	// A failed clone leaves no local repository, so `git remote add` there would exit with "not a git
+	// repository". The remote one exists, though, so cloning it again recovers the run.
+	it('clones the repository when the clone itself failed', () => {
+		const steps = buildGitSourceNextSteps({ ...base, stopReason: 'gitSetupFailed', scaffolded: false });
+
+		expect(steps).toContainEqual(expect.stringContaining(`git clone ${base.httpsUrl}`));
+		expect(steps).not.toContainEqual(expect.stringContaining('git remote add'));
 	});
 });
 
 describe('logGitSourceOutcome', () => {
 	const result = (scaffolded: boolean): GitSourceResult => ({
 		remoteUrl: null,
+		httpsUrl: null,
 		actorId: null,
 		workspaces: null,
 		stopReason: 'notAuthorized',

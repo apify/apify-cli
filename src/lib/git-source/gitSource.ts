@@ -37,6 +37,8 @@ export type GitSourceStopReason =
 
 export interface GitSourceResult {
 	remoteUrl: string | null;
+	/** The clone URL, kept apart from `remoteUrl`: local recovery has no SSH key, the platform does. */
+	httpsUrl: string | null;
 	actorId: string | null;
 	/** The accounts the user can create in, when we got far enough to know them. */
 	workspaces: string[] | null;
@@ -457,6 +459,7 @@ export const runGitSourceFlow = async ({
 		extra: Partial<GitSourceResult> = {},
 	): GitSourceResult => ({
 		remoteUrl: null,
+		httpsUrl: null,
 		actorId: null,
 		workspaces: null,
 		scaffolded,
@@ -522,7 +525,7 @@ export const runGitSourceFlow = async ({
 
 		await customize(actorDir);
 	} catch (err) {
-		return stopped('gitSetupFailed', err, { workspaces, remoteUrl: repo.sshUrl });
+		return stopped('gitSetupFailed', err, { workspaces, remoteUrl: repo.sshUrl, httpsUrl: repo.httpsUrl });
 	}
 
 	try {
@@ -530,9 +533,17 @@ export const runGitSourceFlow = async ({
 		// own credentials rather than the user's.
 		const actor = await createGitActor({ client, actorName, gitRepoUrl: repo.sshUrl });
 		info({ message: `Created Actor ${actor.name} on Apify.` });
-		return { remoteUrl: repo.sshUrl, actorId: actor.id, workspaces, stopReason: null, error: null, scaffolded: true };
+		return {
+			remoteUrl: repo.sshUrl,
+			httpsUrl: repo.httpsUrl,
+			actorId: actor.id,
+			workspaces,
+			stopReason: null,
+			error: null,
+			scaffolded: true,
+		};
 	} catch (err) {
-		return stopped('actorCreateFailed', err, { workspaces, remoteUrl: repo.sshUrl });
+		return stopped('actorCreateFailed', err, { workspaces, remoteUrl: repo.sshUrl, httpsUrl: repo.httpsUrl });
 	}
 };
 
@@ -555,25 +566,31 @@ export interface GitSourceNextStepsOptions {
 	stopReason: GitSourceStopReason;
 	provider: GitProvider;
 	remoteUrl: string | null;
+	/** Recovery runs on the user's machine, which may have no SSH key — so it clones over HTTPS. */
+	httpsUrl: string | null;
 	repoName: string;
+	/** False means the clone never landed, so there is no local repository to recover. */
+	scaffolded: boolean;
 }
 
 /**
  * What to tell the user (or hand an agent in `--json`) once the Git wiring has stopped. After the clone
- * the scaffold is on disk and the steps recover it; before it they re-run the command in place — so a
- * stop is never a dead end either way.
+ * the scaffold is on disk and the steps recover it; before it they re-run the command in place, or clone
+ * the repository the run already created — so a stop is never a dead end either way.
  */
 export const buildGitSourceNextSteps = ({
 	actorName,
 	stopReason,
 	provider,
 	remoteUrl,
+	httpsUrl,
 	repoName,
+	scaffolded,
 }: GitSourceNextStepsOptions): string[] => {
 	const enter = `cd "${actorName}"`;
 
-	// Everything before the clone leaves the directory empty, so telling the user to `cd` into it — or to
-	// re-run from inside it — would be wrong. Those cases re-run in place instead.
+	// A stop up to `repoCreateFailed` leaves the directory empty, so telling the user to `cd` into it — or
+	// to re-run from inside it — would be wrong. Those cases re-run in place instead.
 	switch (stopReason) {
 		case 'lookupFailed':
 			return ['Re-run with APIFY_CLI_DEBUG=1 to see the failing request'];
@@ -589,7 +606,11 @@ export const buildGitSourceNextSteps = ({
 		case 'repoCreateFailed':
 			return ['Re-run apify create to try again'];
 		case 'gitSetupFailed':
-			return [enter, `git remote add origin ${remoteUrl}`, 'git fetch origin', 'git reset --mixed origin/HEAD'];
+			// The repository exists either way; only the local half differs. A failed clone left the
+			// directory empty, so there is nothing to attach a remote to — clone it again instead.
+			return scaffolded
+				? [enter, `git remote add origin ${httpsUrl}`, 'git fetch origin', 'git reset --mixed origin/HEAD']
+				: [`git clone ${httpsUrl} "${actorName}"`, enter];
 		case 'actorCreateFailed':
 			return [enter, `Create an Actor from ${remoteUrl} in Apify Console`];
 	}

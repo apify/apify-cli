@@ -10,6 +10,7 @@ import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 // The Git flow gave up before the clone, so nothing reached the disk.
 const AMBIGUOUS_WORKSPACE_STOP: GitSourceResult = {
 	remoteUrl: null,
+	httpsUrl: null,
 	actorId: null,
 	workspaces: ['apify', 'l2ysho'],
 	stopReason: 'ambiguousWorkspace',
@@ -20,6 +21,7 @@ const AMBIGUOUS_WORKSPACE_STOP: GitSourceResult = {
 // The clone landed and the wiring after it did not, so the scaffold is on disk with no Actor behind it.
 const GIT_SETUP_FAILED_STOP: GitSourceResult = {
 	remoteUrl: 'git@github.com:apify/my-scraper.git',
+	httpsUrl: 'https://github.com/apify/my-scraper.git',
 	actorId: null,
 	workspaces: ['apify'],
 	stopReason: 'gitSetupFailed',
