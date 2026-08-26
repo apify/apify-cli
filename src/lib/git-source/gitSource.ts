@@ -114,7 +114,7 @@ export const promptGitSource = async (): Promise<GitSource> =>
 				name: 'GitHub',
 				value: 'github',
 				description:
-					'Apify creates a public repository and builds the Actor from it. Add --git-private for a private one.',
+					'Apify creates a private repository and builds the Actor from it. Add --git-public for a public one.',
 			},
 		],
 		default: 'apify',
@@ -344,9 +344,9 @@ const createRemoteRepo = async (options: CreateRemoteRepoOptions): Promise<Creat
 /**
  * Clones the repository the platform just seeded into `dir`.
  *
- * HTTPS, not SSH: a public repository clones with no credentials and no host-key check, so this works on
- * a machine that has never talked to the provider — including CI, where SSH would stop to verify the host
- * key with nobody there to answer.
+ * HTTPS, not SSH: no host-key check, so this works on a machine that has never talked to the provider —
+ * including CI, where SSH would stop to verify the host key with nobody there to answer. Repositories are
+ * private by default, so the clone does need the user's own provider credentials.
  */
 const cloneRepo = async (dir: string, httpsUrl: string, isInteractive: boolean) => {
 	// A private repository still needs credentials. Non-interactively, make git fail fast rather than

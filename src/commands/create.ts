@@ -140,9 +140,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				'Repository to create, as "workspace/name" — a workspace being an account or organization you have given Apify access to. A bare value is read as the name, not the workspace. The name defaults to the Actor name, and the workspace is asked for when you have more than one. List yours with "apify api integrations/git". Only used when --source is a Git provider.',
 			required: false,
 		}),
-		'git-private': Flags.boolean({
+		'git-public': Flags.boolean({
 			description:
-				'Create a private repository. Private repositories need an Apify deploy key before builds can read them, so repositories are public by default.',
+				'Create a public repository. Repositories are private by default, matching what Apify Console creates.',
 			required: false,
 		}),
 		...YesFlag(
@@ -177,7 +177,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			origin,
 			json,
 			gitRepo,
-			gitPrivate,
+			gitPublic,
 			yes,
 		} = this.flags;
 
@@ -291,8 +291,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		// Catches a non-interactive run that named a repository but omitted --source, which would
 		// otherwise silently take the Apify path.
-		if (!gitProvider && (gitRepo || gitPrivate)) {
-			throw new Error('--git-repo and --git-private only apply to a Git source, so add --source github or drop them.');
+		if (!gitProvider && (gitRepo || gitPublic)) {
+			throw new Error('--git-repo and --git-public only apply to a Git source, so add --source github or drop them.');
 		}
 
 		// The platform only accepts archive URLs listed in the official manifest.
@@ -340,7 +340,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				actorName,
 				workspace: gitSetup.workspace,
 				repoName: gitSetup.repoName,
-				isPrivate: Boolean(gitPrivate),
+				isPrivate: !gitPublic,
 				templateArchiveUrl,
 				client: gitSetup.client,
 				isInteractive,

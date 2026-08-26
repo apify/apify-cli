@@ -277,7 +277,7 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName] [--git-private] [--git-repo <value>]
+  $ apify create [actorName] [--git-public] [--git-repo <value>]
                  [--json] [-l javascript|js|typescript|ts|python|py]
                  [--omit-optional-deps] [--skip-dependency-install]
                  [--skip-git-init] [--source apify|github] [-t <value>]
@@ -287,10 +287,9 @@ ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
-      --git-private              Create a private
-                                 repository. Private repositories need an Apify
-                                 deploy key before builds can read them, so
-                                 repositories are public by default.
+      --git-public               Create a public
+                                 repository. Repositories are private by default,
+                                 matching what Apify Console creates.
       --git-repo=<value>         Repository to create, as
                                  "workspace/name" — a workspace being an account or
                                  organization you have given Apify access to. A bare
