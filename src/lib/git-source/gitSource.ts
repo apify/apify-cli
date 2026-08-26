@@ -113,8 +113,7 @@ export const promptGitSource = async (): Promise<GitSource> =>
 			{
 				name: 'GitHub',
 				value: 'github',
-				description:
-					'Apify creates a private repository and builds the Actor from it. Add --git-public for a public one.',
+				description: 'Apify creates a private repository and builds the Actor from it.',
 			},
 		],
 		default: 'apify',
