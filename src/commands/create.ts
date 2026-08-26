@@ -539,7 +539,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Suggest install command if dependencies were not installed
 		const installCommandSuggestion = !dependenciesInstalled ? await getInstallCommandSuggestion(actFolderDir) : null;
 
-		const gitRepositoryInitialized = gitInitAttempted && gitInitResult.success;
+		// The Git path's clone makes it a repository too, not only `git init`.
+		const gitRepositoryInitialized = (gitInitAttempted && gitInitResult.success) || Boolean(actorDirHasGit);
 
 		// Any stop leaves the Actor unwired, so the command fails. `--json` callers read `stopReason`, but
 		// a shell script sees only $?.
