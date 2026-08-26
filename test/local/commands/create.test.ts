@@ -235,9 +235,8 @@ describe('apify create', () => {
 		expect(lastErrorMessage()).toMatch(/already exists/);
 	});
 
-	// The Git path validates before it downloads a template or asks the platform for a token, so these
-	// need no network. The Actor directory is made before the check, so what has to hold is that it stays
-	// empty — nothing to clean up, and a re-run is not blocked by it.
+	// Validation runs before the download and the token, so these need no network. The directory is made
+	// before the check, so what has to hold is that it stays empty.
 	it('--source github with --skip-git-init fails without scaffolding anything', async () => {
 		await testRunCommand(CreateCommand, {
 			args_actorName: actName,
@@ -261,8 +260,7 @@ describe('apify create', () => {
 		await expect(readdir(tmpPath)).resolves.toEqual([]);
 	});
 
-	// Without a terminal the source step cannot be asked, so it takes the Apify path — which is not what
-	// a caller passing --git-repo wanted. Say so instead of creating a plain Actor.
+	// Without a terminal the source step takes the Apify path, which is not what --git-repo asked for.
 	it('--git-repo without a Git source fails without scaffolding anything', async () => {
 		await testRunCommand(CreateCommand, {
 			args_actorName: actName,

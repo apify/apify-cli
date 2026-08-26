@@ -20,9 +20,9 @@ export type GitProvider = Exclude<GitSource, 'apify'>;
 export const isGitProvider = (source: string): source is GitProvider => source === 'github';
 
 /**
- * Why the Git wiring stopped short. Each one has to leave the user something runnable in `nextSteps` —
- * that is what makes them different from a crash. Note the directory is still empty for everything up to
- * and including `repoCreateFailed`: on this path the clone is what puts the template on disk.
+ * Why the Git wiring stopped short. Each one maps to runnable recovery steps in `buildGitSourceNextSteps`.
+ * Everything up to and including `repoCreateFailed` leaves the Actor directory empty — the clone is what
+ * puts the template on disk.
  */
 export type GitSourceStopReason =
 	| 'lookupFailed'
@@ -49,15 +49,24 @@ export interface GitSourceResult {
 	scaffolded: boolean;
 }
 
+interface GitProviderConfig {
+	providerId: string;
+	authorizeEndpoint: string;
+	defaultClientId: string;
+	clientIdEnvVar: string;
+	defaultAppName: string;
+	appNameEnvVar: string;
+	/** `{app}` is replaced with the app name. */
+	appInstallUrl: string;
+	redirectPath: string;
+}
+
 /**
- * Per-provider OAuth details.
+ * Per-provider OAuth details. The CLI builds the authorize URL itself: the client id is public, while the
+ * client secret and the access token never leave the platform. Both values differ per environment.
  *
- * The CLI builds the authorize URL itself rather than asking the API for it: the client id is public
- * (it ships in Console's browser bundle), while the client secret and the resulting access token never
- * leave the platform. Both values differ per environment, so both are overridable.
- *
- * `providerId` is the id the API addresses the integration by — for GitHub a synthetic one, because the
- * GitHub App is a single per-user connection rather than a `UserIntegration` document.
+ * `providerId` is the id the API addresses the integration by — synthetic for GitHub, whose App is a
+ * single per-user connection rather than a `UserIntegration` document.
  */
 const GIT_PROVIDERS = {
 	github: {
@@ -67,18 +76,17 @@ const GIT_PROVIDERS = {
 		clientIdEnvVar: 'APIFY_GITHUB_APP_CLIENT_ID',
 		defaultAppName: 'apify',
 		appNameEnvVar: 'APIFY_GITHUB_APP_NAME',
+		appInstallUrl: 'https://github.com/apps/{app}/installations/new',
 		// Legacy path, and known to be changing — apify-core has a refactor planned for this route.
-		redirectPath: '/actors/new/git/connected',
-		redirectQuery: { service: 'github' } as Record<string, string>,
+		redirectPath: '/actors/new/git/connected?service=github',
 	},
-} satisfies Record<GitProvider, unknown>;
+} satisfies Record<GitProvider, GitProviderConfig>;
 
 /** Where to send a user who has not connected this provider to Apify yet. */
 export const getGitConnectUrl = (provider: GitProvider) => {
-	const { authorizeEndpoint, defaultClientId, clientIdEnvVar, redirectPath, redirectQuery } = GIT_PROVIDERS[provider];
+	const { authorizeEndpoint, defaultClientId, clientIdEnvVar, redirectPath } = GIT_PROVIDERS[provider];
 
 	const redirectUri = new URL(redirectPath, getConsoleUrl());
-	for (const [key, value] of Object.entries(redirectQuery)) redirectUri.searchParams.set(key, value);
 
 	const url = new URL(authorizeEndpoint);
 	url.searchParams.set('client_id', process.env[clientIdEnvVar] || defaultClientId);
@@ -88,20 +96,15 @@ export const getGitConnectUrl = (provider: GitProvider) => {
 };
 
 /**
- * Where to install the app so the user gets a workspace to create repositories in.
- *
- * The API reports this as `addWorkspaceUrl`, but derives it from an existing installation — so it is
- * absent in exactly the case that needs it, when there are none. This is the fallback for that case.
+ * Where to install the app so the user gets a workspace to create repositories in. The API's own
+ * `addWorkspaceUrl` is derived from an existing installation, so it is absent in the case that needs it.
  */
 export const getAddWorkspaceUrl = (provider: GitProvider) => {
-	const { defaultAppName, appNameEnvVar } = GIT_PROVIDERS[provider];
-	return `https://github.com/apps/${process.env[appNameEnvVar] || defaultAppName}/installations/new`;
+	const { defaultAppName, appNameEnvVar, appInstallUrl } = GIT_PROVIDERS[provider];
+	return appInstallUrl.replace('{app}', process.env[appNameEnvVar] || defaultAppName);
 };
 
-/**
- * Final wizard step, mirroring the Console's "Where will the source code live?" card. Skipped when
- * `--source` is passed, which is how agents and the Console's "Clone locally" button bypass it.
- */
+/** Final wizard step, mirroring the Console. Skipped when `--source` is passed. */
 export const promptGitSource = async (): Promise<GitSource> =>
 	useSelectFromList<GitSource>({
 		message: 'Where will the source code live?',
@@ -118,10 +121,7 @@ export const promptGitSource = async (): Promise<GitSource> =>
 		loop: false,
 	});
 
-/**
- * Splits `--git-repo` into workspace and name. `workspace/name` pins both; a bare `name` leaves the
- * workspace unset so it is resolved from the connected integration.
- */
+/** Splits `--git-repo` into workspace and name. A bare `name` leaves the workspace to be resolved. */
 export const parseGitRepoFlag = (gitRepo: string | undefined, actorName: string) => {
 	if (!gitRepo) return { workspace: undefined, repoName: actorName };
 
@@ -133,10 +133,7 @@ export const parseGitRepoFlag = (gitRepo: string | undefined, actorName: string)
 	return second === undefined ? { workspace: undefined, repoName: first } : { workspace: first, repoName: second };
 };
 
-/**
- * The API calls all go through the client the command already built and validated, so the token is
- * resolved and the user checked exactly once per run.
- */
+/** The client the command already built, so the token is resolved and the user checked once per run. */
 interface ApiCallOptions {
 	client: ApifyClient;
 }
@@ -194,22 +191,19 @@ const fetchGitIntegrations = async (options: ApiCallOptions): Promise<GitProvide
 const findIntegration = (integrations: GitProviderIntegration[], provider: GitProvider) =>
 	integrations.find((integration) => integration.id === GIT_PROVIDERS[provider].providerId);
 
-// Backs off so a long authorization does not cost one request every two seconds for three minutes.
-// The early polls stay fast, which is where a quick completion actually gets caught.
+// Backs off, so the early polls stay fast without costing a request every two seconds for three minutes.
 const POLL_INTERVAL_START_MS = 2_000;
 const POLL_INTERVAL_MAX_MS = 10_000;
 const POLL_TIMEOUT_MS = 3 * 60_000;
 
 /**
- * Makes sure the provider is connected AND has at least one workspace, opening the browser and waiting
- * if not. Returns the usable integration, or null when the user never finished.
+ * Makes sure the provider is connected and has at least one workspace, opening the browser and polling
+ * if not. Nothing comes back to the CLI directly — the browser hands the code to Console — so polling
+ * the API is the only way to know it finished. Returns null when the user never did.
  *
- * Nothing comes back to the CLI directly — the browser hands the code to Console, which stores the token
- * — so the only way to know we are done is to keep asking the API.
- *
- * Two separate grants are needed and they fail differently: OAuth authorization makes the integration
- * appear at all, while installing the app on an account is what populates `workspaces`. Authorizing again
- * cannot fix a missing installation, so the two cases open different URLs.
+ * Two separate grants are needed: OAuth authorization makes the integration appear at all, while
+ * installing the app populates `workspaces`. Authorizing again cannot fix a missing installation, so the
+ * two cases open different URLs.
  */
 const ensureUsableIntegration = async (
 	provider: GitProvider,
@@ -249,12 +243,8 @@ const ensureUsableIntegration = async (
 };
 
 /**
- * Resolves which workspace to create the repository in.
- *
- * There is deliberately no default when several are connected. The API does not say which workspace is
- * the user's own account, and the order is not meaningful — a personal account can easily sort behind an
- * employer's org, so picking the first risks creating a repository somewhere the user did not intend and
- * may not be allowed to. Ask instead, and make agents state it.
+ * Resolves which workspace to create the repository in. No default when several are connected: the API
+ * does not mark which one is the user's own account, and the order is not meaningful.
  */
 export const chooseWorkspace = async (
 	integration: GitProviderIntegration,
@@ -266,7 +256,6 @@ export const chooseWorkspace = async (
 	const { workspaces } = integration;
 
 	if (requested) {
-		// Provider logins are case-insensitive, so the comparison is too.
 		const match = workspaces.find(({ id }) => id.toLowerCase() === requested.toLowerCase());
 		return match ? { workspace: match.id } : { stopReason: 'unknownWorkspace' };
 	}
@@ -283,7 +272,6 @@ export const chooseWorkspace = async (
 	return { workspace };
 };
 
-/** Thrown so the caller can map a provider failure onto a `GitSourceStopReason`. */
 class CreateRemoteRepoError extends Error {
 	constructor(
 		message: string,
@@ -312,11 +300,8 @@ interface CreatedRemoteRepo {
 }
 
 /**
- * Asks the Apify platform to create the repository and seed it with the scaffold.
- *
- * The platform holds the provider credential (the app the user authorized in Console), so the CLI never
- * handles one. It also reads the template itself, so the scaffold reaches the repository without the CLI
- * uploading or pushing anything.
+ * Asks the Apify platform to create the repository and seed it with the scaffold. The platform holds the
+ * provider credential and reads the template itself, so the CLI handles neither.
  */
 const createRemoteRepo = async (options: CreateRemoteRepoOptions): Promise<CreatedRemoteRepo> => {
 	const { provider, workspace, repoName, isPrivate, templateArchiveUrl } = options;
@@ -357,16 +342,15 @@ const createRemoteRepo = async (options: CreateRemoteRepoOptions): Promise<Creat
 };
 
 /**
- * Clones the repository the platform just seeded into `dir`, tracking whichever branch the provider
- * made the default.
+ * Clones the repository the platform just seeded into `dir`.
  *
- * Cloning over HTTPS rather than SSH is deliberate: a public repository clones with no credentials and no
- * host-key check, so this works on a machine that has never talked to the provider — including CI, where
- * SSH would stop to verify the host key and nobody could answer.
+ * HTTPS, not SSH: a public repository clones with no credentials and no host-key check, so this works on
+ * a machine that has never talked to the provider — including CI, where SSH would stop to verify the host
+ * key with nobody there to answer.
  */
 const cloneRepo = async (dir: string, httpsUrl: string, isInteractive: boolean) => {
-	// A private repository still needs credentials, and so can an unusual setup — interactively that is
-	// the user's to answer, but otherwise make git fail fast rather than block on an unseen prompt.
+	// A private repository still needs credentials. Non-interactively, make git fail fast rather than
+	// block on a prompt nobody can see.
 	const env = isInteractive ? undefined : { GIT_TERMINAL_PROMPT: '0', GIT_SSH_COMMAND: 'ssh -o BatchMode=yes' };
 
 	// `git clone <url> <dir>` accepts an existing empty directory, which is what `apify create` has made.
@@ -374,15 +358,9 @@ const cloneRepo = async (dir: string, httpsUrl: string, isInteractive: boolean) 
 };
 
 /**
- * Commits what `apify create` adds on top of the clone. Two things matter:
- *
- * - the Actor name in `.actor/actor.json`, which the template ships with its own value. `apify push`
- *   resolves the Actor by that name, so leaving it would make a later push fork a duplicate Actor.
- * - the dependency lockfile, which the template does not ship. The template's own CI workflow runs
- *   `npm ci` and caches on a lockfile, so a repository without one fails its first build.
- *
- * Called after dependencies are installed, so the lockfile exists by then. Deliberately not pushed:
- * pushing needs write credentials an unattended run does not have.
+ * Commits what `apify create` adds on top of the clone: the Actor name in `.actor/actor.json`, which
+ * `apify push` resolves by, and the lockfile, without which the templates' CI `npm ci` fails its first
+ * build. Called after the install, so the lockfile exists. Not pushed — that needs write credentials.
  *
  * ponytail: the name half disappears if `create-repo` learns to write the Actor name itself, which is
  * also what would fix the same bug in the Console flow.
@@ -396,7 +374,6 @@ export const commitLocalConfig = async (dir: string) => {
 	return true;
 };
 
-/** Creates the Actor on the platform, pointed at the repository we just seeded. */
 const createGitActor = async ({
 	client,
 	actorName,
@@ -423,19 +400,13 @@ export interface RunGitSourceFlowOptions extends ApiCallOptions {
 	isPrivate: boolean;
 	templateArchiveUrl: string;
 	isInteractive: boolean;
-	/**
-	 * Applies the local-only setup to the freshly cloned directory — the Actor name, the env file, the
-	 * prefilled input. Runs between the clone and the commit, so whatever it changes lands in git.
-	 */
+	/** Local-only setup for the clone. Runs between the clone and the commit, so its changes land in git. */
 	customize: (dir: string) => Promise<void>;
 }
 
 /**
- * The platform-facing half of the flow: authorize, create and seed the repository, attach the local
- * directory to it, create the Actor.
- *
- * Never throws: a failure becomes a `stopReason` plus instructions, so the command can still report what
- * it did manage and what is left to do.
+ * The platform-facing half of the flow: authorize, create and seed the repository, clone it, create the
+ * Actor. Never throws — a failure becomes a `stopReason` plus recovery steps.
  */
 export const runGitSourceFlow = async ({
 	client,
@@ -449,8 +420,6 @@ export const runGitSourceFlow = async ({
 	isInteractive,
 	customize,
 }: RunGitSourceFlowOptions): Promise<GitSourceResult> => {
-	// The clone is what puts the template on disk, so once this is true a stop leaves a scaffold behind
-	// rather than an empty directory.
 	let scaffolded = false;
 
 	const stopped = (
@@ -508,8 +477,6 @@ export const runGitSourceFlow = async ({
 			isPrivate,
 			templateArchiveUrl,
 		});
-		// Visibility is stated because it is what a wizard user never chose: the flag help says public by
-		// default, and the choice they picked cannot repeat every flag.
 		info({
 			message: `Created ${isPrivate ? 'private' : 'public'} repository ${workspace}/${repoName} from the template.`,
 		});
@@ -529,8 +496,7 @@ export const runGitSourceFlow = async ({
 	}
 
 	try {
-		// The Actor keeps the SSH URL — that is what the Console stores, and the platform clones with its
-		// own credentials rather than the user's.
+		// The Actor keeps the SSH URL: what the Console stores, and the platform clones with its own key.
 		const actor = await createGitActor({ client, actorName, gitRepoUrl: repo.sshUrl });
 		info({ message: `Created Actor ${actor.name} on Apify.` });
 		return {
@@ -548,11 +514,8 @@ export const runGitSourceFlow = async ({
 };
 
 /**
- * The URL that unblocks a stop, when one exists. Named `gitConnectUrl` in the `--json` payload so a
- * caller has the link as a field rather than having to find it inside a sentence.
- *
- * Authorization and installation are separate grants, and authorizing again cannot fix a missing
- * installation — so the two stops resolve to different places.
+ * The URL that unblocks a stop, when one exists — `gitConnectUrl` in the `--json` payload. Authorization
+ * and installation are separate grants, so the two stops resolve to different places.
  */
 export const getGitStopUrl = (provider: GitProvider, stopReason: GitSourceStopReason | null): string | null => {
 	if (stopReason === 'notAuthorized') return getGitConnectUrl(provider);
@@ -573,11 +536,7 @@ export interface GitSourceNextStepsOptions {
 	scaffolded: boolean;
 }
 
-/**
- * What to tell the user (or hand an agent in `--json`) once the Git wiring has stopped. After the clone
- * the scaffold is on disk and the steps recover it; before it they re-run the command in place, or clone
- * the repository the run already created — so a stop is never a dead end either way.
- */
+/** What to tell the user, or hand an agent in `--json`, once the Git wiring has stopped. */
 export const buildGitSourceNextSteps = ({
 	actorName,
 	stopReason,
@@ -589,8 +548,8 @@ export const buildGitSourceNextSteps = ({
 }: GitSourceNextStepsOptions): string[] => {
 	const enter = `cd "${actorName}"`;
 
-	// A stop up to `repoCreateFailed` leaves the directory empty, so telling the user to `cd` into it — or
-	// to re-run from inside it — would be wrong. Those cases re-run in place instead.
+	// Everything up to `repoCreateFailed` leaves the directory empty, so those cases re-run in place
+	// instead of telling the user to `cd` into it.
 	switch (stopReason) {
 		case 'lookupFailed':
 			return ['Re-run with APIFY_CLI_DEBUG=1 to see the failing request'];
@@ -606,9 +565,8 @@ export const buildGitSourceNextSteps = ({
 		case 'repoCreateFailed':
 			return ['Re-run apify create to try again'];
 		case 'gitSetupFailed':
-			// The repository exists either way; only the local half differs. A failed clone left the
-			// directory empty, so there is nothing to attach a remote to — clone it again instead. A
-			// clone that landed is complete, remote and all: only the local files it holds need a hand.
+			// The repository exists either way; only the local half differs. A clone that landed already
+			// has its remote, so only its files need a hand. A failed one leaves nothing to attach to.
 			return scaffolded
 				? [enter, 'Apply the local configuration by hand: the error above says what failed']
 				: [`git clone ${httpsUrl} "${actorName}"`, enter];
@@ -617,12 +575,10 @@ export const buildGitSourceNextSteps = ({
 	}
 };
 
-/** Prints the same guidance for humans. */
 export const logGitSourceOutcome = (result: GitSourceResult, nextSteps: string[]) => {
 	if (!result.stopReason) return;
 
-	// A stop before the clone replaces the success banner entirely, so this line is then the only
-	// outcome the user sees — it has to say nothing was created, not imply a scaffold exists.
+	// This replaces the success banner, so it is the only outcome the user sees.
 	const headline = result.scaffolded
 		? 'Actor scaffolded, but the Git setup did not finish'
 		: 'The Actor was not created: the Git setup stopped';

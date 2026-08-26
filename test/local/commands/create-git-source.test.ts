@@ -7,7 +7,7 @@ import type { GitSourceResult } from '../../../src/lib/git-source/gitSource.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
-// The Git flow gave up before the clone, so nothing reached the disk.
+// Gave up before the clone, so nothing reached the disk.
 const AMBIGUOUS_WORKSPACE_STOP: GitSourceResult = {
 	remoteUrl: null,
 	httpsUrl: null,
@@ -18,7 +18,7 @@ const AMBIGUOUS_WORKSPACE_STOP: GitSourceResult = {
 	scaffolded: false,
 };
 
-// The clone landed and the wiring after it did not, so the scaffold is on disk with no Actor behind it.
+// The clone landed but the wiring after it did not, so the scaffold is on disk with no Actor.
 const GIT_SETUP_FAILED_STOP: GitSourceResult = {
 	remoteUrl: 'git@github.com:apify/my-scraper.git',
 	httpsUrl: 'https://github.com/apify/my-scraper.git',
@@ -29,15 +29,13 @@ const GIT_SETUP_FAILED_STOP: GitSourceResult = {
 	scaffolded: true,
 };
 
-// Which stop the mocked flow returns, set per suite below.
 let stop: GitSourceResult = AMBIGUOUS_WORKSPACE_STOP;
 
-// The platform half is what we stand in for; the local reporting around it is what is under test.
+// Stands in for the platform half; the local reporting around it is what is under test.
 vitest.mock('../../../src/lib/git-source/gitSource.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../../src/lib/git-source/gitSource.js')>()),
 	runGitSourceFlow: vitest.fn(async ({ actorDir }: { actorDir: string }) => {
-		// Stand in for the clone: a scaffolded stop leaves a repository behind, which is what tells the
-		// command it has no `git init` of its own to run.
+		// Stand in for the clone: a scaffolded stop leaves a repository behind.
 		if (stop.scaffolded) await mkdir(join(actorDir, '.git'), { recursive: true });
 
 		return stop;
@@ -93,13 +91,13 @@ describe('apify create --source github, stopped before the clone', () => {
 		stop = AMBIGUOUS_WORKSPACE_STOP;
 	});
 
-	it('fails, so a caller reading only the exit status is not told it worked', async () => {
+	it('exits non-zero', async () => {
 		await run();
 
 		expect(mockedProcess.exitCode).toBe(1);
 	});
 
-	it('reports the stop instead of a success banner for an empty directory', async () => {
+	it('reports the stop instead of a success banner', async () => {
 		await run();
 
 		const output = logMessages.error.join('\n');
@@ -109,9 +107,9 @@ describe('apify create --source github, stopped before the clone', () => {
 		expect(output).toContain('--git-repo');
 	});
 
-	// The stray repository this used to leave behind made the directory non-empty, which made the
-	// re-run the next steps ask for fail with "directory already exists".
-	it('leaves no git repository behind to block the re-run', async () => {
+	// A stray repository would make the directory non-empty, so the re-run the next steps ask for would
+	// fail with "directory already exists".
+	it('leaves no git repository behind', async () => {
 		await run();
 
 		expect(existsSync(joinPath('.git'))).toBe(false);
@@ -123,14 +121,12 @@ describe('apify create --source github, stopped after the clone', () => {
 		stop = GIT_SETUP_FAILED_STOP;
 	});
 
-	it('fails, so a caller reading only the exit status is not told it worked', async () => {
+	it('exits non-zero', async () => {
 		await run();
 
 		expect(mockedProcess.exitCode).toBe(1);
 	});
 
-	// The scaffold is on disk, but the Actor is not wired up — so the banner's "created successfully" and
-	// its generic next steps would both contradict the recovery steps the stop carries.
 	it('reports the stop once, in place of the success banner', async () => {
 		await run();
 

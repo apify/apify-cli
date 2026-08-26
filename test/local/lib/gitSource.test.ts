@@ -58,7 +58,7 @@ describe('getGitConnectUrl', () => {
 		);
 	});
 
-	it('honours the environment overrides, so staging is reachable', () => {
+	it('honours the environment overrides', () => {
 		process.env.APIFY_GITHUB_APP_CLIENT_ID = 'Iv1.staging';
 		process.env.APIFY_CONSOLE_URL = 'https://console.staging.example.com';
 
@@ -72,8 +72,6 @@ describe('getGitConnectUrl', () => {
 });
 
 describe('getAddWorkspaceUrl', () => {
-	// The API only reports addWorkspaceUrl when an installation already exists, so the CLI needs its own
-	// value for the one case that actually needs the link.
 	it('builds the app installation URL', () => {
 		expect(getAddWorkspaceUrl('github')).toBe('https://github.com/apps/apify/installations/new');
 	});
@@ -94,7 +92,7 @@ describe('chooseWorkspace', () => {
 		expect(await chooseWorkspace(one, undefined, false)).toEqual({ workspace: 'l2ysho' });
 	});
 
-	it('matches a requested workspace case-insensitively, since provider logins are', async () => {
+	it('matches a requested workspace case-insensitively', async () => {
 		expect(await chooseWorkspace(two, 'L2YSHO', false)).toEqual({ workspace: 'l2ysho' });
 	});
 
@@ -102,8 +100,6 @@ describe('chooseWorkspace', () => {
 		expect(await chooseWorkspace(two, 'someone-else', false)).toEqual({ stopReason: 'unknownWorkspace' });
 	});
 
-	// Workspace order is not meaningful — a personal account can sort behind an employer's org — so
-	// guessing would risk creating a repository in the wrong place.
 	it('refuses to guess between several workspaces when it cannot ask', async () => {
 		expect(await chooseWorkspace(two, undefined, false)).toEqual({ stopReason: 'ambiguousWorkspace' });
 	});

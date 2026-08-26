@@ -120,9 +120,8 @@ export function formatCreateSuccessMessage(params: {
 	message += `\n\nNext steps:\n\n${nextSteps.join('\n')}`;
 
 	if (gitRemote) {
-		// A Git-sourced Actor is built from the repository, so `apify push` is the wrong advice, and the
-		// scaffold is already in it. Automatic builds are opt-in (and off by default), so do not promise
-		// that a plain `git push` rebuilds anything.
+		// A Git-sourced Actor builds from the repository, so `apify push` is the wrong advice. Automatic
+		// builds are off by default, so do not promise that a plain `git push` rebuilds anything.
 		message += `\n\n🌱 Connected to ${gitRemote.remoteUrl} — Actor ${gitRemote.actorId} builds from this repository.`;
 		message += `\n💡 Tip: Turn on Automatic builds in the Actor's Source settings to rebuild on every push.`;
 	} else {
