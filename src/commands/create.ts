@@ -87,6 +87,14 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Create without installing dependencies (faster; run install yourself later).',
 			command: 'apify create my-actor --template python-start --skip-dependency-install',
 		},
+		{
+			description: 'Host the source code on GitHub. Apify creates the repository and builds the Actor from it.',
+			command: 'apify create my-actor --template js-crawlee-cheerio --source github',
+		},
+		{
+			description: 'Name the account and the repository to create, instead of being asked.',
+			command: 'apify create my-actor --template js-crawlee-cheerio --source github --git-repo my-org/my-scraper',
+		},
 	];
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-create';

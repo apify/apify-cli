@@ -494,6 +494,9 @@ export const runGitSourceFlow = async ({
 
 	let repo: CreatedRemoteRepo;
 	try {
+		info({
+			message: `Creating ${isPrivate ? 'private' : 'public'} repository ${workspace}/${repoName} from the template...`,
+		});
 		repo = await createRemoteRepo({
 			client,
 			provider,
@@ -502,17 +505,14 @@ export const runGitSourceFlow = async ({
 			isPrivate,
 			templateArchiveUrl,
 		});
-		info({
-			message: `Created ${isPrivate ? 'private' : 'public'} repository ${workspace}/${repoName} from the template.`,
-		});
 	} catch (err) {
 		const stopReason = err instanceof CreateRemoteRepoError ? err.stopReason : 'repoCreateFailed';
 		return stopped(stopReason, err, { workspaces });
 	}
 
 	try {
+		info({ message: `Cloning ${repo.httpsUrl}...` });
 		await cloneRepo(actorDir, repo.httpsUrl, isInteractive);
-		info({ message: `Cloned ${repo.httpsUrl}.` });
 		scaffolded = true;
 
 		await customize(actorDir);
