@@ -123,7 +123,7 @@ describe('buildGitSourceNextSteps', () => {
 		'noWorkspace',
 		'unknownWorkspace',
 		'ambiguousWorkspace',
-		'repoNameTaken',
+		'repoNameRejected',
 		'repoCreateFailed',
 		'gitSetupFailed',
 		'actorCreateFailed',

@@ -30,7 +30,7 @@ export type GitSourceStopReason =
 	| 'noWorkspace'
 	| 'unknownWorkspace'
 	| 'ambiguousWorkspace'
-	| 'repoNameTaken'
+	| 'repoNameRejected'
 	| 'repoCreateFailed'
 	| 'gitSetupFailed'
 	| 'actorCreateFailed';
@@ -335,7 +335,7 @@ const createRemoteRepo = async (options: CreateRemoteRepoOptions): Promise<Creat
 	// 401 and 403 both mean the user has to (re-)authorize: a stored token the provider has since revoked
 	// still looks connected on the Apify side, so it only surfaces here.
 	if (type && NEEDS_AUTH.has(type)) throw new CreateRemoteRepoError(message, 'notAuthorized');
-	if (type === 'invalid-parameter') throw new CreateRemoteRepoError(message, 'repoNameTaken');
+	if (type === 'invalid-parameter') throw new CreateRemoteRepoError(message, 'repoNameRejected');
 
 	throw new CreateRemoteRepoError(message, 'repoCreateFailed');
 };
@@ -542,8 +542,12 @@ export const buildGitSourceNextSteps = ({
 		case 'unknownWorkspace':
 		case 'ambiguousWorkspace':
 			return [`Re-run naming the account: --git-repo <account>/${repoName}`];
-		case 'repoNameTaken':
-			return [`Re-run with a free repository name: --git-repo <account>/<other-name>`];
+		// The provider rejects a taken name and a malformed one the same way, so name both.
+		case 'repoNameRejected':
+			return [
+				`Re-run with a different repository name: --git-repo <account>/<other-name>`,
+				'The name has to be free, and to use only letters, numbers, hyphens and underscores',
+			];
 		case 'repoCreateFailed':
 			return ['Re-run apify create to try again'];
 		case 'gitSetupFailed':
