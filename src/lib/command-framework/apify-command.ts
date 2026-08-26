@@ -17,6 +17,7 @@ import { trackEvent } from '../hooks/telemetry/trackEvent.js';
 import { checkAndUpdateLastCommand } from '../hooks/telemetry/useTelemetryState.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
+import { useRentalSunsetNotice } from '../hooks/useRentalSunsetNotice.js';
 import { error } from '../outputs.js';
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import { CommandError, CommandErrorCode } from './CommandError.js';
@@ -263,6 +264,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	protected skipTelemetry = false;
 
+	protected skipNotices = false;
+
 	public constructor(entrypoint: string, commandString: string, aliasUsed: string, subcommandAliasUsed?: string) {
 		this.entrypoint = entrypoint;
 		this.commandString = commandString;
@@ -419,6 +422,12 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				this.telemetryData.wasRetried = await checkAndUpdateLastCommand(this.commandString);
 
 				await trackEvent('cli_command', this.telemetryData);
+			}
+
+			// A notice stacked on top of an error message is noise the user did not ask for, and it
+			// would also make an interrupted command wait on the Store lookup before exiting.
+			if (!this.skipNotices && !process.exitCode) {
+				await useRentalSunsetNotice();
 			}
 		}
 	}
@@ -961,6 +970,9 @@ export async function internalRunCommand<Cmd extends typeof BuiltApifyCommand>(
 
 	// eslint-disable-next-line dot-notation
 	instance['skipTelemetry'] = true;
+
+	// eslint-disable-next-line dot-notation
+	instance['skipNotices'] = true;
 
 	// eslint-disable-next-line dot-notation
 	await instance['_run'](rawObject);
