@@ -30,7 +30,6 @@ import { updateLocalJson } from '../lib/files.js';
 import {
 	buildGitSourceNextSteps,
 	getGitStopUrl,
-	commitLocalConfig,
 	GIT_SOURCE_CHOICES,
 	type GitSource,
 	type GitSourceResult,
@@ -543,26 +542,6 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				});
 			} catch (err) {
 				gitInitResult = { success: false, error: err as Error };
-			}
-		}
-
-		// Committed here rather than inside the Git flow so that the lockfile the install produces is part
-		// of it: the templates' CI runs `npm ci`, so a repository without one fails its first build.
-		if (gitResult && !gitResult.stopReason) {
-			if (!dependenciesInstalled) {
-				warning({
-					message:
-						'No dependency lockfile was created, so the repository has none to commit.' +
-						" The template's CI needs one — install dependencies and commit the lockfile before pushing.",
-				});
-			}
-
-			try {
-				if (await commitLocalConfig(actFolderDir)) {
-					info({ message: 'Committed the Actor configuration locally — push it when you are ready.' });
-				}
-			} catch (err) {
-				warning({ message: `Could not commit the Actor configuration: ${(err as Error).message}` });
 			}
 		}
 

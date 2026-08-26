@@ -357,23 +357,6 @@ const cloneRepo = async (dir: string, httpsUrl: string, isInteractive: boolean) 
 	await execa('git', ['clone', httpsUrl, dir], { env });
 };
 
-/**
- * Commits what `apify create` adds on top of the clone: the Actor name in `.actor/actor.json`, which
- * `apify push` resolves by, and the lockfile, without which the templates' CI `npm ci` fails its first
- * build. Called after the install, so the lockfile exists. Not pushed — that needs write credentials.
- *
- * ponytail: the name half disappears if `create-repo` learns to write the Actor name itself, which is
- * also what would fix the same bug in the Console flow.
- */
-export const commitLocalConfig = async (dir: string) => {
-	const { stdout } = await execa('git', ['status', '--porcelain'], { cwd: dir });
-	if (!stdout.trim()) return false;
-
-	await execa('git', ['add', '-A'], { cwd: dir });
-	await execa('git', ['commit', '-m', 'Configure Actor'], { cwd: dir });
-	return true;
-};
-
 const createGitActor = async ({
 	client,
 	actorName,
