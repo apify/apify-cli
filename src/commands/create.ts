@@ -557,6 +557,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 						httpsUrl: gitResult.httpsUrl,
 						repoName: gitSetup.repoName,
 						scaffolded: gitResult.scaffolded,
+						actorId: gitResult.actorId,
 					})
 				: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
 

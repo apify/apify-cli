@@ -33,7 +33,8 @@ export type GitSourceStopReason =
 	| 'repoNameRejected'
 	| 'repoCreateFailed'
 	| 'gitSetupFailed'
-	| 'actorCreateFailed';
+	| 'actorCreateFailed'
+	| 'deploymentKeyFailed';
 
 export interface GitSourceResult {
 	remoteUrl: string | null;
@@ -373,6 +374,48 @@ const createGitActor = async ({
 		],
 	} as never);
 
+/**
+ * Registers the Actor's own read-only deploy key on the repository, so the build worker can clone it over
+ * SSH. Without this a private repository cannot be built at all. Console does the same, silently.
+ *
+ * Runs after `createGitActor`: the key is generated with the Actor, and this endpoint reads it from there.
+ */
+const registerDeploymentKey = async ({
+	client,
+	provider,
+	actorId,
+	repoUrl,
+}: ApiCallOptions & { provider: GitProvider; actorId: string; repoUrl: string }) => {
+	const { providerId } = GIT_PROVIDERS[provider];
+
+	const url = apiUrl({ client }, `integrations/git/${providerId}/register-deployment-key`);
+	const body = JSON.stringify({ actorId, repoName: repoUrl });
+	cliDebugPrint('git-source', 'POST', url, body);
+
+	const response = await fetch(url, {
+		method: 'POST',
+		headers: { ...authHeader({ client }), 'Content-Type': 'application/json' },
+		body,
+	});
+
+	const raw = await response.text();
+	cliDebugPrint('git-source', 'POST', url, '->', response.status, raw.slice(0, 400));
+
+	if (response.ok) return;
+
+	// The API distinguishes a revoked token, a denied key, a missing repository and a duplicate key, but
+	// they all leave the user in one place: no key, so no build. Its own message says which.
+	const message = (() => {
+		try {
+			return (JSON.parse(raw) as { error?: { message?: string } }).error?.message;
+		} catch {
+			return null;
+		}
+	})();
+
+	throw new Error(message || `${response.status} ${response.statusText}`);
+};
+
 export interface RunGitSourceFlowOptions extends ApiCallOptions {
 	provider: GitProvider;
 	actorDir: string;
@@ -477,22 +520,37 @@ export const runGitSourceFlow = async ({
 		return stopped('gitSetupFailed', err, { workspaces, remoteUrl: repo.sshUrl, httpsUrl: repo.httpsUrl });
 	}
 
+	let actorId: string;
 	try {
 		// The Actor keeps the SSH URL: what the Console stores, and the platform clones with its own key.
 		const actor = await createGitActor({ client, actorName, gitRepoUrl: repo.sshUrl });
 		info({ message: `Created Actor ${actor.name} on Apify.` });
-		return {
-			remoteUrl: repo.sshUrl,
-			httpsUrl: repo.httpsUrl,
-			actorId: actor.id,
-			workspaces,
-			stopReason: null,
-			error: null,
-			scaffolded: true,
-		};
+		actorId = actor.id;
 	} catch (err) {
 		return stopped('actorCreateFailed', err, { workspaces, remoteUrl: repo.sshUrl, httpsUrl: repo.httpsUrl });
 	}
+
+	try {
+		await registerDeploymentKey({ client, provider, actorId, repoUrl: repo.htmlUrl });
+	} catch (err) {
+		// Everything else landed, so the Actor exists and is reported — it just cannot build yet.
+		return stopped('deploymentKeyFailed', err, {
+			workspaces,
+			remoteUrl: repo.sshUrl,
+			httpsUrl: repo.httpsUrl,
+			actorId,
+		});
+	}
+
+	return {
+		remoteUrl: repo.sshUrl,
+		httpsUrl: repo.httpsUrl,
+		actorId,
+		workspaces,
+		stopReason: null,
+		error: null,
+		scaffolded: true,
+	};
 };
 
 /**
@@ -516,6 +574,8 @@ export interface GitSourceNextStepsOptions {
 	repoName: string;
 	/** False means the clone never landed, so there is no local repository to recover. */
 	scaffolded: boolean;
+	/** Set once the Actor exists, so a later stop can link to it. */
+	actorId?: string | null;
 }
 
 /** What to tell the user, or hand an agent in `--json`, once the Git wiring has stopped. */
@@ -527,6 +587,7 @@ export const buildGitSourceNextSteps = ({
 	httpsUrl,
 	repoName,
 	scaffolded,
+	actorId,
 }: GitSourceNextStepsOptions): string[] => {
 	const enter = `cd "${actorName}"`;
 
@@ -558,6 +619,13 @@ export const buildGitSourceNextSteps = ({
 				: [`git clone ${httpsUrl} "${actorName}"`, enter];
 		case 'actorCreateFailed':
 			return [enter, `Create an Actor from ${remoteUrl} in Apify Console`];
+		// Repository, clone and Actor all landed. Only the build key is missing, and the platform cannot
+		// read a private repository without it.
+		case 'deploymentKeyFailed':
+			return [
+				enter,
+				`Add the Apify deploy key in the Actor's Source settings before building: ${getConsoleUrl()}/actors/${actorId}`,
+			];
 	}
 };
 

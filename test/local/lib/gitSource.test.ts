@@ -127,6 +127,7 @@ describe('buildGitSourceNextSteps', () => {
 		'repoCreateFailed',
 		'gitSetupFailed',
 		'actorCreateFailed',
+		'deploymentKeyFailed',
 	] as const)('leaves something actionable after %s', (stopReason) => {
 		const steps = buildGitSourceNextSteps({ ...base, stopReason });
 
