@@ -10,7 +10,7 @@ import { fetchManifest, manifestUrl } from '@apify/actor-templates';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
-import { Flags, YesFlag } from '../lib/command-framework/flags.js';
+import { Flags } from '../lib/command-framework/flags.js';
 import {
 	EMPTY_LOCAL_CONFIG,
 	LOCAL_CONFIG_PATH,
@@ -68,7 +68,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for an Actor name, then guides you through what you want to build, a language, a template, and where the source code lives when they are not provided. To run non-interactively, pass the name, --template and --source, or pass --yes to take the defaults. Use --use-case and --language to narrow the template list.';
+		'Prompts for an Actor name, then guides you through what you want to build, a language, a template, and where the source code lives when they are not provided. To run non-interactively, pass the name and --template; --source defaults to "apify". Use --use-case and --language to narrow the template list.';
 
 	static override examples = [
 		{
@@ -140,9 +140,6 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				'Repository to create, as "workspace/name" — a workspace being an account or organization you have given Apify access to. A bare value is read as the name, not the workspace. The name defaults to the Actor name, and the workspace is asked for when you have more than one. List yours with "apify api integrations/git". Only used when --source is a Git provider.',
 			required: false,
 		}),
-		...YesFlag(
-			'Run without prompts. Pass the Actor name and --template, which have no default; everything else takes its default.',
-		),
 		origin: Flags.string({
 			description: 'Where the command was invoked from. Used for funnel telemetry.',
 			choices: ['console', 'cli'],
@@ -172,7 +169,6 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			origin,
 			json,
 			gitRepo,
-			yes,
 		} = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
@@ -180,19 +176,19 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		let { templateArchiveUrl } = this.flags;
 		let skipOptionalDeps = false;
 
-		// Both flags mean "do not ask". The name and the template have no default, so reject a run missing
-		// either before any directory is created.
-		const nonInteractive = json || yes;
-		const nonInteractiveFlag = json ? '--json' : '--yes';
+		// A caller parsing stdout cannot answer a prompt. The name and the template have no default, so
+		// reject a run missing either before any directory is created. Both are reported at once, so one
+		// failed run is enough to learn what to pass.
+		const needsTemplate = !templateName && !templateArchiveUrl;
 
-		if (nonInteractive && !actorName) {
-			throw new Error(`${nonInteractiveFlag} runs non-interactively. Pass the Actor name as an argument.`);
-		}
+		if (json && (!actorName || needsTemplate)) {
+			const missing = [
+				...(actorName ? [] : ['the Actor name as an argument']),
+				...(needsTemplate ? ['--template <name>'] : []),
+			];
+			const templateHint = needsTemplate ? ' Run "apify templates ls" to list template names.' : '';
 
-		if (nonInteractive && !templateName && !templateArchiveUrl) {
-			throw new Error(
-				`${nonInteractiveFlag} runs non-interactively. Pass --template <name>; run \`apify templates ls\` to list values.`,
-			);
+			throw new Error(`--json runs non-interactively. Pass ${missing.join(' and ')}.${templateHint}`);
 		}
 
 		let source = this.flags.source as GitSource | undefined;
@@ -221,7 +217,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					`Cannot create new Actor, directory '${actorName}' already exists. Provide a different name.` +
 					' To create a local Actor environment inside an existing directory, use "apify init".';
 
-				if (nonInteractive) {
+				if (json) {
 					throw new Error(message);
 				}
 
@@ -270,7 +266,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// The prompt helpers cannot be relied on for this: `useStdin` marks any non-TTY stdin as having
 		// data, so their own non-interactive fallback only fires under CI.
 		const { isTTY } = await useStdin();
-		const isInteractive = isTTY && !isCI && !nonInteractive;
+		const isInteractive = isTTY && !isCI && !json;
 
 		// Last wizard step, matching the Console. A run that cannot be asked keeps the previous behaviour.
 		source ??= isInteractive ? await promptGitSource() : 'apify';

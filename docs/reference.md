@@ -281,7 +281,7 @@ USAGE
                  [-l javascript|js|typescript|ts|python|py]
                  [--omit-optional-deps] [--skip-dependency-install]
                  [--skip-git-init] [--source apify|github] [-t <value>]
-                 [-u web-scraper|ai-agent|data-pipeline|browser-automation] [-y]
+                 [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory.
@@ -324,9 +324,6 @@ FLAGS
                                  "apify templates ls".
                                  <options:
                                  web-scraper|ai-agent|data-pipeline|browser-automation>
-  -y, --yes                      Run without prompts.
-                                 Pass the Actor name and --template, which have no
-                                 default; everything else takes its default.
 ```
 
 ##### `apify templates`
