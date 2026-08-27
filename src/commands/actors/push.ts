@@ -145,8 +145,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			command: 'apify push E2jjCZBezvAZnX8Rb --force',
 		},
 		{
-			description: 'Deploy without waiting for the build to finish.',
-			command: 'apify push --no-wait-for-finish',
+			description: 'Deploy without waiting for the build to finish (fire-and-forget).',
+			command: 'apify push --wait-for-finish=0',
 		},
 	];
 
