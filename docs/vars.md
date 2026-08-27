@@ -92,4 +92,4 @@ By default, custom environment variables are available only at runtime. To make 
 }
 ```
 
-Alternatively, pass the `--apply-env-vars-to-build` flag to `apify push` for a one-off push, or `--no-apply-env-vars-to-build` to turn the setting off. The flag overrides the `applyEnvVarsToBuild` field. When both are omitted, the setting currently stored on the Apify platform is kept.
+To apply the environment variables to a single push, add the `--apply-env-vars-to-build` flag to the `apify push` command. To turn off the setting for a single push, add the `--no-apply-env-vars-to-build` flag. The flag overrides the value of the `applyEnvVarsToBuild` field. If you don't use a flag, the Apify platform keeps the stored setting.
