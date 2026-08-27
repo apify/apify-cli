@@ -280,7 +280,8 @@ USAGE
   $ apify create [actorName] [--git-repo <value>] [--json]
                  [-l javascript|js|typescript|ts|python|py]
                  [--omit-optional-deps] [--skip-dependency-install]
-                 [--skip-git-init] [--source apify|github] [-t <value>]
+                 [--skip-git-init] [--source apify|github|gitlab|bitbucket]
+                 [-t <value>]
                  [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
@@ -312,7 +313,7 @@ FLAGS
                                  repository on your connected GitHub account from
                                  the template, clones it here, and creates an Actor
                                  that builds from it.
-                                 <options: apify|github>
+                                 <options: apify|github|gitlab|bitbucket>
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
                                  it. Visit

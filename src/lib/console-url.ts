@@ -20,6 +20,11 @@ export function getConsoleUrl(): string {
 	return DEFAULT_CONSOLE_URL;
 }
 
+/** Where a user manages the accounts Apify is connected to, including the git providers. */
+export function getConsoleIntegrationsUrl(): string {
+	return `${getConsoleUrl()}/settings/integrations`;
+}
+
 function stripTrailingSlash(value: string): string {
 	return value.replace(/\/+$/, '');
 }

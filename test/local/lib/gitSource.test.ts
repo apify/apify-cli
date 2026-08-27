@@ -4,7 +4,7 @@ import {
 	buildGitSourceNextSteps,
 	getAddWorkspaceUrl,
 	getGitConnectUrl,
-	type GitProviderIntegration,
+	type ResolvedWorkspace,
 	type GitSourceResult,
 	isGitProvider,
 	logGitSourceOutcome,
@@ -36,7 +36,38 @@ describe('parseGitRepoFlag', () => {
 describe('isGitProvider', () => {
 	it('separates the Git-backed sources from the default one', () => {
 		expect(isGitProvider('github')).toBe(true);
+		expect(isGitProvider('gitlab')).toBe(true);
+		expect(isGitProvider('bitbucket')).toBe(true);
 		expect(isGitProvider('apify')).toBe(false);
+	});
+
+	it('rejects a source that is not a choice at all', () => {
+		expect(isGitProvider('gitea')).toBe(false);
+	});
+});
+
+// GitLab and Bitbucket mint their CSRF state server-side, so the CLI cannot build either URL for them
+// and hands off to Console instead.
+describe('providers the CLI cannot authorize itself', () => {
+	it.each(['gitlab', 'bitbucket'] as const)('sends %s to the Console integrations page', (provider) => {
+		expect(getGitConnectUrl(provider)).toBe('https://console.apify.com/settings/integrations');
+		expect(getAddWorkspaceUrl(provider)).toBe('https://console.apify.com/settings/integrations');
+	});
+
+	it.each(['gitlab', 'bitbucket'] as const)('still points %s at Console in the next steps', (provider) => {
+		const steps = buildGitSourceNextSteps({
+			actorName: 'my-scraper',
+			provider,
+			stopReason: 'notAuthorized',
+			remoteUrl: null,
+			httpsUrl: null,
+			repoName: 'my-scraper',
+			scaffolded: false,
+		});
+
+		// A null URL used to interpolate as the string "null".
+		expect(steps.join('\n')).not.toContain('null');
+		expect(steps).toContainEqual(expect.stringContaining('/settings/integrations'));
 	});
 });
 
@@ -78,22 +109,24 @@ describe('getAddWorkspaceUrl', () => {
 });
 
 describe('chooseWorkspace', () => {
-	const two: GitProviderIntegration = {
-		id: 'github-app',
-		provider: 'github',
-		workspaces: [
-			{ id: 'apify', label: 'apify' },
-			{ id: 'l2ysho', label: 'l2ysho' },
-		],
-	};
-	const one: GitProviderIntegration = { ...two, workspaces: [{ id: 'l2ysho', label: 'l2ysho' }] };
+	const apify: ResolvedWorkspace = { id: 'apify', label: 'apify', providerId: 'github-app' };
+	const l2ysho: ResolvedWorkspace = { id: 'l2ysho', label: 'l2ysho', providerId: 'github-app' };
+	const two = [apify, l2ysho];
+
+	// GitLab addresses a namespace by numeric id, so the id and the label differ there.
+	const gitlabGroup: ResolvedWorkspace = { id: '4711', label: 'my-group/sub', providerId: 'integration-1' };
 
 	it('uses the only workspace when there is just one', async () => {
-		expect(await chooseWorkspace(one, undefined, false)).toEqual({ workspace: 'l2ysho' });
+		expect(await chooseWorkspace([l2ysho], undefined, false)).toEqual({ workspace: l2ysho });
 	});
 
 	it('matches a requested workspace case-insensitively', async () => {
-		expect(await chooseWorkspace(two, 'L2YSHO', false)).toEqual({ workspace: 'l2ysho' });
+		expect(await chooseWorkspace(two, 'L2YSHO', false)).toEqual({ workspace: l2ysho });
+	});
+
+	// --git-repo 4711/my-scraper is not something anyone would type, so the label resolves too.
+	it('matches a requested workspace by label when the id is opaque', async () => {
+		expect(await chooseWorkspace([gitlabGroup], 'My-Group/Sub', false)).toEqual({ workspace: gitlabGroup });
 	});
 
 	it('rejects a workspace the user has not connected', async () => {
@@ -102,6 +135,14 @@ describe('chooseWorkspace', () => {
 
 	it('refuses to guess between several workspaces when it cannot ask', async () => {
 		expect(await chooseWorkspace(two, undefined, false)).toEqual({ stopReason: 'ambiguousWorkspace' });
+	});
+
+	// Two connected GitLab accounts are two integrations; each workspace keeps the one that owns it.
+	it('keeps the owning account on each workspace', async () => {
+		const other: ResolvedWorkspace = { id: '99', label: 'other-group', providerId: 'integration-2' };
+		const chosen = await chooseWorkspace([gitlabGroup, other], 'other-group', false);
+
+		expect(chosen).toEqual({ workspace: other });
 	});
 });
 
