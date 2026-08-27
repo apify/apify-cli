@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
@@ -197,6 +197,43 @@ describe('apify create', () => {
 
 		expect(lastErrorMessage()).toMatch(/already exists/);
 		expect(logMessages.log).toHaveLength(0);
+	});
+
+	// Validation runs before the download and the token, so these need no network. The directory is made
+	// before the check, so what has to hold is that it stays empty.
+	it('--source github with --skip-git-init fails without scaffolding anything', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_source: 'github',
+			flags_skipGitInit: true,
+		});
+
+		expect(lastErrorMessage()).toMatch(/--skip-git-init/);
+		await expect(readdir(tmpPath)).resolves.toEqual([]);
+	});
+
+	it('--source github with --template-archive-url fails without scaffolding anything', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_source: 'github',
+			flags_templateArchiveUrl: 'https://example.com/template.zip',
+		});
+
+		expect(lastErrorMessage()).toMatch(/--template-archive-url/);
+		await expect(readdir(tmpPath)).resolves.toEqual([]);
+	});
+
+	// Without a terminal the source step takes the Apify path, which is not what --git-repo asked for.
+	it('--git-repo without a Git source fails without scaffolding anything', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_gitRepo: 'acme/my-scraper',
+		});
+
+		expect(lastErrorMessage()).toMatch(/--git-repo/);
+		await expect(readdir(tmpPath)).resolves.toEqual([]);
 	});
 
 	it('records the hidden --origin flag in telemetry', async () => {

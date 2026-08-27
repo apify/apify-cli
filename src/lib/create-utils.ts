@@ -102,19 +102,37 @@ export function formatCreateSuccessMessage(params: {
 	postCreate?: string | null;
 	gitRepositoryInitialized?: boolean;
 	installCommandSuggestion?: string | null;
+	/** Set once the Actor is wired to a Git remote, which changes how it gets deployed. */
+	gitRemote?: { remoteUrl: string; actorId: string } | null;
 }) {
-	const { actorName, dependenciesInstalled, postCreate, gitRepositoryInitialized, installCommandSuggestion } = params;
+	const {
+		actorName,
+		dependenciesInstalled,
+		postCreate,
+		gitRepositoryInitialized,
+		installCommandSuggestion,
+		gitRemote,
+	} = params;
 
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
 	const nextSteps = buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
 	message += `\n\nNext steps:\n\n${nextSteps.join('\n')}`;
 
-	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
+	if (gitRemote) {
+		// A Git-sourced Actor builds from the repository, so `apify push` is the wrong advice. Automatic
+		// builds are off by default, so do not promise that a plain `git push` rebuilds anything.
+		message += `\n\n🌱 Connected to ${gitRemote.remoteUrl} — Actor ${gitRemote.actorId} builds from this repository.`;
+		message += `\n💡 Tip: Turn on Automatic builds in the Actor's Source settings to rebuild on every push.`;
+	} else {
+		message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform`;
 
-	if (gitRepositoryInitialized) {
-		message += `\n🌱 Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`;
+		if (gitRepositoryInitialized) {
+			message += `\n🌱 Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`;
+		}
 	}
+
+	message += `\n📖 Docs: https://docs.apify.com/platform/actors/development`;
 
 	if (postCreate) {
 		message += `\n\n${postCreate}`;

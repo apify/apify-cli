@@ -277,16 +277,24 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName] [--json]
+  $ apify create [actorName] [--git-repo <value>] [--json]
                  [-l javascript|js|typescript|ts|python|py]
                  [--omit-optional-deps] [--skip-dependency-install]
-                 [--skip-git-init] [-t <value>]
+                 [--skip-git-init] [--source apify|github] [-t <value>]
                  [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
+      --git-repo=<value>         Repository to create, as
+                                 "workspace/name" — a workspace being an account or
+                                 organization you have given Apify access to. A bare
+                                 value is read as the name, not the workspace. The
+                                 name defaults to the Actor name, and the workspace
+                                 is asked for when you have more than one. List
+                                 yours with "apify api integrations/git". Only used
+                                 when --source is a Git provider.
       --json                     Format the command
                                  output as JSON.
   -l, --language=<option>        Filter templates by
@@ -299,6 +307,12 @@ FLAGS
                                  dependencies.
       --skip-git-init            Skip initializing a git
                                  repository in the Actor directory.
+      --source=<option>          Where the Actor source
+                                 code will live. With "github", Apify creates the
+                                 repository on your connected GitHub account from
+                                 the template, clones it here, and creates an Actor
+                                 that builds from it.
+                                 <options: apify|github>
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
                                  it. Visit

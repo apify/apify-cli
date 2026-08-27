@@ -2,6 +2,7 @@ import { mkdir, readdir, stat } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
+import { isCI } from 'ci-info';
 import { gte, minVersion } from 'semver';
 import which from 'which';
 
@@ -26,15 +27,29 @@ import {
 } from '../lib/create-utils.js';
 import { execWithLog } from '../lib/exec.js';
 import { updateLocalJson } from '../lib/files.js';
+import {
+	buildGitSourceNextSteps,
+	getGitStopUrl,
+	GIT_SOURCE_CHOICES,
+	type GitSource,
+	type GitSourceResult,
+	isGitProvider,
+	parseGitRepoFlag,
+	promptGitSource,
+	logGitSourceOutcome,
+	runGitSourceFlow,
+} from '../lib/git-source/gitSource.js';
 import { usePythonRuntime } from '../lib/hooks/runtimes/python.js';
 import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
+import { useStdin } from '../lib/hooks/useStdin.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, simpleLog, success, warning } from '../lib/outputs.js';
 import { LANGUAGE_FLAG_CHOICES, USE_CASE_FLAG_CHOICES } from '../lib/templates/consts.js';
 import {
 	downloadAndUnzip,
 	getJsonFileContent,
+	getLoggedClientOrThrow,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
 	printJsonToStdout,
@@ -53,7 +68,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for an Actor name, then guides you through what you want to build, a language, and a template when they are not provided. To run non-interactively, pass the name and --template. Use --use-case and --language to narrow the template list.';
+		'Prompts for an Actor name, then guides you through what you want to build, a language, a template, and where the source code lives when they are not provided. To run non-interactively, pass the name and --template; --source defaults to "apify". Use --use-case and --language to narrow the template list.';
 
 	static override examples = [
 		{
@@ -71,6 +86,14 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		{
 			description: 'Create without installing dependencies (faster; run install yourself later).',
 			command: 'apify create my-actor --template python-start --skip-dependency-install',
+		},
+		{
+			description: 'Host the source code on GitHub. Apify creates the repository and builds the Actor from it.',
+			command: 'apify create my-actor --template js-crawlee-cheerio --source github',
+		},
+		{
+			description: 'Name the account and the repository to create, instead of being asked.',
+			command: 'apify create my-actor --template js-crawlee-cheerio --source github --git-repo my-org/my-scraper',
 		},
 	];
 
@@ -113,6 +136,18 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description: 'Skip initializing a git repository in the Actor directory.',
 			required: false,
 		}),
+		source: Flags.string({
+			description:
+				'Where the Actor source code will live. With "github", Apify creates the repository on your connected GitHub account from the template, clones it here, and creates an Actor that builds from it.',
+			choices: [...GIT_SOURCE_CHOICES],
+			// No default: an omitted flag triggers the wizard prompt, or "apify" when it cannot be asked.
+			required: false,
+		}),
+		'git-repo': Flags.string({
+			description:
+				'Repository to create, as "workspace/name" — a workspace being an account or organization you have given Apify access to. A bare value is read as the name, not the workspace. The name defaults to the Actor name, and the workspace is asked for when you have more than one. List yours with "apify api integrations/git". Only used when --source is a Git provider.',
+			required: false,
+		}),
 		origin: Flags.string({
 			description: 'Where the command was invoked from. Used for funnel telemetry.',
 			choices: ['console', 'cli'],
@@ -133,24 +168,38 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 	async run() {
 		let { actorName } = this.args;
-		const { template: templateName, useCase, language, skipDependencyInstall, skipGitInit, origin, json } = this.flags;
+		const {
+			template: templateName,
+			useCase,
+			language,
+			skipDependencyInstall,
+			skipGitInit,
+			origin,
+			json,
+			gitRepo,
+		} = this.flags;
 
 		// --template-archive-url is an internal, undocumented flag that's used
 		// for testing of templates that are not yet published in the manifest
 		let { templateArchiveUrl } = this.flags;
 		let skipOptionalDeps = false;
 
-		// `--json` implies non-interactive: a caller parsing stdout cannot answer a prompt. Reject
-		// before creating any directories so a failed run leaves nothing behind.
-		if (json && !actorName) {
-			throw new Error('--json runs non-interactively. Pass the Actor name as an argument.');
+		// A caller parsing stdout cannot answer a prompt. The name and the template have no default, so
+		// reject a run missing either before any directory is created. Both are reported at once, so one
+		// failed run is enough to learn what to pass.
+		const needsTemplate = !templateName && !templateArchiveUrl;
+
+		if (json && (!actorName || needsTemplate)) {
+			const missing = [
+				...(actorName ? [] : ['the Actor name as an argument']),
+				...(needsTemplate ? ['--template <name>'] : []),
+			];
+			const templateHint = needsTemplate ? ' Run "apify templates ls" to list template names.' : '';
+
+			throw new Error(`--json runs non-interactively. Pass ${missing.join(' and ')}.${templateHint}`);
 		}
 
-		if (json && !templateName && !templateArchiveUrl) {
-			throw new Error(
-				'--json runs non-interactively. Pass --template <name>; run `apify templates ls` to list values.',
-			);
-		}
+		let source = this.flags.source as GitSource | undefined;
 
 		// Start fetching manifest immediately to prevent
 		// annoying delays that sometimes happen on CLI startup.
@@ -222,22 +271,81 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			skipOptionalDeps = true;
 		}
 
-		await downloadAndUnzip({ url: templateArchiveUrl, pathTo: actFolderDir });
+		// The prompt helpers cannot be relied on for this: `useStdin` marks any non-TTY stdin as having
+		// data, so their own non-interactive fallback only fires under CI.
+		const { isTTY } = await useStdin();
+		const isInteractive = isTTY && !isCI && !json;
 
-		// There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
-		const localConfig = getJsonFileContent(join(actFolderDir, LOCAL_CONFIG_PATH));
-		await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), actFolderDir);
-		await setLocalEnv(actFolderDir);
+		// Last wizard step, matching the Console. A run that cannot be asked keeps the previous behaviour.
+		source ??= isInteractive ? await promptGitSource() : 'apify';
+		const gitProvider = isGitProvider(source) ? source : null;
+		this.telemetryData.create.source = source;
 
-		// Create prefilled INPUT.json file from the input schema prefills
-		await createPrefilledInputFileFromInputSchema(actFolderDir);
+		// Validate before anything downloads a template or asks for a token, so a bad flag combination
+		// costs no more than the empty directory made above.
+		if (gitProvider && skipGitInit) {
+			throw new Error(`--source ${source} clones a git repository, so --skip-git-init cannot apply.`);
+		}
+
+		// Catches a non-interactive run that named a repository but omitted --source, which would
+		// otherwise silently take the Apify path.
+		if (!gitProvider && gitRepo) {
+			throw new Error('--git-repo only applies to a Git source, so add --source github or drop it.');
+		}
+
+		// The platform only accepts archive URLs listed in the official manifest.
+		if (gitProvider && this.flags.templateArchiveUrl) {
+			throw new Error(`--template-archive-url is not supported with --source ${source}.`);
+		}
+
+		const gitSetup = gitProvider
+			? {
+					provider: gitProvider,
+					client: await getLoggedClientOrThrow(),
+					...parseGitRepoFlag(gitRepo, actorName),
+				}
+			: null;
+
+		// Local-only setup, applied to the unzipped archive or to the clone, whichever the run produced.
+		const applyLocalConfig = async (dir: string) => {
+			// There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
+			const localConfig = getJsonFileContent(join(dir, LOCAL_CONFIG_PATH));
+			await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), dir);
+			await setLocalEnv(dir);
+
+			// Create prefilled INPUT.json file from the input schema prefills
+			await createPrefilledInputFileFromInputSchema(dir);
+		};
+
+		if (!gitProvider) {
+			await downloadAndUnzip({ url: templateArchiveUrl, pathTo: actFolderDir });
+			await applyLocalConfig(actFolderDir);
+
+			// Add localReadmeSuffix which is fetched from manifest to README.md
+			// The suffix contains local development instructions. The Git path skips it: the platform
+			// already appended its own while seeding the repository.
+			await enhanceReadmeWithLocalSuffix(join(actFolderDir, 'README.md'), manifestPromise);
+		}
 
 		const packageJsonPath = join(actFolderDir, 'package.json');
-		const readmePath = join(actFolderDir, 'README.md');
 
-		// Add localReadmeSuffix which is fetched from manifest to README.md
-		// The suffix contains local development instructions
-		await enhanceReadmeWithLocalSuffix(readmePath, manifestPromise);
+		// Replaces the unzip above: the platform seeds the repository and the CLI clones it. Never throws.
+		let gitResult: GitSourceResult | null = null;
+		if (gitSetup) {
+			gitResult = await runGitSourceFlow({
+				provider: gitSetup.provider,
+				actorDir: actFolderDir,
+				actorName,
+				workspace: gitSetup.workspace,
+				repoName: gitSetup.repoName,
+				// No way to ask for a public one yet; a visibility flag is coming to Console and the CLI together.
+				isPrivate: true,
+				templateArchiveUrl,
+				client: gitSetup.client,
+				isInteractive,
+				customize: applyLocalConfig,
+			});
+		}
 
 		let dependenciesInstalled = false;
 		if (!skipDependencyInstall) {
@@ -419,7 +527,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Initialize git repository before reporting success, but store result for later
 		let gitInitResult: { success: boolean; error?: Error } = { success: true };
 		const cwdHasGit = await stat(join(cwd, '.git')).catch(() => null);
-		const gitInitAttempted = !skipGitInit && !cwdHasGit;
+		// Skip when the Actor directory is already a repository, which the Git path's clone has made it.
+		const actorDirHasGit = await stat(join(actFolderDir, '.git')).catch(() => null);
+		const stoppedEmpty = gitResult !== null && !gitResult.scaffolded;
+		const gitInitAttempted = !skipGitInit && !cwdHasGit && !actorDirHasGit && !stoppedEmpty;
 
 		if (gitInitAttempted) {
 			try {
@@ -436,20 +547,49 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Suggest install command if dependencies were not installed
 		const installCommandSuggestion = !dependenciesInstalled ? await getInstallCommandSuggestion(actFolderDir) : null;
 
-		const gitRepositoryInitialized = gitInitAttempted && gitInitResult.success;
+		// The Git path's clone makes it a repository too, not only `git init`.
+		const gitRepositoryInitialized = (gitInitAttempted && gitInitResult.success) || Boolean(actorDirHasGit);
+
+		// Any stop leaves the Actor unwired, so the command fails. `--json` callers read `stopReason`, but
+		// a shell script sees only $?.
+		if (gitResult?.stopReason) process.exitCode = 1;
+
+		// A stop has its own recovery steps; anything else uses the normal ones, since the user may still
+		// need to install dependencies.
+		const gitNextSteps =
+			gitSetup && gitResult?.stopReason
+				? buildGitSourceNextSteps({
+						actorName,
+						stopReason: gitResult.stopReason,
+						provider: gitSetup.provider,
+						remoteUrl: gitResult.remoteUrl,
+						httpsUrl: gitResult.httpsUrl,
+						repoName: gitSetup.repoName,
+						scaffolded: gitResult.scaffolded,
+						actorId: gitResult.actorId,
+					})
+				: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
+
+		const reportSuccess = !gitResult?.stopReason;
 
 		if (json) {
 			printJsonToStdout({
 				dir: actFolderDir,
 				actorJsonPath: join(actFolderDir, LOCAL_CONFIG_PATH),
 				template: templateId,
-				source: 'apify',
-				nextSteps: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion }),
+				source,
+				nextSteps: gitNextSteps,
 				// Some templates need extra setup (e.g. "playwright install") before "apify run" works.
 				postCreate: messages?.postCreate ?? null,
 				gitRepositoryInitialized,
+				remote: gitResult?.remoteUrl ?? null,
+				actorId: gitResult?.actorId ?? null,
+				stopReason: gitResult?.stopReason ?? null,
+				error: gitResult?.error ?? null,
+				gitConnectUrl: gitProvider ? getGitStopUrl(gitProvider, gitResult?.stopReason ?? null) : null,
+				workspaces: gitResult?.workspaces ?? null,
 			});
-		} else {
+		} else if (reportSuccess) {
 			simpleLog({ message: '' });
 			success({
 				message: formatCreateSuccessMessage({
@@ -458,6 +598,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					postCreate: messages?.postCreate ?? null,
 					gitRepositoryInitialized,
 					installCommandSuggestion,
+					gitRemote:
+						gitResult?.remoteUrl && gitResult.actorId
+							? { remoteUrl: gitResult.remoteUrl, actorId: gitResult.actorId }
+							: null,
 				}),
 			});
 		}
@@ -467,5 +611,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			warning({ message: `Failed to initialize git repository: ${gitInitResult.error!.message}` });
 			warning({ message: 'You can manually run "git init" in the Actor directory if needed.' });
 		}
+
+		if (gitResult && !json) logGitSourceOutcome(gitResult, gitNextSteps);
 	}
 }
