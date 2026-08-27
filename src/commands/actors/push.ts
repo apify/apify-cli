@@ -71,6 +71,24 @@ interface PushOutcome {
 	errorMessage?: string;
 }
 
+// Parses --env values in KEY=VALUE format into an env object.
+export function parseEnvFlags(entries: string[]): Record<string, string> {
+	// null prototype so a key like __proto__ is stored instead of silently swallowed
+	const result: Record<string, string> = Object.create(null);
+
+	for (const entry of entries) {
+		const separatorIndex = entry.indexOf('=');
+
+		if (separatorIndex < 1) {
+			throw new Error(`Invalid --env value "${entry}", expected KEY=VALUE format.`);
+		}
+
+		result[entry.slice(0, separatorIndex)] = entry.slice(separatorIndex + 1);
+	}
+
+	return result;
+}
+
 // Maps the final build status to the overall push outcome. A still-running
 // fire-and-forget build is not a failure (`ok: true`) — its pending state is
 // conveyed by the build status, and it carries no exit code yet.
@@ -191,6 +209,11 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			required: false,
 			default: false,
 		}),
+		env: Flags.string({
+			description: `Set an environment variable for the Actor, in KEY=VALUE format. Can be used multiple times. Merged with (and overriding) 'environmentVariables' from the '${LOCAL_CONFIG_PATH}' file. Note that using this flag replaces the full list of environment variables stored on the platform, removing any that were set only in Apify Console.`,
+			multiple: true,
+			required: false,
+		}),
 		'apply-env-vars-to-build': Flags.boolean({
 			description: `Make the environment variables also available to the Actor build process. To turn the setting off, use --no-apply-env-vars-to-build. Overrides the value of the 'applyEnvVarsToBuild' field in the '${LOCAL_CONFIG_PATH}' file. Without a flag, the setting currently stored on the platform is kept.`,
 			required: false,
@@ -209,6 +232,16 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	async run() {
 		// Resolving with `.` will mean stay in the cwd folder, whereas anything else in dir will be resolved. If users pass in a full path (`/home/...`, it will correctly resolve to that)
 		const cwd = resolve(process.cwd(), this.flags.dir ?? '.');
+
+		let cliEnvVars: Record<string, string> = {};
+
+		try {
+			cliEnvVars = parseEnvFlags(this.flags.env ?? []);
+		} catch (err) {
+			error({ message: (err as Error).message });
+			process.exitCode = CommandExitCodes.InvalidInput;
+			return;
+		}
 
 		// Validate there are files before rest of the logic
 		const filePathsToPush = await getActorLocalFilePaths(cwd);
@@ -405,11 +438,18 @@ Skipping push. Use --force to override.`,
 
 		// Update Actor version
 		const actorCurrentVersion = await actorClient.version(version).get();
-		const envVars = actorConfig!.environmentVariables
-			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>, undefined, {
-					allowMissing: this.flags.allowMissingSecrets,
-				})
-			: undefined;
+		const environmentVariables = {
+			...(actorConfig!.environmentVariables as Record<string, string> | undefined),
+			...cliEnvVars,
+		};
+		// Sent whenever actor.json has the field (even empty, which clears the platform vars) or --env is used;
+		// otherwise omitted entirely so the platform vars are preserved
+		const envVars =
+			actorConfig!.environmentVariables || this.flags.env?.length
+				? transformEnvToEnvVars(environmentVariables, undefined, {
+						allowMissing: this.flags.allowMissingSecrets,
+					})
+				: undefined;
 		// undefined when neither the flag nor the actor.json field is set, so the value stored on the platform is preserved
 		const applyEnvVarsToBuild =
 			this.flags.applyEnvVarsToBuild ?? (actorConfig!.applyEnvVarsToBuild as boolean | undefined);

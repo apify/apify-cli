@@ -75,6 +75,22 @@ You can use the CLI to manage secrets environment variables:
     }
     ```
 
+### Pass variables on the command line
+
+For one-off pushes (for example in CI), pass variables directly to `apify push` with the repeatable `--env` flag:
+
+```bash
+apify push --env MYSQL_USER=my_username --env MYSQL_PASSWORD=@mySecretPassword
+```
+
+The values are merged with `environmentVariables` from `.actor/actor.json`; when a key is defined in both, the `--env` value wins. The `@` prefix references stored secrets the same way as in the file.
+
+:::caution
+
+Pushing with `--env` (just like pushing with `environmentVariables` in `.actor/actor.json`) replaces the full list of environment variables stored on the platform. Variables set only in Apify Console are removed — include them in `.actor/actor.json` or `--env` if you want to keep them.
+
+:::
+
 ### Apply environment variables to the build
 
 By default, custom environment variables are available only at runtime. To make them available also to the Actor build process, for example, as Docker build arguments, set `applyEnvVarsToBuild` in `.actor/actor.json`:

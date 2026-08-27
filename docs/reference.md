@@ -761,7 +761,8 @@ DESCRIPTION
 USAGE
   $ apify actors push [actorId] [--allow-missing-secrets]
                       [--apply-env-vars-to-build] [-b <value>] [--dir <value>]
-                      [-f] [--json] [--open] [-v <value>] [-w <value>]
+                      [--env <value>...] [-f] [--json] [--open] [-v <value>]
+                      [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -785,6 +786,14 @@ FLAGS
                                  it is taken from the '.actor/actor.json' file.
       --dir=<value>              Directory where the
                                  Actor is located.
+      --env=<value>...           Set an environment
+                                 variable for the Actor, in KEY=VALUE format. Can be
+                                 used multiple times. Merged with (and overriding)
+                                 'environmentVariables' from the '.actor/actor.json'
+                                 file. Note that using this flag replaces the full
+                                 list of environment variables stored on the
+                                 platform, removing any that were set only in Apify
+                                 Console.
   -f, --force                    Push an Actor even
                                  when the local files are older than the Actor on
                                  the platform.

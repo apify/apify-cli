@@ -8,6 +8,7 @@ import { createHmacSignature } from '@apify/utilities';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { addSecret, removeSecret } from '../../../src/lib/secrets.js';
 import { createSourceFiles, getActorLocalFilePaths, getLocalUserInfo } from '../../../src/lib/utils.js';
 import { testUserClient } from '../../__setup__/config.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
@@ -324,6 +325,125 @@ describe('[api] apify push', () => {
 				expect(versionWithNegatedFlagOverride!.applyEnvVarsToBuild).to.be.eql(false);
 			} finally {
 				delete actorJson.applyEnvVarsToBuild;
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+				await testActorClient.delete();
+			}
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should merge --env values over actor.json environmentVariables',
+		async () => {
+			const testActor = await testUserClient.actors().create(TEST_ACTOR);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			try {
+				actorJson.environmentVariables = { FROM_FILE: 'file', SHARED: 'file' };
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+				await testRunCommand(ActorsPushCommand, {
+					args_actorId: testActor.id,
+					flags_noPrompt: true,
+					flags_force: true,
+					flags_env: ['SHARED=cli', 'FROM_CLI=cli'],
+				});
+
+				const version = await testActorClient.version(actorJson.version).get();
+
+				expect(version!.envVars).to.have.deep.members([
+					{ name: 'FROM_FILE', value: 'file' },
+					{ name: 'SHARED', value: 'cli' },
+					{ name: 'FROM_CLI', value: 'cli' },
+				]);
+			} finally {
+				delete actorJson.environmentVariables;
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+				await testActorClient.delete();
+			}
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should resolve @secret values from both actor.json and --env as secret env vars',
+		async () => {
+			const testActor = await testUserClient.actors().create(TEST_ACTOR);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			addSecret('pushTestSecret', 'push-test-secret-value');
+
+			try {
+				actorJson.environmentVariables = { FROM_FILE_SECRET: '@pushTestSecret', PLAIN: 'plain-value' };
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+				await testRunCommand(ActorsPushCommand, {
+					args_actorId: testActor.id,
+					flags_noPrompt: true,
+					flags_force: true,
+					flags_env: ['FROM_CLI_SECRET=@pushTestSecret'],
+				});
+
+				const version = await testActorClient.version(actorJson.version).get();
+				const varsByName = Object.fromEntries(version!.envVars!.map((envVar) => [envVar.name, envVar]));
+
+				expect(Object.keys(varsByName).sort()).to.be.eql(['FROM_CLI_SECRET', 'FROM_FILE_SECRET', 'PLAIN']);
+				expect(varsByName.PLAIN.isSecret).to.be.not.eql(true);
+				expect(varsByName.PLAIN.value).to.be.eql('plain-value');
+				expect(varsByName.FROM_FILE_SECRET.isSecret).to.be.eql(true);
+				expect(varsByName.FROM_CLI_SECRET.isSecret).to.be.eql(true);
+				// secret values must never come back in plain text
+				expect(varsByName.FROM_FILE_SECRET.value).to.be.not.eql('push-test-secret-value');
+				expect(varsByName.FROM_CLI_SECRET.value).to.be.not.eql('push-test-secret-value');
+			} finally {
+				removeSecret('pushTestSecret');
+				delete actorJson.environmentVariables;
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+				await testActorClient.delete();
+			}
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should clear platform env vars when actor.json has an empty environmentVariables object',
+		async () => {
+			// preservation with the field absent is covered by 'should not rewrite current Actor envVars'
+			const testActorWithEnvVars = { ...TEST_ACTOR };
+			testActorWithEnvVars.versions = [
+				{
+					versionNumber: '0.0',
+					sourceType: 'SOURCE_FILES' as never,
+					buildTag: 'latest',
+					sourceFiles: [],
+					envVars: [{ name: 'PLATFORM_VAR', value: 'platformValue' }],
+				},
+			];
+			const testActor = await testUserClient.actors().create(testActorWithEnvVars);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			try {
+				// an empty environmentVariables object is still an explicit value and clears the platform vars
+				actorJson.environmentVariables = {};
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+				await testRunCommand(ActorsPushCommand, {
+					args_actorId: testActor.id,
+					flags_noPrompt: true,
+					flags_force: true,
+				});
+
+				const version = await testActorClient.version(actorJson.version).get();
+
+				expect(version!.envVars).to.be.eql([]);
+			} finally {
+				delete actorJson.environmentVariables;
 				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
 				await testActorClient.delete();
 			}
