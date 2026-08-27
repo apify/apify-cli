@@ -9,6 +9,7 @@ import { getConsoleIntegrationsUrl, getConsoleUrl } from '../console-url.js';
 import { createLocalApiServer } from '../local-api-server.js';
 import { info } from '../outputs.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import type { GitProvider } from './gitSource.js';
 
 // Matches the version `apify login` serves its loopback routes under; Console reads it from the
 // `localCliApiVersion` query param and builds the callback URL from it.
@@ -16,7 +17,9 @@ const API_VERSION = 'v1';
 
 const CONNECT_TIMEOUT_MS = 5 * 60_000;
 
-export type ConnectViaConsoleResult = { connected: true } | { stopReason: string; message: string };
+export type ConnectViaConsoleResult =
+	| { connected: true }
+	| { stopReason: 'connectCancelled' | 'connectTimedOut'; message: string };
 
 /**
  * Connects a git provider that the CLI cannot authorize on its own.
@@ -28,7 +31,7 @@ export type ConnectViaConsoleResult = { connected: true } | { stopReason: string
  *
  * The caller re-reads the integration list afterwards, so the reported id is only logged.
  */
-export const connectViaConsole = async (provider: string): Promise<ConnectViaConsoleResult> => {
+export const connectViaConsole = async (provider: GitProvider, label: string): Promise<ConnectViaConsoleResult> => {
 	const consoleUrl = getConsoleUrl();
 	const authToken = cryptoRandomObjectId();
 
@@ -52,8 +55,8 @@ export const connectViaConsole = async (provider: string): Promise<ConnectViaCon
 				resolve({
 					stopReason: 'connectCancelled',
 					message: body.isWindowClosed
-						? `Connecting your ${provider} account stopped: the Apify Console window was closed.`
-						: `Connecting your ${provider} account was canceled in Apify Console.`,
+						? `Connecting your ${label} account stopped: the Apify Console window was closed.`
+						: `Connecting your ${label} account was canceled in Apify Console.`,
 				});
 			},
 		},
@@ -63,7 +66,7 @@ export const connectViaConsole = async (provider: string): Promise<ConnectViaCon
 		() =>
 			resolve({
 				stopReason: 'connectTimedOut',
-				message: `Connecting your ${provider} account did not finish within ${CONNECT_TIMEOUT_MS / 60_000} minutes.`,
+				message: `Connecting your ${label} account did not finish within ${CONNECT_TIMEOUT_MS / 60_000} minutes.`,
 			}),
 		CONNECT_TIMEOUT_MS,
 	);
@@ -84,7 +87,7 @@ export const connectViaConsole = async (provider: string): Promise<ConnectViaCon
 		// Not critical, and it only labels the request in Console.
 	}
 
-	info({ message: `Connect your ${provider} account to Apify: ${url.href}` });
+	info({ message: `Connect your ${label} account to Apify: ${url.href}` });
 	// Printed above as well — a headless session, or a machine with no usable default browser, still needs it.
 	open(url.href).catch(() => undefined);
 	info({ message: 'Waiting for the connection to complete in your browser...' });

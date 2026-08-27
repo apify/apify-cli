@@ -123,7 +123,7 @@ export const promptGitSource = async (): Promise<GitSource> =>
 			{ name: 'Apify', value: 'apify', description: 'Deploy with "apify push". No Git provider involved.' },
 			...GIT_SOURCE_CHOICES.filter(isGitProvider).map((provider) => ({
 				name: GIT_PROVIDERS[provider].label,
-				value: provider as GitSource,
+				value: provider,
 				description: `Apify creates a private repository on ${GIT_PROVIDERS[provider].label} and builds the Actor from it.`,
 			})),
 		],
@@ -131,16 +131,23 @@ export const promptGitSource = async (): Promise<GitSource> =>
 		loop: false,
 	});
 
-/** Splits `--git-repo` into workspace and name. A bare `name` leaves the workspace to be resolved. */
+/**
+ * Splits `--git-repo` into workspace and name. A bare `name` leaves the workspace to be resolved. The
+ * name is the part after the last slash: a GitLab subgroup label has slashes of its own.
+ */
 export const parseGitRepoFlag = (gitRepo: string | undefined, actorName: string) => {
 	if (!gitRepo) return { workspace: undefined, repoName: actorName };
 
-	const [first, second, ...rest] = gitRepo.split('/');
-	if (rest.length > 0 || (second !== undefined && (!first || !second))) {
+	const splitAt = gitRepo.lastIndexOf('/');
+	if (splitAt === -1) return { workspace: undefined, repoName: gitRepo };
+
+	const workspace = gitRepo.slice(0, splitAt);
+	const repoName = gitRepo.slice(splitAt + 1);
+	if (!workspace || !repoName) {
 		throw new Error(`Invalid --git-repo "${gitRepo}". Use "workspace/name" or just "name".`);
 	}
 
-	return second === undefined ? { workspace: undefined, repoName: first } : { workspace: first, repoName: second };
+	return { workspace, repoName };
 };
 
 /** The client the command already built, so the token is resolved and the user checked once per run. */
@@ -217,7 +224,7 @@ interface ProviderState {
  * GitHub is one integration holding every account it is installed on. GitLab and Bitbucket report one
  * integration per connected account, so taking the first would hide the rest.
  */
-const readProviderState = (integrations: GitProviderIntegration[], provider: GitProvider): ProviderState => {
+export const readProviderState = (integrations: GitProviderIntegration[], provider: GitProvider): ProviderState => {
 	const mine = integrations.filter((integration) => integration.provider === provider);
 
 	return {
@@ -237,7 +244,7 @@ const POLL_TIMEOUT_MS = 3 * 60_000;
 /**
  * Makes sure the provider is connected and has at least one workspace, opening the browser and polling
  * if not. Nothing comes back to the CLI directly — the browser hands the code to Console — so polling
- * the API is the only way to know it finished. Returns null when the user never did.
+ * the API is the only way to know it finished. Returns the last state seen when the user never did.
  *
  * Two separate grants are needed: OAuth authorization makes the integration appear at all, while
  * installing the app populates `workspaces`. Authorizing again cannot fix a missing installation, so the
@@ -256,9 +263,11 @@ const ensureUsableIntegration = async (
 	// Agents and CI must never be parked on a browser; the caller emits the URL and stops instead.
 	if (!isInteractive) return state;
 
+	const { label, authorize } = GIT_PROVIDERS[provider];
+
 	// GitLab and Bitbucket cannot build an authorize URL, so Console starts the flow and reports back.
-	if (!state.connected && !GIT_PROVIDERS[provider].authorize) {
-		const result = await connectViaConsole(provider);
+	if (!state.connected && !authorize) {
+		const result = await connectViaConsole(provider, label);
 		if ('stopReason' in result) {
 			warning({ message: result.message });
 			return state;
@@ -267,7 +276,6 @@ const ensureUsableIntegration = async (
 		return load();
 	}
 
-	const { label } = GIT_PROVIDERS[provider];
 	// The API derives its own URL from an existing installation, so it knows the right one when it has it.
 	const url = state.connected ? (state.addWorkspaceUrl ?? getAddWorkspaceUrl(provider)) : getGitConnectUrl(provider);
 	const what = state.connected ? `Give Apify access to a ${label} account` : `Connect your ${label} account to Apify`;
@@ -516,11 +524,12 @@ export const runGitSourceFlow = async ({
 		return stopped('lookupFailed', err);
 	}
 
+	const { label } = GIT_PROVIDERS[provider];
 	if (!resolved.connected) {
-		return stopped('notAuthorized', new Error(`Apify is not authorized to access your ${provider} account.`));
+		return stopped('notAuthorized', new Error(`Apify is not authorized to access your ${label} account.`));
 	}
 	if (!resolved.workspaces.length) {
-		return stopped('noWorkspace', new Error(`Apify has no ${provider} account to create the repository in.`));
+		return stopped('noWorkspace', new Error(`Apify has no ${label} account to create the repository in.`));
 	}
 
 	// Labels, not ids: GitLab's ids are numeric namespace ids that mean nothing to the user.

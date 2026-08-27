@@ -4,12 +4,14 @@ import {
 	buildGitSourceNextSteps,
 	getAddWorkspaceUrl,
 	getGitConnectUrl,
+	type GitProviderIntegration,
 	type ResolvedWorkspace,
 	type GitSourceResult,
 	isGitProvider,
 	logGitSourceOutcome,
 	parseGitRepoFlag,
 	chooseWorkspace,
+	readProviderState,
 } from '../../../src/lib/git-source/gitSource.js';
 
 describe('parseGitRepoFlag', () => {
@@ -28,7 +30,15 @@ describe('parseGitRepoFlag', () => {
 		});
 	});
 
-	it.each(['acme-inc/', '/my-scraper', 'a/b/c'])('rejects %s', (value) => {
+	// A GitLab subgroup label has slashes of its own, so only the last segment is the name.
+	it('keeps a subgroup path together as the workspace', () => {
+		expect(parseGitRepoFlag('my-group/sub/my-scraper', 'ignored')).toEqual({
+			workspace: 'my-group/sub',
+			repoName: 'my-scraper',
+		});
+	});
+
+	it.each(['acme-inc/', '/my-scraper'])('rejects %s', (value) => {
 		expect(() => parseGitRepoFlag(value, 'my-scraper')).toThrow(/Use "workspace\/name" or just "name"/);
 	});
 });
@@ -65,7 +75,7 @@ describe('providers the CLI cannot authorize itself', () => {
 			scaffolded: false,
 		});
 
-		// A null URL used to interpolate as the string "null".
+		// A missing URL must not interpolate as the string "null".
 		expect(steps.join('\n')).not.toContain('null');
 		expect(steps).toContainEqual(expect.stringContaining('/settings/integrations'));
 	});
@@ -105,6 +115,40 @@ describe('getGitConnectUrl', () => {
 describe('getAddWorkspaceUrl', () => {
 	it('builds the app installation URL', () => {
 		expect(getAddWorkspaceUrl('github')).toBe('https://github.com/apps/apify/installations/new');
+	});
+});
+
+describe('readProviderState', () => {
+	const integrations: GitProviderIntegration[] = [
+		{ id: 'github-app', provider: 'github', workspaces: [{ id: 'apify', label: 'apify' }] },
+		{
+			id: 'integration-1',
+			provider: 'gitlab',
+			workspaces: [{ id: '4711', label: 'my-group' }],
+			addWorkspaceUrl: 'https://gitlab.example.com/add',
+		},
+		{ id: 'integration-2', provider: 'gitlab', workspaces: [{ id: '99', label: 'other-group' }] },
+	];
+
+	// GitLab and Bitbucket report one integration per connected account; taking the first would
+	// silently drop every other account.
+	it('merges the workspaces of every connected account, each keeping its own account id', () => {
+		expect(readProviderState(integrations, 'gitlab')).toEqual({
+			connected: true,
+			workspaces: [
+				{ id: '4711', label: 'my-group', providerId: 'integration-1' },
+				{ id: '99', label: 'other-group', providerId: 'integration-2' },
+			],
+			addWorkspaceUrl: 'https://gitlab.example.com/add',
+		});
+	});
+
+	it('does not let one provider satisfy a lookup for another', () => {
+		expect(readProviderState(integrations, 'bitbucket')).toEqual({
+			connected: false,
+			workspaces: [],
+			addWorkspaceUrl: undefined,
+		});
 	});
 });
 
