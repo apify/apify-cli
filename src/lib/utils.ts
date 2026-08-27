@@ -117,20 +117,31 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 };
 
 /**
- * Gets instance of ApifyClient for user otherwise throws error
+ * Gets instance of ApifyClient for user otherwise throws error.
+ *
+ * When APIFY_TOKEN is present in the environment and no on-disk auth exists,
+ * this treats the command as authenticated with the env token — no prior
+ * `apify login` needed. Primary use case: CI and agent harnesses that ship
+ * a token via env and would otherwise hit an auth wall on the first command.
  */
 export async function getLoggedClientOrThrow() {
 	const loggedClient = await getLoggedClient();
 
 	if (!loggedClient) {
 		process.exitCode = CommandExitCodes.MissingAuth;
-		throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
+		const hint = process.env.APIFY_TOKEN
+			? 'APIFY_TOKEN is set in the environment but did not validate against the Apify API. Check that the token is current and has access to this workspace.'
+			: 'You are not logged in with your Apify account. Call "apify login" to fix that, or export APIFY_TOKEN in your environment (recommended for CI/agent contexts).';
+		throw new Error(hint);
 	}
 	return loggedClient;
 }
 
 const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
 	if (existingToken) return existingToken;
+	// Prefer APIFY_TOKEN from env when set — matches Apify SDK behavior and lets
+	// agents/CI skip `apify login`. Falls through to keyring/auth.json when unset.
+	if (process.env.APIFY_TOKEN) return process.env.APIFY_TOKEN;
 	await ensureMigrated();
 	return getToken();
 };
