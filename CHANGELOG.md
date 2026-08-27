@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.9.0](https://github.com/apify/apify-cli/releases/tag/v1.9.0) (2026-08-27)
+
+### 🚀 Features
+
+- **install:** Single-bundle install&#x2F;upgrade scripts ([#1219](https://github.com/apify/apify-cli/pull/1219)) ([bb346ec](https://github.com/apify/apify-cli/commit/bb346ec0a538d4494ab39503d25685bd3a179f36)) by [@vladfrangu](https://github.com/vladfrangu)
+- Add task publish and unpublish commands ([#1317](https://github.com/apify/apify-cli/pull/1317)) ([b5bbc08](https://github.com/apify/apify-cli/commit/b5bbc08407cea88d88aeeed728a89bef7810dbb4)) by [@Janjiran](https://github.com/Janjiran)
+- **create:** Machine-readable --json output and hidden --origin flag ([#1280](https://github.com/apify/apify-cli/pull/1280)) ([1255d2f](https://github.com/apify/apify-cli/commit/1255d2f5fb3dc07127b7894f995e55925bf34f20)) by [@l2ysho](https://github.com/l2ysho), closes [#1238](https://github.com/apify/apify-cli/issues/1238)
+- Warn rental Actor publishers about the rental model sunset ([#1347](https://github.com/apify/apify-cli/pull/1347)) ([ffc6605](https://github.com/apify/apify-cli/commit/ffc66050cc4fb4740d16c53059b51b89ac96149d)) by [@patrikbraborec](https://github.com/patrikbraborec), closes [#1344](https://github.com/apify/apify-cli/issues/1344)
+- Add `--source github` to create Git-sourced Actors ([#1348](https://github.com/apify/apify-cli/pull/1348)) ([4502c46](https://github.com/apify/apify-cli/commit/4502c468ecfe8d4e0282b28150291cf056792888)) by [@l2ysho](https://github.com/l2ysho), closes [#1237](https://github.com/apify/apify-cli/issues/1237)
+
+### 🐛 Bug Fixes
+
+- Validate actors search choice flags ([#1332](https://github.com/apify/apify-cli/pull/1332)) ([0e25909](https://github.com/apify/apify-cli/commit/0e25909488e495000a6a860fc96a48fc09f63fe2)) by [@kuntal1461](https://github.com/kuntal1461), closes [#1322](https://github.com/apify/apify-cli/issues/1322)
+- Allow tilde in inline JSON input ([#1331](https://github.com/apify/apify-cli/pull/1331)) ([99f3cc1](https://github.com/apify/apify-cli/commit/99f3cc18f1cfa8d6ff22f91f6f3bb917cbdf3e4b)) by [@kuntal1461](https://github.com/kuntal1461), closes [#1281](https://github.com/apify/apify-cli/issues/1281)
+
+
 ## [1.8.0](https://github.com/apify/apify-cli/releases/tag/v1.8.0) (2026-08-11)
 
 ### 🚀 Features
