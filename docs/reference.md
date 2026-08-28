@@ -690,15 +690,19 @@ DESCRIPTION
 
 USAGE
   $ apify actors ls [--desc] [--json] [--limit <value>] [--my]
-                    [--offset <value>]
+                    [--offset <value>] [--private | --public]
 
 FLAGS
       --desc            Sort Actors in descending order.
       --json            Format the command output as JSON.
       --limit=<value>   Number of Actors that will be listed.
+                        Defaults to 20.
       --my              Whether to list Actors made by the logged
                         in user.
       --offset=<value>  Number of Actors that will be skipped.
+                        Defaults to 0.
+      --private         Show only private Actors.
+      --public          Show only public Actors.
 ```
 
 ##### `apify actors search`
