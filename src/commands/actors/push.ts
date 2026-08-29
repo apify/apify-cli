@@ -182,6 +182,25 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			default: false,
 			required: false,
 		}),
+		// Aliases for --force. Agents frequently confabulate npm/apt-style skip-confirmation flags
+		// (--yes, -y, --no-prompt, --no-interactive) instead of Apify's --force. Accept them all so
+		// the command does what the user obviously meant rather than failing with "Unknown flag".
+		yes: Flags.boolean({
+			char: 'y',
+			description: 'Alias for --force. Accepted so npm/apt-style `--yes` / `-y` work with `apify push`.',
+			default: false,
+			required: false,
+		}),
+		'no-prompt': Flags.boolean({
+			description: 'Alias for --force. Accepted so `--no-prompt` works with `apify push`.',
+			default: false,
+			required: false,
+		}),
+		'no-interactive': Flags.boolean({
+			description: 'Alias for --force. Accepted so `--no-interactive` works with `apify push`.',
+			default: false,
+			required: false,
+		}),
 		dir: Flags.string({
 			description: 'Directory where the Actor is located.',
 			required: false,
@@ -347,8 +366,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				}, 0);
 				const actorModifiedMs = client?.modifiedAt.valueOf();
 
+				// npm/apt-style skip-confirmation flags are treated as aliases for --force.
+				const skipStalenessCheck =
+					this.flags.force || this.flags.yes || this.flags.noPrompt || this.flags.noInteractive;
+
 				if (
-					!this.flags.force &&
+					!skipStalenessCheck &&
 					actorModifiedMs &&
 					mostRecentModifiedFileMs < actorModifiedMs &&
 					(actorConfig?.name || forceActorId)
