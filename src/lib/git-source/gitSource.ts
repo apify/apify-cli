@@ -10,6 +10,7 @@ import { ACTOR_SOURCE_TYPES } from '@apify/consts';
 import { getConsoleUrl } from '../console-url.js';
 import { useSelectFromList } from '../hooks/user-confirmations/useSelectFromList.js';
 import { info, warning } from '../outputs.js';
+import type { AuthJSON } from '../types.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 
 /** Where a new Actor's source code lives. `apify` is the existing, Git-less path. */
@@ -83,11 +84,37 @@ const GIT_PROVIDERS = {
 	},
 } satisfies Record<GitProvider, GitProviderConfig>;
 
+/**
+ * The Apify account the CLI token belongs to, as `auth.json` records it. An organization login is the case
+ * that matters: Console completes the exchange as whichever account its own route prefix selects, so
+ * without that prefix the grant lands on the personal account behind the organization instead.
+ */
+export interface GitAccount {
+	id?: string;
+	username?: string;
+	organizationOwnerUserId?: string;
+}
+
+/** Narrows the stored login to what the handoff needs, so the token is not carried around with it. */
+export const toGitAccount = ({ id, username, organizationOwnerUserId }: AuthJSON): GitAccount => ({
+	id,
+	username,
+	organizationOwnerUserId,
+});
+
+/** The Console route the callback page has to run under to complete the exchange as this account. */
+const getConsoleRoutePrefix = (account?: GitAccount) =>
+	account?.organizationOwnerUserId && account.id ? `/organization/${account.id}` : null;
+
 /** Where to send a user who has not connected this provider to Apify yet. */
-export const getGitConnectUrl = (provider: GitProvider) => {
+export const getGitConnectUrl = (provider: GitProvider, account?: GitAccount) => {
 	const { authorizeEndpoint, defaultClientId, clientIdEnvVar, redirectPath } = GIT_PROVIDERS[provider];
 
 	const redirectUri = new URL(redirectPath, getConsoleUrl());
+	const routePrefix = getConsoleRoutePrefix(account);
+	// Encoded twice on purpose, matching Console: it encodes the prefix into the query it builds, and the
+	// callback page decodes it once of its own accord before navigating there.
+	if (routePrefix) redirectUri.searchParams.set('routePrefix', encodeURIComponent(routePrefix));
 
 	const url = new URL(authorizeEndpoint);
 	url.searchParams.set('client_id', process.env[clientIdEnvVar] || defaultClientId);
@@ -207,7 +234,7 @@ const POLL_TIMEOUT_MS = 3 * 60_000;
  */
 const ensureUsableIntegration = async (
 	provider: GitProvider,
-	{ client, isInteractive }: ApiCallOptions & { isInteractive: boolean },
+	{ client, isInteractive, account }: ApiCallOptions & { isInteractive: boolean; account?: GitAccount },
 ): Promise<GitProviderIntegration | null> => {
 	const load = async () => findIntegration(await fetchGitIntegrations({ client }), provider);
 
@@ -222,13 +249,27 @@ const ensureUsableIntegration = async (
 	// Agents and CI must never be parked on a browser; the caller emits the URL and stops instead.
 	if (!isInteractive) return integration ?? null;
 
-	const url = integration ? integration.addWorkspaceUrl || getAddWorkspaceUrl(provider) : getGitConnectUrl(provider);
-	const what = integration ? `Give Apify access to a ${provider} account` : `Connect your ${provider} account to Apify`;
+	// Which grant is missing decides the URL, and authorizing changes the answer: the integration then
+	// exists with no workspaces, and only installing the app fills them. So this is re-read every poll,
+	// and a URL that has already been opened is never opened twice.
+	let openedUrl: string | null = null;
+	const offer = async (current: GitProviderIntegration | undefined) => {
+		const url = current ? current.addWorkspaceUrl || getAddWorkspaceUrl(provider) : getGitConnectUrl(provider, account);
+		if (url === openedUrl) return;
+		openedUrl = url;
 
-	info({ message: `${what}: ${url}` });
-	// Printed above as well — a headless session, or a machine with no usable default browser, still needs it.
-	await open(url).catch(() => undefined);
-	info({ message: 'Waiting for authorization to complete in your browser...' });
+		const what = current ? `Give Apify access to a ${provider} account` : `Connect your ${provider} account to Apify`;
+		info({ message: `${what}: ${url}` });
+		// Printed above as well — a headless session, or a machine with no usable default browser, still needs it.
+		await open(url).catch(() => undefined);
+		info({
+			message: account?.username
+				? `Waiting for authorization to complete in your browser. It connects ${provider} to the Apify account ${account.username}.`
+				: 'Waiting for authorization to complete in your browser...',
+		});
+	};
+
+	await offer(integration);
 
 	const deadline = Date.now() + POLL_TIMEOUT_MS;
 	let interval = POLL_INTERVAL_START_MS;
@@ -237,6 +278,7 @@ const ensureUsableIntegration = async (
 		interval = Math.min(Math.round(interval * 1.5), POLL_INTERVAL_MAX_MS);
 		integration = await load();
 		if (integration?.workspaces.length) return integration;
+		await offer(integration);
 	}
 
 	return integration ?? null;
@@ -425,6 +467,8 @@ export interface RunGitSourceFlowOptions extends ApiCallOptions {
 	isPrivate: boolean;
 	templateArchiveUrl: string;
 	isInteractive: boolean;
+	/** The account the run authorizes as, so an organization login connects the organization. */
+	account?: GitAccount;
 	/** Local-only setup for the clone. Runs between the clone and the commit, so its changes land in git. */
 	customize: (dir: string) => Promise<void>;
 }
@@ -443,6 +487,7 @@ export const runGitSourceFlow = async ({
 	isPrivate,
 	templateArchiveUrl,
 	isInteractive,
+	account,
 	customize,
 }: RunGitSourceFlowOptions): Promise<GitSourceResult> => {
 	let scaffolded = false;
@@ -464,16 +509,17 @@ export const runGitSourceFlow = async ({
 
 	let integration: GitProviderIntegration | null;
 	try {
-		integration = await ensureUsableIntegration(provider, { client, isInteractive });
+		integration = await ensureUsableIntegration(provider, { client, isInteractive, account });
 	} catch (err) {
 		return stopped('lookupFailed', err);
 	}
 
+	const who = account?.username ? `The Apify account ${account.username}` : 'Apify';
 	if (!integration) {
-		return stopped('notAuthorized', new Error(`Apify is not authorized to access your ${provider} account.`));
+		return stopped('notAuthorized', new Error(`${who} is not authorized to access ${provider}.`));
 	}
 	if (!integration.workspaces.length) {
-		return stopped('noWorkspace', new Error(`Apify has no ${provider} account to create the repository in.`));
+		return stopped('noWorkspace', new Error(`${who} has no ${provider} account to create the repository in.`));
 	}
 
 	const workspaces = integration.workspaces.map(({ id }) => id);
@@ -557,8 +603,12 @@ export const runGitSourceFlow = async ({
  * The URL that unblocks a stop, when one exists — `gitConnectUrl` in the `--json` payload. Authorization
  * and installation are separate grants, so the two stops resolve to different places.
  */
-export const getGitStopUrl = (provider: GitProvider, stopReason: GitSourceStopReason | null): string | null => {
-	if (stopReason === 'notAuthorized') return getGitConnectUrl(provider);
+export const getGitStopUrl = (
+	provider: GitProvider,
+	stopReason: GitSourceStopReason | null,
+	account?: GitAccount,
+): string | null => {
+	if (stopReason === 'notAuthorized') return getGitConnectUrl(provider, account);
 	if (stopReason === 'noWorkspace') return getAddWorkspaceUrl(provider);
 	return null;
 };
@@ -576,6 +626,7 @@ export interface GitSourceNextStepsOptions {
 	scaffolded: boolean;
 	/** Set once the Actor exists, so a later stop can link to it. */
 	actorId?: string | null;
+	account?: GitAccount;
 }
 
 /** What to tell the user, or hand an agent in `--json`, once the Git wiring has stopped. */
@@ -588,6 +639,7 @@ export const buildGitSourceNextSteps = ({
 	repoName,
 	scaffolded,
 	actorId,
+	account,
 }: GitSourceNextStepsOptions): string[] => {
 	const enter = `cd "${actorName}"`;
 
@@ -597,7 +649,10 @@ export const buildGitSourceNextSteps = ({
 		case 'lookupFailed':
 			return ['Re-run with APIFY_CLI_DEBUG=1 to see the failing request'];
 		case 'notAuthorized':
-			return [`Connect your ${provider} account to Apify: ${getGitConnectUrl(provider)}`, 'then re-run apify create'];
+			return [
+				`Connect your ${provider} account to Apify: ${getGitConnectUrl(provider, account)}`,
+				'then re-run apify create',
+			];
 		case 'noWorkspace':
 			return [`Give Apify access to an account: ${getAddWorkspaceUrl(provider)}`, 'then re-run apify create'];
 		case 'unknownWorkspace':

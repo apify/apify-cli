@@ -58,6 +58,31 @@ describe('getGitConnectUrl', () => {
 		);
 	});
 
+	// The callback page verifies the code as the account its route prefix selects, so an organization
+	// login without this connects the personal account behind it and the CLI waits for nothing.
+	it('sends an organization login to its own Console route', () => {
+		const url = new URL(
+			getGitConnectUrl('github', {
+				id: 'qTyaZThN7mnbef6iQ',
+				username: 'balrog',
+				organizationOwnerUserId: 'eCJxAGafqfxEVvmjx',
+			}),
+		);
+		const redirectUri = new URL(url.searchParams.get('redirect_uri')!);
+
+		// Double-encoded, as Console builds it: the page decodes the value once before navigating there.
+		expect(redirectUri.searchParams.get('routePrefix')).toBe('%2Forganization%2FqTyaZThN7mnbef6iQ');
+		expect(decodeURIComponent(redirectUri.searchParams.get('routePrefix')!)).toBe('/organization/qTyaZThN7mnbef6iQ');
+	});
+
+	it('leaves a personal login on the root Console route', () => {
+		const url = new URL(getGitConnectUrl('github', { id: 'eCJxAGafqfxEVvmjx', username: 'l2ysho' }));
+
+		expect(url.searchParams.get('redirect_uri')).toBe(
+			'https://console.apify.com/actors/new/git/connected?service=github',
+		);
+	});
+
 	it('honours the environment overrides', () => {
 		process.env.APIFY_GITHUB_APP_CLIENT_ID = 'Iv1.staging';
 		process.env.APIFY_CONSOLE_URL = 'https://console.staging.example.com';
@@ -143,6 +168,17 @@ describe('buildGitSourceNextSteps', () => {
 
 		expect(notAuthorized).toContainEqual(expect.stringContaining('login/oauth/authorize'));
 		expect(noWorkspace).toContainEqual(expect.stringContaining('installations/new'));
+	});
+
+	// The recovery URL has to carry the prefix too, or the re-run repeats the same dead end.
+	it('keeps an organization login on its own route in the recovery steps', () => {
+		const steps = buildGitSourceNextSteps({
+			...base,
+			stopReason: 'notAuthorized',
+			account: { id: 'qTyaZThN7mnbef6iQ', username: 'balrog', organizationOwnerUserId: 'eCJxAGafqfxEVvmjx' },
+		});
+
+		expect(steps.join('\n')).toContain('routePrefix');
 	});
 
 	// A clone that landed already has its remote, so re-adding one would exit with "remote origin
