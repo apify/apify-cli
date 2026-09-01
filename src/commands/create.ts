@@ -38,6 +38,7 @@ import {
 	promptGitSource,
 	logGitSourceOutcome,
 	runGitSourceFlow,
+	toGitAccount,
 } from '../lib/git-source/gitSource.js';
 import { usePythonRuntime } from '../lib/hooks/runtimes/python.js';
 import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
@@ -49,6 +50,7 @@ import { LANGUAGE_FLAG_CHOICES, USE_CASE_FLAG_CHOICES } from '../lib/templates/c
 import {
 	downloadAndUnzip,
 	getJsonFileContent,
+	getLocalUserInfo,
 	getLoggedClientOrThrow,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
@@ -302,6 +304,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			? {
 					provider: gitProvider,
 					client: await getLoggedClientOrThrow(),
+					// Read after the client, which refreshes auth.json from the token the run resolved.
+					account: toGitAccount(await getLocalUserInfo()),
 					...parseGitRepoFlag(gitRepo, actorName),
 				}
 			: null;
@@ -343,6 +347,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				templateArchiveUrl,
 				client: gitSetup.client,
 				isInteractive,
+				account: gitSetup.account,
 				customize: applyLocalConfig,
 			});
 		}
@@ -567,6 +572,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 						repoName: gitSetup.repoName,
 						scaffolded: gitResult.scaffolded,
 						actorId: gitResult.actorId,
+						account: gitSetup.account,
 					})
 				: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
 
@@ -586,7 +592,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				actorId: gitResult?.actorId ?? null,
 				stopReason: gitResult?.stopReason ?? null,
 				error: gitResult?.error ?? null,
-				gitConnectUrl: gitProvider ? getGitStopUrl(gitProvider, gitResult?.stopReason ?? null) : null,
+				gitConnectUrl: gitProvider
+					? getGitStopUrl(gitProvider, gitResult?.stopReason ?? null, gitSetup?.account)
+					: null,
 				workspaces: gitResult?.workspaces ?? null,
 			});
 		} else if (reportSuccess) {
