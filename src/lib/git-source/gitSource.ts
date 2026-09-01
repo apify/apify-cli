@@ -7,7 +7,7 @@ import open from 'open';
 
 import { ACTOR_SOURCE_TYPES } from '@apify/consts';
 
-import { getConsoleIntegrationsUrl, getConsoleUrl } from '../console-url.js';
+import { getConsoleIntegrationsUrl, getConsoleRoutePrefix, getConsoleUrl } from '../console-url.js';
 import { useSelectFromList } from '../hooks/user-confirmations/useSelectFromList.js';
 import { useUserInput } from '../hooks/user-confirmations/useUserInput.js';
 import { info, warning } from '../outputs.js';
@@ -107,17 +107,14 @@ export const toGitAccount = ({ id, username, organizationOwnerUserId }: AuthJSON
 	organizationOwnerUserId,
 });
 
-/** The Console route the callback page has to run under to complete the exchange as this account. */
-const getConsoleRoutePrefix = (account?: GitAccount) =>
-	account?.organizationOwnerUserId && account.id ? `/organization/${account.id}` : null;
-
 /**
  * Where to send a user who has not connected this provider to Apify yet. Providers the CLI cannot
  * authorize itself get the Console page, which is where they connect by hand.
  */
 export const getGitConnectUrl = (provider: GitProvider, account?: GitAccount): string => {
 	const { authorize } = GIT_PROVIDERS[provider];
-	if (!authorize) return getConsoleIntegrationsUrl();
+	// The Console page acts on the account its route names, so that one has to carry the account itself.
+	if (!authorize) return getConsoleIntegrationsUrl(account);
 
 	const redirectUri = new URL(authorize.redirectPath, getConsoleUrl());
 	const routePrefix = getConsoleRoutePrefix(account);
@@ -136,9 +133,9 @@ export const getGitConnectUrl = (provider: GitProvider, account?: GitAccount): s
  * Where to install the app so the user gets a workspace to create repositories in. Only a fallback: the
  * API reports its own `addWorkspaceUrl`, which is preferred wherever it is present.
  */
-export const getAddWorkspaceUrl = (provider: GitProvider): string => {
+export const getAddWorkspaceUrl = (provider: GitProvider, account?: GitAccount): string => {
 	const { authorize } = GIT_PROVIDERS[provider];
-	if (!authorize) return getConsoleIntegrationsUrl();
+	if (!authorize) return getConsoleIntegrationsUrl(account);
 
 	return authorize.appInstallUrl.replace('{app}', process.env[authorize.appNameEnvVar] || authorize.defaultAppName);
 };
@@ -338,7 +335,7 @@ export const ensureUsableIntegration = async (
 		// too, and take whichever arrives first.
 		const controller = new AbortController();
 		const startedAt = Date.now();
-		const handoff = connectViaConsole(provider, label, controller.signal);
+		const handoff = connectViaConsole(provider, label, { abortSignal: controller.signal, account });
 		let polled: ProviderState | null;
 		try {
 			polled = await Promise.race([
@@ -379,7 +376,7 @@ export const ensureUsableIntegration = async (
 	const offer = async (current: ProviderState) => {
 		// The API derives its own URL from an existing installation, so it knows the right one when it has it.
 		const url = current.connected
-			? (current.addWorkspaceUrl ?? getAddWorkspaceUrl(provider))
+			? (current.addWorkspaceUrl ?? getAddWorkspaceUrl(provider, account))
 			: getGitConnectUrl(provider, account);
 		if (url === openedUrl) return;
 		openedUrl = url;
@@ -776,7 +773,7 @@ export const getGitStopUrl = (
 	account?: GitAccount,
 ): string | null => {
 	if (stopReason === 'notAuthorized') return getGitConnectUrl(provider, account);
-	if (stopReason === 'noWorkspace') return getAddWorkspaceUrl(provider);
+	if (stopReason === 'noWorkspace') return getAddWorkspaceUrl(provider, account);
 	return null;
 };
 
@@ -822,7 +819,7 @@ export const buildGitSourceNextSteps = ({
 			];
 		case 'noWorkspace':
 			return [
-				`Give Apify access to a ${GIT_PROVIDERS[provider].label} account: ${getAddWorkspaceUrl(provider)}`,
+				`Give Apify access to a ${GIT_PROVIDERS[provider].label} account: ${getAddWorkspaceUrl(provider, account)}`,
 				'then re-run apify create',
 			];
 		case 'unknownWorkspace':

@@ -5,7 +5,7 @@ import open from 'open';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
-import { getConsoleIntegrationsUrl, getConsoleUrl } from '../console-url.js';
+import { type ConsoleAccount, getConsoleIntegrationsUrl, getConsoleUrl } from '../console-url.js';
 import { createLocalApiServer } from '../local-api-server.js';
 import { info } from '../outputs.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
@@ -36,7 +36,7 @@ export type ConnectViaConsoleResult =
 export const connectViaConsole = async (
 	provider: GitProvider,
 	label: string,
-	abortSignal?: AbortSignal,
+	{ abortSignal, account }: { abortSignal?: AbortSignal; account?: ConsoleAccount } = {},
 ): Promise<ConnectViaConsoleResult> => {
 	const consoleUrl = getConsoleUrl();
 	const authToken = cryptoRandomObjectId();
@@ -83,7 +83,10 @@ export const connectViaConsole = async (
 	server.listen(0);
 	const { port } = server.address() as AddressInfo;
 
-	const url = new URL(getConsoleIntegrationsUrl());
+	// Console creates the integration for the account its own route names, so the CLI has to name the one
+	// its token belongs to. Without it the connection can land on another account this user can reach,
+	// where the poll below — and every later build — cannot see it.
+	const url = new URL(getConsoleIntegrationsUrl(account));
 	url.searchParams.set('localCliCommand', 'connect-git-provider');
 	url.searchParams.set('gitProvider', provider);
 	url.searchParams.set('localCliPort', `${port}`);

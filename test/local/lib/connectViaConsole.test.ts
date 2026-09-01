@@ -1,13 +1,14 @@
 import open from 'open';
 
+import type { ConsoleAccount } from '../../../src/lib/console-url.js';
 import { connectViaConsole } from '../../../src/lib/git-source/connectViaConsole.js';
 
 vi.mock('open', () => ({ default: vi.fn(async () => undefined) }));
 vi.mock('computer-name', () => ({ default: () => 'test-machine' }));
 
 /** Starts the hand-off and returns the URL it asked the browser to open, parsed. */
-const startConnect = async (provider: string, label: string) => {
-	const finished = connectViaConsole(provider, label);
+const startConnect = async (provider: string, label: string, account?: ConsoleAccount) => {
+	const finished = connectViaConsole(provider, label, { account });
 	await vi.waitFor(() => expect(open).toHaveBeenCalled());
 
 	const url = new URL(vi.mocked(open).mock.calls.at(-1)![0] as string);
@@ -33,6 +34,34 @@ describe('connectViaConsole', () => {
 		expect(url.searchParams.get('gitProvider')).toBe('gitlab');
 		expect(url.searchParams.get('localCliApiVersion')).toBe('v1');
 		expect(token).not.toBe('');
+
+		await fetch(callback('exit'), { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+		await finished;
+	});
+
+	// Console creates the integration for the account its route names, and where the route says nothing it
+	// takes the account the browser was last on. Either way the connection can land somewhere the CLI's
+	// token cannot see, so the account has to be in the path.
+	it('opens an organization login under its own Console route', async () => {
+		const { finished, token, callback } = await startConnect('gitlab', 'GitLab', {
+			id: 'qTyaZThN7mnbef6iQ',
+			organizationOwnerUserId: 'eCJxAGafqfxEVvmjx',
+		});
+
+		const url = new URL(vi.mocked(open).mock.calls.at(-1)![0] as string);
+		expect(url.origin + url.pathname).toBe(
+			'https://console.apify.com/organization/qTyaZThN7mnbef6iQ/settings/integrations',
+		);
+
+		await fetch(callback('exit'), { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+		await finished;
+	});
+
+	it('leaves a personal login on the root Console route', async () => {
+		const { finished, token, callback } = await startConnect('gitlab', 'GitLab', { id: 'eCJxAGafqfxEVvmjx' });
+
+		const url = new URL(vi.mocked(open).mock.calls.at(-1)![0] as string);
+		expect(url.origin + url.pathname).toBe('https://console.apify.com/settings/integrations');
 
 		await fetch(callback('exit'), { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
 		await finished;
@@ -99,7 +128,7 @@ describe('connectViaConsole', () => {
 	// The caller races this against polling the API, so it has to let go when polling wins.
 	it('stops waiting when the caller aborts', async () => {
 		const controller = new AbortController();
-		const finished = connectViaConsole('gitlab', 'GitLab', controller.signal);
+		const finished = connectViaConsole('gitlab', 'GitLab', { abortSignal: controller.signal });
 		await vi.waitFor(() => expect(open).toHaveBeenCalled());
 
 		controller.abort();

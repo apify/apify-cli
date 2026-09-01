@@ -5,6 +5,7 @@ import {
 	buildGitSourceNextSteps,
 	getAddWorkspaceUrl,
 	getGitConnectUrl,
+	getGitStopUrl,
 	type GitProviderIntegration,
 	type ResolvedWorkspace,
 	type GitSourceResult,
@@ -99,6 +100,24 @@ describe('providers the CLI cannot authorize itself', () => {
 	it.each(['gitlab', 'bitbucket'] as const)('sends %s to the Console integrations page', (provider) => {
 		expect(getGitConnectUrl(provider)).toBe('https://console.apify.com/settings/integrations');
 		expect(getAddWorkspaceUrl(provider)).toBe('https://console.apify.com/settings/integrations');
+	});
+
+	// The Console page acts on the account its route names, so a bare URL can connect an account the CLI's
+	// token cannot see — and every later build reads the integration through that token.
+	it.each(['gitlab', 'bitbucket'] as const)('sends an organization login to its own %s route', (provider) => {
+		const account = { id: 'qTyaZThN7mnbef6iQ', username: 'balrog', organizationOwnerUserId: 'eCJxAGafqfxEVvmjx' };
+		const expected = 'https://console.apify.com/organization/qTyaZThN7mnbef6iQ/settings/integrations';
+
+		expect(getGitConnectUrl(provider, account)).toBe(expected);
+		expect(getAddWorkspaceUrl(provider, account)).toBe(expected);
+		expect(getGitStopUrl(provider, 'noWorkspace', account)).toBe(expected);
+	});
+
+	it.each(['gitlab', 'bitbucket'] as const)('leaves a personal %s login on the root route', (provider) => {
+		const account = { id: 'eCJxAGafqfxEVvmjx', username: 'l2ysho' };
+
+		expect(getGitConnectUrl(provider, account)).toBe('https://console.apify.com/settings/integrations');
+		expect(getAddWorkspaceUrl(provider, account)).toBe('https://console.apify.com/settings/integrations');
 	});
 
 	it.each(['gitlab', 'bitbucket'] as const)('still points %s at Console in the next steps', (provider) => {

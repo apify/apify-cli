@@ -20,9 +20,27 @@ export function getConsoleUrl(): string {
 	return DEFAULT_CONSOLE_URL;
 }
 
-/** Where a user manages the accounts Apify is connected to, including the git providers. */
-export function getConsoleIntegrationsUrl(): string {
-	return `${getConsoleUrl()}/settings/integrations`;
+/** The fields of a stored login that decide which Apify account a Console URL opens. */
+export interface ConsoleAccount {
+	id?: string;
+	organizationOwnerUserId?: string;
+}
+
+/**
+ * The Console route an organization login has to run under. Console takes the account from the path, and
+ * where the path does not say it falls back to the account the browser was last on — so a bare URL can act
+ * on an account the CLI never asked for.
+ */
+export function getConsoleRoutePrefix(account?: ConsoleAccount): string | null {
+	return account?.organizationOwnerUserId && account.id ? `/organization/${account.id}` : null;
+}
+
+/**
+ * Where a user manages the accounts Apify is connected to, including the git providers. Pass the account
+ * whenever the page is opened to act on it, rather than only to be read.
+ */
+export function getConsoleIntegrationsUrl(account?: ConsoleAccount): string {
+	return `${getConsoleUrl()}${getConsoleRoutePrefix(account) ?? ''}/settings/integrations`;
 }
 
 function stripTrailingSlash(value: string): string {
