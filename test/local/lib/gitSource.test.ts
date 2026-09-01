@@ -4,6 +4,8 @@ import {
 	buildGitSourceNextSteps,
 	getAddWorkspaceUrl,
 	getGitConnectUrl,
+	createGrantTracker,
+	getPendingGrants,
 	type GitProviderIntegration,
 	type GitSourceResult,
 	isGitProvider,
@@ -114,6 +116,117 @@ describe('getAddWorkspaceUrl', () => {
 	});
 });
 
+describe('getPendingGrants', () => {
+	const account = { id: 'orgId', username: 'my-org', organizationOwnerUserId: 'ownerId' };
+	const authorize = 'https://github.com/login/oauth/authorize';
+	const install = 'https://github.com/apps/apify/installations/new';
+	const empty: GitProviderIntegration = { id: 'github-app', provider: 'github', workspaces: [] };
+
+	// The API leaves the integration out entirely until the user has authorized, so this state is the
+	// only unambiguous one.
+	it('asks only for authorization when nothing is connected', () => {
+		const grants = getPendingGrants('github', undefined, { account });
+
+		expect(grants).toHaveLength(1);
+		expect(grants[0].kind).toBe('connect');
+		expect(grants[0].url).toContain(authorize);
+		expect(grants[0].url).toContain('routePrefix');
+	});
+
+	// An authorized user who has installed the app nowhere and one whose token the provider revoked are
+	// reported identically, and the fix for one does nothing for the other, so neither may be dropped.
+	it('names both grants when the integration has no workspaces', () => {
+		const grants = getPendingGrants('github', empty, { account });
+
+		expect(grants.map(({ kind }) => kind)).toEqual(['connect', 'install']);
+		expect(grants[0].url).toContain(authorize);
+		expect(grants[1].url).toBe(install);
+	});
+
+	// The run watched the user authorize, so the integration it is seeing now is that grant landing, which
+	// settles authorization and leaves only the installation.
+	it('asks only for the installation once this run has sent the user through authorization', () => {
+		const grants = getPendingGrants('github', empty, { account, authorizedHere: true });
+
+		expect(grants.map(({ kind }) => kind)).toEqual(['install']);
+		expect(grants[0].url).toBe(install);
+	});
+
+	// `addWorkspaceUrl` is derived from a live installation listing, so the token behind it works and the
+	// ambiguity does not apply.
+	it('asks only for the installation when the API reports a place to add one', () => {
+		const grants = getPendingGrants('github', { ...empty, addWorkspaceUrl: install }, { account });
+
+		expect(grants.map(({ kind }) => kind)).toEqual(['install']);
+	});
+
+	it('prefers the installation URL the API reports over the one it builds', () => {
+		const reported = 'https://github.com/apps/apify-staging/installations/new';
+		const grants = getPendingGrants('github', { ...empty, addWorkspaceUrl: reported }, { account });
+
+		expect(grants.find(({ kind }) => kind === 'install')?.url).toBe(reported);
+	});
+
+	// The wait line is the only thing on screen while the CLI polls, so it has to name the grant that is
+	// actually pending.
+	it('carries a wait line matching each grant', () => {
+		const [connect, installGrant] = getPendingGrants('github', empty, { account });
+
+		expect(connect.waiting).toContain('authorization');
+		expect(installGrant.waiting).toContain('installation');
+	});
+});
+
+describe('createGrantTracker', () => {
+	const account = { id: 'orgId', username: 'my-org', organizationOwnerUserId: 'ownerId' };
+	const empty: GitProviderIntegration = { id: 'github-app', provider: 'github', workspaces: [] };
+	const filled: GitProviderIntegration = {
+		id: 'github-app',
+		provider: 'github',
+		workspaces: [],
+		addWorkspaceUrl: 'https://github.com/apps/apify/installations/new',
+	};
+
+	it('offers both grants once when the state is ambiguous, then goes quiet', () => {
+		const track = createGrantTracker('github', account);
+
+		expect(track(empty)?.map(({ kind }) => kind)).toEqual(['connect', 'install']);
+		expect(track(empty)).toBeNull();
+		expect(track(empty)).toBeNull();
+	});
+
+	// Offering authorization in the ambiguous state says nothing about whether the user completed it.
+	// Counting it as done reordered the grants on the next poll and opened a second tab two seconds
+	// after sending the user to the first one.
+	it('does not treat an authorization offered in the ambiguous state as completed', () => {
+		const track = createGrantTracker('github', account);
+		const first = track(empty);
+
+		expect(first?.[0].kind).toBe('connect');
+		expect(track(empty)).toBeNull();
+	});
+
+	it('moves on to the installation once authorization it watched has landed', () => {
+		const track = createGrantTracker('github', account);
+
+		expect(track(undefined)?.map(({ kind }) => kind)).toEqual(['connect']);
+		expect(track(empty)?.map(({ kind }) => kind)).toEqual(['install']);
+		expect(track(empty)).toBeNull();
+	});
+
+	it('never offers the same URL twice in a row', () => {
+		const track = createGrantTracker('github', account);
+		const opened: string[] = [];
+
+		for (const state of [undefined, empty, empty, filled, filled]) {
+			const grants = track(state);
+			if (grants) opened.push(grants[0].url);
+		}
+
+		expect(new Set(opened).size).toBe(opened.length);
+	});
+});
+
 describe('chooseWorkspace', () => {
 	const two: GitProviderIntegration = {
 		id: 'github-app',
@@ -172,8 +285,8 @@ describe('buildGitSourceNextSteps', () => {
 		expect(steps.every((step) => step.trim().length > 0)).toBe(true);
 	});
 
-	// Authorizing again cannot fix a missing installation, so these two must not send the user to the
-	// same place.
+	// `noWorkspace` names both grants, because at that point the two are indistinguishable — but the
+	// installation is the one the `notAuthorized` steps never mention.
 	it('distinguishes "never connected" from "connected but no account"', () => {
 		const notAuthorized = buildGitSourceNextSteps({ ...base, stopReason: 'notAuthorized' });
 		const noWorkspace = buildGitSourceNextSteps({ ...base, stopReason: 'noWorkspace' });
@@ -220,7 +333,7 @@ describe('logGitSourceOutcome', () => {
 		actorId: null,
 		workspaces: null,
 		stopReason: 'notAuthorized',
-		error: 'Apify is not authorized to access your github account.',
+		error: 'Apify is not authorized to access github.',
 		scaffolded,
 	});
 

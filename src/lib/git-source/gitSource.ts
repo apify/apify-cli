@@ -219,6 +219,76 @@ const fetchGitIntegrations = async (options: ApiCallOptions): Promise<GitProvide
 const findIntegration = (integrations: GitProviderIntegration[], provider: GitProvider) =>
 	integrations.find((integration) => integration.id === GIT_PROVIDERS[provider].providerId);
 
+/** One of the two grants the platform needs, and how to ask the user for it. */
+export interface PendingGrant {
+	kind: 'connect' | 'install';
+	url: string;
+	what: string;
+	waiting: string;
+}
+
+/**
+ * The grants that may still be missing, the likeliest first.
+ *
+ * The API cannot say which one it is. An authorized user who has installed the app nowhere and one whose
+ * token the provider has revoked are reported identically: the integration is present, `workspaces` is
+ * empty, and `addWorkspaceUrl` is absent, because it is derived from the first installation. Only one of
+ * those is fixed by installing the app, so both are named whenever the run cannot tell them apart.
+ *
+ * `authorizedHere` is what breaks the tie: a run that has already sent the user through authorization
+ * knows the integration it is now seeing is the result, which leaves the installation as the missing one.
+ */
+export const getPendingGrants = (
+	provider: GitProvider,
+	integration: GitProviderIntegration | undefined,
+	{ account, authorizedHere = false }: { account?: GitAccount; authorizedHere?: boolean } = {},
+): PendingGrant[] => {
+	const connect: PendingGrant = {
+		kind: 'connect',
+		url: getGitConnectUrl(provider, account),
+		what: `Connect your ${provider} account to Apify`,
+		waiting: 'Waiting for authorization to complete in your browser.',
+	};
+
+	const install: PendingGrant = {
+		kind: 'install',
+		url: integration?.addWorkspaceUrl || getAddWorkspaceUrl(provider),
+		what: `Give Apify access to a ${provider} account`,
+		waiting: 'Waiting for the app installation to complete in your browser.',
+	};
+
+	if (!integration) return [connect];
+
+	// Both mean the provider token works, so authorization is settled and only the installation is left:
+	// the run watched the authorization land, or the API derived `addWorkspaceUrl` from a live listing.
+	if (authorizedHere || integration.addWorkspaceUrl) return [install];
+
+	return [connect, install];
+};
+
+/**
+ * Remembers what has already been offered, so the same URL is never opened twice and the run keeps track
+ * of whether it watched the user authorize. Returns the grants to show now, or null when nothing changed.
+ *
+ * Only an authorization offered while no integration existed counts: offering one in the ambiguous state
+ * says nothing about whether the user completed it, and treating it as done would reorder the grants on
+ * the very next poll and pull the user off the page they were just sent to.
+ */
+export const createGrantTracker = (provider: GitProvider, account?: GitAccount) => {
+	let openedUrl: string | null = null;
+	let authorizedHere = false;
+
+	return (integration: GitProviderIntegration | undefined): PendingGrant[] | null => {
+		const grants = getPendingGrants(provider, integration, { account, authorizedHere });
+		const [next] = grants;
+		if (next.url === openedUrl) return null;
+
+		openedUrl = next.url;
+		authorizedHere ||= next.kind === 'connect' && !integration;
+		return grants;
+	};
+};
+
 // Backs off, so the early polls stay fast without costing a request every two seconds for three minutes.
 const POLL_INTERVAL_START_MS = 2_000;
 const POLL_INTERVAL_MAX_MS = 10_000;
@@ -230,8 +300,8 @@ const POLL_TIMEOUT_MS = 3 * 60_000;
  * the API is the only way to know it finished. Returns null when the user never did.
  *
  * Two separate grants are needed: OAuth authorization makes the integration appear at all, while
- * installing the app populates `workspaces`. Authorizing again cannot fix a missing installation, so the
- * two cases open different URLs.
+ * installing the app populates `workspaces`. `createGrantTracker` decides what is still missing, and
+ * it is re-read every poll because completing one changes the answer.
  */
 const ensureUsableIntegration = async (
 	provider: GitProvider,
@@ -250,36 +320,42 @@ const ensureUsableIntegration = async (
 	// Agents and CI must never be parked on a browser; the caller emits the URL and stops instead.
 	if (!isInteractive) return integration ?? null;
 
-	// Which grant is missing decides the URL, and authorizing changes the answer: the integration then
-	// exists with no workspaces, and only installing the app fills them. So this is re-read every poll,
-	// and a URL that has already been opened is never opened twice.
-	let openedUrl: string | null = null;
+	// Which grant is pending changes as the user makes progress, so it is re-read every poll.
+	const trackGrants = createGrantTracker(provider, account);
 	const offer = async (current: GitProviderIntegration | undefined) => {
-		const url = current ? current.addWorkspaceUrl || getAddWorkspaceUrl(provider) : getGitConnectUrl(provider, account);
-		if (url === openedUrl) return;
-		openedUrl = url;
+		const grants = trackGrants(current);
+		if (!grants) return false;
 
-		const what = current ? `Give Apify access to a ${provider} account` : `Connect your ${provider} account to Apify`;
-		info({ message: `${what}: ${url}` });
+		const [next, ...also] = grants;
+		info({ message: `${next.what}: ${next.url}` });
+		// Only the first is opened. The rest are printed so an ambiguous state still leaves the user with
+		// the link the platform could not tell them they needed.
+		for (const other of also) info({ message: `Already done? ${other.what}: ${other.url}` });
 		// Printed above as well — a headless session, or a machine with no usable default browser, still needs it.
-		await open(url).catch(() => undefined);
+		await open(next.url).catch(() => undefined);
 		info({
 			message: account?.username
-				? `Waiting for authorization to complete in your browser. It connects ${provider} to the Apify account ${account.username}.`
-				: 'Waiting for authorization to complete in your browser...',
+				? `${next.waiting} Apify will connect ${provider} to the account ${account.username}.`
+				: next.waiting,
 		});
+		return true;
 	};
 
 	await offer(integration);
 
-	const deadline = Date.now() + POLL_TIMEOUT_MS;
+	// Each new URL is a step the user still has to do in the browser, so it gets the whole budget rather
+	// than what the step before it left over.
+	let deadline = Date.now() + POLL_TIMEOUT_MS;
 	let interval = POLL_INTERVAL_START_MS;
 	while (Date.now() < deadline) {
 		await sleep(interval);
 		interval = Math.min(Math.round(interval * 1.5), POLL_INTERVAL_MAX_MS);
 		integration = await load();
 		if (integration?.workspaces.length) return integration;
-		await offer(integration);
+		if (await offer(integration)) {
+			deadline = Date.now() + POLL_TIMEOUT_MS;
+			interval = POLL_INTERVAL_START_MS;
+		}
 	}
 
 	return integration ?? null;
@@ -669,8 +745,14 @@ export const buildGitSourceNextSteps = ({
 				`Connect your ${provider} account to Apify: ${getGitConnectUrl(provider, account)}`,
 				'then re-run apify create',
 			];
+		// Both grants are named: from here the CLI cannot tell a missing installation from a revoked token,
+		// and the second is only recovered by authorizing again.
 		case 'noWorkspace':
-			return [`Give Apify access to an account: ${getAddWorkspaceUrl(provider)}`, 'then re-run apify create'];
+			return [
+				`Give Apify access to an account: ${getAddWorkspaceUrl(provider)}`,
+				`Or reconnect ${provider} if access is already granted: ${getGitConnectUrl(provider, account)}`,
+				'then re-run apify create',
+			];
 		case 'unknownWorkspace':
 		case 'ambiguousWorkspace':
 			return [`Re-run naming the account: --git-repo <account>/${repoName}`];
