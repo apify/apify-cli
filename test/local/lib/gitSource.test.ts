@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
 	buildGitSourceNextSteps,
@@ -10,10 +10,22 @@ import {
 	isGitProvider,
 	logGitSourceOutcome,
 	parseGitRepoFlag,
+	runGitSourceFlow,
 	chooseWorkspace,
 	readProviderState,
 	ensureUsableIntegration,
 } from '../../../src/lib/git-source/gitSource.js';
+import { useUserInput } from '../../../src/lib/hooks/user-confirmations/useUserInput.js';
+
+vi.mock('../../../src/lib/hooks/user-confirmations/useUserInput.js', () => ({
+	useUserInput: vi.fn(),
+}));
+
+const useUserInputMock = vi.mocked(useUserInput);
+
+beforeEach(() => {
+	useUserInputMock.mockReset();
+});
 
 vi.mock('open', () => ({ default: vi.fn(async () => undefined) }));
 vi.mock('../../../src/lib/git-source/connectViaConsole.js', () => ({
@@ -102,6 +114,31 @@ describe('getGitConnectUrl', () => {
 
 		expect(url.origin + url.pathname).toBe('https://github.com/login/oauth/authorize');
 		expect(url.searchParams.get('client_id')).toBe('Iv1.e39b3ed87e74885f');
+		expect(url.searchParams.get('redirect_uri')).toBe(
+			'https://console.apify.com/actors/new/git/connected?service=github',
+		);
+	});
+
+	// The callback page verifies the code as the account its route prefix selects, so an organization
+	// login without this connects the personal account behind it and the CLI waits for nothing.
+	it('sends an organization login to its own Console route', () => {
+		const url = new URL(
+			getGitConnectUrl('github', {
+				id: 'qTyaZThN7mnbef6iQ',
+				username: 'balrog',
+				organizationOwnerUserId: 'eCJxAGafqfxEVvmjx',
+			}),
+		);
+		const redirectUri = new URL(url.searchParams.get('redirect_uri')!);
+
+		// Double-encoded, as Console builds it: the page decodes the value once before navigating there.
+		expect(redirectUri.searchParams.get('routePrefix')).toBe('%2Forganization%2FqTyaZThN7mnbef6iQ');
+		expect(decodeURIComponent(redirectUri.searchParams.get('routePrefix')!)).toBe('/organization/qTyaZThN7mnbef6iQ');
+	});
+
+	it('leaves a personal login on the root Console route', () => {
+		const url = new URL(getGitConnectUrl('github', { id: 'eCJxAGafqfxEVvmjx', username: 'l2ysho' }));
+
 		expect(url.searchParams.get('redirect_uri')).toBe(
 			'https://console.apify.com/actors/new/git/connected?service=github',
 		);
@@ -236,6 +273,17 @@ describe('buildGitSourceNextSteps', () => {
 
 		expect(notAuthorized).toContainEqual(expect.stringContaining('login/oauth/authorize'));
 		expect(noWorkspace).toContainEqual(expect.stringContaining('installations/new'));
+	});
+
+	// The recovery URL has to carry the prefix too, or the re-run repeats the same dead end.
+	it('keeps an organization login on its own route in the recovery steps', () => {
+		const steps = buildGitSourceNextSteps({
+			...base,
+			stopReason: 'notAuthorized',
+			account: { id: 'qTyaZThN7mnbef6iQ', username: 'balrog', organizationOwnerUserId: 'eCJxAGafqfxEVvmjx' },
+		});
+
+		expect(steps.join('\n')).toContain('routePrefix');
 	});
 
 	// A clone that landed already has its remote, so re-adding one would exit with "remote origin
@@ -399,5 +447,75 @@ describe('ensureUsableIntegration', () => {
 
 		expect(state).toEqual({ connected: false, workspaces: [], addWorkspaceUrl: undefined });
 		expect(fetch).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('runGitSourceFlow', () => {
+	const client = { baseUrl: 'https://api.example.com/v2', token: 'token' } as never;
+
+	const options = {
+		client,
+		provider: 'github' as const,
+		actorDir: '/tmp/apify-create-git-source',
+		actorName: 'my-scraper',
+		repoName: 'my-scraper',
+		isPrivate: true,
+		templateArchiveUrl: 'https://example.com/template.zip',
+		isInteractive: true,
+		customize: async () => {},
+	};
+
+	const jsonResponse = (status: number, body: unknown) =>
+		new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+	// A taken name is fixable on the spot, so the run has to ask for another one rather than making the
+	// user start over — the second attempt must reach the API with the name the user typed.
+	it('asks for another repository name when the provider rejects the first one', async () => {
+		useUserInputMock.mockResolvedValueOnce('my-scraper-2');
+
+		const fetchMock = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValueOnce(
+				jsonResponse(200, {
+					data: [{ id: 'github-app', provider: 'github', workspaces: [{ id: 'apify', label: 'apify' }] }],
+				}),
+			)
+			.mockResolvedValueOnce(
+				jsonResponse(400, { error: { type: 'invalid-parameter', message: 'Name already exists' } }),
+			)
+			.mockResolvedValueOnce(jsonResponse(500, { error: { type: 'internal-server-error', message: 'Boom' } }));
+
+		try {
+			const result = await runGitSourceFlow(options);
+
+			expect(useUserInputMock).toHaveBeenCalledTimes(1);
+			expect(JSON.parse(String(fetchMock.mock.calls[2][1]!.body))).toMatchObject({ repoName: 'my-scraper-2' });
+			expect(result.stopReason).toBe('repoCreateFailed');
+		} finally {
+			fetchMock.mockRestore();
+		}
+	});
+
+	// Nobody is there to answer the prompt, so a rejected name has to stop with actionable steps instead.
+	it('stops on a rejected name when it cannot ask', async () => {
+		const fetchMock = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValueOnce(
+				jsonResponse(200, {
+					data: [{ id: 'github-app', provider: 'github', workspaces: [{ id: 'apify', label: 'apify' }] }],
+				}),
+			)
+			.mockResolvedValueOnce(
+				jsonResponse(400, { error: { type: 'invalid-parameter', message: 'Name already exists' } }),
+			);
+
+		try {
+			const result = await runGitSourceFlow({ ...options, isInteractive: false });
+
+			expect(useUserInputMock).not.toHaveBeenCalled();
+			expect(result.stopReason).toBe('repoNameRejected');
+		} finally {
+			fetchMock.mockRestore();
+		}
 	});
 });

@@ -9,7 +9,9 @@ import { ACTOR_SOURCE_TYPES } from '@apify/consts';
 
 import { getConsoleIntegrationsUrl, getConsoleUrl } from '../console-url.js';
 import { useSelectFromList } from '../hooks/user-confirmations/useSelectFromList.js';
+import { useUserInput } from '../hooks/user-confirmations/useUserInput.js';
 import { info, warning } from '../outputs.js';
+import type { AuthJSON } from '../types.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { CONNECT_TIMEOUT_MS, connectViaConsole } from './connectViaConsole.js';
 
@@ -88,14 +90,40 @@ const GIT_PROVIDERS: Record<GitProvider, GitProviderConfig> = {
 export const isGitProvider = (source: string): source is GitProvider => Object.hasOwn(GIT_PROVIDERS, source);
 
 /**
+ * The Apify account the CLI token belongs to, as `auth.json` records it. An organization login is the case
+ * that matters: Console completes the exchange as whichever account its own route prefix selects, so
+ * without that prefix the grant lands on the personal account behind the organization instead.
+ */
+export interface GitAccount {
+	id?: string;
+	username?: string;
+	organizationOwnerUserId?: string;
+}
+
+/** Narrows the stored login to what the handoff needs, so the token is not carried around with it. */
+export const toGitAccount = ({ id, username, organizationOwnerUserId }: AuthJSON): GitAccount => ({
+	id,
+	username,
+	organizationOwnerUserId,
+});
+
+/** The Console route the callback page has to run under to complete the exchange as this account. */
+const getConsoleRoutePrefix = (account?: GitAccount) =>
+	account?.organizationOwnerUserId && account.id ? `/organization/${account.id}` : null;
+
+/**
  * Where to send a user who has not connected this provider to Apify yet. Providers the CLI cannot
  * authorize itself get the Console page, which is where they connect by hand.
  */
-export const getGitConnectUrl = (provider: GitProvider): string => {
+export const getGitConnectUrl = (provider: GitProvider, account?: GitAccount): string => {
 	const { authorize } = GIT_PROVIDERS[provider];
 	if (!authorize) return getConsoleIntegrationsUrl();
 
 	const redirectUri = new URL(authorize.redirectPath, getConsoleUrl());
+	const routePrefix = getConsoleRoutePrefix(account);
+	// Encoded twice on purpose, matching Console: it encodes the prefix into the query it builds, and the
+	// callback page decodes it once of its own accord before navigating there.
+	if (routePrefix) redirectUri.searchParams.set('routePrefix', encodeURIComponent(routePrefix));
 
 	const url = new URL(authorize.endpoint);
 	url.searchParams.set('client_id', process.env[authorize.clientIdEnvVar] || authorize.defaultClientId);
@@ -247,8 +275,11 @@ const POLL_TIMEOUT_MS = 3 * 60_000;
  */
 const pollForWorkspaces = async (
 	load: () => Promise<ProviderState>,
-	timeoutMs: number,
-	abortSignal?: AbortSignal,
+	{
+		timeoutMs,
+		abortSignal,
+		onState,
+	}: { timeoutMs: number; abortSignal?: AbortSignal; onState?: (state: ProviderState) => Promise<void> },
 ): Promise<ProviderState | null> => {
 	const deadline = Date.now() + timeoutMs;
 	let interval = POLL_INTERVAL_START_MS;
@@ -264,6 +295,7 @@ const pollForWorkspaces = async (
 		interval = Math.min(Math.round(interval * 1.5), POLL_INTERVAL_MAX_MS);
 		state = await load();
 		if (state.workspaces.length) return state;
+		await onState?.(state);
 	}
 
 	return state;
@@ -280,11 +312,11 @@ const pollForWorkspaces = async (
  */
 export const ensureUsableIntegration = async (
 	provider: GitProvider,
-	{ client, isInteractive }: ApiCallOptions & { isInteractive: boolean },
+	{ client, isInteractive, account }: ApiCallOptions & { isInteractive: boolean; account?: GitAccount },
 ): Promise<ProviderState> => {
 	const load = async () => readProviderState(await fetchGitIntegrations({ client }), provider);
 
-	const state = await load();
+	let state = await load();
 	cliDebugPrint('git-source', 'integrations:', provider, state.connected, `workspaces=${state.workspaces.length}`);
 	if (state.workspaces.length) return state;
 
@@ -302,7 +334,7 @@ export const ensureUsableIntegration = async (
 		const handoff = connectViaConsole(provider, label, controller.signal);
 		const polled = await Promise.race([
 			handoff.then(() => null),
-			pollForWorkspaces(load, CONNECT_TIMEOUT_MS, controller.signal),
+			pollForWorkspaces(load, { timeoutMs: CONNECT_TIMEOUT_MS, abortSignal: controller.signal }),
 		]);
 		controller.abort();
 
@@ -317,16 +349,34 @@ export const ensureUsableIntegration = async (
 		return load();
 	}
 
-	// The API derives its own URL from an existing installation, so it knows the right one when it has it.
-	const url = state.connected ? (state.addWorkspaceUrl ?? getAddWorkspaceUrl(provider)) : getGitConnectUrl(provider);
-	const what = state.connected ? `Give Apify access to a ${label} account` : `Connect your ${label} account to Apify`;
+	// Which grant is missing decides the URL, and authorizing changes the answer: the integration then
+	// exists with no workspaces, and only installing the app fills them. So this is re-read every poll,
+	// and a URL that has already been opened is never opened twice.
+	let openedUrl: string | null = null;
+	const offer = async (current: ProviderState) => {
+		// The API derives its own URL from an existing installation, so it knows the right one when it has it.
+		const url = current.connected
+			? (current.addWorkspaceUrl ?? getAddWorkspaceUrl(provider))
+			: getGitConnectUrl(provider, account);
+		if (url === openedUrl) return;
+		openedUrl = url;
 
-	info({ message: `${what}: ${url}` });
-	// Printed above as well — a headless session, or a machine with no usable default browser, still needs it.
-	await open(url).catch(() => undefined);
-	info({ message: 'Waiting for authorization to complete in your browser...' });
+		const what = current.connected
+			? `Give Apify access to a ${label} account`
+			: `Connect your ${label} account to Apify`;
+		info({ message: `${what}: ${url}` });
+		// Printed above as well — a headless session, or a machine with no usable default browser, still needs it.
+		await open(url).catch(() => undefined);
+		info({
+			message: account?.username
+				? `Waiting for authorization to complete in your browser. It connects ${label} to the Apify account ${account.username}.`
+				: 'Waiting for authorization to complete in your browser...',
+		});
+	};
 
-	return (await pollForWorkspaces(load, POLL_TIMEOUT_MS)) ?? state;
+	await offer(state);
+
+	return (await pollForWorkspaces(load, { timeoutMs: POLL_TIMEOUT_MS, onState: offer })) ?? state;
 };
 
 /**
@@ -528,6 +578,8 @@ export interface RunGitSourceFlowOptions extends ApiCallOptions {
 	isPrivate: boolean;
 	templateArchiveUrl: string;
 	isInteractive: boolean;
+	/** The account the run authorizes as, so an organization login connects the organization. */
+	account?: GitAccount;
 	/** Local-only setup for the clone. Runs between the clone and the commit, so its changes land in git. */
 	customize: (dir: string) => Promise<void>;
 }
@@ -546,6 +598,7 @@ export const runGitSourceFlow = async ({
 	isPrivate,
 	templateArchiveUrl,
 	isInteractive,
+	account,
 	customize,
 }: RunGitSourceFlowOptions): Promise<GitSourceResult> => {
 	let scaffolded = false;
@@ -567,17 +620,18 @@ export const runGitSourceFlow = async ({
 
 	let resolved: ProviderState;
 	try {
-		resolved = await ensureUsableIntegration(provider, { client, isInteractive });
+		resolved = await ensureUsableIntegration(provider, { client, isInteractive, account });
 	} catch (err) {
 		return stopped('lookupFailed', err);
 	}
 
 	const { label } = GIT_PROVIDERS[provider];
+	const who = account?.username ? `The Apify account ${account.username}` : 'Apify';
 	if (!resolved.connected) {
-		return stopped('notAuthorized', new Error(`Apify is not authorized to access your ${label} account.`));
+		return stopped('notAuthorized', new Error(`${who} is not authorized to access your ${label} account.`));
 	}
 	if (!resolved.workspaces.length) {
-		return stopped('noWorkspace', new Error(`Apify has no ${label} account to create the repository in.`));
+		return stopped('noWorkspace', new Error(`${who} has no ${label} account to create the repository in.`));
 	}
 
 	// Labels, not ids: GitLab's ids are numeric namespace ids that mean nothing to the user.
@@ -598,21 +652,36 @@ export const runGitSourceFlow = async ({
 	const { workspace } = chosen;
 
 	let repo: CreatedRemoteRepo;
-	try {
-		info({
-			message: `Creating ${isPrivate ? 'private' : 'public'} repository ${workspace.label}/${repoName} from the template...`,
-		});
-		repo = await createRemoteRepo({
-			client,
-			providerId: workspace.providerId,
-			workspace: workspace.id,
-			repoName,
-			isPrivate,
-			templateArchiveUrl,
-		});
-	} catch (err) {
-		const stopReason = err instanceof CreateRemoteRepoError ? err.stopReason : 'repoCreateFailed';
-		return stopped(stopReason, err, { workspaces });
+	while (true) {
+		try {
+			info({
+				message: `Creating ${isPrivate ? 'private' : 'public'} repository ${workspace.label}/${repoName} from the template...`,
+			});
+			repo = await createRemoteRepo({
+				client,
+				providerId: workspace.providerId,
+				workspace: workspace.id,
+				repoName,
+				isPrivate,
+				templateArchiveUrl,
+			});
+			break;
+		} catch (err) {
+			// A taken or malformed name is the one failure the user can fix without re-running, and
+			// nothing has been created yet — so ask for another name instead of stopping.
+			if (err instanceof CreateRemoteRepoError && err.stopReason === 'repoNameRejected' && isInteractive) {
+				warning({ message: err.message });
+				repoName = await useUserInput({
+					message: 'Choose a different repository name:',
+					validate: (value) => value.trim().length > 0 || 'Enter a repository name.',
+				});
+				continue;
+			}
+
+			return stopped(err instanceof CreateRemoteRepoError ? err.stopReason : 'repoCreateFailed', err, {
+				workspaces,
+			});
+		}
 	}
 
 	// The clone is the only step that needs the user's own provider credentials, and the only one that is
@@ -678,8 +747,12 @@ export const runGitSourceFlow = async ({
  * The URL that unblocks a stop, when one exists — `gitConnectUrl` in the `--json` payload. Authorization
  * and installation are separate grants, so the two stops resolve to different places.
  */
-export const getGitStopUrl = (provider: GitProvider, stopReason: GitSourceStopReason | null): string | null => {
-	if (stopReason === 'notAuthorized') return getGitConnectUrl(provider);
+export const getGitStopUrl = (
+	provider: GitProvider,
+	stopReason: GitSourceStopReason | null,
+	account?: GitAccount,
+): string | null => {
+	if (stopReason === 'notAuthorized') return getGitConnectUrl(provider, account);
 	if (stopReason === 'noWorkspace') return getAddWorkspaceUrl(provider);
 	return null;
 };
@@ -697,6 +770,7 @@ export interface GitSourceNextStepsOptions {
 	scaffolded: boolean;
 	/** Set once the Actor exists, so a later stop can link to it. */
 	actorId?: string | null;
+	account?: GitAccount;
 }
 
 /** What to tell the user, or hand an agent in `--json`, once the Git wiring has stopped. */
@@ -709,6 +783,7 @@ export const buildGitSourceNextSteps = ({
 	repoName,
 	scaffolded,
 	actorId,
+	account,
 }: GitSourceNextStepsOptions): string[] => {
 	const enter = `cd "${actorName}"`;
 
@@ -719,7 +794,7 @@ export const buildGitSourceNextSteps = ({
 			return ['Re-run with APIFY_CLI_DEBUG=1 to see the failing request'];
 		case 'notAuthorized':
 			return [
-				`Connect your ${GIT_PROVIDERS[provider].label} account to Apify: ${getGitConnectUrl(provider)}`,
+				`Connect your ${GIT_PROVIDERS[provider].label} account to Apify: ${getGitConnectUrl(provider, account)}`,
 				'then re-run apify create',
 			];
 		case 'noWorkspace':
