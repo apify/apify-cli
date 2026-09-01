@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
 	buildGitSourceNextSteps,
@@ -9,8 +9,20 @@ import {
 	isGitProvider,
 	logGitSourceOutcome,
 	parseGitRepoFlag,
+	runGitSourceFlow,
 	chooseWorkspace,
 } from '../../../src/lib/git-source/gitSource.js';
+import { useUserInput } from '../../../src/lib/hooks/user-confirmations/useUserInput.js';
+
+vi.mock('../../../src/lib/hooks/user-confirmations/useUserInput.js', () => ({
+	useUserInput: vi.fn(),
+}));
+
+const useUserInputMock = vi.mocked(useUserInput);
+
+beforeEach(() => {
+	useUserInputMock.mockReset();
+});
 
 describe('parseGitRepoFlag', () => {
 	it('falls back to the Actor name and an unset workspace when the flag is omitted', () => {
@@ -243,5 +255,75 @@ describe('logGitSourceOutcome', () => {
 		}
 
 		expect(lines[0]).toContain('Actor scaffolded');
+	});
+});
+
+describe('runGitSourceFlow', () => {
+	const client = { baseUrl: 'https://api.example.com/v2', token: 'token' } as never;
+
+	const options = {
+		client,
+		provider: 'github' as const,
+		actorDir: '/tmp/apify-create-git-source',
+		actorName: 'my-scraper',
+		repoName: 'my-scraper',
+		isPrivate: true,
+		templateArchiveUrl: 'https://example.com/template.zip',
+		isInteractive: true,
+		customize: async () => {},
+	};
+
+	const jsonResponse = (status: number, body: unknown) =>
+		new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+	// A taken name is fixable on the spot, so the run has to ask for another one rather than making the
+	// user start over — the second attempt must reach the API with the name the user typed.
+	it('asks for another repository name when the provider rejects the first one', async () => {
+		useUserInputMock.mockResolvedValueOnce('my-scraper-2');
+
+		const fetchMock = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValueOnce(
+				jsonResponse(200, {
+					data: [{ id: 'github-app', provider: 'github', workspaces: [{ id: 'apify', label: 'apify' }] }],
+				}),
+			)
+			.mockResolvedValueOnce(
+				jsonResponse(400, { error: { type: 'invalid-parameter', message: 'Name already exists' } }),
+			)
+			.mockResolvedValueOnce(jsonResponse(500, { error: { type: 'internal-server-error', message: 'Boom' } }));
+
+		try {
+			const result = await runGitSourceFlow(options);
+
+			expect(useUserInputMock).toHaveBeenCalledTimes(1);
+			expect(JSON.parse(String(fetchMock.mock.calls[2][1]!.body))).toMatchObject({ repoName: 'my-scraper-2' });
+			expect(result.stopReason).toBe('repoCreateFailed');
+		} finally {
+			fetchMock.mockRestore();
+		}
+	});
+
+	// Nobody is there to answer the prompt, so a rejected name has to stop with actionable steps instead.
+	it('stops on a rejected name when it cannot ask', async () => {
+		const fetchMock = vi
+			.spyOn(globalThis, 'fetch')
+			.mockResolvedValueOnce(
+				jsonResponse(200, {
+					data: [{ id: 'github-app', provider: 'github', workspaces: [{ id: 'apify', label: 'apify' }] }],
+				}),
+			)
+			.mockResolvedValueOnce(
+				jsonResponse(400, { error: { type: 'invalid-parameter', message: 'Name already exists' } }),
+			);
+
+		try {
+			const result = await runGitSourceFlow({ ...options, isInteractive: false });
+
+			expect(useUserInputMock).not.toHaveBeenCalled();
+			expect(result.stopReason).toBe('repoNameRejected');
+		} finally {
+			fetchMock.mockRestore();
+		}
 	});
 });

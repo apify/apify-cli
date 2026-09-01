@@ -9,6 +9,7 @@ import { ACTOR_SOURCE_TYPES } from '@apify/consts';
 
 import { getConsoleUrl } from '../console-url.js';
 import { useSelectFromList } from '../hooks/user-confirmations/useSelectFromList.js';
+import { useUserInput } from '../hooks/user-confirmations/useUserInput.js';
 import { info, warning } from '../outputs.js';
 import type { AuthJSON } from '../types.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
@@ -539,21 +540,36 @@ export const runGitSourceFlow = async ({
 	const { workspace } = chosen;
 
 	let repo: CreatedRemoteRepo;
-	try {
-		info({
-			message: `Creating ${isPrivate ? 'private' : 'public'} repository ${workspace}/${repoName} from the template...`,
-		});
-		repo = await createRemoteRepo({
-			client,
-			provider,
-			workspace,
-			repoName,
-			isPrivate,
-			templateArchiveUrl,
-		});
-	} catch (err) {
-		const stopReason = err instanceof CreateRemoteRepoError ? err.stopReason : 'repoCreateFailed';
-		return stopped(stopReason, err, { workspaces });
+	while (true) {
+		try {
+			info({
+				message: `Creating ${isPrivate ? 'private' : 'public'} repository ${workspace}/${repoName} from the template...`,
+			});
+			repo = await createRemoteRepo({
+				client,
+				provider,
+				workspace,
+				repoName,
+				isPrivate,
+				templateArchiveUrl,
+			});
+			break;
+		} catch (err) {
+			// A taken or malformed name is the one failure the user can fix without re-running, and
+			// nothing has been created yet — so ask for another name instead of stopping.
+			if (err instanceof CreateRemoteRepoError && err.stopReason === 'repoNameRejected' && isInteractive) {
+				warning({ message: err.message });
+				repoName = await useUserInput({
+					message: 'Choose a different repository name:',
+					validate: (value) => value.trim().length > 0 || 'Enter a repository name.',
+				});
+				continue;
+			}
+
+			return stopped(err instanceof CreateRemoteRepoError ? err.stopReason : 'repoCreateFailed', err, {
+				workspaces,
+			});
+		}
 	}
 
 	try {
