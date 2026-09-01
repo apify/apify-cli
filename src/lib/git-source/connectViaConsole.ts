@@ -15,10 +15,12 @@ import type { GitProvider } from './gitSource.js';
 // `localCliApiVersion` query param and builds the callback URL from it.
 const API_VERSION = 'v1';
 
-const CONNECT_TIMEOUT_MS = 5 * 60_000;
+export const CONNECT_TIMEOUT_MS = 5 * 60_000;
 
 export type ConnectViaConsoleResult =
 	| { connected: true }
+	/** The caller stopped waiting — it learned of the connection another way. Nothing to report. */
+	| { abandoned: true }
 	| { stopReason: 'connectCancelled' | 'connectTimedOut'; message: string };
 
 /**
@@ -31,7 +33,11 @@ export type ConnectViaConsoleResult =
  *
  * The caller re-reads the integration list afterwards, so the reported id is only logged.
  */
-export const connectViaConsole = async (provider: GitProvider, label: string): Promise<ConnectViaConsoleResult> => {
+export const connectViaConsole = async (
+	provider: GitProvider,
+	label: string,
+	abortSignal?: AbortSignal,
+): Promise<ConnectViaConsoleResult> => {
 	const consoleUrl = getConsoleUrl();
 	const authToken = cryptoRandomObjectId();
 
@@ -70,6 +76,8 @@ export const connectViaConsole = async (provider: GitProvider, label: string): P
 			}),
 		CONNECT_TIMEOUT_MS,
 	);
+
+	abortSignal?.addEventListener('abort', () => resolve({ abandoned: true }), { once: true });
 
 	// Port 0 assigns a random free port.
 	server.listen(0);

@@ -12,7 +12,15 @@ import {
 	parseGitRepoFlag,
 	chooseWorkspace,
 	readProviderState,
+	ensureUsableIntegration,
 } from '../../../src/lib/git-source/gitSource.js';
+
+vi.mock('open', () => ({ default: vi.fn(async () => undefined) }));
+vi.mock('../../../src/lib/git-source/connectViaConsole.js', () => ({
+	CONNECT_TIMEOUT_MS: 5 * 60_000,
+	// Stands in for a Console that never calls back, which is what the polling fallback is for.
+	connectViaConsole: vi.fn(() => new Promise(() => {})),
+}));
 
 describe('parseGitRepoFlag', () => {
 	it('falls back to the Actor name and an unset workspace when the flag is omitted', () => {
@@ -232,6 +240,20 @@ describe('buildGitSourceNextSteps', () => {
 
 	// A clone that landed already has its remote, so re-adding one would exit with "remote origin
 	// already exists" — the only thing left undone is the local configuration.
+	// The Actor is created before the clone is judged, so a missing deploy key can coexist with missing
+	// files. Both have to be recoverable from one list.
+	it('offers the clone alongside the deploy key when neither landed', () => {
+		const steps = buildGitSourceNextSteps({
+			...base,
+			stopReason: 'deploymentKeyFailed',
+			scaffolded: false,
+			actorId: 'actor-1',
+		});
+
+		expect(steps[0]).toBe('git clone https://github.com/acme-inc/my-scraper.git "my-scraper"');
+		expect(steps.at(-1)).toContain('deploy key');
+	});
+
 	it('does not rebuild the clone when only the local configuration failed', () => {
 		const steps = buildGitSourceNextSteps({ ...base, stopReason: 'gitSetupFailed' });
 
@@ -247,6 +269,14 @@ describe('buildGitSourceNextSteps', () => {
 
 		expect(steps).toContainEqual(expect.stringContaining(`git clone ${base.httpsUrl}`));
 		expect(steps).not.toContainEqual(expect.stringContaining('git remote add'));
+	});
+
+	// HTTPS needs a provider token, which many users have never made. An SSH key they already have gets
+	// them the files without one.
+	it('offers SSH as well as HTTPS when the clone has to be redone', () => {
+		const steps = buildGitSourceNextSteps({ ...base, stopReason: 'gitSetupFailed', scaffolded: false });
+
+		expect(steps).toContainEqual(expect.stringContaining(`git clone ${base.remoteUrl}`));
 	});
 });
 
@@ -279,6 +309,26 @@ describe('logGitSourceOutcome', () => {
 		expect(lines[0]).not.toContain('scaffolded');
 	});
 
+	// A clone that could not authenticate no longer costs the Actor, so the wording must not claim it is
+	// missing when it exists.
+	it('says the Actor exists when only the clone failed', () => {
+		const lines: string[] = [];
+		const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => lines.push(args.map(String).join(' ')));
+		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+
+		try {
+			logGitSourceOutcome({ ...result(false), stopReason: 'gitSetupFailed', actorId: 'actor-1' }, [
+				'git clone https://gitlab.com/me/my-scraper.git "my-scraper"',
+			]);
+		} finally {
+			errorSpy.mockRestore();
+			logSpy.mockRestore();
+		}
+
+		expect(lines[0]).toContain('Actor created');
+		expect(lines[0]).not.toContain('was not created');
+	});
+
 	it('keeps the scaffold wording when the clone had already landed', () => {
 		const lines: string[] = [];
 		const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => lines.push(args.map(String).join(' ')));
@@ -292,5 +342,62 @@ describe('logGitSourceOutcome', () => {
 		}
 
 		expect(lines[0]).toContain('Actor scaffolded');
+	});
+});
+
+describe('ensureUsableIntegration', () => {
+	const client = { baseUrl: 'https://api.example.com/v2', token: 'token' } as never;
+
+	afterEach(() => {
+		vi.unstubAllGlobals();
+	});
+
+	/** Answers `GET /integrations/git` with a different listing on each call. */
+	const stubListings = (listings: GitProviderIntegration[][]) => {
+		let call = 0;
+		vi.stubGlobal(
+			'fetch',
+			vi.fn(async () => ({
+				ok: true,
+				status: 200,
+				statusText: 'OK',
+				text: async () => JSON.stringify({ data: listings[Math.min(call++, listings.length - 1)] }),
+			})),
+		);
+	};
+
+	const gitlabIntegration: GitProviderIntegration = {
+		id: 'integration-1',
+		provider: 'gitlab',
+		workspaces: [{ id: '4711', label: 'solar.richard' }],
+	};
+
+	it('takes the first listing when the provider is already usable', async () => {
+		stubListings([[gitlabIntegration]]);
+
+		const state = await ensureUsableIntegration('gitlab', { client, isInteractive: true });
+
+		expect(state.workspaces).toEqual([{ id: '4711', label: 'solar.richard', providerId: 'integration-1' }]);
+		expect(fetch).toHaveBeenCalledTimes(1);
+	});
+
+	// Console's callback is not guaranteed: connecting on the page by hand never triggers it. The poll is
+	// what makes that case work, so it must not depend on the hand-off resolving.
+	it('picks up a connection made without a callback', async () => {
+		stubListings([[], [gitlabIntegration]]);
+
+		const state = await ensureUsableIntegration('gitlab', { client, isInteractive: true });
+
+		expect(state.connected).toBe(true);
+		expect(state.workspaces).toHaveLength(1);
+	});
+
+	it('never waits on a browser it cannot open', async () => {
+		stubListings([[]]);
+
+		const state = await ensureUsableIntegration('gitlab', { client, isInteractive: false });
+
+		expect(state).toEqual({ connected: false, workspaces: [], addWorkspaceUrl: undefined });
+		expect(fetch).toHaveBeenCalledTimes(1);
 	});
 });

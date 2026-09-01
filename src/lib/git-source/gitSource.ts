@@ -11,7 +11,7 @@ import { getConsoleIntegrationsUrl, getConsoleUrl } from '../console-url.js';
 import { useSelectFromList } from '../hooks/user-confirmations/useSelectFromList.js';
 import { info, warning } from '../outputs.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
-import { connectViaConsole } from './connectViaConsole.js';
+import { CONNECT_TIMEOUT_MS, connectViaConsole } from './connectViaConsole.js';
 
 /** Where a new Actor's source code lives. `apify` is the existing, Git-less path. */
 export const GIT_SOURCE_CHOICES = ['apify', 'github', 'gitlab', 'bitbucket'] as const;
@@ -242,6 +242,34 @@ const POLL_INTERVAL_MAX_MS = 10_000;
 const POLL_TIMEOUT_MS = 3 * 60_000;
 
 /**
+ * Polls the listing until the provider has a workspace, the deadline passes, or the caller aborts.
+ * Reports the last state it read, so a half-finished grant is not mistaken for a missing one.
+ */
+const pollForWorkspaces = async (
+	load: () => Promise<ProviderState>,
+	timeoutMs: number,
+	abortSignal?: AbortSignal,
+): Promise<ProviderState | null> => {
+	const deadline = Date.now() + timeoutMs;
+	let interval = POLL_INTERVAL_START_MS;
+	let state: ProviderState | null = null;
+
+	while (Date.now() < deadline) {
+		try {
+			await sleep(interval, undefined, { signal: abortSignal });
+		} catch {
+			return state;
+		}
+
+		interval = Math.min(Math.round(interval * 1.5), POLL_INTERVAL_MAX_MS);
+		state = await load();
+		if (state.workspaces.length) return state;
+	}
+
+	return state;
+};
+
+/**
  * Makes sure the provider is connected and has at least one workspace, opening the browser and polling
  * if not. Nothing comes back to the CLI directly — the browser hands the code to Console — so polling
  * the API is the only way to know it finished. Returns the last state seen when the user never did.
@@ -250,13 +278,13 @@ const POLL_TIMEOUT_MS = 3 * 60_000;
  * installing the app populates `workspaces`. Authorizing again cannot fix a missing installation, so the
  * two cases open different URLs.
  */
-const ensureUsableIntegration = async (
+export const ensureUsableIntegration = async (
 	provider: GitProvider,
 	{ client, isInteractive }: ApiCallOptions & { isInteractive: boolean },
 ): Promise<ProviderState> => {
 	const load = async () => readProviderState(await fetchGitIntegrations({ client }), provider);
 
-	let state = await load();
+	const state = await load();
 	cliDebugPrint('git-source', 'integrations:', provider, state.connected, `workspaces=${state.workspaces.length}`);
 	if (state.workspaces.length) return state;
 
@@ -267,7 +295,20 @@ const ensureUsableIntegration = async (
 
 	// GitLab and Bitbucket cannot build an authorize URL, so Console starts the flow and reports back.
 	if (!state.connected && !authorize) {
-		const result = await connectViaConsole(provider, label);
+		// Console's callback is the fast path, not a guarantee: a user who connects on the page by hand
+		// never triggers it, and neither does a Console that predates the hand-off. So watch the listing
+		// too, and take whichever arrives first.
+		const controller = new AbortController();
+		const handoff = connectViaConsole(provider, label, controller.signal);
+		const polled = await Promise.race([
+			handoff.then(() => null),
+			pollForWorkspaces(load, CONNECT_TIMEOUT_MS, controller.signal),
+		]);
+		controller.abort();
+
+		if (polled?.workspaces.length) return polled;
+
+		const result = await handoff;
 		if ('stopReason' in result) {
 			warning({ message: result.message });
 			return state;
@@ -285,16 +326,7 @@ const ensureUsableIntegration = async (
 	await open(url).catch(() => undefined);
 	info({ message: 'Waiting for authorization to complete in your browser...' });
 
-	const deadline = Date.now() + POLL_TIMEOUT_MS;
-	let interval = POLL_INTERVAL_START_MS;
-	while (Date.now() < deadline) {
-		await sleep(interval);
-		interval = Math.min(Math.round(interval * 1.5), POLL_INTERVAL_MAX_MS);
-		state = await load();
-		if (state.workspaces.length) return state;
-	}
-
-	return state;
+	return (await pollForWorkspaces(load, POLL_TIMEOUT_MS)) ?? state;
 };
 
 /**
@@ -358,6 +390,20 @@ interface CreatedRemoteRepo {
 }
 
 /**
+ * Drops any account name Bitbucket embeds in its clone URL. Git would take it as the username and ask
+ * only for a password, which fails for a token whose username is the token's own.
+ */
+const withoutUserInfo = (url: string): string => {
+	if (!URL.canParse(url)) return url;
+
+	const parsed = new URL(url);
+	parsed.username = '';
+	parsed.password = '';
+
+	return parsed.href;
+};
+
+/**
  * Asks the Apify platform to create the repository and seed it with the scaffold. The platform holds the
  * provider credential and reads the template itself, so the CLI handles neither.
  */
@@ -385,7 +431,9 @@ const createRemoteRepo = async (options: CreateRemoteRepoOptions): Promise<Creat
 		}
 	})();
 
-	if (response.ok && payload?.data) return payload.data;
+	if (response.ok && payload?.data) {
+		return { ...payload.data, httpsUrl: withoutUserInfo(payload.data.httpsUrl) };
+	}
 
 	const type = payload?.error?.type;
 	const message = payload?.error?.message || `${response.status} ${response.statusText}`;
@@ -567,6 +615,10 @@ export const runGitSourceFlow = async ({
 		return stopped(stopReason, err, { workspaces });
 	}
 
+	// The clone is the only step that needs the user's own provider credentials, and the only one that is
+	// purely local. Losing it costs the files, not the Actor, so the error waits until the platform side
+	// is finished.
+	let cloneError: unknown = null;
 	try {
 		info({ message: `Cloning ${repo.httpsUrl}...` });
 		await cloneRepo(actorDir, repo.httpsUrl, isInteractive);
@@ -574,7 +626,10 @@ export const runGitSourceFlow = async ({
 
 		await customize(actorDir);
 	} catch (err) {
-		return stopped('gitSetupFailed', err, { workspaces, remoteUrl: repo.sshUrl, httpsUrl: repo.httpsUrl });
+		// execa leads with its own "Command failed" line and the full argv, burying git's own message,
+		// which is the only part that says why.
+		const stderr = (err as { stderr?: string }).stderr?.trim();
+		cloneError = stderr ? new Error(stderr) : err;
 	}
 
 	let actorId: string;
@@ -592,6 +647,15 @@ export const runGitSourceFlow = async ({
 	} catch (err) {
 		// Everything else landed, so the Actor exists and is reported — it just cannot build yet.
 		return stopped('deploymentKeyFailed', err, {
+			workspaces,
+			remoteUrl: repo.sshUrl,
+			httpsUrl: repo.httpsUrl,
+			actorId,
+		});
+	}
+
+	if (cloneError) {
+		return stopped('gitSetupFailed', cloneError, {
 			workspaces,
 			remoteUrl: repo.sshUrl,
 			httpsUrl: repo.httpsUrl,
@@ -679,14 +743,18 @@ export const buildGitSourceNextSteps = ({
 			// has its remote, so only its files need a hand. A failed one leaves nothing to attach to.
 			return scaffolded
 				? [enter, 'Apply the local configuration by hand: the error above says what failed']
-				: [`git clone ${httpsUrl} "${actorName}"`, enter];
+				: [
+						`git clone ${httpsUrl} "${actorName}"`,
+						`Or clone over SSH, if you have a key for the provider: git clone ${remoteUrl} "${actorName}"`,
+						enter,
+					];
 		case 'actorCreateFailed':
 			return [enter, `Create an Actor from ${remoteUrl} in Apify Console`];
 		// Repository, clone and Actor all landed. Only the build key is missing, and the platform cannot
 		// read a private repository without it.
 		case 'deploymentKeyFailed':
 			return [
-				enter,
+				...(scaffolded ? [enter] : [`git clone ${httpsUrl} "${actorName}"`, enter]),
 				`Add the Apify deploy key in the Actor's Source settings before building: ${getConsoleUrl()}/actors/${actorId}`,
 			];
 	}
@@ -695,10 +763,13 @@ export const buildGitSourceNextSteps = ({
 export const logGitSourceOutcome = (result: GitSourceResult, nextSteps: string[]) => {
 	if (!result.stopReason) return;
 
-	// This replaces the success banner, so it is the only outcome the user sees.
+	// This replaces the success banner, so it is the only outcome the user sees. Each headline names what
+	// failed rather than the state it left behind.
 	const headline = result.scaffolded
 		? 'Actor scaffolded, but the Git setup did not finish'
-		: 'The Actor was not created: the Git setup stopped';
+		: result.actorId
+			? 'Actor created, but the clone failed'
+			: 'The Actor was not created: the Git setup stopped';
 	warning({ message: `${headline}: ${result.error}` });
 	info({ message: `Next steps:\n${nextSteps.map((step) => `  ${step}`).join('\n')}` });
 };

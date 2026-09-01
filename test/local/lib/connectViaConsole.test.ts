@@ -96,6 +96,17 @@ describe('connectViaConsole', () => {
 		}
 	});
 
+	// The caller races this against polling the API, so it has to let go when polling wins.
+	it('stops waiting when the caller aborts', async () => {
+		const controller = new AbortController();
+		const finished = connectViaConsole('gitlab', 'GitLab', controller.signal);
+		await vi.waitFor(() => expect(open).toHaveBeenCalled());
+
+		controller.abort();
+
+		expect(await finished).toEqual({ abandoned: true });
+	});
+
 	it('rejects a report that does not carry the token', async () => {
 		const { finished, token, callback } = await startConnect('gitlab', 'GitLab');
 
