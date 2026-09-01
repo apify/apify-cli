@@ -4,7 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintStatus } from '../../lib/commands/pretty-print-status.js';
-import { formatActorContextError, resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
+import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import {
@@ -87,7 +87,9 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 
 		if (!ctx.valid) {
 			error({
-				message: formatActorContextError(ctx.reason, actorId),
+				message: actorId
+					? `${ctx.reason}. Check that the Actor ID or name is correct and that your API token has permission to access it.`
+					: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
 			});
 
 			return;
