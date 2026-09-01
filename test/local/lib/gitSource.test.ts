@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { connectViaConsole } from '../../../src/lib/git-source/connectViaConsole.js';
 import {
 	buildGitSourceNextSteps,
 	getAddWorkspaceUrl,
@@ -28,11 +29,27 @@ beforeEach(() => {
 });
 
 vi.mock('open', () => ({ default: vi.fn(async () => undefined) }));
+// The poll's backoff is not what these tests are about, and Vitest's fake timers do not reach
+// `node:timers/promises`. Keeping the abort behavior is what matters: the poll gives up on it.
+vi.mock('node:timers/promises', () => ({
+	setTimeout: (_ms: number, value?: unknown, { signal }: { signal?: AbortSignal } = {}) =>
+		new Promise((resolve, reject) => {
+			if (signal?.aborted) {
+				reject(signal.reason);
+				return;
+			}
+
+			signal?.addEventListener('abort', () => reject(signal.reason), { once: true });
+			setImmediate(() => resolve(value));
+		}),
+}));
 vi.mock('../../../src/lib/git-source/connectViaConsole.js', () => ({
 	CONNECT_TIMEOUT_MS: 5 * 60_000,
 	// Stands in for a Console that never calls back, which is what the polling fallback is for.
 	connectViaConsole: vi.fn(() => new Promise(() => {})),
 }));
+
+const connectViaConsoleMock = vi.mocked(connectViaConsole);
 
 describe('parseGitRepoFlag', () => {
 	it('falls back to the Actor name and an unset workspace when the flag is omitted', () => {
@@ -400,17 +417,22 @@ describe('ensureUsableIntegration', () => {
 		vi.unstubAllGlobals();
 	});
 
-	/** Answers `GET /integrations/git` with a different listing on each call. */
-	const stubListings = (listings: GitProviderIntegration[][]) => {
+	/** Answers `GET /integrations/git` with a different listing on each call; an `Error` fails that call. */
+	const stubListings = (listings: (GitProviderIntegration[] | Error)[]) => {
 		let call = 0;
 		vi.stubGlobal(
 			'fetch',
-			vi.fn(async () => ({
-				ok: true,
-				status: 200,
-				statusText: 'OK',
-				text: async () => JSON.stringify({ data: listings[Math.min(call++, listings.length - 1)] }),
-			})),
+			vi.fn(async () => {
+				const listing = listings[Math.min(call++, listings.length - 1)];
+				if (listing instanceof Error) throw listing;
+
+				return {
+					ok: true,
+					status: 200,
+					statusText: 'OK',
+					text: async () => JSON.stringify({ data: listing }),
+				};
+			}),
 		);
 	};
 
@@ -438,6 +460,27 @@ describe('ensureUsableIntegration', () => {
 
 		expect(state.connected).toBe(true);
 		expect(state.workspaces).toHaveLength(1);
+	});
+
+	// A dropped connection mid-wait used to reject out of the poll, which skipped the abort that closes the
+	// loopback server — leaving the command hanging on its five-minute timer.
+	it('keeps waiting when a listing lookup fails', async () => {
+		stubListings([[], new Error('network down'), [gitlabIntegration]]);
+
+		const state = await ensureUsableIntegration('gitlab', { client, isInteractive: true });
+
+		expect(state.workspaces).toHaveLength(1);
+	});
+
+	// Console reports the connection as soon as the integration exists, which can beat its workspaces into
+	// the listing. Stopping on that one empty read reported a connected account as a missing one.
+	it('keeps waiting when the callback lands before the workspaces do', async () => {
+		connectViaConsoleMock.mockResolvedValueOnce({ connected: true });
+		stubListings([[], [{ ...gitlabIntegration, workspaces: [] }], [gitlabIntegration]]);
+
+		const state = await ensureUsableIntegration('gitlab', { client, isInteractive: true });
+
+		expect(state.workspaces).toEqual([{ id: '4711', label: 'solar.richard', providerId: 'integration-1' }]);
 	});
 
 	it('never waits on a browser it cannot open', async () => {

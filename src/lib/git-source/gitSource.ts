@@ -293,7 +293,13 @@ const pollForWorkspaces = async (
 		}
 
 		interval = Math.min(Math.round(interval * 1.5), POLL_INTERVAL_MAX_MS);
-		state = await load();
+		try {
+			state = await load();
+		} catch (error) {
+			// A dropped connection or one 5xx mid-wait is not an answer; the grant may still land.
+			cliDebugPrint('git-source', 'poll failed:', error);
+			continue;
+		}
 		if (state.workspaces.length) return state;
 		await onState?.(state);
 	}
@@ -331,12 +337,19 @@ export const ensureUsableIntegration = async (
 		// never triggers it, and neither does a Console that predates the hand-off. So watch the listing
 		// too, and take whichever arrives first.
 		const controller = new AbortController();
+		const startedAt = Date.now();
 		const handoff = connectViaConsole(provider, label, controller.signal);
-		const polled = await Promise.race([
-			handoff.then(() => null),
-			pollForWorkspaces(load, { timeoutMs: CONNECT_TIMEOUT_MS, abortSignal: controller.signal }),
-		]);
-		controller.abort();
+		let polled: ProviderState | null;
+		try {
+			polled = await Promise.race([
+				handoff.then(() => null),
+				pollForWorkspaces(load, { timeoutMs: CONNECT_TIMEOUT_MS, abortSignal: controller.signal }),
+			]);
+		} finally {
+			// Aborting is what closes the loopback server and clears its timer, so it has to run even when
+			// the poll throws — a leaked handle holds the command open until the connect timeout expires.
+			controller.abort();
+		}
 
 		if (polled?.workspaces.length) return polled;
 
@@ -346,7 +359,17 @@ export const ensureUsableIntegration = async (
 			return state;
 		}
 
-		return load();
+		state = await load();
+		if (state.workspaces.length) return state;
+
+		// Console reports the connection as soon as the integration exists, which can be moments before its
+		// workspaces are filled in. One empty read is not a missing account, so wait the way the branch
+		// below waits for an installation.
+		const remainingMs = Math.min(POLL_TIMEOUT_MS, CONNECT_TIMEOUT_MS - (Date.now() - startedAt));
+		if (remainingMs < POLL_INTERVAL_START_MS) return state;
+
+		info({ message: `Waiting for Apify to finish connecting your ${label} account...` });
+		return (await pollForWorkspaces(load, { timeoutMs: remainingMs })) ?? state;
 	}
 
 	// Which grant is missing decides the URL, and authorizing changes the answer: the integration then
