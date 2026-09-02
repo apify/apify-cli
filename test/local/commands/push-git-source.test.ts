@@ -111,7 +111,7 @@ describe('apify push on a Git-sourced Actor', () => {
 		const stderr = logMessages.error.join('\n');
 		expect(stderr).toContain(GIT_REPO_URL);
 		expect(stderr).toContain('run git push instead');
-		expect(stderr).toContain('Use --force to switch its source to the local files');
+		expect(stderr).toContain('To switch the source to the local files, use --force.');
 	});
 
 	it('leaves the Actor alone when the user says no', async () => {
