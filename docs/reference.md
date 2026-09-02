@@ -445,6 +445,69 @@ ARGUMENTS
         validates all schemas in '.actor/actor.json'.
 ```
 
+##### `apify runtime`
+
+```sh
+DESCRIPTION
+  Manages the Actor runtime, a self-contained local Apify platform running as a 
+  Docker container.
+
+SUBCOMMANDS
+  runtime install  Installs the Actor runtime: verifies this
+                   machine can run Docker images and downloads the Actor runtime
+                   Docker image ('actor-runtime:latest').
+  runtime start    Starts the Actor runtime, a local Apify
+                   platform running as a Docker container.
+  runtime stop     Stops the Actor runtime container started with
+                   'apify runtime start --detach'.
+```
+
+##### `apify runtime install`
+
+```sh
+DESCRIPTION
+  Installs the Actor runtime: verifies this machine can run Docker images and 
+  downloads the Actor runtime Docker image ('actor-runtime:latest').
+
+USAGE
+  $ apify runtime install [-f]
+
+FLAGS
+  -f, --force  Download the Actor runtime image even when it is already
+               available locally.
+```
+
+##### `apify runtime start`
+
+```sh
+DESCRIPTION
+  Starts the Actor runtime, a local Apify platform running as a Docker 
+  container.
+  Installs the runtime first when needed (like 'apify runtime install'). The 
+  runtime API listens on http://localhost:3333 and the console on 
+  http://localhost:3000.
+
+USAGE
+  $ apify runtime start [--data-dir <value>] [-d]
+
+FLAGS
+      --data-dir=<value>  Host directory mounted as the runtime
+                          data directory (storages, builds and run records).
+                          Defaults to ~/.apify/actor-runtime/data.
+  -d, --detach            Run the runtime container in the
+                          background. Stop it with 'apify runtime stop'.
+```
+
+##### `apify runtime stop`
+
+```sh
+DESCRIPTION
+  Stops the Actor runtime container started with 'apify runtime start --detach'.
+
+USAGE
+  $ apify runtime stop
+```
+
 ##### `apify actor`
 
 ```sh
