@@ -22,6 +22,7 @@ import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } fro
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
@@ -122,6 +123,36 @@ export function resolvePushOutcome(buildStatus: string): PushOutcome {
 	}
 }
 
+/**
+ * Asks before `apify push` turns a Git-sourced version into source files, which drops the Git connection.
+ * `--force` skips the question but keeps the warning. Without a terminal and without it, the run stops here.
+ */
+const confirmGitSourceSwitch = async ({
+	actorName,
+	gitRepoUrl,
+	force,
+}: {
+	actorName: string;
+	gitRepoUrl: string;
+	force: boolean;
+}) => {
+	warning({
+		message: [
+			`Actor ${actorName} builds from a Git repository: ${gitRepoUrl}`,
+			'A push replaces that source with the local files and drops the Git connection.',
+			'To build from the repository, run git push instead. The platform builds on push when Automatic builds are on.',
+		].join('\n'),
+	});
+
+	if (force) return true;
+
+	return useYesNoConfirm({
+		message: 'Switch the source to the local files?',
+		default: false,
+		errorMessageForStdin: `Actor ${actorName} builds from a Git repository. Use --force to switch its source to the local files.`,
+	});
+};
+
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	static override name = 'push' as const;
 
@@ -178,7 +209,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}),
 		force: Flags.boolean({
 			char: 'f',
-			description: 'Push an Actor even when the local files are older than the Actor on the platform.',
+			description:
+				'Push an Actor even when the local files are older than the Actor on the platform, or when the Actor builds from a Git repository.',
 			default: false,
 			required: false,
 		}),
@@ -329,37 +361,54 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
 
+		if (filesSize < MAX_MULTIFILE_BYTES && !isActorCreatedNow) {
+			const client = await actorClient.get();
+
+			// Check when was files modified last
+			const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
+				const { mtimeMs, ctimeMs } = statSync(join(cwd, filePath));
+
+				// Sometimes it's possible mtimeMs is some messed up value (like 2000/01/01 midnight), then we want to check created if it's newer
+				const fileModifiedMs = mtimeMs > ctimeMs ? mtimeMs : ctimeMs;
+
+				return modifiedMs > fileModifiedMs ? modifiedMs : fileModifiedMs;
+			}, 0);
+			const actorModifiedMs = client?.modifiedAt.valueOf();
+
+			if (
+				!this.flags.force &&
+				actorModifiedMs &&
+				mostRecentModifiedFileMs < actorModifiedMs &&
+				(actorConfig?.name || forceActorId)
+			) {
+				throw new Error(
+					`Actor with identifier "${actorConfig?.name || forceActorId}" is already on the platform and was modified there since modified locally.
+Skipping push. Use --force to override.`,
+				);
+			}
+		}
+
+		const actorCurrentVersion = await actorClient.version(version).get();
+
+		// A push replaces the version's source with the local files. For a Git-sourced version that also
+		// drops the Git connection, so it needs an explicit go-ahead.
+		if (actorCurrentVersion?.sourceType === ACTOR_SOURCE_TYPES.GIT_REPO) {
+			const confirmed = await confirmGitSourceSwitch({
+				actorName: actor.name,
+				gitRepoUrl: actorCurrentVersion.gitRepoUrl,
+				force: this.flags.force,
+			});
+
+			if (!confirmed) {
+				info({ message: `Push aborted. Actor ${actor.name} still builds from its Git repository.` });
+				return;
+			}
+		}
+
 		let sourceType;
 		let sourceFiles;
 		let tarballUrl;
 		if (filesSize < MAX_MULTIFILE_BYTES) {
-			const client = await actorClient.get();
-
-			if (!isActorCreatedNow) {
-				// Check when was files modified last
-				const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
-					const { mtimeMs, ctimeMs } = statSync(join(cwd, filePath));
-
-					// Sometimes it's possible mtimeMs is some messed up value (like 2000/01/01 midnight), then we want to check created if it's newer
-					const fileModifiedMs = mtimeMs > ctimeMs ? mtimeMs : ctimeMs;
-
-					return modifiedMs > fileModifiedMs ? modifiedMs : fileModifiedMs;
-				}, 0);
-				const actorModifiedMs = client?.modifiedAt.valueOf();
-
-				if (
-					!this.flags.force &&
-					actorModifiedMs &&
-					mostRecentModifiedFileMs < actorModifiedMs &&
-					(actorConfig?.name || forceActorId)
-				) {
-					throw new Error(
-						`Actor with identifier "${actorConfig?.name || forceActorId}" is already on the platform and was modified there since modified locally.
-Skipping push. Use --force to override.`,
-					);
-				}
-			}
-
 			sourceFiles = await createSourceFiles(filePathsToPush, cwd);
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else {
@@ -400,7 +449,6 @@ Skipping push. Use --force to override.`,
 		}
 
 		// Update Actor version
-		const actorCurrentVersion = await actorClient.version(version).get();
 		const envVars = actorConfig!.environmentVariables
 			? transformEnvToEnvVars(actorConfig!.environmentVariables as Record<string, string>, undefined, {
 					allowMissing: this.flags.allowMissingSecrets,

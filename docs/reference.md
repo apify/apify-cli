@@ -800,7 +800,8 @@ FLAGS
                                  Actor is located.
   -f, --force                    Push an Actor even
                                  when the local files are older than the Actor on
-                                 the platform.
+                                 the platform, or when the Actor builds from a Git
+                                 repository.
       --json                     Format the command
                                  output as JSON.
       --open                     Whether to open the
