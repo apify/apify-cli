@@ -140,7 +140,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}),
 		source: Flags.string({
 			description:
-				'Where the Actor source code will live. With "github", Apify creates the repository on your connected GitHub account from the template, clones it here, and creates an Actor that builds from it.',
+				'Where the Actor source code will live. With a Git provider, Apify creates the repository on your connected account from the template, clones it here, and creates an Actor that builds from it.',
 			choices: [...GIT_SOURCE_CHOICES],
 			// No default: an omitted flag triggers the wizard prompt, or "apify" when it cannot be asked.
 			required: false,
@@ -292,7 +292,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Catches a non-interactive run that named a repository but omitted --source, which would
 		// otherwise silently take the Apify path.
 		if (!gitProvider && gitRepo) {
-			throw new Error('--git-repo only applies to a Git source, so add --source github or drop it.');
+			throw new Error('--git-repo only applies to a Git source, so add --source github|gitlab|bitbucket or drop it.');
 		}
 
 		// The platform only accepts archive URLs listed in the official manifest.

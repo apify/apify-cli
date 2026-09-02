@@ -7,19 +7,18 @@ import open from 'open';
 
 import { ACTOR_SOURCE_TYPES } from '@apify/consts';
 
-import { getConsoleUrl } from '../console-url.js';
+import { getConsoleIntegrationsUrl, getConsoleRoutePrefix, getConsoleUrl } from '../console-url.js';
 import { useSelectFromList } from '../hooks/user-confirmations/useSelectFromList.js';
 import { useUserInput } from '../hooks/user-confirmations/useUserInput.js';
 import { info, warning } from '../outputs.js';
 import type { AuthJSON } from '../types.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
+import { CONNECT_TIMEOUT_MS, connectViaConsole } from './connectViaConsole.js';
 
 /** Where a new Actor's source code lives. `apify` is the existing, Git-less path. */
-export const GIT_SOURCE_CHOICES = ['apify', 'github'] as const;
+export const GIT_SOURCE_CHOICES = ['apify', 'github', 'gitlab', 'bitbucket'] as const;
 export type GitSource = (typeof GIT_SOURCE_CHOICES)[number];
 export type GitProvider = Exclude<GitSource, 'apify'>;
-
-export const isGitProvider = (source: string): source is GitProvider => source === 'github';
 
 /**
  * Why the Git wiring stopped short. Each one maps to runnable recovery steps in `buildGitSourceNextSteps`.
@@ -53,37 +52,42 @@ export interface GitSourceResult {
 }
 
 interface GitProviderConfig {
-	providerId: string;
-	authorizeEndpoint: string;
-	defaultClientId: string;
-	clientIdEnvVar: string;
-	defaultAppName: string;
-	appNameEnvVar: string;
-	/** `{app}` is replaced with the app name. */
-	appInstallUrl: string;
-	redirectPath: string;
+	label: string;
+	/**
+	 * Set when the CLI can build the authorize URL itself. GitLab and Bitbucket cannot: their CSRF `state`
+	 * is minted server-side, so they hand off to Console instead — see `connectViaConsole`.
+	 */
+	authorize?: {
+		endpoint: string;
+		defaultClientId: string;
+		clientIdEnvVar: string;
+		defaultAppName: string;
+		appNameEnvVar: string;
+		/** `{app}` is replaced with the app name. */
+		appInstallUrl: string;
+		redirectPath: string;
+	};
 }
 
-/**
- * Per-provider OAuth details. The CLI builds the authorize URL itself: the client id is public, while the
- * client secret and the access token never leave the platform. Both values differ per environment.
- *
- * `providerId` is the id the API addresses the integration by — synthetic for GitHub, whose App is a
- * single per-user connection rather than a `UserIntegration` document.
- */
-const GIT_PROVIDERS = {
+const GIT_PROVIDERS: Record<GitProvider, GitProviderConfig> = {
 	github: {
-		providerId: 'github-app',
-		authorizeEndpoint: 'https://github.com/login/oauth/authorize',
-		defaultClientId: 'Iv1.e39b3ed87e74885f',
-		clientIdEnvVar: 'APIFY_GITHUB_APP_CLIENT_ID',
-		defaultAppName: 'apify',
-		appNameEnvVar: 'APIFY_GITHUB_APP_NAME',
-		appInstallUrl: 'https://github.com/apps/{app}/installations/new',
-		// Legacy path, and known to be changing — apify-core has a refactor planned for this route.
-		redirectPath: '/actors/new/git/connected?service=github',
+		label: 'GitHub',
+		authorize: {
+			endpoint: 'https://github.com/login/oauth/authorize',
+			defaultClientId: 'Iv1.e39b3ed87e74885f',
+			clientIdEnvVar: 'APIFY_GITHUB_APP_CLIENT_ID',
+			defaultAppName: 'apify',
+			appNameEnvVar: 'APIFY_GITHUB_APP_NAME',
+			appInstallUrl: 'https://github.com/apps/{app}/installations/new',
+			// Legacy path, and known to be changing — apify-core has a refactor planned for this route.
+			redirectPath: '/actors/new/git/connected?service=github',
+		},
 	},
-} satisfies Record<GitProvider, GitProviderConfig>;
+	gitlab: { label: 'GitLab' },
+	bitbucket: { label: 'Bitbucket' },
+};
+
+export const isGitProvider = (source: string): source is GitProvider => Object.hasOwn(GIT_PROVIDERS, source);
 
 /**
  * The Apify account the CLI token belongs to, as `auth.json` records it. An organization login is the case
@@ -103,34 +107,37 @@ export const toGitAccount = ({ id, username, organizationOwnerUserId }: AuthJSON
 	organizationOwnerUserId,
 });
 
-/** The Console route the callback page has to run under to complete the exchange as this account. */
-const getConsoleRoutePrefix = (account?: GitAccount) =>
-	account?.organizationOwnerUserId && account.id ? `/organization/${account.id}` : null;
+/**
+ * Where to send a user who has not connected this provider to Apify yet. Providers the CLI cannot
+ * authorize itself get the Console page, which is where they connect by hand.
+ */
+export const getGitConnectUrl = (provider: GitProvider, account?: GitAccount): string => {
+	const { authorize } = GIT_PROVIDERS[provider];
+	// The Console page acts on the account its route names, so that one has to carry the account itself.
+	if (!authorize) return getConsoleIntegrationsUrl(account);
 
-/** Where to send a user who has not connected this provider to Apify yet. */
-export const getGitConnectUrl = (provider: GitProvider, account?: GitAccount) => {
-	const { authorizeEndpoint, defaultClientId, clientIdEnvVar, redirectPath } = GIT_PROVIDERS[provider];
-
-	const redirectUri = new URL(redirectPath, getConsoleUrl());
+	const redirectUri = new URL(authorize.redirectPath, getConsoleUrl());
 	const routePrefix = getConsoleRoutePrefix(account);
 	// Encoded twice on purpose, matching Console: it encodes the prefix into the query it builds, and the
 	// callback page decodes it once of its own accord before navigating there.
 	if (routePrefix) redirectUri.searchParams.set('routePrefix', encodeURIComponent(routePrefix));
 
-	const url = new URL(authorizeEndpoint);
-	url.searchParams.set('client_id', process.env[clientIdEnvVar] || defaultClientId);
+	const url = new URL(authorize.endpoint);
+	url.searchParams.set('client_id', process.env[authorize.clientIdEnvVar] || authorize.defaultClientId);
 	url.searchParams.set('redirect_uri', redirectUri.href);
 
 	return url.href;
 };
 
 /**
- * Where to install the app so the user gets a workspace to create repositories in. The API's own
- * `addWorkspaceUrl` is derived from an existing installation, so it is absent in the case that needs it.
+ * Where to install the app so the user gets a workspace to create repositories in. Only a fallback: the
+ * API reports its own `addWorkspaceUrl`, which is preferred wherever it is present.
  */
-export const getAddWorkspaceUrl = (provider: GitProvider) => {
-	const { defaultAppName, appNameEnvVar, appInstallUrl } = GIT_PROVIDERS[provider];
-	return appInstallUrl.replace('{app}', process.env[appNameEnvVar] || defaultAppName);
+export const getAddWorkspaceUrl = (provider: GitProvider, account?: GitAccount): string => {
+	const { authorize } = GIT_PROVIDERS[provider];
+	if (!authorize) return getConsoleIntegrationsUrl(account);
+
+	return authorize.appInstallUrl.replace('{app}', process.env[authorize.appNameEnvVar] || authorize.defaultAppName);
 };
 
 /** Final wizard step, mirroring the Console. Skipped when `--source` is passed. */
@@ -139,26 +146,33 @@ export const promptGitSource = async (): Promise<GitSource> =>
 		message: 'Where will the source code live?',
 		choices: [
 			{ name: 'Apify', value: 'apify', description: 'Deploy with "apify push". No Git provider involved.' },
-			{
-				name: 'GitHub',
-				value: 'github',
-				description: 'Apify creates a private repository and builds the Actor from it.',
-			},
+			...GIT_SOURCE_CHOICES.filter(isGitProvider).map((provider) => ({
+				name: GIT_PROVIDERS[provider].label,
+				value: provider,
+				description: `Apify creates a private repository on ${GIT_PROVIDERS[provider].label} and builds the Actor from it.`,
+			})),
 		],
 		default: 'apify',
 		loop: false,
 	});
 
-/** Splits `--git-repo` into workspace and name. A bare `name` leaves the workspace to be resolved. */
+/**
+ * Splits `--git-repo` into workspace and name. A bare `name` leaves the workspace to be resolved. The
+ * name is the part after the last slash: a GitLab subgroup label has slashes of its own.
+ */
 export const parseGitRepoFlag = (gitRepo: string | undefined, actorName: string) => {
 	if (!gitRepo) return { workspace: undefined, repoName: actorName };
 
-	const [first, second, ...rest] = gitRepo.split('/');
-	if (rest.length > 0 || (second !== undefined && (!first || !second))) {
+	const splitAt = gitRepo.lastIndexOf('/');
+	if (splitAt === -1) return { workspace: undefined, repoName: gitRepo };
+
+	const workspace = gitRepo.slice(0, splitAt);
+	const repoName = gitRepo.slice(splitAt + 1);
+	if (!workspace || !repoName) {
 		throw new Error(`Invalid --git-repo "${gitRepo}". Use "workspace/name" or just "name".`);
 	}
 
-	return second === undefined ? { workspace: undefined, repoName: first } : { workspace: first, repoName: second };
+	return { workspace, repoName };
 };
 
 /** The client the command already built, so the token is resolved and the user checked once per run. */
@@ -216,8 +230,36 @@ const fetchGitIntegrations = async (options: ApiCallOptions): Promise<GitProvide
 	return payload?.data ?? [];
 };
 
-const findIntegration = (integrations: GitProviderIntegration[], provider: GitProvider) =>
-	integrations.find((integration) => integration.id === GIT_PROVIDERS[provider].providerId);
+/** A workspace plus the connected account it belongs to, whose id addresses it in every later call. */
+export interface ResolvedWorkspace extends GitWorkspace {
+	providerId: string;
+}
+
+/** What the CLI needs from the listing: whether the provider is connected, and where it can create. */
+interface ProviderState {
+	connected: boolean;
+	workspaces: ResolvedWorkspace[];
+	/** The API's own "give Apify access to another account" URL, when it reported one. */
+	addWorkspaceUrl?: string;
+}
+
+/**
+ * Reads the listing once and reduces it to this provider's state.
+ *
+ * GitHub is one integration holding every account it is installed on. GitLab and Bitbucket report one
+ * integration per connected account, so taking the first would hide the rest.
+ */
+export const readProviderState = (integrations: GitProviderIntegration[], provider: GitProvider): ProviderState => {
+	const mine = integrations.filter((integration) => integration.provider === provider);
+
+	return {
+		connected: mine.length > 0,
+		workspaces: mine.flatMap((integration) =>
+			integration.workspaces.map((workspace) => ({ ...workspace, providerId: integration.id })),
+		),
+		addWorkspaceUrl: mine.find(({ addWorkspaceUrl }) => addWorkspaceUrl)?.addWorkspaceUrl,
+	};
+};
 
 // Backs off, so the early polls stay fast without costing a request every two seconds for three minutes.
 const POLL_INTERVAL_START_MS = 2_000;
@@ -225,64 +267,136 @@ const POLL_INTERVAL_MAX_MS = 10_000;
 const POLL_TIMEOUT_MS = 3 * 60_000;
 
 /**
+ * Polls the listing until the provider has a workspace, the deadline passes, or the caller aborts.
+ * Reports the last state it read, so a half-finished grant is not mistaken for a missing one.
+ */
+const pollForWorkspaces = async (
+	load: () => Promise<ProviderState>,
+	{
+		timeoutMs,
+		abortSignal,
+		onState,
+	}: { timeoutMs: number; abortSignal?: AbortSignal; onState?: (state: ProviderState) => Promise<void> },
+): Promise<ProviderState | null> => {
+	const deadline = Date.now() + timeoutMs;
+	let interval = POLL_INTERVAL_START_MS;
+	let state: ProviderState | null = null;
+
+	while (Date.now() < deadline) {
+		try {
+			await sleep(interval, undefined, { signal: abortSignal });
+		} catch {
+			return state;
+		}
+
+		interval = Math.min(Math.round(interval * 1.5), POLL_INTERVAL_MAX_MS);
+		try {
+			state = await load();
+		} catch (error) {
+			// A dropped connection or one 5xx mid-wait is not an answer; the grant may still land.
+			cliDebugPrint('git-source', 'poll failed:', error);
+			continue;
+		}
+		if (state.workspaces.length) return state;
+		await onState?.(state);
+	}
+
+	return state;
+};
+
+/**
  * Makes sure the provider is connected and has at least one workspace, opening the browser and polling
  * if not. Nothing comes back to the CLI directly — the browser hands the code to Console — so polling
- * the API is the only way to know it finished. Returns null when the user never did.
+ * the API is the only way to know it finished. Returns the last state seen when the user never did.
  *
  * Two separate grants are needed: OAuth authorization makes the integration appear at all, while
  * installing the app populates `workspaces`. Authorizing again cannot fix a missing installation, so the
  * two cases open different URLs.
  */
-const ensureUsableIntegration = async (
+export const ensureUsableIntegration = async (
 	provider: GitProvider,
 	{ client, isInteractive, account }: ApiCallOptions & { isInteractive: boolean; account?: GitAccount },
-): Promise<GitProviderIntegration | null> => {
-	const load = async () => findIntegration(await fetchGitIntegrations({ client }), provider);
+): Promise<ProviderState> => {
+	const load = async () => readProviderState(await fetchGitIntegrations({ client }), provider);
 
-	let integration = await load();
-	cliDebugPrint(
-		'git-source',
-		'integration:',
-		integration ? `${integration.id} workspaces=${integration.workspaces.length}` : 'none',
-	);
-	if (integration?.workspaces.length) return integration;
+	let state = await load();
+	cliDebugPrint('git-source', 'integrations:', provider, state.connected, `workspaces=${state.workspaces.length}`);
+	if (state.workspaces.length) return state;
 
 	// Agents and CI must never be parked on a browser; the caller emits the URL and stops instead.
-	if (!isInteractive) return integration ?? null;
+	if (!isInteractive) return state;
+
+	const { label, authorize } = GIT_PROVIDERS[provider];
+
+	// GitLab and Bitbucket cannot build an authorize URL, so Console starts the flow and reports back.
+	if (!state.connected && !authorize) {
+		// Console's callback is the fast path, not a guarantee: a user who connects on the page by hand
+		// never triggers it, and neither does a Console that predates the hand-off. So watch the listing
+		// too, and take whichever arrives first.
+		const controller = new AbortController();
+		const startedAt = Date.now();
+		const handoff = connectViaConsole(provider, label, { abortSignal: controller.signal, account });
+		let polled: ProviderState | null;
+		try {
+			polled = await Promise.race([
+				handoff.then(() => null),
+				pollForWorkspaces(load, { timeoutMs: CONNECT_TIMEOUT_MS, abortSignal: controller.signal }),
+			]);
+		} finally {
+			// Aborting is what closes the loopback server and clears its timer, so it has to run even when
+			// the poll throws — a leaked handle holds the command open until the connect timeout expires.
+			controller.abort();
+		}
+
+		if (polled?.workspaces.length) return polled;
+
+		const result = await handoff;
+		if ('stopReason' in result) {
+			warning({ message: result.message });
+			return state;
+		}
+
+		state = await load();
+		if (state.workspaces.length) return state;
+
+		// Console reports the connection as soon as the integration exists, which can be moments before its
+		// workspaces are filled in. One empty read is not a missing account, so wait the way the branch
+		// below waits for an installation.
+		const remainingMs = Math.min(POLL_TIMEOUT_MS, CONNECT_TIMEOUT_MS - (Date.now() - startedAt));
+		if (remainingMs < POLL_INTERVAL_START_MS) return state;
+
+		info({ message: `Waiting for Apify to finish connecting your ${label} account...` });
+		return (await pollForWorkspaces(load, { timeoutMs: remainingMs })) ?? state;
+	}
 
 	// Which grant is missing decides the URL, and authorizing changes the answer: the integration then
 	// exists with no workspaces, and only installing the app fills them. So this is re-read every poll,
 	// and a URL that has already been opened is never opened twice.
 	let openedUrl: string | null = null;
-	const offer = async (current: GitProviderIntegration | undefined) => {
-		const url = current ? current.addWorkspaceUrl || getAddWorkspaceUrl(provider) : getGitConnectUrl(provider, account);
+	const offer = async (current: ProviderState) => {
+		// The API derives its own URL from an existing installation, so it knows the right one when it has it.
+		const url = current.connected
+			? (current.addWorkspaceUrl ?? getAddWorkspaceUrl(provider, account))
+			: getGitConnectUrl(provider, account);
 		if (url === openedUrl) return;
 		openedUrl = url;
 
-		const what = current ? `Give Apify access to a ${provider} account` : `Connect your ${provider} account to Apify`;
+		const what = current.connected
+			? `Give Apify access to a ${label} account`
+			: `Connect your ${label} account to Apify`;
 		info({ message: `${what}: ${url}` });
 		// Printed above as well — a headless session, or a machine with no usable default browser, still needs it.
 		await open(url).catch(() => undefined);
 		info({
 			message: account?.username
-				? `Waiting for authorization to complete in your browser. It connects ${provider} to the Apify account ${account.username}.`
+				? `Waiting for authorization to complete in your browser. It connects ${label} to the Apify account ${account.username}.`
 				: 'Waiting for authorization to complete in your browser...',
 		});
 	};
 
-	await offer(integration);
+	await offer(state);
 
-	const deadline = Date.now() + POLL_TIMEOUT_MS;
-	let interval = POLL_INTERVAL_START_MS;
-	while (Date.now() < deadline) {
-		await sleep(interval);
-		interval = Math.min(Math.round(interval * 1.5), POLL_INTERVAL_MAX_MS);
-		integration = await load();
-		if (integration?.workspaces.length) return integration;
-		await offer(integration);
-	}
-
-	return integration ?? null;
+	return (await pollForWorkspaces(load, { timeoutMs: POLL_TIMEOUT_MS, onState: offer })) ?? state;
 };
 
 /**
@@ -290,25 +404,27 @@ const ensureUsableIntegration = async (
  * does not mark which one is the user's own account, and the order is not meaningful.
  */
 export const chooseWorkspace = async (
-	integration: GitProviderIntegration,
+	workspaces: ResolvedWorkspace[],
 	requested: string | undefined,
 	isInteractive: boolean,
 ): Promise<
-	{ workspace: string } | { stopReason: Extract<GitSourceStopReason, 'unknownWorkspace' | 'ambiguousWorkspace'> }
+	| { workspace: ResolvedWorkspace }
+	| { stopReason: Extract<GitSourceStopReason, 'unknownWorkspace' | 'ambiguousWorkspace'> }
 > => {
-	const { workspaces } = integration;
-
 	if (requested) {
-		const match = workspaces.find(({ id }) => id.toLowerCase() === requested.toLowerCase());
-		return match ? { workspace: match.id } : { stopReason: 'unknownWorkspace' };
+		// Matched against the label as well as the id: GitLab's workspace id is a numeric namespace id,
+		// which nobody would type into --git-repo. Provider logins are case-insensitive, so this is too.
+		const wanted = requested.toLowerCase();
+		const match = workspaces.find(({ id, label }) => id.toLowerCase() === wanted || label.toLowerCase() === wanted);
+		return match ? { workspace: match } : { stopReason: 'unknownWorkspace' };
 	}
 
-	if (workspaces.length === 1) return { workspace: workspaces[0].id };
+	if (workspaces.length === 1) return { workspace: workspaces[0] };
 	if (!isInteractive) return { stopReason: 'ambiguousWorkspace' };
 
-	const workspace = await useSelectFromList<string>({
+	const workspace = await useSelectFromList<ResolvedWorkspace>({
 		message: 'Which account should own the repository?',
-		choices: workspaces.map(({ id, label }) => ({ name: label, value: id })),
+		choices: workspaces.map((entry) => ({ name: entry.label, value: entry })),
 		loop: false,
 	});
 
@@ -329,7 +445,8 @@ class CreateRemoteRepoError extends Error {
 const NEEDS_AUTH = new Set(['integration-auth-error', 'invalid-git-auth-token']);
 
 export interface CreateRemoteRepoOptions extends ApiCallOptions {
-	provider: GitProvider;
+	/** The connected account the API addresses: 'github-app', or a per-account integration id. */
+	providerId: string;
 	workspace: string;
 	repoName: string;
 	isPrivate: boolean;
@@ -343,12 +460,25 @@ interface CreatedRemoteRepo {
 }
 
 /**
+ * Drops any account name Bitbucket embeds in its clone URL. Git would take it as the username and ask
+ * only for a password, which fails for a token whose username is the token's own.
+ */
+const withoutUserInfo = (url: string): string => {
+	if (!URL.canParse(url)) return url;
+
+	const parsed = new URL(url);
+	parsed.username = '';
+	parsed.password = '';
+
+	return parsed.href;
+};
+
+/**
  * Asks the Apify platform to create the repository and seed it with the scaffold. The platform holds the
  * provider credential and reads the template itself, so the CLI handles neither.
  */
 const createRemoteRepo = async (options: CreateRemoteRepoOptions): Promise<CreatedRemoteRepo> => {
-	const { provider, workspace, repoName, isPrivate, templateArchiveUrl } = options;
-	const { providerId } = GIT_PROVIDERS[provider];
+	const { providerId, workspace, repoName, isPrivate, templateArchiveUrl } = options;
 
 	const url = apiUrl(options, `integrations/git/${providerId}/create-repo`);
 	const body = JSON.stringify({ workspace, repoName, isPrivate, templateArchiveUrl });
@@ -371,7 +501,9 @@ const createRemoteRepo = async (options: CreateRemoteRepoOptions): Promise<Creat
 		}
 	})();
 
-	if (response.ok && payload?.data) return payload.data;
+	if (response.ok && payload?.data) {
+		return { ...payload.data, httpsUrl: withoutUserInfo(payload.data.httpsUrl) };
+	}
 
 	const type = payload?.error?.type;
 	const message = payload?.error?.message || `${response.status} ${response.statusText}`;
@@ -425,12 +557,10 @@ const createGitActor = async ({
  */
 const registerDeploymentKey = async ({
 	client,
-	provider,
+	providerId,
 	actorId,
 	repoUrl,
-}: ApiCallOptions & { provider: GitProvider; actorId: string; repoUrl: string }) => {
-	const { providerId } = GIT_PROVIDERS[provider];
-
+}: ApiCallOptions & { providerId: string; actorId: string; repoUrl: string }) => {
 	const url = apiUrl({ client }, `integrations/git/${providerId}/register-deployment-key`);
 	const body = JSON.stringify({ actorId, repoName: repoUrl });
 	cliDebugPrint('git-source', 'POST', url, body);
@@ -508,24 +638,26 @@ export const runGitSourceFlow = async ({
 		error: err instanceof Error ? err.message : String(err),
 	});
 
-	let integration: GitProviderIntegration | null;
+	let resolved: ProviderState;
 	try {
-		integration = await ensureUsableIntegration(provider, { client, isInteractive, account });
+		resolved = await ensureUsableIntegration(provider, { client, isInteractive, account });
 	} catch (err) {
 		return stopped('lookupFailed', err);
 	}
 
+	const { label } = GIT_PROVIDERS[provider];
 	const who = account?.username ? `The Apify account ${account.username}` : 'Apify';
-	if (!integration) {
-		return stopped('notAuthorized', new Error(`${who} is not authorized to access ${provider}.`));
+	if (!resolved.connected) {
+		return stopped('notAuthorized', new Error(`${who} is not authorized to access your ${label} account.`));
 	}
-	if (!integration.workspaces.length) {
-		return stopped('noWorkspace', new Error(`${who} has no ${provider} account to create the repository in.`));
+	if (!resolved.workspaces.length) {
+		return stopped('noWorkspace', new Error(`${who} has no ${label} account to create the repository in.`));
 	}
 
-	const workspaces = integration.workspaces.map(({ id }) => id);
+	// Labels, not ids: GitLab's ids are numeric namespace ids that mean nothing to the user.
+	const workspaces = resolved.workspaces.map(({ label }) => label);
 	const available = workspaces.join(', ');
-	const chosen = await chooseWorkspace(integration, requestedWorkspace, isInteractive);
+	const chosen = await chooseWorkspace(resolved.workspaces, requestedWorkspace, isInteractive);
 	if ('stopReason' in chosen) {
 		return stopped(
 			chosen.stopReason,
@@ -543,12 +675,12 @@ export const runGitSourceFlow = async ({
 	while (true) {
 		try {
 			info({
-				message: `Creating ${isPrivate ? 'private' : 'public'} repository ${workspace}/${repoName} from the template...`,
+				message: `Creating ${isPrivate ? 'private' : 'public'} repository ${workspace.label}/${repoName} from the template...`,
 			});
 			repo = await createRemoteRepo({
 				client,
-				provider,
-				workspace,
+				providerId: workspace.providerId,
+				workspace: workspace.id,
 				repoName,
 				isPrivate,
 				templateArchiveUrl,
@@ -572,6 +704,10 @@ export const runGitSourceFlow = async ({
 		}
 	}
 
+	// The clone is the only step that needs the user's own provider credentials, and the only one that is
+	// purely local. Losing it costs the files, not the Actor, so the error waits until the platform side
+	// is finished.
+	let cloneError: unknown = null;
 	try {
 		info({ message: `Cloning ${repo.httpsUrl}...` });
 		await cloneRepo(actorDir, repo.httpsUrl, isInteractive);
@@ -579,7 +715,10 @@ export const runGitSourceFlow = async ({
 
 		await customize(actorDir);
 	} catch (err) {
-		return stopped('gitSetupFailed', err, { workspaces, remoteUrl: repo.sshUrl, httpsUrl: repo.httpsUrl });
+		// execa leads with its own "Command failed" line and the full argv, burying git's own message,
+		// which is the only part that says why.
+		const stderr = (err as { stderr?: string }).stderr?.trim();
+		cloneError = stderr ? new Error(stderr) : err;
 	}
 
 	let actorId: string;
@@ -593,10 +732,19 @@ export const runGitSourceFlow = async ({
 	}
 
 	try {
-		await registerDeploymentKey({ client, provider, actorId, repoUrl: repo.htmlUrl });
+		await registerDeploymentKey({ client, providerId: workspace.providerId, actorId, repoUrl: repo.htmlUrl });
 	} catch (err) {
 		// Everything else landed, so the Actor exists and is reported — it just cannot build yet.
 		return stopped('deploymentKeyFailed', err, {
+			workspaces,
+			remoteUrl: repo.sshUrl,
+			httpsUrl: repo.httpsUrl,
+			actorId,
+		});
+	}
+
+	if (cloneError) {
+		return stopped('gitSetupFailed', cloneError, {
 			workspaces,
 			remoteUrl: repo.sshUrl,
 			httpsUrl: repo.httpsUrl,
@@ -625,7 +773,7 @@ export const getGitStopUrl = (
 	account?: GitAccount,
 ): string | null => {
 	if (stopReason === 'notAuthorized') return getGitConnectUrl(provider, account);
-	if (stopReason === 'noWorkspace') return getAddWorkspaceUrl(provider);
+	if (stopReason === 'noWorkspace') return getAddWorkspaceUrl(provider, account);
 	return null;
 };
 
@@ -666,11 +814,14 @@ export const buildGitSourceNextSteps = ({
 			return ['Re-run with APIFY_CLI_DEBUG=1 to see the failing request'];
 		case 'notAuthorized':
 			return [
-				`Connect your ${provider} account to Apify: ${getGitConnectUrl(provider, account)}`,
+				`Connect your ${GIT_PROVIDERS[provider].label} account to Apify: ${getGitConnectUrl(provider, account)}`,
 				'then re-run apify create',
 			];
 		case 'noWorkspace':
-			return [`Give Apify access to an account: ${getAddWorkspaceUrl(provider)}`, 'then re-run apify create'];
+			return [
+				`Give Apify access to a ${GIT_PROVIDERS[provider].label} account: ${getAddWorkspaceUrl(provider, account)}`,
+				'then re-run apify create',
+			];
 		case 'unknownWorkspace':
 		case 'ambiguousWorkspace':
 			return [`Re-run naming the account: --git-repo <account>/${repoName}`];
@@ -687,14 +838,18 @@ export const buildGitSourceNextSteps = ({
 			// has its remote, so only its files need a hand. A failed one leaves nothing to attach to.
 			return scaffolded
 				? [enter, 'Apply the local configuration by hand: the error above says what failed']
-				: [`git clone ${httpsUrl} "${actorName}"`, enter];
+				: [
+						`git clone ${httpsUrl} "${actorName}"`,
+						`Or clone over SSH, if you have a key for the provider: git clone ${remoteUrl} "${actorName}"`,
+						enter,
+					];
 		case 'actorCreateFailed':
 			return [enter, `Create an Actor from ${remoteUrl} in Apify Console`];
 		// Repository, clone and Actor all landed. Only the build key is missing, and the platform cannot
 		// read a private repository without it.
 		case 'deploymentKeyFailed':
 			return [
-				enter,
+				...(scaffolded ? [enter] : [`git clone ${httpsUrl} "${actorName}"`, enter]),
 				`Add the Apify deploy key in the Actor's Source settings before building: ${getConsoleUrl()}/actors/${actorId}`,
 			];
 	}
@@ -703,10 +858,13 @@ export const buildGitSourceNextSteps = ({
 export const logGitSourceOutcome = (result: GitSourceResult, nextSteps: string[]) => {
 	if (!result.stopReason) return;
 
-	// This replaces the success banner, so it is the only outcome the user sees.
+	// This replaces the success banner, so it is the only outcome the user sees. Each headline names what
+	// failed rather than the state it left behind.
 	const headline = result.scaffolded
 		? 'Actor scaffolded, but the Git setup did not finish'
-		: 'The Actor was not created: the Git setup stopped';
+		: result.actorId
+			? 'Actor created, but the clone failed'
+			: 'The Actor was not created: the Git setup stopped';
 	warning({ message: `${headline}: ${result.error}` });
 	info({ message: `Next steps:\n${nextSteps.map((step) => `  ${step}`).join('\n')}` });
 };
