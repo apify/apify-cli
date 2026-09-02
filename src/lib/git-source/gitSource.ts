@@ -803,10 +803,13 @@ export const runGitSourceFlow = async ({
 		try {
 			await enableAutomaticBuilds({ client, providerId: workspace.providerId, actorId });
 			automaticBuilds = 'on';
+			info({ message: 'Turned on automatic builds.' });
 		} catch (err) {
 			automaticBuilds = 'failed';
 			warning({ message: `Automatic builds stay off: ${err instanceof Error ? err.message : String(err)}` });
 		}
+	} else {
+		info({ message: 'Automatic builds stay off, so a push does not rebuild the Actor.' });
 	}
 
 	if (cloneError) {
