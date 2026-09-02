@@ -149,7 +149,7 @@ const confirmGitSourceSwitch = async ({
 	return useYesNoConfirm({
 		message: 'Switch the source to the local files?',
 		default: false,
-		errorMessageForStdin: `Actor ${actorName} builds from a Git repository. Use --force to switch its source to the local files.`,
+		errorMessageForStdin: `Actor ${actorName} builds from a Git repository. To switch the source to the local files, use --force.`,
 	});
 };
 
