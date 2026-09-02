@@ -9,6 +9,7 @@
 		"dev:actor": "tsx ./src/entrypoints/actor.ts",
 		"test:all": "pnpm run test:local && pnpm run test:api",
 		"test:local": "vitest run --testNamePattern \"^((?!\\[api]).)*$\" --exclude ./test/api --exclude ./test/e2e",
+		"test:lib:local": "vitest run --dir ./test/local/lib",
 		"test:e2e": "vitest run --testNamePattern \"\\[e2e\\]\" --exclude ./test/api",
 		"test:e2e:local": "vitest run --testNamePattern \"^(?=.*\\[e2e\\])(?!.*\\[api\\]).*$\" --exclude ./test/api",
 		"test:api": "vitest run --testNamePattern \"^(?=.*\\[api\\])(?!.*\\[e2e\\]).*$\" --exclude ./test/e2e",
