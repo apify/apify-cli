@@ -113,6 +113,22 @@ afterEach(async () => {
 	await afterAllCalls();
 });
 
+// A flag the run would ignore is worse than a stop, which is how `--git-repo` and `--skip-git-init`
+// already behave against the wrong source.
+describe('apify create --auto-build without a Git source', () => {
+	it('stops instead of ignoring the flag', async () => {
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_source: 'apify',
+			flags_skipDependencyInstall: true,
+			flags_autoBuild: 'off',
+		});
+
+		expect(logMessages.error.join('\n')).toContain('--auto-build only applies to a Git source');
+	});
+});
+
 describe('apify create --source github, stopped before the clone', () => {
 	beforeEach(() => {
 		stop = AMBIGUOUS_WORKSPACE_STOP;

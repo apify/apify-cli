@@ -154,7 +154,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			description:
 				'Whether a push to the repository rebuilds the Actor. On by default. Turning it on registers a push webhook on the new repository, which needs admin rights on it. Only used when --source is a Git provider.',
 			choices: ['on', 'off'],
-			default: 'on',
+			// No default: the framework would fill it in, leaving no way to tell an omitted flag from a
+			// typed one — and a flag typed against the wrong source has to be caught, not ignored.
 			required: false,
 		}),
 		origin: Flags.string({
@@ -302,6 +303,11 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			throw new Error('--git-repo only applies to a Git source, so add --source github|gitlab|bitbucket or drop it.');
 		}
 
+		// Only a Git source has a repository to rebuild from, so an Apify-sourced run would ignore this.
+		if (!gitProvider && this.flags.autoBuild) {
+			throw new Error('--auto-build only applies to a Git source, so add --source github|gitlab|bitbucket or drop it.');
+		}
+
 		// The platform only accepts archive URLs listed in the official manifest.
 		if (gitProvider && this.flags.templateArchiveUrl) {
 			throw new Error(`--template-archive-url is not supported with --source ${source}.`);
@@ -313,6 +319,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					client: await getLoggedClientOrThrow(),
 					// Read after the client, which refreshes auth.json from the token the run resolved.
 					account: toGitAccount(await getLocalUserInfo()),
+					// Omitted means on: the webhook is what makes a Git-sourced Actor rebuild on a push.
 					autoBuild: this.flags.autoBuild !== 'off',
 					...parseGitRepoFlag(gitRepo, actorName),
 				}
