@@ -17,6 +17,7 @@ import { trackEvent } from '../hooks/telemetry/trackEvent.js';
 import { checkAndUpdateLastCommand } from '../hooks/telemetry/useTelemetryState.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
+import { useRentalSunsetNotice } from '../hooks/useRentalSunsetNotice.js';
 import { error } from '../outputs.js';
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import { CommandError, CommandErrorCode } from './CommandError.js';
@@ -263,6 +264,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 	protected skipTelemetry = false;
 
+	protected skipNotices = false;
+
 	public constructor(entrypoint: string, commandString: string, aliasUsed: string, subcommandAliasUsed?: string) {
 		this.entrypoint = entrypoint;
 		this.commandString = commandString;
@@ -420,6 +423,12 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 				await trackEvent('cli_command', this.telemetryData);
 			}
+
+			// A notice stacked on top of an error message is noise the user did not ask for, and it
+			// would also make an interrupted command wait on the Store lookup before exiting.
+			if (!this.skipNotices && !process.exitCode) {
+				await useRentalSunsetNotice();
+			}
 		}
 	}
 
@@ -500,9 +509,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 
 			// If you have a flag a, with alias b, and you pass --a and --b, it's not allowed
-			// Check for presence, not truthiness: the real CLI path always yields arrays (`multiple: true`), but
-			// internalRunCommand/testRunCommand inject scalar values, where an explicit `false` must match too
-			const matchingFlags = allMatchers.filter((matcher) => typeof rawFlags[matcher] !== 'undefined');
+			const matchingFlags = allMatchers.filter((matcher) => Object.hasOwn(rawFlags, matcher));
 
 			if (matchingFlags.length > 1) {
 				throw new CommandError({
@@ -600,7 +607,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			// Validate choices
 			if (
 				// We have the flag
-				this.flags[camelCasedName] &&
+				this.flags[camelCasedName] != null &&
 				// And we have a list of choices
 				builderData.choices &&
 				// And the flag is not one of the choices
@@ -963,6 +970,9 @@ export async function internalRunCommand<Cmd extends typeof BuiltApifyCommand>(
 
 	// eslint-disable-next-line dot-notation
 	instance['skipTelemetry'] = true;
+
+	// eslint-disable-next-line dot-notation
+	instance['skipNotices'] = true;
 
 	// eslint-disable-next-line dot-notation
 	await instance['_run'](rawObject);

@@ -277,24 +277,16 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName] [--auto-build on|off]
-                 [--git-repo <value>] [--json]
+  $ apify create [actorName] [--git-repo <value>] [--json]
                  [-l javascript|js|typescript|ts|python|py]
                  [--omit-optional-deps] [--skip-dependency-install]
-                 [--skip-git-init] [--source apify|github|gitlab|bitbucket]
-                 [-t <value>]
+                 [--skip-git-init] [--source apify|github] [-t <value>]
                  [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
-      --auto-build=<option>      Whether a push to the
-                                 repository rebuilds the Actor. On by default.
-                                 Turning it on registers a push webhook on the new
-                                 repository, which needs admin rights on it. Only
-                                 used when --source is a Git provider.
-                                 <options: on|off>
       --git-repo=<value>         Repository to create, as
                                  "workspace/name" — a workspace being an account or
                                  organization you have given Apify access to. A bare
@@ -316,11 +308,11 @@ FLAGS
       --skip-git-init            Skip initializing a git
                                  repository in the Actor directory.
       --source=<option>          Where the Actor source
-                                 code will live. With a Git provider, Apify creates
-                                 the repository on your connected account from the
-                                 template, clones it here, and creates an Actor that
-                                 builds from it.
-                                 <options: apify|github|gitlab|bitbucket>
+                                 code will live. With "github", Apify creates the
+                                 repository on your connected GitHub account from
+                                 the template, clones it here, and creates an Actor
+                                 that builds from it.
+                                 <options: apify|github>
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
                                  it. Visit
@@ -788,8 +780,8 @@ DESCRIPTION
 
 USAGE
   $ apify actors push [actorId] [--allow-missing-secrets]
-                      [--apply-env-vars-to-build] [-b <value>] [--dir <value>]
-                      [-f] [--json] [--open] [-v <value>] [-w <value>]
+                      [-b <value>] [--dir <value>] [-f] [--json] [--open]
+                      [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -800,11 +792,6 @@ FLAGS
       --allow-missing-secrets    Allow the command to
                                  continue even when secret values are not found in
                                  the local secrets storage.
-      --apply-env-vars-to-build  Make the environment
-                                 variables also available to the Actor build
-                                 process. Use --no-apply-env-vars-to-build to turn
-                                 the setting off. When omitted, the setting
-                                 currently stored on the platform is kept.
   -b, --build-tag=<value>        Build tag to be
                                  applied to the successful Actor build. By default,
                                  it is taken from the '.actor/actor.json' file.
@@ -812,8 +799,7 @@ FLAGS
                                  Actor is located.
   -f, --force                    Push an Actor even
                                  when the local files are older than the Actor on
-                                 the platform, or when the Actor builds from a Git
-                                 repository.
+                                 the platform.
       --json                     Format the command
                                  output as JSON.
       --open                     Whether to open the

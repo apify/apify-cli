@@ -370,7 +370,7 @@ describe('[api] apify push', () => {
 			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
 			if (testActor) await testActorClient.delete();
 
-			expect(lastErrorMessage()).to.includes('is already on the platform');
+			expect(lastErrorMessage()).to.includes('already exists on the platform');
 		},
 		TEST_TIMEOUT,
 	);
