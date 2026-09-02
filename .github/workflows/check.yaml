@@ -235,6 +235,7 @@ jobs:
                       bun-target-arch: arm64
 
         runs-on: ${{ matrix.os }}
+        timeout-minutes: 20
 
         steps:
             - uses: actions/checkout@v7
