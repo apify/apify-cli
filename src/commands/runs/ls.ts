@@ -88,8 +88,8 @@ export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 		if (!ctx.valid) {
 			error({
 				message: actorId
-					? `${ctx.reason}. Check that the Actor ID or name is correct and that your API token has permission to access it.`
-					: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
+					? `${ctx.reason}. Check that the ID or name is correct and that your API token has access to this Actor.`
+					: `${ctx.reason}. Run this command in an Actor directory, or specify the Actor ID.`,
 			});
 
 			return;
