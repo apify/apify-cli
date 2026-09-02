@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.10.0](https://github.com/apify/apify-cli/releases/tag/v1.10.0) (2026-09-02)
+
+### 🚀 Features
+
+- Re-prompt for a repository name when the provider rejects it ([#1373](https://github.com/apify/apify-cli/pull/1373)) ([e8b9d9b](https://github.com/apify/apify-cli/commit/e8b9d9b52dcced3bc4213c8a613dbbd80cfec6d1)) by [@l2ysho](https://github.com/l2ysho), closes [#1372](https://github.com/apify/apify-cli/issues/1372)
+- Add GitLab and Bitbucket to `--source` ([#1356](https://github.com/apify/apify-cli/pull/1356)) ([fec0ea8](https://github.com/apify/apify-cli/commit/fec0ea89a92beac54d1eb7ba0df5c2fcbc5d47c2)) by [@l2ysho](https://github.com/l2ysho)
+- Ask before `apify push` drops a Git source ([#1378](https://github.com/apify/apify-cli/pull/1378)) ([6667817](https://github.com/apify/apify-cli/commit/6667817c2cd42417f8349b269423ca838cd35390)) by [@l2ysho](https://github.com/l2ysho), closes [#1142](https://github.com/apify/apify-cli/issues/1142)
+- Turn on automatic builds for a Git-sourced Actor ([#1377](https://github.com/apify/apify-cli/pull/1377)) ([5bb642e](https://github.com/apify/apify-cli/commit/5bb642ecd1028314f1958608487272848b1ffcd1)) by [@l2ysho](https://github.com/l2ysho), closes [#1355](https://github.com/apify/apify-cli/issues/1355)
+
+### 🐛 Bug Fixes
+
+- Connect the right Apify account in `apify create --source github` ([#1371](https://github.com/apify/apify-cli/pull/1371)) ([87dd140](https://github.com/apify/apify-cli/commit/87dd140f1666c78d548008b14c9bf349d3be5281)) by [@l2ysho](https://github.com/l2ysho), closes [#1370](https://github.com/apify/apify-cli/issues/1370)
+
+
 ## [1.9.0](https://github.com/apify/apify-cli/releases/tag/v1.9.0) (2026-08-27)
 
 ### 🚀 Features
