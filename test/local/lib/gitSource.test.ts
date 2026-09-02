@@ -16,6 +16,7 @@ import {
 	chooseWorkspace,
 	readProviderState,
 	ensureUsableIntegration,
+	enableAutomaticBuilds,
 } from '../../../src/lib/git-source/gitSource.js';
 import { useUserInput } from '../../../src/lib/hooks/user-confirmations/useUserInput.js';
 
@@ -509,6 +510,44 @@ describe('ensureUsableIntegration', () => {
 
 		expect(state).toEqual({ connected: false, workspaces: [], addWorkspaceUrl: undefined });
 		expect(fetch).toHaveBeenCalledTimes(1);
+	});
+});
+
+describe('enableAutomaticBuilds', () => {
+	const client = { baseUrl: 'https://api.example.com/v2', token: 'token' } as never;
+
+	// The webhook is keyed to the single version `createGitActor` makes, so the path has to name it.
+	it('toggles the webhook on the version the Actor was created with', async () => {
+		const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }) as never);
+
+		try {
+			await enableAutomaticBuilds({ client, providerId: 'integration-1', actorId: 'abc123' });
+
+			const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+			expect(url).toBe('https://api.example.com/v2/actors/abc123/versions/0.0/build-on-push');
+			expect(init.method).toBe('PUT');
+			expect(JSON.parse(String(init.body))).toEqual({ providerId: 'integration-1', enabled: true });
+		} finally {
+			fetchMock.mockRestore();
+		}
+	});
+
+	// Connecting an account does not grant admin rights on a repository, so this is the one platform step
+	// a fully connected account can still be refused — and the API's own message says which.
+	it('reports the API message when the provider refuses the webhook', async () => {
+		const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+			new Response(JSON.stringify({ error: { type: 'integration-auth', message: 'Repository admin required' } }), {
+				status: 403,
+			}) as never,
+		);
+
+		try {
+			await expect(enableAutomaticBuilds({ client, providerId: 'integration-1', actorId: 'abc123' })).rejects.toThrow(
+				'Repository admin required',
+			);
+		} finally {
+			fetchMock.mockRestore();
+		}
 	});
 });
 

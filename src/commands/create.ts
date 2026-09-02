@@ -589,6 +589,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				postCreate: messages?.postCreate ?? null,
 				gitRepositoryInitialized,
 				remote: gitResult?.remoteUrl ?? null,
+				automaticBuilds: gitResult?.automaticBuilds ?? null,
 				actorId: gitResult?.actorId ?? null,
 				stopReason: gitResult?.stopReason ?? null,
 				error: gitResult?.error ?? null,
@@ -608,7 +609,11 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					installCommandSuggestion,
 					gitRemote:
 						gitResult?.remoteUrl && gitResult.actorId
-							? { remoteUrl: gitResult.remoteUrl, actorId: gitResult.actorId }
+							? {
+									remoteUrl: gitResult.remoteUrl,
+									actorId: gitResult.actorId,
+									automaticBuilds: gitResult.automaticBuilds,
+								}
 							: null,
 				}),
 			});

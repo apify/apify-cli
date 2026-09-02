@@ -49,6 +49,8 @@ export interface GitSourceResult {
 	error: string | null;
 	/** Whether the clone put the template on disk — false means the Actor directory is still empty. */
 	scaffolded: boolean;
+	/** Whether a push to the repository rebuilds the Actor. False also when we stopped before trying. */
+	automaticBuilds: boolean;
 }
 
 interface GitProviderConfig {
@@ -532,6 +534,9 @@ const cloneRepo = async (dir: string, httpsUrl: string, isInteractive: boolean) 
 	await execa('git', ['clone', httpsUrl, dir], { env });
 };
 
+/** The single version `createGitActor` makes, and the one the build-on-push webhook is keyed to. */
+const GIT_ACTOR_VERSION = '0.0';
+
 const createGitActor = async ({
 	client,
 	actorName,
@@ -541,7 +546,7 @@ const createGitActor = async ({
 		name: actorName,
 		versions: [
 			{
-				versionNumber: '0.0',
+				versionNumber: GIT_ACTOR_VERSION,
 				// TODO: export enum from apify-client (same cast as actors/push.ts)
 				sourceType: ACTOR_SOURCE_TYPES.GIT_REPO as never,
 				gitRepoUrl,
@@ -578,6 +583,45 @@ const registerDeploymentKey = async ({
 
 	// The API distinguishes a revoked token, a denied key, a missing repository and a duplicate key, but
 	// they all leave the user in one place: no key, so no build. Its own message says which.
+	const message = (() => {
+		try {
+			return (JSON.parse(raw) as { error?: { message?: string } }).error?.message;
+		} catch {
+			return null;
+		}
+	})();
+
+	throw new Error(message || `${response.status} ${response.statusText}`);
+};
+
+/**
+ * `PUT /v2/actors/:id/versions/:v/build-on-push` — registers a push webhook on the repository, so a push
+ * rebuilds the Actor. Console calls this "Automatic builds", and leaves it off.
+ *
+ * The API resolves the provider token from `providerId` itself, so nothing about the repository is passed.
+ * Registering a webhook needs admin rights on it, which connecting the account does not, so this is the
+ * one platform step a fully connected account can still be refused.
+ */
+export const enableAutomaticBuilds = async ({
+	client,
+	providerId,
+	actorId,
+}: ApiCallOptions & { providerId: string; actorId: string }) => {
+	const url = apiUrl({ client }, `actors/${actorId}/versions/${GIT_ACTOR_VERSION}/build-on-push`);
+	const body = JSON.stringify({ providerId, enabled: true });
+	cliDebugPrint('git-source', 'PUT', url, body);
+
+	const response = await fetch(url, {
+		method: 'PUT',
+		headers: { ...authHeader({ client }), 'Content-Type': 'application/json' },
+		body,
+	});
+
+	const raw = await response.text();
+	cliDebugPrint('git-source', 'PUT', url, '->', response.status, raw.slice(0, 400));
+
+	if (response.ok) return;
+
 	const message = (() => {
 		try {
 			return (JSON.parse(raw) as { error?: { message?: string } }).error?.message;
@@ -633,6 +677,7 @@ export const runGitSourceFlow = async ({
 		actorId: null,
 		workspaces: null,
 		scaffolded,
+		automaticBuilds: false,
 		...extra,
 		stopReason,
 		error: err instanceof Error ? err.message : String(err),
@@ -743,12 +788,23 @@ export const runGitSourceFlow = async ({
 		});
 	}
 
+	// A webhook is what makes a push rebuild; without it the Actor still builds on demand. So a refusal
+	// here costs a convenience, not the run, and the next steps say where to turn it on by hand.
+	let automaticBuilds = false;
+	try {
+		await enableAutomaticBuilds({ client, providerId: workspace.providerId, actorId });
+		automaticBuilds = true;
+	} catch (err) {
+		warning({ message: `Automatic builds stay off: ${err instanceof Error ? err.message : String(err)}` });
+	}
+
 	if (cloneError) {
 		return stopped('gitSetupFailed', cloneError, {
 			workspaces,
 			remoteUrl: repo.sshUrl,
 			httpsUrl: repo.httpsUrl,
 			actorId,
+			automaticBuilds,
 		});
 	}
 
@@ -760,6 +816,7 @@ export const runGitSourceFlow = async ({
 		stopReason: null,
 		error: null,
 		scaffolded: true,
+		automaticBuilds,
 	};
 };
 

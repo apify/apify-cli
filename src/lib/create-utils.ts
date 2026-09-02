@@ -103,7 +103,7 @@ export function formatCreateSuccessMessage(params: {
 	gitRepositoryInitialized?: boolean;
 	installCommandSuggestion?: string | null;
 	/** Set once the Actor is wired to a Git remote, which changes how it gets deployed. */
-	gitRemote?: { remoteUrl: string; actorId: string } | null;
+	gitRemote?: { remoteUrl: string; actorId: string; automaticBuilds: boolean } | null;
 }) {
 	const {
 		actorName,
@@ -120,10 +120,12 @@ export function formatCreateSuccessMessage(params: {
 	message += `\n\nNext steps:\n\n${nextSteps.join('\n')}`;
 
 	if (gitRemote) {
-		// A Git-sourced Actor builds from the repository, so `apify push` is the wrong advice. Automatic
-		// builds are off by default, so do not promise that a plain `git push` rebuilds anything.
+		// A Git-sourced Actor builds from the repository, so `apify push` is the wrong advice. Only promise
+		// that a push rebuilds it when the webhook actually landed.
 		message += `\n\n🌱 Connected to ${gitRemote.remoteUrl} — Actor ${gitRemote.actorId} builds from this repository.`;
-		message += `\n💡 Tip: Turn on Automatic builds in the Actor's Source settings to rebuild on every push.`;
+		message += gitRemote.automaticBuilds
+			? `\n🔁 Every push to this repository rebuilds the Actor.`
+			: `\n💡 Tip: Turn on Automatic builds in the Actor's Source settings to rebuild on every push.`;
 	} else {
 		message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform`;
 
