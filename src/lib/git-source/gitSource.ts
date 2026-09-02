@@ -37,6 +37,8 @@ export type GitSourceStopReason =
 	| 'actorCreateFailed'
 	| 'deploymentKeyFailed';
 
+export type AutomaticBuilds = 'on' | 'off' | 'failed';
+
 export interface GitSourceResult {
 	remoteUrl: string | null;
 	/** The clone URL, kept apart from `remoteUrl`: local recovery has no SSH key, the platform does. */
@@ -49,6 +51,11 @@ export interface GitSourceResult {
 	error: string | null;
 	/** Whether the clone put the template on disk — false means the Actor directory is still empty. */
 	scaffolded: boolean;
+	/**
+	 * Whether a push to the repository rebuilds the Actor: `off` when it was not asked for or we stopped
+	 * before trying, `failed` when the provider refused the webhook.
+	 */
+	automaticBuilds: AutomaticBuilds;
 }
 
 interface GitProviderConfig {
@@ -589,6 +596,46 @@ const registerDeploymentKey = async ({
 	throw new Error(message || `${response.status} ${response.statusText}`);
 };
 
+/**
+ * `PUT /v2/actors/:id/versions/:v/build-on-push` — registers a push webhook on the repository, so a push
+ * rebuilds the Actor. Console calls this "Automatic builds", and leaves it off.
+ *
+ * The API resolves the provider token from `providerId` itself, so nothing about the repository is passed.
+ * The version is the only one `createGitActor` makes. Registering a webhook needs admin rights on the
+ * repository, which connecting the account does not, so this is the one platform step a fully connected
+ * account can still be refused.
+ */
+export const enableAutomaticBuilds = async ({
+	client,
+	providerId,
+	actorId,
+}: ApiCallOptions & { providerId: string; actorId: string }) => {
+	const url = apiUrl({ client }, `actors/${actorId}/versions/0.0/build-on-push`);
+	const body = JSON.stringify({ providerId, enabled: true });
+	cliDebugPrint('git-source', 'PUT', url, body);
+
+	const response = await fetch(url, {
+		method: 'PUT',
+		headers: { ...authHeader({ client }), 'Content-Type': 'application/json' },
+		body,
+	});
+
+	const raw = await response.text();
+	cliDebugPrint('git-source', 'PUT', url, '->', response.status, raw.slice(0, 400));
+
+	if (response.ok) return;
+
+	const message = (() => {
+		try {
+			return (JSON.parse(raw) as { error?: { message?: string } }).error?.message;
+		} catch {
+			return null;
+		}
+	})();
+
+	throw new Error(message || `${response.status} ${response.statusText}`);
+};
+
 export interface RunGitSourceFlowOptions extends ApiCallOptions {
 	provider: GitProvider;
 	actorDir: string;
@@ -598,6 +645,8 @@ export interface RunGitSourceFlowOptions extends ApiCallOptions {
 	isPrivate: boolean;
 	templateArchiveUrl: string;
 	isInteractive: boolean;
+	/** Whether to register the push webhook, so a push rebuilds the Actor. */
+	autoBuild: boolean;
 	/** The account the run authorizes as, so an organization login connects the organization. */
 	account?: GitAccount;
 	/** Local-only setup for the clone. Runs between the clone and the commit, so its changes land in git. */
@@ -619,6 +668,7 @@ export const runGitSourceFlow = async ({
 	templateArchiveUrl,
 	isInteractive,
 	account,
+	autoBuild,
 	customize,
 }: RunGitSourceFlowOptions): Promise<GitSourceResult> => {
 	let scaffolded = false;
@@ -633,6 +683,7 @@ export const runGitSourceFlow = async ({
 		actorId: null,
 		workspaces: null,
 		scaffolded,
+		automaticBuilds: 'off',
 		...extra,
 		stopReason,
 		error: err instanceof Error ? err.message : String(err),
@@ -743,12 +794,29 @@ export const runGitSourceFlow = async ({
 		});
 	}
 
+	// A webhook is what makes a push rebuild; without it the Actor still builds on demand. So a refusal
+	// here costs a convenience, not the run, and the success message says where to turn it on by hand.
+	let automaticBuilds: AutomaticBuilds = 'off';
+	if (autoBuild) {
+		try {
+			await enableAutomaticBuilds({ client, providerId: workspace.providerId, actorId });
+			automaticBuilds = 'on';
+			info({ message: 'Turned on automatic builds.' });
+		} catch (err) {
+			automaticBuilds = 'failed';
+			warning({ message: `Automatic builds stay off: ${err instanceof Error ? err.message : String(err)}` });
+		}
+	} else {
+		info({ message: 'Automatic builds stay off, so a push does not rebuild the Actor.' });
+	}
+
 	if (cloneError) {
 		return stopped('gitSetupFailed', cloneError, {
 			workspaces,
 			remoteUrl: repo.sshUrl,
 			httpsUrl: repo.httpsUrl,
 			actorId,
+			automaticBuilds,
 		});
 	}
 
@@ -760,6 +828,7 @@ export const runGitSourceFlow = async ({
 		stopReason: null,
 		error: null,
 		scaffolded: true,
+		automaticBuilds,
 	};
 };
 

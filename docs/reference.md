@@ -277,7 +277,8 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName] [--git-repo <value>] [--json]
+  $ apify create [actorName] [--auto-build on|off]
+                 [--git-repo <value>] [--json]
                  [-l javascript|js|typescript|ts|python|py]
                  [--omit-optional-deps] [--skip-dependency-install]
                  [--skip-git-init] [--source apify|github|gitlab|bitbucket]
@@ -288,6 +289,12 @@ ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
+      --auto-build=<option>      Whether a push to the
+                                 repository rebuilds the Actor. On by default.
+                                 Turning it on registers a push webhook on the new
+                                 repository, which needs admin rights on it. Only
+                                 used when --source is a Git provider.
+                                 <options: on|off>
       --git-repo=<value>         Repository to create, as
                                  "workspace/name" — a workspace being an account or
                                  organization you have given Apify access to. A bare
