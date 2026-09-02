@@ -238,30 +238,3 @@ describe('unknown root', () => {
 		expect(emit(ir, { types }).split('\n')[0]).not.toBe(emit(ir, { types, unknownRoot: 'record' }).split('\n')[0]);
 	});
 });
-
-/**
- * The contract the emitter is written against, as a consumer would compile our output — not this
- * repo's tsconfig.json, which is about compiling *our* source and answers to a different audience.
- * Pinned on purpose: `exactOptionalPropertyTypes` is why we emit `name?: T | undefined` at all, so
- * if someone relaxed it at the repo root to unblock a src file, this gate must keep asserting it
- * rather than silently stop testing the thing it exists for. `types: []` proves generated output
- * stands alone with no ambient @types on the machine.
- */
-const GATE_TSCONFIG = JSON.stringify(
-	{
-		compilerOptions: {
-			noEmit: true,
-			strict: true,
-			exactOptionalPropertyTypes: true,
-			target: 'esnext',
-			module: 'nodenext',
-			moduleResolution: 'nodenext',
-			allowImportingTsExtensions: true,
-			skipLibCheck: true,
-			types: [],
-		},
-		include: ['*.ts'],
-	},
-	null,
-	4,
-);
