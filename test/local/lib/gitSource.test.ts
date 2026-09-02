@@ -563,6 +563,7 @@ describe('runGitSourceFlow', () => {
 		isPrivate: true,
 		templateArchiveUrl: 'https://example.com/template.zip',
 		isInteractive: true,
+		autoBuild: true,
 		customize: async () => {},
 	};
 

@@ -17,6 +17,7 @@ const SUCCESS: GitSourceResult = {
 	stopReason: null,
 	error: null,
 	scaffolded: true,
+	automaticBuilds: 'on',
 };
 
 // Gave up before the clone, so nothing reached the disk.
@@ -28,6 +29,7 @@ const AMBIGUOUS_WORKSPACE_STOP: GitSourceResult = {
 	stopReason: 'ambiguousWorkspace',
 	error: 'Several accounts are connected (apify, l2ysho); pick one with --git-repo <account>/<name>.',
 	scaffolded: false,
+	automaticBuilds: 'off',
 };
 
 // The clone landed but the wiring after it did not, so the scaffold is on disk with no Actor.
@@ -39,6 +41,7 @@ const GIT_SETUP_FAILED_STOP: GitSourceResult = {
 	stopReason: 'gitSetupFailed',
 	error: 'Could not write the Actor configuration.',
 	scaffolded: true,
+	automaticBuilds: 'off',
 };
 
 let stop: GitSourceResult = AMBIGUOUS_WORKSPACE_STOP;
@@ -47,7 +50,14 @@ let stop: GitSourceResult = AMBIGUOUS_WORKSPACE_STOP;
 vitest.mock('../../../src/lib/git-source/gitSource.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../../src/lib/git-source/gitSource.js')>()),
 	runGitSourceFlow: vitest.fn(
-		async ({ actorDir, customize }: { actorDir: string; customize: (dir: string) => Promise<void> }) => {
+		async ({
+			actorDir,
+			customize,
+		}: {
+			actorDir: string;
+			autoBuild: boolean;
+			customize: (dir: string) => Promise<void>;
+		}) => {
 			// Stand in for the clone: a scaffolded stop leaves a repository behind.
 			if (stop.scaffolded) {
 				await mkdir(join(actorDir, '.git'), { recursive: true });
@@ -176,9 +186,31 @@ describe('apify create --source github, successful', () => {
 		expect(output).toContain('created successfully');
 		expect(output).toContain(SUCCESS.remoteUrl);
 		expect(output).toContain(SUCCESS.actorId);
-		expect(output).toContain('Automatic builds');
+		expect(output).toContain('Every push to this repository rebuilds the Actor');
 		// A Git-sourced Actor builds from the repository, so the push tip would be wrong.
 		expect(output).not.toContain('apify push');
+	});
+
+	// Automatic builds are on unless asked otherwise, and someone who turned them off does not need to be
+	// told how to turn them on.
+	it('honours --auto-build=off', async () => {
+		stop = { ...SUCCESS, automaticBuilds: 'off' };
+
+		await testRunCommand(CreateCommand, {
+			args_actorName: actName,
+			flags_template: 'project_empty',
+			flags_source: 'github',
+			flags_skipDependencyInstall: true,
+			flags_autoBuild: 'off',
+		});
+
+		const { runGitSourceFlow } = await import('../../../src/lib/git-source/gitSource.js');
+		expect(vitest.mocked(runGitSourceFlow).mock.lastCall![0]).toMatchObject({ autoBuild: false });
+
+		const output = logMessages.error.join('\n');
+		expect(output).toContain('created successfully');
+		expect(output).not.toContain('Automatic builds');
+		expect(output).not.toContain('Every push');
 	});
 
 	it('applies the local configuration to the clone', async () => {
@@ -203,6 +235,7 @@ describe('apify create --source github, successful', () => {
 		const output = JSON.parse(logMessages.log[0]);
 
 		expect(output.source).toBe('github');
+		expect(output.automaticBuilds).toBe('on');
 		expect(output.stopReason).toBeNull();
 		expect(output.error).toBeNull();
 		expect(output.remote).toBe(SUCCESS.remoteUrl);

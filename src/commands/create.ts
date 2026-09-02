@@ -150,6 +150,13 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				'Repository to create, as "workspace/name" — a workspace being an account or organization you have given Apify access to. A bare value is read as the name, not the workspace. The name defaults to the Actor name, and the workspace is asked for when you have more than one. List yours with "apify api integrations/git". Only used when --source is a Git provider.',
 			required: false,
 		}),
+		'auto-build': Flags.string({
+			description:
+				'Whether a push to the repository rebuilds the Actor. Turning it on registers a push webhook on the new repository, which needs admin rights on it. Only used when --source is a Git provider.',
+			choices: ['on', 'off'],
+			default: 'on',
+			required: false,
+		}),
 		origin: Flags.string({
 			description: 'Where the command was invoked from. Used for funnel telemetry.',
 			choices: ['console', 'cli'],
@@ -306,6 +313,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					client: await getLoggedClientOrThrow(),
 					// Read after the client, which refreshes auth.json from the token the run resolved.
 					account: toGitAccount(await getLocalUserInfo()),
+					autoBuild: this.flags.autoBuild !== 'off',
 					...parseGitRepoFlag(gitRepo, actorName),
 				}
 			: null;
@@ -348,6 +356,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				client: gitSetup.client,
 				isInteractive,
 				account: gitSetup.account,
+				autoBuild: gitSetup.autoBuild,
 				customize: applyLocalConfig,
 			});
 		}

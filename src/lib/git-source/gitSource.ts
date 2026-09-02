@@ -37,6 +37,8 @@ export type GitSourceStopReason =
 	| 'actorCreateFailed'
 	| 'deploymentKeyFailed';
 
+export type AutomaticBuilds = 'on' | 'off' | 'failed';
+
 export interface GitSourceResult {
 	remoteUrl: string | null;
 	/** The clone URL, kept apart from `remoteUrl`: local recovery has no SSH key, the platform does. */
@@ -49,8 +51,11 @@ export interface GitSourceResult {
 	error: string | null;
 	/** Whether the clone put the template on disk — false means the Actor directory is still empty. */
 	scaffolded: boolean;
-	/** Whether a push to the repository rebuilds the Actor. False also when we stopped before trying. */
-	automaticBuilds: boolean;
+	/**
+	 * Whether a push to the repository rebuilds the Actor: `off` when it was not asked for or we stopped
+	 * before trying, `failed` when the provider refused the webhook.
+	 */
+	automaticBuilds: AutomaticBuilds;
 }
 
 interface GitProviderConfig {
@@ -642,6 +647,8 @@ export interface RunGitSourceFlowOptions extends ApiCallOptions {
 	isPrivate: boolean;
 	templateArchiveUrl: string;
 	isInteractive: boolean;
+	/** Whether to register the push webhook, so a push rebuilds the Actor. */
+	autoBuild: boolean;
 	/** The account the run authorizes as, so an organization login connects the organization. */
 	account?: GitAccount;
 	/** Local-only setup for the clone. Runs between the clone and the commit, so its changes land in git. */
@@ -663,6 +670,7 @@ export const runGitSourceFlow = async ({
 	templateArchiveUrl,
 	isInteractive,
 	account,
+	autoBuild,
 	customize,
 }: RunGitSourceFlowOptions): Promise<GitSourceResult> => {
 	let scaffolded = false;
@@ -677,7 +685,7 @@ export const runGitSourceFlow = async ({
 		actorId: null,
 		workspaces: null,
 		scaffolded,
-		automaticBuilds: false,
+		automaticBuilds: 'off',
 		...extra,
 		stopReason,
 		error: err instanceof Error ? err.message : String(err),
@@ -789,13 +797,16 @@ export const runGitSourceFlow = async ({
 	}
 
 	// A webhook is what makes a push rebuild; without it the Actor still builds on demand. So a refusal
-	// here costs a convenience, not the run, and the next steps say where to turn it on by hand.
-	let automaticBuilds = false;
-	try {
-		await enableAutomaticBuilds({ client, providerId: workspace.providerId, actorId });
-		automaticBuilds = true;
-	} catch (err) {
-		warning({ message: `Automatic builds stay off: ${err instanceof Error ? err.message : String(err)}` });
+	// here costs a convenience, not the run, and the success message says where to turn it on by hand.
+	let automaticBuilds: AutomaticBuilds = 'off';
+	if (autoBuild) {
+		try {
+			await enableAutomaticBuilds({ client, providerId: workspace.providerId, actorId });
+			automaticBuilds = 'on';
+		} catch (err) {
+			automaticBuilds = 'failed';
+			warning({ message: `Automatic builds stay off: ${err instanceof Error ? err.message : String(err)}` });
+		}
 	}
 
 	if (cloneError) {
