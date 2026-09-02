@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'vitest';
 
-import { emit } from '../../../../../src/lib/schema-to-ts/emit.js';
-import { jsonSchemaToIR } from '../../../../../src/lib/schema-to-ts/json-schema-to-ir.js';
 import { normalizeInputSchema } from '../../../../../src/lib/schema-to-ts/preprocess/input.js';
 
 describe('normalizeInputSchema', () => {
