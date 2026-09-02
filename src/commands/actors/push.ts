@@ -382,7 +382,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				(actorConfig?.name || forceActorId)
 			) {
 				throw new Error(
-					`Actor with identifier "${actorConfig?.name || forceActorId}" is already on the platform and was modified there since modified locally.
+					`Actor with identifier "${actorConfig?.name || forceActorId}" already exists on the platform and has newer changes than your local copy.
 Skipping push. Use --force to override.`,
 				);
 			}
