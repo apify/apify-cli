@@ -140,7 +140,7 @@ const confirmGitSourceSwitch = async ({
 		message: [
 			`Actor ${actorName} builds from a Git repository: ${gitRepoUrl}`,
 			'A push replaces that source with the local files and drops the Git connection.',
-			'To build from the repository, run git push instead. The platform builds on push when Automatic builds are on.',
+			'To build from the repository, run git push instead. The platform builds on push when automated builds are on.',
 		].join('\n'),
 	});
 
