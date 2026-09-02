@@ -290,10 +290,10 @@ ARGUMENTS
 
 FLAGS
       --auto-build=<option>      Whether a push to the
-                                 repository rebuilds the Actor. Turning it on
-                                 registers a push webhook on the new repository,
-                                 which needs admin rights on it. Only used when
-                                 --source is a Git provider.
+                                 repository rebuilds the Actor. On by default.
+                                 Turning it on registers a push webhook on the new
+                                 repository, which needs admin rights on it. Only
+                                 used when --source is a Git provider.
                                  <options: on|off>
       --git-repo=<value>         Repository to create, as
                                  "workspace/name" — a workspace being an account or

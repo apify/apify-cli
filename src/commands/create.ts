@@ -152,7 +152,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}),
 		'auto-build': Flags.string({
 			description:
-				'Whether a push to the repository rebuilds the Actor. Turning it on registers a push webhook on the new repository, which needs admin rights on it. Only used when --source is a Git provider.',
+				'Whether a push to the repository rebuilds the Actor. On by default. Turning it on registers a push webhook on the new repository, which needs admin rights on it. Only used when --source is a Git provider.',
 			choices: ['on', 'off'],
 			default: 'on',
 			required: false,
