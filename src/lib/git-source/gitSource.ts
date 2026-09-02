@@ -539,9 +539,6 @@ const cloneRepo = async (dir: string, httpsUrl: string, isInteractive: boolean) 
 	await execa('git', ['clone', httpsUrl, dir], { env });
 };
 
-/** The single version `createGitActor` makes, and the one the build-on-push webhook is keyed to. */
-const GIT_ACTOR_VERSION = '0.0';
-
 const createGitActor = async ({
 	client,
 	actorName,
@@ -551,7 +548,7 @@ const createGitActor = async ({
 		name: actorName,
 		versions: [
 			{
-				versionNumber: GIT_ACTOR_VERSION,
+				versionNumber: '0.0',
 				// TODO: export enum from apify-client (same cast as actors/push.ts)
 				sourceType: ACTOR_SOURCE_TYPES.GIT_REPO as never,
 				gitRepoUrl,
@@ -604,15 +601,16 @@ const registerDeploymentKey = async ({
  * rebuilds the Actor. Console calls this "Automatic builds", and leaves it off.
  *
  * The API resolves the provider token from `providerId` itself, so nothing about the repository is passed.
- * Registering a webhook needs admin rights on it, which connecting the account does not, so this is the
- * one platform step a fully connected account can still be refused.
+ * The version is the only one `createGitActor` makes. Registering a webhook needs admin rights on the
+ * repository, which connecting the account does not, so this is the one platform step a fully connected
+ * account can still be refused.
  */
 export const enableAutomaticBuilds = async ({
 	client,
 	providerId,
 	actorId,
 }: ApiCallOptions & { providerId: string; actorId: string }) => {
-	const url = apiUrl({ client }, `actors/${actorId}/versions/${GIT_ACTOR_VERSION}/build-on-push`);
+	const url = apiUrl({ client }, `actors/${actorId}/versions/0.0/build-on-push`);
 	const body = JSON.stringify({ providerId, enabled: true });
 	cliDebugPrint('git-source', 'PUT', url, body);
 
