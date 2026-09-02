@@ -54,7 +54,7 @@ const datasetTypes = (name: string): CompileOptions => ({
  */
 function significant(source: string): string {
 	return source
-		.replace(/^\/\/ oxlint-disable\n/, '')
+		.replace(/^\/\/ oxlint-disable\r?\n/, '')
 		.replace(/'([^']*)'/g, '"$1"')
 		.replace(/[()]/g, '')
 		.replace(/\s+/g, ' ')
