@@ -1,0 +1,188 @@
+{
+    "actorSpecification": 1,
+    "fields": {
+        "type": "object",
+        "properties": {
+            "authorMeta": {
+                "type": "object",
+                "description": "Metadata about the user whose connections are being scraped",
+                "properties": {
+                    "id": { "type": "string", "nullable": true },
+                    "name": { "type": "string", "nullable": true },
+                    "profileUrl": { "type": "string", "nullable": true },
+                    "verified": { "type": "boolean", "nullable": true },
+                    "privateAccount": { "type": "boolean", "nullable": true },
+                    "nickName": { "type": "string", "nullable": true },
+                    "avatar": { "type": "string", "nullable": true },
+                    "signature": { "type": "string", "nullable": true },
+                    "bioLink": { "type": "string", "nullable": true },
+                    "region": { "type": "string", "nullable": true },
+                    "following": { "type": "number", "nullable": true },
+                    "fans": { "type": "number", "nullable": true },
+                    "video": { "type": "number", "nullable": true },
+                    "heart": { "type": "number", "nullable": true },
+                    "digg": { "type": "number", "nullable": true },
+                    "friends": { "type": "number", "nullable": true },
+                    "commerceUserInfo": {
+                        "type": "object",
+                        "properties": {
+                            "commerceUser": { "type": "boolean", "nullable": true },
+                            "category": { "type": "string", "nullable": true }
+                        },
+                        "required": [],
+                        "additionalProperties": true,
+                        "nullable": true
+                    },
+                    "isUnderAge18": { "type": "boolean", "nullable": true },
+                    "roomId": { "type": "string", "nullable": true },
+                    "ttSeller": { "type": "boolean", "nullable": true },
+                    "createTime": { "type": "number", "nullable": true },
+                    "followDatasetUrl": { "type": "string", "nullable": true },
+                    "originalAvatarUrl": { "type": "string", "nullable": true }
+                },
+                "required": [],
+                "additionalProperties": true,
+                "nullable": true,
+                "example": {
+                    "id": "6784642169778881542",
+                    "name": "exampleuser",
+                    "profileUrl": "https://www.tiktok.com/@exampleuser",
+                    "nickName": "Example User",
+                    "verified": false,
+                    "fans": 12500,
+                    "video": 48,
+                    "avatar": "https://p16-sign.tiktokcdn-us.com/example-avatar.jpg"
+                }
+            },
+            "connectedTo": {
+                "type": "object",
+                "description": "Metadata about the connected user (follower or following)",
+                "properties": {
+                    "id": { "type": "string", "nullable": true },
+                    "name": { "type": "string", "nullable": true },
+                    "profileUrl": { "type": "string", "nullable": true },
+                    "verified": { "type": "boolean", "nullable": true },
+                    "privateAccount": { "type": "boolean", "nullable": true },
+                    "nickName": { "type": "string", "nullable": true },
+                    "avatar": { "type": "string", "nullable": true },
+                    "signature": { "type": "string", "nullable": true },
+                    "bioLink": { "type": "string", "nullable": true },
+                    "region": { "type": "string", "nullable": true },
+                    "following": { "type": "number", "nullable": true },
+                    "fans": { "type": "number", "nullable": true },
+                    "video": { "type": "number", "nullable": true },
+                    "heart": { "type": "number", "nullable": true },
+                    "digg": { "type": "number", "nullable": true },
+                    "friends": { "type": "number", "nullable": true },
+                    "commerceUserInfo": {
+                        "type": "object",
+                        "properties": {
+                            "commerceUser": { "type": "boolean", "nullable": true },
+                            "category": { "type": "string", "nullable": true }
+                        },
+                        "required": [],
+                        "additionalProperties": true,
+                        "nullable": true
+                    },
+                    "isUnderAge18": { "type": "boolean", "nullable": true },
+                    "roomId": { "type": "string", "nullable": true },
+                    "ttSeller": { "type": "boolean", "nullable": true },
+                    "createTime": { "type": "number", "nullable": true },
+                    "followDatasetUrl": { "type": "string", "nullable": true },
+                    "originalAvatarUrl": { "type": "string", "nullable": true }
+                },
+                "required": [],
+                "additionalProperties": true,
+                "nullable": true,
+                "example": {
+                    "id": "9876543210987654321",
+                    "name": "sampleuser",
+                    "profileUrl": "https://www.tiktok.com/@sampleuser",
+                    "nickName": "Sample User",
+                    "verified": false,
+                    "fans": 5000,
+                    "video": 20,
+                    "avatar": "https://p16-sign.tiktokcdn-us.com/sample-avatar.jpg"
+                }
+            },
+            "connectionType": {
+                "type": "string",
+                "description": "Type of connection: whether the connected user is a follower or someone being followed",
+                "nullable": true,
+                "example": "FOLLOWER"
+            },
+            "connectionDescription": {
+                "type": "string",
+                "description": "Human-readable description of the connection relationship",
+                "nullable": true,
+                "example": "sampleuser follows exampleuser"
+            }
+        },
+        "required": [],
+        "additionalProperties": true,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "views": {
+        "overview": {
+            "title": "Overview 🔎",
+            "description": "",
+            "transformation": {
+                "fields": [
+                    "authorMeta.name",
+                    "connectedTo.avatar",
+                    "connectedTo.name",
+                    "connectedTo.nickName",
+                    "connectedTo.verified",
+                    "connectedTo.fans",
+                    "connectedTo.video",
+                    "connectedTo.signature",
+                    "connectedTo.bioLink",
+                    "connectionType",
+                    "connectionDescription"
+                ],
+                "flatten": ["authorMeta", "connectedTo"]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "authorMeta.name": {
+                        "label": "Source User"
+                    },
+                    "connectedTo.avatar": {
+                        "label": "Avatar",
+                        "format": "image"
+                    },
+                    "connectedTo.name": {
+                        "label": "Username"
+                    },
+                    "connectedTo.nickName": {
+                        "label": "Nickname"
+                    },
+                    "connectedTo.verified": {
+                        "label": "Verified?"
+                    },
+                    "connectedTo.fans": {
+                        "label": "Followers",
+                        "format": "number"
+                    },
+                    "connectedTo.video": {
+                        "label": "Videos",
+                        "format": "number"
+                    },
+                    "connectedTo.signature": {
+                        "label": "Bio"
+                    },
+                    "connectedTo.bioLink": {
+                        "label": "Bio Link"
+                    },
+                    "connectionType": {
+                        "label": "Connection Type"
+                    },
+                    "connectionDescription": {
+                        "label": "Description"
+                    }
+                }
+            }
+        }
+    }
+}

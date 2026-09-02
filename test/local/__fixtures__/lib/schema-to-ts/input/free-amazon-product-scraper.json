@@ -1,0 +1,73 @@
+{
+    "title": "Input schema for the store-amazon-categories actor.",
+    "type": "object",
+    "schemaVersion": 1,
+    "description": "Amazon sometimes restricts search terms to maximum of 7 pages, please validate the number of pages in the URL. To overcome this limit, try to use one of the regular categories and combine it with the search terms. E.g. instead of just searching for `Diamond rings`, find `Jewelry` or `Women's rings` category and combine them with the search term.",
+    "properties": {
+        "categoryUrls": {
+            "title": "Urls of Amazon categories",
+            "type": "array",
+            "description": "Enter urls of Amazon categories. You can also use specific product URLs directly.",
+            "editor": "requestListSources",
+            "prefill": [{ "url": "https://www.amazon.com/s?k=keyboard" }],
+            "example": [{ "url": "https://www.amazon.com/s?k=keyboard" }],
+            "uniqueItems": true
+        },
+        "maxItemsPerStartUrl": {
+            "title": "Max results (per start URL)",
+            "type": "integer",
+            "description": "Enter the maximum number of results you want to scrape per each star URL. This will let the scraper know when to stop.",
+            "minimum": 0,
+            "prefill": 100,
+            "example": 100,
+            "unit": "results",
+            "nullable": false
+        },
+        "maxSearchPagesPerStartUrl": {
+            "sectionCaption": "Other Settings",
+            "sectionDescription": "These settings are not required for the scraper to run, but they can help you get better results.",
+            "title": "Maximum search pages (per start URL)",
+            "type": "integer",
+            "description": "Enter the maximum number of search pages to scrape for each start URL. E.g. only scrape the first 5 pages.\n\nThis field can also be used with the `maxItemsPerStartUrl` option, the scraper will stop after either one of these limits is reached.",
+            "minimum": 1,
+            "prefill": 9999,
+            "example": 9999,
+            "unit": "pages",
+            "nullable": false
+        },
+        "maxProductVariantsAsSeparateResults": {
+            "title": "Maximum product variants per product (as separate results)",
+            "type": "integer",
+            "description": "Enter the maximum number of product variants you want to scrape per each product, outputted as separate results.\n\n**Please beware** that **you can already get** most of the **variant details** changes, in the **`variantDetails` field**, which is outputted by default.\n\nNote that this **will increase the number of requests** and **extend the scraping time**.",
+            "minimum": 0,
+            "prefill": 0,
+            "example": 0,
+            "unit": "variants",
+            "nullable": false
+        },
+        "useCaptchaSolver": {
+            "title": "Use Captcha solver (warning: see description)",
+            "type": "boolean",
+            "description": "If enabled the scraper will automatically solve captchas thrown by Amazon. This will decrease the amount of request retries and increase the speed of the scraper.<br><br>***IMPORTANT*** - This option works well only for the `'.com'` Amazon domain, but even for that one Amazon doesn't show a few product fields after solving a captcha (specifically: 'attributes', 'manufacturer attributes', and 'bestseller ranks')",
+            "default": false,
+            "example": false
+        },
+        "scrapeProductVariantPrices": {
+            "title": "Scrape product variant prices",
+            "type": "boolean",
+            "description": "Enable this option to extract prices of different variations of a product. Useful when you need prices for each variant.\n\nNote that this **will increase the number of requests** and **extend the scraping time**.",
+            "default": false,
+            "example": false
+        },
+        "scrapeProductDetails": {
+            "title": "Scrape product details",
+            "type": "boolean",
+            "description": "If enabled, the scraper will extract each found product from the category page in detail (this is the default behavior).\n\nIf disabled, the scraper will only extract the quick product information from the category page. Useful for faster and more lightweight searches for products.",
+            "editor": "hidden",
+            "default": true,
+            "example": true,
+            "nullable": true
+        }
+    },
+    "required": ["categoryUrls"]
+}
