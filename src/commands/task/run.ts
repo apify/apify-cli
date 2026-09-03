@@ -1,5 +1,7 @@
 import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
 
+import { APIFY_ID_REGEX } from '@apify/consts';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
@@ -100,12 +102,26 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			};
 		}
 
-		// Try fetching task directly by name
+		// Try fetching task directly by name or ID
 		if (taskId) {
+			// If the input looks like a raw Apify resource ID, try it directly first
+			if (APIFY_ID_REGEX.test(taskId)) {
+				const taskById = await client.task(taskId).get();
+
+				if (taskById) {
+					return {
+						id: taskById.id,
+						userFriendlyId: `${usernameOrId}/${taskById.name}`,
+						title: taskById.title,
+						task: taskById,
+					};
+				}
+			}
+
 			const task = await client.task(`${usernameOrId}/${taskId.toLowerCase()}`).get();
 
 			if (!task) {
-				throw new Error(`Cannot find Task with name '${taskId}' in your account.`);
+				throw new Error(`Cannot find Task with name or ID '${taskId}' in your account.`);
 			}
 
 			return {
