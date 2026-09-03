@@ -20,6 +20,12 @@ export interface LocalStateV1 {
 		lastChecked: number;
 		lastVersion?: string;
 	};
+	rentalSunset?: {
+		lastChecked: number;
+		username: string;
+		rentalActorCount: number;
+		lastNotifiedAt?: number;
+	};
 }
 
 function migrateStateV0ToV1(state: LocalState) {

@@ -1,6 +1,6 @@
 {
 	"name": "apify-cli",
-	"version": "1.8.1",
+	"version": "1.10.0",
 	"description": "Apify command-line interface (CLI) helps you manage the Apify cloud platform and develop, build, and deploy Apify Actors.",
 	"exports": "./dist/index.js",
 	"type": "module",
@@ -144,9 +144,9 @@
 	},
 	"volta": {
 		"node": "24.18.0",
-		"pnpm": "11.8.0"
+		"pnpm": "11.11.0"
 	},
-	"packageManager": "pnpm@11.8.0",
+	"packageManager": "pnpm@11.11.0",
 	"devEngines": {
 		"runtime": [
 			{
