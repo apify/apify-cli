@@ -2,9 +2,6 @@ import { mkdir, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import type { JSONSchema4 } from 'json-schema';
-import { compile, type Options } from 'json-schema-to-typescript';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -16,6 +13,8 @@ import {
 	readStorageSchema,
 } from '../../lib/input_schema.js';
 import { error, info, success, warning } from '../../lib/outputs.js';
+import { compile as basedCompile, type CompileResult } from '../../lib/schema-to-ts/compile.js';
+import type { Diagnostic, Notice } from '../../lib/schema-to-ts/diagnostics.js';
 import {
 	clearAllRequired,
 	makePropertiesRequired,
@@ -140,22 +139,17 @@ just as if the command were run from that directory with no argument.`;
 			? clearAllRequired(inputSchema)
 			: makePropertiesRequired(inputSchema);
 
-		const compileOptions: Partial<Options> = {
-			bannerComment: BANNER_COMMENT,
-			maxItems: -1,
-			unknownAny: true,
-			format: true,
-			additionalProperties: !this.flags.strict,
-			$refOptions: { resolve: { external: false, file: false, http: false } },
-		};
-
-		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, name, compileOptions);
+		const result = basedCompile(stripTitles(schemaToCompile), {
+			types: [{ name, variant: 'received' }],
+		});
+		notifyDiagnostics('input', result);
+		// const result2 = await compile(stripTitles(schemaToCompile) as JSONSchema4, name, compileOptions);
 
 		const outputDir = path.resolve(effectiveCwd, this.flags.output);
 		await mkdir(outputDir, { recursive: true });
 
 		const outputFile = path.join(outputDir, `${name}.ts`);
-		await writeFile(outputFile, result, 'utf-8');
+		await writeFile(outputFile, result.source, 'utf-8');
 
 		success({ message: `Generated types written to ${outputFile}` });
 
@@ -163,9 +157,9 @@ just as if the command were run from that directory with no argument.`;
 		// (this includes both "no argument" and "directory argument" modes)
 		if (!forcePath) {
 			const schemaResults = await Promise.allSettled([
-				this.generateDatasetTypes({ cwd: effectiveCwd, outputDir, compileOptions }),
-				this.generateOutputTypes({ cwd: effectiveCwd, outputDir, compileOptions }),
-				this.generateKvsTypes({ cwd: effectiveCwd, outputDir, compileOptions }),
+				this.generateDatasetTypes({ cwd: effectiveCwd, outputDir }),
+				this.generateOutputTypes({ cwd: effectiveCwd, outputDir }),
+				this.generateKvsTypes({ cwd: effectiveCwd, outputDir }),
 			]);
 
 			const schemaLabels = ['Dataset', 'Output', 'Key-Value Store'];
@@ -186,15 +180,7 @@ just as if the command were run from that directory with no argument.`;
 		}
 	}
 
-	private async generateDatasetTypes({
-		cwd,
-		outputDir,
-		compileOptions,
-	}: {
-		cwd: string;
-		outputDir: string;
-		compileOptions: Partial<Options>;
-	}) {
+	private async generateDatasetTypes({ cwd, outputDir }: { cwd: string; outputDir: string }) {
 		const datasetResult = readDatasetSchema({ cwd });
 
 		if (!datasetResult) {
@@ -219,24 +205,19 @@ just as if the command were run from that directory with no argument.`;
 		const datasetName = 'dataset';
 
 		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
-
-		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, datasetName, compileOptions);
+		const result = basedCompile(stripTitles(schemaToCompile), {
+			types: [{ name: datasetName, variant: 'supplied' }],
+			unknownRoot: 'record',
+		});
+		notifyDiagnostics('Dataset', result);
 
 		const outputFile = path.join(outputDir, `${datasetName}.ts`);
-		await writeFile(outputFile, result, 'utf-8');
+		await writeFile(outputFile, result.source, 'utf-8');
 
 		success({ message: `Generated types written to ${outputFile}` });
 	}
 
-	private async generateOutputTypes({
-		cwd,
-		outputDir,
-		compileOptions,
-	}: {
-		cwd: string;
-		outputDir: string;
-		compileOptions: Partial<Options>;
-	}) {
+	private async generateOutputTypes({ cwd, outputDir }: { cwd: string; outputDir: string }) {
 		const outputResult = readOutputSchema({ cwd });
 
 		if (!outputResult) {
@@ -261,24 +242,19 @@ just as if the command were run from that directory with no argument.`;
 		const outputName = 'output';
 
 		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
+		const result = basedCompile(stripTitles(schemaToCompile), {
+			types: [{ name: outputName, variant: 'supplied' }],
+		});
+		// const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, outputName, compileOptions);
 
-		const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, outputName, compileOptions);
-
+		notifyDiagnostics('output', result);
 		const outputFile = path.join(outputDir, `${outputName}.ts`);
-		await writeFile(outputFile, result, 'utf-8');
+		await writeFile(outputFile, result.source, 'utf-8');
 
 		success({ message: `Generated types written to ${outputFile}` });
 	}
 
-	private async generateKvsTypes({
-		cwd,
-		outputDir,
-		compileOptions,
-	}: {
-		cwd: string;
-		outputDir: string;
-		compileOptions: Partial<Options>;
-	}) {
+	private async generateKvsTypes({ cwd, outputDir }: { cwd: string; outputDir: string }) {
 		const kvsResult = readStorageSchema({ cwd, key: 'keyValueStore', label: 'Key-Value Store' });
 
 		if (!kvsResult) {
@@ -305,22 +281,48 @@ just as if the command were run from that directory with no argument.`;
 		}
 
 		const parts: string[] = [];
+		const diagnostics: Diagnostic[] = [];
+		const notices: Notice[] = [];
 
 		for (const { name, schema } of collections) {
 			const schemaToCompile = this.flags.allOptional ? clearAllRequired(schema) : schema;
-
-			const compiled = await compile(stripTitles(schemaToCompile) as JSONSchema4, name, {
-				...compileOptions,
-				// Only the first collection gets the banner comment
-				bannerComment: parts.length === 0 ? (compileOptions.bannerComment as string) : '',
+			const result = basedCompile(stripTitles(schemaToCompile), {
+				types: [{ name, variant: 'supplied' }],
 			});
 
-			parts.push(compiled);
+			parts.push(result.source);
+			notices.push(...result.notices);
+			diagnostics.push(...result.diagnostics);
 		}
-
+		const finalSource = parts.join('\n');
+		notifyDiagnostics('key-value-store', { source: finalSource, diagnostics, notices });
 		const outputFile = path.join(outputDir, 'key-value-store.ts');
-		await writeFile(outputFile, parts.join('\n'), 'utf-8');
+		await writeFile(outputFile, finalSource, 'utf-8');
 
 		success({ message: `Generated types written to ${outputFile}` });
+	}
+}
+
+function notifyDiagnostics(label: string, result: CompileResult) {
+	const errors: Diagnostic[] = [];
+	const warnings: Diagnostic[] = [];
+
+	for (const diagnostic of result.diagnostics) {
+		(diagnostic.severity === 'error' ? errors : warnings).push(diagnostic);
+	}
+
+	const format = (diagnostics: Diagnostic[]) =>
+		diagnostics.map(({ path: at, code, message }) => `  ${at || '<root>'} [${code}] ${message}`).join('\n');
+
+	if (errors.length > 0) {
+		error({
+			message: `Found ${errors.length} error(s) in the ${label} schema:\n${format(errors)}`,
+		});
+	}
+
+	if (warnings.length > 0) {
+		warning({
+			message: `Found ${warnings.length} unsupported construct(s) in the ${label} schema, the affected values are typed as 'unknown':\n${format(warnings)}`,
+		});
 	}
 }
