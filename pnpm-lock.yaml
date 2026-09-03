@@ -223,8 +223,8 @@ importers:
         specifier: ^3.27.1
         version: 3.28.24(ajv@8.20.0)
       '@apify/json_schemas':
-        specifier: ^0.16.0
-        version: 0.16.16
+        specifier: ^0.17.0
+        version: 0.17.2
       '@apify/utilities':
         specifier: ^2.25.6
         version: 2.35.4
@@ -655,6 +655,9 @@ packages:
   '@apify/consts@2.56.1':
     resolution: {integrity: sha512-ZfrnC2dcv1+XfkBr48Pxth8Z2qwbkUIETtAmnlrE+nLXi8LbYa5mNywEH1q+wiTomIdicboAkYjnZPCtWNZELA==}
 
+  '@apify/consts@2.58.1':
+    resolution: {integrity: sha512-pKnoPincN2eqiSANmX2u19FihJATX3f1ucMhxss7t2epUmB/UhSjGM7G4immjC7Q/CXrNmbETBbOGmR0/EH4/Q==}
+
   '@apify/datastructures@2.0.6':
     resolution: {integrity: sha512-hI/Q5cCjXXI/g4OPwX+/xuk+JsOtXRhKNXl2wnq/nKmdrji3nYCc9vGsAEc1iXVbs16xQMZy5uRhoY3XTABovA==}
 
@@ -681,6 +684,9 @@ packages:
 
   '@apify/json_schemas@0.16.16':
     resolution: {integrity: sha512-z+VdJD3+1wyQQNwBrcsAudZxrNViJ1FRf/mo4AIdkrr5Ig8M+ixQwP3X281DVcrXQAeWvKqY5BXhQZjxtPJ6bA==}
+
+  '@apify/json_schemas@0.17.2':
+    resolution: {integrity: sha512-nN1QiBX+FJJyOG2OTjE6X6mG1EPYz5Je5TA4JmQ8JyWmWilQ/6hBDB6mUyg1JmvS3QDd+swtZS0G3dJ7sP+6uQ==}
 
   '@apify/log@2.5.47':
     resolution: {integrity: sha512-mr2M0DBJuZBKbPEqwuSDpZ7101nxwSFfHbxfZiEPErJznDiRKUkb1u9tsRoC7DJVEsN2idQfYX2/a0m9Tr5FZA==}
@@ -9696,6 +9702,8 @@ snapshots:
 
   '@apify/consts@2.56.1': {}
 
+  '@apify/consts@2.58.1': {}
+
   '@apify/datastructures@2.0.6': {}
 
   '@apify/docs-search-modal@1.4.0(@algolia/client-search@5.57.0)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react-dom@19.2.8(react@19.2.8))(react-is@16.13.1)(react@19.2.8)(search-insights@2.17.3)(supports-color@8.1.1)':
@@ -9786,6 +9794,11 @@ snapshots:
   '@apify/json_schemas@0.16.16':
     dependencies:
       '@apify/consts': 2.56.1
+      ajv: 8.20.0
+
+  '@apify/json_schemas@0.17.2':
+    dependencies:
+      '@apify/consts': 2.58.1
       ajv: 8.20.0
 
   '@apify/log@2.5.47':
