@@ -74,3 +74,22 @@ You can use the CLI to manage secrets environment variables:
         ...
     }
     ```
+
+### Apply environment variables to the build
+
+By default, custom environment variables are available only at runtime. To make them available also to the Actor build process, for example, as Docker build arguments, set `applyEnvVarsToBuild` in `.actor/actor.json`:
+
+```json
+{
+  "actorSpecification": 1,
+  "name": "dataset-to-mysql",
+  "version": "0.1",
+  "buildTag": "latest",
+  "applyEnvVarsToBuild": true,
+  "environmentVariables": {
+    "MYSQL_PASSWORD": "@mySecretPassword"
+  }
+}
+```
+
+To apply the environment variables to a single push, add the `--apply-env-vars-to-build` flag to the `apify push` command. To turn off the setting for a single push, add the `--no-apply-env-vars-to-build` flag. The flag overrides the value of the `applyEnvVarsToBuild` field. If you don't use a flag, the Apify platform keeps the stored setting.

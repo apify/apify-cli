@@ -224,8 +224,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			default: false,
 		}),
 		'apply-env-vars-to-build': Flags.boolean({
-			description:
-				'Make the environment variables also available to the Actor build process. Use --no-apply-env-vars-to-build to turn the setting off. When omitted, the setting currently stored on the platform is kept.',
+			description: `Make the environment variables also available to the Actor build process. To turn the setting off, use --no-apply-env-vars-to-build. Overrides the value of the 'applyEnvVarsToBuild' field in the '${LOCAL_CONFIG_PATH}' file. Without a flag, the setting currently stored on the platform is kept.`,
 			required: false,
 		}),
 	};
@@ -459,8 +458,9 @@ Skipping push. Use --force to override.`,
 					allowMissing: this.flags.allowMissingSecrets,
 				})
 			: undefined;
-		// true/false when --[no-]apply-env-vars-to-build is passed, undefined when omitted so the value stored on the platform is preserved
-		const { applyEnvVarsToBuild } = this.flags;
+		// undefined when neither the flag nor the actor.json field is set, so the value stored on the platform is preserved
+		const applyEnvVarsToBuild =
+			this.flags.applyEnvVarsToBuild ?? (actorConfig!.applyEnvVarsToBuild as boolean | undefined);
 
 		if (actorCurrentVersion) {
 			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars, applyEnvVarsToBuild };
