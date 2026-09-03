@@ -26,6 +26,16 @@ export const EMPTY_LOCAL_CONFIG = {
 
 export const CHECK_VERSION_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
 
+export const CHECK_RENTAL_ACTORS_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
+
+export const RENTAL_SUNSET_NOTICE_EVERY_MILLIS = 24 * 60 * 60 * 1000; // Once a day
+
+/**
+ * Rental Actors are fully retired on this date, so there is nothing left to warn about afterwards.
+ * Old CLI versions keep running for a long time, so the notice expires on its own.
+ */
+export const RENTAL_SUNSET_NOTICE_UNTIL = Date.UTC(2026, 9, 1); // 2026-10-01
+
 // Signals representing user-initiated interruption that long-running commands
 // should react to (aborting platform jobs, forwarding to local subprocesses).
 export const INTERRUPT_SIGNALS: NodeJS.Signals[] = ['SIGINT', 'SIGTERM', 'SIGHUP'];
