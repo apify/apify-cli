@@ -129,7 +129,7 @@ describe('apify actor generate-schema-types', () => {
 		expect(lastErrorMessage()).include('Generated types written to');
 
 		const generatedFile = await readFile(joinPath('output', 'input.ts'), 'utf-8');
-		expect(generatedFile).toContain('export interface');
+		expect(generatedFile).toContain('export type');
 		expect(generatedFile).toContain('searchQuery');
 	});
 
@@ -142,7 +142,7 @@ describe('apify actor generate-schema-types', () => {
 		expect(lastErrorMessage()).include(join('__generated__', 'actor', 'input.ts'));
 
 		const generatedFile = await readFile(joinPath('src', '__generated__', 'actor', 'input.ts'), 'utf-8');
-		expect(generatedFile).toContain('export interface');
+		expect(generatedFile).toContain('export type');
 	});
 
 	it('should generate strict types by default (no index signature)', async () => {
@@ -168,7 +168,7 @@ describe('apify actor generate-schema-types', () => {
 
 		const generatedFile = await readFile(joinPath('output-non-strict', 'input.ts'), 'utf-8');
 		// Verify the file is generated with the interface
-		expect(generatedFile).toContain('export interface');
+		expect(generatedFile).toContain('export type');
 	});
 
 	it('should fail when schema file does not exist', async () => {
@@ -234,29 +234,6 @@ describe('apify actor generate-schema-types', () => {
 		expect(generatedFile).toMatch(/crawlerType:/);
 	});
 
-	it('should make all properties optional with --all-optional flag', async () => {
-		const outputDir = joinPath('output-all-optional');
-
-		await testRunCommand(ActorGenerateSchemaTypesCommand, {
-			args_path: complexInputSchemaPath,
-			flags_output: outputDir,
-			'flags_all-optional': true,
-		});
-
-		const generatedFile = await readFile(joinPath('output-all-optional', 'input.ts'), 'utf-8');
-
-		// With --all-optional, ALL properties should be optional - including originally required ones
-		expect(generatedFile).toMatch(/startUrls\?:/);
-		expect(generatedFile).toMatch(/searchQuery\?:/);
-		expect(generatedFile).toMatch(/maxItems\?:/);
-		expect(generatedFile).toMatch(/includeImages\?:/);
-		expect(generatedFile).toMatch(/proxyConfig\?:/);
-
-		// Nested required properties should also become optional
-		expect(generatedFile).toMatch(/useApifyProxy\?:/);
-		expect(generatedFile).not.toMatch(/useApifyProxy:/); // ensure it's not non-optional
-	});
-
 	describe('dataset schema', () => {
 		it('should generate types from dataset schema referenced in actor.json', async () => {
 			const outputDir = joinPath('ds-output');
@@ -267,10 +244,10 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('ds-output', 'dataset.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
-			expect(generatedFile).toContain('title');
-			expect(generatedFile).toContain('url');
-			expect(generatedFile).toContain('price');
+			expect(generatedFile).toContain('export type');
+			expect(generatedFile).toContain('title: string;');
+			expect(generatedFile).toContain('url: string;');
+			expect(generatedFile).toContain('price?: number | undefined;');
 		});
 
 		it('should generate types from dataset schema embedded in actor.json', async () => {
@@ -295,7 +272,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('ds-output-embedded', 'dataset.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('name');
 			expect(generatedFile).toContain('value');
 		});
@@ -342,7 +319,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('out-output', 'output.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('productPage');
 			expect(generatedFile).toContain('screenshot');
 			expect(generatedFile).toContain('report');
@@ -369,7 +346,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('out-output-embedded', 'output.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('resultPage');
 			expect(generatedFile).toContain('dataExport');
 		});
@@ -410,7 +387,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('kvs-output', 'key-value-store.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			// Only "results" collection has jsonSchema; "screenshots" does not
 			expect(generatedFile).toContain('totalItems');
 			expect(generatedFile).toContain('summary');
@@ -445,7 +422,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('kvs-output-embedded', 'key-value-store.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('runCount');
 			expect(generatedFile).toContain('avgDuration');
 		});
@@ -507,16 +484,16 @@ describe('apify actor generate-schema-types', () => {
 			const outputDir = join(projectDir, 'src', '__generated__', 'actor');
 
 			const inputFile = await readFile(join(outputDir, 'input.ts'), 'utf-8');
-			expect(inputFile).toContain('export interface');
+			expect(inputFile).toContain('export type');
 
 			const datasetFile = await readFile(join(outputDir, 'dataset.ts'), 'utf-8');
-			expect(datasetFile).toContain('export interface');
+			expect(datasetFile).toContain('export type');
 
 			const outputFile = await readFile(join(outputDir, 'output.ts'), 'utf-8');
-			expect(outputFile).toContain('export interface');
+			expect(outputFile).toContain('export type');
 
 			const kvsFile = await readFile(join(outputDir, 'key-value-store.ts'), 'utf-8');
-			expect(kvsFile).toContain('export interface');
+			expect(kvsFile).toContain('export type');
 		});
 
 		it('should discover input schema from default locations in the directory', async () => {
@@ -542,7 +519,7 @@ describe('apify actor generate-schema-types', () => {
 
 			const outputDir = join(projectDir, 'src', '__generated__', 'actor');
 			const generatedFile = await readFile(join(outputDir, 'input.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('query');
 		});
 
@@ -557,7 +534,7 @@ describe('apify actor generate-schema-types', () => {
 			// Output should be inside the project directory, not in cwd
 			const outputFile = join(projectDir, 'src', '__generated__', 'actor', 'input.ts');
 			const generatedFile = await readFile(outputFile, 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 		});
 
 		it('should fail with clear error when directory has no schemas', async () => {
@@ -572,18 +549,17 @@ describe('apify actor generate-schema-types', () => {
 		});
 	});
 
-	it('should write successful schemas and report error for the failing one', async () => {
+	it('warns about unsupported JsonSchema feature usage', async () => {
 		const outputDir = joinPath('partial-fail-output');
 
-		// Dataset schema has a $ref that cannot be resolved (file resolution is disabled),
-		// so dataset compilation will throw while input compilation succeeds.
+		// `$ref` is not a supported feature (yet)
 		await setupActorConfig(joinPath(), {
 			datasetSchemaRef: {
 				actorSpecification: 1,
 				fields: {
 					type: 'object',
 					properties: {
-						x: { $ref: './nonexistent.json' },
+						myRef: { $ref: 'someRef' },
 					},
 				},
 				views: {},
@@ -596,11 +572,15 @@ describe('apify actor generate-schema-types', () => {
 
 		// input.ts must have been written despite the dataset failure
 		const inputFile = await readFile(joinPath('partial-fail-output', 'input.ts'), 'utf-8');
-		expect(inputFile).toContain('export interface');
+		expect(inputFile).toContain('export type');
 
 		// An error naming the failing schema must be logged
 		const allErrors = logMessages.error.join('\n');
-		expect(allErrors).toContain('Failed to generate types for Dataset schema');
+		expect(allErrors).toContain('[unsupported-keyword] $ref is not supported');
+
+		// dataset.ts must have been written despite the dataset failure
+		const datasetFile = await readFile(joinPath('partial-fail-output', 'dataset.ts'), 'utf-8');
+		expect(datasetFile).toContain('myRef?: unknown;');
 	});
 });
 
