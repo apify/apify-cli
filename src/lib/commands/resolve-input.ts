@@ -58,8 +58,9 @@ export async function getInputOverride(
 	const { schemaHint } = options;
 
 	if (!inputFlag && !inputFileFlag) {
-		// Try reading stdin
-		const stdin = await readStdin();
+		// Nobody asked for stdin here, so it must not block: this command is reachable with a pipe
+		// it only inherited from whatever spawned it.
+		const stdin = await readStdin({ implicit: true });
 
 		if (stdin) {
 			try {
