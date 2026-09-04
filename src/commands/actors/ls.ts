@@ -133,12 +133,17 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			description: 'Sort Actors in descending order.',
 			default: false,
 		}),
+		'name-only': Flags.boolean({
+			description:
+				'Print one "<username>/<name>" per line and skip the table/hydration. Useful for scripting (e.g. detecting name collisions before `apify push`).',
+			default: false,
+		}),
 	};
 
 	static override enableJsonFlag = true;
 
 	async run() {
-		const { desc, limit, offset, my, json } = this.flags;
+		const { desc, limit, offset, my, json, nameOnly } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
 
@@ -150,11 +155,27 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 				return;
 			}
 
+			if (nameOnly) {
+				// Nothing to print; exit cleanly so scripts can rely on empty output.
+				return;
+			}
+
 			info({
 				message: my ? "You don't have any Actors yet!" : 'There are no recent Actors used by you.',
 				stdout: true,
 			});
 
+			return;
+		}
+
+		// --name-only short-circuits before the per-actor hydration Promise.all,
+		// which fetches an extra Actor + runs list for every row. That work is
+		// wasted when a caller only needs the identifiers.
+		if (nameOnly && !json) {
+			simpleLog({
+				stdout: true,
+				message: rawActorList.items.map((a) => `${a.username}/${a.name}`).join('\n'),
+			});
 			return;
 		}
 
