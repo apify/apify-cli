@@ -184,3 +184,32 @@ Releases are fully automated via GitHub Actions — **do not bump the version in
 - **Stable releases:** trigger the **Create a release** workflow (`.github/workflows/release.yaml`) manually from the GitHub Actions UI. It computes the next version (auto / patch / minor / major / custom), updates `CHANGELOG.md`, builds standalone bundles for Linux / macOS / Windows (x64 + ARM64), creates a GitHub release with the bundles attached, publishes to npm under `latest`, and opens a PR against the Homebrew formula.
 
 Only users with publish access to the [`apify-cli` npm package](https://www.npmjs.com/package/apify-cli) can trigger the stable release workflow.
+
+### Side channels (publishing a branch to npm)
+
+A feature that needs real-world testing before it lands on `master` can be published from its own branch
+under its own npm dist-tag. Users on `latest` are unaffected — npm only installs a dist-tag when it is
+asked for explicitly:
+
+```bash
+npm install -g apify-cli@runtime
+```
+
+The `runtime` channel exists for [Actor runtime](https://docs.apify.com/cli) development. To publish one:
+
+1. Merge `master` into your branch. The workflow definition comes from the ref you dispatch from, but
+   `.github/scripts/` comes from the ref you publish, so a stale branch fails the version-bump step.
+2. Run the **Publish to NPM** workflow (`.github/workflows/publish_to_npm.yaml`) from the Actions UI,
+   dispatching it **from `master`**, with `ref` set to your branch and `tag` set to `runtime`. Dispatching
+   from `master` also keeps the OIDC claim npm's trusted publisher sees stable.
+3. The workflow derives the version itself: the base version moves forward to the first unpublished patch
+   and the channel name becomes the prerelease identifier, so the result looks like `1.10.1-runtime.0`,
+   then `.1`, `.2` on later publishes. Each channel counts independently of `beta`.
+
+Side channels publish to npm only — no GitHub release, no changelog entry, no standalone bundles.
+
+To add another channel, add its name to the `tag` input's `options` in the workflow. Channel names must be
+lowercase and cannot be valid semver (they become both a dist-tag and a semver prerelease identifier).
+
+Publishing `latest` is refused unless the ref is contained in `origin/master`; `allow_unmerged_latest`
+overrides that for a deliberate release from another branch.

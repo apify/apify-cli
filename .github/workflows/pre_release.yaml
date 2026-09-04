@@ -80,7 +80,7 @@ jobs:
             - name: Get pre-release version
               id: get-pre-release-version
               run: |
-                  pnpm exec tsx ./.github/scripts/before-beta-release.ts
+                  pnpm exec tsx ./.github/scripts/before-prerelease.ts --tag beta
                   echo "pre_release_version=$(cat package.json | jq -r '.version')" >> $GITHUB_OUTPUT
 
     build-bundles:
