@@ -77,7 +77,9 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
+				message: actorId
+					? `${ctx.reason}. Check that the ID or name is correct and that your API token has access to this Actor.`
+					: `${ctx.reason}. Run this command in an Actor directory, or specify the Actor ID.`,
 				stdout: true,
 			});
 

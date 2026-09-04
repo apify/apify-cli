@@ -93,7 +93,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please specify the Actor ID.`,
+				message: `${ctx.reason}. Check that the ID or name is correct and that your API token has access to this Actor.`,
 				stdout: true,
 			});
 
