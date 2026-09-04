@@ -63,6 +63,61 @@ enum RunType {
 	Script = 2,
 }
 
+// Package managers / node runtimes that resolve their own subcommands and
+// therefore do not need a matching node_modules/.bin entry.
+const PREFLIGHT_SKIP_LEADING_TOKENS = new Set([
+	'node',
+	'npm',
+	'npx',
+	'pnpm',
+	'pnpx',
+	'yarn',
+	'bun',
+	'bunx',
+	'deno',
+	'sh',
+	'bash',
+	'zsh',
+	'python',
+	'python3',
+	'echo',
+	'true',
+	'false',
+]);
+
+/**
+ * Extracts the leading binary from an npm script command and returns it iff
+ * it looks like a local dependency binary that is expected to live in
+ * `<cwd>/node_modules/.bin/<name>` but does not. Returns `null` if we can't
+ * confidently determine that a binary is missing (unknown command shapes,
+ * absolute paths, node_modules/.bin present, etc.) — the preflight is meant
+ * to catch the common failure mode, not to second-guess arbitrary scripts.
+ */
+async function findMissingScriptBinary(cwd: string, script: string): Promise<string | null> {
+	if (!script) return null;
+
+	// Strip leading env-var assignments (e.g. `NODE_ENV=production tsx src/main.ts`).
+	const tokens = script.trim().split(/\s+/);
+	let idx = 0;
+	while (idx < tokens.length && /^[A-Za-z_][A-Za-z0-9_]*=/.test(tokens[idx])) {
+		idx += 1;
+	}
+	const leading = tokens[idx];
+	if (!leading) return null;
+
+	// Skip package managers, node/deno, shells, etc. — none of these are expected
+	// to be locally installed binaries.
+	if (PREFLIGHT_SKIP_LEADING_TOKENS.has(leading)) return null;
+
+	// If the script references an explicit path, we can't reliably infer a
+	// node_modules/.bin entry — skip the preflight to avoid false positives.
+	if (leading.includes('/') || leading.includes('\\') || leading.startsWith('.')) return null;
+
+	const binPath = join(cwd, 'node_modules', '.bin', leading);
+	const exists = existsSync(binPath) || existsSync(`${binPath}.cmd`) || existsSync(`${binPath}.exe`);
+	return exists ? null : leading;
+}
+
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	static override name = 'run' as const;
 
@@ -396,6 +451,20 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 						if (!runtime.pmPath) {
 							throw new Error(
 								'No npm executable found! Please make sure your Node.js runtime has npm installed if you want to run package.json scripts locally.',
+							);
+						}
+
+						// Preflight: catch the common "sh: tsx: not found" failure mode
+						// where devDependencies were skipped (typically because the caller
+						// had NODE_ENV=production when running `npm install`). Emit an
+						// actionable error before spawning the package manager, instead of
+						// letting the child fail with a bare `sh: <bin>: not found`.
+						const missingBin = await findMissingScriptBinary(cwd, packageJsonObj.scripts[entrypoint]);
+						if (missingBin) {
+							throw new Error(
+								`"${missingBin}" was not found in node_modules/.bin. This usually means ` +
+									`devDependencies were skipped during install (e.g. NODE_ENV=production). ` +
+									`Run \`npm install --include=dev\` (or \`pnpm install --prod=false\`) and retry.`,
 							);
 						}
 
