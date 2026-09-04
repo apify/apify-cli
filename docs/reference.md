@@ -788,8 +788,8 @@ DESCRIPTION
 
 USAGE
   $ apify actors push [actorId] [--allow-missing-secrets]
-                      [-b <value>] [--dir <value>] [-f] [--json] [--open]
-                      [-v <value>] [-w <value>]
+                      [--apply-env-vars-to-build] [-b <value>] [--dir <value>]
+                      [-f] [--json] [--open] [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -800,6 +800,11 @@ FLAGS
       --allow-missing-secrets    Allow the command to
                                  continue even when secret values are not found in
                                  the local secrets storage.
+      --apply-env-vars-to-build  Make the environment
+                                 variables also available to the Actor build
+                                 process. Use --no-apply-env-vars-to-build to turn
+                                 the setting off. When omitted, the setting
+                                 currently stored on the platform is kept.
   -b, --build-tag=<value>        Build tag to be
                                  applied to the successful Actor build. By default,
                                  it is taken from the '.actor/actor.json' file.
