@@ -1,5 +1,12 @@
 import { Time } from '@sapphire/duration';
-import type { Actor, ActorRunListItem, ActorTaggedBuild, PaginatedList } from 'apify-client';
+import type {
+	Actor,
+	ActorCollectionListItem,
+	ActorRunListItem,
+	ActorTaggedBuild,
+	ApifyClient,
+	PaginatedList,
+} from 'apify-client';
 import chalk from 'chalk';
 
 import type { ACTOR_JOB_STATUSES } from '@apify/consts';
@@ -97,6 +104,8 @@ interface HydratedListData {
 export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 	static override name = 'ls' as const;
 
+	private static readonly INTERNAL_PAGE_SIZE = 100;
+
 	static override description = 'Prints a list of recently executed Actors or Actors you own.';
 
 	static override examples = [
@@ -112,6 +121,14 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			description: 'List the next page of 50 Actors.',
 			command: 'apify actors ls --limit 50 --offset 50',
 		},
+		{
+			description: 'List only public Actors.',
+			command: 'apify actors ls --public',
+		},
+		{
+			description: 'List only private Actors.',
+			command: 'apify actors ls --private',
+		},
 	];
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-actors-ls';
@@ -121,13 +138,21 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			description: 'Whether to list Actors made by the logged in user.',
 			default: false,
 		}),
+		public: Flags.boolean({
+			description: 'Show only public Actors.',
+			default: false,
+			exclusive: ['private'],
+		}),
+		private: Flags.boolean({
+			description: 'Show only private Actors.',
+			default: false,
+			exclusive: ['public'],
+		}),
 		offset: Flags.integer({
-			description: 'Number of Actors that will be skipped.',
-			default: 0,
+			description: 'Number of Actors that will be skipped. Defaults to 0.',
 		}),
 		limit: Flags.integer({
-			description: 'Number of Actors that will be listed.',
-			default: 20,
+			description: 'Number of Actors that will be listed. Defaults to 20.',
 		}),
 		desc: Flags.boolean({
 			description: 'Sort Actors in descending order.',
@@ -138,69 +163,98 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 	static override enableJsonFlag = true;
 
 	async run() {
-		const { desc, limit, offset, my, json } = this.flags;
+		const { desc, limit, offset, my, json, public: publicOnly, private: privateOnly } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
 
-		const rawActorList = await client.actors().list({ limit, offset, desc, my });
+		let actorItems: HydratedListData[];
+		let jsonTotal: number;
+		let jsonOffset: number;
+		let jsonLimit: number;
 
-		if (rawActorList.count === 0) {
+		if (publicOnly || privateOnly) {
+			const matching: HydratedListData[] = [];
+			let pageOffset = 0;
+			let total = Infinity;
+
+			while (pageOffset < total) {
+				const page = await client
+					.actors()
+					.list({ desc, my, limit: ActorsLsCommand.INTERNAL_PAGE_SIZE, offset: pageOffset });
+
+				total = page.total;
+
+				if (page.items.length === 0) break;
+
+				const hydrated = await this.hydrateActors(page.items, client);
+
+				for (const item of hydrated) {
+					if (publicOnly && item.actor?.isPublic === true) matching.push(item);
+					if (privateOnly && item.actor?.isPublic === false) matching.push(item);
+				}
+
+				pageOffset += page.items.length;
+			}
+
+			const sortedMatching = my ? this.sortByModifiedAt(matching) : this.sortByLastRun(matching);
+			jsonTotal = sortedMatching.length;
+			jsonOffset = offset ?? 0;
+			jsonLimit = limit ?? sortedMatching.length;
+			actorItems = sortedMatching.slice(jsonOffset, jsonOffset + jsonLimit);
+		} else {
+			const rawActorList = await client.actors().list({ limit: limit ?? 20, offset: offset ?? 0, desc, my });
+
+			if (rawActorList.count === 0) {
+				if (json) {
+					printJsonToStdout(rawActorList);
+					return;
+				}
+
+				info({
+					message: my ? "You don't have any Actors yet!" : 'There are no recent Actors used by you.',
+					stdout: true,
+				});
+
+				return;
+			}
+
+			actorItems = await this.hydrateActors(rawActorList.items, client);
+			actorItems = my ? this.sortByModifiedAt(actorItems) : this.sortByLastRun(actorItems);
+			jsonTotal = rawActorList.total;
+			jsonOffset = rawActorList.offset;
+			jsonLimit = limit ?? 20;
+		}
+
+		if (actorItems.length === 0) {
 			if (json) {
-				printJsonToStdout(rawActorList);
+				printJsonToStdout({ items: [], total: jsonTotal, count: 0, offset: jsonOffset, limit: jsonLimit, desc });
 				return;
 			}
 
 			info({
-				message: my ? "You don't have any Actors yet!" : 'There are no recent Actors used by you.',
+				message: publicOnly ? 'No public Actors found.' : 'No private Actors found.',
 				stdout: true,
 			});
 
 			return;
 		}
 
-		// Fetch the last run for actors
-		const actorList: PaginatedList<HydratedListData> = {
-			...rawActorList,
-			items: await Promise.all(
-				rawActorList.items.map(async (actorData) => {
-					const actor = await client.actor(actorData.id).get();
-					const runs = await client
-						.actor(actorData.id)
-						.runs()
-						.list({ desc: true, limit: 1 })
-						// Throws an error if the returned actor changed publicity status
-						.catch(
-							() =>
-								({
-									count: 0,
-									desc: true,
-									items: [],
-									limit: 1,
-									offset: 0,
-									total: 0,
-								}) satisfies PaginatedList<ActorRunListItem>,
-						);
-
-					return {
-						...actorData,
-						actor: actor ?? null,
-						lastRun: (runs.items[0] ?? null) as ActorRunListItem | null,
-					} as HydratedListData;
-				}),
-			),
-		};
-
-		actorList.items = my ? this.sortByModifiedAt(actorList.items) : this.sortByLastRun(actorList.items);
-
 		if (json) {
-			printJsonToStdout(actorList);
+			printJsonToStdout({
+				items: actorItems,
+				total: jsonTotal,
+				count: actorItems.length,
+				offset: jsonOffset,
+				limit: jsonLimit,
+				desc,
+			});
 			return;
 		}
 
 		const table = my ? myRecentlyUsedTable : recentlyUsedTable;
 
 		const longestActorTitleLength =
-			actorList.items.reduce((acc, curr) => {
+			actorItems.reduce((acc: number, curr: HydratedListData) => {
 				const title = `${curr.username}/${curr.name}`;
 
 				if (title.length > acc) {
@@ -214,7 +268,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			// Runs column minimum size with padding
 			6;
 
-		for (const item of actorList.items) {
+		for (const item of actorItems) {
 			const lastRunDisplayedTimestamp = item.stats.lastRunStartedAt
 				? MultilineTimestampFormatter.display(item.stats.lastRunStartedAt)
 				: '';
@@ -298,6 +352,36 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 			message: table.render(CompactMode.WebLikeCompact),
 			stdout: true,
 		});
+	}
+
+	private async hydrateActors(items: ActorCollectionListItem[], client: ApifyClient): Promise<HydratedListData[]> {
+		return Promise.all(
+			items.map(async (actorData) => {
+				const actor = await client.actor(actorData.id).get();
+				const runs = await client
+					.actor(actorData.id)
+					.runs()
+					.list({ desc: true, limit: 1 })
+					// Throws an error if the returned actor changed publicity status
+					.catch(
+						() =>
+							({
+								count: 0,
+								desc: true,
+								items: [],
+								limit: 1,
+								offset: 0,
+								total: 0,
+							}) satisfies PaginatedList<ActorRunListItem>,
+					);
+
+				return {
+					...actorData,
+					actor: actor ?? null,
+					lastRun: (runs.items[0] ?? null) as ActorRunListItem | null,
+				} as HydratedListData;
+			}),
+		);
 	}
 
 	private sortByModifiedAt(items: HydratedListData[]) {
