@@ -5,10 +5,10 @@ import chalk from 'chalk';
 
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import { getConsoleUrl } from '../console-url.js';
 import { CommandExitCodes } from '../consts.js';
 import { simpleLog } from '../outputs.js';
 import { printJsonToStdout } from '../utils.js';
+import { consoleActorUrl, consoleDatasetUrl, consoleRunUrl, fetchLogTail } from './agent-output.js';
 
 /** Which command produced the run, used for labels and the JSON `operation` field. */
 export type RunResultOperation = 'call' | 'task-run';
@@ -20,18 +20,6 @@ const OPERATION_LABELS: Record<RunResultOperation, string> = {
 
 /** How many trailing log lines to surface as the failure reason. */
 const LOG_TAIL_LINES = 10;
-
-function actorUrl(actorId: string) {
-	return `${getConsoleUrl()}/actors/${actorId}`;
-}
-
-export function runUrl(actorId: string, runId: string) {
-	return `${getConsoleUrl()}/actors/${actorId}/runs/${runId}`;
-}
-
-function datasetUrl(datasetId: string) {
-	return `${getConsoleUrl()}/storage/datasets/${datasetId}`;
-}
 
 function isSucceeded(run: ActorRun): boolean {
 	return run.status === ACTOR_JOB_STATUSES.SUCCEEDED;
@@ -80,23 +68,7 @@ export async function fetchRunLogTail(apifyClient: ApifyClient, run: ActorRun): 
 		return [];
 	}
 
-	let log: string | undefined;
-
-	try {
-		log = await apifyClient.log(run.id).get();
-	} catch {
-		return [];
-	}
-
-	if (!log) {
-		return [];
-	}
-
-	return log
-		.split('\n')
-		.map((line) => line.trimEnd())
-		.filter((line) => line.length > 0)
-		.slice(-LOG_TAIL_LINES);
+	return fetchLogTail(apifyClient, run.id, LOG_TAIL_LINES);
 }
 
 export interface RunResultOptions {
@@ -124,17 +96,17 @@ export function buildRunResultJson({ run, operation, logTail }: RunResultOptions
 		operation,
 		actor: {
 			id: run.actId,
-			url: actorUrl(run.actId),
+			url: consoleActorUrl(run.actId),
 		},
 		run: {
 			id: run.id,
 			status: run.status,
-			url: runUrl(run.actId, run.id),
+			url: consoleRunUrl(run.actId, run.id),
 		},
 		storage: {
 			defaultDatasetId: run.defaultDatasetId,
 			defaultKeyValueStoreId: run.defaultKeyValueStoreId,
-			datasetUrl: datasetUrl(run.defaultDatasetId),
+			datasetUrl: consoleDatasetUrl(run.defaultDatasetId),
 		},
 		exitCode: getRunExitCode(run),
 	};
@@ -172,8 +144,8 @@ export function printRunResultSummary({ run, operation, logTail }: RunResultOpti
 		`${chalk.yellow('Dataset ID')}: ${run.defaultDatasetId}`,
 		`${chalk.yellow('Key-value store ID')}: ${run.defaultKeyValueStoreId}`,
 		'',
-		`${chalk.blue('Run URL')}: ${runUrl(run.actId, run.id)}`,
-		`${chalk.blue('Dataset URL')}: ${datasetUrl(run.defaultDatasetId)}`,
+		`${chalk.blue('Run URL')}: ${consoleRunUrl(run.actId, run.id)}`,
+		`${chalk.blue('Dataset URL')}: ${consoleDatasetUrl(run.defaultDatasetId)}`,
 	);
 
 	if (!ok) {
