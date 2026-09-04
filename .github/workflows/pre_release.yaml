@@ -101,6 +101,7 @@ jobs:
                       bun-target-arch: arm64
 
         runs-on: ${{ matrix.os }}
+        timeout-minutes: 20
 
         steps:
             - name: Checkout repository
