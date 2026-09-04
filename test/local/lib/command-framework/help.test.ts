@@ -1,6 +1,7 @@
 /* eslint-disable max-classes-per-file */
 import stripAnsi from 'strip-ansi';
 
+import { ActorsPushCommand } from '../../../../src/commands/actors/push.js';
 import {
 	ApifyCommand,
 	type BuiltApifyCommand as _BuiltApifyCommand,
@@ -138,6 +139,14 @@ describe('Help rendering', () => {
 
 			expect(output).toContain('# Abort a running Actor gracefully.');
 			expect(output).toContain('$ apify runs abort <runId>');
+		});
+
+		test('renders a valid fire-and-forget example for apify push', () => {
+			registerCommandForHelpGeneration('apify', ActorsPushCommand);
+			const output = stripAnsi(renderHelpForCommand(ActorsPushCommand));
+
+			expect(output).toContain('$ apify push --wait-for-finish=0');
+			expect(output).not.toContain('--no-wait-for-finish');
 		});
 	});
 
