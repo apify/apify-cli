@@ -9,7 +9,7 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { getConsoleUrl } from '../../lib/console-url.js';
+import { getConsoleIntegrationsUrl, getConsoleUrl } from '../../lib/console-url.js';
 import { AUTH_FILE_PATH } from '../../lib/consts.js';
 import { getBackend } from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
@@ -18,8 +18,6 @@ import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectF
 import { createLocalApiServer } from '../../lib/local-api-server.js';
 import { error, info, success } from '../../lib/outputs.js';
 import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
-
-const CONSOLE_INTEGRATIONS_PATH = '/settings/integrations';
 
 // When logging in against a local Console instance (local platform development), validate the token
 // against the local API rather than production.
@@ -108,7 +106,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 
 		const consoleUrl = getConsoleUrl();
 		const consoleOrigin = new URL(consoleUrl).origin;
-		const consoleIntegrationsUrl = `${consoleUrl}${CONSOLE_INTEGRATIONS_PATH}`;
+		const consoleIntegrationsUrl = getConsoleIntegrationsUrl();
 
 		let selectedMethod = method;
 

@@ -19,6 +19,7 @@ export default defineConfig({
 		env: {
 			APIFY_CLI_DISABLE_TELEMETRY: '1',
 			APIFY_CLI_SKIP_UPDATE_CHECK: '1',
+			APIFY_CLI_SKIP_RENTAL_SUNSET_NOTICE: '1',
 			APIFY_NO_LOGS_IN_TESTS: '1',
 		},
 		retry: 3,
