@@ -31,6 +31,7 @@ const expectedOutput = {
 describe('[api] apify task run', () => {
 	let actorId: string;
 	let taskId: string;
+	let rawTaskId: string;
 
 	beforeAll(async () => {
 		await beforeAllCalls();
@@ -77,6 +78,7 @@ describe('[api] apify task run', () => {
 			input: expectedOutput,
 		});
 
+		rawTaskId = task.id;
 		taskId = `${username}/${task.name}`;
 	}, TEST_TIMEOUT);
 
@@ -104,6 +106,20 @@ describe('[api] apify task run', () => {
 	it('should work with the full name', async () => {
 		await testRunCommand(TaskRunCommand, {
 			args_taskId: taskId,
+		});
+
+		const taskClient = testUserClient.task(taskId);
+		const runs = await taskClient.runs().list();
+		const lastRun = runs.items.pop();
+		const lastRunDetail = await testUserClient.run(lastRun!.id).get();
+		const output = await testUserClient.keyValueStore(lastRunDetail!.defaultKeyValueStoreId).getRecord('OUTPUT');
+
+		expect(expectedOutput).toStrictEqual(output!.value);
+	});
+
+	it('should work with just the task ID', async () => {
+		await testRunCommand(TaskRunCommand, {
+			args_taskId: rawTaskId,
 		});
 
 		const taskClient = testUserClient.task(taskId);
