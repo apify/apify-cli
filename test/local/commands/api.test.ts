@@ -118,6 +118,27 @@ describe('apify api (local)', () => {
 		});
 	});
 
+	describe('inline query-string detection', () => {
+		it('should warn when the endpoint contains "?"', async () => {
+			await testRunCommand(ApiCommand, {
+				args_methodOrEndpoint: 'v2/acts?my=1&limit=100',
+			});
+
+			const combinedErrors = logMessages.error.join('\n');
+			expect(combinedErrors).toMatch(/endpoint contains a "\?"/i);
+			expect(combinedErrors).toMatch(/--params/);
+		});
+
+		it('should not warn when the endpoint has no "?"', async () => {
+			await testRunCommand(ApiCommand, {
+				args_methodOrEndpoint: 'v2/users/me',
+			});
+
+			const combinedErrors = logMessages.error.join('\n');
+			expect(combinedErrors).not.toMatch(/endpoint contains a "\?"/i);
+		});
+	});
+
 	describe('method handling', () => {
 		it('should error when positional method conflicts with --method flag', async () => {
 			await testRunCommand(ApiCommand, {
