@@ -68,7 +68,7 @@
 	"dependencies": {
 		"@apify/actor-memory-expression": "^0.2.0",
 		"@apify/actor-templates": "^0.1.5",
-		"@apify/consts": "^2.53.0",
+		"@apify/consts": "^3.0.0",
 		"@apify/input_schema": "^3.27.1",
 		"@apify/json_schemas": "^0.17.0",
 		"@apify/utilities": "^2.25.6",
