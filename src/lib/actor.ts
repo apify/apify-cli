@@ -9,7 +9,7 @@ import { ApifyClient } from 'apify-client';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';
 
-import { getApifyClientOptions, getLocalStorageDir, getLocalUserInfo } from './utils.js';
+import { getApifyClientOptions, getLocalStorageDir, resolveToken } from './utils.js';
 
 export const APIFY_STORAGE_TYPES = {
 	KEY_VALUE_STORE: 'KEY_VALUE_STORE',
@@ -18,23 +18,18 @@ export const APIFY_STORAGE_TYPES = {
 } as const;
 
 /**
- * Returns Apify token from environment variable or local auth file.
+ * Returns the Apify token to use — the `APIFY_TOKEN` env var, else the token stored by `apify login`.
  * @returns Apify token
  */
-export const getApifyTokenFromEnvOrAuthFile = async () => {
-	const apifyToken = process.env[APIFY_ENV_VARS.TOKEN];
-	if (apifyToken) {
-		return apifyToken;
-	}
-
-	const localUserInfo = await getLocalUserInfo();
-	if (!localUserInfo || !localUserInfo.token) {
+export const getApifyToken = async () => {
+	const apifyToken = await resolveToken();
+	if (!apifyToken) {
 		throw new Error(
 			'Apify token is not set. Please set it using the environment variable APIFY_TOKEN or apify login command.',
 		);
 	}
 
-	return localUserInfo.token;
+	return apifyToken;
 };
 
 /**
@@ -54,7 +49,7 @@ export const getApifyStorageClient = async (
 			...options,
 		});
 	}
-	const apifyToken = await getApifyTokenFromEnvOrAuthFile();
+	const apifyToken = await getApifyToken();
 
 	return new ApifyClient({
 		...(await getApifyClientOptions(apifyToken)),

@@ -14,7 +14,35 @@ import {
 	setProxyPassword,
 	setToken,
 } from '../../../src/lib/credentials.js';
-import { getLocalUserInfo } from '../../../src/lib/utils.js';
+import { getApifyClientOptions, getLocalUserInfo, getLoggedClient } from '../../../src/lib/utils.js';
+
+/** `user('me').get()` failures for the mock below to simulate, keyed by the token used. */
+const userFetchFailures = new Map<string, { statusCode?: number }>();
+
+// Stubs out the `user('me').get()` round-trip so getLoggedClient() can be tested without the API.
+vi.mock('apify-client', () => {
+	class ApifyClient {
+		token?: string;
+		constructor(options: { token?: string }) {
+			this.token = options.token;
+		}
+		user() {
+			return {
+				get: async () => {
+					const failure = userFetchFailures.get(this.token!);
+					if (failure) throw Object.assign(new Error('simulated API failure'), failure);
+
+					return {
+						id: `id_for_${this.token}`,
+						username: `user_for_${this.token}`,
+						proxy: { password: `pw_for_${this.token}` },
+					};
+				},
+			};
+		}
+	}
+	return { ApifyClient };
+});
 
 const keyringStore = new Map<string, string>();
 const keyringFailures = new Set<string>();
@@ -49,8 +77,10 @@ const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
 describe('credentials', () => {
 	beforeEach(() => {
 		vitest.stubEnv('__APIFY_INTERNAL_TEST_AUTH_PATH__', cryptoRandomObjectId(12));
+		vitest.stubEnv('APIFY_TOKEN', undefined);
 		keyringStore.clear();
 		keyringFailures.clear();
+		userFetchFailures.clear();
 		__resetCredentialsForTests();
 	});
 
@@ -276,6 +306,112 @@ describe('credentials', () => {
 			const info = await getLocalUserInfo();
 			expect(info.token).toBe('tok_kr');
 			expect(info.proxy?.password).toBe('pw_kr');
+		});
+
+		it('describes the APIFY_TOKEN account, not the stored login', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			writeAuthFile({ username: 'stored', id: 'stored_id', token: 'stored_tok', secretsBackend: 'file' });
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok_a');
+
+			const info = await getLocalUserInfo();
+			expect(info).toMatchObject({
+				username: 'user_for_env_tok_a',
+				id: 'id_for_env_tok_a',
+				token: 'env_tok_a',
+			});
+			expect(info.proxy?.password).toBe('pw_for_env_tok_a');
+		});
+
+		it('describes the APIFY_TOKEN account when there is no stored login at all', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok_b');
+
+			expect(await getLocalUserInfo()).toMatchObject({ username: 'user_for_env_tok_b', id: 'id_for_env_tok_b' });
+		});
+
+		// `apify run` needs no network, so an unreachable API must not stop it — only a refused token is fatal.
+		it.each([[undefined], [500], [502]])(
+			'degrades to no identity when the identity lookup fails with statusCode %s',
+			async (statusCode) => {
+				const token = `env_tok_soft_${statusCode}`;
+				vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+				vitest.stubEnv('APIFY_TOKEN', token);
+				userFetchFailures.set(token, { statusCode });
+
+				expect(await getLocalUserInfo()).toEqual({ token });
+			},
+		);
+
+		it.each([[401], [403], [409]])('throws when the API refuses the APIFY_TOKEN with %i', async (statusCode) => {
+			const token = `env_tok_refused_${statusCode}`;
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			vitest.stubEnv('APIFY_TOKEN', token);
+			userFetchFailures.set(token, { statusCode });
+
+			await expect(getLocalUserInfo()).rejects.toThrow(`refused by the Apify API (HTTP ${statusCode})`);
+		});
+	});
+
+	// Precedence: explicit token arg (e.g. --token) > APIFY_TOKEN env var > stored login token.
+	// Regression guard for the env var being ignored in favour of the stored token.
+	describe('token resolution precedence (getApifyClientOptions)', () => {
+		it('prefers the APIFY_TOKEN env var over the stored token', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			await setToken('stored_tok');
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok');
+			const { token } = await getApifyClientOptions();
+			expect(token).toBe('env_tok');
+		});
+
+		it('prefers an explicitly passed token over the APIFY_TOKEN env var', async () => {
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok');
+			const { token } = await getApifyClientOptions('explicit_tok');
+			expect(token).toBe('explicit_tok');
+		});
+
+		it('falls back to the stored token when APIFY_TOKEN is not set', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			vitest.stubEnv('APIFY_TOKEN', '');
+			await setToken('stored_tok');
+			const { token } = await getApifyClientOptions();
+			expect(token).toBe('stored_tok');
+		});
+	});
+
+	// A one-time token override (APIFY_TOKEN / --token) must never be written over the durable
+	// `apify login` credentials — only `apify login` itself persists.
+	describe('getLoggedClient() credential persistence', () => {
+		beforeEach(async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			await setToken('stored_tok');
+			writeAuthFile({ ...readAuthFile(), username: 'stored_user', id: 'stored_id' });
+		});
+
+		it('uses APIFY_TOKEN without overwriting the stored login', async () => {
+			vitest.stubEnv('APIFY_TOKEN', 'env_tok');
+
+			const client = await getLoggedClient();
+
+			expect(client?.token).toBe('env_tok');
+			expect(await getToken()).toBe('stored_tok');
+			expect(readAuthFile().username).toBe('stored_user');
+			expect(readAuthFile().id).toBe('stored_id');
+		});
+
+		it('uses an explicitly passed token without overwriting the stored login', async () => {
+			const client = await getLoggedClient('flag_tok');
+
+			expect(client?.token).toBe('flag_tok');
+			expect(await getToken()).toBe('stored_tok');
+			expect(readAuthFile().username).toBe('stored_user');
+		});
+
+		it('persists the token and user metadata when persistCredentials is set (apify login)', async () => {
+			const client = await getLoggedClient('login_tok', undefined, { persistCredentials: true });
+
+			expect(client?.token).toBe('login_tok');
+			expect(await getToken()).toBe('login_tok');
+			expect(readAuthFile().username).toBe('user_for_login_tok');
 		});
 	});
 });

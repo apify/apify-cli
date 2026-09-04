@@ -28,7 +28,7 @@ const API_VERSION = 'v1';
 
 const tryToLogin = async (token: string) => {
 	const apiBaseUrl = getConsoleUrl().includes('localhost') ? LOCAL_API_BASE_URL : undefined;
-	const isUserLogged = await getLoggedClient(token, apiBaseUrl);
+	const isUserLogged = await getLoggedClient(token, apiBaseUrl, { persistCredentials: true });
 	const userInfo = await getLocalUserInfo();
 
 	if (isUserLogged) {
