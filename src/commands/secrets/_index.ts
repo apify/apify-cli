@@ -1,6 +1,7 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { SecretsAddCommand } from './add.js';
+import { SecretsCheckCommand } from './check.js';
 import { SecretsLsCommand } from './ls.js';
 import { SecretsRmCommand } from './rm.js';
 
@@ -20,11 +21,15 @@ export class SecretsIndexCommand extends ApifyCommand<typeof SecretsIndexCommand
 			description: `Reference the secret from .actor/actor.json using the "@" prefix, e.g. "environmentVariables": { "SECRET_ENV_VAR": "@mySecret" }, then push as usual.`,
 			command: 'apify push',
 		},
+		{
+			description: 'Verify that every "@name" reference in .actor/actor.json resolves to a locally stored secret.',
+			command: 'apify secrets check',
+		},
 	];
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-secrets';
 
-	static override subcommands = [SecretsAddCommand, SecretsLsCommand, SecretsRmCommand];
+	static override subcommands = [SecretsAddCommand, SecretsCheckCommand, SecretsLsCommand, SecretsRmCommand];
 
 	async run() {
 		this.printHelp();
