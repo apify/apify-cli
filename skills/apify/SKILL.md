@@ -87,6 +87,31 @@ apify key-value-stores set-value <storeId> <key> <value>
 apify key-value-stores keys <storeId> --json
 ```
 
+## Local Actor runtime
+
+`apify runtime` runs a self-contained local Apify platform as a Docker container (needs Docker installed and running). Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account.
+
+```sh
+apify runtime install            # verify Docker and pull the runtime image
+apify runtime start --detach     # run in the background; omit --detach to run in the foreground (Ctrl+C stops it)
+apify runtime stop
+```
+
+The runtime publishes two ports on `localhost`. Point the CLI at it by exporting these environment variables (the same values `apify runtime -h` and `apify runtime start` print):
+
+| Port | Service | Environment variable | Value |
+| ---- | ------- | -------------------- | ----- |
+| 3333 | API (Apify API compatible) | `APIFY_CLIENT_BASE_URL` | `http://localhost:3333` |
+| 3000 | Console (web UI) | `APIFY_CONSOLE_URL` | `http://localhost:3000` |
+
+```sh
+export APIFY_CLIENT_BASE_URL=http://localhost:3333
+export APIFY_CONSOLE_URL=http://localhost:3000
+apify actors ls --json           # now talks to the local runtime
+```
+
+Every `apify` command in that shell (`push`, `call`, `actors`, `datasets`, `api`, ...) then targets the runtime. Unset the variables (or start a new shell) to talk to the Apify cloud again. Do not set them globally for the user without asking - they silently redirect all API traffic.
+
 ## Scheduling and recurring runs
 
 For anything recurring or unattended (e.g. "run every 15 minutes"), use the Apify platform — **not** local `cron`, a `while` loop, or GitHub Actions. Apify Schedules run in the cloud, so they keep firing after your laptop, terminal, or agent session is shut down.

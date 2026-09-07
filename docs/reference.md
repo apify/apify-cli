@@ -460,6 +460,20 @@ DESCRIPTION
   Manages the Actor runtime, a self-contained local Apify platform running as a 
   Docker container.
 
+  The runtime publishes two ports on localhost:
+
+    3333   API      http://localhost:3333  (Apify API compatible endpoint)
+    3000   Console  http://localhost:3000  (web UI)
+
+  Point the Apify CLI (and Apify SDKs and API clients that honour these 
+  variables) at the runtime instead of the Apify cloud by setting:
+
+    export APIFY_CLIENT_BASE_URL=http://localhost:3333
+    export APIFY_CONSOLE_URL=http://localhost:3000
+
+  Unset them to talk to the Apify cloud again. 'apify runtime start' prints the 
+  same values when the runtime boots.
+
 SUBCOMMANDS
   runtime install  Installs the Actor runtime: verifies this
                    machine can run Docker images and downloads the Actor runtime
@@ -494,7 +508,8 @@ DESCRIPTION
   container.
   Installs the runtime first when needed (like 'apify runtime install'). The 
   runtime API listens on http://localhost:3333 and the console on 
-  http://localhost:3000.
+  http://localhost:3000. Run 'apify runtime -h' for the environment variables 
+  that point the CLI at it.
 
 USAGE
   $ apify runtime start [--data-dir <value>] [-d]

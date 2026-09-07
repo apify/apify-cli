@@ -1,6 +1,7 @@
 /* eslint-disable max-classes-per-file */
 import stripAnsi from 'strip-ansi';
 
+import { RuntimeIndexCommand } from '../../../../src/commands/runtime/_index.js';
 import {
 	ApifyCommand,
 	type BuiltApifyCommand as _BuiltApifyCommand,
@@ -11,6 +12,12 @@ import {
 	renderHelpForCommand,
 	renderMainHelpMenu,
 } from '../../../../src/lib/command-framework/help.js';
+import {
+	ACTOR_RUNTIME_API_PORT,
+	ACTOR_RUNTIME_API_URL,
+	ACTOR_RUNTIME_CONSOLE_PORT,
+	ACTOR_RUNTIME_CONSOLE_URL,
+} from '../../../../src/lib/runtime/docker.js';
 
 const BuiltApifyCommand = ApifyCommand as typeof _BuiltApifyCommand;
 
@@ -94,6 +101,7 @@ describe('Help rendering', () => {
 		registerCommandForHelpGeneration('apify', FakeRunsIndex);
 		registerCommandForHelpGeneration('apify', FakeUtility);
 		registerCommandForHelpGeneration('apify', FakeInteractiveNamespace);
+		registerCommandForHelpGeneration('apify', RuntimeIndexCommand);
 
 		// The `actor push-data` subcommand is registered twice with different entrypoints,
 		// once as a subcommand of `apify actor` and once as a standalone `actor` command.
@@ -158,6 +166,18 @@ describe('Help rendering', () => {
 			expect(output).toContain('[INTERACTIVE]');
 			expect(output).toContain('NOTE');
 			expect(output).toContain('Pass --token to skip prompts.');
+		});
+	});
+
+	describe('apify runtime help', () => {
+		it('lists the runtime ports and the environment variables that point the CLI at them', () => {
+			const output = stripAnsi(renderHelpForCommand(RuntimeIndexCommand));
+
+			expect(output).toContain(`${ACTOR_RUNTIME_API_PORT}`);
+			expect(output).toContain(`${ACTOR_RUNTIME_CONSOLE_PORT}`);
+			expect(output).toContain(`export APIFY_CLIENT_BASE_URL=${ACTOR_RUNTIME_API_URL}`);
+			expect(output).toContain(`export APIFY_CONSOLE_URL=${ACTOR_RUNTIME_CONSOLE_URL}`);
+			expect(output).toContain('runtime start');
 		});
 	});
 

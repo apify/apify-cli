@@ -13,6 +13,23 @@ export const ACTOR_RUNTIME_API_PORT = 3333;
 
 export const ACTOR_RUNTIME_CONSOLE_PORT = 3000;
 
+export const ACTOR_RUNTIME_API_URL = `http://localhost:${ACTOR_RUNTIME_API_PORT}`;
+
+export const ACTOR_RUNTIME_CONSOLE_URL = `http://localhost:${ACTOR_RUNTIME_CONSOLE_PORT}`;
+
+/**
+ * Environment variables that point the Apify CLI (and the Apify SDKs/clients that honour them)
+ * at a locally running Actor runtime instead of the Apify cloud.
+ */
+export const ACTOR_RUNTIME_ENV_VARS = {
+	APIFY_CLIENT_BASE_URL: ACTOR_RUNTIME_API_URL,
+	APIFY_CONSOLE_URL: ACTOR_RUNTIME_CONSOLE_URL,
+} as const;
+
+export function runtimeEnvExportLines(): string[] {
+	return Object.entries(ACTOR_RUNTIME_ENV_VARS).map(([name, value]) => `export ${name}=${value}`);
+}
+
 export async function findDockerExecutable(): Promise<string | null> {
 	return which('docker', { nothrow: true });
 }
