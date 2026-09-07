@@ -1,0 +1,429 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Kitchen sink",
+	"description": "Plain JSON Schema plus the `nullable` shorthand. Not a real Actor schema — every property exists to pin one compiler behaviour, and the `description` says which. Property names are the index; nothing here is decorative.",
+	"schemaVersion": 1,
+	"type": "object",
+	"properties": {
+		"aString": {
+			"title": "A string",
+			"description": "Scalar, plus keywords with no type meaning: they must all be ignored in silence.",
+			"type": "string",
+			"editor": "textfield",
+			"minLength": 3,
+			"maxLength": 40,
+			"pattern": "^a",
+			"format": "hostname",
+			"example": "apify",
+			"prefill": "apify",
+			"sectionCaption": "Scalars"
+		},
+		"aNumber": {
+			"type": "number",
+			"minimum": 0,
+			"exclusiveMaximum": 1,
+			"multipleOf": 0.01,
+			"unit": "ratio"
+		},
+		"anInteger": {
+			"description": "`integer` collapses to `number` — TypeScript has no integer type.",
+			"type": "integer",
+			"editor": "number"
+		},
+		"aBoolean": {
+			"type": "boolean",
+			"editor": "checkbox"
+		},
+		"aNull": {
+			"description": "`null` is a type of its own, not an absence.",
+			"type": "null"
+		},
+		"aSecret": {
+			"type": "string",
+			"editor": "hidden",
+			"isSecret": true
+		},
+		"multiType": {
+			"description": "A `type` array becomes a union, in declared order.",
+			"type": ["string", "number", "boolean", "null"]
+		},
+		"repeatedType": {
+			"description": "Repeats collapse: `string | number`, not `string | string | number`.",
+			"type": ["string", "string", "number"]
+		},
+		"nullableString": {
+			"description": "The `nullable` shorthand widens the type.",
+			"type": "string",
+			"nullable": true
+		},
+		"notNullableString": {
+			"description": "`nullable: false` is a no-op, not a null.",
+			"type": "string",
+			"nullable": false
+		},
+		"alreadyNullable": {
+			"description": "`nullable` on a type that already admits null appends nothing.",
+			"type": ["string", "null"],
+			"nullable": true
+		},
+		"nullableInferredObject": {
+			"description": "No `type`, so `properties` says what `nullable` widens.",
+			"nullable": true,
+			"properties": {
+				"x": { "type": "string" }
+			}
+		},
+		"nullableArrayOfObjects": {
+			"description": "`nullable` applies to the array, not to its items.",
+			"type": "array",
+			"nullable": true,
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": { "type": "integer" },
+					"label": { "type": "string", "nullable": true }
+				},
+				"required": ["id"]
+			}
+		},
+		"stringEnum": {
+			"description": "An enum becomes a literal union; `enumTitles` is display-only.",
+			"type": "string",
+			"editor": "select",
+			"enum": ["cheerio", "puppeteer", "playwright"],
+			"enumTitles": ["Cheerio crawler", "Puppeteer browser", "Playwright browser"]
+		},
+		"numberEnum": {
+			"type": "integer",
+			"enum": [1, 2, 3]
+		},
+		"mixedEnum": {
+			"description": "Strings, numbers, booleans and null mix freely in one union.",
+			"enum": ["auto", 42, true, null]
+		},
+		"singleMemberEnum": {
+			"description": "One member is a literal, not a one-member union.",
+			"enum": ["only"]
+		},
+		"repeatedEnumMembers": {
+			"description": "Duplicate members collapse, the same as duplicate types do.",
+			"enum": ["a", "a", "b"]
+		},
+		"enumOverridesType": {
+			"description": "`enum` fully determines the type, so it wins over a conflicting `type`.",
+			"type": "boolean",
+			"enum": ["not", "boolean", "at", "all"]
+		},
+		"nullableEnum": {
+			"description": "GAP: `nullable` is silently dropped next to an `enum`, with no diagnostic. Expected `\"a\" | \"b\" | null`, emitted `\"a\" | \"b\"`.",
+			"type": "string",
+			"enum": ["a", "b"],
+			"nullable": true
+		},
+		"constString": {
+			"description": "GAP: `const` is silently ignored, so the literal widens to `string`.",
+			"type": "string",
+			"const": "fixed"
+		},
+		"arrayWithoutItems": {
+			"description": "No `items` is `Array<unknown>` — unknown elements, not `any`.",
+			"type": "array",
+			"editor": "requestListSources",
+			"prefill": [{ "url": "https://example.com" }],
+			"sectionCaption": "Arrays"
+		},
+		"arrayOfStrings": {
+			"type": "array",
+			"items": { "type": "string" },
+			"minItems": 1,
+			"maxItems": 10,
+			"uniqueItems": true
+		},
+		"arrayOfArrays": {
+			"type": "array",
+			"items": {
+				"type": "array",
+				"items": { "type": "number" }
+			}
+		},
+		"arrayOfEnums": {
+			"type": "array",
+			"items": {
+				"type": "string",
+				"enum": ["a", "b"]
+			}
+		},
+		"arrayOfUnions": {
+			"description": "`Array<T>` always, so a union element never needs parenthesizing.",
+			"type": "array",
+			"items": { "type": ["string", "number"] }
+		},
+		"inferredArray": {
+			"description": "No `type`, but `items` is unambiguous.",
+			"items": { "type": "string" }
+		},
+		"openObject": {
+			"description": "No `additionalProperties`: the writer may add keys, the reader may not read them.",
+			"type": "object",
+			"editor": "json",
+			"properties": {
+				"a": { "type": "string" }
+			},
+			"sectionCaption": "Objects"
+		},
+		"closedObject": {
+			"description": "`additionalProperties: false` closes the object for both variants.",
+			"type": "object",
+			"properties": {
+				"a": { "type": "string" }
+			},
+			"required": ["a"],
+			"additionalProperties": false
+		},
+		"explicitlyOpenObject": {
+			"description": "`additionalProperties: true` says what silence already said.",
+			"type": "object",
+			"properties": {
+				"a": { "type": "string" }
+			},
+			"additionalProperties": true
+		},
+		"emptyAdditionalProperties": {
+			"description": "`additionalProperties: {}` types nothing, so it is just open.",
+			"type": "object",
+			"properties": {
+				"a": { "type": "string" }
+			},
+			"additionalProperties": {}
+		},
+		"recordOfNumbers": {
+			"description": "No `properties`, typed extras: a plain `Record`.",
+			"type": "object",
+			"additionalProperties": { "type": "number" }
+		},
+		"objectWithTypedExtras": {
+			"description": "Declared properties and typed extras: a literal intersected with a `Record`.",
+			"type": "object",
+			"properties": {
+				"known": { "type": "string" }
+			},
+			"required": ["known"],
+			"additionalProperties": { "type": "number" }
+		},
+		"propertylessObject": {
+			"description": "Never a bare `{}` — in TypeScript that admits `5`.",
+			"type": "object"
+		},
+		"closedPropertylessObject": {
+			"description": "Closed and empty: `Record<string, never>` accepts no key at all.",
+			"type": "object",
+			"additionalProperties": false
+		},
+		"inferredObject": {
+			"description": "No `type`, but `properties` is unambiguous.",
+			"properties": {
+				"a": { "type": "string" }
+			}
+		},
+		"deeplyNested": {
+			"description": "Objects, arrays and objects again — indentation has to survive the round trip.",
+			"type": "object",
+			"properties": {
+				"level1": {
+					"type": "object",
+					"properties": {
+						"level2": {
+							"type": "array",
+							"items": {
+								"type": "object",
+								"properties": {
+									"leaf": { "type": "string" }
+								},
+								"required": ["leaf"]
+							}
+						}
+					},
+					"required": ["level2"]
+				}
+			},
+			"required": ["level1"]
+		},
+		"requiredWithDefault": {
+			"description": "Required and defaulted: present for both variants.",
+			"type": "string",
+			"default": "d",
+			"sectionCaption": "Optionality"
+		},
+		"optionalWithDefault": {
+			"description": "The platform materializes the default, so the reader always has it and the writer never needs it.",
+			"type": "integer",
+			"default": 5
+		},
+		"optionalWithoutDefault": {
+			"description": "Optional for both variants, and `| undefined` under exactOptionalPropertyTypes.",
+			"type": "string"
+		},
+		"optionalUnknown": {
+			"description": "Two things at once: `nullable` with no `type` and no sibling keyword has nothing to widen, so it is dropped; and the resulting `unknown` already admits undefined, so it is not widened with `| undefined` either.",
+			"nullable": true
+		},
+		"emptySchema": {
+			"description": "`{}` is faithfully `unknown` — a notice, not a degradation.",
+			"sectionCaption": "Edge cases"
+		},
+		"with-dash": {
+			"description": "Not a bare identifier, so the key is quoted.",
+			"type": "string"
+		},
+		"2fa": {
+			"description": "Leading digit, so the key is quoted.",
+			"type": "boolean"
+		},
+		"class": {
+			"description": "A reserved word is a legal property name, so it stays bare.",
+			"type": "string"
+		},
+		"$dollar_and_underscore": {
+			"description": "Legal identifier characters that only look like they need quoting.",
+			"type": "string"
+		},
+		"": {
+			"description": "The empty key is legal JSON Schema, and quoting it is the only way to emit it.",
+			"type": "string"
+		},
+		"refToDefs": {
+			"description": "NOT SUPPORTED: `$ref`. The definition is spelled out right here in `$defs` and we still hand back `unknown`.",
+			"$ref": "#/$defs/address",
+			"sectionCaption": "Unsupported: warned"
+		},
+		"refWithSiblings": {
+			"description": "NOT SUPPORTED: `$ref` wins over sibling keywords — the whole node degrades, `type` and `properties` included.",
+			"type": "object",
+			"$ref": "#/$defs/address",
+			"properties": {
+				"ignored": { "type": "string" }
+			}
+		},
+		"arrayOfRefs": {
+			"description": "NOT SUPPORTED: the warning lands on the items, and the array around it survives as `Array<unknown>`.",
+			"type": "array",
+			"items": { "$ref": "#/$defs/address" }
+		},
+		"oneOfBranch": {
+			"description": "NOT SUPPORTED: `oneOf` — an exclusive union we could express and do not.",
+			"oneOf": [{ "type": "string" }, { "type": "number" }]
+		},
+		"anyOfBranch": {
+			"description": "NOT SUPPORTED: `anyOf` — a plain union we could express and do not.",
+			"anyOf": [{ "type": "string" }, { "type": "number" }]
+		},
+		"allOfBranch": {
+			"description": "NOT SUPPORTED: `allOf` — an intersection we could express and do not.",
+			"allOf": [
+				{ "type": "object", "properties": { "a": { "type": "string" } } },
+				{ "type": "object", "properties": { "b": { "type": "number" } } }
+			]
+		},
+		"notBranch": {
+			"description": "NOT SUPPORTED: `not` has no TypeScript equivalent at all.",
+			"not": { "type": "string" }
+		},
+		"conditional": {
+			"description": "NOT SUPPORTED: `if` / `then` / `else` — one warning naming all three.",
+			"type": "object",
+			"properties": {
+				"kind": { "type": "string" }
+			},
+			"if": { "properties": { "kind": { "const": "a" } } },
+			"then": { "required": ["kind"] },
+			"else": { "additionalProperties": false }
+		},
+		"patternKeys": {
+			"description": "NOT SUPPORTED: `patternProperties` — a template literal key type we could express and do not.",
+			"type": "object",
+			"patternProperties": {
+				"^x-": { "type": "string" }
+			}
+		},
+		"tupleItems": {
+			"description": "NOT SUPPORTED: positional `items`. A tuple is still an array, so `Array<unknown>` is a sound degradation.",
+			"type": "array",
+			"items": [{ "type": "string" }, { "type": "number" }]
+		},
+		"objectEnum": {
+			"description": "NOT SUPPORTED: an `enum` of objects cannot be written as a literal.",
+			"enum": [{ "a": 1 }, { "a": 2 }]
+		},
+		"arrayEnum": {
+			"description": "NOT SUPPORTED: an `enum` of arrays, same reason.",
+			"enum": [["a"], ["b"]]
+		},
+		"escaped/key~with~specials": {
+			"description": "NOT SUPPORTED, and the point is the JSON Pointer: `/` and `~` must be escaped per RFC 6901 so the path is machine-usable.",
+			"$ref": "#/$defs/address"
+		},
+		"prefixItemsTuple": {
+			"description": "GAP: `prefixItems` is the 2020-12 tuple syntax and we do not even know to warn — silently `Array<unknown>`.",
+			"type": "array",
+			"prefixItems": [{ "type": "string" }, { "type": "number" }],
+			"sectionCaption": "Unsupported: silent"
+		},
+		"unevaluatedExtras": {
+			"description": "GAP: `unevaluatedProperties` is silently ignored, so the object stays open.",
+			"type": "object",
+			"properties": {
+				"a": { "type": "string" }
+			},
+			"unevaluatedProperties": false
+		},
+		"constrainedKeys": {
+			"description": "GAP: `propertyNames` is silently ignored, so the key type stays `string`.",
+			"type": "object",
+			"propertyNames": { "pattern": "^[a-z]+$" },
+			"additionalProperties": { "type": "string" }
+		},
+		"containsANumber": {
+			"description": "GAP: `contains` is silently ignored — no items, so `Array<unknown>`.",
+			"type": "array",
+			"contains": { "type": "number" }
+		},
+		"dependentKeys": {
+			"description": "GAP: `dependentRequired` / `dependentSchemas` are silently ignored, so conditional requiredness is lost.",
+			"type": "object",
+			"properties": {
+				"card": { "type": "string" },
+				"billingAddress": { "type": "string" }
+			},
+			"dependentRequired": { "card": ["billingAddress"] },
+			"dependentSchemas": { "card": { "required": ["billingAddress"] } }
+		},
+		"readOnlyValue": {
+			"description": "GAP: `readOnly` is silently ignored — the emitted property is not `readonly`.",
+			"type": "string",
+			"readOnly": true
+		},
+		"deprecatedValue": {
+			"description": "GAP: `deprecated` is silently ignored — no `@deprecated` reaches the output.",
+			"type": "string",
+			"deprecated": true
+		}
+	},
+	"required": [
+		"aString",
+		"requiredWithDefault",
+		"closedObject",
+		"deeplyNested",
+		"ghostProperty"
+	],
+	"$defs": {
+		"address": {
+			"description": "Reachable only through `$ref`, so nothing here is ever read. `$defs` itself is not warned about — without a `$ref` it is dead weight, and with one the `$ref` is the warning.",
+			"type": "object",
+			"properties": {
+				"street": { "type": "string" },
+				"city": { "type": "string" }
+			},
+			"required": ["street"]
+		}
+	}
+}
