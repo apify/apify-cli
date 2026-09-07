@@ -4,8 +4,8 @@ import { execa } from 'execa';
 import which from 'which';
 
 // TODO: replace with the published image on Apify's Docker Hub (e.g. 'apify/actor-runtime')
-// once it is available. Until then this is a local placeholder built from the actor-runtime repo.
-export const ACTOR_RUNTIME_IMAGE = 'actor-runtime:latest';
+// once it is available. Until then the runtime ships from a development repository.
+export const ACTOR_RUNTIME_IMAGE = 'josefprochazka/actor-runtime-dev:latest';
 
 export const ACTOR_RUNTIME_CONTAINER_NAME = 'apify-actor-runtime';
 

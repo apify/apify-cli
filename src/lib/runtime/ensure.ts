@@ -53,9 +53,10 @@ export async function ensureActorRuntimeImage({
 	} catch {
 		error({
 			message: [
-				`Could not pull '${ACTOR_RUNTIME_IMAGE}'. The image is not published to a registry yet.`,
-				'Until it is, build it locally from your actor-runtime checkout:',
-				chalk.white.bold(`  docker build -t ${ACTOR_RUNTIME_IMAGE} .`),
+				`Could not pull '${ACTOR_RUNTIME_IMAGE}'.`,
+				`  Check that you are online and can access the image - a private repository needs ${chalk.white.bold('docker login')} first.`,
+				'  You can also build the image locally from an actor-runtime checkout instead:',
+				chalk.white.bold(`    docker build -t ${ACTOR_RUNTIME_IMAGE} .`),
 			].join('\n'),
 		});
 		process.exitCode = 1;

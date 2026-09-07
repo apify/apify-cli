@@ -463,7 +463,7 @@ DESCRIPTION
 SUBCOMMANDS
   runtime install  Installs the Actor runtime: verifies this
                    machine can run Docker images and downloads the Actor runtime
-                   Docker image ('actor-runtime:latest').
+                   Docker image ('josefprochazka/actor-runtime-dev:latest').
   runtime start    Starts the Actor runtime, a local Apify
                    platform running as a Docker container.
   runtime stop     Stops the Actor runtime container started with
@@ -475,7 +475,8 @@ SUBCOMMANDS
 ```sh
 DESCRIPTION
   Installs the Actor runtime: verifies this machine can run Docker images and 
-  downloads the Actor runtime Docker image ('actor-runtime:latest').
+  downloads the Actor runtime Docker image 
+  ('josefprochazka/actor-runtime-dev:latest').
 
 USAGE
   $ apify runtime install [-f]
