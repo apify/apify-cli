@@ -24,6 +24,7 @@ The CLI then asks you for the following:
 1. Select a type of Actor to create:  web scraper, AI agent, API and data pipeline, or browser automation. Let's choose **web scraper**.
 1. Choose the programming language: JavaScript, TypeScript, or Python. Let's choose **JavaScript**.
 1. Based on your choice, the CLI suggests Actor templates. For this tutorial, let's choose **Crawlee and Cheerio**.
+1. Choose how the source code is set up: local only, or hosted on GitHub, GitLab, or Bitbucket. Let's choose **Local only**, which keeps everything on this machine.
 
 :::tip Explore Actor templates
 
