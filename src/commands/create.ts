@@ -70,11 +70,12 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for an Actor name, then guides you through what you want to build, a language, a template, and where the source code lives when they are not provided. To run non-interactively, pass the name and --template; --source defaults to "apify". Use --use-case and --language to narrow the template list.';
+		'Prompts for an Actor name, then guides you through what you want to build, a language, a template, and how the source code is set up when they are not provided. To run non-interactively, pass the name and --template; --source defaults to "apify". Use --use-case and --language to narrow the template list.';
 
 	static override examples = [
 		{
-			description: 'Create a new Actor project interactively (guided name, use case, language, and template prompts).',
+			description:
+				'Create a new Actor project interactively, with guided prompts for the name, use case, language, template, and source.',
 			command: 'apify create',
 		},
 		{
@@ -140,7 +141,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}),
 		source: Flags.string({
 			description:
-				'Where the Actor source code will live. With a Git provider, Apify creates the repository on your connected account from the template, clones it here, and creates an Actor that builds from it.',
+				'How the Actor source code is set up. "apify" keeps everything on this machine and uploads nothing, so you deploy it with "apify push". With a Git provider, Apify creates a private repository on your connected account from the template, clones it into the Actor directory, and creates an Actor that builds from it.',
 			choices: [...GIT_SOURCE_CHOICES],
 			// No default: an omitted flag triggers the wizard prompt, or "apify" when it cannot be asked.
 			required: false,
