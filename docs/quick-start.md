@@ -68,9 +68,9 @@ By deploying your Actor to the Apify platform, you can run your code on Apify's 
 <details>
   <summary>Deploy a Git-sourced Actor</summary>
 
-If you chose to host the source code in a Git repository, your Actor already exists on the Apify platform.
+If you chose to host the source code on GitHub, GitLab, or Bitbucket, `apify create` created the Actor on the Apify platform and connected it to your repository.
 
-To build your Actor, push changes to the repository with `git push`. Automated builds are on by default, so every push to the repository rebuilds the Actor.
+As a result, Git stores and versions your code. To deploy and build your Actor, use `git push`.
 
 </details>
 
