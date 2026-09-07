@@ -31,6 +31,7 @@ import { ToplevelPushCommand } from './push.js';
 import { RequestQueuesIndexCommand } from './request-queues/_index.js';
 import { RunCommand } from './run.js';
 import { RunsIndexCommand } from './runs/_index.js';
+import { RuntimeIndexCommand } from './runtime/_index.js';
 import { SecretsIndexCommand } from './secrets/_index.js';
 import { TasksIndexCommand } from './task/_index.js';
 import { TelemetryIndexCommand } from './telemetry/_index.js';
@@ -48,6 +49,7 @@ export const apifyCommands = [
 	MCPIndexCommand,
 	RequestQueuesIndexCommand,
 	RunsIndexCommand,
+	RuntimeIndexCommand,
 	SecretsIndexCommand,
 	TasksIndexCommand,
 	TelemetryIndexCommand,
