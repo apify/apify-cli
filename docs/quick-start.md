@@ -23,13 +23,15 @@ The CLI then asks you for the following:
 1. Name your Actor. Use lowercase letters, numbers, and hyphens.
 1. Select a type of Actor to create:  web scraper, AI agent, API and data pipeline, or browser automation. Let's choose **web scraper**.
 1. Choose the programming language: JavaScript, TypeScript, or Python. Let's choose **JavaScript**.
-1. Based on your choice, the CLI suggests Actor templates. For this tutorial, let's choose **Crawlee and Cheerio**.
+1. Based on your choice, the CLI suggests Actor templates. For this tutorial, let's choose **JavaScript Cheerio crawler**.
 
-:::tip Explore Actor templates
+    :::tip Explore Actor templates
 
-To find a template that best suits your needs, browse the [full list of templates](https://apify.com/templates).
+    To find a template that best suits your needs, browse the [full list of templates](https://apify.com/templates).
 
-:::
+    :::
+
+1. Choose where to host the source code of your Actor: on Apify, GitHub, GitLab, or Bitbucket. Let's choose **Apify**.
 
 The CLI creates a new directory with the boilerplate code and installs all project dependencies.
 
@@ -59,10 +61,18 @@ Local runs store their data in the `storage` directory:
 | `storage/key_value_stores/default/` | Records the Actor read or wrote, including its input. |
 | `storage/request_queues/default/` | Requests the Actor enqueued. |
 
-
 ## 3. Deploy your Actor
 
 By deploying your Actor to the Apify platform, you can run your code on Apify's infrastructure, schedule runs, and monitor logs and stored data.
+
+<details>
+  <summary>Deploy a Git-sourced Actor</summary>
+
+If you chose to host the source code in a Git repository, your Actor already exists on the Apify platform.
+
+To build your Actor, push changes to the repository with `git push`. Automated builds are on by default, so every push to the repository rebuilds the Actor.
+
+</details>
 
 ### Log in to Apify Console
 
