@@ -43,6 +43,12 @@ interface CliCommandEvent {
 		wasCreated?: boolean;
 	};
 
+	login?: {
+		method: 'oauth2-device' | 'oauth2-code' | 'console' | 'manual' | 'token';
+		/** Set when the `oauth2` method could not run and another flow took over. */
+		fellBackFrom?: 'oauth2-discovery' | 'oauth2-device' | 'oauth2-code';
+	};
+
 	// init command
 	actorWrapper?: string;
 

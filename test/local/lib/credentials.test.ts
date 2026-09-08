@@ -25,6 +25,7 @@ import {
 	LEGACY_KEYRING_TOKEN_KEY,
 	keyringFailures,
 	keyringProxyPasswordKey,
+	keyringRefreshTokenKey,
 	keyringSetKeys,
 	keyringStore,
 	keyringTokenKey,
@@ -57,6 +58,7 @@ const writeV2AuthFile = (...args: Parameters<typeof v2AuthFile>) =>
 
 const TOKEN_KEY = keyringTokenKey(TEST_USER_ID);
 const PROXY_PASSWORD_KEY = keyringProxyPasswordKey(TEST_USER_ID);
+const REFRESH_TOKEN_KEY = keyringRefreshTokenKey(TEST_USER_ID);
 
 describe('credentials', () => {
 	beforeEach(() => {
@@ -622,6 +624,75 @@ describe('credentials', () => {
 			// auth.json is the CLI's only index of the keyring, so a hand-deleted file orphans the entry.
 			// Reaching for it on a machine with no account would touch the keyring on every command.
 			expect(keyringStore.get(LEGACY_KEYRING_TOKEN_KEY)).toBe('tok_kr');
+		});
+	});
+	describe('refresh token', () => {
+		it('on the file backend, lives on the profile next to the token', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			writeV2AuthFile();
+
+			await setSecret(TEST_USER_ID, 'token', 'tok');
+			await setSecret(TEST_USER_ID, 'refresh-token', 'rt_1');
+
+			expect(await getSecret(TEST_USER_ID, 'refresh-token')).toBe('rt_1');
+			expect(readProfile()).toMatchObject({ token: 'tok', refreshToken: 'rt_1' });
+		});
+
+		it('on the keyring backend, is keyed by user ID and stays out of auth.json', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeV2AuthFile();
+
+			await setSecret(TEST_USER_ID, 'refresh-token', 'rt_1');
+
+			expect(keyringStore.get(REFRESH_TOKEN_KEY)).toBe('rt_1');
+			expect(await getSecret(TEST_USER_ID, 'refresh-token')).toBe('rt_1');
+			expect(readProfile().refreshToken).toBeUndefined();
+		});
+
+		it('falls back to the profile when its keyring write fails', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeV2AuthFile();
+			keyringFailures.add(REFRESH_TOKEN_KEY);
+
+			await setSecret(TEST_USER_ID, 'refresh-token', 'rt_1');
+
+			expect(await getSecret(TEST_USER_ID, 'refresh-token')).toBe('rt_1');
+			expect(readProfile().refreshToken).toBe('rt_1');
+		});
+
+		it('follows the token into the file when the token write falls back', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeV2AuthFile();
+			await setSecret(TEST_USER_ID, 'refresh-token', 'rt_1');
+			keyringFailures.add(TOKEN_KEY);
+
+			await setSecret(TEST_USER_ID, 'token', 'tok');
+
+			expect(readProfile()).toMatchObject({ token: 'tok', refreshToken: 'rt_1' });
+			expect(keyringStore.has(REFRESH_TOKEN_KEY)).toBe(false);
+		});
+
+		it('deleteSecret() forgets it and leaves the token alone', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			writeV2AuthFile();
+			await setSecret(TEST_USER_ID, 'token', 'tok');
+			await setSecret(TEST_USER_ID, 'refresh-token', 'rt_1');
+
+			await deleteSecret(TEST_USER_ID, 'refresh-token');
+
+			expect(await getSecret(TEST_USER_ID, 'refresh-token')).toBeUndefined();
+			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok');
+		});
+
+		it('clearKeyringSecrets() removes the keyed entry', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeV2AuthFile();
+			await setSecret(TEST_USER_ID, 'refresh-token', 'rt_1');
+			expect(keyringStore.has(REFRESH_TOKEN_KEY)).toBe(true);
+
+			await clearKeyringSecrets(TEST_USER_ID);
+
+			expect(keyringStore.has(REFRESH_TOKEN_KEY)).toBe(false);
 		});
 	});
 });
