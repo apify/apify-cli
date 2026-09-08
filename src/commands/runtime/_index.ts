@@ -4,6 +4,8 @@ import {
 	ACTOR_RUNTIME_API_URL,
 	ACTOR_RUNTIME_CONSOLE_PORT,
 	ACTOR_RUNTIME_CONSOLE_URL,
+	DOCKER_ENGINE_INSTALL_URL,
+	DOCKER_GET_DOCKER_URL,
 	runtimeEnvExportLines,
 } from '../../lib/runtime/docker.js';
 import { RuntimeInstallCommand } from './install.js';
@@ -15,6 +17,15 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 
 	static override description = [
 		'Manages the Actor runtime, a self-contained local Apify platform running as a Docker container.',
+		'',
+		'Prerequisite: Docker must be installed and running. Follow the official Docker documentation to set it up:',
+		'',
+		'  Docker Desktop (macOS, Windows, Linux desktop):',
+		`    ${DOCKER_GET_DOCKER_URL}`,
+		'  Docker Engine (Linux servers, headless):',
+		`    ${DOCKER_ENGINE_INSTALL_URL}`,
+		'',
+		`'apify runtime install' checks that Docker is available and pulls the runtime image.`,
 		'',
 		'The runtime publishes two ports on localhost:',
 		'',

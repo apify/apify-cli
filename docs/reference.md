@@ -460,6 +460,17 @@ DESCRIPTION
   Manages the Actor runtime, a self-contained local Apify platform running as a 
   Docker container.
 
+  Prerequisite: Docker must be installed and running. Follow the official Docker
+   documentation to set it up:
+
+    Docker Desktop (macOS, Windows, Linux desktop):
+      https://docs.docker.com/get-started/get-docker/
+    Docker Engine (Linux servers, headless):
+      https://docs.docker.com/engine/install/
+
+  'apify runtime install' checks that Docker is available and pulls the runtime 
+  image.
+
   The runtime publishes two ports on localhost:
 
     3333   API      http://localhost:3333  (Apify API compatible endpoint)
@@ -491,6 +502,8 @@ DESCRIPTION
   Installs the Actor runtime: verifies this machine can run Docker images and 
   downloads the Actor runtime Docker image 
   ('josefprochazka/actor-runtime-dev:latest').
+  Docker itself is a prerequisite and is not installed by this command - see 
+  https://docs.docker.com/get-started/get-docker/.
 
 USAGE
   $ apify runtime install [-f]

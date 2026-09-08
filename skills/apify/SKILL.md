@@ -89,7 +89,14 @@ apify key-value-stores keys <storeId> --json
 
 ## Local Actor runtime
 
-`apify runtime` runs a self-contained local Apify platform as a Docker container (needs Docker installed and running). Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account.
+`apify runtime` runs a self-contained local Apify platform as a Docker container. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account.
+
+**Prerequisite: Docker.** Docker must be installed and the daemon running before any `apify runtime` command works. The CLI does not install Docker. Installation differs per OS and can need admin rights, so do not improvise it - point the user at the official Docker docs and let them pick the right path:
+
+- Docker Desktop (macOS, Windows, Linux desktop): https://docs.docker.com/get-started/get-docker/
+- Docker Engine (Linux servers, headless): https://docs.docker.com/engine/install/
+
+Check with `docker info`; `apify runtime install` also verifies Docker and prints a platform-specific hint when it is missing or not running.
 
 ```sh
 apify runtime install            # verify Docker and pull the runtime image

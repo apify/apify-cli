@@ -9,6 +9,12 @@ export const ACTOR_RUNTIME_IMAGE = 'josefprochazka/actor-runtime-dev:latest';
 
 export const ACTOR_RUNTIME_CONTAINER_NAME = 'apify-actor-runtime';
 
+/** Official Docker documentation: Docker Desktop for macOS, Windows and Linux desktops. */
+export const DOCKER_GET_DOCKER_URL = 'https://docs.docker.com/get-started/get-docker/';
+
+/** Official Docker documentation: Docker Engine (server/headless Linux installs). */
+export const DOCKER_ENGINE_INSTALL_URL = 'https://docs.docker.com/engine/install/';
+
 export const ACTOR_RUNTIME_API_PORT = 3333;
 
 export const ACTOR_RUNTIME_CONSOLE_PORT = 3000;
