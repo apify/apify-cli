@@ -9,9 +9,32 @@ export const ACTOR_RUNTIME_IMAGE = 'josefprochazka/actor-runtime-dev:latest';
 
 export const ACTOR_RUNTIME_CONTAINER_NAME = 'apify-actor-runtime';
 
+/** Official Docker documentation: Docker Desktop for macOS, Windows and Linux desktops. */
+export const DOCKER_GET_DOCKER_URL = 'https://docs.docker.com/get-started/get-docker/';
+
+/** Official Docker documentation: Docker Engine (server/headless Linux installs). */
+export const DOCKER_ENGINE_INSTALL_URL = 'https://docs.docker.com/engine/install/';
+
 export const ACTOR_RUNTIME_API_PORT = 3333;
 
 export const ACTOR_RUNTIME_CONSOLE_PORT = 3000;
+
+export const ACTOR_RUNTIME_API_URL = `http://localhost:${ACTOR_RUNTIME_API_PORT}`;
+
+export const ACTOR_RUNTIME_CONSOLE_URL = `http://localhost:${ACTOR_RUNTIME_CONSOLE_PORT}`;
+
+/**
+ * Environment variables that point the Apify CLI (and the Apify SDKs/clients that honour them)
+ * at a locally running Actor runtime instead of the Apify cloud.
+ */
+export const ACTOR_RUNTIME_ENV_VARS = {
+	APIFY_CLIENT_BASE_URL: ACTOR_RUNTIME_API_URL,
+	APIFY_CONSOLE_URL: ACTOR_RUNTIME_CONSOLE_URL,
+} as const;
+
+export function runtimeEnvExportLines(): string[] {
+	return Object.entries(ACTOR_RUNTIME_ENV_VARS).map(([name, value]) => `export ${name}=${value}`);
+}
 
 export async function findDockerExecutable(): Promise<string | null> {
 	return which('docker', { nothrow: true });

@@ -10,11 +10,12 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { GLOBAL_CONFIGS_FOLDER, INTERRUPT_SIGNALS } from '../../lib/consts.js';
 import { error, info, run } from '../../lib/outputs.js';
 import {
-	ACTOR_RUNTIME_API_PORT,
-	ACTOR_RUNTIME_CONSOLE_PORT,
+	ACTOR_RUNTIME_API_URL,
+	ACTOR_RUNTIME_CONSOLE_URL,
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	buildRuntimeRunArgs,
 	isRuntimeContainerRunning,
+	runtimeEnvExportLines,
 } from '../../lib/runtime/docker.js';
 import { ensureActorRuntimeImage } from '../../lib/runtime/ensure.js';
 
@@ -26,7 +27,8 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 	static override description =
 		`Starts the Actor runtime, a local Apify platform running as a Docker container.\n` +
 		`Installs the runtime first when needed (like 'apify runtime install'). The runtime API listens on ` +
-		`http://localhost:${ACTOR_RUNTIME_API_PORT} and the console on http://localhost:${ACTOR_RUNTIME_CONSOLE_PORT}.`;
+		`${ACTOR_RUNTIME_API_URL} and the console on ${ACTOR_RUNTIME_CONSOLE_URL}. Run 'apify runtime -h' for the ` +
+		`environment variables that point the CLI at it.`;
 
 	static override group = 'Local Actor Development';
 
@@ -77,12 +79,11 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			message: [
 				`Starting the Actor runtime (data directory: ${dataDir})...`,
 				'',
-				`  API:     http://localhost:${ACTOR_RUNTIME_API_PORT}`,
-				`  Console: http://localhost:${ACTOR_RUNTIME_CONSOLE_PORT}`,
+				`  API:     ${ACTOR_RUNTIME_API_URL}`,
+				`  Console: ${ACTOR_RUNTIME_CONSOLE_URL}`,
 				'',
 				'Point the Apify CLI at the runtime with:',
-				chalk.white.bold(`  export APIFY_CLIENT_BASE_URL=http://localhost:${ACTOR_RUNTIME_API_PORT}`),
-				chalk.white.bold(`  export APIFY_CONSOLE_URL=http://localhost:${ACTOR_RUNTIME_CONSOLE_PORT}`),
+				...runtimeEnvExportLines().map((line) => chalk.white.bold(`  ${line}`)),
 			].join('\n'),
 		});
 
