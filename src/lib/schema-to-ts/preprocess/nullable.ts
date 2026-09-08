@@ -41,6 +41,9 @@ export function normalizeNullable(schema: unknown): unknown {
 		const widened = withNull(schema);
 		// Assigning `undefined` would make `'type' in schema` true and trip malformed-type.
 		if (widened !== undefined) result.type = widened;
+		// A nullable enum must carry `null` as a member: the core cross-narrows `enum` against
+		// `type`, so a null that lived only in the widened `type` would be dropped, not implied.
+		if (Array.isArray(schema.enum) && !schema.enum.includes(null)) result.enum = [...schema.enum, null];
 	}
 	return result;
 }

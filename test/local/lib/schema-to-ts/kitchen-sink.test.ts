@@ -239,7 +239,7 @@ const SILENT: { feature: string; property: string; lost: string; received: strin
 		feature: 'nullable next to an enum',
 		property: 'nullableEnum',
 		lost: 'null — enum wins over type, and the widened type never reaches the enum branch',
-		received: 'nullableEnum?: "a" | "b" | undefined;',
+		received: 'nullableEnum?: "a" | "b" | null;',
 	},
 	{
 		feature: 'const',
