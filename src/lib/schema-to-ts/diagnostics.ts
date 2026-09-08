@@ -28,6 +28,7 @@ export type WarningCode =
 /** No type impact whatsoever. */
 export type NoticeCode =
 	| 'required-unknown-property' // `required` names a property that does not exist
+	| 'unreachable-enum-member' // an `enum` member whose type is excluded by `type`
 	| 'empty-schema'; // `{}` — faithfully `unknown`, not a degradation
 
 export interface Diagnostic {

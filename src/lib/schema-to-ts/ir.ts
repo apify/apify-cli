@@ -7,13 +7,14 @@
  */
 
 export type IRNode =
-	| { kind: 'string' }
+	| { kind: 'string' } // just `string`, enums are a union of literals
 	| { kind: 'number' } // `integer` collapses to `number`
 	| { kind: 'boolean' }
 	| { kind: 'null' }
 	| { kind: 'unknown' }
 	| { kind: 'literal'; value: string | number | boolean }
 	| { kind: 'union'; members: IRNode[] }
+	// no order or tupleness, all arrays are Array<T> with T being whatever we can represent with other IR
 	| { kind: 'array'; items: IRNode }
 	| { kind: 'object'; props: IRProp[]; valueType?: IRNode; open: boolean };
 
@@ -57,7 +58,10 @@ export function nodeKey(node: IRNode): string {
 	}
 }
 
-/** Flattens, de-dupes, and collapses so there is exactly one IR per type. */
+/**
+ * Flattens, de-dupes, and collapses so there is exactly one IR per type.
+ * @deprecated should be done by the Parser
+ **/
 export function union(members: IRNode[]): IRNode {
 	const flat: IRNode[] = [];
 	const seen = new Set<string>();

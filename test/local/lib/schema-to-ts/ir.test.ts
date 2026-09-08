@@ -82,6 +82,24 @@ describe('union', () => {
 		expect(union([one, oneStr])).toEqual({ kind: 'union', members: [one, oneStr] });
 	});
 
+	test('nullable enums are not lost', () => {
+		expect(
+			union([
+				{
+					kind: 'union',
+					members: [
+						{ kind: 'literal', value: 'a' },
+						{ kind: 'literal', value: 'b' },
+					],
+				},
+				{ kind: 'null' },
+			]),
+		).toEqual({
+			kind: 'union',
+			members: [{ kind: 'literal', value: 'a' }, { kind: 'literal', value: 'b' }, { kind: 'null' }],
+		});
+	});
+
 	test('flattens nested unions', () => {
 		expect(union([{ kind: 'union', members: [str, nul] }, num])).toEqual({
 			kind: 'union',

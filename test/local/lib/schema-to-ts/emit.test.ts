@@ -207,6 +207,24 @@ describe('nodes', () => {
 		expect(body({ kind: 'literal', value: true })).toBe('true');
 	});
 
+	test("enums don't lose their type", () => {
+		expect(
+			body({
+				kind: 'union',
+				members: [
+					{
+						kind: 'union',
+						members: [
+							{ kind: 'literal', value: 'a' },
+							{ kind: 'literal', value: 'b' },
+						],
+					},
+					{ kind: 'null' },
+				],
+			}),
+		).toBe('"a" | "b" | null');
+	});
+
 	test('unions emit in authored order — only the hash sorts', () => {
 		expect(body({ kind: 'union', members: [str, nul] })).toBe('string | null');
 		expect(body({ kind: 'union', members: [nul, str] })).toBe('null | string');

@@ -108,11 +108,9 @@ describe('malformed type', () => {
 	});
 });
 
-describe('absent type', () => {
-	test('is inferred from properties, additionalProperties, or items', () => {
-		expect(field({ properties: { x: { type: 'string' } } }).node.kind).toBe('object');
-		expect(field({ additionalProperties: { type: 'string' } }).node.kind).toBe('object');
-		expect(field({ items: { type: 'boolean' } }).node).toEqual({ kind: 'array', items: bool });
+describe('absent types are detected', () => {
+	test('empty-type-array is shown if more properties are present', () => {
+		expect(codes(field({ properties: { x: { type: 'string' } } }))).toEqual(['error /properties/f empty-type-array']);
 	});
 
 	test('a bare {} is faithfully unknown — a notice, not a diagnostic', () => {
@@ -124,38 +122,59 @@ describe('absent type', () => {
 });
 
 describe('enum', () => {
-	test('wins over type and de-dupes', () => {
-		const lifted = field({ type: ['string', 'null'], enum: ['x', 'y', 'x'] });
+	test('takes nulls correctly', () => {
+		const lifted = field({ type: ['string', 'null'], enum: ['x', 'y', 'x', null] });
 		expect(lifted.node).toEqual({
 			kind: 'union',
-			members: [
-				{ kind: 'literal', value: 'x' },
-				{ kind: 'literal', value: 'y' },
-			],
+			members: [{ kind: 'literal', value: 'x' }, { kind: 'literal', value: 'y' }, { kind: 'null' }],
 		});
 		expectClean(lifted);
 	});
 
+	test('incomplete enum member coverage in type', () => {
+		expect(noticeCodes(field({ type: ['string'], enum: ['a', 1, true, null] }))).toContain(
+			'/properties/f/enum unreachable-enum-member',
+		);
+	});
+
 	test('mixes literal types and null', () => {
-		expect(field({ enum: ['a', 1, true, null] }).node).toEqual({
-			kind: 'union',
-			members: [{ kind: 'literal', value: 'a' }, { kind: 'literal', value: 1 }, { kind: 'literal', value: true }, nul],
+		const enumResult = field({ type: ['string', 'boolean', 'integer', 'null'], enum: ['a', 1, true, null] });
+		expectClean(enumResult);
+		expect(enumResult.node).toEqual({
+			'kind': 'union',
+			'members': [
+				{
+					'kind': 'literal',
+					'value': 'a',
+				},
+				{
+					'kind': 'literal',
+					'value': 1,
+				},
+				{
+					'kind': 'literal',
+					'value': true,
+				},
+				{
+					'kind': 'null',
+				},
+			],
 		});
 	});
 
 	test('a single member collapses to a bare literal', () => {
-		expect(field({ enum: ['only'] }).node).toEqual({ kind: 'literal', value: 'only' });
+		expect(field({ type: 'string', enum: ['only'] }).node).toEqual({ kind: 'literal', value: 'only' });
 	});
 
 	test('objects and arrays cannot be literals', () => {
-		const lifted = field({ enum: [{ x: 1 }] });
+		const lifted = field({ type: ['string', 'object'], enum: [{ x: 1 }] });
 		expect(lifted.node).toEqual(UNKNOWN);
 		expect(codes(lifted)).toEqual(['warning /properties/f/enum unsupported-enum-values']);
 	});
 
 	test('must be a non-empty array', () => {
-		expect(codes(field({ enum: [] }))).toEqual(['error /properties/f/enum malformed-enum']);
-		expect(codes(field({ enum: 'nope' }))).toEqual(['error /properties/f/enum malformed-enum']);
+		expect(codes(field({ type: 'string', enum: [] }))).toEqual(['error /properties/f/enum malformed-enum']);
+		expect(codes(field({ type: 'string', enum: 'nope' }))).toEqual(['error /properties/f/enum malformed-enum']);
 	});
 });
 
