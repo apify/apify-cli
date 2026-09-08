@@ -1,5 +1,5 @@
 import { Report, pointer, type Diagnostic, type Notice } from './diagnostics.js';
-import { IR_VERSION, UNKNOWN, union, type IRNode, type IRProp, type IRRoot } from './ir.js';
+import { IR_VERSION, UNKNOWN, type IRNode, type IRProp, type IRRoot } from './ir.js';
 
 /**
  * Lifted IR and diagnostics from the Parser. The Parser is the only place where IR is
@@ -282,4 +282,51 @@ function describe(value: unknown): string {
 	if (value === undefined) return 'undefined';
 	if (Array.isArray(value)) return 'an array';
 	return typeof value === 'object' ? 'an object' : `${typeof value} (${JSON.stringify(value)})`;
+}
+
+/**
+ * Flattens, de-dupes, and collapses so there is exactly one IR per type. Lives with the Parser
+ * because building a well-formed union is a lifting concern, not a property of the IR data.
+ */
+export function union(members: IRNode[]): IRNode {
+	const flat: IRNode[] = [];
+	const seen = new Set<string>();
+	const push = (node: IRNode): void => {
+		if (node.kind === 'union') {
+			node.members.forEach(push);
+			return;
+		}
+		const key = nodeKey(node);
+		if (seen.has(key)) return;
+		seen.add(key);
+		flat.push(node);
+	};
+	members.forEach(push);
+
+	if (flat.length === 0) return UNKNOWN;
+	if (flat.length === 1) return flat[0]!;
+	// `unknown` absorbs everything it is unioned with.
+	if (flat.some((n) => n.kind === 'unknown')) return UNKNOWN;
+	return { kind: 'union', members: flat };
+}
+
+/**
+ * Structural key used only for de-duplicating union members. The canonical serializer that
+ * feeds the hash is a separate, sorted representation — do not conflate them.
+ */
+export function nodeKey(node: IRNode): string {
+	switch (node.kind) {
+		case 'literal':
+			return `l:${typeof node.value}:${String(node.value)}`;
+		case 'union':
+			return `u[${node.members.map(nodeKey).join(',')}]`;
+		case 'array':
+			return `a[${nodeKey(node.items)}]`;
+		case 'object':
+			return `o[${node.props
+				.map((p) => `${p.name}${p.required ? 'R' : '-'}${p.hasDefault ? 'D' : '-'}:${nodeKey(p.node)}`)
+				.join(',')}|${node.valueType ? nodeKey(node.valueType) : ''}|${node.open ? '+' : '-'}]`;
+		default:
+			return node.kind;
+	}
 }
