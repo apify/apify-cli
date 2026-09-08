@@ -41,11 +41,12 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { ensureMigrated, getBackend, getProxyPassword, getToken } from './credentials.js';
+import { ensureMigrated, getBackend, getProxyPassword } from './credentials.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import { encodeRecordKey, readKvsRecordMetadata, recordMetadataFileName } from './kvs-metadata.js';
+import { getAccessToken } from './oauth/session.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -99,13 +100,17 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 		// auth.json may not exist yet (fresh keyring-only state); fall through
 	}
 
-	if ((await getBackend()) === 'keyring') {
-		const token = await getToken();
-		if (token) result.token = token;
+	// Refreshes an OAuth-issued token when it is about to expire; a plain API token passes through.
+	const token = await getAccessToken();
+	if (token) result.token = token;
 
+	if ((await getBackend()) === 'keyring') {
 		const proxyPassword = await getProxyPassword();
 		if (proxyPassword) result.proxy = { ...result.proxy, password: proxyPassword };
 	}
+
+	// OAuth session state is internal; callers that need it use `getOAuthMetadata()`.
+	delete (result as Record<string, unknown>).oauth;
 
 	const hasUserMetadata = !!(result.username || result.id);
 	const isComplete = hasUserMetadata || !!result.token;
