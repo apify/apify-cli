@@ -1,6 +1,11 @@
 import { Report, pointer, type Diagnostic, type Notice } from './diagnostics.js';
 import { IR_VERSION, UNKNOWN, union, type IRNode, type IRProp, type IRRoot } from './ir.js';
 
+/**
+ * Lifted IR and diagnostics from the Parser. The Parser is the only place where IR is
+ * constructed, so it is the only place where IR is lifted. The Parser is also the only place
+ * where diagnostics are collected, so they are also lifted.
+ */
 export interface Lifted {
 	ir: IRRoot;
 	diagnostics: Diagnostic[];
@@ -53,21 +58,95 @@ function toNode(schema: unknown, path: string, report: Report): IRNode {
 		return UNKNOWN;
 	}
 
-	// `enum` fully determines the type, so it wins over `type` when both are present.
-	if ('enum' in schema) return fromEnum(schema.enum, path, report);
-
 	const types = readTypes(schema, path, report);
-	if (types === null) return UNKNOWN;
+	if (types === null) {
+		// report.error(path, 'empty-type-array', 'no type specified');
+		// if ('enum' in schema) return fromEnum(schema.enum, path, report);
+		return UNKNOWN;
+	}
+
+	// unlike other types enums require the whole section to be parsed
+	// due to heterogeneous members ["foo", 1] which need type ["string", "number"]
+	// types (and enum members) get cross-narrowed.
+	// So they become the minimal set of values that match each other
+	if (schema.enum) {
+		return enumToNode(types, schema, path, report);
+	}
 
 	return union(types.map((t) => fromType(t, schema, path, report)));
 }
 
-/** Returns null when `type` is unusable; infers from siblings when `type` is absent. */
+/**
+ * `enum` and `type` constrain each other: a value is valid only if it is listed in `enum` *and*
+ * its type is one of the declared `type`s. We keep the members that satisfy both — the minimal
+ * set of values that match each other — and drop the rest. Object/array members cannot be
+ * literals and degrade the whole node, like `fromEnum`.
+ */
+function enumToNode(types: JsonSchemaType[], schema: Obj, path: string, report: Report): IRNode {
+	const raw = schema.enum;
+	if (!Array.isArray(raw) || raw.length === 0) {
+		report.error(pointer(path, 'enum'), 'malformed-enum', `expected a non-empty array, got ${describe(raw)}`);
+		return UNKNOWN;
+	}
+
+	const members: IRNode[] = [];
+	for (const value of raw) {
+		const memberType = enumMemberType(value);
+		if (memberType === null) {
+			report.warn(
+				pointer(path, 'enum'),
+				'unsupported-enum-values',
+				`\`enum\` holding ${describe(value)} cannot be expressed as a literal`,
+			);
+			return UNKNOWN;
+		}
+		// Cross-narrow: a member survives only if the declared types accept its type.
+		if (!typeAccepts(types, memberType)) {
+			report.notice(
+				pointer(path, 'enum'),
+				'unreachable-enum-member',
+				`\`enum\` holding ${describe(value)} but no matching entry in \`type\` field`,
+			);
+			continue;
+		}
+		members.push(value === null ? { kind: 'null' } : { kind: 'literal', value });
+	}
+
+	return union(members);
+}
+
+/** The JSON Schema type of an enum member, or null when it cannot be a literal. */
+function enumMemberType(value: unknown): JsonSchemaType | null {
+	if (value === null) return 'null';
+	switch (typeof value) {
+		case 'string':
+			return 'string';
+		case 'number':
+			return Number.isInteger(value) ? 'integer' : 'number';
+		case 'boolean':
+			return 'boolean';
+		default:
+			return null;
+	}
+}
+
+/** An integer satisfies both `integer` and `number`; a fractional number only `number`. */
+function typeAccepts(types: JsonSchemaType[], memberType: JsonSchemaType): boolean {
+	if (memberType === 'integer') return types.includes('integer') || types.includes('number');
+	return types.includes(memberType);
+}
+
+/**
+ * Reads the `type` keyword, which is either a string or an array of strings.
+ * Its then returned on array form if present and valid.
+ * */
 function readTypes(schema: Obj, path: string, report: Report): JsonSchemaType[] | null {
-	if (!('type' in schema)) {
-		if ('properties' in schema || 'additionalProperties' in schema) return ['object'];
-		if ('items' in schema) return ['array'];
+	if (Object.keys(schema).length === 0) {
 		report.notice(path, 'empty-schema', 'no type information, treated as unknown');
+		return null;
+	}
+	if (!('type' in schema)) {
+		report.error(path, 'empty-type-array', 'type field is missing, type inferrence not supported');
 		return null;
 	}
 
@@ -196,33 +275,6 @@ function readAdditional(schema: Obj, path: string, report: Report): { open: bool
 	if (Object.keys(raw).length === 0) return { open: true };
 
 	return { open: true, valueType: toNode(raw, pointer(path, 'additionalProperties'), report) };
-}
-
-function fromEnum(raw: unknown, path: string, report: Report): IRNode {
-	if (!Array.isArray(raw) || raw.length === 0) {
-		report.error(pointer(path, 'enum'), 'malformed-enum', `expected a non-empty array, got ${describe(raw)}`);
-		return UNKNOWN;
-	}
-
-	const members: IRNode[] = [];
-	for (const value of raw) {
-		if (value === null) {
-			members.push({ kind: 'null' });
-			continue;
-		}
-		if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-			members.push({ kind: 'literal', value });
-			continue;
-		}
-		report.warn(
-			pointer(path, 'enum'),
-			'unsupported-enum-values',
-			`\`enum\` holding ${describe(value)} cannot be expressed as a literal`,
-		);
-		return UNKNOWN;
-	}
-
-	return union(members);
 }
 
 function describe(value: unknown): string {
