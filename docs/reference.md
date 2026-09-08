@@ -160,14 +160,19 @@ DESCRIPTION
   '~/.apify/auth.json'.
   All other commands use these stored credentials.
 
-  Run 'apify logout' to remove authentication.
+  By default, the login is confirmed in Apify Console in your browser by putting
+   in a code. Run 'apify logout' to remove authentication.
 
 USAGE
-  $ apify auth login [-m console|manual] [-t <value>]
+  $ apify auth login [-m oauth2|console|manual] [-t <value>]
 
 FLAGS
-  -m, --method=<option>  Method of logging in to Apify.
-                         <options: console|manual>
+  -m, --method=<option>  Method of logging in to Apify. The
+                         default method ('oauth2') confirms the login in Apify
+                         Console by putting in a code. The 'manual' method prompts
+                         for an API token. The 'console' method uses the legacy
+                         Console hand-off, which is deprecated.
+                         <options: oauth2|console|manual>
   -t, --token=<value>    Apify API token.
 ```
 
@@ -188,6 +193,8 @@ USAGE
 ```sh
 DESCRIPTION
   Prints the current API token for the Apify CLI.
+  Tokens issued by an OAuth login expire after about an hour; the expiry is 
+  noted on stderr.
 
 USAGE
   $ apify auth token

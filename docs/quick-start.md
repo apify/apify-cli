@@ -72,10 +72,13 @@ To log in, run:
 apify login
 ```
 
-You can then choose one of the following methods:
+The CLI opens Apify Console in your browser, where you confirm the login. If the browser does not open, visit the printed URL and enter the code shown in your terminal.
 
-- _(Recommended)_ Sign in through the Apify Console in your browser.
-- Provide an [Apify API token](https://console.apify.com/settings/integrations).
+To use an [Apify API token](https://console.apify.com/settings/integrations) instead, pass it directly:
+
+```bash
+apify login --token <your-api-token>
+```
 
 ### Push your Actor to Apify
 

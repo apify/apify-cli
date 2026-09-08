@@ -21,6 +21,7 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
+import { getOAuthMetadata } from '../lib/credentials.js';
 import { execWithLog } from '../lib/exec.js';
 import { deleteFile } from '../lib/files.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
@@ -28,6 +29,7 @@ import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { useModuleVersion } from '../lib/hooks/useModuleVersion.js';
 import { CRAWLEE_INPUT_KEY_ENV, resolveInputKey, TEMP_INPUT_KEY_PREFIX } from '../lib/input-key.js';
 import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
+import { getAccessToken } from '../lib/oauth/session.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
@@ -61,6 +63,27 @@ enum RunType {
 	DirectFile = 0,
 	Module = 1,
 	Script = 2,
+}
+
+// An OAuth-issued token lives for an hour. The Actor process gets a token with at least this much of it
+// left; when a refresh cannot deliver that (e.g. offline), the user is told how long the run can rely on it.
+const LOCAL_RUN_MIN_TOKEN_LIFETIME_MS = 45 * 60_000;
+
+async function resolveTokenForLocalRun(storedToken: string | undefined): Promise<string | undefined> {
+	if (!storedToken || !getOAuthMetadata()) return storedToken;
+
+	const token = await getAccessToken({ minRemainingMs: LOCAL_RUN_MIN_TOKEN_LIFETIME_MS });
+
+	const remainingMs = (getOAuthMetadata()?.expiresAt ?? 0) - Date.now();
+	if (remainingMs < LOCAL_RUN_MIN_TOKEN_LIFETIME_MS) {
+		warning({
+			message:
+				`Your login session token expires in about ${Math.max(0, Math.round(remainingMs / 60_000))} minutes and could not be refreshed; ` +
+				`a local run longer than that loses Apify API access. For long runs, set the APIFY_TOKEN environment variable to an API token from Apify Console.`,
+		});
+	}
+
+	return token;
 }
 
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
@@ -145,7 +168,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	async run() {
 		const cwd = process.cwd();
 
-		const { proxy, id: userId, token } = await getLocalUserInfo();
+		const { proxy, id: userId, token: storedToken } = await getLocalUserInfo();
+		const token = await resolveTokenForLocalRun(storedToken);
 
 		const localConfigResult = await useActorConfig({ cwd });
 
