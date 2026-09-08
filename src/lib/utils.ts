@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { createWriteStream, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
@@ -545,22 +545,22 @@ export const getLocalInput = (cwd: string, inputKey?: string) => {
 };
 
 export const purgeDefaultQueue = async () => {
-	const defaultQueuesPath = getLocalRequestQueuePath();
-	if (existsSync(getLocalStorageDir()) && existsSync(defaultQueuesPath)) {
+	const defaultQueuesPath = resolve(process.cwd(), getLocalRequestQueuePath());
+	if (existsSync(resolve(process.cwd(), getLocalStorageDir())) && existsSync(defaultQueuesPath)) {
 		await rimrafPromised(defaultQueuesPath);
 	}
 };
 
 export const purgeDefaultDataset = async () => {
-	const defaultDatasetPath = getLocalDatasetPath();
-	if (existsSync(getLocalStorageDir()) && existsSync(defaultDatasetPath)) {
+	const defaultDatasetPath = resolve(process.cwd(), getLocalDatasetPath());
+	if (existsSync(resolve(process.cwd(), getLocalStorageDir())) && existsSync(defaultDatasetPath)) {
 		await rimrafPromised(defaultDatasetPath);
 	}
 };
 
 export const purgeDefaultKeyValueStore = async (...inputKeys: string[]) => {
-	const defaultKeyValueStorePath = getLocalKeyValueStorePath();
-	if (!existsSync(getLocalStorageDir()) || !existsSync(defaultKeyValueStorePath)) {
+	const defaultKeyValueStorePath = resolve(process.cwd(), getLocalKeyValueStorePath());
+	if (!existsSync(resolve(process.cwd(), getLocalStorageDir())) || !existsSync(defaultKeyValueStorePath)) {
 		return;
 	}
 	const filesToDelete = readdirSync(defaultKeyValueStorePath);

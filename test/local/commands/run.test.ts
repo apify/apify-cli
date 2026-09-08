@@ -278,7 +278,9 @@ writeFileSync(String.raw\`${joinPath('result.txt')}\`, 'hello world');
 
 	describe('input tests', () => {
 		const actPath = joinPath('src/main.js');
-		const inputSchemaPath = joinPath('INPUT_SCHEMA.json');
+		// Templates ship `.actor/input_schema.json`, which shadows a root-level
+		// `INPUT_SCHEMA.json` on case-insensitive file systems, so write there.
+		const inputSchemaPath = joinPath('.actor', 'INPUT_SCHEMA.json');
 		const inputPath = joinPath(getLocalKeyValueStorePath(), 'INPUT.json');
 		const outputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 		const handPassedInput = JSON.stringify({ awesome: null });
