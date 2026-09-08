@@ -89,22 +89,39 @@ apify key-value-stores keys <storeId> --json
 
 ## Local Actor runtime
 
-`apify runtime` runs a self-contained local Apify platform as a Docker container. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account.
+`apify runtime` runs a self-contained local Apify platform as a Docker container. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account. It ships on the `runtime` npm dist-tag, not on `latest`.
 
-**Prerequisite: Docker.** Docker must be installed and the daemon running before any `apify runtime` command works. The CLI does not install Docker. Installation differs per OS and can need admin rights, so do not improvise it - point the user at the official Docker docs and let them pick the right path:
+**Prerequisite: Docker.** Docker must be installed and the daemon running before any `apify runtime` command works. The CLI does not install Docker. Check with `docker info` and act on what it tells you:
 
-- Docker Desktop (macOS, Windows, Linux desktop): https://docs.docker.com/get-started/get-docker/
-- Docker Engine (Linux servers, headless): https://docs.docker.com/engine/install/
+- `docker info` succeeds - you are ready.
+- It fails with "Cannot connect to the Docker daemon" (or similar) - Docker is installed but not running. Do not reinstall it; start the daemon:
+  - Docker Desktop (macOS, Windows): start the Docker Desktop app and wait until it reports running.
+  - Linux with systemd: `sudo systemctl start docker`.
+  - Sandboxes and containers without systemd (common for agent environments): `dockerd` is usually present but nothing starts it. iptables and IP forwarding are often unavailable there, so start it without them, then poll until the daemon answers:
 
-Check with `docker info`; `apify runtime install` also verifies Docker and prints a platform-specific hint when it is missing or not running.
+    ```sh
+    if ! docker info >/dev/null 2>&1; then
+      nohup dockerd --iptables=false --ip6tables=false > dockerd.log 2>&1 &
+      until docker info >/dev/null 2>&1; do sleep 1; done
+    fi
+    ```
+
+    Keep the default bridge network - `apify runtime start` publishes ports 3333 and 3000 with `-p`, which needs it. If `docker info` never succeeds, read `dockerd.log` before trying anything else.
+- The `docker` command is missing - installation differs per OS and can need admin rights, so do not improvise it. Point the user at the official Docker docs and let them pick the right path:
+  - Docker Desktop (macOS, Windows, Linux desktop): https://docs.docker.com/get-started/get-docker/
+  - Docker Engine (Linux servers, headless): https://docs.docker.com/engine/install/
+
+`apify runtime install` runs the same Docker checks and prints a platform-specific hint when something is missing.
+
+**Working directory.** Install the preview CLI locally in one dedicated directory rather than globally, so it cannot replace the user's stable `apify` install. Keep the runtime data and the Actor projects you create in the same directory - everything the session produced is then in one place and easy to clean up:
 
 ```sh
-apify runtime install            # verify Docker and pull the runtime image
-apify runtime start --detach     # run in the background; omit --detach to run in the foreground (Ctrl+C stops it)
-apify runtime stop
+mkdir -p apify-runtime-work && cd apify-runtime-work
+npm init -y >/dev/null && npm i apify-cli@runtime
+APIFY=./node_modules/.bin/apify        # use $APIFY for every command below
 ```
 
-The runtime publishes two ports on `localhost`. Point the CLI at it by exporting these environment variables (the same values `apify runtime -h` and `apify runtime start` print):
+**Start it and point the CLI at it.** The runtime publishes two ports on `localhost`. Export these variables in the shell you drive the CLI from (they are the same values `apify runtime -h` and `apify runtime start` print):
 
 | Port | Service | Environment variable | Value |
 | ---- | ------- | -------------------- | ----- |
@@ -114,8 +131,16 @@ The runtime publishes two ports on `localhost`. Point the CLI at it by exporting
 ```sh
 export APIFY_CLIENT_BASE_URL=http://localhost:3333
 export APIFY_CONSOLE_URL=http://localhost:3000
-apify actors ls --json           # now talks to the local runtime
+export APIFY_DISABLE_KEYRING=1
+
+$APIFY runtime install
+$APIFY runtime start --detach --data-dir ./runtime-data   # omit --detach to run in the foreground (Ctrl+C stops it)
+$APIFY login --token local-dev-token                      # the runtime accepts any token
+$APIFY actors ls --json                                   # now talks to the local runtime
+$APIFY runtime stop
 ```
+
+`APIFY_DISABLE_KEYRING=1` makes `apify login` store the token in `~/.apify/auth.json` instead of the OS keyring. Set it for agent flows: sandboxes rarely have a keyring, and the runtime token is a throwaway placeholder anyway, so there is nothing worth protecting. Note that this login still replaces whatever credentials `~/.apify/auth.json` held - fine in a throwaway sandbox, but on a developer's machine ask first or have the user run `apify login` with their real token afterwards.
 
 Every `apify` command in that shell (`push`, `call`, `actors`, `datasets`, `api`, ...) then targets the runtime. Unset the variables (or start a new shell) to talk to the Apify cloud again. Do not set them globally for the user without asking - they silently redirect all API traffic.
 
