@@ -63,7 +63,7 @@
 	},
 	"homepage": "https://github.com/apify/apify-cli#readme",
 	"engines": {
-		"node": ">=20"
+		"node": ">=22"
 	},
 	"dependencies": {
 		"@apify/actor-memory-expression": "^0.2.0",
@@ -151,7 +151,7 @@
 		"runtime": [
 			{
 				"name": "node",
-				"version": "^20.19.0 || >=22.12.0",
+				"version": ">=22.12.0",
 				"onFail": "error"
 			},
 			{
