@@ -1,0 +1,165 @@
+{
+    "actorSpecification": 1,
+    "fields": {
+        "type": "object",
+        "properties": {
+            "postUrl": {
+                "type": ["string", "null"],
+                "examples": ["https://www.instagram.com/p/ABCdef1234g/"],
+                "description": "URL of the Instagram post containing the comment"
+            },
+            "commentUrl": {
+                "type": ["string", "null"],
+                "examples": ["https://www.instagram.com/p/ABCdef1234g/c/17987654321/"],
+                "description": "Direct URL to the specific comment"
+            },
+            "id": {
+                "type": ["string", "null"],
+                "examples": ["17987654321"],
+                "description": "Unique identifier of the comment"
+            },
+            "text": {
+                "type": ["string", "null"],
+                "examples": ["Great post! Love this content."],
+                "description": "Text content of the comment"
+            },
+            "ownerUsername": {
+                "type": ["string", "null"],
+                "examples": ["exampleuser"],
+                "description": "Username of the comment author"
+            },
+            "ownerProfilePicUrl": {
+                "type": ["string", "null"],
+                "examples": ["https://example.com/profile/pic/123456.jpg"],
+                "description": "Profile picture URL of the comment author"
+            },
+            "timestamp": {
+                "type": ["string", "null"],
+                "examples": ["2025-01-15T10:30:00.000Z"],
+                "description": "ISO 8601 timestamp when the comment was posted"
+            },
+            "likesCount": {
+                "type": ["number", "null"],
+                "examples": [42],
+                "description": "Number of likes on the comment"
+            },
+            "owner": {
+                "examples": [
+                    {
+                        "id": "123456789",
+                        "username": "exampleuser",
+                        "is_verified": false
+                    }
+                ],
+                "description": "Detailed information about the comment author",
+                "properties": {
+                    "fbid_v2": {
+                        "type": ["string", "null"]
+                    },
+                    "id": {
+                        "type": ["string", "null"]
+                    },
+                    "is_verified": {
+                        "type": ["boolean", "null"]
+                    },
+                    "profile_pic_url": {
+                        "type": ["string", "null"]
+                    },
+                    "username": {
+                        "type": ["string", "null"]
+                    },
+                    "full_name": {
+                        "type": ["string", "null"]
+                    },
+                    "is_mentionable": {
+                        "type": ["boolean", "null"]
+                    },
+                    "is_private": {
+                        "type": ["boolean", "null"]
+                    },
+                    "latest_reel_media": {
+                        "type": ["number", "null"]
+                    },
+                    "profile_pic_id": {
+                        "type": ["string", "null"]
+                    }
+                },
+                "type": ["object", "null"]
+            },
+            "url": {
+                "type": ["string", "null"],
+                "examples": ["https://www.instagram.com/p/ABCdef1234g/"],
+                "description": "URL associated with the comment or post"
+            },
+            "parentCommentUrl": {
+                "type": ["string", "null"],
+                "examples": ["https://www.instagram.com/p/ABCdef1234g/c/17987654321/"],
+                "description": "URL of the parent comment"
+            },
+            "requestErrorMessages": {
+                "examples": [["HTTP 404 NOT FOUND"]],
+                "description": "Array of error messages encountered during scraping",
+                "items": {
+                    "type": "string"
+                },
+                "type": ["array", "null"]
+            },
+            "error": {
+                "type": ["string", "null"],
+                "examples": ["Failed to load comment data"],
+                "description": "Error message if comment scraping failed"
+            },
+            "errorDescription": {
+                "type": ["string", "null"],
+                "examples": ["The comment may have been deleted or the post is private"],
+                "description": "Detailed description of the error that occurred"
+            },
+            "repliesCount": {
+                "type": ["number", "null"],
+                "examples": [5],
+                "description": "Number of replies to this comment"
+            },
+            "replies": {
+                "examples": [[]],
+                "description": "Replies to this comment",
+                "items": {
+                    "type": "object",
+                    "additionalProperties": {}
+                },
+                "type": ["array", "null"]
+            }
+        },
+        "additionalProperties": {}
+    },
+    "views": {
+        "overview": {
+            "title": "Overview",
+            "description": "",
+            "transformation": {
+                "fields": ["id", "text", "timestamp", "ownerUsername", "ownerProfilePicUrl", "postUrl"]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "id": {
+                        "label": "Comment ID",
+                        "format": "text"
+                    },
+                    "ownerUsername": {
+                        "label": "Commenter",
+                        "format": "text"
+                    },
+                    "ownerProfilePicUrl": {
+                        "label": "Commenter profile picture",
+                        "format": "image"
+                    },
+                    "timestamp": {
+                        "label": "Commented on",
+                        "format": "text"
+                    }
+                }
+            }
+        }
+    },
+    "$schema": "https://apify.com/schemas/v1/dataset.json"
+}

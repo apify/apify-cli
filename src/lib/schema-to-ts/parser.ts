@@ -1,0 +1,345 @@
+import { Report, pointer, type Diagnostic, type Notice } from './diagnostics.js';
+import { IR_VERSION, UNKNOWN, type IRNode, type IRProp, type IRRoot } from './ir.js';
+
+/**
+ * Lifted IR and diagnostics from the Parser. The Parser is the only place where IR is
+ * constructed, so it is the only place where IR is lifted. The Parser is also the only place
+ * where diagnostics are collected, so they are also lifted.
+ */
+export interface Lifted {
+	ir: IRRoot;
+	diagnostics: Diagnostic[];
+	notices: Notice[];
+}
+
+const JSON_SCHEMA_TYPES = ['string', 'number', 'integer', 'boolean', 'object', 'array', 'null'] as const;
+type JsonSchemaType = (typeof JSON_SCHEMA_TYPES)[number];
+
+/**
+ * Keywords that carry type meaning we cannot represent. Anything *not* listed here and not
+ * read below is ignored in silence — the core tolerates extraneous fields, so `editor`,
+ * `prefill`, `title`, `pattern`, `minimum` and the rest produce nothing at all.
+ *
+ * `$defs` is deliberately absent: without a `$ref` pointing at it, it is dead weight.
+ */
+const UNSUPPORTED_KEYWORDS = [
+	'oneOf',
+	'anyOf',
+	'allOf',
+	'not',
+	'if',
+	'then',
+	'else',
+	'$ref',
+	'patternProperties',
+] as const;
+
+type Obj = Record<string, unknown>;
+
+function isObj(value: unknown): value is Obj {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export function jsonSchemaToIR(schema: unknown): Lifted {
+	const report = new Report();
+	const root = toNode(schema, '', report);
+	return { ir: { irVersion: IR_VERSION, root }, diagnostics: report.diagnostics, notices: report.notices };
+}
+
+function toNode(schema: unknown, path: string, report: Report): IRNode {
+	if (!isObj(schema)) {
+		report.error(path, 'malformed-schema', `expected a JSON object, got ${describe(schema)}`);
+		return UNKNOWN;
+	}
+
+	const unsupported = UNSUPPORTED_KEYWORDS.filter((k) => k in schema);
+	if (unsupported.length > 0) {
+		report.warn(path, 'unsupported-keyword', `${unsupported.join(', ')} is not supported yet`);
+		return UNKNOWN;
+	}
+
+	const types = readTypes(schema, path, report);
+	if (types === null) {
+		// report.error(path, 'empty-type-array', 'no type specified');
+		// if ('enum' in schema) return fromEnum(schema.enum, path, report);
+		return UNKNOWN;
+	}
+
+	// unlike other types enums require the whole section to be parsed
+	// due to heterogeneous members ["foo", 1] which need type ["string", "number"]
+	// types (and enum members) get cross-narrowed.
+	// So they become the minimal set of values that match each other
+	if (schema.enum) {
+		return enumToNode(types, schema, path, report);
+	}
+
+	return union(types.map((t) => fromType(t, schema, path, report)));
+}
+
+/**
+ * `enum` and `type` constrain each other: a value is valid only if it is listed in `enum` *and*
+ * its type is one of the declared `type`s. We keep the members that satisfy both — the minimal
+ * set of values that match each other — and drop the rest. Object/array members cannot be
+ * literals and degrade the whole node, like `fromEnum`.
+ */
+function enumToNode(types: JsonSchemaType[], schema: Obj, path: string, report: Report): IRNode {
+	const raw = schema.enum;
+	if (!Array.isArray(raw) || raw.length === 0) {
+		report.error(pointer(path, 'enum'), 'malformed-enum', `expected a non-empty array, got ${describe(raw)}`);
+		return UNKNOWN;
+	}
+
+	const members: IRNode[] = [];
+	for (const value of raw) {
+		const memberType = enumMemberType(value);
+		if (memberType === null) {
+			report.warn(
+				pointer(path, 'enum'),
+				'unsupported-enum-values',
+				`\`enum\` holding ${describe(value)} cannot be expressed as a literal`,
+			);
+			return UNKNOWN;
+		}
+		// Cross-narrow: a member survives only if the declared types accept its type.
+		if (!typeAccepts(types, memberType)) {
+			report.notice(
+				pointer(path, 'enum'),
+				'unreachable-enum-member',
+				`\`enum\` holding ${describe(value)} but no matching entry in \`type\` field`,
+			);
+			continue;
+		}
+		members.push(value === null ? { kind: 'null' } : { kind: 'literal', value });
+	}
+
+	return union(members);
+}
+
+/** The JSON Schema type of an enum member, or null when it cannot be a literal. */
+function enumMemberType(value: unknown): JsonSchemaType | null {
+	if (value === null) return 'null';
+	switch (typeof value) {
+		case 'string':
+			return 'string';
+		case 'number':
+			return Number.isInteger(value) ? 'integer' : 'number';
+		case 'boolean':
+			return 'boolean';
+		default:
+			return null;
+	}
+}
+
+/** An integer satisfies both `integer` and `number`; a fractional number only `number`. */
+function typeAccepts(types: JsonSchemaType[], memberType: JsonSchemaType): boolean {
+	if (memberType === 'integer') return types.includes('integer') || types.includes('number');
+	return types.includes(memberType);
+}
+
+/**
+ * Reads the `type` keyword, which is either a string or an array of strings.
+ * Its then returned on array form if present and valid.
+ * */
+function readTypes(schema: Obj, path: string, report: Report): JsonSchemaType[] | null {
+	if (Object.keys(schema).length === 0) {
+		report.notice(path, 'empty-schema', 'no type information, treated as unknown');
+		return null;
+	}
+	if (!('type' in schema)) {
+		report.error(path, 'empty-type-array', 'type field is missing, type inferrence not supported');
+		return null;
+	}
+
+	const raw = schema.type;
+	const names = typeof raw === 'string' ? [raw] : raw;
+
+	if (!Array.isArray(names) || !names.every((n) => typeof n === 'string')) {
+		report.error(path, 'malformed-type', `\`type\` must be a string or an array of strings, got ${describe(raw)}`);
+		return null;
+	}
+	if (names.length === 0) {
+		report.error(path, 'empty-type-array', '`type: []` matches nothing');
+		return null;
+	}
+
+	const unknownName = names.find((n) => !(JSON_SCHEMA_TYPES as readonly string[]).includes(n));
+	if (unknownName !== undefined) {
+		report.error(path, 'unknown-type-name', `\`${unknownName}\` is not a JSON Schema type`);
+		return null;
+	}
+
+	return [...new Set(names as JsonSchemaType[])];
+}
+
+function fromType(type: JsonSchemaType, schema: Obj, path: string, report: Report): IRNode {
+	switch (type) {
+		case 'string':
+			return { kind: 'string' };
+		case 'number':
+		case 'integer':
+			return { kind: 'number' };
+		case 'boolean':
+			return { kind: 'boolean' };
+		case 'null':
+			return { kind: 'null' };
+		case 'array':
+			return fromArray(schema, path, report);
+		case 'object':
+			return fromObject(schema, path, report);
+	}
+}
+
+function fromArray(schema: Obj, path: string, report: Report): IRNode {
+	if (!('items' in schema)) return { kind: 'array', items: UNKNOWN };
+
+	const { items } = schema;
+	if (Array.isArray(items)) {
+		// A tuple is still an array, so `Array<T | U | ...>` is a sound degradation.
+		report.warn(pointer(path, 'items'), 'unsupported-tuple-items', 'positional `items` is not supported yet');
+		const degradedToUnion = union(items.map((item) => toNode(item, pointer(path, 'items'), report)));
+		return { kind: 'array', items: degradedToUnion };
+	}
+	if (!isObj(items)) {
+		report.error(pointer(path, 'items'), 'malformed-items', `expected an object or array, got ${describe(items)}`);
+		return UNKNOWN;
+	}
+
+	return { kind: 'array', items: toNode(items, pointer(path, 'items'), report) };
+}
+
+function fromObject(schema: Obj, path: string, report: Report): IRNode {
+	const required = readRequired(schema, path, report);
+
+	const props = readProps(schema, path, required, report);
+	if (props === null) return UNKNOWN;
+
+	let additional = readAdditional(schema, path, report);
+	// If no props and additional is broken, we turn everything into unknown
+	if (additional === null && props.length === 0) return UNKNOWN;
+	// If we have props, we don't let additional to break the result
+	additional ??= { open: true, valueType: UNKNOWN };
+
+	for (const name of required) {
+		if (!props.some((p) => p.name === name)) {
+			report.notice(
+				pointer(path, 'required'),
+				'required-unknown-property',
+				`\`${name}\` is required but not declared in \`properties\``,
+			);
+		}
+	}
+	return { kind: 'object', props, open: additional.open, valueType: additional.valueType };
+}
+
+/**
+ * Reads the `required` keyword, it complains if it is malformed
+ * but it will always return an array of strings.
+ * Lost accuracy is just not having the strictness, not switching to `unknown`
+ * */
+function readRequired(schema: Obj, path: string, report: Report): string[] {
+	if (!('required' in schema)) return [];
+	const raw = schema.required;
+	if (!Array.isArray(raw) || !raw.every((n) => typeof n === 'string')) {
+		report.error(pointer(path, 'required'), 'malformed-required', `expected an array of strings, got ${describe(raw)}`);
+		return [];
+	}
+	return raw;
+}
+
+function readProps(schema: Obj, path: string, required: string[], report: Report): IRProp[] | null {
+	if (!('properties' in schema)) return [];
+	const raw = schema.properties;
+	if (!isObj(raw)) {
+		report.error(pointer(path, 'properties'), 'malformed-properties', `expected an object, got ${describe(raw)}`);
+		return null;
+	}
+
+	// Object.keys preserves authored order, which the emitter reproduces.
+	return Object.keys(raw).map((name) => ({
+		name,
+		node: toNode(raw[name], pointer(path, 'properties', name), report),
+		required: required.includes(name),
+		hasDefault: isObj(raw[name]) && 'default' in (raw[name] as Obj),
+	}));
+}
+
+/** `{}` / `true` / absent are all "open"; only a non-empty subschema types the extra keys. */
+function readAdditional(schema: Obj, path: string, report: Report): { open: boolean; valueType?: IRNode } | null {
+	if (!('additionalProperties' in schema)) return { open: true };
+
+	const raw = schema.additionalProperties;
+	if (typeof raw === 'boolean') return { open: raw };
+	if (!isObj(raw)) {
+		report.error(
+			pointer(path, 'additionalProperties'),
+			'malformed-additional-properties',
+			`expected a boolean or an object, got ${describe(raw)}`,
+		);
+		return null;
+	}
+	if (Object.keys(raw).length === 0) return { open: true };
+
+	return { open: true, valueType: toNode(raw, pointer(path, 'additionalProperties'), report) };
+}
+
+// #region helpers
+/**
+ * human readable description of a value passed
+ * so diagnostics can complain in a human readable way
+ */
+function describe(value: unknown): string {
+	if (value === null) return 'null';
+	if (value === undefined) return 'undefined';
+	if (Array.isArray(value)) return 'an array';
+	if (typeof value === 'object') return 'an object';
+	return `${typeof value} (${JSON.stringify(value)})`;
+}
+
+/**
+ * Flattens, de-dupes, and collapses so there is exactly one IR per type. Lives with the Parser
+ * because building a well-formed union is a lifting concern, not a property of the IR data.
+ */
+export function union(members: IRNode[]): IRNode {
+	const flat: IRNode[] = [];
+	const seen = new Set<string>();
+	const push = (node: IRNode): void => {
+		// Nested union flattening
+		if (node.kind === 'union') {
+			node.members.forEach(push);
+			return;
+		}
+		const key = nodeKey(node);
+		if (seen.has(key)) return;
+		seen.add(key);
+		flat.push(node);
+	};
+	members.forEach(push);
+
+	if (flat.length === 0) return UNKNOWN;
+	if (flat.length === 1) return flat[0]!;
+	// `unknown` absorbs everything it is unioned with.
+	if (flat.some((n) => n.kind === 'unknown')) return UNKNOWN;
+	return { kind: 'union', members: flat };
+}
+
+/**
+ * Structural key used only for de-duplicating union members. The canonical serializer that
+ * feeds the hash is a separate, sorted representation — do not conflate them.
+ */
+export function nodeKey(node: IRNode): string {
+	switch (node.kind) {
+		case 'literal':
+			return `l:${typeof node.value}:${String(node.value)}`;
+		case 'union':
+			return `u[${node.members.map(nodeKey).join(',')}]`;
+		case 'array':
+			return `a[${nodeKey(node.items)}]`;
+		case 'object':
+			return `o[${node.props
+				.map((p) => `${p.name}${p.required ? 'R' : '-'}${p.hasDefault ? 'D' : '-'}:${nodeKey(p.node)}`)
+				.join(',')}|${node.valueType ? nodeKey(node.valueType) : ''}|${node.open ? '+' : '-'}]`;
+		default:
+			return node.kind;
+	}
+}
+// #endregion

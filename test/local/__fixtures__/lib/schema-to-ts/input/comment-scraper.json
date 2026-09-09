@@ -1,0 +1,36 @@
+{
+    "title": "Input schema for Instagram Comments scraper",
+    "type": "object",
+    "description": "To scrape comments from Instagram posts or reels, just paste one or multiple Instagram URLs, choose the number of comments, click on &#9655; <b>Start</b> and your data is on its way! If you need any guidance, just <a href='https://apify.it/44ixxvx' target='_blank' rel='noopener'>follow this video tutorial</a>.<br><br>⚠️ Free usage gets only the top 15 comments, sorted by newest. Upgrade to <a href='https://console.apify.com/billing/subscription' target='_blank' rel='noopener'> Starter plan</a> for full access.<br> 📅 If you need to scrape comments filtered by date, use our <a href='https://console.apify.com/actors/shu8hvrXbJbY3Eb9W/input' target='_blank' rel='noopener'>Instagram Scraper</a> instead.",
+    "schemaVersion": 1,
+    "properties": {
+        "directUrls": {
+            "title": "🔗 Instagram posts or reels URLs",
+            "type": "array",
+            "description": "Add one or multiple URLs to scrape comments from - posts or reels. You can add URLs one by one or upload a list using the <b>Bulk edit</b> option.",
+            "editor": "stringList",
+            "placeholderValue": "URL",
+            "prefill": ["https://www.instagram.com/p/DN8-GjPkgjS", "https://www.instagram.com/reel/DDIJAfeyemG"],
+            "items": {
+                "type": "string",
+                "pattern": "https?:\\/\\/(?:www\\.)?instagram\\.com\\/(?!reels\\/audio\\/)(?:(?:[^!@#$%^&*(){},'\"\\/\\s`\\\\=-]+\\/)?(?:p|reel)|reels)\\/[^\\/]+"
+            },
+            "uniqueItems": true
+        },
+        "resultsLimit": {
+            "title": "💯 Up to [number] of comments",
+            "type": "integer",
+            "description": "Set the number of comments you expect to scrape from each post or reel. <br><br> If set to <b>5</b>, you will get <b>5</b> comments per URL. If you add 2 URLs, you will extract <b>10</b> results altogether.<br>❗️ If you choose to scrape replies as well, the total number will be greater than you set for comments.",
+            "editor": "number",
+            "prefill": 15,
+            "minimum": 1
+        },
+        "includeNestedComments": {
+            "title": "$ Include replies",
+            "type": "boolean",
+            "description": "This feature is for paying users only. If checked, the scraper will extract replies for each comment.<br>⚠️ Note that each reply/comment will be displayed as a separate result, so <b>you'll get more results in total</b> than you set in `resultsLimit` section above.",
+            "editor": "checkbox"
+        }
+    },
+    "required": ["directUrls"]
+}

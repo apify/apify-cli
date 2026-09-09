@@ -1,0 +1,60 @@
+{
+    "$schema": "https://apify.com/schemas/v1/key-value-store.json",
+    "actorKeyValueStoreSchemaVersion": 1,
+    "title": "Maps to Polygon",
+    "description": "Maps to Polygon key-value store",
+    "collections": {
+        "meme": {
+            "key": "meme",
+            "title": "Meme",
+            "description": "Meme search result",
+            "jsonSchema": {
+                "type": "object",
+                "properties": {
+                    "url": { "type": "string" },
+                    "topLeft": {
+                        "type": "object",
+                        "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+                    },
+                    "bottomRight": {
+                        "type": "object",
+                        "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+                    }
+                },
+                "required": ["url", "topLeft", "bottomRight"],
+                "additionalProperties": false
+            },
+            "contentTypes": ["application/json"]
+        },
+        "initial": {
+            "key": "initial.png",
+            "title": "Initial Screenshot",
+            "description": "The initial screenshot of the search result",
+            "contentTypes": ["image/png"]
+        },
+        "cropped": {
+            "key": "cropped.png",
+            "title": "Map Area",
+            "description": "The cropped screenshot of the search result",
+            "contentTypes": ["image/png"]
+        },
+        "binary": {
+            "key": "binary.png",
+            "title": "Binary Image",
+            "description": "Binary image that should only show the outline",
+            "contentTypes": ["image/png"]
+        },
+        "gift_wrapping": {
+            "key": "gift_wrapping.png",
+            "title": "Gift Wrapping Image",
+            "description": "Convex Hull wrapping search result",
+            "contentTypes": ["image/png"]
+        },
+        "final": {
+            "key": "final.png",
+            "title": "Final Image",
+            "description": "Final image with the coordinates and detected area",
+            "contentTypes": ["image/png"]
+        }
+    }
+}

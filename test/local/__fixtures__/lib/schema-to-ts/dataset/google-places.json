@@ -1,0 +1,2032 @@
+{
+    "$schema": "https://apify.com/schemas/v1/dataset.json",
+    "actorSpecification": 1,
+    "fields": {
+        "type": "object",
+        "properties": {
+            "webResults": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/WebResult"
+                },
+                "description": "Web search results related to the place",
+                "examples": [
+                    [
+                        {
+                            "title": "Crystal Clean Laundromat",
+                            "url": "https://example.com",
+                            "description": "Laundromat services"
+                        }
+                    ]
+                ]
+            },
+            "userPlaceNote": {
+                "type": "string",
+                "description": "User's personal note about the place",
+                "examples": ["My favorite laundromat"]
+            },
+            "tableReservationLinks": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/Link"
+                },
+                "description": "Links for table reservations",
+                "examples": [
+                    [
+                        {
+                            "name": "OpenTable",
+                            "url": "https://www.opentable.com/r/restaurant"
+                        }
+                    ]
+                ]
+            },
+            "tableReservationProviders": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/TableReservationProvider"
+                },
+                "description": "Table reservation providers available for the place. Populated only when `scrapeTableReservationProvider` is enabled."
+            },
+            "bookingLinks": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/Link"
+                },
+                "description": "Links for booking (hotels, tours, etc.)",
+                "examples": [
+                    [
+                        {
+                            "name": "fastfreshlaundry.com",
+                            "url": "https://www.fastfreshlaundry.com/pickup-and-delivery/"
+                        }
+                    ]
+                ]
+            },
+            "orderOnline": {
+                "type": "object",
+                "properties": {
+                    "pickUps": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/PickUpItem"
+                        },
+                        "description": "Pickup options"
+                    },
+                    "deliveries": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/DeliveryItem"
+                        },
+                        "description": "Delivery options"
+                    }
+                },
+                "required": ["pickUps", "deliveries"],
+                "description": "Online ordering options (pickup and delivery). Omitted unless `scrapeOrderOnline` is enabled. Note: Google may also omit this data in ~5% of cases.",
+                "examples": [
+                    {
+                        "pickUps": [
+                            {
+                                "name": "Pickup",
+                                "orderUrl": "https://example.com/pickup"
+                            }
+                        ],
+                        "deliveries": [
+                            {
+                                "name": "Delivery",
+                                "url": "https://example.com/delivery",
+                                "deliveryFees": "$5",
+                                "deliveryTime": "30-45 min"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "questionsAndAnswers": {
+                "anyOf": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/definitions/QuestionAndAnswers"
+                        }
+                    },
+                    {
+                        "$ref": "#/definitions/QuestionAndAnswers"
+                    }
+                ],
+                "description": "Questions and answers from the Q&A section",
+                "examples": [
+                    [
+                        {
+                            "question": "Do they accept credit cards?",
+                            "answers": [
+                                {
+                                    "answer": "Yes",
+                                    "answerDate": "2 months ago"
+                                }
+                            ]
+                        }
+                    ]
+                ]
+            },
+            "ownerUpdates": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/OwnerUpdate"
+                },
+                "description": "Updates posted by the business owner",
+                "examples": [
+                    [
+                        {
+                            "text": "Now open on Sundays!",
+                            "date": "2025-06-15T10:00:00.000Z"
+                        }
+                    ]
+                ]
+            },
+            "restaurantData": {
+                "type": "object",
+                "properties": {
+                    "tableReservationProvider": {
+                        "anyOf": [
+                            {
+                                "$ref": "#/definitions/TableReservationProvider"
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Table reservation provider information"
+                    }
+                },
+                "description": "Restaurant-specific data"
+            },
+            "reviewsCount": {
+                "type": ["number", "null"],
+                "description": "Total number of reviews"
+            },
+            "title": {
+                "type": "string",
+                "description": "Name/title of the place",
+                "examples": ["Crystal Clean Laundromat"]
+            },
+            "placeId": {
+                "type": "string",
+                "description": "Unique Google Place ID",
+                "examples": ["ChIJ9ckBii1754gRk8w_xAu7tTA"]
+            },
+            "address": {
+                "type": ["string", "null"],
+                "description": "Full address of the place",
+                "examples": ["1408 S Crystal Lake Dr, Orlando, FL 32806"]
+            },
+            "location": {
+                "anyOf": [
+                    {
+                        "$ref": "#/definitions/Coordinates"
+                    },
+                    {
+                        "type": "null"
+                    }
+                ],
+                "description": "Geographic coordinates (latitude and longitude)",
+                "examples": [
+                    {
+                        "lat": 28.525325,
+                        "lng": -81.3437558
+                    }
+                ]
+            },
+            "categories": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of category names for the place",
+                "examples": [["Laundromat", "Clothing alteration service", "Dry cleaner"]]
+            },
+            "isAdvertisement": {
+                "type": "boolean",
+                "description": "Whether this place is a paid advertisement"
+            },
+            "categoryName": {
+                "type": ["string", "null"],
+                "description": "Primary category name",
+                "examples": ["Laundromat"]
+            },
+            "totalScore": {
+                "type": ["number", "null"],
+                "description": "Average rating score (0-5)"
+            },
+            "permanentlyClosed": {
+                "type": "boolean",
+                "description": "Whether the place is permanently closed"
+            },
+            "temporarilyClosed": {
+                "type": "boolean",
+                "description": "Whether the place is temporarily closed"
+            },
+            "url": {
+                "type": "string",
+                "description": "Google Maps URL for the place",
+                "examples": [
+                    "https://www.google.com/maps/search/?api=1&query=Crystal%20Clean%20Laundromat&query_place_id=ChIJ9ckBii1754gRk8w_xAu7tTA"
+                ]
+            },
+            "price": {
+                "type": ["string", "null"],
+                "description": "Price level indicator (e.g., \"$\", \"$$\", \"$$$\")",
+                "examples": ["$$"]
+            },
+            "cid": {
+                "type": ["string", "null"],
+                "description": "Google CID (Customer ID) - numeric identifier",
+                "examples": ["3509917143816719507"]
+            },
+            "fid": {
+                "type": ["string", "null"],
+                "description": "Feature ID - More info at https://dataforseo.com/help-center/what-is-cid-place-id-feature-id",
+                "examples": ["0x88e77b2d8a01c9f5:0x30b5bb0bc43fcc93"]
+            },
+            "imageUrl": {
+                "type": ["string", "null"],
+                "description": "URL of the main place image",
+                "examples": [
+                    "https://lh3.googleusercontent.com/p/AF1QipO46METc51OY74zH4zSLZp2aBWDfyzi-ISukdK1=w426-h240-k-no"
+                ]
+            },
+            "hotelStars": {
+                "type": ["string", "null"],
+                "description": "Hotel star rating (for hotels)",
+                "examples": ["3-star hotel"]
+            },
+            "scrapedAt": {
+                "type": "string",
+                "description": "Timestamp when the data was scraped (ISO 8601)",
+                "examples": ["2025-12-11T20:48:53.297Z"]
+            },
+            "searchPageUrl": {
+                "type": "string",
+                "description": "URL of the search page where this place was found",
+                "examples": ["https://www.google.com/maps/search/laundromat+near+orlando"]
+            },
+            "searchString": {
+                "type": "string",
+                "description": "Search query used to find this place",
+                "examples": ["laundromat near orlando"]
+            },
+            "inputPlaceId": {
+                "type": "string",
+                "description": "Place ID from the input if specified",
+                "examples": ["ChIJ9ckBii1754gRk8w_xAu7tTA"]
+            },
+            "inputStartUrl": {
+                "type": "string",
+                "description": "Start URL from the input if specified",
+                "examples": ["https://www.google.com/maps/place/..."]
+            },
+            "language": {
+                "type": "string",
+                "description": "Language code used for scraping",
+                "examples": ["en"]
+            },
+            "rank": {
+                "type": "number",
+                "description": "Position in search results (1-based)"
+            },
+            "kgmid": {
+                "type": ["string", "null"],
+                "description": "Google Knowledge Graph ID",
+                "examples": ["/g/11b6q62wr1"]
+            },
+            "businessProfileId": {
+                "type": ["string", "null"],
+                "description": "Business Profile ID",
+                "examples": ["112318156752526390"]
+            },
+            "neighborhood": {
+                "type": ["string", "null"],
+                "description": "Neighborhood or district name",
+                "examples": ["Lake Como"]
+            },
+            "street": {
+                "type": ["string", "null"],
+                "description": "Street address including building number",
+                "examples": ["1408 S Crystal Lake Dr"]
+            },
+            "city": {
+                "type": ["string", "null"],
+                "description": "City name",
+                "examples": ["Orlando"]
+            },
+            "countryCode": {
+                "type": ["string", "null"],
+                "description": "Two-letter country code (ISO 3166-1 alpha-2)",
+                "examples": ["US"]
+            },
+            "postalCode": {
+                "type": ["string", "null"],
+                "description": "Postal or ZIP code",
+                "examples": ["32806"]
+            },
+            "state": {
+                "type": ["string", "null"],
+                "description": "State or province name",
+                "examples": ["Florida"]
+            },
+            "emails": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of email addresses found",
+                "examples": [["info@example.com", "support@example.com"]]
+            },
+            "phones": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of phone numbers found",
+                "examples": [["+1-555-123-4567", "+1-555-987-6543"]]
+            },
+            "phonesUncertain": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of uncertain/possible phone numbers",
+                "examples": [["+1-555-000-0000"]]
+            },
+            "linkedIns": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of LinkedIn profile URLs",
+                "examples": [["https://www.linkedin.com/company/example"]]
+            },
+            "twitters": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of Twitter profile URLs",
+                "examples": [["https://twitter.com/example"]]
+            },
+            "instagrams": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of Instagram profile URLs",
+                "examples": [["https://www.instagram.com/example/"]]
+            },
+            "facebooks": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of Facebook profile URLs",
+                "examples": [["https://www.facebook.com/example"]]
+            },
+            "youtubes": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of YouTube channel URLs",
+                "examples": [["https://www.youtube.com/channel/example"]]
+            },
+            "tiktoks": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of TikTok profile URLs",
+                "examples": [["https://www.tiktok.com/@example"]]
+            },
+            "pinterests": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of Pinterest profile URLs",
+                "examples": [["https://www.pinterest.com/example/"]]
+            },
+            "discords": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Array of Discord server URLs",
+                "examples": [["https://discord.gg/example"]]
+            },
+            "facebookProfiles": {
+                "type": "array",
+                "items": {
+                    "description": "This represents scraped social media profile. We don't care much about its fields in this actor so we define it as unknown"
+                },
+                "description": "Array of Facebook profile data",
+                "examples": [
+                    [
+                        {
+                            "url": "https://www.facebook.com/example",
+                            "likes": 1000
+                        }
+                    ]
+                ]
+            },
+            "instagramProfiles": {
+                "type": "array",
+                "items": {
+                    "description": "This represents scraped social media profile. We don't care much about its fields in this actor so we define it as unknown"
+                },
+                "description": "Array of Instagram profile data",
+                "examples": [
+                    [
+                        {
+                            "url": "https://www.instagram.com/example/",
+                            "followers": 5000
+                        }
+                    ]
+                ]
+            },
+            "youtubeProfiles": {
+                "type": "array",
+                "items": {
+                    "description": "This represents scraped social media profile. We don't care much about its fields in this actor so we define it as unknown"
+                },
+                "description": "Array of YouTube profile data",
+                "examples": [
+                    [
+                        {
+                            "url": "https://www.youtube.com/channel/example",
+                            "subscribers": 10000
+                        }
+                    ]
+                ]
+            },
+            "tiktokProfiles": {
+                "type": "array",
+                "items": {
+                    "description": "This represents scraped social media profile. We don't care much about its fields in this actor so we define it as unknown"
+                },
+                "description": "Array of TikTok profile data",
+                "examples": [
+                    [
+                        {
+                            "url": "https://www.tiktok.com/@example",
+                            "followers": 20000
+                        }
+                    ]
+                ]
+            },
+            "twitterProfiles": {
+                "type": "array",
+                "items": {
+                    "description": "This represents scraped social media profile. We don't care much about its fields in this actor so we define it as unknown"
+                },
+                "description": "Array of Twitter profile data",
+                "examples": [
+                    [
+                        {
+                            "url": "https://twitter.com/example",
+                            "followers": 3000
+                        }
+                    ]
+                ]
+            },
+            "description": {
+                "type": ["string", "null"],
+                "description": "Brief description of the place",
+                "examples": ["Full-service laundromat with modern equipment and free WiFi"]
+            },
+            "phone": {
+                "type": ["string", "null"],
+                "description": "Formatted phone number",
+                "examples": ["(407) 896-9355"]
+            },
+            "phoneUnformatted": {
+                "type": ["string", "null"],
+                "description": "Unformatted phone number with country code",
+                "examples": ["+14078969355"]
+            },
+            "imagesCount": {
+                "type": "number",
+                "description": "Total number of images available"
+            },
+            "openingHours": {
+                "$ref": "#/definitions/OpeningHours",
+                "description": "Opening hours for each day of the week",
+                "examples": [
+                    [
+                        {
+                            "day": "Monday",
+                            "hours": "7 AM to 9 PM"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "hours": "7 AM to 9 PM"
+                        }
+                    ]
+                ]
+            },
+            "additionalOpeningHours": {
+                "type": "object",
+                "additionalProperties": {
+                    "$ref": "#/definitions/OpeningHours"
+                },
+                "description": "Additional opening hours for specific services (e.g., delivery, pickup)",
+                "examples": [
+                    {
+                        "Delivery": [
+                            {
+                                "day": "Monday",
+                                "hours": "9 AM–6 PM"
+                            }
+                        ]
+                    }
+                ]
+            },
+            "claimThisBusiness": {
+                "type": "boolean",
+                "description": "Whether the business can be claimed by its owner"
+            },
+            "peopleAlsoSearch": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/PeopleAlsoSearchSingle"
+                },
+                "description": "Related places suggested by Google",
+                "examples": [
+                    [
+                        {
+                            "category": "People also search for",
+                            "title": "Thornton Park Laundry",
+                            "reviewsCount": 92,
+                            "totalScore": 3.7
+                        }
+                    ]
+                ]
+            },
+            "additionalInfo": {
+                "$ref": "#/definitions/AdditionalInfo",
+                "description": "Additional information grouped by categories (accessibility, amenities, etc.)",
+                "examples": [
+                    {
+                        "Service options": [
+                            {
+                                "Online estimates": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            "reviewsTags": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/Tag"
+                },
+                "description": "Tags extracted from reviews",
+                "examples": [
+                    [
+                        {
+                            "title": "coffee",
+                            "count": 67
+                        },
+                        {
+                            "title": "cookies",
+                            "count": 47
+                        }
+                    ]
+                ]
+            },
+            "placesTags": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/Tag"
+                },
+                "description": "Tags related to the place itself",
+                "examples": [
+                    [
+                        {
+                            "title": "family-friendly",
+                            "count": 10
+                        }
+                    ]
+                ]
+            },
+            "imageCategories": {
+                "type": "array",
+                "items": {
+                    "type": "string"
+                },
+                "description": "Categories available in the image gallery",
+                "examples": [["All", "Latest", "Videos", "Exterior", "Inside"]]
+            },
+            "gasPrices": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/GasPrice"
+                },
+                "description": "Gas prices (for gas stations)",
+                "examples": [
+                    [
+                        {
+                            "priceTag": "$3.45",
+                            "gasType": "Regular",
+                            "price": 3.45
+                        }
+                    ]
+                ]
+            },
+            "reserveTableUrl": {
+                "type": ["string", "null"],
+                "description": "URL for making table reservations",
+                "examples": ["https://www.opentable.com/restaurant/profile/12345"]
+            },
+            "googleFoodUrl": {
+                "type": ["string", "null"],
+                "description": "Google Food ordering URL",
+                "examples": ["https://food.google.com/chooseprovider?restaurantId=..."]
+            },
+            "website": {
+                "type": "string",
+                "description": "Official website of the place",
+                "examples": ["https://www.fastfreshlaundry.com/locations/crystal-clean-laundromat/"]
+            },
+            "leadsEnrichment": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/LeadsEnrichmentResult"
+                },
+                "description": "Enriched leads data from external sources",
+                "examples": [
+                    [
+                        {
+                            "firstName": "John",
+                            "lastName": "Doe",
+                            "jobTitle": "Manager",
+                            "email": "john@example.com"
+                        }
+                    ]
+                ]
+            },
+            "parentPlaceUrl": {
+                "type": "string",
+                "description": "URL of the parent place (for places within other places)",
+                "examples": ["https://www.google.com/maps/place/Shopping+Mall/..."]
+            },
+            "hotelDescription": {
+                "type": ["string", "null"],
+                "description": "Description of the hotel",
+                "examples": ["Modern hotel with pool and free breakfast"]
+            },
+            "checkInDate": {
+                "type": ["string", "null"],
+                "description": "Check-in date for the search query",
+                "examples": ["2025-08-15"]
+            },
+            "checkOutDate": {
+                "type": ["string", "null"],
+                "description": "Check-out date for the search query",
+                "examples": ["2025-08-20"]
+            },
+            "similarHotelsNearby": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "name": {
+                            "type": ["string", "null"],
+                            "description": "Name of the similar hotel",
+                            "examples": ["Hotel Nearby"]
+                        },
+                        "rating": {
+                            "type": ["number", "null"],
+                            "description": "Average rating"
+                        },
+                        "reviews": {
+                            "type": ["number", "null"],
+                            "description": "Number of reviews"
+                        },
+                        "description": {
+                            "type": ["string", "null"],
+                            "description": "Brief description",
+                            "examples": ["Budget hotel near downtown"]
+                        },
+                        "price": {
+                            "type": ["string", "null"],
+                            "description": "Price per night",
+                            "examples": ["$89"]
+                        }
+                    },
+                    "required": ["name", "rating", "reviews", "description", "price"]
+                },
+                "description": "Array of similar hotels in the area",
+                "examples": [
+                    [
+                        {
+                            "name": "Hotel Nearby",
+                            "rating": 4.2,
+                            "reviews": 150,
+                            "description": "Budget hotel",
+                            "price": "$89"
+                        }
+                    ]
+                ]
+            },
+            "hotelReviewSummary": {
+                "$ref": "#/definitions/HotelReviewSummary",
+                "description": "Summary of hotel reviews by traveler type"
+            },
+            "hotelAds": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/HotelAd"
+                },
+                "description": "Array of booking advertisements for the hotel",
+                "examples": [
+                    [
+                        {
+                            "title": "Booking.com",
+                            "price": "$150",
+                            "isOfficialSite": false
+                        }
+                    ]
+                ]
+            },
+            "subTitle": {
+                "type": ["string", "null"],
+                "description": "Subtitle or secondary name",
+                "examples": ["Downtown location"]
+            },
+            "ownerDescription": {
+                "type": ["string", "null"],
+                "description": "Description written by the owner in Google Business Profile, shown in the \"From the business\" section. Unlike `description`, which is Google's own editorial summary. Kept in the language the owner wrote it in.",
+                "examples": ["Our cozy living room where we share a love for hand brews and little brunches."]
+            },
+            "menu": {
+                "type": ["string", "null"],
+                "description": "URL to the menu (for restaurants)",
+                "examples": ["https://example.com/menu.pdf"]
+            },
+            "servicesLink": {
+                "type": ["string", "null"],
+                "description": "URL to book services or appointments (for service businesses like barbershops, spas)",
+                "examples": ["https://example.com/book"]
+            },
+            "locatedIn": {
+                "type": ["string", "null"],
+                "description": "Name of the location where this place is situated",
+                "examples": ["Terminal 3, Orlando International Airport"]
+            },
+            "floor": {
+                "type": ["string", "null"],
+                "description": "Floor number or level",
+                "examples": ["2nd floor"]
+            },
+            "plusCode": {
+                "type": ["string", "null"],
+                "description": "Plus Code for the location",
+                "examples": ["GMG4+4F Orlando, Florida"]
+            },
+            "reviewsDistribution": {
+                "$ref": "#/definitions/ReviewsDistribution",
+                "description": "Distribution of reviews across star ratings",
+                "examples": [
+                    {
+                        "oneStar": 24,
+                        "twoStar": 10,
+                        "threeStar": 17,
+                        "fourStar": 50,
+                        "fiveStar": 720
+                    }
+                ]
+            },
+            "reviewsRemovedNotice": {
+                "$ref": "#/definitions/ReviewsRemovedNotice",
+                "description": "Notice about reviews removed due to legal defamation complaints",
+                "examples": [
+                    {
+                        "text": "One review removed due to a defamation complaint."
+                    }
+                ]
+            },
+            "updatesFromCustomers": {
+                "$ref": "#/definitions/UpdateFromCustomer",
+                "description": "Latest update posted by a customer",
+                "examples": [
+                    {
+                        "text": "Great service!",
+                        "language": "en",
+                        "postDate": "1 week ago"
+                    }
+                ]
+            },
+            "openingHoursBusinessConfirmationText": {
+                "type": "string",
+                "description": "Confirmation text about opening hours from the business",
+                "examples": ["Hours updated 2 weeks ago"]
+            },
+            "wasOpenAtScrapeTime": {
+                "type": ["boolean", "null"],
+                "description": "Whether the place was open at the moment it was scraped, as reported by Google in the place's own time zone. Always `false` for permanently or temporarily closed places, and `null` when the status is missing or unrecognized, e.g. the place publishes no opening hours."
+            },
+            "popularTimesLiveText": {
+                "type": ["string", "null"],
+                "description": "Human-readable text describing current occupancy level",
+                "examples": ["Less busy than usual"]
+            },
+            "popularTimesLivePercent": {
+                "type": ["number", "null"],
+                "description": "Current occupancy as a percentage (0-100)"
+            },
+            "popularTimesHistogram": {
+                "type": "object",
+                "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "hour": {
+                                "type": "number"
+                            },
+                            "occupancyPercent": {
+                                "type": "number"
+                            }
+                        },
+                        "required": ["hour", "occupancyPercent"]
+                    }
+                },
+                "description": "Hourly occupancy data for each day of the week",
+                "examples": [
+                    {
+                        "Mo": [
+                            {
+                                "hour": 9,
+                                "occupancyPercent": 56
+                            },
+                            {
+                                "hour": 10,
+                                "occupancyPercent": 62
+                            }
+                        ]
+                    }
+                ]
+            },
+            "isExternalServicePlace": {
+                "type": "boolean",
+                "description": "Whether this place data comes from an external service"
+            },
+            "externalServiceProvider": {
+                "type": ["string", "null"],
+                "description": "Name of the external service provider",
+                "examples": ["Tripadvisor"]
+            },
+            "externalId": {
+                "type": "string",
+                "description": "Identifier in the external service",
+                "examples": ["d123456"]
+            }
+        },
+        "required": [
+            "address",
+            "businessProfileId",
+            "categories",
+            "categoryName",
+            "checkInDate",
+            "checkOutDate",
+            "cid",
+            "city",
+            "countryCode",
+            "description",
+            "fid",
+            "floor",
+            "gasPrices",
+            "hotelDescription",
+            "hotelStars",
+            "imageCategories",
+            "imageUrl",
+            "imagesCount",
+            "isAdvertisement",
+            "kgmid",
+            "language",
+            "locatedIn",
+            "location",
+            "menu",
+            "neighborhood",
+            "ownerDescription",
+            "permanentlyClosed",
+            "phone",
+            "phoneUnformatted",
+            "placeId",
+            "plusCode",
+            "popularTimesHistogram",
+            "popularTimesLivePercent",
+            "popularTimesLiveText",
+            "postalCode",
+            "price",
+            "reserveTableUrl",
+            "reviewsCount",
+            "scrapedAt",
+            "servicesLink",
+            "state",
+            "street",
+            "subTitle",
+            "temporarilyClosed",
+            "title",
+            "totalScore",
+            "url",
+            "wasOpenAtScrapeTime"
+        ],
+        "definitions": {
+            "WebResult": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": ["string", "null"],
+                        "description": "Title of the web result",
+                        "examples": ["Crystal Clean Laundromat - Orlando, FL"]
+                    },
+                    "displayedUrl": {
+                        "type": ["string", "null"],
+                        "description": "Displayed URL (may be shortened or formatted)",
+                        "examples": ["fastfreshlaundry.com"]
+                    },
+                    "url": {
+                        "type": ["string", "null"],
+                        "description": "Full URL to the web page",
+                        "examples": ["https://www.fastfreshlaundry.com/locations/crystal-clean-laundromat/"]
+                    },
+                    "description": {
+                        "type": ["string", "null"],
+                        "description": "Description or snippet from the web page",
+                        "examples": ["Full-service laundromat with modern equipment and free WiFi"]
+                    }
+                },
+                "required": ["title", "displayedUrl", "url", "description"],
+                "description": "A web search result related to the place"
+            },
+            "Link": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "description": "Display name for the link",
+                        "examples": ["fastfreshlaundry.com"]
+                    },
+                    "url": {
+                        "type": "string",
+                        "description": "[URL of the link]",
+                        "examples": ["https://www.fastfreshlaundry.com/pickup-and-delivery/"]
+                    }
+                },
+                "required": ["url"],
+                "description": "A simple link with name and URL"
+            },
+            "TableReservationProvider": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": ["string", "null"],
+                        "description": "Name of the reservation provider",
+                        "examples": ["OpenTable"]
+                    },
+                    "email": {
+                        "type": ["string", "null"],
+                        "description": "Email address of the provider",
+                        "examples": ["reservations@example.com"]
+                    },
+                    "phone": {
+                        "type": ["string", "null"],
+                        "description": "Phone number of the provider",
+                        "examples": ["+1-555-123-4567"]
+                    },
+                    "address": {
+                        "type": ["string", "null"],
+                        "description": "Address of the provider",
+                        "examples": ["123 Main St, New York, NY"]
+                    },
+                    "reserveTableUrl": {
+                        "type": "string",
+                        "description": "URL to make a table reservation",
+                        "examples": ["https://www.opentable.com/restaurant/profile/12345"]
+                    }
+                },
+                "required": ["name", "email", "phone", "address", "reserveTableUrl"],
+                "description": "Information about a table reservation service provider"
+            },
+            "PickUpItem": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": ["string", "null"],
+                        "description": "Name of the pickup service",
+                        "examples": ["Uber Eats"]
+                    },
+                    "url": {
+                        "type": ["string", "null"],
+                        "description": "URL to the service website",
+                        "examples": ["https://www.ubereats.com"]
+                    },
+                    "orderUrl": {
+                        "type": "string",
+                        "description": "Direct URL to place an order",
+                        "examples": ["https://www.ubereats.com/store/example-restaurant"]
+                    },
+                    "pickUpTime": {
+                        "type": ["string", "null"],
+                        "description": "Estimated pickup time",
+                        "examples": ["15-25 min"]
+                    },
+                    "pickUpFees": {
+                        "type": ["string", "null"],
+                        "description": "Pickup fees",
+                        "examples": ["$2.99"]
+                    }
+                },
+                "required": ["name", "url", "orderUrl", "pickUpTime", "pickUpFees"],
+                "description": "Information about a pickup ordering option"
+            },
+            "DeliveryItem": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": ["string", "null"],
+                        "description": "Name of the delivery service",
+                        "examples": ["DoorDash"]
+                    },
+                    "url": {
+                        "type": "string",
+                        "description": "URL to the service website",
+                        "examples": ["https://www.doordash.com"]
+                    },
+                    "deliveryFees": {
+                        "type": ["string", "null"],
+                        "description": "Delivery fees",
+                        "examples": ["$5.99"]
+                    },
+                    "deliveryTime": {
+                        "type": ["string", "null"],
+                        "description": "Estimated delivery time",
+                        "examples": ["30-45 min"]
+                    }
+                },
+                "required": ["name", "url", "deliveryFees", "deliveryTime"],
+                "description": "Information about a delivery ordering option"
+            },
+            "QuestionAndAnswers": {
+                "type": "object",
+                "properties": {
+                    "question": {
+                        "type": ["string", "null"],
+                        "description": "The question text",
+                        "examples": ["Do they accept credit cards?"]
+                    },
+                    "answers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "answer": {
+                                    "type": ["string", "null"],
+                                    "description": "The answer text",
+                                    "examples": ["Yes, they accept credit cards and mobile payments"]
+                                },
+                                "answerDate": {
+                                    "type": ["string", "null"],
+                                    "description": "When the answer was posted",
+                                    "examples": ["3 months ago"]
+                                },
+                                "answeredBy": {
+                                    "anyOf": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "name": {
+                                                    "type": ["string", "null"],
+                                                    "description": "Name of the person who answered",
+                                                    "examples": ["John Doe"]
+                                                },
+                                                "url": {
+                                                    "type": ["string", "null"],
+                                                    "description": "URL to the answerer's profile",
+                                                    "examples": ["https://www.google.com/maps/contrib/123456"]
+                                                }
+                                            },
+                                            "required": ["name", "url"]
+                                        },
+                                        {
+                                            "type": "null"
+                                        }
+                                    ],
+                                    "description": "Information about who provided the answer",
+                                    "examples": [
+                                        {
+                                            "name": "John Doe",
+                                            "url": "https://www.google.com/maps/contrib/123"
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": ["answer", "answerDate", "answeredBy"],
+                            "description": "An answer to a question posted on Google Maps"
+                        },
+                        "description": "Array of answers to the question",
+                        "examples": [
+                            [
+                                {
+                                    "answer": "Yes, they accept all major credit cards",
+                                    "answerDate": "2 months ago",
+                                    "answeredBy": {
+                                        "name": "Jane Smith"
+                                    }
+                                }
+                            ]
+                        ]
+                    },
+                    "askDate": {
+                        "type": ["string", "null"],
+                        "description": "When the question was asked",
+                        "examples": ["6 months ago"]
+                    },
+                    "askedBy": {
+                        "anyOf": [
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": ["string", "null"],
+                                        "description": "Name of the person who asked",
+                                        "examples": ["Mary Johnson"]
+                                    },
+                                    "url": {
+                                        "type": ["string", "null"],
+                                        "description": "URL to the asker's profile",
+                                        "examples": ["https://www.google.com/maps/contrib/789456"]
+                                    }
+                                },
+                                "required": ["name", "url"]
+                            },
+                            {
+                                "type": "null"
+                            }
+                        ],
+                        "description": "Information about who asked the question",
+                        "examples": [
+                            {
+                                "name": "Mary Johnson",
+                                "url": "https://www.google.com/maps/contrib/789"
+                            }
+                        ]
+                    }
+                },
+                "required": ["question", "answers", "askDate", "askedBy"],
+                "description": "A question and its answers from the Q&A section on Google Maps"
+            },
+            "OwnerUpdate": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": ["string", "null"],
+                        "description": "Text content of the owner's update",
+                        "examples": ["We are open this fourth of July - because clean never takes a day off!"]
+                    },
+                    "buttonText": {
+                        "type": ["string", "null"],
+                        "description": "Text displayed on the action button",
+                        "examples": ["Order online"]
+                    },
+                    "buttonLink": {
+                        "type": ["string", "null"],
+                        "description": "URL linked to the action button",
+                        "examples": ["http://www.fastfreshlaundry.com/"]
+                    },
+                    "date": {
+                        "type": ["string", "null"],
+                        "description": "Date when the update was posted (ISO 8601 format)",
+                        "examples": ["2025-07-04T21:03:52.000Z"]
+                    },
+                    "imageUrl": {
+                        "type": ["string", "null"],
+                        "description": "URL of the image attached to the update",
+                        "examples": [
+                            "https://lh3.googleusercontent.com/geougc/AF1QipNtZqWouyANvs4cg7qWebqvjZjk1j9hBMDy-Kci=h400-no"
+                        ]
+                    }
+                },
+                "required": ["text", "buttonText", "buttonLink", "date", "imageUrl"],
+                "description": "An update posted by the business owner"
+            },
+            "Coordinates": {
+                "type": "object",
+                "properties": {
+                    "lat": {
+                        "type": "number"
+                    },
+                    "lng": {
+                        "type": "number"
+                    }
+                },
+                "required": ["lat", "lng"]
+            },
+            "OpeningHours": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "day": {
+                            "type": "string"
+                        },
+                        "hours": {
+                            "type": "string"
+                        }
+                    },
+                    "required": ["day", "hours"]
+                },
+                "description": "Opening hours for all seven days of the week in sorted order",
+                "examples": [
+                    [
+                        {
+                            "day": "Monday",
+                            "hours": "7 AM to 9 PM"
+                        },
+                        {
+                            "day": "Tuesday",
+                            "hours": "7 AM to 9 PM"
+                        },
+                        {
+                            "day": "Wednesday",
+                            "hours": "7 AM to 9 PM"
+                        },
+                        {
+                            "day": "Thursday",
+                            "hours": "7 AM to 9 PM"
+                        },
+                        {
+                            "day": "Friday",
+                            "hours": "7 AM to 9 PM"
+                        },
+                        {
+                            "day": "Saturday",
+                            "hours": "6 AM to 9 PM"
+                        },
+                        {
+                            "day": "Sunday",
+                            "hours": "6 AM to 9 PM"
+                        }
+                    ]
+                ]
+            },
+            "PeopleAlsoSearchSingle": {
+                "type": "object",
+                "properties": {
+                    "category": {
+                        "type": ["string", "null"],
+                        "description": "Category of the suggestion (e.g., \"People also search for\")",
+                        "examples": ["People also search for"]
+                    },
+                    "title": {
+                        "type": ["string", "null"],
+                        "description": "Name of the suggested place",
+                        "examples": ["Thornton Park Laundry"]
+                    },
+                    "reviewsCount": {
+                        "type": ["number", "null"],
+                        "description": "Number of reviews for the suggested place"
+                    },
+                    "totalScore": {
+                        "type": ["number", "null"],
+                        "description": "Average rating of the suggested place"
+                    }
+                },
+                "required": ["category", "title", "reviewsCount", "totalScore"],
+                "description": "A related place suggestion from \"People also search for\" section"
+            },
+            "AdditionalInfo": {
+                "type": "object",
+                "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "boolean"
+                        }
+                    }
+                },
+                "description": "Additional information about the place grouped by categories (accessibility, amenities, etc.)",
+                "examples": [
+                    {
+                        "Service options": [
+                            {
+                                "Online estimates": true
+                            },
+                            {
+                                "Onsite services": true
+                            }
+                        ]
+                    }
+                ]
+            },
+            "Tag": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": ["string", "null"],
+                        "description": "The tag text",
+                        "examples": ["coffee"]
+                    },
+                    "count": {
+                        "type": ["number", "null"],
+                        "description": "Number of times this tag appears"
+                    }
+                },
+                "required": ["title", "count"],
+                "description": "A tag with frequency count extracted from reviews or place descriptions"
+            },
+            "GasPrice": {
+                "type": "object",
+                "properties": {
+                    "priceTag": {
+                        "type": ["string", "null"],
+                        "description": "Formatted price string with currency",
+                        "examples": ["$3.45"]
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "description": "When the price was last updated",
+                        "examples": ["2 hours ago"]
+                    },
+                    "unit": {
+                        "type": ["string", "null"],
+                        "description": "Unit of measurement (e.g., gallon, liter)",
+                        "examples": ["gallon"]
+                    },
+                    "currency": {
+                        "type": ["string", "null"],
+                        "description": "Currency code",
+                        "examples": ["USD"]
+                    },
+                    "price": {
+                        "type": ["number", "null"],
+                        "description": "Numeric price value"
+                    },
+                    "gasType": {
+                        "type": ["string", "null"],
+                        "description": "Type of gasoline (e.g., Regular, Premium, Diesel)",
+                        "examples": ["Regular"]
+                    }
+                },
+                "required": ["priceTag", "updatedAt", "unit", "currency", "price", "gasType"],
+                "description": "Gas price information for gas stations"
+            },
+            "LeadsEnrichmentResult": {
+                "type": "object",
+                "properties": {
+                    "personId": {
+                        "type": "string",
+                        "description": "Unique identifier for the person",
+                        "examples": ["5f9b3f3e4f3b9a001f3e4b1a"]
+                    },
+                    "firstName": {
+                        "type": ["string", "null"],
+                        "description": "First name",
+                        "examples": ["John"]
+                    },
+                    "lastName": {
+                        "type": ["string", "null"],
+                        "description": "Last name",
+                        "examples": ["Doe"]
+                    },
+                    "fullName": {
+                        "type": ["string", "null"],
+                        "description": "Full name",
+                        "examples": ["John Doe"]
+                    },
+                    "linkedinProfile": {
+                        "type": ["string", "null"],
+                        "description": "LinkedIn profile URL",
+                        "examples": ["https://www.linkedin.com/in/johndoe"]
+                    },
+                    "email": {
+                        "type": ["string", "null"],
+                        "description": "Email address",
+                        "examples": ["john.doe@example.com"]
+                    },
+                    "mobileNumber": {
+                        "type": ["string", "null"],
+                        "description": "Mobile phone number",
+                        "examples": ["+1-555-123-4567"]
+                    },
+                    "jobTitle": {
+                        "type": ["string", "null"],
+                        "description": "Job title",
+                        "examples": ["Marketing Manager"]
+                    },
+                    "industry": {
+                        "type": ["string", "null"],
+                        "description": "Industry sector",
+                        "examples": ["Technology"]
+                    },
+                    "city": {
+                        "type": ["string", "null"],
+                        "description": "City of residence",
+                        "examples": ["San Francisco"]
+                    },
+                    "state": {
+                        "type": ["string", "null"],
+                        "description": "State or province",
+                        "examples": ["California"]
+                    },
+                    "country": {
+                        "type": ["string", "null"],
+                        "description": "Country",
+                        "examples": ["United States"]
+                    },
+                    "companyId": {
+                        "type": ["string", "null"],
+                        "description": "Unique identifier for the company",
+                        "examples": ["5f9b3f3e4f3b9a001f3e4b1b"]
+                    },
+                    "companyName": {
+                        "type": ["string", "null"],
+                        "description": "Company name",
+                        "examples": ["Acme Corporation"]
+                    },
+                    "companyWebsite": {
+                        "type": ["string", "null"],
+                        "description": "Company website URL",
+                        "examples": ["https://www.acmecorp.com"]
+                    },
+                    "companySize": {
+                        "type": ["string", "null"],
+                        "description": "Size range of the company",
+                        "examples": ["100-500 employees"]
+                    },
+                    "companyLinkedin": {
+                        "type": ["string", "null"],
+                        "description": "Company LinkedIn profile URL",
+                        "examples": ["https://www.linkedin.com/company/acmecorp"]
+                    },
+                    "companyCity": {
+                        "type": ["string", "null"],
+                        "description": "City where company is located",
+                        "examples": ["New York"]
+                    },
+                    "companyState": {
+                        "type": ["string", "null"],
+                        "description": "State where company is located",
+                        "examples": ["New York"]
+                    },
+                    "companyCountry": {
+                        "type": ["string", "null"],
+                        "description": "Country where company is located",
+                        "examples": ["United States"]
+                    },
+                    "companyPhoneNumber": {
+                        "type": ["string", "null"],
+                        "description": "Company phone number",
+                        "examples": ["+1-555-987-6543"]
+                    },
+                    "headline": {
+                        "type": ["string", "null"],
+                        "description": "Professional headline",
+                        "examples": ["Experienced Marketing Professional"]
+                    },
+                    "departments": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Departments the person is associated with",
+                        "examples": [["Marketing", "Sales"]]
+                    },
+                    "seniority": {
+                        "type": ["string", "null"],
+                        "description": "Seniority level",
+                        "examples": ["Manager"]
+                    },
+                    "photoUrl": {
+                        "type": ["string", "null"],
+                        "description": "URL to profile photo",
+                        "examples": ["https://media.licdn.com/dms/image/..."]
+                    },
+                    "twitter": {
+                        "type": ["string", "null"],
+                        "description": "Twitter profile URL",
+                        "examples": ["https://twitter.com/johndoe"]
+                    },
+                    "emailVerification": {
+                        "type": "object",
+                        "properties": {
+                            "email": {
+                                "type": "string",
+                                "description": "Email this verification is for",
+                                "examples": ["john.doe@example.com"]
+                            },
+                            "quality": {
+                                "type": "string",
+                                "enum": ["", "good", "bad", "risky", "unknown"],
+                                "description": "Quality classification of the email address",
+                                "examples": ["good"]
+                            },
+                            "result": {
+                                "type": "string",
+                                "enum": ["ok", "catch_all", "unknown", "error", "disposable", "invalid"],
+                                "description": "Verification result status",
+                                "examples": ["ok"]
+                            },
+                            "subResult": {
+                                "type": "string",
+                                "description": "Detailed sub-result providing additional verification context",
+                                "examples": ["mailbox_verified"]
+                            },
+                            "free": {
+                                "type": "boolean",
+                                "description": "Whether the email is from a free email provider"
+                            },
+                            "role": {
+                                "type": "boolean",
+                                "description": "Whether the email is a role-based address (e.g., info@, support@)"
+                            },
+                            "error": {
+                                "type": "string",
+                                "description": "Error message if verification failed, empty string otherwise",
+                                "examples": [""]
+                            }
+                        },
+                        "required": ["email"],
+                        "description": "Email verification result for a given email if it was enabled",
+                        "examples": [
+                            {
+                                "email": "john@example.com",
+                                "quality": "good",
+                                "result": "ok",
+                                "subResult": "mailbox_verified",
+                                "free": false,
+                                "role": false,
+                                "error": ""
+                            }
+                        ]
+                    }
+                },
+                "required": [
+                    "personId",
+                    "firstName",
+                    "lastName",
+                    "fullName",
+                    "linkedinProfile",
+                    "email",
+                    "mobileNumber",
+                    "jobTitle",
+                    "industry",
+                    "city",
+                    "state",
+                    "country",
+                    "companyId",
+                    "companyName",
+                    "companyWebsite",
+                    "companySize",
+                    "companyLinkedin",
+                    "companyCity",
+                    "companyState",
+                    "companyCountry",
+                    "companyPhoneNumber",
+                    "headline",
+                    "departments",
+                    "seniority",
+                    "photoUrl",
+                    "twitter"
+                ],
+                "description": "Enriched lead information from external data sources"
+            },
+            "HotelReviewSummary": {
+                "type": "object",
+                "properties": {
+                    "overall": {
+                        "$ref": "#/definitions/HotelReviewerGroupSummary",
+                        "description": "Overall review summary across all traveler types"
+                    },
+                    "bussiness": {
+                        "$ref": "#/definitions/HotelReviewerGroupSummary",
+                        "description": "Review summary from business travelers"
+                    },
+                    "couples": {
+                        "$ref": "#/definitions/HotelReviewerGroupSummary",
+                        "description": "Review summary from couples"
+                    },
+                    "solo": {
+                        "$ref": "#/definitions/HotelReviewerGroupSummary",
+                        "description": "Review summary from solo travelers"
+                    },
+                    "families": {
+                        "$ref": "#/definitions/HotelReviewerGroupSummary",
+                        "description": "Review summary from families"
+                    },
+                    "friends": {
+                        "$ref": "#/definitions/HotelReviewerGroupSummary",
+                        "description": "Review summary from groups of friends"
+                    }
+                },
+                "description": "Summary of hotel reviews broken down by traveler type"
+            },
+            "HotelReviewerGroupSummary": {
+                "type": "object",
+                "properties": {
+                    "rating": {
+                        "type": ["number", "null"],
+                        "description": "Overall rating for this traveler group"
+                    },
+                    "rooms": {
+                        "type": "object",
+                        "properties": {
+                            "rating": {
+                                "type": ["number", "null"],
+                                "description": "Average rating for this category"
+                            },
+                            "reviews": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Array of review excerpts mentioning this category",
+                                "examples": [["Clean and spacious", "Very comfortable beds"]]
+                            }
+                        },
+                        "required": ["rating", "reviews"],
+                        "description": "Review summary for rooms"
+                    },
+                    "servicesAndFacilities": {
+                        "type": "object",
+                        "properties": {
+                            "rating": {
+                                "type": ["number", "null"],
+                                "description": "Average rating for this category"
+                            },
+                            "reviews": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Array of review excerpts mentioning this category",
+                                "examples": [["Clean and spacious", "Very comfortable beds"]]
+                            }
+                        },
+                        "required": ["rating", "reviews"],
+                        "description": "Review summary for services and facilities"
+                    },
+                    "location": {
+                        "type": "object",
+                        "properties": {
+                            "rating": {
+                                "type": ["number", "null"],
+                                "description": "Average rating for this category"
+                            },
+                            "reviews": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Array of review excerpts mentioning this category",
+                                "examples": [["Clean and spacious", "Very comfortable beds"]]
+                            }
+                        },
+                        "required": ["rating", "reviews"],
+                        "description": "Review summary for location"
+                    }
+                },
+                "required": ["rating"],
+                "description": "Review summary for a specific traveler group with category breakdowns"
+            },
+            "HotelAd": {
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": ["string", "null"],
+                        "description": "Title or name of the booking provider",
+                        "examples": ["Booking.com"]
+                    },
+                    "googleUrl": {
+                        "type": ["string", "null"],
+                        "description": "Google redirect URL for the ad",
+                        "examples": ["https://www.google.com/travel/hotels/..."]
+                    },
+                    "url": {
+                        "type": ["string", "null"],
+                        "description": "Direct URL to the booking site",
+                        "examples": ["https://www.booking.com/hotel/..."]
+                    },
+                    "price": {
+                        "type": ["string", "null"],
+                        "description": "Displayed price",
+                        "examples": ["$150 per night"]
+                    },
+                    "isOfficialSite": {
+                        "type": "boolean",
+                        "description": "Whether this is the hotel's official website"
+                    }
+                },
+                "required": ["title", "googleUrl", "url", "price", "isOfficialSite"],
+                "description": "A hotel booking advertisement"
+            },
+            "ReviewsDistribution": {
+                "type": "object",
+                "properties": {
+                    "oneStar": {
+                        "type": "number",
+                        "description": "Number of 1-star reviews"
+                    },
+                    "twoStar": {
+                        "type": "number",
+                        "description": "Number of 2-star reviews"
+                    },
+                    "threeStar": {
+                        "type": "number",
+                        "description": "Number of 3-star reviews"
+                    },
+                    "fourStar": {
+                        "type": "number",
+                        "description": "Number of 4-star reviews"
+                    },
+                    "fiveStar": {
+                        "type": "number",
+                        "description": "Number of 5-star reviews"
+                    }
+                },
+                "required": ["oneStar", "twoStar", "threeStar", "fourStar", "fiveStar"],
+                "description": "Distribution of reviews across star ratings"
+            },
+            "ReviewsRemovedNotice": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": "string",
+                        "description": "Notice text as shown in the banner",
+                        "examples": ["One review removed due to a defamation complaint."]
+                    }
+                },
+                "required": ["text"],
+                "description": "Notice shown when reviews were removed from the place due to legal defamation complaints\n(e.g. under German law). Text is localized to the run's language and reports the removed reviews\ncount as Google phrases it (e.g. \"One\", \"11 to 20\", \"Six to ten\")."
+            },
+            "UpdateFromCustomer": {
+                "type": "object",
+                "properties": {
+                    "text": {
+                        "type": ["string", "null"],
+                        "description": "Text content of the update",
+                        "examples": ["Excellent laundry, clean and fresh environment, new machines and all working"]
+                    },
+                    "language": {
+                        "type": ["string", "null"],
+                        "description": "Language code of the update",
+                        "examples": ["en"]
+                    },
+                    "postDate": {
+                        "type": ["string", "null"],
+                        "description": "When the update was posted",
+                        "examples": ["11 months ago"]
+                    },
+                    "postedBy": {
+                        "type": "object",
+                        "properties": {
+                            "name": {
+                                "type": ["string", "null"],
+                                "description": "Name of the person who posted",
+                                "examples": ["Aura Toro"]
+                            },
+                            "url": {
+                                "type": ["string", "null"],
+                                "description": "URL to the poster's profile",
+                                "examples": ["https://www.google.com/maps/contrib/106833772378732355960?hl=en-US"]
+                            },
+                            "title": {
+                                "type": ["string", "null"],
+                                "description": "Title or badge (e.g., \"Local Guide\")",
+                                "examples": ["Local Guide"]
+                            },
+                            "totalReviews": {
+                                "type": ["number", "null"],
+                                "description": "Total number of reviews by this person"
+                            }
+                        },
+                        "required": ["name", "url", "title", "totalReviews"],
+                        "description": "Information about who posted the update"
+                    },
+                    "media": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "link": {
+                                    "type": "string"
+                                },
+                                "postDate": {
+                                    "type": ["string", "null"]
+                                }
+                            },
+                            "required": ["link", "postDate"]
+                        },
+                        "description": "Array of media items (photos/videos) attached to the update",
+                        "examples": [
+                            [
+                                {
+                                    "link": "https://lh3.googleusercontent.com/...",
+                                    "postDate": "11 months ago"
+                                }
+                            ]
+                        ]
+                    }
+                },
+                "required": ["text", "language", "postDate", "postedBy", "media"],
+                "description": "A customer update or post about the place"
+            }
+        }
+    },
+    "views": {
+        "overview": {
+            "title": "Overview",
+            "description": "It can take about one minute until the first results are available.",
+            "transformation": {
+                "fields": [
+                    "title",
+                    "totalScore",
+                    "reviewsCount",
+                    "street",
+                    "city",
+                    "state",
+                    "countryCode",
+                    "website",
+                    "phone",
+                    "categories",
+                    "url",
+                    "categoryName"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "title": {
+                        "label": "Place name"
+                    }
+                }
+            }
+        },
+        "contactInfo": {
+            "title": "Contact info",
+            "description": "It can take about one minute until the first results are available.",
+            "transformation": {
+                "fields": [
+                    "title",
+                    "categories",
+                    "address",
+                    "neighborhood",
+                    "street",
+                    "city",
+                    "postalCode",
+                    "state",
+                    "countryCode",
+                    "website",
+                    "emails",
+                    "phone",
+                    "phoneUnformatted",
+                    "location",
+                    "plusCode",
+                    "categoryName"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "title": {
+                        "label": "Place name"
+                    }
+                }
+            }
+        },
+        "socialmedia": {
+            "title": "Social media",
+            "description": "It can take about one minute until the first results are available.",
+            "transformation": {
+                "fields": [
+                    "title",
+                    "instagrams",
+                    "facebooks",
+                    "linkedIns",
+                    "youtubes",
+                    "tiktoks",
+                    "twitters",
+                    "pinterests"
+                ]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "title": {
+                        "label": "Place name"
+                    }
+                }
+            }
+        },
+        "rating": {
+            "title": "Rating",
+            "description": "It can take about one minute until the first results are available.",
+            "transformation": {
+                "fields": ["title", "totalScore", "reviewsCount", "reviewsDistribution", "reviewsTags"]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "title": {
+                        "label": "Place name"
+                    }
+                }
+            }
+        },
+        "reviews": {
+            "title": "Reviews (if any)",
+            "description": "It can take about one minute until the first results are available.",
+            "transformation": {
+                "fields": [
+                    "title",
+                    "stars",
+                    "text",
+                    "publishedAtDate",
+                    "likesCount",
+                    "name",
+                    "reviewerNumberOfReviews",
+                    "isLocalGuide",
+                    "responseFromOwnerDate",
+                    "responseFromOwnerText",
+                    "reviews"
+                ],
+                "unwind": ["reviews"]
+            },
+            "display": {
+                "component": "table",
+                "properties": {
+                    "title": {
+                        "label": "Place name"
+                    }
+                }
+            }
+        },
+        "leadsEnrichment": {
+            "title": "Lead Enrichment",
+            "description": "It can take about one minute until the first results are available.",
+            "transformation": {
+                "fields": [
+                    "title",
+                    "firstName",
+                    "lastName",
+                    "fullName",
+                    "linkedinProfile",
+                    "email",
+                    "emailVerification",
+                    "mobileNumber",
+                    "headline",
+                    "jobTitle",
+                    "departments",
+                    "seniority",
+                    "industry",
+                    "photoUrl",
+                    "city",
+                    "state",
+                    "country",
+                    "companyName",
+                    "companyWebsite",
+                    "companySize",
+                    "companyLinkedin",
+                    "companyCity",
+                    "companyState",
+                    "companyCountry",
+                    "companyPhoneNumber",
+                    "twitter",
+                    "leadsEnrichment"
+                ],
+                "unwind": ["leadsEnrichment"]
+            },
+            "display": {
+                "component": "table"
+            }
+        },
+        "socialProfiles": {
+            "title": "Social profiles",
+            "description": "Detailed social media profile information for discovered social profiles' URLs",
+            "transformation": {
+                "fields": [
+                    "title",
+                    "website",
+                    "facebookProfiles",
+                    "instagramProfiles",
+                    "youtubeProfiles",
+                    "tiktokProfiles",
+                    "twitterProfiles"
+                ]
+            },
+            "display": {
+                "component": "table"
+            }
+        }
+    }
+}

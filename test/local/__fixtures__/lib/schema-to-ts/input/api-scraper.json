@@ -1,0 +1,89 @@
+{
+    "title": "Input schema for Instagram scraper",
+    "type": "object",
+    "description": "<strong>Enter Instagram URLs and get posts, comments or page details from them.</strong> <br> Alternatively set up the actor to search Instagram for profiles, hashtags or places. If you need any help, follow [this tutorial](https://blog.apify.com/scrape-instagram-posts-comments-and-more-21d05506aeb3/).",
+    "schemaVersion": 1,
+    "properties": {
+        "directUrls": {
+            "title": "Instagram URLs you want to scrape",
+            "type": "array",
+            "description": "Add one or more Instagram URLs to scrape. The field is optional, but you need to either use this field or search query below.",
+            "editor": "stringList",
+            "placeholderValue": "URL",
+            "prefill": ["https://www.instagram.com/humansofny/"],
+            "items": {
+                "type": "string",
+                "pattern": "https:\\/\\/(www\\.)?instagram\\.com\\/.+"
+            },
+            "uniqueItems": true
+        },
+        "resultsType": {
+            "title": "What do you want to scrape from each page?",
+            "type": "string",
+            "description": "You can choose to get posts, comments or details from Instagram URLs. Comments can only be scraped from post URLs.<br>❗Please note that the stories type has been deprecated. It used to return reels data, which wasn’t aligned with its purpose. Please use reels instead.",
+            "editor": "select",
+            "enum": ["posts", "comments", "details", "mentions", "reels", "stories"],
+            "enumTitles": [
+                "Scrape posts",
+                "Scrape comments",
+                "Scrape details of a profile, post, hashtag or place",
+                "Scrape profile mentions",
+                "Scrape profile reels",
+                " "
+            ],
+            "default": "posts",
+            "prefill": "posts"
+        },
+        "resultsLimit": {
+            "title": "Max results per URL",
+            "type": "integer",
+            "description": "How many posts or comments (max 50 comments per post) you want to scrape from each Instagram URL. If you set this to 1, you will get a single post from each page.",
+            "editor": "number",
+            "prefill": 200,
+            "minimum": 1
+        },
+        "onlyPostsNewerThan": {
+            "title": "Newer than",
+            "type": "string",
+            "description": "Limit how far back to the history the scraper should go. The date should be in YYYY-MM-DD or full ISO absolute format or in relative format e.g. 1 days, 2 months, 3 years. All time values are taken in UTC timezone",
+            "editor": "datepicker",
+            "dateType": "absoluteOrRelative",
+            "pattern": "^(\\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])(T[0-2]\\d:[0-5]\\d(:[0-5]\\d)?(\\.\\d+)?Z?)?$|^(\\d+)\\s*(minute|hour|day|week|month|year)s?$"
+        },
+        "search": {
+            "title": "Search query",
+            "type": "string",
+            "description": "Provide a search query which will be used to search Instagram for profiles, hashtags or places.",
+            "editor": "textfield",
+            "sectionCaption": "Scrape based on search query instead of URL",
+            "sectionDescription": "Instagram search is available indirectly. The scraper gets the data combining results from Instagram (or Facebook Ads) and Google search. For that reason results might be slightly different from what you see on Instagram as a logged in user."
+        },
+        "searchType": {
+            "title": "Search type",
+            "type": "string",
+            "description": "What type of pages to search for (you can look for hashtags, profiles or places).",
+            "editor": "select",
+            "enum": ["user", "hashtag", "place"],
+            "enumTitles": ["Search users", "Search hashtags", "Search places"],
+            "default": "hashtag",
+            "prefill": "hashtag"
+        },
+        "searchLimit": {
+            "title": "Search results limit",
+            "type": "integer",
+            "description": "How many search results (hashtags, users or places) should be returned.",
+            "editor": "number",
+            "prefill": 1,
+            "minimum": 1,
+            "maximum": 250
+        },
+        "addParentData": {
+            "title": "Add metadata",
+            "type": "boolean",
+            "description": "Only for feed items - add data source to results, i.e. for profile posts metadata is profile, for tag posts metadata is hashtag",
+            "editor": "hidden",
+            "default": false
+        }
+    },
+    "required": []
+}

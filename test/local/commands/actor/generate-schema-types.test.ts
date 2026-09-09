@@ -1,16 +1,9 @@
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
 import { ActorGenerateSchemaTypesCommand } from '../../../../src/commands/actor/generate-schema-types.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
-import {
-	clearAllRequired,
-	makePropertiesRequired,
-	prepareFieldsSchemaForCompilation,
-	prepareKvsCollectionsForCompilation,
-	prepareOutputSchemaForCompilation,
-	stripTitles,
-} from '../../../../src/lib/schema-transforms.js';
 import { validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
@@ -129,7 +122,7 @@ describe('apify actor generate-schema-types', () => {
 		expect(lastErrorMessage()).include('Generated types written to');
 
 		const generatedFile = await readFile(joinPath('output', 'input.ts'), 'utf-8');
-		expect(generatedFile).toContain('export interface');
+		expect(generatedFile).toContain('export type');
 		expect(generatedFile).toContain('searchQuery');
 	});
 
@@ -142,7 +135,7 @@ describe('apify actor generate-schema-types', () => {
 		expect(lastErrorMessage()).include(join('__generated__', 'actor', 'input.ts'));
 
 		const generatedFile = await readFile(joinPath('src', '__generated__', 'actor', 'input.ts'), 'utf-8');
-		expect(generatedFile).toContain('export interface');
+		expect(generatedFile).toContain('export type');
 	});
 
 	it('should generate strict types by default (no index signature)', async () => {
@@ -163,12 +156,11 @@ describe('apify actor generate-schema-types', () => {
 		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: defaultsInputSchemaPath,
 			flags_output: outputDir,
-			flags_strict: false,
 		});
 
 		const generatedFile = await readFile(joinPath('output-non-strict', 'input.ts'), 'utf-8');
 		// Verify the file is generated with the interface
-		expect(generatedFile).toContain('export interface');
+		expect(generatedFile).toContain('export type');
 	});
 
 	it('should fail when schema file does not exist', async () => {
@@ -234,29 +226,6 @@ describe('apify actor generate-schema-types', () => {
 		expect(generatedFile).toMatch(/crawlerType:/);
 	});
 
-	it('should make all properties optional with --all-optional flag', async () => {
-		const outputDir = joinPath('output-all-optional');
-
-		await testRunCommand(ActorGenerateSchemaTypesCommand, {
-			args_path: complexInputSchemaPath,
-			flags_output: outputDir,
-			'flags_all-optional': true,
-		});
-
-		const generatedFile = await readFile(joinPath('output-all-optional', 'input.ts'), 'utf-8');
-
-		// With --all-optional, ALL properties should be optional - including originally required ones
-		expect(generatedFile).toMatch(/startUrls\?:/);
-		expect(generatedFile).toMatch(/searchQuery\?:/);
-		expect(generatedFile).toMatch(/maxItems\?:/);
-		expect(generatedFile).toMatch(/includeImages\?:/);
-		expect(generatedFile).toMatch(/proxyConfig\?:/);
-
-		// Nested required properties should also become optional
-		expect(generatedFile).toMatch(/useApifyProxy\?:/);
-		expect(generatedFile).not.toMatch(/useApifyProxy:/); // ensure it's not non-optional
-	});
-
 	describe('dataset schema', () => {
 		it('should generate types from dataset schema referenced in actor.json', async () => {
 			const outputDir = joinPath('ds-output');
@@ -267,10 +236,10 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('ds-output', 'dataset.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
-			expect(generatedFile).toContain('title');
-			expect(generatedFile).toContain('url');
-			expect(generatedFile).toContain('price');
+			expect(generatedFile).toContain('export type');
+			expect(generatedFile).toContain('title: string;');
+			expect(generatedFile).toContain('url: string;');
+			expect(generatedFile).toContain('price?: number | undefined;');
 		});
 
 		it('should generate types from dataset schema embedded in actor.json', async () => {
@@ -295,12 +264,12 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('ds-output-embedded', 'dataset.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('name');
 			expect(generatedFile).toContain('value');
 		});
 
-		it('should skip when dataset fields are empty', async () => {
+		it('generates generic types when dataset fields are empty', async () => {
 			const outputDir = joinPath('ds-output-empty');
 			await setupActorConfig(joinPath(), {
 				datasetSchemaRef: {
@@ -314,8 +283,8 @@ describe('apify actor generate-schema-types', () => {
 				flags_output: outputDir,
 			});
 
-			const errorMessages = logMessages.error.join('\n');
-			expect(errorMessages).toContain('no fields defined');
+			const generatedFile = await readFile(joinPath('ds-output-empty', 'dataset.ts'), 'utf-8');
+			expect(generatedFile).toContain('export type dataset = Record<string, unknown>;');
 		});
 
 		it('should not generate dataset types when path argument is provided', async () => {
@@ -342,7 +311,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('out-output', 'output.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('productPage');
 			expect(generatedFile).toContain('screenshot');
 			expect(generatedFile).toContain('report');
@@ -356,6 +325,7 @@ describe('apify actor generate-schema-types', () => {
 			await setupActorConfig(joinPath(), {
 				outputSchemaRef: {
 					actorOutputSchemaVersion: 1,
+					type: 'object',
 					properties: {
 						resultPage: { type: 'string', template: 'https://example.com/{{id}}' },
 						dataExport: { type: 'string', template: 'https://example.com/export/{{id}}' },
@@ -369,7 +339,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('out-output-embedded', 'output.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('resultPage');
 			expect(generatedFile).toContain('dataExport');
 		});
@@ -383,7 +353,8 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const errorMessages = logMessages.error.join('\n');
-			expect(errorMessages).toContain('no properties defined');
+			expect(errorMessages).toContain('in the output schema:');
+			expect(errorMessages).toContain('empty-type-array');
 		});
 
 		it('should not generate output types when path argument is provided', async () => {
@@ -410,10 +381,12 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('kvs-output', 'key-value-store.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
-			// Only "results" collection has jsonSchema; "screenshots" does not
+			// One type for the store, keyed by collection name
+			expect(generatedFile).toContain('export type keyValueStore = {');
 			expect(generatedFile).toContain('totalItems');
 			expect(generatedFile).toContain('summary');
+			// "screenshots" has no jsonSchema, so there is no JSON shape to describe
+			expect(generatedFile).toContain('screenshots: unknown;');
 		});
 
 		it('should generate types from KVS schema embedded in actor.json', async () => {
@@ -445,12 +418,12 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('kvs-output-embedded', 'key-value-store.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('runCount');
 			expect(generatedFile).toContain('avgDuration');
 		});
 
-		it('should skip when no collections have jsonSchema', async () => {
+		it('generates collections with jsonSchema', async () => {
 			const outputDir = joinPath('kvs-output-no-json');
 			await setupActorConfig(joinPath(), {
 				kvsSchemaRef: {
@@ -462,6 +435,28 @@ describe('apify actor generate-schema-types', () => {
 							contentTypes: ['image/png'],
 							keyPrefix: 'img-',
 						},
+						'meme': {
+							'key': 'meme',
+							'title': 'Meme',
+							'description': 'Meme search result',
+							'jsonSchema': {
+								'type': 'object',
+								'properties': {
+									'url': { 'type': 'string' },
+									'topLeft': {
+										'type': 'object',
+										'properties': { 'x': { 'type': 'number' }, 'y': { 'type': 'number' } },
+									},
+									'bottomRight': {
+										'type': 'object',
+										'properties': { 'x': { 'type': 'number' }, 'y': { 'type': 'number' } },
+									},
+								},
+								'required': ['url', 'topLeft', 'bottomRight'],
+								'additionalProperties': false,
+							},
+							'contentTypes': ['application/json'],
+						},
 					},
 				},
 			});
@@ -469,9 +464,11 @@ describe('apify actor generate-schema-types', () => {
 			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
-
-			const errorMessages = logMessages.error.join('\n');
-			expect(errorMessages).toContain('no collections with JSON schemas');
+			const kvsFile = await readFile(join(outputDir, 'key-value-store.ts'), 'utf-8');
+			expect(kvsFile).toContain('url: string;');
+			// Every declared collection is a required key of the table, JSON or not
+			expect(kvsFile).toContain('images: unknown;');
+			expect(kvsFile).toContain('meme: {');
 		});
 
 		it('should not generate KVS types when path argument is provided', async () => {
@@ -507,16 +504,16 @@ describe('apify actor generate-schema-types', () => {
 			const outputDir = join(projectDir, 'src', '__generated__', 'actor');
 
 			const inputFile = await readFile(join(outputDir, 'input.ts'), 'utf-8');
-			expect(inputFile).toContain('export interface');
+			expect(inputFile).toContain('export type');
 
 			const datasetFile = await readFile(join(outputDir, 'dataset.ts'), 'utf-8');
-			expect(datasetFile).toContain('export interface');
+			expect(datasetFile).toContain('export type');
 
 			const outputFile = await readFile(join(outputDir, 'output.ts'), 'utf-8');
-			expect(outputFile).toContain('export interface');
+			expect(outputFile).toContain('export type');
 
 			const kvsFile = await readFile(join(outputDir, 'key-value-store.ts'), 'utf-8');
-			expect(kvsFile).toContain('export interface');
+			expect(kvsFile).toContain('export type');
 		});
 
 		it('should discover input schema from default locations in the directory', async () => {
@@ -542,7 +539,7 @@ describe('apify actor generate-schema-types', () => {
 
 			const outputDir = join(projectDir, 'src', '__generated__', 'actor');
 			const generatedFile = await readFile(join(outputDir, 'input.ts'), 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 			expect(generatedFile).toContain('query');
 		});
 
@@ -557,7 +554,7 @@ describe('apify actor generate-schema-types', () => {
 			// Output should be inside the project directory, not in cwd
 			const outputFile = join(projectDir, 'src', '__generated__', 'actor', 'input.ts');
 			const generatedFile = await readFile(outputFile, 'utf-8');
-			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('export type');
 		});
 
 		it('should fail with clear error when directory has no schemas', async () => {
@@ -572,18 +569,117 @@ describe('apify actor generate-schema-types', () => {
 		});
 	});
 
-	it('should write successful schemas and report error for the failing one', async () => {
+	describe('--check', () => {
+		// The command is imported statically, before the cwd mock installs, so it writes the exit
+		// code to the real process. Reset it afterwards, or a deliberate failure here would become
+		// the exit code of the whole test run.
+		async function runCheck(flags: Record<string, unknown>) {
+			process.exitCode = 0;
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, { ...flags, flags_check: true });
+
+			const { exitCode } = process;
+			process.exitCode = 0;
+
+			return exitCode;
+		}
+
+		it('passes when the generated file matches the schema', async () => {
+			const outputDir = joinPath('check-match');
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: complexInputSchemaPath,
+				flags_output: outputDir,
+			});
+
+			const exitCode = await runCheck({ args_path: complexInputSchemaPath, flags_output: outputDir });
+
+			expect(exitCode).toBe(0);
+			expect(logMessages.error.join('\n')).toContain('is up to date');
+		});
+
+		it('fails when the generated file is missing', async () => {
+			const outputDir = joinPath('check-missing');
+
+			const exitCode = await runCheck({ args_path: complexInputSchemaPath, flags_output: outputDir });
+
+			expect(exitCode).toBe(1);
+			expect(logMessages.error.join('\n')).toContain('is missing');
+		});
+
+		it('fails when the schema changed since the file was generated', async () => {
+			const outputDir = joinPath('check-stale');
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: complexInputSchemaPath,
+				flags_output: outputDir,
+			});
+
+			const before = await readFile(join(outputDir, 'input.ts'), 'utf-8');
+			const exitCode = await runCheck({ args_path: defaultsInputSchemaPath, flags_output: outputDir });
+
+			expect(exitCode).toBe(1);
+			expect(logMessages.error.join('\n')).toContain('is out of date');
+
+			// A check never writes
+			await expect(readFile(join(outputDir, 'input.ts'), 'utf-8')).resolves.toBe(before);
+		});
+
+		it('fails when the file has no generated header', async () => {
+			const outputDir = joinPath('check-handwritten');
+			await mkdir(outputDir, { recursive: true });
+			await writeFile(join(outputDir, 'input.ts'), 'export type input = { mine: true };\n');
+
+			const exitCode = await runCheck({ args_path: complexInputSchemaPath, flags_output: outputDir });
+
+			expect(exitCode).toBe(1);
+			expect(logMessages.error.join('\n')).toContain('carries no @generated header');
+		});
+
+		it('checks the storage schemas too', async () => {
+			const outputDir = joinPath('check-storages');
+			await setupActorConfig(joinPath(), {
+				datasetSchemaRef: validDatasetSchemaPath,
+				outputSchemaRef: validOutputSchemaPath,
+				kvsSchemaRef: validKvsSchemaPath,
+			});
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, { flags_output: outputDir });
+
+			expect(await runCheck({ flags_output: outputDir })).toBe(0);
+
+			// Break just the Dataset types; the rest stays up to date
+			await writeFile(join(outputDir, 'dataset.ts'), 'export type dataset = unknown;\n');
+
+			expect(await runCheck({ flags_output: outputDir })).toBe(1);
+
+			const errors = logMessages.error.join('\n');
+			expect(errors).toContain(join('check-storages', 'dataset.ts'));
+			expect(errors).toContain('carries no @generated header');
+			expect(errors).toContain(`${join('check-storages', 'input.ts')} is up to date`);
+		});
+
+		it('does not create the output directory', async () => {
+			const outputDir = joinPath('check-no-mkdir');
+
+			await runCheck({ args_path: complexInputSchemaPath, flags_output: outputDir });
+
+			await expect(readFile(join(outputDir, 'input.ts'), 'utf-8')).rejects.toThrow();
+			expect(existsSync(outputDir)).toBe(false);
+		});
+	});
+
+	it('warns about unsupported JsonSchema feature usage', async () => {
 		const outputDir = joinPath('partial-fail-output');
 
-		// Dataset schema has a $ref that cannot be resolved (file resolution is disabled),
-		// so dataset compilation will throw while input compilation succeeds.
+		// `$ref` is not a supported feature (yet)
 		await setupActorConfig(joinPath(), {
 			datasetSchemaRef: {
 				actorSpecification: 1,
 				fields: {
 					type: 'object',
 					properties: {
-						x: { $ref: './nonexistent.json' },
+						myRef: { $ref: 'someRef' },
 					},
 				},
 				views: {},
@@ -596,495 +692,14 @@ describe('apify actor generate-schema-types', () => {
 
 		// input.ts must have been written despite the dataset failure
 		const inputFile = await readFile(joinPath('partial-fail-output', 'input.ts'), 'utf-8');
-		expect(inputFile).toContain('export interface');
+		expect(inputFile).toContain('export type');
 
 		// An error naming the failing schema must be logged
 		const allErrors = logMessages.error.join('\n');
-		expect(allErrors).toContain('Failed to generate types for Dataset schema');
-	});
-});
+		expect(allErrors).toContain('[unsupported-keyword] $ref is not supported');
 
-describe('prepareFieldsSchemaForCompilation', () => {
-	it('should extract fields sub-schema', () => {
-		const schema = {
-			actorSpecification: 1,
-			fields: {
-				type: 'object',
-				properties: {
-					title: { type: 'string' },
-				},
-				required: ['title'],
-			},
-			views: {},
-		};
-
-		const result = prepareFieldsSchemaForCompilation(schema);
-		expect(result).toEqual({
-			type: 'object',
-			properties: { title: { type: 'string' } },
-			required: ['title'],
-		});
-	});
-
-	it('should inject type: "object" when missing from fields', () => {
-		const schema = {
-			actorSpecification: 1,
-			fields: {
-				properties: {
-					name: { type: 'string' },
-				},
-			},
-			views: {},
-		};
-
-		const result = prepareFieldsSchemaForCompilation(schema);
-		expect(result).not.toBeNull();
-		expect(result!.type).toBe('object');
-	});
-
-	it('should return null for empty fields', () => {
-		const schema = {
-			actorSpecification: 1,
-			fields: {},
-			views: {},
-		};
-
-		const result = prepareFieldsSchemaForCompilation(schema);
-		expect(result).toBeNull();
-	});
-
-	it('should return null when fields key is missing', () => {
-		const schema = {
-			actorSpecification: 1,
-			views: {},
-		};
-
-		const result = prepareFieldsSchemaForCompilation(schema);
-		expect(result).toBeNull();
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			actorSpecification: 1,
-			fields: {
-				properties: {
-					title: { type: 'string' },
-				},
-			},
-			views: {},
-		};
-
-		prepareFieldsSchemaForCompilation(schema);
-		expect((schema.fields as any).type).toBeUndefined();
-	});
-});
-
-describe('prepareOutputSchemaForCompilation', () => {
-	it('should extract properties and strip template fields', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-			properties: {
-				page: { type: 'string', template: 'https://example.com/{{id}}', title: 'Page' },
-				report: { type: 'string', template: 'https://example.com/report/{{id}}' },
-			},
-			required: ['page'],
-		};
-
-		const result = prepareOutputSchemaForCompilation(schema);
-		expect(result).toEqual({
-			type: 'object',
-			properties: {
-				page: { type: 'string', title: 'Page' },
-				report: { type: 'string' },
-			},
-			required: ['page'],
-		});
-	});
-
-	it('should return null when properties are missing', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-		};
-
-		const result = prepareOutputSchemaForCompilation(schema);
-		expect(result).toBeNull();
-	});
-
-	it('should return null when properties are empty', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-			properties: {},
-		};
-
-		const result = prepareOutputSchemaForCompilation(schema);
-		expect(result).toBeNull();
-	});
-
-	it('should not include non-JSON-Schema keys like actorOutputSchemaVersion', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-			properties: {
-				name: { type: 'string', template: 'https://example.com/{{name}}' },
-			},
-		};
-
-		const result = prepareOutputSchemaForCompilation(schema);
-		expect(result).not.toBeNull();
-		expect(result).not.toHaveProperty('actorOutputSchemaVersion');
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-			properties: {
-				name: { type: 'string', template: 'https://example.com/{{name}}' },
-			},
-		};
-
-		prepareOutputSchemaForCompilation(schema);
-		expect(schema).toHaveProperty('actorOutputSchemaVersion');
-		expect((schema.properties as any).name).toHaveProperty('template');
-	});
-});
-
-describe('prepareKvsCollectionsForCompilation', () => {
-	it('should extract jsonSchema from collections', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				results: {
-					contentTypes: ['application/json'],
-					key: 'RESULTS',
-					jsonSchema: {
-						type: 'object',
-						properties: { count: { type: 'integer' } },
-					},
-				},
-			},
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toHaveLength(1);
-		expect(result[0].name).toBe('results');
-		expect(result[0].schema).toEqual({
-			type: 'object',
-			properties: { count: { type: 'integer' } },
-		});
-	});
-
-	it('should skip collections without jsonSchema', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				images: {
-					contentTypes: ['image/png'],
-					keyPrefix: 'img-',
-				},
-				results: {
-					contentTypes: ['application/json'],
-					key: 'RESULTS',
-					jsonSchema: {
-						type: 'object',
-						properties: { count: { type: 'integer' } },
-					},
-				},
-			},
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toHaveLength(1);
-		expect(result[0].name).toBe('results');
-	});
-
-	it('should return empty array when no collections exist', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toEqual([]);
-	});
-
-	it('should return empty array when no collections have jsonSchema', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				images: {
-					contentTypes: ['image/png'],
-					keyPrefix: 'img-',
-				},
-			},
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toEqual([]);
-	});
-
-	it('should inject type: "object" when missing from jsonSchema', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				data: {
-					contentTypes: ['application/json'],
-					key: 'DATA',
-					jsonSchema: {
-						properties: { name: { type: 'string' } },
-					},
-				},
-			},
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toHaveLength(1);
-		expect(result[0].schema.type).toBe('object');
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				data: {
-					contentTypes: ['application/json'],
-					key: 'DATA',
-					jsonSchema: {
-						properties: { name: { type: 'string' } },
-					},
-				},
-			},
-		};
-
-		prepareKvsCollectionsForCompilation(schema);
-		expect((schema.collections as any).data.jsonSchema.type).toBeUndefined();
-	});
-});
-
-describe('makePropertiesRequired', () => {
-	it('should add properties with defaults to required array', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-				age: { type: 'number', default: 25 },
-			},
-		};
-
-		const result = makePropertiesRequired(schema);
-		expect(result.required).toEqual(['age']);
-	});
-
-	it('should not remove existing required entries that dont have defaults', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-				age: { type: 'number', default: 25 },
-			},
-			required: ['name'],
-		};
-
-		const result = makePropertiesRequired(schema);
-		expect(result.required).toContain('name');
-		expect(result.required).toContain('age');
-	});
-
-	it('should recurse into nested object properties', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				nested: {
-					type: 'object',
-					properties: {
-						innerOptional: { type: 'string' },
-						innerRequired: { type: 'string' },
-						innerDefault: { type: 'string', default: 'hello' },
-					},
-					required: ['innerRequired'],
-				},
-			},
-		};
-
-		const result = makePropertiesRequired(schema);
-		const { nested } = result.properties as any;
-		expect(nested.required).toEqual(['innerRequired', 'innerDefault']);
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-			},
-			required: [] as string[],
-		};
-
-		makePropertiesRequired(schema);
-		expect(schema.required).toEqual([]);
-	});
-
-	it('should return schema unchanged when there are no properties', () => {
-		const schema = { type: 'object' };
-		const result = makePropertiesRequired(schema);
-		expect(result).toEqual({ type: 'object' });
-	});
-});
-
-describe('clearAllRequired', () => {
-	it('should remove top-level required array', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-			},
-			required: ['name'],
-		};
-
-		const result = clearAllRequired(schema);
-		expect(result.required).toBeUndefined();
-	});
-
-	it('should remove required arrays from nested objects', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				nested: {
-					type: 'object',
-					properties: {
-						inner: { type: 'string' },
-					},
-					required: ['inner'],
-				},
-			},
-			required: ['nested'],
-		};
-
-		const result = clearAllRequired(schema);
-		expect(result.required).toBeUndefined();
-		const { nested } = result.properties as any;
-		expect(nested.required).toBeUndefined();
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-			},
-			required: ['name'],
-		};
-
-		clearAllRequired(schema);
-		expect(schema.required).toEqual(['name']);
-	});
-
-	it('should handle schema with no properties', () => {
-		const schema = { type: 'object', required: ['foo'] };
-		const result = clearAllRequired(schema);
-		expect(result.required).toBeUndefined();
-	});
-});
-
-describe('stripTitles', () => {
-	it('should remove top-level title', () => {
-		const schema = { title: 'MySchema', type: 'object', properties: {} };
-		const result = stripTitles(schema);
-		expect(result.title).toBeUndefined();
-	});
-
-	it('should strip titles from nested properties', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { title: 'Name', type: 'string' },
-				age: { title: 'Age', type: 'integer' },
-			},
-		};
-		const result = stripTitles(schema);
-		const props = result.properties as any;
-		expect(props.name.title).toBeUndefined();
-		expect(props.age.title).toBeUndefined();
-	});
-
-	it('should strip title from items', () => {
-		const schema = {
-			type: 'array',
-			items: { title: 'Item', type: 'string' },
-		};
-		const result = stripTitles(schema);
-		expect((result.items as any).title).toBeUndefined();
-	});
-
-	it('should strip titles from allOf / anyOf / oneOf sub-schemas', () => {
-		const schema = {
-			allOf: [{ title: 'A', type: 'string' }],
-			anyOf: [{ title: 'B', type: 'number' }],
-			oneOf: [{ title: 'C', type: 'boolean' }],
-		};
-		const result = stripTitles(schema);
-		expect((result.allOf as any[])[0].title).toBeUndefined();
-		expect((result.anyOf as any[])[0].title).toBeUndefined();
-		expect((result.oneOf as any[])[0].title).toBeUndefined();
-	});
-
-	it('should strip titles from definitions and $defs', () => {
-		const schema = {
-			definitions: { Foo: { title: 'Foo', type: 'string' } },
-			$defs: { Bar: { title: 'Bar', type: 'number' } },
-		};
-		const result = stripTitles(schema);
-		expect((result.definitions as any).Foo.title).toBeUndefined();
-		expect((result.$defs as any).Bar.title).toBeUndefined();
-	});
-
-	it('should strip title from additionalProperties when it is a schema object', () => {
-		const schema = {
-			type: 'object',
-			additionalProperties: { title: 'Extra', type: 'string' },
-		};
-		const result = stripTitles(schema);
-		expect((result.additionalProperties as any).title).toBeUndefined();
-	});
-
-	it('should strip titles from if / then / else / not', () => {
-		const schema = {
-			if: { title: 'If', type: 'string' },
-			then: { title: 'Then', type: 'number' },
-			else: { title: 'Else', type: 'boolean' },
-			not: { title: 'Not', type: 'null' },
-		};
-		const result = stripTitles(schema);
-		expect((result.if as any).title).toBeUndefined();
-		expect((result.then as any).title).toBeUndefined();
-		expect((result.else as any).title).toBeUndefined();
-		expect((result.not as any).title).toBeUndefined();
-	});
-
-	it('should strip titles from patternProperties', () => {
-		const schema = {
-			type: 'object',
-			patternProperties: {
-				'^S_': { title: 'StringProp', type: 'string' },
-			},
-		};
-		const result = stripTitles(schema);
-		expect((result.patternProperties as any)['^S_'].title).toBeUndefined();
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			title: 'Root',
-			type: 'object',
-			properties: {
-				name: { title: 'Name', type: 'string' },
-			},
-		};
-		stripTitles(schema);
-		expect(schema.title).toBe('Root');
-		expect((schema.properties as any).name.title).toBe('Name');
+		// dataset.ts must have been written despite the dataset failure
+		const datasetFile = await readFile(joinPath('partial-fail-output', 'dataset.ts'), 'utf-8');
+		expect(datasetFile).toContain('myRef?: unknown;');
 	});
 });
