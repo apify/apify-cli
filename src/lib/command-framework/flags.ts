@@ -2,7 +2,7 @@ import type { ParseArgsOptionDescriptor } from 'node:util';
 
 import { camelCaseToKebabCase, kebabCaseString, StdinMode } from './apify-command.js';
 
-export type FlagTag = 'string' | 'boolean' | 'integer';
+export type FlagTag = 'string' | 'strings' | 'boolean' | 'integer';
 
 export interface BaseFlagOptions {
 	required?: boolean;
@@ -24,6 +24,11 @@ export interface BaseFlagOptions {
 export interface StringFlagOptions<Choices extends readonly string[] = readonly string[]> extends BaseFlagOptions {
 	choices?: Choices;
 	default?: string;
+	/**
+	 * Whether the flag can be provided multiple times, collecting all values into an array
+	 * @default false
+	 */
+	multiple?: boolean;
 }
 
 export interface BooleanFlagOptions extends BaseFlagOptions {
@@ -76,10 +81,16 @@ export function YesFlag(description = 'Automatic yes to prompts; assume "yes" as
 }
 
 function stringFlag<const Choices extends string[], const T extends StringFlagOptions<readonly string[]>>(
-	options: T & { choices?: Choices },
-): TaggedFlagBuilder<'string', Choices, T['default'] extends string ? true : T['required'], T['default']> {
+	// Multi-value flags do not support choices or default (unimplemented in parsing), so forbid them at the type level
+	options: T & { choices?: Choices } & (T['multiple'] extends true ? { choices?: never; default?: never } : unknown),
+): TaggedFlagBuilder<
+	T['multiple'] extends true ? 'strings' : 'string',
+	Choices,
+	T['default'] extends string ? true : T['required'],
+	T['default']
+> {
 	return {
-		flagTag: 'string',
+		flagTag: (options.multiple ? 'strings' : 'string') as never,
 		builder: (objectName) => {
 			const allAliases = new Set([...(options.aliases ?? [])]);
 
@@ -115,7 +126,8 @@ function stringFlag<const Choices extends string[], const T extends StringFlagOp
 		choices: options.choices as Choices,
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
-		stdin: options.stdin ?? StdinMode.Stringified,
+		// Multi-value flags do not support stdin ('-' is treated as a regular value)
+		stdin: options.stdin ?? (options.multiple ? StdinMode.None : StdinMode.Stringified),
 
 		description: options.description,
 		aliases: options.aliases,

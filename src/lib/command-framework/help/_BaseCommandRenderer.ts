@@ -174,10 +174,12 @@ export abstract class BaseCommandRenderer {
 			}
 
 			case 'string':
+			case 'strings':
 			case 'integer': {
 				const flagValues = flag.choices?.length ? `${flag.choices.join('|')}` : '<value>';
+				const repeatableSuffix = flag.flagTag === 'strings' ? '...' : '';
 
-				return `${mainFlagPart} ${flagValues}`;
+				return `${mainFlagPart} ${flagValues}${repeatableSuffix}`;
 			}
 
 			default: {

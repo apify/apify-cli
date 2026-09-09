@@ -1,6 +1,6 @@
 import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
-import { resolvePushOutcome } from '../../../src/commands/actors/push.js';
+import { parseEnvFlags, resolvePushOutcome } from '../../../src/commands/actors/push.js';
 import { CommandExitCodes } from '../../../src/lib/consts.js';
 
 describe('resolvePushOutcome', () => {
@@ -35,5 +35,26 @@ describe('resolvePushOutcome', () => {
 		expect(resolvePushOutcome(ACTOR_JOB_STATUSES.TIMING_OUT).errorMessage).toBe('Build is timing out');
 		expect(resolvePushOutcome(ACTOR_JOB_STATUSES.TIMED_OUT).errorMessage).toBe('Build timed out');
 		expect(resolvePushOutcome(ACTOR_JOB_STATUSES.FAILED).errorMessage).toBe('Build failed');
+	});
+});
+
+describe('parseEnvFlags', () => {
+	test('parses KEY=VALUE entries, later entries win, values may contain =', () => {
+		expect(parseEnvFlags([])).toEqual({});
+		expect(parseEnvFlags(['A=1', 'B=two'])).toEqual({ A: '1', B: 'two' });
+		expect(parseEnvFlags(['A=1', 'A=2'])).toEqual({ A: '2' });
+		expect(parseEnvFlags(['URL=https://example.com?a=b'])).toEqual({ URL: 'https://example.com?a=b' });
+		expect(parseEnvFlags(['EMPTY='])).toEqual({ EMPTY: '' });
+	});
+
+	test.each([['NO_SEPARATOR'], ['=NO_KEY'], ['']])('rejects malformed entry %j', (entry) => {
+		expect(() => parseEnvFlags([entry])).toThrow('expected KEY=VALUE format');
+	});
+
+	test('keeps a __proto__ key instead of silently swallowing it', () => {
+		const parsed = parseEnvFlags(['__proto__=x', 'A=1']);
+
+		expect(Object.keys(parsed).sort()).toStrictEqual(['A', '__proto__']);
+		expect({ ...parsed }).toHaveProperty('A', '1');
 	});
 });

@@ -18,6 +18,7 @@ If you modified a command's flags, args, description, or added/removed a command
 - Package manager: **pnpm 10** (via Corepack). Do not use npm or yarn.
 - Use `.js` import specifiers for local files (e.g. `import { foo } from './foo.js'`). The `.ts` source resolves at build time.
 - Commands extend `ApifyCommand` from `src/lib/command-framework/apify-command.ts`. Follow the pattern of existing commands: `static override name`, `static override description`, `static override flags/args`, and an `async run()` method.
+- Repeatable flags: `Flags.string({ multiple: true })` collects repeated values into a `string[]` (flag tag `'strings'`). `choices` and `default` are type-forbidden with `multiple`, and stdin (`-`) is disabled for multi-value flags.
 - New commands must be registered in `src/commands/_register.ts` (or the parent `_index.ts` for subcommands).
 - Do not add docstrings, comments, or type annotations to code you did not change. Keep diffs tight.
 
