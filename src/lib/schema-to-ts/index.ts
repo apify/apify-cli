@@ -9,6 +9,7 @@
 // Apify-aware rewrites. Separate calls, because the schema kind is not the core's business.
 export { normalizeInputSchema } from './preprocess/input.js';
 export { normalizeDatasetSchema } from './preprocess/dataset.js';
+export { normalizeKvstoreSchema } from './preprocess/kvstore.js';
 
 // Schema in, TypeScript out. The IR never crosses this boundary.
 export { compile, check } from './compile.js';

@@ -564,7 +564,7 @@ DESCRIPTION
 
 USAGE
   $ apify actor generate-schema-types [path]
-                                      [--all-optional] [-o <value>] [--strict]
+                                      [-o <value>] [--perspective actor|user]
 
 ARGUMENTS
   path  Optional path to an input schema file or a directory containing
@@ -573,13 +573,16 @@ ARGUMENTS
         directory.
 
 FLAGS
-      --all-optional    Mark all properties as optional in
-                        generated types.
-  -o, --output=<value>  Directory where the generated files
-                        should be outputted. Defaults to src/__generated__/actor/ to
-                        stay within the typical tsconfig rootDir.
-      --strict          Whether generated interfaces should be
-                        strict (no index signature [key: string]: unknown).
+  -o, --output=<value>        Directory where the
+                              generated files should be outputted. Defaults to
+                              src/__generated__/actor/ to stay within the typical
+                              tsconfig rootDir.
+      --perspective=<option>  Whose side of the data to
+                              type. 'actor' is for code running inside the Actor: it
+                              reads the input and writes the storages. 'user' is for
+                              code calling the Actor: it writes the input and reads
+                              the storages.
+                              <options: actor|user>
 ```
 
 ##### `apify actor get-input`

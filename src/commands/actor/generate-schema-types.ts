@@ -13,9 +13,13 @@ import {
 	readStorageSchema,
 } from '../../lib/input_schema.js';
 import { error, info, success, warning } from '../../lib/outputs.js';
-import { compile, normalizeDatasetSchema, normalizeInputSchema } from '../../lib/schema-to-ts/index.js';
-import type { Diagnostic, Notice, CompileResult, Variant } from '../../lib/schema-to-ts/index.js';
-import { prepareKvsCollectionsForCompilation } from '../../lib/schema-transforms.js';
+import {
+	compile,
+	normalizeDatasetSchema,
+	normalizeInputSchema,
+	normalizeKvstoreSchema,
+} from '../../lib/schema-to-ts/index.js';
+import type { CompileResult, Diagnostic, Variant } from '../../lib/schema-to-ts/index.js';
 
 const PERSPECTIVES = ['actor', 'user'] as const;
 type Perspective = (typeof PERSPECTIVES)[number];
@@ -247,32 +251,15 @@ just as if the command were run from that directory with no argument.`;
 			});
 		}
 
-		const collections = prepareKvsCollectionsForCompilation(kvsSchema);
+		const kvsName = 'keyValueStore';
 
-		if (collections.length === 0) {
-			warning({
-				message: 'Key-Value Store schema has no collections with JSON schemas, skipping type generation.',
-			});
-			return;
-		}
+		const result = compile(normalizeKvstoreSchema(kvsSchema), {
+			types: [{ name: kvsName, variant: this.variants.outOfActor }],
+		});
+		notifyDiagnostics('key-value-store', result);
 
-		const parts: string[] = [];
-		const diagnostics: Diagnostic[] = [];
-		const notices: Notice[] = [];
-
-		for (const { name, schema } of collections) {
-			const result = compile(schema, {
-				types: [{ name, variant: this.variants.outOfActor }],
-			});
-
-			parts.push(result.source);
-			notices.push(...result.notices);
-			diagnostics.push(...result.diagnostics);
-		}
-		const finalSource = parts.join('\n');
-		notifyDiagnostics('key-value-store', { source: finalSource, diagnostics, notices });
 		const outputFile = path.join(outputDir, 'key-value-store.ts');
-		await writeFile(outputFile, finalSource, 'utf-8');
+		await writeFile(outputFile, result.source, 'utf-8');
 
 		success({ message: `Generated types written to ${outputFile}` });
 	}
