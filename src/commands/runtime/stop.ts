@@ -3,11 +3,7 @@ import process from 'node:process';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { execWithLog } from '../../lib/exec.js';
 import { info, success } from '../../lib/outputs.js';
-import {
-	ACTOR_RUNTIME_CONTAINER_NAME,
-	findContainerEngine,
-	isRuntimeContainerRunning,
-} from '../../lib/runtime/docker.js';
+import { ACTOR_RUNTIME_CONTAINER_NAME, findRunningRuntimeEngine } from '../../lib/runtime/docker.js';
 
 export class RuntimeStopCommand extends ApifyCommand<typeof RuntimeStopCommand> {
 	static override name = 'stop' as const;
@@ -26,8 +22,8 @@ export class RuntimeStopCommand extends ApifyCommand<typeof RuntimeStopCommand> 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-runtime-stop';
 
 	async run() {
-		const engine = await findContainerEngine();
-		if (!engine || !(await isRuntimeContainerRunning(engine))) {
+		const engine = await findRunningRuntimeEngine();
+		if (!engine) {
 			info({ message: 'The Actor runtime is not running.' });
 			return;
 		}

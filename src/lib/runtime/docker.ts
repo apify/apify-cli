@@ -58,14 +58,36 @@ export function requestedContainerEngine(env: NodeJS.ProcessEnv = process.env): 
 }
 
 /**
- * The engine to drive: the requested one when set, else Docker, else Podman - whichever command is on PATH.
- * Null when the (requested or any) engine command is missing.
+ * The engines whose command is on PATH, in preference order: only the requested one when
+ * `APIFY_CONTAINER_ENGINE` is set, else Docker before Podman.
  */
-export async function findContainerEngine(env: NodeJS.ProcessEnv = process.env): Promise<ContainerEngine | null> {
+export async function installedContainerEngines(env: NodeJS.ProcessEnv = process.env): Promise<ContainerEngine[]> {
 	const requested = requestedContainerEngine(env);
 	const candidates = requested ? [requested] : CONTAINER_ENGINES;
+	const installed: ContainerEngine[] = [];
 	for (const engine of candidates) {
-		if (await which(engine, { nothrow: true })) return engine;
+		if (await which(engine, { nothrow: true })) installed.push(engine);
+	}
+	return installed;
+}
+
+/** The first installed engine that is actually ready to run containers, else the first installed one
+ * (so its problem gets reported), else null when no engine command is on PATH. */
+export async function findContainerEngine(
+	env: NodeJS.ProcessEnv = process.env,
+): Promise<{ engine: ContainerEngine; ready: boolean } | null> {
+	const installed = await installedContainerEngines(env);
+	for (const engine of installed) {
+		if (await isEngineReady(engine)) return { engine, ready: true };
+	}
+	return installed[0] ? { engine: installed[0], ready: false } : null;
+}
+
+/** The engine on which the runtime container is currently running, if any - checked on every installed
+ * engine, since the container may live on Podman while Docker is also on PATH. */
+export async function findRunningRuntimeEngine(env: NodeJS.ProcessEnv = process.env): Promise<ContainerEngine | null> {
+	for (const engine of await installedContainerEngines(env)) {
+		if (await isRuntimeContainerRunning(engine)) return engine;
 	}
 	return null;
 }

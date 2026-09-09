@@ -12,7 +12,6 @@ import {
 	engineInstallHint,
 	findContainerEngine,
 	imageExistsLocally,
-	isEngineReady,
 	requestedContainerEngine,
 } from './docker.js';
 
@@ -27,8 +26,8 @@ export interface EnsureActorRuntimeImageOptions {
 export async function ensureActorRuntimeImage({
 	forcePull = false,
 }: EnsureActorRuntimeImageOptions = {}): Promise<ContainerEngine | null> {
-	const engine = await findContainerEngine();
-	if (!engine) {
+	const found = await findContainerEngine();
+	if (!found) {
 		const requested = requestedContainerEngine();
 		error({
 			message: requested
@@ -39,7 +38,8 @@ export async function ensureActorRuntimeImage({
 		return null;
 	}
 
-	if (!(await isEngineReady(engine))) {
+	const { engine, ready } = found;
+	if (!ready) {
 		error({
 			message:
 				engine === 'podman'

@@ -14,8 +14,7 @@ import {
 	ACTOR_RUNTIME_CONSOLE_URL,
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	buildRuntimeRunArgs,
-	findContainerEngine,
-	isRuntimeContainerRunning,
+	findRunningRuntimeEngine,
 	resolveEngineSocketPath,
 	runtimeEnvExportLines,
 } from '../../lib/runtime/docker.js';
@@ -64,8 +63,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 	};
 
 	async run() {
-		const detected = await findContainerEngine();
-		if (detected && (await isRuntimeContainerRunning(detected))) {
+		if (await findRunningRuntimeEngine()) {
 			error({
 				message: `The Actor runtime is already running (container '${ACTOR_RUNTIME_CONTAINER_NAME}'). Stop it with 'apify runtime stop' first.`,
 			});
