@@ -666,7 +666,8 @@ Skipping push. Use --force to override.`,
 					info({
 						message:
 							`Registered ${result.localDevFolder} as the live dev folder of Actor ${actorName} on the local Actor runtime. ` +
-							`Runs mount it over the built image, so local edits (recompiled locally) apply on the next 'apify call' without another push. ` +
+							`Runs mount it over the built image, so local edits apply on the next 'apify call' without another push. ` +
+							`The mount replaces the image's compiled output too, so a compiled Actor (e.g. TypeScript) needs its local build (e.g. 'npm run build') before it is called. ` +
 							`Use 'apify call --no-dev-folder' to run from the built image alone, or 'apify push --no-dev-folder' to clear the registration.`,
 					});
 				} else {
