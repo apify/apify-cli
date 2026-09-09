@@ -564,7 +564,8 @@ DESCRIPTION
 
 USAGE
   $ apify actor generate-schema-types [path]
-                                      [-o <value>] [--perspective actor|user]
+                                      [--check] [-o <value>]
+                                      [--perspective actor|user]
 
 ARGUMENTS
   path  Optional path to an input schema file or a directory containing
@@ -573,6 +574,11 @@ ARGUMENTS
         directory.
 
 FLAGS
+      --check                 Compare the already generated
+                              files against the schemas instead of writing them.
+                              Nothing is written, and the command exits with code 1
+                              when a file is missing, was not written by this
+                              command, or no longer matches its schema.
   -o, --output=<value>        Directory where the
                               generated files should be outputted. Defaults to
                               src/__generated__/actor/ to stay within the typical

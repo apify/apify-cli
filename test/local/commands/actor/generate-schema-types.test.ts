@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
 
@@ -565,6 +566,106 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			expect(lastErrorMessage()).include('Input schema has not been found');
+		});
+	});
+
+	describe('--check', () => {
+		// The command is imported statically, before the cwd mock installs, so it writes the exit
+		// code to the real process. Reset it afterwards, or a deliberate failure here would become
+		// the exit code of the whole test run.
+		async function runCheck(flags: Record<string, unknown>) {
+			process.exitCode = 0;
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, { ...flags, flags_check: true });
+
+			const { exitCode } = process;
+			process.exitCode = 0;
+
+			return exitCode;
+		}
+
+		it('passes when the generated file matches the schema', async () => {
+			const outputDir = joinPath('check-match');
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: complexInputSchemaPath,
+				flags_output: outputDir,
+			});
+
+			const exitCode = await runCheck({ args_path: complexInputSchemaPath, flags_output: outputDir });
+
+			expect(exitCode).toBe(0);
+			expect(logMessages.error.join('\n')).toContain('is up to date');
+		});
+
+		it('fails when the generated file is missing', async () => {
+			const outputDir = joinPath('check-missing');
+
+			const exitCode = await runCheck({ args_path: complexInputSchemaPath, flags_output: outputDir });
+
+			expect(exitCode).toBe(1);
+			expect(logMessages.error.join('\n')).toContain('is missing');
+		});
+
+		it('fails when the schema changed since the file was generated', async () => {
+			const outputDir = joinPath('check-stale');
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, {
+				args_path: complexInputSchemaPath,
+				flags_output: outputDir,
+			});
+
+			const before = await readFile(join(outputDir, 'input.ts'), 'utf-8');
+			const exitCode = await runCheck({ args_path: defaultsInputSchemaPath, flags_output: outputDir });
+
+			expect(exitCode).toBe(1);
+			expect(logMessages.error.join('\n')).toContain('is out of date');
+
+			// A check never writes
+			await expect(readFile(join(outputDir, 'input.ts'), 'utf-8')).resolves.toBe(before);
+		});
+
+		it('fails when the file has no generated header', async () => {
+			const outputDir = joinPath('check-handwritten');
+			await mkdir(outputDir, { recursive: true });
+			await writeFile(join(outputDir, 'input.ts'), 'export type input = { mine: true };\n');
+
+			const exitCode = await runCheck({ args_path: complexInputSchemaPath, flags_output: outputDir });
+
+			expect(exitCode).toBe(1);
+			expect(logMessages.error.join('\n')).toContain('carries no @generated header');
+		});
+
+		it('checks the storage schemas too', async () => {
+			const outputDir = joinPath('check-storages');
+			await setupActorConfig(joinPath(), {
+				datasetSchemaRef: validDatasetSchemaPath,
+				outputSchemaRef: validOutputSchemaPath,
+				kvsSchemaRef: validKvsSchemaPath,
+			});
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, { flags_output: outputDir });
+
+			expect(await runCheck({ flags_output: outputDir })).toBe(0);
+
+			// Break just the Dataset types; the rest stays up to date
+			await writeFile(join(outputDir, 'dataset.ts'), 'export type dataset = unknown;\n');
+
+			expect(await runCheck({ flags_output: outputDir })).toBe(1);
+
+			const errors = logMessages.error.join('\n');
+			expect(errors).toContain(join('check-storages', 'dataset.ts'));
+			expect(errors).toContain('carries no @generated header');
+			expect(errors).toContain(`${join('check-storages', 'input.ts')} is up to date`);
+		});
+
+		it('does not create the output directory', async () => {
+			const outputDir = joinPath('check-no-mkdir');
+
+			await runCheck({ args_path: complexInputSchemaPath, flags_output: outputDir });
+
+			await expect(readFile(join(outputDir, 'input.ts'), 'utf-8')).rejects.toThrow();
+			expect(existsSync(outputDir)).toBe(false);
 		});
 	});
 

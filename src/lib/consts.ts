@@ -85,6 +85,8 @@ export enum CommandExitCodes {
 	BuildFailed = 1,
 	RunFailed = 1,
 	MissingAuth = 1,
+	// A --check run found generated output that no longer matches the schema it came from.
+	CheckFailed = 1,
 
 	BuildTimedOut = 2,
 	RunTimedOut = 2,
