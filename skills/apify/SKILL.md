@@ -89,9 +89,13 @@ apify key-value-stores keys <storeId> --json
 
 ## Local Actor runtime
 
-`apify runtime` runs a self-contained local Apify platform as a Docker container. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account. It ships on the `runtime` npm dist-tag, not on `latest`.
+`apify runtime` runs a self-contained local Apify platform as a container on Docker or Podman. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account. It ships on the `runtime` npm dist-tag, not on `latest`.
 
-**Prerequisite: Docker.** Docker must be installed and the daemon running before any `apify runtime` command works. The CLI does not install Docker. Check with `docker info` and act on what it tells you:
+**Prerequisite: Docker or Podman.** One of them must be installed and running before any `apify runtime` command works; the CLI does not install either. It uses the first engine found on PATH (Docker before Podman); `APIFY_CONTAINER_ENGINE=podman` forces Podman, and `APIFY_CONTAINER_SOCKET=<host path>` names the engine's API socket when it is not at the default path.
+
+With Podman, the API socket must be served: check with `podman info --format '{{.Host.RemoteSocket.Exists}}'` (must print `true`). If it does not, run `systemctl --user enable --now podman.socket` (rootless) or `sudo systemctl enable --now podman.socket` (rootful); without systemd, `podman system service --time=0 &`. On macOS/Windows, `podman machine start` first. Rootful and rootless Podman both work.
+
+With Docker, check with `docker info` and act on what it tells you:
 
 - `docker info` succeeds - you are ready.
 - It fails with "Cannot connect to the Docker daemon" (or similar) - Docker is installed but not running. Do not reinstall it; start the daemon:
@@ -111,7 +115,7 @@ apify key-value-stores keys <storeId> --json
   - Docker Desktop (macOS, Windows, Linux desktop): https://docs.docker.com/get-started/get-docker/
   - Docker Engine (Linux servers, headless): https://docs.docker.com/engine/install/
 
-`apify runtime install` runs the same Docker checks and prints a platform-specific hint when something is missing.
+`apify runtime install` runs the same engine checks and prints a platform-specific hint when something is missing.
 
 **Working directory.** Install the preview CLI locally in one dedicated directory rather than globally, so it cannot replace the user's stable `apify` install. Keep the runtime data and the Actor projects you create in the same directory - everything the session produced is then in one place and easy to clean up:
 

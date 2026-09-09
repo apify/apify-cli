@@ -458,18 +458,25 @@ ARGUMENTS
 ```sh
 DESCRIPTION
   Manages the Actor runtime, a self-contained local Apify platform running as a 
-  Docker container.
+  container on Docker or Podman.
 
-  Prerequisite: Docker must be installed and running. Follow the official Docker
-   documentation to set it up:
+  Prerequisite: Docker or Podman must be installed and running. Follow the 
+  official documentation to set one up:
 
     Docker Desktop (macOS, Windows, Linux desktop):
       https://docs.docker.com/get-started/get-docker/
     Docker Engine (Linux servers, headless):
       https://docs.docker.com/engine/install/
+    Podman (rootful or rootless; its API socket must be served, e.g. via the 
+  podman.socket systemd unit):
+      https://podman.io/docs/installation
 
-  'apify runtime install' checks that Docker is available and pulls the runtime 
-  image.
+  The first engine found on PATH is used, Docker before Podman. Set 
+  APIFY_CONTAINER_ENGINE=docker or =podman to choose, and APIFY_CONTAINER_SOCKET
+   to name the engine's API socket when it is not at the default path.
+
+  'apify runtime install' checks that the engine is available and pulls the 
+  runtime image.
 
   The runtime publishes two ports on localhost:
 
@@ -487,10 +494,11 @@ DESCRIPTION
 
 SUBCOMMANDS
   runtime install  Installs the Actor runtime: verifies this
-                   machine can run Docker images and downloads the Actor runtime
-                   Docker image ('apify/actor-runtime:latest').
+                   machine has a working container engine (Docker or Podman) and
+                   downloads the Actor runtime image
+                   ('apify/actor-runtime:latest').
   runtime start    Starts the Actor runtime, a local Apify
-                   platform running as a Docker container.
+                   platform running as a container on Docker or Podman.
   runtime stop     Stops the Actor runtime container started with
                    'apify runtime start --detach'.
 ```
@@ -499,10 +507,12 @@ SUBCOMMANDS
 
 ```sh
 DESCRIPTION
-  Installs the Actor runtime: verifies this machine can run Docker images and 
-  downloads the Actor runtime Docker image ('apify/actor-runtime:latest').
-  Docker itself is a prerequisite and is not installed by this command - see 
-  https://docs.docker.com/get-started/get-docker/.
+  Installs the Actor runtime: verifies this machine has a working container 
+  engine (Docker or Podman) and downloads the Actor runtime image 
+  ('apify/actor-runtime:latest').
+  The engine itself is a prerequisite and is not installed by this command - see
+   https://docs.docker.com/get-started/get-docker/ or 
+  https://podman.io/docs/installation.
 
 USAGE
   $ apify runtime install [-f]
@@ -516,8 +526,8 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Starts the Actor runtime, a local Apify platform running as a Docker 
-  container.
+  Starts the Actor runtime, a local Apify platform running as a container on 
+  Docker or Podman.
   Installs the runtime first when needed (like 'apify runtime install'). The 
   runtime API listens on http://localhost:3333 and the console on 
   http://localhost:3000. Run 'apify runtime -h' for the environment variables 

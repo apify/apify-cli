@@ -4,8 +4,11 @@ import {
 	ACTOR_RUNTIME_API_URL,
 	ACTOR_RUNTIME_CONSOLE_PORT,
 	ACTOR_RUNTIME_CONSOLE_URL,
+	CONTAINER_ENGINE_ENV_VAR,
+	CONTAINER_SOCKET_ENV_VAR,
 	DOCKER_ENGINE_INSTALL_URL,
 	DOCKER_GET_DOCKER_URL,
+	PODMAN_INSTALL_URL,
 	runtimeEnvExportLines,
 } from '../../lib/runtime/docker.js';
 import { RuntimeInstallCommand } from './install.js';
@@ -16,16 +19,20 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 	static override name = 'runtime' as const;
 
 	static override description = [
-		'Manages the Actor runtime, a self-contained local Apify platform running as a Docker container.',
+		'Manages the Actor runtime, a self-contained local Apify platform running as a container on Docker or Podman.',
 		'',
-		'Prerequisite: Docker must be installed and running. Follow the official Docker documentation to set it up:',
+		'Prerequisite: Docker or Podman must be installed and running. Follow the official documentation to set one up:',
 		'',
 		'  Docker Desktop (macOS, Windows, Linux desktop):',
 		`    ${DOCKER_GET_DOCKER_URL}`,
 		'  Docker Engine (Linux servers, headless):',
 		`    ${DOCKER_ENGINE_INSTALL_URL}`,
+		'  Podman (rootful or rootless; its API socket must be served, e.g. via the podman.socket systemd unit):',
+		`    ${PODMAN_INSTALL_URL}`,
 		'',
-		`'apify runtime install' checks that Docker is available and pulls the runtime image.`,
+		`The first engine found on PATH is used, Docker before Podman. Set ${CONTAINER_ENGINE_ENV_VAR}=docker or =podman to choose, and ${CONTAINER_SOCKET_ENV_VAR} to name the engine's API socket when it is not at the default path.`,
+		'',
+		`'apify runtime install' checks that the engine is available and pulls the runtime image.`,
 		'',
 		'The runtime publishes two ports on localhost:',
 		'',

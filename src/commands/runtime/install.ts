@@ -1,15 +1,15 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { simpleLog, success } from '../../lib/outputs.js';
-import { ACTOR_RUNTIME_IMAGE, DOCKER_GET_DOCKER_URL } from '../../lib/runtime/docker.js';
+import { ACTOR_RUNTIME_IMAGE, DOCKER_GET_DOCKER_URL, PODMAN_INSTALL_URL } from '../../lib/runtime/docker.js';
 import { ensureActorRuntimeImage } from '../../lib/runtime/ensure.js';
 
 export class RuntimeInstallCommand extends ApifyCommand<typeof RuntimeInstallCommand> {
 	static override name = 'install' as const;
 
 	static override description =
-		`Installs the Actor runtime: verifies this machine can run Docker images and downloads the Actor runtime Docker image ('${ACTOR_RUNTIME_IMAGE}').\n` +
-		`Docker itself is a prerequisite and is not installed by this command - see ${DOCKER_GET_DOCKER_URL}.`;
+		`Installs the Actor runtime: verifies this machine has a working container engine (Docker or Podman) and downloads the Actor runtime image ('${ACTOR_RUNTIME_IMAGE}').\n` +
+		`The engine itself is a prerequisite and is not installed by this command - see ${DOCKER_GET_DOCKER_URL} or ${PODMAN_INSTALL_URL}.`;
 
 	static override group = 'Local Actor Development';
 
