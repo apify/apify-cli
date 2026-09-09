@@ -1,7 +1,7 @@
 import { compareToHeader, type CheckReason } from './check.js';
 import type { Diagnostic, Notice } from './diagnostics.js';
 import { emit, type EmitOptions } from './emit.js';
-import { jsonSchemaToIR } from './json-schema-to-ir.js';
+import { jsonSchemaToIR } from './parser.js';
 
 /**
  * The public facade. Schema in, TypeScript out — the IR never crosses the boundary, so it
