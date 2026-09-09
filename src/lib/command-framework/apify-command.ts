@@ -523,6 +523,19 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			let rawFlag = rawFlags[matchingFlags[0]];
 
+			// parseArgs with allowNegative:true intercepts '--no-X' before the options table,
+			// storing rawFlags['X'] = false instead of rawFlags['no-X'] = true. Recover aliases
+			// of the form 'no-X' by checking whether the stripped positive name was set to false.
+			if (rawFlag === undefined && builderData.flagTag === 'boolean') {
+				for (const alias of builderData.aliases ?? []) {
+					const kebabAlias = kebabCaseString(camelCaseToKebabCase(alias)).toLowerCase();
+					if (kebabAlias.startsWith('no-') && rawFlags[kebabAlias.slice(3)] === false) {
+						rawFlag = true;
+						break;
+					}
+				}
+			}
+
 			if (!rawFlag && builderData.required) {
 				throw new CommandError({
 					code: CommandErrorCode.APIFY_MISSING_FLAG,
