@@ -3,14 +3,7 @@ import { basename, join } from 'node:path';
 
 import { ActorGenerateSchemaTypesCommand } from '../../../../src/commands/actor/generate-schema-types.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
-import {
-	clearAllRequired,
-	makePropertiesRequired,
-	prepareFieldsSchemaForCompilation,
-	prepareKvsCollectionsForCompilation,
-	prepareOutputSchemaForCompilation,
-	stripTitles,
-} from '../../../../src/lib/schema-transforms.js';
+import { prepareKvsCollectionsForCompilation } from '../../../../src/lib/schema-transforms.js';
 import { validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
@@ -163,7 +156,6 @@ describe('apify actor generate-schema-types', () => {
 		await testRunCommand(ActorGenerateSchemaTypesCommand, {
 			args_path: defaultsInputSchemaPath,
 			flags_output: outputDir,
-			flags_strict: false,
 		});
 
 		const generatedFile = await readFile(joinPath('output-non-strict', 'input.ts'), 'utf-8');
@@ -277,7 +269,7 @@ describe('apify actor generate-schema-types', () => {
 			expect(generatedFile).toContain('value');
 		});
 
-		it('should skip when dataset fields are empty', async () => {
+		it('generates generic types when dataset fields are empty', async () => {
 			const outputDir = joinPath('ds-output-empty');
 			await setupActorConfig(joinPath(), {
 				datasetSchemaRef: {
@@ -291,8 +283,8 @@ describe('apify actor generate-schema-types', () => {
 				flags_output: outputDir,
 			});
 
-			const errorMessages = logMessages.error.join('\n');
-			expect(errorMessages).toContain('no fields defined');
+			const generatedFile = await readFile(joinPath('ds-output-empty', 'dataset.ts'), 'utf-8');
+			expect(generatedFile).toContain('export type dataset = Record<string, unknown>;');
 		});
 
 		it('should not generate dataset types when path argument is provided', async () => {
@@ -333,6 +325,7 @@ describe('apify actor generate-schema-types', () => {
 			await setupActorConfig(joinPath(), {
 				outputSchemaRef: {
 					actorOutputSchemaVersion: 1,
+					type: 'object',
 					properties: {
 						resultPage: { type: 'string', template: 'https://example.com/{{id}}' },
 						dataExport: { type: 'string', template: 'https://example.com/export/{{id}}' },
@@ -360,7 +353,8 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const errorMessages = logMessages.error.join('\n');
-			expect(errorMessages).toContain('no properties defined');
+			expect(errorMessages).toContain('in the output schema:');
+			expect(errorMessages).toContain('empty-type-array');
 		});
 
 		it('should not generate output types when path argument is provided', async () => {
@@ -584,149 +578,6 @@ describe('apify actor generate-schema-types', () => {
 	});
 });
 
-describe('prepareFieldsSchemaForCompilation', () => {
-	it('should extract fields sub-schema', () => {
-		const schema = {
-			actorSpecification: 1,
-			fields: {
-				type: 'object',
-				properties: {
-					title: { type: 'string' },
-				},
-				required: ['title'],
-			},
-			views: {},
-		};
-
-		const result = prepareFieldsSchemaForCompilation(schema);
-		expect(result).toEqual({
-			type: 'object',
-			properties: { title: { type: 'string' } },
-			required: ['title'],
-		});
-	});
-
-	it('should inject type: "object" when missing from fields', () => {
-		const schema = {
-			actorSpecification: 1,
-			fields: {
-				properties: {
-					name: { type: 'string' },
-				},
-			},
-			views: {},
-		};
-
-		const result = prepareFieldsSchemaForCompilation(schema);
-		expect(result).not.toBeNull();
-		expect(result!.type).toBe('object');
-	});
-
-	it('should return null for empty fields', () => {
-		const schema = {
-			actorSpecification: 1,
-			fields: {},
-			views: {},
-		};
-
-		const result = prepareFieldsSchemaForCompilation(schema);
-		expect(result).toBeNull();
-	});
-
-	it('should return null when fields key is missing', () => {
-		const schema = {
-			actorSpecification: 1,
-			views: {},
-		};
-
-		const result = prepareFieldsSchemaForCompilation(schema);
-		expect(result).toBeNull();
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			actorSpecification: 1,
-			fields: {
-				properties: {
-					title: { type: 'string' },
-				},
-			},
-			views: {},
-		};
-
-		prepareFieldsSchemaForCompilation(schema);
-		expect((schema.fields as any).type).toBeUndefined();
-	});
-});
-
-describe('prepareOutputSchemaForCompilation', () => {
-	it('should extract properties and strip template fields', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-			properties: {
-				page: { type: 'string', template: 'https://example.com/{{id}}', title: 'Page' },
-				report: { type: 'string', template: 'https://example.com/report/{{id}}' },
-			},
-			required: ['page'],
-		};
-
-		const result = prepareOutputSchemaForCompilation(schema);
-		expect(result).toEqual({
-			type: 'object',
-			properties: {
-				page: { type: 'string', title: 'Page' },
-				report: { type: 'string' },
-			},
-			required: ['page'],
-		});
-	});
-
-	it('should return null when properties are missing', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-		};
-
-		const result = prepareOutputSchemaForCompilation(schema);
-		expect(result).toBeNull();
-	});
-
-	it('should return null when properties are empty', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-			properties: {},
-		};
-
-		const result = prepareOutputSchemaForCompilation(schema);
-		expect(result).toBeNull();
-	});
-
-	it('should not include non-JSON-Schema keys like actorOutputSchemaVersion', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-			properties: {
-				name: { type: 'string', template: 'https://example.com/{{name}}' },
-			},
-		};
-
-		const result = prepareOutputSchemaForCompilation(schema);
-		expect(result).not.toBeNull();
-		expect(result).not.toHaveProperty('actorOutputSchemaVersion');
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			actorOutputSchemaVersion: 1,
-			properties: {
-				name: { type: 'string', template: 'https://example.com/{{name}}' },
-			},
-		};
-
-		prepareOutputSchemaForCompilation(schema);
-		expect(schema).toHaveProperty('actorOutputSchemaVersion');
-		expect((schema.properties as any).name).toHaveProperty('template');
-	});
-});
-
 describe('prepareKvsCollectionsForCompilation', () => {
 	it('should extract jsonSchema from collections', () => {
 		const schema = {
@@ -841,230 +692,5 @@ describe('prepareKvsCollectionsForCompilation', () => {
 
 		prepareKvsCollectionsForCompilation(schema);
 		expect((schema.collections as any).data.jsonSchema.type).toBeUndefined();
-	});
-});
-
-describe('makePropertiesRequired', () => {
-	it('should add properties with defaults to required array', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-				age: { type: 'number', default: 25 },
-			},
-		};
-
-		const result = makePropertiesRequired(schema);
-		expect(result.required).toEqual(['age']);
-	});
-
-	it('should not remove existing required entries that dont have defaults', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-				age: { type: 'number', default: 25 },
-			},
-			required: ['name'],
-		};
-
-		const result = makePropertiesRequired(schema);
-		expect(result.required).toContain('name');
-		expect(result.required).toContain('age');
-	});
-
-	it('should recurse into nested object properties', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				nested: {
-					type: 'object',
-					properties: {
-						innerOptional: { type: 'string' },
-						innerRequired: { type: 'string' },
-						innerDefault: { type: 'string', default: 'hello' },
-					},
-					required: ['innerRequired'],
-				},
-			},
-		};
-
-		const result = makePropertiesRequired(schema);
-		const { nested } = result.properties as any;
-		expect(nested.required).toEqual(['innerRequired', 'innerDefault']);
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-			},
-			required: [] as string[],
-		};
-
-		makePropertiesRequired(schema);
-		expect(schema.required).toEqual([]);
-	});
-
-	it('should return schema unchanged when there are no properties', () => {
-		const schema = { type: 'object' };
-		const result = makePropertiesRequired(schema);
-		expect(result).toEqual({ type: 'object' });
-	});
-});
-
-describe('clearAllRequired', () => {
-	it('should remove top-level required array', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-			},
-			required: ['name'],
-		};
-
-		const result = clearAllRequired(schema);
-		expect(result.required).toBeUndefined();
-	});
-
-	it('should remove required arrays from nested objects', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				nested: {
-					type: 'object',
-					properties: {
-						inner: { type: 'string' },
-					},
-					required: ['inner'],
-				},
-			},
-			required: ['nested'],
-		};
-
-		const result = clearAllRequired(schema);
-		expect(result.required).toBeUndefined();
-		const { nested } = result.properties as any;
-		expect(nested.required).toBeUndefined();
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { type: 'string' },
-			},
-			required: ['name'],
-		};
-
-		clearAllRequired(schema);
-		expect(schema.required).toEqual(['name']);
-	});
-
-	it('should handle schema with no properties', () => {
-		const schema = { type: 'object', required: ['foo'] };
-		const result = clearAllRequired(schema);
-		expect(result.required).toBeUndefined();
-	});
-});
-
-describe('stripTitles', () => {
-	it('should remove top-level title', () => {
-		const schema = { title: 'MySchema', type: 'object', properties: {} };
-		const result = stripTitles(schema);
-		expect(result.title).toBeUndefined();
-	});
-
-	it('should strip titles from nested properties', () => {
-		const schema = {
-			type: 'object',
-			properties: {
-				name: { title: 'Name', type: 'string' },
-				age: { title: 'Age', type: 'integer' },
-			},
-		};
-		const result = stripTitles(schema);
-		const props = result.properties as any;
-		expect(props.name.title).toBeUndefined();
-		expect(props.age.title).toBeUndefined();
-	});
-
-	it('should strip title from items', () => {
-		const schema = {
-			type: 'array',
-			items: { title: 'Item', type: 'string' },
-		};
-		const result = stripTitles(schema);
-		expect((result.items as any).title).toBeUndefined();
-	});
-
-	it('should strip titles from allOf / anyOf / oneOf sub-schemas', () => {
-		const schema = {
-			allOf: [{ title: 'A', type: 'string' }],
-			anyOf: [{ title: 'B', type: 'number' }],
-			oneOf: [{ title: 'C', type: 'boolean' }],
-		};
-		const result = stripTitles(schema);
-		expect((result.allOf as any[])[0].title).toBeUndefined();
-		expect((result.anyOf as any[])[0].title).toBeUndefined();
-		expect((result.oneOf as any[])[0].title).toBeUndefined();
-	});
-
-	it('should strip titles from definitions and $defs', () => {
-		const schema = {
-			definitions: { Foo: { title: 'Foo', type: 'string' } },
-			$defs: { Bar: { title: 'Bar', type: 'number' } },
-		};
-		const result = stripTitles(schema);
-		expect((result.definitions as any).Foo.title).toBeUndefined();
-		expect((result.$defs as any).Bar.title).toBeUndefined();
-	});
-
-	it('should strip title from additionalProperties when it is a schema object', () => {
-		const schema = {
-			type: 'object',
-			additionalProperties: { title: 'Extra', type: 'string' },
-		};
-		const result = stripTitles(schema);
-		expect((result.additionalProperties as any).title).toBeUndefined();
-	});
-
-	it('should strip titles from if / then / else / not', () => {
-		const schema = {
-			if: { title: 'If', type: 'string' },
-			then: { title: 'Then', type: 'number' },
-			else: { title: 'Else', type: 'boolean' },
-			not: { title: 'Not', type: 'null' },
-		};
-		const result = stripTitles(schema);
-		expect((result.if as any).title).toBeUndefined();
-		expect((result.then as any).title).toBeUndefined();
-		expect((result.else as any).title).toBeUndefined();
-		expect((result.not as any).title).toBeUndefined();
-	});
-
-	it('should strip titles from patternProperties', () => {
-		const schema = {
-			type: 'object',
-			patternProperties: {
-				'^S_': { title: 'StringProp', type: 'string' },
-			},
-		};
-		const result = stripTitles(schema);
-		expect((result.patternProperties as any)['^S_'].title).toBeUndefined();
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			title: 'Root',
-			type: 'object',
-			properties: {
-				name: { title: 'Name', type: 'string' },
-			},
-		};
-		stripTitles(schema);
-		expect(schema.title).toBe('Root');
-		expect((schema.properties as any).name.title).toBe('Name');
 	});
 });

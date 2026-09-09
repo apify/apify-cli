@@ -13,16 +13,25 @@ import {
 	readStorageSchema,
 } from '../../lib/input_schema.js';
 import { error, info, success, warning } from '../../lib/outputs.js';
-import { compile as basedCompile, type CompileResult } from '../../lib/schema-to-ts/compile.js';
-import type { Diagnostic, Notice } from '../../lib/schema-to-ts/diagnostics.js';
-import {
-	clearAllRequired,
-	makePropertiesRequired,
-	prepareFieldsSchemaForCompilation,
-	prepareKvsCollectionsForCompilation,
-	prepareOutputSchemaForCompilation,
-	stripTitles,
-} from '../../lib/schema-transforms.js';
+import { compile, normalizeDatasetSchema, normalizeInputSchema } from '../../lib/schema-to-ts/index.js';
+import type { Diagnostic, Notice, CompileResult, Variant } from '../../lib/schema-to-ts/index.js';
+import { prepareKvsCollectionsForCompilation } from '../../lib/schema-transforms.js';
+
+const PERSPECTIVES = ['actor', 'user'] as const;
+type Perspective = (typeof PERSPECTIVES)[number];
+
+/**
+ * The input flows into the Actor and every other storage flows out of it, so a single
+ * perspective fixes the variant for every file.
+ *
+ * The side that reads the data gets `received`, which is precise: platform-materialized
+ * defaults are present and unknown keys are a typo. The side that writes it gets `supplied`,
+ * which is permissive: only `required` is mandatory and extras are allowed.
+ */
+const VARIANTS = {
+	actor: { intoActor: 'received', outOfActor: 'supplied' },
+	user: { intoActor: 'supplied', outOfActor: 'received' },
+} as const satisfies Record<Perspective, Record<'intoActor' | 'outOfActor', Variant>>;
 
 export const BANNER_COMMENT = `
 // biome-ignore-all lint: generated
@@ -69,8 +78,8 @@ just as if the command were run from that directory with no argument.`;
 			command: 'actor generate-schema-types ./schemas/my-input.json',
 		},
 		{
-			description: 'Mark all generated properties as optional.',
-			command: 'actor generate-schema-types --all-optional',
+			description: 'Generate types for code that calls the Actor instead of code running inside it.',
+			command: 'actor generate-schema-types --perspective user',
 		},
 	];
 
@@ -84,15 +93,12 @@ just as if the command were run from that directory with no argument.`;
 			required: false,
 			default: path.join('src', '__generated__', 'actor'),
 		}),
-		strict: Flags.boolean({
-			description: 'Whether generated interfaces should be strict (no index signature [key: string]: unknown).',
+		perspective: Flags.string({
+			description:
+				"Whose side of the data to type. 'actor' is for code running inside the Actor: it reads the input and writes the storages. 'user' is for code calling the Actor: it writes the input and reads the storages.",
 			required: false,
-			default: true,
-		}),
-		'all-optional': Flags.boolean({
-			description: 'Mark all properties as optional in generated types.',
-			required: false,
-			default: false,
+			choices: [...PERSPECTIVES],
+			default: 'actor' satisfies Perspective,
 		}),
 	};
 
@@ -103,6 +109,10 @@ just as if the command were run from that directory with no argument.`;
 				'Optional path to an input schema file or a directory containing Actor schemas. If a directory is given, all schema types are generated from it. If not provided, searches default locations in the current directory.',
 		}),
 	};
+
+	private get variants() {
+		return VARIANTS[this.flags.perspective];
+	}
 
 	async run() {
 		const cwd = process.cwd();
@@ -135,15 +145,10 @@ just as if the command were run from that directory with no argument.`;
 
 		const name = 'input';
 
-		const schemaToCompile = this.flags.allOptional
-			? clearAllRequired(inputSchema)
-			: makePropertiesRequired(inputSchema);
-
-		const result = basedCompile(stripTitles(schemaToCompile), {
-			types: [{ name, variant: 'received' }],
+		const result = compile(normalizeInputSchema(inputSchema), {
+			types: [{ name, variant: this.variants.intoActor }],
 		});
 		notifyDiagnostics('input', result);
-		// const result2 = await compile(stripTitles(schemaToCompile) as JSONSchema4, name, compileOptions);
 
 		const outputDir = path.resolve(effectiveCwd, this.flags.output);
 		await mkdir(outputDir, { recursive: true });
@@ -195,18 +200,10 @@ just as if the command were run from that directory with no argument.`;
 			info({ message: `[experimental] Generating types from Dataset schema embedded in '${LOCAL_CONFIG_PATH}'` });
 		}
 
-		const prepared = prepareFieldsSchemaForCompilation(datasetSchema);
-
-		if (!prepared) {
-			warning({ message: 'Dataset schema has no fields defined, skipping type generation.' });
-			return;
-		}
-
 		const datasetName = 'dataset';
 
-		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
-		const result = basedCompile(stripTitles(schemaToCompile), {
-			types: [{ name: datasetName, variant: 'supplied' }],
+		const result = compile(normalizeDatasetSchema(datasetSchema), {
+			types: [{ name: datasetName, variant: this.variants.outOfActor }],
 			unknownRoot: 'record',
 		});
 		notifyDiagnostics('Dataset', result);
@@ -232,22 +229,13 @@ just as if the command were run from that directory with no argument.`;
 			info({ message: `[experimental] Generating types from Output schema embedded in '${LOCAL_CONFIG_PATH}'` });
 		}
 
-		const prepared = prepareOutputSchemaForCompilation(outputSchema);
-
-		if (!prepared) {
-			warning({ message: 'Output schema has no properties defined, skipping type generation.' });
-			return;
-		}
-
 		const outputName = 'output';
 
-		const schemaToCompile = this.flags.allOptional ? clearAllRequired(prepared) : prepared;
-		const result = basedCompile(stripTitles(schemaToCompile), {
-			types: [{ name: outputName, variant: 'supplied' }],
+		const result = compile(outputSchema, {
+			types: [{ name: outputName, variant: this.variants.outOfActor }],
 		});
-		// const result = await compile(stripTitles(schemaToCompile) as JSONSchema4, outputName, compileOptions);
-
 		notifyDiagnostics('output', result);
+
 		const outputFile = path.join(outputDir, `${outputName}.ts`);
 		await writeFile(outputFile, result.source, 'utf-8');
 
@@ -285,9 +273,8 @@ just as if the command were run from that directory with no argument.`;
 		const notices: Notice[] = [];
 
 		for (const { name, schema } of collections) {
-			const schemaToCompile = this.flags.allOptional ? clearAllRequired(schema) : schema;
-			const result = basedCompile(stripTitles(schemaToCompile), {
-				types: [{ name, variant: 'supplied' }],
+			const result = compile(schema, {
+				types: [{ name, variant: this.variants.outOfActor }],
 			});
 
 			parts.push(result.source);
