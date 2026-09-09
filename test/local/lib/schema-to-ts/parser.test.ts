@@ -373,8 +373,8 @@ describe('extraneous keywords', () => {
 
 describe('nodeKey', () => {
 	test('separates literals of different types that stringify the same', () => {
-		expect(nodeKey({ kind: 'literal', value: 1 })).not.toBe(nodeKey({ kind: 'literal', value: '1' }));
-		expect(nodeKey({ kind: 'literal', value: true })).not.toBe(nodeKey({ kind: 'literal', value: 'true' }));
+		expect(nodeKey({ kind: 'literal', value: 1 })).not.toEqual(nodeKey({ kind: 'literal', value: '1' }));
+		expect(nodeKey({ kind: 'literal', value: true })).not.toEqual(nodeKey({ kind: 'literal', value: 'true' }));
 	});
 
 	test('is stable for structurally identical nodes', () => {
@@ -388,7 +388,7 @@ describe('nodeKey', () => {
 			props: [{ name: 'a', node: str, required: true, hasDefault: false }],
 			open: true,
 		};
-		expect(nodeKey(a)).toBe(nodeKey(b));
+		expect(nodeKey(a)).toEqual(nodeKey(b));
 	});
 
 	test('distinguishes required, hasDefault, open, and valueType', () => {
@@ -406,19 +406,21 @@ describe('nodeKey', () => {
 			nodeKey(obj([base], { open: false })),
 			nodeKey(obj([base], { valueType: num })),
 		]);
-		expect(keys.size).toBe(5);
+		expect(keys.size).toEqual(5);
 	});
 
 	test('distinguishes property order', () => {
 		const p = (name: string) => ({ name, node: str, required: false, hasDefault: false });
-		expect(nodeKey({ kind: 'object', props: [p('a'), p('b')], open: true })).not.toBe(
+		expect(nodeKey({ kind: 'object', props: [p('a'), p('b')], open: true })).not.toEqual(
 			nodeKey({ kind: 'object', props: [p('b'), p('a')], open: true }),
 		);
 	});
 
 	test('descends into arrays and unions', () => {
-		expect(nodeKey({ kind: 'array', items: str })).not.toBe(nodeKey({ kind: 'array', items: num }));
-		expect(nodeKey({ kind: 'union', members: [str, nul] })).not.toBe(nodeKey({ kind: 'union', members: [num, nul] }));
+		expect(nodeKey({ kind: 'array', items: str })).not.toEqual(nodeKey({ kind: 'array', items: num }));
+		expect(nodeKey({ kind: 'union', members: [str, nul] })).not.toEqual(
+			nodeKey({ kind: 'union', members: [num, nul] }),
+		);
 	});
 });
 
