@@ -24,8 +24,7 @@ useConsoleSpy();
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { RunCommand } = await import('../../../src/commands/run.js');
 
-// Without dependencies there is no crawlee to purge the storage on start, so the
-// CLI has to do it. That is a different code path than the one crawlee projects take.
+// Without dependencies there is no crawlee to purge the storage on start, so the CLI has to do it.
 describe('apify run without crawlee', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();

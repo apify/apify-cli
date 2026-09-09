@@ -11,6 +11,7 @@ const { beforeAllCalls, afterAllCalls, joinPath } = useTempPath('purge-storages'
 });
 
 const {
+	checkIfStorageIsEmpty,
 	getLocalDatasetPath,
 	getLocalKeyValueStorePath,
 	getLocalRequestQueuePath,
@@ -35,7 +36,7 @@ const seedStorage = () => {
 	writeFileSync(join(requestQueuePath, 'request.json'), '{}');
 };
 
-describe('purge helpers', () => {
+describe('local storage helpers', () => {
 	beforeAll(async () => {
 		await beforeAllCalls();
 	});
@@ -75,11 +76,22 @@ describe('purge helpers', () => {
 		expect(existsSync(joinPath(getLocalRequestQueuePath()))).toBe(false);
 	});
 
+	it('reports the storage as non-empty while records remain', async () => {
+		await expect(checkIfStorageIsEmpty('INPUT')).resolves.toBe(false);
+	});
+
+	it('reports the storage as empty once only the input file is left', async () => {
+		await Promise.all([purgeDefaultKeyValueStore('INPUT'), purgeDefaultDataset(), purgeDefaultQueue()]);
+
+		await expect(checkIfStorageIsEmpty('INPUT')).resolves.toBe(true);
+	});
+
 	it('does nothing when the storage folder is missing', async () => {
 		rmSync(joinPath(getLocalStorageDir()), { recursive: true, force: true });
 
-		await expect(
-			Promise.all([purgeDefaultKeyValueStore('INPUT'), purgeDefaultDataset(), purgeDefaultQueue()]),
-		).resolves.toBeDefined();
+		await Promise.all([purgeDefaultKeyValueStore('INPUT'), purgeDefaultDataset(), purgeDefaultQueue()]);
+
+		expect(existsSync(joinPath(getLocalStorageDir()))).toBe(false);
+		await expect(checkIfStorageIsEmpty('INPUT')).resolves.toBe(true);
 	});
 });
