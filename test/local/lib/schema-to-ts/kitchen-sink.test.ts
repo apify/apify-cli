@@ -1,21 +1,18 @@
 // oxlint-disable import/default -- `?raw` is a Vite import; the rule resolves it to the .ts file and finds no default.
 import { describe, expect, test } from 'vitest';
 
-import {
-	check,
-	compile,
-	normalizeInputSchema,
-	type CompileOptions,
-	type Diagnostic,
-} from '../../../../src/lib/schema-to-ts/index.js';
+import { check, compile, type CompileOptions, type Diagnostic } from '../../../../src/lib/schema-to-ts/index.js';
 import { significant, tally } from '../../../__setup__/schema-to-ts.js';
 import kitchenSinkExpected from '../../__fixtures__/lib/schema-to-ts/expected/kitchen-sink.ts?raw';
 import kitchenSink from '../../__fixtures__/lib/schema-to-ts/kitchen-sink.json' with { type: 'json' };
 
 /**
- * One schema, every construct. compile.test.ts owns the claim that real Actor schemas survive
- * the pipeline; this file owns the claim that we know *exactly* which constructs we handle,
- * which we refuse loudly, and which we drop without saying a word.
+ * One schema, every construct — plain JSON Schema only. `nullable` and the rest of the Apify
+ * sugar never reach the core, so they are the pre-processor's tests, not these.
+ *
+ * compile.test.ts owns the claim that real Actor schemas survive the pipeline; this file owns
+ * the claim that we know *exactly* which constructs we handle, which we refuse loudly, and
+ * which we drop without saying a word.
  *
  * The tables below are the authored expectations — a row per construct, stating the type it
  * must produce. The checked-in `expected/kitchen-sink.ts` is only the regression net: it is the
@@ -32,7 +29,7 @@ const OPTS: CompileOptions = {
 	],
 };
 
-const schema = normalizeInputSchema(kitchenSink);
+const schema = kitchenSink;
 const result = compile(schema, OPTS);
 
 /** The two declarations, split so a row can say which variant it is talking about. */
@@ -59,43 +56,70 @@ const SUPPORTED: { feature: string; received: string; supplied?: string }[] = [
 		received: 'anInteger?: number | undefined;',
 	},
 	{ feature: 'boolean', received: 'aBoolean?: boolean | undefined;' },
-	{ feature: 'null is a type of its own', received: 'aNull?: null | undefined;' },
-	{ feature: 'editor, isSecret and friends carry no type meaning', received: 'aSecret?: string | undefined;' },
+	{
+		feature: 'null is a type of its own',
+		received: 'aNull?: null | undefined;',
+	},
+	{
+		feature: 'validation and annotation keywords carry no type meaning',
+		received: 'aString: string;',
+	},
 	{
 		feature: 'a type array becomes a union, in declared order',
 		received: 'multiType?: string | number | boolean | null | undefined;',
 	},
-	{ feature: 'repeated types collapse', received: 'repeatedType?: string | number | undefined;' },
-	{ feature: 'the nullable shorthand widens the type', received: 'nullableString?: string | null | undefined;' },
-	{ feature: 'nullable: false is a no-op', received: 'notNullableString?: string | undefined;' },
-	{ feature: 'nullable is idempotent', received: 'alreadyNullable?: string | null | undefined;' },
+	{
+		feature: 'repeated types collapse',
+		received: 'repeatedType?: string | number | undefined;',
+	},
+	{
+		feature: 'null in the type array widens the type',
+		received: 'stringOrNull?: string | null | undefined;',
+	},
 	{
 		feature: 'an enum becomes a literal union',
 		received: 'stringEnum?: "cheerio" | "puppeteer" | "playwright" | undefined;',
 	},
-	{ feature: 'a numeric enum keeps its numbers', received: 'numberEnum?: 1 | 2 | 3 | undefined;' },
+	{
+		feature: 'a numeric enum keeps its numbers',
+		received: 'numberEnum?: 1 | 2 | 3 | undefined;',
+	},
 	{
 		feature: 'strings, numbers, booleans and null mix in one enum',
 		received: 'mixedEnum?: "auto" | 42 | true | null | undefined;',
 	},
-	{ feature: 'a one-member enum is a literal, not a union', received: 'singleMemberEnum?: "only" | undefined;' },
-	{ feature: 'repeated enum members collapse', received: 'repeatedEnumMembers?: "a" | "b" | undefined;' },
 	{
-		feature: 'enum wins over a conflicting type',
-		received: 'enumOverridesType?: "not" | "boolean" | "at" | "all" | undefined;',
+		feature: 'a one-member enum is a literal, not a union',
+		received: 'singleMemberEnum?: "only" | undefined;',
+	},
+	{
+		feature: 'repeated enum members collapse',
+		received: 'repeatedEnumMembers?: "a" | "b" | undefined;',
+	},
+	{
+		feature: 'a null enum member survives when type admits it',
+		received: 'enumWithNull?: "a" | "b" | null | undefined;',
 	},
 	{
 		feature: 'an array with no items is Array<unknown>, not Array<any>',
 		received: 'arrayWithoutItems?: Array<unknown> | undefined;',
 	},
-	{ feature: 'items types the elements', received: 'arrayOfStrings?: Array<string> | undefined;' },
-	{ feature: 'arrays nest', received: 'arrayOfArrays?: Array<Array<number>> | undefined;' },
-	{ feature: 'an enum inside items', received: 'arrayOfEnums?: Array<"a" | "b"> | undefined;' },
+	{
+		feature: 'items types the elements',
+		received: 'arrayOfStrings?: Array<string> | undefined;',
+	},
+	{
+		feature: 'arrays nest',
+		received: 'arrayOfArrays?: Array<Array<number>> | undefined;',
+	},
+	{
+		feature: 'an enum inside items',
+		received: 'arrayOfEnums?: Array<"a" | "b"> | undefined;',
+	},
 	{
 		feature: 'Array<T> always, so a union element never needs parenthesizing',
 		received: 'arrayOfUnions?: Array<string | number> | undefined;',
 	},
-	{ feature: 'array inferred from items alone', received: 'inferredArray?: Array<string> | undefined;' },
 	{
 		feature: 'typed extras with no properties are a plain Record',
 		received: 'recordOfNumbers?: Record<string, number> | undefined;',
@@ -108,7 +132,10 @@ const SUPPORTED: { feature: string; received: string; supplied?: string }[] = [
 		feature: 'closed and empty accepts no key at all',
 		received: 'closedPropertylessObject?: Record<string, never> | undefined;',
 	},
-	{ feature: 'required and defaulted is present for both variants', received: 'requiredWithDefault: string;' },
+	{
+		feature: 'required and defaulted is present for both variants',
+		received: 'requiredWithDefault: string;',
+	},
 	{
 		feature: 'the platform materializes a default, so the reader has it and the writer need not send it',
 		received: 'optionalWithDefault: number;',
@@ -118,16 +145,30 @@ const SUPPORTED: { feature: string; received: string; supplied?: string }[] = [
 		feature: 'optional with no default is ? and | undefined, for exactOptionalPropertyTypes',
 		received: 'optionalWithoutDefault?: string | undefined;',
 	},
-	{ feature: 'unknown already admits undefined, so it is not widened again', received: 'optionalUnknown?: unknown;' },
-	{ feature: '{} is faithfully unknown', received: 'emptySchema?: unknown;' },
-	{ feature: 'a non-identifier key is quoted', received: '"with-dash"?: string | undefined;' },
-	{ feature: 'a leading digit is quoted', received: '"2fa"?: boolean | undefined;' },
-	{ feature: 'a reserved word is a legal property name, so it stays bare', received: 'class?: string | undefined;' },
+	{
+		feature: '{} is faithfully unknown, and unknown already admits undefined so it is not widened again',
+		received: 'emptySchema?: unknown;',
+	},
+	{
+		feature: 'a non-identifier key is quoted',
+		received: '"with-dash"?: string | undefined;',
+	},
+	{
+		feature: 'a leading digit is quoted',
+		received: '"2fa"?: boolean | undefined;',
+	},
+	{
+		feature: 'a reserved word is a legal property name, so it stays bare',
+		received: 'class?: string | undefined;',
+	},
 	{
 		feature: '$ and _ are identifier characters, so they need no quoting',
 		received: '$dollar_and_underscore?: string | undefined;',
 	},
-	{ feature: 'the empty key is legal, and quoting is the only way to emit it', received: '""?: string | undefined;' },
+	{
+		feature: 'the empty key is legal, and quoting is the only way to emit it',
+		received: '""?: string | undefined;',
+	},
 ];
 
 /**
@@ -135,7 +176,13 @@ const SUPPORTED: { feature: string; received: string; supplied?: string }[] = [
  * not, so every row degrades to `unknown` *and* says so. `path` is the JSON Pointer a CLI
  * prints, which is why the pointer escaping has a row of its own.
  */
-const WARNED: { feature: string; path: string; code: string; message: string; emitted: string }[] = [
+const WARNED: {
+	feature: string;
+	path: string;
+	code: string;
+	message: string;
+	emitted: string;
+}[] = [
 	{
 		feature: '$ref, even to a definition this very schema spells out',
 		path: '/properties/refToDefs',
@@ -200,11 +247,11 @@ const WARNED: { feature: string; path: string; code: string; message: string; em
 		emitted: 'patternKeys?: unknown;',
 	},
 	{
-		feature: 'positional items — a tuple is still an array, so Array<unknown> is sound',
+		feature: 'positional items — the positions are lost, the member types are not',
 		path: '/properties/tupleItems/items',
 		code: 'unsupported-tuple-items',
 		message: 'positional `items` is not supported yet',
-		emitted: 'tupleItems?: Array<unknown> | undefined;',
+		emitted: 'tupleItems?: Array<string | number> | undefined;',
 	},
 	{
 		feature: 'an enum of objects cannot be written as a literal',
@@ -234,13 +281,12 @@ const WARNED: { feature: string; path: string; code: string; message: string; em
  * nothing tells the user. `lost` is prose on purpose — there is no code to assert against,
  * which is precisely the defect.
  */
-const SILENT: { feature: string; property: string; lost: string; received: string }[] = [
-	{
-		feature: 'nullable next to an enum',
-		property: 'nullableEnum',
-		lost: 'null — enum wins over type, and the widened type never reaches the enum branch',
-		received: 'nullableEnum?: "a" | "b" | null;',
-	},
+const SILENT: {
+	feature: string;
+	property: string;
+	lost: string;
+	received: string;
+}[] = [
 	{
 		feature: 'const',
 		property: 'constString',
@@ -286,12 +332,18 @@ describe('the whole fixture', () => {
 
 	test('and that comparison has teeth — a schema that moved does not pass it', () => {
 		const root = schema as { properties: Record<string, unknown> };
-		const moved = { ...root, properties: { ...root.properties, addedLater: { type: 'string' } } };
+		const moved = {
+			...root,
+			properties: { ...root.properties, addedLater: { type: 'string' } },
+		};
 		expect(significant(compile(moved, OPTS).source)).not.toBe(significant(kitchenSinkExpected));
 	});
 
 	test('check reads the formatted file as current — the fingerprint outlives the formatter', () => {
-		expect(check(kitchenSinkExpected, schema, OPTS)).toMatchObject({ stale: false, reason: 'match' });
+		expect(check(kitchenSinkExpected, schema, OPTS)).toMatchObject({
+			stale: false,
+			reason: 'match',
+		});
 	});
 
 	test('nothing here is malformed, so no construct produces an error', () => {
@@ -312,8 +364,23 @@ describe('unsupported, and warned about: $feature', () => {
 	});
 
 	test('every warning, at the exact pointer, and no others', () => {
-		expect(result.diagnostics.map(({ severity, path, code, message }) => ({ severity, path, code, message }))).toEqual(
-			WARNED.map(({ path, code, message }): Diagnostic => ({ severity: 'warning', path, code, message }) as Diagnostic),
+		expect(
+			result.diagnostics.map(({ severity, path, code, message }) => ({
+				severity,
+				path,
+				code,
+				message,
+			})),
+		).toEqual(
+			WARNED.map(
+				({ path, code, message }): Diagnostic =>
+					({
+						severity: 'warning',
+						path,
+						code,
+						message,
+					}) as Diagnostic,
+			),
 		);
 	});
 });
@@ -384,20 +451,14 @@ describe('what the two variants disagree about', () => {
 		);
 	});
 
-	test('nullable applies to the array, not to its items', () => {
+	test('null next to array widens the array, not its items', () => {
 		expect(received).toContain(
 			[
-				'    nullableArrayOfObjects?: Array<{',
+				'    arrayOfObjectsOrNull?: Array<{',
 				'        id: number;',
 				'        label?: string | null | undefined;',
 				'    }> | null | undefined;',
 			].join('\n'),
-		);
-	});
-
-	test('a nullable inferred object keeps its shape inside the union', () => {
-		expect(received).toContain(
-			['    nullableInferredObject?: {', '        x?: string | undefined;', '    } | null | undefined;'].join('\n'),
 		);
 	});
 
@@ -434,10 +495,27 @@ describe('$defs', () => {
 	});
 });
 
+describe('enum and type cross-narrow', () => {
+	test('a member the type excludes is dropped, and the rest of the union stands', () => {
+		expect(received).toContain(line('narrowedEnum?: "a" | "b" | undefined;'));
+		expect(result.notices.filter((n) => n.path.includes('narrowedEnum'))).toHaveLength(1);
+	});
+
+	test('when no member survives, the node degrades — one notice per member, and no error', () => {
+		expect(received).toContain(line('contradictoryEnum?: unknown;'));
+		expect(result.notices.filter((n) => n.path.includes('contradictoryEnum'))).toHaveLength(4);
+		expect(result.diagnostics.filter((d) => d.path.includes('contradictoryEnum'))).toEqual([]);
+	});
+});
+
 describe('notices — schema lint with no type impact', () => {
 	test('exactly the ones the fixture asks for', () => {
 		expect(result.notices.map(({ path, code }) => `${path} ${code}`)).toEqual([
-			'/properties/optionalUnknown empty-schema',
+			'/properties/narrowedEnum/enum unreachable-enum-member',
+			'/properties/contradictoryEnum/enum unreachable-enum-member',
+			'/properties/contradictoryEnum/enum unreachable-enum-member',
+			'/properties/contradictoryEnum/enum unreachable-enum-member',
+			'/properties/contradictoryEnum/enum unreachable-enum-member',
 			'/properties/emptySchema empty-schema',
 			'/required required-unknown-property',
 		]);
@@ -455,6 +533,10 @@ describe('the fidelity ledger', () => {
 			'unsupported-tuple-items': 1,
 			'unsupported-enum-values': 2,
 		});
-		expect(tally(result.notices)).toEqual({ 'empty-schema': 2, 'required-unknown-property': 1 });
+		expect(tally(result.notices)).toEqual({
+			'unreachable-enum-member': 5,
+			'empty-schema': 1,
+			'required-unknown-property': 1,
+		});
 	});
 });

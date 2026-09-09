@@ -1,5 +1,5 @@
 // oxlint-disable
-// @generated schema-ts v1-dc1c247febc88182 — do not edit
+// @generated schema-ts v1-d6f2d413923da0a4 — do not edit
 
 export type KitchenSink = {
 	aString: string;
@@ -7,39 +7,30 @@ export type KitchenSink = {
 	anInteger?: number | undefined;
 	aBoolean?: boolean | undefined;
 	aNull?: null | undefined;
-	aSecret?: string | undefined;
 	multiType?: string | number | boolean | null | undefined;
 	repeatedType?: string | number | undefined;
-	nullableString?: string | null | undefined;
-	notNullableString?: string | undefined;
-	alreadyNullable?: string | null | undefined;
-	nullableInferredObject?:
-		| {
-				x?: string | undefined;
-		  }
-		| null
-		| undefined;
-	nullableArrayOfObjects?:
-		| Array<{
-				id: number;
-				label?: string | null | undefined;
-		  }>
-		| null
-		| undefined;
+	stringOrNull?: string | null | undefined;
 	stringEnum?: 'cheerio' | 'puppeteer' | 'playwright' | undefined;
 	numberEnum?: 1 | 2 | 3 | undefined;
 	mixedEnum?: 'auto' | 42 | true | null | undefined;
 	singleMemberEnum?: 'only' | undefined;
 	repeatedEnumMembers?: 'a' | 'b' | undefined;
-	enumOverridesType?: 'not' | 'boolean' | 'at' | 'all' | undefined;
-	nullableEnum?: 'a' | 'b' | undefined;
+	enumWithNull?: 'a' | 'b' | null | undefined;
+	narrowedEnum?: 'a' | 'b' | undefined;
+	contradictoryEnum?: unknown;
 	constString?: string | undefined;
 	arrayWithoutItems?: Array<unknown> | undefined;
 	arrayOfStrings?: Array<string> | undefined;
 	arrayOfArrays?: Array<Array<number>> | undefined;
 	arrayOfEnums?: Array<'a' | 'b'> | undefined;
 	arrayOfUnions?: Array<string | number> | undefined;
-	inferredArray?: Array<string> | undefined;
+	arrayOfObjectsOrNull?:
+		| Array<{
+				id: number;
+				label?: string | null | undefined;
+		  }>
+		| null
+		| undefined;
 	openObject?:
 		| {
 				a?: string | undefined;
@@ -66,11 +57,6 @@ export type KitchenSink = {
 		| undefined;
 	propertylessObject?: Record<string, unknown> | undefined;
 	closedPropertylessObject?: Record<string, never> | undefined;
-	inferredObject?:
-		| {
-				a?: string | undefined;
-		  }
-		| undefined;
 	deeplyNested: {
 		level1: {
 			level2: Array<{
@@ -81,7 +67,6 @@ export type KitchenSink = {
 	requiredWithDefault: string;
 	optionalWithDefault: number;
 	optionalWithoutDefault?: string | undefined;
-	optionalUnknown?: unknown;
 	emptySchema?: unknown;
 	'with-dash'?: string | undefined;
 	'2fa'?: boolean | undefined;
@@ -97,7 +82,7 @@ export type KitchenSink = {
 	notBranch?: unknown;
 	conditional?: unknown;
 	patternKeys?: unknown;
-	tupleItems?: Array<unknown> | undefined;
+	tupleItems?: Array<string | number> | undefined;
 	objectEnum?: unknown;
 	arrayEnum?: unknown;
 	'escaped/key~with~specials'?: unknown;
@@ -125,19 +110,24 @@ export type KitchenSinkArgs = {
 	anInteger?: number | undefined;
 	aBoolean?: boolean | undefined;
 	aNull?: null | undefined;
-	aSecret?: string | undefined;
 	multiType?: string | number | boolean | null | undefined;
 	repeatedType?: string | number | undefined;
-	nullableString?: string | null | undefined;
-	notNullableString?: string | undefined;
-	alreadyNullable?: string | null | undefined;
-	nullableInferredObject?:
-		| ({
-				x?: string | undefined;
-		  } & Record<string, unknown>)
-		| null
-		| undefined;
-	nullableArrayOfObjects?:
+	stringOrNull?: string | null | undefined;
+	stringEnum?: 'cheerio' | 'puppeteer' | 'playwright' | undefined;
+	numberEnum?: 1 | 2 | 3 | undefined;
+	mixedEnum?: 'auto' | 42 | true | null | undefined;
+	singleMemberEnum?: 'only' | undefined;
+	repeatedEnumMembers?: 'a' | 'b' | undefined;
+	enumWithNull?: 'a' | 'b' | null | undefined;
+	narrowedEnum?: 'a' | 'b' | undefined;
+	contradictoryEnum?: unknown;
+	constString?: string | undefined;
+	arrayWithoutItems?: Array<unknown> | undefined;
+	arrayOfStrings?: Array<string> | undefined;
+	arrayOfArrays?: Array<Array<number>> | undefined;
+	arrayOfEnums?: Array<'a' | 'b'> | undefined;
+	arrayOfUnions?: Array<string | number> | undefined;
+	arrayOfObjectsOrNull?:
 		| Array<
 				{
 					id: number;
@@ -146,20 +136,6 @@ export type KitchenSinkArgs = {
 		  >
 		| null
 		| undefined;
-	stringEnum?: 'cheerio' | 'puppeteer' | 'playwright' | undefined;
-	numberEnum?: 1 | 2 | 3 | undefined;
-	mixedEnum?: 'auto' | 42 | true | null | undefined;
-	singleMemberEnum?: 'only' | undefined;
-	repeatedEnumMembers?: 'a' | 'b' | undefined;
-	enumOverridesType?: 'not' | 'boolean' | 'at' | 'all' | undefined;
-	nullableEnum?: 'a' | 'b' | undefined;
-	constString?: string | undefined;
-	arrayWithoutItems?: Array<unknown> | undefined;
-	arrayOfStrings?: Array<string> | undefined;
-	arrayOfArrays?: Array<Array<number>> | undefined;
-	arrayOfEnums?: Array<'a' | 'b'> | undefined;
-	arrayOfUnions?: Array<string | number> | undefined;
-	inferredArray?: Array<string> | undefined;
 	openObject?:
 		| ({
 				a?: string | undefined;
@@ -186,11 +162,6 @@ export type KitchenSinkArgs = {
 		| undefined;
 	propertylessObject?: Record<string, unknown> | undefined;
 	closedPropertylessObject?: Record<string, never> | undefined;
-	inferredObject?:
-		| ({
-				a?: string | undefined;
-		  } & Record<string, unknown>)
-		| undefined;
 	deeplyNested: {
 		level1: {
 			level2: Array<
@@ -203,7 +174,6 @@ export type KitchenSinkArgs = {
 	requiredWithDefault: string;
 	optionalWithDefault?: number | undefined;
 	optionalWithoutDefault?: string | undefined;
-	optionalUnknown?: unknown;
 	emptySchema?: unknown;
 	'with-dash'?: string | undefined;
 	'2fa'?: boolean | undefined;
@@ -219,7 +189,7 @@ export type KitchenSinkArgs = {
 	notBranch?: unknown;
 	conditional?: unknown;
 	patternKeys?: unknown;
-	tupleItems?: Array<unknown> | undefined;
+	tupleItems?: Array<string | number> | undefined;
 	objectEnum?: unknown;
 	arrayEnum?: unknown;
 	'escaped/key~with~specials'?: unknown;
