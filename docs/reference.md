@@ -802,9 +802,12 @@ FLAGS
                                  the local secrets storage.
       --apply-env-vars-to-build  Make the environment
                                  variables also available to the Actor build
-                                 process. Use --no-apply-env-vars-to-build to turn
-                                 the setting off. When omitted, the setting
-                                 currently stored on the platform is kept.
+                                 process. To turn the setting off, use
+                                 --no-apply-env-vars-to-build. Overrides the value
+                                 of the 'applyEnvVarsToBuild' field in the
+                                 '.actor/actor.json' file. When both the field and
+                                 the flag are omitted, the setting currently stored
+                                 on the platform is kept.
   -b, --build-tag=<value>        Build tag to be
                                  applied to the successful Actor build. By default,
                                  it is taken from the '.actor/actor.json' file.
