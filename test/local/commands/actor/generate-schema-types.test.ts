@@ -3,7 +3,6 @@ import { basename, join } from 'node:path';
 
 import { ActorGenerateSchemaTypesCommand } from '../../../../src/commands/actor/generate-schema-types.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
-import { prepareKvsCollectionsForCompilation } from '../../../../src/lib/schema-transforms.js';
 import { validDatasetSchemaPath } from '../../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
@@ -381,10 +380,12 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('kvs-output', 'key-value-store.ts'), 'utf-8');
-			expect(generatedFile).toContain('export type');
-			// Only "results" collection has jsonSchema; "screenshots" does not
+			// One type for the store, keyed by collection name
+			expect(generatedFile).toContain('export type keyValueStore = {');
 			expect(generatedFile).toContain('totalItems');
 			expect(generatedFile).toContain('summary');
+			// "screenshots" has no jsonSchema, so there is no JSON shape to describe
+			expect(generatedFile).toContain('screenshots: unknown;');
 		});
 
 		it('should generate types from KVS schema embedded in actor.json', async () => {
@@ -421,7 +422,7 @@ describe('apify actor generate-schema-types', () => {
 			expect(generatedFile).toContain('avgDuration');
 		});
 
-		it('should skip when no collections have jsonSchema', async () => {
+		it('generates collections with jsonSchema', async () => {
 			const outputDir = joinPath('kvs-output-no-json');
 			await setupActorConfig(joinPath(), {
 				kvsSchemaRef: {
@@ -433,6 +434,28 @@ describe('apify actor generate-schema-types', () => {
 							contentTypes: ['image/png'],
 							keyPrefix: 'img-',
 						},
+						'meme': {
+							'key': 'meme',
+							'title': 'Meme',
+							'description': 'Meme search result',
+							'jsonSchema': {
+								'type': 'object',
+								'properties': {
+									'url': { 'type': 'string' },
+									'topLeft': {
+										'type': 'object',
+										'properties': { 'x': { 'type': 'number' }, 'y': { 'type': 'number' } },
+									},
+									'bottomRight': {
+										'type': 'object',
+										'properties': { 'x': { 'type': 'number' }, 'y': { 'type': 'number' } },
+									},
+								},
+								'required': ['url', 'topLeft', 'bottomRight'],
+								'additionalProperties': false,
+							},
+							'contentTypes': ['application/json'],
+						},
 					},
 				},
 			});
@@ -440,9 +463,11 @@ describe('apify actor generate-schema-types', () => {
 			await testRunCommand(ActorGenerateSchemaTypesCommand, {
 				flags_output: outputDir,
 			});
-
-			const errorMessages = logMessages.error.join('\n');
-			expect(errorMessages).toContain('no collections with JSON schemas');
+			const kvsFile = await readFile(join(outputDir, 'key-value-store.ts'), 'utf-8');
+			expect(kvsFile).toContain('url: string;');
+			// Every declared collection is a required key of the table, JSON or not
+			expect(kvsFile).toContain('images: unknown;');
+			expect(kvsFile).toContain('meme: {');
 		});
 
 		it('should not generate KVS types when path argument is provided', async () => {
@@ -575,122 +600,5 @@ describe('apify actor generate-schema-types', () => {
 		// dataset.ts must have been written despite the dataset failure
 		const datasetFile = await readFile(joinPath('partial-fail-output', 'dataset.ts'), 'utf-8');
 		expect(datasetFile).toContain('myRef?: unknown;');
-	});
-});
-
-describe('prepareKvsCollectionsForCompilation', () => {
-	it('should extract jsonSchema from collections', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				results: {
-					contentTypes: ['application/json'],
-					key: 'RESULTS',
-					jsonSchema: {
-						type: 'object',
-						properties: { count: { type: 'integer' } },
-					},
-				},
-			},
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toHaveLength(1);
-		expect(result[0].name).toBe('results');
-		expect(result[0].schema).toEqual({
-			type: 'object',
-			properties: { count: { type: 'integer' } },
-		});
-	});
-
-	it('should skip collections without jsonSchema', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				images: {
-					contentTypes: ['image/png'],
-					keyPrefix: 'img-',
-				},
-				results: {
-					contentTypes: ['application/json'],
-					key: 'RESULTS',
-					jsonSchema: {
-						type: 'object',
-						properties: { count: { type: 'integer' } },
-					},
-				},
-			},
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toHaveLength(1);
-		expect(result[0].name).toBe('results');
-	});
-
-	it('should return empty array when no collections exist', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toEqual([]);
-	});
-
-	it('should return empty array when no collections have jsonSchema', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				images: {
-					contentTypes: ['image/png'],
-					keyPrefix: 'img-',
-				},
-			},
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toEqual([]);
-	});
-
-	it('should inject type: "object" when missing from jsonSchema', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				data: {
-					contentTypes: ['application/json'],
-					key: 'DATA',
-					jsonSchema: {
-						properties: { name: { type: 'string' } },
-					},
-				},
-			},
-		};
-
-		const result = prepareKvsCollectionsForCompilation(schema);
-		expect(result).toHaveLength(1);
-		expect(result[0].schema.type).toBe('object');
-	});
-
-	it('should not mutate the original schema', () => {
-		const schema = {
-			actorKeyValueStoreSchemaVersion: 1,
-			title: 'Test',
-			collections: {
-				data: {
-					contentTypes: ['application/json'],
-					key: 'DATA',
-					jsonSchema: {
-						properties: { name: { type: 'string' } },
-					},
-				},
-			},
-		};
-
-		prepareKvsCollectionsForCompilation(schema);
-		expect((schema.collections as any).data.jsonSchema.type).toBeUndefined();
 	});
 });

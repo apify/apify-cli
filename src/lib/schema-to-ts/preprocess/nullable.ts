@@ -19,6 +19,7 @@ function isObj(value: unknown): value is Obj {
  *  which must be copied verbatim — a `nullable` key inside an example is not a schema. */
 const SUBSCHEMA_KEYS = new Set(['properties', 'items', 'additionalProperties']);
 
+export function normalizeNullable<T>(schema: T): T;
 export function normalizeNullable(schema: unknown): unknown {
 	// Positional `items: [...]`: every member is a subschema.
 	if (Array.isArray(schema)) return schema.map(normalizeNullable);
