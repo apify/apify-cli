@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { jsonSchemaToIR } from '../../../../../src/lib/schema-to-ts/json-schema-to-ir.js';
+import { jsonSchemaToIR } from '../../../../../src/lib/schema-to-ts/parser.js';
 import { normalizeDatasetSchema } from '../../../../../src/lib/schema-to-ts/preprocess/dataset.js';
 
 describe('normalizeDatasetSchema', () => {

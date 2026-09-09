@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 
 import type { EmitOptions } from '../../../../src/lib/schema-to-ts/emit.js';
 import { HASH_LENGTH, irHash } from '../../../../src/lib/schema-to-ts/hash.js';
-import { jsonSchemaToIR } from '../../../../src/lib/schema-to-ts/json-schema-to-ir.js';
+import { jsonSchemaToIR } from '../../../../src/lib/schema-to-ts/parser.js';
 
 /**
  * The tables below are the load-bearing test of the whole design: the hash must move for
