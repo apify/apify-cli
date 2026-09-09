@@ -194,9 +194,10 @@ function fromArray(schema: Obj, path: string, report: Report): IRNode {
 
 	const { items } = schema;
 	if (Array.isArray(items)) {
-		// A tuple is still an array, so `Array<unknown>` is a sound degradation.
+		// A tuple is still an array, so `Array<T | U | ...>` is a sound degradation.
 		report.warn(pointer(path, 'items'), 'unsupported-tuple-items', 'positional `items` is not supported yet');
-		return { kind: 'array', items: UNKNOWN };
+		const degradedToUnion = union(items.map((item) => toNode(item, pointer(path, 'items'), report)));
+		return { kind: 'array', items: degradedToUnion };
 	}
 	if (!isObj(items)) {
 		report.error(pointer(path, 'items'), 'malformed-items', `expected an object or array, got ${describe(items)}`);
@@ -208,13 +209,15 @@ function fromArray(schema: Obj, path: string, report: Report): IRNode {
 
 function fromObject(schema: Obj, path: string, report: Report): IRNode {
 	const required = readRequired(schema, path, report);
-	if (required === null) return UNKNOWN;
 
 	const props = readProps(schema, path, required, report);
 	if (props === null) return UNKNOWN;
 
-	const additional = readAdditional(schema, path, report);
-	if (additional === null) return UNKNOWN;
+	let additional = readAdditional(schema, path, report);
+	// If no props and additional is broken, we turn everything into unknown
+	if (additional === null && props.length === 0) return UNKNOWN;
+	// If we have props, we don't let additional to break the result
+	additional ??= { open: true, valueType: UNKNOWN };
 
 	for (const name of required) {
 		if (!props.some((p) => p.name === name)) {
@@ -225,20 +228,22 @@ function fromObject(schema: Obj, path: string, report: Report): IRNode {
 			);
 		}
 	}
-
-	return additional.valueType
-		? { kind: 'object', props, valueType: additional.valueType, open: additional.open }
-		: { kind: 'object', props, open: additional.open };
+	return { kind: 'object', props, open: additional.open, valueType: additional.valueType };
 }
 
-function readRequired(schema: Obj, path: string, report: Report): string[] | null {
+/**
+ * Reads the `required` keyword, it complains if it is malformed
+ * but it will always return an array of strings.
+ * Lost accuracy is just not having the strictness, not switching to `unknown`
+ * */
+function readRequired(schema: Obj, path: string, report: Report): string[] {
 	if (!('required' in schema)) return [];
 	const raw = schema.required;
 	if (!Array.isArray(raw) || !raw.every((n) => typeof n === 'string')) {
 		report.error(pointer(path, 'required'), 'malformed-required', `expected an array of strings, got ${describe(raw)}`);
-		return null;
+		return [];
 	}
-	return raw as string[];
+	return raw;
 }
 
 function readProps(schema: Obj, path: string, required: string[], report: Report): IRProp[] | null {
@@ -277,11 +282,17 @@ function readAdditional(schema: Obj, path: string, report: Report): { open: bool
 	return { open: true, valueType: toNode(raw, pointer(path, 'additionalProperties'), report) };
 }
 
+// #region helpers
+/**
+ * human readable description of a value passed
+ * so diagnostics can complain in a human readable way
+ */
 function describe(value: unknown): string {
 	if (value === null) return 'null';
 	if (value === undefined) return 'undefined';
 	if (Array.isArray(value)) return 'an array';
-	return typeof value === 'object' ? 'an object' : `${typeof value} (${JSON.stringify(value)})`;
+	if (typeof value === 'object') return 'an object';
+	return `${typeof value} (${JSON.stringify(value)})`;
 }
 
 /**
@@ -292,6 +303,7 @@ export function union(members: IRNode[]): IRNode {
 	const flat: IRNode[] = [];
 	const seen = new Set<string>();
 	const push = (node: IRNode): void => {
+		// Nested union flattening
 		if (node.kind === 'union') {
 			node.members.forEach(push);
 			return;
@@ -330,3 +342,4 @@ export function nodeKey(node: IRNode): string {
 			return node.kind;
 	}
 }
+// #endregion
