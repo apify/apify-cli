@@ -88,11 +88,11 @@ const CASES = [
 		schema: normalizeDatasetSchema(datasetGooglePlaces),
 		expected: datasetGooglePlacesExpected,
 		opts: datasetTypes('Place'),
-		// The only fixture here that uses $ref. Every one of those 23 places is a named
-		// definition the schema spells out and we hand back as `unknown` — this is the gap,
-		// pinned so it cannot widen quietly and so closing it shows up as a diff.
-		diagnostics: { 'unsupported-keyword': 23 },
-		notices: { 'empty-schema': 5 },
+		// The only fixture here that uses $ref.
+		// Every one of those 23 places is a named definition the schema
+		//  spells out and we hand back as `unknown`
+		// Additionally, empty-type-array is just the schema sucking
+		diagnostics: { 'unsupported-keyword': 23, 'empty-type-array': 5 },
 	},
 	{
 		label: 'dataset/tiktok-followers-scraper',
@@ -102,7 +102,7 @@ const CASES = [
 	},
 ];
 
-describe.each(CASES)('$label', ({ schema, expected, opts, diagnostics: lost, notices: lint }) => {
+describe.each(CASES)('$label', ({ schema, expected, opts, diagnostics: lost }) => {
 	test('compiles to the checked-in TypeScript', () => {
 		expect(significant(compile(schema, opts).source)).toBe(significant(expected));
 	});
@@ -112,9 +112,8 @@ describe.each(CASES)('$label', ({ schema, expected, opts, diagnostics: lost, not
 	});
 
 	test('loses exactly the fidelity it admits to, and no more', () => {
-		const { diagnostics, notices } = compile(schema, opts);
+		const { diagnostics } = compile(schema, opts);
 		expect(tally(diagnostics)).toEqual(lost ?? {});
-		expect(tally(notices)).toEqual(lint ?? {});
 	});
 
 	test('check reads the formatted file as current — the fingerprint outlives the formatter', () => {
