@@ -264,6 +264,28 @@ describe('additionalProperties', () => {
 			open: false,
 		});
 	});
+	test("mangled additionalProperties don't break props", () => {
+		const mangledAdditional = field({
+			type: 'object',
+			properties: { a: { type: 'string' } },
+			additionalProperties: 'mangled',
+		});
+		expect(mangledAdditional.node).not.toEqual(UNKNOWN);
+		expect(mangledAdditional.diagnostics.map((x) => x.code)).toContain('malformed-additional-properties');
+		expect(mangledAdditional.node).toEqual({
+			kind: 'object',
+			props: [
+				{
+					name: 'a',
+					node: str,
+					hasDefault: false,
+					required: false,
+				},
+			],
+			valueType: UNKNOWN,
+			open: true,
+		});
+	});
 
 	test('a non-empty subschema types the extra keys', () => {
 		expect(field({ type: 'object', additionalProperties: { type: 'string' } }).node).toEqual({
@@ -313,9 +335,15 @@ describe('arrays', () => {
 		expect(field({ type: 'array', items: { type: 'string' } }).node).toEqual({ kind: 'array', items: str });
 	});
 
-	test('a tuple degrades the element, not the array — a tuple is still an array', () => {
+	test('a single item tuple degrades to an array of the type', () => {
 		const lifted = field({ type: 'array', items: [{ type: 'string' }] });
-		expect(lifted.node).toEqual({ kind: 'array', items: UNKNOWN });
+		expect(lifted.node).toEqual({ kind: 'array', items: str });
+		expect(codes(lifted)).toEqual(['warning /properties/f/items unsupported-tuple-items']);
+	});
+
+	test('an N-tuple degrades to an array of unions', () => {
+		const lifted = field({ type: 'array', items: [{ type: 'string' }, { type: 'number' }] });
+		expect(lifted.node).toEqual({ kind: 'array', items: union([str, num]) });
 		expect(codes(lifted)).toEqual(['warning /properties/f/items unsupported-tuple-items']);
 	});
 
