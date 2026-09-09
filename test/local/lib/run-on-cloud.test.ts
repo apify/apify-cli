@@ -54,4 +54,62 @@ describe('runActorOrTaskOnCloud', () => {
 		expect(err.message).toMatch(/has not been approved yet/);
 		expect(err.message).not.toMatch(/Approve here/);
 	});
+
+	describe('extraStartParams (local Actor runtime extensions)', () => {
+		const startedRun = { id: 'run1', status: 'RUNNING' };
+		const fetchedRun = { id: 'run1', status: 'RUNNING', startedAt: new Date(0) };
+
+		const fakeClient = () => {
+			const start = vitest.fn();
+			const call = vitest.fn(async () => ({ data: { data: startedRun } }));
+			const client = {
+				httpClient: { call },
+				actor: () => ({ url: 'http://localhost:3333/v2/actors/abc', start }),
+				run: () => ({ get: async () => fetchedRun }),
+			} as unknown as ApifyClient;
+			return { client, start, call };
+		};
+
+		const startOnce = async (client: ApifyClient, extraStartParams?: Record<string, string>) => {
+			const iterator = runActorOrTaskOnCloud(client, {
+				actorOrTaskData: { id: 'abc', userFriendlyId: 'apify/test-actor' },
+				runOptions: { waitForFinish: 2, build: 'latest', memory: 256 },
+				inputOverride: { url: 'https://example.com' },
+				type: 'Actor',
+				silent: true,
+				suppressFinalStatus: true,
+				extraStartParams,
+			});
+			const { value } = await iterator.next();
+			await iterator.return(undefined);
+			return value;
+		};
+
+		it('starts the run through a raw request carrying the standard options plus the extras, then re-reads it', async () => {
+			const { client, start, call } = fakeClient();
+
+			const run = await startOnce(client, { devFolder: 'false' });
+
+			expect(start).not.toHaveBeenCalled();
+			expect(call).toHaveBeenCalledTimes(1);
+			expect(call.mock.calls[0][0 as never]).toMatchObject({
+				url: 'http://localhost:3333/v2/actors/abc/runs',
+				method: 'POST',
+				data: { url: 'https://example.com' },
+				headers: { 'content-type': 'application/json' },
+				params: { waitForFinish: 2, build: 'latest', memory: 256, devFolder: 'false' },
+			});
+			expect(run).toBe(fetchedRun);
+		});
+
+		it("uses apify-client's own start() when there are no extras", async () => {
+			const { client, start, call } = fakeClient();
+			start.mockResolvedValue(fetchedRun);
+
+			await startOnce(client);
+
+			expect(call).not.toHaveBeenCalled();
+			expect(start).toHaveBeenCalledTimes(1);
+		});
+	});
 });
