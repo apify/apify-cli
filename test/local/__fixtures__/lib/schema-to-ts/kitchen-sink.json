@@ -1,47 +1,35 @@
 {
 	"$schema": "http://json-schema.org/draft-07/schema#",
 	"title": "Kitchen sink",
-	"description": "Plain JSON Schema plus the `nullable` shorthand. Not a real Actor schema — every property exists to pin one compiler behaviour, and the `description` says which. Property names are the index; nothing here is decorative.",
-	"schemaVersion": 1,
+	"description": "Plain JSON Schema — no `nullable`, no `editor`, none of the Apify sugar, all of which the pre-processor owns. Every property exists to pin one compiler behaviour, and the `description` says which. Property names are the index; nothing here is decorative. `$comment` carries the section headings a JSON file cannot.",
 	"type": "object",
 	"properties": {
 		"aString": {
+			"$comment": "Scalars",
 			"title": "A string",
-			"description": "Scalar, plus keywords with no type meaning: they must all be ignored in silence.",
-			"type": "string",
-			"editor": "textfield",
+			"description": "Scalar, plus validation and annotation keywords with no type meaning: they must all be ignored in silence.",
 			"minLength": 3,
 			"maxLength": 40,
 			"pattern": "^a",
 			"format": "hostname",
-			"example": "apify",
-			"prefill": "apify",
-			"sectionCaption": "Scalars"
+			"type": "string"
 		},
 		"aNumber": {
 			"type": "number",
 			"minimum": 0,
 			"exclusiveMaximum": 1,
-			"multipleOf": 0.01,
-			"unit": "ratio"
+			"multipleOf": 0.01
 		},
 		"anInteger": {
 			"description": "`integer` collapses to `number` — TypeScript has no integer type.",
-			"type": "integer",
-			"editor": "number"
+			"type": "integer"
 		},
 		"aBoolean": {
-			"type": "boolean",
-			"editor": "checkbox"
+			"type": "boolean"
 		},
 		"aNull": {
 			"description": "`null` is a type of its own, not an absence.",
 			"type": "null"
-		},
-		"aSecret": {
-			"type": "string",
-			"editor": "hidden",
-			"isSecret": true
 		},
 		"multiType": {
 			"description": "A `type` array becomes a union, in declared order.",
@@ -51,74 +39,49 @@
 			"description": "Repeats collapse: `string | number`, not `string | string | number`.",
 			"type": ["string", "string", "number"]
 		},
-		"nullableString": {
-			"description": "The `nullable` shorthand widens the type.",
-			"type": "string",
-			"nullable": true
-		},
-		"notNullableString": {
-			"description": "`nullable: false` is a no-op, not a null.",
-			"type": "string",
-			"nullable": false
-		},
-		"alreadyNullable": {
-			"description": "`nullable` on a type that already admits null appends nothing.",
-			"type": ["string", "null"],
-			"nullable": true
-		},
-		"nullableInferredObject": {
-			"description": "No `type`, so `properties` says what `nullable` widens.",
-			"nullable": true,
-			"properties": {
-				"x": { "type": "string" }
-			}
-		},
-		"nullableArrayOfObjects": {
-			"description": "`nullable` applies to the array, not to its items.",
-			"type": "array",
-			"nullable": true,
-			"items": {
-				"type": "object",
-				"properties": {
-					"id": { "type": "integer" },
-					"label": { "type": "string", "nullable": true }
-				},
-				"required": ["id"]
-			}
+		"stringOrNull": {
+			"description": "`null` alongside a scalar is the ordinary way to spell a nullable field.",
+			"type": ["string", "null"]
 		},
 		"stringEnum": {
-			"description": "An enum becomes a literal union; `enumTitles` is display-only.",
+			"$comment": "Enums",
+			"description": "An enum becomes a literal union.",
 			"type": "string",
-			"editor": "select",
-			"enum": ["cheerio", "puppeteer", "playwright"],
-			"enumTitles": ["Cheerio crawler", "Puppeteer browser", "Playwright browser"]
+			"enum": ["cheerio", "puppeteer", "playwright"]
 		},
 		"numberEnum": {
 			"type": "integer",
 			"enum": [1, 2, 3]
 		},
 		"mixedEnum": {
-			"description": "Strings, numbers, booleans and null mix freely in one union.",
+			"description": "Strings, numbers, booleans and null mix freely in one union, as long as `type` admits them all.",
+			"type": ["string", "integer", "boolean", "null"],
 			"enum": ["auto", 42, true, null]
 		},
 		"singleMemberEnum": {
 			"description": "One member is a literal, not a one-member union.",
+			"type": "string",
 			"enum": ["only"]
 		},
 		"repeatedEnumMembers": {
 			"description": "Duplicate members collapse, the same as duplicate types do.",
+			"type": "string",
 			"enum": ["a", "a", "b"]
 		},
-		"enumOverridesType": {
-			"description": "`enum` fully determines the type, so it wins over a conflicting `type`.",
+		"enumWithNull": {
+			"description": "A `null` member needs `null` in `type` to survive the cross-narrowing.",
+			"type": ["string", "null"],
+			"enum": ["a", "b", null]
+		},
+		"narrowedEnum": {
+			"description": "`enum` and `type` constrain each other: `1` is not a string, so it is dropped with a notice.",
+			"type": "string",
+			"enum": ["a", 1, "b"]
+		},
+		"contradictoryEnum": {
+			"description": "Cross-narrowing taken to its end: no member is a boolean, so nothing survives and the node degrades — one notice per dropped member.",
 			"type": "boolean",
 			"enum": ["not", "boolean", "at", "all"]
-		},
-		"nullableEnum": {
-			"description": "GAP: `nullable` is silently dropped next to an `enum`, with no diagnostic. Expected `\"a\" | \"b\" | null`, emitted `\"a\" | \"b\"`.",
-			"type": "string",
-			"enum": ["a", "b"],
-			"nullable": true
 		},
 		"constString": {
 			"description": "GAP: `const` is silently ignored, so the literal widens to `string`.",
@@ -126,11 +89,9 @@
 			"const": "fixed"
 		},
 		"arrayWithoutItems": {
+			"$comment": "Arrays",
 			"description": "No `items` is `Array<unknown>` — unknown elements, not `any`.",
-			"type": "array",
-			"editor": "requestListSources",
-			"prefill": [{ "url": "https://example.com" }],
-			"sectionCaption": "Arrays"
+			"type": "array"
 		},
 		"arrayOfStrings": {
 			"type": "array",
@@ -158,18 +119,25 @@
 			"type": "array",
 			"items": { "type": ["string", "number"] }
 		},
-		"inferredArray": {
-			"description": "No `type`, but `items` is unambiguous.",
-			"items": { "type": "string" }
+		"arrayOfObjectsOrNull": {
+			"description": "The `null` belongs to the array, not to its items — and the items keep their own.",
+			"type": ["array", "null"],
+			"items": {
+				"type": "object",
+				"properties": {
+					"id": { "type": "integer" },
+					"label": { "type": ["string", "null"] }
+				},
+				"required": ["id"]
+			}
 		},
 		"openObject": {
+			"$comment": "Objects",
 			"description": "No `additionalProperties`: the writer may add keys, the reader may not read them.",
 			"type": "object",
-			"editor": "json",
 			"properties": {
 				"a": { "type": "string" }
-			},
-			"sectionCaption": "Objects"
+			}
 		},
 		"closedObject": {
 			"description": "`additionalProperties: false` closes the object for both variants.",
@@ -219,12 +187,6 @@
 			"type": "object",
 			"additionalProperties": false
 		},
-		"inferredObject": {
-			"description": "No `type`, but `properties` is unambiguous.",
-			"properties": {
-				"a": { "type": "string" }
-			}
-		},
 		"deeplyNested": {
 			"description": "Objects, arrays and objects again — indentation has to survive the round trip.",
 			"type": "object",
@@ -249,10 +211,10 @@
 			"required": ["level1"]
 		},
 		"requiredWithDefault": {
+			"$comment": "Optionality",
 			"description": "Required and defaulted: present for both variants.",
 			"type": "string",
-			"default": "d",
-			"sectionCaption": "Optionality"
+			"default": "d"
 		},
 		"optionalWithDefault": {
 			"description": "The platform materializes the default, so the reader always has it and the writer never needs it.",
@@ -263,15 +225,9 @@
 			"description": "Optional for both variants, and `| undefined` under exactOptionalPropertyTypes.",
 			"type": "string"
 		},
-		"optionalUnknown": {
-			"description": "Two things at once: `nullable` with no `type` and no sibling keyword has nothing to widen, so it is dropped; and the resulting `unknown` already admits undefined, so it is not widened with `| undefined` either.",
-			"nullable": true
-		},
-		"emptySchema": {
-			"description": "`{}` is faithfully `unknown` — a notice, not a degradation.",
-			"sectionCaption": "Edge cases"
-		},
+		"emptySchema": {},
 		"with-dash": {
+			"$comment": "Property keys",
 			"description": "Not a bare identifier, so the key is quoted.",
 			"type": "string"
 		},
@@ -292,9 +248,9 @@
 			"type": "string"
 		},
 		"refToDefs": {
+			"$comment": "Unsupported: warned",
 			"description": "NOT SUPPORTED: `$ref`. The definition is spelled out right here in `$defs` and we still hand back `unknown`.",
-			"$ref": "#/$defs/address",
-			"sectionCaption": "Unsupported: warned"
+			"$ref": "#/$defs/address"
 		},
 		"refWithSiblings": {
 			"description": "NOT SUPPORTED: `$ref` wins over sibling keywords — the whole node degrades, `type` and `properties` included.",
@@ -320,8 +276,14 @@
 		"allOfBranch": {
 			"description": "NOT SUPPORTED: `allOf` — an intersection we could express and do not.",
 			"allOf": [
-				{ "type": "object", "properties": { "a": { "type": "string" } } },
-				{ "type": "object", "properties": { "b": { "type": "number" } } }
+				{
+					"type": "object",
+					"properties": { "a": { "type": "string" } }
+				},
+				{
+					"type": "object",
+					"properties": { "b": { "type": "number" } }
+				}
 			]
 		},
 		"notBranch": {
@@ -346,16 +308,18 @@
 			}
 		},
 		"tupleItems": {
-			"description": "NOT SUPPORTED: positional `items`. A tuple is still an array, so `Array<unknown>` is a sound degradation.",
+			"description": "NOT SUPPORTED: positional `items`. Positions are lost, but the member types are not — `Array<string | number>` is the sound degradation.",
 			"type": "array",
 			"items": [{ "type": "string" }, { "type": "number" }]
 		},
 		"objectEnum": {
 			"description": "NOT SUPPORTED: an `enum` of objects cannot be written as a literal.",
+			"type": "object",
 			"enum": [{ "a": 1 }, { "a": 2 }]
 		},
 		"arrayEnum": {
 			"description": "NOT SUPPORTED: an `enum` of arrays, same reason.",
+			"type": "array",
 			"enum": [["a"], ["b"]]
 		},
 		"escaped/key~with~specials": {
@@ -363,10 +327,10 @@
 			"$ref": "#/$defs/address"
 		},
 		"prefixItemsTuple": {
+			"$comment": "Unsupported: silent",
 			"description": "GAP: `prefixItems` is the 2020-12 tuple syntax and we do not even know to warn — silently `Array<unknown>`.",
 			"type": "array",
-			"prefixItems": [{ "type": "string" }, { "type": "number" }],
-			"sectionCaption": "Unsupported: silent"
+			"prefixItems": [{ "type": "string" }, { "type": "number" }]
 		},
 		"unevaluatedExtras": {
 			"description": "GAP: `unevaluatedProperties` is silently ignored, so the object stays open.",
