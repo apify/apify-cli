@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest';
 
 import { IR_VERSION, UNKNOWN, type IRNode, type IRProp } from '../../../../src/lib/schema-to-ts/ir.js';
-import { jsonSchemaToIR, nodeKey, union, type Lifted } from '../../../../src/lib/schema-to-ts/json-schema-to-ir.js';
+import { jsonSchemaToIR, nodeKey, union, type Lifted } from '../../../../src/lib/schema-to-ts/parser.js';
 
 const str: IRNode = { kind: 'string' };
 const num: IRNode = { kind: 'number' };

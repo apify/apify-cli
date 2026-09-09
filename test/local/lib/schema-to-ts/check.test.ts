@@ -3,7 +3,7 @@ import { describe, expect, test } from 'vitest';
 import { compareToHeader, readHeader, readHeaders } from '../../../../src/lib/schema-to-ts/check.js';
 import { emit, header, type EmitOptions } from '../../../../src/lib/schema-to-ts/emit.js';
 import { IR_VERSION, type IRNode, type IRRoot } from '../../../../src/lib/schema-to-ts/ir.js';
-import { jsonSchemaToIR } from '../../../../src/lib/schema-to-ts/json-schema-to-ir.js';
+import { jsonSchemaToIR } from '../../../../src/lib/schema-to-ts/parser.js';
 
 const OPTS: EmitOptions = { types: [{ name: 'Input', variant: 'received' }] };
 
