@@ -192,7 +192,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			default: false,
 		}),
 		'apply-env-vars-to-build': Flags.boolean({
-			description: `Make the environment variables also available to the Actor build process. To turn the setting off, use --no-apply-env-vars-to-build. Overrides the value of the 'applyEnvVarsToBuild' field in the '${LOCAL_CONFIG_PATH}' file. Without a flag, the setting currently stored on the platform is kept.`,
+			description: `Make the environment variables also available to the Actor build process. To turn the setting off, use --no-apply-env-vars-to-build. Overrides the value of the 'applyEnvVarsToBuild' field in the '${LOCAL_CONFIG_PATH}' file. When both the field and the flag are omitted, the setting currently stored on the platform is kept.`,
 			required: false,
 		}),
 	};
