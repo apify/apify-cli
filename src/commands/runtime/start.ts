@@ -14,6 +14,7 @@ import {
 	ACTOR_RUNTIME_CONSOLE_URL,
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	buildRuntimeRunArgs,
+	ensureRuntimeNetwork,
 	findRunningRuntimeEngine,
 	resolveEngineSocketPath,
 	runtimeEnvExportLines,
@@ -77,6 +78,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		const hostSocketPath = await resolveEngineSocketPath(engine);
 		const dataDir = resolve(this.flags.dataDir ?? defaultDataDir());
 		await mkdir(dataDir, { recursive: true });
+		await ensureRuntimeNetwork(engine);
 
 		info({
 			message: [
