@@ -217,8 +217,8 @@ importers:
         specifier: ^0.1.5
         version: 0.1.5
       '@apify/consts':
-        specifier: ^2.53.0
-        version: 2.58.1
+        specifier: ^3.0.0
+        version: 3.0.1
       '@apify/input_schema':
         specifier: ^3.27.1
         version: 3.29.2(ajv@8.20.0)
@@ -654,6 +654,10 @@ packages:
 
   '@apify/consts@2.58.1':
     resolution: {integrity: sha512-pKnoPincN2eqiSANmX2u19FihJATX3f1ucMhxss7t2epUmB/UhSjGM7G4immjC7Q/CXrNmbETBbOGmR0/EH4/Q==}
+
+  '@apify/consts@3.0.1':
+    resolution: {integrity: sha512-ZPmfdb4qt143R+6/jFYVCQDoHGInl24Ntz8ltEAMW7tFHSdiXnQoZtDgydZYT06vw6gOtPa/jEXgSneq8FM+uA==}
+    engines: {node: '>=22'}
 
   '@apify/datastructures@2.0.6':
     resolution: {integrity: sha512-hI/Q5cCjXXI/g4OPwX+/xuk+JsOtXRhKNXl2wnq/nKmdrji3nYCc9vGsAEc1iXVbs16xQMZy5uRhoY3XTABovA==}
@@ -9609,6 +9613,8 @@ snapshots:
   '@apify/actor-templates@0.1.5': {}
 
   '@apify/consts@2.58.1': {}
+
+  '@apify/consts@3.0.1': {}
 
   '@apify/datastructures@2.0.6': {}
 
