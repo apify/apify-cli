@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
@@ -14,30 +14,27 @@ import {
 	setProxyPassword,
 	setToken,
 } from '../../../src/lib/credentials.js';
-import { getLocalUserInfo } from '../../../src/lib/utils.js';
+import { getApifyClientOptions, getLocalUserInfo } from '../../../src/lib/utils.js';
+import {
+	KEYRING_PROXY_PASSWORD_KEY,
+	KEYRING_TOKEN_KEY,
+	keyringFailures,
+	keyringSetKeys,
+	keyringStore,
+	resetKeyringMock,
+} from '../../__setup__/keyring-mock.js';
 
-const keyringStore = new Map<string, string>();
-const keyringFailures = new Set<string>();
+vi.mock('@napi-rs/keyring', () => import('../../__setup__/keyring-mock.js'));
 
-vi.mock('@napi-rs/keyring', () => {
-	class Entry {
-		private key: string;
-		constructor(service: string, account: string) {
-			this.key = `${service}:${account}`;
-		}
-		getPassword(): string | null {
-			return keyringStore.get(this.key) ?? null;
-		}
-		setPassword(password: string): void {
-			if (keyringFailures.has(this.key)) throw new Error('simulated keyring failure');
-			keyringStore.set(this.key, password);
-		}
-		deletePassword(): boolean {
-			return keyringStore.delete(this.key);
-		}
-	}
-	return { Entry };
+// Passthrough spy — lets the skipIfUnchanged tests tell "skipped the write" apart from
+// "wrote the same bytes again", which comparing file contents cannot.
+vi.mock('node:fs', async (importOriginal) => {
+	const actual = await importOriginal<typeof import('node:fs')>();
+	return { ...actual, writeFileSync: vi.fn(actual.writeFileSync) };
 });
+
+const writeFileSyncSpy = vi.mocked(writeFileSync);
+const authFileWrites = () => writeFileSyncSpy.mock.calls.filter((call) => call[0] === AUTH_FILE_PATH());
 
 const writeAuthFile = (data: Record<string, unknown>) => {
 	mkdirSync(GLOBAL_CONFIGS_FOLDER(), { recursive: true });
@@ -49,8 +46,8 @@ const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
 describe('credentials', () => {
 	beforeEach(() => {
 		vitest.stubEnv('__APIFY_INTERNAL_TEST_AUTH_PATH__', cryptoRandomObjectId(12));
-		keyringStore.clear();
-		keyringFailures.clear();
+		resetKeyringMock();
+		writeFileSyncSpy.mockClear();
 		__resetCredentialsForTests();
 	});
 
@@ -104,18 +101,36 @@ describe('credentials', () => {
 			expect(readAuthFile().proxy).toEqual({ password: 'new', groups: [{ name: 'g' }] });
 		});
 
-		it('skipIfUnchanged is a no-op when the stored value matches', async () => {
+		it('skipIfUnchanged skips the write when the stored token matches', async () => {
 			await setToken('tok_123');
-			const before = readFileSync(AUTH_FILE_PATH(), 'utf-8');
+			writeFileSyncSpy.mockClear();
 			await setToken('tok_123', { skipIfUnchanged: true });
-			const after = readFileSync(AUTH_FILE_PATH(), 'utf-8');
-			expect(after).toBe(before);
+			expect(authFileWrites()).toHaveLength(0);
+		});
+
+		it('skipIfUnchanged skips the write when the stored proxy password matches', async () => {
+			await setProxyPassword('pw_abc');
+			writeFileSyncSpy.mockClear();
+			await setProxyPassword('pw_abc', { skipIfUnchanged: true });
+			expect(authFileWrites()).toHaveLength(0);
 		});
 
 		it('skipIfUnchanged still writes when the value differs', async () => {
 			await setToken('tok_123');
+			writeFileSyncSpy.mockClear();
 			await setToken('tok_456', { skipIfUnchanged: true });
+			expect(authFileWrites()).toHaveLength(1);
 			expect(await getToken()).toBe('tok_456');
+		});
+
+		it('writes auth.json with mode 0600', async () => {
+			await setToken('tok_123');
+			expect(writeFileSyncSpy).toHaveBeenCalledWith(AUTH_FILE_PATH(), expect.any(String), { mode: 0o600 });
+		});
+
+		it.skipIf(process.platform === 'win32')('creates auth.json readable only by the owner', async () => {
+			await setToken('tok_123');
+			expect(statSync(AUTH_FILE_PATH()).mode & 0o777).toBe(0o600);
 		});
 	});
 
@@ -127,14 +142,14 @@ describe('credentials', () => {
 		it('round-trips the token through the keyring and keeps it out of auth.json', async () => {
 			await setToken('tok_123');
 			expect(await getToken()).toBe('tok_123');
-			expect(keyringStore.get('com.apify.cli:token')).toBe('tok_123');
+			expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBe('tok_123');
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 		});
 
 		it('round-trips the proxy password through the keyring and keeps it out of auth.json', async () => {
 			await setProxyPassword('pw_abc');
 			expect(await getProxyPassword()).toBe('pw_abc');
-			expect(keyringStore.get('com.apify.cli:proxy-password')).toBe('pw_abc');
+			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw_abc');
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 		});
 
@@ -145,20 +160,63 @@ describe('credentials', () => {
 			expect(await getToken()).toBeUndefined();
 			expect(await getProxyPassword()).toBeUndefined();
 		});
+
+		it('skipIfUnchanged skips the keyring write when the stored token matches', async () => {
+			await setToken('tok_123');
+			await setToken('tok_123', { skipIfUnchanged: true });
+			expect(keyringSetKeys.filter((key) => key === KEYRING_TOKEN_KEY)).toHaveLength(1);
+			expect(authFileWrites()).toHaveLength(0);
+		});
+
+		it('skipIfUnchanged skips the keyring write when the stored proxy password matches', async () => {
+			await setProxyPassword('pw_abc');
+			await setProxyPassword('pw_abc', { skipIfUnchanged: true });
+			expect(keyringSetKeys.filter((key) => key === KEYRING_PROXY_PASSWORD_KEY)).toHaveLength(1);
+			expect(authFileWrites()).toHaveLength(0);
+		});
+
+		it('falls back to auth.json when the keyring token write fails', async () => {
+			keyringFailures.add(KEYRING_TOKEN_KEY);
+			await setToken('tok_123');
+
+			expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBeUndefined();
+			expect(readAuthFile()).toEqual({ token: 'tok_123', secretsBackend: 'file' });
+			expect(await getBackend()).toBe('file');
+			expect(await getToken()).toBe('tok_123');
+		});
+
+		it('keeps using auth.json for later writes after a keyring failure', async () => {
+			keyringFailures.add(KEYRING_TOKEN_KEY);
+			await setToken('tok_123');
+
+			// The proxy key never fails, but the backend already downgraded for the process.
+			await setProxyPassword('pw_abc');
+			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBeUndefined();
+			expect(readAuthFile().proxy).toEqual({ password: 'pw_abc' });
+		});
+
+		it('falls back to auth.json when the keyring proxy password write fails', async () => {
+			keyringFailures.add(KEYRING_PROXY_PASSWORD_KEY);
+			await setProxyPassword('pw_abc');
+
+			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBeUndefined();
+			expect(readAuthFile()).toEqual({ proxy: { password: 'pw_abc' }, secretsBackend: 'file' });
+			expect(await getProxyPassword()).toBe('pw_abc');
+		});
 	});
 
 	describe('clearKeyringSecrets()', () => {
 		it('clears the keyring token entry even when APIFY_DISABLE_KEYRING=1 is set at logout time', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			await setToken('tok_123');
-			expect(keyringStore.get('com.apify.cli:token')).toBe('tok_123');
+			expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBe('tok_123');
 
 			__resetCredentialsForTests();
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
 			expect(await getBackend()).toBe('file');
 
 			await clearKeyringSecrets();
-			expect(keyringStore.get('com.apify.cli:token')).toBeUndefined();
+			expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBeUndefined();
 		});
 	});
 
@@ -168,6 +226,14 @@ describe('credentials', () => {
 			writeAuthFile({ token: 'tok', secretsBackend: 'file' });
 			await ensureMigrated();
 			expect(readAuthFile().token).toBe('tok');
+		});
+
+		it('is a no-op when the marker says keyring and secrets are still in auth.json', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeAuthFile({ token: 'tok', proxy: { password: 'pw' }, secretsBackend: 'keyring' });
+			await ensureMigrated();
+			expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBeUndefined();
+			expect(readAuthFile()).toEqual({ token: 'tok', proxy: { password: 'pw' }, secretsBackend: 'keyring' });
 		});
 
 		it('is a no-op when there are no secrets to migrate', async () => {
@@ -190,8 +256,8 @@ describe('credentials', () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			writeAuthFile({ token: 'tok', proxy: { password: 'pw' }, username: 'u' });
 			await ensureMigrated();
-			expect(keyringStore.get('com.apify.cli:token')).toBe('tok');
-			expect(keyringStore.get('com.apify.cli:proxy-password')).toBe('pw');
+			expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBe('tok');
+			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
 			const file = readAuthFile();
 			expect(file.token).toBeUndefined();
 			expect(file.proxy).toBeUndefined();
@@ -203,7 +269,7 @@ describe('credentials', () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			writeAuthFile({ token: 'tok', proxy: { password: 'pw', groups: [{ name: 'g' }] }, username: 'u' });
 			await ensureMigrated();
-			expect(keyringStore.get('com.apify.cli:proxy-password')).toBe('pw');
+			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
 			const file = readAuthFile();
 			expect(file.proxy).toEqual({ groups: [{ name: 'g' }] });
 			expect(file.secretsBackend).toBe('keyring');
@@ -213,7 +279,7 @@ describe('credentials', () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			writeAuthFile({ proxy: { password: 'pw' }, username: 'u' });
 			await ensureMigrated();
-			expect(keyringStore.get('com.apify.cli:proxy-password')).toBe('pw');
+			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
 			const file = readAuthFile();
 			expect(file.proxy).toBeUndefined();
 			expect(file.username).toBe('u');
@@ -231,7 +297,7 @@ describe('credentials', () => {
 
 		it('falls back to file backend when the proxy keyring write fails after token succeeds', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
-			keyringFailures.add('com.apify.cli:proxy-password');
+			keyringFailures.add(KEYRING_PROXY_PASSWORD_KEY);
 			writeAuthFile({ token: 'tok', proxy: { password: 'pw' }, username: 'u' });
 			await ensureMigrated();
 			const file = readAuthFile();
@@ -270,12 +336,55 @@ describe('credentials', () => {
 
 		it('on keyring backend, overlays token and proxy password from keyring', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
-			keyringStore.set('com.apify.cli:token', 'tok_kr');
-			keyringStore.set('com.apify.cli:proxy-password', 'pw_kr');
+			keyringStore.set(KEYRING_TOKEN_KEY, 'tok_kr');
+			keyringStore.set(KEYRING_PROXY_PASSWORD_KEY, 'pw_kr');
 			writeAuthFile({ username: 'me', id: 'uid', secretsBackend: 'keyring' });
 			const info = await getLocalUserInfo();
 			expect(info.token).toBe('tok_kr');
 			expect(info.proxy?.password).toBe('pw_kr');
+		});
+
+		it('returns an empty object when nothing is stored', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			expect(await getLocalUserInfo()).toEqual({});
+		});
+
+		it('on file backend, throws when a token is stored without user metadata', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			writeAuthFile({ token: 'tok', secretsBackend: 'file' });
+			await expect(getLocalUserInfo()).rejects.toThrow('Stale credentials found without user metadata');
+		});
+
+		it('on keyring backend, throws when the keyring holds a token but auth.json is gone', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			keyringStore.set(KEYRING_TOKEN_KEY, 'tok_kr');
+			await expect(getLocalUserInfo()).rejects.toThrow('Stale credentials found without user metadata');
+		});
+	});
+
+	describe('getApifyClientOptions()', () => {
+		beforeEach(() => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+		});
+
+		it('resolves the stored token when nothing overrides it', async () => {
+			await setToken('tok_stored');
+			expect((await getApifyClientOptions()).token).toBe('tok_stored');
+		});
+
+		it('prefers an explicitly passed token over the stored one', async () => {
+			await setToken('tok_stored');
+			expect((await getApifyClientOptions('tok_explicit')).token).toBe('tok_explicit');
+		});
+
+		it('resolves a pre-migration auth.json and stamps the backend marker', async () => {
+			writeAuthFile({ username: 'me', id: 'uid', token: 'tok_legacy' });
+			expect((await getApifyClientOptions()).token).toBe('tok_legacy');
+			expect(readAuthFile().secretsBackend).toBe('file');
+		});
+
+		it('resolves to undefined when no token is stored', async () => {
+			expect((await getApifyClientOptions()).token).toBeUndefined();
 		});
 	});
 });
