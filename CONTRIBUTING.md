@@ -51,6 +51,22 @@ export APIFY_CONSOLE_URL=http://localhost:3000
 
 Note that if `APIFY_CONSOLE_URL` points at `localhost`, `apify login` validates your token against `http://localhost:3333`. All other commands still call the production API at `https://api.apify.com`.
 
+### `APIFY_CLI_OAUTH_ISSUER_URL`
+
+The OAuth 2.0 authorization server `apify login` talks to. The CLI fetches its RFC 8414 metadata from `<issuer>/.well-known/oauth-authorization-server` and uses the device authorization, authorization and token endpoints it lists.
+
+The default value is `https://console-backend.apify.com`.
+
+### `APIFY_CLI_OAUTH_CLIENT_ID`
+
+The OAuth 2.0 client ID of the CLI. It is the URL of a hosted client metadata document describing the CLI as a public native client.
+
+The default value is `https://apify.com/.well-known/oauth-clients/apify-cli.json`. To test against a differently hosted document, for example a key-value store record, point the variable at its URL:
+
+```bash
+export APIFY_CLI_OAUTH_CLIENT_ID='https://api.apify.com/v2/key-value-stores/<store-id>/records/oidc.json?signature=<signature>'
+```
+
 ## Code style
 
 The repo uses three tools, wired together via a pre-commit hook (`husky` + `lint-staged`):

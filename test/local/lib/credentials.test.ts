@@ -7,10 +7,15 @@ import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.j
 import {
 	__resetCredentialsForTests,
 	clearKeyringSecrets,
+	clearOAuthState,
 	ensureMigrated,
 	getBackend,
+	getOAuthMetadata,
+	getOAuthRefreshToken,
 	getProxyPassword,
 	getToken,
+	setOAuthMetadata,
+	setOAuthRefreshToken,
 	setProxyPassword,
 	setToken,
 } from '../../../src/lib/credentials.js';
@@ -251,6 +256,77 @@ describe('credentials', () => {
 			writeAuthFile({ token: 'tok2' });
 			await ensureMigrated();
 			expect(readAuthFile().secretsBackend).toBeUndefined();
+		});
+	});
+
+	describe('oauth state', () => {
+		const metadata = {
+			issuer: 'https://issuer.test',
+			clientId: 'https://client.test/oauth-client.json',
+			tokenEndpoint: 'https://issuer.test/oauth/apps/token',
+			expiresAt: 1_700_000_000_000,
+			refreshTokenExpiresAt: 1_800_000_000_000,
+		};
+
+		it('on file backend, keeps the refresh token inline next to the metadata', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			await setOAuthRefreshToken('rt_1');
+			setOAuthMetadata(metadata);
+
+			expect(await getOAuthRefreshToken()).toBe('rt_1');
+			expect(getOAuthMetadata()).toEqual(metadata);
+			expect(readAuthFile().oauth).toEqual({ ...metadata, refreshToken: 'rt_1' });
+		});
+
+		it('on keyring backend, keeps the refresh token out of auth.json', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			await setOAuthRefreshToken('rt_1');
+			setOAuthMetadata(metadata);
+
+			expect(keyringStore.get('com.apify.cli:oauth-refresh-token')).toBe('rt_1');
+			expect(await getOAuthRefreshToken()).toBe('rt_1');
+			expect(readAuthFile().oauth).toEqual(metadata);
+		});
+
+		it('falls back to the file when the keyring write fails', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			keyringFailures.add('com.apify.cli:oauth-refresh-token');
+			await setOAuthRefreshToken('rt_1');
+
+			expect(await getOAuthRefreshToken()).toBe('rt_1');
+			expect(readAuthFile().oauth).toEqual({ refreshToken: 'rt_1' });
+			expect(readAuthFile().secretsBackend).toBe('file');
+		});
+
+		it('getOAuthMetadata() ignores an incomplete record', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			writeAuthFile({ oauth: { refreshToken: 'rt_1' } } as never);
+
+			expect(getOAuthMetadata()).toBeUndefined();
+		});
+
+		it('clearOAuthState() removes the refresh token and metadata but keeps the access token', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			await setToken('tok');
+			await setOAuthRefreshToken('rt_1');
+			setOAuthMetadata(metadata);
+
+			await clearOAuthState();
+
+			expect(await getToken()).toBe('tok');
+			expect(await getOAuthRefreshToken()).toBeUndefined();
+			expect(getOAuthMetadata()).toBeUndefined();
+			expect(readAuthFile().oauth).toBeUndefined();
+		});
+
+		it('clearKeyringSecrets() removes the refresh token entry', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			await setOAuthRefreshToken('rt_1');
+			expect(keyringStore.has('com.apify.cli:oauth-refresh-token')).toBe(true);
+
+			await clearKeyringSecrets();
+
+			expect(keyringStore.has('com.apify.cli:oauth-refresh-token')).toBe(false);
 		});
 	});
 

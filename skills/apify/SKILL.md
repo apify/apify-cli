@@ -14,7 +14,7 @@ Many commands prompt when run interactively. To run without prompts, pass every 
 - `apify create <name> --template <template>` — skip the create wizard.
 - `apify init <name>` — skip the init prompt.
 - `-y` / `--yes` on destructive commands (`apify actors rm`, etc.) — auto-confirm.
-- `apify login --token <token>` — log in without the interactive token prompt.
+- `apify login --token <token>` — log in without the browser confirmation.
 
 If a command's help shows an "interactive note", it lists exactly which flags make it non-interactive.
 
@@ -22,7 +22,7 @@ If a command's help shows an "interactive note", it lists exactly which flags ma
 
 See https://apify.com/auth.md for how to authenticate. Do not assume `APIFY_TOKEN` is already set in the environment and use it implicitly — confirm with the user first.
 
-- Persist a session explicitly: `apify login --token <token>`.
+- Persist a session explicitly: `apify login --token <token>` (plain `apify login` opens a browser confirmation, which agents cannot complete).
 - Verify auth: `apify info` (prints the logged-in user; non-zero exit / error if not authenticated).
 - Print the stored token: `apify auth token`.
 

@@ -9,8 +9,20 @@ import { cliDebugPrint } from './utils/cliDebugPrint.js';
 const KEYRING_SERVICE = 'com.apify.cli';
 const TOKEN_ACCOUNT = 'token';
 const PROXY_PASSWORD_ACCOUNT = 'proxy-password';
+const OAUTH_REFRESH_TOKEN_ACCOUNT = 'oauth-refresh-token';
 
 export type CredentialsBackend = 'keyring' | 'file';
+
+/** Non-secret state of an OAuth login. Lives in auth.json on both backends. */
+export interface OAuthMetadata {
+	issuer: string;
+	clientId: string;
+	tokenEndpoint: string;
+	/** Access token expiry, ms since epoch. */
+	expiresAt: number;
+	/** Refresh token expiry, ms since epoch, when the server reports one. */
+	refreshTokenExpiresAt?: number;
+}
 
 interface KeyringEntry {
 	getPassword(): string | null;
@@ -25,6 +37,8 @@ interface KeyringModule {
 interface StoredAuthFile {
 	token?: string;
 	proxy?: { password?: string; [k: string]: unknown };
+	/** `refreshToken` is only present on the file backend. */
+	oauth?: Partial<OAuthMetadata> & { refreshToken?: string };
 	secretsBackend?: CredentialsBackend;
 	[k: string]: unknown;
 }
@@ -216,9 +230,72 @@ export async function setProxyPassword(password: string, opts: { skipIfUnchanged
 	writeAuthFile(data);
 }
 
+export async function getOAuthRefreshToken(): Promise<string | undefined> {
+	const backend = await getBackend();
+	if (backend === 'keyring') return readKeyring(OAUTH_REFRESH_TOKEN_ACCOUNT);
+	return readAuthFile().oauth?.refreshToken;
+}
+
+export async function setOAuthRefreshToken(
+	refreshToken: string,
+	opts: { skipIfUnchanged?: boolean } = {},
+): Promise<void> {
+	const backend = await getBackend();
+	if (opts.skipIfUnchanged) {
+		const existing =
+			backend === 'keyring' ? await readKeyring(OAUTH_REFRESH_TOKEN_ACCOUNT) : readAuthFile().oauth?.refreshToken;
+		if (existing === refreshToken) return;
+	}
+
+	if (backend === 'keyring') {
+		try {
+			await writeKeyring(OAUTH_REFRESH_TOKEN_ACCOUNT, refreshToken);
+			return;
+		} catch (err) {
+			cliDebugPrint('credentials', 'keyring write failed; falling back to file', err);
+			downgradeBackendToFile();
+		}
+	}
+
+	const data = readAuthFile();
+	data.oauth = { ...data.oauth, refreshToken };
+	data.secretsBackend = 'file';
+	writeAuthFile(data);
+}
+
+/** Reads the OAuth metadata from auth.json without touching the keyring. Never returns the refresh token. */
+export function getOAuthMetadata(): OAuthMetadata | undefined {
+	const { oauth } = readAuthFile();
+	if (!oauth?.issuer || !oauth.clientId || !oauth.tokenEndpoint || typeof oauth.expiresAt !== 'number') {
+		return undefined;
+	}
+
+	const { refreshToken: _refreshToken, ...metadata } = oauth;
+	return metadata as OAuthMetadata;
+}
+
+/** Writes the OAuth metadata to auth.json, keeping an inline refresh token (file backend) in place. */
+export function setOAuthMetadata(metadata: OAuthMetadata): void {
+	const data = readAuthFile();
+	const refreshToken = data.oauth?.refreshToken;
+	data.oauth = refreshToken ? { ...metadata, refreshToken } : { ...metadata };
+	writeAuthFile(data);
+}
+
+/** Forgets the OAuth session (refresh token and metadata) while leaving the access token in place. */
+export async function clearOAuthState(): Promise<void> {
+	await deleteKeyring(OAUTH_REFRESH_TOKEN_ACCOUNT);
+
+	if (!existsSync(AUTH_FILE_PATH())) return;
+	const data = readAuthFile();
+	if (!data.oauth) return;
+	delete data.oauth;
+	writeAuthFile(data);
+}
+
 /**
- * Remove the token and proxy-password entries from the OS keyring. Always attempts the
- * keyring deletes even when the current backend is `file`, so toggling
+ * Remove the token, proxy-password and OAuth refresh-token entries from the OS keyring. Always
+ * attempts the keyring deletes even when the current backend is `file`, so toggling
  * `APIFY_DISABLE_KEYRING=1` between login and logout does not orphan entries the user
  * has no in-CLI way to discover. Plaintext secrets in `auth.json` are the caller's
  * responsibility (e.g. `logout` removes the whole file).
@@ -226,6 +303,7 @@ export async function setProxyPassword(password: string, opts: { skipIfUnchanged
 export async function clearKeyringSecrets(): Promise<void> {
 	await deleteKeyring(TOKEN_ACCOUNT);
 	await deleteKeyring(PROXY_PASSWORD_ACCOUNT);
+	await deleteKeyring(OAUTH_REFRESH_TOKEN_ACCOUNT);
 }
 
 /**
