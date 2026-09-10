@@ -7,9 +7,6 @@ export const ACTOR_RUNTIME_IMAGE = 'apify/actor-runtime:latest';
 
 export const ACTOR_RUNTIME_CONTAINER_NAME = 'apify-actor-runtime';
 
-/** The engine network Actor containers run on. The runtime container starts on it so Actors reach the runtime's API directly. */
-export const ACTOR_RUNTIME_NETWORK_NAME = 'apify-local';
-
 /** Official Docker documentation: Docker Desktop for macOS, Windows and Linux desktops. */
 export const DOCKER_GET_DOCKER_URL = 'https://docs.docker.com/get-started/get-docker/';
 
@@ -158,17 +155,6 @@ export async function imageExistsLocally(engine: ContainerEngine, image: string)
 	}
 }
 
-/** Creates the network the runtime container starts on if the engine does not have it yet. */
-export async function ensureRuntimeNetwork(engine: ContainerEngine): Promise<void> {
-	try {
-		await execa(engine, ['network', 'inspect', ACTOR_RUNTIME_NETWORK_NAME]);
-		return;
-	} catch {
-		// Not there yet - created below.
-	}
-	await execa(engine, ['network', 'create', ACTOR_RUNTIME_NETWORK_NAME]);
-}
-
 export async function isRuntimeContainerRunning(engine: ContainerEngine): Promise<boolean> {
 	try {
 		const { stdout } = await execa(engine, [
@@ -254,17 +240,7 @@ export function buildRuntimeRunArgs({
 	platform = process.platform,
 }: RuntimeRunArgsOptions): string[] {
 	// --init makes signals (Ctrl+C) reach the runtime process even though it runs as the container's PID 1.
-	// --network puts the runtime on the Actors' network from the start, on every engine and rootless or not;
-	// the runtime joining it later by itself is refused under rootless Podman.
-	const args = [
-		'run',
-		'--rm',
-		'--init',
-		'--name',
-		ACTOR_RUNTIME_CONTAINER_NAME,
-		'--network',
-		ACTOR_RUNTIME_NETWORK_NAME,
-	];
+	const args = ['run', '--rm', '--init', '--name', ACTOR_RUNTIME_CONTAINER_NAME];
 
 	if (detach) {
 		args.push('--detach');

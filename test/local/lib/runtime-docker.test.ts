@@ -93,8 +93,6 @@ describe('runtime/docker', () => {
 				'--init',
 				'--name',
 				ACTOR_RUNTIME_CONTAINER_NAME,
-				'--network',
-				'apify-local',
 				'-p',
 				'3333:3333',
 				'-p',
