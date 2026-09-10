@@ -31,21 +31,12 @@ describe('runtime/docker', () => {
 	});
 
 	describe('resolveEngineSocketPath()', () => {
-		it('always prefers an explicit APIFY_CONTAINER_SOCKET', async () => {
-			await expect(
-				resolveEngineSocketPath('docker', 'linux', { APIFY_CONTAINER_SOCKET: '/custom.sock' }),
-			).resolves.toBe('/custom.sock');
-			await expect(
-				resolveEngineSocketPath('podman', 'linux', { APIFY_CONTAINER_SOCKET: '/custom.sock' }),
-			).resolves.toBe('/custom.sock');
-		});
-
 		it('uses the default Docker socket unless DOCKER_HOST names a unix socket (rootless Docker)', async () => {
-			await expect(resolveEngineSocketPath('docker', 'linux', {})).resolves.toBe('/var/run/docker.sock');
+			await expect(resolveEngineSocketPath('docker', {})).resolves.toBe('/var/run/docker.sock');
 			await expect(
-				resolveEngineSocketPath('docker', 'linux', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }),
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }),
 			).resolves.toBe('/run/user/1000/docker.sock');
-			await expect(resolveEngineSocketPath('docker', 'linux', { DOCKER_HOST: 'tcp://localhost:2375' })).resolves.toBe(
+			await expect(resolveEngineSocketPath('docker', { DOCKER_HOST: 'tcp://localhost:2375' })).resolves.toBe(
 				'/var/run/docker.sock',
 			);
 		});

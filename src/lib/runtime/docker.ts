@@ -36,13 +36,10 @@ export const ACTOR_RUNTIME_ENV_VARS = {
 /** The container engines the runtime can run on. Both serve the Docker-compatible API the runtime uses. */
 export type ContainerEngine = 'docker' | 'podman';
 
-export const CONTAINER_ENGINES: readonly ContainerEngine[] = ['docker', 'podman'];
+const CONTAINER_ENGINES: readonly ContainerEngine[] = ['docker', 'podman'];
 
 /** Set to `docker` or `podman` to pick the engine instead of taking the first one found on PATH. */
 export const CONTAINER_ENGINE_ENV_VAR = 'APIFY_CONTAINER_ENGINE';
-
-/** Host path of the engine's API socket to mount into the runtime container, when auto-detection is wrong. */
-export const CONTAINER_SOCKET_ENV_VAR = 'APIFY_CONTAINER_SOCKET';
 
 /** Where the runtime container expects the engine's API socket. */
 export const RUNTIME_SOCKET_PATH = '/var/run/docker.sock';
@@ -175,26 +172,17 @@ function unixSocketPath(url: string | undefined): string | undefined {
 }
 
 /**
- * Host path of the engine's API socket, to be mounted into the runtime container. `APIFY_CONTAINER_SOCKET`
- * wins when set. Docker: the `DOCKER_HOST` socket when it is a unix socket (rootless Docker), else the
- * default one. Podman: whatever `podman info` says it serves - rootful `/run/podman/podman.sock`, rootless
- * `$XDG_RUNTIME_DIR/podman/podman.sock`; on macOS/Windows that is a host-side forwarding socket, so the
- * path inside the Podman machine is used instead, where the runtime container actually runs.
+ * Host path of the engine's API socket, to be mounted into the runtime container. Docker: the `DOCKER_HOST`
+ * socket when it is a unix socket (rootless Docker), else the default one. Podman: the socket `podman info`
+ * reports serving, which is the path on the machine the containers run on (rootful, rootless, or inside a
+ * `podman machine` VM alike).
  */
 export async function resolveEngineSocketPath(
 	engine: ContainerEngine,
-	platform: NodeJS.Platform = process.platform,
 	env: NodeJS.ProcessEnv = process.env,
 ): Promise<string> {
-	const override = env[CONTAINER_SOCKET_ENV_VAR]?.trim();
-	if (override) return override;
-
 	if (engine === 'docker') {
 		return unixSocketPath(env.DOCKER_HOST) ?? RUNTIME_SOCKET_PATH;
-	}
-
-	if (platform === 'darwin' || platform === 'win32') {
-		return podmanMachineSocketPath();
 	}
 
 	try {
@@ -204,19 +192,6 @@ export async function resolveEngineSocketPath(
 	} catch {
 		return '/run/podman/podman.sock';
 	}
-}
-
-/** Best effort for `podman machine`: the socket path as seen inside the VM, rootful or rootless. */
-async function podmanMachineSocketPath(): Promise<string> {
-	try {
-		const { stdout: rootful } = await execa('podman', ['machine', 'inspect', '--format', '{{.Rootful}}']);
-		if (rootful.trim() === 'true') return '/run/podman/podman.sock';
-		const { stdout: runtimeDir } = await execa('podman', ['machine', 'ssh', '--', 'echo', '$XDG_RUNTIME_DIR']);
-		if (runtimeDir.trim()) return `${runtimeDir.trim()}/podman/podman.sock`;
-	} catch {
-		// Fall through to the rootful default below.
-	}
-	return '/run/podman/podman.sock';
 }
 
 export function socketMountArg(hostSocketPath: string, platform: NodeJS.Platform = process.platform): string {

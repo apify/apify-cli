@@ -472,8 +472,7 @@ DESCRIPTION
       https://podman.io/docs/installation
 
   The first engine found on PATH is used, Docker before Podman. Set 
-  APIFY_CONTAINER_ENGINE=docker or =podman to choose, and APIFY_CONTAINER_SOCKET
-   to name the engine's API socket when it is not at the default path.
+  APIFY_CONTAINER_ENGINE=docker or =podman to choose.
 
   'apify runtime install' checks that the engine is available and pulls the 
   runtime image.
