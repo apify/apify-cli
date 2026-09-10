@@ -79,6 +79,39 @@ export const readInputSchema = async ({
 		};
 	}
 
+	// `inputSchema` is an alias for `input` supported by the canonical actor schema
+	if (typeof localConfig?.inputSchema === 'object' && localConfig.inputSchema !== null) {
+		return {
+			inputSchema: localConfig.inputSchema as Record<string, unknown>,
+			inputSchemaPath: null,
+		};
+	}
+
+	if (typeof localConfig?.inputSchema === 'string') {
+		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, localConfig.inputSchema);
+		const schema = getJsonFileContent(fullPath);
+
+		if (!schema) {
+			if (throwOnMissing) {
+				throw new Error(`Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`);
+			}
+
+			warning({
+				message: `Input schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			});
+
+			return {
+				inputSchema: null,
+				inputSchemaPath: fullPath,
+			};
+		}
+
+		return {
+			inputSchema: schema,
+			inputSchemaPath: fullPath,
+		};
+	}
+
 	for (const path of DEFAULT_INPUT_SCHEMA_PATHS) {
 		const fullPath = join(cwd, path);
 		if (existsSync(fullPath)) {
@@ -211,15 +244,22 @@ export const readDatasetSchema = ({
 
 /**
  * Read the Output schema from the Actor config.
- * Thin wrapper around `readStorageSchema` — reads `output` from the top-level config
- * rather than `storages.<key>`.
+ * Supports both the `output` and `outputSchema` fields (canonical actor schema aliases).
  */
 export const readOutputSchema = ({
 	cwd,
+	throwOnMissing = false,
 }: {
 	cwd: string;
+	throwOnMissing?: boolean;
 }): { outputSchema: Record<string, unknown>; outputSchemaPath: string | null } | null => {
-	const result = readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output });
+	const result = readStorageSchema({
+		cwd,
+		key: 'output',
+		label: 'Output',
+		getRef: (config) => config?.output ?? config?.outputSchema,
+		throwOnMissing,
+	});
 
 	if (!result) {
 		return null;
@@ -321,6 +361,80 @@ export function validateKvsSchema(schema: Record<string, unknown>): void {
 	if (!validate(schema)) {
 		throw new Error(formatSchemaValidationErrors(validate.errors!, 'Key-Value Store'));
 	}
+}
+
+export interface DatasetEntry {
+	name: string;
+	/** 'singular' when from storages.dataset; 'plural' when from storages.datasets.<name> */
+	form: 'singular' | 'plural';
+	schema: Record<string, unknown> | null;
+	schemaPath: string | null;
+	errorCode?: 'ref-missing' | 'parse-failed';
+	errorMessage?: string;
+}
+
+function resolveDatasetRef(name: string, form: 'singular' | 'plural', ref: unknown, cwd: string): DatasetEntry {
+	if (typeof ref === 'object' && ref !== null) {
+		return { name, form, schema: ref as Record<string, unknown>, schemaPath: null };
+	}
+
+	if (typeof ref === 'string') {
+		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, ref);
+
+		let schema: Record<string, unknown> | undefined;
+		try {
+			schema = getJsonFileContent(fullPath);
+		} catch (ex) {
+			return {
+				name,
+				form,
+				schema: null,
+				schemaPath: fullPath,
+				errorCode: 'parse-failed',
+				errorMessage: `Dataset schema "${name}" at ${fullPath} contains malformed JSON: ${(ex as SyntaxError).message}`,
+			};
+		}
+
+		if (!schema) {
+			return {
+				name,
+				form,
+				schema: null,
+				schemaPath: fullPath,
+				errorCode: 'ref-missing',
+				errorMessage: `Dataset schema "${name}" not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+			};
+		}
+
+		return { name, form, schema, schemaPath: fullPath };
+	}
+
+	return { name, form, schema: null, schemaPath: null };
+}
+
+/**
+ * Reads dataset schema entries from the Actor config.
+ * Supports both `storages.dataset` (singular) and `storages.datasets` (plural with named entries).
+ * These two forms are mutually exclusive per the canonical actor schema.
+ * Returns null when no dataset schema is configured.
+ */
+export function readDatasetSchemas({ cwd }: { cwd: string }): DatasetEntry[] | null {
+	const localConfig = getLocalConfig(cwd);
+	const storages = localConfig?.storages as Record<string, unknown> | undefined;
+
+	if (!storages) return null;
+
+	if ('dataset' in storages && storages.dataset !== undefined) {
+		return [resolveDatasetRef('default', 'singular', storages.dataset, cwd)];
+	}
+
+	if ('datasets' in storages && typeof storages.datasets === 'object' && storages.datasets !== null) {
+		const datasetsConfig = storages.datasets as Record<string, unknown>;
+		const results = Object.entries(datasetsConfig).map(([name, ref]) => resolveDatasetRef(name, 'plural', ref, cwd));
+		return results.length > 0 ? results : null;
+	}
+
+	return null;
 }
 
 // Lots of code copied from @apify-packages/actor, this really should be moved to the shared input_schema package
