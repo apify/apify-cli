@@ -2,6 +2,8 @@ import process from 'node:process';
 
 import chalk from 'chalk';
 
+import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
+
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -157,7 +159,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			// The `using` binding removes the listener when the block exits.
 			using _signalHandler = useAbortJobOnSignal({
 				apifyClient: client,
-				kind: 'build',
+				kind: ACTOR_JOB_TYPES.BUILD,
 				jobId: build.id,
 			});
 
@@ -179,16 +181,16 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			const { job } = await waitForTerminalStatus({
 				apifyClient: client,
 				jobId: build.id,
-				kind: 'build',
+				kind: ACTOR_JOB_TYPES.BUILD,
 			});
-			build = job as typeof build;
+			build = job;
 		}
 
 		const reachedTerminal = log || wait;
 
 		if (reachedTerminal) {
-			const ok = build.status === 'SUCCEEDED';
-			const exitCode = exitCodeForJobStatus(build.status, 'build');
+			const ok = build.status === ACTOR_JOB_STATUSES.SUCCEEDED;
+			const exitCode = exitCodeForJobStatus(build.status, ACTOR_JOB_TYPES.BUILD);
 			const logTail = ok ? [] : await fetchLogTail(client, build.id);
 
 			if (json) {
@@ -224,7 +226,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			simpleLog({
 				message: formatResultSummary({
 					resultLabel: 'Apify build result',
-					overallStatus: build.status as never,
+					overallStatus: build.status,
 					lines: [
 						{ label: 'Build', value: build.status },
 						{ label: 'Build ID', value: build.id },
