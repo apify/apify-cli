@@ -489,8 +489,7 @@ DESCRIPTION
   directory as the Actor's live dev folder: later runs mount it over the built 
   image, so local edits (recompiled locally) apply on the next 'apify call' 
   without another push.
-  Pass --no-dev-folder to 'apify call' to run from the built image alone, or to 
-  'apify push' to clear the registration.
+  Pass --no-dev-folder to 'apify call' to run from the built image alone.
 
 SUBCOMMANDS
   runtime install  Installs the Actor runtime: verifies this
@@ -887,8 +886,8 @@ DESCRIPTION
 
 USAGE
   $ apify actors push [actorId] [--allow-missing-secrets]
-                      [-b <value>] [--dev-folder] [--dir <value>] [-f] [--json]
-                      [--open] [-v <value>] [-w <value>]
+                      [-b <value>] [--dir <value>] [-f] [--json] [--open]
+                      [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -902,14 +901,6 @@ FLAGS
   -b, --build-tag=<value>        Build tag to be
                                  applied to the successful Actor build. By default,
                                  it is taken from the '.actor/actor.json' file.
-      --dev-folder               Local Actor runtime
-                                 only: register the pushed directory as the Actor's
-                                 live dev folder, so later runs against the runtime
-                                 mount it over the built image and pick up local
-                                 edits without another push (the default). Use
-                                 --no-dev-folder to skip that and clear any earlier
-                                 registration. Ignored when pushing to the Apify
-                                 platform.
       --dir=<value>              Directory where the
                                  Actor is located.
   -f, --force                    Push an Actor even

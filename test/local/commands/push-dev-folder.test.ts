@@ -117,15 +117,6 @@ describe('apify push against a local Actor runtime', () => {
 		expect(devFolderCalls().map((call) => call.body)).toEqual([join(tmpPath, 'nested')]);
 	});
 
-	it('clears the registration with --no-dev-folder', async () => {
-		await testRunCommand(ActorsPushCommand, { flags_devFolder: false });
-
-		expect(process.exitCode).toBeFalsy();
-		expect(devFolderCalls().map((call) => call.body)).toEqual(['']);
-		expect(logMessages.error.join('\n')).toContain('has no live dev folder');
-		expect(logMessages.log.join('\n')).toContain('Live dev folder: none');
-	});
-
 	it('reports the registered folder in --json output', async () => {
 		await testRunCommand(ActorsPushCommand, { flags_json: true });
 
@@ -167,9 +158,8 @@ describe('apify push against the Apify platform', () => {
 		baseUrl = CLOUD_BASE_URL;
 	});
 
-	it('never calls the runtime endpoint, with or without the flag', async () => {
+	it('never calls the runtime endpoint', async () => {
 		await testRunCommand(ActorsPushCommand, {});
-		await testRunCommand(ActorsPushCommand, { flags_devFolder: false });
 
 		expect(fetchMock).not.toHaveBeenCalled();
 		expect(logMessages.error.join('\n')).not.toContain('dev folder');
