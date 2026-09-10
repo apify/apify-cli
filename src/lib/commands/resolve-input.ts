@@ -4,10 +4,10 @@ import process from 'node:process';
 
 import mime from 'mime';
 
-import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { CommandExitCodes } from '../consts.js';
 import { error } from '../outputs.js';
 import { getLocalInput } from '../utils.js';
+import { readStdin } from './read-stdin.js';
 
 interface InputOverrideOptions {
 	schemaHint?: string;
@@ -58,8 +58,9 @@ export async function getInputOverride(
 	const { schemaHint } = options;
 
 	if (!inputFlag && !inputFileFlag) {
-		// Try reading stdin
-		const stdin = cachedStdinInput;
+		// Nobody asked for stdin here, so it must not block: this command is reachable with a pipe
+		// it only inherited from whatever spawned it.
+		const stdin = await readStdin({ implicit: true });
 
 		if (stdin) {
 			try {

@@ -11,15 +11,12 @@ import type { BuiltApifyCommand } from '../lib/command-framework/apify-command.j
 import { commandRegistry, internalRunCommand } from '../lib/command-framework/apify-command.js';
 import { CommandError } from '../lib/command-framework/CommandError.js';
 import { renderMainHelpMenu } from '../lib/command-framework/help.js';
-import { readStdin } from '../lib/commands/read-stdin.js';
 import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
 import { error } from '../lib/outputs.js';
 import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
-
-export const cachedStdinInput = await readStdin();
 
 const cliMetadata = useCLIMetadata();
 
