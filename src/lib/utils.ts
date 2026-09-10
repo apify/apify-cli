@@ -42,6 +42,7 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
 import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
+import { AuthError } from './errors/AuthError.js';
 import { deleteFile, ensureApifyDirectory, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
@@ -124,7 +125,10 @@ export async function getLoggedClientOrThrow() {
 
 	if (!loggedClient) {
 		process.exitCode = CommandExitCodes.MissingAuth;
-		throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
+		throw new AuthError(
+			'You are not logged in with your Apify account. Call "apify login" to fix that.',
+			CommandExitCodes.MissingAuth,
+		);
 	}
 	return loggedClient;
 }
