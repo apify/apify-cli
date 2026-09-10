@@ -44,6 +44,15 @@ describe('apify init', () => {
 		expect(
 			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
 		).toStrictEqual({});
+		expect(
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.__metadata__.json`), 'utf8'),
+			),
+		).toStrictEqual({
+			key: KEY_VALUE_STORE_KEYS.INPUT,
+			contentType: 'application/json; charset=utf-8',
+			filename: `${KEY_VALUE_STORE_KEYS.INPUT}.json`,
+		});
 	});
 
 	it('correctly creates structure with prefilled INPUT.json', async () => {
