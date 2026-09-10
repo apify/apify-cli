@@ -232,8 +232,8 @@ importers:
         specifier: ^3.16.0
         version: 3.18.1
       '@inquirer/core':
-        specifier: ^11.1.7
-        version: 11.2.1(@types/node@24.13.3)
+        specifier: ^12.0.0
+        version: 12.0.3(@types/node@24.13.3)
       '@inquirer/input':
         specifier: ^5.0.10
         version: 5.1.6(@types/node@24.13.3)
@@ -2428,15 +2428,6 @@ packages:
   '@inquirer/ansi@2.0.8':
     resolution: {integrity: sha512-WpQM+Ti6Z40EFwwt+uL2p4UabT+W179zHp6HhLVOzfbwnVn05IPO/eXIZXGNqcT1jbQ15SujNLzQ39k4QPPxBQ==}
     engines: {node: '>=23.5.0 || ^22.13.0 || ^20.17.0'}
-
-  '@inquirer/core@11.2.1':
-    resolution: {integrity: sha512-Qd6GJT1yVyrZZCfN8W2qKF5ApmqryXRhRKCuip8h01x2w/esJQ2XIYc6f9abMIHgKQdBfFTSOdbHRLAhuM09UA==}
-    engines: {node: '>=23.5.0 || ^22.13.0 || ^20.17.0'}
-    peerDependencies:
-      '@types/node': '>=18'
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
 
   '@inquirer/core@12.0.3':
     resolution: {integrity: sha512-wsSy0sznmXwkty+2PzZwx00Cazc/E0r0B7mAzdGROz2Ct+DFZXaK7WDjGZvgjRldxH5ZhFVfF2lgkYrqgOw2KA==}
@@ -12593,18 +12584,6 @@ snapshots:
       '@hapi/hoek': 9.3.0
 
   '@inquirer/ansi@2.0.8': {}
-
-  '@inquirer/core@11.2.1(@types/node@24.13.3)':
-    dependencies:
-      '@inquirer/ansi': 2.0.8
-      '@inquirer/figures': 2.0.9
-      '@inquirer/type': 4.1.1(@types/node@24.13.3)
-      cli-width: 4.1.0
-      fast-wrap-ansi: 0.2.2
-      mute-stream: 3.0.0
-      signal-exit: 4.1.0
-    optionalDependencies:
-      '@types/node': 24.13.3
 
   '@inquirer/core@12.0.3(@types/node@24.13.3)':
     dependencies:
