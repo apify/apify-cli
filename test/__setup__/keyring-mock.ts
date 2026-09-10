@@ -1,19 +1,15 @@
 /**
- * Fake `@napi-rs/keyring` for tests. Install it with
- * `vi.mock('@napi-rs/keyring', () => import('<path>/keyring-mock.js'))` and import the
- * state below normally — the factory's dynamic import resolves to the same module instance.
+ * Fake `@napi-rs/keyring`. Install with
+ * `vi.mock('@napi-rs/keyring', () => import('<path>/keyring-mock.js'))`.
  */
 
 export const KEYRING_TOKEN_KEY = 'com.apify.cli:token';
 export const KEYRING_PROXY_PASSWORD_KEY = 'com.apify.cli:proxy-password';
 
-/** Stored secrets, keyed `${service}:${account}`. */
 export const keyringStore = new Map<string, string>();
 
-/** Keys for which `setPassword` throws, so the file fallback can be exercised. */
 export const keyringFailures = new Set<string>();
 
-/** Keys of successful writes, in order. Lets tests count how often a secret was actually written. */
 export const keyringSetKeys: string[] = [];
 
 export class Entry {

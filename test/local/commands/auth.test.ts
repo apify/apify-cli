@@ -22,8 +22,7 @@ const { clientState } = vi.hoisted(() => ({
 	},
 }));
 
-// The auth commands only need `client.token` and `user('me').get()`, so a stub client lets
-// them run in test:local — no TEST_USER_TOKEN, no network.
+// Stubbing the client is what lets the auth commands run in test:local.
 vi.mock('apify-client', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('apify-client')>();
 
@@ -114,7 +113,7 @@ describe('auth commands', () => {
 
 			const authFile = readAuthFile();
 			expect(authFile).toMatchObject({ token: 'apify_api_other_token', id: 'uid2', username: 'other' });
-			// Known gap: fields the new account does not have survive the merge in getLoggedClient.
+			// Known gap: getLoggedClient merges, so the old account's extra fields survive.
 			expect(authFile.email).toBe('me@example.com');
 		});
 

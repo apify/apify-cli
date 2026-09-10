@@ -57,10 +57,8 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 }
 
 /**
- * Switches the enclosing `describe` to the keyring backend, overriding the file backend
- * that {@link useAuthSetup} pins. The file must mock `@napi-rs/keyring` with
- * `test/__setup__/keyring-mock.ts`; without it the hook throws rather than let the test
- * write to the real OS keyring.
+ * Switches the enclosing `describe` to the keyring backend, which {@link useAuthSetup} pins off.
+ * Throws unless the file mocks `@napi-rs/keyring` with `test/__setup__/keyring-mock.ts`.
  */
 export function useKeyringBackend() {
 	beforeEach(async () => {

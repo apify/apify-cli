@@ -27,8 +27,7 @@ import {
 
 vi.mock('@napi-rs/keyring', () => import('../../__setup__/keyring-mock.js'));
 
-// Passthrough spy — lets the skipIfUnchanged tests tell "skipped the write" apart from
-// "wrote the same bytes again", which comparing file contents cannot.
+// A rewrite is byte-identical, so only a spy can tell a skipped write from a repeated one.
 vi.mock('node:fs', async (importOriginal) => {
 	const actual = await importOriginal<typeof import('node:fs')>();
 	return { ...actual, writeFileSync: vi.fn(actual.writeFileSync) };
@@ -196,7 +195,6 @@ describe('credentials', () => {
 			keyringFailures.add(KEYRING_TOKEN_KEY);
 			await setToken('tok_123');
 
-			// The proxy key never fails, but the backend already downgraded for the process.
 			await setProxyPassword('pw_abc');
 			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBeUndefined();
 			expect(readAuthFile().proxy).toEqual({ password: 'pw_abc' });
