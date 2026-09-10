@@ -271,7 +271,7 @@ jobs:
                   git config --global user.email 'apify-service-account@users.noreply.github.com'
 
             - name: Set up Homebrew
-              uses: Homebrew/actions/setup-homebrew@8f3d1ec8a696b3b9d9a6c3696b6c73033cab69e4 # master
+              uses: Homebrew/actions/setup-homebrew@f8d4222eb633e65c2a0157383cf80861fc7fae7f # master
 
             # It can happen that the updated package version is not available right after the `npm publish` command finishes
             # Try waiting 3 minutes until the updated package version is available
