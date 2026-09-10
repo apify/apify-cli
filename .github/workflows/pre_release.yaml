@@ -22,7 +22,7 @@ jobs:
             changelog: ${{ steps.release_metadata.outputs.changelog }}
             release_notes: ${{ steps.release_metadata.outputs.release_notes }}
         steps:
-            - uses: apify/actions/git-cliff-release@v1.3.0
+            - uses: apify/actions/git-cliff-release@v1.5.0
               name: Prepare release metadata
               id: release_metadata
               with:
@@ -33,7 +33,7 @@ jobs:
         name: Wait for code checks to pass
         runs-on: ubuntu-latest
         steps:
-            - uses: lewagon/wait-on-check-action@96d9100b431964d10e0136aff8b9ccb92470505e # v1.8.0
+            - uses: lewagon/wait-on-check-action@369769072fe522a3a8a85c03c96af1e5242a1994 # v1.9.1
               with:
                   ref: ${{ github.sha }}
                   repo-token: ${{ secrets.GITHUB_TOKEN }}
@@ -61,7 +61,7 @@ jobs:
                   registry-url: https://registry.npmjs.org
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.3.1
+              uses: apify/actions/pnpm-install@v1.5.0
 
             - name: Update package version in package.json
               run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version
@@ -71,7 +71,7 @@ jobs:
 
             - name: Commit changes
               id: commit
-              uses: apify/actions/signed-commit@v1.3.0
+              uses: apify/actions/signed-commit@v1.5.0
               with:
                   message: "chore(release): Update changelog and package version [skip ci]"
                   pull: '--rebase --autostash'
@@ -117,7 +117,7 @@ jobs:
                   registry-url: https://registry.npmjs.org
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.3.1
+              uses: apify/actions/pnpm-install@v1.5.0
 
             - name: Install bun
               uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -180,7 +180,7 @@ jobs:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.3.1
+              uses: apify/actions/pnpm-install@v1.5.0
 
             - name: Set pre-release version
               run: pnpm version ${{ needs.update_changelog.outputs.pre_release_version }} --no-git-tag-version --allow-same-version --no-git-checks
@@ -190,7 +190,7 @@ jobs:
               run: node scripts/report-install-size.mjs
 
             - name: Create release
-              uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
+              uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
               with:
                   tag_name: v${{ needs.update_changelog.outputs.pre_release_version }}
                   name: ${{ needs.update_changelog.outputs.pre_release_version }}
@@ -210,7 +210,7 @@ jobs:
 
         steps:
             - name: Execute publish workflow
-              uses: apify/actions/execute-workflow@v1.3.0
+              uses: apify/actions/execute-workflow@v1.5.0
               with:
                   workflow: publish_to_npm.yaml
                   inputs: >
