@@ -491,6 +491,10 @@ DESCRIPTION
   Unset them to talk to the Apify cloud again. 'apify runtime start' prints the 
   same values when the runtime boots.
 
+  Pointed at the runtime, 'apify push' also registers the pushed directory as 
+  the Actor's live dev folder, so runs pick up local edits without another push;
+   'apify call --no-dev-folder' runs from the built image alone.
+
 SUBCOMMANDS
   runtime install  Installs the Actor runtime: verifies this
                    machine has a working container engine (Docker or Podman) and
@@ -959,7 +963,7 @@ DESCRIPTION
   info <actor> --input".
 
 USAGE
-  $ apify actors call [actorId] [-b <value>]
+  $ apify actors call [actorId] [-b <value>] [--dev-folder]
                       [-i <value> | -f <value>] [--json] [-m <value>] [-o] [-s]
                       [-t <value>]
 
@@ -972,6 +976,12 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>       Tag or number of the build to
                             run (e.g. "latest" or "1.2.34").
+      --dev-folder          Local Actor runtime only: mount
+                            the Actor's registered live dev folder into the run, so
+                            it picks up local edits (the default). Use
+                            --no-dev-folder to run from the built image alone this
+                            once; the registration itself stays. Ignored when
+                            calling on the Apify platform.
   -i, --input=<value>       Optional inline JSON object
                             input for the Actor. To avoid shell parsing issues, wrap
                             the JSON in quotes. For JSON files, use --input-file.

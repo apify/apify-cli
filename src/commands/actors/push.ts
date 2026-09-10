@@ -2,7 +2,7 @@ import { readFileSync, statSync, unlinkSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
-import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
+import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyClient } from 'apify-client';
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
@@ -24,6 +24,7 @@ import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
+import { mayTargetActorRuntime, registerActorRuntimeDevFolder } from '../../lib/runtime/dev-folder.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
 	createActZip,
@@ -484,6 +485,8 @@ Skipping push. Use --force to override.`,
 			info({ message: `${isEnabled ? 'Enabled' : 'Disabled'} standby mode for Actor ${actor.name}.` });
 		}
 
+		await registerDevFolderOnActorRuntime(apifyClient, actorId, actor.name, cwd);
+
 		// Build Actor on Apify and wait for build to finish
 		run({ message: `Building Actor ${actor.name}` });
 		// Anchor the deadline at build start so log streaming + status polling
@@ -617,5 +620,32 @@ Skipping push. Use --force to override.`,
 		if (this.flags.open) {
 			await open(actorUrl);
 		}
+	}
+}
+
+/**
+ * Against a local Actor runtime, registers the pushed directory as the Actor's live dev folder, so later
+ * runs mount it over the built image. Against the Apify platform this is a no-op without a request.
+ */
+async function registerDevFolderOnActorRuntime(
+	apifyClient: ApifyClient,
+	actorId: string,
+	actorName: string,
+	cwd: string,
+) {
+	if (!mayTargetActorRuntime(apifyClient)) return;
+
+	const result = await registerActorRuntimeDevFolder(apifyClient, actorId, cwd);
+	if (result.ok) {
+		info({
+			message:
+				`Registered ${cwd} as the live dev folder of Actor ${actorName} on the local Actor runtime: runs mount it over the built image, ` +
+				`so local edits apply on the next 'apify call' without another push. A compiled Actor (e.g. TypeScript) needs its local build first. ` +
+				`Use 'apify call --no-dev-folder' to run from the built image alone.`,
+		});
+	} else if (result.error) {
+		warning({
+			message: `Could not register ${cwd} as the live dev folder of Actor ${actorName} on the local Actor runtime: ${result.error}`,
+		});
 	}
 }

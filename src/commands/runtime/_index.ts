@@ -43,6 +43,8 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 		...runtimeEnvExportLines().map((line) => `  ${line}`),
 		'',
 		`Unset them to talk to the Apify cloud again. 'apify runtime start' prints the same values when the runtime boots.`,
+		'',
+		`Pointed at the runtime, 'apify push' also registers the pushed directory as the Actor's live dev folder, so runs pick up local edits without another push; 'apify call --no-dev-folder' runs from the built image alone.`,
 	].join('\n');
 
 	static override group = 'Local Actor Development';
