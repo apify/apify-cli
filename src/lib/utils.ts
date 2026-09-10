@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { createWriteStream, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
@@ -529,38 +529,36 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 export const getLocalInput = (cwd: string, inputKey?: string) => {
 	const defaultLocalStorePath = getLocalKeyValueStorePath();
 
-	const folderExists = existsSync(join(cwd, defaultLocalStorePath));
+	const storePath = resolve(cwd, defaultLocalStorePath);
 
-	if (!folderExists) return;
+	if (!existsSync(storePath)) return;
 
-	const files = readdirSync(join(cwd, defaultLocalStorePath));
+	const files = readdirSync(storePath);
 	const inputName = files.find((file) => !!file.match(inputFileRegExp(inputKey ?? 'INPUT')));
 
 	// No input file
 	if (!inputName) return;
 
-	const input = readFileSync(join(cwd, defaultLocalStorePath, inputName));
+	const input = readFileSync(join(storePath, inputName));
 	const contentType = mime.getType(inputName);
 	return { body: input, contentType, fileName: inputName };
 };
 
 export const purgeDefaultQueue = async () => {
-	const defaultQueuesPath = getLocalRequestQueuePath();
-	if (existsSync(getLocalStorageDir()) && existsSync(defaultQueuesPath)) {
-		await rimrafPromised(defaultQueuesPath);
-	}
+	await rimrafPromised(resolve(process.cwd(), getLocalRequestQueuePath()));
 };
 
 export const purgeDefaultDataset = async () => {
-	const defaultDatasetPath = getLocalDatasetPath();
-	if (existsSync(getLocalStorageDir()) && existsSync(defaultDatasetPath)) {
-		await rimrafPromised(defaultDatasetPath);
-	}
+	await rimrafPromised(resolve(process.cwd(), getLocalDatasetPath()));
 };
 
+/**
+ * Deletes every record from the default key-value store, except the files
+ * matching the given input keys. Defaults to preserving `INPUT.*`.
+ */
 export const purgeDefaultKeyValueStore = async (...inputKeys: string[]) => {
-	const defaultKeyValueStorePath = getLocalKeyValueStorePath();
-	if (!existsSync(getLocalStorageDir()) || !existsSync(defaultKeyValueStorePath)) {
+	const defaultKeyValueStorePath = resolve(process.cwd(), getLocalKeyValueStorePath());
+	if (!existsSync(defaultKeyValueStorePath)) {
 		return;
 	}
 	const filesToDelete = readdirSync(defaultKeyValueStorePath);
@@ -647,15 +645,19 @@ export const getNpmCmd = (): string => {
 };
 
 /**
- * Returns true if apify storage is empty (expect INPUT.*)
+ * Returns true if the local storage holds nothing but the input file, either
+ * the user's own `<inputKey>.*` or the temporary copy the CLI writes next to it.
  */
 export const checkIfStorageIsEmpty = async (inputKey?: string) => {
 	const key = inputKey || KEY_VALUE_STORE_KEYS.INPUT;
-	const filesWithoutInput = await glob([
-		`${getLocalStorageDir()}/**`,
-		`!${getLocalKeyValueStorePath()}/${key}.*`,
-		`!${getLocalKeyValueStorePath()}/${TEMP_INPUT_KEY_PREFIX}${key}.*`,
-	]);
+	// Storage paths use backslashes on Windows, which glob reads as escape characters.
+	const storageDir = getLocalStorageDir().replaceAll('\\', '/');
+	const keyValueStoreDir = getLocalKeyValueStorePath().replaceAll('\\', '/');
+
+	const filesWithoutInput = await glob(
+		[`${storageDir}/**`, `!${keyValueStoreDir}/${key}.*`, `!${keyValueStoreDir}/${TEMP_INPUT_KEY_PREFIX}${key}.*`],
+		{ cwd: process.cwd() },
+	);
 
 	return filesWithoutInput.length === 0;
 };
