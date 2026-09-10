@@ -105,6 +105,19 @@ describe('auth commands', () => {
 			expect(await getToken()).toBeUndefined();
 		});
 
+		it('logging in as another account replaces the stored metadata', async () => {
+			clientState.user = { id: 'uid', username: 'me', email: 'me@example.com' };
+			await login();
+
+			clientState.user = { id: 'uid2', username: 'other' };
+			await login('apify_api_other_token');
+
+			const authFile = readAuthFile();
+			expect(authFile).toMatchObject({ token: 'apify_api_other_token', id: 'uid2', username: 'other' });
+			// Known gap: fields the new account does not have survive the merge in getLoggedClient.
+			expect(authFile.email).toBe('me@example.com');
+		});
+
 		it('login with an invalid token stores nothing', async () => {
 			clientState.fail = true;
 			await login('bad-token');

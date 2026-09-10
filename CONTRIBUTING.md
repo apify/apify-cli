@@ -126,7 +126,7 @@ API-dependent test cases must have `[api]` in the test name and live in `test/ap
 
 ### `useKeyringBackend`
 
-`useAuthSetup` pins the file backend so tests never reach the real OS keyring. To cover the keyring backend instead, mock `@napi-rs/keyring` with the shared fake in `test/__setup__/keyring-mock.ts` and call `useKeyringBackend()` inside the `describe` that needs it. Both backends can then live in one file.
+`useAuthSetup` pins the file backend so tests never reach the real OS keyring. To cover the keyring backend instead, mock `@napi-rs/keyring` with the shared fake in `test/__setup__/keyring-mock.ts` and call `useKeyringBackend()` inside the `describe` that needs it. It must be nested inside a `describe`, so its `beforeEach` runs after the one `useAuthSetup` registers. Both backends can then live in one file.
 
 ```typescript
 import { useAuthSetup, useKeyringBackend } from "./__setup__/hooks/useAuthSetup.js";

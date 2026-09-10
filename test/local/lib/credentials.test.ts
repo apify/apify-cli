@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { rm } from 'node:fs/promises';
+import process from 'node:process';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
@@ -66,6 +67,12 @@ describe('credentials', () => {
 		it('returns "keyring" when the keyring probe succeeds', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			expect(await getBackend()).toBe('keyring');
+		});
+
+		it('returns "file" when auth.json carries the marker, even if the keyring loads', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeAuthFile({ token: 'tok', secretsBackend: 'file' });
+			expect(await getBackend()).toBe('file');
 		});
 
 		it('caches the backend choice for the rest of the process', async () => {
