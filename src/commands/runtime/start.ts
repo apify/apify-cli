@@ -14,7 +14,8 @@ import {
 	ACTOR_RUNTIME_CONSOLE_URL,
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	buildRuntimeRunArgs,
-	isRuntimeContainerRunning,
+	findRunningRuntimeEngine,
+	resolveEngineSocketPath,
 	runtimeEnvExportLines,
 } from '../../lib/runtime/docker.js';
 import { ensureActorRuntimeImage } from '../../lib/runtime/ensure.js';
@@ -25,7 +26,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 	static override name = 'start' as const;
 
 	static override description =
-		`Starts the Actor runtime, a local Apify platform running as a Docker container.\n` +
+		`Starts the Actor runtime, a local Apify platform running as a container on Docker or Podman.\n` +
 		`Installs the runtime first when needed (like 'apify runtime install'). The runtime API listens on ` +
 		`${ACTOR_RUNTIME_API_URL} and the console on ${ACTOR_RUNTIME_CONSOLE_URL}. Run 'apify runtime -h' for the ` +
 		`environment variables that point the CLI at it.`;
@@ -62,7 +63,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 	};
 
 	async run() {
-		if (await isRuntimeContainerRunning()) {
+		if (await findRunningRuntimeEngine()) {
 			error({
 				message: `The Actor runtime is already running (container '${ACTOR_RUNTIME_CONTAINER_NAME}'). Stop it with 'apify runtime stop' first.`,
 			});
@@ -70,8 +71,10 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			return;
 		}
 
-		if (!(await ensureActorRuntimeImage())) return;
+		const engine = await ensureActorRuntimeImage();
+		if (!engine) return;
 
+		const hostSocketPath = await resolveEngineSocketPath(engine);
 		const dataDir = resolve(this.flags.dataDir ?? defaultDataDir());
 		await mkdir(dataDir, { recursive: true });
 
@@ -87,11 +90,11 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			].join('\n'),
 		});
 
-		// Spawned without a shell so interrupt signals reach 'docker run' directly instead of dying in 'sh -c'.
-		const args = buildRuntimeRunArgs({ dataDir, detach: this.flags.detach });
-		run({ message: `docker ${args.join(' ')}` });
+		// Spawned without a shell so interrupt signals reach the engine's 'run' directly instead of dying in 'sh -c'.
+		const args = buildRuntimeRunArgs({ dataDir, detach: this.flags.detach, hostSocketPath });
+		run({ message: `${engine} ${args.join(' ')}` });
 
-		const child = execa('docker', args, { stdio: 'inherit' });
+		const child = execa(engine, args, { stdio: 'inherit' });
 
 		let interrupted = false;
 		const cleanupSignalHandlers = INTERRUPT_SIGNALS.map((signal) => {

@@ -2,40 +2,83 @@ import {
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	ACTOR_RUNTIME_IMAGE,
 	buildRuntimeRunArgs,
-	dockerDaemonHint,
-	dockerInstallHint,
-	dockerSocketMount,
+	engineDaemonHint,
+	engineInstallHint,
+	requestedContainerEngine,
+	resolveEngineSocketPath,
+	socketMountArg,
 } from '../../../src/lib/runtime/docker.js';
 
 describe('runtime/docker', () => {
-	describe('dockerSocketMount()', () => {
-		it('uses the plain socket path on Linux and macOS', () => {
-			expect(dockerSocketMount('linux')).toBe('/var/run/docker.sock:/var/run/docker.sock');
-			expect(dockerSocketMount('darwin')).toBe('/var/run/docker.sock:/var/run/docker.sock');
+	describe('socketMountArg()', () => {
+		it('mounts the host socket at the path the runtime expects, on Linux and macOS', () => {
+			expect(socketMountArg('/var/run/docker.sock', 'linux')).toBe('/var/run/docker.sock:/var/run/docker.sock');
+			expect(socketMountArg('/run/podman/podman.sock', 'darwin')).toBe('/run/podman/podman.sock:/var/run/docker.sock');
 		});
 
 		it('doubles the leading slash on Windows to prevent path mangling', () => {
-			expect(dockerSocketMount('win32')).toBe('//var/run/docker.sock:/var/run/docker.sock');
+			expect(socketMountArg('/var/run/docker.sock', 'win32')).toBe('//var/run/docker.sock:/var/run/docker.sock');
+		});
+	});
+
+	describe('requestedContainerEngine()', () => {
+		it('reads APIFY_CONTAINER_ENGINE case-insensitively and ignores anything but docker or podman', () => {
+			expect(requestedContainerEngine({ APIFY_CONTAINER_ENGINE: 'podman' })).toBe('podman');
+			expect(requestedContainerEngine({ APIFY_CONTAINER_ENGINE: ' Docker ' })).toBe('docker');
+			expect(requestedContainerEngine({ APIFY_CONTAINER_ENGINE: 'nerdctl' })).toBeUndefined();
+			expect(requestedContainerEngine({})).toBeUndefined();
+		});
+	});
+
+	describe('resolveEngineSocketPath()', () => {
+		it('uses the default Docker socket unless DOCKER_HOST names a unix socket (rootless Docker)', async () => {
+			await expect(resolveEngineSocketPath('docker', {})).resolves.toBe('/var/run/docker.sock');
+			await expect(
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }),
+			).resolves.toBe('/run/user/1000/docker.sock');
+			await expect(resolveEngineSocketPath('docker', { DOCKER_HOST: 'tcp://localhost:2375' })).resolves.toBe(
+				'/var/run/docker.sock',
+			);
 		});
 	});
 
 	describe('install and daemon hints', () => {
 		it('points each platform at the right Docker distribution', () => {
-			expect(dockerInstallHint('darwin')).toContain('Docker Desktop for Mac');
-			expect(dockerInstallHint('win32')).toContain('Docker Desktop for Windows');
-			expect(dockerInstallHint('linux')).toContain('Docker Engine');
+			expect(engineInstallHint('docker', 'darwin')).toContain('Docker Desktop for Mac');
+			expect(engineInstallHint('docker', 'win32')).toContain('Docker Desktop for Windows');
+			expect(engineInstallHint('docker', 'linux')).toContain('Docker Engine');
+		});
+
+		it('points Podman users at the Podman installation docs on every platform', () => {
+			for (const platform of ['darwin', 'win32', 'linux'] as const) {
+				expect(engineInstallHint('podman', platform)).toContain('podman.io');
+			}
 		});
 
 		it('tells desktop users to start Docker Desktop and Linux users to start the daemon', () => {
-			expect(dockerDaemonHint('darwin')).toContain('Docker Desktop');
-			expect(dockerDaemonHint('win32')).toContain('Docker Desktop');
-			expect(dockerDaemonHint('linux')).toContain('systemctl start docker');
+			expect(engineDaemonHint('docker', 'darwin')).toContain('Docker Desktop');
+			expect(engineDaemonHint('docker', 'win32')).toContain('Docker Desktop');
+			expect(engineDaemonHint('docker', 'linux')).toContain('systemctl start docker');
+		});
+
+		it('tells Podman users to serve the API socket on Linux and to start the machine on desktops', () => {
+			expect(engineDaemonHint('podman', 'linux')).toContain('podman.socket');
+			expect(engineDaemonHint('podman', 'linux')).toContain('podman system service');
+			expect(engineDaemonHint('podman', 'darwin')).toContain('podman machine start');
+			expect(engineDaemonHint('podman', 'win32')).toContain('podman machine start');
 		});
 	});
 
 	describe('buildRuntimeRunArgs()', () => {
-		it('builds the canonical docker run command', () => {
-			expect(buildRuntimeRunArgs({ dataDir: '/home/me/data', detach: false, platform: 'linux' })).toEqual([
+		it('builds the canonical run command around the resolved host socket', () => {
+			expect(
+				buildRuntimeRunArgs({
+					dataDir: '/home/me/data',
+					detach: false,
+					hostSocketPath: '/var/run/docker.sock',
+					platform: 'linux',
+				}),
+			).toEqual([
 				'run',
 				'--rm',
 				'--init',
@@ -53,8 +96,23 @@ describe('runtime/docker', () => {
 			]);
 		});
 
+		it("mounts a rootless Podman socket at the runtime's expected path", () => {
+			const args = buildRuntimeRunArgs({
+				dataDir: '/data',
+				detach: false,
+				hostSocketPath: '/run/user/1000/podman/podman.sock',
+				platform: 'linux',
+			});
+			expect(args).toContain('/run/user/1000/podman/podman.sock:/var/run/docker.sock');
+		});
+
 		it('adds --detach before the image when requested', () => {
-			const args = buildRuntimeRunArgs({ dataDir: '/data', detach: true, platform: 'linux' });
+			const args = buildRuntimeRunArgs({
+				dataDir: '/data',
+				detach: true,
+				hostSocketPath: '/var/run/docker.sock',
+				platform: 'linux',
+			});
 			expect(args).toContain('--detach');
 			expect(args.indexOf('--detach')).toBeLessThan(args.indexOf(ACTOR_RUNTIME_IMAGE));
 		});

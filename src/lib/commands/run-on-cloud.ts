@@ -92,7 +92,10 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 	} catch (err: any) {
 		// TODO: Better error message in apify-client-js
 		if (err.type === 'record-not-found') {
-			throw new Error(`${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id}) not found!`);
+			// The API's own message says what exactly is missing - e.g. a local runtime reports an Actor that
+			// exists but has no build under the requested tag with this same error type.
+			const reason = typeof err.message === 'string' && err.message ? `: ${err.message}` : '!';
+			throw new Error(`${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id}) not found${reason}`);
 		}
 
 		if (err.type === 'full-permission-actor-not-approved') {
