@@ -1,5 +1,7 @@
 import {
 	DEV_FOLDER_OFF_RUN_PARAMS,
+	formatLiveDevFolderWarning,
+	getActorRuntimeDevFolder,
 	mayTargetActorRuntime,
 	setActorRuntimeDevFolder,
 	toActorRuntimeDevFolderPath,
@@ -111,6 +113,53 @@ describe('setActorRuntimeDevFolder', () => {
 			kind: 'unreachable',
 			message: 'ECONNREFUSED',
 		});
+	});
+});
+
+describe('getActorRuntimeDevFolder', () => {
+	const fetchMock = vitest.fn<typeof fetch>();
+
+	beforeEach(() => {
+		fetchMock.mockReset();
+		vitest.stubGlobal('fetch', fetchMock);
+	});
+
+	afterEach(() => {
+		vitest.unstubAllGlobals();
+	});
+
+	it('GETs the registration without a body and reads it back', async () => {
+		fetchMock.mockResolvedValueOnce(jsonResponse(200, { data: { localDevFolder: '/abs/actor' } }));
+
+		expect(await getActorRuntimeDevFolder(client, 'actor123')).toEqual({ kind: 'ok', localDevFolder: '/abs/actor' });
+		const [url, init] = fetchMock.mock.calls[0];
+		expect(url).toBe(`${RUNTIME_BASE_URL}/actor-runtime/dev-folder/actor123`);
+		expect(init?.method).toBe('GET');
+		expect(init?.body).toBeUndefined();
+		expect(init?.headers).not.toHaveProperty('Content-Type');
+	});
+
+	it('reports null when nothing is registered', async () => {
+		fetchMock.mockResolvedValueOnce(jsonResponse(200, { data: { localDevFolder: null } }));
+
+		expect(await getActorRuntimeDevFolder(client, 'actor123')).toEqual({ kind: 'ok', localDevFolder: null });
+	});
+
+	it('reports a 404 as unsupported - an older runtime without the GET, or not a runtime at all', async () => {
+		fetchMock.mockResolvedValueOnce(jsonResponse(404, { error: { type: 'record-not-found' } }));
+
+		expect(await getActorRuntimeDevFolder(client, 'actor123')).toEqual({ kind: 'unsupported' });
+	});
+});
+
+describe('formatLiveDevFolderWarning', () => {
+	it('names the folder, the compile requirement, and the way out', () => {
+		const text = formatLiveDevFolderWarning('/abs/actor');
+
+		expect(text).toContain('LIVE DEV FOLDER MODE');
+		expect(text).toContain('/abs/actor');
+		expect(text).toContain('TS-based Actors require local compilation');
+		expect(text).toContain('apify call --no-dev-folder');
 	});
 });
 

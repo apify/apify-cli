@@ -20,7 +20,12 @@ import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands
 import { finalizeRun, runUrl } from '../../lib/commands/run-result.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog, warning } from '../../lib/outputs.js';
-import { DEV_FOLDER_OFF_RUN_PARAMS, mayTargetActorRuntime } from '../../lib/runtime/dev-folder.js';
+import {
+	DEV_FOLDER_OFF_RUN_PARAMS,
+	formatLiveDevFolderWarning,
+	getActorRuntimeDevFolder,
+	mayTargetActorRuntime,
+} from '../../lib/runtime/dev-folder.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
@@ -158,6 +163,12 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 					message:
 						'--no-dev-folder only applies to runs on a local Actor runtime; the Apify platform has no live dev folder to skip. Ignoring it.',
 				});
+			}
+		} else if (mayTargetActorRuntime(apifyClient)) {
+			// Loud on purpose: the run is about to use local files, not the image the developer may expect.
+			const devFolder = await getActorRuntimeDevFolder(apifyClient, actorId);
+			if (devFolder.kind === 'ok' && devFolder.localDevFolder) {
+				simpleLog({ message: formatLiveDevFolderWarning(devFolder.localDevFolder) });
 			}
 		}
 
