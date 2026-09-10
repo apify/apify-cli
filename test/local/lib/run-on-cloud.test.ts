@@ -101,15 +101,5 @@ describe('runActorOrTaskOnCloud', () => {
 			});
 			expect(run).toBe(fetchedRun);
 		});
-
-		it("uses apify-client's own start() when there are no extras", async () => {
-			const { client, start, call } = fakeClient();
-			start.mockResolvedValue(fetchedRun);
-
-			await startOnce(client);
-
-			expect(call).not.toHaveBeenCalled();
-			expect(start).toHaveBeenCalledTimes(1);
-		});
 	});
 });

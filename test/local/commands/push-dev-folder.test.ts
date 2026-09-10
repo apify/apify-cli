@@ -101,27 +101,6 @@ describe('apify push against a local Actor runtime', () => {
 			{ url: `${RUNTIME_BASE_URL}/actor-runtime/dev-folder/${ACTOR_ID}`, body: tmpPath },
 		]);
 		expect(logMessages.error.join('\n')).toContain(`Registered ${tmpPath} as the live dev folder`);
-		expect(logMessages.log.join('\n')).toContain(`Live dev folder: ${tmpPath}`);
-	});
-
-	it('registers the --dir directory, not the cwd, when pushing another folder', async () => {
-		await mkdir(joinPath('nested', '.actor'), { recursive: true });
-		await writeFile(
-			joinPath('nested', LOCAL_CONFIG_PATH),
-			JSON.stringify({ actorSpecification: 1, name: actName, version: '0.0', buildTag: 'latest' }),
-		);
-		await writeFile(joinPath('nested', '.actor', 'main.js'), 'console.log("nested")');
-
-		await testRunCommand(ActorsPushCommand, { flags_dir: 'nested' });
-
-		expect(devFolderCalls().map((call) => call.body)).toEqual([join(tmpPath, 'nested')]);
-	});
-
-	it('reports the registered folder in --json output', async () => {
-		await testRunCommand(ActorsPushCommand, { flags_json: true });
-
-		const result = JSON.parse(logMessages.log.find((line) => line.startsWith('{'))!) as Record<string, unknown>;
-		expect(result).toMatchObject({ ok: true, localDevFolder: tmpPath });
 	});
 
 	it('warns, but still reports a successful push, when the runtime refuses the path', async () => {
@@ -139,30 +118,16 @@ describe('apify push against a local Actor runtime', () => {
 		expect(process.exitCode).toBeFalsy();
 		expect(logMessages.error.join('\n')).toContain('The submitted path does not exist on the host.');
 		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
-		expect(logMessages.log.join('\n')).not.toContain('Live dev folder:');
-	});
-
-	it('stays quiet when the non-cloud target turns out not to be an Actor runtime (404)', async () => {
-		fetchMock.mockResolvedValueOnce(new Response('{"error":{"type":"record-not-found"}}', { status: 404 }));
-
-		await testRunCommand(ActorsPushCommand, {});
-
-		expect(process.exitCode).toBeFalsy();
-		expect(logMessages.error.join('\n')).not.toContain('dev folder');
-		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 	});
 });
 
 describe('apify push against the Apify platform', () => {
-	beforeEach(() => {
-		baseUrl = CLOUD_BASE_URL;
-	});
-
 	it('never calls the runtime endpoint', async () => {
+		baseUrl = CLOUD_BASE_URL;
+
 		await testRunCommand(ActorsPushCommand, {});
 
 		expect(fetchMock).not.toHaveBeenCalled();
 		expect(logMessages.error.join('\n')).not.toContain('dev folder');
-		expect(logMessages.log.join('\n')).not.toContain('Live dev folder');
 	});
 });

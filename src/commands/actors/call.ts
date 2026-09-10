@@ -20,7 +20,7 @@ import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands
 import { finalizeRun, runUrl } from '../../lib/commands/run-result.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog, warning } from '../../lib/outputs.js';
-import { DEV_FOLDER_OFF_RUN_PARAMS, mayTargetActorRuntime } from '../../lib/runtime/dev-folder.js';
+import { mayTargetActorRuntime } from '../../lib/runtime/dev-folder.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
@@ -152,7 +152,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		let extraStartParams: Record<string, string> | undefined;
 		if (!this.flags.devFolder) {
 			if (mayTargetActorRuntime(apifyClient)) {
-				extraStartParams = DEV_FOLDER_OFF_RUN_PARAMS;
+				extraStartParams = { devFolder: 'false' };
 			} else {
 				warning({
 					message:

@@ -485,11 +485,9 @@ DESCRIPTION
   Unset them to talk to the Apify cloud again. 'apify runtime start' prints the 
   same values when the runtime boots.
 
-  With the CLI pointed at the runtime, 'apify push' also registers the pushed 
-  directory as the Actor's live dev folder: later runs mount it over the built 
-  image, so local edits (recompiled locally) apply on the next 'apify call' 
-  without another push.
-  Pass --no-dev-folder to 'apify call' to run from the built image alone.
+  Pointed at the runtime, 'apify push' also registers the pushed directory as 
+  the Actor's live dev folder, so runs pick up local edits without another push;
+   'apify call --no-dev-folder' runs from the built image alone.
 
 SUBCOMMANDS
   runtime install  Installs the Actor runtime: verifies this
