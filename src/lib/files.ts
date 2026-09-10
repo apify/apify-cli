@@ -50,7 +50,9 @@ export const ensureFolderExistsSync = (rootPath: string, folderPath?: string) =>
 
 export const rimrafPromised = async (pathToBeRemoved: string | string[]) => {
 	const paths = Array.isArray(pathToBeRemoved) ? pathToBeRemoved : [pathToBeRemoved];
-	await Promise.all(paths.map(async (path) => rm(path, { recursive: true, force: true })));
+	await Promise.all(
+		paths.map(async (path) => rm(path, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })),
+	);
 };
 
 export const deleteFile = async (filePath: string) => {
