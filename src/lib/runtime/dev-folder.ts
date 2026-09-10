@@ -1,7 +1,6 @@
 import process from 'node:process';
 
 import type { ApifyClient } from 'apify-client';
-import chalk from 'chalk';
 
 import { APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
@@ -50,22 +49,14 @@ export function toActorRuntimeDevFolderPath(localPath: string, platform: NodeJS.
 }
 
 export type DevFolderResult =
-	/** The runtime answered; `localDevFolder` is what it has registered for the Actor (`null` when nothing). */
+	/** The runtime accepted the call; `localDevFolder` is what it now has registered (`null` after a clear). */
 	| { kind: 'ok'; localDevFolder: string | null }
 	/** The target answered `404`: it is not an Actor runtime, or one without this endpoint. */
 	| { kind: 'unsupported' }
-	/** The runtime refused the request (a path that does not exist on the host, is not a directory, Docker unreachable, ...). */
+	/** The runtime refused the path (does not exist on the host, not a directory, Docker unreachable, ...). */
 	| { kind: 'rejected'; message: string }
 	/** The request itself failed. */
 	| { kind: 'unreachable'; message: string };
-
-/**
- * `GET /actor-runtime/dev-folder/:actorId` - reads what the runtime has registered for the Actor without
- * changing it. Never throws.
- */
-export async function getActorRuntimeDevFolder(client: RuntimeClient, actorId: string): Promise<DevFolderResult> {
-	return devFolderRequest(client, actorId, 'GET');
-}
 
 /**
  * `POST /actor-runtime/dev-folder/:actorId` - registers `path` as the Actor's live dev folder, or clears
@@ -77,34 +68,28 @@ export async function setActorRuntimeDevFolder(
 	actorId: string,
 	path: string | null,
 ): Promise<DevFolderResult> {
-	return devFolderRequest(client, actorId, 'POST', JSON.stringify(path ?? ''));
-}
-
-async function devFolderRequest(
-	client: RuntimeClient,
-	actorId: string,
-	method: 'GET' | 'POST',
-	body?: string,
-): Promise<DevFolderResult> {
 	// `baseUrl` already ends in `/v2`; the runtime serves `/v2/actor-runtime/*` as an alias of `/actor-runtime/*`.
 	const url = `${client.baseUrl}/actor-runtime/dev-folder/${actorId}`;
+	const body = JSON.stringify(path ?? '');
 
 	let response: Response;
 	try {
-		const headers = { ...APIFY_CLIENT_DEFAULT_HEADERS, Authorization: `Bearer ${client.token}` };
-		response = await fetch(
-			url,
-			body === undefined
-				? { method, headers }
-				: { method, headers: { ...headers, 'Content-Type': 'application/json' }, body },
-		);
+		response = await fetch(url, {
+			method: 'POST',
+			headers: {
+				...APIFY_CLIENT_DEFAULT_HEADERS,
+				'Authorization': `Bearer ${client.token}`,
+				'Content-Type': 'application/json',
+			},
+			body,
+		});
 	} catch (err) {
-		cliDebugPrint('actor-runtime', method, url, 'failed', err);
+		cliDebugPrint('actor-runtime', 'POST', url, 'failed', err);
 		return { kind: 'unreachable', message: (err as Error).message };
 	}
 
 	const text = await response.text();
-	cliDebugPrint('actor-runtime', method, url, body ?? '', '->', response.status, text.slice(0, 400));
+	cliDebugPrint('actor-runtime', 'POST', url, body, '->', response.status, text.slice(0, 400));
 
 	if (response.status === 404) return { kind: 'unsupported' };
 
@@ -121,22 +106,4 @@ async function devFolderRequest(
 	}
 
 	return { kind: 'ok', localDevFolder: payload?.data?.localDevFolder ?? null };
-}
-
-/**
- * The banner `apify call` prints before a run that will mount a registered live dev folder - loud on
- * purpose: the mount also hides the image's compiled output, so an un-rebuilt TypeScript Actor fails
- * with a confusing "cannot find module dist/main.js" rather than running stale code.
- */
-export function formatLiveDevFolderWarning(localDevFolder: string): string {
-	const bar = '!'.repeat(96);
-	const lines = [
-		'',
-		chalk.bgRed.white.bold(' LIVE DEV FOLDER MODE '),
-		`This run uses the local source files from ${localDevFolder}, mounted over the built Docker image.`,
-		'TS-based Actors require local compilation (e.g. `npm run build`) before the run.',
-		'To run purely from the built Docker image, use `apify call --no-dev-folder`.',
-		'',
-	];
-	return [bar, ...lines.map((line) => `!!  ${line}`), bar].map((line) => chalk.red.bold(line)).join('\n');
 }
