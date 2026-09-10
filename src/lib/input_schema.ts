@@ -15,6 +15,11 @@ import { ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_PATH } from './consts.js';
 import { info, warning } from './outputs.js';
 import { Ajv2019, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
+// Actor versions on the platform are MAJOR.MINOR with non-negative integers and no leading
+// zeros. Three-part SemVer (e.g. "1.0.0") is a build-number format the platform rejects.
+// TODO: replace with the shared export from @apify/consts once apify-shared-js #655 lands.
+const ACTOR_VERSION_REGEX = /^(0|[1-9]\d*)\.(0|[1-9]\d*)$/;
+
 const DEFAULT_INPUT_SCHEMA_PATHS = [
 	'.actor/INPUT_SCHEMA.json',
 	'./INPUT_SCHEMA.json',
@@ -230,6 +235,22 @@ export const readOutputSchema = ({
 		outputSchemaPath: result.schemaPath,
 	};
 };
+
+export function validateActorVersion(config: Record<string, unknown>): void {
+	if (config.version === undefined) {
+		return;
+	}
+
+	if (typeof config.version === 'string' && ACTOR_VERSION_REGEX.test(config.version)) {
+		return;
+	}
+
+	const received = typeof config.version === 'string' ? `"${config.version}"` : JSON.stringify(config.version);
+
+	throw new Error(
+		`Actor version in '${LOCAL_CONFIG_PATH}' must be in MAJOR.MINOR format, for example "1.0". Received ${received}.`,
+	);
+}
 
 /**
  * Goes to the Actor directory and creates INPUT.json file from the input schema prefills.
