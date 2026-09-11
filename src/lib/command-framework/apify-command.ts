@@ -383,15 +383,15 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 		}
 
-		if (missingRequiredArgs.size) {
-			process.exitCode = 1;
-			this._printMissingRequiredArgs(missingRequiredArgs);
-			return;
-		}
-
 		this._parseFlags(rawFlags, rawTokens);
 
 		try {
+			if (missingRequiredArgs.size) {
+				process.exitCode = 1;
+				this._printMissingRequiredArgs(missingRequiredArgs);
+				return;
+			}
+
 			await this.run();
 		} catch (err: any) {
 			error({ message: err.message });

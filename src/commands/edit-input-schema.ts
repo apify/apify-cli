@@ -12,7 +12,7 @@ import { Args } from '../lib/command-framework/args.js';
 import { LOCAL_CONFIG_PATH } from '../lib/consts.js';
 import { readInputSchema } from '../lib/input_schema.js';
 import { createLocalApiServer } from '../lib/local-api-server.js';
-import { error, info, success, warning } from '../lib/outputs.js';
+import { info, logError, success, warning } from '../lib/outputs.js';
 
 const INPUT_SCHEMA_EDITOR_BASE_URL = 'https://apify.github.io/input-schema-editor-react/';
 const INPUT_SCHEMA_EDITOR_ORIGIN = new URL(INPUT_SCHEMA_EDITOR_BASE_URL).origin;
@@ -105,7 +105,7 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 						}
 					} catch (err) {
 						const errorMessage = `Reading input schema from disk failed with: ${(err as Error).message}`;
-						error({ message: errorMessage });
+						logError({ message: errorMessage });
 						res.status(500);
 						res.send(errorMessage);
 						return;
@@ -116,7 +116,7 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 						inputSchemaObj = JSON.parse(inputSchemaStr || '{}');
 					} catch (err) {
 						const errorMessage = `Parsing input schema failed with error: ${(err as Error).message}`;
-						error({ message: errorMessage });
+						logError({ message: errorMessage });
 						res.status(500);
 						res.send(errorMessage);
 						return;
@@ -141,7 +141,7 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 						info({ message: 'Input schema saved to disk.' });
 					} catch (err) {
 						const errorMessage = `Saving input schema failed with error: ${(err as Error).message}`;
-						error({ message: errorMessage });
+						logError({ message: errorMessage });
 						res.status(500);
 						res.send(errorMessage);
 					}
