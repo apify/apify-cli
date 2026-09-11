@@ -13,6 +13,7 @@ import {
 import { RuntimeConnectCommand } from './connect.js';
 import { RuntimeDisconnectCommand } from './disconnect.js';
 import { RuntimeInstallCommand } from './install.js';
+import { RuntimeSkillCommand } from './skill.js';
 import { RuntimeStartCommand } from './start.js';
 import { RuntimeStatusCommand } from './status.js';
 import { RuntimeStopCommand } from './stop.js';
@@ -78,6 +79,7 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 		RuntimeStatusCommand,
 		RuntimeConnectCommand,
 		RuntimeDisconnectCommand,
+		RuntimeSkillCommand,
 	];
 
 	async run() {

@@ -519,6 +519,10 @@ SUBCOMMANDS
                       Apify CLI targets the Apify platform again, unless the API
                       and console URL environment variables point it somewhere
                       else.
+  runtime skill       Prints the Actor runtime's Agent Skill -
+                      the instructions an agent needs to drive the runtime (the
+                      dev-folder loop, debug mode, browser view, migration
+                      testing, the API fallback).
 ```
 
 ##### `apify runtime install`
@@ -618,6 +622,31 @@ DESCRIPTION
 
 USAGE
   $ apify runtime disconnect
+```
+
+##### `apify runtime skill`
+
+```sh
+DESCRIPTION
+  Prints the Actor runtime's Agent Skill - the instructions an agent needs to 
+  drive the runtime (the dev-folder loop, debug mode, browser view, migration 
+  testing, the API fallback).
+  The skill ships inside the runtime image, so it always describes the runtime 
+  you actually have. It is read over HTTP when the runtime is running, and 
+  straight out of the installed image when it is not - so 'apify runtime 
+  install' is all it needs.
+  Use --install to put it in your agent's skills directory, where it loads on 
+  demand in this and later sessions instead of only the terminal it was printed 
+  into.
+
+USAGE
+  $ apify runtime skill [--install] [--raw]
+
+FLAGS
+      --install  Write the skill into every agent skills directory found,
+                 instead of printing it.
+      --raw      Print the file exactly as it ships, frontmatter and all,
+                 with no added header.
 ```
 
 ##### `apify actor`

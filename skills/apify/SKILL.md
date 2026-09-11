@@ -91,6 +91,8 @@ apify key-value-stores keys <storeId> --json
 
 `apify runtime` runs a self-contained local Apify platform as a container on Docker or Podman. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account. It ships on the `runtime` npm dist-tag, not on `latest`.
 
+This section covers only how to *get* a runtime. Once you have one, **run `apify runtime skill --install`** (or `apify runtime skill` to read it now) — the runtime ships its own Agent Skill describing everything it can do: the no-rebuild dev-folder loop, IDE debugging, watching a Playwright/Puppeteer browser, migration testing, and relaying unimplemented calls to the real platform. That skill lives in the runtime image, so it always matches the runtime you actually have; do not reconstruct it from memory.
+
 **Prerequisite: Docker or Podman.** One of them must be installed and running before any `apify runtime` command works; the CLI does not install either. It uses the first engine found on PATH (Docker before Podman); `APIFY_CONTAINER_ENGINE=podman` forces Podman.
 
 With Podman, the API socket must be served: check with `podman info --format '{{.Host.RemoteSocket.Exists}}'` (must print `true`). If it does not, run `systemctl --user enable --now podman.socket` (rootless) or `sudo systemctl enable --now podman.socket` (rootful); without systemd, `podman system service --time=0 &`. On macOS/Windows, `podman machine start` first. Rootful and rootless Podman both work.
@@ -139,6 +141,7 @@ export APIFY_DISABLE_KEYRING=1
 
 $APIFY runtime install
 $APIFY runtime start --detach --data-dir ./runtime-data   # omit --detach to run in the foreground (Ctrl+C stops it)
+$APIFY runtime skill --install                            # install the runtime's own skill, then follow it
 $APIFY login --token local-dev-token                      # the runtime accepts any token
 $APIFY actors ls --json                                   # now talks to the local runtime
 $APIFY runtime stop

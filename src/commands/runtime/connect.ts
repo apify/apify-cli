@@ -6,6 +6,7 @@ import {
 	ACTOR_RUNTIME_API_URL,
 	ACTOR_RUNTIME_CONSOLE_URL,
 	findRunningRuntimeEngine,
+	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
 import { overridingRuntimeEnvVars, setConnectedToActorRuntime } from '../../lib/runtime/target.js';
 
@@ -40,6 +41,8 @@ export class RuntimeConnectCommand extends ApifyCommand<typeof RuntimeConnectCom
 				`  Console: ${ACTOR_RUNTIME_CONSOLE_URL}`,
 				'',
 				`Run ${chalk.white.bold('apify runtime disconnect')} to target the Apify platform again.`,
+				'',
+				...runtimeSkillHintLines(),
 			].join('\n'),
 		});
 

@@ -11,6 +11,7 @@ import {
 	findRunningRuntimeEngine,
 	inspectRuntimeContainer,
 	type PublishedPort,
+	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
 import { installedActorRuntimeImage } from '../../lib/runtime/ensure.js';
 import { isConnectedToActorRuntime, overridingRuntimeEnvVars, resolveApiBaseUrl } from '../../lib/runtime/target.js';
@@ -115,6 +116,10 @@ export class RuntimeStatusCommand extends ApifyCommand<typeof RuntimeStatusComma
 				'Set in this shell, taking precedence over the connection above:',
 				...overrides.map(([name, value]) => `  ${name}=${value}`),
 			);
+		}
+
+		if (engine) {
+			lines.push('', ...runtimeSkillHintLines());
 		}
 
 		simpleLog({ message: lines.join('\n') });
