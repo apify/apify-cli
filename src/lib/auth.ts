@@ -4,20 +4,34 @@ import process from 'node:process';
 import { ApifyClient, type ApifyClientOptions } from 'apify-client';
 import { AxiosHeaders } from 'axios';
 
+import { APIFY_ENV_VARS } from '@apify/consts';
+
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH } from './consts.js';
 import { ensureMigrated, getBackend, getToken, setProxyPassword, setToken } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
-export type TokenSource = 'flag' | 'stored';
+export type TokenSource = 'flag' | 'env' | 'stored';
 
 export interface ResolvedAuth {
 	token: string;
 	source: TokenSource;
 }
 
+/** Where a resolved token came from, for messages that need to name it. */
+export const TOKEN_SOURCE_LABELS: Record<TokenSource, string> = {
+	flag: '--token flag',
+	env: `${APIFY_ENV_VARS.TOKEN} environment variable`,
+	stored: 'apify login',
+};
+
 /**
- * The single token resolver. Order: `--token` flag -> stored login.
+ * The single token resolver. Order: a token the command was given -> `APIFY_TOKEN` -> stored
+ * login. Only `login` and `mcp install` take a token of their own, through `--token`; every
+ * other command uses `APIFY_TOKEN` to run as a different account.
+ *
+ * Inside a platform run there is no stored login, so `APIFY_TOKEN` wins without a special case
+ * for the `actor` entrypoint.
  *
  * Read-only by contract: no caller of this function persists anything. Only `apify login`
  * writes credentials, through {@link loginWithToken}.
@@ -25,6 +39,11 @@ export interface ResolvedAuth {
 export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth | undefined> => {
 	if (explicitToken) {
 		return { token: explicitToken, source: 'flag' };
+	}
+
+	const envToken = process.env[APIFY_ENV_VARS.TOKEN];
+	if (envToken) {
+		return { token: envToken, source: 'env' };
 	}
 
 	await ensureMigrated();
@@ -36,6 +55,34 @@ export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth 
 
 	return undefined;
 };
+
+/**
+ * Message for a token that the API rejected, or for having no token at all. `error` is the
+ * failure the lookup produced, so an unreachable API is not reported as a bad token.
+ */
+export async function describeAuthFailure(error?: unknown): Promise<string> {
+	const auth = await resolveAuth();
+
+	if (!auth) {
+		return 'You are not logged in with your Apify account. Call "apify login" to fix that.';
+	}
+
+	// Only the API can reject a token, so a failure that carries no auth status is something else.
+	const statusCode = (error as { statusCode?: number } | undefined)?.statusCode;
+	if (error && statusCode !== 401 && statusCode !== 403) {
+		const reason = error instanceof Error ? error.message : String(error);
+		return `Could not verify your API token. The Apify API request failed: ${reason}`;
+	}
+
+	switch (auth.source) {
+		case 'flag':
+			return 'The API token passed with --token was rejected. Check the token and try again.';
+		case 'env':
+			return `The API token in ${APIFY_ENV_VARS.TOKEN} was rejected. Unset it to use your stored login instead.`;
+		default:
+			return 'Your stored API token was rejected. Call "apify login" to log in again.';
+	}
+}
 
 type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
 

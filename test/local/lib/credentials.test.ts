@@ -47,6 +47,8 @@ const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
 describe('credentials', () => {
 	beforeEach(() => {
 		vitest.stubEnv('__APIFY_INTERNAL_TEST_AUTH_PATH__', cryptoRandomObjectId(12));
+		// The resolver reads APIFY_TOKEN, so a token in the developer's shell would leak into tests.
+		vitest.stubEnv('APIFY_TOKEN', '');
 		resetKeyringMock();
 		writeFileSyncSpy.mockClear();
 		__resetCredentialsForTests();

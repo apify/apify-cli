@@ -70,9 +70,12 @@ vitest.mock('../../../src/lib/git-source/gitSource.js', async (importOriginal) =
 }));
 
 // A Git source needs a token; the mocked flow never uses the client, so an empty one is enough.
+// The account has to be stubbed too, or the real lookup goes to the API for whatever token the
+// host happens to have in its environment.
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../../src/lib/utils.js')>()),
 	getLoggedClientOrThrow: vitest.fn(async () => ({})),
+	getCurrentUserInfo: vitest.fn(async () => ({ id: 'userId', username: 'user' })),
 }));
 
 const actName = 'create-git-source-actor';

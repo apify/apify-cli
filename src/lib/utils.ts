@@ -32,7 +32,7 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
-import { getApifyClientOptions, resolveAuth } from './auth.js';
+import { describeAuthFailure, getApifyClientOptions, resolveAuth } from './auth.js';
 import {
 	AUTH_FILE_PATH,
 	CommandExitCodes,
@@ -120,13 +120,13 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
  * Gets instance of ApifyClient for user otherwise throws error
  */
 export async function getLoggedClientOrThrow() {
-	const loggedClient = await getLoggedClient();
+	const { client, error } = await getLoggedClient();
 
-	if (!loggedClient) {
+	if (!client) {
 		process.exitCode = CommandExitCodes.MissingAuth;
-		throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
+		throw new Error(await describeAuthFailure(error));
 	}
-	return loggedClient;
+	return client;
 }
 
 let cachedUserInfo: { token: string; userInfo: AuthJSON } | undefined;
@@ -137,26 +137,27 @@ export function __resetUserInfoCacheForTests() {
 }
 
 /**
- * Gets instance of ApifyClient for the token the current command resolved, or `null` when no
- * token is available or the API rejected it.
+ * Gets instance of ApifyClient for the token the current command resolved. `client` is `null`
+ * when no token is available, or when the lookup failed — `error` carries that failure so the
+ * caller can tell a rejected token from an API it could not reach.
  *
  * Read-only: the resolved token is never persisted. Only `apify login` writes credentials.
  */
-export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
-	const auth = await resolveAuth(token);
-	if (!auth) return null;
+async function getLoggedClient(): Promise<{ client: ApifyClient | null; error?: unknown }> {
+	const auth = await resolveAuth();
+	if (!auth) return { client: null };
 
-	const apifyClient = new ApifyClient(await getApifyClientOptions(auth.token, apiBaseUrl));
+	const apifyClient = new ApifyClient(await getApifyClientOptions(auth.token));
 
 	try {
 		const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
 		cachedUserInfo = { token: auth.token, userInfo };
 	} catch (err) {
-		cliDebugPrint('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
-		return null;
+		cliDebugPrint('[getLoggedClient] error getting user info', { error: err });
+		return { client: null, error: err };
 	}
 
-	return apifyClient;
+	return { client: apifyClient };
 }
 
 /**

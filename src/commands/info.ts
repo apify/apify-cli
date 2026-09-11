@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 
+import { resolveAuth, TOKEN_SOURCE_LABELS } from '../lib/auth.js';
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { getCurrentUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 
@@ -22,16 +23,21 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 	async run() {
 		await getLoggedClientOrThrow();
 		const info = await getCurrentUserInfo();
+		const auth = await resolveAuth();
 
-		if (info) {
-			const niceInfo = {
-				username: info.username,
-				userId: info.id,
-			} as const;
+		const niceInfo: Record<string, string | undefined> = {
+			username: info.username,
+			userId: info.id,
+		};
 
-			for (const key of Object.keys(niceInfo) as (keyof typeof niceInfo)[]) {
-				console.log(`${chalk.gray(key)}: ${chalk.bold(niceInfo[key])}`);
-			}
+		if (auth) {
+			// Names where the token came from, so an APIFY_TOKEN that overrides a stored login
+			// is visible rather than silent.
+			niceInfo['token source'] = TOKEN_SOURCE_LABELS[auth.source];
+		}
+
+		for (const key of Object.keys(niceInfo)) {
+			console.log(`${chalk.gray(key)}: ${chalk.bold(niceInfo[key])}`);
 		}
 	}
 }

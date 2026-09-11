@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import process from 'node:process';
 
-import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
+import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
 import { getToken } from '../../../src/lib/credentials.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
@@ -117,12 +117,33 @@ describe('auth commands', () => {
 			expect(authFile.email).toBeUndefined();
 		});
 
-		it('login with an invalid token stores nothing', async () => {
+		it('login with an invalid token stores nothing and fails the command', async () => {
 			clientState.fail = true;
 			await login('bad-token');
 
 			expect(lastErrorMessage()).toContain('Login to Apify failed');
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+			// A login that exits 0 lets `apify login --token $BAD && apify push` run on.
+			expect(process.exitCode).toBe(CommandExitCodes.MissingAuth);
+			process.exitCode = 0;
+		});
+
+		it('login saves its own token even when APIFY_TOKEN is set', async () => {
+			vitest.stubEnv('APIFY_TOKEN', 'apify_api_env_token');
+			await login();
+
+			expect(await getToken()).toBe(TOKEN);
+		});
+
+		it('auth token prints APIFY_TOKEN over the stored token, and stores nothing', async () => {
+			await login();
+			vitest.stubEnv('APIFY_TOKEN', 'apify_api_env_token');
+
+			await testRunCommand(AuthTokenCommand, {});
+
+			expect(lastLogMessage()).toBe('apify_api_env_token');
+			expect(await getToken()).toBe(TOKEN);
+			expect(readAuthFile()).toMatchObject({ username: 'me' });
 		});
 	});
 
