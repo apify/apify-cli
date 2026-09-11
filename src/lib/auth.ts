@@ -1,7 +1,7 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
-import { ApifyClient, type ApifyClientOptions } from 'apify-client';
+import { ApifyApiError, ApifyClient, type ApifyClientOptions } from 'apify-client';
 import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
@@ -69,6 +69,8 @@ export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth 
 		return { token: explicitToken, source: 'flag' };
 	}
 
+	await ensureMigrated();
+
 	const envToken = getEnvToken();
 	if (envToken) {
 		// Only worth saying when there is a stored login to override. In CI and inside a platform
@@ -84,8 +86,6 @@ export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth 
 	if (rawEnvToken) {
 		noticeOnce(`${APIFY_ENV_VARS.TOKEN} is invalid: "${rawEnvToken}".`);
 	}
-
-	await ensureMigrated();
 
 	const storedToken = await getToken();
 	if (storedToken) {
@@ -107,7 +107,7 @@ export async function describeAuthFailure(error?: unknown): Promise<string> {
 	}
 
 	// Only the API can reject a token, so a failure that carries no auth status is something else.
-	const statusCode = (error as { statusCode?: number } | undefined)?.statusCode;
+	const statusCode = error instanceof ApifyApiError ? error.statusCode : undefined;
 	if (error && statusCode !== 401 && statusCode !== 403) {
 		const reason = error instanceof Error ? error.message : String(error);
 		return `Could not verify your API token. The Apify API request failed: ${reason}`;
@@ -125,28 +125,29 @@ export async function describeAuthFailure(error?: unknown): Promise<string> {
 
 type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
 
+/** Base URL and headers, with no token and so no credential lookup. */
+export const getAnonymousApifyClientOptions = (apiBaseUrl?: string): ApifyClientOptions => ({
+	baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
+	requestInterceptors: [
+		(config) => {
+			config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
+
+			for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
+				config.headers![key] = value;
+			}
+
+			return config;
+		},
+	],
+});
+
 /**
  * Returns options for ApifyClient
  */
-export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => {
-	const auth = await resolveAuth(token);
-
-	return {
-		token: auth?.token,
-		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
-		requestInterceptors: [
-			(config) => {
-				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
-
-				for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
-					config.headers![key] = value;
-				}
-
-				return config;
-			},
-		],
-	};
-};
+export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => ({
+	...getAnonymousApifyClientOptions(apiBaseUrl),
+	token: (await resolveAuth(token))?.token,
+});
 
 /**
  * Authenticates `token` and saves it together with the account metadata. This is the only
@@ -168,7 +169,6 @@ export async function loginWithToken(token: string, apiBaseUrl?: string): Promis
 	// Replaces the previous account rather than merging into it, so fields the new account
 	// does not have (email, organizationOwnerUserId) cannot linger from the old one.
 	const fileContents: Record<string, unknown> = { ...userInfo, secretsBackend: await getBackend() };
-	delete fileContents.token;
 	if (fileContents.proxy && typeof fileContents.proxy === 'object') {
 		const { password: _password, ...rest } = fileContents.proxy as { password?: string };
 		if (Object.keys(rest).length > 0) {

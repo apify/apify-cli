@@ -160,17 +160,23 @@ async function getLoggedClient(): Promise<{ client: ApifyClient | null; error?: 
 }
 
 /**
- * Account metadata for the token the current command resolved. An env token has no entry in
- * auth.json, so the account is read from the API, normally off the cache {@link getLoggedClient}
- * already filled.
+ * Account metadata for the token the current command resolved, preferring what
+ * {@link getLoggedClient} already fetched. An env token has no entry in auth.json, so a cold
+ * cache means an API call — bounded, because `apify run` reaches here before spawning anything
+ * and the client would otherwise retry an unreachable API for minutes.
  */
 export async function getCurrentUserInfo(): Promise<AuthJSON> {
 	const auth = await resolveAuth();
-	if (!auth || auth.source === 'stored') return getLocalUserInfo();
+	if (!auth) return getLocalUserInfo();
 
 	if (cachedUserInfo?.token === auth.token) return cachedUserInfo.userInfo;
+	if (auth.source === 'stored') return getLocalUserInfo();
 
-	const apifyClient = new ApifyClient(await getApifyClientOptions(auth.token));
+	const apifyClient = new ApifyClient({
+		...(await getApifyClientOptions(auth.token)),
+		maxRetries: 1,
+		timeoutSecs: 10,
+	});
 	const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
 	cachedUserInfo = { token: auth.token, userInfo };
 

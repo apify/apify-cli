@@ -1,7 +1,7 @@
 import { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
-import { getApifyClientOptions } from '../../lib/auth.js';
+import { getAnonymousApifyClientOptions } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -97,9 +97,7 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 		const { query } = this.args;
 		const { json, sortBy, category, username, pricingModel, limit, offset } = this.flags;
 
-		const clientOptions = await getApifyClientOptions();
-		delete clientOptions.token;
-		const client = new ApifyClient(clientOptions);
+		const client = new ApifyClient(getAnonymousApifyClientOptions());
 
 		let result;
 

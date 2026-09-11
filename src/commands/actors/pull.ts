@@ -80,8 +80,8 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		const userInfo = await getCurrentUserInfo();
 		const apifyClient = await getLoggedClientOrThrow();
+		const userInfo = await getCurrentUserInfo();
 
 		const isActorAutomaticallyDetected = !this.args.actorId;
 		const usernameOrId = userInfo.username || userInfo.id;

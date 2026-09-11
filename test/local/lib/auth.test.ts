@@ -1,9 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs';
 
+import { ApifyApiError } from 'apify-client';
+
 import { loginWithToken, resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
 import { getProxyPassword, getToken, setToken } from '../../../src/lib/credentials.js';
-import { getLoggedClientOrThrow } from '../../../src/lib/utils.js';
+import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../../src/lib/utils.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
@@ -47,6 +49,14 @@ const ENV = 'apify_api_env';
 const FLAG = 'apify_api_flag';
 
 const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
+
+// A real ApifyApiError, not a look-alike: describeAuthFailure narrows on the class, so a
+// hand-built error would let the 401/403 branch rot without failing a test.
+const apiError = (statusCode: number) =>
+	new ApifyApiError(
+		{ status: statusCode, data: { error: { message: 'nope' } }, config: {}, headers: {}, statusText: '' } as never,
+		1,
+	);
 
 describe('auth', () => {
 	beforeEach(() => {
@@ -180,7 +190,7 @@ describe('auth', () => {
 			await loginWithToken(STORED);
 			vitest.stubEnv('APIFY_TOKEN', ENV);
 			clientState.fail = true;
-			clientState.failWith = Object.assign(new Error('Unauthorized'), { statusCode: 401 });
+			clientState.failWith = apiError(401);
 
 			await expect(getLoggedClientOrThrow()).rejects.toThrow(`The API token in APIFY_TOKEN was rejected`);
 		});
@@ -188,7 +198,7 @@ describe('auth', () => {
 		it('names the stored login as the source of a rejected token', async () => {
 			await loginWithToken(STORED);
 			clientState.fail = true;
-			clientState.failWith = Object.assign(new Error('Forbidden'), { statusCode: 403 });
+			clientState.failWith = apiError(403);
 
 			await expect(getLoggedClientOrThrow()).rejects.toThrow('Your stored API token was rejected');
 		});
@@ -199,6 +209,47 @@ describe('auth', () => {
 			clientState.failWith = new Error('getaddrinfo ENOTFOUND api.apify.com');
 
 			await expect(getLoggedClientOrThrow()).rejects.toThrow('The Apify API request failed');
+		});
+	});
+
+	describe('getCurrentUserInfo()', () => {
+		it('reads auth.json for a stored token, without touching the API', async () => {
+			await loginWithToken(STORED);
+			clientState.fail = true;
+
+			await expect(getCurrentUserInfo()).resolves.toMatchObject({ username: 'me', id: 'uid' });
+		});
+
+		it('fetches the account behind APIFY_TOKEN rather than the stored one', async () => {
+			await loginWithToken(STORED);
+			vitest.stubEnv('APIFY_TOKEN', ENV);
+			clientState.user = { id: 'uid2', username: 'other' };
+
+			await expect(getCurrentUserInfo()).resolves.toMatchObject({ username: 'other', id: 'uid2' });
+		});
+
+		it('reuses the account the client lookup already fetched', async () => {
+			await loginWithToken(STORED);
+			vitest.stubEnv('APIFY_TOKEN', ENV);
+			clientState.user = { id: 'uid2', username: 'other' };
+			await getLoggedClientOrThrow();
+
+			// A second API call would throw here; the cache is what keeps this green.
+			clientState.fail = true;
+
+			await expect(getCurrentUserInfo()).resolves.toMatchObject({ username: 'other' });
+		});
+
+		it('prefers that cache over auth.json on the stored path, so a rename is picked up', async () => {
+			await loginWithToken(STORED);
+			clientState.user = { id: 'uid', username: 'renamed' };
+			await getLoggedClientOrThrow();
+
+			await expect(getCurrentUserInfo()).resolves.toMatchObject({ username: 'renamed' });
+		});
+
+		it('returns an empty account when no token resolves', async () => {
+			await expect(getCurrentUserInfo()).resolves.toEqual({});
 		});
 	});
 
