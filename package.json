@@ -95,7 +95,7 @@
 		"configparser": "~0.3.10",
 		"detect-indent": "~7.0.2",
 		"escape-string-regexp": "~5.0.0",
-		"execa": "^9.6.1",
+		"execa": "^10.0.0",
 		"giget": "^3.3.0",
 		"handlebars": "~4.7.9",
 		"ignore": "^7.0.5",
