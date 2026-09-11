@@ -56,6 +56,24 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 	});
 }
 
+/**
+ * Switches the enclosing `describe` to the keyring backend, which {@link useAuthSetup} pins off.
+ * Throws unless the file mocks `@napi-rs/keyring` with `test/__setup__/keyring-mock.ts`.
+ */
+export function useKeyringBackend() {
+	beforeEach(async () => {
+		const keyring = await import('@napi-rs/keyring').catch(() => null);
+		if (!keyring || !('resetKeyringMock' in keyring)) {
+			throw new Error(
+				"useKeyringBackend() would write to the real OS keyring. Add vi.mock('@napi-rs/keyring', () => import('<path>/keyring-mock.js')) to this file.",
+			);
+		}
+
+		vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+		__resetCredentialsForTests();
+	});
+}
+
 export async function safeLogin(tokenOverride?: string) {
 	const { TEST_USER_TOKEN } = await import('../config.js');
 
