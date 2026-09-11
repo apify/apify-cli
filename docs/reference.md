@@ -498,8 +498,8 @@ DESCRIPTION
 SUBCOMMANDS
   runtime install  Installs the Actor runtime: verifies this
                    machine has a working container engine (Docker or Podman) and
-                   downloads the Actor runtime image
-                   ('apify/actor-runtime:latest').
+                   downloads the Actor runtime image ('apify/actor-runtime:latest'
+                   unless another one is given).
   runtime start    Starts the Actor runtime, a local Apify
                    platform running as a container on Docker or Podman.
   runtime stop     Stops the Actor runtime container started with
@@ -512,13 +512,18 @@ SUBCOMMANDS
 DESCRIPTION
   Installs the Actor runtime: verifies this machine has a working container 
   engine (Docker or Podman) and downloads the Actor runtime image 
-  ('apify/actor-runtime:latest').
+  ('apify/actor-runtime:latest' unless another one is given).
+  'apify runtime start' then runs the image installed last.
   The engine itself is a prerequisite and is not installed by this command - see
    https://docs.docker.com/get-started/get-docker/ or 
   https://podman.io/docs/installation.
 
 USAGE
-  $ apify runtime install [-f]
+  $ apify runtime install [image] [-f]
+
+ARGUMENTS
+  image  Container image to install as the Actor runtime. Defaults to
+         'apify/actor-runtime:latest'.
 
 FLAGS
   -f, --force  Download the Actor runtime image even when it is already

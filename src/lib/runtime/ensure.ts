@@ -1,12 +1,15 @@
+import { readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
 import chalk from 'chalk';
 
+import { ACTOR_RUNTIME_CONFIG_FILE_PATH } from '../consts.js';
 import { execWithLog } from '../exec.js';
+import { ensureApifyDirectory } from '../files.js';
 import { error, info } from '../outputs.js';
 import {
-	ACTOR_RUNTIME_IMAGE,
 	CONTAINER_ENGINE_ENV_VAR,
+	DEFAULT_ACTOR_RUNTIME_IMAGE,
 	type ContainerEngine,
 	engineDaemonHint,
 	engineInstallHint,
@@ -16,7 +19,23 @@ import {
 } from './docker.js';
 
 export interface EnsureActorRuntimeImageOptions {
+	image: string;
 	forcePull?: boolean;
+}
+
+/** The image the last 'apify runtime install' fetched, or the default when nothing was installed yet. */
+export function installedActorRuntimeImage(): string {
+	try {
+		const { image } = JSON.parse(readFileSync(ACTOR_RUNTIME_CONFIG_FILE_PATH(), 'utf-8'));
+		return typeof image === 'string' && image ? image : DEFAULT_ACTOR_RUNTIME_IMAGE;
+	} catch {
+		return DEFAULT_ACTOR_RUNTIME_IMAGE;
+	}
+}
+
+export function rememberInstalledActorRuntimeImage(image: string) {
+	ensureApifyDirectory(ACTOR_RUNTIME_CONFIG_FILE_PATH());
+	writeFileSync(ACTOR_RUNTIME_CONFIG_FILE_PATH(), JSON.stringify({ image }, null, '\t'));
 }
 
 /**
@@ -24,8 +43,9 @@ export interface EnsureActorRuntimeImageOptions {
  * Resolves to the engine to drive, or null after printing a user-facing error and setting the exit code.
  */
 export async function ensureActorRuntimeImage({
+	image,
 	forcePull = false,
-}: EnsureActorRuntimeImageOptions = {}): Promise<ContainerEngine | null> {
+}: EnsureActorRuntimeImageOptions): Promise<ContainerEngine | null> {
 	const found = await findContainerEngine();
 	if (!found) {
 		const requested = requestedContainerEngine();
@@ -50,23 +70,25 @@ export async function ensureActorRuntimeImage({
 		return null;
 	}
 
-	if (!forcePull && (await imageExistsLocally(engine, ACTOR_RUNTIME_IMAGE))) {
-		info({ message: `Actor runtime image '${ACTOR_RUNTIME_IMAGE}' is already available locally.` });
+	if (!forcePull && (await imageExistsLocally(engine, image))) {
+		info({ message: `Actor runtime image '${image}' is already available locally.` });
+		rememberInstalledActorRuntimeImage(image);
 		return engine;
 	}
 
-	info({ message: `Downloading the Actor runtime image '${ACTOR_RUNTIME_IMAGE}'...` });
+	info({ message: `Downloading the Actor runtime image '${image}'...` });
 
 	try {
-		await execWithLog({ cmd: engine, args: ['pull', ACTOR_RUNTIME_IMAGE] });
+		await execWithLog({ cmd: engine, args: ['pull', image] });
+		rememberInstalledActorRuntimeImage(image);
 		return engine;
 	} catch {
 		error({
 			message: [
-				`Could not pull '${ACTOR_RUNTIME_IMAGE}'.`,
+				`Could not pull '${image}'.`,
 				`  Check that you are online and can access the image - a private repository needs ${chalk.white.bold(`${engine} login`)} first.`,
 				'  You can also build the image locally from an actor-runtime checkout instead:',
-				chalk.white.bold(`    ${engine} build -t ${ACTOR_RUNTIME_IMAGE} .`),
+				chalk.white.bold(`    ${engine} build -t ${image} .`),
 			].join('\n'),
 		});
 		process.exitCode = 1;

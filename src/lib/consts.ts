@@ -58,6 +58,8 @@ export const STATE_FILE_PATH = () => join(GLOBAL_CONFIGS_FOLDER(), 'state.json')
 
 export const TELEMETRY_FILE_PATH = () => join(GLOBAL_CONFIGS_FOLDER(), 'telemetry.json');
 
+export const ACTOR_RUNTIME_CONFIG_FILE_PATH = () => join(GLOBAL_CONFIGS_FOLDER(), 'actor-runtime', 'config.json');
+
 export const DEPRECATED_LOCAL_CONFIG_NAME = 'apify.json';
 
 export const ACTOR_SPECIFICATION_FOLDER = '.actor';

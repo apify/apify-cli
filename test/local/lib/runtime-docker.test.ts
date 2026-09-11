@@ -1,7 +1,7 @@
 import {
 	ACTOR_RUNTIME_CONTAINER_NAME,
-	ACTOR_RUNTIME_IMAGE,
 	buildRuntimeRunArgs,
+	DEFAULT_ACTOR_RUNTIME_IMAGE,
 	engineDaemonHint,
 	engineInstallHint,
 	requestedContainerEngine,
@@ -73,6 +73,7 @@ describe('runtime/docker', () => {
 		it('builds the canonical run command around the resolved host socket', () => {
 			expect(
 				buildRuntimeRunArgs({
+					image: DEFAULT_ACTOR_RUNTIME_IMAGE,
 					dataDir: '/home/me/data',
 					detach: false,
 					hostSocketPath: '/var/run/docker.sock',
@@ -92,12 +93,13 @@ describe('runtime/docker', () => {
 				'/var/run/docker.sock:/var/run/docker.sock',
 				'-v',
 				'/home/me/data:/data',
-				ACTOR_RUNTIME_IMAGE,
+				DEFAULT_ACTOR_RUNTIME_IMAGE,
 			]);
 		});
 
 		it("mounts a rootless Podman socket at the runtime's expected path", () => {
 			const args = buildRuntimeRunArgs({
+				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
 				dataDir: '/data',
 				detach: false,
 				hostSocketPath: '/run/user/1000/podman/podman.sock',
@@ -108,13 +110,14 @@ describe('runtime/docker', () => {
 
 		it('adds --detach before the image when requested', () => {
 			const args = buildRuntimeRunArgs({
+				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
 				dataDir: '/data',
 				detach: true,
 				hostSocketPath: '/var/run/docker.sock',
 				platform: 'linux',
 			});
 			expect(args).toContain('--detach');
-			expect(args.indexOf('--detach')).toBeLessThan(args.indexOf(ACTOR_RUNTIME_IMAGE));
+			expect(args.indexOf('--detach')).toBeLessThan(args.indexOf(DEFAULT_ACTOR_RUNTIME_IMAGE));
 		});
 	});
 });
