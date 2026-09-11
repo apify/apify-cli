@@ -18,7 +18,7 @@ import {
 	resolveEngineSocketPath,
 	runtimeEnvExportLines,
 } from '../../lib/runtime/docker.js';
-import { ensureActorRuntimeImage } from '../../lib/runtime/ensure.js';
+import { ensureActorRuntimeImage, installedActorRuntimeImage } from '../../lib/runtime/ensure.js';
 
 const defaultDataDir = () => join(GLOBAL_CONFIGS_FOLDER(), 'actor-runtime', 'data');
 
@@ -71,7 +71,8 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			return;
 		}
 
-		const engine = await ensureActorRuntimeImage();
+		const image = installedActorRuntimeImage();
+		const engine = await ensureActorRuntimeImage({ image });
 		if (!engine) return;
 
 		const hostSocketPath = await resolveEngineSocketPath(engine);
@@ -91,7 +92,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		});
 
 		// Spawned without a shell so interrupt signals reach the engine's 'run' directly instead of dying in 'sh -c'.
-		const args = buildRuntimeRunArgs({ dataDir, detach: this.flags.detach, hostSocketPath });
+		const args = buildRuntimeRunArgs({ image, dataDir, detach: this.flags.detach, hostSocketPath });
 		run({ message: `${engine} ${args.join(' ')}` });
 
 		const child = execa(engine, args, { stdio: 'inherit' });

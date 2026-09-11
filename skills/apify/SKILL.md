@@ -115,7 +115,7 @@ With Docker, check with `docker info` and act on what it tells you:
   - Docker Desktop (macOS, Windows, Linux desktop): https://docs.docker.com/get-started/get-docker/
   - Docker Engine (Linux servers, headless): https://docs.docker.com/engine/install/
 
-`apify runtime install` runs the same engine checks and prints a platform-specific hint when something is missing.
+`apify runtime install` runs the same engine checks and prints a platform-specific hint when something is missing. It installs `apify/actor-runtime:latest` unless another image is given (for example `apify runtime install apify/actor-runtime:master-5462005` for a pinned build); `apify runtime start` runs whichever image was installed last. Only name an image when the user asks for a specific one.
 
 **Working directory.** Install the preview CLI locally in one dedicated directory rather than globally, so it cannot replace the user's stable `apify` install. Keep the runtime data and the Actor projects you create in the same directory - everything the session produced is then in one place and easy to clean up:
 

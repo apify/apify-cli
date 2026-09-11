@@ -3,7 +3,7 @@ import process from 'node:process';
 import { execa } from 'execa';
 import which from 'which';
 
-export const ACTOR_RUNTIME_IMAGE = 'apify/actor-runtime:latest';
+export const DEFAULT_ACTOR_RUNTIME_IMAGE = 'apify/actor-runtime:latest';
 
 export const ACTOR_RUNTIME_CONTAINER_NAME = 'apify-actor-runtime';
 
@@ -202,6 +202,7 @@ export function socketMountArg(hostSocketPath: string, platform: NodeJS.Platform
 }
 
 export interface RuntimeRunArgsOptions {
+	image: string;
 	dataDir: string;
 	detach: boolean;
 	hostSocketPath: string;
@@ -209,6 +210,7 @@ export interface RuntimeRunArgsOptions {
 }
 
 export function buildRuntimeRunArgs({
+	image,
 	dataDir,
 	detach,
 	hostSocketPath,
@@ -230,7 +232,7 @@ export function buildRuntimeRunArgs({
 		socketMountArg(hostSocketPath, platform),
 		'-v',
 		`${dataDir}:/data`,
-		ACTOR_RUNTIME_IMAGE,
+		image,
 	);
 
 	return args;
