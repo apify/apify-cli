@@ -1,3 +1,4 @@
+import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -56,7 +57,7 @@ export class ActorSetValueCommand extends ApifyCommand<typeof ActorSetValueComma
 		const { contentType = 'application/json; charset=utf-8' } = this.flags;
 
 		// NOTE: If user pass value as argument and data on stdin same time. We use the value from argument.
-		const recordValue = value || process.stdin;
+		const recordValue = value ?? cachedStdinInput;
 		const apifyClient = await getApifyStorageClient();
 		const storeClient = apifyClient.keyValueStore(getDefaultStorageId(APIFY_STORAGE_TYPES.KEY_VALUE_STORE));
 
