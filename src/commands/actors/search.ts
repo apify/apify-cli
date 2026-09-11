@@ -1,13 +1,14 @@
 import { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
+import { getApifyClientOptions } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { error, info, simpleLog } from '../../lib/outputs.js';
-import { getApifyClientOptions, printJsonToStdout } from '../../lib/utils.js';
+import { printJsonToStdout } from '../../lib/utils.js';
 
 const pricingModelLabels: Record<string, string> = {
 	FREE: 'Free',

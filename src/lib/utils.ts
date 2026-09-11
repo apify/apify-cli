@@ -9,9 +9,9 @@ import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapp
 import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
-import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
+import { type ActorRun, ApifyClient, type Build } from 'apify-client';
 import { ZipArchive } from 'archiver';
-import axios, { AxiosHeaders } from 'axios';
+import axios from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import ignoreModule, { type Ignore } from 'ignore';
 import { getEncoding } from 'istextorbinary';
@@ -32,8 +32,8 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
+import { getApifyClientOptions, resolveAuth } from './auth.js';
 import {
-	APIFY_CLIENT_DEFAULT_HEADERS,
 	AUTH_FILE_PATH,
 	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
@@ -41,8 +41,8 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
-import { deleteFile, ensureApifyDirectory, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { ensureMigrated, getBackend, getProxyPassword, getToken } from './credentials.js';
+import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import type { AuthJSON } from './types.js';
@@ -129,89 +129,54 @@ export async function getLoggedClientOrThrow() {
 	return loggedClient;
 }
 
-const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
-	if (existingToken) return existingToken;
-	await ensureMigrated();
-	return getToken();
-};
+let cachedUserInfo: { token: string; userInfo: AuthJSON } | undefined;
 
-type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
-
-/**
- * Returns options for ApifyClient
- */
-export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => {
-	const resolvedToken = await resolveToken(token);
-
-	return {
-		token: resolvedToken,
-		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
-		requestInterceptors: [
-			(config) => {
-				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
-
-				for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
-					config.headers![key] = value;
-				}
-
-				return config;
-			},
-		],
-	};
-};
+/** Test-only: drop the in-memory account metadata so each test starts fresh. */
+export function __resetUserInfoCacheForTests() {
+	cachedUserInfo = undefined;
+}
 
 /**
- * Gets instance of ApifyClient for token or for params from global auth file.
+ * Gets instance of ApifyClient for the token the current command resolved, or `null` when no
+ * token is available or the API rejected it.
  *
- * Refreshes the user metadata in auth.json each run. Secrets (token, proxy.password) only
- * get written when their value actually changes — avoids macOS Keychain prompts on every command.
+ * Read-only: the resolved token is never persisted. Only `apify login` writes credentials.
  */
 export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
-	const resolvedToken = await resolveToken(token);
+	const auth = await resolveAuth(token);
+	if (!auth) return null;
 
-	const apifyClient = new ApifyClient(await getApifyClientOptions(resolvedToken, apiBaseUrl));
+	const apifyClient = new ApifyClient(await getApifyClientOptions(auth.token, apiBaseUrl));
 
-	let userInfo;
 	try {
-		userInfo = await apifyClient.user('me').get();
+		const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
+		cachedUserInfo = { token: auth.token, userInfo };
 	} catch (err) {
 		cliDebugPrint('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
 		return null;
 	}
 
-	if (apifyClient.token) {
-		await setToken(apifyClient.token, { skipIfUnchanged: true });
-	}
-
-	const proxyPassword = userInfo.proxy?.password;
-	if (proxyPassword) {
-		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
-	}
-
-	ensureApifyDirectory(AUTH_FILE_PATH());
-	const existingFile = (() => {
-		try {
-			return JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8')) as Record<string, unknown>;
-		} catch {
-			return {};
-		}
-	})();
-	const backend = await getBackend();
-	const fileContents: Record<string, unknown> = { ...existingFile, ...userInfo, secretsBackend: backend };
-	if (backend === 'keyring') {
-		delete fileContents.token;
-		if (fileContents.proxy && typeof fileContents.proxy === 'object') {
-			const { password: _password, ...rest } = fileContents.proxy as { password?: string };
-			if (Object.keys(rest).length > 0) {
-				fileContents.proxy = rest;
-			} else {
-				delete fileContents.proxy;
-			}
-		}
-	}
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
-
 	return apifyClient;
+}
+
+/**
+ * Account metadata for the token the current command resolved.
+ *
+ * A one-off `--token` has no entry in auth.json, so the account is read from the API instead.
+ * In practice the value is already cached by the {@link getLoggedClient} call such commands
+ * make first.
+ */
+export async function getCurrentUserInfo(): Promise<AuthJSON> {
+	const auth = await resolveAuth();
+	if (!auth || auth.source === 'stored') return getLocalUserInfo();
+
+	if (cachedUserInfo?.token === auth.token) return cachedUserInfo.userInfo;
+
+	const apifyClient = new ApifyClient(await getApifyClientOptions(auth.token));
+	const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
+	cachedUserInfo = { token: auth.token, userInfo };
+
+	return userInfo;
 }
 
 export const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);

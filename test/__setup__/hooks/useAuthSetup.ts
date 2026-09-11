@@ -9,7 +9,7 @@ import { LoginCommand } from '../../../src/commands/login.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { __resetCredentialsForTests } from '../../../src/lib/credentials.js';
-import { getLocalUserInfo } from '../../../src/lib/utils.js';
+import { __resetUserInfoCacheForTests, getLocalUserInfo } from '../../../src/lib/utils.js';
 
 export interface UseAuthSetupOptions {
 	/**
@@ -43,7 +43,10 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 		// Tests pin to the file backend so they don't touch the real OS keyring.
 		// Unit tests for credentials.ts override this explicitly.
 		vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+		// The resolver reads APIFY_TOKEN, so a token in the developer's shell would leak into tests.
+		vitest.stubEnv('APIFY_TOKEN', '');
 		__resetCredentialsForTests();
+		__resetUserInfoCacheForTests();
 	});
 
 	after(async () => {
@@ -52,6 +55,7 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 		}
 
 		__resetCredentialsForTests();
+		__resetUserInfoCacheForTests();
 		vitest.unstubAllEnvs();
 	});
 }
@@ -71,6 +75,7 @@ export function useKeyringBackend() {
 
 		vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 		__resetCredentialsForTests();
+		__resetUserInfoCacheForTests();
 	});
 }
 

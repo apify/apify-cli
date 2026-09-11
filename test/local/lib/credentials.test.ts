@@ -4,6 +4,7 @@ import process from 'node:process';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { getApifyClientOptions } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import {
 	__resetCredentialsForTests,
@@ -15,7 +16,7 @@ import {
 	setProxyPassword,
 	setToken,
 } from '../../../src/lib/credentials.js';
-import { getApifyClientOptions, getLocalUserInfo } from '../../../src/lib/utils.js';
+import { getLocalUserInfo } from '../../../src/lib/utils.js';
 import {
 	KEYRING_PROXY_PASSWORD_KEY,
 	KEYRING_TOKEN_KEY,

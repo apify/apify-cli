@@ -7,6 +7,7 @@ import open from 'open';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { loginWithToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getConsoleIntegrationsUrl, getConsoleUrl } from '../../lib/console-url.js';
@@ -17,7 +18,7 @@ import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInpu
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { createLocalApiServer } from '../../lib/local-api-server.js';
 import { error, info, success } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
+import { getLocalUserInfo, tildify } from '../../lib/utils.js';
 
 // When logging in against a local Console instance (local platform development), validate the token
 // against the local API rather than production.
@@ -28,7 +29,7 @@ const API_VERSION = 'v1';
 
 const tryToLogin = async (token: string) => {
 	const apiBaseUrl = getConsoleUrl().includes('localhost') ? LOCAL_API_BASE_URL : undefined;
-	const isUserLogged = await getLoggedClient(token, apiBaseUrl);
+	const isUserLogged = await loginWithToken(token, apiBaseUrl);
 	const userInfo = await getLocalUserInfo();
 
 	if (isUserLogged) {

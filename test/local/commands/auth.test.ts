@@ -113,8 +113,8 @@ describe('auth commands', () => {
 
 			const authFile = readAuthFile();
 			expect(authFile).toMatchObject({ token: 'apify_api_other_token', id: 'uid2', username: 'other' });
-			// Known gap: getLoggedClient merges, so the old account's extra fields survive.
-			expect(authFile.email).toBe('me@example.com');
+			// The new account has no email, so the old one must not linger.
+			expect(authFile.email).toBeUndefined();
 		});
 
 		it('login with an invalid token stores nothing', async () => {

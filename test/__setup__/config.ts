@@ -3,7 +3,7 @@ import { EOL } from 'node:os';
 import { ApifyClient } from 'apify-client';
 import { isCI } from 'ci-info';
 
-import { getApifyClientOptions } from '../../src/lib/utils.js';
+import { getApifyClientOptions } from '../../src/lib/auth.js';
 
 const { TEST_USER_TOKEN: ENV_TEST_USER_TOKEN } = process.env;
 

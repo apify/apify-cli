@@ -36,7 +36,7 @@ import {
 	getLocalInput,
 	getLocalKeyValueStorePath,
 	getLocalStorageDir,
-	getLocalUserInfo,
+	getCurrentUserInfo,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
 	purgeDefaultDataset,
@@ -145,7 +145,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	async run() {
 		const cwd = process.cwd();
 
-		const { proxy, id: userId, token } = await getLocalUserInfo();
+		const { proxy, id: userId, token } = await getCurrentUserInfo();
 
 		const localConfigResult = await useActorConfig({ cwd });
 

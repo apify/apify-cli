@@ -9,7 +9,8 @@ import { ApifyClient } from 'apify-client';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';
 
-import { getApifyClientOptions, getLocalStorageDir, getLocalUserInfo } from './utils.js';
+import { getApifyClientOptions } from './auth.js';
+import { getLocalStorageDir, getLocalUserInfo } from './utils.js';
 
 export const APIFY_STORAGE_TYPES = {
 	KEY_VALUE_STORE: 'KEY_VALUE_STORE',

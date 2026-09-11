@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
+import { getCurrentUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 
 export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 	static override name = 'info' as const;
@@ -21,7 +21,7 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 
 	async run() {
 		await getLoggedClientOrThrow();
-		const info = await getLocalUserInfo();
+		const info = await getCurrentUserInfo();
 
 		if (info) {
 			const niceInfo = {
