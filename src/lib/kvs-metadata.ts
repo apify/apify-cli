@@ -1,9 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
+
+/** Name of a key-value store's own metadata file, as written by crawlee's storage clients. */
+const STORE_METADATA_FILE_NAME = '__metadata__.json';
 
 /** Suffix of a key-value store record's metadata sidecar, as written by crawlee's storage clients. */
-const RECORD_METADATA_SUFFIX = '.__metadata__.json';
+const RECORD_METADATA_SUFFIX = `.${STORE_METADATA_FILE_NAME}`;
 
 export interface KvsRecordMetadata {
 	key: string;
@@ -67,7 +70,22 @@ export function readKvsRecordMetadata(storePath: string, key: string): KvsRecord
 		return undefined;
 	}
 
-	return typeof metadata?.contentType === 'string' ? metadata : undefined;
+	if (typeof metadata?.contentType !== 'string') {
+		return undefined;
+	}
+
+	const { filename } = metadata;
+
+	// A sidecar may only bind its key to a plain file in the store itself.
+	const bindsToStoreFile =
+		filename === undefined ||
+		(typeof filename === 'string' &&
+			!['', '.', '..'].includes(filename) &&
+			basename(filename) === filename &&
+			filename !== STORE_METADATA_FILE_NAME &&
+			!filename.endsWith(RECORD_METADATA_SUFFIX));
+
+	return bindsToStoreFile ? metadata : undefined;
 }
 
 /** Delete a record's value file and its metadata sidecar. Missing files are not an error. */

@@ -170,4 +170,15 @@ describe('local storage helpers', () => {
 			fileName: 'INPUT.json',
 		});
 	});
+
+	it('ignores a sidecar binding its key outside the store', () => {
+		writeFileSync(joinPath('secret.json'), '{"secret":true}');
+		writeInputSidecar('../../../secret.json');
+
+		expect(getLocalInput(joinPath())).toStrictEqual({
+			body: Buffer.from('{}'),
+			contentType: 'application/json',
+			fileName: 'INPUT.json',
+		});
+	});
 });
