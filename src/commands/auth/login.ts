@@ -5,19 +5,21 @@ import chalk from 'chalk';
 import computerName from 'computer-name';
 import open from 'open';
 
+import { APIFY_ENV_VARS } from '@apify/consts';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { getEnvToken, loginWithToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getConsoleIntegrationsUrl, getConsoleUrl } from '../../lib/console-url.js';
-import { AUTH_FILE_PATH } from '../../lib/consts.js';
+import { AUTH_FILE_PATH, CommandExitCodes } from '../../lib/consts.js';
 import { getBackend } from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { createLocalApiServer } from '../../lib/local-api-server.js';
-import { error, info, success } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClient, tildify } from '../../lib/utils.js';
+import { error, info, success, warning } from '../../lib/outputs.js';
+import { getLocalUserInfo, tildify } from '../../lib/utils.js';
 
 // When logging in against a local Console instance (local platform development), validate the token
 // against the local API rather than production.
@@ -28,7 +30,7 @@ const API_VERSION = 'v1';
 
 const tryToLogin = async (token: string) => {
 	const apiBaseUrl = getConsoleUrl().includes('localhost') ? LOCAL_API_BASE_URL : undefined;
-	const isUserLogged = await getLoggedClient(token, apiBaseUrl);
+	const isUserLogged = await loginWithToken(token, apiBaseUrl);
 	const userInfo = await getLocalUserInfo();
 
 	if (isUserLogged) {
@@ -46,7 +48,14 @@ const tryToLogin = async (token: string) => {
 		success({
 			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored in ${tokenLocation}.`)}`,
 		});
+
+		if (getEnvToken()) {
+			warning({
+				message: `${APIFY_ENV_VARS.TOKEN} is set, so other commands keep using that token instead of this login. Unset it to use this account.`,
+			});
+		}
 	} else {
+		process.exitCode = CommandExitCodes.MissingAuth;
 		error({
 			message: 'Login to Apify failed, the provided API token is not valid.',
 		});
@@ -85,7 +94,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 	static override flags = {
 		token: Flags.string({
 			char: 't',
-			description: 'Apify API token.',
+			description: 'Apify API token to log in with and save. APIFY_TOKEN is deliberately ignored here.',
 			required: false,
 		}),
 		method: Flags.string({

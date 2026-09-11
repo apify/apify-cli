@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import { ApifyClient } from 'apify-client';
 
-import { getApifyClientOptions } from '../../../../src/lib/utils.js';
+import { getApifyClientOptions } from '../../../../src/lib/auth.js';
 import { runCli } from '../../__helpers__/run-cli.js';
 import { createTestActor, removeTestActor, type TestActor } from '../../__helpers__/test-actor.js';
 

@@ -10,6 +10,7 @@ import { minVersion } from 'semver';
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 
+import { resolveAuth } from '../lib/auth.js';
 import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
@@ -30,19 +31,21 @@ import { CRAWLEE_INPUT_KEY_ENV, resolveInputKey, TEMP_INPUT_KEY_PREFIX } from '.
 import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
+import type { AuthJSON } from '../lib/types.js';
 import {
 	Ajv2019,
 	checkIfStorageIsEmpty,
 	getLocalInput,
 	getLocalKeyValueStorePath,
 	getLocalStorageDir,
-	getLocalUserInfo,
+	getCurrentUserInfo,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
 	purgeDefaultDataset,
 	purgeDefaultKeyValueStore,
 	purgeDefaultQueue,
 } from '../lib/utils.js';
+import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
 
 interface TempInputResult {
 	tempInputKey: string;
@@ -145,7 +148,13 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	async run() {
 		const cwd = process.cwd();
 
-		const { proxy, id: userId, token } = await getLocalUserInfo();
+		const auth = await resolveAuth();
+		// An env token has no entry in auth.json, so the user id and proxy password come from the
+		// API. Losing them only costs the child two env vars, so a failed lookup must not stop the run.
+		const { proxy, id: userId } = await getCurrentUserInfo().catch((err) => {
+			cliDebugPrint('[run] could not resolve the account behind the token', { error: err });
+			return {} as AuthJSON;
+		});
 
 		const localConfigResult = await useActorConfig({ cwd });
 
@@ -331,7 +340,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
-		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
+		if (auth) localEnvVars[APIFY_ENV_VARS.TOKEN] = auth.token;
 		if (localConfig!.environmentVariables) {
 			const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>, undefined, {
 				allowMissing: this.flags.allowMissingSecrets,
@@ -342,7 +351,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		// localEnvVars must take priority so the CLI can redirect the SDK to temp input files
 		const env = { ...process.env, ...localEnvVars };
 
-		if (!userId) {
+		if (!auth) {
 			warning({
 				message:
 					'You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.',

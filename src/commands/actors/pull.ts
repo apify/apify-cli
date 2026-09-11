@@ -12,7 +12,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
-import { downloadZip, getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { downloadZip, getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const extractGitHubZip = async (url: string, directoryPath: string) => {
 	const zipFile = await downloadZip(url);
@@ -80,8 +80,8 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		const userInfo = await getLocalUserInfo();
 		const apifyClient = await getLoggedClientOrThrow();
+		const userInfo = await getCurrentUserInfo();
 
 		const isActorAutomaticallyDetected = !this.args.actorId;
 		const usernameOrId = userInfo.username || userInfo.id;

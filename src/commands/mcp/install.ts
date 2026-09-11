@@ -1,5 +1,6 @@
 import process from 'node:process';
 
+import { resolveAuth } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
@@ -7,25 +8,6 @@ import { CommandExitCodes } from '../../lib/consts.js';
 import { clientNeedsToken, getClientHandler, isSupportedClient, SUPPORTED_CLIENTS } from '../../lib/mcp/clients.js';
 import { buildMcpUrl, DEFAULT_MCP_URL } from '../../lib/mcp/url.js';
 import { error } from '../../lib/outputs.js';
-import { getLocalUserInfo } from '../../lib/utils.js';
-
-/**
- * Resolution order: --token flag → APIFY_TOKEN env → stored login.
- * Prints a user-facing error and sets process.exitCode when no token is available.
- */
-async function resolveApifyToken(tokenFlag: string | undefined): Promise<string | null> {
-	if (tokenFlag) return tokenFlag;
-	if (process.env.APIFY_TOKEN) return process.env.APIFY_TOKEN;
-
-	const userInfo = await getLocalUserInfo();
-	if (userInfo.token) return userInfo.token;
-
-	error({
-		message: `You are not logged in to Apify. Run 'apify login' first, or pass --token <api-token>.`,
-	});
-	process.exitCode = CommandExitCodes.MissingAuth;
-	return null;
-}
 
 export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override name = 'install' as const;
@@ -71,7 +53,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 		...YesFlag(`Overwrite an existing 'apify' entry without prompting.`),
 		token: Flags.string({
 			char: 't',
-			description: `Apify API token to embed in the config. Defaults to the token from 'apify login'.`,
+			description: `Apify API token to embed in the config. Defaults to APIFY_TOKEN, then the token from 'apify login'.`,
 		}),
 		url: Flags.string({
 			description: 'Apify MCP server URL.',
@@ -96,9 +78,15 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 
 		let token = '';
 		if (clientNeedsToken(client)) {
-			const resolved = await resolveApifyToken(tokenFlag);
-			if (!resolved) return;
-			token = resolved;
+			const auth = await resolveAuth(tokenFlag);
+			if (!auth) {
+				error({
+					message: `You are not logged in to Apify. Run 'apify login' first, or pass --token <api-token>.`,
+				});
+				process.exitCode = CommandExitCodes.MissingAuth;
+				return;
+			}
+			token = auth.token;
 		}
 
 		await getClientHandler(client)({ url: buildMcpUrl(baseUrl, tools), token, yes });
