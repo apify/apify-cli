@@ -6,6 +6,7 @@ import { isCI } from 'ci-info';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { LoginCommand } from '../../../src/commands/login.js';
+import { __resetAuthNoticesForTests } from '../../../src/lib/auth.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { __resetCredentialsForTests } from '../../../src/lib/credentials.js';
@@ -47,6 +48,7 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 		vitest.stubEnv('APIFY_TOKEN', '');
 		__resetCredentialsForTests();
 		__resetUserInfoCacheForTests();
+		__resetAuthNoticesForTests();
 	});
 
 	after(async () => {
@@ -56,6 +58,7 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 
 		__resetCredentialsForTests();
 		__resetUserInfoCacheForTests();
+		__resetAuthNoticesForTests();
 		vitest.unstubAllEnvs();
 	});
 }
@@ -76,6 +79,7 @@ export function useKeyringBackend() {
 		vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 		__resetCredentialsForTests();
 		__resetUserInfoCacheForTests();
+		__resetAuthNoticesForTests();
 	});
 }
 

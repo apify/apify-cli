@@ -31,8 +31,6 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 		};
 
 		if (auth) {
-			// Names where the token came from, so an APIFY_TOKEN that overrides a stored login
-			// is visible rather than silent.
 			niceInfo['token source'] = TOKEN_SOURCE_LABELS[auth.source];
 		}
 

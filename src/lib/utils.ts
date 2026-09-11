@@ -137,11 +137,10 @@ export function __resetUserInfoCacheForTests() {
 }
 
 /**
- * Gets instance of ApifyClient for the token the current command resolved. `client` is `null`
- * when no token is available, or when the lookup failed — `error` carries that failure so the
- * caller can tell a rejected token from an API it could not reach.
+ * `client` is `null` when no token is available or the lookup failed; `error` carries that
+ * failure, so the caller can tell a rejected token from an API it could not reach.
  *
- * Read-only: the resolved token is never persisted. Only `apify login` writes credentials.
+ * Read-only: the resolved token is never persisted.
  */
 async function getLoggedClient(): Promise<{ client: ApifyClient | null; error?: unknown }> {
 	const auth = await resolveAuth();
@@ -161,11 +160,9 @@ async function getLoggedClient(): Promise<{ client: ApifyClient | null; error?: 
 }
 
 /**
- * Account metadata for the token the current command resolved.
- *
- * A one-off `--token` has no entry in auth.json, so the account is read from the API instead.
- * In practice the value is already cached by the {@link getLoggedClient} call such commands
- * make first.
+ * Account metadata for the token the current command resolved. An env token has no entry in
+ * auth.json, so the account is read from the API, normally off the cache {@link getLoggedClient}
+ * already filled.
  */
 export async function getCurrentUserInfo(): Promise<AuthJSON> {
 	const auth = await resolveAuth();

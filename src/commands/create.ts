@@ -317,7 +317,6 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			? {
 					provider: gitProvider,
 					client: await getLoggedClientOrThrow(),
-					// Read after the client, whose lookup caches the account for the token the run resolved.
 					account: toGitAccount(await getCurrentUserInfo()),
 					// Omitted means on: the webhook is what makes a Git-sourced Actor rebuild on a push.
 					autoBuild: this.flags.autoBuild !== 'off',

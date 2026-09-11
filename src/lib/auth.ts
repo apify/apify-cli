@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
 import { ApifyClient, type ApifyClientOptions } from 'apify-client';
@@ -9,6 +9,7 @@ import { APIFY_ENV_VARS } from '@apify/consts';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH } from './consts.js';
 import { ensureMigrated, getBackend, getToken, setProxyPassword, setToken } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
+import { warning } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 export type TokenSource = 'flag' | 'env' | 'stored';
@@ -16,6 +17,36 @@ export type TokenSource = 'flag' | 'env' | 'stored';
 export interface ResolvedAuth {
 	token: string;
 	source: TokenSource;
+}
+
+/**
+ * Values that mean the variable was never really set: `APIFY_TOKEN=$UNSET_VAR` leaves an empty
+ * string, and templating an absent value writes the literal "undefined".
+ */
+const PLACEHOLDER_TOKENS = new Set(['undefined', 'null', 'nil', 'none', 'nan', 'false', '0', '-']);
+
+/** The `APIFY_TOKEN` value, or `undefined` when it is unset, blank, or a placeholder. */
+export function getEnvToken(): string | undefined {
+	const raw = process.env[APIFY_ENV_VARS.TOKEN]?.trim();
+	if (!raw || PLACEHOLDER_TOKENS.has(raw.toLowerCase())) return undefined;
+	return raw;
+}
+
+let envNoticeShown = false;
+
+/** Test-only: let each test see the once-per-process notice again. */
+export function __resetAuthNoticesForTests() {
+	envNoticeShown = false;
+}
+
+/**
+ * `resolveAuth` runs several times per command, so the notice is emitted once. Stderr keeps
+ * `auth token` pipeable and `--json` output parseable.
+ */
+function noticeOnce(message: string) {
+	if (envNoticeShown) return;
+	envNoticeShown = true;
+	warning({ message });
 }
 
 /** Where a resolved token came from, for messages that need to name it. */
@@ -27,23 +58,31 @@ export const TOKEN_SOURCE_LABELS: Record<TokenSource, string> = {
 
 /**
  * The single token resolver. Order: a token the command was given -> `APIFY_TOKEN` -> stored
- * login. Only `login` and `mcp install` take a token of their own, through `--token`; every
- * other command uses `APIFY_TOKEN` to run as a different account.
+ * login. Only `login` and `mcp install` take a token of their own; every other command uses
+ * `APIFY_TOKEN` to run as a different account. Inside a platform run there is no stored login,
+ * so `APIFY_TOKEN` wins without a special case for the `actor` entrypoint.
  *
- * Inside a platform run there is no stored login, so `APIFY_TOKEN` wins without a special case
- * for the `actor` entrypoint.
- *
- * Read-only by contract: no caller of this function persists anything. Only `apify login`
- * writes credentials, through {@link loginWithToken}.
+ * Read-only by contract. Only `apify login` writes credentials, through {@link loginWithToken}.
  */
 export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth | undefined> => {
 	if (explicitToken) {
 		return { token: explicitToken, source: 'flag' };
 	}
 
-	const envToken = process.env[APIFY_ENV_VARS.TOKEN];
+	const envToken = getEnvToken();
 	if (envToken) {
+		// Only worth saying when there is a stored login to override. In CI and inside a platform
+		// run APIFY_TOKEN is the only credential, so naming it would be noise on every command.
+		if (existsSync(AUTH_FILE_PATH())) {
+			noticeOnce(`Using the API token from ${APIFY_ENV_VARS.TOKEN}.`);
+		}
+
 		return { token: envToken, source: 'env' };
+	}
+
+	const rawEnvToken = process.env[APIFY_ENV_VARS.TOKEN]?.trim();
+	if (rawEnvToken) {
+		noticeOnce(`${APIFY_ENV_VARS.TOKEN} is invalid: "${rawEnvToken}".`);
 	}
 
 	await ensureMigrated();
@@ -142,9 +181,8 @@ export async function loginWithToken(token: string, apiBaseUrl?: string): Promis
 	ensureApifyDirectory(AUTH_FILE_PATH());
 	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
 
-	// Secrets are written after the metadata file so the file backend, which stores them in
-	// auth.json too, is not overwritten. `skipIfUnchanged` avoids a macOS Keychain prompt
-	// when the value already matches.
+	// Written after the metadata file, which would otherwise clobber them on the file backend.
+	// `skipIfUnchanged` avoids a macOS Keychain prompt when the value already matches.
 	await setToken(token, { skipIfUnchanged: true });
 
 	const proxyPassword = userInfo.proxy?.password;

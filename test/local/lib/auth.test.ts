@@ -5,6 +5,7 @@ import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
 import { getProxyPassword, getToken, setToken } from '../../../src/lib/credentials.js';
 import { getLoggedClientOrThrow } from '../../../src/lib/utils.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
+import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
 const { clientState } = vi.hoisted(() => ({
 	clientState: {
@@ -39,6 +40,7 @@ vi.mock('apify-client', async (importOriginal) => {
 });
 
 useAuthSetup();
+const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const STORED = 'apify_api_stored';
 const ENV = 'apify_api_env';
@@ -76,6 +78,59 @@ describe('auth', () => {
 			vitest.stubEnv('APIFY_TOKEN', ENV);
 
 			await expect(resolveAuth(FLAG)).resolves.toEqual({ token: FLAG, source: 'flag' });
+		});
+
+		it.each(['undefined', 'null', 'NaN', 'none', '0', '  '])(
+			'ignores APIFY_TOKEN set to the placeholder %j and uses the stored login',
+			async (placeholder) => {
+				await loginWithToken(STORED);
+				vitest.stubEnv('APIFY_TOKEN', placeholder);
+
+				await expect(resolveAuth()).resolves.toEqual({ token: STORED, source: 'stored' });
+			},
+		);
+
+		it('says so when it falls back from a placeholder APIFY_TOKEN', async () => {
+			await loginWithToken(STORED);
+			vitest.stubEnv('APIFY_TOKEN', 'undefined');
+
+			await resolveAuth();
+
+			expect(lastErrorMessage()).toContain('APIFY_TOKEN is invalid: "undefined"');
+		});
+
+		it('trims surrounding whitespace off APIFY_TOKEN', async () => {
+			vitest.stubEnv('APIFY_TOKEN', `  ${ENV}  `);
+
+			await expect(resolveAuth()).resolves.toEqual({ token: ENV, source: 'env' });
+		});
+
+		it('says so when APIFY_TOKEN overrides a stored login', async () => {
+			await loginWithToken(STORED);
+			vitest.stubEnv('APIFY_TOKEN', ENV);
+
+			await resolveAuth();
+
+			expect(lastErrorMessage()).toContain('Using the API token from APIFY_TOKEN.');
+		});
+
+		it('says nothing when APIFY_TOKEN is the only credential', async () => {
+			vitest.stubEnv('APIFY_TOKEN', ENV);
+
+			await resolveAuth();
+
+			expect(lastErrorMessage()).toBeUndefined();
+		});
+
+		it('says it once even though the resolver runs several times per command', async () => {
+			await loginWithToken(STORED);
+			vitest.stubEnv('APIFY_TOKEN', ENV);
+
+			await resolveAuth();
+			await resolveAuth();
+			await resolveAuth();
+
+			expect(logMessages.error.filter((message) => message.includes('Using the API token'))).toHaveLength(1);
 		});
 
 		it('resolves APIFY_TOKEN with no stored login, as inside a platform run', async () => {

@@ -5,9 +5,10 @@ import chalk from 'chalk';
 import computerName from 'computer-name';
 import open from 'open';
 
+import { APIFY_ENV_VARS } from '@apify/consts';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
-import { loginWithToken } from '../../lib/auth.js';
+import { getEnvToken, loginWithToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getConsoleIntegrationsUrl, getConsoleUrl } from '../../lib/console-url.js';
@@ -17,7 +18,7 @@ import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { createLocalApiServer } from '../../lib/local-api-server.js';
-import { error, info, success } from '../../lib/outputs.js';
+import { error, info, success, warning } from '../../lib/outputs.js';
 import { getLocalUserInfo, tildify } from '../../lib/utils.js';
 
 // When logging in against a local Console instance (local platform development), validate the token
@@ -47,6 +48,12 @@ const tryToLogin = async (token: string) => {
 		success({
 			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored in ${tokenLocation}.`)}`,
 		});
+
+		if (getEnvToken()) {
+			warning({
+				message: `${APIFY_ENV_VARS.TOKEN} is set, so other commands keep using that token instead of this login. Unset it to use this account.`,
+			});
+		}
 	} else {
 		process.exitCode = CommandExitCodes.MissingAuth;
 		error({

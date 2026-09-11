@@ -128,11 +128,45 @@ describe('auth commands', () => {
 			process.exitCode = 0;
 		});
 
-		it('login saves its own token even when APIFY_TOKEN is set', async () => {
+		it('login saves its own token even when APIFY_TOKEN is set, and says it is overridden', async () => {
 			vitest.stubEnv('APIFY_TOKEN', 'apify_api_env_token');
 			await login();
 
 			expect(await getToken()).toBe(TOKEN);
+			expect(lastErrorMessage()).toContain('APIFY_TOKEN is set, so other commands keep using that token');
+		});
+
+		it('login says nothing about APIFY_TOKEN when it is not set', async () => {
+			await login();
+
+			expect(lastErrorMessage()).not.toContain('APIFY_TOKEN');
+		});
+
+		it('logout warns that APIFY_TOKEN still authenticates', async () => {
+			await login();
+			vitest.stubEnv('APIFY_TOKEN', 'apify_api_env_token');
+
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+			expect(lastErrorMessage()).toContain('APIFY_TOKEN is still set');
+		});
+
+		it('logout says nothing about APIFY_TOKEN when it is not set', async () => {
+			await login();
+
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(lastErrorMessage()).not.toContain('APIFY_TOKEN');
+		});
+
+		it('a placeholder APIFY_TOKEN falls back to the stored login', async () => {
+			await login();
+			vitest.stubEnv('APIFY_TOKEN', 'undefined');
+
+			await testRunCommand(AuthTokenCommand, {});
+
+			expect(lastLogMessage()).toBe(TOKEN);
 		});
 
 		it('auth token prints APIFY_TOKEN over the stored token, and stores nothing', async () => {
