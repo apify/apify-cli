@@ -1,8 +1,9 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, statSync } from 'node:fs';
 import process from 'node:process';
 
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
 import { getToken } from '../../../src/lib/credentials.js';
+import { readActiveProfile, readAuthFile } from '../../__setup__/auth-file.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
@@ -56,7 +57,6 @@ const { testRunCommand } = await import('../../../src/lib/command-framework/apif
 
 const TOKEN = 'apify_api_test_token';
 
-const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
 const login = (token = TOKEN) => testRunCommand(AuthLoginCommand, { flags_token: token });
 
 describe('auth commands', () => {
@@ -71,14 +71,17 @@ describe('auth commands', () => {
 	});
 
 	describe('file backend', () => {
-		it('login stores the token and user metadata in auth.json', async () => {
+		it('login stores the token and one profile keyed by user ID', async () => {
 			await login();
 
-			expect(readAuthFile()).toMatchObject({
-				token: TOKEN,
+			expect(readAuthFile()).toMatchObject({ version: 2, token: TOKEN, secretsBackend: 'file' });
+			expect(readActiveProfile()).toEqual({
 				id: 'uid',
 				username: 'me',
-				secretsBackend: 'file',
+				name: null,
+				authMethod: 'token',
+				expiresAt: null,
+				hasRefreshToken: false,
 			});
 			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
 		});
@@ -104,7 +107,7 @@ describe('auth commands', () => {
 			expect(await getToken()).toBeUndefined();
 		});
 
-		it('logging in as another account replaces the stored metadata', async () => {
+		it('logging in as another account replaces the stored profile', async () => {
 			clientState.user = { id: 'uid', username: 'me', email: 'me@example.com' };
 			await login();
 
@@ -112,9 +115,10 @@ describe('auth commands', () => {
 			await login('apify_api_other_token');
 
 			const authFile = readAuthFile();
-			expect(authFile).toMatchObject({ token: 'apify_api_other_token', id: 'uid2', username: 'other' });
-			// The new account has no email, so the old one must not linger.
-			expect(authFile.email).toBeUndefined();
+			expect(authFile).toMatchObject({ activeProfile: 'uid2', token: 'apify_api_other_token' });
+			// Additive login is a later stage; until then the old profile must not linger.
+			expect(Object.keys(authFile.profiles!)).toEqual(['uid2']);
+			expect(readActiveProfile()).toMatchObject({ username: 'other' });
 		});
 
 		it('login with an invalid token stores nothing and fails the command', async () => {
@@ -177,7 +181,7 @@ describe('auth commands', () => {
 
 			expect(lastLogMessage()).toBe('apify_api_env_token');
 			expect(await getToken()).toBe(TOKEN);
-			expect(readAuthFile()).toMatchObject({ username: 'me' });
+			expect(readActiveProfile()).toMatchObject({ username: 'me' });
 		});
 	});
 
@@ -191,17 +195,11 @@ describe('auth commands', () => {
 			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
 
 			const authFile = readAuthFile();
-			expect(authFile).toMatchObject({ id: 'uid', username: 'me', secretsBackend: 'keyring' });
+			expect(authFile).toMatchObject({ version: 2, secretsBackend: 'keyring' });
 			expect(authFile.token).toBeUndefined();
-			expect(authFile.proxy).toEqual({ groups: [{ name: 'g' }] });
-		});
-
-		it('login drops the proxy object from auth.json when it only held the password', async () => {
-			clientState.user.proxy = { password: 'pw' };
-			await login();
-
-			expect(readAuthFile()).not.toHaveProperty('proxy');
-			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
+			// Proxy groups are not a secret, but nothing reads them either.
+			expect(authFile).not.toHaveProperty('proxy');
+			expect(readActiveProfile()).toMatchObject({ id: 'uid', username: 'me' });
 		});
 
 		it('logging in twice with the same token writes the keyring once', async () => {

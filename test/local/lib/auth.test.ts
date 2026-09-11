@@ -1,9 +1,10 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 
 import { loginWithToken, resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
 import { getProxyPassword, getToken, setToken } from '../../../src/lib/credentials.js';
 import { getLoggedClientOrThrow } from '../../../src/lib/utils.js';
+import { readActiveProfile } from '../../__setup__/auth-file.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
@@ -45,8 +46,6 @@ const { lastErrorMessage, logMessages } = useConsoleSpy();
 const STORED = 'apify_api_stored';
 const ENV = 'apify_api_env';
 const FLAG = 'apify_api_flag';
-
-const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
 
 describe('auth', () => {
 	beforeEach(() => {
@@ -147,7 +146,7 @@ describe('auth', () => {
 
 			expect(await getToken()).toBe(STORED);
 			expect(await getProxyPassword()).toBe('pw');
-			expect(readAuthFile()).toMatchObject({ id: 'uid', username: 'me' });
+			expect(readActiveProfile()).toMatchObject({ id: 'uid', username: 'me' });
 		});
 
 		it('writes nothing when the API rejects the token', async () => {
@@ -210,7 +209,7 @@ describe('auth', () => {
 			await resolveAuth();
 
 			expect(await getToken()).toBe(STORED);
-			expect(readAuthFile()).toMatchObject({ username: 'me' });
+			expect(readActiveProfile()).toMatchObject({ username: 'me' });
 		});
 
 		it('resolving a token the command was given leaves the stored login untouched', async () => {

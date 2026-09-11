@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import process from 'node:process';
 
 import { ApifyClient, type ApifyClientOptions } from 'apify-client';
@@ -6,9 +6,9 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
+import { ensureAuthFileCurrent, setActiveProfile } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH } from './consts.js';
 import { ensureMigrated, getBackend, getToken, setProxyPassword, setToken } from './credentials.js';
-import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -86,6 +86,7 @@ export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth 
 	}
 
 	await ensureMigrated();
+	await ensureAuthFileCurrent();
 
 	const storedToken = await getToken();
 	if (storedToken) {
@@ -165,21 +166,25 @@ export async function loginWithToken(token: string, apiBaseUrl?: string): Promis
 		return null;
 	}
 
-	// Replaces the previous account rather than merging into it, so fields the new account
-	// does not have (email, organizationOwnerUserId) cannot linger from the old one.
-	const fileContents: Record<string, unknown> = { ...userInfo, secretsBackend: await getBackend() };
-	delete fileContents.token;
-	if (fileContents.proxy && typeof fileContents.proxy === 'object') {
-		const { password: _password, ...rest } = fileContents.proxy as { password?: string };
-		if (Object.keys(rest).length > 0) {
-			fileContents.proxy = rest;
-		} else {
-			delete fileContents.proxy;
-		}
+	if (!userInfo.id) {
+		throw new Error('The Apify API returned no user ID for this token, so the login cannot be stored.');
 	}
 
-	ensureApifyDirectory(AUTH_FILE_PATH());
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
+	// The profile is keyed by user ID, and it replaces whatever was stored rather than merging
+	// into it, so fields the new account does not have cannot linger from the old one.
+	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
+	setActiveProfile(
+		userInfo.id,
+		{
+			username: userInfo.username,
+			name: null,
+			...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
+			authMethod: 'token',
+			expiresAt: null,
+			hasRefreshToken: false,
+		},
+		await getBackend(),
+	);
 
 	// Written after the metadata file, which would otherwise clobber them on the file backend.
 	// `skipIfUnchanged` avoids a macOS Keychain prompt when the value already matches.

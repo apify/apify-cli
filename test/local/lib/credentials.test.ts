@@ -4,6 +4,7 @@ import process from 'node:process';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { __resetAuthFileForTests } from '../../../src/lib/auth-file.js';
 import { getApifyClientOptions } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import {
@@ -35,7 +36,8 @@ vi.mock('node:fs', async (importOriginal) => {
 });
 
 const writeFileSyncSpy = vi.mocked(writeFileSync);
-const authFileWrites = () => writeFileSyncSpy.mock.calls.filter((call) => call[0] === AUTH_FILE_PATH());
+// auth.json is written through a temp file and a rename, so the spied path carries a suffix.
+const authFileWrites = () => writeFileSyncSpy.mock.calls.filter((call) => String(call[0]).startsWith(AUTH_FILE_PATH()));
 
 const writeAuthFile = (data: Record<string, unknown>) => {
 	mkdirSync(GLOBAL_CONFIGS_FOLDER(), { recursive: true });
@@ -52,12 +54,14 @@ describe('credentials', () => {
 		resetKeyringMock();
 		writeFileSyncSpy.mockClear();
 		__resetCredentialsForTests();
+		__resetAuthFileForTests();
 	});
 
 	afterEach(async () => {
 		await rm(GLOBAL_CONFIGS_FOLDER(), { recursive: true, force: true });
 		vitest.unstubAllEnvs();
 		__resetCredentialsForTests();
+		__resetAuthFileForTests();
 	});
 
 	describe('getBackend()', () => {
@@ -134,7 +138,9 @@ describe('credentials', () => {
 
 		it('writes auth.json with mode 0600', async () => {
 			await setToken('tok_123');
-			expect(writeFileSyncSpy).toHaveBeenCalledWith(AUTH_FILE_PATH(), expect.any(String), { mode: 0o600 });
+			expect(writeFileSyncSpy).toHaveBeenCalledWith(expect.stringContaining(AUTH_FILE_PATH()), expect.any(String), {
+				mode: 0o600,
+			});
 		});
 
 		it.skipIf(process.platform === 'win32')('creates auth.json readable only by the owner', async () => {
@@ -329,7 +335,7 @@ describe('credentials', () => {
 	});
 
 	describe('getLocalUserInfo()', () => {
-		it('on file backend, preserves non-secret proxy fields', async () => {
+		it('on file backend, keeps the proxy password and drops the groups nothing reads', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
 			writeAuthFile({
 				username: 'me',
@@ -339,7 +345,7 @@ describe('credentials', () => {
 				secretsBackend: 'file',
 			});
 			const info = await getLocalUserInfo();
-			expect(info.proxy).toEqual({ password: 'pw', groups: [{ name: 'g' }] });
+			expect(info.proxy).toEqual({ password: 'pw' });
 		});
 
 		it('on keyring backend, overlays token and proxy password from keyring', async () => {

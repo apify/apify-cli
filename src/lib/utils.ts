@@ -32,6 +32,7 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
+import { ensureAuthFileCurrent, lookUpActiveProfile } from './auth-file.js';
 import { describeAuthFailure, getApifyClientOptions, resolveAuth } from './auth.js';
 import {
 	AUTH_FILE_PATH,
@@ -41,7 +42,7 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { ensureMigrated, getBackend, getProxyPassword, getToken } from './credentials.js';
+import { ensureMigrated, getProxyPassword, getToken } from './credentials.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
@@ -84,33 +85,38 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 };
 
 /**
- * Returns object from auth file or empty object. Secrets (token, proxy password) are
- * pulled from the keyring when that backend is active; user metadata lives in auth.json.
+ * The active profile in the flat shape the CLI consumes, or an empty object when nothing is
+ * stored. Secrets come from whichever backend holds them; the metadata comes from auth.json.
  */
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	await ensureMigrated();
+	await ensureAuthFileCurrent();
 
-	let result: AuthJSON = {};
-	try {
-		const raw = await readFile(AUTH_FILE_PATH(), 'utf-8');
-		result = JSON.parse(raw) as AuthJSON;
-	} catch {
-		// auth.json may not exist yet (fresh keyring-only state); fall through
+	const { profile, missingProfile } = lookUpActiveProfile();
+
+	const result: AuthJSON = {};
+	if (profile) {
+		result.id = profile.id;
+		if (profile.username) result.username = profile.username;
+		if (profile.organizationOwnerUserId) result.organizationOwnerUserId = profile.organizationOwnerUserId;
 	}
 
-	if ((await getBackend()) === 'keyring') {
-		const token = await getToken();
-		if (token) result.token = token;
+	const token = await getToken();
+	if (token) result.token = token;
 
-		const proxyPassword = await getProxyPassword();
-		if (proxyPassword) result.proxy = { ...result.proxy, password: proxyPassword };
-	}
+	const proxyPassword = await getProxyPassword();
+	if (proxyPassword) result.proxy = { password: proxyPassword };
 
-	const hasUserMetadata = !!(result.username || result.id);
-	const isComplete = hasUserMetadata || !!result.token;
-	if (!isComplete) return {};
-	if (!hasUserMetadata) {
-		throw new Error('Stale credentials found without user metadata. Please run "apify login" again.');
+	// A token with no profile behind it is reported rather than swallowed: the commands that build
+	// `<username>/<name>` lookups would otherwise fail with a misleading "not found".
+	if (!profile) {
+		if (!result.token) return {};
+
+		throw new Error(
+			missingProfile
+				? `Your active profile "${missingProfile}" is missing from ${AUTH_FILE_PATH()}. Run "apify login" to log in again.`
+				: 'Stale credentials found without user metadata. Run "apify login" again.',
+		);
 	}
 
 	return result;

@@ -1,8 +1,6 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
-import { AUTH_FILE_PATH } from './consts.js';
-import { ensureApifyDirectory } from './files.js';
+import { readAuthFile, writeAuthFile } from './auth-file.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -20,13 +18,6 @@ interface KeyringEntry {
 
 interface KeyringModule {
 	Entry: new (service: string, account: string) => KeyringEntry;
-}
-
-interface StoredAuthFile {
-	token?: string;
-	proxy?: { password?: string; [k: string]: unknown };
-	secretsBackend?: CredentialsBackend;
-	[k: string]: unknown;
 }
 
 let cachedKeyringModule: KeyringModule | null | undefined;
@@ -102,21 +93,6 @@ export async function getBackend(): Promise<CredentialsBackend> {
  */
 function downgradeBackendToFile() {
 	backendPromise = Promise.resolve('file');
-}
-
-function readAuthFile(): StoredAuthFile {
-	if (!existsSync(AUTH_FILE_PATH())) return {};
-	try {
-		const raw = readFileSync(AUTH_FILE_PATH(), 'utf-8');
-		return JSON.parse(raw) as StoredAuthFile;
-	} catch {
-		return {};
-	}
-}
-
-function writeAuthFile(data: StoredAuthFile) {
-	ensureApifyDirectory(AUTH_FILE_PATH());
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(data, null, '\t'), { mode: 0o600 });
 }
 
 async function getKeyringEntry(account: string): Promise<KeyringEntry | null> {

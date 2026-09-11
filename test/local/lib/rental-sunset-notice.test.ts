@@ -27,7 +27,17 @@ async function writeAuthFile(username: string | undefined) {
 	const path = AUTH_FILE_PATH();
 
 	await mkdir(dirname(path), { recursive: true });
-	await writeFile(path, JSON.stringify({ id: 'user-id', username, token: 'apify_api_token' }));
+	await writeFile(
+		path,
+		JSON.stringify({
+			version: 2,
+			activeProfile: 'user-id',
+			profiles: {
+				'user-id': { username, name: null, authMethod: 'token', expiresAt: null, hasRefreshToken: false },
+			},
+			token: 'apify_api_token',
+		}),
+	);
 }
 
 interface StoredRentalSunset {
