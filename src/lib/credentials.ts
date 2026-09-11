@@ -1,8 +1,6 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
-import { AUTH_FILE_PATH } from './consts.js';
-import { ensureApifyDirectory } from './files.js';
+import { readAuthFile, writeAuthFile } from './auth-file.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -20,13 +18,6 @@ interface KeyringEntry {
 
 interface KeyringModule {
 	Entry: new (service: string, account: string) => KeyringEntry;
-}
-
-interface StoredAuthFile {
-	token?: string;
-	proxy?: { password?: string; [k: string]: unknown };
-	secretsBackend?: CredentialsBackend;
-	[k: string]: unknown;
 }
 
 let cachedKeyringModule: KeyringModule | null | undefined;
@@ -104,16 +95,6 @@ function downgradeBackendToFile() {
 	backendPromise = Promise.resolve('file');
 }
 
-function readAuthFile(): StoredAuthFile {
-	if (!existsSync(AUTH_FILE_PATH())) return {};
-	try {
-		const raw = readFileSync(AUTH_FILE_PATH(), 'utf-8');
-		return JSON.parse(raw) as StoredAuthFile;
-	} catch {
-		return {};
-	}
-}
-
 /**
  * Remove the proxy password, keeping any sibling field like `groups` and dropping `proxy`
  * entirely when the secret was all it carried.
@@ -123,11 +104,6 @@ export function stripProxyPassword(data: { proxy?: { password?: string } }) {
 
 	delete data.proxy.password;
 	if (Object.keys(data.proxy).length === 0) delete data.proxy;
-}
-
-function writeAuthFile(data: StoredAuthFile) {
-	ensureApifyDirectory(AUTH_FILE_PATH());
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(data, null, '\t'), { mode: 0o600 });
 }
 
 async function getKeyringEntry(account: string): Promise<KeyringEntry | null> {

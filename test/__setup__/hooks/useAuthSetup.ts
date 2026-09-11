@@ -6,6 +6,7 @@ import { isCI } from 'ci-info';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { LoginCommand } from '../../../src/commands/login.js';
+import { __resetAuthFileForTests } from '../../../src/lib/auth-file.js';
 import { __resetAuthForTests } from '../../../src/lib/auth.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
@@ -20,6 +21,7 @@ function resetAuthCaches() {
 	__resetCredentialsForTests();
 	__resetUserInfoCacheForTests();
 	__resetAuthForTests();
+	__resetAuthFileForTests();
 }
 
 export interface UseAuthSetupOptions {

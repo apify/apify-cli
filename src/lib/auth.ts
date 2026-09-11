@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import process from 'node:process';
 
 import { ApifyApiError, ApifyClient, type ApifyClientOptions } from 'apify-client';
@@ -6,6 +6,7 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
+import { ensureAuthFileCurrent, setActiveProfile } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
 	deleteProxyPassword,
@@ -14,9 +15,7 @@ import {
 	getToken,
 	setProxyPassword,
 	setToken,
-	stripProxyPassword,
 } from './credentials.js';
-import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -81,6 +80,7 @@ export function __resetAuthForTests() {
 export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 	authPromise ??= (async () => {
 		await ensureMigrated();
+		await ensureAuthFileCurrent();
 
 		const envToken = readEnvToken();
 		if (envToken.kind === 'invalid') {
@@ -168,15 +168,27 @@ export async function loginWithToken(
 		return null;
 	}
 
+	if (!userInfo.id) {
+		throw new Error('The Apify API returned no user ID for this token, so the login cannot be stored.');
+	}
+
 	const proxyPassword = userInfo.proxy?.password;
 
-	// Replaces the previous account rather than merging, so stale fields cannot linger. The spread
-	// is shallow, so stripping here also clears userInfo.proxy — read the password first.
-	const fileContents = { ...userInfo, secretsBackend: await getBackend() };
-	stripProxyPassword(fileContents);
-
-	ensureApifyDirectory(AUTH_FILE_PATH());
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
+	// The profile is keyed by user ID, and it replaces whatever was stored rather than merging
+	// into it, so fields the new account does not have cannot linger from the old one.
+	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
+	setActiveProfile(
+		userInfo.id,
+		{
+			username: userInfo.username,
+			name: null,
+			...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
+			authMethod: 'token',
+			expiresAt: null,
+			hasRefreshToken: false,
+		},
+		await getBackend(),
+	);
 
 	// After the metadata file, which would clobber them on the file backend. `skipIfUnchanged` avoids a Keychain prompt.
 	await setToken(token, { skipIfUnchanged: true });
