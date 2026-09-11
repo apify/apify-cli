@@ -1,14 +1,15 @@
-import process from 'node:process';
+import { resolveConsoleUrl } from './runtime/target.js';
 
 const DEFAULT_CONSOLE_URL = 'https://console.apify.com';
 
 /**
  * Resolves the base URL of the Apify Console used whenever the CLI prints links. Set
- * `APIFY_CONSOLE_URL` to point at a non-production Console (staging, a local instance, ...);
- * otherwise the production Console is used.
+ * `APIFY_CONSOLE_URL` to point at a non-production Console (staging, a local instance, ...), or run
+ * `apify runtime connect` to point at the local Actor runtime's console; otherwise the production
+ * Console is used.
  */
 export function getConsoleUrl(): string {
-	const explicit = process.env.APIFY_CONSOLE_URL;
+	const explicit = resolveConsoleUrl();
 	if (explicit) {
 		const stripped = stripTrailingSlash(explicit);
 		if (!URL.canParse(stripped)) {

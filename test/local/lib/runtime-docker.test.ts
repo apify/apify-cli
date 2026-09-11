@@ -4,6 +4,7 @@ import {
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
 	engineDaemonHint,
 	engineInstallHint,
+	parseRuntimeContainerInfo,
 	requestedContainerEngine,
 	resolveEngineSocketPath,
 	socketMountArg,
@@ -66,6 +67,59 @@ describe('runtime/docker', () => {
 			expect(engineDaemonHint('podman', 'linux')).toContain('podman system service');
 			expect(engineDaemonHint('podman', 'darwin')).toContain('podman machine start');
 			expect(engineDaemonHint('podman', 'win32')).toContain('podman machine start');
+		});
+	});
+
+	describe('parseRuntimeContainerInfo()', () => {
+		it("reads the image, data directory and published ports out of either engine's inspect payload", () => {
+			expect(
+				parseRuntimeContainerInfo(
+					'docker',
+					JSON.stringify({
+						Config: { Image: 'apify/actor-runtime:latest' },
+						State: { Status: 'running', StartedAt: '2026-09-11T08:00:00Z' },
+						Mounts: [
+							{ Destination: '/var/run/docker.sock', Source: '/var/run/docker.sock' },
+							{ Destination: '/data', Source: '/home/me/.apify/actor-runtime/data' },
+						],
+						NetworkSettings: {
+							Ports: {
+								'3000/tcp': [{ HostIp: '0.0.0.0', HostPort: '3000' }],
+								'3333/tcp': [{ HostIp: '127.0.0.1', HostPort: '3333' }],
+							},
+						},
+					}),
+				),
+			).toEqual({
+				engine: 'docker',
+				image: 'apify/actor-runtime:latest',
+				status: 'running',
+				startedAt: '2026-09-11T08:00:00Z',
+				dataDir: '/home/me/.apify/actor-runtime/data',
+				ports: [
+					{ containerPort: 3000, protocol: 'tcp', hostAddress: '0.0.0.0:3000' },
+					{ containerPort: 3333, protocol: 'tcp', hostAddress: '127.0.0.1:3333' },
+				],
+			});
+
+			// Podman names the image at the top level and can report the bindings under HostConfig.
+			expect(
+				parseRuntimeContainerInfo(
+					'podman',
+					JSON.stringify({
+						ImageName: 'docker.io/apify/actor-runtime:latest',
+						State: { Status: 'running' },
+						Mounts: [{ Destination: '/data', Source: '/home/me/data' }],
+						HostConfig: { PortBindings: { '3333/tcp': [{ HostIp: '', HostPort: '3333' }] } },
+					}),
+				),
+			).toMatchObject({
+				image: 'docker.io/apify/actor-runtime:latest',
+				dataDir: '/home/me/data',
+				ports: [{ containerPort: 3333, protocol: 'tcp', hostAddress: '0.0.0.0:3333' }],
+			});
+
+			expect(parseRuntimeContainerInfo('docker', 'not json')).toBeNull();
 		});
 	});
 

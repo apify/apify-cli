@@ -1,12 +1,10 @@
-import { readFileSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
 import chalk from 'chalk';
 
-import { ACTOR_RUNTIME_CONFIG_FILE_PATH } from '../consts.js';
 import { execWithLog } from '../exec.js';
-import { ensureApifyDirectory } from '../files.js';
 import { error, info } from '../outputs.js';
+import { readActorRuntimeConfig, updateActorRuntimeConfig } from './config.js';
 import {
 	CONTAINER_ENGINE_ENV_VAR,
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
@@ -25,17 +23,12 @@ export interface EnsureActorRuntimeImageOptions {
 
 /** The image the last 'apify runtime install' fetched, or the default when nothing was installed yet. */
 export function installedActorRuntimeImage(): string {
-	try {
-		const { image } = JSON.parse(readFileSync(ACTOR_RUNTIME_CONFIG_FILE_PATH(), 'utf-8'));
-		return typeof image === 'string' && image ? image : DEFAULT_ACTOR_RUNTIME_IMAGE;
-	} catch {
-		return DEFAULT_ACTOR_RUNTIME_IMAGE;
-	}
+	const { image } = readActorRuntimeConfig();
+	return image || DEFAULT_ACTOR_RUNTIME_IMAGE;
 }
 
 export function rememberInstalledActorRuntimeImage(image: string) {
-	ensureApifyDirectory(ACTOR_RUNTIME_CONFIG_FILE_PATH());
-	writeFileSync(ACTOR_RUNTIME_CONFIG_FILE_PATH(), JSON.stringify({ image }, null, '\t'));
+	updateActorRuntimeConfig({ image });
 }
 
 /**

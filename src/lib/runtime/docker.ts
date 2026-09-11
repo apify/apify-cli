@@ -44,6 +44,9 @@ export const CONTAINER_ENGINE_ENV_VAR = 'APIFY_CONTAINER_ENGINE';
 /** Where the runtime container expects the engine's API socket. */
 export const RUNTIME_SOCKET_PATH = '/var/run/docker.sock';
 
+/** Where the runtime container expects its data directory (storages, builds and run records). */
+export const RUNTIME_DATA_PATH = '/data';
+
 export function runtimeEnvExportLines(): string[] {
 	return Object.entries(ACTOR_RUNTIME_ENV_VARS).map(([name, value]) => `export ${name}=${value}`);
 }
@@ -167,6 +170,87 @@ export async function isRuntimeContainerRunning(engine: ContainerEngine): Promis
 	}
 }
 
+/** A port the runtime container publishes: `containerPort/protocol` reachable at `hostAddress`. */
+export interface PublishedPort {
+	containerPort: number;
+	protocol: string;
+	hostAddress: string;
+}
+
+export interface RuntimeContainerInfo {
+	engine: ContainerEngine;
+	image?: string;
+	status?: string;
+	startedAt?: string;
+	/** The host directory mounted as the runtime's `/data`, where storages, builds and run records live. */
+	dataDir?: string;
+	ports: PublishedPort[];
+}
+
+interface InspectedContainer {
+	Name?: string;
+	ImageName?: string;
+	Config?: { Image?: string };
+	State?: { Status?: string; StartedAt?: string };
+	Mounts?: { Destination?: string; Source?: string }[];
+	NetworkSettings?: { Ports?: Record<string, { HostIp?: string; HostPort?: string }[] | null> };
+	HostConfig?: { PortBindings?: Record<string, { HostIp?: string; HostPort?: string }[] | null> };
+}
+
+function parsePublishedPorts(container: InspectedContainer): PublishedPort[] {
+	const bindings = container.NetworkSettings?.Ports ?? container.HostConfig?.PortBindings ?? {};
+	const ports: PublishedPort[] = [];
+
+	for (const [portAndProtocol, hostBindings] of Object.entries(bindings)) {
+		const [port, protocol = 'tcp'] = portAndProtocol.split('/');
+		const containerPort = Number(port);
+		if (!Number.isInteger(containerPort)) continue;
+
+		for (const binding of hostBindings ?? []) {
+			if (!binding?.HostPort) continue;
+			// An empty HostIp means every interface, which both engines print as 0.0.0.0.
+			ports.push({ containerPort, protocol, hostAddress: `${binding.HostIp || '0.0.0.0'}:${binding.HostPort}` });
+		}
+	}
+
+	return ports.sort((a, b) => a.containerPort - b.containerPort);
+}
+
+/** Reads one `inspect --format '{{json .}}'` payload, in either engine's shape. Null when it is unusable. */
+export function parseRuntimeContainerInfo(engine: ContainerEngine, raw: string): RuntimeContainerInfo | null {
+	let container: InspectedContainer;
+	try {
+		container = JSON.parse(raw) as InspectedContainer;
+	} catch {
+		return null;
+	}
+
+	if (!container || typeof container !== 'object') return null;
+
+	return {
+		engine,
+		// Docker reports the image under Config, Podman at the top level.
+		image: container.Config?.Image ?? container.ImageName,
+		status: container.State?.Status,
+		startedAt: container.State?.StartedAt,
+		dataDir: container.Mounts?.find((mount) => mount.Destination === RUNTIME_DATA_PATH)?.Source,
+		ports: parsePublishedPorts(container),
+	};
+}
+
+/**
+ * What the engine knows about the runtime container - its image, published ports and data directory.
+ * Null when the container is gone or the engine cannot be asked about it.
+ */
+export async function inspectRuntimeContainer(engine: ContainerEngine): Promise<RuntimeContainerInfo | null> {
+	try {
+		const { stdout } = await execa(engine, ['inspect', ACTOR_RUNTIME_CONTAINER_NAME, '--format', '{{json .}}']);
+		return parseRuntimeContainerInfo(engine, stdout);
+	} catch {
+		return null;
+	}
+}
+
 function unixSocketPath(url: string | undefined): string | undefined {
 	return url?.startsWith('unix://') ? url.slice('unix://'.length) : undefined;
 }
@@ -231,7 +315,7 @@ export function buildRuntimeRunArgs({
 		'-v',
 		socketMountArg(hostSocketPath, platform),
 		'-v',
-		`${dataDir}:/data`,
+		`${dataDir}:${RUNTIME_DATA_PATH}`,
 		image,
 	);
 

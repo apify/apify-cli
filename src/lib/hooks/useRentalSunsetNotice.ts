@@ -13,6 +13,7 @@ import {
 	RENTAL_SUNSET_NOTICE_UNTIL,
 } from '../consts.js';
 import { simpleLog, warning } from '../outputs.js';
+import { resolveApiBaseUrl } from '../runtime/target.js';
 import type { AuthJSON } from '../types.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { useCLIMetadata } from './useCLIMetadata.js';
@@ -114,7 +115,7 @@ async function getLocalUsername() {
 async function fetchRentalActorCount(username: string) {
 	const metadata = useCLIMetadata();
 
-	const url = new URL('/v2/store', process.env.APIFY_CLIENT_BASE_URL || DEFAULT_API_BASE_URL);
+	const url = new URL('/v2/store', resolveApiBaseUrl() || DEFAULT_API_BASE_URL);
 
 	try {
 		// axios rather than `fetch`, so the lookup honors HTTP_PROXY/HTTPS_PROXY/NO_PROXY like every
