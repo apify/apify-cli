@@ -226,8 +226,8 @@ importers:
         specifier: ^0.17.0
         version: 0.17.2
       '@apify/utilities':
-        specifier: ^2.25.6
-        version: 2.35.11
+        specifier: ^3.0.0
+        version: 3.0.1
       '@crawlee/memory-storage':
         specifier: ^3.16.0
         version: 3.18.1

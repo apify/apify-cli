@@ -71,7 +71,7 @@
 		"@apify/consts": "^3.0.0",
 		"@apify/input_schema": "^4.0.0",
 		"@apify/json_schemas": "^0.17.0",
-		"@apify/utilities": "^2.25.6",
+		"@apify/utilities": "^3.0.0",
 		"@crawlee/memory-storage": "^3.16.0",
 		"@inquirer/core": "^12.0.0",
 		"@inquirer/input": "^5.0.10",
