@@ -2,7 +2,7 @@ import type { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
 import { INTERRUPT_SIGNALS } from '../consts.js';
-import { error, info } from '../outputs.js';
+import { info, logError } from '../outputs.js';
 import { useSignalHandler } from './useSignalHandler.js';
 
 export type UseAbortJobOnSignalInput = {
@@ -84,7 +84,7 @@ export function useAbortJobOnSignal(input: UseAbortJobOnSignalInput): Disposable
 				try {
 					await apifyClient.build(input.jobId).abort();
 				} catch (abortErr) {
-					error({
+					logError({
 						message: `Failed to abort build "${input.jobId}": ${(abortErr as Error).message}`,
 						stdout: true,
 					});
@@ -111,7 +111,7 @@ export function useAbortJobOnSignal(input: UseAbortJobOnSignalInput): Disposable
 			try {
 				await apifyClient.run(input.jobId).abort({ gracefully });
 			} catch (abortErr) {
-				error({
+				logError({
 					message: `Failed to abort run "${input.jobId}": ${(abortErr as Error).message}`,
 					stdout: true,
 				});

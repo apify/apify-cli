@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import chalk from 'chalk';
 
 export interface LogOptions {
@@ -27,6 +29,13 @@ export function simpleLog(options: SimpleLogOptions) {
 }
 
 export function error(options: SimpleLogOptions) {
+	internalLog({
+		[options.stdout ? 'stdoutOutput' : 'stderrOutput']: [chalk.red('Error:'), options.message],
+	});
+	process.exitCode ||= 1;
+}
+
+export function logError(options: SimpleLogOptions) {
 	internalLog({
 		[options.stdout ? 'stdoutOutput' : 'stderrOutput']: [chalk.red('Error:'), options.message],
 	});

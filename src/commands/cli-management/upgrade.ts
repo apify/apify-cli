@@ -284,7 +284,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 				].join('\n'),
 			});
 
-			process.exit(1);
+			return;
 		}
 
 		const buffer = await res.arrayBuffer();

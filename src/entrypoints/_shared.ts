@@ -60,7 +60,7 @@ export function processVersionCheck(cliName: string) {
 			message: `${cliName} CLI requires Node.js version ${SUPPORTED_NODEJS_VERSION}. Your current version is ${process.version}.`,
 		});
 
-		process.exit(1);
+		return;
 	}
 }
 
@@ -97,7 +97,7 @@ type TopLevelValues = ReturnType<
 	}>
 >;
 
-function handleCommandNotFound(commandName: string): never {
+function handleCommandNotFound(commandName: string): void {
 	const closestMatches = useCommandSuggestions(String(commandName));
 
 	let message = chalk.gray(`Command ${chalk.whiteBright(commandName)} not found`);
@@ -108,8 +108,6 @@ function handleCommandNotFound(commandName: string): never {
 	}
 
 	error({ message });
-
-	process.exit(1);
 }
 
 async function runVersionCheck(entrypoint: string, maybeCommandName?: string) {
@@ -282,7 +280,5 @@ export async function runCLI(entrypoint: string) {
 		const commandError = CommandError.into(err, FinalCommand);
 
 		error({ message: commandError.getPrettyMessage() });
-
-		process.exit(1);
 	}
 }
