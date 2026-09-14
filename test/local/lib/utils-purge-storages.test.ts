@@ -13,6 +13,7 @@ const { beforeAllCalls, afterAllCalls, joinPath } = useTempPath('purge-storages'
 const {
 	checkIfStorageIsEmpty,
 	getLocalDatasetPath,
+	getLocalInput,
 	getLocalKeyValueStorePath,
 	getLocalRequestQueuePath,
 	getLocalStorageDir,
@@ -20,6 +21,12 @@ const {
 	purgeDefaultKeyValueStore,
 	purgeDefaultQueue,
 } = await import('../../../src/lib/utils.js');
+
+const writeInputSidecar = (filename?: string) =>
+	writeFileSync(
+		joinPath(getLocalKeyValueStorePath(), 'INPUT.__metadata__.json'),
+		JSON.stringify({ key: 'INPUT', contentType: 'application/json; charset=utf-8', filename }),
+	);
 
 const seedStorage = () => {
 	const keyValueStorePath = joinPath(getLocalKeyValueStorePath());
@@ -93,5 +100,85 @@ describe('local storage helpers', () => {
 
 		expect(existsSync(joinPath(getLocalStorageDir()))).toBe(false);
 		await expect(checkIfStorageIsEmpty('INPUT')).resolves.toBe(true);
+	});
+
+	it('keeps the input record sidecar and drops the sidecars of purged records', async () => {
+		writeInputSidecar('INPUT.json');
+		writeFileSync(joinPath(getLocalKeyValueStorePath(), 'TEST.__metadata__.json'), '{}');
+
+		await purgeDefaultKeyValueStore('INPUT');
+
+		expect(readdirSync(joinPath(getLocalKeyValueStorePath())).sort()).toStrictEqual([
+			'INPUT.__metadata__.json',
+			'INPUT.json',
+		]);
+	});
+
+	it('keeps the value file the input sidecar is bound to', async () => {
+		rmSync(joinPath(getLocalKeyValueStorePath(), 'INPUT.json'));
+		writeInputSidecar('input-data.json');
+		writeFileSync(joinPath(getLocalKeyValueStorePath(), 'input-data.json'), '{}');
+
+		await purgeDefaultKeyValueStore('INPUT');
+
+		expect(readdirSync(joinPath(getLocalKeyValueStorePath())).sort()).toStrictEqual([
+			'INPUT.__metadata__.json',
+			'input-data.json',
+		]);
+	});
+
+	it('reports the storage as empty once only an extension-less input record is left', async () => {
+		rmSync(joinPath(getLocalKeyValueStorePath(), 'INPUT.json'));
+		writeFileSync(joinPath(getLocalKeyValueStorePath(), 'INPUT'), '{}');
+		writeInputSidecar();
+
+		await Promise.all([purgeDefaultKeyValueStore('INPUT'), purgeDefaultDataset(), purgeDefaultQueue()]);
+
+		await expect(checkIfStorageIsEmpty('INPUT')).resolves.toBe(true);
+	});
+
+	it('reads the input through the file its sidecar names', () => {
+		rmSync(joinPath(getLocalKeyValueStorePath(), 'INPUT.json'));
+		writeFileSync(joinPath(getLocalKeyValueStorePath(), 'input-data.json'), '{"from":"sidecar"}');
+		writeInputSidecar('input-data.json');
+
+		expect(getLocalInput(joinPath())).toStrictEqual({
+			body: Buffer.from('{"from":"sidecar"}'),
+			contentType: 'application/json; charset=utf-8',
+			fileName: 'input-data.json',
+		});
+	});
+
+	it('reads an extension-less input record, which mime type alone cannot type', () => {
+		rmSync(joinPath(getLocalKeyValueStorePath(), 'INPUT.json'));
+		writeFileSync(joinPath(getLocalKeyValueStorePath(), 'INPUT'), '{"bare":true}');
+		writeInputSidecar();
+
+		expect(getLocalInput(joinPath())).toStrictEqual({
+			body: Buffer.from('{"bare":true}'),
+			contentType: 'application/json; charset=utf-8',
+			fileName: 'INPUT',
+		});
+	});
+
+	it('falls back to the input file when its sidecar points at a file that is gone', () => {
+		writeInputSidecar('input-data.json');
+
+		expect(getLocalInput(joinPath())).toStrictEqual({
+			body: Buffer.from('{}'),
+			contentType: 'application/json',
+			fileName: 'INPUT.json',
+		});
+	});
+
+	it('ignores a sidecar binding its key outside the store', () => {
+		writeFileSync(joinPath('secret.json'), '{"secret":true}');
+		writeInputSidecar('../../../secret.json');
+
+		expect(getLocalInput(joinPath())).toStrictEqual({
+			body: Buffer.from('{}'),
+			contentType: 'application/json',
+			fileName: 'INPUT.json',
+		});
 	});
 });
