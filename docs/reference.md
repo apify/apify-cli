@@ -277,16 +277,32 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName] [--json]
+  $ apify create [actorName] [--auto-build on|off]
+                 [--git-repo <value>] [--json]
                  [-l javascript|js|typescript|ts|python|py]
                  [--omit-optional-deps] [--skip-dependency-install]
-                 [--skip-git-init] [-t <value>]
+                 [--skip-git-init] [--source apify|github|gitlab|bitbucket]
+                 [-t <value>]
                  [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
+      --auto-build=<option>      Whether a push to the
+                                 repository rebuilds the Actor. On by default.
+                                 Turning it on registers a push webhook on the new
+                                 repository, which needs admin rights on it. Only
+                                 used when --source is a Git provider.
+                                 <options: on|off>
+      --git-repo=<value>         Repository to create, as
+                                 "workspace/name" — a workspace being an account or
+                                 organization you have given Apify access to. A bare
+                                 value is read as the name, not the workspace. The
+                                 name defaults to the Actor name, and the workspace
+                                 is asked for when you have more than one. List
+                                 yours with "apify api integrations/git". Only used
+                                 when --source is a Git provider.
       --json                     Format the command
                                  output as JSON.
   -l, --language=<option>        Filter templates by
@@ -299,6 +315,12 @@ FLAGS
                                  dependencies.
       --skip-git-init            Skip initializing a git
                                  repository in the Actor directory.
+      --source=<option>          Where the Actor source
+                                 code will live. With a Git provider, Apify creates
+                                 the repository on your connected account from the
+                                 template, clones it here, and creates an Actor that
+                                 builds from it.
+                                 <options: apify|github|gitlab|bitbucket>
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
                                  it. Visit
@@ -700,7 +722,9 @@ DESCRIPTION
 USAGE
   $ apify actors search [query] [--category <value>]
                         [--json] [--limit <value>] [--offset <value>]
-                        [--pricing-model <value>] [--sort-by <value>]
+                        [--pricing-model
+                        FREE|FLAT_PRICE_PER_MONTH|PRICE_PER_DATASET_ITEM|PAY_PER_EVENT]
+                        [--sort-by relevance|popularity|newest|lastUpdate]
                         [--username <value>]
 
 ARGUMENTS
@@ -708,18 +732,22 @@ ARGUMENTS
          or readme.
 
 FLAGS
-      --category=<value>       Filter by category (e.g.
-                               AI).
-      --json                   Format the command output as
-                               JSON.
-      --limit=<value>          Maximum number of results to
-                               return.
-      --offset=<value>         Number of results to skip
-                               for pagination.
-      --pricing-model=<value>  Filter by pricing model.
-      --sort-by=<value>        Sort order for the results.
-      --username=<value>       Filter by Actor author
-                               username.
+      --category=<value>        Filter by category (e.g.
+                                AI).
+      --json                    Format the command output
+                                as JSON.
+      --limit=<value>           Maximum number of results
+                                to return.
+      --offset=<value>          Number of results to skip
+                                for pagination.
+      --pricing-model=<option>  Filter by pricing model.
+                                <options:
+                                FREE|FLAT_PRICE_PER_MONTH|PRICE_PER_DATASET_ITEM|PAY_PER_EVENT>
+      --sort-by=<option>        Sort order for the
+                                results.
+                                <options: relevance|popularity|newest|lastUpdate>
+      --username=<value>        Filter by Actor author
+                                username.
 ```
 
 ##### `apify actors rm`
@@ -774,9 +802,9 @@ FLAGS
                                  the local secrets storage.
       --apply-env-vars-to-build  Make the environment
                                  variables also available to the Actor build
-                                 process. To turn the setting off, use
-                                 --no-apply-env-vars-to-build. Overrides the value
-                                 of the 'applyEnvVarsToBuild' field in the
+                                 process. Use --no-apply-env-vars-to-build to turn
+                                 the setting off. Overrides the value of the
+                                 'applyEnvVarsToBuild' field in the
                                  '.actor/actor.json' file. When both the field and
                                  the flag are omitted, the setting currently stored
                                  on the platform is kept.
@@ -787,7 +815,8 @@ FLAGS
                                  Actor is located.
   -f, --force                    Push an Actor even
                                  when the local files are older than the Actor on
-                                 the platform.
+                                 the platform, or when the Actor builds from a Git
+                                 repository.
       --json                     Format the command
                                  output as JSON.
       --open                     Whether to open the

@@ -35,7 +35,7 @@ jobs:
             changelog: ${{ steps.release_metadata.outputs.changelog }}
             release_notes: ${{ steps.release_metadata.outputs.release_notes }}
         steps:
-            - uses: apify/actions/git-cliff-release@v1.3.0
+            - uses: apify/actions/git-cliff-release@v1.5.0
               name: Prepare release metadata
               id: release_metadata
               with:
@@ -51,7 +51,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v7
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
             - name: Check if the head commit contains [skip ci]
               id: check_skip
               run: |
@@ -61,7 +61,7 @@ jobs:
                     echo 'skipped=false' >> $GITHUB_OUTPUT
                   fi
 
-            - uses: lewagon/wait-on-check-action@v1.8.0
+            - uses: lewagon/wait-on-check-action@369769072fe522a3a8a85c03c96af1e5242a1994 # v1.9.1
               if: ${{ steps.check_skip.outputs.skipped == 'false' }}
               with:
                   ref: ${{ github.sha }}
@@ -78,17 +78,17 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v7
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Use Node.js
-              uses: actions/setup-node@v7
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
               with:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.3.1
+              uses: apify/actions/pnpm-install@v1.5.0
 
             - name: Update package version in package.json
               run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version
@@ -97,7 +97,7 @@ jobs:
               run: pnpm pack
 
             - name: Update CHANGELOG.md
-              uses: DamianReeves/write-file-action@master
+              uses: DamianReeves/write-file-action@d4ee8a06aec5db0c57a036b86f2f428e1f8b00e7 # master
               with:
                   path: CHANGELOG.md
                   write-mode: overwrite
@@ -112,7 +112,7 @@ jobs:
 
             - name: Commit changes
               id: commit
-              uses: apify/actions/signed-commit@v1.3.0
+              uses: apify/actions/signed-commit@v1.5.0
               with:
                   message: "chore(release): Update changelog and package version [skip ci]"
                   pull: '--rebase --autostash'
@@ -136,25 +136,26 @@ jobs:
                       bun-target-arch: arm64
 
         runs-on: ${{ matrix.os }}
+        timeout-minutes: 20
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v7
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
                   fetch-depth: 0
 
             - name: Use Node.js
-              uses: actions/setup-node@v7
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
               with:
                   node-version: 24
                   registry-url: https://registry.npmjs.org
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.3.1
+              uses: apify/actions/pnpm-install@v1.5.0
 
             - name: Install bun
-              uses: oven-sh/setup-bun@v2
+              uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
               with:
                   bun-version-file: .bun-version
 
@@ -177,7 +178,7 @@ jobs:
               run: pnpm run insert-cli-metadata && pnpm run build-bundles
 
             - name: Upload bundles
-              uses: actions/upload-artifact@v7
+              uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
               with:
                   name: apify-cli-bundles-${{ matrix.label }}
                   path: bundles/**
@@ -192,13 +193,13 @@ jobs:
 
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v7
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
 
             # This step also deals with unzipping the archive from GitHub, so we get a big folder with all the bundles!
             - name: Download bundles
-              uses: actions/download-artifact@v8
+              uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
               with:
                   pattern: apify-cli-bundles-*
                   merge-multiple: true
@@ -209,19 +210,19 @@ jobs:
                   ls -la bundles
 
             - name: Use Node.js
-              uses: actions/setup-node@v7
+              uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
               with:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.3.1
+              uses: apify/actions/pnpm-install@v1.5.0
 
             - name: Report install size
               id: install-size
               run: node scripts/report-install-size.mjs
 
             - name: Create release
-              uses: softprops/action-gh-release@v3
+              uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
               with:
                   tag_name: ${{ needs.release_metadata.outputs.tag_name }}
                   name: ${{ needs.release_metadata.outputs.version_number }}
@@ -239,7 +240,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Execute publish workflow
-              uses: apify/actions/execute-workflow@v1.3.0
+              uses: apify/actions/execute-workflow@v1.5.0
               with:
                   workflow: publish_to_npm.yaml
                   inputs: >
@@ -260,7 +261,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Checkout repository
-              uses: actions/checkout@v7
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
                   ref: ${{ needs.update_changelog.outputs.changelog_commitish }}
 
@@ -270,7 +271,7 @@ jobs:
                   git config --global user.email 'apify-service-account@users.noreply.github.com'
 
             - name: Set up Homebrew
-              uses: Homebrew/actions/setup-homebrew@master
+              uses: Homebrew/actions/setup-homebrew@f8d4222eb633e65c2a0157383cf80861fc7fae7f # master
 
             # It can happen that the updated package version is not available right after the `npm publish` command finishes
             # Try waiting 3 minutes until the updated package version is available

@@ -34,6 +34,8 @@ interface CliCommandEvent {
 		templateName?: string;
 		templateLanguage?: string;
 		origin?: 'console' | 'cli';
+		/** Where the Actor's source code lives — 'apify' or a Git provider. */
+		source?: string;
 	};
 
 	push?: {

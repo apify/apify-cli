@@ -5,6 +5,7 @@ import axios from 'axios';
 
 import type { Manifest, Template } from '@apify/actor-templates';
 
+import type { AutomaticBuilds } from './git-source/gitSource.js';
 import type { ChoicesType } from './hooks/user-confirmations/useSelectFromList.js';
 import { useSelectFromList } from './hooks/user-confirmations/useSelectFromList.js';
 import { useUserInput } from './hooks/user-confirmations/useUserInput.js';
@@ -102,19 +103,42 @@ export function formatCreateSuccessMessage(params: {
 	postCreate?: string | null;
 	gitRepositoryInitialized?: boolean;
 	installCommandSuggestion?: string | null;
+	/** Set once the Actor is wired to a Git remote, which changes how it gets deployed. */
+	gitRemote?: { remoteUrl: string; actorId: string; automaticBuilds: AutomaticBuilds } | null;
 }) {
-	const { actorName, dependenciesInstalled, postCreate, gitRepositoryInitialized, installCommandSuggestion } = params;
+	const {
+		actorName,
+		dependenciesInstalled,
+		postCreate,
+		gitRepositoryInitialized,
+		installCommandSuggestion,
+		gitRemote,
+	} = params;
 
 	let message = `✅ Actor '${actorName}' created successfully!`;
 
 	const nextSteps = buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
 	message += `\n\nNext steps:\n\n${nextSteps.join('\n')}`;
 
-	message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform\n📖 Docs: https://docs.apify.com/platform/actors/development`;
+	if (gitRemote) {
+		// A Git-sourced Actor builds from the repository, so `apify push` is the wrong advice. Only promise
+		// that a push rebuilds it when the webhook actually landed.
+		message += `\n\n🌱 Connected to ${gitRemote.remoteUrl} — Actor ${gitRemote.actorId} builds from this repository.`;
+		if (gitRemote.automaticBuilds === 'on') {
+			message += `\n🔁 Every push to this repository rebuilds the Actor.`;
+		} else if (gitRemote.automaticBuilds === 'failed') {
+			// Only worth a tip when it was asked for and refused; someone who passed --auto-build=off knows.
+			message += `\n💡 Tip: Turn on Automatic builds in the Actor's Source settings to rebuild on every push.`;
+		}
+	} else {
+		message += `\n\n💡 Tip: Use 'apify push' to deploy your Actor to the Apify platform`;
 
-	if (gitRepositoryInitialized) {
-		message += `\n🌱 Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`;
+		if (gitRepositoryInitialized) {
+			message += `\n🌱 Git repository initialized in '${actorName}'. You can now commit and push your Actor to Git.`;
+		}
 	}
+
+	message += `\n📖 Docs: https://docs.apify.com/platform/actors/development`;
 
 	if (postCreate) {
 		message += `\n\n${postCreate}`;

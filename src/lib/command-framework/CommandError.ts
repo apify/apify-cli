@@ -201,6 +201,13 @@ export class CommandError extends Error {
 				);
 			}
 
+			case CommandErrorCode.APIFY_INVALID_CHOICE: {
+				const flagName = `--${this.metadata.flag}`;
+				const choices = this.metadata.choices as string;
+
+				return chalk.gray(`Invalid value for flag ${chalk.white.bold(flagName)}. Expected one of: ${choices}`);
+			}
+
 			default: {
 				const cliMetadata = useCLIMetadata();
 

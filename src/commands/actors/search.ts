@@ -67,7 +67,7 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 	static override flags = {
 		'sort-by': Flags.string({
 			description: 'Sort order for the results.',
-			options: ['relevance', 'popularity', 'newest', 'lastUpdate'],
+			choices: ['relevance', 'popularity', 'newest', 'lastUpdate'],
 			default: 'relevance',
 		}),
 		category: Flags.string({
@@ -78,7 +78,7 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 		}),
 		'pricing-model': Flags.string({
 			description: 'Filter by pricing model.',
-			options: ['FREE', 'FLAT_PRICE_PER_MONTH', 'PRICE_PER_DATASET_ITEM', 'PAY_PER_EVENT'],
+			choices: ['FREE', 'FLAT_PRICE_PER_MONTH', 'PRICE_PER_DATASET_ITEM', 'PAY_PER_EVENT'],
 		}),
 		limit: Flags.integer({
 			description: 'Maximum number of results to return.',

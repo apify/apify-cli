@@ -43,6 +43,17 @@ describe('[e2e] actor run input', () => {
 			expect(run.input).toEqual({ foo: 'bar' });
 		});
 
+		it('passes JSON string containing ~ to the actor', async () => {
+			const result = await runCli('apify', ['run', '--input={"standbyActorId":"some-user~some-actor"}'], {
+				cwd: actor.dir,
+			});
+
+			expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+			const run = await getRunResults(actor.dir);
+			expect(run.started).toBe(true);
+			expect(run.input).toEqual({ standbyActorId: 'some-user~some-actor' });
+		});
+
 		it('suggests --input-file when given a file path', async () => {
 			const result = await runCli('apify', ['run', '--input=./my-path/file.json'], { cwd: actor.dir });
 

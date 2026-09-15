@@ -112,7 +112,7 @@ export async function getInputOverride(
 					inputFlag.startsWith('./') ||
 					inputFlag.startsWith('../') ||
 					// Home directory access
-					inputFlag.includes('~') ||
+					inputFlag.startsWith('~') ||
 					// Windows-style path access
 					inputFlag.startsWith('.\\') ||
 					inputFlag.startsWith('..\\');

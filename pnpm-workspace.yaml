@@ -19,9 +19,11 @@ minimumReleaseAgeExclude:
   - "got-scraping"
   # Renovate security update: adm-zip@0.6.0
   - adm-zip@0.6.0
+  # Renovate security update: pnpm@11.11.0
+  - pnpm@11.11.0
 
 overrides:
-  tar: 7.5.16
+  tar: 7.5.22
 
 # Install native deps for all platforms, not just the current machine's, so the
 # cross-platform bundle builds (scripts/build-cli-bundles.ts) can embed them.
