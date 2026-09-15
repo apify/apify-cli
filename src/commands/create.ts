@@ -141,7 +141,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}),
 		source: Flags.string({
 			description:
-				'How the Actor source code is set up. "apify" keeps everything on this machine and uploads nothing, so you deploy it with "apify push". With a Git provider, Apify creates a private repository on your connected account from the template, clones it into the Actor directory, and creates an Actor that builds from it.',
+				'Where the Actor source code lives. With "apify", the code stays on your machine and nothing is uploaded. You can still deploy your Actor with "apify push". With a Git provider, Apify creates a private repository from the template on your connected account, clones the repository into the Actor directory, and builds the Actor from it.',
 			choices: [...GIT_SOURCE_CHOICES],
 			// No default: an omitted flag triggers the wizard prompt, or "apify" when it cannot be asked.
 			required: false,
