@@ -520,9 +520,7 @@ SUBCOMMANDS
                       and console URL environment variables point it somewhere
                       else.
   runtime skill       Prints the Actor runtime's Agent Skill -
-                      the instructions an agent needs to drive the runtime (the
-                      dev-folder loop, debug mode, browser view, migration
-                      testing, the API fallback).
+                      the runtime's own instructions for how to use it.
 ```
 
 ##### `apify runtime install`
@@ -628,9 +626,8 @@ USAGE
 
 ```sh
 DESCRIPTION
-  Prints the Actor runtime's Agent Skill - the instructions an agent needs to 
-  drive the runtime (the dev-folder loop, debug mode, browser view, migration 
-  testing, the API fallback).
+  Prints the Actor runtime's Agent Skill - the runtime's own instructions for 
+  how to use it.
   The skill ships inside the runtime image, so it always describes the runtime 
   you actually have. It is read over HTTP when the runtime is running, and 
   straight out of the installed image when it is not - so 'apify runtime 

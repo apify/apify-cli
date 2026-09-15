@@ -19,8 +19,7 @@ export class RuntimeSkillCommand extends ApifyCommand<typeof RuntimeSkillCommand
 	static override name = 'skill' as const;
 
 	static override description =
-		`Prints the Actor runtime's Agent Skill - the instructions an agent needs to drive the runtime ` +
-		`(the dev-folder loop, debug mode, browser view, migration testing, the API fallback).\n` +
+		`Prints the Actor runtime's Agent Skill - the runtime's own instructions for how to use it.\n` +
 		`The skill ships inside the runtime image, so it always describes the runtime you actually have. ` +
 		`It is read over HTTP when the runtime is running, and straight out of the installed image when ` +
 		`it is not - so 'apify runtime install' is all it needs.\n` +
@@ -75,8 +74,7 @@ export class RuntimeSkillCommand extends ApifyCommand<typeof RuntimeSkillCommand
 		const { content, source } = resolved;
 
 		if (!this.flags.install) {
-			// stdout only, so 'apify runtime skill > SKILL.md' stays a clean file - the same contract
-			// 'apify help --skill' already has.
+			// stdout only, so 'apify runtime skill > SKILL.md' stays clean, like 'apify help --skill'.
 			simpleLog({
 				stdout: true,
 				message: (this.flags.raw ? content : frameSkillForReading(content, source)).trimEnd(),
@@ -92,8 +90,7 @@ export class RuntimeSkillCommand extends ApifyCommand<typeof RuntimeSkillCommand
 				await writeSkillTo(target, stamped);
 				written.push(`  ${tildify(target.directory)}  ${chalk.gray(`(${target.label})`)}`);
 			} catch (err) {
-				// One unwritable location (a read-only home, a project directory owned by someone else)
-				// must not lose the installs that did work.
+				// One unwritable location must not lose the installs that did work.
 				info({ message: chalk.gray(`Skipped ${tildify(target.directory)}: ${(err as Error).message}`) });
 			}
 		}

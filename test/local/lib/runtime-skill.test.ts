@@ -19,9 +19,9 @@ describe('frameSkillForReading', () => {
 	it('replaces the frontmatter with a header saying what the reader is holding', () => {
 		const framed = frameSkillForReading(SKILL, { kind: 'runtime', baseUrl: 'http://localhost:3333' });
 
-		// Frontmatter is metadata for a skill loader; a caller that is printing has none.
+		// Frontmatter is for a skill loader; a caller that prints has none.
 		expect(framed).not.toContain('description: drives the runtime');
-		expect(framed).toContain('Follow these instructions when working with Actors against this runtime');
+		expect(framed).toContain(`The local Actor runtime's own instructions for using it`);
 		expect(framed).toContain('apify runtime skill --install');
 		expect(framed).toContain('# Body');
 	});
@@ -41,7 +41,7 @@ describe('stampSkill', () => {
 	it('records the source and date below the frontmatter, leaving the frontmatter first', () => {
 		const stamped = stampSkill(SKILL, { kind: 'image', image: 'apify/actor-runtime:latest' }, new Date('2026-09-11'));
 
-		// A loader reads the frontmatter from the top of the file - the stamp must not displace it.
+		// A loader reads the frontmatter from the top of the file.
 		expect(stamped.startsWith('---\nname: apify-actor-runtime')).toBe(true);
 		expect(stamped).toContain('2026-09-11');
 		expect(stamped).toContain(`the 'apify/actor-runtime:latest' image`);
