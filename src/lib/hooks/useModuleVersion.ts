@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import { none, type Option, some } from '@sapphire/result';
 import { execa } from 'execa';
 
@@ -102,6 +104,7 @@ export async function useModuleVersion({ moduleName, project }: UseModuleVersion
 
 	try {
 		const result = await execa(project.runtime.executablePath, args, {
+			cwd: process.cwd(),
 			shell: true,
 			windowsHide: true,
 			verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
