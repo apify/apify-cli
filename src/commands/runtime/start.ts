@@ -17,6 +17,7 @@ import {
 	findRunningRuntimeEngine,
 	resolveEngineSocketPath,
 	runtimeEnvExportLines,
+	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
 import { ensureActorRuntimeImage, installedActorRuntimeImage } from '../../lib/runtime/ensure.js';
 
@@ -88,6 +89,8 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 				'',
 				'Point the Apify CLI at the runtime with:',
 				...runtimeEnvExportLines().map((line) => chalk.white.bold(`  ${line}`)),
+				'',
+				...runtimeSkillHintLines(),
 			].join('\n'),
 		});
 

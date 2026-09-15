@@ -321,3 +321,13 @@ export function buildRuntimeRunArgs({
 
 	return args;
 }
+
+/** The one line that tells an agent this runtime documents itself, printed wherever the CLI has just
+ * given it a runtime ('runtime install', 'start', 'connect', 'status'). An agent reads the output of the
+ * command it ran and has no other reason to go looking, so this is the moment that reaches it. */
+export function runtimeSkillHintLines(): string[] {
+	return [
+		`Agents: run 'apify runtime skill --install' to install this runtime's Agent Skill,`,
+		`        or 'apify runtime skill' to read it now.`,
+	];
+}

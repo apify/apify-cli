@@ -34,6 +34,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.runtimeStatus },
 		{ command: Commands.runtimeConnect },
 		{ command: Commands.runtimeDisconnect },
+		{ command: Commands.runtimeSkill },
 
 		{ command: Commands.actor },
 		{ command: Commands.actorCalculateMemory },
