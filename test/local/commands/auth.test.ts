@@ -128,12 +128,33 @@ describe('auth commands', () => {
 			process.exitCode = 0;
 		});
 
-		it('login saves its own token even when APIFY_TOKEN is set, and says it is overridden', async () => {
+		it('login fails and stores nothing when APIFY_TOKEN holds a different token', async () => {
 			vitest.stubEnv('APIFY_TOKEN', 'apify_api_env_token');
+
+			await login();
+
+			expect(lastErrorMessage()).toContain('APIFY_TOKEN is set to a different token');
+			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+			expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
+			process.exitCode = 0;
+		});
+
+		it('login goes through when APIFY_TOKEN holds the same token, as CI sets both', async () => {
+			vitest.stubEnv('APIFY_TOKEN', TOKEN);
+
 			await login();
 
 			expect(await getToken()).toBe(TOKEN);
-			expect(lastErrorMessage()).toContain('APIFY_TOKEN is set, so other commands keep using that token');
+			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
+		});
+
+		it('login goes through while APIFY_TOKEN is a placeholder, so a broken one can be fixed', async () => {
+			vitest.stubEnv('APIFY_TOKEN', 'undefined');
+
+			await login();
+
+			expect(await getToken()).toBe(TOKEN);
+			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
 		});
 
 		it('login says nothing about APIFY_TOKEN when it is not set', async () => {
@@ -160,13 +181,15 @@ describe('auth commands', () => {
 			expect(lastErrorMessage()).not.toContain('APIFY_TOKEN');
 		});
 
-		it('a placeholder APIFY_TOKEN falls back to the stored login', async () => {
+		it('a placeholder APIFY_TOKEN fails the command instead of falling back', async () => {
 			await login();
 			vitest.stubEnv('APIFY_TOKEN', 'undefined');
 
 			await testRunCommand(AuthTokenCommand, {});
 
-			expect(lastLogMessage()).toBe(TOKEN);
+			expect(lastErrorMessage()).toContain('APIFY_TOKEN is set to "undefined"');
+			expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
+			process.exitCode = 0;
 		});
 
 		it('auth token prints APIFY_TOKEN over the stored token, and stores nothing', async () => {

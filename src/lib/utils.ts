@@ -32,7 +32,7 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
-import { describeAuthFailure, getApifyClientOptions, resolveAuth } from './auth.js';
+import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth } from './auth.js';
 import {
 	AUTH_FILE_PATH,
 	CommandExitCodes,
@@ -146,7 +146,7 @@ async function getLoggedClient(): Promise<{ client: ApifyClient | null; error?: 
 	const auth = await resolveAuth();
 	if (!auth) return { client: null };
 
-	const apifyClient = new ApifyClient(await getApifyClientOptions(auth.token));
+	const apifyClient = new ApifyClient(getApifyClientOptionsForToken(auth.token));
 
 	try {
 		const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
@@ -173,7 +173,7 @@ export async function getCurrentUserInfo(): Promise<AuthJSON> {
 	if (auth.source === 'stored') return getLocalUserInfo();
 
 	const apifyClient = new ApifyClient({
-		...(await getApifyClientOptions(auth.token)),
+		...getApifyClientOptionsForToken(auth.token),
 		maxRetries: 1,
 		timeoutSecs: 10,
 	});

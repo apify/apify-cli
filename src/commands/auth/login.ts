@@ -18,7 +18,7 @@ import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { createLocalApiServer } from '../../lib/local-api-server.js';
-import { error, info, success, warning } from '../../lib/outputs.js';
+import { error, info, success } from '../../lib/outputs.js';
 import { getLocalUserInfo, tildify } from '../../lib/utils.js';
 
 // When logging in against a local Console instance (local platform development), validate the token
@@ -48,12 +48,6 @@ const tryToLogin = async (token: string) => {
 		success({
 			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored in ${tokenLocation}.`)}`,
 		});
-
-		if (getEnvToken()) {
-			warning({
-				message: `${APIFY_ENV_VARS.TOKEN} is set, so other commands keep using that token instead of this login. Unset it to use this account.`,
-			});
-		}
 	} else {
 		process.exitCode = CommandExitCodes.MissingAuth;
 		error({
@@ -94,7 +88,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 	static override flags = {
 		token: Flags.string({
 			char: 't',
-			description: 'Apify API token to log in with and save. APIFY_TOKEN is deliberately ignored here.',
+			description: 'Apify API token to log in with and save. Must match APIFY_TOKEN when that is set.',
 			required: false,
 		}),
 		method: Flags.string({
@@ -107,6 +101,21 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 
 	async run() {
 		const { token, method } = this.flags;
+
+		// APIFY_TOKEN outranks a stored login, so logging in under a different token would report
+		// success for an account no other command then uses. The same token is the CI idiom of
+		// setting APIFY_TOKEN and running `apify login --token $APIFY_TOKEN`, where nothing is wrong.
+		// The browser and interactive flows have no token yet, so all they can check is that it is set.
+		const envToken = getEnvToken();
+		if (envToken && envToken !== token?.trim()) {
+			error({
+				message: token
+					? `${APIFY_ENV_VARS.TOKEN} is set to a different token, so other commands would ignore this login. Unset ${APIFY_ENV_VARS.TOKEN} and try again.`
+					: `${APIFY_ENV_VARS.TOKEN} is set, so other commands would ignore this login. Unset ${APIFY_ENV_VARS.TOKEN} and try again, or pass the same token with --token.`,
+			});
+			process.exitCode = CommandExitCodes.InvalidInput;
+			return;
+		}
 
 		if (token) {
 			await tryToLogin(token);

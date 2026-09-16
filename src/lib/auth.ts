@@ -6,7 +6,7 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH } from './consts.js';
+import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import { ensureMigrated, getBackend, getToken, setProxyPassword, setToken } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
@@ -63,6 +63,7 @@ export const TOKEN_SOURCE_LABELS: Record<TokenSource, string> = {
  * so `APIFY_TOKEN` wins without a special case for the `actor` entrypoint.
  *
  * Read-only by contract. Only `apify login` writes credentials, through {@link loginWithToken}.
+ * Throws when `APIFY_TOKEN` holds a placeholder value.
  */
 export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth | undefined> => {
 	if (explicitToken) {
@@ -82,9 +83,14 @@ export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth 
 		return { token: envToken, source: 'env' };
 	}
 
+	// Only a placeholder reaches here, never a blank value. Falling back would run the command as
+	// a different account than the script asked for, and a warning is lost in CI logs.
 	const rawEnvToken = process.env[APIFY_ENV_VARS.TOKEN]?.trim();
 	if (rawEnvToken) {
-		noticeOnce(`${APIFY_ENV_VARS.TOKEN} is invalid: "${rawEnvToken}".`);
+		process.exitCode = CommandExitCodes.InvalidInput;
+		throw new Error(
+			`${APIFY_ENV_VARS.TOKEN} is set to "${rawEnvToken}", which is not an API token. Unset ${APIFY_ENV_VARS.TOKEN} and try again.`,
+		);
 	}
 
 	const storedToken = await getToken();
@@ -141,12 +147,10 @@ export const getAnonymousApifyClientOptions = (apiBaseUrl?: string): ApifyClient
 	],
 });
 
-/**
- * Returns options for ApifyClient
- */
-export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => ({
+/** Options for a caller that already holds a token, so nothing is resolved. */
+export const getApifyClientOptionsForToken = (token: string, apiBaseUrl?: string): ApifyClientOptions => ({
 	...getAnonymousApifyClientOptions(apiBaseUrl),
-	token: (await resolveAuth(token))?.token,
+	token,
 });
 
 /**
@@ -156,7 +160,7 @@ export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string)
  * Returns `null` when the token is rejected, in which case nothing is written.
  */
 export async function loginWithToken(token: string, apiBaseUrl?: string): Promise<ApifyClient | null> {
-	const apifyClient = new ApifyClient(await getApifyClientOptions(token, apiBaseUrl));
+	const apifyClient = new ApifyClient(getApifyClientOptionsForToken(token, apiBaseUrl));
 
 	let userInfo;
 	try {

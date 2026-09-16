@@ -9,7 +9,7 @@ import { ApifyClient } from 'apify-client';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';
 
-import { getApifyClientOptions, resolveAuth } from './auth.js';
+import { getApifyClientOptionsForToken, resolveAuth } from './auth.js';
 import { getLocalStorageDir } from './utils.js';
 
 export const APIFY_STORAGE_TYPES = {
@@ -41,7 +41,7 @@ export const getApifyStorageClient = async (
 	}
 
 	return new ApifyClient({
-		...(await getApifyClientOptions(auth.token)),
+		...getApifyClientOptionsForToken(auth.token),
 		...options,
 	});
 };

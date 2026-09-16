@@ -170,7 +170,7 @@ FLAGS
   -m, --method=<option>  Method of logging in to Apify.
                          <options: console|manual>
   -t, --token=<value>    Apify API token to log in with and
-                         save. APIFY_TOKEN is deliberately ignored here.
+                         save. Must match APIFY_TOKEN when that is set.
 ```
 
 ##### `apify auth logout` / `apify logout`

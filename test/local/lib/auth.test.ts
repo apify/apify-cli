@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { ApifyApiError } from 'apify-client';
 
 import { loginWithToken, resolveAuth } from '../../../src/lib/auth.js';
-import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
+import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
 import { getProxyPassword, getToken, setToken } from '../../../src/lib/credentials.js';
 import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../../src/lib/utils.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -66,6 +66,11 @@ describe('auth', () => {
 	});
 
 	describe('resolveAuth()', () => {
+		afterEach(() => {
+			// The command framework reads this; leaving it set would fail the vitest run.
+			process.exitCode = 0;
+		});
+
 		it('returns undefined when no token is available', async () => {
 			await expect(resolveAuth()).resolves.toBeUndefined();
 		});
@@ -90,23 +95,39 @@ describe('auth', () => {
 			await expect(resolveAuth(FLAG)).resolves.toEqual({ token: FLAG, source: 'flag' });
 		});
 
-		it.each(['undefined', 'null', 'NaN', 'none', '0', '  '])(
-			'ignores APIFY_TOKEN set to the placeholder %j and uses the stored login',
+		it.each(['undefined', 'null', 'NaN', 'none', '0', '-'])(
+			'fails instead of falling back when APIFY_TOKEN is the placeholder %j',
 			async (placeholder) => {
 				await loginWithToken(STORED);
 				vitest.stubEnv('APIFY_TOKEN', placeholder);
 
-				await expect(resolveAuth()).resolves.toEqual({ token: STORED, source: 'stored' });
+				await expect(resolveAuth()).rejects.toThrow(`APIFY_TOKEN is set to "${placeholder}"`);
+				expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
 			},
 		);
 
-		it('says so when it falls back from a placeholder APIFY_TOKEN', async () => {
+		it('says how to fix a placeholder APIFY_TOKEN', async () => {
+			vitest.stubEnv('APIFY_TOKEN', 'undefined');
+
+			await expect(resolveAuth()).rejects.toThrow('Unset APIFY_TOKEN and try again');
+		});
+
+		it.each(['', '   '])(
+			'falls back to the stored login without a word when APIFY_TOKEN is blank %j',
+			async (blank) => {
+				await loginWithToken(STORED);
+				vitest.stubEnv('APIFY_TOKEN', blank);
+
+				await expect(resolveAuth()).resolves.toEqual({ token: STORED, source: 'stored' });
+				expect(lastErrorMessage()).toBeUndefined();
+			},
+		);
+
+		it('still resolves a token the command was given while APIFY_TOKEN is a placeholder', async () => {
 			await loginWithToken(STORED);
 			vitest.stubEnv('APIFY_TOKEN', 'undefined');
 
-			await resolveAuth();
-
-			expect(lastErrorMessage()).toContain('APIFY_TOKEN is invalid: "undefined"');
+			await expect(resolveAuth(FLAG)).resolves.toEqual({ token: FLAG, source: 'flag' });
 		});
 
 		it('trims surrounding whitespace off APIFY_TOKEN', async () => {

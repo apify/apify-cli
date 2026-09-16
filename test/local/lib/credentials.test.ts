@@ -4,7 +4,7 @@ import process from 'node:process';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
-import { getApifyClientOptions } from '../../../src/lib/auth.js';
+import { resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import {
 	__resetCredentialsForTests,
@@ -370,29 +370,15 @@ describe('credentials', () => {
 		});
 	});
 
-	describe('getApifyClientOptions()', () => {
+	describe('resolveAuth()', () => {
 		beforeEach(() => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
 		});
 
-		it('resolves the stored token when nothing overrides it', async () => {
-			await setToken('tok_stored');
-			expect((await getApifyClientOptions()).token).toBe('tok_stored');
-		});
-
-		it('prefers an explicitly passed token over the stored one', async () => {
-			await setToken('tok_stored');
-			expect((await getApifyClientOptions('tok_explicit')).token).toBe('tok_explicit');
-		});
-
 		it('resolves a pre-migration auth.json and stamps the backend marker', async () => {
 			writeAuthFile({ username: 'me', id: 'uid', token: 'tok_legacy' });
-			expect((await getApifyClientOptions()).token).toBe('tok_legacy');
+			expect((await resolveAuth())?.token).toBe('tok_legacy');
 			expect(readAuthFile().secretsBackend).toBe('file');
-		});
-
-		it('resolves to undefined when no token is stored', async () => {
-			expect((await getApifyClientOptions()).token).toBeUndefined();
 		});
 	});
 });
