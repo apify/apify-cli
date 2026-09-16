@@ -146,6 +146,14 @@ export async function isEngineReady(engine: ContainerEngine): Promise<boolean> {
 	}
 }
 
+/**
+ * Whether the image reference is pinned to a digest. Any tag can be moved to a new build in the
+ * registry, so a local copy of a tagged image can be outdated - a digest always is what it names.
+ */
+export function isDigestPinned(image: string): boolean {
+	return image.includes('@');
+}
+
 export async function imageExistsLocally(engine: ContainerEngine, image: string): Promise<boolean> {
 	try {
 		await execa(engine, ['image', 'inspect', image]);

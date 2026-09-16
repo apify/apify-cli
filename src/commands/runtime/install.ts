@@ -15,6 +15,7 @@ export class RuntimeInstallCommand extends ApifyCommand<typeof RuntimeInstallCom
 
 	static override description =
 		`Installs the Actor runtime: verifies this machine has a working container engine (Docker or Podman) and downloads the Actor runtime image ('${DEFAULT_ACTOR_RUNTIME_IMAGE}' unless another one is given).\n` +
+		`Tagged images are always re-checked against the registry, so an outdated local copy gets updated.\n` +
 		`'apify runtime start' then runs the image installed last.\n` +
 		`The engine itself is a prerequisite and is not installed by this command - see ${DOCKER_GET_DOCKER_URL} or ${PODMAN_INSTALL_URL}.`;
 
@@ -55,6 +56,7 @@ export class RuntimeInstallCommand extends ApifyCommand<typeof RuntimeInstallCom
 		const installed = await ensureActorRuntimeImage({
 			image: this.args.image ?? DEFAULT_ACTOR_RUNTIME_IMAGE,
 			forcePull: this.flags.force,
+			refreshFromRegistry: true,
 		});
 		if (!installed) return;
 

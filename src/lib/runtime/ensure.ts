@@ -12,6 +12,7 @@ import {
 	engineDaemonHint,
 	engineInstallHint,
 	findContainerEngine,
+	isDigestPinned,
 	imageExistsLocally,
 	requestedContainerEngine,
 } from './docker.js';
@@ -19,6 +20,8 @@ import {
 export interface EnsureActorRuntimeImageOptions {
 	image: string;
 	forcePull?: boolean;
+	/** Pull tagged images even when they exist locally, so the registry decides whether the local copy is current. */
+	refreshFromRegistry?: boolean;
 }
 
 /** The image the last 'apify runtime install' fetched, or the default when nothing was installed yet. */
@@ -38,6 +41,7 @@ export function rememberInstalledActorRuntimeImage(image: string) {
 export async function ensureActorRuntimeImage({
 	image,
 	forcePull = false,
+	refreshFromRegistry = false,
 }: EnsureActorRuntimeImageOptions): Promise<ContainerEngine | null> {
 	const found = await findContainerEngine();
 	if (!found) {
@@ -63,13 +67,20 @@ export async function ensureActorRuntimeImage({
 		return null;
 	}
 
-	if (!forcePull && (await imageExistsLocally(engine, image))) {
+	const existsLocally = await imageExistsLocally(engine, image);
+	const localCopyIsCurrent = existsLocally && (isDigestPinned(image) || !refreshFromRegistry);
+
+	if (localCopyIsCurrent && !forcePull) {
 		info({ message: `Actor runtime image '${image}' is already available locally.` });
 		rememberInstalledActorRuntimeImage(image);
 		return engine;
 	}
 
-	info({ message: `Downloading the Actor runtime image '${image}'...` });
+	info({
+		message: existsLocally
+			? `Checking the registry for a newer Actor runtime image '${image}'...`
+			: `Downloading the Actor runtime image '${image}'...`,
+	});
 
 	try {
 		await execWithLog({ cmd: engine, args: ['pull', image] });

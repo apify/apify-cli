@@ -4,6 +4,7 @@ import {
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
 	engineDaemonHint,
 	engineInstallHint,
+	isDigestPinned,
 	parseRuntimeContainerInfo,
 	requestedContainerEngine,
 	resolveEngineSocketPath,
@@ -19,6 +20,16 @@ describe('runtime/docker', () => {
 
 		it('doubles the leading slash on Windows to prevent path mangling', () => {
 			expect(socketMountArg('/var/run/docker.sock', 'win32')).toBe('//var/run/docker.sock:/var/run/docker.sock');
+		});
+	});
+
+	describe('isDigestPinned()', () => {
+		it('only treats digest references as fixed - any tag can be moved to a new build', () => {
+			expect(isDigestPinned('apify/actor-runtime@sha256:abc')).toBe(true);
+			expect(isDigestPinned('apify/actor-runtime:latest@sha256:abc')).toBe(true);
+			expect(isDigestPinned(DEFAULT_ACTOR_RUNTIME_IMAGE)).toBe(false);
+			expect(isDigestPinned('apify/actor-runtime:master-5462005')).toBe(false);
+			expect(isDigestPinned('localhost:5000/apify/actor-runtime')).toBe(false);
 		});
 	});
 
