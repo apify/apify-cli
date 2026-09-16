@@ -22,8 +22,6 @@ export class AuthTokenCommand extends ApifyCommand<typeof AuthTokenCommand> {
 		await getLoggedClientOrThrow();
 		const auth = await resolveAuth();
 
-		if (auth) {
-			simpleLog({ message: auth.token, stdout: true });
-		}
+		simpleLog({ message: auth!.token, stdout: true });
 	}
 }

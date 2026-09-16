@@ -25,17 +25,14 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 		const info = await getCurrentUserInfo();
 		const auth = await resolveAuth();
 
-		const niceInfo: Record<string, string | undefined> = {
-			username: info.username,
-			userId: info.id,
+		const rows = {
+			'username': info.username,
+			'userId': info.id,
+			'token source': TOKEN_SOURCE_LABELS[auth!.source],
 		};
 
-		if (auth) {
-			niceInfo['token source'] = TOKEN_SOURCE_LABELS[auth.source];
-		}
-
-		for (const key of Object.keys(niceInfo)) {
-			console.log(`${chalk.gray(key)}: ${chalk.bold(niceInfo[key])}`);
+		for (const [key, value] of Object.entries(rows)) {
+			console.log(`${chalk.gray(key)}: ${chalk.bold(value)}`);
 		}
 	}
 }

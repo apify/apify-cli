@@ -19,7 +19,7 @@ import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInpu
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { createLocalApiServer } from '../../lib/local-api-server.js';
 import { error, info, success, warning } from '../../lib/outputs.js';
-import { getLocalUserInfo, tildify } from '../../lib/utils.js';
+import { tildify } from '../../lib/utils.js';
 
 // When logging in against a local Console instance (local platform development), validate the token
 // against the local API rather than production.
@@ -30,10 +30,10 @@ const API_VERSION = 'v1';
 
 const tryToLogin = async (token: string) => {
 	const apiBaseUrl = getConsoleUrl().includes('localhost') ? LOCAL_API_BASE_URL : undefined;
-	const isUserLogged = await loginWithToken(token, apiBaseUrl);
-	const userInfo = await getLocalUserInfo();
+	const result = await loginWithToken(token, apiBaseUrl);
 
-	if (isUserLogged) {
+	if (result) {
+		const { userInfo } = result;
 		await updateUserId(userInfo.id!);
 
 		const backend = await getBackend();
@@ -54,7 +54,7 @@ const tryToLogin = async (token: string) => {
 			message: 'Login to Apify failed, the provided API token is not valid.',
 		});
 	}
-	return isUserLogged;
+	return result;
 };
 
 export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {

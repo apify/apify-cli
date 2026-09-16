@@ -14,9 +14,11 @@ import {
 	getToken,
 	setProxyPassword,
 	setToken,
+	stripProxyPassword,
 } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
+import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 export type TokenSource = 'env' | 'stored';
@@ -163,7 +165,10 @@ export const getApifyClientOptionsForToken = (token: string, apiBaseUrl?: string
  *
  * Returns `null` when the token is rejected, in which case nothing is written.
  */
-export async function loginWithToken(token: string, apiBaseUrl?: string): Promise<ApifyClient | null> {
+export async function loginWithToken(
+	token: string,
+	apiBaseUrl?: string,
+): Promise<{ client: ApifyClient; userInfo: AuthJSON } | null> {
 	const apifyClient = new ApifyClient(getApifyClientOptionsForToken(token, apiBaseUrl));
 
 	let userInfo;
@@ -174,17 +179,13 @@ export async function loginWithToken(token: string, apiBaseUrl?: string): Promis
 		return null;
 	}
 
+	const proxyPassword = userInfo.proxy?.password;
+
 	// Replaces the previous account rather than merging into it, so fields the new account
-	// does not have (email, organizationOwnerUserId) cannot linger from the old one.
-	const fileContents: Record<string, unknown> = { ...userInfo, secretsBackend: await getBackend() };
-	if (fileContents.proxy && typeof fileContents.proxy === 'object') {
-		const { password: _password, ...rest } = fileContents.proxy as { password?: string };
-		if (Object.keys(rest).length > 0) {
-			fileContents.proxy = rest;
-		} else {
-			delete fileContents.proxy;
-		}
-	}
+	// does not have (email, organizationOwnerUserId) cannot linger from the old one. The spread
+	// is shallow, so stripping the secret here also clears it from userInfo — read it first.
+	const fileContents = { ...userInfo, secretsBackend: await getBackend() };
+	stripProxyPassword(fileContents);
 
 	ensureApifyDirectory(AUTH_FILE_PATH());
 	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
@@ -193,12 +194,11 @@ export async function loginWithToken(token: string, apiBaseUrl?: string): Promis
 	// `skipIfUnchanged` avoids a macOS Keychain prompt when the value already matches.
 	await setToken(token, { skipIfUnchanged: true });
 
-	const proxyPassword = userInfo.proxy?.password;
 	if (proxyPassword) {
 		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
 	} else {
 		await deleteProxyPassword();
 	}
 
-	return apifyClient;
+	return { client: apifyClient, userInfo };
 }

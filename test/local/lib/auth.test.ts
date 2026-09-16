@@ -6,40 +6,14 @@ import { loginWithToken, resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
 import { getProxyPassword, getToken, setToken } from '../../../src/lib/credentials.js';
 import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../../src/lib/utils.js';
+import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
-const { clientState } = vi.hoisted(() => ({
-	clientState: {
-		user: {} as Record<string, unknown>,
-		fail: false,
-		failWith: undefined as unknown,
-	},
+vi.mock('apify-client', async (importOriginal) => ({
+	...(await importOriginal<typeof import('apify-client')>()),
+	ApifyClient: (await import('../../__setup__/apify-client-mock.js')).FakeApifyClient,
 }));
-
-// Stubbing the client is what lets the auth flow run in test:local.
-vi.mock('apify-client', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('apify-client')>();
-
-	class FakeApifyClient {
-		token?: string;
-
-		constructor(options: { token?: string }) {
-			this.token = options.token;
-		}
-
-		user() {
-			return {
-				get: async () => {
-					if (clientState.fail) throw clientState.failWith ?? new Error('401');
-					return clientState.user;
-				},
-			};
-		}
-	}
-
-	return { ...actual, ApifyClient: FakeApifyClient };
-});
 
 useAuthSetup();
 const { lastErrorMessage, logMessages } = useConsoleSpy();
@@ -59,9 +33,7 @@ const apiError = (statusCode: number) =>
 
 describe('auth', () => {
 	beforeEach(() => {
-		clientState.fail = false;
-		clientState.failWith = undefined;
-		clientState.user = { id: 'uid', username: 'me', proxy: { password: 'pw' } };
+		resetApifyClientMock({ id: 'uid', username: 'me', proxy: { password: 'pw' } });
 	});
 
 	describe('resolveAuth()', () => {

@@ -3,6 +3,7 @@ import process from 'node:process';
 
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
 import { getToken } from '../../../src/lib/credentials.js';
+import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
@@ -15,36 +16,10 @@ import {
 
 vi.mock('@napi-rs/keyring', () => import('../../__setup__/keyring-mock.js'));
 
-const { clientState } = vi.hoisted(() => ({
-	clientState: {
-		user: {} as Record<string, unknown>,
-		fail: false,
-	},
+vi.mock('apify-client', async (importOriginal) => ({
+	...(await importOriginal<typeof import('apify-client')>()),
+	ApifyClient: (await import('../../__setup__/apify-client-mock.js')).FakeApifyClient,
 }));
-
-// Stubbing the client is what lets the auth commands run in test:local.
-vi.mock('apify-client', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('apify-client')>();
-
-	class FakeApifyClient {
-		token?: string;
-
-		constructor(options: { token?: string }) {
-			this.token = options.token;
-		}
-
-		user() {
-			return {
-				get: async () => {
-					if (clientState.fail) throw new Error('401');
-					return clientState.user;
-				},
-			};
-		}
-	}
-
-	return { ...actual, ApifyClient: FakeApifyClient };
-});
 
 useAuthSetup();
 const { lastLogMessage, lastErrorMessage } = useConsoleSpy();
@@ -62,12 +37,7 @@ const login = (token = TOKEN) => testRunCommand(AuthLoginCommand, { flags_token:
 describe('auth commands', () => {
 	beforeEach(() => {
 		resetKeyringMock();
-		clientState.fail = false;
-		clientState.user = {
-			id: 'uid',
-			username: 'me',
-			proxy: { password: 'pw', groups: [{ name: 'g' }] },
-		};
+		resetApifyClientMock({ id: 'uid', username: 'me', proxy: { password: 'pw', groups: [{ name: 'g' }] } });
 	});
 
 	describe('file backend', () => {

@@ -229,6 +229,14 @@ describe('credentials', () => {
 	});
 
 	describe('ensureMigrated()', () => {
+		it('runs when resolveAuth reads a pre-migration auth.json', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			writeAuthFile({ username: 'me', id: 'uid', token: 'tok_legacy' });
+
+			expect((await resolveAuth())?.token).toBe('tok_legacy');
+			expect(readAuthFile().secretsBackend).toBe('file');
+		});
+
 		it('is a no-op when secretsBackend marker is already set', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
 			writeAuthFile({ token: 'tok', secretsBackend: 'file' });
@@ -367,18 +375,6 @@ describe('credentials', () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			keyringStore.set(KEYRING_TOKEN_KEY, 'tok_kr');
 			await expect(getLocalUserInfo()).rejects.toThrow('Stale credentials found without user metadata');
-		});
-	});
-
-	describe('resolveAuth()', () => {
-		beforeEach(() => {
-			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-		});
-
-		it('resolves a pre-migration auth.json and stamps the backend marker', async () => {
-			writeAuthFile({ username: 'me', id: 'uid', token: 'tok_legacy' });
-			expect((await resolveAuth())?.token).toBe('tok_legacy');
-			expect(readAuthFile().secretsBackend).toBe('file');
 		});
 	});
 });
