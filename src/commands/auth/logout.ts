@@ -1,6 +1,6 @@
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { getEnvToken } from '../../lib/auth.js';
+import { invalidEnvTokenMessage, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../lib/consts.js';
 import { clearKeyringSecrets } from '../../lib/credentials.js';
@@ -35,10 +35,13 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 
 		success({ message: 'You are logged out from your Apify account.' });
 
-		if (getEnvToken()) {
+		const envToken = readEnvToken();
+		if (envToken.kind === 'token') {
 			warning({
 				message: `${APIFY_ENV_VARS.TOKEN} is still set, so commands stay authenticated with that token.`,
 			});
+		} else if (envToken.kind === 'invalid') {
+			warning({ message: invalidEnvTokenMessage(envToken.raw) });
 		}
 	}
 }

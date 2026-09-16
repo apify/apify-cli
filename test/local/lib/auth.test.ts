@@ -46,7 +46,6 @@ const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const STORED = 'apify_api_stored';
 const ENV = 'apify_api_env';
-const FLAG = 'apify_api_flag';
 
 const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
 
@@ -88,13 +87,6 @@ describe('auth', () => {
 			await expect(resolveAuth()).resolves.toEqual({ token: ENV, source: 'env' });
 		});
 
-		it('prefers a token the command was given over APIFY_TOKEN and the stored login', async () => {
-			await loginWithToken(STORED);
-			vitest.stubEnv('APIFY_TOKEN', ENV);
-
-			await expect(resolveAuth(FLAG)).resolves.toEqual({ token: FLAG, source: 'flag' });
-		});
-
 		it.each(['undefined', 'null', 'NaN', 'none', '0', '-'])(
 			'fails instead of falling back when APIFY_TOKEN is the placeholder %j',
 			async (placeholder) => {
@@ -123,13 +115,6 @@ describe('auth', () => {
 			},
 		);
 
-		it('still resolves a token the command was given while APIFY_TOKEN is a placeholder', async () => {
-			await loginWithToken(STORED);
-			vitest.stubEnv('APIFY_TOKEN', 'undefined');
-
-			await expect(resolveAuth(FLAG)).resolves.toEqual({ token: FLAG, source: 'flag' });
-		});
-
 		it('trims surrounding whitespace off APIFY_TOKEN', async () => {
 			vitest.stubEnv('APIFY_TOKEN', `  ${ENV}  `);
 
@@ -153,7 +138,7 @@ describe('auth', () => {
 			expect(lastErrorMessage()).toBeUndefined();
 		});
 
-		it('says it once even though the resolver runs several times per command', async () => {
+		it('resolves once per process, so the notice is not repeated per caller', async () => {
 			await loginWithToken(STORED);
 			vitest.stubEnv('APIFY_TOKEN', ENV);
 
@@ -283,14 +268,6 @@ describe('auth', () => {
 
 			expect(await getToken()).toBe(STORED);
 			expect(readAuthFile()).toMatchObject({ username: 'me' });
-		});
-
-		it('resolving a token the command was given leaves the stored login untouched', async () => {
-			await setToken(STORED);
-
-			await resolveAuth(FLAG);
-
-			expect(await getToken()).toBe(STORED);
 		});
 	});
 });

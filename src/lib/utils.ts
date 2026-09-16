@@ -32,7 +32,7 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
-import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth } from './auth.js';
+import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth, type ResolvedAuth } from './auth.js';
 import {
 	AUTH_FILE_PATH,
 	CommandExitCodes,
@@ -120,11 +120,11 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
  * Gets instance of ApifyClient for user otherwise throws error
  */
 export async function getLoggedClientOrThrow() {
-	const { client, error } = await getLoggedClient();
+	const { client, auth, error } = await getLoggedClient();
 
 	if (!client) {
 		process.exitCode = CommandExitCodes.MissingAuth;
-		throw new Error(await describeAuthFailure(error));
+		throw new Error(describeAuthFailure(auth, error));
 	}
 	return client;
 }
@@ -142,7 +142,7 @@ export function __resetUserInfoCacheForTests() {
  *
  * Read-only: the resolved token is never persisted.
  */
-async function getLoggedClient(): Promise<{ client: ApifyClient | null; error?: unknown }> {
+async function getLoggedClient(): Promise<{ client: ApifyClient | null; auth?: ResolvedAuth; error?: unknown }> {
 	const auth = await resolveAuth();
 	if (!auth) return { client: null };
 
@@ -153,10 +153,10 @@ async function getLoggedClient(): Promise<{ client: ApifyClient | null; error?: 
 		cachedUserInfo = { token: auth.token, userInfo };
 	} catch (err) {
 		cliDebugPrint('[getLoggedClient] error getting user info', { error: err });
-		return { client: null, error: err };
+		return { client: null, auth, error: err };
 	}
 
-	return { client: apifyClient };
+	return { client: apifyClient, auth };
 }
 
 /**

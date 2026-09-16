@@ -78,7 +78,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 
 		let token = '';
 		if (clientNeedsToken(client)) {
-			const auth = await resolveAuth(tokenFlag);
+			const auth = tokenFlag ? { token: tokenFlag } : await resolveAuth();
 			if (!auth) {
 				error({
 					message: `You are not logged in to Apify. Run 'apify login' first, or pass --token <api-token>.`,

@@ -8,7 +8,7 @@ import open from 'open';
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
-import { getEnvToken, loginWithToken } from '../../lib/auth.js';
+import { invalidEnvTokenMessage, loginWithToken, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getConsoleIntegrationsUrl, getConsoleUrl } from '../../lib/console-url.js';
@@ -18,7 +18,7 @@ import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { createLocalApiServer } from '../../lib/local-api-server.js';
-import { error, info, success } from '../../lib/outputs.js';
+import { error, info, success, warning } from '../../lib/outputs.js';
 import { getLocalUserInfo, tildify } from '../../lib/utils.js';
 
 // When logging in against a local Console instance (local platform development), validate the token
@@ -106,8 +106,14 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 		// success for an account no other command then uses. The same token is the CI idiom of
 		// setting APIFY_TOKEN and running `apify login --token $APIFY_TOKEN`, where nothing is wrong.
 		// The browser and interactive flows have no token yet, so all they can check is that it is set.
-		const envToken = getEnvToken();
-		if (envToken && envToken !== token?.trim()) {
+		const envToken = readEnvToken();
+		if (envToken.kind === 'invalid') {
+			// Every other command fails on this, so login is the only way back. It says so and
+			// carries on rather than refusing the one thing that fixes the shell.
+			warning({ message: invalidEnvTokenMessage(envToken.raw) });
+		}
+
+		if (envToken.kind === 'token' && envToken.token !== token?.trim()) {
 			error({
 				message: token
 					? `${APIFY_ENV_VARS.TOKEN} is set to a different token, so other commands would ignore this login. Unset ${APIFY_ENV_VARS.TOKEN} and try again.`

@@ -19,7 +19,7 @@ import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
-export type TokenSource = 'flag' | 'env' | 'stored';
+export type TokenSource = 'env' | 'stored';
 
 export interface ResolvedAuth {
 	token: string;
@@ -32,89 +32,88 @@ export interface ResolvedAuth {
  */
 const PLACEHOLDER_TOKENS = new Set(['undefined', 'null', 'nil', 'none', 'nan', 'false', '0', '-']);
 
-/** The `APIFY_TOKEN` value, or `undefined` when it is unset, blank, or a placeholder. */
-export function getEnvToken(): string | undefined {
-	const raw = process.env[APIFY_ENV_VARS.TOKEN]?.trim();
-	if (!raw || PLACEHOLDER_TOKENS.has(raw.toLowerCase())) return undefined;
-	return raw;
-}
-
-let envNoticeShown = false;
-
-/** Test-only: let each test see the once-per-process notice again. */
-export function __resetAuthNoticesForTests() {
-	envNoticeShown = false;
-}
-
 /**
- * `resolveAuth` runs several times per command, so the notice is emitted once. Stderr keeps
- * `auth token` pipeable and `--json` output parseable.
+ * What `APIFY_TOKEN` holds. Blank and placeholder values are distinct: the first means nobody set
+ * it, the second means someone meant to and got it wrong. Collapsing them left `login` and
+ * `logout` unable to see a value that every other command rejects.
  */
-function noticeOnce(message: string) {
-	if (envNoticeShown) return;
-	envNoticeShown = true;
-	warning({ message });
+export type EnvToken = { kind: 'unset' } | { kind: 'invalid'; raw: string } | { kind: 'token'; token: string };
+
+export function readEnvToken(): EnvToken {
+	const raw = process.env[APIFY_ENV_VARS.TOKEN]?.trim();
+	if (!raw) return { kind: 'unset' };
+	if (PLACEHOLDER_TOKENS.has(raw.toLowerCase())) return { kind: 'invalid', raw };
+	return { kind: 'token', token: raw };
+}
+
+/** One wording for an `APIFY_TOKEN` set to something unusable, whether it aborts or only warns. */
+export function invalidEnvTokenMessage(raw: string): string {
+	return `${APIFY_ENV_VARS.TOKEN} is set to "${raw}", which is not an API token. Unset ${APIFY_ENV_VARS.TOKEN} and try again.`;
 }
 
 /** Where a resolved token came from, for messages that need to name it. */
 export const TOKEN_SOURCE_LABELS: Record<TokenSource, string> = {
-	flag: '--token flag',
 	env: `${APIFY_ENV_VARS.TOKEN} environment variable`,
 	stored: 'apify login',
 };
 
+let authPromise: Promise<ResolvedAuth | undefined> | undefined;
+
+/** Test-only: drop the resolved token so each test resolves afresh. */
+export function __resetAuthForTests() {
+	authPromise = undefined;
+}
+
 /**
- * The single token resolver. Order: a token the command was given -> `APIFY_TOKEN` -> stored
- * login. Only `login` and `mcp install` take a token of their own; every other command uses
- * `APIFY_TOKEN` to run as a different account. Inside a platform run there is no stored login,
- * so `APIFY_TOKEN` wins without a special case for the `actor` entrypoint.
+ * The single token resolver. Order: `APIFY_TOKEN` -> stored login. Inside a platform run there is
+ * no stored login, so `APIFY_TOKEN` wins without a special case for the `actor` entrypoint.
  *
- * Read-only by contract. Only `apify login` writes credentials, through {@link loginWithToken}.
+ * Single-flighted like {@link getBackend}, because several callers resolve per command and reading
+ * the stored token is an uncached OS keyring hit.
+ *
+ * Read-only by contract, apart from the one-shot migration of an existing plaintext auth.json.
+ * Only `apify login` writes credentials, through {@link loginWithToken}.
+ *
  * Throws when `APIFY_TOKEN` holds a placeholder value.
  */
-export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth | undefined> => {
-	if (explicitToken) {
-		return { token: explicitToken, source: 'flag' };
-	}
+export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
+	authPromise ??= (async () => {
+		await ensureMigrated();
 
-	await ensureMigrated();
-
-	const envToken = getEnvToken();
-	if (envToken) {
-		// Only worth saying when there is a stored login to override. In CI and inside a platform
-		// run APIFY_TOKEN is the only credential, so naming it would be noise on every command.
-		if (existsSync(AUTH_FILE_PATH())) {
-			noticeOnce(`Using the API token from ${APIFY_ENV_VARS.TOKEN}.`);
+		const envToken = readEnvToken();
+		if (envToken.kind === 'invalid') {
+			process.exitCode = CommandExitCodes.InvalidInput;
+			throw new Error(invalidEnvTokenMessage(envToken.raw));
 		}
 
-		return { token: envToken, source: 'env' };
-	}
+		if (envToken.kind === 'token') {
+			// Only worth saying when there is a stored login to override. In CI and inside a platform
+			// run APIFY_TOKEN is the only credential, so naming it would be noise on every command.
+			if (existsSync(AUTH_FILE_PATH())) {
+				warning({ message: `Using the API token from ${APIFY_ENV_VARS.TOKEN}.` });
+			}
 
-	// Only a placeholder reaches here, never a blank value. Falling back would run the command as
-	// a different account than the script asked for, and a warning is lost in CI logs.
-	const rawEnvToken = process.env[APIFY_ENV_VARS.TOKEN]?.trim();
-	if (rawEnvToken) {
-		process.exitCode = CommandExitCodes.InvalidInput;
-		throw new Error(
-			`${APIFY_ENV_VARS.TOKEN} is set to "${rawEnvToken}", which is not an API token. Unset ${APIFY_ENV_VARS.TOKEN} and try again.`,
-		);
-	}
+			return { token: envToken.token, source: 'env' } as const;
+		}
 
-	const storedToken = await getToken();
-	if (storedToken) {
-		return { token: storedToken, source: 'stored' };
-	}
+		const storedToken = await getToken();
+		return storedToken ? ({ token: storedToken, source: 'stored' } as const) : undefined;
+	})();
 
-	return undefined;
+	try {
+		return await authPromise;
+	} catch (err) {
+		// A rejected promise would otherwise be replayed to every later caller in this process.
+		authPromise = undefined;
+		throw err;
+	}
 };
 
 /**
  * Message for a token that the API rejected, or for having no token at all. `error` is the
  * failure the lookup produced, so an unreachable API is not reported as a bad token.
  */
-export async function describeAuthFailure(error?: unknown): Promise<string> {
-	const auth = await resolveAuth();
-
+export function describeAuthFailure(auth: ResolvedAuth | undefined, error?: unknown): string {
 	if (!auth) {
 		return 'You are not logged in with your Apify account. Call "apify login" to fix that.';
 	}
@@ -127,8 +126,6 @@ export async function describeAuthFailure(error?: unknown): Promise<string> {
 	}
 
 	switch (auth.source) {
-		case 'flag':
-			return 'The API token passed with --token was rejected. Check the token and try again.';
 		case 'env':
 			return `The API token in ${APIFY_ENV_VARS.TOKEN} was rejected. Unset it to use your stored login instead.`;
 		default:

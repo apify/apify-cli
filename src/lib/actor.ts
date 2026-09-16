@@ -9,7 +9,7 @@ import { ApifyClient } from 'apify-client';
 
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS, KEY_VALUE_STORE_KEYS, LOCAL_ACTOR_ENV_VARS } from '@apify/consts';
 
-import { getApifyClientOptionsForToken, resolveAuth } from './auth.js';
+import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth } from './auth.js';
 import { getLocalStorageDir } from './utils.js';
 
 export const APIFY_STORAGE_TYPES = {
@@ -37,7 +37,7 @@ export const getApifyStorageClient = async (
 	}
 	const auth = await resolveAuth();
 	if (!auth) {
-		throw new Error(`Apify token is not set. Set ${APIFY_ENV_VARS.TOKEN} or call "apify login".`);
+		throw new Error(describeAuthFailure(auth));
 	}
 
 	return new ApifyClient({

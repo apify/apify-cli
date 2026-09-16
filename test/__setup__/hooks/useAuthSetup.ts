@@ -6,11 +6,21 @@ import { isCI } from 'ci-info';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { LoginCommand } from '../../../src/commands/login.js';
-import { __resetAuthNoticesForTests } from '../../../src/lib/auth.js';
+import { __resetAuthForTests } from '../../../src/lib/auth.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { __resetCredentialsForTests } from '../../../src/lib/credentials.js';
 import { __resetUserInfoCacheForTests, getLocalUserInfo } from '../../../src/lib/utils.js';
+
+/**
+ * Every module-level auth cache, cleared together. Kept in one place so adding a cache does not
+ * mean remembering three hook bodies — forgetting one leaks state between tests as a flake.
+ */
+function resetAuthCaches() {
+	__resetCredentialsForTests();
+	__resetUserInfoCacheForTests();
+	__resetAuthForTests();
+}
 
 export interface UseAuthSetupOptions {
 	/**
@@ -46,9 +56,7 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 		vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
 		// The resolver reads APIFY_TOKEN, so a token in the developer's shell would leak into tests.
 		vitest.stubEnv('APIFY_TOKEN', '');
-		__resetCredentialsForTests();
-		__resetUserInfoCacheForTests();
-		__resetAuthNoticesForTests();
+		resetAuthCaches();
 	});
 
 	after(async () => {
@@ -56,9 +64,7 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 			await rm(GLOBAL_CONFIGS_FOLDER(), { recursive: true, force: true });
 		}
 
-		__resetCredentialsForTests();
-		__resetUserInfoCacheForTests();
-		__resetAuthNoticesForTests();
+		resetAuthCaches();
 		vitest.unstubAllEnvs();
 	});
 }
@@ -77,9 +83,7 @@ export function useKeyringBackend() {
 		}
 
 		vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
-		__resetCredentialsForTests();
-		__resetUserInfoCacheForTests();
-		__resetAuthNoticesForTests();
+		resetAuthCaches();
 	});
 }
 
