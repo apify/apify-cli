@@ -147,14 +147,11 @@ export async function isEngineReady(engine: ContainerEngine): Promise<boolean> {
 }
 
 /**
- * Whether the image reference points at a tag the registry reassigns (':latest', or no tag at all),
- * so a copy that already exists locally can be outdated.
+ * Whether the image reference is pinned to a digest. Any tag can be moved to a new build in the
+ * registry, so a local copy of a tagged image can be outdated - a digest always is what it names.
  */
-export function hasMutableTag(image: string): boolean {
-	if (image.includes('@')) return false;
-	const lastSegment = image.slice(image.lastIndexOf('/') + 1);
-	const colonIndex = lastSegment.indexOf(':');
-	return colonIndex === -1 || lastSegment.slice(colonIndex + 1) === 'latest';
+export function isDigestPinned(image: string): boolean {
+	return image.includes('@');
 }
 
 export async function imageExistsLocally(engine: ContainerEngine, image: string): Promise<boolean> {

@@ -4,7 +4,7 @@ import {
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
 	engineDaemonHint,
 	engineInstallHint,
-	hasMutableTag,
+	isDigestPinned,
 	parseRuntimeContainerInfo,
 	requestedContainerEngine,
 	resolveEngineSocketPath,
@@ -23,13 +23,13 @@ describe('runtime/docker', () => {
 		});
 	});
 
-	describe('hasMutableTag()', () => {
-		it('treats latest and untagged references as mutable, pinned tags and digests as fixed', () => {
-			expect(hasMutableTag(DEFAULT_ACTOR_RUNTIME_IMAGE)).toBe(true);
-			expect(hasMutableTag('apify/actor-runtime')).toBe(true);
-			expect(hasMutableTag('localhost:5000/apify/actor-runtime')).toBe(true);
-			expect(hasMutableTag('apify/actor-runtime:master-5462005')).toBe(false);
-			expect(hasMutableTag('apify/actor-runtime@sha256:abc')).toBe(false);
+	describe('isDigestPinned()', () => {
+		it('only treats digest references as fixed - any tag can be moved to a new build', () => {
+			expect(isDigestPinned('apify/actor-runtime@sha256:abc')).toBe(true);
+			expect(isDigestPinned('apify/actor-runtime:latest@sha256:abc')).toBe(true);
+			expect(isDigestPinned(DEFAULT_ACTOR_RUNTIME_IMAGE)).toBe(false);
+			expect(isDigestPinned('apify/actor-runtime:master-5462005')).toBe(false);
+			expect(isDigestPinned('localhost:5000/apify/actor-runtime')).toBe(false);
 		});
 	});
 
