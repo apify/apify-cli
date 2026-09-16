@@ -530,6 +530,8 @@ DESCRIPTION
   Installs the Actor runtime: verifies this machine has a working container 
   engine (Docker or Podman) and downloads the Actor runtime image 
   ('apify/actor-runtime:latest' unless another one is given).
+  Images tagged ':latest' are always fetched from the registry, so an outdated 
+  local copy gets updated.
   'apify runtime start' then runs the image installed last.
   The engine itself is a prerequisite and is not installed by this command - see
    https://docs.docker.com/get-started/get-docker/ or 

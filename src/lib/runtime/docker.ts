@@ -146,6 +146,17 @@ export async function isEngineReady(engine: ContainerEngine): Promise<boolean> {
 	}
 }
 
+/**
+ * Whether the image reference points at a tag the registry reassigns (':latest', or no tag at all),
+ * so a copy that already exists locally can be outdated.
+ */
+export function hasMutableTag(image: string): boolean {
+	if (image.includes('@')) return false;
+	const lastSegment = image.slice(image.lastIndexOf('/') + 1);
+	const colonIndex = lastSegment.indexOf(':');
+	return colonIndex === -1 || lastSegment.slice(colonIndex + 1) === 'latest';
+}
+
 export async function imageExistsLocally(engine: ContainerEngine, image: string): Promise<boolean> {
 	try {
 		await execa(engine, ['image', 'inspect', image]);

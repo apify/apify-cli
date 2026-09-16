@@ -4,6 +4,7 @@ import {
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
 	engineDaemonHint,
 	engineInstallHint,
+	hasMutableTag,
 	parseRuntimeContainerInfo,
 	requestedContainerEngine,
 	resolveEngineSocketPath,
@@ -19,6 +20,16 @@ describe('runtime/docker', () => {
 
 		it('doubles the leading slash on Windows to prevent path mangling', () => {
 			expect(socketMountArg('/var/run/docker.sock', 'win32')).toBe('//var/run/docker.sock:/var/run/docker.sock');
+		});
+	});
+
+	describe('hasMutableTag()', () => {
+		it('treats latest and untagged references as mutable, pinned tags and digests as fixed', () => {
+			expect(hasMutableTag(DEFAULT_ACTOR_RUNTIME_IMAGE)).toBe(true);
+			expect(hasMutableTag('apify/actor-runtime')).toBe(true);
+			expect(hasMutableTag('localhost:5000/apify/actor-runtime')).toBe(true);
+			expect(hasMutableTag('apify/actor-runtime:master-5462005')).toBe(false);
+			expect(hasMutableTag('apify/actor-runtime@sha256:abc')).toBe(false);
 		});
 	});
 
