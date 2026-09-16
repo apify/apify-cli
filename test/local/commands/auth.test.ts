@@ -227,6 +227,18 @@ describe('auth commands', () => {
 			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
 		});
 
+		it('logging in as an account with no proxy password forgets the previous one', async () => {
+			await login();
+			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
+
+			clientState.user = { id: 'uid2', username: 'other' };
+			await login('apify_api_other_token');
+
+			// The keyring outlives the auth.json rewrite, so without an explicit delete the child
+			// Actor would run with the previous account's proxy credential.
+			expect(keyringStore.has(KEYRING_PROXY_PASSWORD_KEY)).toBe(false);
+		});
+
 		it('logging in twice with the same token writes the keyring once', async () => {
 			await login();
 			await login();

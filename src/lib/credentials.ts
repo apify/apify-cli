@@ -217,6 +217,25 @@ export async function setProxyPassword(password: string, opts: { skipIfUnchanged
 }
 
 /**
+ * Forget the stored proxy password. Called when an account has none, so the previous account's
+ * does not survive a re-login — the keyring outlives the auth.json rewrite that replaces
+ * everything else.
+ */
+export async function deleteProxyPassword(): Promise<void> {
+	if ((await getBackend()) === 'keyring') {
+		await deleteKeyring(PROXY_PASSWORD_ACCOUNT);
+		return;
+	}
+
+	const data = readAuthFile();
+	if (!data.proxy?.password) return;
+
+	delete data.proxy.password;
+	if (Object.keys(data.proxy).length === 0) delete data.proxy;
+	writeAuthFile(data);
+}
+
+/**
  * Remove the token and proxy-password entries from the OS keyring. Always attempts the
  * keyring deletes even when the current backend is `file`, so toggling
  * `APIFY_DISABLE_KEYRING=1` between login and logout does not orphan entries the user

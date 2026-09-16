@@ -7,7 +7,14 @@ import { AxiosHeaders } from 'axios';
 import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
-import { ensureMigrated, getBackend, getToken, setProxyPassword, setToken } from './credentials.js';
+import {
+	deleteProxyPassword,
+	ensureMigrated,
+	getBackend,
+	getToken,
+	setProxyPassword,
+	setToken,
+} from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -192,6 +199,8 @@ export async function loginWithToken(token: string, apiBaseUrl?: string): Promis
 	const proxyPassword = userInfo.proxy?.password;
 	if (proxyPassword) {
 		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
+	} else {
+		await deleteProxyPassword();
 	}
 
 	return apifyClient;
