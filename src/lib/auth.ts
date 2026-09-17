@@ -89,8 +89,6 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 		}
 
 		if (envToken.kind === 'token') {
-			// Only worth saying when there is a stored login to override. In CI and inside a platform
-			// run APIFY_TOKEN is the only credential, so naming it would be noise on every command.
 			if (existsSync(AUTH_FILE_PATH())) {
 				warning({ message: `Using the API token from ${APIFY_ENV_VARS.TOKEN}.` });
 			}
@@ -111,10 +109,6 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 	}
 };
 
-/**
- * Message for a token that the API rejected, or for having no token at all. `error` is the
- * failure the lookup produced, so an unreachable API is not reported as a bad token.
- */
 export function describeAuthFailure(auth: ResolvedAuth | undefined, error?: unknown): string {
 	if (!auth) {
 		return 'You are not logged in with your Apify account. Call "apify login" to fix that.';
@@ -159,12 +153,7 @@ export const getApifyClientOptionsForToken = (token: string, apiBaseUrl?: string
 	token,
 });
 
-/**
- * Authenticates `token` and saves it together with the account metadata. This is the only
- * credential writer in the CLI — every other code path resolves tokens without persisting them.
- *
- * Returns `null` when the token is rejected, in which case nothing is written.
- */
+/** The only credential writer in the CLI. Returns `null` when the token is rejected, writing nothing. */
 export async function loginWithToken(
 	token: string,
 	apiBaseUrl?: string,
@@ -181,17 +170,15 @@ export async function loginWithToken(
 
 	const proxyPassword = userInfo.proxy?.password;
 
-	// Replaces the previous account rather than merging into it, so fields the new account
-	// does not have (email, organizationOwnerUserId) cannot linger from the old one. The spread
-	// is shallow, so stripping the secret here also clears it from userInfo — read it first.
+	// Replaces the previous account rather than merging, so stale fields cannot linger. The spread
+	// is shallow, so stripping here also clears userInfo.proxy — read the password first.
 	const fileContents = { ...userInfo, secretsBackend: await getBackend() };
 	stripProxyPassword(fileContents);
 
 	ensureApifyDirectory(AUTH_FILE_PATH());
 	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
 
-	// Written after the metadata file, which would otherwise clobber them on the file backend.
-	// `skipIfUnchanged` avoids a macOS Keychain prompt when the value already matches.
+	// After the metadata file, which would clobber them on the file backend. `skipIfUnchanged` avoids a Keychain prompt.
 	await setToken(token, { skipIfUnchanged: true });
 
 	if (proxyPassword) {

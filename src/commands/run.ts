@@ -149,8 +149,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const cwd = process.cwd();
 
 		const auth = await resolveAuth();
-		// An env token has no entry in auth.json, so the user id and proxy password come from the
-		// API. Losing them only costs the child two env vars, so a failed lookup must not stop the run.
+		// This only fills in two env vars for the child, so a failed lookup must not stop the run.
 		const { proxy, id: userId } = await getCurrentUserInfo().catch((err): AuthJSON => {
 			cliDebugPrint('[run] could not resolve the account behind the token', { error: err });
 			return {};
