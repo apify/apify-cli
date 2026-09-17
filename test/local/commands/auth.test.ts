@@ -1,8 +1,9 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import process from 'node:process';
 
-import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
+import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
 import { getToken } from '../../../src/lib/credentials.js';
+import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
@@ -15,36 +16,10 @@ import {
 
 vi.mock('@napi-rs/keyring', () => import('../../__setup__/keyring-mock.js'));
 
-const { clientState } = vi.hoisted(() => ({
-	clientState: {
-		user: {} as Record<string, unknown>,
-		fail: false,
-	},
+vi.mock('apify-client', async (importOriginal) => ({
+	...(await importOriginal<typeof import('apify-client')>()),
+	ApifyClient: (await import('../../__setup__/apify-client-mock.js')).FakeApifyClient,
 }));
-
-// Stubbing the client is what lets the auth commands run in test:local.
-vi.mock('apify-client', async (importOriginal) => {
-	const actual = await importOriginal<typeof import('apify-client')>();
-
-	class FakeApifyClient {
-		token?: string;
-
-		constructor(options: { token?: string }) {
-			this.token = options.token;
-		}
-
-		user() {
-			return {
-				get: async () => {
-					if (clientState.fail) throw new Error('401');
-					return clientState.user;
-				},
-			};
-		}
-	}
-
-	return { ...actual, ApifyClient: FakeApifyClient };
-});
 
 useAuthSetup();
 const { lastLogMessage, lastErrorMessage } = useConsoleSpy();
@@ -62,12 +37,7 @@ const login = (token = TOKEN) => testRunCommand(AuthLoginCommand, { flags_token:
 describe('auth commands', () => {
 	beforeEach(() => {
 		resetKeyringMock();
-		clientState.fail = false;
-		clientState.user = {
-			id: 'uid',
-			username: 'me',
-			proxy: { password: 'pw', groups: [{ name: 'g' }] },
-		};
+		resetApifyClientMock({ id: 'uid', username: 'me', proxy: { password: 'pw', groups: [{ name: 'g' }] } });
 	});
 
 	describe('file backend', () => {
@@ -113,16 +83,94 @@ describe('auth commands', () => {
 
 			const authFile = readAuthFile();
 			expect(authFile).toMatchObject({ token: 'apify_api_other_token', id: 'uid2', username: 'other' });
-			// Known gap: getLoggedClient merges, so the old account's extra fields survive.
-			expect(authFile.email).toBe('me@example.com');
+			// The new account has no email, so the old one must not linger.
+			expect(authFile.email).toBeUndefined();
 		});
 
-		it('login with an invalid token stores nothing', async () => {
+		it('login with an invalid token stores nothing and fails the command', async () => {
 			clientState.fail = true;
 			await login('bad-token');
 
 			expect(lastErrorMessage()).toContain('Login to Apify failed');
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+			// A login that exits 0 lets `apify login --token $BAD && apify push` run on.
+			expect(process.exitCode).toBe(CommandExitCodes.MissingAuth);
+			process.exitCode = 0;
+		});
+
+		it('login fails and stores nothing when APIFY_TOKEN holds a different token', async () => {
+			vitest.stubEnv('APIFY_TOKEN', 'apify_api_env_token');
+
+			await login();
+
+			expect(lastErrorMessage()).toContain('APIFY_TOKEN is set to a different token');
+			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+			expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
+			process.exitCode = 0;
+		});
+
+		it('login goes through when APIFY_TOKEN holds the same token, as CI sets both', async () => {
+			vitest.stubEnv('APIFY_TOKEN', TOKEN);
+
+			await login();
+
+			expect(await getToken()).toBe(TOKEN);
+			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
+		});
+
+		it('login goes through while APIFY_TOKEN is a placeholder, so a broken one can be fixed', async () => {
+			vitest.stubEnv('APIFY_TOKEN', 'undefined');
+
+			await login();
+
+			expect(await getToken()).toBe(TOKEN);
+			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
+		});
+
+		it('login says nothing about APIFY_TOKEN when it is not set', async () => {
+			await login();
+
+			expect(lastErrorMessage()).not.toContain('APIFY_TOKEN');
+		});
+
+		it('logout warns that APIFY_TOKEN still authenticates', async () => {
+			await login();
+			vitest.stubEnv('APIFY_TOKEN', 'apify_api_env_token');
+
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+			expect(lastErrorMessage()).toContain('APIFY_TOKEN is still set');
+		});
+
+		it('logout says nothing about APIFY_TOKEN when it is not set', async () => {
+			await login();
+
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(lastErrorMessage()).not.toContain('APIFY_TOKEN');
+		});
+
+		it('a placeholder APIFY_TOKEN fails the command instead of falling back', async () => {
+			await login();
+			vitest.stubEnv('APIFY_TOKEN', 'undefined');
+
+			await testRunCommand(AuthTokenCommand, {});
+
+			expect(lastErrorMessage()).toContain('APIFY_TOKEN is set to "undefined"');
+			expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
+			process.exitCode = 0;
+		});
+
+		it('auth token prints APIFY_TOKEN over the stored token, and stores nothing', async () => {
+			await login();
+			vitest.stubEnv('APIFY_TOKEN', 'apify_api_env_token');
+
+			await testRunCommand(AuthTokenCommand, {});
+
+			expect(lastLogMessage()).toBe('apify_api_env_token');
+			expect(await getToken()).toBe(TOKEN);
+			expect(readAuthFile()).toMatchObject({ username: 'me' });
 		});
 	});
 
@@ -147,6 +195,18 @@ describe('auth commands', () => {
 
 			expect(readAuthFile()).not.toHaveProperty('proxy');
 			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
+		});
+
+		it('logging in as an account with no proxy password forgets the previous one', async () => {
+			await login();
+			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
+
+			clientState.user = { id: 'uid2', username: 'other' };
+			await login('apify_api_other_token');
+
+			// The keyring outlives the auth.json rewrite, so without an explicit delete the child
+			// Actor would run with the previous account's proxy credential.
+			expect(keyringStore.has(KEYRING_PROXY_PASSWORD_KEY)).toBe(false);
 		});
 
 		it('logging in twice with the same token writes the keyring once', async () => {

@@ -50,7 +50,7 @@ import { LANGUAGE_FLAG_CHOICES, USE_CASE_FLAG_CHOICES } from '../lib/templates/c
 import {
 	downloadAndUnzip,
 	getJsonFileContent,
-	getLocalUserInfo,
+	getCurrentUserInfo,
 	getLoggedClientOrThrow,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
@@ -317,8 +317,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			? {
 					provider: gitProvider,
 					client: await getLoggedClientOrThrow(),
-					// Read after the client, which refreshes auth.json from the token the run resolved.
-					account: toGitAccount(await getLocalUserInfo()),
+					account: toGitAccount(await getCurrentUserInfo()),
 					// Omitted means on: the webhook is what makes a Git-sourced Actor rebuild on a push.
 					autoBuild: this.flags.autoBuild !== 'off',
 					...parseGitRepoFlag(gitRepo, actorName),
