@@ -88,7 +88,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 	static override flags = {
 		token: Flags.string({
 			char: 't',
-			description: 'Apify API token to log in with and save. Must match APIFY_TOKEN when that is set.',
+			description: 'Apify API token to log in with and save.',
 			required: false,
 		}),
 		method: Flags.string({
@@ -102,14 +102,8 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 	async run() {
 		const { token, method } = this.flags;
 
-		// APIFY_TOKEN outranks a stored login, so logging in under a different token would report
-		// success for an account no other command then uses. The same token is the CI idiom of
-		// setting APIFY_TOKEN and running `apify login --token $APIFY_TOKEN`, where nothing is wrong.
-		// The browser and interactive flows have no token yet, so all they can check is that it is set.
 		const envToken = readEnvToken();
 		if (envToken.kind === 'invalid') {
-			// Every other command fails on this, so login is the only way back. It says so and
-			// carries on rather than refusing the one thing that fixes the shell.
 			warning({ message: invalidEnvTokenMessage(envToken.raw) });
 		}
 
