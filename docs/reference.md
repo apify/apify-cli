@@ -56,6 +56,10 @@ DESCRIPTION
   The endpoint can be a relative path (e.g. "acts", "v2/acts", or "/v2/acts"); 
   the "v2/" prefix is added automatically if omitted.
 
+  Prefer --params to pass query parameters. If you must include a "?" inline, 
+  quote the whole endpoint so the shell does not treat "&" as a background 
+  operator.
+
   Use --list-endpoints to see all available API endpoints.
 
 USAGE
