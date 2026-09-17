@@ -1,4 +1,4 @@
-import { chmodSync, copyFileSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
@@ -129,16 +129,16 @@ function toV2(file: AuthFile): AuthFile {
 }
 
 /**
- * Never overwrites an existing backup: the first one is the file the user started with, as it
- * stood after `ensureMigrated()` — on the keyring backend that means the secrets are already out
- * of it. `copyFileSync` inherits the source mode, and an auth.json written before the CLI set
- * 0600 is still 0644, so the mode is re-asserted rather than carried over.
+ * A snapshot of the pre-v2 file, kept so an upgrade is inspectable. Written once and never
+ * refreshed, which is why the secrets are left out: `apify login` replaces auth.json but cannot
+ * reach this file, so a copy of a rotated token would sit here until the next logout. Nothing
+ * reads it, and a downgraded CLI finds its token through the usual backends rather than here.
  */
-function backUpV1File() {
+function backUpV1File(file: AuthFile) {
 	if (existsSync(AUTH_BACKUP_FILE_PATH())) return;
 
-	copyFileSync(AUTH_FILE_PATH(), AUTH_BACKUP_FILE_PATH());
-	chmodSync(AUTH_BACKUP_FILE_PATH(), 0o600);
+	const { token: _token, proxy: _proxy, ...withoutSecrets } = file;
+	writeFileSync(AUTH_BACKUP_FILE_PATH(), JSON.stringify(withoutSecrets, null, '\t'), { mode: 0o600 });
 }
 
 async function migrateToV2(): Promise<void> {
@@ -154,7 +154,7 @@ async function migrateToV2(): Promise<void> {
 			if (typeof file.version === 'number') return;
 			if (Object.keys(file).length === 0) return;
 
-			backUpV1File();
+			backUpV1File(file);
 			writeAuthFile(toV2(file));
 		} catch (err) {
 			cliDebugPrint('auth-file', 'migration to v2 failed', err);

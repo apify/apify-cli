@@ -10,6 +10,7 @@ import {
 	removeActiveProfile,
 	setActiveProfile,
 } from '../../../src/lib/auth-file.js';
+import { resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { ensureMigrated, getProxyPassword, getToken } from '../../../src/lib/credentials.js';
 import { getLocalUserInfo } from '../../../src/lib/utils.js';
@@ -145,6 +146,18 @@ describe('auth.json v2', () => {
 			expect(statSync(AUTH_BACKUP_FILE_PATH()).mode & 0o777).toBe(0o600);
 		});
 
+		// The backup is never refreshed, so a token in it would outlive the account it belongs to.
+		it('keeps the secrets out of the backup', async () => {
+			write(v1AuthFile({ secretsBackend: 'file' }));
+
+			await ensureAuthFileCurrent();
+
+			const backup = readBackup();
+			expect(backup).not.toHaveProperty('token');
+			expect(backup).not.toHaveProperty('proxy');
+			expect(backup).toMatchObject({ id: 'uid', username: 'me', email: 'me@example.com' });
+		});
+
 		it('does nothing when there is no file', async () => {
 			await ensureAuthFileCurrent();
 
@@ -172,7 +185,8 @@ describe('auth.json v2', () => {
 				secretsBackend: 'file',
 				token: 'apify_api_v1_token',
 			});
-			expect(readBackup()).toEqual({ token: 'apify_api_v1_token', secretsBackend: 'file' });
+			// The token stays in auth.json, where the re-login prompt can see it, not in the backup.
+			expect(readBackup()).toEqual({ secretsBackend: 'file' });
 			await expect(getLocalUserInfo()).rejects.toThrow('Stale credentials found without user metadata');
 		});
 	});
@@ -230,6 +244,32 @@ describe('auth.json v2', () => {
 
 			expect(() => removeActiveProfile()).toThrow('written by a newer Apify CLI');
 			expect(readAuthFile()).toEqual(newer);
+		});
+	});
+
+	// Both were deletable with a green suite: every other test calls ensureAuthFileCurrent() by hand.
+	describe('the command paths that trigger the migration', () => {
+		it('getLocalUserInfo() migrates the file it reads', async () => {
+			write(v1AuthFile({ secretsBackend: 'file' }));
+
+			await expect(getLocalUserInfo()).resolves.toMatchObject({ id: 'uid', username: 'me' });
+
+			expect(readAuthFile().version).toBe(2);
+		});
+
+		it('resolving a token migrates the file it reads', async () => {
+			write(v1AuthFile({ secretsBackend: 'file' }));
+
+			await expect(resolveAuth()).resolves.toMatchObject({ source: 'stored' });
+
+			expect(readAuthFile().version).toBe(2);
+		});
+
+		it('a file a newer CLI wrote stops a command rather than being read as v1', async () => {
+			write({ version: 3, activeProfile: 'uid', profiles: {}, secretsBackend: 'file', token: 'tok' });
+
+			await expect(getLocalUserInfo()).rejects.toThrow('written by a newer Apify CLI');
+			await expect(resolveAuth()).rejects.toThrow('written by a newer Apify CLI');
 		});
 	});
 
