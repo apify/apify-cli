@@ -26,6 +26,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.init },
 		{ command: Commands.run },
 		{ command: Commands.validateSchema },
+		{ command: Commands.actorsDoctor },
 
 		{ command: Commands.actor },
 		{ command: Commands.actorCalculateMemory },
