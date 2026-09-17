@@ -9,12 +9,13 @@ import {
 	readAndValidateInputSchema,
 	readInputSchema,
 	readStorageSchema,
+	validateActorVersion,
 	validateDatasetSchema,
 	validateKvsSchema,
 	validateOutputSchema,
 } from '../lib/input_schema.js';
 import { error, info, success } from '../lib/outputs.js';
-import { Ajv2019 } from '../lib/utils.js';
+import { Ajv2019, getLocalConfig } from '../lib/utils.js';
 
 export class ValidateSchemaCommand extends ApifyCommand<typeof ValidateSchemaCommand> {
 	static override name = 'validate-schema' as const;
@@ -76,6 +77,18 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 		const cwd = process.cwd();
 		let foundAny = false;
 		let hasErrors = false;
+
+		try {
+			const localConfig = getLocalConfig(cwd);
+
+			if (localConfig) {
+				validateActorVersion(localConfig);
+			}
+		} catch (err) {
+			foundAny = true;
+			hasErrors = true;
+			error({ message: (err as Error).message });
+		}
 
 		// Input schema — not using readAndValidateInputSchema here because it throws
 		// when no schema is found; in the all-schemas scan, a missing input schema
