@@ -1,5 +1,5 @@
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
 
 import { downloadTemplate } from 'giget';
@@ -153,8 +153,16 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 					throwMissingSourceCodeAccessError();
 				}
 
+				const root = resolve(dirpath);
 				const { sourceFiles } = correctVersion;
 				for (const file of sourceFiles) {
+					const rel = relative(root, resolve(root, file.name));
+					if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+						throw new Error(
+							`Cannot pull Actor: source file "${file.name}" would be written outside the target directory.`,
+						);
+					}
+
 					const folderPath = dirname(file.name);
 					mkdirSync(`${dirpath}/${folderPath}`, { recursive: true });
 
