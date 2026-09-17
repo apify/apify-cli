@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 
 import {
 	__resetAuthFileForTests,
@@ -117,9 +117,32 @@ describe('auth.json v2', () => {
 			await ensureAuthFileCurrent();
 			const migrated = readAuthFile();
 
+			// Without the reset the memoised promise short-circuits and the file is never re-read.
+			__resetAuthFileForTests();
 			await ensureAuthFileCurrent();
 
 			expect(readAuthFile()).toEqual(migrated);
+		});
+
+		// The only code path that erases the plaintext v1 token from disk.
+		it('logout removes the backup along with the file', async () => {
+			write(v1AuthFile({ secretsBackend: 'file' }));
+			await ensureAuthFileCurrent();
+			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(true);
+
+			removeActiveProfile();
+
+			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
+		});
+
+		it('writes the backup readable only by the owner, whatever mode the v1 file had', async () => {
+			write(v1AuthFile({ secretsBackend: 'file' }));
+			chmodSync(AUTH_FILE_PATH(), 0o644);
+
+			await ensureAuthFileCurrent();
+
+			expect(statSync(AUTH_BACKUP_FILE_PATH()).mode & 0o777).toBe(0o600);
 		});
 
 		it('does nothing when there is no file', async () => {
