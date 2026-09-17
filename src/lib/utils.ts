@@ -235,7 +235,7 @@ export const setLocalConfig = async (localConfig: Record<string, unknown>, actDi
 	writeFileSync(fullPath, JSON.stringify(localConfig, null, '\t'));
 };
 
-const GITIGNORE_REQUIRED_CONTENTS = [getLocalStorageDir(), 'node_modules', '.venv'];
+const GITIGNORE_REQUIRED_CONTENTS = [getLocalStorageDir(), 'node_modules'];
 
 export const setLocalEnv = async (actDir: string) => {
 	// Create folders for emulation Apify stores
