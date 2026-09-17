@@ -1,6 +1,6 @@
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { removeActiveProfile } from '../../lib/auth-file.js';
+import { assertSupportedAuthFileVersion, getActiveProfileId, removeActiveProfile } from '../../lib/auth-file.js';
 import { getEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../lib/consts.js';
@@ -28,10 +28,12 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-logout';
 
 	async run() {
-		// The file goes first: it is the step that can refuse, and refusing before the keyring is
-		// cleared leaves a logged-in state rather than half a logout.
+		// The refusal comes first, so a file this CLI must not touch leaves a logged-in state
+		// rather than half a logout. The keyring goes next: `auth.json` is the only index of what
+		// the keyring holds, so removing the profile first would strand its entries.
+		assertSupportedAuthFileVersion();
+		await clearKeyringSecrets(getActiveProfileId());
 		removeActiveProfile();
-		await clearKeyringSecrets();
 
 		await updateUserId(null);
 

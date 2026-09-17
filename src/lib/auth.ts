@@ -6,9 +6,9 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { ensureAuthFileCurrent, setActiveProfile } from './auth-file.js';
+import { getActiveProfileId, setActiveProfile } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH } from './consts.js';
-import { ensureMigrated, getBackend, getToken, setProxyPassword, setToken } from './credentials.js';
+import { clearKeyringSecrets, ensureCredentialsCurrent, getBackend, getSecret, setSecret } from './credentials.js';
 import { warning } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -85,10 +85,10 @@ export const resolveAuth = async (explicitToken?: string): Promise<ResolvedAuth 
 		noticeOnce(`${APIFY_ENV_VARS.TOKEN} is invalid: "${rawEnvToken}".`);
 	}
 
-	await ensureMigrated();
-	await ensureAuthFileCurrent();
+	await ensureCredentialsCurrent();
 
-	const storedToken = await getToken();
+	const userId = getActiveProfileId();
+	const storedToken = userId ? await getSecret(userId, 'token') : undefined;
 	if (storedToken) {
 		return { token: storedToken, source: 'stored' };
 	}
@@ -170,6 +170,13 @@ export async function loginWithToken(token: string, apiBaseUrl?: string): Promis
 		throw new Error('The Apify API returned no user ID for this token, so the login cannot be stored.');
 	}
 
+	// `auth.json` is the only index of what the keyring holds, so the outgoing account's entries
+	// have to go before its ID leaves the file.
+	const previousUserId = getActiveProfileId();
+	if (previousUserId && previousUserId !== userInfo.id) {
+		await clearKeyringSecrets(previousUserId);
+	}
+
 	// The profile is keyed by user ID, and it replaces whatever was stored rather than merging
 	// into it, so fields the new account does not have cannot linger from the old one.
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
@@ -188,11 +195,11 @@ export async function loginWithToken(token: string, apiBaseUrl?: string): Promis
 
 	// Written after the metadata file, which would otherwise clobber them on the file backend.
 	// `skipIfUnchanged` avoids a macOS Keychain prompt when the value already matches.
-	await setToken(token, { skipIfUnchanged: true });
+	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
 
 	const proxyPassword = userInfo.proxy?.password;
 	if (proxyPassword) {
-		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
+		await setSecret(userInfo.id, 'proxy-password', proxyPassword, { skipIfUnchanged: true });
 	}
 
 	return apifyClient;

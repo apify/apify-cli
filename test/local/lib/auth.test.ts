@@ -2,7 +2,7 @@ import { existsSync } from 'node:fs';
 
 import { loginWithToken, resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
-import { getProxyPassword, getToken, setToken } from '../../../src/lib/credentials.js';
+import { getSecret } from '../../../src/lib/credentials.js';
 import { getLoggedClientOrThrow } from '../../../src/lib/utils.js';
 import { readActiveProfile } from '../../__setup__/auth-file.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -144,8 +144,8 @@ describe('auth', () => {
 		it('saves the token, the proxy password and the account metadata', async () => {
 			await loginWithToken(STORED);
 
-			expect(await getToken()).toBe(STORED);
-			expect(await getProxyPassword()).toBe('pw');
+			expect(await getSecret('uid', 'token')).toBe(STORED);
+			expect(await getSecret('uid', 'proxy-password')).toBe('pw');
 			expect(readActiveProfile()).toMatchObject({ id: 'uid', username: 'me' });
 		});
 
@@ -161,7 +161,7 @@ describe('auth', () => {
 
 			await loginWithToken(STORED);
 
-			expect(await getToken()).toBe(STORED);
+			expect(await getSecret('uid', 'token')).toBe(STORED);
 		});
 	});
 
@@ -208,16 +208,16 @@ describe('auth', () => {
 
 			await resolveAuth();
 
-			expect(await getToken()).toBe(STORED);
+			expect(await getSecret('uid', 'token')).toBe(STORED);
 			expect(readActiveProfile()).toMatchObject({ username: 'me' });
 		});
 
 		it('resolving a token the command was given leaves the stored login untouched', async () => {
-			await setToken(STORED);
+			await loginWithToken(STORED);
 
 			await resolveAuth(FLAG);
 
-			expect(await getToken()).toBe(STORED);
+			expect(await getSecret('uid', 'token')).toBe(STORED);
 		});
 	});
 });

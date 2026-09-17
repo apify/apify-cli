@@ -3,11 +3,11 @@ import { copyFileSync, existsSync, readFileSync, renameSync, rmSync, writeFileSy
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { AUTH_FILE_PATH } from './consts.js';
-import type { CredentialsBackend } from './credentials.js';
+import type { CredentialsBackend, SecretKind } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
-const AUTH_FILE_VERSION = 2;
+export const AUTH_FILE_VERSION = 2;
 
 /** The way back to a CLI that only reads the v1 shape. */
 export const AUTH_BACKUP_FILE_PATH = () => `${AUTH_FILE_PATH()}.v1.bak`;
@@ -28,11 +28,15 @@ export interface AuthProfile {
 	expiresAt: string | null;
 	/** Whether a refresh token came with the access token. Unused until the device flow lands. */
 	hasRefreshToken: boolean;
+	/** File backend only. The keyring backend keeps this in the OS store instead. */
+	token?: string;
+	/** File backend only. The keyring backend keeps this in the OS store instead. */
+	proxy?: { password?: string };
 }
 
 /**
- * `auth.json` as it sits on disk. `token` and `proxy` are the file backend's secret storage; they
- * stay outside the profiles until each profile gets its own keys.
+ * `auth.json` as it sits on disk. Top-level `token` and `proxy` are where the file backend kept
+ * secrets before they were keyed per profile; `ensureSecretsKeyed()` moves them into the profile.
  */
 export interface AuthFile {
 	version?: number;
@@ -114,8 +118,8 @@ function v1Profile(file: AuthFile): AuthProfile {
 function toV2(file: AuthFile): AuthFile {
 	const migrated: AuthFile = { version: AUTH_FILE_VERSION, profiles: {} };
 
-	// A v1 file with a token but no ID has no key to store the profile under. Keep the secrets so
-	// the next command reports stale credentials instead of a silent logged-out state.
+	// A v1 file with a token but no ID has no key to store the profile under. The secrets are
+	// carried over here and dropped by `ensureSecretsKeyed()`, which is what forces the re-login.
 	if (typeof file.id === 'string') {
 		migrated.activeProfile = file.id;
 		migrated.profiles![file.id] = v1Profile(file);
@@ -161,7 +165,7 @@ async function migrateToV2(): Promise<void> {
  * A file from a newer CLI is not something to guess at — migrating it backwards would drop
  * whatever that version stores.
  */
-function assertSupportedAuthFileVersion() {
+export function assertSupportedAuthFileVersion() {
 	const { version } = readAuthFile();
 
 	if (typeof version === 'number' && version > AUTH_FILE_VERSION) {
@@ -205,6 +209,51 @@ export function lookUpActiveProfile(): ActiveProfileLookup {
 /** The active profile, or `undefined` when nothing usable is stored. */
 export function getActiveProfile(): (AuthProfile & { id: string }) | undefined {
 	return lookUpActiveProfile().profile;
+}
+
+/**
+ * The user ID every secret is keyed by. Taken from `activeProfile` rather than from the profile
+ * object, so a file whose `activeProfile` names a missing profile still resolves its secrets and
+ * reports the dangling profile instead of looking logged out.
+ */
+export function getActiveProfileId(): string | undefined {
+	const file = readAuthFile();
+
+	if (file.version !== AUTH_FILE_VERSION) {
+		return typeof file.id === 'string' ? file.id : undefined;
+	}
+
+	return file.activeProfile;
+}
+
+/** Where the file backend keeps a secret inside a profile. */
+function profileSecret(profile: AuthProfile, kind: SecretKind): string | undefined {
+	return kind === 'token' ? profile.token : profile.proxy?.password;
+}
+
+/** The file backend's stored secret, or `undefined` when the profile does not hold one. */
+export function readProfileSecret(userId: string, kind: SecretKind): string | undefined {
+	const profile = readAuthFile().profiles?.[userId];
+	return profile ? profileSecret(profile, kind) : undefined;
+}
+
+/**
+ * Stores a file-backend secret on the profile and marks the file as the secrets backend. A missing
+ * profile is left alone: inventing one would fabricate the account metadata the CLI reads.
+ */
+export function writeProfileSecret(userId: string, kind: SecretKind, value: string) {
+	const file = readAuthFile();
+	const profile = file.profiles?.[userId];
+	if (!profile) return;
+
+	if (kind === 'token') {
+		profile.token = value;
+	} else {
+		profile.proxy = { ...profile.proxy, password: value };
+	}
+
+	file.secretsBackend = 'file';
+	writeAuthFile(file);
 }
 
 /**
