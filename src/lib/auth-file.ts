@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, copyFileSync, existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
@@ -128,10 +128,17 @@ function toV2(file: AuthFile): AuthFile {
 	return migrated;
 }
 
-/** Never overwrites an existing backup: the first one is the file the user started with. */
+/**
+ * Never overwrites an existing backup: the first one is the file the user started with, as it
+ * stood after `ensureMigrated()` — on the keyring backend that means the secrets are already out
+ * of it. `copyFileSync` inherits the source mode, and an auth.json written before the CLI set
+ * 0600 is still 0644, so the mode is re-asserted rather than carried over.
+ */
 function backUpV1File() {
 	if (existsSync(AUTH_BACKUP_FILE_PATH())) return;
+
 	copyFileSync(AUTH_FILE_PATH(), AUTH_BACKUP_FILE_PATH());
+	chmodSync(AUTH_BACKUP_FILE_PATH(), 0o600);
 }
 
 async function migrateToV2(): Promise<void> {

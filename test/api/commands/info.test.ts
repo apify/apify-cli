@@ -21,7 +21,7 @@ describe('[api] apify info', () => {
 
 		const spy = logSpy();
 
-		expect(spy).toHaveBeenCalledTimes(2);
+		expect(spy).toHaveBeenCalledTimes(3);
 		expect(spy.mock.calls[1][0]).to.include(readActiveProfile()!.id);
 	});
 });
