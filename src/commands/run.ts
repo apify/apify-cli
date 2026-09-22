@@ -23,12 +23,12 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
 import { execWithLog } from '../lib/exec.js';
-import { deleteFile } from '../lib/files.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { useModuleVersion } from '../lib/hooks/useModuleVersion.js';
 import { CRAWLEE_INPUT_KEY_ENV, resolveInputKey, TEMP_INPUT_KEY_PREFIX } from '../lib/input-key.js';
 import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
+import { deleteKvsRecord, writeKvsRecord } from '../lib/kvs-metadata.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import type { AuthJSON } from '../lib/types.js';
@@ -41,6 +41,7 @@ import {
 	getCurrentUserInfo,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
+	type LocalInput,
 	purgeDefaultDataset,
 	purgeDefaultKeyValueStore,
 	purgeDefaultQueue,
@@ -53,12 +54,26 @@ interface TempInputResult {
 }
 
 interface OverwrittenInputResult {
-	existingInput: ReturnType<typeof getLocalInput>;
+	existingInput: LocalInput | undefined;
+	inputKey: string;
 	inputFilePath: string;
 	writtenAt: number;
 }
 
 type ValidateAndStoreInputResult = TempInputResult | OverwrittenInputResult;
+
+/**
+ * Write the input as a record, so a storage client resolves the bare key to `<key>.json`
+ * through the sidecar instead of probing extensions.
+ */
+const writeInputRecord = async (storePath: string, key: string, input: Record<string, unknown>) =>
+	writeKvsRecord({
+		storePath,
+		key,
+		fileName: `${key}.json`,
+		contentType: 'application/json; charset=utf-8',
+		body: JSON.stringify(input, null, 2),
+	});
 
 enum RunType {
 	DirectFile = 0,
@@ -464,8 +479,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		} finally {
 			if (storedInputResults) {
 				if ('tempInputKey' in storedInputResults) {
-					// Temp input file: just delete it, user's INPUT.json was never touched
-					await deleteFile(storedInputResults.tempInputFilePath);
+					// Temp input record: just delete it, user's INPUT.json was never touched
+					await deleteKvsRecord(storedInputResults.tempInputFilePath, storedInputResults.tempInputKey);
 				} else if (storedInputResults.existingInput) {
 					// Check if the input file was modified since we modified it. If it was, we abort the re-overwrite and warn the user
 					const stats = await stat(storedInputResults.inputFilePath);
@@ -486,7 +501,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 					await writeFile(storedInputResults.inputFilePath, storedInputResults.existingInput.body);
 				} else {
 					// No file -> we made it -> we delete it
-					await deleteFile(storedInputResults.inputFilePath);
+					await deleteKvsRecord(storedInputResults.inputFilePath, storedInputResults.inputKey);
 				}
 			}
 		}
@@ -519,7 +534,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
 			const tempInputFilePath = join(localStorePath, `${tempInputKey}.json`);
 
-			await writeFile(tempInputFilePath, JSON.stringify(inputOverride.input, null, 2));
+			await writeInputRecord(localStorePath, tempInputKey, inputOverride.input);
 
 			return {
 				tempInputKey,
@@ -578,7 +593,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			const tempInputFilePath = join(localStorePath, `${tempInputKey}.json`);
 
 			await mkdir(localStorePath, { recursive: true });
-			await writeFile(tempInputFilePath, JSON.stringify(fullInputOverride, null, 2));
+			await writeInputRecord(localStorePath, tempInputKey, fullInputOverride);
 
 			return {
 				tempInputKey,
@@ -589,10 +604,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (!existingInput) {
 			await mkdir(localStorePath, { recursive: true });
 			// No input -> use defaults for this run
-			await writeFile(inputFilePath, JSON.stringify(defaults, null, 2));
+			await writeInputRecord(localStorePath, resolvedInputKey, defaults);
 
 			return {
 				existingInput,
+				inputKey: resolvedInputKey,
 				inputFilePath,
 				writtenAt: Date.now(),
 			};
@@ -624,7 +640,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
 			const tempInputFilePath = join(localStorePath, `${tempInputKey}.json`);
 
-			await writeFile(tempInputFilePath, JSON.stringify(fullInput, null, 2));
+			await writeInputRecord(localStorePath, tempInputKey, fullInput);
 
 			return {
 				tempInputKey,
