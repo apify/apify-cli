@@ -1,0 +1,17 @@
+diff --git a/lib/utils/url.js b/lib/utils/url.js
+index 0c3168c9128b6abd1a0860b222872b2332dc5ab8..995f88d3ee897a471c6aacdd4ae5a65aada599e2 100644
+--- a/lib/utils/url.js
++++ b/lib/utils/url.js
+@@ -69,7 +69,11 @@ export function formatUrl(routePath, options, baseUrl = '') {
+     }
+     // Handle absolute vs relative paths
+     if (relativePaths === false && baseUrl) {
+-        return normalizeUrl([baseUrl, targetPath]);
++        // baseUrl is the site URL plus the Docusaurus baseUrl, e.g. https://docs.apify.com/cli/.
++        // Some callers pass a routePath that already carries that baseUrl, so strip it before
++        // joining, or the section prefix ends up in the URL twice.
++        const basePath = baseUrl.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]*/i, '') || '/';
++        return normalizeUrl([baseUrl, stripBaseUrl(targetPath, basePath)]);
+     }
+     // For relative paths, ensure we preserve the leading slash
+     // normalizeUrl can sometimes remove it, so we handle it explicitly
