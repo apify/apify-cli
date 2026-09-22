@@ -33,6 +33,6 @@ describe('[e2e][api] auth login & token', () => {
 		const result = await runCli('apify', ['auth', 'token'], { env: authEnv });
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
-		expect(result.stdout.trim().length).toBeGreaterThan(0);
+		expect(result.stdout.trim()).toBe(token);
 	});
 });
