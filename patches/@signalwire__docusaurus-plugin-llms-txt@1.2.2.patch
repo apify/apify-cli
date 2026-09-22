@@ -1,17 +1,37 @@
 diff --git a/lib/utils/url.js b/lib/utils/url.js
-index 0c3168c9128b6abd1a0860b222872b2332dc5ab8..995f88d3ee897a471c6aacdd4ae5a65aada599e2 100644
+index 0c3168c9128b6abd1a0860b222872b2332dc5ab8..303ac39b92e24c9008924c949ecf91c6746c38cc 100644
 --- a/lib/utils/url.js
 +++ b/lib/utils/url.js
-@@ -69,7 +69,11 @@ export function formatUrl(routePath, options, baseUrl = '') {
+@@ -56,19 +56,31 @@ export function stripBaseUrl(routePath, baseUrl) {
+  */
+ export function formatUrl(routePath, options, baseUrl = '') {
+     const { enableMarkdownFiles = true, relativePaths = true, markdownFile, } = options;
++    // routePath and markdownFile may already carry the Docusaurus baseUrl. Strip it, or the
++    // section prefix lands in the URL twice. Stripping before the .md suffix is what keeps a
++    // route that is the site root on the INDEX_MD branch instead of producing '/.md'.
++    const sitePath = relativePaths === false && baseUrl
++        ? (baseUrl.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]*/i, '') || '/')
++        : null;
+     // Ensure route path starts with /
+     let targetPath = ensureLeadingSlash(routePath);
++    if (sitePath) {
++        targetPath = stripBaseUrl(targetPath, sitePath);
++    }
+     // Use markdown file path if available and enabled
+     if (enableMarkdownFiles && markdownFile) {
+         // Ensure markdown file path starts with / for consistency
+         targetPath = ensureLeadingSlash(markdownFile);
++        if (sitePath) {
++            targetPath = stripBaseUrl(targetPath, sitePath);
++        }
+     }
+     else if (enableMarkdownFiles) {
+         // Add .md extension to route path
+         targetPath = targetPath === '/' ? INDEX_MD : `${targetPath}.md`;
      }
      // Handle absolute vs relative paths
-     if (relativePaths === false && baseUrl) {
--        return normalizeUrl([baseUrl, targetPath]);
-+        // baseUrl is the site URL plus the Docusaurus baseUrl, e.g. https://docs.apify.com/cli/.
-+        // Some callers pass a routePath that already carries that baseUrl, so strip it before
-+        // joining, or the section prefix ends up in the URL twice.
-+        const basePath = baseUrl.replace(/^[a-z][a-z0-9+.-]*:\/\/[^/]*/i, '') || '/';
-+        return normalizeUrl([baseUrl, stripBaseUrl(targetPath, basePath)]);
+-    if (relativePaths === false && baseUrl) {
++    if (sitePath) {
+         return normalizeUrl([baseUrl, targetPath]);
      }
      // For relative paths, ensure we preserve the leading slash
-     // normalizeUrl can sometimes remove it, so we handle it explicitly
