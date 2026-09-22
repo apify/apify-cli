@@ -318,13 +318,14 @@ FLAGS
                                  dependencies.
       --skip-git-init            Skip initializing a git
                                  repository in the Actor directory.
-      --source=<option>          How the Actor source
-                                 code is set up. "apify" keeps everything on this
-                                 machine and uploads nothing, so you deploy it with
-                                 "apify push". With a Git provider, Apify creates a
-                                 private repository on your connected account from
-                                 the template, clones it into the Actor directory,
-                                 and creates an Actor that builds from it.
+      --source=<option>          Where the Actor source
+                                 code lives. With "apify", the code stays on your
+                                 machine and nothing is uploaded. You can still
+                                 deploy your Actor with "apify push". With a Git
+                                 provider, Apify creates a private repository from
+                                 the template on your connected account, clones the
+                                 repository into the Actor directory, and builds the
+                                 Actor from it.
                                  <options: apify|github|gitlab|bitbucket>
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
