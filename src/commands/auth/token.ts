@@ -7,7 +7,7 @@ export class AuthTokenCommand extends ApifyCommand<typeof AuthTokenCommand> {
 	static override name = 'token' as const;
 
 	static override description =
-		'Prints the API token the CLI would use, resolved from APIFY_TOKEN or the stored login.';
+		'Prints the API token the CLI authenticates with, resolved from APIFY_TOKEN or the token from 'apify login'.';
 
 	static override examples = [
 		{
