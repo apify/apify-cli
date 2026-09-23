@@ -108,8 +108,8 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	const proxyPassword = await getProxyPassword();
 	if (proxyPassword) result.proxy = { password: proxyPassword };
 
-	// A token with no profile behind it is reported rather than swallowed: the commands that build
-	// `<username>/<name>` lookups would otherwise fail with a misleading "not found".
+	// Reported rather than swallowed: the commands that build `<username>/<name>` lookups would
+	// otherwise fail with a misleading "not found".
 	if (!profile) {
 		if (!result.token) return {};
 

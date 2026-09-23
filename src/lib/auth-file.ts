@@ -23,11 +23,9 @@ export interface AuthProfile {
 	name: string | null;
 	/** Set means the profile is an organization rather than a personal account. */
 	organizationOwnerUserId?: string;
-	/** How the token was obtained. Unused until the device flow lands. */
+	/** These three are unread until the device flow lands, and reserved so it needs no migration. */
 	authMethod: 'token';
-	/** When the access token expires. Unused until the device flow lands. */
 	expiresAt: string | null;
-	/** Whether a refresh token came with the access token. Unused until the device flow lands. */
 	hasRefreshToken: boolean;
 	/**
 	 * Where this profile's secrets live. Unused until secrets are keyed per profile; the file-level
@@ -39,8 +37,7 @@ export interface AuthProfile {
 
 /**
  * `auth.json` as this CLI writes it. `token` and `proxy` are the file backend's secret storage;
- * they stay outside the profiles until each profile gets its own keys. No index signature: the
- * fields listed here are the whole surface, so removing one names every reader at compile time.
+ * they stay outside the profiles until each profile gets its own keys.
  */
 export interface AuthFile {
 	version?: number;
@@ -89,7 +86,6 @@ function parseAuthFile(): AuthFile | null {
 	}
 }
 
-/** The parsed file, or an empty object when it is missing or unreadable. */
 export function readAuthFile(): AuthFile {
 	return parseAuthFile() ?? {};
 }
@@ -116,7 +112,6 @@ function atomicWriteJson(path: string, data: unknown) {
 	}
 }
 
-/** The one account a v1 file described, as a profile. */
 function v1Profile(file: LegacyAuthFile): AuthProfile {
 	return {
 		...(typeof file.username === 'string' ? { username: file.username } : {}),
@@ -153,10 +148,9 @@ function toV2(file: LegacyAuthFile): AuthFile {
 }
 
 /**
- * A snapshot of the pre-v2 file, kept so an upgrade is inspectable. Written once and never
- * refreshed, which is why the secrets are left out: `apify login` replaces auth.json but cannot
- * reach this file, so a copy of a rotated token would sit here until the next logout. Nothing
- * reads it, and a downgraded CLI finds its token through the usual backends rather than here.
+ * A snapshot of the pre-v2 file, so an upgrade is inspectable. Written once and never refreshed,
+ * which is why the secrets are left out: a rotated token copied here would outlive the account it
+ * belongs to. Nothing reads it.
  */
 function backUpV1File(file: AuthFile) {
 	if (existsSync(AUTH_BACKUP_FILE_PATH())) return;
@@ -187,7 +181,6 @@ async function migrateAuthFile(): Promise<void> {
 			if (Object.keys(file).length === 0) return;
 
 			const from = typeof file.version === 'number' ? file.version : FIRST_AUTH_FILE_VERSION;
-			// A file from a newer CLI has no steps to run. `assertSupportedAuthFileVersion` reports it.
 			if (from >= AUTH_FILE_VERSION) return;
 
 			// The backup captures the shape the user arrived with, before any step touches it.

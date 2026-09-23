@@ -128,7 +128,6 @@ describe('auth.json v2', () => {
 			expect(readAuthFile()).toEqual(migrated);
 		});
 
-		// The only code path that erases the plaintext v1 token from disk.
 		it('logout removes the backup along with the file', async () => {
 			write(v1AuthFile({ secretsBackend: 'file' }));
 			await ensureAuthFileCurrent();
@@ -271,9 +270,6 @@ describe('auth.json v2', () => {
 		});
 	});
 
-	// Both were deletable with a green suite: every other test calls ensureAuthFileCurrent() by hand.
-	// The write drops the previous account's secrets, and loginWithToken writes the new token
-	// straight after. Nothing pinned either half before.
 	describe('replacing the stored account', () => {
 		it('drops the previous account and its secrets', () => {
 			write({

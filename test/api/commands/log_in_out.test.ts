@@ -37,7 +37,6 @@ describe('[api] apify login and logout', () => {
 
 		expect(lastErrorMessage()).to.include('Success:');
 
-		// v2 stores the account as a profile keyed by user ID, not the whole user('me') response.
 		expect(readActiveProfile()).toMatchObject({
 			id: expectedUserInfo.id,
 			username: expectedUserInfo.username,
@@ -74,7 +73,6 @@ describe('[api] apify login and logout', () => {
 
 		expect(lastErrorMessage()).to.include('Success:');
 
-		// v2 stores the account as a profile keyed by user ID, not the whole user('me') response.
 		expect(readActiveProfile()).toMatchObject({
 			id: expectedUserInfo.id,
 			username: expectedUserInfo.username,
