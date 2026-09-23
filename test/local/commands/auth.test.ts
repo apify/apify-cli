@@ -103,7 +103,7 @@ describe('auth commands', () => {
 
 			await login();
 
-			expect(lastErrorMessage()).toContain('APIFY_TOKEN is set to a different token');
+			expect(lastErrorMessage()).toContain('APIFY_TOKEN is set, so other commands will ignore this login');
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 			expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
 			process.exitCode = 0;

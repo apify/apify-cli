@@ -109,9 +109,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 
 		if (envToken.kind === 'token' && envToken.token !== token?.trim()) {
 			error({
-				message: token
-					? `${APIFY_ENV_VARS.TOKEN} is set to a different token, so other commands will ignore this login. Unset ${APIFY_ENV_VARS.TOKEN} and try again.`
-					: `${APIFY_ENV_VARS.TOKEN} is set, so other commands will ignore this login. Unset ${APIFY_ENV_VARS.TOKEN} and try again, or pass the same token with --token.`,
+				message: `${APIFY_ENV_VARS.TOKEN} is set, so other commands will ignore this login. Unset ${APIFY_ENV_VARS.TOKEN} and try again.`,
 			});
 			process.exitCode = CommandExitCodes.InvalidInput;
 			return;
