@@ -17,10 +17,16 @@ describe('detectAiAgent', () => {
 		'OPENCLAW_SHELL',
 	];
 
-	afterEach(() => {
+	// The suite may run inside an AI coding tool, which sets some of these,
+	// so clear them all instead of relying on the ambient environment.
+	beforeEach(() => {
 		for (const key of agentEnvVars) {
-			delete process.env[key];
+			vi.stubEnv(key, '');
 		}
+	});
+
+	afterEach(() => {
+		vi.unstubAllEnvs();
 	});
 
 	test('returns undefined when no agent env vars are set', () => {
@@ -28,13 +34,13 @@ describe('detectAiAgent', () => {
 	});
 
 	test('returns correct agent for a known env var', () => {
-		process.env.GEMINI_CLI = '1';
+		vi.stubEnv('GEMINI_CLI', '1');
 		expect(detectAiAgent()).toBe('gemini_cli');
 	});
 
 	test('returns first match when multiple agent env vars are set', () => {
-		process.env.CURSOR_AGENT = '1';
-		process.env.GEMINI_CLI = '1';
+		vi.stubEnv('CURSOR_AGENT', '1');
+		vi.stubEnv('GEMINI_CLI', '1');
 
 		// CURSOR_AGENT appears before GEMINI_CLI in the lookup table
 		expect(detectAiAgent()).toBe('cursor');
