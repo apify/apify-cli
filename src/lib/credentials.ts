@@ -114,6 +114,17 @@ function readAuthFile(): StoredAuthFile {
 	}
 }
 
+/**
+ * Remove the proxy password, keeping any sibling field like `groups` and dropping `proxy`
+ * entirely when the secret was all it carried.
+ */
+export function stripProxyPassword(data: { proxy?: { password?: string } }) {
+	if (!data.proxy) return;
+
+	delete data.proxy.password;
+	if (Object.keys(data.proxy).length === 0) delete data.proxy;
+}
+
 function writeAuthFile(data: StoredAuthFile) {
 	ensureApifyDirectory(AUTH_FILE_PATH());
 	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(data, null, '\t'), { mode: 0o600 });
@@ -217,6 +228,24 @@ export async function setProxyPassword(password: string, opts: { skipIfUnchanged
 }
 
 /**
+ * Forget the stored proxy password. Called when an account has none, so the previous account's
+ * does not survive a re-login — the keyring outlives the auth.json rewrite that replaces
+ * everything else.
+ */
+export async function deleteProxyPassword(): Promise<void> {
+	if ((await getBackend()) === 'keyring') {
+		await deleteKeyring(PROXY_PASSWORD_ACCOUNT);
+		return;
+	}
+
+	const data = readAuthFile();
+	if (!data.proxy?.password) return;
+
+	stripProxyPassword(data);
+	writeAuthFile(data);
+}
+
+/**
  * Remove the token and proxy-password entries from the OS keyring. Always attempts the
  * keyring deletes even when the current backend is `file`, so toggling
  * `APIFY_DISABLE_KEYRING=1` between login and logout does not orphan entries the user
@@ -265,12 +294,7 @@ export async function ensureMigrated(): Promise<void> {
 			}
 
 			delete file.token;
-			if (file.proxy) {
-				delete file.proxy.password;
-				// Drop the proxy object entirely when only the password lived there,
-				// but keep it (minus the secret) when it carries other fields like `groups`.
-				if (Object.keys(file.proxy).length === 0) delete file.proxy;
-			}
+			stripProxyPassword(file);
 			file.secretsBackend = 'keyring';
 			writeAuthFile(file);
 		} catch (err) {

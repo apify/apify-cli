@@ -1,13 +1,14 @@
 import { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
+import { getAnonymousApifyClientOptions } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { error, info, simpleLog } from '../../lib/outputs.js';
-import { getApifyClientOptions, printJsonToStdout } from '../../lib/utils.js';
+import { printJsonToStdout } from '../../lib/utils.js';
 
 const pricingModelLabels: Record<string, string> = {
 	FREE: 'Free',
@@ -96,9 +97,7 @@ export class ActorsSearchCommand extends ApifyCommand<typeof ActorsSearchCommand
 		const { query } = this.args;
 		const { json, sortBy, category, username, pricingModel, limit, offset } = this.flags;
 
-		const clientOptions = await getApifyClientOptions();
-		delete clientOptions.token;
-		const client = new ApifyClient(clientOptions);
+		const client = new ApifyClient(getAnonymousApifyClientOptions());
 
 		let result;
 
