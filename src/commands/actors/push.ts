@@ -29,7 +29,7 @@ import {
 	createActZip,
 	createSourceFiles,
 	getActorLocalFilePaths,
-	getLocalUserInfo,
+	getCurrentUserInfo,
 	getLoggedClientOrThrow,
 	outputJobLog,
 	parseWaitForFinishMillis,
@@ -286,7 +286,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
 

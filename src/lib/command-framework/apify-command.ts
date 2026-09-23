@@ -887,10 +887,9 @@ type ExtractOptionalArgKeys<Cmd extends typeof BuiltApifyCommand> = {
 type StaticArgsFlagsInput<Cmd extends typeof BuiltApifyCommand> = Omit<
 	{
 		// This ensures we only get the required args
-		[K in Exclude<
-			keyof InferArgsFromCommand<Cmd['args']>,
-			ExtractOptionalArgKeys<Cmd>
-		> as `args_${string & K}`]: InferArgsFromCommand<Cmd['args']>[K];
+		[
+			K in Exclude<keyof InferArgsFromCommand<Cmd['args']>, ExtractOptionalArgKeys<Cmd>> as `args_${string & K}`
+		]: InferArgsFromCommand<Cmd['args']>[K];
 	},
 	// Omit args_json as it is used only to throw an error if the user provides it
 	'args_json'
@@ -905,10 +904,12 @@ type StaticArgsFlagsInput<Cmd extends typeof BuiltApifyCommand> = Omit<
 	Omit<
 		{
 			// This ensures we only ever get the required flags into this object, as `key?: type` and `key: type | undefined` are not the same (one is optionally present, the other is mandatory)
-			[K in Exclude<
-				keyof InferFlagsFromCommand<Cmd['flags'], true>,
-				ExtractOptionalFlagKeys<Cmd>
-			> as `flags_${string & K}`]: InferFlagsFromCommand<Cmd['flags'], true>[K];
+			[
+				K in Exclude<
+					keyof InferFlagsFromCommand<Cmd['flags'], true>,
+					ExtractOptionalFlagKeys<Cmd>
+				> as `flags_${string & K}`
+			]: InferFlagsFromCommand<Cmd['flags'], true>[K];
 		},
 		// Omit flags_json as it is used only to throw an error if the user provides it
 		'flags_json'
