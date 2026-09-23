@@ -4,7 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { finalizeRun } from '../../lib/commands/run-result.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override name = 'run' as const;
@@ -39,7 +39,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 
 	async run() {
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await getCurrentUserInfo();
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		const { id: taskId, userFriendlyId, title } = await this.resolveTaskId(apifyClient, usernameOrId);

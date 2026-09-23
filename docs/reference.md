@@ -149,7 +149,8 @@ SUBCOMMANDS
                to '~/.apify/auth.json'.
   auth logout  Removes authentication by deleting your API token and
                account information from '~/.apify/auth.json'.
-  auth token   Prints the current API token for the Apify CLI.
+  auth token   Prints the API token the CLI authenticates with,
+               resolved from APIFY_TOKEN or the token from 'apify login'.
 ```
 
 ##### `apify auth login` / `apify login`
@@ -168,7 +169,8 @@ USAGE
 FLAGS
   -m, --method=<option>  Method of logging in to Apify.
                          <options: console|manual>
-  -t, --token=<value>    Apify API token.
+  -t, --token=<value>    Apify API token to log in with and
+                         save to your OS keyring.
 ```
 
 ##### `apify auth logout` / `apify logout`
@@ -187,7 +189,8 @@ USAGE
 
 ```sh
 DESCRIPTION
-  Prints the current API token for the Apify CLI.
+  Prints the API token the CLI authenticates with, resolved from APIFY_TOKEN or 
+  the token from 'apify login'.
 
 USAGE
   $ apify auth token
@@ -315,13 +318,14 @@ FLAGS
                                  dependencies.
       --skip-git-init            Skip initializing a git
                                  repository in the Actor directory.
-      --source=<option>          How the Actor source
-                                 code is set up. "apify" keeps everything on this
-                                 machine and uploads nothing, so you deploy it with
-                                 "apify push". With a Git provider, Apify creates a
-                                 private repository on your connected account from
-                                 the template, clones it into the Actor directory,
-                                 and creates an Actor that builds from it.
+      --source=<option>          Where the Actor source
+                                 code lives. With "apify", the code stays on your
+                                 machine and nothing is uploaded. You can still
+                                 deploy your Actor with "apify push". With a Git
+                                 provider, Apify creates a private repository from
+                                 the template on your connected account, clones the
+                                 repository into the Actor directory, and builds the
+                                 Actor from it.
                                  <options: apify|github|gitlab|bitbucket>
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
@@ -1801,7 +1805,7 @@ ARGUMENTS
 
 FLAGS
   -t, --token=<value>  Apify API token to embed in the config.
-                       Defaults to the token from 'apify login'.
+                       Defaults to APIFY_TOKEN, then the token from 'apify login'.
       --tools=<value>  Comma-separated tool IDs or Actor full names
                        to expose. Forwarded as a '?tools=' query parameter.
       --url=<value>    Apify MCP server URL.
