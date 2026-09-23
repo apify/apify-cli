@@ -11,7 +11,7 @@ export class AuthTokenCommand extends ApifyCommand<typeof AuthTokenCommand> {
 
 	static override examples = [
 		{
-			description: 'Print the resolved API token to stdout (use with care — it is a secret).',
+			description: 'Print the resolved API token to stdout. Be careful with the output, it's a secret.',
 			command: 'apify auth token',
 		},
 	];
