@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import { readAuthFile, writeAuthFile } from './auth-file.js';
+import { AUTH_FILE_VERSION, readAuthFile, writeAuthFile } from './auth-file.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -248,6 +248,9 @@ export async function ensureMigrated(): Promise<void> {
 	migrationPromise = (async () => {
 		try {
 			const file = readAuthFile();
+			// A file a newer CLI wrote is not ours to rewrite, and this runs before the shape
+			// migration reports it.
+			if (typeof file.version === 'number' && file.version > AUTH_FILE_VERSION) return;
 			if (file.secretsBackend) return;
 			if (!file.token && !file.proxy?.password) return;
 

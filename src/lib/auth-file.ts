@@ -5,11 +5,12 @@ import { cryptoRandomObjectId } from '@apify/utilities';
 import { AUTH_FILE_PATH } from './consts.js';
 import type { CredentialsBackend } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
+import { warning } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
-const AUTH_FILE_VERSION = 2;
+export const AUTH_FILE_VERSION = 2;
 
-/** The way back to a CLI that only reads the v1 shape. */
+/** Snapshot of the pre-v2 file. Nothing reads it; see {@link backUpV1File}. */
 export const AUTH_BACKUP_FILE_PATH = () => `${AUTH_FILE_PATH()}.v1.bak`;
 
 /**
@@ -28,6 +29,12 @@ export interface AuthProfile {
 	expiresAt: string | null;
 	/** Whether a refresh token came with the access token. Unused until the device flow lands. */
 	hasRefreshToken: boolean;
+	/**
+	 * Where this profile's secrets live. Unused until secrets are keyed per profile; the file-level
+	 * `secretsBackend` is the answer for every profile until then. Reserved here because a keyring
+	 * failure on one profile must not silently redirect another profile's reads.
+	 */
+	secretsBackend?: CredentialsBackend;
 }
 
 /**
@@ -62,7 +69,11 @@ function parseAuthFile(): AuthFile | null {
 	if (!existsSync(AUTH_FILE_PATH())) return {};
 
 	try {
-		return JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8')) as AuthFile;
+		const parsed: unknown = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
+		// A valid JSON string or array is as unusable as a parse error, and must not be rewritten.
+		if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+
+		return parsed as AuthFile;
 	} catch {
 		return null;
 	}
@@ -78,7 +89,10 @@ export function readAuthFile(): AuthFile {
  * and a half-written auth.json reads as logged out.
  */
 export function writeAuthFile(data: AuthFile) {
-	const path = AUTH_FILE_PATH();
+	atomicWriteJson(AUTH_FILE_PATH(), data);
+}
+
+function atomicWriteJson(path: string, data: unknown) {
 	ensureApifyDirectory(path);
 
 	const tempPath = `${path}.tmp-${cryptoRandomObjectId(8)}`;
@@ -138,10 +152,21 @@ function backUpV1File(file: AuthFile) {
 	if (existsSync(AUTH_BACKUP_FILE_PATH())) return;
 
 	const { token: _token, proxy: _proxy, ...withoutSecrets } = file;
-	writeFileSync(AUTH_BACKUP_FILE_PATH(), JSON.stringify(withoutSecrets, null, '\t'), { mode: 0o600 });
+	atomicWriteJson(AUTH_BACKUP_FILE_PATH(), withoutSecrets);
 }
 
-async function migrateToV2(): Promise<void> {
+/**
+ * One entry per format bump, keyed by the version it upgrades from. A file at version N runs every
+ * step from N upwards, so moving data between shapes later means adding an entry here rather than
+ * reworking this module. The first shape carried no `version` field at all; it counts as 1.
+ */
+const MIGRATION_STEPS: Record<number, (file: AuthFile) => AuthFile> = {
+	1: toV2,
+};
+
+const FIRST_AUTH_FILE_VERSION = 1;
+
+async function migrateAuthFile(): Promise<void> {
 	migrationPromise ??= (async () => {
 		try {
 			const file = parseAuthFile();
@@ -149,15 +174,31 @@ async function migrateToV2(): Promise<void> {
 			// A corrupt file is left alone: readers already treat it as logged out, and rewriting
 			// it would destroy what the user could still recover by hand.
 			if (!file) return;
-			// A numbered version is either already current or from another CLI; either way there
-			// is nothing to migrate. `assertSupportedAuthFileVersion` reports a newer one.
-			if (typeof file.version === 'number') return;
 			if (Object.keys(file).length === 0) return;
 
-			backUpV1File(file);
-			writeAuthFile(toV2(file));
+			const from = typeof file.version === 'number' ? file.version : FIRST_AUTH_FILE_VERSION;
+			// A file from a newer CLI has no steps to run. `assertSupportedAuthFileVersion` reports it.
+			if (from >= AUTH_FILE_VERSION) return;
+
+			// The backup captures the shape the user arrived with, before any step touches it.
+			if (from === FIRST_AUTH_FILE_VERSION) backUpV1File(file);
+
+			let migrated = file;
+			for (let version = from; version < AUTH_FILE_VERSION; version++) {
+				const step = MIGRATION_STEPS[version];
+				if (!step) throw new Error(`No migration step from auth file version ${version}.`);
+
+				migrated = step(migrated);
+			}
+
+			writeAuthFile(migrated);
 		} catch (err) {
-			cliDebugPrint('auth-file', 'migration to v2 failed', err);
+			// Never blocks a command: the readers understand the old shape, so a failed migration
+			// costs nothing this run. Said once, because failing on every run should be visible.
+			cliDebugPrint('auth-file', 'auth file migration failed', err);
+			warning({
+				message: `Could not update ${AUTH_FILE_PATH()} to the current format, so it was left as it is. Run with APIFY_CLI_DEBUG=1 to see why.`,
+			});
 		}
 	})();
 
@@ -186,7 +227,7 @@ function assertSupportedAuthFileVersion() {
  * The migration itself is idempotent, single-flight and never throws — it must not block a command.
  */
 export async function ensureAuthFileCurrent(): Promise<void> {
-	await migrateToV2();
+	await migrateAuthFile();
 	assertSupportedAuthFileVersion();
 }
 

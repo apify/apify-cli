@@ -91,12 +91,14 @@ describe('auth.json v2', () => {
 			expect(file.proxy).toEqual({ password: 'pw' });
 		});
 
-		it('carries organizationOwnerUserId into the profile', async () => {
+		it('carries organizationOwnerUserId into the profile, and back out again', async () => {
 			write(v1AuthFile({ secretsBackend: 'file', organizationOwnerUserId: 'owner-id' }));
 
 			await ensureAuthFileCurrent();
 
 			expect(readActiveProfile()).toMatchObject({ organizationOwnerUserId: 'owner-id' });
+			// `push` and the Console URL read it from here; the file alone is not enough.
+			await expect(getLocalUserInfo()).resolves.toMatchObject({ organizationOwnerUserId: 'owner-id' });
 		});
 
 		it('backs the v1 file up and never overwrites the backup', async () => {
@@ -136,6 +138,16 @@ describe('auth.json v2', () => {
 
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
+		});
+
+		// Only the temp-file + rename repairs an existing file's mode; a direct write would leave it.
+		it.skipIf(process.platform === 'win32')('tightens a pre-existing 0644 auth.json to 0600', async () => {
+			write(v1AuthFile({ secretsBackend: 'file' }));
+			chmodSync(AUTH_FILE_PATH(), 0o644);
+
+			await ensureAuthFileCurrent();
+
+			expect(statSync(AUTH_FILE_PATH()).mode & 0o777).toBe(0o600);
 		});
 
 		// Windows has no POSIX modes: Node reports 0o666 there and chmod only moves the read-only bit.
