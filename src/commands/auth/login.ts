@@ -88,7 +88,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 	static override flags = {
 		token: Flags.string({
 			char: 't',
-			description: 'Apify API token to log in with and save.',
+			description: 'Apify API token to log in with and save to your OS keyring.',
 			required: false,
 		}),
 		method: Flags.string({
