@@ -9,7 +9,7 @@ import {
 	getActiveProfile,
 	lookUpActiveProfile,
 	removeActiveProfile,
-	setActiveProfile,
+	replaceStoredAccount,
 } from '../../../src/lib/auth-file.js';
 import { resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
@@ -251,7 +251,7 @@ describe('auth.json v2', () => {
 			const newer = { version: 3, activeProfile: 'uid', profiles: { uid: { username: 'me' } } };
 			write(newer);
 
-			expect(() => setActiveProfile('uid2', V2_PROFILE, 'file')).toThrow('written by a newer Apify CLI');
+			expect(() => replaceStoredAccount('uid2', V2_PROFILE, 'file')).toThrow('written by a newer Apify CLI');
 			expect(readAuthFile()).toEqual(newer);
 		});
 
@@ -265,6 +265,45 @@ describe('auth.json v2', () => {
 	});
 
 	// Both were deletable with a green suite: every other test calls ensureAuthFileCurrent() by hand.
+	// The write drops the previous account's secrets, and loginWithToken writes the new token
+	// straight after. Nothing pinned either half before.
+	describe('replacing the stored account', () => {
+		it('drops the previous account and its secrets', () => {
+			write({
+				version: 2,
+				activeProfile: 'old',
+				profiles: { old: { ...V2_PROFILE, username: 'old' } },
+				secretsBackend: 'file',
+				token: 'apify_api_old',
+				proxy: { password: 'old_pw' },
+			});
+
+			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' }, 'file');
+
+			const file = readAuthFile();
+			expect(Object.keys(file.profiles!)).toEqual(['new']);
+			expect(file.activeProfile).toBe('new');
+			// A leftover token beside the new account authenticates as the wrong user.
+			expect(file).not.toHaveProperty('token');
+			expect(file).not.toHaveProperty('proxy');
+		});
+
+		it('leaves no token when the caller never writes one', async () => {
+			write({
+				version: 2,
+				activeProfile: 'old',
+				profiles: { old: { ...V2_PROFILE, username: 'old' } },
+				secretsBackend: 'file',
+				token: 'apify_api_old',
+			});
+
+			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' }, 'file');
+
+			// Logged out, rather than logged in as the account that just went away.
+			await expect(getToken()).resolves.toBeUndefined();
+		});
+	});
+
 	describe('the command paths that trigger the migration', () => {
 		it('getLocalUserInfo() migrates the file it reads', async () => {
 			write(v1AuthFile({ secretsBackend: 'file' }));

@@ -256,10 +256,18 @@ export function getActiveProfile(): (AuthProfile & { id: string }) | undefined {
 }
 
 /**
- * Stores one account and makes it active, replacing whatever was there. Nothing puts a second
- * profile in the file yet, so `apify login` owns all of it.
+ * Stores one account as the only one in the file, dropping any previous profile and the secrets
+ * stored beside it.
+ *
+ * Replacing rather than adding is deliberate twice over. Until each profile has its own secret, a
+ * second profile would name an account that cannot authenticate. And dropping the old secrets is
+ * what makes the write safe: the caller writes the new token straight after, so a failure there
+ * leaves no token at all — a logged-out state — rather than the previous account's token sitting
+ * beside the new account's name, which authenticates as the wrong user.
+ *
+ * Adding a profile without disturbing the others is {@link https://github.com/apify/apify-cli/issues/1386 | Stage-2}.
  */
-export function setActiveProfile(userId: string, profile: AuthProfile, secretsBackend: CredentialsBackend) {
+export function replaceStoredAccount(userId: string, profile: AuthProfile, secretsBackend: CredentialsBackend) {
 	assertSupportedAuthFileVersion();
 
 	writeAuthFile({

@@ -6,7 +6,7 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { ensureAuthFileCurrent, setActiveProfile } from './auth-file.js';
+import { ensureAuthFileCurrent, replaceStoredAccount } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
 	deleteProxyPassword,
@@ -174,10 +174,8 @@ export async function loginWithToken(
 
 	const proxyPassword = userInfo.proxy?.password;
 
-	// The profile is keyed by user ID, and it replaces whatever was stored rather than merging
-	// into it, so fields the new account does not have cannot linger from the old one.
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
-	setActiveProfile(
+	replaceStoredAccount(
 		userInfo.id,
 		{
 			username: userInfo.username,
@@ -190,7 +188,7 @@ export async function loginWithToken(
 		await getBackend(),
 	);
 
-	// After the metadata file, which would clobber them on the file backend. `skipIfUnchanged` avoids a Keychain prompt.
+	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
 	await setToken(token, { skipIfUnchanged: true });
 
 	if (proxyPassword) {
