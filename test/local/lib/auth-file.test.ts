@@ -1,4 +1,5 @@
 import { chmodSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import process from 'node:process';
 
 import {
 	__resetAuthFileForTests,
@@ -137,14 +138,18 @@ describe('auth.json v2', () => {
 			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
 		});
 
-		it('writes the backup readable only by the owner, whatever mode the v1 file had', async () => {
-			write(v1AuthFile({ secretsBackend: 'file' }));
-			chmodSync(AUTH_FILE_PATH(), 0o644);
+		// Windows has no POSIX modes: Node reports 0o666 there and chmod only moves the read-only bit.
+		it.skipIf(process.platform === 'win32')(
+			'writes the backup readable only by the owner, whatever mode the v1 file had',
+			async () => {
+				write(v1AuthFile({ secretsBackend: 'file' }));
+				chmodSync(AUTH_FILE_PATH(), 0o644);
 
-			await ensureAuthFileCurrent();
+				await ensureAuthFileCurrent();
 
-			expect(statSync(AUTH_BACKUP_FILE_PATH()).mode & 0o777).toBe(0o600);
-		});
+				expect(statSync(AUTH_BACKUP_FILE_PATH()).mode & 0o777).toBe(0o600);
+			},
+		);
 
 		// The backup is never refreshed, so a token in it would outlive the account it belongs to.
 		it('keeps the secrets out of the backup', async () => {
