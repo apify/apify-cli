@@ -38,8 +38,9 @@ export interface AuthProfile {
 }
 
 /**
- * `auth.json` as it sits on disk. `token` and `proxy` are the file backend's secret storage; they
- * stay outside the profiles until each profile gets its own keys.
+ * `auth.json` as this CLI writes it. `token` and `proxy` are the file backend's secret storage;
+ * they stay outside the profiles until each profile gets its own keys. No index signature: the
+ * fields listed here are the whole surface, so removing one names every reader at compile time.
  */
 export interface AuthFile {
 	version?: number;
@@ -48,7 +49,16 @@ export interface AuthFile {
 	secretsBackend?: CredentialsBackend;
 	token?: string;
 	proxy?: { password?: string; [k: string]: unknown };
-	[k: string]: unknown;
+}
+
+/**
+ * The flat shape written before profiles existed: one account spread across the top level, and no
+ * `version` field. Only the migration and the pre-migration read path see it.
+ */
+export interface LegacyAuthFile extends AuthFile {
+	id?: string;
+	username?: string;
+	organizationOwnerUserId?: string;
 }
 
 export interface ActiveProfileLookup {
@@ -107,7 +117,7 @@ function atomicWriteJson(path: string, data: unknown) {
 }
 
 /** The one account a v1 file described, as a profile. */
-function v1Profile(file: AuthFile): AuthProfile {
+function v1Profile(file: LegacyAuthFile): AuthProfile {
 	return {
 		...(typeof file.username === 'string' ? { username: file.username } : {}),
 		name: null,
@@ -125,7 +135,7 @@ function v1Profile(file: AuthFile): AuthProfile {
  * `effectivePlatformFeatures`, `isPaying`, `createdAt` and `proxy.groups` are dropped — nothing in
  * the CLI reads them.
  */
-function toV2(file: AuthFile): AuthFile {
+function toV2(file: LegacyAuthFile): AuthFile {
 	const migrated: AuthFile = { version: AUTH_FILE_VERSION, profiles: {} };
 
 	// A v1 file with a token but no ID has no key to store the profile under. Keep the secrets so
@@ -239,7 +249,10 @@ export function lookUpActiveProfile(): ActiveProfileLookup {
 	const file = readAuthFile();
 
 	if (file.version !== AUTH_FILE_VERSION) {
-		return typeof file.id === 'string' ? { profile: { id: file.id, ...v1Profile(file) } } : {};
+		// Pre-migration, or a version this CLI does not know. Either way the only account it can
+		// name is the flat one, and a newer file has no top-level id to find.
+		const legacy = file as LegacyAuthFile;
+		return typeof legacy.id === 'string' ? { profile: { id: legacy.id, ...v1Profile(legacy) } } : {};
 	}
 
 	if (!file.activeProfile) return {};
