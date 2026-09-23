@@ -149,8 +149,8 @@ SUBCOMMANDS
                to '~/.apify/auth.json'.
   auth logout  Removes authentication by deleting your API token and
                account information from '~/.apify/auth.json'.
-  auth token   Prints the API token the CLI would use, resolved from
-               APIFY_TOKEN or the stored login.
+  auth token   Prints the API token the CLI authenticates with,
+               resolved from APIFY_TOKEN or the token from 'apify login'.
 ```
 
 ##### `apify auth login` / `apify login`
@@ -170,7 +170,7 @@ FLAGS
   -m, --method=<option>  Method of logging in to Apify.
                          <options: console|manual>
   -t, --token=<value>    Apify API token to log in with and
-                         save.
+                         save to your OS keyring.
 ```
 
 ##### `apify auth logout` / `apify logout`
@@ -189,8 +189,8 @@ USAGE
 
 ```sh
 DESCRIPTION
-  Prints the API token the CLI would use, resolved from APIFY_TOKEN or the 
-  stored login.
+  Prints the API token the CLI authenticates with, resolved from APIFY_TOKEN or 
+  the token from 'apify login'.
 
 USAGE
   $ apify auth token
