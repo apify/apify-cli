@@ -1,6 +1,6 @@
 import type { ApifyClient, Dataset, DatasetClient, KeyValueStore, KeyValueStoreClient } from 'apify-client';
 
-import { getLocalUserInfo } from '../utils.js';
+import { getCurrentUserInfo } from '../utils.js';
 
 type ReturnTypeForStorage<T extends 'dataset' | 'keyValueStore'> = T extends 'dataset'
 	? {
@@ -25,7 +25,7 @@ async function tryToGetStorage<T extends 'dataset' | 'keyValueStore'>(
 		} as ReturnTypeForStorage<T>;
 	}
 
-	const info = await getLocalUserInfo();
+	const info = await getCurrentUserInfo();
 
 	const byName = await client[storageType](`${info.username!}/${id}`)
 		.get()

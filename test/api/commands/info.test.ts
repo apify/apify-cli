@@ -25,7 +25,8 @@ describe('[api] apify info', () => {
 
 		const spy = logSpy();
 
-		expect(spy).toHaveBeenCalledTimes(2);
+		expect(spy).toHaveBeenCalledTimes(3);
 		expect(spy.mock.calls[1][0]).to.include(userInfoFromConfig.id);
+		expect(spy.mock.calls[2][0]).to.include('apify login');
 	});
 });

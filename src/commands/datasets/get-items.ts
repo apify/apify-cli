@@ -4,7 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { error, simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const downloadFormatToContentType: Record<DownloadItemsFormat, string> = {
 	[DownloadItemsFormat.JSON]: 'application/json',
@@ -106,7 +106,7 @@ export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 			};
 		}
 
-		const info = await getLocalUserInfo();
+		const info = await getCurrentUserInfo();
 
 		const byName = await client
 			.dataset(`${info.username!}/${datasetId}`)

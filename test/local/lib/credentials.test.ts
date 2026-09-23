@@ -4,6 +4,7 @@ import process from 'node:process';
 
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import {
 	__resetCredentialsForTests,
@@ -15,7 +16,7 @@ import {
 	setProxyPassword,
 	setToken,
 } from '../../../src/lib/credentials.js';
-import { getApifyClientOptions, getLocalUserInfo } from '../../../src/lib/utils.js';
+import { getLocalUserInfo } from '../../../src/lib/utils.js';
 import {
 	KEYRING_PROXY_PASSWORD_KEY,
 	KEYRING_TOKEN_KEY,
@@ -46,6 +47,8 @@ const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
 describe('credentials', () => {
 	beforeEach(() => {
 		vitest.stubEnv('__APIFY_INTERNAL_TEST_AUTH_PATH__', cryptoRandomObjectId(12));
+		// The resolver reads APIFY_TOKEN, so a token in the developer's shell would leak into tests.
+		vitest.stubEnv('APIFY_TOKEN', '');
 		resetKeyringMock();
 		writeFileSyncSpy.mockClear();
 		__resetCredentialsForTests();
@@ -226,6 +229,14 @@ describe('credentials', () => {
 	});
 
 	describe('ensureMigrated()', () => {
+		it('runs when resolveAuth reads a pre-migration auth.json', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			writeAuthFile({ username: 'me', id: 'uid', token: 'tok_legacy' });
+
+			expect((await resolveAuth())?.token).toBe('tok_legacy');
+			expect(readAuthFile().secretsBackend).toBe('file');
+		});
+
 		it('is a no-op when secretsBackend marker is already set', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
 			writeAuthFile({ token: 'tok', secretsBackend: 'file' });
@@ -364,32 +375,6 @@ describe('credentials', () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			keyringStore.set(KEYRING_TOKEN_KEY, 'tok_kr');
 			await expect(getLocalUserInfo()).rejects.toThrow('Stale credentials found without user metadata');
-		});
-	});
-
-	describe('getApifyClientOptions()', () => {
-		beforeEach(() => {
-			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-		});
-
-		it('resolves the stored token when nothing overrides it', async () => {
-			await setToken('tok_stored');
-			expect((await getApifyClientOptions()).token).toBe('tok_stored');
-		});
-
-		it('prefers an explicitly passed token over the stored one', async () => {
-			await setToken('tok_stored');
-			expect((await getApifyClientOptions('tok_explicit')).token).toBe('tok_explicit');
-		});
-
-		it('resolves a pre-migration auth.json and stamps the backend marker', async () => {
-			writeAuthFile({ username: 'me', id: 'uid', token: 'tok_legacy' });
-			expect((await getApifyClientOptions()).token).toBe('tok_legacy');
-			expect(readAuthFile().secretsBackend).toBe('file');
-		});
-
-		it('resolves to undefined when no token is stored', async () => {
-			expect((await getApifyClientOptions()).token).toBeUndefined();
 		});
 	});
 });

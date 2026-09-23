@@ -53,6 +53,8 @@ export async function runCli(
 			APIFY_CLI_SKIP_RENTAL_SUNSET_NOTICE: '1',
 			// Pin the file backend so e2e subprocesses don't share the host's OS keyring across tests.
 			APIFY_DISABLE_KEYRING: '1',
+			// The resolver prefers APIFY_TOKEN, so a token on the host would pick the account.
+			APIFY_TOKEN: '',
 			...options.env,
 		},
 	});

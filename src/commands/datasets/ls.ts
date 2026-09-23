@@ -5,7 +5,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { info, simpleLog } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import { getCurrentUserInfo, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Dataset ID', 'Name', 'Items', 'Size', 'Created', 'Modified'],
@@ -58,7 +58,7 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 		const { desc, offset, limit, json, unnamed } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
-		const user = await getLocalUserInfo();
+		const user = await getCurrentUserInfo();
 
 		const rawDatasetList = await client.datasets().list({ desc, offset, limit, unnamed });
 

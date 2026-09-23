@@ -50,7 +50,7 @@ import { LANGUAGE_FLAG_CHOICES, USE_CASE_FLAG_CHOICES } from '../lib/templates/c
 import {
 	downloadAndUnzip,
 	getJsonFileContent,
-	getLocalUserInfo,
+	getCurrentUserInfo,
 	getLoggedClientOrThrow,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
@@ -70,11 +70,12 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for an Actor name, then guides you through what you want to build, a language, a template, and where the source code lives when they are not provided. To run non-interactively, pass the name and --template; --source defaults to "apify". Use --use-case and --language to narrow the template list.';
+		'Prompts for an Actor name, then guides you through what you want to build, a language, a template, and how the source code is set up when they are not provided. To run non-interactively, pass the name and --template; --source defaults to "apify". Use --use-case and --language to narrow the template list.';
 
 	static override examples = [
 		{
-			description: 'Create a new Actor project interactively (guided name, use case, language, and template prompts).',
+			description:
+				'Create a new Actor project interactively, with guided prompts for the name, use case, language, template, and source.',
 			command: 'apify create',
 		},
 		{
@@ -140,7 +141,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}),
 		source: Flags.string({
 			description:
-				'Where the Actor source code will live. With a Git provider, Apify creates the repository on your connected account from the template, clones it here, and creates an Actor that builds from it.',
+				'Where the Actor source code lives. With "apify", the code stays on your machine and nothing is uploaded. You can still deploy your Actor with "apify push". With a Git provider, Apify creates a private repository from the template on your connected account, clones the repository into the Actor directory, and builds the Actor from it.',
 			choices: [...GIT_SOURCE_CHOICES],
 			// No default: an omitted flag triggers the wizard prompt, or "apify" when it cannot be asked.
 			required: false,
@@ -317,8 +318,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			? {
 					provider: gitProvider,
 					client: await getLoggedClientOrThrow(),
-					// Read after the client, which refreshes auth.json from the token the run resolved.
-					account: toGitAccount(await getLocalUserInfo()),
+					account: toGitAccount(await getCurrentUserInfo()),
 					// Omitted means on: the webhook is what makes a Git-sourced Actor rebuild on a push.
 					autoBuild: this.flags.autoBuild !== 'off',
 					...parseGitRepoFlag(gitRepo, actorName),
