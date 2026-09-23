@@ -255,12 +255,19 @@ describe('auth.json v2', () => {
 			expect(readAuthFile()).toEqual(newer);
 		});
 
-		it('is not touched by a logout', () => {
-			const newer = { version: 3, activeProfile: 'uid', profiles: { uid: { username: 'me' } }, token: 'tok' };
-			write(newer);
+		// Logout is the only way out of this state, so it is the one command that must not refuse.
+		it('is discarded by a logout', () => {
+			write({ version: 3, activeProfile: 'uid', profiles: { uid: { username: 'me' } }, token: 'tok' });
 
-			expect(() => removeActiveProfile()).toThrow('written by a newer Apify CLI');
-			expect(readAuthFile()).toEqual(newer);
+			removeActiveProfile();
+
+			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+		});
+
+		it('says how to get out of the state', async () => {
+			write({ version: 3, activeProfile: 'uid', profiles: {} });
+
+			await expect(ensureAuthFileCurrent()).rejects.toThrow('apify logout');
 		});
 	});
 
@@ -326,6 +333,14 @@ describe('auth.json v2', () => {
 
 			await expect(getLocalUserInfo()).rejects.toThrow('written by a newer Apify CLI');
 			await expect(resolveAuth()).rejects.toThrow('written by a newer Apify CLI');
+		});
+
+		// A platform run never reads the stored file, so a newer one must not stop it.
+		it('a file a newer CLI wrote does not stop a command running on APIFY_TOKEN', async () => {
+			write({ version: 3, activeProfile: 'uid', profiles: {}, secretsBackend: 'file', token: 'stored' });
+			vitest.stubEnv('APIFY_TOKEN', 'apify_api_from_env');
+
+			await expect(resolveAuth()).resolves.toEqual({ token: 'apify_api_from_env', source: 'env' });
 		});
 	});
 

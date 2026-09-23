@@ -80,7 +80,6 @@ export function __resetAuthForTests() {
 export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 	authPromise ??= (async () => {
 		await ensureMigrated();
-		await ensureAuthFileCurrent();
 
 		const envToken = readEnvToken();
 		if (envToken.kind === 'invalid') {
@@ -95,6 +94,10 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 
 			return { token: envToken.token, source: 'env' } as const;
 		}
+
+		// Only now, because the stored file is not this command's credential when APIFY_TOKEN is
+		// set. A file a newer CLI wrote would otherwise stop a platform run that never reads it.
+		await ensureAuthFileCurrent();
 
 		const storedToken = await getToken();
 		return storedToken ? ({ token: storedToken, source: 'stored' } as const) : undefined;

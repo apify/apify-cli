@@ -224,7 +224,7 @@ function assertSupportedAuthFileVersion() {
 
 	if (typeof version === 'number' && version > AUTH_FILE_VERSION) {
 		throw new Error(
-			`Your credentials in ${AUTH_FILE_PATH()} were written by a newer Apify CLI (auth file version ${version}, this one reads ${AUTH_FILE_VERSION}). Upgrade the CLI to use them.`,
+			`Your credentials in ${AUTH_FILE_PATH()} were written by a newer Apify CLI. It uses auth file version ${version} and this one reads ${AUTH_FILE_VERSION}. Upgrade the CLI, or run "apify logout" to discard them.`,
 		);
 	}
 }
@@ -296,21 +296,31 @@ export function replaceStoredAccount(userId: string, profile: AuthProfile, secre
  * go away once no profile is left, so logging out leaves no token on disk.
  */
 export function removeActiveProfile() {
-	assertSupportedAuthFileVersion();
-
 	const file = readAuthFile();
-	const active = file.version === AUTH_FILE_VERSION ? file.activeProfile : undefined;
 
+	// No version guard. Logout exists to discard credentials, so refusing a file this CLI cannot
+	// read would leave the user no way out of that state. A shape we do not understand goes whole
+	// rather than edited, because editing it would leave something worse than either outcome.
+	if (file.version !== AUTH_FILE_VERSION) {
+		discardAuthFiles();
+		return;
+	}
+
+	const active = file.activeProfile;
 	if (active && file.profiles) delete file.profiles[active];
 	delete file.activeProfile;
 	delete file.token;
 	delete file.proxy;
 
 	if (Object.keys(file.profiles ?? {}).length === 0) {
-		rmSync(AUTH_FILE_PATH(), { force: true });
-		rmSync(AUTH_BACKUP_FILE_PATH(), { force: true });
+		discardAuthFiles();
 		return;
 	}
 
 	writeAuthFile(file);
+}
+
+function discardAuthFiles() {
+	rmSync(AUTH_FILE_PATH(), { force: true, maxRetries: 10, retryDelay: 100 });
+	rmSync(AUTH_BACKUP_FILE_PATH(), { force: true, maxRetries: 10, retryDelay: 100 });
 }
