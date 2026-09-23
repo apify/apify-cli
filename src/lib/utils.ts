@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { createWriteStream, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
@@ -45,6 +45,7 @@ import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPasswor
 import { deleteFile, ensureApifyDirectory, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
+import { encodeRecordKey, readKvsRecordMetadata, recordMetadataFileName } from './kvs-metadata.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -523,52 +524,77 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 	await archive.finalize();
 };
 
+export interface LocalInput {
+	body: Buffer;
+	/** Null when the input file is a bare, sidecar-less file with no telling extension. */
+	contentType: string | null;
+	fileName: string;
+}
+
 /**
  * Get Actor input from local store
  */
-export const getLocalInput = (cwd: string, inputKey?: string) => {
-	const defaultLocalStorePath = getLocalKeyValueStorePath();
+export const getLocalInput = (cwd: string, inputKey?: string): LocalInput | undefined => {
+	const key = inputKey ?? KEY_VALUE_STORE_KEYS.INPUT;
+	const storePath = resolve(cwd, getLocalKeyValueStorePath());
 
-	const folderExists = existsSync(join(cwd, defaultLocalStorePath));
+	if (!existsSync(storePath)) return;
 
-	if (!folderExists) return;
+	// A tracked record: the sidecar names the file the value lives in, so a key like `INPUT`
+	// resolves to `INPUT.json` without guessing extensions.
+	const metadata = readKvsRecordMetadata(storePath, key);
 
-	const files = readdirSync(join(cwd, defaultLocalStorePath));
-	const inputName = files.find((file) => !!file.match(inputFileRegExp(inputKey ?? 'INPUT')));
+	if (metadata) {
+		const fileName = metadata.filename ?? encodeRecordKey(key);
+
+		if (existsSync(join(storePath, fileName))) {
+			return { body: readFileSync(join(storePath, fileName)), contentType: metadata.contentType, fileName };
+		}
+	}
+
+	const files = readdirSync(storePath);
+	const inputName = files.find((file) => !!file.match(inputFileRegExp(key)));
 
 	// No input file
 	if (!inputName) return;
 
-	const input = readFileSync(join(cwd, defaultLocalStorePath, inputName));
+	const input = readFileSync(join(storePath, inputName));
 	const contentType = mime.getType(inputName);
 	return { body: input, contentType, fileName: inputName };
 };
 
 export const purgeDefaultQueue = async () => {
-	const defaultQueuesPath = getLocalRequestQueuePath();
-	if (existsSync(getLocalStorageDir()) && existsSync(defaultQueuesPath)) {
-		await rimrafPromised(defaultQueuesPath);
-	}
+	await rimrafPromised(resolve(process.cwd(), getLocalRequestQueuePath()));
 };
 
 export const purgeDefaultDataset = async () => {
-	const defaultDatasetPath = getLocalDatasetPath();
-	if (existsSync(getLocalStorageDir()) && existsSync(defaultDatasetPath)) {
-		await rimrafPromised(defaultDatasetPath);
-	}
+	await rimrafPromised(resolve(process.cwd(), getLocalDatasetPath()));
 };
 
+/**
+ * Deletes every record from the default key-value store, except the ones
+ * belonging to the given input keys. Defaults to preserving `INPUT.*`.
+ */
 export const purgeDefaultKeyValueStore = async (...inputKeys: string[]) => {
-	const defaultKeyValueStorePath = getLocalKeyValueStorePath();
-	if (!existsSync(getLocalStorageDir()) || !existsSync(defaultKeyValueStorePath)) {
+	const defaultKeyValueStorePath = resolve(process.cwd(), getLocalKeyValueStorePath());
+	if (!existsSync(defaultKeyValueStorePath)) {
 		return;
 	}
 	const filesToDelete = readdirSync(defaultKeyValueStorePath);
-	const preserveRegExps = (inputKeys.length > 0 ? inputKeys : ['INPUT']).map(inputFileRegExp);
+	const keys = inputKeys.length > 0 ? inputKeys : [KEY_VALUE_STORE_KEYS.INPUT];
+	const preserveRegExps = keys.map(inputFileRegExp);
+	// The value file may be bound to a name the regexps don't cover, and the sidecar itself
+	// never matches them, yet dropping it would strip the input of its metadata.
+	const preserveNames = new Set(
+		keys.flatMap((key) => [
+			recordMetadataFileName(key),
+			readKvsRecordMetadata(defaultKeyValueStorePath, key)?.filename,
+		]),
+	);
 
 	const deletePromises: Promise<void>[] = [];
 	filesToDelete.forEach((file) => {
-		if (!preserveRegExps.some((re) => re.test(file))) {
+		if (!preserveNames.has(file) && !preserveRegExps.some((re) => re.test(file))) {
 			deletePromises.push(deleteFile(join(defaultKeyValueStorePath, file)));
 		}
 	});
@@ -647,15 +673,26 @@ export const getNpmCmd = (): string => {
 };
 
 /**
- * Returns true if apify storage is empty (expect INPUT.*)
+ * Returns true if the local storage holds nothing but the input record, either
+ * the user's own `<inputKey>` / `<inputKey>.*` or the temporary copy the CLI writes next to it.
  */
 export const checkIfStorageIsEmpty = async (inputKey?: string) => {
 	const key = inputKey || KEY_VALUE_STORE_KEYS.INPUT;
-	const filesWithoutInput = await glob([
-		`${getLocalStorageDir()}/**`,
-		`!${getLocalKeyValueStorePath()}/${key}.*`,
-		`!${getLocalKeyValueStorePath()}/${TEMP_INPUT_KEY_PREFIX}${key}.*`,
-	]);
+	// Storage paths use backslashes on Windows, which glob reads as escape characters.
+	const storageDir = getLocalStorageDir().replaceAll('\\', '/');
+	const keyValueStoreDir = getLocalKeyValueStorePath().replaceAll('\\', '/');
+
+	const filesWithoutInput = await glob(
+		[
+			`${storageDir}/**`,
+			// `<key>.*` also covers the record's `<key>.__metadata__.json` sidecar.
+			...[key, `${TEMP_INPUT_KEY_PREFIX}${key}`].flatMap((inputName) => [
+				`!${keyValueStoreDir}/${inputName}`,
+				`!${keyValueStoreDir}/${inputName}.*`,
+			]),
+		],
+		{ cwd: process.cwd() },
+	);
 
 	return filesWithoutInput.length === 0;
 };

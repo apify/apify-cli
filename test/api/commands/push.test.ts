@@ -216,6 +216,122 @@ describe('[api] apify push', () => {
 	);
 
 	it(
+		'should set applyEnvVarsToBuild when the flag is passed and keep it when omitted',
+		async () => {
+			const testActor = await testUserClient.actors().create(TEST_ACTOR);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			await testRunCommand(ActorsPushCommand, {
+				args_actorId: testActor.id,
+				flags_noPrompt: true,
+				flags_force: true,
+				flags_applyEnvVarsToBuild: true,
+			});
+
+			const versionWithFlag = await testActorClient.version(actorJson.version).get();
+
+			await testRunCommand(ActorsPushCommand, {
+				args_actorId: testActor.id,
+				flags_noPrompt: true,
+				flags_force: true,
+			});
+
+			const versionWithoutFlag = await testActorClient.version(actorJson.version).get();
+
+			// false is what --no-apply-env-vars-to-build parses to
+			await testRunCommand(ActorsPushCommand, {
+				args_actorId: testActor.id,
+				flags_noPrompt: true,
+				flags_force: true,
+				flags_applyEnvVarsToBuild: false,
+			});
+
+			const versionWithNegatedFlag = await testActorClient.version(actorJson.version).get();
+
+			await testActorClient.delete();
+
+			expect(versionWithFlag!.applyEnvVarsToBuild).to.be.eql(true);
+			// omitting the flag must preserve the value stored on the platform
+			expect(versionWithoutFlag!.applyEnvVarsToBuild).to.be.eql(true);
+			// the negated flag must actively turn the setting off
+			expect(versionWithNegatedFlag!.applyEnvVarsToBuild).to.be.eql(false);
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should read applyEnvVarsToBuild from actor.json, with the flag taking precedence',
+		async () => {
+			const testActor = await testUserClient.actors().create(TEST_ACTOR);
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+
+			try {
+				actorJson.applyEnvVarsToBuild = true;
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+				await testRunCommand(ActorsPushCommand, {
+					args_actorId: testActor.id,
+					flags_noPrompt: true,
+					flags_force: true,
+				});
+
+				const versionWithFieldTrue = await testActorClient.version(actorJson.version).get();
+
+				actorJson.applyEnvVarsToBuild = false;
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+				// the actor config is cached per cwd, so mid-test rewrites need a reset
+				resetCwdCaches();
+
+				await testRunCommand(ActorsPushCommand, {
+					args_actorId: testActor.id,
+					flags_noPrompt: true,
+					flags_force: true,
+				});
+
+				const versionWithFieldFalse = await testActorClient.version(actorJson.version).get();
+
+				// the file still says false, but the flag must win
+				await testRunCommand(ActorsPushCommand, {
+					args_actorId: testActor.id,
+					flags_noPrompt: true,
+					flags_force: true,
+					flags_applyEnvVarsToBuild: true,
+				});
+
+				const versionWithFlagOverride = await testActorClient.version(actorJson.version).get();
+
+				// and the negated flag must also win over a true in the file
+				actorJson.applyEnvVarsToBuild = true;
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+				resetCwdCaches();
+
+				await testRunCommand(ActorsPushCommand, {
+					args_actorId: testActor.id,
+					flags_noPrompt: true,
+					flags_force: true,
+					flags_applyEnvVarsToBuild: false,
+				});
+
+				const versionWithNegatedFlagOverride = await testActorClient.version(actorJson.version).get();
+
+				expect(versionWithFieldTrue!.applyEnvVarsToBuild).to.be.eql(true);
+				expect(versionWithFieldFalse!.applyEnvVarsToBuild).to.be.eql(false);
+				expect(versionWithFlagOverride!.applyEnvVarsToBuild).to.be.eql(true);
+				expect(versionWithNegatedFlagOverride!.applyEnvVarsToBuild).to.be.eql(false);
+			} finally {
+				delete actorJson.applyEnvVarsToBuild;
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+				await testActorClient.delete();
+			}
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
 		'should upload zip for source files larger that 3MB',
 		async () => {
 			const testActorWithEnvVars = { ...TEST_ACTOR };

@@ -1,6 +1,6 @@
 import { existsSync, renameSync } from 'node:fs';
 import { mkdir, readFile, stat, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { join, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { ExecaError } from 'execa';
@@ -22,12 +22,12 @@ import {
 	SUPPORTED_NODEJS_VERSION,
 } from '../lib/consts.js';
 import { execWithLog } from '../lib/exec.js';
-import { deleteFile } from '../lib/files.js';
 import { useActorConfig } from '../lib/hooks/useActorConfig.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { useModuleVersion } from '../lib/hooks/useModuleVersion.js';
 import { CRAWLEE_INPUT_KEY_ENV, resolveInputKey, TEMP_INPUT_KEY_PREFIX } from '../lib/input-key.js';
 import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
+import { deleteKvsRecord, writeKvsRecord } from '../lib/kvs-metadata.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import {
@@ -39,6 +39,7 @@ import {
 	getLocalUserInfo,
 	isNodeVersionSupported,
 	isPythonVersionSupported,
+	type LocalInput,
 	purgeDefaultDataset,
 	purgeDefaultKeyValueStore,
 	purgeDefaultQueue,
@@ -50,12 +51,26 @@ interface TempInputResult {
 }
 
 interface OverwrittenInputResult {
-	existingInput: ReturnType<typeof getLocalInput>;
+	existingInput: LocalInput | undefined;
+	inputKey: string;
 	inputFilePath: string;
 	writtenAt: number;
 }
 
 type ValidateAndStoreInputResult = TempInputResult | OverwrittenInputResult;
+
+/**
+ * Write the input as a record, so a storage client resolves the bare key to `<key>.json`
+ * through the sidecar instead of probing extensions.
+ */
+const writeInputRecord = async (storePath: string, key: string, input: Record<string, unknown>) =>
+	writeKvsRecord({
+		storePath,
+		key,
+		fileName: `${key}.json`,
+		contentType: 'application/json; charset=utf-8',
+		body: JSON.stringify(input, null, 2),
+	});
 
 enum RunType {
 	DirectFile = 0,
@@ -244,8 +259,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			return;
 		}
 
-		if (existsSync(LEGACY_LOCAL_STORAGE_DIR) && !existsSync(actualStoragePath)) {
-			renameSync(LEGACY_LOCAL_STORAGE_DIR, actualStoragePath);
+		const legacyStoragePath = resolve(cwd, LEGACY_LOCAL_STORAGE_DIR);
+		const resolvedStoragePath = resolve(cwd, actualStoragePath);
+
+		if (existsSync(legacyStoragePath) && !existsSync(resolvedStoragePath)) {
+			renameSync(legacyStoragePath, resolvedStoragePath);
 			warning({
 				message:
 					`The legacy 'apify_storage' directory was renamed to '${actualStoragePath}' to align it with Apify SDK v3.` +
@@ -453,8 +471,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		} finally {
 			if (storedInputResults) {
 				if ('tempInputKey' in storedInputResults) {
-					// Temp input file: just delete it, user's INPUT.json was never touched
-					await deleteFile(storedInputResults.tempInputFilePath);
+					// Temp input record: just delete it, user's INPUT.json was never touched
+					await deleteKvsRecord(storedInputResults.tempInputFilePath, storedInputResults.tempInputKey);
 				} else if (storedInputResults.existingInput) {
 					// Check if the input file was modified since we modified it. If it was, we abort the re-overwrite and warn the user
 					const stats = await stat(storedInputResults.inputFilePath);
@@ -475,7 +493,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 					await writeFile(storedInputResults.inputFilePath, storedInputResults.existingInput.body);
 				} else {
 					// No file -> we made it -> we delete it
-					await deleteFile(storedInputResults.inputFilePath);
+					await deleteKvsRecord(storedInputResults.inputFilePath, storedInputResults.inputKey);
 				}
 			}
 		}
@@ -494,6 +512,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		resolvedInputKey = 'INPUT',
 	): Promise<ValidateAndStoreInputResult | null> {
 		const { inputSchema } = await readInputSchema({ cwd: process.cwd() });
+		const localStorePath = resolve(process.cwd(), getLocalKeyValueStorePath());
 
 		if (!inputSchema) {
 			if (!inputOverride) {
@@ -502,13 +521,12 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 			// We cannot validate input schema if it is not found -> default to no validation and overriding if flags are given
 			// Write the override to a temp file so the user's input file is never touched.
-			const defaultStorePath = join(process.cwd(), getLocalKeyValueStorePath());
-			await mkdir(defaultStorePath, { recursive: true });
+			await mkdir(localStorePath, { recursive: true });
 
 			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
-			const tempInputFilePath = join(defaultStorePath, `${tempInputKey}.json`);
+			const tempInputFilePath = join(localStorePath, `${tempInputKey}.json`);
 
-			await writeFile(tempInputFilePath, JSON.stringify(inputOverride.input, null, 2));
+			await writeInputRecord(localStorePath, tempInputKey, inputOverride.input);
 
 			return {
 				tempInputKey,
@@ -527,11 +545,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		const existingInput = getLocalInput(process.cwd(), resolvedInputKey);
 
 		// Prepare the file path for where we'll temporarily store the validated input
-		const inputFilePath = join(
-			process.cwd(),
-			getLocalKeyValueStorePath(),
-			existingInput?.fileName ?? `${resolvedInputKey}.json`,
-		);
+		const inputFilePath = join(localStorePath, existingInput?.fileName ?? `${resolvedInputKey}.json`);
 
 		let errorHeader: string;
 
@@ -568,10 +582,10 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 			// Write to a temp file so the user's input file is never touched.
 			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
-			const tempInputFilePath = join(dirname(inputFilePath), `${tempInputKey}.json`);
+			const tempInputFilePath = join(localStorePath, `${tempInputKey}.json`);
 
-			await mkdir(dirname(inputFilePath), { recursive: true });
-			await writeFile(tempInputFilePath, JSON.stringify(fullInputOverride, null, 2));
+			await mkdir(localStorePath, { recursive: true });
+			await writeInputRecord(localStorePath, tempInputKey, fullInputOverride);
 
 			return {
 				tempInputKey,
@@ -580,12 +594,13 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		}
 
 		if (!existingInput) {
-			await mkdir(dirname(inputFilePath), { recursive: true });
+			await mkdir(localStorePath, { recursive: true });
 			// No input -> use defaults for this run
-			await writeFile(inputFilePath, JSON.stringify(defaults, null, 2));
+			await writeInputRecord(localStorePath, resolvedInputKey, defaults);
 
 			return {
 				existingInput,
+				inputKey: resolvedInputKey,
 				inputFilePath,
 				writtenAt: Date.now(),
 			};
@@ -615,9 +630,9 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			// Write merged input to a temp file so the user's INPUT.json is never touched.
 			// The SDK is redirected to this file via the ACTOR_INPUT_KEY env var.
 			const tempInputKey = `${TEMP_INPUT_KEY_PREFIX}${resolvedInputKey}`;
-			const tempInputFilePath = join(dirname(inputFilePath), `${tempInputKey}.json`);
+			const tempInputFilePath = join(localStorePath, `${tempInputKey}.json`);
 
-			await writeFile(tempInputFilePath, JSON.stringify(fullInput, null, 2));
+			await writeInputRecord(localStorePath, tempInputKey, fullInput);
 
 			return {
 				tempInputKey,

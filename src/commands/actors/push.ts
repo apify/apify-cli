@@ -223,6 +223,10 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			required: false,
 			default: false,
 		}),
+		'apply-env-vars-to-build': Flags.boolean({
+			description: `Make the environment variables also available to the Actor build process. Use --no-apply-env-vars-to-build to turn the setting off. Overrides the value of the 'applyEnvVarsToBuild' field in the '${LOCAL_CONFIG_PATH}' file. When both the field and the flag are omitted, the setting currently stored on the platform is kept.`,
+			required: false,
+		}),
 	};
 
 	static override args = {
@@ -454,9 +458,13 @@ Skipping push. Use --force to override.`,
 					allowMissing: this.flags.allowMissingSecrets,
 				})
 			: undefined;
+		// The flag wins when passed, then the actor.json field; undefined when neither is set, so the value
+		// stored on the platform is preserved
+		const applyEnvVarsToBuild =
+			this.flags.applyEnvVarsToBuild ?? (actorConfig!.applyEnvVarsToBuild as boolean | undefined);
 
 		if (actorCurrentVersion) {
-			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
+			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars, applyEnvVarsToBuild };
 			// TODO: fix this type too -.-
 			await actorClient.version(version).update(actorVersionModifier as never);
 			run({ message: `Updated version ${version} for Actor ${actor.name}.` });
@@ -468,6 +476,7 @@ Skipping push. Use --force to override.`,
 				buildTag,
 				sourceType,
 				envVars,
+				applyEnvVarsToBuild,
 			};
 
 			await actorClient.versions().create({

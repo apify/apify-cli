@@ -523,7 +523,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			let rawFlag = rawFlags[matchingFlags[0]];
 
-			if (!rawFlag && builderData.required) {
+			if (typeof rawFlag === 'undefined' && builderData.required) {
 				throw new CommandError({
 					code: CommandErrorCode.APIFY_MISSING_FLAG,
 					command: this.ctor,
