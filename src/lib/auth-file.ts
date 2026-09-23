@@ -196,11 +196,11 @@ async function migrateAuthFile(): Promise<void> {
 
 			writeAuthFile(migrated);
 		} catch (err) {
-			// Never blocks a command: the readers understand the old shape, so a failed migration
-			// costs nothing this run. Said once, because failing on every run should be visible.
+			// The readers understand the old shape, so nothing is broken and the next command tries
+			// again. Still said out loud, because failing on every run should not be invisible.
 			cliDebugPrint('auth-file', 'auth file migration failed', err);
 			warning({
-				message: `Could not update ${AUTH_FILE_PATH()} to the current format, so it was left as it is. Run with APIFY_CLI_DEBUG=1 to see why.`,
+				message: `Your login still works, but ${AUTH_FILE_PATH()} could not be updated to the current format. Set APIFY_CLI_DEBUG=1 to see why.`,
 			});
 		}
 	})();

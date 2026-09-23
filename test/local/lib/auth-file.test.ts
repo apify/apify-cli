@@ -17,6 +17,7 @@ import { ensureMigrated, getProxyPassword, getToken } from '../../../src/lib/cre
 import { getLocalUserInfo } from '../../../src/lib/utils.js';
 import { readActiveProfile, readAuthFile, v1AuthFile } from '../../__setup__/auth-file.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
+import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
 	KEYRING_PROXY_PASSWORD_KEY,
 	KEYRING_TOKEN_KEY,
@@ -27,6 +28,7 @@ import {
 vi.mock('@napi-rs/keyring', () => import('../../__setup__/keyring-mock.js'));
 
 useAuthSetup();
+const { lastErrorMessage } = useConsoleSpy();
 
 const write = (contents: unknown) => {
 	mkdirSync(GLOBAL_CONFIGS_FOLDER(), { recursive: true });
@@ -172,6 +174,21 @@ describe('auth.json v2', () => {
 			expect(backup).not.toHaveProperty('token');
 			expect(backup).not.toHaveProperty('proxy');
 			expect(backup).toMatchObject({ id: 'uid', username: 'me', email: 'me@example.com' });
+		});
+
+		// The failure path had no cover: the whole migration sits in one try/catch.
+		it.skipIf(process.platform === 'win32')('says so when it cannot write, and still logs you in', async () => {
+			write(v1AuthFile({ secretsBackend: 'file' }));
+			chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o500);
+
+			try {
+				// The old shape still reads, so the command that triggered this keeps working.
+				await expect(getLocalUserInfo()).resolves.toMatchObject({ id: 'uid', username: 'me' });
+				expect(lastErrorMessage()).toContain('Your login still works');
+				expect(readAuthFile().version).toBeUndefined();
+			} finally {
+				chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);
+			}
 		});
 
 		it('does nothing when there is no file', async () => {
