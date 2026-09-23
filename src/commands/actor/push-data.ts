@@ -34,7 +34,9 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 	async run() {
 		const { item: _item } = this.args;
 
-		const item = _item || (await readStdin());
+		// Nobody asked for stdin when the item is missing, so it must not block on a pipe this
+		// process only inherited.
+		const item = _item || (await readStdin({ implicit: true }));
 
 		if (!item) {
 			error({ message: 'No item was provided.' });

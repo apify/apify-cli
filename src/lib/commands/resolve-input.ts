@@ -7,7 +7,7 @@ import mime from 'mime';
 import { CommandExitCodes } from '../consts.js';
 import { error } from '../outputs.js';
 import { getLocalInput } from '../utils.js';
-import { readStdin } from './read-stdin.js';
+import { readStdin, stdinWasCutShort } from './read-stdin.js';
 
 interface InputOverrideOptions {
 	schemaHint?: string;
@@ -77,9 +77,15 @@ export async function getInputOverride(
 				input = parsed;
 				source = 'stdin';
 			} catch (err) {
+				// Standard input is only waited on for as long as it keeps talking, so a writer that stalls
+				// mid-payload leaves behind JSON that ends nowhere. Say so, or the message blames the data.
+				const cutShortHint = stdinWasCutShort()
+					? '\nStandard input went quiet before it closed, so only part of it was read. Use `--input-file=-` to wait for all of it.'
+					: '';
+
 				error({
 					message: withSchemaHint(
-						`Cannot parse JSON input from standard input.\n  ${(err as Error).message}`,
+						`Cannot parse JSON input from standard input.\n  ${(err as Error).message}${cutShortHint}`,
 						schemaHint,
 					),
 				});

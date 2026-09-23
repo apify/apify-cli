@@ -52,7 +52,7 @@ export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 		const casted = input as StdinCheckWrapperInput<Awaited<ReturnType<Fn>>>;
 
 		// Prompts need a terminal to read the answer from. Piped stdin is command input, not an
-		// answer source — before stdin became lazy (#1206) it was always drained by then anyway.
+		// answer source.
 		if (isCI || !isTTY) {
 			if (typeof casted.providedConfirmFromStdin === 'undefined') {
 				throw new Error(casted.errorMessageForStdin ?? errorMessageForStdin);

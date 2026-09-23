@@ -55,7 +55,9 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 
 		let parsedData: Record<string, unknown> | Record<string, unknown>[];
 
-		const item = _item || (await readStdin());
+		// Nobody asked for stdin when the item is missing, so it must not block on a pipe this
+		// process only inherited.
+		const item = _item || (await readStdin({ implicit: true }));
 
 		if (!item) {
 			error({ message: 'No items were provided.' });

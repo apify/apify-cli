@@ -89,9 +89,9 @@ describe('[e2e] stdin held open (#1206)', () => {
 		}
 	});
 
-	// The tests above stop at the project check, ~100 lines before `apify run` resolves its input.
-	// A real project gets that far, and there `run` reads stdin when `--input` is missing — the last
-	// path that still hung on a named pipe.
+	// The tests above stop at the project check, well before `apify run` resolves its input. A real
+	// project gets that far, and there `run` reads stdin when `--input` is missing — the last path
+	// that still hung on a named pipe.
 	const createFifoActor = async (name: string) => {
 		const dir = path.join(emptyDir, name);
 

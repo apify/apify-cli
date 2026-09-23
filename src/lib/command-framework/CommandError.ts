@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 
-import { peekStdin } from '../commands/read-stdin.js';
+import { describeStdinRead } from '../commands/read-stdin.js';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import type { BuiltApifyCommand } from './apify-command.js';
 import { selectiveRenderHelpForCommand } from './help.js';
@@ -225,7 +225,7 @@ export class CommandError extends Error {
 					'',
 					`- CLI version: \`${cliMetadata.fullVersionString}\``,
 					`- CLI debug logs (process.env.APIFY_CLI_DEBUG): ${process.env.APIFY_CLI_DEBUG ? 'Enabled' : 'Disabled'}`,
-					`- Stdin data? ${peekStdin() ? 'Yes' : 'No'}`,
+					`- Stdin data? ${describeStdinRead()}`,
 				].join('\n');
 			}
 		}
