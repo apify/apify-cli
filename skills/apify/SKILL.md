@@ -22,9 +22,11 @@ If a command's help shows an "interactive note", it lists exactly which flags ma
 
 See https://apify.com/auth.md for how to authenticate. Do not assume `APIFY_TOKEN` is already set in the environment and use it implicitly — confirm with the user first.
 
-- Persist a session explicitly: `apify login --token <token>`.
-- Verify auth: `apify info` (prints the logged-in user; non-zero exit / error if not authenticated).
-- Print the stored token: `apify auth token`.
+`APIFY_TOKEN` wins over a stored login, for every command. When it is set, `apify login` refuses to run unless `--token` passes the same token — unset `APIFY_TOKEN` first, or skip the login.
+
+- Persist a session explicitly: `apify login --token <token>`. Exits non-zero on a rejected token, so `apify login --token <t> && apify push` is safe to chain.
+- Verify auth: `apify info` (prints the username, user ID, and which source the token came from; non-zero exit / error if not authenticated).
+- Print the token in use: `apify auth token` (the `APIFY_TOKEN` one when set, otherwise the stored login's).
 
 ## Structured output
 

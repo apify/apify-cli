@@ -2,7 +2,7 @@ import { randomBytes } from 'node:crypto';
 
 import { ApifyClient } from 'apify-client';
 
-import { getApifyClientOptions } from '../../../../src/lib/utils.js';
+import { getApifyClientOptionsForToken } from '../../../../src/lib/auth.js';
 import { runCli } from '../../__helpers__/run-cli.js';
 
 describe('[e2e][api] datasets namespace', () => {
@@ -24,7 +24,7 @@ describe('[e2e][api] datasets namespace', () => {
 			throw new Error(`Failed to login:\n${loginResult.stderr}`);
 		}
 
-		client = new ApifyClient(await getApifyClientOptions(token));
+		client = new ApifyClient(getApifyClientOptionsForToken(token));
 	});
 
 	afterAll(async () => {
