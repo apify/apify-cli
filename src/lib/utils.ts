@@ -703,12 +703,39 @@ export const isNodeVersionSupported = (installedNodeVersion: string) => {
 	return gte(installedNodeVersion, minimumSupportedNodeVersion);
 };
 
+const TRANSIENT_ATTEMPTS = 3;
+const TRANSIENT_RETRY_DELAY_MS = 1000;
+const TRANSIENT_HTTP_STATUSES = new Set([408, 429, 500, 502, 503, 504]);
+
+/**
+ * Retries a network call that failed with a thrown error, or whose result `shouldRetry` marks as transient.
+ * The last attempt's result or error is passed through unchanged.
+ */
+export async function retryTransient<T>(fn: () => Promise<T>, shouldRetry: (result: T) => boolean = () => false) {
+	for (let attempt = 1; ; attempt++) {
+		const isLastAttempt = attempt === TRANSIENT_ATTEMPTS;
+
+		try {
+			const result = await fn();
+			if (isLastAttempt || !shouldRetry(result)) return result;
+		} catch (err) {
+			if (isLastAttempt) throw err;
+		}
+
+		await new Promise((resolve) => setTimeout(resolve, TRANSIENT_RETRY_DELAY_MS * attempt));
+	}
+}
+
 export const downloadZip = async (url: string) => {
-	const response = await axios.get(url, {
-		responseType: 'arraybuffer',
-		validateStatus: () => true,
-		headers: { 'User-Agent': `Apify CLI/${useCLIMetadata().version} (https://github.com/apify/apify-cli)` },
-	});
+	const response = await retryTransient(
+		async () =>
+			axios.get(url, {
+				responseType: 'arraybuffer',
+				validateStatus: () => true,
+				headers: { 'User-Agent': `Apify CLI/${useCLIMetadata().version} (https://github.com/apify/apify-cli)` },
+			}),
+		(res) => TRANSIENT_HTTP_STATUSES.has(res.status),
+	);
 
 	if (response.status < 200 || response.status >= 300) {
 		const body = Buffer.from(response.data).toString('utf8').trim().slice(0, 500);
