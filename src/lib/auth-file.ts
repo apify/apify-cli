@@ -3,7 +3,7 @@ import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'nod
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { AUTH_FILE_PATH } from './consts.js';
-import type { CredentialsBackend } from './credentials.js';
+import type { CredentialsBackend, SecretKind } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -26,14 +26,21 @@ export interface AuthProfile {
 	authMethod: 'token';
 	expiresAt: string | null;
 	hasRefreshToken: boolean;
-	/** Reserved: a keyring failure on one profile must not redirect another profile's reads. */
+	/**
+	 * Where this profile's secrets live. Unused while the file holds one account, so the file-level
+	 * `secretsBackend` is still the answer for every profile. Reserved for Stage-2, where a keyring
+	 * failure on one profile must not silently redirect another profile's reads.
+	 */
 	secretsBackend?: CredentialsBackend;
 	loggedInAt: string | null;
+	/** File backend only. The keyring backend keeps these in the OS store instead. */
+	token?: string;
+	proxy?: { password?: string };
 }
 
 /**
- * `auth.json` as this CLI writes it. `token` and `proxy` are the file backend's secret storage;
- * they stay outside the profiles until each profile gets its own keys.
+ * `auth.json` as this CLI writes it. Top-level `token` and `proxy` are where the file backend kept
+ * secrets before they were keyed per profile; `ensureSecretsKeyed()` moves them into the profile.
  */
 export interface AuthFile {
 	version?: number;
@@ -127,8 +134,8 @@ function v1Profile(file: LegacyAuthFile): AuthProfile {
 function toV2(file: LegacyAuthFile): AuthFile {
 	const migrated: AuthFile = { version: AUTH_FILE_VERSION, profiles: {} };
 
-	// A v1 file with a token but no ID has no key to store the profile under. Keep the secrets so
-	// the next command reports stale credentials instead of a silent logged-out state.
+	// A v1 file with a token but no ID has no key to store the profile under. The secrets are
+	// carried over here and dropped by `ensureSecretsKeyed()`, which is what forces the re-login.
 	if (typeof file.id === 'string') {
 		migrated.activeProfile = file.id;
 		migrated.profiles![file.id] = v1Profile(file);
@@ -254,10 +261,72 @@ export function getActiveProfile(): (AuthProfile & { id: string }) | undefined {
 }
 
 /**
- * Replaces the file with this one account. A second profile would name an account that cannot
- * authenticate until each has its own secret, and dropping the old secrets is what keeps the write
- * safe: the caller writes the new token next, so a failure there leaves nobody logged in rather
- * than the old token beside the new name. Additive login is #1386.
+ * The user ID every secret is keyed by. Taken from `activeProfile` rather than from the profile
+ * object, so a file whose `activeProfile` names a missing profile still resolves its secrets and
+ * reports the dangling profile instead of looking logged out.
+ */
+export function getActiveProfileId(): string | undefined {
+	const file = readAuthFile();
+
+	if (file.version !== AUTH_FILE_VERSION) {
+		const legacy = file as LegacyAuthFile;
+		return typeof legacy.id === 'string' ? legacy.id : undefined;
+	}
+
+	return file.activeProfile;
+}
+
+/** The file backend's stored secret, or `undefined` when the profile does not hold one. */
+export function readProfileSecret(userId: string, kind: SecretKind): string | undefined {
+	const profile = readAuthFile().profiles?.[userId];
+	if (!profile) return undefined;
+
+	return kind === 'token' ? profile.token : profile.proxy?.password;
+}
+
+/**
+ * Stores a file-backend secret on the profile. A missing profile is left alone: inventing one
+ * would fabricate the account metadata the CLI reads.
+ */
+export function writeProfileSecret(userId: string, kind: SecretKind, value: string) {
+	updateProfile(userId, (profile) => {
+		if (kind === 'token') {
+			profile.token = value;
+		} else {
+			profile.proxy = { ...profile.proxy, password: value };
+		}
+	});
+}
+
+/** Forgets one of a profile's file-backend secrets. */
+export function deleteProfileSecret(userId: string, kind: SecretKind) {
+	if (readProfileSecret(userId, kind) === undefined) return;
+
+	updateProfile(userId, (profile) => {
+		if (kind === 'token') {
+			delete profile.token;
+		} else {
+			// The profile's proxy object carries nothing but the password.
+			delete profile.proxy;
+		}
+	});
+}
+
+function updateProfile(userId: string, edit: (profile: AuthProfile) => void) {
+	const file = readAuthFile();
+	const profile = file.profiles?.[userId];
+	if (!profile) return;
+
+	edit(profile);
+	file.secretsBackend = 'file';
+	writeAuthFile(file);
+}
+
+/**
+ * Replaces the file with this one account, dropping any previous profile and its secrets. Nothing
+ * puts a second profile there yet; additive login is #1386. Dropping the old secrets is what keeps
+ * the write safe: the caller writes the new token next, so a failure there leaves nobody logged in
+ * rather than the old token beside the new name.
  */
 export function replaceStoredAccount(userId: string, profile: AuthProfile, secretsBackend: CredentialsBackend) {
 	assertSupportedAuthFileVersion();

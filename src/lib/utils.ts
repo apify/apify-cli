@@ -42,7 +42,7 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { ensureMigrated, getProxyPassword, getToken } from './credentials.js';
+import { ensureMigrated, ensureSecretsKeyed, getSecret } from './credentials.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
@@ -92,33 +92,29 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	await ensureMigrated();
 	await ensureAuthFileCurrent();
+	await ensureSecretsKeyed();
 
 	const { profile, missingProfile } = lookUpActiveProfile();
 
-	const result: AuthJSON = {};
-	if (profile) {
-		result.id = profile.id;
-		if (profile.username) result.username = profile.username;
-		if (profile.organizationOwnerUserId) result.organizationOwnerUserId = profile.organizationOwnerUserId;
-	}
-
-	const token = await getToken();
-	if (token) result.token = token;
-
-	const proxyPassword = await getProxyPassword();
-	if (proxyPassword) result.proxy = { password: proxyPassword };
-
 	// Reported rather than swallowed: the commands that build `<username>/<name>` lookups would
 	// otherwise fail with a misleading "not found".
-	if (!profile) {
-		if (!result.token) return {};
-
+	if (missingProfile) {
 		throw new Error(
-			missingProfile
-				? `Your active profile "${missingProfile}" is missing from ${AUTH_FILE_PATH()}. Run "apify login" to log in again.`
-				: 'Stale credentials found without user metadata. Run "apify login" again.',
+			`Your active profile "${missingProfile}" is missing from ${AUTH_FILE_PATH()}. Run "apify login" to log in again.`,
 		);
 	}
+
+	if (!profile) return {};
+
+	const result: AuthJSON = { id: profile.id };
+	if (profile.username) result.username = profile.username;
+	if (profile.organizationOwnerUserId) result.organizationOwnerUserId = profile.organizationOwnerUserId;
+
+	const token = await getSecret(profile.id, 'token');
+	if (token) result.token = token;
+
+	const proxyPassword = await getSecret(profile.id, 'proxy-password');
+	if (proxyPassword) result.proxy = { password: proxyPassword };
 
 	return result;
 };

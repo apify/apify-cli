@@ -2,18 +2,21 @@ import { existsSync, statSync } from 'node:fs';
 import process from 'node:process';
 
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
-import { getToken } from '../../../src/lib/credentials.js';
+import { getSecret } from '../../../src/lib/credentials.js';
 import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { readActiveProfile, readAuthFile } from '../../__setup__/auth-file.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
-	KEYRING_PROXY_PASSWORD_KEY,
-	KEYRING_TOKEN_KEY,
+	keyringProxyPasswordKey,
 	keyringSetKeys,
 	keyringStore,
+	keyringTokenKey,
 	resetKeyringMock,
 } from '../../__setup__/keyring-mock.js';
+
+const TOKEN_KEY = keyringTokenKey('uid');
+const PROXY_PASSWORD_KEY = keyringProxyPasswordKey('uid');
 
 vi.mock('@napi-rs/keyring', () => import('../../__setup__/keyring-mock.js'));
 
@@ -44,7 +47,8 @@ describe('auth commands', () => {
 		it('login stores the token and one profile keyed by user ID', async () => {
 			await login();
 
-			expect(readAuthFile()).toMatchObject({ version: 2, token: TOKEN, secretsBackend: 'file' });
+			expect(readAuthFile()).toMatchObject({ version: 2, secretsBackend: 'file' });
+			expect(readAuthFile().token).toBeUndefined();
 			expect(readActiveProfile()).toEqual({
 				id: 'uid',
 				username: 'me',
@@ -53,6 +57,8 @@ describe('auth commands', () => {
 				expiresAt: null,
 				hasRefreshToken: false,
 				loggedInAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+				token: TOKEN,
+				proxy: { password: 'pw' },
 			});
 			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
 		});
@@ -75,7 +81,7 @@ describe('auth commands', () => {
 			await testRunCommand(AuthLogoutCommand, {});
 
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
-			expect(await getToken()).toBeUndefined();
+			expect(await getSecret('uid', 'token')).toBeUndefined();
 		});
 
 		it('logging in as another account replaces the stored profile', async () => {
@@ -86,10 +92,10 @@ describe('auth commands', () => {
 			await login('apify_api_other_token');
 
 			const authFile = readAuthFile();
-			expect(authFile).toMatchObject({ activeProfile: 'uid2', token: 'apify_api_other_token' });
+			expect(authFile).toMatchObject({ activeProfile: 'uid2' });
 			// Additive login is a later stage; until then the old profile must not linger.
 			expect(Object.keys(authFile.profiles!)).toEqual(['uid2']);
-			expect(readActiveProfile()).toMatchObject({ username: 'other' });
+			expect(readActiveProfile()).toMatchObject({ username: 'other', token: 'apify_api_other_token' });
 		});
 
 		it('login with an invalid token stores nothing and fails the command', async () => {
@@ -119,7 +125,7 @@ describe('auth commands', () => {
 
 			await login();
 
-			expect(await getToken()).toBe(TOKEN);
+			expect(await getSecret('uid', 'token')).toBe(TOKEN);
 			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
 		});
 
@@ -128,7 +134,7 @@ describe('auth commands', () => {
 
 			await login();
 
-			expect(await getToken()).toBe(TOKEN);
+			expect(await getSecret('uid', 'token')).toBe(TOKEN);
 			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
 		});
 
@@ -174,7 +180,7 @@ describe('auth commands', () => {
 			await testRunCommand(AuthTokenCommand, {});
 
 			expect(lastLogMessage()).toBe('apify_api_env_token');
-			expect(await getToken()).toBe(TOKEN);
+			expect(await getSecret('uid', 'token')).toBe(TOKEN);
 			expect(readActiveProfile()).toMatchObject({ username: 'me' });
 		});
 	});
@@ -185,8 +191,8 @@ describe('auth commands', () => {
 		it('login stores the secrets in the keyring and keeps them out of auth.json', async () => {
 			await login();
 
-			expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBe(TOKEN);
-			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
+			expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
 
 			const authFile = readAuthFile();
 			expect(authFile).toMatchObject({ version: 2, secretsBackend: 'keyring' });
@@ -198,21 +204,43 @@ describe('auth commands', () => {
 
 		it('logging in as an account with no proxy password forgets the previous one', async () => {
 			await login();
-			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
 
 			clientState.user = { id: 'uid2', username: 'other' };
 			await login('apify_api_other_token');
 
 			// The keyring outlives the auth.json rewrite, so without an explicit delete the child
 			// Actor would run with the previous account's proxy credential.
-			expect(keyringStore.has(KEYRING_PROXY_PASSWORD_KEY)).toBe(false);
+			expect(keyringStore.has(PROXY_PASSWORD_KEY)).toBe(false);
+			expect(keyringStore.has(keyringProxyPasswordKey('uid2'))).toBe(false);
+		});
+
+		it('switching accounts clears the outgoing account entries', async () => {
+			await login();
+			expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+
+			clientState.user = { id: 'uid2', username: 'other', proxy: { password: 'pw2' } };
+			await login('apify_api_other_token');
+
+			// auth.json no longer names uid, and the keyring has no listing API, so anything left
+			// under its key would be unreachable for good.
+			expect(keyringStore.get(TOKEN_KEY)).toBeUndefined();
+			expect(keyringStore.get(keyringTokenKey('uid2'))).toBe('apify_api_other_token');
+		});
+
+		it('logging in again as the same account keeps its entries', async () => {
+			await login();
+			await login();
+
+			expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
 		});
 
 		it('logging in twice with the same token writes the keyring once', async () => {
 			await login();
 			await login();
 
-			expect(keyringSetKeys.filter((key) => key === KEYRING_TOKEN_KEY)).toHaveLength(1);
+			expect(keyringSetKeys.filter((key) => key === TOKEN_KEY)).toHaveLength(1);
 		});
 
 		it('auth token prints the token from the keyring', async () => {

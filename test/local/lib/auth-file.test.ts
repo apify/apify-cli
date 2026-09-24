@@ -13,14 +13,14 @@ import {
 } from '../../../src/lib/auth-file.js';
 import { resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
-import { ensureMigrated, getProxyPassword, getToken } from '../../../src/lib/credentials.js';
+import { ensureMigrated, ensureSecretsKeyed, getSecret } from '../../../src/lib/credentials.js';
 import { getLocalUserInfo } from '../../../src/lib/utils.js';
 import { readActiveProfile, readAuthFile, v1AuthFile } from '../../__setup__/auth-file.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
-	KEYRING_PROXY_PASSWORD_KEY,
-	KEYRING_TOKEN_KEY,
+	LEGACY_KEYRING_PROXY_PASSWORD_KEY,
+	LEGACY_KEYRING_TOKEN_KEY,
 	keyringStore,
 	resetKeyringMock,
 } from '../../__setup__/keyring-mock.js';
@@ -77,9 +77,12 @@ describe('auth.json v2', () => {
 
 			await ensureAuthFileCurrent();
 
-			expect(readAuthFile()).toMatchObject({ version: 2, secretsBackend: 'file', token: 'apify_api_v1_token' });
-			expect(await getToken()).toBe('apify_api_v1_token');
-			expect(await getProxyPassword()).toBe('pw');
+			await ensureSecretsKeyed();
+
+			expect(readAuthFile()).toMatchObject({ version: 2, secretsBackend: 'file' });
+			expect(readActiveProfile()).toMatchObject({ token: 'apify_api_v1_token', proxy: { password: 'pw' } });
+			expect(await getSecret('uid', 'token')).toBe('apify_api_v1_token');
+			expect(await getSecret('uid', 'proxy-password')).toBe('pw');
 		});
 
 		it('drops the fields nothing in the CLI reads', async () => {
@@ -208,20 +211,16 @@ describe('auth.json v2', () => {
 			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
 		});
 
-		it('keeps the secrets of a v1 file that has no user ID, so the next command asks for a re-login', async () => {
+		it('drops the secrets of a v1 file that has no user ID, so the next command asks for a re-login', async () => {
 			write({ token: 'apify_api_v1_token', secretsBackend: 'file' });
 
 			await ensureAuthFileCurrent();
+			await ensureSecretsKeyed();
 
-			expect(readAuthFile()).toEqual({
-				version: 2,
-				profiles: {},
-				secretsBackend: 'file',
-				token: 'apify_api_v1_token',
-			});
-			// The token stays in auth.json, where the re-login prompt can see it, not in the backup.
+			// That state already needed a re-login: there is no account to attach the token to.
+			expect(readAuthFile()).toEqual({ version: 2, profiles: {}, secretsBackend: 'file' });
 			expect(readBackup()).toEqual({ secretsBackend: 'file' });
-			await expect(getLocalUserInfo()).rejects.toThrow('Stale credentials found without user metadata');
+			await expect(getLocalUserInfo()).resolves.toEqual({});
 		});
 	});
 
@@ -250,10 +249,10 @@ describe('auth.json v2', () => {
 			await expect(getLocalUserInfo()).rejects.toThrow('Your active profile "gone" is missing');
 		});
 
-		it('is logged out when the missing profile leaves no token behind either', async () => {
+		it('names the missing profile even when no secret is left behind', async () => {
 			write({ version: 2, activeProfile: 'gone', profiles: {}, secretsBackend: 'file' });
 
-			await expect(getLocalUserInfo()).resolves.toEqual({});
+			await expect(getLocalUserInfo()).rejects.toThrow('Your active profile "gone" is missing');
 		});
 	});
 
@@ -321,7 +320,7 @@ describe('auth.json v2', () => {
 			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' }, 'file');
 
 			// Logged out, rather than logged in as the account that just went away.
-			await expect(getToken()).resolves.toBeUndefined();
+			await expect(getSecret('new', 'token')).resolves.toBeUndefined();
 		});
 	});
 
@@ -376,8 +375,8 @@ describe('auth.json v2', () => {
 
 		// State B in the wild: secrets already in the keyring, auth.json holding only metadata.
 		it('migrates state B without touching the keyring', async () => {
-			keyringStore.set(KEYRING_TOKEN_KEY, 'tok_kr');
-			keyringStore.set(KEYRING_PROXY_PASSWORD_KEY, 'pw_kr');
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_kr');
+			keyringStore.set(LEGACY_KEYRING_PROXY_PASSWORD_KEY, 'pw_kr');
 			write({ id: 'uid', username: 'me', email: 'me@example.com', secretsBackend: 'keyring' });
 
 			await ensureMigrated();
@@ -404,7 +403,7 @@ describe('auth.json v2', () => {
 			await ensureMigrated();
 			await ensureAuthFileCurrent();
 
-			expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBe('apify_api_v1_token');
+			expect(keyringStore.get(LEGACY_KEYRING_TOKEN_KEY)).toBe('apify_api_v1_token');
 			expect(readAuthFile()).toEqual({
 				version: 2,
 				activeProfile: 'uid',
