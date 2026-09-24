@@ -4,7 +4,7 @@ import { ApifyApiError } from 'apify-client';
 
 import { loginWithToken, resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
-import { getProxyPassword, getToken, setToken } from '../../../src/lib/credentials.js';
+import { getSecret } from '../../../src/lib/credentials.js';
 import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../../src/lib/utils.js';
 import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { readActiveProfile } from '../../__setup__/auth-file.js';
@@ -132,8 +132,8 @@ describe('auth', () => {
 		it('saves the token, the proxy password and the account metadata', async () => {
 			await loginWithToken(STORED);
 
-			expect(await getToken()).toBe(STORED);
-			expect(await getProxyPassword()).toBe('pw');
+			expect(await getSecret('uid', 'token')).toBe(STORED);
+			expect(await getSecret('uid', 'proxy-password')).toBe('pw');
 			expect(readActiveProfile()).toMatchObject({ id: 'uid', username: 'me' });
 		});
 
@@ -149,7 +149,7 @@ describe('auth', () => {
 
 			await loginWithToken(STORED);
 
-			expect(await getToken()).toBe(STORED);
+			expect(await getSecret('uid', 'token')).toBe(STORED);
 		});
 	});
 
@@ -237,7 +237,7 @@ describe('auth', () => {
 
 			await resolveAuth();
 
-			expect(await getToken()).toBe(STORED);
+			expect(await getSecret('uid', 'token')).toBe(STORED);
 			expect(readActiveProfile()).toMatchObject({ username: 'me' });
 		});
 	});

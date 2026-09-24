@@ -3,7 +3,11 @@
 import { readFileSync } from 'node:fs';
 
 import type { AuthFile, AuthProfile } from '../../src/lib/auth-file.js';
+import { AUTH_FILE_VERSION } from '../../src/lib/auth-file.js';
 import { AUTH_FILE_PATH } from '../../src/lib/consts.js';
+
+/** The user ID the fixtures below key their single profile by. */
+export const TEST_USER_ID = 'uid';
 
 /** The raw file, for assertions about the version, the backend marker, or where secrets landed. */
 export function readAuthFile(): AuthFile {
@@ -17,6 +21,26 @@ export function readActiveProfile(): (AuthProfile & { id: string }) | undefined 
 
 	const profile = profiles?.[activeProfile];
 	return profile ? { id: activeProfile, ...profile } : undefined;
+}
+
+/** A v2 `auth.json` holding one profile, the shape a login writes. */
+export function v2AuthFile(profile: Partial<AuthProfile> = {}, rest: Partial<AuthFile> = {}): AuthFile {
+	return {
+		version: AUTH_FILE_VERSION,
+		activeProfile: TEST_USER_ID,
+		profiles: {
+			[TEST_USER_ID]: {
+				username: 'me',
+				name: null,
+				authMethod: 'token',
+				expiresAt: null,
+				hasRefreshToken: false,
+				loggedInAt: null,
+				...profile,
+			},
+		},
+		...rest,
+	};
 }
 
 /** A v1 `auth.json`, the shape every CLI before the profile migration wrote. */

@@ -3,8 +3,16 @@
  * `vi.mock('@napi-rs/keyring', () => import('<path>/keyring-mock.js'))`.
  */
 
-export const KEYRING_TOKEN_KEY = 'com.apify.cli:token';
-export const KEYRING_PROXY_PASSWORD_KEY = 'com.apify.cli:proxy-password';
+/** The fixed names secrets shared before they were keyed by user. */
+export const LEGACY_KEYRING_TOKEN_KEY = 'com.apify.cli:token';
+export const LEGACY_KEYRING_PROXY_PASSWORD_KEY = 'com.apify.cli:proxy-password';
+
+/**
+ * One service per kind, the user ID as the account. Spelled out here rather than imported so the
+ * test fails when the production key scheme changes without anyone meaning to change it.
+ */
+export const keyringTokenKey = (userId: string) => `com.apify.cli.token:${userId}`;
+export const keyringProxyPasswordKey = (userId: string) => `com.apify.cli.proxy-password:${userId}`;
 
 export const keyringStore = new Map<string, string>();
 

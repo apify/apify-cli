@@ -6,15 +6,16 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { ensureAuthFileCurrent, replaceStoredAccount } from './auth-file.js';
+import { ensureAuthFileCurrent, getActiveProfileId, replaceStoredAccount } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
-	deleteProxyPassword,
+	clearKeyringSecrets,
+	deleteSecret,
 	ensureMigrated,
+	ensureSecretsKeyed,
 	getBackend,
-	getToken,
-	setProxyPassword,
-	setToken,
+	getSecret,
+	setSecret,
 } from './credentials.js';
 import { warning } from './outputs.js';
 import type { AuthJSON } from './types.js';
@@ -98,8 +99,10 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 		// Only now, because the stored file is not this command's credential when APIFY_TOKEN is
 		// set. A file a newer CLI wrote would otherwise stop a platform run that never reads it.
 		await ensureAuthFileCurrent();
+		await ensureSecretsKeyed();
 
-		const storedToken = await getToken();
+		const userId = getActiveProfileId();
+		const storedToken = userId ? await getSecret(userId, 'token') : undefined;
 		return storedToken ? ({ token: storedToken, source: 'stored' } as const) : undefined;
 	})();
 
@@ -177,6 +180,8 @@ export async function loginWithToken(
 
 	const proxyPassword = userInfo.proxy?.password;
 
+	const previousUserId = getActiveProfileId();
+
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
 	replaceStoredAccount(
 		userInfo.id,
@@ -192,13 +197,18 @@ export async function loginWithToken(
 		await getBackend(),
 	);
 
+	// Only once the switch is on disk: a failed write leaves auth.json naming the previous account, whose entries nothing else can find.
+	if (previousUserId && previousUserId !== userInfo.id) {
+		await clearKeyringSecrets(previousUserId);
+	}
+
 	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
-	await setToken(token, { skipIfUnchanged: true });
+	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
 
 	if (proxyPassword) {
-		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
+		await setSecret(userInfo.id, 'proxy-password', proxyPassword, { skipIfUnchanged: true });
 	} else {
-		await deleteProxyPassword();
+		await deleteSecret(userInfo.id, 'proxy-password');
 	}
 
 	return { client: apifyClient, userInfo };
