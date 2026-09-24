@@ -185,9 +185,7 @@ export async function loginWithToken(
 	await ensureAuthFileCurrent();
 	await ensureSecretsKeyed();
 
-	// Leftover unkeyed entries are the outgoing account's; the next keying pass would file them under this one.
 	const previousUserId = getActiveProfileId();
-	if (previousUserId && previousUserId !== userInfo.id) await clearKeyringSecrets();
 
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
 	upsertProfile(
@@ -203,6 +201,10 @@ export async function loginWithToken(
 		},
 		await getBackend(),
 	);
+
+	// Leftover unkeyed entries are the outgoing account's; the next keying pass would file them under this one.
+	// Only once the switch is on disk: a failed write leaves the previous account active, and it may still read them.
+	if (previousUserId && previousUserId !== userInfo.id) await clearKeyringSecrets();
 
 	// After the profile, which says where its secrets go. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });

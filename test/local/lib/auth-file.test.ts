@@ -181,19 +181,26 @@ describe('auth.json v2', () => {
 		});
 
 		// The failure path had no cover: the whole migration sits in one try/catch.
-		it.skipIf(process.platform === 'win32')('says so when it cannot write, and still logs you in', async () => {
-			write(v1AuthFile({ secretsBackend: 'file' }));
-			chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o500);
+		it.skipIf(process.platform === 'win32')(
+			'says the stored login cannot be read when it cannot write, and hands back no token',
+			async () => {
+				write(v1AuthFile({ secretsBackend: 'file' }));
+				chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o500);
 
-			try {
-				// The old shape still reads, so the command that triggered this keeps working.
-				await expect(getLocalUserInfo()).resolves.toMatchObject({ id: 'uid', username: 'me' });
-				expect(lastErrorMessage()).toContain('Your login still works');
-				expect(readAuthFile().version).toBeUndefined();
-			} finally {
-				chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);
-			}
-		});
+				try {
+					const info = await getLocalUserInfo();
+
+					expect(info).toMatchObject({ id: 'uid', username: 'me' });
+					expect(info).not.toHaveProperty('token');
+					expect(lastErrorMessage()).toContain('Your stored login cannot be read');
+					// The write goes through a temp file and a rename, so the directory is what must be writable.
+					expect(lastErrorMessage()).toContain('Make the directory it is in writable');
+					expect(readAuthFile().version).toBeUndefined();
+				} finally {
+					chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);
+				}
+			},
+		);
 
 		it('does nothing when there is no file', async () => {
 			await ensureAuthFileCurrent();

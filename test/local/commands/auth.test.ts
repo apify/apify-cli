@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
 import { AUTH_BACKUP_FILE_PATH, type AuthProfile } from '../../../src/lib/auth-file.js';
@@ -402,6 +402,51 @@ describe('auth commands', () => {
 
 			expect(keyringStore.size).toBe(0);
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+		});
+
+		// Clearing the keyring before the switch is written left both accounts unreachable: the
+		// keyring has no listing API, so auth.json is the only index of what it holds.
+		it.skipIf(process.platform === 'win32')(
+			'a switch that cannot be written keeps the outgoing account entries',
+			async () => {
+				await login();
+				expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+
+				clientState.user = { id: 'uid2', username: 'other' };
+				chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o500);
+
+				try {
+					await login('apify_api_other_token');
+
+					expect(readActiveProfile()).toMatchObject({ id: 'uid' });
+					expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+					expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
+				} finally {
+					chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);
+					process.exitCode = 0;
+				}
+			},
+		);
+
+		// Exiting 0 with a success line told the user they were logged out while auth.json still
+		// held the account the keyring entries were just deleted for.
+		it.skipIf(process.platform === 'win32')('logout says so when the profile cannot be removed', async () => {
+			await login();
+			chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o500);
+
+			try {
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect(keyringStore.size).toBe(0);
+				expect(existsSync(AUTH_FILE_PATH())).toBe(true);
+				expect(lastErrorMessage()).toContain('Logout did not finish');
+				expect(lastErrorMessage()).toContain('Your secrets were removed from the OS keyring.');
+				expect(lastErrorMessage()).toContain(`Your account is still in ${AUTH_FILE_PATH()}`);
+				expect(process.exitCode).toBe(CommandExitCodes.RunFailed);
+			} finally {
+				chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);
+				process.exitCode = 0;
+			}
 		});
 	});
 });
