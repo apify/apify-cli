@@ -2,7 +2,7 @@ import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { getActiveProfileId, removeActiveProfile } from '../../lib/auth-file.js';
+import { getActiveProfileId, profileLabel, removeActiveProfile } from '../../lib/auth-file.js';
 import { invalidEnvTokenMessage, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../lib/consts.js';
@@ -15,7 +15,8 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	static override name = 'logout' as const;
 
 	static override description =
-		`Removes authentication by deleting your API token and account information from '${tildify(AUTH_FILE_PATH())}'.\n` +
+		`Logs out of the active account by deleting its API token and account information from '${tildify(AUTH_FILE_PATH())}'.\n` +
+		`If other accounts are stored, the most recently logged-in one becomes active.\n` +
 		`Run 'apify login' to authenticate again.`;
 
 	static override group = 'Authentication';
@@ -41,8 +42,9 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 		);
 
 		let profileError: unknown = null;
+		let result: ReturnType<typeof removeActiveProfile> = {};
 		try {
-			removeActiveProfile();
+			result = removeActiveProfile();
 		} catch (err) {
 			profileError = err;
 		}
@@ -53,9 +55,17 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 			return;
 		}
 
-		await updateUserId(null);
+		const { removed, active } = result;
 
-		success({ message: 'You are logged out from your Apify account.' });
+		await updateUserId(active?.id ?? null);
+
+		if (active) {
+			success({
+				message: `You are logged out${removed ? ` of ${profileLabel(removed)}` : ''}. ${profileLabel(active)} is now the active account.`,
+			});
+		} else {
+			success({ message: 'You are logged out from your Apify account.' });
+		}
 
 		const envToken = readEnvToken();
 		if (envToken.kind === 'token') {

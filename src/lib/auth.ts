@@ -6,7 +6,7 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { ensureAuthFileCurrent, getActiveProfileId, replaceStoredAccount } from './auth-file.js';
+import { ensureAuthFileCurrent, getActiveProfileId, upsertProfile } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
 	clearKeyringSecrets,
@@ -180,14 +180,19 @@ export async function loginWithToken(
 
 	const proxyPassword = userInfo.proxy?.password;
 
+	// Brings a stored account to the current shape first, or the upsert below would find nothing to keep.
+	await ensureMigrated();
+	await ensureAuthFileCurrent();
+	await ensureSecretsKeyed();
+
 	const previousUserId = getActiveProfileId();
 
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
-	replaceStoredAccount(
+	upsertProfile(
 		userInfo.id,
 		{
 			username: userInfo.username,
-			name: null,
+			name: userInfo.username || userInfo.id,
 			...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
 			authMethod: 'token',
 			expiresAt: null,
@@ -197,12 +202,11 @@ export async function loginWithToken(
 		await getBackend(),
 	);
 
-	// Only once the switch is on disk: a failed write leaves auth.json naming the previous account, whose entries nothing else can find.
-	if (previousUserId && previousUserId !== userInfo.id) {
-		await clearKeyringSecrets(previousUserId);
-	}
+	// Leftover unkeyed entries are the outgoing account's; the next keying pass would file them under this one.
+	// Only once the switch is on disk: a failed write leaves the previous account active, and it may still read them.
+	if (previousUserId && previousUserId !== userInfo.id) await clearKeyringSecrets();
 
-	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
+	// After the profile, which says where its secrets go. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
 
 	if (proxyPassword) {
