@@ -22,6 +22,8 @@ const tableFactory = () =>
 export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 	static override name = 'ls' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Lists all builds of the Actor.';
 
 	static override examples = [

@@ -247,10 +247,11 @@ export async function deleteSecret(userId: string, kind: SecretKind): Promise<vo
  * before the profile leaves the file, or its entries become unreachable. Secrets stored in
  * `auth.json` itself go with the profile that holds them.
  */
-export async function clearKeyringSecrets(userId?: string): Promise<void> {
+export async function clearKeyringSecrets(userId?: string, { keepLegacy = false } = {}): Promise<void> {
 	for (const kind of SECRET_KINDS) {
 		if (userId) await deleteKeyring(keyringKey(userId, kind));
-		await deleteKeyring(legacyKeyringKey(kind));
+		// The fixed-name entries belong to the active account, so a non-active profile leaves them.
+		if (!keepLegacy) await deleteKeyring(legacyKeyringKey(kind));
 	}
 }
 

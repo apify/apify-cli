@@ -11,6 +11,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDataCommand> {
 	static override name = 'push-items' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Adds data items to specified dataset. Accepts single object or array of objects.';
 
 	static override examples = [

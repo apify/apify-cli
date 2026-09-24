@@ -10,6 +10,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagCommand> {
 	static override name = 'remove-tag' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Removes a tag from a specific Actor build.';
 
 	static override examples = [
