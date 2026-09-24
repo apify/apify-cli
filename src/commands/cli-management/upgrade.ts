@@ -187,9 +187,9 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 				return this.startUpgradeProcess(bundleDirectory, versionWithoutV, assets);
 			}
 
-			await this.handleUnixUpgrade(bundleDirectory, versionWithoutV, assets);
-
-			this.successMessage(versionWithoutV);
+			if (await this.handleUnixUpgrade(bundleDirectory, versionWithoutV, assets)) {
+				this.successMessage(versionWithoutV);
+			}
 
 			return;
 		}
@@ -294,7 +294,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		cliDebugPrint('[upgrade] downloaded upgrade script to', filePath);
 	}
 
-	private async handleUnixUpgrade(bundleDirectory: string, version: string, assets: Asset[]) {
+	private async handleUnixUpgrade(bundleDirectory: string, version: string, assets: Asset[]): Promise<boolean> {
 		const metadata = useCLIMetadata();
 
 		for (const asset of assets) {
@@ -322,7 +322,8 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 					].join('\n'),
 				});
 
-				return;
+				process.exitCode = 1;
+				return false;
 			}
 
 			if (process.env.APIFY_CLI_DEBUG && !process.env.APIFY_CLI_FORCE) {
@@ -363,7 +364,12 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 						`- The error: ${err.message}`,
 					].join('\n'),
 				});
+
+				process.exitCode = 1;
+				return false;
 			}
 		}
+
+		return true;
 	}
 }
