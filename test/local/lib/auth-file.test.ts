@@ -43,6 +43,7 @@ const V2_PROFILE: AuthProfile = {
 	authMethod: 'token',
 	expiresAt: null,
 	hasRefreshToken: false,
+	loggedInAt: null,
 };
 
 const V1_PROFILE = { id: 'uid', ...V2_PROFILE };
@@ -321,6 +322,19 @@ describe('auth.json v2', () => {
 
 			// Logged out, rather than logged in as the account that just went away.
 			await expect(getToken()).resolves.toBeUndefined();
+		});
+	});
+
+	describe('replacing the stored account', () => {
+		it('removes the snapshot of the account it replaced', async () => {
+			write(v1AuthFile({ secretsBackend: 'file' }));
+			await ensureAuthFileCurrent();
+			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(true);
+
+			replaceStoredAccount('other', { ...V2_PROFILE, username: 'other' }, 'file');
+
+			// It described the previous account and is never refreshed, so it must not survive.
+			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
 		});
 	});
 

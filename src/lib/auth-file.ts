@@ -28,6 +28,12 @@ export interface AuthProfile {
 	hasRefreshToken: boolean;
 	/** Reserved: a keyring failure on one profile must not redirect another profile's reads. */
 	secretsBackend?: CredentialsBackend;
+	/**
+	 * When this account last logged in, or `null` for one migrated from the pre-profile file.
+	 * Written but unread: `auth list` orders by it, and a logout falls back to the most recent
+	 * profile left. Neither exists yet, and neither can backfill a time nobody recorded.
+	 */
+	loggedInAt: string | null;
 }
 
 /**
@@ -114,6 +120,7 @@ function v1Profile(file: LegacyAuthFile): AuthProfile {
 		authMethod: 'token',
 		expiresAt: null,
 		hasRefreshToken: false,
+		loggedInAt: null,
 	};
 }
 
@@ -259,6 +266,10 @@ export function getActiveProfile(): (AuthProfile & { id: string }) | undefined {
  */
 export function replaceStoredAccount(userId: string, profile: AuthProfile, secretsBackend: CredentialsBackend) {
 	assertSupportedAuthFileVersion();
+
+	// The snapshot described the account being replaced, and is never refreshed, so keeping it
+	// would leave one user's details on disk under another user's login.
+	rmSync(AUTH_BACKUP_FILE_PATH(), { force: true, maxRetries: 10, retryDelay: 100 });
 
 	writeAuthFile({
 		version: AUTH_FILE_VERSION,

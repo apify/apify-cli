@@ -33,7 +33,14 @@ async function writeAuthFile(username: string | undefined) {
 			version: 2,
 			activeProfile: 'user-id',
 			profiles: {
-				'user-id': { username, name: null, authMethod: 'token', expiresAt: null, hasRefreshToken: false },
+				'user-id': {
+					username,
+					name: null,
+					authMethod: 'token',
+					expiresAt: null,
+					hasRefreshToken: false,
+					loggedInAt: null,
+				},
 			},
 			token: 'apify_api_token',
 		}),

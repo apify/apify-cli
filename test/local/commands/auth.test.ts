@@ -52,6 +52,7 @@ describe('auth commands', () => {
 				authMethod: 'token',
 				expiresAt: null,
 				hasRefreshToken: false,
+				loggedInAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
 			});
 			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
 		});

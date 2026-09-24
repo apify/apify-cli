@@ -187,6 +187,7 @@ export async function loginWithToken(
 			authMethod: 'token',
 			expiresAt: null,
 			hasRefreshToken: false,
+			loggedInAt: new Date().toISOString(),
 		},
 		await getBackend(),
 	);
