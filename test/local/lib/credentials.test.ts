@@ -103,7 +103,7 @@ describe('credentials', () => {
 	describe('file backend', () => {
 		beforeEach(() => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeV2AuthFile();
+			writeV2AuthFile({}, { secretsBackend: 'file' });
 			writeFileSyncSpy.mockClear();
 		});
 
@@ -112,7 +112,8 @@ describe('credentials', () => {
 			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_123');
 			expect(readProfile().token).toBe('tok_123');
 			expect(readAuthFile().token).toBeUndefined();
-			expect(readAuthFile().secretsBackend).toBe('file');
+			// The profile follows the file-level choice, so it records no backend of its own.
+			expect(readProfile().secretsBackend).toBeUndefined();
 		});
 
 		it('round-trips the proxy password through the profile', async () => {
@@ -233,19 +234,22 @@ describe('credentials', () => {
 		});
 
 		it('falls back to the profile when the keyring token write fails', async () => {
-			writeV2AuthFile();
+			writeV2AuthFile({}, { secretsBackend: 'keyring' });
 			keyringFailures.add(TOKEN_KEY);
 			await setSecret(TEST_USER_ID, 'token', 'tok_123');
 
 			expect(keyringStore.get(TOKEN_KEY)).toBeUndefined();
 			expect(readProfile().token).toBe('tok_123');
-			expect(readAuthFile().secretsBackend).toBe('file');
-			expect(await getBackend()).toBe('file');
+			// Recorded on the profile. The file-level choice is left alone, so it still describes
+			// every account whose secrets did reach the keyring.
+			expect(readProfile().secretsBackend).toBe('file');
+			expect(readAuthFile().secretsBackend).toBe('keyring');
+			expect(await getBackend()).toBe('keyring');
 			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_123');
 		});
 
 		it('keeps using auth.json for later writes after a keyring failure', async () => {
-			writeV2AuthFile();
+			writeV2AuthFile({}, { secretsBackend: 'keyring' });
 			keyringFailures.add(TOKEN_KEY);
 			await setSecret(TEST_USER_ID, 'token', 'tok_123');
 
@@ -254,13 +258,29 @@ describe('credentials', () => {
 			expect(readProfile().proxy).toEqual({ password: 'pw_abc' });
 		});
 
+		it('leaves another profile on the keyring after one profile falls back', async () => {
+			const file = v2AuthFile({}, { secretsBackend: 'keyring' });
+			file.profiles!.other = { ...file.profiles![TEST_USER_ID] };
+			writeAuthFile(file as Record<string, unknown>);
+			keyringFailures.add(TOKEN_KEY);
+
+			await setSecret(TEST_USER_ID, 'token', 'tok_123');
+			await setSecret('other', 'token', 'tok_other');
+
+			expect(readAuthFile().profiles.other.secretsBackend).toBeUndefined();
+			expect(keyringStore.get(keyringTokenKey('other'))).toBe('tok_other');
+			expect(await getSecret('other', 'token')).toBe('tok_other');
+			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_123');
+		});
+
 		it('falls back to the profile when the keyring proxy password write fails', async () => {
-			writeV2AuthFile();
+			writeV2AuthFile({}, { secretsBackend: 'keyring' });
 			keyringFailures.add(PROXY_PASSWORD_KEY);
 			await setSecret(TEST_USER_ID, 'proxy-password', 'pw_abc');
 
 			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBeUndefined();
 			expect(readProfile().proxy).toEqual({ password: 'pw_abc' });
+			expect(readProfile().secretsBackend).toBe('file');
 			expect(await getSecret(TEST_USER_ID, 'proxy-password')).toBe('pw_abc');
 		});
 	});
@@ -483,7 +503,7 @@ describe('credentials', () => {
 			expect(readAuthFile().token).toBe('tok');
 		});
 
-		it('downgrades to the file backend when the keyring write fails mid-migration', async () => {
+		it('moves the profile to the file when the keyring write fails mid-migration', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			writeV2AuthFile({}, { secretsBackend: 'keyring' });
 			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok');
@@ -492,10 +512,9 @@ describe('credentials', () => {
 
 			await ensureSecretsKeyed();
 
-			// Both secrets land in the file: the downgrade holds for the rest of the loop.
-			expect(readProfile()).toMatchObject({ token: 'tok', proxy: { password: 'pw' } });
-			expect(readAuthFile().secretsBackend).toBe('file');
-			expect(await getBackend()).toBe('file');
+			// Both secrets land in the file: the fallback holds for the rest of the loop.
+			expect(readProfile()).toMatchObject({ token: 'tok', proxy: { password: 'pw' }, secretsBackend: 'file' });
+			expect(readAuthFile().secretsBackend).toBe('keyring');
 			expect(keyringStore.size).toBe(0);
 		});
 

@@ -27,9 +27,9 @@ export interface AuthProfile {
 	expiresAt: string | null;
 	hasRefreshToken: boolean;
 	/**
-	 * Where this profile's secrets live. Unused while the file holds one account, so the file-level
-	 * `secretsBackend` is still the answer for every profile. Reserved for Stage-2, where a keyring
-	 * failure on one profile must not silently redirect another profile's reads.
+	 * Where this profile's secrets live, when that differs from the file-level `secretsBackend`.
+	 * Written only when a keyring write for this profile fails, so one profile falling back to the
+	 * file cannot silently redirect another profile's reads to a place its secrets are not.
 	 */
 	secretsBackend?: CredentialsBackend;
 	loggedInAt: string | null;
@@ -284,18 +284,37 @@ export function readProfileSecret(userId: string, kind: SecretKind): string | un
 	return kind === 'token' ? profile.token : profile.proxy?.password;
 }
 
+/** Where this profile's secrets live, or `undefined` when it follows the file-level default. */
+export function readProfileBackend(userId: string): CredentialsBackend | undefined {
+	return readAuthFile().profiles?.[userId]?.secretsBackend;
+}
+
 /**
  * Stores a file-backend secret on the profile. A missing profile is left alone: inventing one
  * would fabricate the account metadata the CLI reads.
  */
 export function writeProfileSecret(userId: string, kind: SecretKind, value: string) {
+	updateProfile(userId, (profile) => setProfileSecret(profile, kind, value));
+}
+
+/**
+ * Stores the secret and records that this profile reads from the file from now on, in one write.
+ * Called when a keyring write for this profile failed: splitting the two would leave a window
+ * where the profile looks logged out, or where it still points at a keyring entry that is not there.
+ */
+export function moveProfileSecretToFile(userId: string, kind: SecretKind, value: string) {
 	updateProfile(userId, (profile) => {
-		if (kind === 'token') {
-			profile.token = value;
-		} else {
-			profile.proxy = { ...profile.proxy, password: value };
-		}
+		setProfileSecret(profile, kind, value);
+		profile.secretsBackend = 'file';
 	});
+}
+
+function setProfileSecret(profile: AuthProfile, kind: SecretKind, value: string) {
+	if (kind === 'token') {
+		profile.token = value;
+	} else {
+		profile.proxy = { ...profile.proxy, password: value };
+	}
 }
 
 /** Forgets one of a profile's file-backend secrets. */
@@ -318,7 +337,6 @@ function updateProfile(userId: string, edit: (profile: AuthProfile) => void) {
 	if (!profile) return;
 
 	edit(profile);
-	file.secretsBackend = 'file';
 	writeAuthFile(file);
 }
 

@@ -4,7 +4,9 @@ import type { AuthFile } from './auth-file.js';
 import {
 	AUTH_FILE_VERSION,
 	deleteProfileSecret,
+	moveProfileSecretToFile,
 	readAuthFile,
+	readProfileBackend,
 	readProfileSecret,
 	writeAuthFile,
 	writeProfileSecret,
@@ -105,9 +107,11 @@ async function importKeyringModule(): Promise<KeyringModule | null> {
  * Single-flight via a promise so concurrent callers share the same lookup.
  * Order: APIFY_DISABLE_KEYRING env override -> persisted marker in auth.json -> module load.
  *
+ * This is the default every profile follows; a profile whose keyring write failed records its own
+ * `secretsBackend` and reads through {@link backendFor} instead.
+ *
  * No write-probe runs here: on macOS that would pop a keychain prompt before the user has
- * authorized one. The first real write is the probe — failure is caught and downgraded
- * via `downgradeBackendToFile()`, persisting the file marker so future runs skip the keyring.
+ * authorized one. The first real write is the probe, and a failure falls back to the file.
  */
 export async function getBackend(): Promise<CredentialsBackend> {
 	if (backendPromise) return backendPromise;
@@ -123,8 +127,9 @@ export async function getBackend(): Promise<CredentialsBackend> {
 }
 
 /**
- * Called when a keyring write fails at runtime. Flips the cached backend so subsequent
- * reads/writes use the file path immediately, without waiting for the marker on disk.
+ * Called when a keyring write fails before any profile exists, so there is nothing to record the
+ * fallback on but the file itself. Flips the cached backend so subsequent reads and writes use the
+ * file path immediately, without waiting for the marker on disk.
  */
 function downgradeBackendToFile() {
 	backendPromise = Promise.resolve('file');
@@ -176,10 +181,17 @@ async function deleteKeyring(key: KeyringKey): Promise<void> {
 	}
 }
 
+/**
+ * Where one account's secrets live. A profile that fell back to the file after a keyring failure
+ * says so itself; every other profile follows the file-level choice.
+ */
+async function backendFor(userId: string): Promise<CredentialsBackend> {
+	return readProfileBackend(userId) ?? (await getBackend());
+}
+
 /** One account's secret of the given kind, from whichever backend holds it. */
 export async function getSecret(userId: string, kind: SecretKind): Promise<string | undefined> {
-	const backend = await getBackend();
-	if (backend === 'keyring') return readKeyring(keyringKey(userId, kind));
+	if ((await backendFor(userId)) === 'keyring') return readKeyring(keyringKey(userId, kind));
 	return readProfileSecret(userId, kind);
 }
 
@@ -193,7 +205,7 @@ export async function setSecret(
 	value: string,
 	opts: { skipIfUnchanged?: boolean } = {},
 ): Promise<void> {
-	const backend = await getBackend();
+	const backend = await backendFor(userId);
 	if (opts.skipIfUnchanged && (await getSecret(userId, kind)) === value) return;
 
 	if (backend === 'keyring') {
@@ -201,8 +213,11 @@ export async function setSecret(
 			await writeKeyring(keyringKey(userId, kind), value);
 			return;
 		} catch (err) {
+			// Recorded on the profile rather than on the file, so an account whose secrets are in
+			// the keyring is not redirected to a file that does not hold them.
 			cliDebugPrint('credentials', 'keyring write failed; falling back to file', err);
-			downgradeBackendToFile();
+			moveProfileSecretToFile(userId, kind, value);
+			return;
 		}
 	}
 
@@ -215,7 +230,7 @@ export async function setSecret(
  * that replaces everything else.
  */
 export async function deleteSecret(userId: string, kind: SecretKind): Promise<void> {
-	if ((await getBackend()) === 'keyring') {
+	if ((await backendFor(userId)) === 'keyring') {
 		await deleteKeyring(keyringKey(userId, kind));
 		return;
 	}
@@ -316,9 +331,9 @@ async function keyKeyringSecrets(userId: string): Promise<void> {
 		const value = await readKeyring(legacy);
 		if (value === undefined) continue;
 
-		// A failure earlier in this loop downgrades the backend for the rest of the process, so
-		// the secrets after it belong in the file rather than under a name nothing will read.
-		if ((await getBackend()) === 'keyring') {
+		// A failure earlier in this loop moved this profile to the file, so the secrets after it
+		// belong there too rather than under a keyring name nothing will read.
+		if ((await backendFor(userId)) === 'keyring') {
 			const target = keyringKey(userId, kind);
 
 			try {
@@ -327,11 +342,10 @@ async function keyKeyringSecrets(userId: string): Promise<void> {
 				continue;
 			} catch (err) {
 				cliDebugPrint('credentials', 'keyring write failed while keying secrets by user', err);
-				downgradeBackendToFile();
 			}
 		}
 
-		writeProfileSecret(userId, kind, value);
+		moveProfileSecretToFile(userId, kind, value);
 		if (readProfileSecret(userId, kind) === value) await deleteKeyring(legacy);
 	}
 }
@@ -348,9 +362,9 @@ function keyFileSecrets(userId: string, file: AuthFile): void {
 	if (token !== undefined) profile.token = token;
 	if (proxyPassword !== undefined) profile.proxy = { password: proxyPassword };
 
+	// The file-level marker already says `file`: nothing else puts secrets at the top level.
 	delete file.token;
 	delete file.proxy;
-	file.secretsBackend = 'file';
 	writeAuthFile(file);
 }
 
@@ -376,7 +390,7 @@ export async function ensureSecretsKeyed(): Promise<void> {
 				return;
 			}
 
-			if ((await getBackend()) === 'keyring') {
+			if ((await backendFor(userId)) === 'keyring') {
 				await keyKeyringSecrets(userId);
 				return;
 			}
