@@ -193,6 +193,8 @@ describe('auth.json v2', () => {
 					expect(info).toMatchObject({ id: 'uid', username: 'me' });
 					expect(info).not.toHaveProperty('token');
 					expect(lastErrorMessage()).toContain('Your stored login cannot be read');
+					// The write goes through a temp file and a rename, so the directory is what must be writable.
+					expect(lastErrorMessage()).toContain('Make the directory it is in writable');
 					expect(readAuthFile().version).toBeUndefined();
 				} finally {
 					chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);
