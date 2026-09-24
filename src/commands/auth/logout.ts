@@ -1,12 +1,14 @@
+import process from 'node:process';
+
 import { APIFY_ENV_VARS } from '@apify/consts';
 
 import { getActiveProfileId, removeActiveProfile } from '../../lib/auth-file.js';
 import { invalidEnvTokenMessage, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
-import { AUTH_FILE_PATH } from '../../lib/consts.js';
+import { AUTH_FILE_PATH, CommandExitCodes } from '../../lib/consts.js';
 import { clearKeyringSecrets } from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
-import { success, warning } from '../../lib/outputs.js';
+import { error, success, warning } from '../../lib/outputs.js';
 import { tildify } from '../../lib/utils.js';
 
 export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
@@ -28,10 +30,28 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-logout';
 
 	async run() {
-		// The keyring goes first: `auth.json` is the only index of what it holds, so removing the
-		// profile would strand its entries.
-		await clearKeyringSecrets(getActiveProfileId());
-		removeActiveProfile();
+		// Read before either step runs: once the profile is gone, nothing names the keyring entries it owns.
+		const activeProfileId = getActiveProfileId();
+
+		// Both steps are attempted even when the first one fails, so neither the secrets nor the
+		// profile are left behind just because the other could not be removed.
+		const keyringError = await clearKeyringSecrets(activeProfileId).then(
+			() => null,
+			(err: unknown) => err,
+		);
+
+		let profileError: unknown = null;
+		try {
+			removeActiveProfile();
+		} catch (err) {
+			profileError = err;
+		}
+
+		if (keyringError || profileError) {
+			error({ message: partialLogoutMessage(activeProfileId, keyringError, profileError) });
+			process.exitCode = CommandExitCodes.RunFailed;
+			return;
+		}
 
 		await updateUserId(null);
 
@@ -46,4 +66,22 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 			warning({ message: invalidEnvTokenMessage(envToken.raw) });
 		}
 	}
+}
+
+function reasonOf(err: unknown) {
+	return err instanceof Error ? err.message : String(err);
+}
+
+function partialLogoutMessage(activeProfileId: string | undefined, keyringError: unknown, profileError: unknown) {
+	const keyringPart = keyringError
+		? `Your secrets are still in the OS keyring${activeProfileId ? ` under the account ${activeProfileId}` : ''}; delete them with your OS keyring app.`
+		: 'Your secrets were removed from the OS keyring.';
+
+	const profilePart = profileError
+		? `Your account is still in ${AUTH_FILE_PATH()}; delete that file to finish logging out.`
+		: `Your account was removed from ${AUTH_FILE_PATH()}.`;
+
+	const reasons = [keyringError, profileError].filter(Boolean).map(reasonOf).join(' ');
+
+	return `Logout did not finish. ${keyringPart} ${profilePart} ${reasons}`;
 }

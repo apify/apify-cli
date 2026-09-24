@@ -180,12 +180,7 @@ export async function loginWithToken(
 
 	const proxyPassword = userInfo.proxy?.password;
 
-	// `auth.json` is the only index of what the keyring holds, so the outgoing account's entries
-	// have to go before its ID leaves the file.
 	const previousUserId = getActiveProfileId();
-	if (previousUserId && previousUserId !== userInfo.id) {
-		await clearKeyringSecrets(previousUserId);
-	}
 
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
 	replaceStoredAccount(
@@ -201,6 +196,11 @@ export async function loginWithToken(
 		},
 		await getBackend(),
 	);
+
+	// Only once the switch is on disk: a failed write leaves auth.json naming the previous account, whose entries nothing else can find.
+	if (previousUserId && previousUserId !== userInfo.id) {
+		await clearKeyringSecrets(previousUserId);
+	}
 
 	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
