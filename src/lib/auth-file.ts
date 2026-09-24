@@ -10,7 +10,6 @@ import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 export const AUTH_FILE_VERSION = 2;
 
-/** Snapshot of the pre-v2 file. Nothing reads it; see {@link backUpV1File}. */
 export const AUTH_BACKUP_FILE_PATH = () => `${AUTH_FILE_PATH()}.v1.bak`;
 
 /**
@@ -27,11 +26,7 @@ export interface AuthProfile {
 	authMethod: 'token';
 	expiresAt: string | null;
 	hasRefreshToken: boolean;
-	/**
-	 * Where this profile's secrets live. Unused until secrets are keyed per profile; the file-level
-	 * `secretsBackend` is the answer for every profile until then. Reserved here because a keyring
-	 * failure on one profile must not silently redirect another profile's reads.
-	 */
+	/** Reserved: a keyring failure on one profile must not redirect another profile's reads. */
 	secretsBackend?: CredentialsBackend;
 }
 
@@ -66,7 +61,7 @@ export interface ActiveProfileLookup {
 
 let migrationPromise: Promise<void> | undefined;
 
-/** Test-only: let each test run the v2 migration again. */
+/** Test-only: let each test run the migration again. */
 export function __resetAuthFileForTests() {
 	migrationPromise = undefined;
 }
@@ -90,14 +85,11 @@ export function readAuthFile(): AuthFile {
 	return parseAuthFile() ?? {};
 }
 
-/**
- * Atomic write: a temp file next to the target, then a rename. Two CLI processes can run at once,
- * and a half-written auth.json reads as logged out.
- */
 export function writeAuthFile(data: AuthFile) {
 	atomicWriteJson(AUTH_FILE_PATH(), data);
 }
 
+/** Temp file then rename: two CLI processes can run at once, and a torn file reads as logged out. */
 function atomicWriteJson(path: string, data: unknown) {
 	ensureApifyDirectory(path);
 
@@ -223,11 +215,10 @@ function assertSupportedAuthFileVersion() {
 }
 
 /**
- * Brings `auth.json` to the v2 profile shape and refuses a file a newer CLI wrote. Runs after
- * `ensureMigrated()`, which moves v1 secrets into the keyring; the two steps stay separate so a
- * keyring failure and a shape failure cannot mask each other.
+ * Runs after `ensureMigrated()`, which moves v1 secrets into the keyring. The two stay separate so
+ * a keyring failure and a shape failure cannot mask each other.
  *
- * The migration itself is idempotent, single-flight and never throws — it must not block a command.
+ * Migrating never throws — it must not block a command. Throws only for a file a newer CLI wrote.
  */
 export async function ensureAuthFileCurrent(): Promise<void> {
 	await migrateAuthFile();
@@ -235,8 +226,8 @@ export async function ensureAuthFileCurrent(): Promise<void> {
 }
 
 /**
- * The active profile with its user ID. Reads a v1 file too, so a command that runs before the
- * migration still finds the account.
+ * Reads the pre-profile shape as well, and keeps doing so: `useRentalSunsetNotice` calls this
+ * without migrating first, to avoid a keychain prompt on commands that need no login.
  */
 export function lookUpActiveProfile(): ActiveProfileLookup {
 	const file = readAuthFile();
@@ -256,22 +247,15 @@ export function lookUpActiveProfile(): ActiveProfileLookup {
 	return { profile: { id: file.activeProfile, ...profile } };
 }
 
-/** The active profile, or `undefined` when nothing usable is stored. */
 export function getActiveProfile(): (AuthProfile & { id: string }) | undefined {
 	return lookUpActiveProfile().profile;
 }
 
 /**
- * Stores one account as the only one in the file, dropping any previous profile and the secrets
- * stored beside it.
- *
- * Replacing rather than adding is deliberate twice over. Until each profile has its own secret, a
- * second profile would name an account that cannot authenticate. And dropping the old secrets is
- * what makes the write safe: the caller writes the new token straight after, so a failure there
- * leaves no token at all — a logged-out state — rather than the previous account's token sitting
- * beside the new account's name, which authenticates as the wrong user.
- *
- * Adding a profile without disturbing the others is {@link https://github.com/apify/apify-cli/issues/1386 | Stage-2}.
+ * Replaces the file with this one account. A second profile would name an account that cannot
+ * authenticate until each has its own secret, and dropping the old secrets is what keeps the write
+ * safe: the caller writes the new token next, so a failure there leaves nobody logged in rather
+ * than the old token beside the new name. Additive login is #1386.
  */
 export function replaceStoredAccount(userId: string, profile: AuthProfile, secretsBackend: CredentialsBackend) {
 	assertSupportedAuthFileVersion();
@@ -291,9 +275,8 @@ export function replaceStoredAccount(userId: string, profile: AuthProfile, secre
 export function removeActiveProfile() {
 	const file = readAuthFile();
 
-	// No version guard. Logout exists to discard credentials, so refusing a file this CLI cannot
-	// read would leave the user no way out of that state. A shape we do not understand goes whole
-	// rather than edited, because editing it would leave something worse than either outcome.
+	// No version guard: refusing to discard a file this CLI cannot read leaves no way out. It goes
+	// whole rather than edited, which would leave something worse than either outcome.
 	if (file.version !== AUTH_FILE_VERSION) {
 		discardAuthFiles();
 		return;
