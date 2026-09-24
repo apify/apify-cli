@@ -8,6 +8,7 @@ import open from 'open';
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { profileLabel, readAuthFile } from '../../lib/auth-file.js';
 import { invalidEnvTokenMessage, loginWithToken, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -48,6 +49,13 @@ const tryToLogin = async (token: string) => {
 		success({
 			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored in ${tokenLocation}.`)}`,
 		});
+
+		const others = Object.entries(readAuthFile().profiles ?? {})
+			.filter(([id]) => id !== userInfo.id)
+			.map(([id, profile]) => profileLabel({ id, ...profile }));
+		if (others.length > 0) {
+			info({ message: `Other stored accounts: ${others.join(', ')}.` });
+		}
 	} else {
 		process.exitCode = CommandExitCodes.MissingAuth;
 		error({

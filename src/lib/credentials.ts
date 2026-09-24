@@ -225,9 +225,8 @@ export async function setSecret(
 }
 
 /**
- * Forget one of an account's secrets. Called for a proxy password when the account has none, so
- * the previous account's does not survive a re-login — the keyring outlives the auth.json rewrite
- * that replaces everything else.
+ * Forget one of an account's secrets. Called for a proxy password when the account has none, so a
+ * re-login does not keep one the account no longer has.
  */
 export async function deleteSecret(userId: string, kind: SecretKind): Promise<void> {
 	if ((await backendFor(userId)) === 'keyring') {

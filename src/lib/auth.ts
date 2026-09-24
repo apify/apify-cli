@@ -6,7 +6,7 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { ensureAuthFileCurrent, getActiveProfileId, replaceStoredAccount } from './auth-file.js';
+import { ensureAuthFileCurrent, getActiveProfileId, upsertProfile } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
 	clearKeyringSecrets,
@@ -180,19 +180,21 @@ export async function loginWithToken(
 
 	const proxyPassword = userInfo.proxy?.password;
 
-	// `auth.json` is the only index of what the keyring holds, so the outgoing account's entries
-	// have to go before its ID leaves the file.
+	// Brings a stored account to the current shape first, or the upsert below would find nothing to keep.
+	await ensureMigrated();
+	await ensureAuthFileCurrent();
+	await ensureSecretsKeyed();
+
+	// Leftover unkeyed entries are the outgoing account's; the next keying pass would file them under this one.
 	const previousUserId = getActiveProfileId();
-	if (previousUserId && previousUserId !== userInfo.id) {
-		await clearKeyringSecrets(previousUserId);
-	}
+	if (previousUserId && previousUserId !== userInfo.id) await clearKeyringSecrets();
 
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
-	replaceStoredAccount(
+	upsertProfile(
 		userInfo.id,
 		{
 			username: userInfo.username,
-			name: null,
+			name: userInfo.username || userInfo.id,
 			...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
 			authMethod: 'token',
 			expiresAt: null,
@@ -202,7 +204,7 @@ export async function loginWithToken(
 		await getBackend(),
 	);
 
-	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
+	// After the profile, which says where its secrets go. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
 
 	if (proxyPassword) {

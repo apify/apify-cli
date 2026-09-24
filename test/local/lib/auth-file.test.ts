@@ -9,7 +9,7 @@ import {
 	getActiveProfile,
 	lookUpActiveProfile,
 	removeActiveProfile,
-	replaceStoredAccount,
+	upsertProfile,
 } from '../../../src/lib/auth-file.js';
 import { resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
@@ -267,7 +267,7 @@ describe('auth.json v2', () => {
 			const newer = { version: 3, activeProfile: 'uid', profiles: { uid: { username: 'me' } } };
 			write(newer);
 
-			expect(() => replaceStoredAccount('uid2', V2_PROFILE, 'file')).toThrow('written by a newer Apify CLI');
+			expect(() => upsertProfile('uid2', V2_PROFILE, 'file')).toThrow('written by a newer Apify CLI');
 			expect(readAuthFile()).toEqual(newer);
 		});
 
@@ -287,8 +287,60 @@ describe('auth.json v2', () => {
 		});
 	});
 
-	describe('replacing the stored account', () => {
-		it('drops the previous account and its secrets', () => {
+	describe('adding or updating a profile', () => {
+		it('keeps the other profiles and makes the new one active', () => {
+			write({
+				version: 2,
+				activeProfile: 'old',
+				profiles: { old: { ...V2_PROFILE, username: 'old', token: 'apify_api_old' } },
+				secretsBackend: 'file',
+			});
+
+			upsertProfile('new', { ...V2_PROFILE, username: 'new' }, 'file');
+
+			const file = readAuthFile();
+			expect(Object.keys(file.profiles!).sort()).toEqual(['new', 'old']);
+			expect(file.activeProfile).toBe('new');
+			expect(file.profiles!.old).toMatchObject({ token: 'apify_api_old' });
+		});
+
+		it('keeps a stored profile secrets and backend when it logs in again', () => {
+			write({
+				version: 2,
+				activeProfile: 'uid',
+				profiles: {
+					uid: { ...V2_PROFILE, username: 'me', secretsBackend: 'file', token: 'tok', proxy: { password: 'pw' } },
+				},
+				secretsBackend: 'keyring',
+			});
+
+			upsertProfile('uid', { ...V2_PROFILE, username: 'renamed' }, 'keyring');
+
+			expect(readActiveProfile()).toMatchObject({
+				username: 'renamed',
+				secretsBackend: 'file',
+				token: 'tok',
+				proxy: { password: 'pw' },
+			});
+		});
+
+		it('records the backend on a new profile when it differs from the file-level one', () => {
+			write({
+				version: 2,
+				activeProfile: 'old',
+				profiles: { old: { ...V2_PROFILE, username: 'old' } },
+				secretsBackend: 'keyring',
+			});
+
+			upsertProfile('new', { ...V2_PROFILE, username: 'new' }, 'file');
+
+			const file = readAuthFile();
+			expect(file.secretsBackend).toBe('keyring');
+			expect(file.profiles!.new!.secretsBackend).toBe('file');
+			expect(file.profiles!.old).not.toHaveProperty('secretsBackend');
+		});
+
+		it('drops unkeyed secrets so they are never keyed to the new account', async () => {
 			write({
 				version: 2,
 				activeProfile: 'old',
@@ -298,42 +350,21 @@ describe('auth.json v2', () => {
 				proxy: { password: 'old_pw' },
 			});
 
-			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' }, 'file');
+			upsertProfile('new', { ...V2_PROFILE, username: 'new' }, 'file');
 
 			const file = readAuthFile();
-			expect(Object.keys(file.profiles!)).toEqual(['new']);
-			expect(file.activeProfile).toBe('new');
-			// A leftover token beside the new account authenticates as the wrong user.
 			expect(file).not.toHaveProperty('token');
 			expect(file).not.toHaveProperty('proxy');
-		});
-
-		it('leaves no token when the caller never writes one', async () => {
-			write({
-				version: 2,
-				activeProfile: 'old',
-				profiles: { old: { ...V2_PROFILE, username: 'old' } },
-				secretsBackend: 'file',
-				token: 'apify_api_old',
-			});
-
-			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' }, 'file');
-
-			// Logged out, rather than logged in as the account that just went away.
 			await expect(getSecret('new', 'token')).resolves.toBeUndefined();
 		});
-	});
 
-	describe('replacing the stored account', () => {
-		it('removes the snapshot of the account it replaced', async () => {
+		it('keeps the v1 snapshot, since the migrated account is still stored', async () => {
 			write(v1AuthFile({ secretsBackend: 'file' }));
 			await ensureAuthFileCurrent();
+
+			upsertProfile('other', { ...V2_PROFILE, username: 'other' }, 'file');
+
 			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(true);
-
-			replaceStoredAccount('other', { ...V2_PROFILE, username: 'other' }, 'file');
-
-			// It described the previous account and is never refreshed, so it must not survive.
-			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
 		});
 	});
 
