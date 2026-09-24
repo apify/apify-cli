@@ -12,7 +12,7 @@ const actorName = 'my-python-actor';
 const PYTHON_START_TEMPLATE_ID = 'python-start';
 const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, toggleCwdBetweenFullAndParentPath } = useTempPath(actorName, {
 	create: true,
-	remove: false,
+	remove: true,
 	cwd: true,
 	cwdParent: true,
 });
@@ -34,6 +34,11 @@ describe('[python] Python support', () => {
 	});
 
 	it('should work', { timeout: TEST_TIMEOUT }, async () => {
+		if (existsSync(tmpPath)) {
+			// Remove the tmp path before detecting the runtime, so a leftover .venv is not picked up
+			await rm(tmpPath, { recursive: true, force: true });
+		}
+
 		const runtime = await usePythonRuntime({ cwd: tmpPath, force: true });
 
 		const pythonVersion = runtime.map((r) => r.version).unwrapOr(undefined);
@@ -42,11 +47,6 @@ describe('[python] Python support', () => {
 		if (!pythonVersion && !process.env.CI) {
 			console.log('Skipping Python template test since Python is not installed');
 			return;
-		}
-
-		if (existsSync(tmpPath)) {
-			// Remove the tmp path if it exists
-			await rm(tmpPath, { recursive: true, force: true });
 		}
 
 		await testRunCommand(CreateCommand, {
