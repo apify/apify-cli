@@ -197,11 +197,10 @@ async function migrateAuthFile(): Promise<void> {
 
 			writeAuthFile(migrated);
 		} catch (err) {
-			// The readers understand the old shape, so nothing is broken and the next command tries
-			// again. Still said out loud, because failing on every run should not be invisible.
+			// Not rethrown: the migration must not abort the command, which fails at the auth step.
 			cliDebugPrint('auth-file', 'auth file migration failed', err);
 			warning({
-				message: `Your login still works, but ${AUTH_FILE_PATH()} could not be updated to the current format. Set APIFY_CLI_DEBUG=1 to see why.`,
+				message: `Your stored login cannot be read until ${AUTH_FILE_PATH()} is updated to the current format, and the update failed. Make the file and the directory it is in writable, then run the command again. Set APIFY_CLI_DEBUG=1 to see why.`,
 			});
 		}
 	})();
