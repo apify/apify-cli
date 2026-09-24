@@ -336,9 +336,9 @@ USAGE
   $ apify create [actorName] [--auto-build on|off]
                  [--git-repo <value>] [--json]
                  [-l javascript|js|typescript|ts|python|py]
-                 [--omit-optional-deps] [--skip-dependency-install]
-                 [--skip-git-init] [--source apify|github|gitlab|bitbucket]
-                 [-t <value>]
+                 [--omit-optional-deps] [--profile <value>]
+                 [--skip-dependency-install] [--skip-git-init]
+                 [--source apify|github|gitlab|bitbucket] [-t <value>]
                  [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
@@ -367,6 +367,9 @@ FLAGS
                                  <options: javascript|js|typescript|ts|python|py>
       --omit-optional-deps       Skip installing optional
                                  dependencies.
+      --profile=<value>          The stored account to
+                                 use for this command, by name or user ID. See
+                                 "apify auth list".
       --skip-dependency-install  Skip installing Actor
                                  dependencies.
       --skip-git-init            Skip initializing a git

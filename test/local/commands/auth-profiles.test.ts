@@ -161,14 +161,15 @@ describe('multi-account UX', () => {
 			expect(output).toContain('my-org');
 		});
 
-		it('is not offered on offline commands', () => {
-			expect(CreateCommand.enableProfileFlag).toBe(false);
+		it('is offered on commands that call the API and not on offline ones', () => {
 			expect(InitCommand.enableProfileFlag).toBe(false);
 
 			registerCommandForHelpGeneration('apify', InitCommand);
 			registerCommandForHelpGeneration('apify', InfoCommand);
+			registerCommandForHelpGeneration('apify', CreateCommand);
 			expect(renderHelpForCommand(InitCommand)).not.toContain('--profile');
 			expect(renderHelpForCommand(InfoCommand)).toContain('--profile');
+			expect(renderHelpForCommand(CreateCommand)).toContain('--profile');
 		});
 	});
 
