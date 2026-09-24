@@ -28,11 +28,6 @@ export interface AuthProfile {
 	hasRefreshToken: boolean;
 	/** Reserved: a keyring failure on one profile must not redirect another profile's reads. */
 	secretsBackend?: CredentialsBackend;
-	/**
-	 * When this account last logged in, or `null` for one migrated from the pre-profile file.
-	 * Written but unread: `auth list` orders by it, and a logout falls back to the most recent
-	 * profile left. Neither exists yet, and neither can backfill a time nobody recorded.
-	 */
 	loggedInAt: string | null;
 }
 
