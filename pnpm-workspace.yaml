@@ -41,3 +41,6 @@ supportedArchitectures:
 nodeLinker: hoisted
 publicHoistPattern:
   - "*"
+
+patchedDependencies:
+  '@signalwire/docusaurus-plugin-llms-txt@1.2.2': patches/@signalwire__docusaurus-plugin-llms-txt@1.2.2.patch
