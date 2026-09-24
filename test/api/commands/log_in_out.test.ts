@@ -1,9 +1,11 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 
 import axios from 'axios';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
+import { getToken } from '../../../src/lib/credentials.js';
+import { readActiveProfile } from '../../__setup__/auth-file.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../../__setup__/config.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
@@ -31,31 +33,15 @@ describe('[api] apify login and logout', () => {
 	it('should work with correct token', async () => {
 		await safeLogin(TEST_USER_TOKEN);
 
-		const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), {
-			token: TEST_USER_TOKEN,
-		}) as unknown as Record<string, string>;
-		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
+		const expectedUserInfo = await testUserClient.user('me').get();
 
 		expect(lastErrorMessage()).to.include('Success:');
 
-		// Omit currentBillingPeriod, It can change during tests
-
-		const {
-			currentBillingPeriod: _1,
-			plan: _2,
-			createdAt: _3,
-			...expectedUserInfoWithoutFloatFields
-		} = expectedUserInfo;
-
-		const {
-			currentBillingPeriod: _4,
-			plan: _5,
-			createdAt: _6,
-			secretsBackend: _7,
-			...userInfoFromConfigWithoutFloatFields
-		} = userInfoFromConfig;
-
-		expect(expectedUserInfoWithoutFloatFields).to.eql(userInfoFromConfigWithoutFloatFields);
+		expect(readActiveProfile()).toMatchObject({
+			id: expectedUserInfo.id,
+			username: expectedUserInfo.username,
+		});
+		expect(await getToken()).to.eql(TEST_USER_TOKEN);
 
 		await testRunCommand(LogoutCommand, {});
 		const isGlobalConfig = existsSync(AUTH_FILE_PATH());
@@ -83,29 +69,14 @@ describe('[api] apify login and logout', () => {
 
 		expect(response.status).to.be.eql(200);
 
-		const expectedUserInfo = Object.assign(await testUserClient.user('me').get(), {
-			token: TEST_USER_TOKEN,
-		}) as unknown as Record<string, string>;
-		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
+		const expectedUserInfo = await testUserClient.user('me').get();
 
 		expect(lastErrorMessage()).to.include('Success:');
 
-		// Omit currentBillingPeriod, It can change during tests
-
-		const {
-			currentBillingPeriod: _1,
-			plan: _2,
-			createdAt: _3,
-			...expectedUserInfoWithoutFloatFields
-		} = expectedUserInfo;
-		const {
-			currentBillingPeriod: _4,
-			plan: _5,
-			createdAt: _6,
-			secretsBackend: _7,
-			...userInfoFromConfigWithoutFloatFields
-		} = userInfoFromConfig;
-
-		expect(expectedUserInfoWithoutFloatFields).to.eql(userInfoFromConfigWithoutFloatFields);
+		expect(readActiveProfile()).toMatchObject({
+			id: expectedUserInfo.id,
+			username: expectedUserInfo.username,
+		});
+		expect(await getToken()).to.eql(TEST_USER_TOKEN);
 	});
 });
