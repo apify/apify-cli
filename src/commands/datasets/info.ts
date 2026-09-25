@@ -18,6 +18,8 @@ const consoleLikeTable = new ResponsiveTable({
 export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand> {
 	static override name = 'info' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Prints information about a specific dataset.';
 
 	static override examples = [

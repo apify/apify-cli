@@ -18,6 +18,8 @@ import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 	static override name = 'wait' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		'Waits for an Actor run to reach a terminal status (SUCCEEDED, FAILED, ABORTED, TIMED-OUT).\n' +
 		'Returns exit code 0 only when the run SUCCEEDED. Designed for CI and agentic workflows.';

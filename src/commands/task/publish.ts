@@ -12,6 +12,8 @@ import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 export class TaskPublishCommand extends ApifyCommand<typeof TaskPublishCommand> {
 	static override name = 'publish' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		'Publishes the task on its public landing page.\n' +
 		'The task must belong to a public Actor and have its public display configuration set up ' +

@@ -9,6 +9,8 @@ import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 	static override name = 'run' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		'Executes predefined Actor task remotely using local key-value store for input.\n' +
 		'Customize with --memory and --timeout flags.\n';

@@ -7,6 +7,8 @@ import { getCurrentUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 	static override name = 'info' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Prints details about your currently authenticated Apify account.';
 
 	static override group = 'Apify Console';
@@ -28,7 +30,8 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 		const rows = {
 			'username': info.username,
 			'userId': info.id,
-			'token source': TOKEN_SOURCE_LABELS[auth!.source],
+			'token source': this.flags.profile ? '--profile flag' : TOKEN_SOURCE_LABELS[auth!.source],
+			...(auth!.profile ? { profile: auth!.profile.label } : {}),
 		};
 
 		for (const [key, value] of Object.entries(rows)) {

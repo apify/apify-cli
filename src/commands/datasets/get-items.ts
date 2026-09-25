@@ -19,6 +19,8 @@ const downloadFormatToContentType: Record<DownloadItemsFormat, string> = {
 export class DatasetsGetItems extends ApifyCommand<typeof DatasetsGetItems> {
 	static override name = 'get-items' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Retrieves dataset items in specified format (JSON, CSV, etc).';
 
 	static override examples = [

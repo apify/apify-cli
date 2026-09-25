@@ -11,6 +11,8 @@ import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, Timestamp
 export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 	static override name = 'info' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Prints information about a specific build.';
 
 	static override examples = [

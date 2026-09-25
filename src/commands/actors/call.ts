@@ -25,6 +25,8 @@ import { getLocalConfig, getCurrentUserInfo, getLoggedClientOrThrow, TimestampFo
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		'Executes Actor remotely using your authenticated account.\n' +
 		'Reads input from local key-value store by default.\n' +

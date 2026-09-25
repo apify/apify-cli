@@ -48,7 +48,11 @@ describe('auth', () => {
 		it('resolves the stored login when nothing overrides it', async () => {
 			await loginWithToken(STORED);
 
-			await expect(resolveAuth()).resolves.toEqual({ token: STORED, source: 'stored' });
+			await expect(resolveAuth()).resolves.toEqual({
+				token: STORED,
+				source: 'stored',
+				profile: { id: 'uid', label: 'me' },
+			});
 		});
 
 		it('prefers APIFY_TOKEN over the stored login', async () => {
@@ -81,7 +85,11 @@ describe('auth', () => {
 				await loginWithToken(STORED);
 				vitest.stubEnv('APIFY_TOKEN', blank);
 
-				await expect(resolveAuth()).resolves.toEqual({ token: STORED, source: 'stored' });
+				await expect(resolveAuth()).resolves.toEqual({
+					token: STORED,
+					source: 'stored',
+					profile: { id: 'uid', label: 'me' },
+				});
 				expect(lastErrorMessage()).toBeUndefined();
 			},
 		);
@@ -177,7 +185,7 @@ describe('auth', () => {
 			clientState.fail = true;
 			clientState.failWith = apiError(403);
 
-			await expect(getLoggedClientOrThrow()).rejects.toThrow('Your stored API token was rejected');
+			await expect(getLoggedClientOrThrow()).rejects.toThrow('The stored API token for me was rejected');
 		});
 
 		it('does not blame the token when the API request itself failed', async () => {

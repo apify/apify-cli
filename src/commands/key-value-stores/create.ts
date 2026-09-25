@@ -9,6 +9,8 @@ import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 export class KeyValueStoresCreateCommand extends ApifyCommand<typeof KeyValueStoresCreateCommand> {
 	static override name = 'create' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Creates a new key-value store on your account.';
 
 	static override examples = [

@@ -15,6 +15,8 @@ const table = new ResponsiveTable({
 export class KeyValueStoresKeysCommand extends ApifyCommand<typeof KeyValueStoresKeysCommand> {
 	static override name = 'keys' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Lists all keys in a key-value store.';
 
 	static override examples = [
