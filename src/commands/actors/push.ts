@@ -626,6 +626,7 @@ Skipping push. Use --force to override.`,
 /**
  * Against a local Actor runtime, registers the pushed directory as the Actor's live dev folder, so later
  * runs mount it over the built image. Against the Apify platform this is a no-op without a request.
+ * Success is announced by the runtime itself in the build log; only a refusal is reported here.
  */
 async function registerDevFolderOnActorRuntime(
 	apifyClient: ApifyClient,
@@ -636,14 +637,7 @@ async function registerDevFolderOnActorRuntime(
 	if (!mayTargetActorRuntime(apifyClient)) return;
 
 	const result = await registerActorRuntimeDevFolder(apifyClient, actorId, cwd);
-	if (result.ok) {
-		info({
-			message:
-				`Registered ${cwd} as the live dev folder of Actor ${actorName} on the local Actor runtime: runs mount it over the built image, ` +
-				`so local edits apply on the next 'apify call' without another push. A compiled Actor (e.g. TypeScript) needs its local build first. ` +
-				`Use 'apify call --no-dev-folder' to run from the built image alone.`,
-		});
-	} else if (result.error) {
+	if (!result.ok && result.error) {
 		warning({
 			message: `Could not register ${cwd} as the live dev folder of Actor ${actorName} on the local Actor runtime: ${result.error}`,
 		});

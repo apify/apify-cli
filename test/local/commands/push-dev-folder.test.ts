@@ -100,7 +100,7 @@ describe('apify push against a local Actor runtime', () => {
 		expect(devFolderCalls()).toEqual([
 			{ url: `${RUNTIME_BASE_URL}/actor-runtime/dev-folder/${ACTOR_ID}`, body: tmpPath },
 		]);
-		expect(logMessages.error.join('\n')).toContain(`Registered ${tmpPath} as the live dev folder`);
+		expect(logMessages.error.join('\n')).not.toContain('live dev folder');
 	});
 
 	it('warns, but still reports a successful push, when the runtime refuses the path', async () => {
