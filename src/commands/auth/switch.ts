@@ -10,6 +10,7 @@ import {
 import {
 	envTokenOverridesProfileMessage,
 	missingProfileTokenMessage,
+	NO_STORED_ACCOUNTS_MESSAGE,
 	readEnvToken,
 	requireProfile,
 } from '../../lib/auth.js';
@@ -86,7 +87,7 @@ export class AuthSwitchCommand extends ApifyCommand<typeof AuthSwitchCommand> {
 		const profiles = listProfiles();
 		if (!profiles.length) {
 			process.exitCode = CommandExitCodes.MissingAuth;
-			throw new Error('No accounts are stored. Run "apify login" to add one.');
+			throw new Error(NO_STORED_ACCOUNTS_MESSAGE);
 		}
 
 		return useSelectFromList({

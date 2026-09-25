@@ -80,6 +80,8 @@ export function __resetAuthForTests() {
 	selectedProfile = undefined;
 }
 
+export const NO_STORED_ACCOUNTS_MESSAGE = 'No accounts are stored. Run "apify login" to add one.';
+
 /** One wording for a profile selection that `APIFY_TOKEN` would override. */
 export function envTokenOverridesProfileMessage(what: string): string {
 	return `${APIFY_ENV_VARS.TOKEN} is set, so commands ignore ${what}. Unset ${APIFY_ENV_VARS.TOKEN} and try again.`;

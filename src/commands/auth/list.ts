@@ -9,7 +9,7 @@ import {
 	profileLabel,
 	readAuthFile,
 } from '../../lib/auth-file.js';
-import { invalidEnvTokenMessage, readEnvToken } from '../../lib/auth.js';
+import { invalidEnvTokenMessage, NO_STORED_ACCOUNTS_MESSAGE, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { ensureMigrated, ensureSecretsKeyed } from '../../lib/credentials.js';
@@ -79,7 +79,7 @@ export class AuthListCommand extends ApifyCommand<typeof AuthListCommand> {
 		}
 
 		if (!profiles.length) {
-			simpleLog({ message: 'No accounts are stored. Run "apify login" to add one.', stdout: true });
+			simpleLog({ message: NO_STORED_ACCOUNTS_MESSAGE, stdout: true });
 			return;
 		}
 

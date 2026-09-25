@@ -315,7 +315,7 @@ describe('multi-account UX', () => {
 
 				await testRunCommand(AuthLogoutCommand, flags);
 
-				expect(lastErrorMessage()).toContain('You are not logged in.');
+				expect(lastErrorMessage()).toContain('No accounts are stored. Run "apify login" to add one.');
 				expect(lastErrorMessage()).not.toContain('logged out');
 				expect(process.exitCode ?? 0).toBe(0);
 			},

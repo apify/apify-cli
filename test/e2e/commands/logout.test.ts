@@ -9,7 +9,7 @@ describe('[e2e] apify logout', () => {
 		const result = await runCli('apify', ['logout'], { env: authEnv });
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
-		expect(result.stderr).toContain('You are not logged in.');
+		expect(result.stderr).toContain('No accounts are stored. Run "apify login" to add one.');
 		expect(result.stderr).not.toContain('Success');
 	});
 });

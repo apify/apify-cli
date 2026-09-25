@@ -10,7 +10,7 @@ import {
 	removeAllProfiles,
 	removeProfile,
 } from '../../lib/auth-file.js';
-import { invalidEnvTokenMessage, readEnvToken, requireProfile } from '../../lib/auth.js';
+import { invalidEnvTokenMessage, NO_STORED_ACCOUNTS_MESSAGE, readEnvToken, requireProfile } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../lib/consts.js';
@@ -63,7 +63,7 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 		if (!this.flags.profile && !existsSync(AUTH_FILE_PATH())) {
 			// The fixed-name keyring entries outlive the file they were stored beside.
 			await clearKeyringSecrets();
-			info({ message: 'You are not logged in.' });
+			info({ message: NO_STORED_ACCOUNTS_MESSAGE });
 		} else {
 			const done = this.flags.all ? await this.logOutOfAll() : await this.logOutOf(this.flags.profile);
 			if (!done) return;
