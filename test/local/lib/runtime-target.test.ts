@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 
+import { runUrl } from '../../../src/lib/commands/run-result.js';
+import { getConsoleUrl } from '../../../src/lib/console-url.js';
 import { ACTOR_RUNTIME_CONFIG_FILE_PATH } from '../../../src/lib/consts.js';
 import { updateActorRuntimeConfig } from '../../../src/lib/runtime/config.js';
 import { ACTOR_RUNTIME_API_URL, ACTOR_RUNTIME_CONSOLE_URL } from '../../../src/lib/runtime/docker.js';
@@ -46,6 +48,8 @@ describe('runtime/target', () => {
 		expect(configuredRuntimePorts()).toEqual({ api: 4333, console: 4000 });
 		expect(resolveApiBaseUrl({})).toBe('http://localhost:4333');
 		expect(resolveConsoleUrl({})).toBe('http://localhost:4000');
+		expect(runUrl('actor', 'run')).toBe('http://localhost:4000/actors/actor/runs/run');
+		expect(getConsoleUrl()).toBe('http://localhost:4000');
 	});
 
 	it('lets the environment variables win over the connection', () => {
