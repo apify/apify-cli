@@ -184,5 +184,34 @@ describe('runtime/docker', () => {
 			expect(args).toContain('--detach');
 			expect(args.indexOf('--detach')).toBeLessThan(args.indexOf(DEFAULT_ACTOR_RUNTIME_IMAGE));
 		});
+
+		it('publishes moved ports under the same number and tells the runtime to listen on them', () => {
+			const args = buildRuntimeRunArgs({
+				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+				dataDir: '/data',
+				detach: false,
+				hostSocketPath: '/var/run/docker.sock',
+				ports: { api: 4333, console: 4000 },
+				platform: 'linux',
+			});
+			expect(args.join(' ')).toContain(
+				'-e ACTOR_RUNTIME_API_PORT=4333 -e ACTOR_RUNTIME_CONSOLE_PORT=4000 -p 4333:4333 -p 4000:4000',
+			);
+			expect(args.indexOf('-e')).toBeLessThan(args.indexOf(DEFAULT_ACTOR_RUNTIME_IMAGE));
+		});
+
+		it('passes only the moved port to the runtime', () => {
+			const args = buildRuntimeRunArgs({
+				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+				dataDir: '/data',
+				detach: false,
+				hostSocketPath: '/var/run/docker.sock',
+				ports: { api: 3333, console: 4000 },
+				platform: 'linux',
+			});
+			expect(args).toContain('ACTOR_RUNTIME_CONSOLE_PORT=4000');
+			expect(args.join(' ')).not.toContain('ACTOR_RUNTIME_API_PORT');
+			expect(args).toContain('3333:3333');
+		});
 	});
 });

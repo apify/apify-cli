@@ -3,12 +3,16 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { simpleLog, success, warning } from '../../lib/outputs.js';
 import {
-	ACTOR_RUNTIME_API_URL,
-	ACTOR_RUNTIME_CONSOLE_URL,
 	findRunningRuntimeEngine,
+	runtimeApiUrl,
+	runtimeConsoleUrl,
 	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
-import { overridingRuntimeEnvVars, setConnectedToActorRuntime } from '../../lib/runtime/target.js';
+import {
+	configuredRuntimePorts,
+	overridingRuntimeEnvVars,
+	setConnectedToActorRuntime,
+} from '../../lib/runtime/target.js';
 
 export class RuntimeConnectCommand extends ApifyCommand<typeof RuntimeConnectCommand> {
 	static override name = 'connect' as const;
@@ -33,12 +37,13 @@ export class RuntimeConnectCommand extends ApifyCommand<typeof RuntimeConnectCom
 
 	async run() {
 		setConnectedToActorRuntime(true);
+		const ports = configuredRuntimePorts();
 
 		success({ message: 'The Apify CLI now targets the local Actor runtime.' });
 		simpleLog({
 			message: [
-				`  API:     ${ACTOR_RUNTIME_API_URL}`,
-				`  Console: ${ACTOR_RUNTIME_CONSOLE_URL}`,
+				`  API:     ${runtimeApiUrl(ports.api)}`,
+				`  Console: ${runtimeConsoleUrl(ports.console)}`,
 				'',
 				`Run ${chalk.white.bold('apify runtime disconnect')} to target the Apify platform again.`,
 				'',
