@@ -55,6 +55,33 @@ describe('runActorOrTaskOnCloud', () => {
 		expect(err.message).not.toMatch(/Approve here/);
 	});
 
+	describe('onLogChunk', () => {
+		it('sees the printed log of a run that had already finished, so a caller can react to what the Actor wrote', async () => {
+			const finishedRun = { id: 'run1', status: 'FAILED', startedAt: new Date(0) };
+			const log = "Error: Cannot find module '/usr/src/app/dist/main.js'\n  code: 'MODULE_NOT_FOUND'\n";
+			const client = {
+				actor: () => ({ start: async () => finishedRun }),
+				run: () => ({ get: async () => finishedRun }),
+				log: () => ({ get: async () => log }),
+			} as unknown as ApifyClient;
+			const chunks: string[] = [];
+
+			const iterator = runActorOrTaskOnCloud(client, {
+				actorOrTaskData: { id: 'abc', userFriendlyId: 'apify/test-actor' },
+				runOptions: {},
+				type: 'Actor',
+				printRunLogs: true,
+				suppressFinalStatus: true,
+				onLogChunk: (chunk) => chunks.push(chunk),
+			});
+			for await (const _ of iterator) {
+				// drain
+			}
+
+			expect(chunks).toEqual([log]);
+		});
+	});
+
 	describe('extraStartParams (local Actor runtime extensions)', () => {
 		const startedRun = { id: 'run1', status: 'RUNNING' };
 		const fetchedRun = { id: 'run1', status: 'RUNNING', startedAt: new Date(0) };

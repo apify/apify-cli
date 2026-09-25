@@ -44,6 +44,8 @@ export interface RunOnCloudOptions {
 	 * options, so a run with these is started through a raw request instead. Actors only.
 	 */
 	extraStartParams?: Record<string, string>;
+	/** Sees every chunk of the run log as it is printed (only when the log is printed at all). */
+	onLogChunk?: (chunk: string) => void;
 }
 
 /**
@@ -83,6 +85,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		printRunLogs,
 		suppressFinalStatus,
 		extraStartParams,
+		onLogChunk,
 	} = options;
 
 	const clientMethod = type === 'Actor' ? 'actor' : 'task';
@@ -164,7 +167,12 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 
 	if (!silent && printRunLogs) {
 		try {
-			const res = await outputJobLog({ job: run, timeoutMillis: waitForFinishMillis, apifyClient });
+			const res = await outputJobLog({
+				job: run,
+				timeoutMillis: waitForFinishMillis,
+				apifyClient,
+				onChunk: onLogChunk,
+			});
 
 			if (res === 'timeouts') {
 				console.error(`\n${chalk.gray('Timeout for printing logs was hit, there may be future logs.')}\n`);

@@ -20,7 +20,12 @@ import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands
 import { finalizeRun, runUrl } from '../../lib/commands/run-result.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog, warning } from '../../lib/outputs.js';
-import { mayTargetActorRuntime } from '../../lib/runtime/dev-folder.js';
+import {
+	looksLikeUncompiledTypeScriptActor,
+	mayTargetActorRuntime,
+	mentionsMissingModule,
+	uncompiledDevFolderHint,
+} from '../../lib/runtime/dev-folder.js';
 import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
@@ -170,6 +175,11 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			return;
 		}
 
+		// Under the runtime's live dev folder mount, a missing module usually means the TypeScript Actor in
+		// this directory was never compiled locally - the run log is watched for it so the outcome can say so.
+		const watchForMissingModule = this.flags.devFolder && mayTargetActorRuntime(apifyClient);
+		let missingModuleInLog = false;
+
 		let runStarted = false;
 		let run: ActorRun;
 
@@ -186,6 +196,11 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			printRunLogs: true,
 			suppressFinalStatus: true,
 			extraStartParams,
+			onLogChunk: watchForMissingModule
+				? (chunk) => {
+						missingModuleInLog ||= mentionsMissingModule(chunk);
+					}
+				: undefined,
 		});
 
 		for await (const yieldedRun of iterator) {
@@ -255,6 +270,10 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 		if (this.flags.json) {
 			return;
+		}
+
+		if (missingModuleInLog && run!.status === ACTOR_JOB_STATUSES.FAILED && looksLikeUncompiledTypeScriptActor(cwd)) {
+			error({ message: chalk.red(uncompiledDevFolderHint(cwd)) });
 		}
 
 		if (this.flags.outputDataset && run!.status === ACTOR_JOB_STATUSES.SUCCEEDED) {

@@ -581,22 +581,27 @@ export const outputJobLog = async ({
 	job,
 	timeoutMillis,
 	apifyClient,
+	onChunk,
 }: {
 	job: ActorRun | Build;
 	timeoutMillis?: number;
 	apifyClient?: ApifyClient;
+	/** Sees every piece of the log as it is printed, so a caller can react to what the job wrote. */
+	onChunk?: (chunk: string) => void;
 }) => {
 	const { id: logId, status } = job;
 	const client = apifyClient || new ApifyClient({ baseUrl: resolveApiBaseUrl() });
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
+		// Undefined when the job has no log at all (it failed before its container ever started).
+		const log = await client.log(logId).get();
+		if (log) onChunk?.(log);
+
 		if (process.env.APIFY_NO_LOGS_IN_TESTS) {
 			return;
 		}
 
-		// Undefined when the job has no log at all (it failed before its container ever started).
-		const log = await client.log(logId).get();
 		if (log) process.stderr.write(log);
 		return;
 	}
@@ -614,6 +619,8 @@ export const outputJobLog = async ({
 		let nodeTimeout: NodeJS.Timeout | null = null;
 
 		stream.on('data', (chunk) => {
+			onChunk?.(chunk.toString());
+
 			// In tests, writing to process.stderr directly messes with vitest's output
 			// With that said, we still NEED to wait for this stream to end, as otherwise tests become flaky.
 			if (process.env.APIFY_NO_LOGS_IN_TESTS) {

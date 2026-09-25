@@ -1,6 +1,42 @@
+import { existsSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+
 import type { ApifyClient } from 'apify-client';
 
 import { APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
+
+/** Node's own wording, CommonJS (`Cannot find module`, `MODULE_NOT_FOUND`) and ESM (`ERR_MODULE_NOT_FOUND`) alike. */
+const MISSING_MODULE_PATTERN = /Cannot find module|MODULE_NOT_FOUND/;
+
+/** Whether a piece of a run log reports a module Node could not load. */
+export function mentionsMissingModule(logChunk: string): boolean {
+	return MISSING_MODULE_PATTERN.test(logChunk);
+}
+
+/**
+ * A TypeScript project that was never compiled locally: `tsconfig.json` is there, `dist/` (where the Apify
+ * TypeScript templates compile to) is not. Mounted as the live dev folder, such a folder hides the compiled
+ * output the Docker image built, so the run cannot find its entry module.
+ */
+export function looksLikeUncompiledTypeScriptActor(dir: string): boolean {
+	if (!existsSync(join(dir, 'tsconfig.json'))) return false;
+
+	try {
+		return !statSync(join(dir, 'dist')).isDirectory();
+	} catch {
+		return true;
+	}
+}
+
+/** Printed after a failed `apify call` whose log mentions a missing module, when `dir` looks uncompiled. */
+export function uncompiledDevFolderHint(dir: string): string {
+	return (
+		`The run failed with a missing module, and ${dir} looks like a TypeScript Actor that was not compiled locally ` +
+		`(it has a tsconfig.json but no dist/ directory). In live dev folder mode the run uses your local files instead of ` +
+		`the compiled output the Docker image built. Compile it locally (e.g. 'npm run build') and call again, ` +
+		`or run from the built image alone with 'apify call --no-dev-folder'.`
+	);
+}
 
 /**
  * Whether the client talks to something other than the Apify cloud API - the only case in which it can be
