@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
@@ -59,8 +60,14 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-logout';
 
 	async run() {
-		const done = this.flags.all ? await this.logOutOfAll() : await this.logOutOf(this.flags.profile);
-		if (!done) return;
+		if (!this.flags.profile && !existsSync(AUTH_FILE_PATH())) {
+			// The fixed-name keyring entries outlive the file they were stored beside.
+			await clearKeyringSecrets();
+			info({ message: 'You are not logged in.' });
+		} else {
+			const done = this.flags.all ? await this.logOutOfAll() : await this.logOutOf(this.flags.profile);
+			if (!done) return;
+		}
 
 		const envToken = readEnvToken();
 		if (envToken.kind === 'token') {

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
 import type { AuthFile, AuthProfile } from '../../../src/lib/auth-file.js';
@@ -307,5 +307,18 @@ describe('multi-account UX', () => {
 			expect(Object.keys(readAuthFile().profiles!)).toEqual(['uid', 'org']);
 			takeExitCode();
 		});
+
+		it.each([{}, { flags_all: true }])(
+			'with nothing stored says so instead of reporting success (%o)',
+			async (flags) => {
+				rmSync(AUTH_FILE_PATH());
+
+				await testRunCommand(AuthLogoutCommand, flags);
+
+				expect(lastErrorMessage()).toContain('You are not logged in.');
+				expect(lastErrorMessage()).not.toContain('logged out');
+				expect(process.exitCode ?? 0).toBe(0);
+			},
+		);
 	});
 });
