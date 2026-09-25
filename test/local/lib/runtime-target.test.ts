@@ -1,9 +1,11 @@
 import { readFileSync } from 'node:fs';
 
 import { ACTOR_RUNTIME_CONFIG_FILE_PATH } from '../../../src/lib/consts.js';
+import { updateActorRuntimeConfig } from '../../../src/lib/runtime/config.js';
 import { ACTOR_RUNTIME_API_URL, ACTOR_RUNTIME_CONSOLE_URL } from '../../../src/lib/runtime/docker.js';
 import { rememberInstalledActorRuntimeImage } from '../../../src/lib/runtime/ensure.js';
 import {
+	configuredRuntimePorts,
 	overridingRuntimeEnvVars,
 	resolveApiBaseUrl,
 	resolveConsoleUrl,
@@ -33,6 +35,17 @@ describe('runtime/target', () => {
 
 		expect(resolveApiBaseUrl({})).toBeUndefined();
 		expect(resolveConsoleUrl({})).toBeUndefined();
+	});
+
+	it('follows the ports the runtime was last started with', () => {
+		expect(configuredRuntimePorts()).toEqual({ api: 3333, console: 3000 });
+
+		updateActorRuntimeConfig({ apiPort: 4333, consolePort: 4000 });
+		setConnectedToActorRuntime(true);
+
+		expect(configuredRuntimePorts()).toEqual({ api: 4333, console: 4000 });
+		expect(resolveApiBaseUrl({})).toBe('http://localhost:4333');
+		expect(resolveConsoleUrl({})).toBe('http://localhost:4000');
 	});
 
 	it('lets the environment variables win over the connection', () => {

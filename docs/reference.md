@@ -478,7 +478,8 @@ DESCRIPTION
   runtime image, 'apify runtime start' runs it, and 'apify runtime status' says 
   whether it is up.
 
-  The runtime publishes two ports on localhost:
+  The runtime publishes two ports on localhost, by default (move them with 
+  'apify runtime start --api-port <port> --console-port <port>'):
 
     3333   API      http://localhost:3333  (Apify API compatible endpoint)
     3000   Console  http://localhost:3000  (web UI)
@@ -489,7 +490,7 @@ DESCRIPTION
 
   These environment variables point the CLI (and the Apify SDKs and API clients 
   that honour them) at the runtime for one shell only, and take precedence over 
-  the connection wherever they are set:
+  the connection wherever they are set (shown for the default ports):
 
     export APIFY_CLIENT_BASE_URL=http://localhost:3333
     export APIFY_CONSOLE_URL=http://localhost:3000
@@ -557,18 +558,25 @@ DESCRIPTION
   Docker or Podman.
   Installs the runtime first when needed (like 'apify runtime install'). The 
   runtime API listens on http://localhost:3333 and the console on 
-  http://localhost:3000. Run 'apify runtime -h' for the environment variables 
-  that point the CLI at it.
+  http://localhost:3000 unless moved with --api-port and --console-port, which 
+  are remembered for later starts and for 'apify runtime connect'. Run 'apify 
+  runtime -h' for the environment variables that point the CLI at it.
 
 USAGE
-  $ apify runtime start [--data-dir <value>] [-d]
+  $ apify runtime start [--api-port <value>]
+                        [--console-port <value>] [--data-dir <value>] [-d]
 
 FLAGS
-      --data-dir=<value>  Host directory mounted as the runtime
-                          data directory (storages, builds and run records).
-                          Defaults to ~/.apify/actor-runtime/data.
-  -d, --detach            Run the runtime container in the
-                          background. Stop it with 'apify runtime stop'.
+      --api-port=<value>      Host port for the runtime API.
+                              Defaults to the port of the previous start, else 3333.
+      --console-port=<value>  Host port for the runtime
+                              console. Defaults to the port of the previous start,
+                              else 3000.
+      --data-dir=<value>      Host directory mounted as the
+                              runtime data directory (storages, builds and run
+                              records). Defaults to ~/.apify/actor-runtime/data.
+  -d, --detach                Run the runtime container
+                              in the background. Stop it with 'apify runtime stop'.
 ```
 
 ##### `apify runtime stop`
