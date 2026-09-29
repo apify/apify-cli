@@ -1,0 +1,52 @@
+# Copy of apify/actions/pnpm-install@v1.5.0 with pnpm/action-setup bumped to v6.1.0 for pnpm 12 support.
+# Switch back once apify/actions ships the bump.
+name: "pnpm install"
+description: "Run pnpm install with cache enabled"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Set up swap space
+      if: runner.os == 'Linux' && runner.arch != 'ARM64'
+      uses: pierotofy/set-swap-space@49819abfb41bd9b44fb781159c033dba90353a7c # v1.0
+      with:
+        swap-size-gb: 10
+
+    - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+      name: Install pnpm
+      with:
+        run_install: false
+        package_json_file: package.json
+
+    - name: Expose pnpm config(s) through "$GITHUB_OUTPUT"
+      id: pnpm-config
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+    - name: Cache rotation keys
+      id: cache-rotation
+      shell: bash
+      run: |
+        echo "YEAR_MONTH=$(/bin/date -u "+%Y%m")" >> $GITHUB_OUTPUT
+
+    - name: Compute pnpm-lock.yaml hash
+      id: pnpm-lock-hash
+      shell: bash
+      run: |
+        echo "HASH=${{ hashFiles('**/pnpm-lock.yaml') }}" >> $GITHUB_OUTPUT
+
+    - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      name: Setup pnpm cache
+      with:
+        path: ${{ steps.pnpm-config.outputs.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-cache-${{ steps.cache-rotation.outputs.YEAR_MONTH }}-${{ steps.pnpm-lock-hash.outputs.HASH }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-cache-${{ steps.cache-rotation.outputs.YEAR_MONTH }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        pnpm install --frozen-lockfile --prefer-offline --loglevel error
+      env:
+        HUSKY: "0"
