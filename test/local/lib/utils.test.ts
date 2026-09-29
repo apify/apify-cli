@@ -1,12 +1,15 @@
 import { existsSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import process from 'node:process';
 
 import axios from 'axios';
+
+import { ACTOR_JOB_STATUSES } from '@apify/consts';
 
 import { execWithLog } from '../../../src/lib/exec.js';
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { inputFileRegExp } from '../../../src/lib/input-key.js';
-import { createActZip, downloadAndUnzip, getActorLocalFilePaths } from '../../../src/lib/utils.js';
+import { createActZip, downloadAndUnzip, getActorLocalFilePaths, outputJobLog } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 import { withRetries } from '../../__setup__/hooks/withRetries.js';
 
@@ -101,6 +104,61 @@ describe('Utils', () => {
 			await expect(downloadAndUnzip({ url: 'https://example.com/a.zip', pathTo: '.' })).rejects.toThrow(
 				/not a valid zip archive/,
 			);
+		});
+	});
+
+	describe('outputJobLog()', () => {
+		const originalNoLogs = process.env.APIFY_NO_LOGS_IN_TESTS;
+
+		const makeClientWithLog = (log: string | null | undefined) =>
+			({
+				log: () => ({
+					get: async () => log,
+					stream: async () => undefined,
+				}),
+			}) as never;
+
+		const terminalJob = {
+			id: 'job-id',
+			status: ACTOR_JOB_STATUSES.SUCCEEDED,
+		} as never;
+
+		beforeEach(() => {
+			delete process.env.APIFY_NO_LOGS_IN_TESTS;
+		});
+
+		afterEach(() => {
+			vitest.restoreAllMocks();
+
+			if (originalNoLogs === undefined) {
+				delete process.env.APIFY_NO_LOGS_IN_TESTS;
+			} else {
+				process.env.APIFY_NO_LOGS_IN_TESTS = originalNoLogs;
+			}
+		});
+
+		it('writes an existing terminal job log to stderr', async () => {
+			const stderrWrite = vitest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+			await outputJobLog({ job: terminalJob, apifyClient: makeClientWithLog('hello\n') });
+
+			expect(stderrWrite).toHaveBeenCalledWith('hello\n');
+		});
+
+		it.each([undefined, null])('does not throw or write when a terminal job log is %s', async (log) => {
+			const stderrWrite = vitest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+			await expect(outputJobLog({ job: terminalJob, apifyClient: makeClientWithLog(log) })).resolves.toBeUndefined();
+
+			expect(stderrWrite).not.toHaveBeenCalled();
+		});
+
+		it('keeps empty terminal job logs as valid write input', async () => {
+			const stderrWrite = vitest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+			await outputJobLog({ job: terminalJob, apifyClient: makeClientWithLog('') });
+
+			expect(stderrWrite).toHaveBeenCalledWith('');
 		});
 	});
 
