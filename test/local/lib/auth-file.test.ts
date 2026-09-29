@@ -65,7 +65,6 @@ describe('auth.json v2', () => {
 				version: 2,
 				activeProfile: 'uid',
 				profiles: { uid: V2_PROFILE },
-				secretsBackend: 'file',
 				token: 'apify_api_v1_token',
 				proxy: { password: 'pw' },
 			});
@@ -79,7 +78,8 @@ describe('auth.json v2', () => {
 
 			await ensureSecretsKeyed();
 
-			expect(readAuthFile()).toMatchObject({ version: 2, secretsBackend: 'file' });
+			expect(readAuthFile()).toMatchObject({ version: 2 });
+			expect(readAuthFile()).not.toHaveProperty('secretsBackend');
 			expect(readActiveProfile()).toMatchObject({ token: 'apify_api_v1_token', proxy: { password: 'pw' } });
 			expect(await getSecret('uid', 'token')).toBe('apify_api_v1_token');
 			expect(await getSecret('uid', 'proxy-password')).toBe('pw');
@@ -225,7 +225,7 @@ describe('auth.json v2', () => {
 			await ensureSecretsKeyed();
 
 			// That state already needed a re-login: there is no account to attach the token to.
-			expect(readAuthFile()).toEqual({ version: 2, profiles: {}, secretsBackend: 'file' });
+			expect(readAuthFile()).toEqual({ version: 2, profiles: {} });
 			expect(readBackup()).toEqual({ secretsBackend: 'file' });
 			await expect(getLocalUserInfo()).resolves.toEqual({});
 		});
@@ -274,7 +274,7 @@ describe('auth.json v2', () => {
 			const newer = { version: 3, activeProfile: 'uid', profiles: { uid: { username: 'me' } } };
 			write(newer);
 
-			expect(() => replaceStoredAccount('uid2', V2_PROFILE, 'file')).toThrow('written by a newer Apify CLI');
+			expect(() => replaceStoredAccount('uid2', V2_PROFILE)).toThrow('written by a newer Apify CLI');
 			expect(readAuthFile()).toEqual(newer);
 		});
 
@@ -305,7 +305,7 @@ describe('auth.json v2', () => {
 				proxy: { password: 'old_pw' },
 			});
 
-			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' }, 'file');
+			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' });
 
 			const file = readAuthFile();
 			expect(Object.keys(file.profiles!)).toEqual(['new']);
@@ -324,7 +324,7 @@ describe('auth.json v2', () => {
 				token: 'apify_api_old',
 			});
 
-			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' }, 'file');
+			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' });
 
 			// Logged out, rather than logged in as the account that just went away.
 			await expect(getSecret('new', 'token')).resolves.toBeUndefined();
@@ -337,7 +337,7 @@ describe('auth.json v2', () => {
 			await ensureAuthFileCurrent();
 			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(true);
 
-			replaceStoredAccount('other', { ...V2_PROFILE, username: 'other' }, 'file');
+			replaceStoredAccount('other', { ...V2_PROFILE, username: 'other' });
 
 			// It described the previous account and is never refreshed, so it must not survive.
 			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
@@ -393,7 +393,6 @@ describe('auth.json v2', () => {
 				version: 2,
 				activeProfile: 'uid',
 				profiles: { uid: V2_PROFILE },
-				secretsBackend: 'keyring',
 			});
 			expect(await getLocalUserInfo()).toEqual({
 				id: 'uid',
@@ -415,7 +414,6 @@ describe('auth.json v2', () => {
 				version: 2,
 				activeProfile: 'uid',
 				profiles: { uid: V2_PROFILE },
-				secretsBackend: 'keyring',
 			});
 		});
 	});

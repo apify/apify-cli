@@ -3,7 +3,7 @@ import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'nod
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { AUTH_FILE_PATH } from './consts.js';
-import type { CredentialsBackend, SecretKind } from './credentials.js';
+import type { SecretKind } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -26,14 +26,11 @@ export interface AuthProfile {
 	authMethod: 'token';
 	expiresAt: string | null;
 	hasRefreshToken: boolean;
-	/**
-	 * Where this profile's secrets live, when that differs from the file-level `secretsBackend`.
-	 * Written only when a keyring write for this profile fails, so one profile falling back to the
-	 * file cannot silently redirect another profile's reads to a place its secrets are not.
-	 */
-	secretsBackend?: CredentialsBackend;
 	loggedInAt: string | null;
-	/** File backend only. The keyring backend keeps these in the OS store instead. */
+	/**
+	 * Set only when the keyring is disabled, unavailable, or refused the write. A token here is
+	 * the record of where this profile's secrets live: no marker says so separately.
+	 */
 	token?: string;
 	proxy?: { password?: string };
 }
@@ -46,7 +43,6 @@ export interface AuthFile {
 	version?: number;
 	activeProfile?: string;
 	profiles?: Record<string, AuthProfile>;
-	secretsBackend?: CredentialsBackend;
 	token?: string;
 	proxy?: { password?: string; [k: string]: unknown };
 }
@@ -141,7 +137,6 @@ function toV2(file: LegacyAuthFile): AuthFile {
 		migrated.profiles![file.id] = v1Profile(file);
 	}
 
-	if (file.secretsBackend) migrated.secretsBackend = file.secretsBackend;
 	if (typeof file.token === 'string') migrated.token = file.token;
 	if (typeof file.proxy?.password === 'string') migrated.proxy = { password: file.proxy.password };
 
@@ -283,11 +278,6 @@ export function readProfileSecret(userId: string, kind: SecretKind): string | un
 	return kind === 'token' ? profile.token : profile.proxy?.password;
 }
 
-/** Where this profile's secrets live, or `undefined` when it follows the file-level default. */
-export function readProfileBackend(userId: string): CredentialsBackend | undefined {
-	return readAuthFile().profiles?.[userId]?.secretsBackend;
-}
-
 /**
  * Stores a file-backend secret on the profile. A missing profile is left alone: inventing one
  * would fabricate the account metadata the CLI reads.
@@ -296,15 +286,14 @@ export function writeProfileSecret(userId: string, kind: SecretKind, value: stri
 	updateProfile(userId, (profile) => setProfileSecret(profile, kind, value));
 }
 
-/**
- * Stores the secret and records that this profile reads from the file from now on, in one write.
- * Called when a keyring write for this profile failed: splitting the two would leave a window
- * where the profile looks logged out, or where it still points at a keyring entry that is not there.
- */
-export function moveProfileSecretToFile(userId: string, kind: SecretKind, value: string) {
-	updateProfile(userId, (profile) => {
-		setProfileSecret(profile, kind, value);
-		profile.secretsBackend = 'file';
+/** Forgets every file-backend secret of a profile, once its token is in the keyring. */
+export function clearProfileFileSecrets(userId: string) {
+	const profile = readAuthFile().profiles?.[userId];
+	if (profile?.token === undefined && profile?.proxy === undefined) return;
+
+	updateProfile(userId, (edited) => {
+		delete edited.token;
+		delete edited.proxy;
 	});
 }
 
@@ -345,7 +334,7 @@ function updateProfile(userId: string, edit: (profile: AuthProfile) => void) {
  * the write safe: the caller writes the new token next, so a failure there leaves nobody logged in
  * rather than the old token beside the new name.
  */
-export function replaceStoredAccount(userId: string, profile: AuthProfile, secretsBackend: CredentialsBackend) {
+export function replaceStoredAccount(userId: string, profile: AuthProfile) {
 	assertSupportedAuthFileVersion();
 
 	// The snapshot described the account being replaced, and is never refreshed, so keeping it
@@ -356,7 +345,6 @@ export function replaceStoredAccount(userId: string, profile: AuthProfile, secre
 		version: AUTH_FILE_VERSION,
 		activeProfile: userId,
 		profiles: { [userId]: profile },
-		secretsBackend,
 	});
 }
 

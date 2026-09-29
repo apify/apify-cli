@@ -3,10 +3,9 @@ import process from 'node:process';
 import type { AuthFile } from './auth-file.js';
 import {
 	AUTH_FILE_VERSION,
+	clearProfileFileSecrets,
 	deleteProfileSecret,
-	moveProfileSecretToFile,
 	readAuthFile,
-	readProfileBackend,
 	readProfileSecret,
 	writeAuthFile,
 	writeProfileSecret,
@@ -103,12 +102,9 @@ async function importKeyringModule(): Promise<KeyringModule | null> {
 }
 
 /**
- * Picks a backend the first time it's called and caches the result for the rest of the process.
- * Single-flight via a promise so concurrent callers share the same lookup.
- * Order: APIFY_DISABLE_KEYRING env override -> persisted marker in auth.json -> module load.
- *
- * This is the default every profile follows; a profile whose keyring write failed records its own
- * `secretsBackend` and reads through {@link backendFor} instead.
+ * Where new secrets go: the keyring, unless APIFY_DISABLE_KEYRING=1 is set or the keyring module
+ * cannot load. Nothing on disk overrides it, so a past keyring failure never pins a later write to
+ * the file. Cached for the process; single-flight so concurrent callers share the lookup.
  *
  * No write-probe runs here: on macOS that would pop a keychain prompt before the user has
  * authorized one. The first real write is the probe, and a failure falls back to the file.
@@ -118,21 +114,10 @@ export async function getBackend(): Promise<CredentialsBackend> {
 	backendPromise = (async (): Promise<CredentialsBackend> => {
 		if (process.env.APIFY_DISABLE_KEYRING === '1') return 'file';
 
-		const marker = readAuthFile().secretsBackend;
-		if (marker === 'file') return 'file';
 		const mod = await loadKeyringModule();
 		return mod ? 'keyring' : 'file';
 	})();
 	return backendPromise;
-}
-
-/**
- * Called when a keyring write fails before any profile exists, so there is nothing to record the
- * fallback on but the file itself. Flips the cached backend so subsequent reads and writes use the
- * file path immediately, without waiting for the marker on disk.
- */
-function downgradeBackendToFile() {
-	backendPromise = Promise.resolve('file');
 }
 
 /**
@@ -182,22 +167,32 @@ async function deleteKeyring(key: KeyringKey): Promise<void> {
 }
 
 /**
- * Where one account's secrets live. A profile that fell back to the file after a keyring failure
- * says so itself; every other profile follows the file-level choice.
+ * Where one account's secrets live. A token in `auth.json` means the file, and the account's other
+ * secrets follow it there; otherwise the keyring, unless it is disabled or unavailable. Decided by
+ * the token alone, so a keyring account never looks up a proxy password in the file first.
  */
-async function backendFor(userId: string): Promise<CredentialsBackend> {
-	return readProfileBackend(userId) ?? (await getBackend());
+export async function backendFor(userId: string): Promise<CredentialsBackend> {
+	if (readProfileSecret(userId, 'token') !== undefined) return 'file';
+	return getBackend();
 }
 
-/** One account's secret of the given kind, from whichever backend holds it. */
+/**
+ * One account's secret of the given kind, from whichever backend holds it. A keyring miss falls
+ * back to the file, where a secret lands when its own keyring write failed after the token's
+ * succeeded.
+ */
 export async function getSecret(userId: string, kind: SecretKind): Promise<string | undefined> {
-	if ((await backendFor(userId)) === 'keyring') return readKeyring(keyringKey(userId, kind));
+	if ((await backendFor(userId)) === 'keyring') {
+		return (await readKeyring(keyringKey(userId, kind))) ?? readProfileSecret(userId, kind);
+	}
 	return readProfileSecret(userId, kind);
 }
 
 /**
- * Persist one account's secret. When `skipIfUnchanged` is true and the stored value already
- * matches, the write is skipped. This avoids macOS Keychain prompts on every command.
+ * Persist one account's secret. A token goes wherever {@link getBackend} says now, so a re-login
+ * moves an account back to the keyring once it works again; the other secrets follow the token.
+ * When `skipIfUnchanged` is true and the stored value already matches in that place, the write is
+ * skipped. This avoids macOS Keychain prompts on every command.
  */
 export async function setSecret(
 	userId: string,
@@ -205,19 +200,18 @@ export async function setSecret(
 	value: string,
 	opts: { skipIfUnchanged?: boolean } = {},
 ): Promise<void> {
-	const backend = await backendFor(userId);
-	if (opts.skipIfUnchanged && (await getSecret(userId, kind)) === value) return;
+	const current = await backendFor(userId);
+	const target = kind === 'token' ? await getBackend() : current;
+	if (opts.skipIfUnchanged && current === target && (await getSecret(userId, kind)) === value) return;
 
-	if (backend === 'keyring') {
+	if (target === 'keyring') {
 		try {
 			await writeKeyring(keyringKey(userId, kind), value);
+			// The file copies are what would send reads there, so they go once the keyring holds the token.
+			if (kind === 'token') clearProfileFileSecrets(userId);
 			return;
 		} catch (err) {
-			// Recorded on the profile rather than on the file, so an account whose secrets are in
-			// the keyring is not redirected to a file that does not hold them.
 			cliDebugPrint('credentials', 'keyring write failed; falling back to file', err);
-			moveProfileSecretToFile(userId, kind, value);
-			return;
 		}
 	}
 
@@ -230,11 +224,7 @@ export async function setSecret(
  * that replaces everything else.
  */
 export async function deleteSecret(userId: string, kind: SecretKind): Promise<void> {
-	if ((await backendFor(userId)) === 'keyring') {
-		await deleteKeyring(keyringKey(userId, kind));
-		return;
-	}
-
+	if ((await backendFor(userId)) === 'keyring') await deleteKeyring(keyringKey(userId, kind));
 	deleteProfileSecret(userId, kind);
 }
 
@@ -256,13 +246,12 @@ export async function clearKeyringSecrets(userId?: string): Promise<void> {
 }
 
 /**
- * One-shot, idempotent migration of legacy plaintext auth.json to the keyring.
+ * Moves plaintext secrets at the top level of a v1 auth.json into the keyring.
  *
- * Both the API token and the proxy password are moved into the keyring on the keyring backend.
- *
- * - `secretsBackend` marker in auth.json makes re-entry a no-op.
- * - On `file` backend the marker is written but secrets stay in auth.json.
- * - On `keyring` backend the token and proxy password are moved out of auth.json.
+ * - No top-level secret means there is nothing to do, which makes re-entry a no-op.
+ * - On the `file` backend, or when the keyring write fails, the secrets stay where they are, and
+ *   `ensureSecretsKeyed()` moves them into the profile, after which this has nothing to do.
+ * - A `secretsBackend` marker from an older CLI is ignored and dropped by the shape migration.
  * - Wrapped in try/catch so a migration failure never blocks the CLI.
  */
 export async function ensureMigrated(): Promise<void> {
@@ -273,15 +262,8 @@ export async function ensureMigrated(): Promise<void> {
 			// A file a newer CLI wrote is not ours to rewrite, and this runs before the shape
 			// migration reports it.
 			if (typeof file.version === 'number' && file.version > AUTH_FILE_VERSION) return;
-			if (file.secretsBackend) return;
 			if (!file.token && !file.proxy?.password) return;
-
-			const backend = await getBackend();
-			if (backend === 'file') {
-				file.secretsBackend = 'file';
-				writeAuthFile(file);
-				return;
-			}
+			if ((await getBackend()) === 'file') return;
 
 			try {
 				if (file.token) await writeKeyring(legacyKeyringKey('token'), file.token);
@@ -289,16 +271,12 @@ export async function ensureMigrated(): Promise<void> {
 					await writeKeyring(legacyKeyringKey('proxy-password'), file.proxy.password);
 				}
 			} catch (err) {
-				cliDebugPrint('credentials', 'keyring write failed during migration; falling back to file', err);
-				downgradeBackendToFile();
-				file.secretsBackend = 'file';
-				writeAuthFile(file);
+				cliDebugPrint('credentials', 'keyring write failed during migration; keeping secrets in the file', err);
 				return;
 			}
 
 			delete file.token;
 			stripProxyPassword(file);
-			file.secretsBackend = 'keyring';
 			writeAuthFile(file);
 		} catch (err) {
 			cliDebugPrint('credentials', 'migration failed', err);
@@ -331,8 +309,8 @@ async function keyKeyringSecrets(userId: string): Promise<void> {
 		const value = await readKeyring(legacy);
 		if (value === undefined) continue;
 
-		// A failure earlier in this loop moved this profile to the file, so the secrets after it
-		// belong there too rather than under a keyring name nothing will read.
+		// A failure earlier in this loop put the token in the file, so the secrets after it belong
+		// there too rather than under a keyring name nothing will read.
 		if ((await backendFor(userId)) === 'keyring') {
 			const target = keyringKey(userId, kind);
 
@@ -345,7 +323,7 @@ async function keyKeyringSecrets(userId: string): Promise<void> {
 			}
 		}
 
-		moveProfileSecretToFile(userId, kind, value);
+		writeProfileSecret(userId, kind, value);
 		if (readProfileSecret(userId, kind) === value) await deleteKeyring(legacy);
 	}
 }
@@ -362,7 +340,6 @@ function keyFileSecrets(userId: string, file: AuthFile): void {
 	if (token !== undefined) profile.token = token;
 	if (proxyPassword !== undefined) profile.proxy = { password: proxyPassword };
 
-	// The file-level marker already says `file`: nothing else puts secrets at the top level.
 	delete file.token;
 	delete file.proxy;
 	writeAuthFile(file);
@@ -390,12 +367,10 @@ export async function ensureSecretsKeyed(): Promise<void> {
 				return;
 			}
 
-			if ((await backendFor(userId)) === 'keyring') {
-				await keyKeyringSecrets(userId);
-				return;
-			}
-
+			// Top-level secrets are already in the file, whichever backend is current, so they move into
+			// the profile either way; that is also what stops a failed keyring move from being retried.
 			keyFileSecrets(userId, file);
+			if ((await backendFor(userId)) === 'keyring') await keyKeyringSecrets(userId);
 		} catch (err) {
 			cliDebugPrint('credentials', 'keying secrets by user failed', err);
 		}

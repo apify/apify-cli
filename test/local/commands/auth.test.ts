@@ -47,7 +47,8 @@ describe('auth commands', () => {
 		it('login stores the token and one profile keyed by user ID', async () => {
 			await login();
 
-			expect(readAuthFile()).toMatchObject({ version: 2, secretsBackend: 'file' });
+			expect(readAuthFile().version).toBe(2);
+			expect(readAuthFile()).not.toHaveProperty('secretsBackend');
 			expect(readAuthFile().token).toBeUndefined();
 			expect(readActiveProfile()).toEqual({
 				id: 'uid',
@@ -195,7 +196,8 @@ describe('auth commands', () => {
 			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
 
 			const authFile = readAuthFile();
-			expect(authFile).toMatchObject({ version: 2, secretsBackend: 'keyring' });
+			expect(authFile.version).toBe(2);
+			expect(authFile).not.toHaveProperty('secretsBackend');
 			expect(authFile.token).toBeUndefined();
 			// Proxy groups are not a secret, but nothing reads them either.
 			expect(authFile).not.toHaveProperty('proxy');

@@ -5,7 +5,7 @@ import process from 'node:process';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { __resetAuthFileForTests } from '../../../src/lib/auth-file.js';
-import { resolveAuth } from '../../../src/lib/auth.js';
+import { __resetAuthForTests, resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import {
 	__resetCredentialsForTests,
@@ -86,10 +86,10 @@ describe('credentials', () => {
 			expect(await getBackend()).toBe('keyring');
 		});
 
-		it('returns "file" when auth.json carries the marker, even if the keyring loads', async () => {
+		it('ignores a file marker an older CLI left in auth.json', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			writeAuthFile({ token: 'tok', secretsBackend: 'file' });
-			expect(await getBackend()).toBe('file');
+			expect(await getBackend()).toBe('keyring');
 		});
 
 		it('caches the backend choice for the rest of the process', async () => {
@@ -103,7 +103,7 @@ describe('credentials', () => {
 	describe('file backend', () => {
 		beforeEach(() => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeV2AuthFile({}, { secretsBackend: 'file' });
+			writeV2AuthFile();
 			writeFileSyncSpy.mockClear();
 		});
 
@@ -112,8 +112,6 @@ describe('credentials', () => {
 			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_123');
 			expect(readProfile().token).toBe('tok_123');
 			expect(readAuthFile().token).toBeUndefined();
-			// The profile follows the file-level choice, so it records no backend of its own.
-			expect(readProfile().secretsBackend).toBeUndefined();
 		});
 
 		it('round-trips the proxy password through the profile', async () => {
@@ -234,22 +232,33 @@ describe('credentials', () => {
 		});
 
 		it('falls back to the profile when the keyring token write fails', async () => {
-			writeV2AuthFile({}, { secretsBackend: 'keyring' });
+			writeV2AuthFile();
 			keyringFailures.add(TOKEN_KEY);
 			await setSecret(TEST_USER_ID, 'token', 'tok_123');
 
 			expect(keyringStore.get(TOKEN_KEY)).toBeUndefined();
 			expect(readProfile().token).toBe('tok_123');
-			// Recorded on the profile. The file-level choice is left alone, so it still describes
-			// every account whose secrets did reach the keyring.
-			expect(readProfile().secretsBackend).toBe('file');
-			expect(readAuthFile().secretsBackend).toBe('keyring');
+			// The token in the file is the only record; no marker is written.
+			expect(readProfile()).not.toHaveProperty('secretsBackend');
+			expect(readAuthFile()).not.toHaveProperty('secretsBackend');
 			expect(await getBackend()).toBe('keyring');
 			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_123');
 		});
 
+		it('moves the token back to the keyring once a write there succeeds', async () => {
+			writeV2AuthFile({ token: 'tok_file', proxy: { password: 'pw_file' } });
+
+			await setSecret(TEST_USER_ID, 'token', 'tok_file', { skipIfUnchanged: true });
+
+			// Unchanged in value, but in the wrong place, so the write is not skipped.
+			expect(keyringStore.get(TOKEN_KEY)).toBe('tok_file');
+			expect(readProfile()).not.toHaveProperty('token');
+			expect(readProfile()).not.toHaveProperty('proxy');
+			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_file');
+		});
+
 		it('keeps using auth.json for later writes after a keyring failure', async () => {
-			writeV2AuthFile({}, { secretsBackend: 'keyring' });
+			writeV2AuthFile();
 			keyringFailures.add(TOKEN_KEY);
 			await setSecret(TEST_USER_ID, 'token', 'tok_123');
 
@@ -259,7 +268,7 @@ describe('credentials', () => {
 		});
 
 		it('leaves another profile on the keyring after one profile falls back', async () => {
-			const file = v2AuthFile({}, { secretsBackend: 'keyring' });
+			const file = v2AuthFile();
 			file.profiles!.other = { ...file.profiles![TEST_USER_ID] };
 			writeAuthFile(file as Record<string, unknown>);
 			keyringFailures.add(TOKEN_KEY);
@@ -267,20 +276,22 @@ describe('credentials', () => {
 			await setSecret(TEST_USER_ID, 'token', 'tok_123');
 			await setSecret('other', 'token', 'tok_other');
 
-			expect(readAuthFile().profiles.other.secretsBackend).toBeUndefined();
+			expect(readAuthFile().profiles.other).not.toHaveProperty('token');
 			expect(keyringStore.get(keyringTokenKey('other'))).toBe('tok_other');
 			expect(await getSecret('other', 'token')).toBe('tok_other');
 			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_123');
 		});
 
 		it('falls back to the profile when the keyring proxy password write fails', async () => {
-			writeV2AuthFile({}, { secretsBackend: 'keyring' });
+			writeV2AuthFile();
+			await setSecret(TEST_USER_ID, 'token', 'tok_123');
 			keyringFailures.add(PROXY_PASSWORD_KEY);
 			await setSecret(TEST_USER_ID, 'proxy-password', 'pw_abc');
 
 			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBeUndefined();
 			expect(readProfile().proxy).toEqual({ password: 'pw_abc' });
-			expect(readProfile().secretsBackend).toBe('file');
+			// The token stays in the keyring; only the proxy password is read from the file.
+			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_123');
 			expect(await getSecret(TEST_USER_ID, 'proxy-password')).toBe('pw_abc');
 		});
 	});
@@ -330,22 +341,15 @@ describe('credentials', () => {
 			writeAuthFile({ username: 'me', id: 'uid', token: 'tok_legacy' });
 
 			expect((await resolveAuth())?.token).toBe('tok_legacy');
-			expect(readAuthFile().secretsBackend).toBe('file');
+			expect(readAuthFile()).not.toHaveProperty('secretsBackend');
 		});
 
-		it('is a no-op when secretsBackend marker is already set', async () => {
-			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeAuthFile({ token: 'tok', secretsBackend: 'file' });
-			await ensureMigrated();
-			expect(readAuthFile().token).toBe('tok');
-		});
-
-		it('is a no-op when the marker says keyring and secrets are still in auth.json', async () => {
+		it('ignores a marker an older CLI left and moves the secrets to the keyring', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
-			writeAuthFile({ token: 'tok', proxy: { password: 'pw' }, secretsBackend: 'keyring' });
+			writeAuthFile({ token: 'tok', proxy: { password: 'pw' }, secretsBackend: 'file' });
 			await ensureMigrated();
-			expect(keyringStore.get(LEGACY_KEYRING_TOKEN_KEY)).toBeUndefined();
-			expect(readAuthFile()).toEqual({ token: 'tok', proxy: { password: 'pw' }, secretsBackend: 'keyring' });
+			expect(keyringStore.get(LEGACY_KEYRING_TOKEN_KEY)).toBe('tok');
+			expect(readAuthFile().token).toBeUndefined();
 		});
 
 		it('is a no-op when there are no secrets to migrate', async () => {
@@ -354,14 +358,13 @@ describe('credentials', () => {
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 		});
 
-		it('on the file backend, stamps the marker without moving data', async () => {
+		it('on the file backend, leaves the file untouched', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
 			writeAuthFile({ token: 'tok', username: 'u' });
+			writeFileSyncSpy.mockClear();
 			await ensureMigrated();
-			const file = readAuthFile();
-			expect(file.token).toBe('tok');
-			expect(file.username).toBe('u');
-			expect(file.secretsBackend).toBe('file');
+			expect(authFileWrites()).toHaveLength(0);
+			expect(readAuthFile()).toEqual({ token: 'tok', username: 'u' });
 		});
 
 		it('on the keyring backend, moves the token and proxy password out of auth.json', async () => {
@@ -370,11 +373,7 @@ describe('credentials', () => {
 			await ensureMigrated();
 			expect(keyringStore.get(LEGACY_KEYRING_TOKEN_KEY)).toBe('tok');
 			expect(keyringStore.get(LEGACY_KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
-			const file = readAuthFile();
-			expect(file.token).toBeUndefined();
-			expect(file.proxy).toBeUndefined();
-			expect(file.username).toBe('u');
-			expect(file.secretsBackend).toBe('keyring');
+			expect(readAuthFile()).toEqual({ username: 'u' });
 		});
 
 		it('on the keyring backend, strips only the proxy password and keeps other proxy fields', async () => {
@@ -382,9 +381,7 @@ describe('credentials', () => {
 			writeAuthFile({ token: 'tok', proxy: { password: 'pw', groups: [{ name: 'g' }] }, username: 'u' });
 			await ensureMigrated();
 			expect(keyringStore.get(LEGACY_KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
-			const file = readAuthFile();
-			expect(file.proxy).toEqual({ groups: [{ name: 'g' }] });
-			expect(file.secretsBackend).toBe('keyring');
+			expect(readAuthFile().proxy).toEqual({ groups: [{ name: 'g' }] });
 		});
 
 		it('migrates proxy password to the keyring when token is absent', async () => {
@@ -392,50 +389,44 @@ describe('credentials', () => {
 			writeAuthFile({ proxy: { password: 'pw' }, username: 'u' });
 			await ensureMigrated();
 			expect(keyringStore.get(LEGACY_KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
-			const file = readAuthFile();
-			expect(file.proxy).toBeUndefined();
-			expect(file.username).toBe('u');
-			expect(file.secretsBackend).toBe('keyring');
+			expect(readAuthFile()).toEqual({ username: 'u' });
 		});
 
-		it('stamps the file marker for a proxy-only state on the file backend', async () => {
-			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeAuthFile({ proxy: { password: 'pw' } });
-			await ensureMigrated();
-			const file = readAuthFile();
-			expect(file.secretsBackend).toBe('file');
-			expect(file.proxy?.password).toBe('pw');
-		});
-
-		it('falls back to file backend when the proxy keyring write fails after token succeeds', async () => {
+		it('keeps the secrets in the file when a keyring write fails', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			keyringFailures.add(LEGACY_KEYRING_PROXY_PASSWORD_KEY);
 			writeAuthFile({ token: 'tok', proxy: { password: 'pw' }, username: 'u' });
 			await ensureMigrated();
-			const file = readAuthFile();
-			expect(file.secretsBackend).toBe('file');
-			expect(file.token).toBe('tok');
-			expect(file.proxy?.password).toBe('pw');
-			expect(file.username).toBe('u');
+			expect(readAuthFile()).toEqual({ token: 'tok', proxy: { password: 'pw' }, username: 'u' });
+		});
+
+		it('a failed keyring move ends up in the profile, so the next command does not retry it', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+			writeAuthFile({ username: 'me', id: 'uid', token: 'tok' });
+			__resetAuthForTests();
+
+			expect((await resolveAuth())?.token).toBe('tok');
+			expect(readAuthFile()).not.toHaveProperty('token');
+			expect(readProfile().token).toBe('tok');
 		});
 
 		it('is memoized within a process', async () => {
-			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			writeAuthFile({ token: 'tok' });
 			await ensureMigrated();
-			expect(readAuthFile().secretsBackend).toBe('file');
+			expect(keyringStore.get(LEGACY_KEYRING_TOKEN_KEY)).toBe('tok');
 
-			// Overwrite the marker and call again — the memoized promise should short-circuit.
 			writeAuthFile({ token: 'tok2' });
 			await ensureMigrated();
-			expect(readAuthFile().secretsBackend).toBeUndefined();
+			expect(readAuthFile().token).toBe('tok2');
 		});
 	});
 
 	describe('ensureSecretsKeyed()', () => {
 		it('moves keyring entries off the fixed names onto the user ID', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
-			writeV2AuthFile({}, { secretsBackend: 'keyring' });
+			writeV2AuthFile();
 			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok');
 			keyringStore.set(LEGACY_KEYRING_PROXY_PASSWORD_KEY, 'pw');
 
@@ -449,7 +440,7 @@ describe('credentials', () => {
 
 		it('moves top-level file secrets into the profile', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeV2AuthFile({}, { secretsBackend: 'file', token: 'tok', proxy: { password: 'pw' } });
+			writeV2AuthFile({}, { token: 'tok', proxy: { password: 'pw' } });
 
 			await ensureSecretsKeyed();
 
@@ -457,12 +448,22 @@ describe('credentials', () => {
 			const file = readAuthFile();
 			expect(file.token).toBeUndefined();
 			expect(file.proxy).toBeUndefined();
-			expect(file.secretsBackend).toBe('file');
+		});
+
+		it('moves top-level file secrets into the profile on the keyring backend too', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeV2AuthFile({}, { token: 'tok', proxy: { password: 'pw' } });
+
+			await ensureSecretsKeyed();
+
+			expect(readProfile()).toMatchObject({ token: 'tok', proxy: { password: 'pw' } });
+			expect(readAuthFile().token).toBeUndefined();
+			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok');
 		});
 
 		it('drops secrets it has no user ID to file under', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
-			writeAuthFile({ version: 2, profiles: {}, secretsBackend: 'keyring', token: 'tok' });
+			writeAuthFile({ version: 2, profiles: {}, token: 'tok' });
 			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_kr');
 
 			await ensureSecretsKeyed();
@@ -473,7 +474,7 @@ describe('credentials', () => {
 
 		it('drops the legacy entries even under APIFY_DISABLE_KEYRING=1', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeAuthFile({ version: 2, profiles: {}, secretsBackend: 'keyring' });
+			writeAuthFile({ version: 2, profiles: {} });
 			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_kr');
 
 			await ensureSecretsKeyed();
@@ -483,7 +484,7 @@ describe('credentials', () => {
 
 		it('is a no-op on a file whose secrets are already keyed', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeV2AuthFile({ token: 'tok' }, { secretsBackend: 'file' });
+			writeV2AuthFile({ token: 'tok' });
 			writeFileSyncSpy.mockClear();
 
 			await ensureSecretsKeyed();
@@ -505,7 +506,7 @@ describe('credentials', () => {
 
 		it('moves the profile to the file when the keyring write fails mid-migration', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
-			writeV2AuthFile({}, { secretsBackend: 'keyring' });
+			writeV2AuthFile();
 			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok');
 			keyringStore.set(LEGACY_KEYRING_PROXY_PASSWORD_KEY, 'pw');
 			keyringFailures.add(TOKEN_KEY);
@@ -513,18 +514,17 @@ describe('credentials', () => {
 			await ensureSecretsKeyed();
 
 			// Both secrets land in the file: the fallback holds for the rest of the loop.
-			expect(readProfile()).toMatchObject({ token: 'tok', proxy: { password: 'pw' }, secretsBackend: 'file' });
-			expect(readAuthFile().secretsBackend).toBe('keyring');
+			expect(readProfile()).toMatchObject({ token: 'tok', proxy: { password: 'pw' } });
 			expect(keyringStore.size).toBe(0);
 		});
 
 		it('is memoized within a process', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeV2AuthFile({}, { secretsBackend: 'file', token: 'tok' });
+			writeV2AuthFile({}, { token: 'tok' });
 			await ensureSecretsKeyed();
 			expect(readProfile().token).toBe('tok');
 
-			writeV2AuthFile({}, { secretsBackend: 'file', token: 'tok2' });
+			writeV2AuthFile({}, { token: 'tok2' });
 			await ensureSecretsKeyed();
 			expect(readAuthFile().token).toBe('tok2');
 		});
@@ -533,7 +533,7 @@ describe('credentials', () => {
 	describe('getLocalUserInfo()', () => {
 		it('on file backend, reads the token and proxy password from the profile', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeV2AuthFile({ token: 'tok', proxy: { password: 'pw' } }, { secretsBackend: 'file' });
+			writeV2AuthFile({ token: 'tok', proxy: { password: 'pw' } });
 
 			const info = await getLocalUserInfo();
 			expect(info.token).toBe('tok');
@@ -547,7 +547,6 @@ describe('credentials', () => {
 				id: 'uid',
 				token: 'tok',
 				proxy: { password: 'pw', groups: [{ name: 'g' }] },
-				secretsBackend: 'file',
 			});
 			const info = await getLocalUserInfo();
 			expect(info.proxy).toEqual({ password: 'pw' });
@@ -557,7 +556,7 @@ describe('credentials', () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
 			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_kr');
 			keyringStore.set(LEGACY_KEYRING_PROXY_PASSWORD_KEY, 'pw_kr');
-			writeAuthFile({ username: 'me', id: 'uid', secretsBackend: 'keyring' });
+			writeAuthFile({ username: 'me', id: 'uid' });
 			const info = await getLocalUserInfo();
 			expect(info.token).toBe('tok_kr');
 			expect(info.proxy?.password).toBe('pw_kr');
@@ -570,7 +569,7 @@ describe('credentials', () => {
 
 		it('on file backend, reports logged out for a token stored without user metadata', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-			writeAuthFile({ token: 'tok', secretsBackend: 'file' });
+			writeAuthFile({ token: 'tok' });
 
 			expect(await getLocalUserInfo()).toEqual({});
 			// The secret is dropped rather than left unreachable, so the next command asks for a login.

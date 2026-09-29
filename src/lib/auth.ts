@@ -13,7 +13,6 @@ import {
 	deleteSecret,
 	ensureMigrated,
 	ensureSecretsKeyed,
-	getBackend,
 	getSecret,
 	setSecret,
 } from './credentials.js';
@@ -70,7 +69,7 @@ export function __resetAuthForTests() {
  * The single token resolver. Order: `APIFY_TOKEN` -> stored login. Inside a platform run there is
  * no stored login, so `APIFY_TOKEN` wins without a special case for the `actor` entrypoint.
  *
- * Single-flighted like {@link getBackend}, because several callers resolve per command and reading
+ * Single-flighted like `getBackend()`, because several callers resolve per command and reading
  * the stored token is an uncached OS keyring hit.
  *
  * Read-only by contract, apart from the one-shot migration of an existing plaintext auth.json.
@@ -183,19 +182,15 @@ export async function loginWithToken(
 	const previousUserId = getActiveProfileId();
 
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
-	replaceStoredAccount(
-		userInfo.id,
-		{
-			username: userInfo.username,
-			name: null,
-			...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
-			authMethod: 'token',
-			expiresAt: null,
-			hasRefreshToken: false,
-			loggedInAt: new Date().toISOString(),
-		},
-		await getBackend(),
-	);
+	replaceStoredAccount(userInfo.id, {
+		username: userInfo.username,
+		name: null,
+		...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
+		authMethod: 'token',
+		expiresAt: null,
+		hasRefreshToken: false,
+		loggedInAt: new Date().toISOString(),
+	});
 
 	// Only once the switch is on disk: a failed write leaves auth.json naming the previous account, whose entries nothing else can find.
 	if (previousUserId && previousUserId !== userInfo.id) {
