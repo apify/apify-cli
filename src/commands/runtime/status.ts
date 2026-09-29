@@ -5,26 +5,30 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { simpleLog } from '../../lib/outputs.js';
 import {
-	ACTOR_RUNTIME_API_PORT,
-	ACTOR_RUNTIME_CONSOLE_PORT,
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	findRunningRuntimeEngine,
 	inspectRuntimeContainer,
 	type PublishedPort,
+	type RuntimePorts,
 	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
 import { installedActorRuntimeImage } from '../../lib/runtime/ensure.js';
-import { isConnectedToActorRuntime, overridingRuntimeEnvVars, resolveApiBaseUrl } from '../../lib/runtime/target.js';
+import {
+	configuredRuntimePorts,
+	isConnectedToActorRuntime,
+	overridingRuntimeEnvVars,
+	resolveApiBaseUrl,
+} from '../../lib/runtime/target.js';
 import { printJsonToStdout } from '../../lib/utils.js';
 
-function portRole(containerPort: number): string {
-	if (containerPort === ACTOR_RUNTIME_API_PORT) return 'API';
-	if (containerPort === ACTOR_RUNTIME_CONSOLE_PORT) return 'Console';
+function portRole(containerPort: number, ports: RuntimePorts): string {
+	if (containerPort === ports.api) return 'API';
+	if (containerPort === ports.console) return 'Console';
 	return '';
 }
 
-function portLine({ containerPort, protocol, hostAddress }: PublishedPort): string {
-	const role = portRole(containerPort);
+function portLine({ containerPort, protocol, hostAddress }: PublishedPort, ports: RuntimePorts): string {
+	const role = portRole(containerPort, ports);
 	return `  ${`${containerPort}/${protocol}`.padEnd(10)} -> ${hostAddress}${role ? `  (${role})` : ''}`;
 }
 
@@ -101,7 +105,8 @@ export class RuntimeStatusCommand extends ApifyCommand<typeof RuntimeStatusComma
 			}
 
 			lines.push('', container?.ports.length ? 'Published ports:' : 'Published ports: none');
-			lines.push(...(container?.ports ?? []).map(portLine));
+			const ports = configuredRuntimePorts();
+			lines.push(...(container?.ports ?? []).map((port) => portLine(port, ports)));
 		}
 
 		lines.push('', 'Apify CLI target:');

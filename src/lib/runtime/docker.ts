@@ -16,13 +16,33 @@ export const DOCKER_ENGINE_INSTALL_URL = 'https://docs.docker.com/engine/install
 /** Official Podman documentation: installation on every platform. */
 export const PODMAN_INSTALL_URL = 'https://podman.io/docs/installation';
 
+/** Default ports; 'apify runtime start --api-port/--console-port' moves them. */
 export const ACTOR_RUNTIME_API_PORT = 3333;
 
 export const ACTOR_RUNTIME_CONSOLE_PORT = 3000;
 
-export const ACTOR_RUNTIME_API_URL = `http://localhost:${ACTOR_RUNTIME_API_PORT}`;
+/** The runtime's own environment variables that move its ports; the same number is published on the host. */
+export const RUNTIME_API_PORT_ENV_VAR = 'ACTOR_RUNTIME_API_PORT';
 
-export const ACTOR_RUNTIME_CONSOLE_URL = `http://localhost:${ACTOR_RUNTIME_CONSOLE_PORT}`;
+export const RUNTIME_CONSOLE_PORT_ENV_VAR = 'ACTOR_RUNTIME_CONSOLE_PORT';
+
+export interface RuntimePorts {
+	api: number;
+	console: number;
+}
+
+export const DEFAULT_RUNTIME_PORTS: RuntimePorts = {
+	api: ACTOR_RUNTIME_API_PORT,
+	console: ACTOR_RUNTIME_CONSOLE_PORT,
+};
+
+export const runtimeApiUrl = (port: number) => `http://localhost:${port}`;
+
+export const runtimeConsoleUrl = (port: number) => `http://localhost:${port}`;
+
+export const ACTOR_RUNTIME_API_URL = runtimeApiUrl(ACTOR_RUNTIME_API_PORT);
+
+export const ACTOR_RUNTIME_CONSOLE_URL = runtimeConsoleUrl(ACTOR_RUNTIME_CONSOLE_PORT);
 
 /**
  * Environment variables that point the Apify CLI (and the Apify SDKs/clients that honour them)
@@ -47,8 +67,11 @@ export const RUNTIME_SOCKET_PATH = '/var/run/docker.sock';
 /** Where the runtime container expects its data directory (storages, builds and run records). */
 export const RUNTIME_DATA_PATH = '/data';
 
-export function runtimeEnvExportLines(): string[] {
-	return Object.entries(ACTOR_RUNTIME_ENV_VARS).map(([name, value]) => `export ${name}=${value}`);
+export function runtimeEnvExportLines(ports: RuntimePorts = DEFAULT_RUNTIME_PORTS): string[] {
+	return [
+		`export APIFY_CLIENT_BASE_URL=${runtimeApiUrl(ports.api)}`,
+		`export APIFY_CONSOLE_URL=${runtimeConsoleUrl(ports.console)}`,
+	];
 }
 
 /** The engine the user asked for via `APIFY_CONTAINER_ENGINE`, or undefined for "whichever is installed". */
@@ -298,6 +321,7 @@ export interface RuntimeRunArgsOptions {
 	dataDir: string;
 	detach: boolean;
 	hostSocketPath: string;
+	ports?: RuntimePorts;
 	platform?: NodeJS.Platform;
 }
 
@@ -306,6 +330,7 @@ export function buildRuntimeRunArgs({
 	dataDir,
 	detach,
 	hostSocketPath,
+	ports = DEFAULT_RUNTIME_PORTS,
 	platform = process.platform,
 }: RuntimeRunArgsOptions): string[] {
 	// --init makes signals (Ctrl+C) reach the runtime process even though it runs as the container's PID 1.
@@ -315,11 +340,20 @@ export function buildRuntimeRunArgs({
 		args.push('--detach');
 	}
 
+	// Same number inside and out: the runtime builds its URLs, and Actors may reach its API through the
+	// host, from the port it listens on. Defaults are left implicit so older runtime images keep working.
+	if (ports.api !== ACTOR_RUNTIME_API_PORT) {
+		args.push('-e', `${RUNTIME_API_PORT_ENV_VAR}=${ports.api}`);
+	}
+	if (ports.console !== ACTOR_RUNTIME_CONSOLE_PORT) {
+		args.push('-e', `${RUNTIME_CONSOLE_PORT_ENV_VAR}=${ports.console}`);
+	}
+
 	args.push(
 		'-p',
-		`${ACTOR_RUNTIME_API_PORT}:${ACTOR_RUNTIME_API_PORT}`,
+		`${ports.api}:${ports.api}`,
 		'-p',
-		`${ACTOR_RUNTIME_CONSOLE_PORT}:${ACTOR_RUNTIME_CONSOLE_PORT}`,
+		`${ports.console}:${ports.console}`,
 		'-v',
 		socketMountArg(hostSocketPath, platform),
 		'-v',

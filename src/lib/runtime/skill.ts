@@ -8,9 +8,9 @@ import { execa } from 'execa';
 
 import { APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
 import { userHomeDir } from '../utils.js';
-import { ACTOR_RUNTIME_API_URL, findRunningRuntimeEngine, imageExistsLocally, type ContainerEngine } from './docker.js';
+import { findRunningRuntimeEngine, imageExistsLocally, runtimeApiUrl, type ContainerEngine } from './docker.js';
 import { installedActorRuntimeImage } from './ensure.js';
-import { resolveApiBaseUrl } from './target.js';
+import { configuredRuntimePorts, resolveApiBaseUrl } from './target.js';
 
 /** Matches the `name` in the file's own frontmatter. */
 export const RUNTIME_SKILL_NAME = 'apify-actor-runtime';
@@ -70,7 +70,7 @@ async function readSkillFromImage(engine: ContainerEngine, image: string): Promi
 /** Cheapest-first: HTTP, then the installed image. Deliberately no copy bundled with the CLI - one could
  * only ever describe the image the CLI was released against, not the one present. */
 export async function resolveRuntimeSkill(): Promise<ResolvedSkill | null> {
-	const baseUrl = resolveApiBaseUrl() ?? ACTOR_RUNTIME_API_URL;
+	const baseUrl = resolveApiBaseUrl() ?? runtimeApiUrl(configuredRuntimePorts().api);
 
 	const overHttp = await fetchSkillFromRuntime(baseUrl);
 	if (overHttp) return { content: overHttp, source: { kind: 'runtime', baseUrl } };

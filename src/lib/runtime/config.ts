@@ -9,6 +9,9 @@ export interface ActorRuntimeConfig {
 	image?: string;
 	/** Whether `apify runtime connect` pointed the CLI at the runtime. */
 	connected?: boolean;
+	/** The ports the last `apify runtime start` published. */
+	apiPort?: number;
+	consolePort?: number;
 }
 
 export function readActorRuntimeConfig(): ActorRuntimeConfig {
