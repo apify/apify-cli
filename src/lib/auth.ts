@@ -6,13 +6,13 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { ensureAuthFileCurrent, getActiveProfileId, replaceStoredAccount } from './auth-file.js';
+import { getActiveProfileId, replaceStoredAccount } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
 	clearKeyringSecrets,
 	deleteSecret,
+	ensureCredentialsCurrent,
 	ensureMigrated,
-	ensureSecretsKeyed,
 	getSecret,
 	setSecret,
 } from './credentials.js';
@@ -97,8 +97,7 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 
 		// Only now, because the stored file is not this command's credential when APIFY_TOKEN is
 		// set. A file a newer CLI wrote would otherwise stop a platform run that never reads it.
-		await ensureAuthFileCurrent();
-		await ensureSecretsKeyed();
+		await ensureCredentialsCurrent();
 
 		const userId = getActiveProfileId();
 		const storedToken = userId ? await getSecret(userId, 'token') : undefined;
@@ -192,10 +191,11 @@ export async function loginWithToken(
 		loggedInAt: new Date().toISOString(),
 	});
 
-	// Only once the switch is on disk: a failed write leaves auth.json naming the previous account, whose entries nothing else can find.
-	if (previousUserId && previousUserId !== userInfo.id) {
-		await clearKeyringSecrets(previousUserId);
-	}
+	// Only once the switch is on disk: a failed write leaves auth.json naming the previous account,
+	// whose entries nothing else can find. The fixed-name entries go on every login, even a repeat
+	// of the same account: the secrets below are written under keyed names, so whatever is left
+	// under the old names is stale, and the next migration cannot tell it from a current secret.
+	await clearKeyringSecrets(previousUserId === userInfo.id ? undefined : previousUserId);
 
 	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
