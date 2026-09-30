@@ -157,13 +157,16 @@ async function writeKeyring(key: KeyringKey, value: string): Promise<void> {
 	entry.setPassword(value);
 }
 
-async function deleteKeyring(key: KeyringKey): Promise<void> {
+/** Returns what the delete failed with, or null. Callers that cannot act on it ignore it. */
+async function deleteKeyring(key: KeyringKey): Promise<unknown> {
 	try {
 		const entry = await getKeyringEntry(key);
-		if (!entry) return;
+		if (!entry) return null;
 		entry.deletePassword();
+		return null;
 	} catch (err) {
 		cliDebugPrint('credentials', `failed to delete ${key.service}/${key.account} from keyring`, err);
+		return err;
 	}
 }
 
@@ -238,11 +241,21 @@ export async function deleteSecret(userId: string, kind: SecretKind): Promise<vo
  * The keyring has no listing API, so `auth.json` is the only index of what it holds. Call this
  * before the profile leaves the file, or its entries become unreachable. Secrets stored in
  * `auth.json` itself go with the profile that holds them.
+ *
+ * Rejects when the keyring refused a delete, so a caller can say the secrets are still there.
  */
 export async function clearKeyringSecrets(userId?: string): Promise<void> {
+	const failures: unknown[] = [];
+
 	for (const kind of SECRET_KINDS) {
-		if (userId) await deleteKeyring(keyringKey(userId, kind));
-		await deleteKeyring(legacyKeyringKey(kind));
+		if (userId) failures.push(await deleteKeyring(keyringKey(userId, kind)));
+		failures.push(await deleteKeyring(legacyKeyringKey(kind)));
+	}
+
+	// Every key is attempted before this: one entry the keyring refuses must not strand the rest.
+	const failed = failures.filter((err) => err !== null);
+	if (failed.length) {
+		throw new AggregateError(failed, failed.map((err) => (err instanceof Error ? err.message : String(err))).join(' '));
 	}
 }
 

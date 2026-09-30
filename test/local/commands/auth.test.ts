@@ -8,6 +8,7 @@ import { readActiveProfile, readAuthFile } from '../../__setup__/auth-file.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
+	keyringFailures,
 	keyringProxyPasswordKey,
 	keyringSetKeys,
 	keyringStore,
@@ -26,7 +27,7 @@ vi.mock('apify-client', async (importOriginal) => ({
 }));
 
 useAuthSetup();
-const { lastLogMessage, lastErrorMessage } = useConsoleSpy();
+const { lastLogMessage, lastErrorMessage, logMessages } = useConsoleSpy();
 
 const { AuthLoginCommand } = await import('../../../src/commands/auth/login.js');
 const { AuthLogoutCommand } = await import('../../../src/commands/auth/logout.js');
@@ -283,6 +284,38 @@ describe('auth commands', () => {
 				}
 			},
 		);
+
+		it('login warns when the previous account entries cannot be removed', async () => {
+			await login();
+			clientState.user = { id: 'uid2', username: 'other' };
+			keyringFailures.add(TOKEN_KEY);
+
+			await login('apify_api_other_token');
+
+			expect(readActiveProfile()).toMatchObject({ id: 'uid2' });
+			expect([...logMessages.log, ...logMessages.error].join('\n')).toContain(
+				'Your previous secrets are still in the OS keyring under the account uid',
+			);
+		});
+
+		// Exiting 0 with a success line told the user the keyring was clear while the token was
+		// still in it, and auth.json, the only index of what it holds, was gone.
+		it('logout says so when the keyring cannot be cleared', async () => {
+			await login();
+			keyringFailures.add(TOKEN_KEY);
+
+			try {
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+				expect(lastErrorMessage()).toContain('Logout did not finish');
+				expect(lastErrorMessage()).toContain('Your secrets are still in the OS keyring under the account uid');
+				expect(lastErrorMessage()).toContain(`Your account was removed from ${AUTH_FILE_PATH()}`);
+				expect(process.exitCode).toBe(CommandExitCodes.RunFailed);
+			} finally {
+				process.exitCode = 0;
+			}
+		});
 
 		// Exiting 0 with a success line told the user they were logged out while auth.json still
 		// held the account the keyring entries were just deleted for.

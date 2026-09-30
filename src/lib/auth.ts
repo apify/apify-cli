@@ -195,7 +195,21 @@ export async function loginWithToken(
 	// whose entries nothing else can find. The fixed-name entries go on every login, even a repeat
 	// of the same account: the secrets below are written under keyed names, so whatever is left
 	// under the old names is stale, and the next migration cannot tell it from a current secret.
-	await clearKeyringSecrets(previousUserId === userInfo.id ? undefined : previousUserId);
+	const staleUserId = previousUserId === userInfo.id ? undefined : previousUserId;
+	try {
+		await clearKeyringSecrets(staleUserId);
+	} catch (err) {
+		// The login itself succeeded, so it goes through. The entries left behind are the previous
+		// account's, and nothing reads them under the new one.
+		cliDebugPrint('[loginWithToken] clearing the previous keyring entries failed', { error: err });
+		if (staleUserId) {
+			warning({
+				message:
+					`Your previous secrets are still in the OS keyring under the account ${staleUserId}; ` +
+					`delete them with your OS keyring app.`,
+			});
+		}
+	}
 
 	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
