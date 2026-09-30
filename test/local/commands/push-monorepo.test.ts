@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 
@@ -28,7 +28,12 @@ const build = { id: 'build1', actId: ACTOR_ID, buildNumber: '0.0.1', status: 'SU
 const currentVersion = { versionNumber: '0.0', sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES };
 
 let baseUrl = RUNTIME_BASE_URL;
+/** `null` makes the pushed version a new one. */
+let existingVersion: typeof currentVersion | null = currentVersion;
 const versionUpdates: unknown[] = [];
+const versionCreates: unknown[] = [];
+const versionDeletes = vitest.fn(async () => {});
+const actorDeletes = vitest.fn(async () => {});
 const actorGets = vitest.fn(async () => actor);
 
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
@@ -40,11 +45,19 @@ vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 		token: 'my-token',
 		actor: () => ({
 			get: actorGets,
+			delete: actorDeletes,
 			version: () => ({
-				get: async () => currentVersion,
+				get: async () => existingVersion,
 				update: async (modifier: unknown) => {
 					versionUpdates.push(modifier);
 					return {};
+				},
+				delete: versionDeletes,
+			}),
+			versions: () => ({
+				create: async (created: unknown) => {
+					versionCreates.push(created);
+					return created;
 				},
 			}),
 			build: async () => build,
@@ -135,6 +148,10 @@ beforeEach(async () => {
 	baseUrl = RUNTIME_BASE_URL;
 	sourceContextResponse = undefined;
 	versionUpdates.length = 0;
+	versionCreates.length = 0;
+	existingVersion = currentVersion;
+	versionDeletes.mockClear();
+	actorDeletes.mockClear();
 	actorGets.mockClear();
 	cwdCache.clear();
 	fetchMock.mockClear();
@@ -228,7 +245,65 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 
 		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
 		expect(logMessages.error.join('\n')).toContain(`update it with 'apify runtime install'`);
+		expect(logMessages.error.join('\n')).not.toContain('apify runtime connect');
 		expect(callsTo('dev-folder')).toEqual([]);
+		// The existing version is left as it was.
+		expect(versionUpdates).toEqual([]);
+	});
+
+	it('creates a new version before pushing its context, and removes it again when the push fails', async () => {
+		existingVersion = null;
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionCreates).toEqual([expect.objectContaining({ versionNumber: '0.0', buildTag: 'latest' })]);
+		expect(sourceContextUpload().query.actorPath).toBe(ACTOR_PATH);
+		expect(versionDeletes).not.toHaveBeenCalled();
+
+		fetchMock.mockClear();
+		cwdCache.clear();
+		sourceContextResponse = () =>
+			new Response(JSON.stringify({ error: { type: 'invalid-request', message: 'Archive is broken' } }), {
+				status: 400,
+			});
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.BuildFailed);
+		expect(logMessages.error.join('\n')).toContain('Could not push the Docker context');
+		expect(logMessages.error.join('\n')).toContain('Archive is broken');
+		expect(versionDeletes).toHaveBeenCalledOnce();
+		expect(callsTo('dev-folder')).toEqual([]);
+	});
+
+	it("applies the Actor folder's own .actorignore to its files, force-includes too", async () => {
+		await write(`${ACTOR_PATH}/.gitignore`, 'dist\n');
+		await write(`${ACTOR_PATH}/.actorignore`, '!dist/\nsrc/secret.ts\n');
+		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(3);\n');
+		await write(`${ACTOR_PATH}/src/secret.ts`, 'export const s = 1;\n');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		const names = [...sourceContextUpload().files.keys()];
+		expect(names).toContain(`${ACTOR_PATH}/dist/main.js`);
+		expect(names).not.toContain(`${ACTOR_PATH}/src/secret.ts`);
+		expect(names).toContain(`${ACTOR_PATH}/src/index.ts`);
+		expect(names).toContain('packages/typescript-utils/src/index.ts');
+	});
+
+	it('counts only changes inside the Docker context as uncommitted', async () => {
+		await write(
+			`${ACTOR_PATH}/.actor/actor.json`,
+			(await readFile(joinPath(`${ACTOR_PATH}/.actor/actor.json`), 'utf8')).replace('"../../.."', '"../.."'),
+		);
+		git('add', '.');
+		git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'context is actors/');
+		await write('packages/typescript-utils/src/new.ts', 'export const y = 2;\n');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(sourceContextUpload().query.gitDirty).toBe('false');
 	});
 
 	it('rejects a dockerContextDir that does not contain the Actor', async () => {

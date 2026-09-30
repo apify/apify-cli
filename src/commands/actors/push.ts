@@ -27,6 +27,8 @@ import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { mayTargetActorRuntime, registerActorRuntimeDevFolder } from '../../lib/runtime/dev-folder.js';
 import {
 	createContextTarball,
+	getContextFilePaths,
+	monorepoOutdatedRuntimeMessage,
 	monorepoUnsupportedMessage,
 	pushActorRuntimeSourceContext,
 	readGitProvenance,
@@ -305,7 +307,10 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			return;
 		}
 		const sourceRoot = dockerContext.kind === 'context' ? dockerContext.contextRoot : cwd;
-		const sourcePaths = dockerContext.kind === 'context' ? await getActorLocalFilePaths(sourceRoot) : filePathsToPush;
+		const sourcePaths =
+			dockerContext.kind === 'context'
+				? await getContextFilePaths(dockerContext.contextRoot, dockerContext.actorPath, filePathsToPush)
+				: filePathsToPush;
 
 		const userInfo = await getLocalUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
@@ -384,9 +389,10 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
-		const filesSize = await sumFilesSizeInBytes(sourcePaths, sourceRoot);
+		// A Docker context always goes to the runtime in one piece, whatever its size.
+		const filesSize = dockerContext.kind === 'context' ? 0 : await sumFilesSizeInBytes(sourcePaths, sourceRoot);
 
-		if ((filesSize < MAX_MULTIFILE_BYTES || dockerContext.kind === 'context') && !isActorCreatedNow) {
+		if (filesSize < MAX_MULTIFILE_BYTES && !isActorCreatedNow) {
 			const client = await actorClient.get();
 
 			// Check when was files modified last
@@ -434,7 +440,7 @@ Skipping push. Use --force to override.`,
 		let sourceFiles;
 		let tarballUrl;
 		if (dockerContext.kind === 'context') {
-			// The files go to the runtime's own endpoint below, once the version exists.
+			// The files go to the runtime's own endpoint instead.
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else if (filesSize < MAX_MULTIFILE_BYTES) {
 			sourceFiles = await createSourceFiles(filePathsToPush, cwd);
@@ -483,6 +489,33 @@ Skipping push. Use --force to override.`,
 				})
 			: undefined;
 
+		// The runtime takes a context only for an existing version. For one, it goes first, so a runtime that
+		// refuses it leaves the version untouched; a version update without files keeps the context.
+		const pushDockerContext = async () => {
+			if (dockerContext.kind !== 'context') return true;
+			run({
+				message: `Pushing the Docker context ${sourceRoot} (${sourcePaths.length} files), with the Actor in ${dockerContext.actorPath}.`,
+			});
+			const result = await pushActorRuntimeSourceContext(apifyClient, actorId, version, {
+				actorPath: dockerContext.actorPath,
+				tarball: await createContextTarball(sourcePaths, sourceRoot),
+				git: readGitProvenance(sourceRoot),
+			});
+			if (result.ok) return true;
+			error({
+				message: result.unsupported
+					? monorepoOutdatedRuntimeMessage(apifyClient.baseUrl)
+					: `Could not push the Docker context of Actor ${actor.name}: ${result.error}`,
+			});
+			process.exitCode = result.unsupported ? CommandExitCodes.NotImplemented : CommandExitCodes.BuildFailed;
+			return false;
+		};
+
+		if (actorCurrentVersion && !(await pushDockerContext())) {
+			if (isActorCreatedNow) await actorClient.delete();
+			return;
+		}
+
 		if (actorCurrentVersion) {
 			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
 			// TODO: fix this type too -.-
@@ -503,24 +536,10 @@ Skipping push. Use --force to override.`,
 			} as never);
 
 			run({ message: `Created version ${version} for Actor ${actor.name}.` });
-		}
 
-		if (dockerContext.kind === 'context') {
-			run({
-				message: `Pushing the Docker context ${sourceRoot} (${sourcePaths.length} files), with the Actor in ${dockerContext.actorPath}.`,
-			});
-			const result = await pushActorRuntimeSourceContext(apifyClient, actorId, version, {
-				actorPath: dockerContext.actorPath,
-				tarball: await createContextTarball(sourcePaths, sourceRoot),
-				git: readGitProvenance(sourceRoot),
-			});
-			if (!result.ok) {
-				error({
-					message: result.unsupported
-						? `${apifyClient.baseUrl} does not accept monorepo Actors. If it is a local Actor runtime, update it with 'apify runtime install'.\n${monorepoUnsupportedMessage(actor.name)}`
-						: `Could not push the Docker context of Actor ${actor.name}: ${result.error}`,
-				});
-				process.exitCode = result.unsupported ? CommandExitCodes.NotImplemented : CommandExitCodes.BuildFailed;
+			// Undone when the context is refused, so a failed push leaves no empty version behind.
+			if (!(await pushDockerContext())) {
+				await actorClient.version(version).delete();
 				return;
 			}
 		}

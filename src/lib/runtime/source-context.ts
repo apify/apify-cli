@@ -5,6 +5,7 @@ import type { ApifyClient } from 'apify-client';
 import { TarArchive } from 'archiver';
 
 import { ACTOR_SPECIFICATION_FOLDER, APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
+import { getActorLocalFilePaths } from '../utils.js';
 
 /** Tracks pushing Actors with `dockerContextDir` (monorepo Actors) to the Apify platform. */
 export const MONOREPO_PLATFORM_SUPPORT_ISSUE_URL = 'https://github.com/apify/apify-core/issues/28685';
@@ -76,7 +77,7 @@ export function readGitProvenance(dir: string): GitProvenance {
 	if (branch && branch !== 'HEAD') provenance.branch = branch;
 	const remoteUrl = git(dir, ['remote', 'get-url', 'origin']);
 	if (remoteUrl) provenance.remoteUrl = withoutCredentials(remoteUrl);
-	const status = git(dir, ['status', '--porcelain']);
+	const status = git(dir, ['status', '--porcelain', '--', '.']);
 	if (status !== undefined) provenance.dirty = status.length > 0;
 	return provenance;
 }
@@ -133,7 +134,7 @@ export async function pushActorRuntimeSourceContext(
 			'Authorization': `Bearer ${client.token}`,
 			'Content-Type': 'application/gzip',
 		},
-		body: new Uint8Array(upload.tarball),
+		body: new Uint8Array(upload.tarball.buffer, upload.tarball.byteOffset, upload.tarball.byteLength),
 	});
 	if (response.ok) return { ok: true };
 
@@ -142,6 +143,31 @@ export async function pushActorRuntimeSourceContext(
 	// A missing route answers `not-found`; a missing Actor or version answers `record-not-found`.
 	const unsupported = response.status === 404 && payload?.error?.type !== 'record-not-found';
 	return { ok: false, unsupported, error };
+}
+
+/**
+ * The files of the Docker context at `contextRoot`, relative to it. Those in the Actor's folder are exactly
+ * what an ordinary push of that folder sends (`actorFilePaths`), so its own `.actorignore` applies there;
+ * the rest follow the context root's `.gitignore` and `.actorignore`.
+ */
+export async function getContextFilePaths(
+	contextRoot: string,
+	actorPath: string,
+	actorFilePaths: string[],
+): Promise<string[]> {
+	const actorFolder = actorPath.split('/').join(sep);
+	const outsideActor = (await getActorLocalFilePaths(contextRoot)).filter(
+		(filePath) => filePath !== actorFolder && !filePath.startsWith(`${actorFolder}${sep}`),
+	);
+	return [...outsideActor, ...actorFilePaths.map((filePath) => join(actorFolder, filePath))];
+}
+
+/** For a target that answered the context upload as an unknown endpoint. */
+export function monorepoOutdatedRuntimeMessage(baseUrl: string): string {
+	return [
+		`${baseUrl} does not accept monorepo Actors. If it is a local Actor runtime, update it with 'apify runtime install'.`,
+		`The Apify platform does not accept them from apify push yet: ${MONOREPO_PLATFORM_SUPPORT_ISSUE_URL}`,
+	].join('\n');
 }
 
 export function monorepoUnsupportedMessage(actorName: string): string {
