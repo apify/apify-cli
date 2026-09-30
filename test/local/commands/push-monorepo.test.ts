@@ -170,12 +170,18 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 	});
 
-	it('reports uncommitted changes', async () => {
+	it('pushes the working copy as it is on disk, uncommitted and untracked files included', async () => {
 		await write(`${ACTOR_PATH}/src/index.ts`, 'console.log(2);\n');
+		await write('packages/typescript-utils/src/new.ts', 'export const y = 2;\n');
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		expect(callsTo('source-context')[0].body.git.dirty).toBe(true);
+		const { body } = callsTo('source-context')[0];
+		const files = body.sourceFiles as { name: string; content: string }[];
+		const byName = (name: string) => files.find((file) => file.name.split('\\').join('/') === name);
+		expect(byName(`${ACTOR_PATH}/src/index.ts`)?.content).toBe('console.log(2);\n');
+		expect(byName('packages/typescript-utils/src/new.ts')?.content).toBe('export const y = 2;\n');
+		expect(body.git.dirty).toBe(true);
 	});
 
 	it('asks to update a runtime that has no source-context endpoint', async () => {
