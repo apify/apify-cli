@@ -345,13 +345,16 @@ async function dropUnkeyedSecrets(file: AuthFile): Promise<void> {
 async function keyKeyringSecrets(userId: string): Promise<void> {
 	// A keyed token means a login already wrote this account's secrets under the new names. The
 	// fixed names are then whatever a previous login left, which may be another account's, so
-	// nothing under them is claimed for this one.
-	const claimable = (await readKeyring(keyringKey(userId, 'token'))) === undefined;
+	// nothing under them is claimed for this one. Read once, and only once a fixed name turns
+	// something up, which on a keyed account is never.
+	let claimable: boolean | undefined;
 
 	for (const kind of SECRET_KINDS) {
 		const legacy = legacyKeyringKey(kind);
 		const value = await readKeyring(legacy);
 		if (value === undefined) continue;
+
+		claimable ??= (await readKeyring(keyringKey(userId, 'token'))) === undefined;
 
 		// The second test covers the kinds a login stores directly; the first covers the kinds it
 		// leaves empty, which nothing else would tell apart from never having been set.
