@@ -987,6 +987,9 @@ DESCRIPTION
   as ZIP file.
   Files matched by .gitignore and .actorignore are excluded. Use negation 
   patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.
+  An Actor whose '.actor/actor.json' sets "dockerContextDir" (a monorepo Actor) 
+  pushes that whole Docker context; this works only against a local Actor 
+  runtime for now.
   Use --force to override newer remote versions.
 
 USAGE
