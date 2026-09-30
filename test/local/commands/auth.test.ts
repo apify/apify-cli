@@ -1,13 +1,16 @@
 import { chmodSync, existsSync, statSync } from 'node:fs';
 import process from 'node:process';
 
+import { __resetAuthFileForTests } from '../../../src/lib/auth-file.js';
 import { AUTH_FILE_PATH, CommandExitCodes, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
-import { getSecret } from '../../../src/lib/credentials.js';
+import { __resetCredentialsForTests, ensureSecretsKeyed, getSecret } from '../../../src/lib/credentials.js';
 import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { readActiveProfile, readAuthFile } from '../../__setup__/auth-file.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
+	LEGACY_KEYRING_PROXY_PASSWORD_KEY,
+	LEGACY_KEYRING_TOKEN_KEY,
 	keyringFailures,
 	keyringProxyPasswordKey,
 	keyringSetKeys,
@@ -296,6 +299,26 @@ describe('auth commands', () => {
 			expect([...logMessages.log, ...logMessages.error].join('\n')).toContain(
 				'Your previous secrets are still in the OS keyring under the account uid',
 			);
+		});
+
+		// The keyring module loads on machines where the secret service does not answer, so a
+		// delete that throws there is not a secret left behind: nothing was ever stored.
+		it('logout succeeds when the keyring answers nothing', async () => {
+			for (const key of [TOKEN_KEY, PROXY_PASSWORD_KEY, LEGACY_KEYRING_TOKEN_KEY, LEGACY_KEYRING_PROXY_PASSWORD_KEY]) {
+				keyringFailures.add(key);
+			}
+
+			try {
+				await login();
+				expect(keyringStore.size).toBe(0);
+
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+				expect(process.exitCode).not.toBe(CommandExitCodes.RunFailed);
+			} finally {
+				process.exitCode = 0;
+			}
 		});
 
 		// Exiting 0 with a success line told the user the keyring was clear while the token was

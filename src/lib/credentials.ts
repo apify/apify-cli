@@ -157,7 +157,14 @@ async function writeKeyring(key: KeyringKey, value: string): Promise<void> {
 	entry.setPassword(value);
 }
 
-/** Returns what the delete failed with, or null. Callers that cannot act on it ignore it. */
+/**
+ * Returns what the delete failed with, or null. Callers that cannot act on it ignore it.
+ *
+ * Only a secret that still reads back is reported. The module loads on machines with no secret
+ * service, where every entry throws although nothing was ever stored, and a caller acting on that
+ * would tell the user to clean a keyring they do not have. A keyring that can neither delete nor
+ * read is silent for the same reason, which is the cost of not crying wolf on every such machine.
+ */
 async function deleteKeyring(key: KeyringKey): Promise<unknown> {
 	try {
 		const entry = await getKeyringEntry(key);
@@ -166,7 +173,7 @@ async function deleteKeyring(key: KeyringKey): Promise<unknown> {
 		return null;
 	} catch (err) {
 		cliDebugPrint('credentials', `failed to delete ${key.service}/${key.account} from keyring`, err);
-		return err;
+		return (await readKeyring(key)) === undefined ? null : err;
 	}
 }
 
