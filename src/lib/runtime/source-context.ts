@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { existsSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import type { ApifyClient } from 'apify-client';
@@ -28,14 +29,35 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	const contextRoot = resolve(actorDir, ACTOR_SPECIFICATION_FOLDER, dockerContextDir);
 	const actorPath = relative(contextRoot, actorDir);
 	if (actorPath === '') return { kind: 'none' };
-	if (isAbsolute(actorPath) || actorPath === '..' || actorPath.startsWith(`..${sep}`)) {
+	if (isOutside(actorPath)) {
 		return {
 			kind: 'invalid',
 			message: `"dockerContextDir" in .actor/actor.json points to ${contextRoot}, which does not contain the Actor's folder.`,
 		};
 	}
 
+	// The platform builds from a clone of the repository, which holds nothing above its root.
+	const repoRoot = git(actorDir, ['rev-parse', '--show-toplevel']);
+	if (repoRoot && !existsSync(contextRoot)) {
+		return {
+			kind: 'invalid',
+			message: `"dockerContextDir" in .actor/actor.json points to ${contextRoot}, which does not exist.`,
+		};
+	}
+	if (repoRoot && isOutside(relative(realpathSync(repoRoot), realpathSync(contextRoot)))) {
+		return {
+			kind: 'invalid',
+			message:
+				`"dockerContextDir" in .actor/actor.json points to ${contextRoot}, outside the Git repository ${repoRoot}. ` +
+				'The Apify platform builds from a clone of the repository, so it could not build this Actor.',
+		};
+	}
+
 	return { kind: 'context', contextRoot, actorPath: actorPath.split(sep).join('/') };
+}
+
+function isOutside(relativePath: string): boolean {
+	return isAbsolute(relativePath) || relativePath === '..' || relativePath.startsWith(`..${sep}`);
 }
 
 export interface GitProvenance {
@@ -145,21 +167,32 @@ export async function pushActorRuntimeSourceContext(
 	return { ok: false, unsupported, error };
 }
 
+/** Untracked files under these are never on the platform, and are too big to push by accident. */
+const UNTRACKED_IGNORED_SEGMENTS = new Set(['node_modules', 'storage', 'apify_storage', 'crawlee_storage']);
+
+function gitFileList(contextRoot: string, args: string[]): string[] | undefined {
+	const output = git(contextRoot, ['ls-files', '-z', ...args]);
+	return output?.split('\0').filter(Boolean);
+}
+
 /**
- * The files of the Docker context at `contextRoot`, relative to it. Those in the Actor's folder are exactly
- * what an ordinary push of that folder sends (`actorFilePaths`), so its own `.actorignore` applies there;
- * the rest follow the context root's `.gitignore` and `.actorignore`.
+ * The files of the Docker context at `contextRoot`, relative to it: those a clone of the repository has -
+ * what the platform builds from - as they are on disk now, plus files not committed yet that Git does not
+ * ignore. `.actorignore` does not apply, as it does not for the platform's Git builds. Outside a Git
+ * repository, the files an ordinary push of `contextRoot` would send.
  */
-export async function getContextFilePaths(
-	contextRoot: string,
-	actorPath: string,
-	actorFilePaths: string[],
-): Promise<string[]> {
-	const actorFolder = actorPath.split('/').join(sep);
-	const outsideActor = (await getActorLocalFilePaths(contextRoot)).filter(
-		(filePath) => filePath !== actorFolder && !filePath.startsWith(`${actorFolder}${sep}`),
-	);
-	return [...outsideActor, ...actorFilePaths.map((filePath) => join(actorFolder, filePath))];
+export async function getContextFilePaths(contextRoot: string): Promise<string[]> {
+	const tracked = gitFileList(contextRoot, ['--cached']);
+	const untracked = gitFileList(contextRoot, ['--others', '--exclude-standard']);
+	if (!tracked || !untracked) return getActorLocalFilePaths(contextRoot);
+
+	// A tracked file deleted locally is not pushed; a submodule is listed as a directory.
+	const isFile = (filePath: string) =>
+		existsSync(join(contextRoot, filePath)) && !statSync(join(contextRoot, filePath)).isDirectory();
+	return [
+		...tracked.filter(isFile),
+		...untracked.filter((filePath) => !filePath.split('/').some((segment) => UNTRACKED_IGNORED_SEGMENTS.has(segment))),
+	].map((filePath) => filePath.split('/').join(sep));
 }
 
 /** For a target that answered the context upload as an unknown endpoint. */

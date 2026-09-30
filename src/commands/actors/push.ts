@@ -308,9 +308,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}
 		const sourceRoot = dockerContext.kind === 'context' ? dockerContext.contextRoot : cwd;
 		const sourcePaths =
-			dockerContext.kind === 'context'
-				? await getContextFilePaths(dockerContext.contextRoot, dockerContext.actorPath, filePathsToPush)
-				: filePathsToPush;
+			dockerContext.kind === 'context' ? await getContextFilePaths(dockerContext.contextRoot) : filePathsToPush;
 
 		const userInfo = await getLocalUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
@@ -496,10 +494,17 @@ Skipping push. Use --force to override.`,
 			run({
 				message: `Pushing the Docker context ${sourceRoot} (${sourcePaths.length} files), with the Actor in ${dockerContext.actorPath}.`,
 			});
+			const gitProvenance = readGitProvenance(sourceRoot);
+			if (gitProvenance.dirty) {
+				warning({
+					message:
+						'The Docker context has changes that are not committed. They are built here, but the Apify platform builds only what is committed and pushed to Git.',
+				});
+			}
 			const result = await pushActorRuntimeSourceContext(apifyClient, actorId, version, {
 				actorPath: dockerContext.actorPath,
 				tarball: await createContextTarball(sourcePaths, sourceRoot),
-				git: readGitProvenance(sourceRoot),
+				git: gitProvenance,
 			});
 			if (result.ok) return true;
 			error({

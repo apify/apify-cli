@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 
@@ -96,10 +96,11 @@ function callsTo(endpoint: string) {
 		.map(([url, init]) => ({ url: String(url), method: init?.method, body: JSON.parse(init?.body as string) }));
 }
 
-/** The regular files of a `.tar.gz`, by name - a plain ustar reader is enough for what `archiver` writes. */
-function untar(gzipped: Uint8Array): Map<string, string> {
+/** The regular files of a `.tar.gz` and their permission bits, by name - a plain ustar reader is enough for what `archiver` writes. */
+function untar(gzipped: Uint8Array): { files: Map<string, string>; modes: Map<string, number> } {
 	const archive = gunzipSync(gzipped);
 	const files = new Map<string, string>();
+	const modes = new Map<string, number>();
 	for (let offset = 0; offset + 512 <= archive.length;) {
 		const header = archive.subarray(offset, offset + 512);
 		const field = (start: number, length: number) => {
@@ -113,10 +114,14 @@ function untar(gzipped: Uint8Array): Map<string, string> {
 		const size = Number.parseInt(field(124, 12).trim() || '0', 8);
 		const type = field(156, 1);
 		const content = archive.subarray(offset + 512, offset + 512 + size).toString('utf8');
-		if (type === '0' || type === '') files.set(prefix ? `${prefix}/${name}` : name, content);
+		if (type === '0' || type === '') {
+			const path = prefix ? `${prefix}/${name}` : name;
+			files.set(path, content);
+			modes.set(path, Number.parseInt(field(100, 8).trim() || '0', 8) & 0o777);
+		}
 		offset += 512 + Math.ceil(size / 512) * 512;
 	}
-	return files;
+	return { files, modes };
 }
 
 /** The one source-context upload: its URL and query, and the files of its tarball body. */
@@ -128,7 +133,7 @@ function sourceContextUpload() {
 		method: init?.method,
 		contentType: (init!.headers as Record<string, string>)['Content-Type'],
 		query: Object.fromEntries(parsed.searchParams),
-		files: untar(init?.body as Uint8Array),
+		...untar(init?.body as Uint8Array),
 	};
 }
 
@@ -277,19 +282,41 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 		expect(callsTo('dev-folder')).toEqual([]);
 	});
 
-	it("applies the Actor folder's own .actorignore to its files, force-includes too", async () => {
+	it('pushes the files a Git clone has, as they are on disk, and not what .actorignore changes', async () => {
+		// `dist` is git-ignored: the platform's clone has no `dist`, whatever .actorignore force-includes.
 		await write(`${ACTOR_PATH}/.gitignore`, 'dist\n');
-		await write(`${ACTOR_PATH}/.actorignore`, '!dist/\nsrc/secret.ts\n');
+		await write(`${ACTOR_PATH}/.actorignore`, '!dist/\nsrc/index.ts\n');
 		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(3);\n');
-		await write(`${ACTOR_PATH}/src/secret.ts`, 'export const s = 1;\n');
+		await write('shared/start.sh', '#!/bin/sh\necho hi\n');
+		await chmod(joinPath('shared/start.sh'), 0o755);
+		await rm(joinPath('packages/typescript-utils/src/index.ts'));
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		const names = [...sourceContextUpload().files.keys()];
-		expect(names).toContain(`${ACTOR_PATH}/dist/main.js`);
-		expect(names).not.toContain(`${ACTOR_PATH}/src/secret.ts`);
+		const { files, modes } = sourceContextUpload();
+		const names = [...files.keys()];
+		expect(names).not.toContain(`${ACTOR_PATH}/dist/main.js`);
+		// Tracked, so in the clone, although .actorignore excludes it.
 		expect(names).toContain(`${ACTOR_PATH}/src/index.ts`);
-		expect(names).toContain('packages/typescript-utils/src/index.ts');
+		// Deleted locally, so not pushed although still committed.
+		expect(names).not.toContain('packages/typescript-utils/src/index.ts');
+		// Untracked and not ignored: pushed, with a warning that the platform would not have it yet.
+		expect(names).toContain('shared/start.sh');
+		expect(modes.get('shared/start.sh')).toBe(0o755);
+		expect(logMessages.error.join('\n')).toContain('changes that are not committed');
+	});
+
+	it('rejects a dockerContextDir outside the Git repository, which the platform could not build', async () => {
+		await write(
+			`${ACTOR_PATH}/.actor/actor.json`,
+			JSON.stringify({ actorSpecification: 1, name: actName, version: '0.0', dockerContextDir: '../../../..' }),
+		);
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		expect(logMessages.error.join('\n')).toContain('outside the Git repository');
+		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
 	it('counts only changes inside the Docker context as uncommitted', async () => {
