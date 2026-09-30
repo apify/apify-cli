@@ -301,6 +301,23 @@ describe('auth commands', () => {
 			);
 		});
 
+		it('does not hand one account the previous account secret', async () => {
+			keyringStore.set(LEGACY_KEYRING_PROXY_PASSWORD_KEY, 'pw_of_uid');
+			// The keyring refuses that delete, so login cannot clear it.
+			keyringFailures.add(LEGACY_KEYRING_PROXY_PASSWORD_KEY);
+
+			await login();
+			clientState.user = { id: 'uid2', username: 'other' };
+			await login('apify_api_other_token');
+
+			// The migration next runs in a fresh process, with nothing memoized.
+			__resetCredentialsForTests();
+			__resetAuthFileForTests();
+			await ensureSecretsKeyed();
+
+			expect(await getSecret('uid2', 'proxy-password')).toBeUndefined();
+		});
+
 		// The keyring module loads on machines where the secret service does not answer, so a
 		// delete that throws there is not a secret left behind: nothing was ever stored.
 		it('logout succeeds when the keyring answers nothing', async () => {

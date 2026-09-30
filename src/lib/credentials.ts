@@ -339,18 +339,23 @@ async function dropUnkeyedSecrets(file: AuthFile): Promise<void> {
 
 /**
  * Write the new entry, verify it reads back, then delete the old one. The reverse order loses the
- * secret when the delete succeeds and the write does not. A kind the account already has is left
- * alone, so the migration never restores a value something newer replaced.
+ * secret when the delete succeeds and the write does not. Nothing the account already has is
+ * touched, so the migration never restores a value something newer replaced.
  */
 async function keyKeyringSecrets(userId: string): Promise<void> {
+	// A keyed token means a login already wrote this account's secrets under the new names. The
+	// fixed names are then whatever a previous login left, which may be another account's, so
+	// nothing under them is claimed for this one.
+	const claimable = (await readKeyring(keyringKey(userId, 'token'))) === undefined;
+
 	for (const kind of SECRET_KINDS) {
 		const legacy = legacyKeyringKey(kind);
 		const value = await readKeyring(legacy);
 		if (value === undefined) continue;
 
-		// A login between the upgrade and this migration already stored this kind, and the legacy
-		// entry it left behind is the older value.
-		if ((await getSecret(userId, kind)) !== undefined) {
+		// The second test covers the kinds a login stores directly; the first covers the kinds it
+		// leaves empty, which nothing else would tell apart from never having been set.
+		if (!claimable || (await getSecret(userId, kind)) !== undefined) {
 			await deleteKeyring(legacy);
 			continue;
 		}

@@ -199,8 +199,9 @@ export async function loginWithToken(
 	try {
 		await clearKeyringSecrets(staleUserId);
 	} catch (err) {
-		// The login itself succeeded, so it goes through. The entries left behind are the previous
-		// account's, and nothing reads them under the new one.
+		// The login itself succeeded, so it goes through. What is left behind stays unreadable:
+		// `keyKeyringSecrets` claims nothing under the fixed names for an account that already has
+		// a keyed token, which this login is about to write.
 		cliDebugPrint('[loginWithToken] clearing the previous keyring entries failed', { error: err });
 		if (staleUserId) {
 			warning({
