@@ -11,6 +11,7 @@ import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from '
 import {
 	clearKeyringSecrets,
 	deleteSecret,
+	describeLeftovers,
 	ensureCredentialsCurrent,
 	ensureMigrated,
 	getSecret,
@@ -196,20 +197,16 @@ export async function loginWithToken(
 	// of the same account: the secrets below are written under keyed names, so whatever is left
 	// under the old names is stale, and the next migration cannot tell it from a current secret.
 	const staleUserId = previousUserId === userInfo.id ? undefined : previousUserId;
-	try {
-		await clearKeyringSecrets(staleUserId);
-	} catch (err) {
-		// The login itself succeeded, so it goes through. What is left behind stays unreadable:
-		// `keyKeyringSecrets` claims nothing under the fixed names for an account that already has
-		// a keyed token, which this login is about to write.
-		cliDebugPrint('[loginWithToken] clearing the previous keyring entries failed', { error: err });
-		if (staleUserId) {
-			warning({
-				message:
-					`Your previous secrets are still in the OS keyring under the account ${staleUserId}; ` +
-					`delete them with your OS keyring app.`,
-			});
-		}
+	const leftovers = await clearKeyringSecrets(staleUserId);
+
+	// The login itself succeeded, so it goes through. Said whether or not the account changed: a
+	// repeat login leaves the same entries behind, and nothing later in the CLI reads or names them.
+	if (leftovers.length) {
+		warning({
+			message:
+				`Your previous secrets are still in the OS keyring at ${describeLeftovers(leftovers)}; ` +
+				`delete them with your OS keyring app.`,
+		});
 	}
 
 	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.

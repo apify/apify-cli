@@ -1,9 +1,12 @@
 import { chmodSync, existsSync, statSync } from 'node:fs';
 import process from 'node:process';
 
+import { APIFY_ENV_VARS } from '@apify/consts';
+
 import { __resetAuthFileForTests } from '../../../src/lib/auth-file.js';
 import { AUTH_FILE_PATH, CommandExitCodes, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { __resetCredentialsForTests, ensureSecretsKeyed, getSecret } from '../../../src/lib/credentials.js';
+import { tildify } from '../../../src/lib/utils.js';
 import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { readActiveProfile, readAuthFile } from '../../__setup__/auth-file.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
@@ -296,9 +299,9 @@ describe('auth commands', () => {
 			await login('apify_api_other_token');
 
 			expect(readActiveProfile()).toMatchObject({ id: 'uid2' });
-			expect([...logMessages.log, ...logMessages.error].join('\n')).toContain(
-				'Your previous secrets are still in the OS keyring under the account uid',
-			);
+			const printed = [...logMessages.log, ...logMessages.error].join('\n');
+			expect(printed).toContain('Your previous secrets are still in the OS keyring at com.apify.cli.token/uid;');
+			expect(printed).not.toContain('uid2');
 		});
 
 		it('does not hand one account the previous account secret', async () => {
@@ -316,6 +319,46 @@ describe('auth commands', () => {
 			await ensureSecretsKeyed();
 
 			expect(await getSecret('uid2', 'proxy-password')).toBeUndefined();
+		});
+
+		it('logout names the keyring entry that survived, not the account', async () => {
+			await login();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_legacy');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+
+			try {
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect(lastErrorMessage()).toContain('com.apify.cli/token');
+				expect(lastErrorMessage()).not.toContain('under the account uid');
+			} finally {
+				process.exitCode = 0;
+			}
+		});
+
+		it('logout still reports APIFY_TOKEN when a step failed', async () => {
+			vitest.stubEnv(APIFY_ENV_VARS.TOKEN, 'apify_api_env');
+			await login();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_legacy');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+
+			try {
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect([...logMessages.log, ...logMessages.error].join('\n')).toContain(`${APIFY_ENV_VARS.TOKEN} is still set`);
+			} finally {
+				process.exitCode = 0;
+			}
+		});
+
+		it('login reports a leftover entry when the account did not change', async () => {
+			await login();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_legacy');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+
+			await login();
+
+			expect([...logMessages.log, ...logMessages.error].join('\n')).toContain('com.apify.cli/token');
 		});
 
 		// The keyring module loads on machines where the secret service does not answer, so a
@@ -349,8 +392,8 @@ describe('auth commands', () => {
 
 				expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
 				expect(lastErrorMessage()).toContain('Logout did not finish');
-				expect(lastErrorMessage()).toContain('Your secrets are still in the OS keyring under the account uid');
-				expect(lastErrorMessage()).toContain(`Your account was removed from ${AUTH_FILE_PATH()}`);
+				expect(lastErrorMessage()).toContain('Your secrets are still in the OS keyring at com.apify.cli.token/uid;');
+				expect(lastErrorMessage()).toContain(`Your account was removed from ${tildify(AUTH_FILE_PATH())}`);
 				expect(process.exitCode).toBe(CommandExitCodes.RunFailed);
 			} finally {
 				process.exitCode = 0;
@@ -370,7 +413,7 @@ describe('auth commands', () => {
 				expect(existsSync(AUTH_FILE_PATH())).toBe(true);
 				expect(lastErrorMessage()).toContain('Logout did not finish');
 				expect(lastErrorMessage()).toContain('Your secrets were removed from the OS keyring.');
-				expect(lastErrorMessage()).toContain(`Your account is still in ${AUTH_FILE_PATH()}`);
+				expect(lastErrorMessage()).toContain(`Your account is still in ${tildify(AUTH_FILE_PATH())}`);
 				expect(process.exitCode).toBe(CommandExitCodes.RunFailed);
 			} finally {
 				chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);

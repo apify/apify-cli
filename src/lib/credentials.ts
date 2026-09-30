@@ -26,7 +26,7 @@ export type SecretKind = 'token' | 'proxy-password';
 
 const SECRET_KINDS: readonly SecretKind[] = ['token', 'proxy-password'];
 
-interface KeyringKey {
+export interface KeyringKey {
 	service: string;
 	account: string;
 }
@@ -43,6 +43,12 @@ function keyringKey(userId: string, kind: SecretKind): KeyringKey {
 /** Where a secret sat before it was keyed by user: one service, the kind as the account. */
 function legacyKeyringKey(kind: SecretKind): KeyringKey {
 	return { service: KEYRING_SERVICE, account: kind };
+}
+
+/** A secret a delete could not remove, named by where it still is. */
+export interface KeyringLeftover {
+	key: KeyringKey;
+	error: unknown;
 }
 
 interface KeyringEntry {
@@ -158,14 +164,14 @@ async function writeKeyring(key: KeyringKey, value: string): Promise<void> {
 }
 
 /**
- * Returns what the delete failed with, or null. Callers that cannot act on it ignore it.
+ * Returns the secret this left in the keyring, or null. Callers that cannot act on it ignore it.
  *
  * Only a secret that still reads back is reported. The module loads on machines with no secret
  * service, where every entry throws although nothing was ever stored, and a caller acting on that
- * would tell the user to clean a keyring they do not have. A keyring that can neither delete nor
- * read is silent for the same reason, which is the cost of not crying wolf on every such machine.
+ * would name a keyring the user does not have. A keyring that can neither delete nor read is
+ * silent for the same reason, which is the cost of not naming one that was never there.
  */
-async function deleteKeyring(key: KeyringKey): Promise<unknown> {
+async function deleteKeyring(key: KeyringKey): Promise<KeyringLeftover | null> {
 	try {
 		const entry = await getKeyringEntry(key);
 		if (!entry) return null;
@@ -173,7 +179,7 @@ async function deleteKeyring(key: KeyringKey): Promise<unknown> {
 		return null;
 	} catch (err) {
 		cliDebugPrint('credentials', `failed to delete ${key.service}/${key.account} from keyring`, err);
-		return (await readKeyring(key)) === undefined ? null : err;
+		return (await readKeyring(key)) === undefined ? null : { key, error: err };
 	}
 }
 
@@ -266,21 +272,29 @@ export async function deleteSecret(userId: string, kind: SecretKind): Promise<vo
  * before the profile leaves the file, or its entries become unreachable. Secrets stored in
  * `auth.json` itself go with the profile that holds them.
  *
- * Rejects when the keyring refused a delete, so a caller can say the secrets are still there.
+ * Returns the entries the keyring refused to delete, so a caller can name them. Every key is
+ * attempted first: one entry the keyring holds on to must not strand the rest.
  */
-export async function clearKeyringSecrets(userId?: string): Promise<void> {
-	const failures: unknown[] = [];
+export async function clearKeyringSecrets(userId?: string): Promise<KeyringLeftover[]> {
+	const leftovers: (KeyringLeftover | null)[] = [];
 
 	for (const kind of SECRET_KINDS) {
-		if (userId) failures.push(await deleteKeyring(keyringKey(userId, kind)));
-		failures.push(await deleteKeyring(legacyKeyringKey(kind)));
+		if (userId) leftovers.push(await deleteKeyring(keyringKey(userId, kind)));
+		leftovers.push(await deleteKeyring(legacyKeyringKey(kind)));
 	}
 
-	// Every key is attempted before this: one entry the keyring refuses must not strand the rest.
-	const failed = failures.filter((err) => err !== null);
-	if (failed.length) {
-		throw new AggregateError(failed, failed.map((err) => (err instanceof Error ? err.message : String(err))).join(' '));
-	}
+	return leftovers.filter((leftover) => leftover !== null);
+}
+
+/** Names the entries a failed logout or login left behind, in the words the keyring app shows. */
+export function describeLeftovers(leftovers: KeyringLeftover[]): string {
+	return leftovers.map(({ key }) => `${key.service}/${key.account}`).join(', ');
+}
+
+/** The reasons behind {@link describeLeftovers}, each said once however many entries share it. */
+export function leftoverReasons(leftovers: KeyringLeftover[]): string {
+	const reasons = leftovers.map(({ error }) => (error instanceof Error ? error.message : String(error)));
+	return [...new Set(reasons)].join(' ');
 }
 
 /**
