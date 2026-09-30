@@ -162,7 +162,7 @@
 		],
 		"packageManager": {
 			"name": "pnpm",
-			"version": "12.4.1",
+			"version": "12.6.0",
 			"onFail": "warn"
 		}
 	},
