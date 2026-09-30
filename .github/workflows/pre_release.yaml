@@ -22,7 +22,7 @@ jobs:
             changelog: ${{ steps.release_metadata.outputs.changelog }}
             release_notes: ${{ steps.release_metadata.outputs.release_notes }}
         steps:
-            - uses: apify/actions/git-cliff-release@v1.5.0
+            - uses: apify/actions/git-cliff-release@v1.6.1
               name: Prepare release metadata
               id: release_metadata
               with:
@@ -71,7 +71,7 @@ jobs:
 
             - name: Commit changes
               id: commit
-              uses: apify/actions/signed-commit@v1.5.0
+              uses: apify/actions/signed-commit@v1.6.1
               with:
                   message: "chore(release): Update changelog and package version [skip ci]"
                   pull: '--rebase --autostash'
@@ -210,7 +210,7 @@ jobs:
 
         steps:
             - name: Execute publish workflow
-              uses: apify/actions/execute-workflow@v1.5.0
+              uses: apify/actions/execute-workflow@v1.6.1
               with:
                   workflow: publish_to_npm.yaml
                   inputs: >
