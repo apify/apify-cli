@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { chmod, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 
@@ -97,10 +97,15 @@ function callsTo(endpoint: string) {
 }
 
 /** The regular files of a `.tar.gz` and their permission bits, by name - a plain ustar reader is enough for what `archiver` writes. */
-function untar(gzipped: Uint8Array): { files: Map<string, string>; modes: Map<string, number> } {
+function untar(gzipped: Uint8Array): {
+	files: Map<string, string>;
+	modes: Map<string, number>;
+	links: Map<string, string>;
+} {
 	const archive = gunzipSync(gzipped);
 	const files = new Map<string, string>();
 	const modes = new Map<string, number>();
+	const links = new Map<string, string>();
 	for (let offset = 0; offset + 512 <= archive.length;) {
 		const header = archive.subarray(offset, offset + 512);
 		const field = (start: number, length: number) => {
@@ -114,6 +119,7 @@ function untar(gzipped: Uint8Array): { files: Map<string, string>; modes: Map<st
 		const size = Number.parseInt(field(124, 12).trim() || '0', 8);
 		const type = field(156, 1);
 		const content = archive.subarray(offset + 512, offset + 512 + size).toString('utf8');
+		if (type === '2') links.set(prefix ? `${prefix}/${name}` : name, field(157, 100));
 		if (type === '0' || type === '') {
 			const path = prefix ? `${prefix}/${name}` : name;
 			files.set(path, content);
@@ -121,7 +127,7 @@ function untar(gzipped: Uint8Array): { files: Map<string, string>; modes: Map<st
 		}
 		offset += 512 + Math.ceil(size / 512) * 512;
 	}
-	return { files, modes };
+	return { files, modes, links };
 }
 
 /** The one source-context upload: its URL and query, and the files of its tarball body. */
@@ -319,18 +325,28 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
-	it('counts only changes inside the Docker context as uncommitted', async () => {
+	it('pushes the whole repository, like a clone, when the Docker context is only part of it', async () => {
 		await write(
 			`${ACTOR_PATH}/.actor/actor.json`,
 			(await readFile(joinPath(`${ACTOR_PATH}/.actor/actor.json`), 'utf8')).replace('"../../.."', '"../.."'),
 		);
-		git('add', '.');
-		git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'context is actors/');
-		await write('packages/typescript-utils/src/new.ts', 'export const y = 2;\n');
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		expect(sourceContextUpload().query.gitDirty).toBe('false');
+		const { files, query } = sourceContextUpload();
+		// The Actor's path is relative to the repository, as the folder part of a Git source URL is.
+		expect(query.actorPath).toBe(ACTOR_PATH);
+		expect([...files.keys()]).toEqual(expect.arrayContaining(['package.json', 'shared/TypeScript_Dockerfile']));
+		// The image holds the context, so that is the dev folder.
+		expect(callsTo('dev-folder').map((c) => c.body)).toEqual([joinPath('actors')]);
+	});
+
+	it('keeps a symlink a link, as a Git clone does', async () => {
+		await symlink('../../shared', joinPath(`${ACTOR_PATH}/shared`));
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(sourceContextUpload().links.get(`${ACTOR_PATH}/shared`)).toBe('../../shared');
 	});
 
 	it('rejects a dockerContextDir that does not contain the Actor', async () => {

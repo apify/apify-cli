@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, realpathSync, statSync } from 'node:fs';
+import { existsSync, lstatSync, readlinkSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import type { ApifyClient } from 'apify-client';
@@ -13,7 +13,14 @@ export const MONOREPO_PLATFORM_SUPPORT_ISSUE_URL = 'https://github.com/apify/api
 
 export type DockerContextResolution =
 	| { kind: 'none' }
-	| { kind: 'context'; contextRoot: string; actorPath: string }
+	| {
+			kind: 'context';
+			contextRoot: string;
+			/** What is pushed, like the platform's clone: the Git repository's root, else the context itself. */
+			sourceRoot: string;
+			/** The Actor's folder relative to `sourceRoot` - the folder part of a Git source URL. */
+			actorPath: string;
+	  }
 	| { kind: 'invalid'; message: string };
 
 /**
@@ -53,7 +60,9 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 		};
 	}
 
-	return { kind: 'context', contextRoot, actorPath: actorPath.split(sep).join('/') };
+	const sourceRoot = repoRoot ? realpathSync(repoRoot) : contextRoot;
+	const actorPathInSource = relative(sourceRoot, repoRoot ? realpathSync(actorDir) : actorDir);
+	return { kind: 'context', contextRoot, sourceRoot, actorPath: actorPathInSource.split(sep).join('/') };
 }
 
 function isOutside(relativePath: string): boolean {
@@ -115,7 +124,11 @@ export async function createContextTarball(paths: string[], root: string): Promi
 		archive.once('error', reject);
 	});
 	for (const filePath of paths) {
-		archive.file(join(root, filePath), { name: filePath.split(sep).join('/') });
+		const name = filePath.split(sep).join('/');
+		const absolutePath = join(root, filePath);
+		// Kept as a link, as in a Git clone, not replaced by what it points to.
+		if (lstatSync(absolutePath).isSymbolicLink()) archive.symlink(name, readlinkSync(absolutePath));
+		else archive.file(absolutePath, { name });
 	}
 	await archive.finalize();
 	await ended;
@@ -129,8 +142,8 @@ export interface SourceContextUpload {
 }
 
 /**
- * `PUT /actor-runtime/source-context/:actorId/:versionNumber` - replaces the version's source with the whole
- * Docker context, sent as one `.tar.gz`. `unsupported` means the target has no such endpoint: not an Actor runtime, or an older one.
+ * `PUT /actor-runtime/source-context/:actorId/:versionNumber` - replaces the version's source with the pushed
+ * source root, sent as one `.tar.gz`; the runtime takes the Docker context from it as the platform does. `unsupported` means the target has no such endpoint: not an Actor runtime, or an older one.
  */
 export async function pushActorRuntimeSourceContext(
 	client: Pick<ApifyClient, 'baseUrl' | 'token'>,
@@ -170,28 +183,38 @@ export async function pushActorRuntimeSourceContext(
 /** Untracked files under these are never on the platform, and are too big to push by accident. */
 const UNTRACKED_IGNORED_SEGMENTS = new Set(['node_modules', 'storage', 'apify_storage', 'crawlee_storage']);
 
-function gitFileList(contextRoot: string, args: string[]): string[] | undefined {
-	const output = git(contextRoot, ['ls-files', '-z', ...args]);
+function gitFileList(root: string, args: string[]): string[] | undefined {
+	const output = git(root, ['ls-files', '-z', ...args]);
 	return output?.split('\0').filter(Boolean);
 }
 
 /**
- * The files of the Docker context at `contextRoot`, relative to it: those a clone of the repository has -
- * what the platform builds from - as they are on disk now, plus files not committed yet that Git does not
- * ignore. `.actorignore` does not apply, as it does not for the platform's Git builds. Outside a Git
- * repository, the files an ordinary push of `contextRoot` would send.
+ * The files under `root`, relative to it: those a clone of the repository has - what the platform builds
+ * from - as they are on disk now, plus files not committed yet that Git does not ignore. `.actorignore` does
+ * not apply, as it does not for the platform's Git builds; symlinks stay links. Outside a Git repository,
+ * the files an ordinary push of `root` would send.
  */
-export async function getContextFilePaths(contextRoot: string): Promise<string[]> {
-	const tracked = gitFileList(contextRoot, ['--cached']);
-	const untracked = gitFileList(contextRoot, ['--others', '--exclude-standard']);
-	if (!tracked || !untracked) return getActorLocalFilePaths(contextRoot);
+export async function getContextFilePaths(root: string): Promise<string[]> {
+	const tracked = gitFileList(root, ['--cached']);
+	const untracked = gitFileList(root, ['--others', '--exclude-standard']);
+	if (!tracked || !untracked) return getActorLocalFilePaths(root);
 
-	// A tracked file deleted locally is not pushed; a submodule is listed as a directory.
-	const isFile = (filePath: string) =>
-		existsSync(join(contextRoot, filePath)) && !statSync(join(contextRoot, filePath)).isDirectory();
+	// A tracked file deleted locally is not pushed; a submodule is listed as a directory, and a clone leaves
+	// it empty.
+	const isPushable = (filePath: string) => {
+		try {
+			const stats = lstatSync(join(root, filePath));
+			return stats.isSymbolicLink() || stats.isFile();
+		} catch {
+			return false;
+		}
+	};
 	return [
-		...tracked.filter(isFile),
-		...untracked.filter((filePath) => !filePath.split('/').some((segment) => UNTRACKED_IGNORED_SEGMENTS.has(segment))),
+		...tracked.filter(isPushable),
+		...untracked.filter(
+			(filePath) =>
+				isPushable(filePath) && !filePath.split('/').some((segment) => UNTRACKED_IGNORED_SEGMENTS.has(segment)),
+		),
 	].map((filePath) => filePath.split('/').join(sep));
 }
 

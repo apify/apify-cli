@@ -306,9 +306,9 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			process.exitCode = CommandExitCodes.NotImplemented;
 			return;
 		}
-		const sourceRoot = dockerContext.kind === 'context' ? dockerContext.contextRoot : cwd;
+		const sourceRoot = dockerContext.kind === 'context' ? dockerContext.sourceRoot : cwd;
 		const sourcePaths =
-			dockerContext.kind === 'context' ? await getContextFilePaths(dockerContext.contextRoot) : filePathsToPush;
+			dockerContext.kind === 'context' ? await getContextFilePaths(dockerContext.sourceRoot) : filePathsToPush;
 
 		const userInfo = await getLocalUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
@@ -492,7 +492,7 @@ Skipping push. Use --force to override.`,
 		const pushDockerContext = async () => {
 			if (dockerContext.kind !== 'context') return true;
 			run({
-				message: `Pushing the Docker context ${sourceRoot} (${sourcePaths.length} files), with the Actor in ${dockerContext.actorPath}.`,
+				message: `Pushing ${sourceRoot} (${sourcePaths.length} files) with the Actor in ${dockerContext.actorPath}; the build takes its Docker context ${dockerContext.contextRoot} from it.`,
 			});
 			const gitProvenance = readGitProvenance(sourceRoot);
 			if (gitProvenance.dirty) {
@@ -556,7 +556,13 @@ Skipping push. Use --force to override.`,
 			info({ message: `${isEnabled ? 'Enabled' : 'Disabled'} standby mode for Actor ${actor.name}.` });
 		}
 
-		await registerDevFolderOnActorRuntime(apifyClient, actorId, actor.name, sourceRoot);
+		// The image holds the Docker context, so that is what a run can mount over it.
+		await registerDevFolderOnActorRuntime(
+			apifyClient,
+			actorId,
+			actor.name,
+			dockerContext.kind === 'context' ? dockerContext.contextRoot : cwd,
+		);
 
 		// Build Actor on Apify and wait for build to finish
 		run({ message: `Building Actor ${actor.name}` });

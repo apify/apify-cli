@@ -6,9 +6,11 @@ const actorDir = join('/repo', 'actors', 'a');
 
 describe('resolveDockerContext', () => {
 	it('resolves dockerContextDir relative to the .actor folder', () => {
+		// Outside a Git repository, the context itself is what is pushed.
 		expect(resolveDockerContext(actorDir, '../../..')).toEqual({
 			kind: 'context',
 			contextRoot: join('/repo'),
+			sourceRoot: join('/repo'),
 			actorPath: 'actors/a',
 		});
 	});
