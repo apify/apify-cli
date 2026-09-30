@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { isAbsolute, relative, resolve, sep } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import type { ApifyClient } from 'apify-client';
+import { TarArchive } from 'archiver';
 
 import { ACTOR_SPECIFICATION_FOLDER, APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
 
@@ -80,15 +81,33 @@ export function readGitProvenance(dir: string): GitProvenance {
 	return provenance;
 }
 
+/** The files at `paths` under `root`, as one in-memory `.tar.gz`, each named by its path relative to `root`. */
+export async function createContextTarball(paths: string[], root: string): Promise<Buffer> {
+	// Level 6: the same speed/size balance as the ZIP upload of an ordinary push.
+	const archive = new TarArchive({ gzip: true, gzipOptions: { level: 6 } });
+	const chunks: Buffer[] = [];
+	archive.on('data', (chunk: Buffer) => chunks.push(chunk));
+	const ended = new Promise<void>((resolve, reject) => {
+		archive.once('end', resolve);
+		archive.once('error', reject);
+	});
+	for (const filePath of paths) {
+		archive.file(join(root, filePath), { name: filePath.split(sep).join('/') });
+	}
+	await archive.finalize();
+	await ended;
+	return Buffer.concat(chunks);
+}
+
 export interface SourceContextUpload {
 	actorPath: string;
-	sourceFiles: { name: string; format: string; content: string }[];
+	tarball: Buffer;
 	git?: GitProvenance;
 }
 
 /**
  * `PUT /actor-runtime/source-context/:actorId/:versionNumber` - replaces the version's source with the whole
- * Docker context. `unsupported` means the target has no such endpoint: not an Actor runtime, or an older one.
+ * Docker context, sent as one `.tar.gz`. `unsupported` means the target has no such endpoint: not an Actor runtime, or an older one.
  */
 export async function pushActorRuntimeSourceContext(
 	client: Pick<ApifyClient, 'baseUrl' | 'token'>,
@@ -97,15 +116,24 @@ export async function pushActorRuntimeSourceContext(
 	upload: SourceContextUpload,
 ): Promise<{ ok: true } | { ok: false; unsupported: boolean; error: string }> {
 	// `baseUrl` already ends in `/v2`; the runtime serves `/v2/actor-runtime/*` as an alias of `/actor-runtime/*`.
-	const url = `${client.baseUrl}/actor-runtime/source-context/${encodeURIComponent(actorId)}/${encodeURIComponent(versionNumber)}`;
+	const url = new URL(
+		`${client.baseUrl}/actor-runtime/source-context/${encodeURIComponent(actorId)}/${encodeURIComponent(versionNumber)}`,
+	);
+	url.searchParams.set('actorPath', upload.actorPath);
+	const { git } = upload;
+	if (git?.remoteUrl) url.searchParams.set('gitRemoteUrl', git.remoteUrl);
+	if (git?.branch) url.searchParams.set('gitBranch', git.branch);
+	if (git?.commit) url.searchParams.set('gitCommit', git.commit);
+	if (git?.dirty !== undefined) url.searchParams.set('gitDirty', String(git.dirty));
+
 	const response = await fetch(url, {
 		method: 'PUT',
 		headers: {
 			...APIFY_CLIENT_DEFAULT_HEADERS,
 			'Authorization': `Bearer ${client.token}`,
-			'Content-Type': 'application/json',
+			'Content-Type': 'application/gzip',
 		},
-		body: JSON.stringify(upload),
+		body: new Uint8Array(upload.tarball),
 	});
 	if (response.ok) return { ok: true };
 

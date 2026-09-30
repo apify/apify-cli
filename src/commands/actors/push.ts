@@ -26,6 +26,7 @@ import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConf
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { mayTargetActorRuntime, registerActorRuntimeDevFolder } from '../../lib/runtime/dev-folder.js';
 import {
+	createContextTarball,
 	monorepoUnsupportedMessage,
 	pushActorRuntimeSourceContext,
 	readGitProvenance,
@@ -510,7 +511,7 @@ Skipping push. Use --force to override.`,
 			});
 			const result = await pushActorRuntimeSourceContext(apifyClient, actorId, version, {
 				actorPath: dockerContext.actorPath,
-				sourceFiles: await createSourceFiles(sourcePaths, sourceRoot),
+				tarball: await createContextTarball(sourcePaths, sourceRoot),
 				git: readGitProvenance(sourceRoot),
 			});
 			if (!result.ok) {

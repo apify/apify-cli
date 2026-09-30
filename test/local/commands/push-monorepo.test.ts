@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import { gunzipSync } from 'node:zlib';
 
 import { ACTOR_SOURCE_TYPES } from '@apify/consts';
 
@@ -82,6 +83,42 @@ function callsTo(endpoint: string) {
 		.map(([url, init]) => ({ url: String(url), method: init?.method, body: JSON.parse(init?.body as string) }));
 }
 
+/** The regular files of a `.tar.gz`, by name - a plain ustar reader is enough for what `archiver` writes. */
+function untar(gzipped: Uint8Array): Map<string, string> {
+	const archive = gunzipSync(gzipped);
+	const files = new Map<string, string>();
+	for (let offset = 0; offset + 512 <= archive.length;) {
+		const header = archive.subarray(offset, offset + 512);
+		const field = (start: number, length: number) => {
+			const raw = header.subarray(start, start + length);
+			const end = raw.indexOf(0);
+			return raw.subarray(0, end === -1 ? raw.length : end).toString('utf8');
+		};
+		const name = field(0, 100);
+		if (!name) break;
+		const prefix = field(345, 155);
+		const size = Number.parseInt(field(124, 12).trim() || '0', 8);
+		const type = field(156, 1);
+		const content = archive.subarray(offset + 512, offset + 512 + size).toString('utf8');
+		if (type === '0' || type === '') files.set(prefix ? `${prefix}/${name}` : name, content);
+		offset += 512 + Math.ceil(size / 512) * 512;
+	}
+	return files;
+}
+
+/** The one source-context upload: its URL and query, and the files of its tarball body. */
+function sourceContextUpload() {
+	const [[url, init]] = fetchMock.mock.calls.filter(([u]) => String(u).includes('/actor-runtime/source-context/'));
+	const parsed = new URL(String(url));
+	return {
+		path: `${parsed.origin}${parsed.pathname}`,
+		method: init?.method,
+		contentType: (init!.headers as Record<string, string>)['Content-Type'],
+		query: Object.fromEntries(parsed.searchParams),
+		files: untar(init?.body as Uint8Array),
+	};
+}
+
 async function write(relativePath: string, content: string) {
 	await mkdir(dirname(joinPath(relativePath)), { recursive: true });
 	await writeFile(joinPath(relativePath), content);
@@ -141,11 +178,18 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 		await testRunCommand(ActorsPushCommand, {});
 
 		expect(commandProcess.exitCode).toBeFalsy();
-		const [call] = callsTo('source-context');
-		expect(call.url).toBe(`${RUNTIME_BASE_URL}/actor-runtime/source-context/${ACTOR_ID}/0.0`);
-		expect(call.method).toBe('PUT');
-		expect(call.body.actorPath).toBe(ACTOR_PATH);
-		const names = (call.body.sourceFiles as { name: string }[]).map((file) => file.name.split('\\').join('/'));
+		const upload = sourceContextUpload();
+		expect(upload.path).toBe(`${RUNTIME_BASE_URL}/actor-runtime/source-context/${ACTOR_ID}/0.0`);
+		expect(upload.method).toBe('PUT');
+		expect(upload.contentType).toBe('application/gzip');
+		expect(upload.query).toMatchObject({
+			actorPath: ACTOR_PATH,
+			gitBranch: 'main',
+			gitRemoteUrl: 'https://github.com/acme/monorepo.git',
+			gitDirty: 'false',
+		});
+		expect(upload.query.gitCommit).toMatch(/^[0-9a-f]{40}$/);
+		const names = [...upload.files.keys()];
 		expect(names).toEqual(
 			expect.arrayContaining([
 				'package.json',
@@ -156,12 +200,6 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 			]),
 		);
 		expect(names.some((name) => name.startsWith('node_modules'))).toBe(false);
-		expect(call.body.git).toMatchObject({
-			branch: 'main',
-			remoteUrl: 'https://github.com/acme/monorepo.git',
-			dirty: false,
-		});
-		expect(call.body.git.commit).toMatch(/^[0-9a-f]{40}$/);
 
 		// The version update carries no files of its own; the context replaces them.
 		expect(versionUpdates).toEqual([expect.not.objectContaining({ sourceFiles: expect.anything() })]);
@@ -176,12 +214,10 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		const { body } = callsTo('source-context')[0];
-		const files = body.sourceFiles as { name: string; content: string }[];
-		const byName = (name: string) => files.find((file) => file.name.split('\\').join('/') === name);
-		expect(byName(`${ACTOR_PATH}/src/index.ts`)?.content).toBe('console.log(2);\n');
-		expect(byName('packages/typescript-utils/src/new.ts')?.content).toBe('export const y = 2;\n');
-		expect(body.git.dirty).toBe(true);
+		const { files, query } = sourceContextUpload();
+		expect(files.get(`${ACTOR_PATH}/src/index.ts`)).toBe('console.log(2);\n');
+		expect(files.get('packages/typescript-utils/src/new.ts')).toBe('export const y = 2;\n');
+		expect(query.gitDirty).toBe('true');
 	});
 
 	it('asks to update a runtime that has no source-context endpoint', async () => {
