@@ -301,13 +301,21 @@ async function dropUnkeyedSecrets(file: AuthFile): Promise<void> {
 
 /**
  * Write the new entry, verify it reads back, then delete the old one. The reverse order loses the
- * secret when the delete succeeds and the write does not.
+ * secret when the delete succeeds and the write does not. A kind the account already has is left
+ * alone, so the migration never restores a value something newer replaced.
  */
 async function keyKeyringSecrets(userId: string): Promise<void> {
 	for (const kind of SECRET_KINDS) {
 		const legacy = legacyKeyringKey(kind);
 		const value = await readKeyring(legacy);
 		if (value === undefined) continue;
+
+		// A login between the upgrade and this migration already stored this kind, and the legacy
+		// entry it left behind is the older value.
+		if ((await getSecret(userId, kind)) !== undefined) {
+			await deleteKeyring(legacy);
+			continue;
+		}
 
 		// A failure earlier in this loop put the token in the file, so the secrets after it belong
 		// there too rather than under a keyring name nothing will read.

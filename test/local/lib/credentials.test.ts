@@ -518,6 +518,29 @@ describe('credentials', () => {
 			expect(keyringStore.size).toBe(0);
 		});
 
+		it('keeps a keyed entry a legacy entry would overwrite', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeV2AuthFile();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_old');
+			keyringStore.set(TOKEN_KEY, 'tok_new');
+
+			await ensureSecretsKeyed();
+
+			expect(keyringStore.get(TOKEN_KEY)).toBe('tok_new');
+			expect(keyringStore.get(LEGACY_KEYRING_TOKEN_KEY)).toBeUndefined();
+		});
+
+		it('leaves a login that ran before it alone', async () => {
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			writeV2AuthFile();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_old');
+
+			await setSecret(TEST_USER_ID, 'token', 'tok_new');
+			await ensureSecretsKeyed();
+
+			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_new');
+		});
+
 		it('is memoized within a process', async () => {
 			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
 			writeV2AuthFile({}, { token: 'tok' });
