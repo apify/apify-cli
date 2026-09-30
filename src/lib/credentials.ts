@@ -5,6 +5,7 @@ import {
 	AUTH_FILE_VERSION,
 	clearProfileFileSecrets,
 	deleteProfileSecret,
+	ensureAuthFileCurrent,
 	readAuthFile,
 	readProfileSecret,
 	writeAuthFile,
@@ -385,4 +386,20 @@ export async function ensureSecretsKeyed(): Promise<void> {
 	})();
 
 	return keyingPromise;
+}
+
+/**
+ * Brings the stored credentials to their current form: the plaintext secrets into the keyring, the
+ * file into its current shape, then the secrets onto keys that carry the user ID. The order is a
+ * dependency chain — keying by user needs the user ID the shape migration produces.
+ *
+ * Every reader calls this before it reads. `loginWithToken()` does not: it replaces the file
+ * wholesale, so there is nothing to bring forward, and it clears the old keyring names itself.
+ *
+ * Each step is single-flight and never throws, so repeat calls cost nothing.
+ */
+export async function ensureCredentialsCurrent(): Promise<void> {
+	await ensureMigrated();
+	await ensureAuthFileCurrent();
+	await ensureSecretsKeyed();
 }
