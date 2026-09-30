@@ -294,7 +294,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		// A monorepo Actor builds from a Docker context above its own folder: that whole context is pushed.
+		// A monorepo Actor pushes its whole repository.
 		const dockerContext = resolveDockerContext(cwd, actorConfig?.dockerContextDir);
 		if (dockerContext.kind === 'invalid') {
 			error({ message: dockerContext.message });
@@ -387,7 +387,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
-		// A Docker context always goes to the runtime in one piece, whatever its size.
 		const filesSize = dockerContext.kind === 'context' ? 0 : await sumFilesSizeInBytes(sourcePaths, sourceRoot);
 
 		if (filesSize < MAX_MULTIFILE_BYTES && !isActorCreatedNow) {
@@ -438,7 +437,6 @@ Skipping push. Use --force to override.`,
 		let sourceFiles;
 		let tarballUrl;
 		if (dockerContext.kind === 'context') {
-			// The files go to the runtime's own endpoint instead.
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else if (filesSize < MAX_MULTIFILE_BYTES) {
 			sourceFiles = await createSourceFiles(filePathsToPush, cwd);
@@ -487,8 +485,7 @@ Skipping push. Use --force to override.`,
 				})
 			: undefined;
 
-		// The runtime takes a context only for an existing version. For one, it goes first, so a runtime that
-		// refuses it leaves the version untouched; a version update without files keeps the context.
+		// Pushed before the version update, so a runtime that refuses it leaves the version untouched.
 		const pushDockerContext = async () => {
 			if (dockerContext.kind !== 'context') return true;
 			run({
@@ -542,7 +539,7 @@ Skipping push. Use --force to override.`,
 
 			run({ message: `Created version ${version} for Actor ${actor.name}.` });
 
-			// Undone when the context is refused, so a failed push leaves no empty version behind.
+			// So a failed push leaves no empty version behind.
 			if (!(await pushDockerContext())) {
 				await actorClient.version(version).delete();
 				return;
@@ -556,7 +553,6 @@ Skipping push. Use --force to override.`,
 			info({ message: `${isEnabled ? 'Enabled' : 'Disabled'} standby mode for Actor ${actor.name}.` });
 		}
 
-		// The image holds the Docker context, so that is what a run can mount over it.
 		await registerDevFolderOnActorRuntime(
 			apifyClient,
 			actorId,

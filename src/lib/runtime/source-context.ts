@@ -16,17 +16,14 @@ export type DockerContextResolution =
 	| {
 			kind: 'context';
 			contextRoot: string;
-			/** What is pushed, like the platform's clone: the Git repository's root, else the context itself. */
+			/** The Git repository's root, else the context. */
 			sourceRoot: string;
-			/** The Actor's folder relative to `sourceRoot` - the folder part of a Git source URL. */
+			/** Relative to `sourceRoot`. */
 			actorPath: string;
 	  }
 	| { kind: 'invalid'; message: string };
 
-/**
- * Where `dockerContextDir` from `.actor/actor.json` puts the Docker context, resolved like the platform does:
- * relative to the `.actor` folder. A context that is the Actor's own folder is an ordinary push.
- */
+/** `dockerContextDir` is relative to `.actor/`, as on the platform. */
 export function resolveDockerContext(actorDir: string, dockerContextDir: unknown): DockerContextResolution {
 	if (dockerContextDir === undefined || dockerContextDir === null || dockerContextDir === '') return { kind: 'none' };
 	if (typeof dockerContextDir !== 'string') {
@@ -43,7 +40,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 		};
 	}
 
-	// The platform builds from a clone of the repository, which holds nothing above its root.
+	// The platform's clone holds nothing above the repository root.
 	const repoRoot = git(actorDir, ['rev-parse', '--show-toplevel']);
 	if (repoRoot && !existsSync(contextRoot)) {
 		return {
@@ -98,7 +95,6 @@ function withoutCredentials(remoteUrl: string): string {
 	}
 }
 
-/** What the runtime shows about where the pushed files came from. Empty outside a Git working copy. */
 export function readGitProvenance(dir: string): GitProvenance {
 	const commit = git(dir, ['rev-parse', 'HEAD']);
 	if (!commit) return {};
@@ -113,9 +109,7 @@ export function readGitProvenance(dir: string): GitProvenance {
 	return provenance;
 }
 
-/** The files at `paths` under `root`, as one in-memory `.tar.gz`, each named by its path relative to `root`. */
 export async function createContextTarball(paths: string[], root: string): Promise<Buffer> {
-	// Level 6: the same speed/size balance as the ZIP upload of an ordinary push.
 	const archive = new TarArchive({ gzip: true, gzipOptions: { level: 6 } });
 	const chunks: Buffer[] = [];
 	archive.on('data', (chunk: Buffer) => chunks.push(chunk));
@@ -126,7 +120,7 @@ export async function createContextTarball(paths: string[], root: string): Promi
 	for (const filePath of paths) {
 		const name = filePath.split(sep).join('/');
 		const absolutePath = join(root, filePath);
-		// Kept as a link, as in a Git clone, not replaced by what it points to.
+		// A link stays a link, as in a Git clone.
 		if (lstatSync(absolutePath).isSymbolicLink()) archive.symlink(name, readlinkSync(absolutePath));
 		else archive.file(absolutePath, { name });
 	}
@@ -141,10 +135,7 @@ export interface SourceContextUpload {
 	git?: GitProvenance;
 }
 
-/**
- * `PUT /actor-runtime/source-context/:actorId/:versionNumber` - replaces the version's source with the pushed
- * source root, sent as one `.tar.gz`; the runtime takes the Docker context from it as the platform does. `unsupported` means the target has no such endpoint: not an Actor runtime, or an older one.
- */
+/** `unsupported`: the target has no such endpoint - not an Actor runtime, or an older one. */
 export async function pushActorRuntimeSourceContext(
 	client: Pick<ApifyClient, 'baseUrl' | 'token'>,
 	actorId: string,
@@ -180,7 +171,7 @@ export async function pushActorRuntimeSourceContext(
 	return { ok: false, unsupported, error };
 }
 
-/** Untracked files under these are never on the platform, and are too big to push by accident. */
+/** Untracked, these are never on the platform and too big to push by accident. */
 const UNTRACKED_IGNORED_SEGMENTS = new Set(['node_modules', 'storage', 'apify_storage', 'crawlee_storage']);
 
 function gitFileList(root: string, args: string[]): string[] | undefined {
@@ -188,19 +179,14 @@ function gitFileList(root: string, args: string[]): string[] | undefined {
 	return output?.split('\0').filter(Boolean);
 }
 
-/**
- * The files under `root`, relative to it: those a clone of the repository has - what the platform builds
- * from - as they are on disk now, plus files not committed yet that Git does not ignore. `.actorignore` does
- * not apply, as it does not for the platform's Git builds; symlinks stay links. Outside a Git repository,
- * the files an ordinary push of `root` would send.
- */
+/** What a Git clone of `root` has, as on disk now, plus untracked files Git does not ignore; `.actorignore`
+ * does not apply, as on the platform. Outside Git, what an ordinary push of `root` sends. */
 export async function getContextFilePaths(root: string): Promise<string[]> {
 	const tracked = gitFileList(root, ['--cached']);
 	const untracked = gitFileList(root, ['--others', '--exclude-standard']);
 	if (!tracked || !untracked) return getActorLocalFilePaths(root);
 
-	// A tracked file deleted locally is not pushed; a submodule is listed as a directory, and a clone leaves
-	// it empty.
+	// Skips files deleted locally and submodules (listed as directories).
 	const isPushable = (filePath: string) => {
 		try {
 			const stats = lstatSync(join(root, filePath));
@@ -218,7 +204,6 @@ export async function getContextFilePaths(root: string): Promise<string[]> {
 	].map((filePath) => filePath.split('/').join(sep));
 }
 
-/** For a target that answered the context upload as an unknown endpoint. */
 export function monorepoOutdatedRuntimeMessage(baseUrl: string): string {
 	return [
 		`${baseUrl} does not accept monorepo Actors. If it is a local Actor runtime, update it with 'apify runtime install'.`,
