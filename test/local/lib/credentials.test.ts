@@ -9,6 +9,7 @@ import { __resetAuthForTests, resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import {
 	__resetCredentialsForTests,
+	backendFor,
 	clearKeyringSecrets,
 	deleteSecret,
 	ensureMigrated,
@@ -255,6 +256,20 @@ describe('credentials', () => {
 			expect(readProfile()).not.toHaveProperty('token');
 			expect(readProfile()).not.toHaveProperty('proxy');
 			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_file');
+		});
+
+		it('brings the proxy password down when the token falls back to the file', async () => {
+			writeV2AuthFile();
+			await setSecret(TEST_USER_ID, 'token', 'tok_1');
+			await setSecret(TEST_USER_ID, 'proxy-password', 'pw_abc');
+
+			keyringFailures.add(TOKEN_KEY);
+			await setSecret(TEST_USER_ID, 'token', 'tok_2');
+
+			expect(await backendFor(TEST_USER_ID)).toBe('file');
+			expect(await getSecret(TEST_USER_ID, 'token')).toBe('tok_2');
+			expect(await getSecret(TEST_USER_ID, 'proxy-password')).toBe('pw_abc');
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBeUndefined();
 		});
 
 		it('keeps using auth.json for later writes after a keyring failure', async () => {

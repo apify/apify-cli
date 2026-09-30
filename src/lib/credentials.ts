@@ -172,8 +172,9 @@ async function deleteKeyring(key: KeyringKey): Promise<unknown> {
 
 /**
  * Where one account's secrets live. A token in `auth.json` means the file, and the account's other
- * secrets follow it there; otherwise the keyring, unless it is disabled or unavailable. Decided by
- * the token alone, so a keyring account never looks up a proxy password in the file first.
+ * secrets are moved there with it; otherwise the keyring, unless it is disabled or unavailable.
+ * Decided by the token alone, so a keyring account never looks up a proxy password in the file
+ * first.
  */
 export async function backendFor(userId: string): Promise<CredentialsBackend> {
 	if (readProfileSecret(userId, 'token') !== undefined) return 'file';
@@ -216,10 +217,26 @@ export async function setSecret(
 			return;
 		} catch (err) {
 			cliDebugPrint('credentials', 'keyring write failed; falling back to file', err);
+			// The token is about to land in the file, which is where reads go from now on. The rest
+			// follow it, or the keyring copies become unreachable.
+			if (kind === 'token') await moveKeyringSecretsToFile(userId);
 		}
 	}
 
 	writeProfileSecret(userId, kind, value);
+}
+
+/** Every secret but the token, which the caller writes next. */
+async function moveKeyringSecretsToFile(userId: string): Promise<void> {
+	for (const kind of SECRET_KINDS) {
+		if (kind === 'token') continue;
+
+		const value = await readKeyring(keyringKey(userId, kind));
+		if (value === undefined) continue;
+
+		writeProfileSecret(userId, kind, value);
+		if (readProfileSecret(userId, kind) === value) await deleteKeyring(keyringKey(userId, kind));
+	}
 }
 
 /**
