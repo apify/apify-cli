@@ -7,10 +7,10 @@ import { AxiosHeaders } from 'axios';
 import { APIFY_ENV_VARS } from '@apify/consts';
 
 import {
-	findProfile,
 	getActiveProfile,
 	getActiveProfileId,
 	listProfiles,
+	matchProfiles,
 	profileLabel,
 	type StoredProfile,
 	upsertProfile,
@@ -29,7 +29,7 @@ import { warning } from './outputs.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
-export type TokenSource = 'env' | 'stored';
+export type TokenSource = 'env' | 'stored' | 'profile';
 
 export interface ResolvedAuth {
 	token: string;
@@ -67,6 +67,7 @@ export function invalidEnvTokenMessage(raw: string): string {
 export const TOKEN_SOURCE_LABELS: Record<TokenSource, string> = {
 	env: `${APIFY_ENV_VARS.TOKEN} environment variable`,
 	stored: 'apify login',
+	profile: '--profile flag',
 };
 
 let authPromise: Promise<ResolvedAuth | undefined> | undefined;
@@ -90,16 +91,30 @@ export function envTokenOverridesProfileMessage(what: string): string {
 export async function requireProfile(nameOrId: string): Promise<StoredProfile> {
 	await ensureCredentialsCurrent();
 
-	const profile = findProfile(nameOrId);
-	if (profile) return profile;
+	const matches = matchProfiles(nameOrId);
+	if (matches.length === 1) return matches[0];
 
 	process.exitCode = CommandExitCodes.InvalidInput;
+	if (matches.length > 1) {
+		throw new Error(
+			`More than one stored account is called "${nameOrId}": ${matches.map(({ id }) => id).join(', ')}. Use the user ID instead.`,
+		);
+	}
+
 	const stored = listProfiles().map(profileLabel);
 	throw new Error(
 		stored.length
 			? `No stored account is called "${nameOrId}". Stored accounts: ${stored.join(', ')}.`
 			: `No stored account is called "${nameOrId}". Run "apify login" to add one.`,
 	);
+}
+
+/**
+ * The stored profile this command uses: the one `--profile` selected, otherwise the active one.
+ * Reads `auth.json` only, never a secret, so it cannot cause a keychain prompt.
+ */
+export function getCurrentProfile(): StoredProfile | undefined {
+	return selectedProfile ?? getActiveProfile();
 }
 
 /**
@@ -157,7 +172,7 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 				throw new Error(missingProfileTokenMessage(selectedProfile));
 			}
 
-			return { token, source: 'stored', profile: profileRef(selectedProfile) } as const;
+			return { token, source: 'profile', profile: profileRef(selectedProfile) } as const;
 		}
 
 		const userId = getActiveProfileId();

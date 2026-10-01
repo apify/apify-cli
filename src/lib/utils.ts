@@ -32,7 +32,7 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
-import { findProfile, lookUpActiveProfile } from './auth-file.js';
+import { lookUpActiveProfile, lookUpProfile } from './auth-file.js';
 import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth, type ResolvedAuth } from './auth.js';
 import {
 	AUTH_FILE_PATH,
@@ -92,13 +92,13 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 export const getLocalUserInfo = async (userId?: string): Promise<AuthJSON> => {
 	await ensureCredentialsCurrent();
 
-	const { profile, missingProfile } = userId ? { profile: findProfile(userId) } : lookUpActiveProfile();
+	const { profile, missingProfile } = userId ? lookUpProfile(userId) : lookUpActiveProfile();
 
 	// Reported rather than swallowed: the commands that build `<username>/<name>` lookups would
 	// otherwise fail with a misleading "not found".
 	if (missingProfile) {
 		throw new Error(
-			`Your active profile "${missingProfile}" is missing from ${AUTH_FILE_PATH()}. Run "apify login" to log in again.`,
+			`Your ${userId ? '' : 'active '}profile "${missingProfile}" is missing from ${AUTH_FILE_PATH()}. Run "apify login" to log in again.`,
 		);
 	}
 
@@ -169,7 +169,7 @@ export async function getCurrentUserInfo(): Promise<AuthJSON> {
 	if (!auth) return getLocalUserInfo();
 
 	if (cachedUserInfo?.token === auth.token) return cachedUserInfo.userInfo;
-	if (auth.source === 'stored') return getLocalUserInfo(auth.profile?.id);
+	if (auth.source !== 'env') return getLocalUserInfo(auth.profile?.id);
 
 	const apifyClient = new ApifyClient({
 		...getApifyClientOptionsForToken(auth.token),

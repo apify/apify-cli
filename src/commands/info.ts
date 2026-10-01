@@ -30,7 +30,7 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 		const rows = {
 			'username': info.username,
 			'userId': info.id,
-			'token source': this.flags.profile ? '--profile flag' : TOKEN_SOURCE_LABELS[auth!.source],
+			'token source': TOKEN_SOURCE_LABELS[auth!.source],
 			...(auth!.profile ? { profile: auth!.profile.label } : {}),
 		};
 

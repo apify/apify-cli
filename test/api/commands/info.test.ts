@@ -19,10 +19,11 @@ describe('[api] apify info', () => {
 		await safeLogin();
 		await testRunCommand(InfoCommand, {});
 
-		const spy = logSpy();
+		const rows = logSpy().mock.calls.map(([row]) => String(row));
+		const row = (label: string) => rows.find((r) => r.includes(label));
 
-		expect(spy).toHaveBeenCalledTimes(3);
-		expect(spy.mock.calls[1][0]).to.include(readActiveProfile()!.id);
-		expect(spy.mock.calls[2][0]).to.include('apify login');
+		expect(row('userId')).toContain(readActiveProfile()!.id);
+		expect(row('token source')).toContain('apify login');
+		expect(row('profile')).toContain(readActiveProfile()!.name!);
 	});
 });

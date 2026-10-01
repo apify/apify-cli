@@ -67,8 +67,13 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	async run() {
 		if (!this.flags.profile && !existsSync(AUTH_FILE_PATH())) {
 			// The fixed-name keyring entries outlive the file they were stored beside.
-			await clearKeyringSecrets();
-			info({ message: NO_STORED_ACCOUNTS_MESSAGE });
+			const leftovers = await clearKeyringSecrets();
+			if (leftovers.length) {
+				error({ message: partialLogoutMessage(leftovers, null, { hadFile: false }) });
+				process.exitCode = CommandExitCodes.RunFailed;
+			} else {
+				info({ message: NO_STORED_ACCOUNTS_MESSAGE });
+			}
 		} else {
 			const proceeded = this.flags.all ? await this.logOutOfAll() : await this.logOutOf(this.flags.profile);
 			if (!proceeded) return;
@@ -171,16 +176,18 @@ function reasonOf(err: unknown) {
 	return err instanceof Error ? err.message : String(err);
 }
 
-function partialLogoutMessage(leftovers: KeyringLeftover[], profileError: unknown) {
+function partialLogoutMessage(leftovers: KeyringLeftover[], profileError: unknown, { hadFile = true } = {}) {
 	const keyringPart = leftovers.length
 		? `Your secrets are still in the OS keyring at ${describeLeftovers(leftovers)}; delete them with your OS keyring app.`
 		: 'Your secrets were removed from the OS keyring.';
 
-	const profilePart = profileError
-		? `Your account is still in ${tildify(AUTH_FILE_PATH())}; delete that file to finish logging out.`
-		: `Your account was removed from ${tildify(AUTH_FILE_PATH())}.`;
+	const profilePart = !hadFile
+		? ''
+		: profileError
+			? ` Your account is still in ${tildify(AUTH_FILE_PATH())}; delete that file to finish logging out.`
+			: ` Your account was removed from ${tildify(AUTH_FILE_PATH())}.`;
 
 	const reasons = [leftoverReasons(leftovers), profileError ? reasonOf(profileError) : ''].filter(Boolean).join(' ');
 
-	return `Logout did not finish. ${keyringPart} ${profilePart} The reason was: ${reasons}`;
+	return `Logout did not finish. ${keyringPart}${profilePart} The reason was: ${reasons}`;
 }

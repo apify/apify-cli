@@ -10,6 +10,7 @@ import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
 	keyringFailures,
 	keyringStore,
+	keyringTokenKey,
 	LEGACY_KEYRING_TOKEN_KEY,
 	resetKeyringMock,
 } from '../../__setup__/keyring-mock.js';
@@ -34,11 +35,11 @@ const { AuthTokenCommand } = await import('../../../src/commands/auth/token.js')
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { InfoCommand } = await import('../../../src/commands/info.js');
 const { InitCommand } = await import('../../../src/commands/init.js');
-const { describeAuthFailure, resolveAuth, selectProfile } = await import('../../../src/lib/auth.js');
+const { describeAuthFailure, getCurrentProfile, resolveAuth, selectProfile } = await import('../../../src/lib/auth.js');
 const { registerCommandForHelpGeneration, renderHelpForCommand } =
 	await import('../../../src/lib/command-framework/help.js');
 const { testRunCommand } = await import('../../../src/lib/command-framework/apify-command.js');
-const { getCurrentUserInfo } = await import('../../../src/lib/utils.js');
+const { getCurrentUserInfo, getLocalUserInfo } = await import('../../../src/lib/utils.js');
 
 const PROFILE: AuthProfile = {
 	name: null,
@@ -114,6 +115,30 @@ describe('multi-account UX', () => {
 			await testRunCommand(AuthTokenCommand, { flags_profile: 'my-org' });
 
 			expect(lastLogMessage()).toBe('t-org');
+		});
+
+		it('refuses a name two accounts share and lists their user IDs', async () => {
+			const file = twoProfiles();
+			file.profiles!.org.name = 'me';
+			writeAuthFile(file);
+
+			await testRunCommand(AuthTokenCommand, { flags_profile: 'me' });
+
+			expect(lastErrorMessage()).toContain('More than one stored account is called "me": uid, org.');
+			expect(takeExitCode()).toBe(CommandExitCodes.InvalidInput);
+		});
+
+		it('is the account the post-command notices read, without changing the active one', async () => {
+			expect(getCurrentProfile()?.id).toBe('uid');
+
+			await selectProfile('my-org');
+
+			expect(getCurrentProfile()?.id).toBe('org');
+			expect(readAuthFile().activeProfile).toBe('uid');
+		});
+
+		it('reports a profile that disappeared from the file instead of returning no account', async () => {
+			await expect(getLocalUserInfo('gone')).rejects.toThrow('Your profile "gone" is missing');
 		});
 
 		it('fails fast and lists the stored profiles when the name is unknown', async () => {
@@ -257,6 +282,17 @@ describe('multi-account UX', () => {
 			});
 		});
 
+		it('reports no storage for an account with no token while the keyring is off', async () => {
+			const file = twoProfiles();
+			delete file.profiles!.org.token;
+			writeAuthFile(file);
+
+			await testRunCommand(AuthListCommand, { flags_json: true });
+
+			const { profiles } = JSON.parse(lastLogMessage());
+			expect(profiles.map((p: { secretsBackend: unknown }) => p.secretsBackend)).toEqual(['file', null]);
+		});
+
 		it('marks the active profile and labels organizations', async () => {
 			await testRunCommand(AuthListCommand, {});
 
@@ -291,6 +327,36 @@ describe('multi-account UX', () => {
 			expect(file.activeProfile).toBe('uid');
 			expect(file.profiles).not.toHaveProperty('org');
 			expect(lastErrorMessage()).toContain('You are logged out of my-org. me is still the active account.');
+		});
+
+		it('--profile deletes only that account keyring entries and keeps the fixed-name ones', async () => {
+			const file = twoProfiles();
+			delete file.profiles!.uid.token;
+			delete file.profiles!.org.token;
+			writeAuthFile(file);
+			keyringStore.set(keyringTokenKey('uid'), 't-me');
+			keyringStore.set(keyringTokenKey('org'), 't-org');
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 't-legacy');
+
+			await testRunCommand(AuthLogoutCommand, { flags_profile: 'my-org' });
+
+			expect(keyringStore.has(keyringTokenKey('org'))).toBe(false);
+			expect(keyringStore.get(keyringTokenKey('uid'))).toBe('t-me');
+			expect(keyringStore.get(LEGACY_KEYRING_TOKEN_KEY)).toBe('t-legacy');
+		});
+
+		it('with nothing stored reports a keyring entry it could not delete', async () => {
+			rmSync(AUTH_FILE_PATH());
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 't-legacy');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(lastErrorMessage()).toContain(
+				'Logout did not finish. Your secrets are still in the OS keyring at com.apify.cli/token',
+			);
+			expect(lastErrorMessage()).not.toContain('auth.json');
+			expect(takeExitCode()).toBe(CommandExitCodes.RunFailed);
 		});
 
 		it('--profile with the active account behaves like a plain logout', async () => {

@@ -250,12 +250,11 @@ export function lookUpActiveProfile(): ActiveProfileLookup {
 	return { profile: { id: file.activeProfile, ...profile } };
 }
 
-export function profileLabel(profile: AuthProfile & { id: string }) {
+export type StoredProfile = AuthProfile & { id: string };
+
+export function profileLabel(profile: StoredProfile) {
 	return profile.name ?? profile.username ?? profile.id;
 }
-
-/** A profile together with the user ID it is keyed by. */
-export type StoredProfile = AuthProfile & { id: string };
 
 /** Every stored profile, in file order. Reads the pre-profile shape as its one account. */
 export function listProfiles(): StoredProfile[] {
@@ -268,10 +267,20 @@ export function listProfiles(): StoredProfile[] {
 	return Object.entries(file.profiles ?? {}).map(([id, profile]) => ({ id, ...profile }));
 }
 
-/** The profile a `--profile` value names: a user ID first, then the label `profileLabel` shows. */
-export function findProfile(nameOrId: string): StoredProfile | undefined {
+/**
+ * The profiles a `--profile` value names: the one with that user ID, otherwise every profile whose
+ * `profileLabel` matches. More than one match means the name is ambiguous.
+ */
+export function matchProfiles(nameOrId: string): StoredProfile[] {
 	const profiles = listProfiles();
-	return profiles.find(({ id }) => id === nameOrId) ?? profiles.find((p) => profileLabel(p) === nameOrId);
+	const byId = profiles.find(({ id }) => id === nameOrId);
+	return byId ? [byId] : profiles.filter((p) => profileLabel(p) === nameOrId);
+}
+
+/** Like {@link lookUpActiveProfile}, for the profile with this user ID. */
+export function lookUpProfile(userId: string): ActiveProfileLookup {
+	const profile = listProfiles().find(({ id }) => id === userId);
+	return profile ? { profile } : { missingProfile: userId };
 }
 
 /** Makes a stored profile active. A user ID the file does not hold is ignored. */
@@ -283,7 +292,7 @@ export function setActiveProfile(userId: string) {
 	writeAuthFile(file);
 }
 
-export function getActiveProfile(): (AuthProfile & { id: string }) | undefined {
+export function getActiveProfile(): StoredProfile | undefined {
 	return lookUpActiveProfile().profile;
 }
 
