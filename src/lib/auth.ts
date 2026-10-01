@@ -193,9 +193,7 @@ export async function loginWithToken(
 	});
 
 	// Only once the switch is on disk: a failed write leaves auth.json naming the previous account,
-	// whose entries nothing else can find. The fixed-name entries go on every login, even a repeat
-	// of the same account: the secrets below are written under keyed names, so whatever is left
-	// under the old names is stale, and the next migration cannot tell it from a current secret.
+	// whose entries nothing else can find. The fixed names go every time, stale by then either way.
 	const staleUserId = previousUserId === userInfo.id ? undefined : previousUserId;
 	const leftovers = await clearKeyringSecrets(staleUserId);
 
@@ -210,8 +208,6 @@ export async function loginWithToken(
 		if (leftover) leftovers.push(leftover);
 	}
 
-	// The login itself succeeded, so it goes through. Said whether or not the account changed: a
-	// repeat login leaves the same entries behind, and nothing later in the CLI reads or names them.
 	if (leftovers.length) {
 		warning({
 			message:

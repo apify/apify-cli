@@ -45,7 +45,6 @@ function legacyKeyringKey(kind: SecretKind): KeyringKey {
 	return { service: KEYRING_SERVICE, account: kind };
 }
 
-/** A secret a delete could not remove, named by where it still is. */
 export interface KeyringLeftover {
 	key: KeyringKey;
 	error: unknown;
@@ -164,12 +163,9 @@ async function writeKeyring(key: KeyringKey, value: string): Promise<void> {
 }
 
 /**
- * Returns the secret this left in the keyring, or null. Callers that cannot act on it ignore it.
- *
- * Only a secret that still reads back is reported. The module loads on machines with no secret
- * service, where every entry throws although nothing was ever stored, and a caller acting on that
- * would name a keyring the user does not have. A keyring that can neither delete nor read is
- * silent for the same reason, which is the cost of not naming one that was never there.
+ * Returns the secret this left in the keyring, or null. Only a secret that still reads back is
+ * reported: the module loads on machines with no secret service, where every entry throws although
+ * nothing was ever stored, and naming a keyring the user does not have helps no one.
  */
 async function deleteKeyring(key: KeyringKey): Promise<KeyringLeftover | null> {
 	try {
@@ -230,8 +226,7 @@ export async function setSecret(
 			return;
 		} catch (err) {
 			cliDebugPrint('credentials', 'keyring write failed; falling back to file', err);
-			// The token is about to land in the file, which is where reads go from now on. The rest
-			// follow it, or the keyring copies become unreachable.
+			// Reads go to the file from here, so a copy left in the keyring is unreachable.
 			if (kind === 'token') await moveKeyringSecretsToFile(userId);
 		}
 	}
@@ -257,8 +252,8 @@ async function moveKeyringSecretsToFile(userId: string): Promise<void> {
  * the previous account's does not survive a re-login — the keyring outlives the auth.json rewrite
  * that replaces everything else.
  *
- * Returns the secret this left behind, or null. A refused delete here is the one that matters
- * most: the stored value stays, and reads keep serving it as the account's own.
+ * Returns the secret this left behind, or null: reads hit the keyring first, so a refused delete
+ * keeps serving a password the account no longer has.
  */
 export async function deleteSecret(userId: string, kind: SecretKind): Promise<KeyringLeftover | null> {
 	const leftover = (await backendFor(userId)) === 'keyring' ? await deleteKeyring(keyringKey(userId, kind)) : null;
@@ -277,7 +272,7 @@ export async function deleteSecret(userId: string, kind: SecretKind): Promise<Ke
  * stored in `auth.json` itself go with the profile that holds them.
  *
  * `findCredentials()` could enumerate a service on every platform but the Linux keyutils
- * fallback, so a repair path is open if one is ever needed.
+ * fallback, where it throws, so a repair path is open if one is ever needed.
  *
  * Returns the entries the keyring refused to delete, so a caller can name them. Every key is
  * attempted first: one entry the keyring holds on to must not strand the rest.
@@ -293,12 +288,12 @@ export async function clearKeyringSecrets(userId?: string): Promise<KeyringLefto
 	return leftovers.filter((leftover) => leftover !== null);
 }
 
-/** Names the entries a failed logout or login left behind, in the words the keyring app shows. */
+/** Names the entries a failed logout or login left behind. */
 export function describeLeftovers(leftovers: KeyringLeftover[]): string {
 	return leftovers.map(({ key }) => `${key.service}/${key.account}`).join(', ');
 }
 
-/** The reasons behind {@link describeLeftovers}, each said once however many entries share it. */
+/** The reasons behind {@link describeLeftovers}, each said once. */
 export function leftoverReasons(leftovers: KeyringLeftover[]): string {
 	const reasons = leftovers.map(({ error }) => (error instanceof Error ? error.message : String(error)));
 	return [...new Set(reasons)].join(' ');
@@ -364,10 +359,8 @@ async function dropUnkeyedSecrets(file: AuthFile): Promise<void> {
  * touched, so the migration never restores a value something newer replaced.
  */
 async function keyKeyringSecrets(userId: string): Promise<void> {
-	// A keyed token means a login already wrote this account's secrets under the new names. The
-	// fixed names are then whatever a previous login left, which may be another account's, so
-	// nothing under them is claimed for this one. Read once, and only once a fixed name turns
-	// something up, which on a keyed account is never.
+	// A keyed token means a login already wrote this account's secrets under the new names, so the
+	// fixed names hold a previous login's, possibly another account's. Read lazily: usually never.
 	let claimable: boolean | undefined;
 
 	for (const kind of SECRET_KINDS) {
@@ -377,8 +370,6 @@ async function keyKeyringSecrets(userId: string): Promise<void> {
 
 		claimable ??= (await readKeyring(keyringKey(userId, 'token'))) === undefined;
 
-		// The second test covers the kinds a login stores directly; the first covers the kinds it
-		// leaves empty, which nothing else would tell apart from never having been set.
 		if (!claimable || (await getSecret(userId, kind)) !== undefined) {
 			await deleteKeyring(legacy);
 			continue;
@@ -459,10 +450,10 @@ export async function ensureSecretsKeyed(): Promise<void> {
  * file into its current shape, then the secrets onto keys that carry the user ID. The order is a
  * dependency chain — keying by user needs the user ID the shape migration produces.
  *
- * Every reader calls this before it reads. `loginWithToken()` does not: it replaces the file
- * wholesale, so there is nothing to bring forward, and it clears the old keyring names itself.
+ * `loginWithToken()` does not call it: it replaces the file wholesale, so there is nothing to
+ * bring forward, and it clears the old keyring names itself.
  *
- * Each step is single-flight and never throws, so repeat calls cost nothing.
+ * Each step is single-flight, so repeat calls cost nothing.
  */
 export async function ensureCredentialsCurrent(): Promise<void> {
 	await ensureMigrated();

@@ -59,8 +59,7 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 			success({ message: 'You are logged out from your Apify account.' });
 		}
 
-		// Said either way: a token in the environment still authenticates every later command, and
-		// a half-finished logout is when the user most needs to hear it.
+		// Said either way: a half-finished logout is when this matters most.
 		const envToken = readEnvToken();
 		if (envToken.kind === 'token') {
 			warning({
