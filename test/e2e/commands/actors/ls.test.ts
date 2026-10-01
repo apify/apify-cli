@@ -36,6 +36,46 @@ describe('[e2e][api] actors ls', () => {
 		const result = await runCli('apify', ['actors', 'ls', '--my', '--limit', '5', '--json'], { env: authEnv });
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
-		expect(() => JSON.parse(result.stdout)).not.toThrow();
+		const parsed = JSON.parse(result.stdout);
+		expect(parsed.items.length).toBeLessThanOrEqual(5);
+		expect(parsed.limit).toBe(5);
+	});
+
+	it('filters to public actors with --public flag', async () => {
+		const result = await runCli('apify', ['actors', 'ls', '--public', '--json'], { env: authEnv });
+
+		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+		const parsed = JSON.parse(result.stdout);
+		for (const item of parsed.items) {
+			expect(item.actor?.isPublic).toBe(true);
+		}
+	});
+
+	it('filters to private actors with --private flag', async () => {
+		const result = await runCli('apify', ['actors', 'ls', '--private', '--json'], { env: authEnv });
+
+		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+		const parsed = JSON.parse(result.stdout);
+		for (const item of parsed.items) {
+			expect(item.actor?.isPublic).toBe(false);
+		}
+	});
+
+	it('--private --limit returns correct metadata', async () => {
+		const result = await runCli('apify', ['actors', 'ls', '--private', '--limit', '1', '--json'], { env: authEnv });
+
+		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+		const parsed = JSON.parse(result.stdout);
+		expect(parsed.items.length).toBeLessThanOrEqual(1);
+		expect(parsed.limit).toBe(1);
+		expect(parsed.offset).toBe(0);
+		expect(parsed.total).toBeGreaterThanOrEqual(parsed.items.length);
+	});
+
+	it('rejects --public and --private used together', async () => {
+		const result = await runCli('apify', ['actors', 'ls', '--public', '--private'], { env: authEnv });
+
+		expect(result.exitCode).not.toBe(0);
+		expect(result.stderr).toContain('cannot also be provided');
 	});
 });
