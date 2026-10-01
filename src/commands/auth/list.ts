@@ -2,17 +2,11 @@ import chalk from 'chalk';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import {
-	ensureAuthFileCurrent,
-	getActiveProfileId,
-	listProfiles,
-	profileLabel,
-	readAuthFile,
-} from '../../lib/auth-file.js';
+import { getActiveProfileId, listProfiles, profileLabel } from '../../lib/auth-file.js';
 import { invalidEnvTokenMessage, NO_STORED_ACCOUNTS_MESSAGE, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { ensureMigrated, ensureSecretsKeyed } from '../../lib/credentials.js';
+import { ensureCredentialsCurrent } from '../../lib/credentials.js';
 import { simpleLog, warning } from '../../lib/outputs.js';
 import { printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
@@ -45,11 +39,8 @@ export class AuthListCommand extends ApifyCommand<typeof AuthListCommand> {
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-auth-list';
 
 	async run() {
-		await ensureMigrated();
-		await ensureAuthFileCurrent();
-		await ensureSecretsKeyed();
+		await ensureCredentialsCurrent();
 
-		const file = readAuthFile();
 		const activeId = getActiveProfileId();
 		const envToken = readEnvToken();
 
@@ -61,8 +52,8 @@ export class AuthListCommand extends ApifyCommand<typeof AuthListCommand> {
 			isOrganization: Boolean(profile.organizationOwnerUserId),
 			organizationOwnerUserId: profile.organizationOwnerUserId ?? null,
 			loggedInAt: profile.loggedInAt,
-			// A file without the marker predates the keyring, so its secrets are still in it.
-			secretsBackend: profile.secretsBackend ?? file.secretsBackend ?? 'file',
+			// Same rule as the credential store: a token in the file means the file holds this account's secrets.
+			secretsBackend: profile.token === undefined ? 'keyring' : 'file',
 		}));
 
 		if (this.flags.json) {

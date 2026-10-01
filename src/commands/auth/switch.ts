@@ -1,12 +1,6 @@
 import process from 'node:process';
 
-import {
-	ensureAuthFileCurrent,
-	getActiveProfileId,
-	listProfiles,
-	profileLabel,
-	setActiveProfile,
-} from '../../lib/auth-file.js';
+import { getActiveProfileId, listProfiles, profileLabel, setActiveProfile } from '../../lib/auth-file.js';
 import {
 	envTokenOverridesProfileMessage,
 	missingProfileTokenMessage,
@@ -17,7 +11,7 @@ import {
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { CommandExitCodes } from '../../lib/consts.js';
-import { ensureMigrated, ensureSecretsKeyed, getSecret } from '../../lib/credentials.js';
+import { ensureCredentialsCurrent, getSecret } from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { info, success } from '../../lib/outputs.js';
@@ -80,9 +74,7 @@ export class AuthSwitchCommand extends ApifyCommand<typeof AuthSwitchCommand> {
 	}
 
 	private async pickProfile(): Promise<string> {
-		await ensureMigrated();
-		await ensureAuthFileCurrent();
-		await ensureSecretsKeyed();
+		await ensureCredentialsCurrent();
 
 		const profiles = listProfiles();
 		if (!profiles.length) {

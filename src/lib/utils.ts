@@ -32,7 +32,7 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
-import { ensureAuthFileCurrent, findProfile, lookUpActiveProfile } from './auth-file.js';
+import { findProfile, lookUpActiveProfile } from './auth-file.js';
 import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth, type ResolvedAuth } from './auth.js';
 import {
 	AUTH_FILE_PATH,
@@ -42,7 +42,7 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { ensureMigrated, ensureSecretsKeyed, getSecret } from './credentials.js';
+import { ensureCredentialsCurrent, getSecret } from './credentials.js';
 import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
@@ -90,9 +90,7 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
  * stored. Secrets come from whichever backend holds them; the metadata comes from auth.json.
  */
 export const getLocalUserInfo = async (userId?: string): Promise<AuthJSON> => {
-	await ensureMigrated();
-	await ensureAuthFileCurrent();
-	await ensureSecretsKeyed();
+	await ensureCredentialsCurrent();
 
 	const { profile, missingProfile } = userId ? { profile: findProfile(userId) } : lookUpActiveProfile();
 

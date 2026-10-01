@@ -14,7 +14,12 @@ import { invalidEnvTokenMessage, NO_STORED_ACCOUNTS_MESSAGE, readEnvToken, requi
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../lib/consts.js';
-import { clearKeyringSecrets } from '../../lib/credentials.js';
+import {
+	clearKeyringSecrets,
+	describeLeftovers,
+	type KeyringLeftover,
+	leftoverReasons,
+} from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { error, info, success, warning } from '../../lib/outputs.js';
@@ -65,10 +70,11 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 			await clearKeyringSecrets();
 			info({ message: NO_STORED_ACCOUNTS_MESSAGE });
 		} else {
-			const done = this.flags.all ? await this.logOutOfAll() : await this.logOutOf(this.flags.profile);
-			if (!done) return;
+			const proceeded = this.flags.all ? await this.logOutOfAll() : await this.logOutOf(this.flags.profile);
+			if (!proceeded) return;
 		}
 
+		// Said either way: a half-finished logout is when this matters most.
 		const envToken = readEnvToken();
 		if (envToken.kind === 'token') {
 			warning({
@@ -87,10 +93,7 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 
 		// Both steps are attempted even when the first one fails, so neither the secrets nor the
 		// profile are left behind just because the other could not be removed.
-		const keyringError = await clearKeyringSecrets(targetId, { keepLegacy: !isActive }).then(
-			() => null,
-			(err: unknown) => err,
-		);
+		const leftovers = await clearKeyringSecrets(targetId, { keepLegacy: !isActive });
 
 		let profileError: unknown = null;
 		let result: ReturnType<typeof removeProfile> = {};
@@ -100,24 +103,20 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 			profileError = err;
 		}
 
-		if (keyringError || profileError) {
-			error({ message: partialLogoutMessage(targetId, keyringError, profileError) });
-			process.exitCode = CommandExitCodes.RunFailed;
-			return false;
-		}
-
 		const { removed, active } = result;
 
-		if (!isActive) {
+		// The account is off disk whenever the profile step succeeded, so the telemetry ID follows
+		// whichever account is active now.
+		if (isActive && !profileError) await updateUserId(active?.id ?? null);
+
+		if (leftovers.length || profileError) {
+			error({ message: partialLogoutMessage(leftovers, profileError) });
+			process.exitCode = CommandExitCodes.RunFailed;
+		} else if (!isActive) {
 			success({
-				message: `You are logged out of ${profileLabel(removed!)}.${active ? ` ${profileLabel(active)} is still the active account.` : ''}`,
+				message: `You are logged out${removed ? ` of ${profileLabel(removed)}` : ''}.${active ? ` ${profileLabel(active)} is still the active account.` : ''}`,
 			});
-			return true;
-		}
-
-		await updateUserId(active?.id ?? null);
-
-		if (active) {
+		} else if (active) {
 			success({
 				message: `You are logged out${removed ? ` of ${profileLabel(removed)}` : ''}. ${profileLabel(active)} is now the active account.`,
 			});
@@ -143,9 +142,9 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 			}
 		}
 
-		const keyringErrors: unknown[] = [];
+		const leftovers = await clearKeyringSecrets();
 		for (const id of new Set([getActiveProfileId(), ...profiles.map((p) => p.id)])) {
-			await clearKeyringSecrets(id).catch((err: unknown) => keyringErrors.push(err));
+			leftovers.push(...(await clearKeyringSecrets(id, { keepLegacy: true })));
 		}
 
 		let profileError: unknown = null;
@@ -155,14 +154,15 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 			profileError = err;
 		}
 
-		if (keyringErrors.length || profileError) {
-			error({ message: partialLogoutMessage(undefined, keyringErrors[0], profileError) });
+		if (!profileError) await updateUserId(null);
+
+		if (leftovers.length || profileError) {
+			error({ message: partialLogoutMessage(leftovers, profileError) });
 			process.exitCode = CommandExitCodes.RunFailed;
-			return false;
+		} else {
+			success({ message: 'You are logged out of all your Apify accounts.' });
 		}
 
-		await updateUserId(null);
-		success({ message: 'You are logged out of all your Apify accounts.' });
 		return true;
 	}
 }
@@ -171,16 +171,16 @@ function reasonOf(err: unknown) {
 	return err instanceof Error ? err.message : String(err);
 }
 
-function partialLogoutMessage(profileId: string | undefined, keyringError: unknown, profileError: unknown) {
-	const keyringPart = keyringError
-		? `Your secrets are still in the OS keyring${profileId ? ` under the account ${profileId}` : ''}; delete them with your OS keyring app.`
+function partialLogoutMessage(leftovers: KeyringLeftover[], profileError: unknown) {
+	const keyringPart = leftovers.length
+		? `Your secrets are still in the OS keyring at ${describeLeftovers(leftovers)}; delete them with your OS keyring app.`
 		: 'Your secrets were removed from the OS keyring.';
 
 	const profilePart = profileError
-		? `Your account is still in ${AUTH_FILE_PATH()}; delete that file to finish logging out.`
-		: `Your account was removed from ${AUTH_FILE_PATH()}.`;
+		? `Your account is still in ${tildify(AUTH_FILE_PATH())}; delete that file to finish logging out.`
+		: `Your account was removed from ${tildify(AUTH_FILE_PATH())}.`;
 
-	const reasons = [keyringError, profileError].filter(Boolean).map(reasonOf).join(' ');
+	const reasons = [leftoverReasons(leftovers), profileError ? reasonOf(profileError) : ''].filter(Boolean).join(' ');
 
-	return `Logout did not finish. ${keyringPart} ${profilePart} ${reasons}`;
+	return `Logout did not finish. ${keyringPart} ${profilePart} The reason was: ${reasons}`;
 }

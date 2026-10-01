@@ -7,6 +7,12 @@ import { resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { readAuthFile } from '../../__setup__/auth-file.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
+import {
+	keyringFailures,
+	keyringStore,
+	LEGACY_KEYRING_TOKEN_KEY,
+	resetKeyringMock,
+} from '../../__setup__/keyring-mock.js';
 
 // Prompts take the non-interactive path, as they do in CI.
 vi.mock('ci-info', async (importOriginal) => ({ ...(await importOriginal<typeof import('ci-info')>()), isCI: true }));
@@ -81,6 +87,7 @@ const takeExitCode = () => {
 
 describe('multi-account UX', () => {
 	beforeEach(() => {
+		resetKeyringMock();
 		resetApifyClientMock({ id: 'uid', username: 'me' });
 		writeAuthFile(twoProfiles());
 	});
@@ -298,6 +305,16 @@ describe('multi-account UX', () => {
 
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 			expect(lastErrorMessage()).toContain('You are logged out of all your Apify accounts.');
+		});
+
+		it('--all names a keyring entry it could not delete once, however many accounts are stored', async () => {
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_legacy');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+
+			await testRunCommand(AuthLogoutCommand, { flags_all: true, flags_yes: true });
+
+			expect(lastErrorMessage().match(/com\.apify\.cli\/token/g)).toHaveLength(1);
+			expect(takeExitCode()).toBe(CommandExitCodes.RunFailed);
 		});
 
 		it('--all without --yes needs a confirmation', async () => {

@@ -38,6 +38,7 @@ export class Entry {
 	}
 
 	deletePassword(): boolean {
+		if (keyringFailures.has(this.key)) throw new Error('simulated keyring failure');
 		return keyringStore.delete(this.key);
 	}
 }

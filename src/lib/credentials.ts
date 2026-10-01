@@ -3,10 +3,10 @@ import process from 'node:process';
 import type { AuthFile } from './auth-file.js';
 import {
 	AUTH_FILE_VERSION,
+	clearProfileFileSecrets,
 	deleteProfileSecret,
-	moveProfileSecretToFile,
+	ensureAuthFileCurrent,
 	readAuthFile,
-	readProfileBackend,
 	readProfileSecret,
 	writeAuthFile,
 	writeProfileSecret,
@@ -26,7 +26,7 @@ export type SecretKind = 'token' | 'proxy-password';
 
 const SECRET_KINDS: readonly SecretKind[] = ['token', 'proxy-password'];
 
-interface KeyringKey {
+export interface KeyringKey {
 	service: string;
 	account: string;
 }
@@ -43,6 +43,11 @@ function keyringKey(userId: string, kind: SecretKind): KeyringKey {
 /** Where a secret sat before it was keyed by user: one service, the kind as the account. */
 function legacyKeyringKey(kind: SecretKind): KeyringKey {
 	return { service: KEYRING_SERVICE, account: kind };
+}
+
+export interface KeyringLeftover {
+	key: KeyringKey;
+	error: unknown;
 }
 
 interface KeyringEntry {
@@ -103,12 +108,9 @@ async function importKeyringModule(): Promise<KeyringModule | null> {
 }
 
 /**
- * Picks a backend the first time it's called and caches the result for the rest of the process.
- * Single-flight via a promise so concurrent callers share the same lookup.
- * Order: APIFY_DISABLE_KEYRING env override -> persisted marker in auth.json -> module load.
- *
- * This is the default every profile follows; a profile whose keyring write failed records its own
- * `secretsBackend` and reads through {@link backendFor} instead.
+ * Where new secrets go: the keyring, unless APIFY_DISABLE_KEYRING=1 is set or the keyring module
+ * cannot load. Nothing on disk overrides it, so a past keyring failure never pins a later write to
+ * the file. Cached for the process; single-flight so concurrent callers share the lookup.
  *
  * No write-probe runs here: on macOS that would pop a keychain prompt before the user has
  * authorized one. The first real write is the probe, and a failure falls back to the file.
@@ -118,21 +120,10 @@ export async function getBackend(): Promise<CredentialsBackend> {
 	backendPromise = (async (): Promise<CredentialsBackend> => {
 		if (process.env.APIFY_DISABLE_KEYRING === '1') return 'file';
 
-		const marker = readAuthFile().secretsBackend;
-		if (marker === 'file') return 'file';
 		const mod = await loadKeyringModule();
 		return mod ? 'keyring' : 'file';
 	})();
 	return backendPromise;
-}
-
-/**
- * Called when a keyring write fails before any profile exists, so there is nothing to record the
- * fallback on but the file itself. Flips the cached backend so subsequent reads and writes use the
- * file path immediately, without waiting for the marker on disk.
- */
-function downgradeBackendToFile() {
-	backendPromise = Promise.resolve('file');
 }
 
 /**
@@ -171,33 +162,51 @@ async function writeKeyring(key: KeyringKey, value: string): Promise<void> {
 	entry.setPassword(value);
 }
 
-async function deleteKeyring(key: KeyringKey): Promise<void> {
+/**
+ * Returns the secret this left in the keyring, or null. Only a secret that still reads back is
+ * reported: the module loads on machines with no secret service, where every entry throws although
+ * nothing was ever stored, and naming a keyring the user does not have helps no one.
+ */
+async function deleteKeyring(key: KeyringKey): Promise<KeyringLeftover | null> {
 	try {
 		const entry = await getKeyringEntry(key);
-		if (!entry) return;
+		if (!entry) return null;
 		entry.deletePassword();
+		return null;
 	} catch (err) {
 		cliDebugPrint('credentials', `failed to delete ${key.service}/${key.account} from keyring`, err);
+		return (await readKeyring(key)) === undefined ? null : { key, error: err };
 	}
 }
 
 /**
- * Where one account's secrets live. A profile that fell back to the file after a keyring failure
- * says so itself; every other profile follows the file-level choice.
+ * Where one account's secrets live. A token in `auth.json` means the file, and the account's other
+ * secrets are moved there with it; otherwise the keyring, unless it is disabled or unavailable.
+ * Decided by the token alone, so a keyring account never looks up a proxy password in the file
+ * first.
  */
-async function backendFor(userId: string): Promise<CredentialsBackend> {
-	return readProfileBackend(userId) ?? (await getBackend());
+export async function backendFor(userId: string): Promise<CredentialsBackend> {
+	if (readProfileSecret(userId, 'token') !== undefined) return 'file';
+	return getBackend();
 }
 
-/** One account's secret of the given kind, from whichever backend holds it. */
+/**
+ * One account's secret of the given kind, from whichever backend holds it. A keyring miss falls
+ * back to the file, where a secret lands when its own keyring write failed after the token's
+ * succeeded.
+ */
 export async function getSecret(userId: string, kind: SecretKind): Promise<string | undefined> {
-	if ((await backendFor(userId)) === 'keyring') return readKeyring(keyringKey(userId, kind));
+	if ((await backendFor(userId)) === 'keyring') {
+		return (await readKeyring(keyringKey(userId, kind))) ?? readProfileSecret(userId, kind);
+	}
 	return readProfileSecret(userId, kind);
 }
 
 /**
- * Persist one account's secret. When `skipIfUnchanged` is true and the stored value already
- * matches, the write is skipped. This avoids macOS Keychain prompts on every command.
+ * Persist one account's secret. A token goes wherever {@link getBackend} says now, so a re-login
+ * moves an account back to the keyring once it works again; the other secrets follow the token.
+ * When `skipIfUnchanged` is true and the stored value already matches in that place, the write is
+ * skipped. This avoids macOS Keychain prompts on every command.
  */
 export async function setSecret(
 	userId: string,
@@ -205,36 +214,50 @@ export async function setSecret(
 	value: string,
 	opts: { skipIfUnchanged?: boolean } = {},
 ): Promise<void> {
-	const backend = await backendFor(userId);
-	if (opts.skipIfUnchanged && (await getSecret(userId, kind)) === value) return;
+	const current = await backendFor(userId);
+	const target = kind === 'token' ? await getBackend() : current;
+	if (opts.skipIfUnchanged && current === target && (await getSecret(userId, kind)) === value) return;
 
-	if (backend === 'keyring') {
+	if (target === 'keyring') {
 		try {
 			await writeKeyring(keyringKey(userId, kind), value);
+			// The file copies are what would send reads there, so they go once the keyring holds the token.
+			if (kind === 'token') clearProfileFileSecrets(userId);
 			return;
 		} catch (err) {
-			// Recorded on the profile rather than on the file, so an account whose secrets are in
-			// the keyring is not redirected to a file that does not hold them.
 			cliDebugPrint('credentials', 'keyring write failed; falling back to file', err);
-			moveProfileSecretToFile(userId, kind, value);
-			return;
+			// Reads go to the file from here, so a copy left in the keyring is unreachable.
+			if (kind === 'token') await moveKeyringSecretsToFile(userId);
 		}
 	}
 
 	writeProfileSecret(userId, kind, value);
 }
 
+/** Every secret but the token, which the caller writes next. */
+async function moveKeyringSecretsToFile(userId: string): Promise<void> {
+	for (const kind of SECRET_KINDS) {
+		if (kind === 'token') continue;
+
+		const value = await readKeyring(keyringKey(userId, kind));
+		if (value === undefined) continue;
+
+		writeProfileSecret(userId, kind, value);
+		if (readProfileSecret(userId, kind) === value) await deleteKeyring(keyringKey(userId, kind));
+	}
+}
+
 /**
  * Forget one of an account's secrets. Called for a proxy password when the account has none, so a
  * re-login does not keep one the account no longer has.
+ *
+ * Returns the secret this left behind, or null: reads hit the keyring first, so a refused delete
+ * keeps serving a password the account no longer has.
  */
-export async function deleteSecret(userId: string, kind: SecretKind): Promise<void> {
-	if ((await backendFor(userId)) === 'keyring') {
-		await deleteKeyring(keyringKey(userId, kind));
-		return;
-	}
-
+export async function deleteSecret(userId: string, kind: SecretKind): Promise<KeyringLeftover | null> {
+	const leftover = (await backendFor(userId)) === 'keyring' ? await deleteKeyring(keyringKey(userId, kind)) : null;
 	deleteProfileSecret(userId, kind);
+	return leftover;
 }
 
 /**
@@ -243,26 +266,46 @@ export async function deleteSecret(userId: string, kind: SecretKind): Promise<vo
  * `APIFY_DISABLE_KEYRING=1` between login and logout does not orphan entries the user has no
  * in-CLI way to discover.
  *
- * The keyring has no listing API, so `auth.json` is the only index of what it holds. Call this
- * before the profile leaves the file, or its entries become unreachable. Secrets stored in
- * `auth.json` itself go with the profile that holds them.
+ * The CLI never enumerates the keyring, so `auth.json` is its only index of what it holds. Call
+ * this before the profile leaves the file, or the CLI loses the names of its entries. Secrets
+ * stored in `auth.json` itself go with the profile that holds them.
+ *
+ * `findCredentials()` could enumerate a service on every platform but the Linux keyutils
+ * fallback, where it throws, so a repair path is open if one is ever needed.
+ *
+ * Returns the entries the keyring refused to delete, so a caller can name them. Every key is
+ * attempted first: one entry the keyring holds on to must not strand the rest.
  */
-export async function clearKeyringSecrets(userId?: string, { keepLegacy = false } = {}): Promise<void> {
+export async function clearKeyringSecrets(userId?: string, { keepLegacy = false } = {}): Promise<KeyringLeftover[]> {
+	const leftovers: (KeyringLeftover | null)[] = [];
+
 	for (const kind of SECRET_KINDS) {
-		if (userId) await deleteKeyring(keyringKey(userId, kind));
+		if (userId) leftovers.push(await deleteKeyring(keyringKey(userId, kind)));
 		// The fixed-name entries belong to the active account, so a non-active profile leaves them.
-		if (!keepLegacy) await deleteKeyring(legacyKeyringKey(kind));
+		if (!keepLegacy) leftovers.push(await deleteKeyring(legacyKeyringKey(kind)));
 	}
+
+	return leftovers.filter((leftover) => leftover !== null);
+}
+
+/** Names the entries a failed logout or login left behind. */
+export function describeLeftovers(leftovers: KeyringLeftover[]): string {
+	return leftovers.map(({ key }) => `${key.service}/${key.account}`).join(', ');
+}
+
+/** The reasons behind {@link describeLeftovers}, each said once. */
+export function leftoverReasons(leftovers: KeyringLeftover[]): string {
+	const reasons = leftovers.map(({ error }) => (error instanceof Error ? error.message : String(error)));
+	return [...new Set(reasons)].join(' ');
 }
 
 /**
- * One-shot, idempotent migration of legacy plaintext auth.json to the keyring.
+ * Moves plaintext secrets at the top level of a v1 auth.json into the keyring.
  *
- * Both the API token and the proxy password are moved into the keyring on the keyring backend.
- *
- * - `secretsBackend` marker in auth.json makes re-entry a no-op.
- * - On `file` backend the marker is written but secrets stay in auth.json.
- * - On `keyring` backend the token and proxy password are moved out of auth.json.
+ * - No top-level secret means there is nothing to do, which makes re-entry a no-op.
+ * - On the `file` backend, or when the keyring write fails, the secrets stay where they are, and
+ *   `ensureSecretsKeyed()` moves them into the profile, after which this has nothing to do.
+ * - A `secretsBackend` marker from an older CLI is ignored and dropped by the shape migration.
  * - Wrapped in try/catch so a migration failure never blocks the CLI.
  */
 export async function ensureMigrated(): Promise<void> {
@@ -273,15 +316,8 @@ export async function ensureMigrated(): Promise<void> {
 			// A file a newer CLI wrote is not ours to rewrite, and this runs before the shape
 			// migration reports it.
 			if (typeof file.version === 'number' && file.version > AUTH_FILE_VERSION) return;
-			if (file.secretsBackend) return;
 			if (!file.token && !file.proxy?.password) return;
-
-			const backend = await getBackend();
-			if (backend === 'file') {
-				file.secretsBackend = 'file';
-				writeAuthFile(file);
-				return;
-			}
+			if ((await getBackend()) === 'file') return;
 
 			try {
 				if (file.token) await writeKeyring(legacyKeyringKey('token'), file.token);
@@ -289,16 +325,12 @@ export async function ensureMigrated(): Promise<void> {
 					await writeKeyring(legacyKeyringKey('proxy-password'), file.proxy.password);
 				}
 			} catch (err) {
-				cliDebugPrint('credentials', 'keyring write failed during migration; falling back to file', err);
-				downgradeBackendToFile();
-				file.secretsBackend = 'file';
-				writeAuthFile(file);
+				cliDebugPrint('credentials', 'keyring write failed during migration; keeping secrets in the file', err);
 				return;
 			}
 
 			delete file.token;
 			stripProxyPassword(file);
-			file.secretsBackend = 'keyring';
 			writeAuthFile(file);
 		} catch (err) {
 			cliDebugPrint('credentials', 'migration failed', err);
@@ -323,16 +355,28 @@ async function dropUnkeyedSecrets(file: AuthFile): Promise<void> {
 
 /**
  * Write the new entry, verify it reads back, then delete the old one. The reverse order loses the
- * secret when the delete succeeds and the write does not.
+ * secret when the delete succeeds and the write does not. Nothing the account already has is
+ * touched, so the migration never restores a value something newer replaced.
  */
 async function keyKeyringSecrets(userId: string): Promise<void> {
+	// A keyed token means a login already wrote this account's secrets under the new names, so the
+	// fixed names hold a previous login's, possibly another account's. Read lazily: usually never.
+	let claimable: boolean | undefined;
+
 	for (const kind of SECRET_KINDS) {
 		const legacy = legacyKeyringKey(kind);
 		const value = await readKeyring(legacy);
 		if (value === undefined) continue;
 
-		// A failure earlier in this loop moved this profile to the file, so the secrets after it
-		// belong there too rather than under a keyring name nothing will read.
+		claimable ??= (await readKeyring(keyringKey(userId, 'token'))) === undefined;
+
+		if (!claimable || (await getSecret(userId, kind)) !== undefined) {
+			await deleteKeyring(legacy);
+			continue;
+		}
+
+		// A failure earlier in this loop put the token in the file, so the secrets after it belong
+		// there too rather than under a keyring name nothing will read.
 		if ((await backendFor(userId)) === 'keyring') {
 			const target = keyringKey(userId, kind);
 
@@ -345,7 +389,7 @@ async function keyKeyringSecrets(userId: string): Promise<void> {
 			}
 		}
 
-		moveProfileSecretToFile(userId, kind, value);
+		writeProfileSecret(userId, kind, value);
 		if (readProfileSecret(userId, kind) === value) await deleteKeyring(legacy);
 	}
 }
@@ -362,7 +406,6 @@ function keyFileSecrets(userId: string, file: AuthFile): void {
 	if (token !== undefined) profile.token = token;
 	if (proxyPassword !== undefined) profile.proxy = { password: proxyPassword };
 
-	// The file-level marker already says `file`: nothing else puts secrets at the top level.
 	delete file.token;
 	delete file.proxy;
 	writeAuthFile(file);
@@ -390,16 +433,27 @@ export async function ensureSecretsKeyed(): Promise<void> {
 				return;
 			}
 
-			if ((await backendFor(userId)) === 'keyring') {
-				await keyKeyringSecrets(userId);
-				return;
-			}
-
+			// Top-level secrets are already in the file, whichever backend is current, so they move into
+			// the profile either way; that is also what stops a failed keyring move from being retried.
 			keyFileSecrets(userId, file);
+			if ((await backendFor(userId)) === 'keyring') await keyKeyringSecrets(userId);
 		} catch (err) {
 			cliDebugPrint('credentials', 'keying secrets by user failed', err);
 		}
 	})();
 
 	return keyingPromise;
+}
+
+/**
+ * Brings the stored credentials to their current form: the plaintext secrets into the keyring, the
+ * file into its current shape, then the secrets onto keys that carry the user ID. The order is a
+ * dependency chain — keying by user needs the user ID the shape migration produces.
+ *
+ * Each step is single-flight, so repeat calls cost nothing.
+ */
+export async function ensureCredentialsCurrent(): Promise<void> {
+	await ensureMigrated();
+	await ensureAuthFileCurrent();
+	await ensureSecretsKeyed();
 }
