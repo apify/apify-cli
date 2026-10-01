@@ -1,6 +1,7 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { ActorsBuildCommand } from './build.js';
 import { ActorsCallCommand } from './call.js';
+import { ActorsDoctorCommand } from './doctor.js';
 import { ActorsInfoCommand } from './info.js';
 import { ActorsLsCommand } from './ls.js';
 import { ActorsPullCommand } from './pull.js';
@@ -31,6 +32,7 @@ export class ActorsIndexCommand extends ApifyCommand<typeof ActorsIndexCommand> 
 		ActorsInfoCommand,
 		ActorsCallCommand,
 		ActorsBuildCommand,
+		ActorsDoctorCommand,
 	];
 
 	async run() {
