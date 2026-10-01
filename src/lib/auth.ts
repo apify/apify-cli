@@ -6,14 +6,14 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { ensureAuthFileCurrent, getActiveProfileId, upsertProfile } from './auth-file.js';
+import { getActiveProfileId, upsertProfile } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
 	clearKeyringSecrets,
 	deleteSecret,
+	describeLeftovers,
+	ensureCredentialsCurrent,
 	ensureMigrated,
-	ensureSecretsKeyed,
-	getBackend,
 	getSecret,
 	setSecret,
 } from './credentials.js';
@@ -70,7 +70,7 @@ export function __resetAuthForTests() {
  * The single token resolver. Order: `APIFY_TOKEN` -> stored login. Inside a platform run there is
  * no stored login, so `APIFY_TOKEN` wins without a special case for the `actor` entrypoint.
  *
- * Single-flighted like {@link getBackend}, because several callers resolve per command and reading
+ * Single-flighted like `getBackend()`, because several callers resolve per command and reading
  * the stored token is an uncached OS keyring hit.
  *
  * Read-only by contract, apart from the one-shot migration of an existing plaintext auth.json.
@@ -98,8 +98,7 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 
 		// Only now, because the stored file is not this command's credential when APIFY_TOKEN is
 		// set. A file a newer CLI wrote would otherwise stop a platform run that never reads it.
-		await ensureAuthFileCurrent();
-		await ensureSecretsKeyed();
+		await ensureCredentialsCurrent();
 
 		const userId = getActiveProfileId();
 		const storedToken = userId ? await getSecret(userId, 'token') : undefined;
@@ -181,30 +180,22 @@ export async function loginWithToken(
 	const proxyPassword = userInfo.proxy?.password;
 
 	// Brings a stored account to the current shape first, or the upsert below would find nothing to keep.
-	await ensureMigrated();
-	await ensureAuthFileCurrent();
-	await ensureSecretsKeyed();
-
-	const previousUserId = getActiveProfileId();
+	await ensureCredentialsCurrent();
 
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
-	upsertProfile(
-		userInfo.id,
-		{
-			username: userInfo.username,
-			name: userInfo.username || userInfo.id,
-			...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
-			authMethod: 'token',
-			expiresAt: null,
-			hasRefreshToken: false,
-			loggedInAt: new Date().toISOString(),
-		},
-		await getBackend(),
-	);
+	upsertProfile(userInfo.id, {
+		username: userInfo.username,
+		name: userInfo.username || userInfo.id,
+		...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
+		authMethod: 'token',
+		expiresAt: null,
+		hasRefreshToken: false,
+		loggedInAt: new Date().toISOString(),
+	});
 
-	// Leftover unkeyed entries are the outgoing account's; the next keying pass would file them under this one.
-	// Only once the switch is on disk: a failed write leaves the previous account active, and it may still read them.
-	if (previousUserId && previousUserId !== userInfo.id) await clearKeyringSecrets();
+	// Only once the profile is on disk: a failed write leaves the previous account active, and it may
+	// still read the fixed names. Its keyed entries stay, because that account is still stored.
+	const leftovers = await clearKeyringSecrets();
 
 	// After the profile, which says where its secrets go. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
@@ -212,7 +203,17 @@ export async function loginWithToken(
 	if (proxyPassword) {
 		await setSecret(userInfo.id, 'proxy-password', proxyPassword, { skipIfUnchanged: true });
 	} else {
-		await deleteSecret(userInfo.id, 'proxy-password');
+		// A refused delete leaves the revoked password where every read looks first.
+		const leftover = await deleteSecret(userInfo.id, 'proxy-password');
+		if (leftover) leftovers.push(leftover);
+	}
+
+	if (leftovers.length) {
+		warning({
+			message:
+				`Secrets this login could not remove are still in the OS keyring at ` +
+				`${describeLeftovers(leftovers)}; delete them with your OS keyring app.`,
+		});
 	}
 
 	return { client: apifyClient, userInfo };

@@ -35,7 +35,7 @@ jobs:
             changelog: ${{ steps.release_metadata.outputs.changelog }}
             release_notes: ${{ steps.release_metadata.outputs.release_notes }}
         steps:
-            - uses: apify/actions/git-cliff-release@v1.5.0
+            - uses: apify/actions/git-cliff-release@v1.6.1
               name: Prepare release metadata
               id: release_metadata
               with:
@@ -88,7 +88,7 @@ jobs:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.5.0
+              uses: apify/actions/pnpm-install@v1.6.1
 
             - name: Update package version in package.json
               run: pnpm version ${{ needs.release_metadata.outputs.version_number }} --no-git-tag-version --allow-same-version
@@ -112,7 +112,7 @@ jobs:
 
             - name: Commit changes
               id: commit
-              uses: apify/actions/signed-commit@v1.5.0
+              uses: apify/actions/signed-commit@v1.6.1
               with:
                   message: "chore(release): Update changelog and package version [skip ci]"
                   pull: '--rebase --autostash'
@@ -152,7 +152,7 @@ jobs:
                   registry-url: https://registry.npmjs.org
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.5.0
+              uses: apify/actions/pnpm-install@v1.6.1
 
             - name: Install bun
               uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
@@ -215,7 +215,7 @@ jobs:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.5.0
+              uses: apify/actions/pnpm-install@v1.6.1
 
             - name: Report install size
               id: install-size
@@ -240,7 +240,7 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - name: Execute publish workflow
-              uses: apify/actions/execute-workflow@v1.5.0
+              uses: apify/actions/execute-workflow@v1.6.1
               with:
                   workflow: publish_to_npm.yaml
                   inputs: >

@@ -65,7 +65,6 @@ describe('auth.json v2', () => {
 				version: 2,
 				activeProfile: 'uid',
 				profiles: { uid: V2_PROFILE },
-				secretsBackend: 'file',
 				token: 'apify_api_v1_token',
 				proxy: { password: 'pw' },
 			});
@@ -79,7 +78,8 @@ describe('auth.json v2', () => {
 
 			await ensureSecretsKeyed();
 
-			expect(readAuthFile()).toMatchObject({ version: 2, secretsBackend: 'file' });
+			expect(readAuthFile()).toMatchObject({ version: 2 });
+			expect(readAuthFile()).not.toHaveProperty('secretsBackend');
 			expect(readActiveProfile()).toMatchObject({ token: 'apify_api_v1_token', proxy: { password: 'pw' } });
 			expect(await getSecret('uid', 'token')).toBe('apify_api_v1_token');
 			expect(await getSecret('uid', 'proxy-password')).toBe('pw');
@@ -225,7 +225,7 @@ describe('auth.json v2', () => {
 			await ensureSecretsKeyed();
 
 			// That state already needed a re-login: there is no account to attach the token to.
-			expect(readAuthFile()).toEqual({ version: 2, profiles: {}, secretsBackend: 'file' });
+			expect(readAuthFile()).toEqual({ version: 2, profiles: {} });
 			expect(readBackup()).toEqual({ secretsBackend: 'file' });
 			await expect(getLocalUserInfo()).resolves.toEqual({});
 		});
@@ -303,7 +303,7 @@ describe('auth.json v2', () => {
 				secretsBackend: 'file',
 			});
 
-			upsertProfile('new', { ...V2_PROFILE, username: 'new' }, 'file');
+			upsertProfile('new', { ...V2_PROFILE, username: 'new' });
 
 			const file = readAuthFile();
 			expect(Object.keys(file.profiles!).sort()).toEqual(['new', 'old']);
@@ -311,40 +311,25 @@ describe('auth.json v2', () => {
 			expect(file.profiles!.old).toMatchObject({ token: 'apify_api_old' });
 		});
 
-		it('keeps a stored profile secrets and backend when it logs in again', () => {
+		it('keeps a stored profile file secrets when it logs in again, until the caller writes new ones', () => {
 			write({
 				version: 2,
 				activeProfile: 'uid',
-				profiles: {
-					uid: { ...V2_PROFILE, username: 'me', secretsBackend: 'file', token: 'tok', proxy: { password: 'pw' } },
-				},
-				secretsBackend: 'keyring',
+				profiles: { uid: { ...V2_PROFILE, username: 'me', token: 'tok', proxy: { password: 'pw' } } },
 			});
 
-			upsertProfile('uid', { ...V2_PROFILE, username: 'renamed' }, 'keyring');
+			upsertProfile('uid', { ...V2_PROFILE, username: 'renamed' });
 
-			expect(readActiveProfile()).toMatchObject({
-				username: 'renamed',
-				secretsBackend: 'file',
-				token: 'tok',
-				proxy: { password: 'pw' },
-			});
+			expect(readActiveProfile()).toMatchObject({ username: 'renamed', token: 'tok', proxy: { password: 'pw' } });
 		});
 
-		it('records the backend on a new profile when it differs from the file-level one', () => {
-			write({
-				version: 2,
-				activeProfile: 'old',
-				profiles: { old: { ...V2_PROFILE, username: 'old' } },
-				secretsBackend: 'keyring',
-			});
+		it('writes no secrets backend marker', () => {
+			write({ version: 2, activeProfile: 'old', profiles: { old: { ...V2_PROFILE, username: 'old' } } });
 
-			upsertProfile('new', { ...V2_PROFILE, username: 'new' }, 'file');
+			upsertProfile('new', { ...V2_PROFILE, username: 'new' });
 
-			const file = readAuthFile();
-			expect(file.secretsBackend).toBe('keyring');
-			expect(file.profiles!.new!.secretsBackend).toBe('file');
-			expect(file.profiles!.old).not.toHaveProperty('secretsBackend');
+			expect(readAuthFile()).not.toHaveProperty('secretsBackend');
+			expect(readAuthFile().profiles!.new).not.toHaveProperty('secretsBackend');
 		});
 
 		it('drops unkeyed secrets so they are never keyed to the new account', async () => {
@@ -357,7 +342,7 @@ describe('auth.json v2', () => {
 				proxy: { password: 'old_pw' },
 			});
 
-			upsertProfile('new', { ...V2_PROFILE, username: 'new' }, 'file');
+			upsertProfile('new', { ...V2_PROFILE, username: 'new' });
 
 			const file = readAuthFile();
 			expect(file).not.toHaveProperty('token');
@@ -369,7 +354,7 @@ describe('auth.json v2', () => {
 			write(v1AuthFile({ secretsBackend: 'file' }));
 			await ensureAuthFileCurrent();
 
-			upsertProfile('other', { ...V2_PROFILE, username: 'other' }, 'file');
+			upsertProfile('other', { ...V2_PROFILE, username: 'other' });
 
 			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(true);
 		});
@@ -424,7 +409,6 @@ describe('auth.json v2', () => {
 				version: 2,
 				activeProfile: 'uid',
 				profiles: { uid: V2_PROFILE },
-				secretsBackend: 'keyring',
 			});
 			expect(await getLocalUserInfo()).toEqual({
 				id: 'uid',
@@ -446,7 +430,6 @@ describe('auth.json v2', () => {
 				version: 2,
 				activeProfile: 'uid',
 				profiles: { uid: V2_PROFILE },
-				secretsBackend: 'keyring',
 			});
 		});
 	});
