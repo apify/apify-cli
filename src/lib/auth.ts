@@ -199,23 +199,25 @@ export async function loginWithToken(
 	const staleUserId = previousUserId === userInfo.id ? undefined : previousUserId;
 	const leftovers = await clearKeyringSecrets(staleUserId);
 
-	// The login itself succeeded, so it goes through. Said whether or not the account changed: a
-	// repeat login leaves the same entries behind, and nothing later in the CLI reads or names them.
-	if (leftovers.length) {
-		warning({
-			message:
-				`Your previous secrets are still in the OS keyring at ${describeLeftovers(leftovers)}; ` +
-				`delete them with your OS keyring app.`,
-		});
-	}
-
 	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
 
 	if (proxyPassword) {
 		await setSecret(userInfo.id, 'proxy-password', proxyPassword, { skipIfUnchanged: true });
 	} else {
-		await deleteSecret(userInfo.id, 'proxy-password');
+		// A refused delete leaves the revoked password where every read looks first.
+		const leftover = await deleteSecret(userInfo.id, 'proxy-password');
+		if (leftover) leftovers.push(leftover);
+	}
+
+	// The login itself succeeded, so it goes through. Said whether or not the account changed: a
+	// repeat login leaves the same entries behind, and nothing later in the CLI reads or names them.
+	if (leftovers.length) {
+		warning({
+			message:
+				`Secrets this login could not remove are still in the OS keyring at ` +
+				`${describeLeftovers(leftovers)}; delete them with your OS keyring app.`,
+		});
 	}
 
 	return { client: apifyClient, userInfo };

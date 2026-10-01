@@ -231,7 +231,7 @@ describe('auth commands', () => {
 			clientState.user = { id: 'uid2', username: 'other', proxy: { password: 'pw2' } };
 			await login('apify_api_other_token');
 
-			// auth.json no longer names uid, and the keyring has no listing API, so anything left
+			// auth.json no longer names uid, and the CLI never enumerates the keyring, so anything left
 			// under its key would be unreachable for good.
 			expect(keyringStore.get(TOKEN_KEY)).toBeUndefined();
 			expect(keyringStore.get(keyringTokenKey('uid2'))).toBe('apify_api_other_token');
@@ -268,7 +268,7 @@ describe('auth commands', () => {
 		});
 
 		// Clearing the keyring before the switch is written left both accounts unreachable: the
-		// keyring has no listing API, so auth.json is the only index of what it holds.
+		// CLI never enumerates the keyring, so auth.json is its only index of what it holds.
 		it.skipIf(process.platform === 'win32')(
 			'a switch that cannot be written keeps the outgoing account entries',
 			async () => {
@@ -300,7 +300,9 @@ describe('auth commands', () => {
 
 			expect(readActiveProfile()).toMatchObject({ id: 'uid2' });
 			const printed = [...logMessages.log, ...logMessages.error].join('\n');
-			expect(printed).toContain('Your previous secrets are still in the OS keyring at com.apify.cli.token/uid;');
+			expect(printed).toContain(
+				'Secrets this login could not remove are still in the OS keyring at com.apify.cli.token/uid;',
+			);
 			expect(printed).not.toContain('uid2');
 		});
 
@@ -359,6 +361,24 @@ describe('auth commands', () => {
 			await login();
 
 			expect([...logMessages.log, ...logMessages.error].join('\n')).toContain('com.apify.cli/token');
+		});
+
+		// The delete that exists to stop a revoked proxy password surviving a re-login. Its failure
+		// was the one the login never mentioned.
+		it('login reports a proxy password it could not remove', async () => {
+			await login();
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
+
+			// The account loses its proxy password, and the keyring refuses to drop the stored one.
+			clientState.user = { id: 'uid', username: 'me' };
+			keyringFailures.add(PROXY_PASSWORD_KEY);
+
+			await login();
+
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
+			expect([...logMessages.log, ...logMessages.error].join('\n')).toContain(
+				`still in the OS keyring at ${PROXY_PASSWORD_KEY.replace(':', '/')}`,
+			);
 		});
 
 		// The keyring module loads on machines where the secret service does not answer, so a

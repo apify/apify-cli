@@ -619,7 +619,7 @@ describe('credentials', () => {
 			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_kr');
 
 			expect(await getLocalUserInfo()).toEqual({});
-			// auth.json is the only index of the keyring, so a hand-deleted file strands the entry.
+			// auth.json is the CLI's only index of the keyring, so a hand-deleted file orphans the entry.
 			// Reaching for it on a machine with no account would touch the keyring on every command.
 			expect(keyringStore.get(LEGACY_KEYRING_TOKEN_KEY)).toBe('tok_kr');
 		});

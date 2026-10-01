@@ -256,10 +256,14 @@ async function moveKeyringSecretsToFile(userId: string): Promise<void> {
  * Forget one of an account's secrets. Called for a proxy password when the account has none, so
  * the previous account's does not survive a re-login — the keyring outlives the auth.json rewrite
  * that replaces everything else.
+ *
+ * Returns the secret this left behind, or null. A refused delete here is the one that matters
+ * most: the stored value stays, and reads keep serving it as the account's own.
  */
-export async function deleteSecret(userId: string, kind: SecretKind): Promise<void> {
-	if ((await backendFor(userId)) === 'keyring') await deleteKeyring(keyringKey(userId, kind));
+export async function deleteSecret(userId: string, kind: SecretKind): Promise<KeyringLeftover | null> {
+	const leftover = (await backendFor(userId)) === 'keyring' ? await deleteKeyring(keyringKey(userId, kind)) : null;
 	deleteProfileSecret(userId, kind);
+	return leftover;
 }
 
 /**
@@ -268,9 +272,12 @@ export async function deleteSecret(userId: string, kind: SecretKind): Promise<vo
  * `APIFY_DISABLE_KEYRING=1` between login and logout does not orphan entries the user has no
  * in-CLI way to discover.
  *
- * The keyring has no listing API, so `auth.json` is the only index of what it holds. Call this
- * before the profile leaves the file, or its entries become unreachable. Secrets stored in
- * `auth.json` itself go with the profile that holds them.
+ * The CLI never enumerates the keyring, so `auth.json` is its only index of what it holds. Call
+ * this before the profile leaves the file, or the CLI loses the names of its entries. Secrets
+ * stored in `auth.json` itself go with the profile that holds them.
+ *
+ * `findCredentials()` could enumerate a service on every platform but the Linux keyutils
+ * fallback, so a repair path is open if one is ever needed.
  *
  * Returns the entries the keyring refused to delete, so a caller can name them. Every key is
  * attempted first: one entry the keyring holds on to must not strand the rest.
