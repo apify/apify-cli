@@ -9,7 +9,6 @@ on:
 
     # TODO: Remove after validating the workflow works
     pull_request:
-        branches: [master]
 
     # Manual trigger — pick any branch in the Actions UI to test that branch's build.
     workflow_dispatch:
@@ -20,7 +19,7 @@ on:
 
 concurrency:
     group: e2e-${{ github.event_name }}-${{ github.ref }}
-    cancel-in-progress: false
+    cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
     e2e:
@@ -52,7 +51,7 @@ jobs:
                   node-version: 24
 
             - name: Install pnpm and dependencies
-              uses: apify/actions/pnpm-install@v1.5.0
+              uses: apify/actions/pnpm-install@v1.6.1
 
             - name: Build CLI from source
               run: pnpm run build
