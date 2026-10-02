@@ -2,11 +2,17 @@ import chalk from 'chalk';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { getActiveProfileId, listProfiles, profileLabel } from '../../lib/auth-file.js';
+import {
+	assertSupportedAuthFileVersion,
+	getActiveProfileId,
+	listProfiles,
+	profileLabel,
+	readAuthFile,
+} from '../../lib/auth-file.js';
 import { invalidEnvTokenMessage, NO_STORED_ACCOUNTS_MESSAGE, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
-import { ensureCredentialsCurrent, getBackend } from '../../lib/credentials.js';
+import { getBackend } from '../../lib/credentials.js';
 import { simpleLog, warning } from '../../lib/outputs.js';
 import { printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
@@ -43,8 +49,10 @@ export class AuthListCommand extends ApifyCommand<typeof AuthListCommand> {
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-auth-list';
 
 	async run() {
-		await ensureCredentialsCurrent();
+		// No credential migration: it reads the OS keyring, and listing must not prompt for it.
+		assertSupportedAuthFileVersion();
 
+		const file = readAuthFile();
 		const activeId = getActiveProfileId();
 		const envToken = readEnvToken();
 		// Loads the keyring module without reading from it, so listing never prompts for the keychain.
@@ -60,7 +68,11 @@ export class AuthListCommand extends ApifyCommand<typeof AuthListCommand> {
 			loggedInAt: profile.loggedInAt,
 			// Same rule as `backendFor`: a token in the file wins, and without the keyring nothing else holds one.
 			secretsBackend:
-				profile.token !== undefined ? ('file' as const) : keyringBackend === 'keyring' ? keyringBackend : null,
+				(profile.token ?? (profile.id === activeId ? file.token : undefined)) !== undefined
+					? ('file' as const)
+					: keyringBackend === 'keyring'
+						? keyringBackend
+						: null,
 		}));
 
 		if (this.flags.json) {

@@ -5,9 +5,10 @@ import type { AuthFile, AuthProfile } from '../../../src/lib/auth-file.js';
 import { AUTH_FILE_PATH, CommandExitCodes, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { readAuthFile } from '../../__setup__/auth-file.js';
-import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
+import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
+	Entry,
 	keyringFailures,
 	keyringStore,
 	keyringTokenKey,
@@ -291,6 +292,28 @@ describe('multi-account UX', () => {
 
 			const { profiles } = JSON.parse(lastLogMessage());
 			expect(profiles.map((p: { secretsBackend: unknown }) => p.secretsBackend)).toEqual(['file', null]);
+		});
+
+		describe('on the keyring backend', () => {
+			useKeyringBackend();
+
+			it('reads nothing from the keyring, even with fixed-name entries it cannot delete', async () => {
+				const file = twoProfiles();
+				delete file.profiles!.uid.token;
+				delete file.profiles!.org.token;
+				writeAuthFile(file);
+				keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 't-legacy');
+				keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+				const read = vi.spyOn(Entry.prototype, 'getPassword');
+				const remove = vi.spyOn(Entry.prototype, 'deletePassword');
+
+				await testRunCommand(AuthListCommand, { flags_json: true });
+
+				expect(read).not.toHaveBeenCalled();
+				expect(remove).not.toHaveBeenCalled();
+				const { profiles } = JSON.parse(lastLogMessage());
+				expect(profiles.map((p: { secretsBackend: unknown }) => p.secretsBackend)).toEqual(['keyring', 'keyring']);
+			});
 		});
 
 		it('marks the active profile and labels organizations', async () => {

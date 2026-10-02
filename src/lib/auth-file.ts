@@ -207,7 +207,7 @@ async function migrateAuthFile(): Promise<void> {
  * A file from a newer CLI is not something to guess at — migrating it backwards would drop
  * whatever that version stores.
  */
-function assertSupportedAuthFileVersion() {
+export function assertSupportedAuthFileVersion() {
 	const { version } = readAuthFile();
 
 	if (typeof version === 'number' && version > AUTH_FILE_VERSION) {
