@@ -11,12 +11,12 @@ import {
 	deleteProxyPassword,
 	ensureMigrated,
 	getBackend,
-	getToken,
 	setProxyPassword,
 	setToken,
 	stripProxyPassword,
 } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
+import { clearOAuthSession, getAccessToken } from './oauth/session.js';
 import { warning } from './outputs.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -73,8 +73,9 @@ export function __resetAuthForTests() {
  * Single-flighted like {@link getBackend}, because several callers resolve per command and reading
  * the stored token is an uncached OS keyring hit.
  *
- * Read-only by contract, apart from the one-shot migration of an existing plaintext auth.json.
- * Only `apify login` writes credentials, through {@link loginWithToken}.
+ * Read-only by contract, apart from the one-shot migration of an existing plaintext auth.json and
+ * the refresh of an expiring OAuth access token. Only `apify login` writes credentials, through
+ * {@link loginWithToken}.
  *
  * Throws when `APIFY_TOKEN` holds a placeholder value.
  */
@@ -96,7 +97,7 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 			return { token: envToken.token, source: 'env' } as const;
 		}
 
-		const storedToken = await getToken();
+		const storedToken = await getAccessToken();
 		return storedToken ? ({ token: storedToken, source: 'stored' } as const) : undefined;
 	})();
 
@@ -153,7 +154,10 @@ export const getApifyClientOptionsForToken = (token: string, apiBaseUrl?: string
 	token,
 });
 
-/** The only credential writer in the CLI. Returns `null` when the token is rejected, writing nothing. */
+/**
+ * The only credential writer in the CLI. Returns `null` when the token is rejected, writing nothing.
+ * Any OAuth session is dropped along the way; an OAuth login saves its new session right after.
+ */
 export async function loginWithToken(
 	token: string,
 	apiBaseUrl?: string,
@@ -174,6 +178,9 @@ export async function loginWithToken(
 	// is shallow, so stripping here also clears userInfo.proxy — read the password first.
 	const fileContents = { ...userInfo, secretsBackend: await getBackend() };
 	stripProxyPassword(fileContents);
+
+	// The file rewrite below already drops the OAuth metadata; this also forgets the refresh token in the keyring.
+	await clearOAuthSession();
 
 	ensureApifyDirectory(AUTH_FILE_PATH());
 	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
