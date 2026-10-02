@@ -93,7 +93,8 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	private async logOutOf(nameOrId: string | undefined): Promise<boolean> {
 		// Read before either step runs: once the profile is gone, nothing names the keyring entries it owns.
 		const activeProfileId = getActiveProfileId();
-		const targetId = nameOrId ? (await requireProfile(nameOrId)).id : activeProfileId;
+		const target = nameOrId ? await requireProfile(nameOrId) : undefined;
+		const targetId = target?.id ?? activeProfileId;
 		const isActive = targetId === activeProfileId;
 
 		// Both steps are attempted even when the first one fails, so neither the secrets nor the
@@ -115,7 +116,9 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 		if (isActive && !profileError) await updateUserId(active?.id ?? null);
 
 		if (leftovers.length || profileError) {
-			error({ message: partialLogoutMessage(leftovers, profileError) });
+			// Deleting the file would also drop the accounts that stay, so only the active one may suggest it.
+			const keptAccount = !isActive && target ? profileLabel(target) : undefined;
+			error({ message: partialLogoutMessage(leftovers, profileError, { keptAccount }) });
 			process.exitCode = CommandExitCodes.RunFailed;
 		} else if (!isActive) {
 			success({
@@ -176,7 +179,11 @@ function reasonOf(err: unknown) {
 	return err instanceof Error ? err.message : String(err);
 }
 
-function partialLogoutMessage(leftovers: KeyringLeftover[], profileError: unknown, { hadFile = true } = {}) {
+function partialLogoutMessage(
+	leftovers: KeyringLeftover[],
+	profileError: unknown,
+	{ hadFile = true, keptAccount }: { hadFile?: boolean; keptAccount?: string } = {},
+) {
 	const keyringPart = leftovers.length
 		? `Your secrets are still in the OS keyring at ${describeLeftovers(leftovers)}; delete them with your OS keyring app.`
 		: 'Your secrets were removed from the OS keyring.';
@@ -184,7 +191,9 @@ function partialLogoutMessage(leftovers: KeyringLeftover[], profileError: unknow
 	const profilePart = !hadFile
 		? ''
 		: profileError
-			? ` Your account is still in ${tildify(AUTH_FILE_PATH())}; delete that file to finish logging out.`
+			? keptAccount
+				? ` ${keptAccount} is still stored in ${tildify(AUTH_FILE_PATH())}; run the logout again to remove it.`
+				: ` Your account is still in ${tildify(AUTH_FILE_PATH())}; delete that file to finish logging out.`
 			: ` Your account was removed from ${tildify(AUTH_FILE_PATH())}.`;
 
 	const reasons = [leftoverReasons(leftovers), profileError ? reasonOf(profileError) : ''].filter(Boolean).join(' ');

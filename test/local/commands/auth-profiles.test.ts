@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
 import type { AuthFile, AuthProfile } from '../../../src/lib/auth-file.js';
@@ -18,6 +18,12 @@ import {
 
 // Prompts take the non-interactive path, as they do in CI.
 vi.mock('ci-info', async (importOriginal) => ({ ...(await importOriginal<typeof import('ci-info')>()), isCI: true }));
+
+vi.mock('../../../src/lib/hooks/user-confirmations/useSelectFromList.js', async (importOriginal) => {
+	const actual =
+		await importOriginal<typeof import('../../../src/lib/hooks/user-confirmations/useSelectFromList.js')>();
+	return { useSelectFromList: vi.fn(actual.useSelectFromList) };
+});
 
 vi.mock('@napi-rs/keyring', () => import('../../__setup__/keyring-mock.js'));
 
@@ -41,6 +47,7 @@ const { registerCommandForHelpGeneration, renderHelpForCommand } =
 	await import('../../../src/lib/command-framework/help.js');
 const { testRunCommand } = await import('../../../src/lib/command-framework/apify-command.js');
 const { getCurrentUserInfo, getLocalUserInfo } = await import('../../../src/lib/utils.js');
+const { useSelectFromList } = await import('../../../src/lib/hooks/user-confirmations/useSelectFromList.js');
 
 const PROFILE: AuthProfile = {
 	name: null,
@@ -228,6 +235,24 @@ describe('multi-account UX', () => {
 			expect(readAuthFile().activeProfile).toBe('uid');
 		});
 
+		it('without an argument makes the picked account active, starting from the active one', async () => {
+			vi.mocked(useSelectFromList).mockResolvedValueOnce('org');
+
+			await testRunCommand(AuthSwitchCommand, {});
+
+			expect(useSelectFromList).toHaveBeenCalledWith(
+				expect.objectContaining({
+					default: 'uid',
+					choices: [
+						{ name: 'me (uid)', value: 'uid' },
+						{ name: 'my-org (org)', value: 'org' },
+					],
+				}),
+			);
+			expect(readAuthFile().activeProfile).toBe('org');
+			expect(lastErrorMessage()).toContain('my-org is now the active account.');
+		});
+
 		it('errors instead of prompting in a non-interactive shell', async () => {
 			await testRunCommand(AuthSwitchCommand, {});
 
@@ -382,6 +407,26 @@ describe('multi-account UX', () => {
 			expect(lastErrorMessage()).not.toContain('auth.json');
 			expect(takeExitCode()).toBe(CommandExitCodes.RunFailed);
 		});
+
+		it.skipIf(process.platform === 'win32')(
+			'--profile for another account does not suggest deleting the file when it cannot be saved',
+			async () => {
+				chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o500);
+
+				try {
+					await testRunCommand(AuthLogoutCommand, { flags_profile: 'my-org' });
+
+					expect(lastErrorMessage()).toContain('my-org is still stored in');
+					expect(lastErrorMessage()).toContain('run the logout again to remove it.');
+					expect(lastErrorMessage()).not.toContain('delete that file');
+					expect(takeExitCode()).toBe(CommandExitCodes.RunFailed);
+				} finally {
+					chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);
+				}
+
+				expect(Object.keys(readAuthFile().profiles!)).toEqual(['uid', 'org']);
+			},
+		);
 
 		it('--profile with the active account behaves like a plain logout', async () => {
 			await testRunCommand(AuthLogoutCommand, { flags_profile: 'me' });
