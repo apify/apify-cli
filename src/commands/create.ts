@@ -45,6 +45,7 @@ import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
 import { useStdin } from '../lib/hooks/useStdin.js';
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
+import { isNonInteractive } from '../lib/nonInteractiveMode.js';
 import { error, info, simpleLog, success, warning } from '../lib/outputs.js';
 import { LANGUAGE_FLAG_CHOICES, USE_CASE_FLAG_CHOICES } from '../lib/templates/consts.js';
 import {
@@ -200,14 +201,15 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// failed run is enough to learn what to pass.
 		const needsTemplate = !templateName && !templateArchiveUrl;
 
-		if (json && (!actorName || needsTemplate)) {
+		if ((json || isNonInteractive()) && (!actorName || needsTemplate)) {
 			const missing = [
 				...(actorName ? [] : ['the Actor name as an argument']),
 				...(needsTemplate ? ['--template <name>'] : []),
 			];
+			const modeFlag = json ? '--json' : '--non-interactive';
 			const templateHint = needsTemplate ? ' Run "apify templates ls" to list template names.' : '';
 
-			throw new Error(`--json runs non-interactively. Pass ${missing.join(' and ')}.${templateHint}`);
+			throw new Error(`${modeFlag} runs non-interactively. Pass ${missing.join(' and ')}.${templateHint}`);
 		}
 
 		let source = this.flags.source as GitSource | undefined;
@@ -285,7 +287,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// The prompt helpers cannot be relied on for this: `useStdin` marks any non-TTY stdin as having
 		// data, so their own non-interactive fallback only fires under CI.
 		const { isTTY } = await useStdin();
-		const isInteractive = isTTY && !isCI && !json;
+		const isInteractive = isTTY && !isCI && !json && !isNonInteractive();
 
 		// Last wizard step, matching the Console. A run that cannot be asked keeps the previous behaviour.
 		source ??= isInteractive ? await promptGitSource() : 'apify';

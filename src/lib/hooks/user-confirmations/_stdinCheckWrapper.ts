@@ -2,6 +2,7 @@ import process from 'node:process';
 
 import { isCI } from 'ci-info';
 
+import { isNonInteractive } from '../../nonInteractiveMode.js';
 import { useStdin } from '../useStdin.js';
 
 /**
@@ -24,9 +25,6 @@ type NewFunctionArgs<Fn extends (...args: any[]) => any> = [
 	...AllButFirst<Parameters<Fn>>,
 ];
 
-const ConfirmFlag = 'confirm';
-const NoConfirmFlag = `no-${ConfirmFlag}`;
-
 interface StdinCheckWrapperOptions {
 	/**
 	 * When set, this value will be used in environments where stdin is not available to provide a custom error message.
@@ -43,7 +41,7 @@ interface StdinCheckWrapperOptions {
 export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 	fn: Fn,
 	{
-		errorMessageForStdin = `Please use the --${ConfirmFlag}/--${NoConfirmFlag} flags to confirm the action.`,
+		errorMessageForStdin = `This command requires interactive input. Pass --non-interactive to skip all prompts (exits non-zero when a required answer has no flag equivalent). See --help for flags that answer specific prompts.`,
 	}: StdinCheckWrapperOptions = {},
 ): (...args: NewFunctionArgs<Fn>) => Promise<Awaited<ReturnType<Fn>>> {
 	return async (input, ...rest) => {
@@ -51,7 +49,7 @@ export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 
 		const casted = input as StdinCheckWrapperInput<Awaited<ReturnType<Fn>>>;
 
-		if (isCI || (!isTTY && !hasData)) {
+		if (isNonInteractive() || isCI || (!isTTY && !hasData)) {
 			if (typeof casted.providedConfirmFromStdin === 'undefined') {
 				throw new Error(casted.errorMessageForStdin ?? errorMessageForStdin);
 			}
