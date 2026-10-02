@@ -1,6 +1,8 @@
 import type { ApifyClient } from 'apify-client';
 import chalk from 'chalk';
 
+import { ACTOR_JOB_TYPES } from '@apify/consts';
+
 import { INTERRUPT_SIGNALS } from '../consts.js';
 import { error, info } from '../outputs.js';
 import { useSignalHandler } from './useSignalHandler.js';
@@ -13,13 +15,13 @@ export type UseAbortJobOnSignalInput = {
 } & (
 	| {
 			/** Abort an Actor build. Builds have no graceful/force distinction. */
-			kind: 'build';
+			kind: typeof ACTOR_JOB_TYPES.BUILD;
 			/** ID of the build to abort. */
 			jobId: string;
 	  }
 	| {
 			/** Abort an Actor or Task run. Runs escalate: graceful on the first signal, forced on the second. */
-			kind: 'run';
+			kind: typeof ACTOR_JOB_TYPES.RUN;
 			/** ID of the run to abort. */
 			jobId: string;
 			/** Used purely for the user-visible status line (e.g. "aborting actor run ..."). */
@@ -36,9 +38,9 @@ export type UseAbortJobOnSignalInput = {
  * Repeat signals never terminate the CLI while an abort is in flight — the
  * listener stays registered for the lifetime of the `using` binding:
  *
- * - For `kind: 'build'`, the first signal issues the abort and subsequent
+ * - For builds, the first signal issues the abort and subsequent
  *   signals are silent no-ops. The build-abort API has no "gracefully" knob.
- * - For `kind: 'run'`, the first signal issues `abort({ gracefully: true })`
+ * - For runs, the first signal issues `abort({ gracefully: true })`
  *   with a hint that pressing Ctrl+C again forces an immediate abort. The
  *   second signal issues `abort({ gracefully: false })`. Third and later
  *   signals are silent no-ops.
@@ -48,7 +50,7 @@ export type UseAbortJobOnSignalInput = {
  * {
  *   using _signalHandler = useAbortJobOnSignal({
  *     apifyClient: client,
- *     kind: 'build',
+ *     kind: ACTOR_JOB_TYPES.BUILD,
  *     jobId: build.id,
  *   });
  *
@@ -67,7 +69,7 @@ export function useAbortJobOnSignal(input: UseAbortJobOnSignalInput): Disposable
 		handler: async (signal) => {
 			abortAttempt += 1;
 
-			if (input.kind === 'build') {
+			if (input.kind === ACTOR_JOB_TYPES.BUILD) {
 				if (abortAttempt > 1) {
 					return;
 				}

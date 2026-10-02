@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import type { ActorRun } from 'apify-client';
+import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
@@ -70,15 +70,15 @@ export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 		const { job, timedOutWaiting } = await waitForTerminalStatus({
 			apifyClient,
 			jobId: runId,
-			kind: 'run',
+			kind: ACTOR_JOB_TYPES.RUN,
 			maxWaitMillis: timeout ? timeout * 1000 : undefined,
 			pollIntervalMillis: pollInterval ? pollInterval * 1000 : undefined,
 		});
-		const run = job as ActorRun;
+		const run = job;
 
 		const url = consoleRunUrl(run.actId, run.id);
-		const ok = run.status === 'SUCCEEDED';
-		const exitCode = exitCodeForWaitResult({ job, timedOutWaiting }, 'run');
+		const ok = run.status === ACTOR_JOB_STATUSES.SUCCEEDED;
+		const exitCode = exitCodeForWaitResult({ job, timedOutWaiting }, ACTOR_JOB_TYPES.RUN);
 		const giveUpMessage = `Gave up waiting after ${timeout}s; run is still ${run.status}`;
 
 		let logTail: string[] = [];
@@ -131,7 +131,7 @@ export class RunsWaitCommand extends ApifyCommand<typeof RunsWaitCommand> {
 		simpleLog({
 			message: formatResultSummary({
 				resultLabel: 'Apify run result',
-				overallStatus: run.status as never,
+				overallStatus: run.status,
 				lines,
 				links,
 				errorReason: ok ? undefined : logTail,
