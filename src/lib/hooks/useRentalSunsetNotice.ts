@@ -1,19 +1,17 @@
-import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 
 import axios from 'axios';
 import chalk from 'chalk';
 import { isCI } from 'ci-info';
 
+import { getActiveProfile } from '../auth-file.js';
 import {
 	APIFY_CLIENT_DEFAULT_HEADERS,
-	AUTH_FILE_PATH,
 	CHECK_RENTAL_ACTORS_EVERY_MILLIS,
 	RENTAL_SUNSET_NOTICE_EVERY_MILLIS,
 	RENTAL_SUNSET_NOTICE_UNTIL,
 } from '../consts.js';
 import { simpleLog, warning } from '../outputs.js';
-import type { AuthJSON } from '../types.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { useCLIMetadata } from './useCLIMetadata.js';
 import { type LatestState, updateLocalState, useLocalState } from './useLocalState.js';
@@ -92,18 +90,12 @@ export function renderRentalSunsetNotice(rentalActorCount: number) {
 }
 
 /**
- * Reads the logged in username straight from auth.json instead of going through `getLocalUserInfo`,
- * which resolves the token from the OS keyring and would trigger a keychain prompt on commands that
- * do not need authentication at all.
+ * Reads the username straight out of auth.json instead of going through `getLocalUserInfo`, which
+ * resolves the token from the OS keyring and would trigger a keychain prompt on commands that do
+ * not need authentication at all.
  */
-async function getLocalUsername() {
-	try {
-		const raw = await readFile(AUTH_FILE_PATH(), 'utf-8');
-
-		return (JSON.parse(raw) as AuthJSON).username;
-	} catch {
-		return undefined;
-	}
+function getLocalUsername() {
+	return getActiveProfile()?.username;
 }
 
 /**
@@ -207,7 +199,7 @@ export async function useRentalSunsetNotice() {
 			return;
 		}
 
-		const username = await getLocalUsername();
+		const username = getLocalUsername();
 
 		if (!username) {
 			cliDebugPrint('useRentalSunsetNotice', 'Not logged in, skipping the check');

@@ -1,8 +1,6 @@
-import { readFileSync } from 'node:fs';
-
 import { InfoCommand } from '../../../src/commands/info.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
-import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
+import { readActiveProfile } from '../../__setup__/auth-file.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
@@ -21,12 +19,10 @@ describe('[api] apify info', () => {
 		await safeLogin();
 		await testRunCommand(InfoCommand, {});
 
-		const userInfoFromConfig = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
-
 		const spy = logSpy();
 
 		expect(spy).toHaveBeenCalledTimes(3);
-		expect(spy.mock.calls[1][0]).to.include(userInfoFromConfig.id);
+		expect(spy.mock.calls[1][0]).to.include(readActiveProfile()!.id);
 		expect(spy.mock.calls[2][0]).to.include('apify login');
 	});
 });
