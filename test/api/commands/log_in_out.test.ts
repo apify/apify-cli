@@ -4,7 +4,7 @@ import axios from 'axios';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../../src/lib/consts.js';
-import { getToken } from '../../../src/lib/credentials.js';
+import { getSecret } from '../../../src/lib/credentials.js';
 import { readActiveProfile } from '../../__setup__/auth-file.js';
 import { TEST_USER_BAD_TOKEN, TEST_USER_TOKEN, testUserClient } from '../../__setup__/config.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -41,7 +41,7 @@ describe('[api] apify login and logout', () => {
 			id: expectedUserInfo.id,
 			username: expectedUserInfo.username,
 		});
-		expect(await getToken()).to.eql(TEST_USER_TOKEN);
+		expect(await getSecret(expectedUserInfo.id, 'token')).to.eql(TEST_USER_TOKEN);
 
 		await testRunCommand(LogoutCommand, {});
 		const isGlobalConfig = existsSync(AUTH_FILE_PATH());
@@ -77,6 +77,6 @@ describe('[api] apify login and logout', () => {
 			id: expectedUserInfo.id,
 			username: expectedUserInfo.username,
 		});
-		expect(await getToken()).to.eql(TEST_USER_TOKEN);
+		expect(await getSecret(expectedUserInfo.id, 'token')).to.eql(TEST_USER_TOKEN);
 	});
 });
