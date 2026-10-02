@@ -28,10 +28,8 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-logout';
 
 	async run() {
-		// The file goes first: it is the step that can refuse, and refusing before the keyring is
-		// cleared leaves a logged-in state rather than half a logout.
-		removeActiveProfile();
 		await clearKeyringSecrets();
+		removeActiveProfile();
 
 		await updateUserId(null);
 
