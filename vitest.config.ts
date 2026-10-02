@@ -11,6 +11,7 @@ export default defineConfig({
 	test: {
 		globals: true,
 		restoreMocks: true,
+		setupFiles: ['./test/setup.ts'],
 		testTimeout: 120_000 * multiplierFactor,
 		hookTimeout: 120_000 * multiplierFactor,
 		include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)'],
