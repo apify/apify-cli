@@ -6,7 +6,7 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { getActiveProfileId, replaceStoredAccount } from './auth-file.js';
+import { getActiveProfileId, upsertProfile } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
 	clearKeyringSecrets,
@@ -179,12 +179,13 @@ export async function loginWithToken(
 
 	const proxyPassword = userInfo.proxy?.password;
 
-	const previousUserId = getActiveProfileId();
+	// Brings a stored account to the current shape first, or the upsert below would find nothing to keep.
+	await ensureCredentialsCurrent();
 
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
-	replaceStoredAccount(userInfo.id, {
+	upsertProfile(userInfo.id, {
 		username: userInfo.username,
-		name: null,
+		name: userInfo.username || userInfo.id,
 		...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
 		authMethod: 'token',
 		expiresAt: null,
@@ -192,12 +193,11 @@ export async function loginWithToken(
 		loggedInAt: new Date().toISOString(),
 	});
 
-	// Only once the switch is on disk: a failed write leaves auth.json naming the previous account,
-	// whose entries nothing else can find. The fixed names go every time, stale by then either way.
-	const staleUserId = previousUserId === userInfo.id ? undefined : previousUserId;
-	const leftovers = await clearKeyringSecrets(staleUserId);
+	// Only once the profile is on disk: a failed write leaves the previous account active, and it may
+	// still read the fixed names. Its keyed entries stay, because that account is still stored.
+	const leftovers = await clearKeyringSecrets();
 
-	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
+	// After the profile, which says where its secrets go. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
 
 	if (proxyPassword) {

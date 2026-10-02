@@ -248,9 +248,8 @@ async function moveKeyringSecretsToFile(userId: string): Promise<void> {
 }
 
 /**
- * Forget one of an account's secrets. Called for a proxy password when the account has none, so
- * the previous account's does not survive a re-login — the keyring outlives the auth.json rewrite
- * that replaces everything else.
+ * Forget one of an account's secrets. Called for a proxy password when the account has none, so a
+ * re-login does not keep one the account no longer has.
  *
  * Returns the secret this left behind, or null: reads hit the keyring first, so a refused delete
  * keeps serving a password the account no longer has.
@@ -449,9 +448,6 @@ export async function ensureSecretsKeyed(): Promise<void> {
  * Brings the stored credentials to their current form: the plaintext secrets into the keyring, the
  * file into its current shape, then the secrets onto keys that carry the user ID. The order is a
  * dependency chain — keying by user needs the user ID the shape migration produces.
- *
- * `loginWithToken()` does not call it: it replaces the file wholesale, so there is nothing to
- * bring forward, and it clears the old keyring names itself.
  *
  * Each step is single-flight, so repeat calls cost nothing.
  */

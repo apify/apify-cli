@@ -18,7 +18,7 @@ export const AUTH_BACKUP_FILE_PATH = () => `${AUTH_FILE_PATH()}.v1.bak`;
  */
 export interface AuthProfile {
 	username?: string;
-	/** Human label for `--profile <name>`. Unused until profiles get names. */
+	/** Human label for `--profile <name>`. */
 	name: string | null;
 	/** Set means the profile is an organization rather than a personal account. */
 	organizationOwnerUserId?: string;
@@ -250,6 +250,10 @@ export function lookUpActiveProfile(): ActiveProfileLookup {
 	return { profile: { id: file.activeProfile, ...profile } };
 }
 
+export function profileLabel(profile: AuthProfile & { id: string }) {
+	return profile.name ?? profile.username ?? profile.id;
+}
+
 export function getActiveProfile(): (AuthProfile & { id: string }) | undefined {
 	return lookUpActiveProfile().profile;
 }
@@ -329,51 +333,71 @@ function updateProfile(userId: string, edit: (profile: AuthProfile) => void) {
 }
 
 /**
- * Replaces the file with this one account, dropping any previous profile and its secrets. Nothing
- * puts a second profile there yet; additive login is #1386. Dropping the old secrets is what keeps
- * the write safe: the caller writes the new token next, so a failure there leaves nobody logged in
- * rather than the old token beside the new name.
+ * Adds the account, or updates it in place when it is already stored, and makes it active. Other
+ * profiles are kept. A stored profile keeps its file-backend secrets until the caller writes the
+ * new ones, so a failed write leaves the old login in place rather than none.
  */
-export function replaceStoredAccount(userId: string, profile: AuthProfile) {
+export function upsertProfile(userId: string, profile: AuthProfile) {
 	assertSupportedAuthFileVersion();
 
-	// The snapshot described the account being replaced, and is never refreshed, so keeping it
-	// would leave one user's details on disk under another user's login.
-	rmSync(AUTH_BACKUP_FILE_PATH(), { force: true, maxRetries: 10, retryDelay: 100 });
+	const current = readAuthFile();
+	// A file the migration could not bring to v2 has no profiles to keep.
+	const file: AuthFile = current.version === AUTH_FILE_VERSION ? current : { version: AUTH_FILE_VERSION };
+	file.profiles ??= {};
+	// Unkeyed secrets belong to the account that was active, and re-keying would file them under this one.
+	delete file.token;
+	delete file.proxy;
 
-	writeAuthFile({
-		version: AUTH_FILE_VERSION,
-		activeProfile: userId,
-		profiles: { [userId]: profile },
-	});
+	const existing = file.profiles[userId];
+	file.profiles[userId] = {
+		...profile,
+		...(existing?.token ? { token: existing.token } : {}),
+		...(existing?.proxy ? { proxy: existing.proxy } : {}),
+	};
+
+	file.activeProfile = userId;
+	writeAuthFile(file);
 }
 
 /**
- * Drops the active profile together with the secrets stored beside it. The file and the v1 backup
- * go away once no profile is left, so logging out leaves no token on disk.
+ * Drops the active profile together with the secrets stored beside it. The profile with the most
+ * recent `loggedInAt` becomes active. The file and the v1 backup go away once no profile is left,
+ * so logging out leaves no token on disk.
  */
-export function removeActiveProfile() {
+export function removeActiveProfile(): {
+	removed?: AuthProfile & { id: string };
+	active?: AuthProfile & { id: string };
+} {
 	const file = readAuthFile();
 
 	// No version guard: refusing to discard a file this CLI cannot read leaves no way out. It goes
 	// whole rather than edited, which would leave something worse than either outcome.
 	if (file.version !== AUTH_FILE_VERSION) {
 		discardAuthFiles();
-		return;
+		return {};
 	}
 
-	const active = file.activeProfile;
-	if (active && file.profiles) delete file.profiles[active];
+	const removedId = file.activeProfile;
+	const removedProfile = removedId ? file.profiles?.[removedId] : undefined;
+	const removed = removedId && removedProfile ? { id: removedId, ...removedProfile } : undefined;
+
+	if (removedId && file.profiles) delete file.profiles[removedId];
 	delete file.activeProfile;
 	delete file.token;
 	delete file.proxy;
 
-	if (Object.keys(file.profiles ?? {}).length === 0) {
+	const [nextId] = Object.entries(file.profiles ?? {})
+		.sort(([, a], [, b]) => (b.loggedInAt ?? '').localeCompare(a.loggedInAt ?? ''))
+		.map(([id]) => id);
+
+	if (!nextId) {
 		discardAuthFiles();
-		return;
+		return { removed };
 	}
 
+	file.activeProfile = nextId;
 	writeAuthFile(file);
+	return { removed, active: { id: nextId, ...file.profiles![nextId] } };
 }
 
 function discardAuthFiles() {

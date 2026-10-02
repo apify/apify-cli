@@ -147,8 +147,8 @@ DESCRIPTION
 SUBCOMMANDS
   auth login   Authenticates your Apify account and saves credentials
                to '~/.apify/auth.json'.
-  auth logout  Removes authentication by deleting your API token and
-               account information from '~/.apify/auth.json'.
+  auth logout  Logs out of the active account by deleting its API
+               token and account information from '~/.apify/auth.json'.
   auth token   Prints the API token the CLI authenticates with,
                resolved from APIFY_TOKEN or the token from 'apify login'.
 ```
@@ -177,8 +177,9 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Removes authentication by deleting your API token and account information from
-   '~/.apify/auth.json'.
+  Logs out of the active account by deleting its API token and account 
+  information from '~/.apify/auth.json'.
+  If other accounts are stored, the most recently logged-in one becomes active.
   Run 'apify login' to authenticate again.
 
 USAGE
