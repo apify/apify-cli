@@ -24,6 +24,5 @@ describe('[api] apify info', () => {
 
 		expect(row('userId')).toContain(readActiveProfile()!.id);
 		expect(row('token source')).toContain('apify login');
-		expect(row('profile')).toContain(readActiveProfile()!.name!);
 	});
 });

@@ -31,7 +31,6 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 			'username': info.username,
 			'userId': info.id,
 			'token source': TOKEN_SOURCE_LABELS[auth!.source],
-			...(auth!.profile ? { profile: auth!.profile.label } : {}),
 		};
 
 		for (const [key, value] of Object.entries(rows)) {

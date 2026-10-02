@@ -189,9 +189,10 @@ describe('multi-account UX', () => {
 
 			await testRunCommand(InfoCommand, { flags_profile: 'my-org' });
 
-			const output = logSpy().mock.calls.flat().join('\n');
-			expect(output).toContain('--profile flag');
-			expect(output).toContain('my-org');
+			const rows = logSpy().mock.calls.map(([row]) => String(row));
+			expect(rows.find((r) => r.includes('token source'))).toContain('--profile flag');
+			expect(rows.find((r) => r.includes('username'))).toContain('my-org');
+			expect(rows).toHaveLength(3);
 		});
 
 		it('is offered on commands that call the API and not on offline ones', () => {
