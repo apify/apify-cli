@@ -55,6 +55,7 @@ import {
 	isNodeVersionSupported,
 	isPythonVersionSupported,
 	printJsonToStdout,
+	retryTransient,
 	setLocalConfig,
 	setLocalEnv,
 } from '../lib/utils.js';
@@ -214,7 +215,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 		// Start fetching manifest immediately to prevent
 		// annoying delays that sometimes happen on CLI startup.
-		const manifestPromise = fetchManifest().catch((err) => {
+		const manifestPromise = retryTransient(async () => fetchManifest()).catch((err) => {
 			return new Error(`Could not fetch template list from server. Cause: ${err?.message}`);
 		});
 

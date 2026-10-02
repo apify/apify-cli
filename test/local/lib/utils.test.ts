@@ -95,6 +95,17 @@ describe('Utils', () => {
 			await expect(downloadAndUnzip({ url: 'https://example.com/a.zip', pathTo: '.' })).rejects.toThrow(/HTTP 403/);
 		});
 
+		it('should retry transient failures', async () => {
+			const get = vitest
+				.spyOn(axios, 'get')
+				.mockRejectedValueOnce(new Error('socket hang up'))
+				.mockResolvedValueOnce({ status: 503, data: Buffer.from('unavailable') })
+				.mockResolvedValue({ status: 404, data: Buffer.from('gone') });
+
+			await expect(downloadAndUnzip({ url: 'https://example.com/a.zip', pathTo: '.' })).rejects.toThrow(/HTTP 404/);
+			expect(get).toHaveBeenCalledTimes(3);
+		});
+
 		it('should throw an actionable error when the response body is not a zip', async () => {
 			vitest.spyOn(axios, 'get').mockResolvedValue({ status: 200, data: Buffer.from('<html>block page</html>') });
 
