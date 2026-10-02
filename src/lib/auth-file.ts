@@ -207,7 +207,7 @@ async function migrateAuthFile(): Promise<void> {
  * A file from a newer CLI is not something to guess at — migrating it backwards would drop
  * whatever that version stores.
  */
-function assertSupportedAuthFileVersion() {
+export function assertSupportedAuthFileVersion() {
 	const { version } = readAuthFile();
 
 	if (typeof version === 'number' && version > AUTH_FILE_VERSION) {
@@ -250,11 +250,49 @@ export function lookUpActiveProfile(): ActiveProfileLookup {
 	return { profile: { id: file.activeProfile, ...profile } };
 }
 
-export function profileLabel(profile: AuthProfile & { id: string }) {
+export type StoredProfile = AuthProfile & { id: string };
+
+export function profileLabel(profile: StoredProfile) {
 	return profile.name ?? profile.username ?? profile.id;
 }
 
-export function getActiveProfile(): (AuthProfile & { id: string }) | undefined {
+/** Every stored profile, in file order. Reads the pre-profile shape as its one account. */
+export function listProfiles(): StoredProfile[] {
+	const file = readAuthFile();
+	if (file.version !== AUTH_FILE_VERSION) {
+		const { profile } = lookUpActiveProfile();
+		return profile ? [profile] : [];
+	}
+
+	return Object.entries(file.profiles ?? {}).map(([id, profile]) => ({ id, ...profile }));
+}
+
+/**
+ * The profiles a `--profile` value names: the one with that user ID, otherwise every profile whose
+ * `profileLabel` matches. More than one match means the name is ambiguous.
+ */
+export function matchProfiles(nameOrId: string): StoredProfile[] {
+	const profiles = listProfiles();
+	const byId = profiles.find(({ id }) => id === nameOrId);
+	return byId ? [byId] : profiles.filter((p) => profileLabel(p) === nameOrId);
+}
+
+/** Like {@link lookUpActiveProfile}, for the profile with this user ID. */
+export function lookUpProfile(userId: string): ActiveProfileLookup {
+	const profile = listProfiles().find(({ id }) => id === userId);
+	return profile ? { profile } : { missingProfile: userId };
+}
+
+/** Makes a stored profile active. A user ID the file does not hold is ignored. */
+export function setActiveProfile(userId: string) {
+	const file = readAuthFile();
+	if (!file.profiles?.[userId]) return;
+
+	file.activeProfile = userId;
+	writeAuthFile(file);
+}
+
+export function getActiveProfile(): StoredProfile | undefined {
 	return lookUpActiveProfile().profile;
 }
 
@@ -360,13 +398,13 @@ export function upsertProfile(userId: string, profile: AuthProfile) {
 }
 
 /**
- * Drops the active profile together with the secrets stored beside it. The profile with the most
- * recent `loggedInAt` becomes active. The file and the v1 backup go away once no profile is left,
- * so logging out leaves no token on disk.
+ * Drops a profile together with the secrets stored beside it; the active one when no ID is given.
+ * Removing the active profile makes the one with the most recent `loggedInAt` active. The file and
+ * the v1 backup go away once no profile is left, so logging out leaves no token on disk.
  */
-export function removeActiveProfile(): {
-	removed?: AuthProfile & { id: string };
-	active?: AuthProfile & { id: string };
+export function removeProfile(userId?: string): {
+	removed?: StoredProfile;
+	active?: StoredProfile;
 } {
 	const file = readAuthFile();
 
@@ -377,11 +415,18 @@ export function removeActiveProfile(): {
 		return {};
 	}
 
-	const removedId = file.activeProfile;
+	const removedId = userId ?? file.activeProfile;
 	const removedProfile = removedId ? file.profiles?.[removedId] : undefined;
 	const removed = removedId && removedProfile ? { id: removedId, ...removedProfile } : undefined;
 
 	if (removedId && file.profiles) delete file.profiles[removedId];
+
+	if (removedId !== file.activeProfile) {
+		writeAuthFile(file);
+		const activeProfile = file.activeProfile ? file.profiles?.[file.activeProfile] : undefined;
+		return { removed, active: activeProfile && { id: file.activeProfile!, ...activeProfile } };
+	}
+
 	delete file.activeProfile;
 	delete file.token;
 	delete file.proxy;
@@ -398,6 +443,11 @@ export function removeActiveProfile(): {
 	file.activeProfile = nextId;
 	writeAuthFile(file);
 	return { removed, active: { id: nextId, ...file.profiles![nextId] } };
+}
+
+/** Deletes the auth file and the v1 backup. The caller clears the keyring first, while the file still indexes it. */
+export function removeAllProfiles() {
+	discardAuthFiles();
 }
 
 function discardAuthFiles() {
