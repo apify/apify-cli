@@ -3,7 +3,6 @@ import process from 'node:process';
 
 import {
 	__resetAuthFileForTests,
-	AUTH_BACKUP_FILE_PATH,
 	type AuthProfile,
 	ensureAuthFileCurrent,
 	getActiveProfile,
@@ -34,8 +33,6 @@ const write = (contents: unknown) => {
 	mkdirSync(GLOBAL_CONFIGS_FOLDER(), { recursive: true });
 	writeFileSync(AUTH_FILE_PATH(), typeof contents === 'string' ? contents : JSON.stringify(contents));
 };
-
-const readBackup = () => JSON.parse(readFileSync(AUTH_BACKUP_FILE_PATH(), 'utf-8'));
 
 const V2_PROFILE: AuthProfile = {
 	username: 'me',
@@ -107,21 +104,6 @@ describe('auth.json v2', () => {
 			await expect(getLocalUserInfo()).resolves.toMatchObject({ organizationOwnerUserId: 'owner-id' });
 		});
 
-		it('backs the v1 file up and never overwrites the backup', async () => {
-			write(v1AuthFile({ secretsBackend: 'file' }));
-
-			await ensureAuthFileCurrent();
-			expect(readBackup()).toMatchObject({ id: 'uid', email: 'me@example.com' });
-
-			// A later process migrating another v1 file must leave the first backup alone.
-			write(v1AuthFile({ secretsBackend: 'file', username: 'someone-else' }));
-			__resetAuthFileForTests();
-			await ensureAuthFileCurrent();
-
-			expect(readActiveProfile()).toMatchObject({ username: 'someone-else' });
-			expect(readBackup()).toMatchObject({ username: 'me' });
-		});
-
 		it('is a no-op on a file that is already v2', async () => {
 			write(v1AuthFile({ secretsBackend: 'file' }));
 			await ensureAuthFileCurrent();
@@ -134,17 +116,6 @@ describe('auth.json v2', () => {
 			expect(readAuthFile()).toEqual(migrated);
 		});
 
-		it('logout removes the backup along with the file', async () => {
-			write(v1AuthFile({ secretsBackend: 'file' }));
-			await ensureAuthFileCurrent();
-			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(true);
-
-			removeActiveProfile();
-
-			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
-			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
-		});
-
 		// Only the temp-file + rename repairs an existing file's mode; a direct write would leave it.
 		it.skipIf(process.platform === 'win32')('tightens a pre-existing 0644 auth.json to 0600', async () => {
 			write(v1AuthFile({ secretsBackend: 'file' }));
@@ -153,31 +124,6 @@ describe('auth.json v2', () => {
 			await ensureAuthFileCurrent();
 
 			expect(statSync(AUTH_FILE_PATH()).mode & 0o777).toBe(0o600);
-		});
-
-		// Windows has no POSIX modes: Node reports 0o666 there and chmod only moves the read-only bit.
-		it.skipIf(process.platform === 'win32')(
-			'writes the backup readable only by the owner, whatever mode the v1 file had',
-			async () => {
-				write(v1AuthFile({ secretsBackend: 'file' }));
-				chmodSync(AUTH_FILE_PATH(), 0o644);
-
-				await ensureAuthFileCurrent();
-
-				expect(statSync(AUTH_BACKUP_FILE_PATH()).mode & 0o777).toBe(0o600);
-			},
-		);
-
-		// The backup is never refreshed, so a token in it would outlive the account it belongs to.
-		it('keeps the secrets out of the backup', async () => {
-			write(v1AuthFile({ secretsBackend: 'file' }));
-
-			await ensureAuthFileCurrent();
-
-			const backup = readBackup();
-			expect(backup).not.toHaveProperty('token');
-			expect(backup).not.toHaveProperty('proxy');
-			expect(backup).toMatchObject({ id: 'uid', username: 'me', email: 'me@example.com' });
 		});
 
 		// The failure path had no cover: the whole migration sits in one try/catch.
@@ -206,7 +152,6 @@ describe('auth.json v2', () => {
 			await ensureAuthFileCurrent();
 
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
-			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
 		});
 
 		it('leaves a corrupt file alone rather than rewriting it', async () => {
@@ -215,7 +160,6 @@ describe('auth.json v2', () => {
 			await ensureAuthFileCurrent();
 
 			expect(readFileSync(AUTH_FILE_PATH(), 'utf-8')).toBe('{ not json');
-			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
 		});
 
 		it('drops the secrets of a v1 file that has no user ID, so the next command asks for a re-login', async () => {
@@ -226,7 +170,6 @@ describe('auth.json v2', () => {
 
 			// That state already needed a re-login: there is no account to attach the token to.
 			expect(readAuthFile()).toEqual({ version: 2, profiles: {} });
-			expect(readBackup()).toEqual({ secretsBackend: 'file' });
 			await expect(getLocalUserInfo()).resolves.toEqual({});
 		});
 	});
@@ -328,19 +271,6 @@ describe('auth.json v2', () => {
 
 			// Logged out, rather than logged in as the account that just went away.
 			await expect(getSecret('new', 'token')).resolves.toBeUndefined();
-		});
-	});
-
-	describe('replacing the stored account', () => {
-		it('removes the snapshot of the account it replaced', async () => {
-			write(v1AuthFile({ secretsBackend: 'file' }));
-			await ensureAuthFileCurrent();
-			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(true);
-
-			replaceStoredAccount('other', { ...V2_PROFILE, username: 'other' });
-
-			// It described the previous account and is never refreshed, so it must not survive.
-			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(false);
 		});
 	});
 
