@@ -3,7 +3,7 @@ import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { __resetAuthFileForTests, AUTH_BACKUP_FILE_PATH, type AuthProfile } from '../../../src/lib/auth-file.js';
+import { __resetAuthFileForTests, type AuthProfile } from '../../../src/lib/auth-file.js';
 import { AUTH_FILE_PATH, CommandExitCodes, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { __resetCredentialsForTests, ensureSecretsKeyed, getSecret } from '../../../src/lib/credentials.js';
 import { tildify } from '../../../src/lib/utils.js';
@@ -196,7 +196,6 @@ describe('auth commands', () => {
 			const authFile = readAuthFile();
 			expect(authFile).toMatchObject({ version: 2, activeProfile: 'uid2' });
 			expect(authFile.profiles!.uid).toMatchObject({ username: 'me', token: 'apify_api_v1_token' });
-			expect(existsSync(AUTH_BACKUP_FILE_PATH())).toBe(true);
 		});
 
 		it('login with an invalid token stores nothing and fails the command', async () => {

@@ -10,8 +10,6 @@ import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 export const AUTH_FILE_VERSION = 2;
 
-export const AUTH_BACKUP_FILE_PATH = () => `${AUTH_FILE_PATH()}.v1.bak`;
-
 /**
  * One account. Keyed by user ID in {@link AuthFile.profiles}, so renaming a profile can never
  * orphan the secret that key names.
@@ -144,18 +142,6 @@ function toV2(file: LegacyAuthFile): AuthFile {
 }
 
 /**
- * A snapshot of the pre-v2 file, so an upgrade is inspectable. Written once and never refreshed,
- * which is why the secrets are left out: a rotated token copied here would outlive the account it
- * belongs to. Nothing reads it.
- */
-function backUpV1File(file: AuthFile) {
-	if (existsSync(AUTH_BACKUP_FILE_PATH())) return;
-
-	const { token: _token, proxy: _proxy, ...withoutSecrets } = file;
-	atomicWriteJson(AUTH_BACKUP_FILE_PATH(), withoutSecrets);
-}
-
-/**
  * One entry per format bump, keyed by the version it upgrades from. A file at version N runs every
  * step from N upwards, so moving data between shapes later means adding an entry here rather than
  * reworking this module. The first shape carried no `version` field at all; it counts as 1.
@@ -178,9 +164,6 @@ async function migrateAuthFile(): Promise<void> {
 
 			const from = typeof file.version === 'number' ? file.version : FIRST_AUTH_FILE_VERSION;
 			if (from >= AUTH_FILE_VERSION) return;
-
-			// The backup captures the shape the user arrived with, before any step touches it.
-			if (from === FIRST_AUTH_FILE_VERSION) backUpV1File(file);
 
 			let migrated = file;
 			for (let version = from; version < AUTH_FILE_VERSION; version++) {
@@ -373,7 +356,7 @@ export function removeActiveProfile(): {
 	// No version guard: refusing to discard a file this CLI cannot read leaves no way out. It goes
 	// whole rather than edited, which would leave something worse than either outcome.
 	if (file.version !== AUTH_FILE_VERSION) {
-		discardAuthFiles();
+		discardAuthFile();
 		return {};
 	}
 
@@ -391,7 +374,7 @@ export function removeActiveProfile(): {
 		.map(([id]) => id);
 
 	if (!nextId) {
-		discardAuthFiles();
+		discardAuthFile();
 		return { removed };
 	}
 
@@ -400,7 +383,7 @@ export function removeActiveProfile(): {
 	return { removed, active: { id: nextId, ...file.profiles![nextId] } };
 }
 
-function discardAuthFiles() {
+function discardAuthFile() {
+	// Retries because Windows refuses the unlink while an antivirus or a second process holds it.
 	rmSync(AUTH_FILE_PATH(), { force: true, maxRetries: 10, retryDelay: 100 });
-	rmSync(AUTH_BACKUP_FILE_PATH(), { force: true, maxRetries: 10, retryDelay: 100 });
 }
