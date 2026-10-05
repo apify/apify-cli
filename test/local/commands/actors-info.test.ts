@@ -29,7 +29,15 @@ const defaultBuild = {
 	inputSchema: '{"title":"default build schema"}',
 };
 
-const fakeClient = ({ taggedBuilds, defaultBuildResult }: { taggedBuilds: object; defaultBuildResult?: object }) =>
+const fakeClient = ({
+	taggedBuilds,
+	defaultBuildResult,
+	defaultBuildError,
+}: {
+	taggedBuilds: object;
+	defaultBuildResult?: object;
+	defaultBuildError?: Error;
+}) =>
 	({
 		actor: () => ({
 			get: async () => ({
@@ -41,7 +49,8 @@ const fakeClient = ({ taggedBuilds, defaultBuildResult }: { taggedBuilds: object
 				defaultRunOptions: { build: 'version-1' },
 			}),
 			defaultBuild: async () => {
-				if (!defaultBuildResult) throw new Error('Default build not found');
+				if (defaultBuildError) throw defaultBuildError;
+				if (!defaultBuildResult) throw Object.assign(new Error('Default build not found'), { statusCode: 404 });
 				return { get: async () => defaultBuildResult };
 			},
 		}),
@@ -49,11 +58,16 @@ const fakeClient = ({ taggedBuilds, defaultBuildResult }: { taggedBuilds: object
 		build: () => ({ get: async () => ({ readme: 'tagged build readme', inputSchema: '{"title":"tagged"}' }) }),
 	}) as unknown as ApifyClient;
 
+// The command framework records a thrown error on the real `process`; put it back so it cannot leak.
+let originalExitCode: typeof process.exitCode;
+
 beforeEach(() => {
+	originalExitCode = process.exitCode;
 	mockGetCurrentUserInfo.mockResolvedValue({ id: 'userId', username: 'someone-else' });
 });
 
 afterEach(() => {
+	process.exitCode = originalExitCode;
 	mockGetLoggedClientOrThrow.mockReset();
 	mockGetCurrentUserInfo.mockReset();
 });
@@ -97,5 +111,20 @@ describe('apify actors info', () => {
 		await testRunCommand(ActorsInfoCommand, { args_actorId: 'someone-else/some-actor', flags_input: true });
 
 		expect(logMessages.log.join('\n')).toBe('{"title":"tagged"}');
+	});
+
+	it('does not fall back to the latest tag when the default build lookup fails with a non-404 error', async () => {
+		mockGetLoggedClientOrThrow.mockResolvedValue(
+			fakeClient({
+				taggedBuilds: { latest: { buildId: 'b0', buildNumber: '0.0.32' } },
+				defaultBuildError: Object.assign(new Error('Internal error'), { statusCode: 500 }),
+			}),
+		);
+
+		await testRunCommand(ActorsInfoCommand, { args_actorId: 'someone-else/some-actor', flags_input: true });
+
+		expect(process.exitCode).toBe(1);
+		expect(logMessages.error.join('\n')).toContain('Internal error');
+		expect(logMessages.log.join('\n')).not.toContain('tagged');
 	});
 });

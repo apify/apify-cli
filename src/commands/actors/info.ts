@@ -1,4 +1,4 @@
-import type { Actor, ActorChargeEvent, ActorTaggedBuild, ApifyClient, Build, User } from 'apify-client';
+import type { Actor, ActorChargeEvent, ActorTaggedBuild, ApifyApiError, ApifyClient, Build, User } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -34,8 +34,12 @@ async function getDefaultBuild(client: ApifyClient, actorId: string, fallback?: 
 	try {
 		const build = await client.actor(actorId).defaultBuild();
 		return (await build.get()) ?? fallback;
-	} catch {
-		return fallback;
+	} catch (err) {
+		if ((err as ApifyApiError).statusCode === 404) {
+			return fallback;
+		}
+
+		throw err;
 	}
 }
 
