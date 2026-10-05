@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 
 import { ApifyApiError } from 'apify-client';
 
@@ -7,6 +7,7 @@ import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
 import { getProxyPassword, getToken, setToken } from '../../../src/lib/credentials.js';
 import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../../src/lib/utils.js';
 import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
+import { readActiveProfile } from '../../__setup__/auth-file.js';
 import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
@@ -20,8 +21,6 @@ const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const STORED = 'apify_api_stored';
 const ENV = 'apify_api_env';
-
-const readAuthFile = () => JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8'));
 
 // A real ApifyApiError, not a look-alike: describeAuthFailure narrows on the class, so a
 // hand-built error would let the 401/403 branch rot without failing a test.
@@ -135,7 +134,7 @@ describe('auth', () => {
 
 			expect(await getToken()).toBe(STORED);
 			expect(await getProxyPassword()).toBe('pw');
-			expect(readAuthFile()).toMatchObject({ id: 'uid', username: 'me' });
+			expect(readActiveProfile()).toMatchObject({ id: 'uid', username: 'me' });
 		});
 
 		it('writes nothing when the API rejects the token', async () => {
@@ -239,7 +238,7 @@ describe('auth', () => {
 			await resolveAuth();
 
 			expect(await getToken()).toBe(STORED);
-			expect(readAuthFile()).toMatchObject({ username: 'me' });
+			expect(readActiveProfile()).toMatchObject({ username: 'me' });
 		});
 	});
 });
