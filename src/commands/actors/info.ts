@@ -1,3 +1,5 @@
+import process from 'node:process';
+
 import type { Actor, ActorChargeEvent, ActorTaggedBuild, Build, User } from 'apify-client';
 import chalk from 'chalk';
 
@@ -6,6 +8,7 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { resolveActorContext } from '../../lib/commands/resolve-actor-context.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
+import { CommandExitCodes } from '../../lib/consts.js';
 import { error, simpleLog } from '../../lib/outputs.js';
 import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
@@ -121,51 +124,31 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 			return;
 		}
 
-		const latest = actorInfo.taggedBuilds?.latest;
+		// The Actor's own default tag before `latest`: a tag is free text, and an Actor that names
+		// its builds something else still has a README and an input schema to show.
+		const taggedBuilds = actorInfo.taggedBuilds ?? {};
+		const defaultTag = actorInfo.defaultRunOptions?.build;
+		const defaultBuild = (defaultTag ? taggedBuilds[defaultTag] : undefined) ?? taggedBuilds.latest;
 
 		if (readme) {
-			if (!latest) {
-				error({
-					message: 'No README found for this Actor.',
-					stdout: true,
-				});
-
+			if (!defaultBuild?.build?.readme) {
+				error({ message: 'No README found for this Actor.' });
+				process.exitCode = CommandExitCodes.NotFound;
 				return;
 			}
 
-			if (!latest.build?.readme) {
-				error({
-					message: 'No README found for this Actor.',
-					stdout: true,
-				});
-
-				return;
-			}
-
-			simpleLog({ message: latest.build.readme, stdout: true });
+			simpleLog({ message: defaultBuild.build.readme, stdout: true });
 			return;
 		}
 
 		if (input) {
-			if (!latest) {
-				error({
-					message: 'No input schema found for this Actor.',
-					stdout: true,
-				});
-
+			if (!defaultBuild?.build?.inputSchema) {
+				error({ message: 'No input schema found for this Actor.' });
+				process.exitCode = CommandExitCodes.NotFound;
 				return;
 			}
 
-			if (!latest.build?.inputSchema) {
-				error({
-					message: 'No input schema found for this Actor.',
-					stdout: true,
-				});
-
-				return;
-			}
-
-			simpleLog({ message: latest.build.inputSchema, stdout: true });
+			simpleLog({ message: defaultBuild.build.inputSchema, stdout: true });
 			return;
 		}
 

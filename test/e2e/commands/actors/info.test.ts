@@ -33,11 +33,21 @@ describe('[e2e][api] actors info', () => {
 		expect(result.stdout.length).toBeGreaterThan(0);
 	});
 
+	// apify/rag-web-browser tags its builds `version-1` and `beta-3`, never `latest`. Reading the
+	// `latest` tag alone reported no input schema for it, on stdout, with exit 0.
 	it('shows input schema with --input flag', async () => {
 		const result = await runCli('apify', ['actors', 'info', 'apify/rag-web-browser', '--input'], { env: authEnv });
 
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+		expect(result.stderr).toBe('');
 		expect(() => JSON.parse(result.stdout)).not.toThrow();
+	});
+
+	it('reads the README from the same build', async () => {
+		const result = await runCli('apify', ['actors', 'info', 'apify/rag-web-browser', '--readme'], { env: authEnv });
+
+		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
+		expect(result.stdout.length).toBeGreaterThan(0);
 	});
 
 	it('fails with invalid actor ID', async () => {
