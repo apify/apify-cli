@@ -102,7 +102,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 			const confirmed = await useYesNoConfirm({
 				message: 'Do you want to continue?',
-				providedConfirmFromStdin: this.flags.yes,
+				errorMessageForStdin: 'Confirmation is required to continue. Pass --yes to skip the prompt.',
 			});
 
 			if (!confirmed) {
@@ -124,25 +124,43 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 			}
 
 			if (!actorName) {
-				let response = actorConfig.isOkAnd((cfg) => cfg.exists) ? (actorConfig.unwrap().config.name as string) : null;
+				const existingName = actorConfig.isOkAnd((cfg) => cfg.exists)
+					? (actorConfig.unwrap().config.name as string)
+					: null;
 
-				// TODO: see if we can use promptActorName instead
-				while (!response) {
+				if (existingName) {
+					actorName = existingName;
+				} else if (this.flags.yes) {
+					// A directory name is not necessarily a legal Actor name, and --yes has no prompt to
+					// fall back to.
 					try {
-						const answer = await useUserInput({
-							message: 'Actor name:',
-							default: defaultActorName,
-						});
-
-						validateActorName(answer);
-
-						response = answer;
+						validateActorName(defaultActorName);
 					} catch (err) {
-						error({ message: (err as Error).message });
+						throw new Error(
+							`'${defaultActorName}' cannot be used as the Actor name. ${(err as Error).message} Run 'apify init <name>' to set it.`,
+						);
 					}
-				}
 
-				actorName = response;
+					actorName = defaultActorName;
+				} else {
+					// Validating inside the prompt lets inquirer re-ask on a typo. Retrying around the
+					// prompt instead would also retry a prompt that cannot be answered at all.
+					actorName = await useUserInput({
+						message: 'Actor name:',
+						default: defaultActorName,
+						validate: (value) => {
+							try {
+								validateActorName(value);
+							} catch (err) {
+								return (err as Error).message;
+							}
+
+							return true;
+						},
+						errorMessageForStdin:
+							"Actor name is required. Run 'apify init <name>', or pass --yes to use the current directory name.",
+					});
+				}
 			}
 
 			// Migrate apify.json to .actor/actor.json
