@@ -72,8 +72,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 		let { actorName } = this.args;
 		const cwd = process.cwd();
 
-		// Both non-interactive failures point the user here, and an unusable name only surfaced on
-		// the next push.
+		// Nothing downstream validates an explicit name, so an unusable one only surfaced on the next push.
 		if (actorName) {
 			validateActorName(actorName);
 		}

@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { access, mkdir, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 import { runCliBounded } from '../__helpers__/run-cli-bounded.js';
@@ -42,7 +42,8 @@ describe('[e2e] apify init with no usable stdin', () => {
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		expect(result.stderr).toContain('The Actor has been initialized in the current directory.');
 
-		await expect(access(path.join(cwd, '.actor', 'actor.json'))).resolves.toBeUndefined();
+		const config = JSON.parse(await readFile(path.join(cwd, '.actor', 'actor.json'), 'utf8'));
+		expect(config.name).toBe('yes-default-name');
 	});
 
 	it('without --yes fails once instead of retrying the name prompt', async () => {

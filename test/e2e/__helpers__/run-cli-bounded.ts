@@ -63,7 +63,7 @@ export async function runCliBounded(
 	const capture = (stream: 'stdout' | 'stderr') => (chunk: Buffer) => {
 		bytesWritten += chunk.length;
 
-		// Keep the head only: buffering the tail costs hundreds of megabytes before the kill lands.
+		// Keep the head only: the tail after the cap is unbounded and carries nothing the assertions read.
 		if (!outputCapExceeded) captured[stream].push(chunk);
 
 		if (bytesWritten > outputCapBytes && !outputCapExceeded) {
