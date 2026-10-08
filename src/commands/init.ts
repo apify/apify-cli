@@ -12,7 +12,13 @@ import { useYesNoConfirm } from '../lib/hooks/user-confirmations/useYesNoConfirm
 import { createPrefilledInputFileFromInputSchema } from '../lib/input_schema.js';
 import { error, info, success, warning } from '../lib/outputs.js';
 import { wrapScrapyProject } from '../lib/projects/scrapy/wrapScrapyProject.js';
-import { sanitizeActorName, setLocalConfig, setLocalEnv, validateActorName } from '../lib/utils.js';
+import {
+	sanitizeActorName,
+	setLocalConfig,
+	setLocalEnv,
+	validateActorName,
+	validateActorNameForPrompt,
+} from '../lib/utils.js';
 
 export class InitCommand extends ApifyCommand<typeof InitCommand> {
 	static override name = 'init' as const;
@@ -66,6 +72,12 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 		let { actorName } = this.args;
 		const cwd = process.cwd();
 
+		// Both non-interactive failures point the user here, and an unusable name only surfaced on
+		// the next push.
+		if (actorName) {
+			validateActorName(actorName);
+		}
+
 		const projectResult = await useCwdProject();
 
 		// TODO: use direct .unwrap() once we migrate to yargs
@@ -82,13 +94,14 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 			}
 		}
 
-		let defaultActorName = sanitizeActorName(basename(cwd));
+		let actorNameSource = basename(cwd);
 		if (project.type === ProjectLanguage.Python && project.entrypoint?.path) {
 			const entryPath = project.entrypoint.path;
 			// Extract the actual package name (last segment of dotted path)
-			const packageName = entryPath.includes('.') ? entryPath.split('.').pop()! : entryPath;
-			defaultActorName = sanitizeActorName(packageName);
+			actorNameSource = entryPath.includes('.') ? entryPath.split('.').pop()! : entryPath;
 		}
+
+		const defaultActorName = sanitizeActorName(actorNameSource);
 
 		if (project.type === ProjectLanguage.Scrapy) {
 			info({ message: 'The current directory looks like a Scrapy project. Using automatic project wrapping.' });
@@ -135,7 +148,9 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 					try {
 						validateActorName(defaultActorName);
 					} catch {
-						throw new Error(`Cannot derive an Actor name from '${basename(cwd)}'. Run 'apify init <name>' to set it.`);
+						throw new Error(
+							`Cannot derive an Actor name from '${actorNameSource}'. Run 'apify init <name>' to set it.`,
+						);
 					}
 
 					actorName = defaultActorName;
@@ -144,15 +159,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 					actorName = await useUserInput({
 						message: 'Actor name:',
 						default: defaultActorName,
-						validate: (value) => {
-							try {
-								validateActorName(value);
-							} catch (err) {
-								return (err as Error).message;
-							}
-
-							return true;
-						},
+						validate: validateActorNameForPrompt,
 						errorMessageForStdin:
 							"Actor name is required. Run 'apify init <name>', or pass --yes to use the current directory name.",
 					});

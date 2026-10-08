@@ -686,6 +686,17 @@ export const validateActorName = (actorName: string) => {
 	}
 };
 
+/** Adapts {@link validateActorName} to the `validate` contract of the inquirer prompts. */
+export const validateActorNameForPrompt = (actorName: string) => {
+	try {
+		validateActorName(actorName);
+	} catch (err) {
+		return (err as Error).message;
+	}
+
+	return true;
+};
+
 export const sanitizeActorName = (actorName: string) => {
 	let sanitizedName = actorName.replaceAll(/[^a-zA-Z0-9-]/g, '-');
 

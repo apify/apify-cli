@@ -3,8 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
 
-// `isCI` short-circuits every prompt in `stdinCheckWrapper` into a throw, which is what a non-TTY
-// stdin does in the field. See src/lib/hooks/user-confirmations/_stdinCheckWrapper.ts.
+// `isCI` short-circuits every prompt in `stdinCheckWrapper` into a throw, same as a non-TTY stdin.
 vitest.mock('ci-info', async (importOriginal) => {
 	const original = await importOriginal<typeof import('ci-info')>();
 	return { ...original, isCI: true };
@@ -23,8 +22,7 @@ const { tmpPath, beforeAllCalls, afterAllCalls, forceNewCwd } = useTempPath('ini
 
 const { InitCommand } = await import('../../../src/commands/init.js');
 
-// A retry loop around a prompt that can never succeed writes until the process is killed. The cap
-// turns that into a failed assertion in milliseconds instead of a test timeout after minutes.
+// Turns a retry loop into a failed assertion in milliseconds instead of a test timeout.
 const MAX_ERROR_LINES = 20;
 
 function captureErrorsWithCap() {
@@ -47,8 +45,8 @@ function errorLines(lines: string[]) {
 	return lines.filter((line) => line.includes('Error:'));
 }
 
-// `resetCwdCaches` resolves the hook modules outside the `node:process` mock graph, so it cannot
-// clear the caches the command actually reads. A directory per test keeps the cache keys apart.
+// `resetCwdCaches` resolves the hooks outside the `node:process` mock graph, so it cannot clear the
+// caches the command reads. A directory per test keeps the cache keys apart.
 async function useFreshCwd(name: string) {
 	forceNewCwd(name);
 	await mkdir(join(tmpPath, name), { recursive: true });

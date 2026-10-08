@@ -30,16 +30,11 @@ const DefaultTimeoutMs = 15_000;
 const DefaultOutputCapBytes = 256 * 1024;
 
 /**
- * Run a CLI command against the freshly built `./dist` (requires `pnpm run build`) with stdin
- * pointed at `/dev/null` — the non-TTY, no-data case that CI runners, agent shells and
- * `cmd < /dev/null` produce, and the one every prompting command must survive.
+ * Run a built CLI command (requires `pnpm run build`) with stdin pointed at `/dev/null`.
  *
- * A hang and a retry loop both look like "the command never finished", so a deadline alone cannot
- * tell them apart and costs the full deadline either way. The output cap separates them and trips
- * in milliseconds: `outputCapExceeded` means the command retried something it can never succeed at.
- *
- * Use this for any command that prompts. `runCli` stays the right helper everywhere else: execa's
- * own `maxBuffer` can cap output too, but it takes seconds to trip where this takes milliseconds.
+ * A deadline alone cannot tell a hang from a retry loop, and costs the full deadline either way.
+ * The output cap separates them in milliseconds: `outputCapExceeded` means the command retried
+ * something it can never succeed at. Use `runCli` for everything that does not prompt.
  */
 export async function runCliBounded(
 	binary: 'apify' | 'actor',
@@ -68,8 +63,7 @@ export async function runCliBounded(
 	const capture = (stream: 'stdout' | 'stderr') => (chunk: Buffer) => {
 		bytesWritten += chunk.length;
 
-		// Keep the head only: past the cap the tail is the same line repeated, and holding it costs
-		// hundreds of megabytes before the kill lands.
+		// Keep the head only: buffering the tail costs hundreds of megabytes before the kill lands.
 		if (!outputCapExceeded) captured[stream].push(chunk);
 
 		if (bytesWritten > outputCapBytes && !outputCapExceeded) {

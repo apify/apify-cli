@@ -5,8 +5,6 @@ import path from 'node:path';
 import { runCliBounded } from '../__helpers__/run-cli-bounded.js';
 import { TestTmpRoot } from '../__helpers__/tmp.js';
 
-const EXIT_DEADLINE_MS = 15_000;
-
 const MissingNameError = 'Error: Actor name is required';
 
 function countOccurrences(haystack: string, needle: string) {
@@ -35,7 +33,7 @@ describe('[e2e] apify init with no usable stdin', () => {
 		const cwd = path.join(root, 'yes-default-name');
 		await makeNodeProject(cwd);
 
-		const result = await runCliBounded('apify', ['init', '--yes'], { cwd, timeoutMs: EXIT_DEADLINE_MS });
+		const result = await runCliBounded('apify', ['init', '--yes'], { cwd });
 
 		expect(result.outputCapExceeded, `the prompt retried instead of failing once (${result.bytesWritten} bytes)`).toBe(
 			false,
@@ -51,7 +49,7 @@ describe('[e2e] apify init with no usable stdin', () => {
 		const cwd = path.join(root, 'no-yes-missing-name');
 		await makeNodeProject(cwd);
 
-		const result = await runCliBounded('apify', ['init'], { cwd, timeoutMs: EXIT_DEADLINE_MS });
+		const result = await runCliBounded('apify', ['init'], { cwd });
 
 		expect(result.outputCapExceeded, `the prompt retried instead of failing once (${result.bytesWritten} bytes)`).toBe(
 			false,
@@ -69,7 +67,7 @@ describe('[e2e] apify init with no usable stdin', () => {
 		const cwd = path.join(root, 'no-yes-unknown-project');
 		await mkdir(cwd, { recursive: true });
 
-		const result = await runCliBounded('apify', ['init'], { cwd, timeoutMs: EXIT_DEADLINE_MS });
+		const result = await runCliBounded('apify', ['init'], { cwd });
 
 		expect(result.outputCapExceeded, `the prompt retried instead of failing once (${result.bytesWritten} bytes)`).toBe(
 			false,
