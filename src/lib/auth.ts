@@ -6,15 +6,16 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { ensureAuthFileCurrent, replaceStoredAccount } from './auth-file.js';
+import { getActiveProfileId, replaceStoredAccount } from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
-	deleteProxyPassword,
+	clearKeyringSecrets,
+	deleteSecret,
+	describeLeftovers,
+	ensureCredentialsCurrent,
 	ensureMigrated,
-	getBackend,
-	getToken,
-	setProxyPassword,
-	setToken,
+	getSecret,
+	setSecret,
 } from './credentials.js';
 import { warning } from './outputs.js';
 import type { AuthJSON } from './types.js';
@@ -69,7 +70,7 @@ export function __resetAuthForTests() {
  * The single token resolver. Order: `APIFY_TOKEN` -> stored login. Inside a platform run there is
  * no stored login, so `APIFY_TOKEN` wins without a special case for the `actor` entrypoint.
  *
- * Single-flighted like {@link getBackend}, because several callers resolve per command and reading
+ * Single-flighted like `getBackend()`, because several callers resolve per command and reading
  * the stored token is an uncached OS keyring hit.
  *
  * Read-only by contract, apart from the one-shot migration of an existing plaintext auth.json.
@@ -97,9 +98,10 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 
 		// Only now, because the stored file is not this command's credential when APIFY_TOKEN is
 		// set. A file a newer CLI wrote would otherwise stop a platform run that never reads it.
-		await ensureAuthFileCurrent();
+		await ensureCredentialsCurrent();
 
-		const storedToken = await getToken();
+		const userId = getActiveProfileId();
+		const storedToken = userId ? await getSecret(userId, 'token') : undefined;
 		return storedToken ? ({ token: storedToken, source: 'stored' } as const) : undefined;
 	})();
 
@@ -177,28 +179,41 @@ export async function loginWithToken(
 
 	const proxyPassword = userInfo.proxy?.password;
 
+	const previousUserId = getActiveProfileId();
+
 	const { organizationOwnerUserId } = userInfo as { organizationOwnerUserId?: string };
-	replaceStoredAccount(
-		userInfo.id,
-		{
-			username: userInfo.username,
-			name: null,
-			...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
-			authMethod: 'token',
-			expiresAt: null,
-			hasRefreshToken: false,
-			loggedInAt: new Date().toISOString(),
-		},
-		await getBackend(),
-	);
+	replaceStoredAccount(userInfo.id, {
+		username: userInfo.username,
+		name: null,
+		...(organizationOwnerUserId ? { organizationOwnerUserId } : {}),
+		authMethod: 'token',
+		expiresAt: null,
+		hasRefreshToken: false,
+		loggedInAt: new Date().toISOString(),
+	});
+
+	// Only once the switch is on disk: a failed write leaves auth.json naming the previous account,
+	// whose entries nothing else can find. The fixed names go every time, stale by then either way.
+	const staleUserId = previousUserId === userInfo.id ? undefined : previousUserId;
+	const leftovers = await clearKeyringSecrets(staleUserId);
 
 	// After the account, which drops the previous secrets. `skipIfUnchanged` avoids a Keychain prompt.
-	await setToken(token, { skipIfUnchanged: true });
+	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });
 
 	if (proxyPassword) {
-		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
+		await setSecret(userInfo.id, 'proxy-password', proxyPassword, { skipIfUnchanged: true });
 	} else {
-		await deleteProxyPassword();
+		// A refused delete leaves the revoked password where every read looks first.
+		const leftover = await deleteSecret(userInfo.id, 'proxy-password');
+		if (leftover) leftovers.push(leftover);
+	}
+
+	if (leftovers.length) {
+		warning({
+			message:
+				`Secrets this login could not remove are still in the OS keyring at ` +
+				`${describeLeftovers(leftovers)}; delete them with your OS keyring app.`,
+		});
 	}
 
 	return { client: apifyClient, userInfo };
