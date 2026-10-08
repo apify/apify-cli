@@ -156,6 +156,8 @@ const confirmGitSourceSwitch = async ({
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	static override name = 'push' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		`Deploys Actor to Apify platform using settings from '${LOCAL_CONFIG_PATH}'.\n` +
 		`Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files"; ` +

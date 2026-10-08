@@ -276,12 +276,13 @@ export async function deleteSecret(userId: string, kind: SecretKind): Promise<Ke
  * Returns the entries the keyring refused to delete, so a caller can name them. Every key is
  * attempted first: one entry the keyring holds on to must not strand the rest.
  */
-export async function clearKeyringSecrets(userId?: string): Promise<KeyringLeftover[]> {
+export async function clearKeyringSecrets(userId?: string, { keepLegacy = false } = {}): Promise<KeyringLeftover[]> {
 	const leftovers: (KeyringLeftover | null)[] = [];
 
 	for (const kind of SECRET_KINDS) {
 		if (userId) leftovers.push(await deleteKeyring(keyringKey(userId, kind)));
-		leftovers.push(await deleteKeyring(legacyKeyringKey(kind)));
+		// The fixed-name entries belong to the active account, so a non-active profile leaves them.
+		if (!keepLegacy) leftovers.push(await deleteKeyring(legacyKeyringKey(kind)));
 	}
 
 	return leftovers.filter((leftover) => leftover !== null);

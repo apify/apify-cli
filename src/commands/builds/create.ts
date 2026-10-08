@@ -21,6 +21,8 @@ import { getLoggedClientOrThrow, objectGroupBy, outputJobLog, printJsonToStdout 
 export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand> {
 	static override name = 'create' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Creates a new build of the Actor.';
 
 	static override examples = [

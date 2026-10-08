@@ -61,7 +61,7 @@ DESCRIPTION
 USAGE
   $ apify api [methodOrEndpoint] [endpoint] [-d <value>]
               [--describe <value> | -l | -s <value>] [-H <value>]
-              [-X GET|POST|PUT|PATCH|DELETE] [-p <value>]
+              [-X GET|POST|PUT|PATCH|DELETE] [-p <value>] [--profile <value>]
 
 ARGUMENTS
   methodOrEndpoint  The API endpoint path (e.g. "acts",
@@ -90,6 +90,8 @@ FLAGS
                           <options: GET|POST|PUT|PATCH|DELETE>
   -p, --params=<value>    Query parameters as a JSON object,
                           e.g. '{"limit": 1, "desc": true}'.
+      --profile=<value>   The stored account to use for this
+                          command, by name or user ID. See "apify auth list".
   -s, --search=<value>    Filter results returned by
                           --list-endpoints. The query is case-insensitive and split
                           into tokens by spaces. For an endpoint to be returned,
@@ -141,14 +143,19 @@ Use these commands to manage your Apify account authentication, access tokens, a
 
 ```sh
 DESCRIPTION
-  Log in, log out, and inspect your stored Apify API token. Also available as 
-  `apify login` / `apify logout`.
+  Log in, log out, switch between stored accounts, and inspect your stored Apify
+   API token. Also available as `apify login` / `apify logout`.
 
 SUBCOMMANDS
   auth login   Authenticates your Apify account and saves credentials
                to '~/.apify/auth.json'.
   auth logout  Logs out of the active account by deleting its API
                token and account information from '~/.apify/auth.json'.
+  auth list    Lists the stored Apify accounts and marks the active
+               one. Reads only the local login, so it works offline and does not
+               check that the tokens are still valid.
+  auth switch  Sets the stored account that commands use. Without an
+               argument, prompts you to pick one of the stored accounts.
   auth token   Prints the API token the CLI authenticates with,
                resolved from APIFY_TOKEN or the token from 'apify login'.
 ```
@@ -183,7 +190,44 @@ DESCRIPTION
   Run 'apify login' to authenticate again.
 
 USAGE
-  $ apify auth logout
+  $ apify auth logout [--all | --profile <value>] [-y]
+
+FLAGS
+      --all              Log out of every stored account.
+      --profile=<value>  The stored account to log out of, by
+                         name or user ID. See "apify auth list".
+  -y, --yes              Automatic yes to prompts; assume
+                         "yes" as answer to all prompts.
+```
+
+##### `apify auth list`
+
+```sh
+DESCRIPTION
+  Lists the stored Apify accounts and marks the active one. Reads only the local
+   login, so it works offline and does not check that the tokens are still 
+  valid.
+
+USAGE
+  $ apify auth list [--json]
+
+FLAGS
+      --json  Format the command output as JSON.
+```
+
+##### `apify auth switch`
+
+```sh
+DESCRIPTION
+  Sets the stored account that commands use. Without an argument, prompts you to
+   pick one of the stored accounts.
+
+USAGE
+  $ apify auth switch [profile]
+
+ARGUMENTS
+  profile  The stored account to make active, by name or user ID. See
+           "apify auth list".
 ```
 
 ##### `apify auth token`
@@ -194,7 +238,11 @@ DESCRIPTION
   the token from 'apify login'.
 
 USAGE
-  $ apify auth token
+  $ apify auth token [--profile <value>]
+
+FLAGS
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify info`
@@ -204,7 +252,11 @@ DESCRIPTION
   Prints details about your currently authenticated Apify account.
 
 USAGE
-  $ apify info
+  $ apify info [--profile <value>]
+
+FLAGS
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify secrets`
@@ -284,9 +336,9 @@ USAGE
   $ apify create [actorName] [--auto-build on|off]
                  [--git-repo <value>] [--json]
                  [-l javascript|js|typescript|ts|python|py]
-                 [--omit-optional-deps] [--skip-dependency-install]
-                 [--skip-git-init] [--source apify|github|gitlab|bitbucket]
-                 [-t <value>]
+                 [--omit-optional-deps] [--profile <value>]
+                 [--skip-dependency-install] [--skip-git-init]
+                 [--source apify|github|gitlab|bitbucket] [-t <value>]
                  [-u web-scraper|ai-agent|data-pipeline|browser-automation]
 
 ARGUMENTS
@@ -315,6 +367,9 @@ FLAGS
                                  <options: javascript|js|typescript|ts|python|py>
       --omit-optional-deps       Skip installing optional
                                  dependencies.
+      --profile=<value>          The stored account to
+                                 use for this command, by name or user ID. See
+                                 "apify auth list".
       --skip-dependency-install  Skip installing Actor
                                  dependencies.
       --skip-git-init            Skip initializing a git
@@ -407,7 +462,8 @@ DESCRIPTION
 
 USAGE
   $ apify run [--allow-missing-secrets] [--entrypoint <value>]
-              [-i <value> | --input-file <value>] [-p | --resurrect]
+              [-i <value> | --input-file <value>] [--profile <value>]
+              [-p | --resurrect]
 
 FLAGS
       --allow-missing-secrets  Allow the command to
@@ -426,6 +482,9 @@ FLAGS
                                JSON input to be given to the Actor. The file must be
                                a valid JSON file. You can also specify `-` to read
                                from standard input.
+      --profile=<value>        The stored account to use
+                               for this command, by name or user ID. See "apify auth
+                               list".
   -p, --purge                  Whether to purge the
                                default request queue, dataset and key-value store
                                before the run starts.
@@ -705,15 +764,17 @@ DESCRIPTION
 
 USAGE
   $ apify actors ls [--desc] [--json] [--limit <value>] [--my]
-                    [--offset <value>]
+                    [--offset <value>] [--profile <value>]
 
 FLAGS
-      --desc            Sort Actors in descending order.
-      --json            Format the command output as JSON.
-      --limit=<value>   Number of Actors that will be listed.
-      --my              Whether to list Actors made by the logged
-                        in user.
-      --offset=<value>  Number of Actors that will be skipped.
+      --desc             Sort Actors in descending order.
+      --json             Format the command output as JSON.
+      --limit=<value>    Number of Actors that will be listed.
+      --my               Whether to list Actors made by the
+                         logged in user.
+      --offset=<value>   Number of Actors that will be skipped.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify actors search`
@@ -764,14 +825,16 @@ DESCRIPTION
   Permanently removes an Actor from your account.
 
 USAGE
-  $ apify actors rm <actorId> [-y]
+  $ apify actors rm <actorId> [--profile <value>] [-y]
 
 ARGUMENTS
   actorId  The Actor ID to delete.
 
 FLAGS
-  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
-             prompts.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -y, --yes              Automatic yes to prompts; assume
+                         "yes" as answer to all prompts.
 ```
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->
@@ -796,7 +859,8 @@ DESCRIPTION
 USAGE
   $ apify actors push [actorId] [--allow-missing-secrets]
                       [--apply-env-vars-to-build] [-b <value>] [--dir <value>]
-                      [-f] [--json] [--open] [-v <value>] [-w <value>]
+                      [-f] [--json] [--open] [--profile <value>] [-v <value>]
+                      [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -828,6 +892,9 @@ FLAGS
                                  output as JSON.
       --open                     Whether to open the
                                  browser automatically to the Actor details page.
+      --profile=<value>          The stored account to
+                                 use for this command, by name or user ID. See
+                                 "apify auth list".
   -v, --version=<value>          Actor version number
                                  to which the files should be pushed. By default, it
                                  is taken from the '.actor/actor.json' file.
@@ -849,7 +916,8 @@ DESCRIPTION
   Actor files based on the source type.
 
 USAGE
-  $ apify actors pull [actorId] [--dir <value>] [-v <value>]
+  $ apify actors pull [actorId] [--dir <value>]
+                      [--profile <value>] [-v <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "apify/hello-world" or
@@ -860,6 +928,8 @@ ARGUMENTS
 FLAGS
       --dir=<value>      Directory where the Actor should be
                          pulled to.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
   -v, --version=<value>  Actor version number which will be
                          pulled, e.g. 1.2. Default: the highest version.
 ```
@@ -875,8 +945,8 @@ DESCRIPTION
 
 USAGE
   $ apify actors call [actorId] [-b <value>]
-                      [-i <value> | -f <value>] [--json] [-m <value>] [-o] [-s]
-                      [-t <value>]
+                      [-i <value> | -f <value>] [--json] [-m <value>] [-o]
+                      [--profile <value>] [-s] [-t <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "my-actor",
@@ -899,6 +969,8 @@ FLAGS
                             the Actor run, in megabytes.
   -o, --output-dataset      Prints out the entire default
                             dataset on successful run of the Actor.
+      --profile=<value>     The stored account to use for this
+                            command, by name or user ID. See "apify auth list".
   -s, --silent              Prevents printing the logs of
                             the Actor run to the console.
   -t, --timeout=<value>     Timeout for the Actor run in
@@ -915,7 +987,7 @@ DESCRIPTION
 USAGE
   $ apify actors start [actorId] [-b <value>]
                        [-i <value> | --input-file <value>] [--json] [-m <value>]
-                       [-t <value>]
+                       [--profile <value>] [-t <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to run (e.g. "my-actor",
@@ -935,6 +1007,8 @@ FLAGS
       --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
+      --profile=<value>     The stored account to use for this
+                            command, by name or user ID. See "apify auth list".
   -t, --timeout=<value>     Timeout for the Actor run in
                             seconds. Zero value means there is no timeout.
 ```
@@ -947,14 +1021,17 @@ DESCRIPTION
 
 USAGE
   $ apify actors info <actorId> [--input | --readme] [--json]
+                      [--profile <value>]
 
 ARGUMENTS
   actorId  The ID of the Actor to return information about.
 
 FLAGS
-      --input   Return the Actor input schema.
-      --json    Format the command output as JSON.
-      --readme  Return the Actor README.
+      --input            Return the Actor input schema.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+      --readme           Return the Actor README.
 ```
 <!-- actor-deploy-commands-end -->
 <!-- prettier-ignore-end -->
@@ -992,10 +1069,13 @@ DESCRIPTION
 
 USAGE
   $ apify builds add-tag -b <value> -t <value>
+                         [--profile <value>]
 
 FLAGS
-  -b, --build=<value>  The build ID to tag.
-  -t, --tag=<value>    The tag to add to the build.
+  -b, --build=<value>    The build ID to tag.
+  -t, --tag=<value>      The tag to add to the build.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify builds create` / `apify actors build`
@@ -1006,7 +1086,8 @@ DESCRIPTION
 
 USAGE
   $ apify builds create [actorId] [--json] [--log]
-                        [--tag <value>] [--version <value>] [--wait]
+                        [--profile <value>] [--tag <value>] [--version <value>]
+                        [--wait]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to trigger a build for. By default,
@@ -1016,6 +1097,8 @@ FLAGS
       --json             Format the command output as JSON.
       --log              Whether to print out the build log after
                          the build is triggered.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
       --tag=<value>      Build tag to be applied to the
                          successful Actor build. By default, this is "latest".
       --version=<value>  Optional Actor Version to build. By
@@ -1032,13 +1115,15 @@ DESCRIPTION
   Prints information about a specific build.
 
 USAGE
-  $ apify builds info <buildId> [--json]
+  $ apify builds info <buildId> [--json] [--profile <value>]
 
 ARGUMENTS
   buildId  The build ID to get information about.
 
 FLAGS
-      --json  Format the command output as JSON.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify builds log`
@@ -1048,10 +1133,14 @@ DESCRIPTION
   Prints the log of a specific build.
 
 USAGE
-  $ apify builds log <buildId>
+  $ apify builds log <buildId> [--profile <value>]
 
 ARGUMENTS
   buildId  The build ID to get the log from.
+
+FLAGS
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify builds ls`
@@ -1062,18 +1151,20 @@ DESCRIPTION
 
 USAGE
   $ apify builds ls [actorId] [-c] [--desc] [--json]
-                    [--limit <value>] [--offset <value>]
+                    [--limit <value>] [--offset <value>] [--profile <value>]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to list runs for. By default, it
            will use the Actor from the current directory.
 
 FLAGS
-  -c, --compact         Display a compact table.
-      --desc            Sort builds in descending order.
-      --json            Format the command output as JSON.
-      --limit=<value>   Number of builds that will be listed.
-      --offset=<value>  Number of builds that will be skipped.
+  -c, --compact          Display a compact table.
+      --desc             Sort builds in descending order.
+      --json             Format the command output as JSON.
+      --limit=<value>    Number of builds that will be listed.
+      --offset=<value>   Number of builds that will be skipped.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify builds remove-tag`
@@ -1083,13 +1174,16 @@ DESCRIPTION
   Removes a tag from a specific Actor build.
 
 USAGE
-  $ apify builds remove-tag -b <value> -t <value> [-y]
+  $ apify builds remove-tag -b <value> -t <value>
+                            [--profile <value>] [-y]
 
 FLAGS
-  -b, --build=<value>  The build ID to remove the tag from.
-  -t, --tag=<value>    The tag to remove from the build.
-  -y, --yes            Automatic yes to prompts; assume "yes"
-                       as answer to all prompts.
+  -b, --build=<value>    The build ID to remove the tag from.
+  -t, --tag=<value>      The tag to remove from the build.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -y, --yes              Automatic yes to prompts; assume
+                         "yes" as answer to all prompts.
 ```
 
 ##### `apify builds rm`
@@ -1099,14 +1193,16 @@ DESCRIPTION
   Permanently removes an Actor build from the Apify platform.
 
 USAGE
-  $ apify builds rm <buildId> [-y]
+  $ apify builds rm <buildId> [--profile <value>] [-y]
 
 ARGUMENTS
   buildId  The build ID to delete.
 
 FLAGS
-  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
-             prompts.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -y, --yes              Automatic yes to prompts; assume
+                         "yes" as answer to all prompts.
 ```
 
 ##### `apify builds wait`
@@ -1120,7 +1216,7 @@ DESCRIPTION
 
 USAGE
   $ apify builds wait <buildId> [--json]
-                      [--poll-interval <value>] [-t <value>]
+                      [--poll-interval <value>] [--profile <value>] [-t <value>]
 
 ARGUMENTS
   buildId  The build ID to wait for.
@@ -1130,6 +1226,9 @@ FLAGS
                                JSON.
       --poll-interval=<value>  In seconds, how often to
                                poll the platform. Defaults to 2.
+      --profile=<value>        The stored account to use
+                               for this command, by name or user ID. See "apify auth
+                               list".
   -t, --timeout=<value>        In seconds, how long to
                                wait before giving up. If skipped, it waits
                                indefinitely.
@@ -1169,15 +1268,17 @@ DESCRIPTION
   Aborts an Actor run.
 
 USAGE
-  $ apify runs abort <runId> [-f] [--json]
+  $ apify runs abort <runId> [-f] [--json] [--profile <value>]
 
 ARGUMENTS
   runId  The run ID to abort.
 
 FLAGS
-  -f, --force  Whether to force the run to abort immediately, instead
-               of gracefully.
-      --json   Format the command output as JSON.
+  -f, --force            Whether to force the run to abort
+                         immediately, instead of gracefully.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify runs info`
@@ -1187,15 +1288,17 @@ DESCRIPTION
   Prints information about an Actor run.
 
 USAGE
-  $ apify runs info <runId> [--json] [-v]
+  $ apify runs info <runId> [--json] [--profile <value>] [-v]
 
 ARGUMENTS
   runId  The run ID to print information about.
 
 FLAGS
-      --json     Format the command output as JSON.
-  -v, --verbose  Prints more in-depth information about the Actor
-                 run.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -v, --verbose          Prints more in-depth information
+                         about the Actor run.
 ```
 
 ##### `apify runs log`
@@ -1205,10 +1308,14 @@ DESCRIPTION
   Prints the log of a specific run.
 
 USAGE
-  $ apify runs log <runId>
+  $ apify runs log <runId> [--profile <value>]
 
 ARGUMENTS
   runId  The run ID to get the log from.
+
+FLAGS
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify runs ls`
@@ -1219,18 +1326,20 @@ DESCRIPTION
 
 USAGE
   $ apify runs ls [actorId] [-c] [--desc] [--json]
-                  [--limit <value>] [--offset <value>]
+                  [--limit <value>] [--offset <value>] [--profile <value>]
 
 ARGUMENTS
   actorId  Optional Actor ID or Name to list runs for. By default, it
            will use the Actor from the current directory.
 
 FLAGS
-  -c, --compact         Display a compact table.
-      --desc            Sort runs in descending order.
-      --json            Format the command output as JSON.
-      --limit=<value>   Number of runs that will be listed.
-      --offset=<value>  Number of runs that will be skipped.
+  -c, --compact          Display a compact table.
+      --desc             Sort runs in descending order.
+      --json             Format the command output as JSON.
+      --limit=<value>    Number of runs that will be listed.
+      --offset=<value>   Number of runs that will be skipped.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify runs resurrect`
@@ -1241,12 +1350,15 @@ DESCRIPTION
 
 USAGE
   $ apify runs resurrect <runId> [--json]
+                         [--profile <value>]
 
 ARGUMENTS
   runId  The run ID to resurrect.
 
 FLAGS
-      --json  Format the command output as JSON.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify runs rm`
@@ -1256,14 +1368,16 @@ DESCRIPTION
   Deletes an Actor Run.
 
 USAGE
-  $ apify runs rm <runId> [-y]
+  $ apify runs rm <runId> [--profile <value>] [-y]
 
 ARGUMENTS
   runId  The run ID to delete.
 
 FLAGS
-  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
-             prompts.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -y, --yes              Automatic yes to prompts; assume
+                         "yes" as answer to all prompts.
 ```
 
 ##### `apify runs wait`
@@ -1277,7 +1391,7 @@ DESCRIPTION
 
 USAGE
   $ apify runs wait <runId> [--json] [--poll-interval <value>]
-                    [-t <value>]
+                    [--profile <value>] [-t <value>]
 
 ARGUMENTS
   runId  The run ID to wait for.
@@ -1287,6 +1401,9 @@ FLAGS
                                JSON.
       --poll-interval=<value>  How often to poll the
                                platform, in seconds. Defaults to 2.
+      --profile=<value>        The stored account to use
+                               for this command, by name or user ID. See "apify auth
+                               list".
   -t, --timeout=<value>        Maximum seconds to wait
                                before giving up. Without this flag the command waits
                                indefinitely.
@@ -1334,12 +1451,15 @@ DESCRIPTION
 
 USAGE
   $ apify datasets create [datasetName] [--json]
+                          [--profile <value>]
 
 ARGUMENTS
   datasetName  Optional name for the Dataset.
 
 FLAGS
-      --json  Format the command output as JSON.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify datasets get-items`
@@ -1352,6 +1472,7 @@ USAGE
   $ apify datasets get-items <datasetId>
                              [--format json|jsonl|csv|html|rss|xml|xlsx]
                              [--limit <value>] [--offset <value>]
+                             [--profile <value>]
 
 ARGUMENTS
   datasetId  The ID of the Dataset to export the items for.
@@ -1364,6 +1485,8 @@ FLAGS
                          dataset. By default, it will return all available items.
       --offset=<value>   The offset in the dataset where to start
                          getting items.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify datasets info`
@@ -1374,12 +1497,15 @@ DESCRIPTION
 
 USAGE
   $ apify datasets info <storeId> [--json]
+                        [--profile <value>]
 
 ARGUMENTS
   storeId  The dataset store ID to print information about.
 
 FLAGS
-      --json  Format the command output as JSON.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify datasets ls`
@@ -1390,14 +1516,17 @@ DESCRIPTION
 
 USAGE
   $ apify datasets ls [--desc] [--json] [--limit <value>]
-                      [--offset <value>] [--unnamed]
+                      [--offset <value>] [--profile <value>] [--unnamed]
 
 FLAGS
-      --desc            Sorts datasets in descending order.
-      --json            Format the command output as JSON.
-      --limit=<value>   Number of datasets that will be listed.
-      --offset=<value>  Number of datasets that will be skipped.
-      --unnamed         Lists datasets that don't have a name set.
+      --desc             Sorts datasets in descending order.
+      --json             Format the command output as JSON.
+      --limit=<value>    Number of datasets that will be listed.
+      --offset=<value>   Number of datasets that will be skipped.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+      --unnamed          Lists datasets that don't have a name
+                         set.
 ```
 
 ##### `apify datasets push-items`
@@ -1409,10 +1538,15 @@ DESCRIPTION
 
 USAGE
   $ apify datasets push-items <nameOrId> [item]
+                              [--profile <value>]
 
 ARGUMENTS
   nameOrId  The dataset ID or name to push the objects to.
   item      The object or array of objects to be pushed.
+
+FLAGS
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify datasets rename`
@@ -1422,14 +1556,17 @@ DESCRIPTION
   Change the dataset name or remove the name with --unname flag.
 
 USAGE
-  $ apify datasets rename <nameOrId> [newName] [--unname]
+  $ apify datasets rename <nameOrId> [newName]
+                          [--profile <value>] [--unname]
 
 ARGUMENTS
   nameOrId  The dataset ID or name to delete.
   newName   The new name for the dataset.
 
 FLAGS
-      --unname  Removes the unique name of the dataset.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+      --unname           Removes the unique name of the dataset.
 ```
 
 ##### `apify datasets rm`
@@ -1439,14 +1576,17 @@ DESCRIPTION
   Permanently removes a dataset.
 
 USAGE
-  $ apify datasets rm <datasetNameOrId> [-y]
+  $ apify datasets rm <datasetNameOrId> [--profile <value>]
+                      [-y]
 
 ARGUMENTS
   datasetNameOrId  The dataset ID or name to delete.
 
 FLAGS
-  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
-             prompts.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -y, --yes              Automatic yes to prompts; assume
+                         "yes" as answer to all prompts.
 ```
 <!-- dataset-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1498,13 +1638,16 @@ DESCRIPTION
 USAGE
   $ apify key-value-stores create
                                   [key-value store name] [--json]
+                                  [--profile <value>]
 
 ARGUMENTS
   key-value store name  Optional name for the key-value
                         store.
 
 FLAGS
-      --json  Format the command output as JSON.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify key-value-stores delete-value`
@@ -1515,15 +1658,18 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores delete-value
-                                        <store id> <itemKey> [-y]
+                                        <store id> <itemKey> [--profile <value>]
+                                        [-y]
 
 ARGUMENTS
   store id  The key-value store ID to delete the value from.
   itemKey   The key of the item in the key-value store.
 
 FLAGS
-  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
-             prompts.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -y, --yes              Automatic yes to prompts; assume
+                         "yes" as answer to all prompts.
 ```
 
 ##### `apify key-value-stores get-value`
@@ -1536,7 +1682,7 @@ DESCRIPTION
 USAGE
   $ apify key-value-stores get-value
                                      <keyValueStoreId> <itemKey>
-                                     [--only-content-type]
+                                     [--only-content-type] [--profile <value>]
 
 ARGUMENTS
   keyValueStoreId  The key-value store ID to get the value from.
@@ -1545,6 +1691,8 @@ ARGUMENTS
 FLAGS
       --only-content-type  Only return the content type of the
                            specified key.
+      --profile=<value>    The stored account to use for this
+                           command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify key-value-stores info`
@@ -1555,12 +1703,15 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores info <storeId> [--json]
+                                [--profile <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to print information about.
 
 FLAGS
-      --json  Format the command output as JSON.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify key-value-stores keys`
@@ -1572,7 +1723,7 @@ DESCRIPTION
 USAGE
   $ apify key-value-stores keys <storeId>
                                 [--exclusive-start-key <value>] [--json]
-                                [--limit <value>]
+                                [--limit <value>] [--profile <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to list keys for.
@@ -1584,6 +1735,9 @@ FLAGS
                                      command output as JSON.
       --limit=<value>                The maximum
                                      number of keys to return.
+      --profile=<value>              The stored
+                                     account to use for this command, by name or
+                                     user ID. See "apify auth list".
 ```
 
 ##### `apify key-value-stores ls`
@@ -1594,18 +1748,21 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores ls [--desc] [--json]
-                              [--limit <value>] [--offset <value>] [--unnamed]
+                              [--limit <value>] [--offset <value>]
+                              [--profile <value>] [--unnamed]
 
 FLAGS
-      --desc            Sorts key-value stores in descending
-                        order.
-      --json            Format the command output as JSON.
-      --limit=<value>   Number of key-value stores that will be
-                        listed.
-      --offset=<value>  Number of key-value stores that will be
-                        skipped.
-      --unnamed         Lists key-value stores that don't have a
-                        name set.
+      --desc             Sorts key-value stores in descending
+                         order.
+      --json             Format the command output as JSON.
+      --limit=<value>    Number of key-value stores that will be
+                         listed.
+      --offset=<value>   Number of key-value stores that will be
+                         skipped.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+      --unnamed          Lists key-value stores that don't have a
+                         name set.
 ```
 
 ##### `apify key-value-stores rename`
@@ -1616,7 +1773,8 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores rename
-                                  <keyValueStoreNameOrId> [newName] [--unname]
+                                  <keyValueStoreNameOrId> [newName]
+                                  [--profile <value>] [--unname]
 
 ARGUMENTS
   keyValueStoreNameOrId  The key-value store ID or name to
@@ -1625,7 +1783,10 @@ ARGUMENTS
                          store.
 
 FLAGS
-      --unname  Removes the unique name of the key-value store.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+      --unname           Removes the unique name of the key-value
+                         store.
 ```
 
 ##### `apify key-value-stores rm`
@@ -1636,15 +1797,17 @@ DESCRIPTION
 
 USAGE
   $ apify key-value-stores rm <keyValueStoreNameOrId>
-                              [-y]
+                              [--profile <value>] [-y]
 
 ARGUMENTS
   keyValueStoreNameOrId  The key-value store ID or name to
                          delete.
 
 FLAGS
-  -y, --yes  Automatic yes to prompts; assume "yes" as answer to all
-             prompts.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -y, --yes              Automatic yes to prompts; assume
+                         "yes" as answer to all prompts.
 ```
 
 ##### `apify key-value-stores set-value`
@@ -1656,6 +1819,7 @@ DESCRIPTION
 USAGE
   $ apify key-value-stores set-value <storeId>
                                      <itemKey> [value] [--content-type <value>]
+                                     [--profile <value>]
 
 ARGUMENTS
   storeId  The key-value store ID to set the value in.
@@ -1665,6 +1829,9 @@ ARGUMENTS
 FLAGS
       --content-type=<value>  The MIME content type of the
                               value. By default, "application/json" is assumed.
+      --profile=<value>       The stored account to use for
+                              this command, by name or user ID. See "apify auth
+                              list".
 ```
 <!-- keyval-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1717,7 +1884,7 @@ DESCRIPTION
 
 USAGE
   $ apify task run <taskId> [-b <value>] [--json] [-m <value>]
-                   [-t <value>]
+                   [--profile <value>] [-t <value>]
 
 ARGUMENTS
   taskId  Name or ID of the Task to run (e.g. "my-task" or
@@ -1729,6 +1896,8 @@ FLAGS
       --json             Format the command output as JSON.
   -m, --memory=<value>   Amount of memory allocated for the
                          Task run, in megabytes.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
   -t, --timeout=<value>  Timeout for the Task run in seconds.
                          Zero value means there is no timeout.
 ```
@@ -1743,11 +1912,15 @@ DESCRIPTION
   write access to the task and to its Actor.
 
 USAGE
-  $ apify task publish <taskId>
+  $ apify task publish <taskId> [--profile <value>]
 
 ARGUMENTS
   taskId  Name of the task to publish. For example, "my-task" or
           "username/my-task".
+
+FLAGS
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 
 ##### `apify task unpublish`
@@ -1759,11 +1932,15 @@ DESCRIPTION
   again later. Requires write access to the task and to its Actor.
 
 USAGE
-  $ apify task unpublish <taskId>
+  $ apify task unpublish <taskId> [--profile <value>]
 
 ARGUMENTS
   taskId  Name of the task to unpublish. For example, "my-task" or
           "username/my-task".
+
+FLAGS
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
 ```
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->

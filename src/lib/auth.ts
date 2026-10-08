@@ -6,7 +6,15 @@ import { AxiosHeaders } from 'axios';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { getActiveProfileId, upsertProfile } from './auth-file.js';
+import {
+	getActiveProfile,
+	getActiveProfileId,
+	listProfiles,
+	matchProfiles,
+	profileLabel,
+	type StoredProfile,
+	upsertProfile,
+} from './auth-file.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, AUTH_FILE_PATH, CommandExitCodes } from './consts.js';
 import {
 	clearKeyringSecrets,
@@ -21,11 +29,13 @@ import { warning } from './outputs.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
-export type TokenSource = 'env' | 'stored';
+export type TokenSource = 'env' | 'stored' | 'profile';
 
 export interface ResolvedAuth {
 	token: string;
 	source: TokenSource;
+	/** The stored profile the token belongs to. Unset for `APIFY_TOKEN`. */
+	profile?: { id: string; label: string };
 }
 
 /**
@@ -57,12 +67,67 @@ export function invalidEnvTokenMessage(raw: string): string {
 export const TOKEN_SOURCE_LABELS: Record<TokenSource, string> = {
 	env: `${APIFY_ENV_VARS.TOKEN} environment variable`,
 	stored: 'apify login',
+	profile: '--profile flag',
 };
 
 let authPromise: Promise<ResolvedAuth | undefined> | undefined;
 
+let selectedProfile: StoredProfile | undefined;
+
 /** Test-only: drop the resolved token so each test resolves afresh. */
 export function __resetAuthForTests() {
+	authPromise = undefined;
+	selectedProfile = undefined;
+}
+
+export const NO_STORED_ACCOUNTS_MESSAGE = 'No accounts are stored. Run "apify login" to add one.';
+
+/** One wording for a profile selection that `APIFY_TOKEN` would override. */
+export function envTokenOverridesProfileMessage(what: string): string {
+	return `${APIFY_ENV_VARS.TOKEN} is set, so commands ignore ${what}. Unset ${APIFY_ENV_VARS.TOKEN} and try again.`;
+}
+
+/** The stored profile a `--profile` value names, or an error listing the ones that exist. */
+export async function requireProfile(nameOrId: string): Promise<StoredProfile> {
+	await ensureCredentialsCurrent();
+
+	const matches = matchProfiles(nameOrId);
+	if (matches.length === 1) return matches[0];
+
+	process.exitCode = CommandExitCodes.InvalidInput;
+	if (matches.length > 1) {
+		throw new Error(
+			`More than one stored account is called "${nameOrId}": ${matches.map(({ id }) => id).join(', ')}. Use the user ID instead.`,
+		);
+	}
+
+	const stored = listProfiles().map(profileLabel);
+	throw new Error(
+		stored.length
+			? `No stored account is called "${nameOrId}". Stored accounts: ${stored.join(', ')}.`
+			: `No stored account is called "${nameOrId}". Run "apify login" to add one.`,
+	);
+}
+
+/**
+ * The stored profile this command uses: the one `--profile` selected, otherwise the active one.
+ * Reads `auth.json` only, never a secret, so it cannot cause a keychain prompt.
+ */
+export function getCurrentProfile(): StoredProfile | undefined {
+	return selectedProfile ?? getActiveProfile();
+}
+
+/**
+ * Makes {@link resolveAuth} use this profile instead of the active one, for this process only.
+ * Throws when `APIFY_TOKEN` is set, even to the same token: the variable would win silently.
+ */
+export async function selectProfile(nameOrId: string): Promise<void> {
+	if (readEnvToken().kind !== 'unset') {
+		process.exitCode = CommandExitCodes.InvalidInput;
+		throw new Error(envTokenOverridesProfileMessage('--profile'));
+	}
+
+	selectedProfile = await requireProfile(nameOrId);
 	authPromise = undefined;
 }
 
@@ -100,9 +165,22 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 		// set. A file a newer CLI wrote would otherwise stop a platform run that never reads it.
 		await ensureCredentialsCurrent();
 
+		if (selectedProfile) {
+			const token = await getSecret(selectedProfile.id, 'token');
+			if (!token) {
+				process.exitCode = CommandExitCodes.MissingAuth;
+				throw new Error(missingProfileTokenMessage(selectedProfile));
+			}
+
+			return { token, source: 'profile', profile: profileRef(selectedProfile) } as const;
+		}
+
 		const userId = getActiveProfileId();
 		const storedToken = userId ? await getSecret(userId, 'token') : undefined;
-		return storedToken ? ({ token: storedToken, source: 'stored' } as const) : undefined;
+		if (!storedToken) return undefined;
+
+		const profile = getActiveProfile();
+		return { token: storedToken, source: 'stored', ...(profile ? { profile: profileRef(profile) } : {}) } as const;
 	})();
 
 	try {
@@ -113,6 +191,15 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 		throw err;
 	}
 };
+
+function profileRef(profile: StoredProfile) {
+	return { id: profile.id, label: profileLabel(profile) };
+}
+
+/** One wording for a stored profile that has no token, for `--profile` and `auth switch`. */
+export function missingProfileTokenMessage(profile: StoredProfile): string {
+	return `No API token is stored for ${profileLabel(profile)}. Run "apify login" to log in to ${profileLabel(profile)} again.`;
+}
 
 export function describeAuthFailure(auth: ResolvedAuth | undefined, error?: unknown): string {
 	if (!auth) {
@@ -130,7 +217,9 @@ export function describeAuthFailure(auth: ResolvedAuth | undefined, error?: unkn
 		case 'env':
 			return `The API token in ${APIFY_ENV_VARS.TOKEN} was rejected. Unset it to use your stored login instead.`;
 		default:
-			return 'Your stored API token was rejected. Call "apify login" to log in again.';
+			return auth.profile
+				? `The stored API token for ${auth.profile.label} was rejected. Run "apify login" to log in to ${auth.profile.label} again.`
+				: 'Your stored API token was rejected. Call "apify login" to log in again.';
 	}
 }
 
