@@ -131,8 +131,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 				if (existingName) {
 					actorName = existingName;
 				} else if (this.flags.yes) {
-					// Sanitizing covers the usual separators, but a name of only dashes or non-ASCII
-					// leaves nothing behind, and --yes has no prompt to fall back to.
+					// Sanitizing a name of only dashes or non-ASCII leaves nothing behind.
 					try {
 						validateActorName(defaultActorName);
 					} catch {

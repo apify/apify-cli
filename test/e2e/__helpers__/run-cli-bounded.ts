@@ -6,7 +6,6 @@ import { CliTestEnv, DistActor, DistApify } from './run-cli.js';
 
 export interface RunCliBoundedOptions {
 	cwd: string;
-	env?: Record<string, string>;
 	/** Wall-clock budget. The child is killed once it elapses. */
 	timeoutMs?: number;
 	/** Combined byte budget for stdout and stderr. The child is killed once it is passed. */
@@ -17,7 +16,6 @@ export interface RunCliBoundedResult {
 	stdout: string;
 	stderr: string;
 	exitCode: number | null;
-	signal: NodeJS.Signals | null;
 	/** The command was still running when `timeoutMs` elapsed. */
 	timedOut: boolean;
 	/** The command wrote past `outputCapBytes`, which only a runaway loop does. */
@@ -48,7 +46,7 @@ export async function runCliBounded(
 	args: string[],
 	options: RunCliBoundedOptions,
 ): Promise<RunCliBoundedResult> {
-	const { cwd, env, timeoutMs = DefaultTimeoutMs, outputCapBytes = DefaultOutputCapBytes } = options;
+	const { cwd, timeoutMs = DefaultTimeoutMs, outputCapBytes = DefaultOutputCapBytes } = options;
 
 	await mkdir(cwd, { recursive: true });
 
@@ -59,7 +57,6 @@ export async function runCliBounded(
 		env: {
 			...process.env,
 			...CliTestEnv,
-			...env,
 		},
 	});
 
@@ -89,16 +86,15 @@ export async function runCliBounded(
 		child.kill('SIGKILL');
 	}, timeoutMs);
 
-	const [exitCode, signal] = await new Promise<[number | null, NodeJS.Signals | null]>((resolve, reject) => {
+	const exitCode = await new Promise<number | null>((resolve, reject) => {
 		child.once('error', reject);
-		child.once('close', (code, sig) => resolve([code, sig]));
+		child.once('close', resolve);
 	}).finally(() => clearTimeout(timer));
 
 	return {
 		stdout: Buffer.concat(captured.stdout).toString('utf8'),
 		stderr: Buffer.concat(captured.stderr).toString('utf8'),
 		exitCode,
-		signal,
 		timedOut,
 		outputCapExceeded,
 		bytesWritten,

@@ -5,8 +5,6 @@ import path from 'node:path';
 import { runCliBounded } from '../__helpers__/run-cli-bounded.js';
 import { TestTmpRoot } from '../__helpers__/tmp.js';
 
-// The command itself finishes well under a second. A deadline only has to separate "exits" from
-// "never exits"; a retry loop trips the output cap long before this.
 const EXIT_DEADLINE_MS = 15_000;
 
 const MissingNameError = 'Error: Actor name is required';
@@ -78,6 +76,7 @@ describe('[e2e] apify init with no usable stdin', () => {
 		);
 		expect(result.timedOut, `stderr: ${result.stderr}`).toBe(false);
 		expect(result.exitCode).not.toBe(0);
+		expect(result.stderr).toContain('Confirmation is required to continue');
 
 		await expect(access(path.join(cwd, '.actor', 'actor.json'))).rejects.toThrow();
 	});

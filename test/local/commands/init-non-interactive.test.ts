@@ -10,10 +10,6 @@ vitest.mock('ci-info', async (importOriginal) => {
 	return { ...original, isCI: true };
 });
 
-// The global `restoreMocks` would undo useTempPath's process.cwd spy after the first test, pointing
-// every later test at the repo root instead of the temp directory.
-vitest.setConfig({ restoreMocks: false });
-
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
@@ -123,19 +119,6 @@ describe('apify init without a usable stdin', () => {
 		expect(errorLines(lines)).toHaveLength(1);
 		expect(errorLines(lines)[0]).toContain('apify init <name>');
 		expect(errorLines(lines)[0]).toContain('--yes');
-		expect(process.exitCode).toBeDefined();
-		expect(process.exitCode).not.toBe(0);
-		expect(existsSync(joinCwd(LOCAL_CONFIG_PATH))).toBe(false);
-	});
-
-	it('does not exit 0 when the directory confirmation cannot be answered', async () => {
-		const joinCwd = await useFreshCwd('no-yes-unknown-project');
-
-		const lines = captureErrorsWithCap();
-
-		await testRunCommand(InitCommand, {});
-
-		expect(errorLines(lines)).toHaveLength(1);
 		expect(process.exitCode).toBeDefined();
 		expect(process.exitCode).not.toBe(0);
 		expect(existsSync(joinCwd(LOCAL_CONFIG_PATH))).toBe(false);
