@@ -1,10 +1,10 @@
 import { APIFY_ENV_VARS } from '@apify/consts';
 
+import { removeActiveProfile } from '../../lib/auth-file.js';
 import { invalidEnvTokenMessage, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH } from '../../lib/consts.js';
 import { clearKeyringSecrets } from '../../lib/credentials.js';
-import { rimrafPromised } from '../../lib/files.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { success, warning } from '../../lib/outputs.js';
 import { tildify } from '../../lib/utils.js';
@@ -29,7 +29,7 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 
 	async run() {
 		await clearKeyringSecrets();
-		await rimrafPromised(AUTH_FILE_PATH());
+		removeActiveProfile();
 
 		await updateUserId(null);
 
