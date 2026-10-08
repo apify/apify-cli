@@ -68,7 +68,6 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 
 		const projectResult = await useCwdProject();
 
-		// TODO: use direct .unwrap() once we migrate to yargs
 		if (projectResult.isErr()) {
 			error({ message: projectResult.unwrapErr().message });
 			process.exit(1);
