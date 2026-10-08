@@ -6,6 +6,7 @@ import { isCI } from 'ci-info';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { LoginCommand } from '../../../src/commands/login.js';
+import { __resetAuthFileForTests } from '../../../src/lib/auth-file.js';
 import { __resetAuthForTests } from '../../../src/lib/auth.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
@@ -20,6 +21,7 @@ function resetAuthCaches() {
 	__resetCredentialsForTests();
 	__resetUserInfoCacheForTests();
 	__resetAuthForTests();
+	__resetAuthFileForTests();
 }
 
 export interface UseAuthSetupOptions {
@@ -41,6 +43,21 @@ const envVariable = '__APIFY_INTERNAL_TEST_AUTH_PATH__';
 /**
  * A hook that allows each test to have a unique auth setup.
  */
+/**
+ * The keyring is the one store a test cannot sandbox: `__APIFY_INTERNAL_TEST_AUTH_PATH__` moves
+ * `auth.json` somewhere scratch, but the OS keyring is per-user, and `clearKeyringSecrets()`
+ * deletes the fixed names whatever the backend is. One `logout` against the real module reaches
+ * the developer's own stored login.
+ */
+async function assertKeyringIsMocked() {
+	const keyring = await import('@napi-rs/keyring').catch(() => null);
+	if (keyring && !('resetKeyringMock' in keyring)) {
+		throw new Error(
+			'Tests resolved the real @napi-rs/keyring, which would read and delete your own stored login. Restore setupFiles in vitest.config.ts.',
+		);
+	}
+}
+
 export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOptions = {}) {
 	const random = cryptoRandomObjectId(12);
 
@@ -49,7 +66,8 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 	const before = perTest ? beforeEach : beforeAll;
 	const after = perTest ? afterEach : afterAll;
 
-	before(() => {
+	before(async () => {
+		await assertKeyringIsMocked();
 		vitest.stubEnv(envVariable, envValue());
 		// Tests pin to the file backend so they don't touch the real OS keyring.
 		// Unit tests for credentials.ts override this explicitly.
