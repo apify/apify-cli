@@ -1,11 +1,8 @@
 import { spawn } from 'node:child_process';
 import { mkdir } from 'node:fs/promises';
 import process from 'node:process';
-import { fileURLToPath } from 'node:url';
 
-const ProjectRoot = new URL('../../../', import.meta.url);
-const DistApify = fileURLToPath(new URL('./dist/apify.js', ProjectRoot));
-const DistActor = fileURLToPath(new URL('./dist/actor.js', ProjectRoot));
+import { CliTestEnv, DistActor, DistApify } from './run-cli.js';
 
 export interface RunCliBoundedOptions {
 	cwd: string;
@@ -43,8 +40,8 @@ const DefaultOutputCapBytes = 256 * 1024;
  * tell them apart and costs the full deadline either way. The output cap separates them and trips
  * in milliseconds: `outputCapExceeded` means the command retried something it can never succeed at.
  *
- * Use this for any command that prompts. `runCli` stays the right helper everywhere else — it
- * buffers without a cap, so a loop there costs tens of seconds before the timeout fires.
+ * Use this for any command that prompts. `runCli` stays the right helper everywhere else: execa's
+ * own `maxBuffer` can cap output too, but it takes seconds to trip where this takes milliseconds.
  */
 export async function runCliBounded(
 	binary: 'apify' | 'actor',
@@ -58,13 +55,10 @@ export async function runCliBounded(
 	const child = spawn(process.execPath, [binary === 'actor' ? DistActor : DistApify, ...args], {
 		cwd,
 		stdio: ['ignore', 'pipe', 'pipe'],
+		// `spawn` replaces the environment wholesale, unlike execa's `extendEnv`.
 		env: {
 			...process.env,
-			APIFY_CLI_DISABLE_TELEMETRY: '1',
-			APIFY_CLI_SKIP_UPDATE_CHECK: '1',
-			APIFY_CLI_SKIP_RENTAL_SUNSET_NOTICE: '1',
-			APIFY_DISABLE_KEYRING: '1',
-			APIFY_TOKEN: '',
+			...CliTestEnv,
 			...env,
 		},
 	});

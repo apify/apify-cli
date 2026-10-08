@@ -84,8 +84,21 @@ describe('apify init without a usable stdin', () => {
 		expect(JSON.parse(readFileSync(joinCwd(LOCAL_CONFIG_PATH), 'utf8')).name).toBe('yes-default-name');
 	});
 
-	it('--yes fails when the directory name is not a legal Actor name', async () => {
-		const joinCwd = await useFreshCwd('yes_bad_default_name');
+	it('--yes sanitizes a directory name that is not a legal Actor name', async () => {
+		const joinCwd = await useFreshCwd('yes_sanitized.name');
+		writeFileSync(joinCwd('package.json'), JSON.stringify({ name: 'pkg', version: '1.0.0' }));
+
+		const lines = captureErrorsWithCap();
+
+		await testRunCommand(InitCommand, { flags_yes: true });
+
+		expect(errorLines(lines)).toStrictEqual([]);
+		expect(process.exitCode ?? 0).toBe(0);
+		expect(JSON.parse(readFileSync(joinCwd(LOCAL_CONFIG_PATH), 'utf8')).name).toBe('yes-sanitized-name');
+	});
+
+	it('--yes fails when nothing is left of the directory name', async () => {
+		const joinCwd = await useFreshCwd('___');
 		writeFileSync(joinCwd('package.json'), JSON.stringify({ name: 'pkg', version: '1.0.0' }));
 
 		const lines = captureErrorsWithCap();

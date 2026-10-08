@@ -82,7 +82,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 			}
 		}
 
-		let defaultActorName = basename(cwd);
+		let defaultActorName = sanitizeActorName(basename(cwd));
 		if (project.type === ProjectLanguage.Python && project.entrypoint?.path) {
 			const entryPath = project.entrypoint.path;
 			// Extract the actual package name (last segment of dotted path)
@@ -131,20 +131,17 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 				if (existingName) {
 					actorName = existingName;
 				} else if (this.flags.yes) {
-					// A directory name is not necessarily a legal Actor name, and --yes has no prompt to
-					// fall back to.
+					// Sanitizing covers the usual separators, but a name of only dashes or non-ASCII
+					// leaves nothing behind, and --yes has no prompt to fall back to.
 					try {
 						validateActorName(defaultActorName);
-					} catch (err) {
-						throw new Error(
-							`'${defaultActorName}' cannot be used as the Actor name. ${(err as Error).message} Run 'apify init <name>' to set it.`,
-						);
+					} catch {
+						throw new Error(`Cannot derive an Actor name from '${basename(cwd)}'. Run 'apify init <name>' to set it.`);
 					}
 
 					actorName = defaultActorName;
 				} else {
-					// Validating inside the prompt lets inquirer re-ask on a typo. Retrying around the
-					// prompt instead would also retry a prompt that cannot be answered at all.
+					// Validating inside the prompt lets inquirer re-ask on a typo.
 					actorName = await useUserInput({
 						message: 'Actor name:',
 						default: defaultActorName,
