@@ -13,7 +13,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getConsoleIntegrationsUrl, getConsoleUrl } from '../../lib/console-url.js';
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../lib/consts.js';
-import { getBackend } from '../../lib/credentials.js';
+import { backendFor } from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
@@ -36,7 +36,7 @@ const tryToLogin = async (token: string) => {
 		const { userInfo } = result;
 		await updateUserId(userInfo.id!);
 
-		const backend = await getBackend();
+		const backend = await backendFor(userInfo.id!);
 		let tokenLocation: string;
 		if (backend === 'keyring') {
 			tokenLocation = 'your OS keyring';

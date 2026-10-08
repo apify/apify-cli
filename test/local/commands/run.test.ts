@@ -5,7 +5,7 @@ import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
-import { getProxyPassword, getToken } from '../../../src/lib/credentials.js';
+import { getSecret, type SecretKind } from '../../../src/lib/credentials.js';
 import { rimrafPromised } from '../../../src/lib/files.js';
 import {
 	getLocalDatasetPath,
@@ -18,6 +18,8 @@ import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+
+const storedSecret = (kind: SecretKind) => getSecret(readActiveProfile()!.id, kind);
 import {
 	defaultsInputSchemaPath,
 	missingRequiredPropertyInputSchemaPath,
@@ -127,9 +129,9 @@ describe('apify run', () => {
 		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
 		// Read from disk, not through getLocalUserInfo: `run` sources these from that same
 		// function, so asserting against it would only prove it agrees with itself.
-		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(await getProxyPassword());
+		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(await storedSecret('proxy-password'));
 		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(readActiveProfile()!.id);
-		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(await getToken());
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(await storedSecret('token'));
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
 	});
 
@@ -166,9 +168,9 @@ describe('apify run', () => {
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
 		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
-		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(await getProxyPassword());
+		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(await storedSecret('proxy-password'));
 		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(readActiveProfile()!.id);
-		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(await getToken());
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(await storedSecret('token'));
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
 
 		const actOutputPath2 = joinPath(getLocalKeyValueStorePath(), 'owo.json');
@@ -204,9 +206,9 @@ describe('apify run', () => {
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
 		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
-		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(await getProxyPassword());
+		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(await storedSecret('proxy-password'));
 		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(readActiveProfile()!.id);
-		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(await getToken());
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(await storedSecret('token'));
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
 
 		const actOutputPath2 = joinPath(getLocalKeyValueStorePath(), 'two.json');
