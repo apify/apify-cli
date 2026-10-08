@@ -7,7 +7,7 @@ import {
 	ensureAuthFileCurrent,
 	getActiveProfile,
 	lookUpActiveProfile,
-	removeActiveProfile,
+	removeProfile,
 	upsertProfile,
 } from '../../../src/lib/auth-file.js';
 import { resolveAuth } from '../../../src/lib/auth.js';
@@ -225,7 +225,7 @@ describe('auth.json v2', () => {
 		it('is discarded by a logout', () => {
 			write({ version: 3, activeProfile: 'uid', profiles: { uid: { username: 'me' } }, token: 'tok' });
 
-			removeActiveProfile();
+			removeProfile();
 
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 		});

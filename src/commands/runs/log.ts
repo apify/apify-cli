@@ -6,6 +6,8 @@ import { getLoggedClientOrThrow, outputJobLog } from '../../lib/utils.js';
 export class RunsLogCommand extends ApifyCommand<typeof RunsLogCommand> {
 	static override name = 'log' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Prints the log of a specific run.';
 
 	static override examples = [
