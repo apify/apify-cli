@@ -309,6 +309,40 @@ export async function resolveEngineSocketPath(
 	}
 }
 
+/** What `podman info` says about the Podman the runtime will run on, as far as its start command depends on it. */
+export interface PodmanInfo {
+	rootless: boolean;
+	majorVersion?: number;
+}
+
+export function parsePodmanInfo(output: string): PodmanInfo {
+	const [rootless, version] = output.trim().split(/\s+/);
+	const majorVersion = Number(version?.match(/^(\d+)\./)?.[1]);
+	return { rootless: rootless === 'true', ...(Number.isInteger(majorVersion) ? { majorVersion } : {}) };
+}
+
+export async function podmanInfo(): Promise<PodmanInfo | undefined> {
+	try {
+		const { stdout } = await execa('podman', ['info', '--format', '{{.Host.Security.Rootless}} {{.Version.Version}}']);
+		return parsePodmanInfo(stdout);
+	} catch {
+		return undefined;
+	}
+}
+
+/**
+ * Under rootless Podman 3.x the runtime container and the Actor containers each run under slirp4netns,
+ * whose gateway reaches the host's loopback only with this option. The runtime needs that route to reach
+ * the web servers of the Actor runs it starts (their `containerUrl`); elsewhere it reaches them directly.
+ */
+export const PODMAN3_ROOTLESS_NETWORK_MODE = 'slirp4netns:allow_host_loopback=true';
+
+/** The `--network` mode the runtime container needs on this engine, or undefined for the engine's default. */
+export function runtimeNetworkMode(engine: ContainerEngine, podman: PodmanInfo | undefined): string | undefined {
+	if (engine !== 'podman' || !podman?.rootless || podman.majorVersion !== 3) return undefined;
+	return PODMAN3_ROOTLESS_NETWORK_MODE;
+}
+
 export function socketMountArg(hostSocketPath: string, platform: NodeJS.Platform = process.platform): string {
 	// Docker Desktop on Windows exposes the Linux engine's socket to containers under the same
 	// path; the leading double slash prevents MSYS/Git Bash shells from mangling it.
@@ -323,6 +357,8 @@ export interface RuntimeRunArgsOptions {
 	hostSocketPath: string;
 	ports?: RuntimePorts;
 	platform?: NodeJS.Platform;
+	/** From `runtimeNetworkMode`; absent means the engine's default network. */
+	networkMode?: string;
 }
 
 export function buildRuntimeRunArgs({
@@ -332,6 +368,7 @@ export function buildRuntimeRunArgs({
 	hostSocketPath,
 	ports = DEFAULT_RUNTIME_PORTS,
 	platform = process.platform,
+	networkMode,
 }: RuntimeRunArgsOptions): string[] {
 	// --init makes signals (Ctrl+C) reach the runtime process even though it runs as the container's PID 1.
 	const args = ['run', '--rm', '--init', '--name', ACTOR_RUNTIME_CONTAINER_NAME];
@@ -347,6 +384,9 @@ export function buildRuntimeRunArgs({
 	}
 	if (ports.console !== ACTOR_RUNTIME_CONSOLE_PORT) {
 		args.push('-e', `${RUNTIME_CONSOLE_PORT_ENV_VAR}=${ports.console}`);
+	}
+	if (networkMode) {
+		args.push('--network', networkMode);
 	}
 
 	args.push(
