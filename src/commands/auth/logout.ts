@@ -2,7 +2,7 @@ import process from 'node:process';
 
 import { APIFY_ENV_VARS } from '@apify/consts';
 
-import { getActiveProfileId, removeActiveProfile } from '../../lib/auth-file.js';
+import { getActiveProfileId, profileLabel, removeActiveProfile } from '../../lib/auth-file.js';
 import { invalidEnvTokenMessage, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../lib/consts.js';
@@ -20,7 +20,8 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 	static override name = 'logout' as const;
 
 	static override description =
-		`Removes authentication by deleting your API token and account information from '${tildify(AUTH_FILE_PATH())}'.\n` +
+		`Logs out of the active account by deleting its API token and account information from '${tildify(AUTH_FILE_PATH())}'.\n` +
+		`If other accounts are stored, the most recently logged-in one becomes active.\n` +
 		`Run 'apify login' to authenticate again.`;
 
 	static override group = 'Authentication';
@@ -43,18 +44,26 @@ export class AuthLogoutCommand extends ApifyCommand<typeof AuthLogoutCommand> {
 		const leftovers = await clearKeyringSecrets(activeProfileId);
 
 		let profileError: unknown = null;
+		let result: ReturnType<typeof removeActiveProfile> = {};
 		try {
-			removeActiveProfile();
+			result = removeActiveProfile();
 		} catch (err) {
 			profileError = err;
 		}
 
-		// The account is off disk whenever the profile step succeeded, so the telemetry ID goes too.
-		if (!profileError) await updateUserId(null);
+		const { removed, active } = result;
+
+		// The account is off disk whenever the profile step succeeded, so the telemetry ID follows
+		// whichever account is active now.
+		if (!profileError) await updateUserId(active?.id ?? null);
 
 		if (leftovers.length || profileError) {
 			error({ message: partialLogoutMessage(leftovers, profileError) });
 			process.exitCode = CommandExitCodes.RunFailed;
+		} else if (active) {
+			success({
+				message: `You are logged out${removed ? ` of ${profileLabel(removed)}` : ''}. ${profileLabel(active)} is now the active account.`,
+			});
 		} else {
 			success({ message: 'You are logged out from your Apify account.' });
 		}
