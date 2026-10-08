@@ -1,7 +1,7 @@
-import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { readStdin } from '../../lib/commands/read-stdin.js';
 import { error } from '../../lib/outputs.js';
 
 export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataCommand> {
@@ -34,7 +34,9 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 	async run() {
 		const { item: _item } = this.args;
 
-		const item = _item || cachedStdinInput;
+		// Nobody asked for stdin when the item is missing, so it must not block on a pipe this
+		// process only inherited.
+		const item = _item || (await readStdin({ implicit: true }));
 
 		if (!item) {
 			error({ message: 'No item was provided.' });
