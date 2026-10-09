@@ -4,12 +4,15 @@ import { ApifyApiError } from 'apify-client';
 
 import { loginWithToken, resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
-import { getProxyPassword, getToken, setToken } from '../../../src/lib/credentials.js';
+import { __resetCredentialsForTests, ensureSecretsKeyed, getSecret } from '../../../src/lib/credentials.js';
 import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../../src/lib/utils.js';
 import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
 import { readActiveProfile } from '../../__setup__/auth-file.js';
-import { useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
+import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
+import { LEGACY_KEYRING_PROXY_PASSWORD_KEY, keyringStore, resetKeyringMock } from '../../__setup__/keyring-mock.js';
+
+vi.mock('@napi-rs/keyring', () => import('../../__setup__/keyring-mock.js'));
 
 vi.mock('apify-client', async (importOriginal) => ({
 	...(await importOriginal<typeof import('apify-client')>()),
@@ -48,7 +51,11 @@ describe('auth', () => {
 		it('resolves the stored login when nothing overrides it', async () => {
 			await loginWithToken(STORED);
 
-			await expect(resolveAuth()).resolves.toEqual({ token: STORED, source: 'stored' });
+			await expect(resolveAuth()).resolves.toEqual({
+				token: STORED,
+				source: 'stored',
+				profile: { id: 'uid', label: 'me' },
+			});
 		});
 
 		it('prefers APIFY_TOKEN over the stored login', async () => {
@@ -81,7 +88,11 @@ describe('auth', () => {
 				await loginWithToken(STORED);
 				vitest.stubEnv('APIFY_TOKEN', blank);
 
-				await expect(resolveAuth()).resolves.toEqual({ token: STORED, source: 'stored' });
+				await expect(resolveAuth()).resolves.toEqual({
+					token: STORED,
+					source: 'stored',
+					profile: { id: 'uid', label: 'me' },
+				});
 				expect(lastErrorMessage()).toBeUndefined();
 			},
 		);
@@ -132,8 +143,8 @@ describe('auth', () => {
 		it('saves the token, the proxy password and the account metadata', async () => {
 			await loginWithToken(STORED);
 
-			expect(await getToken()).toBe(STORED);
-			expect(await getProxyPassword()).toBe('pw');
+			expect(await getSecret('uid', 'token')).toBe(STORED);
+			expect(await getSecret('uid', 'proxy-password')).toBe('pw');
 			expect(readActiveProfile()).toMatchObject({ id: 'uid', username: 'me' });
 		});
 
@@ -149,7 +160,28 @@ describe('auth', () => {
 
 			await loginWithToken(STORED);
 
-			expect(await getToken()).toBe(STORED);
+			expect(await getSecret('uid', 'token')).toBe(STORED);
+		});
+	});
+
+	describe('loginWithToken() on the keyring backend', () => {
+		useKeyringBackend();
+
+		beforeEach(() => {
+			resetKeyringMock();
+		});
+
+		it('does not resurrect a proxy password the account no longer has', async () => {
+			resetApifyClientMock({ id: 'uid', username: 'me' });
+			keyringStore.set(LEGACY_KEYRING_PROXY_PASSWORD_KEY, 'pw_old');
+
+			await loginWithToken(STORED);
+
+			// The migration next runs in a fresh process, with nothing memoized.
+			__resetCredentialsForTests();
+			await ensureSecretsKeyed();
+
+			expect(await getSecret('uid', 'proxy-password')).toBeUndefined();
 		});
 	});
 
@@ -177,7 +209,7 @@ describe('auth', () => {
 			clientState.fail = true;
 			clientState.failWith = apiError(403);
 
-			await expect(getLoggedClientOrThrow()).rejects.toThrow('Your stored API token was rejected');
+			await expect(getLoggedClientOrThrow()).rejects.toThrow('The stored API token for me was rejected');
 		});
 
 		it('does not blame the token when the API request itself failed', async () => {
@@ -237,7 +269,7 @@ describe('auth', () => {
 
 			await resolveAuth();
 
-			expect(await getToken()).toBe(STORED);
+			expect(await getSecret('uid', 'token')).toBe(STORED);
 			expect(readActiveProfile()).toMatchObject({ username: 'me' });
 		});
 	});

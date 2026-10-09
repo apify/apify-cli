@@ -11,6 +11,8 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.auth },
 		{ command: Commands.authLogin, aliases: [Commands.login] },
 		{ command: Commands.authLogout, aliases: [Commands.logout] },
+		{ command: Commands.authList },
+		{ command: Commands.authSwitch },
 		{ command: Commands.authToken },
 		{ command: Commands.info },
 		{ command: Commands.secrets },

@@ -3,7 +3,7 @@ import { existsSync, readFileSync, renameSync, rmSync, writeFileSync } from 'nod
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { AUTH_FILE_PATH } from './consts.js';
-import type { CredentialsBackend } from './credentials.js';
+import type { SecretKind } from './credentials.js';
 import { ensureApifyDirectory } from './files.js';
 import { warning } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -16,7 +16,7 @@ export const AUTH_FILE_VERSION = 2;
  */
 export interface AuthProfile {
 	username?: string;
-	/** Human label for `--profile <name>`. Unused until profiles get names. */
+	/** Human label for `--profile <name>`. */
 	name: string | null;
 	/** Set means the profile is an organization rather than a personal account. */
 	organizationOwnerUserId?: string;
@@ -24,20 +24,23 @@ export interface AuthProfile {
 	authMethod: 'token';
 	expiresAt: string | null;
 	hasRefreshToken: boolean;
-	/** Reserved: a keyring failure on one profile must not redirect another profile's reads. */
-	secretsBackend?: CredentialsBackend;
 	loggedInAt: string | null;
+	/**
+	 * Set only when the keyring is disabled, unavailable, or refused the write. A token here is
+	 * the record of where this profile's secrets live: no marker says so separately.
+	 */
+	token?: string;
+	proxy?: { password?: string };
 }
 
 /**
- * `auth.json` as this CLI writes it. `token` and `proxy` are the file backend's secret storage;
- * they stay outside the profiles until each profile gets its own keys.
+ * `auth.json` as this CLI writes it. Top-level `token` and `proxy` are where the file backend kept
+ * secrets before they were keyed per profile; `ensureSecretsKeyed()` moves them into the profile.
  */
 export interface AuthFile {
 	version?: number;
 	activeProfile?: string;
 	profiles?: Record<string, AuthProfile>;
-	secretsBackend?: CredentialsBackend;
 	token?: string;
 	proxy?: { password?: string; [k: string]: unknown };
 }
@@ -125,14 +128,13 @@ function v1Profile(file: LegacyAuthFile): AuthProfile {
 function toV2(file: LegacyAuthFile): AuthFile {
 	const migrated: AuthFile = { version: AUTH_FILE_VERSION, profiles: {} };
 
-	// A v1 file with a token but no ID has no key to store the profile under. Keep the secrets so
-	// the next command reports stale credentials instead of a silent logged-out state.
+	// A v1 file with a token but no ID has no key to store the profile under. The secrets are
+	// carried over here and dropped by `ensureSecretsKeyed()`, which is what forces the re-login.
 	if (typeof file.id === 'string') {
 		migrated.activeProfile = file.id;
 		migrated.profiles![file.id] = v1Profile(file);
 	}
 
-	if (file.secretsBackend) migrated.secretsBackend = file.secretsBackend;
 	if (typeof file.token === 'string') migrated.token = file.token;
 	if (typeof file.proxy?.password === 'string') migrated.proxy = { password: file.proxy.password };
 
@@ -173,11 +175,10 @@ async function migrateAuthFile(): Promise<void> {
 
 			writeAuthFile(migrated);
 		} catch (err) {
-			// The readers understand the old shape, so nothing is broken and the next command tries
-			// again. Still said out loud, because failing on every run should not be invisible.
+			// Not rethrown: the migration must not abort the command, which fails at the auth step.
 			cliDebugPrint('auth-file', 'auth file migration failed', err);
 			warning({
-				message: `Your login still works, but ${AUTH_FILE_PATH()} could not be updated to the current format. Set APIFY_CLI_DEBUG=1 to see why.`,
+				message: `Your stored login cannot be read until ${AUTH_FILE_PATH()} is updated to the current format, and the update failed. Make the directory it is in writable, then run the command again. Set APIFY_CLI_DEBUG=1 to see why.`,
 			});
 		}
 	})();
@@ -189,7 +190,7 @@ async function migrateAuthFile(): Promise<void> {
  * A file from a newer CLI is not something to guess at — migrating it backwards would drop
  * whatever that version stores.
  */
-function assertSupportedAuthFileVersion() {
+export function assertSupportedAuthFileVersion() {
 	const { version } = readAuthFile();
 
 	if (typeof version === 'number' && version > AUTH_FILE_VERSION) {
@@ -232,53 +233,204 @@ export function lookUpActiveProfile(): ActiveProfileLookup {
 	return { profile: { id: file.activeProfile, ...profile } };
 }
 
-export function getActiveProfile(): (AuthProfile & { id: string }) | undefined {
+export type StoredProfile = AuthProfile & { id: string };
+
+export function profileLabel(profile: StoredProfile) {
+	return profile.name ?? profile.username ?? profile.id;
+}
+
+/** Every stored profile, in file order. Reads the pre-profile shape as its one account. */
+export function listProfiles(): StoredProfile[] {
+	const file = readAuthFile();
+	if (file.version !== AUTH_FILE_VERSION) {
+		const { profile } = lookUpActiveProfile();
+		return profile ? [profile] : [];
+	}
+
+	return Object.entries(file.profiles ?? {}).map(([id, profile]) => ({ id, ...profile }));
+}
+
+/**
+ * The profiles a `--profile` value names: the one with that user ID, otherwise every profile whose
+ * `profileLabel` matches. More than one match means the name is ambiguous.
+ */
+export function matchProfiles(nameOrId: string): StoredProfile[] {
+	const profiles = listProfiles();
+	const byId = profiles.find(({ id }) => id === nameOrId);
+	return byId ? [byId] : profiles.filter((p) => profileLabel(p) === nameOrId);
+}
+
+/** Like {@link lookUpActiveProfile}, for the profile with this user ID. */
+export function lookUpProfile(userId: string): ActiveProfileLookup {
+	const profile = listProfiles().find(({ id }) => id === userId);
+	return profile ? { profile } : { missingProfile: userId };
+}
+
+/** Makes a stored profile active. A user ID the file does not hold is ignored. */
+export function setActiveProfile(userId: string) {
+	const file = readAuthFile();
+	if (!file.profiles?.[userId]) return;
+
+	file.activeProfile = userId;
+	writeAuthFile(file);
+}
+
+export function getActiveProfile(): StoredProfile | undefined {
 	return lookUpActiveProfile().profile;
 }
 
 /**
- * Replaces the file with this one account. A second profile would name an account that cannot
- * authenticate until each has its own secret, and dropping the old secrets is what keeps the write
- * safe: the caller writes the new token next, so a failure there leaves nobody logged in rather
- * than the old token beside the new name. Additive login is #1386.
+ * The user ID every secret is keyed by. Taken from `activeProfile` rather than from the profile
+ * object, so a file whose `activeProfile` names a missing profile still resolves its secrets and
+ * reports the dangling profile instead of looking logged out.
  */
-export function replaceStoredAccount(userId: string, profile: AuthProfile, secretsBackend: CredentialsBackend) {
-	assertSupportedAuthFileVersion();
+export function getActiveProfileId(): string | undefined {
+	const file = readAuthFile();
 
-	writeAuthFile({
-		version: AUTH_FILE_VERSION,
-		activeProfile: userId,
-		profiles: { [userId]: profile },
-		secretsBackend,
-	});
+	if (file.version !== AUTH_FILE_VERSION) {
+		const legacy = file as LegacyAuthFile;
+		return typeof legacy.id === 'string' ? legacy.id : undefined;
+	}
+
+	return file.activeProfile;
+}
+
+/** The file backend's stored secret, or `undefined` when the profile does not hold one. */
+export function readProfileSecret(userId: string, kind: SecretKind): string | undefined {
+	const profile = readAuthFile().profiles?.[userId];
+	if (!profile) return undefined;
+
+	return kind === 'token' ? profile.token : profile.proxy?.password;
 }
 
 /**
- * Drops the active profile together with the secrets stored beside it. The file and the v1 backup
- * go away once no profile is left, so logging out leaves no token on disk.
+ * Stores a file-backend secret on the profile. A missing profile is left alone: inventing one
+ * would fabricate the account metadata the CLI reads.
  */
-export function removeActiveProfile() {
+export function writeProfileSecret(userId: string, kind: SecretKind, value: string) {
+	updateProfile(userId, (profile) => setProfileSecret(profile, kind, value));
+}
+
+/** Forgets every file-backend secret of a profile, once its token is in the keyring. */
+export function clearProfileFileSecrets(userId: string) {
+	const profile = readAuthFile().profiles?.[userId];
+	if (profile?.token === undefined && profile?.proxy === undefined) return;
+
+	updateProfile(userId, (edited) => {
+		delete edited.token;
+		delete edited.proxy;
+	});
+}
+
+function setProfileSecret(profile: AuthProfile, kind: SecretKind, value: string) {
+	if (kind === 'token') {
+		profile.token = value;
+	} else {
+		profile.proxy = { ...profile.proxy, password: value };
+	}
+}
+
+/** Forgets one of a profile's file-backend secrets. */
+export function deleteProfileSecret(userId: string, kind: SecretKind) {
+	if (readProfileSecret(userId, kind) === undefined) return;
+
+	updateProfile(userId, (profile) => {
+		if (kind === 'token') {
+			delete profile.token;
+		} else {
+			// The profile's proxy object carries nothing but the password.
+			delete profile.proxy;
+		}
+	});
+}
+
+function updateProfile(userId: string, edit: (profile: AuthProfile) => void) {
+	const file = readAuthFile();
+	const profile = file.profiles?.[userId];
+	if (!profile) return;
+
+	edit(profile);
+	writeAuthFile(file);
+}
+
+/**
+ * Adds the account, or updates it in place when it is already stored, and makes it active. Other
+ * profiles are kept. A stored profile keeps its file-backend secrets until the caller writes the
+ * new ones, so a failed write leaves the old login in place rather than none.
+ */
+export function upsertProfile(userId: string, profile: AuthProfile) {
+	assertSupportedAuthFileVersion();
+
+	const current = readAuthFile();
+	// A file the migration could not bring to v2 has no profiles to keep.
+	const file: AuthFile = current.version === AUTH_FILE_VERSION ? current : { version: AUTH_FILE_VERSION };
+	file.profiles ??= {};
+	// Unkeyed secrets belong to the account that was active, and re-keying would file them under this one.
+	delete file.token;
+	delete file.proxy;
+
+	const existing = file.profiles[userId];
+	file.profiles[userId] = {
+		...profile,
+		...(existing?.token ? { token: existing.token } : {}),
+		...(existing?.proxy ? { proxy: existing.proxy } : {}),
+	};
+
+	file.activeProfile = userId;
+	writeAuthFile(file);
+}
+
+/**
+ * Drops a profile together with the secrets stored beside it; the active one when no ID is given.
+ * Removing the active profile makes the one with the most recent `loggedInAt` active. The file goes
+ * away once no profile is left, so logging out leaves no token on disk.
+ */
+export function removeProfile(userId?: string): {
+	removed?: StoredProfile;
+	active?: StoredProfile;
+} {
 	const file = readAuthFile();
 
 	// No version guard: refusing to discard a file this CLI cannot read leaves no way out. It goes
 	// whole rather than edited, which would leave something worse than either outcome.
 	if (file.version !== AUTH_FILE_VERSION) {
 		discardAuthFile();
-		return;
+		return {};
 	}
 
-	const active = file.activeProfile;
-	if (active && file.profiles) delete file.profiles[active];
+	const removedId = userId ?? file.activeProfile;
+	const removedProfile = removedId ? file.profiles?.[removedId] : undefined;
+	const removed = removedId && removedProfile ? { id: removedId, ...removedProfile } : undefined;
+
+	if (removedId && file.profiles) delete file.profiles[removedId];
+
+	if (removedId !== file.activeProfile) {
+		writeAuthFile(file);
+		const activeProfile = file.activeProfile ? file.profiles?.[file.activeProfile] : undefined;
+		return { removed, active: activeProfile && { id: file.activeProfile!, ...activeProfile } };
+	}
+
 	delete file.activeProfile;
 	delete file.token;
 	delete file.proxy;
 
-	if (Object.keys(file.profiles ?? {}).length === 0) {
+	const [nextId] = Object.entries(file.profiles ?? {})
+		.sort(([, a], [, b]) => (b.loggedInAt ?? '').localeCompare(a.loggedInAt ?? ''))
+		.map(([id]) => id);
+
+	if (!nextId) {
 		discardAuthFile();
-		return;
+		return { removed };
 	}
 
+	file.activeProfile = nextId;
 	writeAuthFile(file);
+	return { removed, active: { id: nextId, ...file.profiles![nextId] } };
+}
+
+/** Deletes the auth file. The caller clears the keyring first, while the file still indexes it. */
+export function removeAllProfiles() {
+	discardAuthFile();
 }
 
 function discardAuthFile() {

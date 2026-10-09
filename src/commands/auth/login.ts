@@ -8,12 +8,13 @@ import open from 'open';
 import { APIFY_ENV_VARS } from '@apify/consts';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
+import { profileLabel, readAuthFile } from '../../lib/auth-file.js';
 import { invalidEnvTokenMessage, loginWithToken, readEnvToken } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getConsoleIntegrationsUrl, getConsoleUrl } from '../../lib/console-url.js';
 import { AUTH_FILE_PATH, CommandExitCodes } from '../../lib/consts.js';
-import { getBackend } from '../../lib/credentials.js';
+import { backendFor } from '../../lib/credentials.js';
 import { updateUserId } from '../../lib/hooks/telemetry/useTelemetryState.js';
 import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInput.js';
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
@@ -36,7 +37,7 @@ const tryToLogin = async (token: string) => {
 		const { userInfo } = result;
 		await updateUserId(userInfo.id!);
 
-		const backend = await getBackend();
+		const backend = await backendFor(userInfo.id!);
 		let tokenLocation: string;
 		if (backend === 'keyring') {
 			tokenLocation = 'your OS keyring';
@@ -48,6 +49,13 @@ const tryToLogin = async (token: string) => {
 		success({
 			message: `You are logged in to Apify as ${userInfo.username || userInfo.id}. ${chalk.gray(`Your token is stored in ${tokenLocation}.`)}`,
 		});
+
+		const others = Object.entries(readAuthFile().profiles ?? {})
+			.filter(([id]) => id !== userInfo.id)
+			.map(([id, profile]) => profileLabel({ id, ...profile }));
+		if (others.length > 0) {
+			info({ message: `Other stored accounts: ${others.join(', ')}.` });
+		}
 	} else {
 		process.exitCode = CommandExitCodes.MissingAuth;
 		error({

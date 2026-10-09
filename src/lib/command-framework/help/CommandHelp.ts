@@ -142,6 +142,25 @@ export class CommandHelp extends BaseCommandRenderer {
 			]);
 		}
 
+		if (this.command.enableProfileFlag) {
+			flags.push([
+				'profile',
+				{
+					choices: null,
+					flagTag: 'string',
+					hasDefault: false,
+					required: false,
+					stdin: null as never,
+					builder: null as never,
+					aliases: undefined,
+					char: undefined,
+					description: 'The stored account to use for this command, by name or user ID. See "apify auth list".',
+					hidden: undefined,
+					exclusive: undefined,
+				},
+			]);
+		}
+
 		const sortedFlags = new Map(
 			flags.sort((a, b) => {
 				if (typeof a[1] === 'string') {

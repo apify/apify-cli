@@ -1,19 +1,29 @@
-import { existsSync, statSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
-import { AUTH_FILE_PATH, CommandExitCodes } from '../../../src/lib/consts.js';
-import { getToken } from '../../../src/lib/credentials.js';
+import { APIFY_ENV_VARS } from '@apify/consts';
+
+import { __resetAuthFileForTests, type AuthProfile } from '../../../src/lib/auth-file.js';
+import { AUTH_FILE_PATH, CommandExitCodes, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
+import { __resetCredentialsForTests, ensureSecretsKeyed, getSecret } from '../../../src/lib/credentials.js';
+import { tildify } from '../../../src/lib/utils.js';
 import { clientState, resetApifyClientMock } from '../../__setup__/apify-client-mock.js';
-import { readActiveProfile, readAuthFile } from '../../__setup__/auth-file.js';
+import { readActiveProfile, readAuthFile, v1AuthFile } from '../../__setup__/auth-file.js';
 import { useAuthSetup, useKeyringBackend } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import {
-	KEYRING_PROXY_PASSWORD_KEY,
-	KEYRING_TOKEN_KEY,
+	LEGACY_KEYRING_PROXY_PASSWORD_KEY,
+	LEGACY_KEYRING_TOKEN_KEY,
+	keyringFailures,
+	keyringProxyPasswordKey,
 	keyringSetKeys,
 	keyringStore,
+	keyringTokenKey,
 	resetKeyringMock,
 } from '../../__setup__/keyring-mock.js';
+
+const TOKEN_KEY = keyringTokenKey('uid');
+const PROXY_PASSWORD_KEY = keyringProxyPasswordKey('uid');
 
 vi.mock('@napi-rs/keyring', () => import('../../__setup__/keyring-mock.js'));
 
@@ -23,7 +33,7 @@ vi.mock('apify-client', async (importOriginal) => ({
 }));
 
 useAuthSetup();
-const { lastLogMessage, lastErrorMessage } = useConsoleSpy();
+const { lastLogMessage, lastErrorMessage, logMessages } = useConsoleSpy();
 
 const { AuthLoginCommand } = await import('../../../src/commands/auth/login.js');
 const { AuthLogoutCommand } = await import('../../../src/commands/auth/logout.js');
@@ -31,6 +41,19 @@ const { AuthTokenCommand } = await import('../../../src/commands/auth/token.js')
 const { testRunCommand } = await import('../../../src/lib/command-framework/apify-command.js');
 
 const TOKEN = 'apify_api_test_token';
+
+const PROFILE: AuthProfile = {
+	name: null,
+	authMethod: 'token',
+	expiresAt: null,
+	hasRefreshToken: false,
+	loggedInAt: null,
+};
+
+const writeAuthFile = (data: unknown) => {
+	mkdirSync(GLOBAL_CONFIGS_FOLDER(), { recursive: true });
+	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(data));
+};
 
 const login = (token = TOKEN) => testRunCommand(AuthLoginCommand, { flags_token: token });
 
@@ -44,15 +67,19 @@ describe('auth commands', () => {
 		it('login stores the token and one profile keyed by user ID', async () => {
 			await login();
 
-			expect(readAuthFile()).toMatchObject({ version: 2, token: TOKEN, secretsBackend: 'file' });
+			expect(readAuthFile().version).toBe(2);
+			expect(readAuthFile()).not.toHaveProperty('secretsBackend');
+			expect(readAuthFile().token).toBeUndefined();
 			expect(readActiveProfile()).toEqual({
 				id: 'uid',
 				username: 'me',
-				name: null,
+				name: 'me',
 				authMethod: 'token',
 				expiresAt: null,
 				hasRefreshToken: false,
 				loggedInAt: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T/),
+				token: TOKEN,
+				proxy: { password: 'pw' },
 			});
 			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
 		});
@@ -75,21 +102,100 @@ describe('auth commands', () => {
 			await testRunCommand(AuthLogoutCommand, {});
 
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
-			expect(await getToken()).toBeUndefined();
+			expect(await getSecret('uid', 'token')).toBeUndefined();
 		});
 
-		it('logging in as another account replaces the stored profile', async () => {
-			clientState.user = { id: 'uid', username: 'me', email: 'me@example.com' };
+		it('logging in as another account adds a profile and makes it active', async () => {
 			await login();
 
 			clientState.user = { id: 'uid2', username: 'other' };
 			await login('apify_api_other_token');
 
 			const authFile = readAuthFile();
-			expect(authFile).toMatchObject({ activeProfile: 'uid2', token: 'apify_api_other_token' });
-			// Additive login is a later stage; until then the old profile must not linger.
-			expect(Object.keys(authFile.profiles!)).toEqual(['uid2']);
-			expect(readActiveProfile()).toMatchObject({ username: 'other' });
+			expect(authFile).toMatchObject({ activeProfile: 'uid2' });
+			expect(Object.keys(authFile.profiles!).sort()).toEqual(['uid', 'uid2']);
+			expect(authFile.profiles!.uid).toMatchObject({ name: 'me', token: TOKEN });
+			expect(readActiveProfile()).toMatchObject({ name: 'other', token: 'apify_api_other_token' });
+			expect(lastErrorMessage()).toContain('Other stored accounts: me.');
+		});
+
+		it('logging in again to a stored account updates it in place and makes it active', async () => {
+			await login();
+			const firstLoginAt = readActiveProfile()!.loggedInAt!;
+
+			clientState.user = { id: 'uid2', username: 'other' };
+			await login('apify_api_other_token');
+
+			clientState.user = { id: 'uid', username: 'me-renamed' };
+			await new Promise((resolve) => setTimeout(resolve, 5));
+			await login('apify_api_rotated_token');
+
+			const authFile = readAuthFile();
+			expect(Object.keys(authFile.profiles!).sort()).toEqual(['uid', 'uid2']);
+			expect(readActiveProfile()).toMatchObject({
+				id: 'uid',
+				name: 'me-renamed',
+				token: 'apify_api_rotated_token',
+			});
+			expect(readActiveProfile()!.loggedInAt! > firstLoginAt).toBe(true);
+		});
+
+		it('logout with two accounts makes the other one active and says so', async () => {
+			await login();
+			clientState.user = { id: 'uid2', username: 'other' };
+			await login('apify_api_other_token');
+
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(lastErrorMessage()).toContain('You are logged out of other. me is now the active account.');
+			expect(readAuthFile().profiles).not.toHaveProperty('uid2');
+			expect(readActiveProfile()).toMatchObject({ id: 'uid', token: TOKEN });
+
+			await testRunCommand(AuthTokenCommand, {});
+			expect(lastLogMessage()).toBe(TOKEN);
+		});
+
+		it('logout makes the most recently logged-in remaining account active', async () => {
+			writeAuthFile({
+				version: 2,
+				activeProfile: 'uid',
+				secretsBackend: 'file',
+				profiles: {
+					uid: { ...PROFILE, name: 'me', loggedInAt: '2026-03-01T00:00:00.000Z', token: TOKEN },
+					old: { ...PROFILE, name: 'old', loggedInAt: null, token: 't-old' },
+					recent: { ...PROFILE, name: 'recent', loggedInAt: '2026-02-01T00:00:00.000Z', token: 't-recent' },
+					older: { ...PROFILE, name: 'older', loggedInAt: '2026-01-01T00:00:00.000Z', token: 't-older' },
+				},
+			});
+
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(readAuthFile().activeProfile).toBe('recent');
+		});
+
+		it('logout with a dangling active profile still names the account that becomes active', async () => {
+			writeAuthFile({
+				version: 2,
+				activeProfile: 'gone',
+				secretsBackend: 'file',
+				profiles: { uid: { ...PROFILE, name: 'me', token: TOKEN } },
+			});
+
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(lastErrorMessage()).toContain('You are logged out. me is now the active account.');
+			expect(readAuthFile().activeProfile).toBe('uid');
+		});
+
+		it('a migrated v1 account survives logging in to a second account', async () => {
+			writeAuthFile(v1AuthFile());
+
+			clientState.user = { id: 'uid2', username: 'other' };
+			await login('apify_api_other_token');
+
+			const authFile = readAuthFile();
+			expect(authFile).toMatchObject({ version: 2, activeProfile: 'uid2' });
+			expect(authFile.profiles!.uid).toMatchObject({ username: 'me', token: 'apify_api_v1_token' });
 		});
 
 		it('login with an invalid token stores nothing and fails the command', async () => {
@@ -119,7 +225,7 @@ describe('auth commands', () => {
 
 			await login();
 
-			expect(await getToken()).toBe(TOKEN);
+			expect(await getSecret('uid', 'token')).toBe(TOKEN);
 			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
 		});
 
@@ -128,7 +234,7 @@ describe('auth commands', () => {
 
 			await login();
 
-			expect(await getToken()).toBe(TOKEN);
+			expect(await getSecret('uid', 'token')).toBe(TOKEN);
 			expect(lastErrorMessage()).toContain('You are logged in to Apify as me');
 		});
 
@@ -174,7 +280,7 @@ describe('auth commands', () => {
 			await testRunCommand(AuthTokenCommand, {});
 
 			expect(lastLogMessage()).toBe('apify_api_env_token');
-			expect(await getToken()).toBe(TOKEN);
+			expect(await getSecret('uid', 'token')).toBe(TOKEN);
 			expect(readActiveProfile()).toMatchObject({ username: 'me' });
 		});
 	});
@@ -185,34 +291,108 @@ describe('auth commands', () => {
 		it('login stores the secrets in the keyring and keeps them out of auth.json', async () => {
 			await login();
 
-			expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBe(TOKEN);
-			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
+			expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
 
 			const authFile = readAuthFile();
-			expect(authFile).toMatchObject({ version: 2, secretsBackend: 'keyring' });
+			expect(authFile.version).toBe(2);
+			expect(authFile).not.toHaveProperty('secretsBackend');
 			expect(authFile.token).toBeUndefined();
 			// Proxy groups are not a secret, but nothing reads them either.
 			expect(authFile).not.toHaveProperty('proxy');
 			expect(readActiveProfile()).toMatchObject({ id: 'uid', username: 'me' });
 		});
 
-		it('logging in as an account with no proxy password forgets the previous one', async () => {
+		it('logging in again with no proxy password forgets the previous one', async () => {
 			await login();
-			expect(keyringStore.get(KEYRING_PROXY_PASSWORD_KEY)).toBe('pw');
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
+
+			clientState.user = { id: 'uid', username: 'me' };
+			await login();
+
+			expect(keyringStore.has(PROXY_PASSWORD_KEY)).toBe(false);
+		});
+
+		it('logging in to a second account keeps the first account entries', async () => {
+			await login();
+
+			clientState.user = { id: 'uid2', username: 'other', proxy: { password: 'pw2' } };
+			await login('apify_api_other_token');
+
+			expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
+			expect(keyringStore.get(keyringTokenKey('uid2'))).toBe('apify_api_other_token');
+			expect(keyringStore.get(keyringProxyPasswordKey('uid2'))).toBe('pw2');
+		});
+
+		it('a second login with the keyring disabled leaves the first account on the keyring', async () => {
+			await login();
+
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			__resetCredentialsForTests();
+			clientState.user = { id: 'uid2', username: 'other' };
+			await login('apify_api_other_token');
+
+			const authFile = readAuthFile();
+			expect(authFile).not.toHaveProperty('secretsBackend');
+			expect(authFile.profiles!.uid2).toMatchObject({ token: 'apify_api_other_token' });
+			expect(authFile.profiles!.uid).not.toHaveProperty('token');
+
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			__resetCredentialsForTests();
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(await getSecret('uid', 'token')).toBe(TOKEN);
+		});
+
+		it('logging in again with the keyring disabled keeps reading the new token once it is enabled', async () => {
+			await login();
+
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
+			__resetCredentialsForTests();
+			await login('apify_api_rotated_token');
+
+			vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+			__resetCredentialsForTests();
+			expect(await getSecret('uid', 'token')).toBe('apify_api_rotated_token');
+		});
+
+		it('logging in to a second account drops unkeyed entries left by the first', async () => {
+			await login();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, TOKEN);
 
 			clientState.user = { id: 'uid2', username: 'other' };
 			await login('apify_api_other_token');
 
-			// The keyring outlives the auth.json rewrite, so without an explicit delete the child
-			// Actor would run with the previous account's proxy credential.
-			expect(keyringStore.has(KEYRING_PROXY_PASSWORD_KEY)).toBe(false);
+			expect(keyringStore.has(LEGACY_KEYRING_TOKEN_KEY)).toBe(false);
+		});
+
+		it('logout with two accounts clears only the outgoing account entries', async () => {
+			await login();
+			clientState.user = { id: 'uid2', username: 'other', proxy: { password: 'pw2' } };
+			await login('apify_api_other_token');
+
+			await testRunCommand(AuthLogoutCommand, {});
+
+			expect(keyringStore.has(keyringTokenKey('uid2'))).toBe(false);
+			expect(keyringStore.has(keyringProxyPasswordKey('uid2'))).toBe(false);
+			expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+			expect(readActiveProfile()).toMatchObject({ id: 'uid' });
+		});
+
+		it('logging in again as the same account keeps its entries', async () => {
+			await login();
+			await login();
+
+			expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
 		});
 
 		it('logging in twice with the same token writes the keyring once', async () => {
 			await login();
 			await login();
 
-			expect(keyringSetKeys.filter((key) => key === KEYRING_TOKEN_KEY)).toHaveLength(1);
+			expect(keyringSetKeys.filter((key) => key === TOKEN_KEY)).toHaveLength(1);
 		});
 
 		it('auth token prints the token from the keyring', async () => {
@@ -228,6 +408,181 @@ describe('auth commands', () => {
 
 			expect(keyringStore.size).toBe(0);
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+		});
+
+		// Clearing the keyring before the switch is written left both accounts unreachable: the
+		// CLI never enumerates the keyring, so auth.json is its only index of what it holds.
+		it.skipIf(process.platform === 'win32')(
+			'a switch that cannot be written keeps the outgoing account entries',
+			async () => {
+				await login();
+				expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+
+				clientState.user = { id: 'uid2', username: 'other' };
+				chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o500);
+
+				try {
+					await login('apify_api_other_token');
+
+					expect(readActiveProfile()).toMatchObject({ id: 'uid' });
+					expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+					expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
+				} finally {
+					chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);
+					process.exitCode = 0;
+				}
+			},
+		);
+
+		it('login keeps the previous account entries and warns about fixed-name ones it cannot remove', async () => {
+			await login();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'stale');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+			clientState.user = { id: 'uid2', username: 'other' };
+
+			await login('apify_api_other_token');
+
+			expect(readActiveProfile()).toMatchObject({ id: 'uid2' });
+			expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+			const printed = [...logMessages.log, ...logMessages.error].join('\n');
+			expect(printed).toContain(
+				'Secrets this login could not remove are still in the OS keyring at com.apify.cli/token;',
+			);
+		});
+
+		it('does not hand one account the previous account secret', async () => {
+			keyringStore.set(LEGACY_KEYRING_PROXY_PASSWORD_KEY, 'pw_of_uid');
+			// The keyring refuses that delete, so login cannot clear it.
+			keyringFailures.add(LEGACY_KEYRING_PROXY_PASSWORD_KEY);
+
+			await login();
+			clientState.user = { id: 'uid2', username: 'other' };
+			await login('apify_api_other_token');
+
+			// The migration next runs in a fresh process, with nothing memoized.
+			__resetCredentialsForTests();
+			__resetAuthFileForTests();
+			await ensureSecretsKeyed();
+
+			expect(await getSecret('uid2', 'proxy-password')).toBeUndefined();
+		});
+
+		it('logout names the keyring entry that survived, not the account', async () => {
+			await login();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_legacy');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+
+			try {
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect(lastErrorMessage()).toContain('com.apify.cli/token');
+				expect(lastErrorMessage()).not.toContain('under the account uid');
+			} finally {
+				process.exitCode = 0;
+			}
+		});
+
+		it('logout still reports APIFY_TOKEN when a step failed', async () => {
+			vitest.stubEnv(APIFY_ENV_VARS.TOKEN, 'apify_api_env');
+			await login();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_legacy');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+
+			try {
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect([...logMessages.log, ...logMessages.error].join('\n')).toContain(`${APIFY_ENV_VARS.TOKEN} is still set`);
+			} finally {
+				process.exitCode = 0;
+			}
+		});
+
+		it('login reports a leftover entry when the account did not change', async () => {
+			await login();
+			keyringStore.set(LEGACY_KEYRING_TOKEN_KEY, 'tok_legacy');
+			keyringFailures.add(LEGACY_KEYRING_TOKEN_KEY);
+
+			await login();
+
+			expect([...logMessages.log, ...logMessages.error].join('\n')).toContain('com.apify.cli/token');
+		});
+
+		// The delete that exists to stop a revoked proxy password surviving a re-login. Its failure
+		// was the one the login never mentioned.
+		it('login reports a proxy password it could not remove', async () => {
+			await login();
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
+
+			// The account loses its proxy password, and the keyring refuses to drop the stored one.
+			clientState.user = { id: 'uid', username: 'me' };
+			keyringFailures.add(PROXY_PASSWORD_KEY);
+
+			await login();
+
+			expect(keyringStore.get(PROXY_PASSWORD_KEY)).toBe('pw');
+			expect([...logMessages.log, ...logMessages.error].join('\n')).toContain(
+				`still in the OS keyring at ${PROXY_PASSWORD_KEY.replace(':', '/')}`,
+			);
+		});
+
+		// The keyring module loads on machines where the secret service does not answer, so a
+		// delete that throws there is not a secret left behind: nothing was ever stored.
+		it('logout succeeds when the keyring answers nothing', async () => {
+			for (const key of [TOKEN_KEY, PROXY_PASSWORD_KEY, LEGACY_KEYRING_TOKEN_KEY, LEGACY_KEYRING_PROXY_PASSWORD_KEY]) {
+				keyringFailures.add(key);
+			}
+
+			try {
+				await login();
+				expect(keyringStore.size).toBe(0);
+
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+				expect(process.exitCode).not.toBe(CommandExitCodes.RunFailed);
+			} finally {
+				process.exitCode = 0;
+			}
+		});
+
+		// Exiting 0 with a success line told the user the keyring was clear while the token was
+		// still in it, and auth.json, the only index of what it holds, was gone.
+		it('logout says so when the keyring cannot be cleared', async () => {
+			await login();
+			keyringFailures.add(TOKEN_KEY);
+
+			try {
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
+				expect(lastErrorMessage()).toContain('Logout did not finish');
+				expect(lastErrorMessage()).toContain('Your secrets are still in the OS keyring at com.apify.cli.token/uid;');
+				expect(lastErrorMessage()).toContain(`Your account was removed from ${tildify(AUTH_FILE_PATH())}`);
+				expect(process.exitCode).toBe(CommandExitCodes.RunFailed);
+			} finally {
+				process.exitCode = 0;
+			}
+		});
+
+		// Exiting 0 with a success line told the user they were logged out while auth.json still
+		// held the account the keyring entries were just deleted for.
+		it.skipIf(process.platform === 'win32')('logout says so when the profile cannot be removed', async () => {
+			await login();
+			chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o500);
+
+			try {
+				await testRunCommand(AuthLogoutCommand, {});
+
+				expect(keyringStore.size).toBe(0);
+				expect(existsSync(AUTH_FILE_PATH())).toBe(true);
+				expect(lastErrorMessage()).toContain('Logout did not finish');
+				expect(lastErrorMessage()).toContain('Your secrets were removed from the OS keyring.');
+				expect(lastErrorMessage()).toContain(`Your account is still in ${tildify(AUTH_FILE_PATH())}`);
+				expect(process.exitCode).toBe(CommandExitCodes.RunFailed);
+			} finally {
+				chmodSync(GLOBAL_CONFIGS_FOLDER(), 0o700);
+				process.exitCode = 0;
+			}
 		});
 	});
 });
