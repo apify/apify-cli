@@ -18,7 +18,9 @@ import {
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	buildRuntimeRunArgs,
 	findRunningRuntimeEngine,
+	podmanInfo,
 	resolveEngineSocketPath,
+	runtimeNetworkMode,
 	runtimeApiUrl,
 	runtimeConsoleUrl,
 	runtimeEnvExportLines,
@@ -112,6 +114,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		if (!engine) return;
 
 		const hostSocketPath = await resolveEngineSocketPath(engine);
+		const networkMode = runtimeNetworkMode(engine, engine === 'podman' ? await podmanInfo() : undefined);
 		const dataDir = resolve(this.flags.dataDir ?? defaultDataDir());
 		await mkdir(dataDir, { recursive: true });
 		updateActorRuntimeConfig({ apiPort: ports.api, consolePort: ports.console });
@@ -131,7 +134,14 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		});
 
 		// Spawned without a shell so interrupt signals reach the engine's 'run' directly instead of dying in 'sh -c'.
-		const args = buildRuntimeRunArgs({ image, dataDir, detach: this.flags.detach, hostSocketPath, ports });
+		const args = buildRuntimeRunArgs({
+			image,
+			dataDir,
+			detach: this.flags.detach,
+			hostSocketPath,
+			ports,
+			networkMode,
+		});
 		run({ message: `${engine} ${args.join(' ')}` });
 
 		const child = execa(engine, args, { stdio: 'inherit' });

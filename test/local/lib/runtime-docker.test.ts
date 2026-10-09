@@ -2,6 +2,8 @@ import {
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	buildRuntimeRunArgs,
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
+	parsePodmanInfo,
+	runtimeNetworkMode,
 	engineDaemonHint,
 	engineInstallHint,
 	isDigestPinned,
@@ -198,6 +200,48 @@ describe('runtime/docker', () => {
 				'-e ACTOR_RUNTIME_API_PORT=4333 -e ACTOR_RUNTIME_CONSOLE_PORT=4000 -p 4333:4333 -p 4000:4000',
 			);
 			expect(args.indexOf('-e')).toBeLessThan(args.indexOf(DEFAULT_ACTOR_RUNTIME_IMAGE));
+		});
+
+		it('gives the runtime container a route to the host loopback on rootless Podman 3.x, and nothing elsewhere', () => {
+			const podman3 = parsePodmanInfo('true 3.4.4\n');
+			expect(podman3).toEqual({ rootless: true, majorVersion: 3 });
+			expect(runtimeNetworkMode('podman', podman3)).toBe('slirp4netns:allow_host_loopback=true');
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('false 3.4.4'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('true 4.9.3'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('true 5.0.0-dev'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('true'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', undefined)).toBeUndefined();
+			expect(runtimeNetworkMode('docker', podman3)).toBeUndefined();
+
+			// The same command the actor-runtime e2e suite starts the runtime with on that engine.
+			expect(
+				buildRuntimeRunArgs({
+					image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+					dataDir: '/home/me/data',
+					detach: true,
+					hostSocketPath: '/run/user/1000/podman/podman.sock',
+					platform: 'linux',
+					networkMode: runtimeNetworkMode('podman', podman3),
+				}),
+			).toEqual([
+				'run',
+				'--rm',
+				'--init',
+				'--name',
+				ACTOR_RUNTIME_CONTAINER_NAME,
+				'--detach',
+				'--network',
+				'slirp4netns:allow_host_loopback=true',
+				'-p',
+				'3333:3333',
+				'-p',
+				'3000:3000',
+				'-v',
+				'/run/user/1000/podman/podman.sock:/var/run/docker.sock',
+				'-v',
+				'/home/me/data:/data',
+				DEFAULT_ACTOR_RUNTIME_IMAGE,
+			]);
 		});
 
 		it('passes only the moved port to the runtime', () => {
