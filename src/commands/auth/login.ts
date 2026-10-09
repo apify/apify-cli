@@ -219,7 +219,11 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 		} else {
 			console.log(`Enter your Apify API token. You can find it at ${consoleIntegrationsUrl}`);
 
-			const tokenAnswer = await useMaskedInput({ message: 'token:' });
+			const tokenAnswer = await useMaskedInput({
+				message: 'token:',
+				errorMessageForStdin:
+					'Pass --token <your-token> to log in non-interactively (e.g. apify login --token <value>).',
+			});
 			await tryToLogin(tokenAnswer);
 		}
 	}

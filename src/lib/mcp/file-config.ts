@@ -104,3 +104,50 @@ export async function mergeServerEntry({
 	}
 	return true;
 }
+
+/**
+ * Remove one entry from a JSONC config file's top-level key.
+ * Returns true if the entry was found and removed, false if it was not present or the file did not exist.
+ * Preserves all other content (comments, indentation, unrelated keys) via jju.update.
+ */
+export async function removeServerEntry({
+	filePath,
+	topLevelKey,
+	entryKey,
+}: {
+	filePath: string;
+	topLevelKey: string;
+	entryKey: string;
+}): Promise<boolean> {
+	if (!existsSync(filePath)) return false;
+
+	const text = await readFile(filePath, 'utf-8');
+	if (!text.trim()) return false;
+
+	let document: Record<string, unknown>;
+	try {
+		document = jju.parse(text) as Record<string, unknown>;
+	} catch {
+		return false;
+	}
+
+	const topLevel = document[topLevelKey];
+	if (typeof topLevel !== 'object' || topLevel === null || Array.isArray(topLevel)) return false;
+
+	const topLevelObj = topLevel as Record<string, unknown>;
+	if (!Object.prototype.hasOwnProperty.call(topLevelObj, entryKey)) return false;
+
+	delete topLevelObj[entryKey];
+	document[topLevelKey] = topLevelObj;
+
+	const newText = jju.update(text, document);
+	const tmpPath = `${filePath}.${process.pid}.tmp`;
+	try {
+		await writeFile(tmpPath, newText, 'utf-8');
+		await rename(tmpPath, filePath);
+	} catch (err) {
+		await rm(tmpPath, { force: true });
+		throw err;
+	}
+	return true;
+}

@@ -9,6 +9,8 @@ Run `apify -h` first to see the available commands and global options, then `api
 
 ## Non-interactive use
 
+Always pass `--non-interactive` (or set `APIFY_CLI_NON_INTERACTIVE=1`) when driving `apify` from an agent — it forces every prompt onto the skip path regardless of terminal detection and exits non-zero when a required answer has no flag equivalent.
+
 Many commands prompt when run interactively. To run without prompts, pass every required argument and flag explicitly:
 
 - `apify create <name> --template <template>` — skip the create wizard.
