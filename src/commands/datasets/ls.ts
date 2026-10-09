@@ -18,6 +18,8 @@ const table = new ResponsiveTable({
 export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 	static override name = 'ls' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Prints all datasets on your account.';
 
 	static override examples = [

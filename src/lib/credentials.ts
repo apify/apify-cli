@@ -248,9 +248,8 @@ async function moveKeyringSecretsToFile(userId: string): Promise<void> {
 }
 
 /**
- * Forget one of an account's secrets. Called for a proxy password when the account has none, so
- * the previous account's does not survive a re-login — the keyring outlives the auth.json rewrite
- * that replaces everything else.
+ * Forget one of an account's secrets. Called for a proxy password when the account has none, so a
+ * re-login does not keep one the account no longer has.
  *
  * Returns the secret this left behind, or null: reads hit the keyring first, so a refused delete
  * keeps serving a password the account no longer has.
@@ -277,12 +276,13 @@ export async function deleteSecret(userId: string, kind: SecretKind): Promise<Ke
  * Returns the entries the keyring refused to delete, so a caller can name them. Every key is
  * attempted first: one entry the keyring holds on to must not strand the rest.
  */
-export async function clearKeyringSecrets(userId?: string): Promise<KeyringLeftover[]> {
+export async function clearKeyringSecrets(userId?: string, { keepLegacy = false } = {}): Promise<KeyringLeftover[]> {
 	const leftovers: (KeyringLeftover | null)[] = [];
 
 	for (const kind of SECRET_KINDS) {
 		if (userId) leftovers.push(await deleteKeyring(keyringKey(userId, kind)));
-		leftovers.push(await deleteKeyring(legacyKeyringKey(kind)));
+		// The fixed-name entries belong to the active account, so a non-active profile leaves them.
+		if (!keepLegacy) leftovers.push(await deleteKeyring(legacyKeyringKey(kind)));
 	}
 
 	return leftovers.filter((leftover) => leftover !== null);
@@ -449,9 +449,6 @@ export async function ensureSecretsKeyed(): Promise<void> {
  * Brings the stored credentials to their current form: the plaintext secrets into the keyring, the
  * file into its current shape, then the secrets onto keys that carry the user ID. The order is a
  * dependency chain — keying by user needs the user ID the shape migration produces.
- *
- * `loginWithToken()` does not call it: it replaces the file wholesale, so there is nothing to
- * bring forward, and it clears the old keyring names itself.
  *
  * Each step is single-flight, so repeat calls cost nothing.
  */

@@ -97,6 +97,8 @@ interface HydratedListData {
 export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 	static override name = 'ls' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Prints a list of recently executed Actors or Actors you own.';
 
 	static override examples = [

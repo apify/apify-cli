@@ -12,6 +12,8 @@ import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishCommand> {
 	static override name = 'unpublish' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		'Unpublishes the task from its public landing page.\n' +
 		'The public display configuration is preserved, so the task can be published again later. ' +
