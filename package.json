@@ -133,7 +133,7 @@
 		"husky": "^9.1.7",
 		"lint-staged": "^17.5.1",
 		"mock-stdin": "^1.0.0",
-		"oxfmt": "0.71.0",
+		"oxfmt": "0.72.0",
 		"oxlint": "1.86.0",
 		"oxlint-tsgolint": "0.22.1",
 		"rimraf": "~6.1.3",
