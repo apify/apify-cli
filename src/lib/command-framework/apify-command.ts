@@ -19,6 +19,7 @@ import { checkAndUpdateLastCommand } from '../hooks/telemetry/useTelemetryState.
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
 import { useRentalSunsetNotice } from '../hooks/useRentalSunsetNotice.js';
+import { NON_INTERACTIVE_FLAG_NAME, resetNonInteractiveFlag, setNonInteractiveFlag } from '../nonInteractiveMode.js';
 import { error } from '../outputs.js';
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import { CommandError, CommandErrorCode } from './CommandError.js';
@@ -156,6 +157,11 @@ const profileFlagDefinition = {
 
 const userAgentFlagDefinition = {
 	type: 'string',
+	multiple: false,
+} as const satisfies ParseArgsOptionDescriptor;
+
+const nonInteractiveFlagDefinition = {
+	type: 'boolean',
 	multiple: false,
 } as const satisfies ParseArgsOptionDescriptor;
 
@@ -324,6 +330,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	private async _run(parseResult: ParseResult) {
 		const startTime = Date.now();
 		const { values: rawFlags, positionals: rawArgs, tokens: rawTokens } = parseResult;
+
+		resetNonInteractiveFlag();
+		if (rawFlags[NON_INTERACTIVE_FLAG_NAME] === true) {
+			setNonInteractiveFlag(true);
+		}
 
 		if (rawFlags.help) {
 			this.ctor.printHelp();
@@ -746,6 +757,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	protected _buildParseArgsOption() {
 		const baseOptions: Record<string, ParseArgsOptionDescriptor> = {
 			help: helpFlagDefinition,
+			[NON_INTERACTIVE_FLAG_NAME]: nonInteractiveFlagDefinition,
 		};
 
 		if (USER_AGENT_SUPPORTED_ENTRYPOINTS.has(this.entrypoint)) {

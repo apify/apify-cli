@@ -16,6 +16,7 @@ import { SUPPORTED_NODEJS_VERSION } from '../lib/consts.js';
 import { useCLIMetadata } from '../lib/hooks/useCLIMetadata.js';
 import { shouldSkipVersionCheck } from '../lib/hooks/useCLIVersionCheck.js';
 import { useCommandSuggestions } from '../lib/hooks/useCommandSuggestions.js';
+import { NON_INTERACTIVE_FLAG_NAME, setNonInteractiveFlag } from '../lib/nonInteractiveMode.js';
 import { error } from '../lib/outputs.js';
 import { cliDebugPrint } from '../lib/utils/cliDebugPrint.js';
 
@@ -170,6 +171,10 @@ export async function runCLI(entrypoint: string) {
 
 	printCLIVersionAndExitIfFlagUsed(startingResult);
 	printHelpAndExitIfFlagUsedOrNoCommandPassed(startingResult, entrypoint);
+
+	if (startingResult.values[NON_INTERACTIVE_FLAG_NAME] === true) {
+		setNonInteractiveFlag(true);
+	}
 
 	// MIDDLEWARE START //
 
