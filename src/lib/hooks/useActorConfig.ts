@@ -110,6 +110,8 @@ export async function useActorConfig(
 async function handleBothConfigVersionsFound(deprecatedConfigPath: string) {
 	const confirmed = await useYesNoConfirm({
 		message: `The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Since we have found both files in your Actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use ".actor/actor.json". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?`,
+		errorMessageForStdin:
+			'Config migration requires an interactive terminal. Run the command in an interactive terminal to confirm.',
 	});
 
 	// If users refuse to migrate, 🤷
@@ -169,6 +171,8 @@ async function handleMigrationFlow(
 
 	const confirmed = await useYesNoConfirm({
 		message: `The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Your "apify.json" file will be automatically updated to the new format under ".actor/actor.json". The original file will be renamed by adding the ".deprecated" suffix. Do you want to continue?`,
+		errorMessageForStdin:
+			'Config migration requires an interactive terminal. Run the command in an interactive terminal to confirm.',
 	});
 
 	if (!confirmed) {
