@@ -506,9 +506,9 @@ DESCRIPTION
   path.
 
   When no path is provided, validates all schemas found in '.actor/actor.json':
-    - Input schema (from "input" key or default locations)
-    - Dataset schema (from "storages.dataset")
-    - Output schema (from "output")
+    - Input schema (from "input" or "inputSchema" key, or default locations)
+    - Dataset schema (from "storages.dataset" or "storages.datasets")
+    - Output schema (from "output" or "outputSchema")
     - Key-Value Store schema (from "storages.keyValueStore")
 
 USAGE
@@ -517,6 +517,18 @@ USAGE
 ARGUMENTS
   path  Optional path to your INPUT_SCHEMA.json file. If not provided,
         validates all schemas in '.actor/actor.json'.
+```
+
+##### `apify actors doctor`
+
+```sh
+DESCRIPTION
+  Run local diagnostics on the Actor project in the current directory.
+  Checks actor.json structure, schema references, and schema validity. No 
+  network calls are made.
+
+USAGE
+  $ apify actors doctor
 ```
 
 ##### `apify actor`
@@ -754,6 +766,8 @@ SUBCOMMANDS
   actors call    Executes Actor remotely using your authenticated
                  account.
   actors build   Creates a new build of the Actor.
+  actors doctor  Run local diagnostics on the Actor project in the
+                 current directory.
 ```
 
 ##### `apify actors ls`
