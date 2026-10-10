@@ -13,6 +13,7 @@ export const LEGACY_KEYRING_PROXY_PASSWORD_KEY = 'com.apify.cli:proxy-password';
  */
 export const keyringTokenKey = (userId: string) => `com.apify.cli.token:${userId}`;
 export const keyringProxyPasswordKey = (userId: string) => `com.apify.cli.proxy-password:${userId}`;
+export const keyringRefreshTokenKey = (userId: string) => `com.apify.cli.refresh-token:${userId}`;
 
 export const keyringStore = new Map<string, string>();
 

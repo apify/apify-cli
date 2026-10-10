@@ -10,7 +10,8 @@ import { minVersion } from 'semver';
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 
-import { resolveAuth } from '../lib/auth.js';
+import { lookUpProfile } from '../lib/auth-file.js';
+import { type ResolvedAuth, resolveAuth } from '../lib/auth.js';
 import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import { getInputOverride } from '../lib/commands/resolve-input.js';
@@ -29,6 +30,7 @@ import { useModuleVersion } from '../lib/hooks/useModuleVersion.js';
 import { CRAWLEE_INPUT_KEY_ENV, resolveInputKey, TEMP_INPUT_KEY_PREFIX } from '../lib/input-key.js';
 import { getAjvValidator, getDefaultsFromInputSchema, readInputSchema } from '../lib/input_schema.js';
 import { deleteKvsRecord, writeKvsRecord } from '../lib/kvs-metadata.js';
+import { getAccessToken, OAuthSessionError } from '../lib/oauth/session.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
 import type { AuthJSON } from '../lib/types.js';
@@ -79,6 +81,28 @@ enum RunType {
 	DirectFile = 0,
 	Module = 1,
 	Script = 2,
+}
+
+// An OAuth-issued token lives for an hour. The Actor process gets a token with at least this much of it
+// left; when a refresh cannot deliver that (e.g. offline), the user is told how long the run can rely on it.
+const LOCAL_RUN_MIN_TOKEN_LIFETIME_MS = 45 * 60_000;
+
+async function resolveTokenForLocalRun(auth: ResolvedAuth | undefined): Promise<string | undefined> {
+	const userId = auth?.profile?.id;
+	if (!userId || lookUpProfile(userId).profile?.authMethod !== 'oauth2') return auth?.token;
+
+	const token = await getAccessToken(userId, { minRemainingMs: LOCAL_RUN_MIN_TOKEN_LIFETIME_MS });
+
+	const remainingMs = Date.parse(lookUpProfile(userId).profile?.expiresAt ?? '') - Date.now();
+	if (Number.isFinite(remainingMs) && remainingMs < LOCAL_RUN_MIN_TOKEN_LIFETIME_MS) {
+		warning({
+			message:
+				`Your login session token expires in about ${Math.max(0, Math.round(remainingMs / 60_000))} minutes and could not be refreshed; ` +
+				`a local run longer than that loses Apify API access. For long runs, set the APIFY_TOKEN environment variable to an API token from Apify Console.`,
+		});
+	}
+
+	return token;
 }
 
 export class RunCommand extends ApifyCommand<typeof RunCommand> {
@@ -165,7 +189,14 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	async run() {
 		const cwd = process.cwd();
 
-		const auth = await resolveAuth();
+		let authFailure: string | undefined;
+		const auth = await resolveAuth().catch((err): undefined => {
+			// A dead login session must not stop a local run; the Actor just runs without Apify API access.
+			if (!(err instanceof OAuthSessionError)) throw err;
+			authFailure = err.message;
+			return undefined;
+		});
+		const token = await resolveTokenForLocalRun(auth);
 		// This only fills in two env vars for the child, so a failed lookup must not stop the run.
 		const { proxy, id: userId } = await getCurrentUserInfo().catch((err): AuthJSON => {
 			cliDebugPrint('[run] could not resolve the account behind the token', { error: err });
@@ -356,7 +387,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
-		if (auth) localEnvVars[APIFY_ENV_VARS.TOKEN] = auth.token;
+		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
 		if (localConfig!.environmentVariables) {
 			const updatedEnv = replaceSecretsValue(localConfig!.environmentVariables as Record<string, string>, undefined, {
 				allowMissing: this.flags.allowMissingSecrets,
@@ -370,6 +401,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		if (!auth) {
 			warning({
 				message:
+					authFailure ??
 					'You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.',
 			});
 		}
