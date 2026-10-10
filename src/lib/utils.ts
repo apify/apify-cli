@@ -632,14 +632,6 @@ export const outputJobLog = async ({
 };
 
 /**
- * Returns npm command for current os
- * NOTE: For window we have to returns npm.cmd instead of npm, otherwise it doesn't work
- */
-export const getNpmCmd = (): string => {
-	return process.platform.startsWith('win') ? 'npm.cmd' : 'npm';
-};
-
-/**
  * Returns true if the local storage holds nothing but the input record, either
  * the user's own `<inputKey>` / `<inputKey>.*` or the temporary copy the CLI writes next to it.
  */
@@ -792,27 +784,6 @@ export function objectGroupBy<K extends PropertyKey, T>(
 	}
 
 	return result;
-}
-
-/**
- * A "polyfill" for Map.groupBy
- */
-export function mapGroupBy<K, T>(items: Iterable<T>, keySelector: (item: T, index: number) => K): Map<K, T[]> {
-	const map = new Map<K, T[]>();
-	let index = 0;
-
-	for (const value of items) {
-		const key = keySelector(value, index++);
-		const list = map.get(key);
-
-		if (list) {
-			list.push(value);
-		} else {
-			map.set(key, [value]);
-		}
-	}
-
-	return map;
 }
 
 export function printJsonToStdout(object: unknown) {
