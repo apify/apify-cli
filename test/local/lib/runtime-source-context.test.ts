@@ -1,16 +1,18 @@
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { resolveDockerContext } from '../../../src/lib/runtime/source-context.js';
 
-const actorDir = join('/repo', 'actors', 'a');
+// `resolve`, not `join`: on Windows the resolved context carries the drive (`D:\repo`), as the command resolves it.
+const repoDir = resolve('/repo');
+const actorDir = join(repoDir, 'actors', 'a');
 
 describe('resolveDockerContext', () => {
 	it('resolves dockerContextDir relative to the .actor folder', () => {
 		// Outside a Git repository, the context itself is what is pushed.
 		expect(resolveDockerContext(actorDir, '../../..')).toEqual({
 			kind: 'context',
-			contextRoot: join('/repo'),
-			sourceRoot: join('/repo'),
+			contextRoot: repoDir,
+			sourceRoot: repoDir,
 			actorPath: 'actors/a',
 		});
 	});

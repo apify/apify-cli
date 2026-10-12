@@ -308,7 +308,8 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 		expect(names).not.toContain('packages/typescript-utils/src/index.ts');
 		// Untracked and not ignored: pushed, with a warning that the platform would not have it yet.
 		expect(names).toContain('shared/start.sh');
-		expect(modes.get('shared/start.sh')).toBe(0o755);
+		// Windows has no execute bit, so chmod cannot set one and the tarball records the default mode.
+		if (process.platform !== 'win32') expect(modes.get('shared/start.sh')).toBe(0o755);
 		expect(logMessages.error.join('\n')).toContain('changes that are not committed');
 	});
 
