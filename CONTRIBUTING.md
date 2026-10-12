@@ -124,6 +124,30 @@ useAuthSetup();
 
 API-dependent test cases must have `[api]` in the test name and live in `test/api/`. Files outside `test/api/` may mix local and `[api]` tests — the `test:local` script skips the `[api]` ones by name.
 
+### `useKeyringBackend`
+
+`useAuthSetup` pins the file backend so tests never reach the real OS keyring. To cover the keyring backend instead, mock `@napi-rs/keyring` with the shared fake in `test/__setup__/keyring-mock.ts` and call `useKeyringBackend()` inside the `describe` that needs it. It must be nested inside a `describe`, so its `beforeEach` runs after the one `useAuthSetup` registers. Both backends can then live in one file.
+
+```typescript
+import { useAuthSetup, useKeyringBackend } from "./__setup__/hooks/useAuthSetup.js";
+import { keyringStore, resetKeyringMock } from "./__setup__/keyring-mock.js";
+
+vi.mock("@napi-rs/keyring", () => import("./__setup__/keyring-mock.js"));
+
+useAuthSetup();
+beforeEach(resetKeyringMock);
+
+describe("keyring backend", () => {
+  useKeyringBackend();
+
+  it("stores the token in the keyring", async () => {
+    // ... expect(keyringStore.get(KEYRING_TOKEN_KEY)).toBe("tok");
+  });
+});
+```
+
+The fake exposes `keyringStore` (the stored secrets), `keyringFailures` (keys whose write should throw), `keyringSetKeys` (keys of successful writes, in order) and `resetKeyringMock()` — the hook does not reset the fake for you, so call it yourself between tests.
+
 ### `useTempPath`
 
 Creates (and cleans up) a temporary directory, and optionally mocks `process.cwd()` so commands run as if executed there.

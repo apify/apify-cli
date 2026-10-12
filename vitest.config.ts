@@ -14,6 +14,7 @@ export default defineConfig({
 		testTimeout: 120_000 * multiplierFactor,
 		hookTimeout: 120_000 * multiplierFactor,
 		include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+		setupFiles: ['./test/__setup__/global.ts'],
 		passWithNoTests: true,
 		silent: !process.env.NO_SILENT_TESTS,
 		env: {

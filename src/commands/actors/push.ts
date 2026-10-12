@@ -39,7 +39,7 @@ import {
 	createActZip,
 	createSourceFiles,
 	getActorLocalFilePaths,
-	getLocalUserInfo,
+	getCurrentUserInfo,
 	getLoggedClientOrThrow,
 	outputJobLog,
 	parseWaitForFinishMillis,
@@ -166,6 +166,8 @@ const confirmGitSourceSwitch = async ({
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	static override name = 'push' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		`Deploys Actor to Apify platform using settings from '${LOCAL_CONFIG_PATH}'.\n` +
 		`Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files"; ` +
@@ -234,6 +236,10 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			description: 'Allow the command to continue even when secret values are not found in the local secrets storage.',
 			required: false,
 			default: false,
+		}),
+		'apply-env-vars-to-build': Flags.boolean({
+			description: `Make the environment variables also available to the Actor build process. Use --no-apply-env-vars-to-build to turn the setting off. Overrides the value of the 'applyEnvVarsToBuild' field in the '${LOCAL_CONFIG_PATH}' file. When both the field and the flag are omitted, the setting currently stored on the platform is kept.`,
+			required: false,
 		}),
 	};
 
@@ -310,7 +316,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const sourcePaths =
 			dockerContext.kind === 'context' ? await getContextFilePaths(dockerContext.sourceRoot) : filePathsToPush;
 
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
 
@@ -484,6 +490,10 @@ Skipping push. Use --force to override.`,
 					allowMissing: this.flags.allowMissingSecrets,
 				})
 			: undefined;
+		// The flag wins when passed, then the actor.json field; undefined when neither is set, so the value
+		// stored on the platform is preserved
+		const applyEnvVarsToBuild =
+			this.flags.applyEnvVarsToBuild ?? (actorConfig!.applyEnvVarsToBuild as boolean | undefined);
 
 		// Pushed before the version update, so a runtime that refuses it leaves the version untouched.
 		const pushDockerContext = async () => {
@@ -519,7 +529,7 @@ Skipping push. Use --force to override.`,
 		}
 
 		if (actorCurrentVersion) {
-			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars };
+			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars, applyEnvVarsToBuild };
 			// TODO: fix this type too -.-
 			await actorClient.version(version).update(actorVersionModifier as never);
 			run({ message: `Updated version ${version} for Actor ${actor.name}.` });
@@ -531,6 +541,7 @@ Skipping push. Use --force to override.`,
 				buildTag,
 				sourceType,
 				envVars,
+				applyEnvVarsToBuild,
 			};
 
 			await actorClient.versions().create({

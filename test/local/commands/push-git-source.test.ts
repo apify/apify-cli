@@ -34,7 +34,7 @@ const versionUpdate = vitest.fn(async () => ({}));
 // Stands in for the platform: the Actor exists, and the version's source type is what is under test.
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../../src/lib/utils.js')>()),
-	getLocalUserInfo: vitest.fn(async () => ({ id: 'userId', username: 'user' })),
+	getCurrentUserInfo: vitest.fn(async () => ({ id: 'userId', username: 'user' })),
 	outputJobLog: vitest.fn(async () => {}),
 	getLoggedClientOrThrow: vitest.fn(async () => ({
 		baseUrl: 'https://api.apify.com/v2',

@@ -21,10 +21,12 @@ import { finalizeRun, runUrl } from '../../lib/commands/run-result.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, simpleLog, warning } from '../../lib/outputs.js';
 import { mayTargetActorRuntime } from '../../lib/runtime/dev-folder.js';
-import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+import { getLocalConfig, getCurrentUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
+
+	static override enableProfileFlag = true;
 
 	static override description =
 		'Executes Actor remotely using your authenticated account.\n' +
@@ -109,7 +111,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		const cwd = process.cwd();
 		const localConfig = getLocalConfig(cwd) || {};
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await getCurrentUserInfo();
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		if (this.flags.json && this.flags.outputDataset) {

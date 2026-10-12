@@ -10,6 +10,7 @@ import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
 import { cachedStdinInput } from '../../entrypoints/_shared.js';
+import { selectProfile } from '../auth.js';
 import { keepStdoutClean } from '../exec.js';
 import { detectAiAgent, detectCi, detectIsInteractive } from '../hooks/telemetry/detectEnvironment.js';
 import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
@@ -122,6 +123,7 @@ type InferFlagsFromCommand<
 	? Record<string, unknown>
 	: _InferFlagsFromCommand<Exclude<O, undefined>, OptionalIfHasDefault>) & {
 	json: boolean;
+	profile?: string;
 };
 
 export function camelCaseString(str: string): string {
@@ -144,6 +146,11 @@ const helpFlagDefinition = {
 
 const jsonFlagDefinition = {
 	type: 'boolean',
+	multiple: false,
+} as const satisfies ParseArgsOptionDescriptor;
+
+const profileFlagDefinition = {
+	type: 'string',
 	multiple: false,
 } as const satisfies ParseArgsOptionDescriptor;
 
@@ -212,6 +219,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	static subcommands?: (typeof BuiltApifyCommand)[];
 
 	static enableJsonFlag = false;
+
+	/** Adds `--profile`, which picks the stored account this command authenticates with. */
+	static enableProfileFlag = false;
 
 	static name: string;
 
@@ -392,6 +402,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		this._parseFlags(rawFlags, rawTokens);
 
 		try {
+			if (this.ctor.enableProfileFlag && typeof rawFlags.profile === 'string') {
+				this.flags.profile = rawFlags.profile;
+				await selectProfile(rawFlags.profile);
+			}
+
 			await this.run();
 		} catch (err: any) {
 			error({ message: err.message });
@@ -523,7 +538,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			let rawFlag = rawFlags[matchingFlags[0]];
 
-			if (!rawFlag && builderData.required) {
+			if (typeof rawFlag === 'undefined' && builderData.required) {
 				throw new CommandError({
 					code: CommandErrorCode.APIFY_MISSING_FLAG,
 					command: this.ctor,
@@ -778,6 +793,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			object.options!.json = jsonFlagDefinition;
 		}
 
+		if (this.ctor.enableProfileFlag) {
+			object.options!.profile = profileFlagDefinition;
+		}
+
 		return object;
 	}
 
@@ -887,10 +906,9 @@ type ExtractOptionalArgKeys<Cmd extends typeof BuiltApifyCommand> = {
 type StaticArgsFlagsInput<Cmd extends typeof BuiltApifyCommand> = Omit<
 	{
 		// This ensures we only get the required args
-		[K in Exclude<
-			keyof InferArgsFromCommand<Cmd['args']>,
-			ExtractOptionalArgKeys<Cmd>
-		> as `args_${string & K}`]: InferArgsFromCommand<Cmd['args']>[K];
+		[
+			K in Exclude<keyof InferArgsFromCommand<Cmd['args']>, ExtractOptionalArgKeys<Cmd>> as `args_${string & K}`
+		]: InferArgsFromCommand<Cmd['args']>[K];
 	},
 	// Omit args_json as it is used only to throw an error if the user provides it
 	'args_json'
@@ -905,10 +923,12 @@ type StaticArgsFlagsInput<Cmd extends typeof BuiltApifyCommand> = Omit<
 	Omit<
 		{
 			// This ensures we only ever get the required flags into this object, as `key?: type` and `key: type | undefined` are not the same (one is optionally present, the other is mandatory)
-			[K in Exclude<
-				keyof InferFlagsFromCommand<Cmd['flags'], true>,
-				ExtractOptionalFlagKeys<Cmd>
-			> as `flags_${string & K}`]: InferFlagsFromCommand<Cmd['flags'], true>[K];
+			[
+				K in Exclude<
+					keyof InferFlagsFromCommand<Cmd['flags'], true>,
+					ExtractOptionalFlagKeys<Cmd>
+				> as `flags_${string & K}`
+			]: InferFlagsFromCommand<Cmd['flags'], true>[K];
 		},
 		// Omit flags_json as it is used only to throw an error if the user provides it
 		'flags_json'

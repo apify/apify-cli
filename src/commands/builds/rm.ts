@@ -11,6 +11,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 	static override name = 'rm' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Permanently removes an Actor build from the Apify platform.';
 
 	static override interactive = true;

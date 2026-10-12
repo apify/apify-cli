@@ -117,6 +117,9 @@ module.exports = {
 					includeGeneratedIndex: false,
 					includePages: true,
 					relativePaths: false,
+					excludeRoutes: [
+						'/cli/',
+					],
 				},
 			},
 		],

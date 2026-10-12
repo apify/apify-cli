@@ -28,7 +28,7 @@ let baseUrl = RUNTIME_BASE_URL;
 
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../../src/lib/utils.js')>()),
-	getLocalUserInfo: vitest.fn(async () => ({ id: 'userId', username: 'user' })),
+	getCurrentUserInfo: vitest.fn(async () => ({ id: 'userId', username: 'user' })),
 	outputJobLog: vitest.fn(async () => {}),
 	getLoggedClientOrThrow: vitest.fn(async () => ({
 		baseUrl,

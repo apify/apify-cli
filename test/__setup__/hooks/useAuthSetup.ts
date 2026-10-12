@@ -6,10 +6,23 @@ import { isCI } from 'ci-info';
 import { cryptoRandomObjectId } from '@apify/utilities';
 
 import { LoginCommand } from '../../../src/commands/login.js';
+import { __resetAuthFileForTests } from '../../../src/lib/auth-file.js';
+import { __resetAuthForTests } from '../../../src/lib/auth.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { __resetCredentialsForTests } from '../../../src/lib/credentials.js';
-import { getLocalUserInfo } from '../../../src/lib/utils.js';
+import { __resetUserInfoCacheForTests, getLocalUserInfo } from '../../../src/lib/utils.js';
+
+/**
+ * Every module-level auth cache, cleared together. Kept in one place so adding a cache does not
+ * mean remembering three hook bodies — forgetting one leaks state between tests as a flake.
+ */
+function resetAuthCaches() {
+	__resetCredentialsForTests();
+	__resetUserInfoCacheForTests();
+	__resetAuthForTests();
+	__resetAuthFileForTests();
+}
 
 export interface UseAuthSetupOptions {
 	/**
@@ -30,6 +43,21 @@ const envVariable = '__APIFY_INTERNAL_TEST_AUTH_PATH__';
 /**
  * A hook that allows each test to have a unique auth setup.
  */
+/**
+ * The keyring is the one store a test cannot sandbox: `__APIFY_INTERNAL_TEST_AUTH_PATH__` moves
+ * `auth.json` somewhere scratch, but the OS keyring is per-user, and `clearKeyringSecrets()`
+ * deletes the fixed names whatever the backend is. One `logout` against the real module reaches
+ * the developer's own stored login.
+ */
+async function assertKeyringIsMocked() {
+	const keyring = await import('@napi-rs/keyring').catch(() => null);
+	if (keyring && !('resetKeyringMock' in keyring)) {
+		throw new Error(
+			'Tests resolved the real @napi-rs/keyring, which would read and delete your own stored login. Restore setupFiles in vitest.config.ts.',
+		);
+	}
+}
+
 export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOptions = {}) {
 	const random = cryptoRandomObjectId(12);
 
@@ -38,12 +66,15 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 	const before = perTest ? beforeEach : beforeAll;
 	const after = perTest ? afterEach : afterAll;
 
-	before(() => {
+	before(async () => {
+		await assertKeyringIsMocked();
 		vitest.stubEnv(envVariable, envValue());
 		// Tests pin to the file backend so they don't touch the real OS keyring.
 		// Unit tests for credentials.ts override this explicitly.
 		vitest.stubEnv('APIFY_DISABLE_KEYRING', '1');
-		__resetCredentialsForTests();
+		// The resolver reads APIFY_TOKEN, so a token in the developer's shell would leak into tests.
+		vitest.stubEnv('APIFY_TOKEN', '');
+		resetAuthCaches();
 	});
 
 	after(async () => {
@@ -51,8 +82,26 @@ export function useAuthSetup({ cleanup = true, perTest = true }: UseAuthSetupOpt
 			await rm(GLOBAL_CONFIGS_FOLDER(), { recursive: true, force: true });
 		}
 
-		__resetCredentialsForTests();
+		resetAuthCaches();
 		vitest.unstubAllEnvs();
+	});
+}
+
+/**
+ * Switches the enclosing `describe` to the keyring backend, which {@link useAuthSetup} pins off.
+ * Throws unless the file mocks `@napi-rs/keyring` with `test/__setup__/keyring-mock.ts`.
+ */
+export function useKeyringBackend() {
+	beforeEach(async () => {
+		const keyring = await import('@napi-rs/keyring').catch(() => null);
+		if (!keyring || !('resetKeyringMock' in keyring)) {
+			throw new Error(
+				"useKeyringBackend() would write to the real OS keyring. Add vi.mock('@napi-rs/keyring', () => import('<path>/keyring-mock.js')) to this file.",
+			);
+		}
+
+		vitest.stubEnv('APIFY_DISABLE_KEYRING', '');
+		resetAuthCaches();
 	});
 }
 

@@ -1,4 +1,4 @@
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import type { Ajv, ErrorObject } from 'ajv';
@@ -12,6 +12,7 @@ import {
 } from '@apify/json_schemas';
 
 import { ACTOR_SPECIFICATION_FOLDER, LOCAL_CONFIG_PATH } from './consts.js';
+import { writeKvsRecord } from './kvs-metadata.js';
 import { info, warning } from './outputs.js';
 import { Ajv2019, getJsonFileContent, getLocalConfig, getLocalKeyValueStorePath } from './utils.js';
 
@@ -273,9 +274,13 @@ export const createPrefilledInputFileFromInputSchema = async (actorFolderDir: st
 			}`,
 		});
 	} finally {
-		const keyValueStorePath = getLocalKeyValueStorePath();
-		const inputJsonPath = join(actorFolderDir, keyValueStorePath, `${KEY_VALUE_STORE_KEYS.INPUT}.json`);
-		writeFileSync(inputJsonPath, JSON.stringify(inputFile, null, '\t'));
+		await writeKvsRecord({
+			storePath: join(actorFolderDir, getLocalKeyValueStorePath()),
+			key: KEY_VALUE_STORE_KEYS.INPUT,
+			fileName: `${KEY_VALUE_STORE_KEYS.INPUT}.json`,
+			contentType: 'application/json; charset=utf-8',
+			body: JSON.stringify(inputFile, null, '\t'),
+		});
 	}
 };
 

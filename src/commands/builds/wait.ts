@@ -18,6 +18,8 @@ import { getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 export class BuildsWaitCommand extends ApifyCommand<typeof BuildsWaitCommand> {
 	static override name = 'wait' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		'Waits for an Actor build to reach a terminal status (SUCCEEDED, FAILED, ABORTED, TIMED-OUT).\n' +
 		'Returns exit code 0 only when the build SUCCEEDED. Designed for CI and agentic workflows.';

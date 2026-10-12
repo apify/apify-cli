@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { ApifyClient } from 'apify-client';
 
-import { getApifyClientOptions } from '../../../../src/lib/utils.js';
+import { getApifyClientOptionsForToken } from '../../../../src/lib/auth.js';
 import { runCli } from '../../__helpers__/run-cli.js';
 import { createTestActor, removeTestActor, type TestActor } from '../../__helpers__/test-actor.js';
 import { TestTmpRoot } from '../../__helpers__/tmp.js';
@@ -28,7 +28,7 @@ describe('[e2e][api] runs lifecycle', () => {
 			throw new Error(`Failed to login:\n${loginResult.stderr}`);
 		}
 
-		client = new ApifyClient(await getApifyClientOptions(token));
+		client = new ApifyClient(getApifyClientOptionsForToken(token));
 		const me = await client.user('me').get();
 
 		actor = await createTestActor('e2e-runs');

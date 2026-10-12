@@ -12,6 +12,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 	static override name = 'rm' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Permanently removes a dataset.';
 
 	static override interactive = true;
