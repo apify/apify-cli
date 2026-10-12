@@ -20,18 +20,27 @@ import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInpu
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { createLocalApiServer } from '../../lib/local-api-server.js';
 import { error, info, success, warning } from '../../lib/outputs.js';
+import { runtimeApiUrl } from '../../lib/runtime/docker.js';
+import { configuredRuntimePorts, resolveApiBaseUrl } from '../../lib/runtime/target.js';
 import { tildify } from '../../lib/utils.js';
-
-// When logging in against a local Console instance (local platform development), validate the token
-// against the local API rather than production.
-const LOCAL_API_BASE_URL = 'http://localhost:3333';
 
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
+/**
+ * Where the token is validated. `APIFY_CLIENT_BASE_URL` and a connected Actor runtime win. Otherwise a local
+ * Console (a hand-started runtime, or local platform development) means the local API: the port the
+ * runtime was last started on, or 3333 when none is known.
+ */
+export function resolveLoginApiBaseUrl(): string | undefined {
+	const explicit = resolveApiBaseUrl();
+	if (explicit) return explicit;
+
+	return getConsoleUrl().includes('localhost') ? runtimeApiUrl(configuredRuntimePorts().api) : undefined;
+}
+
 const tryToLogin = async (token: string) => {
-	const apiBaseUrl = getConsoleUrl().includes('localhost') ? LOCAL_API_BASE_URL : undefined;
-	const result = await loginWithToken(token, apiBaseUrl);
+	const result = await loginWithToken(token, resolveLoginApiBaseUrl());
 
 	if (result) {
 		const { userInfo } = result;
