@@ -123,6 +123,19 @@ function formatEndpointLine(ep: Endpoint): string {
 
 const LIST_ENDPOINTS_HINT = `Run ${chalk.cyan('apify api --list-endpoints')} to see all available Apify API endpoints.`;
 
+function printResponseBody(responseText: string) {
+	if (!responseText) {
+		return;
+	}
+
+	try {
+		const parsed = JSON.parse(responseText);
+		simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
+	} catch {
+		simpleLog({ message: responseText, stdout: true });
+	}
+}
+
 function printSuggestions(suggestions: Endpoint[]) {
 	if (suggestions.length > 0) {
 		simpleLog({ message: `\nDid you mean:`, stdout: false });
@@ -361,30 +374,18 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			// pipelines like `apify api ... | jq` still receive the payload on failure.
 			error({ message: `${response.status} ${response.statusText}` });
 
-			if (responseText) {
-				try {
-					const parsed = JSON.parse(responseText);
-					simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
-				} catch {
-					simpleLog({ message: responseText, stdout: true });
-				}
-			}
-
+			// The endpoint hints come first so the API's own error, which usually says what is actually
+			// wrong (e.g. an unknown record rather than an unknown endpoint), ends the output.
 			if (response.status === 404) {
 				await this.print404Suggestions(endpoint);
 			}
 
+			printResponseBody(responseText);
+
 			return;
 		}
 
-		if (responseText) {
-			try {
-				const parsed = JSON.parse(responseText);
-				simpleLog({ message: JSON.stringify(parsed, null, 2), stdout: true });
-			} catch {
-				simpleLog({ message: responseText, stdout: true });
-			}
-		}
+		printResponseBody(responseText);
 	}
 
 	private async getEndpoints(): Promise<Endpoint[]> {

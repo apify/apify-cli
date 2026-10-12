@@ -57,6 +57,8 @@ describe('apify api 404 suggestions', () => {
 			expect(combined).toMatch(/404/);
 			expect(combined).toMatch(/did you mean/i);
 			expect(combined).toMatch(/--list-endpoints/);
+			// The API's own error body is still printed, after the hint and on stdout.
+			expect(logMessages.log.join('\n')).toContain('"message": "Not found"');
 		} finally {
 			fetchSpy.mockRestore();
 		}
