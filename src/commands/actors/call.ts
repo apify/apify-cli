@@ -136,7 +136,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			runOpts.build = this.flags.build;
 		}
 
-		if (this.flags.timeout) {
+		if (this.flags.timeout !== undefined) {
 			runOpts.timeout = this.flags.timeout;
 		}
 
