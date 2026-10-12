@@ -95,7 +95,8 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			runOpts.build = this.flags.build;
 		}
 
-		if (this.flags.timeout) {
+		// `0` means no timeout, so only an omitted flag falls back to the Actor's default.
+		if (this.flags.timeout !== undefined) {
 			runOpts.timeout = this.flags.timeout;
 		}
 
