@@ -7,7 +7,7 @@ import wrap from 'wrap-ansi';
 
 import type { ArgTag, TaggedArgBuilder } from '../args.js';
 import type { FlagTag, TaggedFlagBuilder } from '../flags.js';
-import { BaseCommandRenderer, experimentalLabel, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
+import { BaseCommandRenderer, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
 import { getMaxLineWidth } from './consts.js';
 
 /*
@@ -56,8 +56,6 @@ export class CommandHelp extends BaseCommandRenderer {
 			this.pushDescription(result);
 		}
 
-		this.pushExperimentalNote(result);
-
 		this.pushExamples(result);
 
 		this.pushInteractiveNote(result);
@@ -80,10 +78,6 @@ export class CommandHelp extends BaseCommandRenderer {
 
 		if (options.showDescription && this.command.description) {
 			this.pushDescription(result);
-		}
-
-		if (options.showExperimentalNote) {
-			this.pushExperimentalNote(result);
 		}
 
 		if (options.showExamples) {
@@ -143,7 +137,6 @@ export class CommandHelp extends BaseCommandRenderer {
 					char: undefined,
 					description: 'Format the command output as JSON.',
 					hidden: undefined,
-					experimental: undefined,
 					exclusive: undefined,
 				},
 			]);
@@ -163,7 +156,6 @@ export class CommandHelp extends BaseCommandRenderer {
 					char: undefined,
 					description: 'The stored account to use for this command, by name or user ID. See "apify auth list".',
 					hidden: undefined,
-					experimental: undefined,
 					exclusive: undefined,
 				},
 			]);
@@ -316,7 +308,7 @@ export class CommandHelp extends BaseCommandRenderer {
 
 		for (const [flagString, flag] of linesOfFlags) {
 			const paddingToAdd = widestFlagNameLength - stripAnsi(flagString).length;
-			let fullString = `${flagString}${' '.repeat(paddingToAdd)}  ${experimentalLabel(flag)}${flag.description ?? ''}`;
+			let fullString = `${flagString}${' '.repeat(paddingToAdd)}  ${flag.description ?? ''}`;
 
 			if (flag.choices?.length) {
 				fullString += `\n<options: ${flag.choices.join('|')}>`;

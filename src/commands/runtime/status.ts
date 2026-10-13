@@ -3,7 +3,6 @@ import process from 'node:process';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
-import { ACTOR_RUNTIME_EXPERIMENTAL_NOTE } from '../../lib/consts.js';
 import { simpleLog } from '../../lib/outputs.js';
 import {
 	ACTOR_RUNTIME_CONTAINER_NAME,
@@ -44,8 +43,6 @@ export class RuntimeStatusCommand extends ApifyCommand<typeof RuntimeStatusComma
 	static override group = 'Local Actor Development';
 
 	static override experimental = true;
-
-	static override experimentalNote = ACTOR_RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override examples = [
 		{

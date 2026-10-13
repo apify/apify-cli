@@ -175,7 +175,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`Files matched by .gitignore and .actorignore are excluded. ` +
 		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.\n` +
 		`Experimental: an Actor whose '${LOCAL_CONFIG_PATH}' sets "dockerContextDir" (a monorepo Actor) pushes that whole Docker context; ` +
-		`this works only against the local Actor runtime ('apify runtime', itself experimental) for now.\n` +
+		`this works only against a local Actor runtime for now.\n` +
 		`Use --force to override newer remote versions.`;
 
 	static override group = 'Local Actor Development';

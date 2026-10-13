@@ -1,5 +1,4 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
-import { ACTOR_RUNTIME_EXPERIMENTAL_NOTE } from '../../lib/consts.js';
 import {
 	ACTOR_RUNTIME_API_PORT,
 	ACTOR_RUNTIME_API_URL,
@@ -24,6 +23,8 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 
 	static override description = [
 		'Manages the Actor runtime, a self-contained local Apify platform running as a container on Docker or Podman.',
+		'',
+		'The Actor runtime is experimental: these commands, and what they add to other commands, may change in any release.',
 		'',
 		'Prerequisite: Docker or Podman must be installed and running. Follow the official documentation to set one up:',
 		'',
@@ -57,8 +58,6 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 	static override group = 'Local Actor Development';
 
 	static override experimental = true;
-
-	static override experimentalNote = ACTOR_RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override examples = [
 		{

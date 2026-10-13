@@ -219,9 +219,7 @@ asked for explicitly:
 npm install -g apify-cli@runtime
 ```
 
-The `runtime` channel exists for [Actor runtime](https://docs.apify.com/cli) development. The runtime commands are
-marked `experimental` (see `ApifyCommand.experimental`), which labels them in help and prints a notice on every run;
-keep that in place until the feature graduates to `latest`. To publish one:
+The `runtime` channel exists for [Actor runtime](https://docs.apify.com/cli) development. To publish one:
 
 1. Merge `master` into your branch. The workflow definition comes from the ref you dispatch from, but
    `.github/scripts/` comes from the ref you publish, so a stale branch fails the version-bump step.

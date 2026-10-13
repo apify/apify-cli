@@ -207,9 +207,6 @@ const COMMANDS_WITHIN_ACTOR = [
 	'actors start',
 ];
 
-export const DEFAULT_EXPERIMENTAL_NOTE =
-	'This command is experimental: it may change or be removed in any release without notice.';
-
 export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof BuiltApifyCommand> {
 	static args?: Record<string, TaggedArgBuilder<ArgTag, unknown>> & {
 		json?: 'Do not use json as the key of an argument, as it will prevent the --json flag from working';
@@ -249,17 +246,8 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	 */
 	static interactiveNote?: string;
 
-	/**
-	 * Marks the command as experimental: help labels it and every run prints a notice first,
-	 * so nobody mistakes it for a stable part of the CLI. It may change or go away in any release.
-	 */
+	/** Labels the command [EXPERIMENTAL] in help and warns on every run: it may change in any release. */
 	static experimental?: boolean;
-
-	/**
-	 * Replaces the default experimental notice in help and at run time, to say what exactly
-	 * is experimental and where to report feedback.
-	 */
-	static experimentalNote?: string;
 
 	/**
 	 * Grouping label shown in the main help menu. Commands are grouped by this value
@@ -423,7 +411,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			}
 
 			if (this.ctor.experimental && !this.skipNotices) {
-				warning({ message: this.ctor.experimentalNote || DEFAULT_EXPERIMENTAL_NOTE });
+				warning({
+					message: `'${this.entrypoint} ${this.commandString}' is experimental and may change in any release.`,
+				});
 			}
 
 			await this.run();

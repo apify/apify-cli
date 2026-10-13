@@ -3,26 +3,19 @@ import indent from 'indent-string';
 import width from 'string-width';
 import wrap from 'wrap-ansi';
 
-import {
-	type BuiltApifyCommand,
-	camelCaseToKebabCase,
-	DEFAULT_EXPERIMENTAL_NOTE,
-	kebabCaseString,
-} from '../apify-command.js';
+import { type BuiltApifyCommand, camelCaseToKebabCase, kebabCaseString } from '../apify-command.js';
 import type { FlagTag, TaggedFlagBuilder } from '../flags.js';
 import { getMaxLineWidth } from './consts.js';
 
 export interface SelectiveRenderOptions {
 	showShortDescription?: boolean;
 	showDescription?: boolean;
-	showExperimentalNote?: boolean;
 	showUsageString?: boolean;
 	showSubcommands?: boolean;
 	showExamples?: boolean;
 	showLearnMore?: boolean;
 }
 
-/** `[EXPERIMENTAL] ` in front of a command's one-line description wherever that line is shown. */
 export function experimentalLabel(command: Pick<typeof BuiltApifyCommand, 'experimental'>): string {
 	return command.experimental ? `${chalk.yellow('[EXPERIMENTAL]')} ` : '';
 }
@@ -119,19 +112,6 @@ export abstract class BaseCommandRenderer {
 		// Also rewrite any piped invocations (e.g. "... | actor foo") to use the full entrypoint.
 		result = result.replace(new RegExp(`\\|\\s+${escapedLastWord}\\s`, 'g'), `| ${parentPrefix}${lastWord} `);
 		return result;
-	}
-
-	protected pushExperimentalNote(result: string[]) {
-		if (!this.command.experimental) {
-			return;
-		}
-
-		result.push(chalk.bold('EXPERIMENTAL'));
-
-		const wrapped = wrap(this.command.experimentalNote || DEFAULT_EXPERIMENTAL_NOTE, getMaxLineWidth() - 2);
-
-		result.push(indent(wrapped, 2));
-		result.push('');
 	}
 
 	protected pushInteractiveNote(result: string[]) {

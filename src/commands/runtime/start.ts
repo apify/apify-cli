@@ -7,7 +7,7 @@ import { execa, type ExecaError } from 'execa';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { ACTOR_RUNTIME_EXPERIMENTAL_NOTE, GLOBAL_CONFIGS_FOLDER, INTERRUPT_SIGNALS } from '../../lib/consts.js';
+import { GLOBAL_CONFIGS_FOLDER, INTERRUPT_SIGNALS } from '../../lib/consts.js';
 import { error, info, run } from '../../lib/outputs.js';
 import { updateActorRuntimeConfig } from '../../lib/runtime/config.js';
 import {
@@ -47,8 +47,6 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 	static override group = 'Local Actor Development';
 
 	static override experimental = true;
-
-	static override experimentalNote = ACTOR_RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override examples = [
 		{

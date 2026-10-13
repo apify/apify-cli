@@ -33,7 +33,7 @@ import indentString from 'indent-string';
 import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
-import { BaseCommandRenderer, experimentalLabel, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
+import { BaseCommandRenderer, type SelectiveRenderOptions } from './_BaseCommandRenderer.js';
 import { getMaxLineWidth } from './consts.js';
 
 export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
@@ -45,8 +45,6 @@ export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
 		if (this.command.description) {
 			this.pushDescription(result);
 		}
-
-		this.pushExperimentalNote(result);
 
 		this.pushSubcommands(result);
 
@@ -68,10 +66,6 @@ export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
 
 		if (options.showDescription && this.command.description) {
 			this.pushDescription(result);
-		}
-
-		if (options.showExperimentalNote) {
-			this.pushExperimentalNote(result);
 		}
 
 		if (options.showSubcommands) {
@@ -102,10 +96,8 @@ export class CommandWithSubcommandsHelp extends BaseCommandRenderer {
 
 		for (const subcommand of this.command.subcommands) {
 			const shortDescription = subcommand.shortDescription || subcommand.description?.split('\n')[0] || '';
-			// The parent's own label already covers its subcommands.
-			const label = this.command.experimental ? '' : experimentalLabel(subcommand);
 
-			const fullString = `${this.command.name} ${subcommand.name.padEnd(widestSubcommandNameLength - this.command.name.length - 1)}  ${label}${shortDescription}`;
+			const fullString = `${this.command.name} ${subcommand.name.padEnd(widestSubcommandNameLength - this.command.name.length - 1)}  ${shortDescription}`;
 
 			const wrapped = wrapAnsi(fullString, getMaxLineWidth() - widestSubcommandNameLength - 2);
 
