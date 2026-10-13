@@ -4,6 +4,7 @@ import {
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
 	parsePodmanInfo,
 	runtimeNetworkMode,
+	runtimeSecurityOptions,
 	engineDaemonHint,
 	engineInstallHint,
 	isDigestPinned,
@@ -45,14 +46,27 @@ describe('runtime/docker', () => {
 	});
 
 	describe('resolveEngineSocketPath()', () => {
-		it('uses the default Docker socket unless DOCKER_HOST names a unix socket (rootless Docker)', async () => {
-			await expect(resolveEngineSocketPath('docker', {})).resolves.toBe('/var/run/docker.sock');
+		it('uses the default Docker socket unless DOCKER_HOST names a unix socket (rootless Docker) on Linux', async () => {
+			await expect(resolveEngineSocketPath('docker', {}, 'linux')).resolves.toBe('/var/run/docker.sock');
 			await expect(
-				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }),
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }, 'linux'),
 			).resolves.toBe('/run/user/1000/docker.sock');
-			await expect(resolveEngineSocketPath('docker', { DOCKER_HOST: 'tcp://localhost:2375' })).resolves.toBe(
+			await expect(resolveEngineSocketPath('docker', { DOCKER_HOST: 'tcp://localhost:2375' }, 'linux')).resolves.toBe(
 				'/var/run/docker.sock',
 			);
+		});
+		it('ignores a DOCKER_HOST unix socket on macOS and Windows, where the daemon lives in a VM', async () => {
+			// Colima's docs suggest exporting its host-side socket for tools that ignore docker contexts; a bind
+			// mount of that macOS path cannot reach into the VM, where the daemon serves /var/run/docker.sock.
+			await expect(
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///Users/me/.colima/default/docker.sock' }, 'darwin'),
+			).resolves.toBe('/var/run/docker.sock');
+			await expect(
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }, 'win32'),
+			).resolves.toBe('/var/run/docker.sock');
+			await expect(
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }, 'linux'),
+			).resolves.toBe('/run/user/1000/docker.sock');
 		});
 	});
 
@@ -203,13 +217,13 @@ describe('runtime/docker', () => {
 		});
 
 		it('gives the runtime container a route to the host loopback on rootless Podman 3.x, and nothing elsewhere', () => {
-			const podman3 = parsePodmanInfo('true 3.4.4\n');
-			expect(podman3).toEqual({ rootless: true, majorVersion: 3 });
+			const podman3 = parsePodmanInfo('true false 3.4.4\n');
+			expect(podman3).toEqual({ rootless: true, selinux: false, majorVersion: 3 });
 			expect(runtimeNetworkMode('podman', podman3)).toBe('slirp4netns:allow_host_loopback=true');
-			expect(runtimeNetworkMode('podman', parsePodmanInfo('false 3.4.4'))).toBeUndefined();
-			expect(runtimeNetworkMode('podman', parsePodmanInfo('true 4.9.3'))).toBeUndefined();
-			expect(runtimeNetworkMode('podman', parsePodmanInfo('true 5.0.0-dev'))).toBeUndefined();
-			expect(runtimeNetworkMode('podman', parsePodmanInfo('true'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('false false 3.4.4'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('true false 4.9.3'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('true false 5.0.0-dev'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('true false'))).toBeUndefined();
 			expect(runtimeNetworkMode('podman', undefined)).toBeUndefined();
 			expect(runtimeNetworkMode('docker', podman3)).toBeUndefined();
 
@@ -238,6 +252,49 @@ describe('runtime/docker', () => {
 				'3000:3000',
 				'-v',
 				'/run/user/1000/podman/podman.sock:/var/run/docker.sock',
+				'-v',
+				'/home/me/data:/data',
+				DEFAULT_ACTOR_RUNTIME_IMAGE,
+			]);
+		});
+
+		it('runs the runtime container unconfined by SELinux where Podman reports it enforcing, and nowhere else', () => {
+			const fedora = parsePodmanInfo('true true 5.4.0\n');
+			expect(fedora).toEqual({ rootless: true, selinux: true, majorVersion: 5 });
+			expect(runtimeSecurityOptions('podman', fedora)).toEqual(['label=disable']);
+			expect(runtimeSecurityOptions('podman', parsePodmanInfo('false true 4.9.3'))).toEqual(['label=disable']);
+			expect(runtimeSecurityOptions('podman', parsePodmanInfo('true false 5.4.0'))).toEqual([]);
+			expect(runtimeSecurityOptions('podman', parsePodmanInfo('true'))).toEqual([]);
+			expect(runtimeSecurityOptions('podman', undefined)).toEqual([]);
+			expect(runtimeSecurityOptions('docker', fedora)).toEqual([]);
+
+			// The same command the actor-runtime e2e suite starts the runtime with on that engine - a
+			// `podman machine` (Podman Desktop) on macOS is this case: rootless, SELinux enforcing in its VM.
+			expect(
+				buildRuntimeRunArgs({
+					image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+					dataDir: '/home/me/data',
+					detach: true,
+					hostSocketPath: '/run/user/501/podman/podman.sock',
+					platform: 'darwin',
+					networkMode: runtimeNetworkMode('podman', fedora),
+					securityOptions: runtimeSecurityOptions('podman', fedora),
+				}),
+			).toEqual([
+				'run',
+				'--rm',
+				'--init',
+				'--name',
+				ACTOR_RUNTIME_CONTAINER_NAME,
+				'--detach',
+				'--security-opt',
+				'label=disable',
+				'-p',
+				'3333:3333',
+				'-p',
+				'3000:3000',
+				'-v',
+				'/run/user/501/podman/podman.sock:/var/run/docker.sock',
 				'-v',
 				'/home/me/data:/data',
 				DEFAULT_ACTOR_RUNTIME_IMAGE,

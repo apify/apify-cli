@@ -21,6 +21,7 @@ import {
 	podmanInfo,
 	resolveEngineSocketPath,
 	runtimeNetworkMode,
+	runtimeSecurityOptions,
 	runtimeApiUrl,
 	runtimeConsoleUrl,
 	runtimeEnvExportLines,
@@ -114,7 +115,9 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		if (!engine) return;
 
 		const hostSocketPath = await resolveEngineSocketPath(engine);
-		const networkMode = runtimeNetworkMode(engine, engine === 'podman' ? await podmanInfo() : undefined);
+		const podman = engine === 'podman' ? await podmanInfo() : undefined;
+		const networkMode = runtimeNetworkMode(engine, podman);
+		const securityOptions = runtimeSecurityOptions(engine, podman);
 		const dataDir = resolve(this.flags.dataDir ?? defaultDataDir());
 		await mkdir(dataDir, { recursive: true });
 		updateActorRuntimeConfig({ apiPort: ports.api, consolePort: ports.console });
@@ -141,6 +144,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			hostSocketPath,
 			ports,
 			networkMode,
+			securityOptions,
 		});
 		run({ message: `${engine} ${args.join(' ')}` });
 

@@ -287,16 +287,22 @@ function unixSocketPath(url: string | undefined): string | undefined {
 }
 
 /**
- * Host path of the engine's API socket, to be mounted into the runtime container. Docker: the `DOCKER_HOST`
- * socket when it is a unix socket (rootless Docker), else the default one. Podman: the socket `podman info`
- * reports serving, which is the path on the machine the containers run on (rootful, rootless, or inside a
- * `podman machine` VM alike).
+ * Host path of the engine's API socket, to be mounted into the runtime container - a path on the machine the
+ * containers run on, since that machine's engine resolves the mount. Docker on Linux: the `DOCKER_HOST` socket
+ * when it is a unix socket (rootless Docker), else the default one. Docker on macOS and Windows: always the
+ * default one - the daemon lives in a VM (Docker Desktop, Colima, OrbStack, Rancher Desktop all serve it at
+ * `/var/run/docker.sock` in there), and a `DOCKER_HOST` unix socket is a path on the host, which a bind mount
+ * cannot carry into the VM (Colima's docs suggest exporting one for tools that ignore docker contexts).
+ * Podman: the socket `podman info` reports serving, which is the path on the machine the containers run on
+ * (rootful, rootless, or inside a `podman machine` VM alike).
  */
 export async function resolveEngineSocketPath(
 	engine: ContainerEngine,
 	env: NodeJS.ProcessEnv = process.env,
+	platform: NodeJS.Platform = process.platform,
 ): Promise<string> {
 	if (engine === 'docker') {
+		if (platform !== 'linux') return RUNTIME_SOCKET_PATH;
 		return unixSocketPath(env.DOCKER_HOST) ?? RUNTIME_SOCKET_PATH;
 	}
 
@@ -312,18 +318,29 @@ export async function resolveEngineSocketPath(
 /** What `podman info` says about the Podman the runtime will run on, as far as its start command depends on it. */
 export interface PodmanInfo {
 	rootless: boolean;
+	/** SELinux enforcing on the machine the containers run on: Fedora and RHEL, and the Fedora-based VM of
+	 * `podman machine` (so Podman Desktop on macOS and Windows). */
+	selinux: boolean;
 	majorVersion?: number;
 }
 
 export function parsePodmanInfo(output: string): PodmanInfo {
-	const [rootless, version] = output.trim().split(/\s+/);
+	const [rootless, selinux, version] = output.trim().split(/\s+/);
 	const majorVersion = Number(version?.match(/^(\d+)\./)?.[1]);
-	return { rootless: rootless === 'true', ...(Number.isInteger(majorVersion) ? { majorVersion } : {}) };
+	return {
+		rootless: rootless === 'true',
+		selinux: selinux === 'true',
+		...(Number.isInteger(majorVersion) ? { majorVersion } : {}),
+	};
 }
 
 export async function podmanInfo(): Promise<PodmanInfo | undefined> {
 	try {
-		const { stdout } = await execa('podman', ['info', '--format', '{{.Host.Security.Rootless}} {{.Version.Version}}']);
+		const { stdout } = await execa('podman', [
+			'info',
+			'--format',
+			'{{.Host.Security.Rootless}} {{.Host.Security.SELinuxEnabled}} {{.Version.Version}}',
+		]);
 		return parsePodmanInfo(stdout);
 	} catch {
 		return undefined;
@@ -343,6 +360,23 @@ export function runtimeNetworkMode(engine: ContainerEngine, podman: PodmanInfo |
 	return PODMAN3_ROOTLESS_NETWORK_MODE;
 }
 
+/**
+ * Under SELinux enforcing, a container's processes may not connect to the engine's API socket bind-mounted
+ * into it: the socket carries the engine's label, not a container's, so SELinux refuses the connection even
+ * though the mount itself works. The runtime does everything through that socket, so it would report the
+ * engine as unavailable. `label=disable` runs this one container unconfined by SELinux - the documented way
+ * to run a container that manages the engine. The Actor containers the runtime starts stay confined as
+ * usual. Relabelling the socket (`:z`/`:Z`) is not an option: it would change the label of the engine's own
+ * socket for every other client, and the engine recreates it on restart anyway.
+ */
+export const SELINUX_SECURITY_OPTION = 'label=disable';
+
+/** The `--security-opt` values the runtime container needs on this engine; empty for the engine's default. */
+export function runtimeSecurityOptions(engine: ContainerEngine, podman: PodmanInfo | undefined): string[] {
+	if (engine !== 'podman' || !podman?.selinux) return [];
+	return [SELINUX_SECURITY_OPTION];
+}
+
 export function socketMountArg(hostSocketPath: string, platform: NodeJS.Platform = process.platform): string {
 	// Docker Desktop on Windows exposes the Linux engine's socket to containers under the same
 	// path; the leading double slash prevents MSYS/Git Bash shells from mangling it.
@@ -359,6 +393,8 @@ export interface RuntimeRunArgsOptions {
 	platform?: NodeJS.Platform;
 	/** From `runtimeNetworkMode`; absent means the engine's default network. */
 	networkMode?: string;
+	/** From `runtimeSecurityOptions`; absent or empty means the engine's default confinement. */
+	securityOptions?: string[];
 }
 
 export function buildRuntimeRunArgs({
@@ -369,6 +405,7 @@ export function buildRuntimeRunArgs({
 	ports = DEFAULT_RUNTIME_PORTS,
 	platform = process.platform,
 	networkMode,
+	securityOptions = [],
 }: RuntimeRunArgsOptions): string[] {
 	// --init makes signals (Ctrl+C) reach the runtime process even though it runs as the container's PID 1.
 	const args = ['run', '--rm', '--init', '--name', ACTOR_RUNTIME_CONTAINER_NAME];
@@ -387,6 +424,9 @@ export function buildRuntimeRunArgs({
 	}
 	if (networkMode) {
 		args.push('--network', networkMode);
+	}
+	for (const option of securityOptions) {
+		args.push('--security-opt', option);
 	}
 
 	args.push(
