@@ -26,8 +26,6 @@ export class RuntimeConnectCommand extends ApifyCommand<typeof RuntimeConnectCom
 
 	static override group = 'Local Actor Development';
 
-	static override experimental = true;
-
 	static override examples = [
 		{
 			description: 'Send every Apify CLI command to the local Actor runtime.',

@@ -21,8 +21,6 @@ export class RuntimeInstallCommand extends ApifyCommand<typeof RuntimeInstallCom
 
 	static override group = 'Local Actor Development';
 
-	static override experimental = true;
-
 	static override examples = [
 		{
 			description: 'Install the Actor runtime.',

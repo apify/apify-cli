@@ -30,6 +30,8 @@ export function registerCommandForHelpGeneration(entrypoint: string, command: ty
 		commands.set(command, new CommandWithSubcommandsHelp(entrypoint, command));
 
 		for (const subcommand of command.subcommands) {
+			// An experimental namespace makes its subcommands experimental too.
+			subcommand.experimental ??= command.experimental;
 			registerCommandForHelpGeneration(`${entrypoint} ${command.name}`, subcommand);
 		}
 	} else {

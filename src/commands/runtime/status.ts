@@ -42,8 +42,6 @@ export class RuntimeStatusCommand extends ApifyCommand<typeof RuntimeStatusComma
 
 	static override group = 'Local Actor Development';
 
-	static override experimental = true;
-
 	static override examples = [
 		{
 			description: 'Show what the Actor runtime is doing.',

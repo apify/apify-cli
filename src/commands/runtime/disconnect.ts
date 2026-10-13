@@ -16,8 +16,6 @@ export class RuntimeDisconnectCommand extends ApifyCommand<typeof RuntimeDisconn
 
 	static override group = 'Local Actor Development';
 
-	static override experimental = true;
-
 	static override examples = [
 		{
 			description: 'Send Apify CLI commands to the Apify platform again.',

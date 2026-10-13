@@ -28,8 +28,6 @@ export class RuntimeSkillCommand extends ApifyCommand<typeof RuntimeSkillCommand
 
 	static override group = 'Local Actor Development';
 
-	static override experimental = true;
-
 	static override examples = [
 		{
 			description: `Install the skill for the agents on this machine.`,

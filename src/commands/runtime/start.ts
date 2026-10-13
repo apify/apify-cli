@@ -46,8 +46,6 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 
 	static override group = 'Local Actor Development';
 
-	static override experimental = true;
-
 	static override examples = [
 		{
 			description: 'Start the Actor runtime in the foreground (Ctrl+C stops it).',

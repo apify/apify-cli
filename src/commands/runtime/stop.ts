@@ -12,8 +12,6 @@ export class RuntimeStopCommand extends ApifyCommand<typeof RuntimeStopCommand> 
 
 	static override group = 'Local Actor Development';
 
-	static override experimental = true;
-
 	static override examples = [
 		{
 			description: 'Stop the running Actor runtime.',
