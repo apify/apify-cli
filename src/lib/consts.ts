@@ -60,6 +60,11 @@ export const TELEMETRY_FILE_PATH = () => join(GLOBAL_CONFIGS_FOLDER(), 'telemetr
 
 export const ACTOR_RUNTIME_CONFIG_FILE_PATH = () => join(GLOBAL_CONFIGS_FOLDER(), 'actor-runtime', 'config.json');
 
+export const ACTOR_RUNTIME_EXPERIMENTAL_NOTE =
+	`The Actor runtime is experimental. The 'apify runtime' commands, the runtime-only behaviour of 'apify push' and ` +
+	`'apify call', and the runtime itself can change or go away in any release without notice. ` +
+	`Report problems at https://github.com/apify/apify-cli/issues/new.`;
+
 export const DEPRECATED_LOCAL_CONFIG_NAME = 'apify.json';
 
 export const ACTOR_SPECIFICATION_FOLDER = '.actor';

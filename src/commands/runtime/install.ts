@@ -1,6 +1,7 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { ACTOR_RUNTIME_EXPERIMENTAL_NOTE } from '../../lib/consts.js';
 import { simpleLog, success } from '../../lib/outputs.js';
 import {
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
@@ -20,6 +21,10 @@ export class RuntimeInstallCommand extends ApifyCommand<typeof RuntimeInstallCom
 		`The engine itself is a prerequisite and is not installed by this command - see ${DOCKER_GET_DOCKER_URL} or ${PODMAN_INSTALL_URL}.`;
 
 	static override group = 'Local Actor Development';
+
+	static override experimental = true;
+
+	static override experimentalNote = ACTOR_RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override examples = [
 		{

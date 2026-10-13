@@ -10,6 +10,8 @@ export interface BaseFlagOptions {
 	aliases?: readonly string[];
 	char?: string;
 	hidden?: boolean;
+	/** Labels the flag `[EXPERIMENTAL]` in help: it may change or go away in any release. */
+	experimental?: boolean;
 	/**
 	 * Maps to the `conflicts` option in yargs, ensures that if this flag is set, others in the array cannot be
 	 */
@@ -55,6 +57,7 @@ export interface TaggedFlagBuilder<
 	aliases: readonly string[] | undefined;
 	char: string | undefined;
 	hidden: boolean | undefined;
+	experimental: boolean | undefined;
 	exclusive: readonly string[] | undefined;
 }
 
@@ -121,6 +124,7 @@ function stringFlag<const Choices extends string[], const T extends StringFlagOp
 		aliases: options.aliases,
 		char: options.char,
 		hidden: options.hidden,
+		experimental: options.experimental,
 		exclusive: options.exclusive,
 	};
 }
@@ -170,6 +174,7 @@ function booleanFlag<const T extends BooleanFlagOptions>(
 		aliases: options.aliases,
 		char: options.char,
 		hidden: options.hidden,
+		experimental: options.experimental,
 		exclusive: options.exclusive,
 	};
 }
@@ -220,6 +225,7 @@ function integerFlag<const T extends IntegerFlagOptions>(
 		aliases: options.aliases,
 		char: options.char,
 		hidden: options.hidden,
+		experimental: options.experimental,
 		exclusive: options.exclusive,
 	};
 }

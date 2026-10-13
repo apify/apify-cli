@@ -567,6 +567,12 @@ DESCRIPTION
   the Actor's live dev folder, so runs pick up local edits without another push;
    'apify call --no-dev-folder' runs from the built image alone.
 
+EXPERIMENTAL
+  The Actor runtime is experimental. The 'apify runtime' commands, the
+  runtime-only behaviour of 'apify push' and 'apify call', and the runtime
+  itself can change or go away in any release without notice. Report problems at
+  https://github.com/apify/apify-cli/issues/new.
+
 SUBCOMMANDS
   runtime install     Installs the Actor runtime: verifies
                       this machine has a working container engine (Docker or
@@ -604,6 +610,12 @@ DESCRIPTION
    https://docs.docker.com/get-started/get-docker/ or 
   https://podman.io/docs/installation.
 
+EXPERIMENTAL
+  The Actor runtime is experimental. The 'apify runtime' commands, the
+  runtime-only behaviour of 'apify push' and 'apify call', and the runtime
+  itself can change or go away in any release without notice. Report problems at
+  https://github.com/apify/apify-cli/issues/new.
+
 USAGE
   $ apify runtime install [image] [-f]
 
@@ -628,6 +640,12 @@ DESCRIPTION
   are remembered for later starts and for 'apify runtime connect'. Run 'apify 
   runtime -h' for the environment variables that point the CLI at it.
 
+EXPERIMENTAL
+  The Actor runtime is experimental. The 'apify runtime' commands, the
+  runtime-only behaviour of 'apify push' and 'apify call', and the runtime
+  itself can change or go away in any release without notice. Report problems at
+  https://github.com/apify/apify-cli/issues/new.
+
 USAGE
   $ apify runtime start [--api-port <value>]
                         [--console-port <value>] [--data-dir <value>] [-d]
@@ -651,6 +669,12 @@ FLAGS
 DESCRIPTION
   Stops the Actor runtime container started with 'apify runtime start --detach'.
 
+EXPERIMENTAL
+  The Actor runtime is experimental. The 'apify runtime' commands, the
+  runtime-only behaviour of 'apify push' and 'apify call', and the runtime
+  itself can change or go away in any release without notice. Report problems at
+  https://github.com/apify/apify-cli/issues/new.
+
 USAGE
   $ apify runtime stop
 ```
@@ -663,6 +687,12 @@ DESCRIPTION
   directory it keeps its data in, and which API the Apify CLI currently talks 
   to.
   Exits with code 1 when the runtime is not running, so scripts can test for it.
+
+EXPERIMENTAL
+  The Actor runtime is experimental. The 'apify runtime' commands, the
+  runtime-only behaviour of 'apify push' and 'apify call', and the runtime
+  itself can change or go away in any release without notice. Report problems at
+  https://github.com/apify/apify-cli/issues/new.
 
 USAGE
   $ apify runtime status [--json]
@@ -681,6 +711,12 @@ DESCRIPTION
   they are set, so a shell that exports them is unaffected. Your login is 
   untouched - run 'apify runtime disconnect' to target the Apify platform again.
 
+EXPERIMENTAL
+  The Actor runtime is experimental. The 'apify runtime' commands, the
+  runtime-only behaviour of 'apify push' and 'apify call', and the runtime
+  itself can change or go away in any release without notice. Report problems at
+  https://github.com/apify/apify-cli/issues/new.
+
 USAGE
   $ apify runtime connect
 ```
@@ -693,6 +729,12 @@ DESCRIPTION
   again, unless the API and console URL environment variables point it somewhere
    else.
   The runtime itself keeps running - stop it with 'apify runtime stop'.
+
+EXPERIMENTAL
+  The Actor runtime is experimental. The 'apify runtime' commands, the
+  runtime-only behaviour of 'apify push' and 'apify call', and the runtime
+  itself can change or go away in any release without notice. Report problems at
+  https://github.com/apify/apify-cli/issues/new.
 
 USAGE
   $ apify runtime disconnect
@@ -711,6 +753,12 @@ DESCRIPTION
   Use --install to put it in your agent's skills directory, where it loads on 
   demand in this and later sessions instead of only the terminal it was printed 
   into.
+
+EXPERIMENTAL
+  The Actor runtime is experimental. The 'apify runtime' commands, the
+  runtime-only behaviour of 'apify push' and 'apify call', and the runtime
+  itself can change or go away in any release without notice. Report problems at
+  https://github.com/apify/apify-cli/issues/new.
 
 USAGE
   $ apify runtime skill [--install] [--raw]
@@ -1057,9 +1105,9 @@ DESCRIPTION
   as ZIP file.
   Files matched by .gitignore and .actorignore are excluded. Use negation 
   patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.
-  An Actor whose '.actor/actor.json' sets "dockerContextDir" (a monorepo Actor) 
-  pushes that whole Docker context; this works only against a local Actor 
-  runtime for now.
+  Experimental: an Actor whose '.actor/actor.json' sets "dockerContextDir" (a 
+  monorepo Actor) pushes that whole Docker context; this works only against the 
+  local Actor runtime ('apify runtime', itself experimental) for now.
   Use --force to override newer remote versions.
 
 USAGE
@@ -1163,9 +1211,9 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>       Tag or number of the build to
                             run (e.g. "latest" or "1.2.34").
-      --dev-folder          Local Actor runtime only: mount
-                            the Actor's registered live dev folder into the run, so
-                            it picks up local edits (the default). Use
+      --dev-folder          [EXPERIMENTAL] Local Actor runtime
+                            only: mount the Actor's registered live dev folder into
+                            the run, so it picks up local edits (the default). Use
                             --no-dev-folder to run from the built image alone this
                             once; the registration itself stays. Ignored when
                             calling on the Apify platform.

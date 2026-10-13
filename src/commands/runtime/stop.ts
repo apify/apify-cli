@@ -1,6 +1,7 @@
 import process from 'node:process';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
+import { ACTOR_RUNTIME_EXPERIMENTAL_NOTE } from '../../lib/consts.js';
 import { execWithLog } from '../../lib/exec.js';
 import { info, success } from '../../lib/outputs.js';
 import { ACTOR_RUNTIME_CONTAINER_NAME, findRunningRuntimeEngine } from '../../lib/runtime/docker.js';
@@ -11,6 +12,10 @@ export class RuntimeStopCommand extends ApifyCommand<typeof RuntimeStopCommand> 
 	static override description = `Stops the Actor runtime container started with 'apify runtime start --detach'.`;
 
 	static override group = 'Local Actor Development';
+
+	static override experimental = true;
+
+	static override experimentalNote = ACTOR_RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override examples = [
 		{

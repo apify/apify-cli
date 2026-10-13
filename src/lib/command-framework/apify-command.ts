@@ -19,7 +19,7 @@ import { checkAndUpdateLastCommand } from '../hooks/telemetry/useTelemetryState.
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
 import { useRentalSunsetNotice } from '../hooks/useRentalSunsetNotice.js';
-import { error } from '../outputs.js';
+import { error, warning } from '../outputs.js';
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import { CommandError, CommandErrorCode } from './CommandError.js';
 import type { FlagTag, TaggedFlagBuilder } from './flags.js';
@@ -207,6 +207,9 @@ const COMMANDS_WITHIN_ACTOR = [
 	'actors start',
 ];
 
+export const DEFAULT_EXPERIMENTAL_NOTE =
+	'This command is experimental: it may change or be removed in any release without notice.';
+
 export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof BuiltApifyCommand> {
 	static args?: Record<string, TaggedArgBuilder<ArgTag, unknown>> & {
 		json?: 'Do not use json as the key of an argument, as it will prevent the --json flag from working';
@@ -245,6 +248,18 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	 * non-interactively (e.g. which flags to pass).
 	 */
 	static interactiveNote?: string;
+
+	/**
+	 * Marks the command as experimental: help labels it and every run prints a notice first,
+	 * so nobody mistakes it for a stable part of the CLI. It may change or go away in any release.
+	 */
+	static experimental?: boolean;
+
+	/**
+	 * Replaces the default experimental notice in help and at run time, to say what exactly
+	 * is experimental and where to report feedback.
+	 */
+	static experimentalNote?: string;
 
 	/**
 	 * Grouping label shown in the main help menu. Commands are grouped by this value
@@ -405,6 +420,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			if (this.ctor.enableProfileFlag && typeof rawFlags.profile === 'string') {
 				this.flags.profile = rawFlags.profile;
 				await selectProfile(rawFlags.profile);
+			}
+
+			if (this.ctor.experimental && !this.skipNotices) {
+				warning({ message: this.ctor.experimentalNote || DEFAULT_EXPERIMENTAL_NOTE });
 			}
 
 			await this.run();

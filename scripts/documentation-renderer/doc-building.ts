@@ -79,7 +79,7 @@ export async function renderDocs(categories: Record<string, CommandsInCategory[]
 			const codeBlockParts: string[] = [];
 
 			if (showDescription) {
-				const result = selectiveRenderHelpForCommand(command, { showDescription: true });
+				const result = selectiveRenderHelpForCommand(command, { showDescription: true, showExperimentalNote: true });
 				if (result) {
 					codeBlockParts.push(result);
 				}

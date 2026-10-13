@@ -6,12 +6,15 @@ import {
 	ApifyCommand,
 	type BuiltApifyCommand as _BuiltApifyCommand,
 	commandRegistry,
+	DEFAULT_EXPERIMENTAL_NOTE,
 } from '../../../../src/lib/command-framework/apify-command.js';
+import { Flags } from '../../../../src/lib/command-framework/flags.js';
 import {
 	registerCommandForHelpGeneration,
 	renderHelpForCommand,
 	renderMainHelpMenu,
 } from '../../../../src/lib/command-framework/help.js';
+import { ACTOR_RUNTIME_EXPERIMENTAL_NOTE } from '../../../../src/lib/consts.js';
 import {
 	ACTOR_RUNTIME_API_PORT,
 	ACTOR_RUNTIME_API_URL,
@@ -78,6 +81,29 @@ class FakeUtility extends BuiltApifyCommand {
 	// No group → should fall into OTHER.
 }
 
+class FakeExperimental extends BuiltApifyCommand {
+	static override name = 'preview' as const;
+	static override description = 'Tries out a preview feature.';
+	static override group = 'Local Actor Development';
+	static override experimental = true;
+	static override flags = {
+		turbo: Flags.boolean({ description: 'Goes faster.', experimental: true }),
+		verbose: Flags.boolean({ description: 'Says more.' }),
+	};
+}
+
+class FakeStableNamespace extends BuiltApifyCommand {
+	static override name = 'tools' as const;
+	static override description = 'Stable tools with one experimental subcommand.';
+	static override subcommands = [
+		FakeExperimental,
+		class extends BuiltApifyCommand {
+			static override name = 'stable' as const;
+			static override description = 'Does the usual.';
+		},
+	];
+}
+
 class FakeInteractiveNamespace extends BuiltApifyCommand {
 	static override name = 'login-wizard' as const;
 	static override description = 'Commands for logging in interactively.';
@@ -104,6 +130,8 @@ describe('Help rendering', () => {
 		registerCommandForHelpGeneration('apify', FakeUtility);
 		registerCommandForHelpGeneration('apify', FakeInteractiveNamespace);
 		registerCommandForHelpGeneration('apify', RuntimeIndexCommand);
+		registerCommandForHelpGeneration('apify', FakeExperimental);
+		registerCommandForHelpGeneration('apify', FakeStableNamespace);
 
 		// The `actor push-data` subcommand is registered twice with different entrypoints,
 		// once as a subcommand of `apify actor` and once as a standalone `actor` command.
@@ -142,6 +170,16 @@ describe('Help rendering', () => {
 			expect(output).toContain('Pass --template to skip the prompt.');
 		});
 
+		test('labels experimental commands and flags and renders the default EXPERIMENTAL note', () => {
+			const output = stripAnsi(renderHelpForCommand(FakeExperimental));
+
+			expect(output.startsWith('[EXPERIMENTAL] Tries out a preview feature.')).toBe(true);
+			expect(output).toContain('EXPERIMENTAL\n');
+			expect(output).toContain(DEFAULT_EXPERIMENTAL_NOTE);
+			expect(output).toContain('--turbo    [EXPERIMENTAL] Goes faster.');
+			expect(output).toContain('--verbose  Says more.');
+		});
+
 		test('renders example descriptions as shell-style # comments', () => {
 			registerCommandForHelpGeneration('apify', FakeRunsAbort);
 			const output = stripAnsi(renderHelpForCommand(FakeRunsAbort));
@@ -161,6 +199,14 @@ describe('Help rendering', () => {
 			expect(output).toContain('Aborts an Actor run.');
 		});
 
+		test('labels an experimental subcommand of a stable namespace', () => {
+			const output = stripAnsi(renderHelpForCommand(FakeStableNamespace));
+
+			expect(output).toContain('tools preview  [EXPERIMENTAL] Tries out a preview feature.');
+			expect(output).toContain('tools stable   Does the usual.');
+			expect(output).not.toContain('EXPERIMENTAL\n');
+		});
+
 		test('renders interactive note for interactive namespace commands', () => {
 			registerCommandForHelpGeneration('apify', FakeInteractiveNamespace);
 			const output = stripAnsi(renderHelpForCommand(FakeInteractiveNamespace));
@@ -172,6 +218,26 @@ describe('Help rendering', () => {
 	});
 
 	describe('apify runtime help', () => {
+		it('is marked experimental, with the runtime note', () => {
+			const output = stripAnsi(renderHelpForCommand(RuntimeIndexCommand));
+
+			expect(output.startsWith('[EXPERIMENTAL] ')).toBe(true);
+			expect(output).toContain('EXPERIMENTAL\n');
+			expect(output).toContain(ACTOR_RUNTIME_EXPERIMENTAL_NOTE.slice(0, 40));
+			expect(output).toContain('https://github.com/apify/apify-cli/issues/new');
+			// The parent's label covers its subcommands; the list stays readable.
+			expect(output).not.toMatch(/runtime start\s+\[EXPERIMENTAL\]/);
+		});
+
+		it('marks every subcommand experimental in its own help', () => {
+			for (const subcommand of RuntimeIndexCommand.subcommands!) {
+				const output = stripAnsi(renderHelpForCommand(subcommand));
+
+				expect(output.startsWith('[EXPERIMENTAL] ')).toBe(true);
+				expect(output).toContain(ACTOR_RUNTIME_EXPERIMENTAL_NOTE.slice(0, 40));
+			}
+		});
+
 		it('lists the runtime ports and the environment variables that point the CLI at them', () => {
 			const output = stripAnsi(renderHelpForCommand(RuntimeIndexCommand));
 
@@ -242,6 +308,17 @@ describe('Help rendering', () => {
 			// Canonical order: Local Actor Development → Apify Console → … → OTHER.
 			expect(devIdx).toBeLessThan(consoleIdx);
 			expect(consoleIdx).toBeLessThan(otherIdx);
+		});
+
+		test('labels experimental commands', () => {
+			registerCommandForHelpGeneration('apify', FakeExperimental);
+			registerCommandForHelpGeneration('apify', RuntimeIndexCommand);
+
+			const output = stripAnsi(renderMainHelpMenu('apify'));
+
+			expect(output).toMatch(/preview\s+\[EXPERIMENTAL\] Tries out a preview feature\./);
+			expect(output).toMatch(/runtime\s+\[EXPERIMENTAL\] Manages the Actor runtime/);
+			expect(output).toMatch(/create\s+Creates a new Actor project\./);
 		});
 
 		test('shows the apify preamble and canonical examples for the apify entrypoint', () => {
