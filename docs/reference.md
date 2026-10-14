@@ -526,6 +526,9 @@ DESCRIPTION
   Manages the Actor runtime, a self-contained local Apify platform running as a 
   container on Docker or Podman.
 
+  The Actor runtime is experimental: these commands, and what they add to other 
+  commands, may change in any release.
+
   Prerequisite: Docker or Podman must be installed and running. Follow the 
   official documentation to set one up:
 
@@ -1057,9 +1060,9 @@ DESCRIPTION
   as ZIP file.
   Files matched by .gitignore and .actorignore are excluded. Use negation 
   patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.
-  An Actor whose '.actor/actor.json' sets "dockerContextDir" (a monorepo Actor) 
-  pushes that whole Docker context; this works only against a local Actor 
-  runtime for now.
+  Experimental: an Actor whose '.actor/actor.json' sets "dockerContextDir" (a 
+  monorepo Actor) pushes that whole Docker context; this works only against a 
+  local Actor runtime for now.
   Use --force to override newer remote versions.
 
 USAGE
@@ -1163,9 +1166,9 @@ ARGUMENTS
 FLAGS
   -b, --build=<value>       Tag or number of the build to
                             run (e.g. "latest" or "1.2.34").
-      --dev-folder          Local Actor runtime only: mount
-                            the Actor's registered live dev folder into the run, so
-                            it picks up local edits (the default). Use
+      --dev-folder          Experimental, local Actor runtime
+                            only: mount the Actor's registered live dev folder into
+                            the run, so it picks up local edits (the default). Use
                             --no-dev-folder to run from the built image alone this
                             once; the registration itself stays. Ignored when
                             calling on the Apify platform.

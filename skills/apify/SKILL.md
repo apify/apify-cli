@@ -91,7 +91,7 @@ apify key-value-stores keys <storeId> --json
 
 ## Local Actor runtime
 
-`apify runtime` runs a self-contained local Apify platform as a container on Docker or Podman. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account. It ships on the `runtime` npm dist-tag, not on `latest`.
+`apify runtime` runs a self-contained local Apify platform as a container on Docker or Podman. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account. It is experimental: it ships on the `runtime` npm dist-tag, not on `latest`, and may change in any release.
 
 This section covers only how to *get* a runtime. Once you have one, **run `apify runtime skill --install`** (or `apify runtime skill` to read it now) — the runtime ships its own Agent Skill on how to use it. That skill lives in the runtime image, so it always matches the runtime you actually have; read it rather than reconstructing it from memory.
 

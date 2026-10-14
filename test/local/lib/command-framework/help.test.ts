@@ -172,6 +172,15 @@ describe('Help rendering', () => {
 	});
 
 	describe('apify runtime help', () => {
+		it('is labelled experimental, in its own help and in the main menu', () => {
+			expect(stripAnsi(renderHelpForCommand(RuntimeIndexCommand)).startsWith('[EXPERIMENTAL] ')).toBe(true);
+			expect(stripAnsi(renderMainHelpMenu('apify'))).toMatch(/runtime\s+\[EXPERIMENTAL\] Manages the Actor runtime/);
+
+			for (const subcommand of RuntimeIndexCommand.subcommands!) {
+				expect(stripAnsi(renderHelpForCommand(subcommand)).startsWith('[EXPERIMENTAL] ')).toBe(true);
+			}
+		});
+
 		it('lists the runtime ports and the environment variables that point the CLI at them', () => {
 			const output = stripAnsi(renderHelpForCommand(RuntimeIndexCommand));
 

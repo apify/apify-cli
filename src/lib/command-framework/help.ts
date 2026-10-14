@@ -6,7 +6,11 @@ import wrapAnsi from 'wrap-ansi';
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { error } from '../outputs.js';
 import type { BuiltApifyCommand } from './apify-command.js';
-import type { BaseCommandRenderer, SelectiveRenderOptions } from './help/_BaseCommandRenderer.js';
+import {
+	type BaseCommandRenderer,
+	experimentalLabel,
+	type SelectiveRenderOptions,
+} from './help/_BaseCommandRenderer.js';
 import { CommandHelp } from './help/CommandHelp.js';
 import { CommandWithSubcommandsHelp } from './help/CommandWithSubcommands.js';
 import { getMaxLineWidth } from './help/consts.js';
@@ -26,6 +30,8 @@ export function registerCommandForHelpGeneration(entrypoint: string, command: ty
 		commands.set(command, new CommandWithSubcommandsHelp(entrypoint, command));
 
 		for (const subcommand of command.subcommands) {
+			// An experimental namespace makes its subcommands experimental too.
+			subcommand.experimental ??= command.experimental;
 			registerCommandForHelpGeneration(`${entrypoint} ${command.name}`, subcommand);
 		}
 	} else {
@@ -156,7 +162,7 @@ export function renderMainHelpMenu(entrypoint: string) {
 	const renderEntry = ([command]: [typeof BuiltApifyCommand, BaseCommandRenderer]): string => {
 		const shortDescription = command.shortDescription || command.description?.split('\n')[0] || '';
 		const label = command.name.padEnd(widestNameLength);
-		const fullString = `${label}  ${shortDescription}`;
+		const fullString = `${label}  ${experimentalLabel(command)}${shortDescription}`;
 		// -4 = 2 leading spaces on the line + 2 spaces between label and description
 		const wrapped = wrapAnsi(fullString, getMaxLineWidth() - widestNameLength - 4);
 		// Indent so continuation lines line up under the description column (label + 2-space separator + 2 leading)

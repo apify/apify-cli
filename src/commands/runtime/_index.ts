@@ -24,6 +24,8 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 	static override description = [
 		'Manages the Actor runtime, a self-contained local Apify platform running as a container on Docker or Podman.',
 		'',
+		'The Actor runtime is experimental: these commands, and what they add to other commands, may change in any release.',
+		'',
 		'Prerequisite: Docker or Podman must be installed and running. Follow the official documentation to set one up:',
 		'',
 		'  Docker Desktop (macOS, Windows, Linux desktop):',
@@ -54,6 +56,8 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 	].join('\n');
 
 	static override group = 'Local Actor Development';
+
+	static override experimental = true;
 
 	static override examples = [
 		{

@@ -89,7 +89,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		}),
 		'dev-folder': Flags.boolean({
 			description:
-				"Local Actor runtime only: mount the Actor's registered live dev folder into the run, so it picks up local edits (the default). " +
+				"Experimental, local Actor runtime only: mount the Actor's registered live dev folder into the run, so it picks up local edits (the default). " +
 				'Use --no-dev-folder to run from the built image alone this once; the registration itself stays. Ignored when calling on the Apify platform.',
 			default: true,
 		}),
