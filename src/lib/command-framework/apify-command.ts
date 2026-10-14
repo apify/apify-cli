@@ -19,7 +19,7 @@ import { checkAndUpdateLastCommand } from '../hooks/telemetry/useTelemetryState.
 import { useCLIMetadata } from '../hooks/useCLIMetadata.js';
 import { ProjectLanguage, useCwdProject } from '../hooks/useCwdProject.js';
 import { useRentalSunsetNotice } from '../hooks/useRentalSunsetNotice.js';
-import { error, warning } from '../outputs.js';
+import { error } from '../outputs.js';
 import type { ArgTag, TaggedArgBuilder } from './args.js';
 import { CommandError, CommandErrorCode } from './CommandError.js';
 import type { FlagTag, TaggedFlagBuilder } from './flags.js';
@@ -246,7 +246,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	 */
 	static interactiveNote?: string;
 
-	/** Labels the command [EXPERIMENTAL] in help and warns on every run: it may change in any release. */
+	/** Labels the command [EXPERIMENTAL] in help: it may change in any release. */
 	static experimental?: boolean;
 
 	/**
@@ -408,12 +408,6 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			if (this.ctor.enableProfileFlag && typeof rawFlags.profile === 'string') {
 				this.flags.profile = rawFlags.profile;
 				await selectProfile(rawFlags.profile);
-			}
-
-			if (this.ctor.experimental && !this.skipNotices) {
-				warning({
-					message: `'${this.entrypoint} ${this.commandString}' is experimental and may change in any release.`,
-				});
 			}
 
 			await this.run();
