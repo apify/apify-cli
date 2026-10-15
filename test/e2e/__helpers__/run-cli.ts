@@ -9,7 +9,7 @@ const DistActor = fileURLToPath(new URL('./dist/actor.js', ProjectRoot));
 
 export interface RunCliOptions {
 	cwd?: string | URL;
-	stdin?: string;
+	stdin?: string | Uint8Array;
 	env?: Record<string, string>;
 	timeout?: number;
 }

@@ -1,5 +1,6 @@
 import type { ApifyApiError } from 'apify-client';
 
+import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -52,6 +53,17 @@ export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueS
 		const { storeId, itemKey, value } = this.args;
 		const { contentType } = this.flags;
 
+		// NOTE: If the value is passed as an argument and on stdin at the same time, the argument wins.
+		// Stdin was already read at startup (see `cachedStdinInput`), so the raw `process.stdin` stream is drained.
+		const recordValue = value || cachedStdinInput;
+
+		if (!recordValue) {
+			error({ message: 'No value was provided. Pass it as an argument or pipe it into the command.' });
+			process.exitCode = 1;
+
+			return;
+		}
+
 		const apifyClient = await getLoggedClientOrThrow();
 		const maybeStore = await tryToGetKeyValueStore(apifyClient, storeId);
 
@@ -67,7 +79,7 @@ export class KeyValueStoresSetValueCommand extends ApifyCommand<typeof KeyValueS
 
 		try {
 			// TODO: again, the types need to be fixed -w-
-			await client.setRecord({ key: itemKey, value: (value || process.stdin) as string, contentType });
+			await client.setRecord({ key: itemKey, value: recordValue as string, contentType });
 
 			success({
 				message: `Value with key "${itemKey}" set in the key-value store.`,
