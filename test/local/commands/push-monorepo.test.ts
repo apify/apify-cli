@@ -138,9 +138,11 @@ function expectRefusal() {
 }
 
 let originalExitCode: typeof process.exitCode;
+let originalGlobalExitCode: typeof process.exitCode;
 
 beforeEach(async () => {
 	originalExitCode = commandProcess.exitCode;
+	originalGlobalExitCode = process.exitCode;
 	gitState.gitAvailable = true;
 	actorGet.mockClear();
 	actorDelete.mockClear();
@@ -169,6 +171,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
 	commandProcess.exitCode = originalExitCode;
+	process.exitCode = originalGlobalExitCode;
 	await afterAllCalls();
 });
 
