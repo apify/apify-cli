@@ -389,7 +389,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			const missing = dirs.find((dir) => !existsSync(join(root, dir, LOCAL_CONFIG_PATH)));
 
 			if (missing !== undefined) {
-				error({ message: `Directory "${missing || '.'}" from --actor-dir has no ${LOCAL_CONFIG_PATH}.` });
+				error({ message: `Directory "${missing || '.'}" from --actor-dir has no .actor/actor.json.` });
 				process.exitCode = CommandExitCodes.NoFilesToPush;
 				return;
 			}
