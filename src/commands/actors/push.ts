@@ -14,6 +14,7 @@ import {
 } from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 
+import { checkActorPaths, formatActorPathProblems } from '../../lib/actor-paths.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -299,6 +300,19 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		if (dockerContext.kind === 'context') {
 			error({ message: monorepoUnsupportedMessage(actorConfig!.name as string) });
 			process.exitCode = CommandExitCodes.NotImplemented;
+			return;
+		}
+
+		// The platform resolves these paths after the upload; a wrong one builds the wrong image or fails the build.
+		const pathProblems = checkActorPaths({
+			actorDir: cwd,
+			uploadRoot: cwd,
+			uploadedFiles: filePathsToPush,
+			config: actorConfig,
+		});
+		if (pathProblems.length > 0) {
+			error({ message: formatActorPathProblems(pathProblems) });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
 
