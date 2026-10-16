@@ -164,13 +164,14 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 			await setLocalConfig(configToWrite, cwd);
 		}
 
-		if (
+		const isPythonWithoutDockerfile =
 			project.type === ProjectLanguage.Python &&
 			!this.flags.dockerfile &&
 			!actorConfig.unwrapOr(undefined)?.config.dockerfile &&
 			!existsSync(join(cwd, '.actor', 'Dockerfile')) &&
-			!existsSync(join(cwd, 'Dockerfile'))
-		) {
+			!existsSync(join(cwd, 'Dockerfile'));
+
+		if (isPythonWithoutDockerfile) {
 			warning({
 				message:
 					'No Dockerfile found. Without one, the Apify platform builds the Actor with a Node.js base image. Add one at .actor/Dockerfile (e.g. FROM apify/actor-python) or pass --dockerfile.',
