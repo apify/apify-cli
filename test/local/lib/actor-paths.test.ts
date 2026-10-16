@@ -18,8 +18,10 @@ describe('checkActorPaths', () => {
 	};
 
 	// The Actor folder is what an ordinary push uploads.
-	const check = (config: Record<string, unknown>, options: { uploadRoot?: string; dockerContextRoot?: string } = {}) =>
-		checkActorPaths({ actorDir, uploadRoot: actorDir, uploadedFiles, config, ...options });
+	const check = (
+		config: Record<string, unknown>,
+		options: { uploadRoot?: string; uploadedFiles?: string[]; dockerContextRoot?: string } = {},
+	) => checkActorPaths({ actorDir, uploadRoot: actorDir, uploadedFiles, config, ...options });
 
 	beforeAll(async () => {
 		root = mkdtempSync(join(tmpdir(), 'apify-cli-actor-paths-'));
@@ -146,8 +148,8 @@ describe('checkActorPaths', () => {
 	});
 
 	it('requires dockerfile inside the Docker context when one is given', () => {
-		const monorepo = { uploadRoot: root, dockerContextRoot: join(root, 'shared') };
-		uploadedFiles = [`${ACTOR_PATH}/Dockerfile`, `${ACTOR_PATH}/.actor/actor.json`, 'shared/Dockerfile'];
+		const monorepoFiles = [`${ACTOR_PATH}/Dockerfile`, `${ACTOR_PATH}/.actor/actor.json`, 'shared/Dockerfile'];
+		const monorepo = { uploadRoot: root, uploadedFiles: monorepoFiles, dockerContextRoot: join(root, 'shared') };
 
 		expect(check({ dockerfile: '../../../shared/Dockerfile' }, monorepo)).toEqual([]);
 		expect(check({ dockerfile: '../Dockerfile' }, monorepo)).toEqual([
@@ -158,7 +160,7 @@ describe('checkActorPaths', () => {
 				reason: `lies outside the Docker context ${join(root, 'shared')}`,
 			},
 		]);
-		expect(check({ dockerfile: '../Dockerfile' }, { uploadRoot: root, dockerContextRoot: root })).toEqual([]);
+		expect(check({ dockerfile: '../Dockerfile' }, { ...monorepo, dockerContextRoot: root })).toEqual([]);
 	});
 });
 
