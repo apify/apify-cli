@@ -24,6 +24,11 @@ export interface BaseFlagOptions {
 export interface StringFlagOptions<Choices extends readonly string[] = readonly string[]> extends BaseFlagOptions {
 	choices?: Choices;
 	default?: string;
+	/**
+	 * Keeps every value of a repeated flag (`--a 1 --a 2`) as a `string[]` instead of rejecting the repeat.
+	 * @default false
+	 */
+	multiple?: boolean;
 }
 
 export interface BooleanFlagOptions extends BaseFlagOptions {
@@ -42,12 +47,14 @@ export interface TaggedFlagBuilder<
 	ChoicesType extends readonly string[] | null,
 	Required = boolean,
 	HasDefault = false,
+	Multiple = boolean,
 > {
 	flagTag: Tag;
 	builder: (objectName: string) => FlagBuilderReturn;
 	choices: ChoicesType;
 	required: Required;
 	hasDefault: HasDefault;
+	multiple?: Multiple;
 	stdin: StdinMode;
 
 	// Fields from the options object
@@ -77,7 +84,13 @@ export function YesFlag(description = 'Automatic yes to prompts; assume "yes" as
 
 function stringFlag<const Choices extends string[], const T extends StringFlagOptions<readonly string[]>>(
 	options: T & { choices?: Choices },
-): TaggedFlagBuilder<'string', Choices, T['default'] extends string ? true : T['required'], T['default']> {
+): TaggedFlagBuilder<
+	'string',
+	Choices,
+	T['default'] extends string ? true : T['required'],
+	T['default'],
+	T['multiple'] extends true ? true : false
+> {
 	return {
 		flagTag: 'string',
 		builder: (objectName) => {
@@ -115,6 +128,7 @@ function stringFlag<const Choices extends string[], const T extends StringFlagOp
 		choices: options.choices as Choices,
 		required: (options.required ?? false) as never,
 		hasDefault: options.default,
+		multiple: (options.multiple ?? false) as never,
 		stdin: options.stdin ?? StdinMode.Stringified,
 
 		description: options.description,
