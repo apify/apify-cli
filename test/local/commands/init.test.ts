@@ -6,7 +6,9 @@ import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
+import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+import { resetCwdCaches } from '../../__setup__/reset-cwd-caches.js';
 
 const actName = 'init-my-actor';
 const { beforeAllCalls, afterAllCalls, joinPath } = useTempPath(actName, {
@@ -16,11 +18,14 @@ const { beforeAllCalls, afterAllCalls, joinPath } = useTempPath(actName, {
 	cwdParent: false,
 });
 
+const { logMessages } = useConsoleSpy();
+
 const { InitCommand } = await import('../../../src/commands/init.js');
 
 describe('apify init', () => {
 	beforeEach(async () => {
 		await beforeAllCalls();
+		resetCwdCaches();
 	});
 
 	afterEach(async () => {
@@ -119,5 +124,26 @@ describe('apify init', () => {
 		const config = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 		expect(config).toStrictEqual(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
 		expect(config.dockerfile).toBeUndefined();
+	});
+
+	it('warns when a Python project has no Dockerfile', async () => {
+		await mkdir(joinPath('my_actor'), { recursive: true });
+		writeFileSync(joinPath('my_actor', '__init__.py'), '');
+		writeFileSync(joinPath('my_actor', '__main__.py'), '');
+
+		await testRunCommand(InitCommand, { args_actorName: actName, flags_yes: true });
+
+		expect(logMessages.error.join('\n')).toMatch(/No Dockerfile found/);
+	});
+
+	it('does not warn when a Python project has a Dockerfile', async () => {
+		await mkdir(joinPath('my_actor'), { recursive: true });
+		writeFileSync(joinPath('my_actor', '__init__.py'), '');
+		writeFileSync(joinPath('my_actor', '__main__.py'), '');
+		writeFileSync(joinPath('Dockerfile'), 'FROM apify/actor-python');
+
+		await testRunCommand(InitCommand, { args_actorName: actName, flags_yes: true });
+
+		expect(logMessages.error.join('\n')).not.toMatch(/No Dockerfile found/);
 	});
 });

@@ -1,4 +1,5 @@
-import { basename } from 'node:path';
+import { existsSync } from 'node:fs';
+import { basename, join } from 'node:path';
 import process from 'node:process';
 
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
@@ -161,6 +162,19 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 			}
 
 			await setLocalConfig(configToWrite, cwd);
+		}
+
+		if (
+			project.type === ProjectLanguage.Python &&
+			!this.flags.dockerfile &&
+			!actorConfig.unwrapOr(undefined)?.config.dockerfile &&
+			!existsSync(join(cwd, '.actor', 'Dockerfile')) &&
+			!existsSync(join(cwd, 'Dockerfile'))
+		) {
+			warning({
+				message:
+					'No Dockerfile found. Without one, the Apify platform builds the Actor with a Node.js base image. Add one at .actor/Dockerfile (e.g. FROM apify/actor-python) or pass --dockerfile.',
+			});
 		}
 
 		await setLocalEnv(cwd);
