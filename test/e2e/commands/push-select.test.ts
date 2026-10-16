@@ -36,6 +36,15 @@ describe('[e2e] apify push in a repository with several Actors', () => {
 		expect(result.stdout).toBe('');
 	});
 
+	it('exits with code 4 for an --actor-dir outside the root', async () => {
+		const result = await runCli('apify', ['push', '--actor-dir', '../outside', '--json'], { cwd: root });
+
+		expect(result.exitCode, `stdout: ${result.stdout}\nstderr: ${result.stderr}`).toBe(4);
+		expect(result.stderr).toContain('Directory "../outside" from --actor-dir is outside the pushed directory.');
+		expect(result.stderr).not.toContain('login');
+		expect(result.stdout).toBe('');
+	});
+
 	it('exits with code 4 for an --actor-dir that is not an Actor', async () => {
 		const result = await runCli('apify', ['push', '--actor-dir', 'packages/shared'], { cwd: root });
 

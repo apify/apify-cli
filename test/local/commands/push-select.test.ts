@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
@@ -198,6 +198,23 @@ describe('apify push in a repository with several Actors', () => {
 
 			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
 			expect(stderr()).toContain('Directory "packages/shared" from --actor-dir has no .actor/actor.json.');
+			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
+			expect(versionUpdate).not.toHaveBeenCalled();
+		});
+
+		it('rejects an --actor-dir outside the root before the login check', async () => {
+			await writeActor('../push-select-outside', ACTOR_B.name);
+
+			try {
+				await run({ flags_actorDir: ['actors/a', '../push-select-outside'] });
+			} finally {
+				await rm(joinPath('..', 'push-select-outside'), { recursive: true, force: true });
+			}
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
+			expect(stderr()).toContain(
+				'Directory "../push-select-outside" from --actor-dir is outside the pushed directory.',
+			);
 			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
 			expect(versionUpdate).not.toHaveBeenCalled();
 		});

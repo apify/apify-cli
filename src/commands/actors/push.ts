@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, statSync, unlinkSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
@@ -376,6 +376,16 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		if (this.flags.actorDir?.length) {
 			const dirs = [...new Set(this.flags.actorDir.map((actorDir) => toPosixRelative(root, resolve(root, actorDir))))];
+			const outside = dirs.find((dir) => isAbsolute(dir) || dir === '..' || dir.startsWith('../'));
+
+			if (outside !== undefined) {
+				error({
+					message: `Directory "${outside}" from --actor-dir is outside the pushed directory. Pass a path below it.`,
+				});
+				process.exitCode = CommandExitCodes.NoFilesToPush;
+				return;
+			}
+
 			const missing = dirs.find((dir) => !existsSync(join(root, dir, LOCAL_CONFIG_PATH)));
 
 			if (missing !== undefined) {
