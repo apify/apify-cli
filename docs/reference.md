@@ -857,10 +857,10 @@ DESCRIPTION
   Use --force to override newer remote versions.
 
 USAGE
-  $ apify actors push [actorId] [--allow-missing-secrets]
-                      [--apply-env-vars-to-build] [-b <value>] [--dir <value>]
-                      [-f] [--json] [--open] [--profile <value>] [-v <value>]
-                      [-w <value>]
+  $ apify actors push [actorId] [--actor-dir <value> | --all]
+                      [--allow-missing-secrets] [--apply-env-vars-to-build]
+                      [-b <value>] [--dir <value>] [-f] [--json] [--open]
+                      [--profile <value>] [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -868,6 +868,13 @@ ARGUMENTS
            modify the Actor with the name specified in '.actor/actor.json' file.
 
 FLAGS
+      --actor-dir=<value>        When the directory has
+                                 no Actor of its own, push the Actor in this
+                                 directory (relative to it). Repeat the flag to push
+                                 several Actors.
+      --all                      When the directory has
+                                 no Actor of its own, push every Actor found in the
+                                 directories below it.
       --allow-missing-secrets    Allow the command to
                                  continue even when secret values are not found in
                                  the local secrets storage.
