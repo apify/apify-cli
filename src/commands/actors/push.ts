@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { readFileSync, statSync, unlinkSync } from 'node:fs';
+import { readFileSync, realpathSync, statSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyApiError } from 'apify-client';
@@ -24,6 +24,7 @@ import { getConsoleUrl } from '../../lib/console-url.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import {
 	getContextFilePaths,
+	isOutside,
 	monorepoUnsupportedMessage,
 	readGitProvenance,
 	resolveDockerContext,
@@ -166,6 +167,25 @@ const confirmGitSourceSwitch = async ({
 const rejectsActorPath = (err: unknown) => {
 	const { statusCode, message } = err as ApifyApiError;
 	return statusCode === 400 && typeof message === 'string' && message.includes('actorPath');
+};
+
+/**
+ * The platform's multi-file and zip sources carry files only: a link to a file goes as that file, a link to a
+ * directory inside the upload as copies of the uploaded files under its target, and a link to nothing is left out.
+ */
+const resolveLinksForUpload = (root: string, files: string[]) => {
+	const stats = new Map(files.map((file) => [file, statSync(join(root, file), { throwIfNoEntry: false })]));
+	return files.flatMap((file) => {
+		const fileStats = stats.get(file);
+		if (fileStats?.isFile()) return [file];
+		if (!fileStats?.isDirectory()) return [];
+		const target = relative(realpathSync(root), realpathSync(join(root, file)));
+		if (isOutside(target)) return [];
+		const prefix = `${toPosix(target)}/`;
+		return files
+			.filter((other) => other.startsWith(prefix) && stats.get(other)?.isFile())
+			.map((other) => `${file}/${other.slice(prefix.length)}`);
+	});
 };
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
@@ -316,7 +336,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		let actorPath: string | undefined;
 		if (dockerContext.kind === 'context') {
 			uploadRoot = dockerContext.sourceRoot;
-			uploadedFiles = (await getContextFilePaths(uploadRoot)).map(toPosix);
+			uploadedFiles = resolveLinksForUpload(uploadRoot, (await getContextFilePaths(uploadRoot)).map(toPosix));
 			actorPath = dockerContext.actorPath;
 		}
 

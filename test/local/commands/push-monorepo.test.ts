@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
+import { existsSync, symlinkSync } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 
@@ -232,6 +232,21 @@ describe('apify push of a monorepo Actor', () => {
 
 		expect(existsSync(join(process.cwd(), 'temp_file.zip'))).toBe(false);
 		expect(existsSync(joinPath('temp_file.zip'))).toBe(false);
+	});
+
+	it('uploads the files under a directory symlink as copies and leaves a dangling link out', async () => {
+		symlinkSync('../../shared', joinPath(`${ACTOR_PATH}/shared`));
+		symlinkSync('missing', joinPath('dangling'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toContain(`${ACTOR_PATH}/shared/TypeScript_Dockerfile`);
+		expect(names).toContain('shared/TypeScript_Dockerfile');
+		expect(names).not.toContain(`${ACTOR_PATH}/shared`);
+		expect(names).not.toContain('dangling');
 	});
 
 	it('warns about uncommitted changes, which the upload carries as they are', async () => {
