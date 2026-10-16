@@ -49,7 +49,18 @@ type InferArgTypeFromArg<Builder extends TaggedArgBuilder<ArgTag, unknown>> =
 type If<T, Y, N> = T extends true ? Y : N;
 type IfNotUnknown<T, Y, N> = T extends unknown ? Y : N;
 
+// A flag that keeps every value (`multiple: true`) is typed as an array of the single-value type
 type InferFlagTypeFromFlag<
+	Builder extends TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>,
+	OptionalIfHasDefault = false,
+> =
+	Builder extends TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown, true>
+		?
+				| Exclude<InferSingleFlagTypeFromFlag<Builder, OptionalIfHasDefault>, undefined>[]
+				| Extract<InferSingleFlagTypeFromFlag<Builder, OptionalIfHasDefault>, undefined>
+		: InferSingleFlagTypeFromFlag<Builder, OptionalIfHasDefault>;
+
+type InferSingleFlagTypeFromFlag<
 	Builder extends TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>,
 	OptionalIfHasDefault = false,
 > =
@@ -549,7 +560,13 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				});
 			}
 
-			// If you provide --a 1 --a 2, it's <currently> not allowed
+			// A flag that opted into `multiple` keeps every value; otherwise --a 1 --a 2 is not allowed
+			if (Array.isArray(rawFlag) && builderData.multiple) {
+				this.flags[camelCasedName] = rawFlag;
+
+				continue;
+			}
+
 			if (Array.isArray(rawFlag)) {
 				if (rawFlag.length > 1) {
 					throw new CommandError({
