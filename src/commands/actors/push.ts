@@ -1,8 +1,10 @@
+import { randomUUID } from 'node:crypto';
 import { readFileSync, statSync, unlinkSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
-import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
+import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyApiError } from 'apify-client';
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
@@ -20,7 +22,13 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getConsoleUrl } from '../../lib/console-url.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { monorepoUnsupportedMessage, resolveDockerContext } from '../../lib/docker-context.js';
+import {
+	getContextFilePaths,
+	monorepoUnsupportedMessage,
+	readGitProvenance,
+	resolveDockerContext,
+	toPosix,
+} from '../../lib/docker-context.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
@@ -38,7 +46,6 @@ import {
 	printJsonToStdout,
 } from '../../lib/utils.js';
 
-const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
 const DEFAULT_RUN_OPTIONS = {
 	build: 'latest',
 	memoryMbytes: 4096,
@@ -153,6 +160,12 @@ const confirmGitSourceSwitch = async ({
 		default: false,
 		errorMessageForStdin: `Actor ${actorName} builds from a Git repository. To switch the source to the local files, use --force.`,
 	});
+};
+
+/** A platform without the `actorPath` version field rejects the key with a schema error. */
+const rejectsActorPath = (err: unknown) => {
+	const { statusCode, message } = err as ApifyApiError;
+	return statusCode === 400 && typeof message === 'string' && message.includes('actorPath');
 };
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
@@ -290,31 +303,47 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		// A monorepo Actor builds from a Docker context above its folder, which a push of that folder cannot carry.
+		// A monorepo Actor builds from a Docker context above its folder, so the push uploads its repository
+		// (or, outside Git, the context) and tells the platform where the Actor lies in it.
 		const dockerContext = resolveDockerContext(cwd, actorConfig?.dockerContextDir);
 		if (dockerContext.kind === 'invalid') {
 			error({ message: dockerContext.message });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
+		let uploadRoot = cwd;
+		let uploadedFiles = filePathsToPush;
+		let actorPath: string | undefined;
 		if (dockerContext.kind === 'context') {
-			error({ message: monorepoUnsupportedMessage(actorConfig!.name as string) });
-			process.exitCode = CommandExitCodes.NotImplemented;
-			return;
+			uploadRoot = dockerContext.sourceRoot;
+			uploadedFiles = (await getContextFilePaths(uploadRoot)).map(toPosix);
+			actorPath = dockerContext.actorPath;
 		}
 
 		// The platform resolves these paths after the upload; a wrong one builds the wrong image or fails the build.
 		const pathProblems = checkActorPaths({
 			actorDir: cwd,
-			uploadRoot: cwd,
-			uploadedFiles: filePathsToPush,
+			uploadRoot,
+			uploadedFiles,
 			config: actorConfig,
+			dockerContextRoot: dockerContext.kind === 'context' ? dockerContext.contextRoot : undefined,
 		});
 		if (pathProblems.length > 0) {
 			error({ message: formatActorPathProblems(pathProblems) });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
+
+		if (actorPath && readGitProvenance(uploadRoot).dirty) {
+			warning({
+				message: `The repository ${uploadRoot} has uncommitted changes; the push uploads the files as they are.`,
+			});
+		}
+
+		const refuseMonorepoPush = () => {
+			error({ message: monorepoUnsupportedMessage(actorConfig!.name as string) });
+			process.exitCode = CommandExitCodes.NotImplemented;
+		};
 
 		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
@@ -368,6 +397,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 							// TODO: export enum from apify-client
 							sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES as never,
 							sourceFiles: [],
+							...(actorPath ? { actorPath } : {}),
 						},
 					],
 				};
@@ -377,7 +407,13 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 					newActor.actorStandby = { isEnabled: true };
 				}
 
-				actor = await apifyClient.actors().create(newActor);
+				try {
+					actor = await apifyClient.actors().create(newActor);
+				} catch (err) {
+					if (!rejectsActorPath(err)) throw err;
+					refuseMonorepoPush();
+					return;
+				}
 				actorId = actor.id;
 				isActorCreatedNow = true;
 				info({ message: `Created Actor with name ${actorConfig!.name} on Apify.` });
@@ -393,14 +429,14 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
-		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
+		const filesSize = await sumFilesSizeInBytes(uploadedFiles, uploadRoot);
 
-		if (filesSize < MAX_MULTIFILE_BYTES && !isActorCreatedNow) {
+		if ((filesSize < MAX_MULTIFILE_BYTES || actorPath) && !isActorCreatedNow) {
 			const client = await actorClient.get();
 
 			// Check when was files modified last
-			const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
-				const { mtimeMs, ctimeMs } = statSync(join(cwd, filePath));
+			const mostRecentModifiedFileMs = uploadedFiles.reduce((modifiedMs, filePath) => {
+				const { mtimeMs, ctimeMs } = statSync(join(uploadRoot, filePath));
 
 				// Sometimes it's possible mtimeMs is some messed up value (like 2000/01/01 midnight), then we want to check created if it's newer
 				const fileModifiedMs = mtimeMs > ctimeMs ? mtimeMs : ctimeMs;
@@ -443,24 +479,28 @@ Skipping push. Use --force to override.`,
 		let sourceFiles;
 		let tarballUrl;
 		if (filesSize < MAX_MULTIFILE_BYTES) {
-			sourceFiles = await createSourceFiles(filePathsToPush, cwd);
+			sourceFiles = await createSourceFiles(uploadedFiles, uploadRoot);
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else {
 			// Create zip
 			run({ message: 'Zipping Actor files' });
-			await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush, cwd);
+			const zipPath = join(tmpdir(), `apify-push-${randomUUID()}.zip`);
+			await createActZip(zipPath, uploadedFiles, uploadRoot);
 
 			// Upload it to Apify.keyValueStores
 			const store = await apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
 			const key = `version-${version}.zip`;
-			const buffer = readFileSync(TEMP_ZIP_FILE_NAME);
-			await apifyClient.keyValueStore(store.id).setRecord({
-				key,
-				// TODO: fix this type too
-				value: buffer as never,
-				contentType: 'application/zip',
-			});
-			unlinkSync(TEMP_ZIP_FILE_NAME);
+			try {
+				const buffer = readFileSync(zipPath);
+				await apifyClient.keyValueStore(store.id).setRecord({
+					key,
+					// TODO: fix this type too
+					value: buffer as never,
+					contentType: 'application/zip',
+				});
+			} finally {
+				unlinkSync(zipPath);
+			}
 			const tempTarballUrl = new URL(
 				`${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
 			);
@@ -493,27 +533,42 @@ Skipping push. Use --force to override.`,
 		const applyEnvVarsToBuild =
 			this.flags.applyEnvVarsToBuild ?? (actorConfig!.applyEnvVarsToBuild as boolean | undefined);
 
-		if (actorCurrentVersion) {
-			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars, applyEnvVarsToBuild };
-			// TODO: fix this type too -.-
-			await actorClient.version(version).update(actorVersionModifier as never);
-			run({ message: `Updated version ${version} for Actor ${actor.name}.` });
-		} else {
-			const actorNewVersion = {
-				versionNumber: version,
-				tarballUrl,
-				sourceFiles,
-				buildTag,
-				sourceType,
-				envVars,
-				applyEnvVarsToBuild,
-			};
+		const actorVersionSource = { tarballUrl, sourceFiles, sourceType, ...(actorPath ? { actorPath } : {}) };
+		try {
+			if (actorCurrentVersion) {
+				const actorVersionModifier = { ...actorVersionSource, buildTag, envVars, applyEnvVarsToBuild };
+				// TODO: fix this type too -.-
+				await actorClient.version(version).update(actorVersionModifier as never);
+				run({ message: `Updated version ${version} for Actor ${actor.name}.` });
+			} else {
+				const actorNewVersion = {
+					versionNumber: version,
+					...actorVersionSource,
+					buildTag,
+					envVars,
+					applyEnvVarsToBuild,
+				};
 
-			await actorClient.versions().create({
-				...actorNewVersion,
-			} as never);
+				await actorClient.versions().create({
+					...actorNewVersion,
+				} as never);
 
-			run({ message: `Created version ${version} for Actor ${actor.name}.` });
+				run({ message: `Created version ${version} for Actor ${actor.name}.` });
+			}
+		} catch (err) {
+			if (!rejectsActorPath(err)) throw err;
+			if (isActorCreatedNow) {
+				try {
+					await actorClient.delete();
+					info({ message: `Deleted the just created Actor ${actor.name} again.` });
+				} catch (deleteErr) {
+					warning({
+						message: `Could not delete the just created Actor ${actor.name}: ${(deleteErr as Error).message}`,
+					});
+				}
+			}
+			refuseMonorepoPush();
+			return;
 		}
 
 		// Sync standby mode on existing actors with actor.json
