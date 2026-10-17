@@ -104,10 +104,6 @@ export function consoleBuildUrl(actorId: string, buildNumber: string): string {
 	return `${getConsoleUrl()}/actors/${actorId}#/builds/${buildNumber}`;
 }
 
-export function consoleDatasetUrl(datasetId: string): string {
-	return `${getConsoleUrl()}/storage/datasets/${datasetId}`;
-}
-
 function statusColor(status: string): string {
 	if (status === 'SUCCEEDED') return chalk.green(status);
 	if (status === 'RUNNING' || status === 'READY') return chalk.blue(status);
