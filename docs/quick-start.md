@@ -31,7 +31,7 @@ The CLI then asks you for the following:
 
     :::
 
-1. Choose where to host the source code of your Actor: on Apify, GitHub, GitLab, or Bitbucket. Let's choose **Apify**.
+1. Choose where to keep the source code of your Actor: on your machine, or hosted on GitHub, GitLab, or Bitbucket. Let's choose **Local only** so the code stays on your machine.
 
 The CLI creates a new directory with the boilerplate code and installs all project dependencies.
 

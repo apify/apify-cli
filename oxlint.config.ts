@@ -3,6 +3,7 @@ import { defineConfig } from '@apify/oxlint-config';
 export default defineConfig({
 	ignorePatterns: ['**/dist', 'node_modules', 'coverage', 'website', '**/*.d.ts', 'test/tmp/**/*'],
 	rules: {
+		'import/extensions': ['error', 'always', { ignorePackages: true }],
 		'no-console': 'off',
 		'no-param-reassign': 'off',
 		'typescript/no-explicit-any': 'off',

@@ -9,9 +9,9 @@ import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapp
 import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
-import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
+import { type ActorRun, ApifyClient, type Build } from 'apify-client';
 import { ZipArchive } from 'archiver';
-import axios, { AxiosHeaders } from 'axios';
+import axios from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import ignoreModule, { type Ignore } from 'ignore';
 import { getEncoding } from 'istextorbinary';
@@ -32,8 +32,9 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
+import { lookUpActiveProfile, lookUpProfile } from './auth-file.js';
+import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth, type ResolvedAuth } from './auth.js';
 import {
-	APIFY_CLIENT_DEFAULT_HEADERS,
 	AUTH_FILE_PATH,
 	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
@@ -41,8 +42,8 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
-import { deleteFile, ensureApifyDirectory, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { ensureCredentialsCurrent, getSecret } from './credentials.js';
+import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import { encodeRecordKey, readKvsRecordMetadata, recordMetadataFileName } from './kvs-metadata.js';
@@ -85,34 +86,33 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 };
 
 /**
- * Returns object from auth file or empty object. Secrets (token, proxy password) are
- * pulled from the keyring when that backend is active; user metadata lives in auth.json.
+ * The given profile, or the active one, in the flat shape the CLI consumes, or an empty object when nothing is
+ * stored. Secrets come from whichever backend holds them; the metadata comes from auth.json.
  */
-export const getLocalUserInfo = async (): Promise<AuthJSON> => {
-	await ensureMigrated();
+export const getLocalUserInfo = async (userId?: string): Promise<AuthJSON> => {
+	await ensureCredentialsCurrent();
 
-	let result: AuthJSON = {};
-	try {
-		const raw = await readFile(AUTH_FILE_PATH(), 'utf-8');
-		result = JSON.parse(raw) as AuthJSON;
-	} catch {
-		// auth.json may not exist yet (fresh keyring-only state); fall through
+	const { profile, missingProfile } = userId ? lookUpProfile(userId) : lookUpActiveProfile();
+
+	// Reported rather than swallowed: the commands that build `<username>/<name>` lookups would
+	// otherwise fail with a misleading "not found".
+	if (missingProfile) {
+		throw new Error(
+			`Your ${userId ? '' : 'active '}profile "${missingProfile}" is missing from ${AUTH_FILE_PATH()}. Run "apify login" to log in again.`,
+		);
 	}
 
-	if ((await getBackend()) === 'keyring') {
-		const token = await getToken();
-		if (token) result.token = token;
+	if (!profile) return {};
 
-		const proxyPassword = await getProxyPassword();
-		if (proxyPassword) result.proxy = { ...result.proxy, password: proxyPassword };
-	}
+	const result: AuthJSON = { id: profile.id };
+	if (profile.username) result.username = profile.username;
+	if (profile.organizationOwnerUserId) result.organizationOwnerUserId = profile.organizationOwnerUserId;
 
-	const hasUserMetadata = !!(result.username || result.id);
-	const isComplete = hasUserMetadata || !!result.token;
-	if (!isComplete) return {};
-	if (!hasUserMetadata) {
-		throw new Error('Stale credentials found without user metadata. Please run "apify login" again.');
-	}
+	const token = await getSecret(profile.id, 'token');
+	if (token) result.token = token;
+
+	const proxyPassword = await getSecret(profile.id, 'proxy-password');
+	if (proxyPassword) result.proxy = { password: proxyPassword };
 
 	return result;
 };
@@ -121,98 +121,65 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
  * Gets instance of ApifyClient for user otherwise throws error
  */
 export async function getLoggedClientOrThrow() {
-	const loggedClient = await getLoggedClient();
+	const { client, auth, error } = await getLoggedClient();
 
-	if (!loggedClient) {
+	if (!client) {
 		process.exitCode = CommandExitCodes.MissingAuth;
-		throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
+		throw new Error(describeAuthFailure(auth, error));
 	}
-	return loggedClient;
+	return client;
 }
 
-const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
-	if (existingToken) return existingToken;
-	await ensureMigrated();
-	return getToken();
-};
+let cachedUserInfo: { token: string; userInfo: AuthJSON } | undefined;
 
-type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
-
-/**
- * Returns options for ApifyClient
- */
-export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => {
-	const resolvedToken = await resolveToken(token);
-
-	return {
-		token: resolvedToken,
-		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
-		requestInterceptors: [
-			(config) => {
-				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
-
-				for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
-					config.headers![key] = value;
-				}
-
-				return config;
-			},
-		],
-	};
-};
+/** Test-only: drop the in-memory account metadata so each test starts fresh. */
+export function __resetUserInfoCacheForTests() {
+	cachedUserInfo = undefined;
+}
 
 /**
- * Gets instance of ApifyClient for token or for params from global auth file.
+ * `client` is `null` when no token is available or the lookup failed; `error` carries that
+ * failure, so the caller can tell a rejected token from an API it could not reach.
  *
- * Refreshes the user metadata in auth.json each run. Secrets (token, proxy.password) only
- * get written when their value actually changes — avoids macOS Keychain prompts on every command.
+ * Read-only: the resolved token is never persisted.
  */
-export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
-	const resolvedToken = await resolveToken(token);
+async function getLoggedClient(): Promise<{ client: ApifyClient | null; auth?: ResolvedAuth; error?: unknown }> {
+	const auth = await resolveAuth();
+	if (!auth) return { client: null };
 
-	const apifyClient = new ApifyClient(await getApifyClientOptions(resolvedToken, apiBaseUrl));
+	const apifyClient = new ApifyClient(getApifyClientOptionsForToken(auth.token));
 
-	let userInfo;
 	try {
-		userInfo = await apifyClient.user('me').get();
+		const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
+		cachedUserInfo = { token: auth.token, userInfo };
 	} catch (err) {
-		cliDebugPrint('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
-		return null;
+		cliDebugPrint('[getLoggedClient] error getting user info', { error: err });
+		return { client: null, auth, error: err };
 	}
 
-	if (apifyClient.token) {
-		await setToken(apifyClient.token, { skipIfUnchanged: true });
-	}
+	return { client: apifyClient, auth };
+}
 
-	const proxyPassword = userInfo.proxy?.password;
-	if (proxyPassword) {
-		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
-	}
+/**
+ * Account metadata for the resolved token. An env token has no auth.json entry, so it needs an API
+ * call — kept short because `apify run` waits on this and the client defaults retry for minutes.
+ */
+export async function getCurrentUserInfo(): Promise<AuthJSON> {
+	const auth = await resolveAuth();
+	if (!auth) return getLocalUserInfo();
 
-	ensureApifyDirectory(AUTH_FILE_PATH());
-	const existingFile = (() => {
-		try {
-			return JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8')) as Record<string, unknown>;
-		} catch {
-			return {};
-		}
-	})();
-	const backend = await getBackend();
-	const fileContents: Record<string, unknown> = { ...existingFile, ...userInfo, secretsBackend: backend };
-	if (backend === 'keyring') {
-		delete fileContents.token;
-		if (fileContents.proxy && typeof fileContents.proxy === 'object') {
-			const { password: _password, ...rest } = fileContents.proxy as { password?: string };
-			if (Object.keys(rest).length > 0) {
-				fileContents.proxy = rest;
-			} else {
-				delete fileContents.proxy;
-			}
-		}
-	}
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
+	if (cachedUserInfo?.token === auth.token) return cachedUserInfo.userInfo;
+	if (auth.source !== 'env') return getLocalUserInfo(auth.profile?.id);
 
-	return apifyClient;
+	const apifyClient = new ApifyClient({
+		...getApifyClientOptionsForToken(auth.token),
+		maxRetries: 1,
+		timeoutSecs: 10,
+	});
+	const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
+	cachedUserInfo = { token: auth.token, userInfo };
+
+	return userInfo;
 }
 
 export const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);

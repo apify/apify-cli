@@ -11,11 +11,13 @@ import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { simpleLog } from '../../lib/outputs.js';
-import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { getLocalConfig, getCurrentUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
 	static override name = 'start' as const;
+
+	static override enableProfileFlag = true;
 
 	static override description =
 		'Starts Actor remotely and returns run details immediately.\n' +
@@ -72,7 +74,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		const cwd = process.cwd();
 		const localConfig = getLocalConfig(cwd) || {};
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await getCurrentUserInfo();
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		const {

@@ -7,10 +7,12 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { error, success } from '../../lib/outputs.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishCommand> {
 	static override name = 'unpublish' as const;
+
+	static override enableProfileFlag = true;
 
 	static override description =
 		'Unpublishes the task from its public landing page.\n' +
@@ -39,7 +41,7 @@ export class TaskUnpublishCommand extends ApifyCommand<typeof TaskUnpublishComma
 
 	async run() {
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await getCurrentUserInfo();
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		const { taskId } = this.args;

@@ -25,7 +25,7 @@ import {
 	createActZip,
 	createSourceFiles,
 	getActorLocalFilePaths,
-	getLocalUserInfo,
+	getCurrentUserInfo,
 	getLoggedClientOrThrow,
 	outputJobLog,
 	parseWaitForFinishMillis,
@@ -151,6 +151,8 @@ const confirmGitSourceSwitch = async ({
 
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	static override name = 'push' as const;
+
+	static override enableProfileFlag = true;
 
 	static override description =
 		`Deploys Actor to Apify platform using settings from '${LOCAL_CONFIG_PATH}'.\n` +
@@ -282,7 +284,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
 
