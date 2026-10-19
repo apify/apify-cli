@@ -17,6 +17,7 @@ export const LEGACY_LOCAL_STORAGE_DIR = 'apify_storage';
 export const ACTOR_SPECIFICATION_VERSION = 1;
 
 export const EMPTY_LOCAL_CONFIG = {
+	$schema: 'https://apify.com/schemas/v1/actor.ide.json',
 	actorSpecification: ACTOR_SPECIFICATION_VERSION,
 	name: null,
 	version: '0.0',
