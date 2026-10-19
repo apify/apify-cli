@@ -196,6 +196,15 @@ export function renderMainHelpMenu(entrypoint: string) {
 		result.push('');
 	}
 
+	result.push(chalk.bold('GLOBAL OPTIONS'));
+	result.push(
+		'  --non-interactive  Skip all prompts; exit non-zero if a required answer has no flag equivalent.',
+		`                     Env: APIFY_CLI_NON_INTERACTIVE=1`,
+		'  --help             Show help for a command.',
+		'  --version          Show CLI version.',
+		'',
+	);
+
 	result.push(
 		chalk.bold('LEARN MORE'),
 		`  Use '${entrypoint} <command> --help' for more information about a command.`,

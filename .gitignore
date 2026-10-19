@@ -27,3 +27,4 @@ package-lock.json
 scripts/temporary-reference.md
 
 bundles/*
+docs/dev-notes/
