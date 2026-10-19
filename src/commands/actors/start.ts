@@ -18,6 +18,8 @@ import { ActorsCallCommand } from './call.js';
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
 	static override name = 'start' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		'Starts Actor remotely and returns run details immediately.\n' +
 		'Uses authenticated account and local key-value store for input.';

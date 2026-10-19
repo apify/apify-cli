@@ -12,6 +12,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyValueStoresDeleteValueCommand> {
 	static override name = 'delete-value' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Delete a value from a key-value store.';
 
 	static override interactive = true;

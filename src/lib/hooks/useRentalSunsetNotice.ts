@@ -4,7 +4,7 @@ import axios from 'axios';
 import chalk from 'chalk';
 import { isCI } from 'ci-info';
 
-import { getActiveProfile } from '../auth-file.js';
+import { getCurrentProfile } from '../auth.js';
 import {
 	APIFY_CLIENT_DEFAULT_HEADERS,
 	CHECK_RENTAL_ACTORS_EVERY_MILLIS,
@@ -95,7 +95,7 @@ export function renderRentalSunsetNotice(rentalActorCount: number) {
  * not need authentication at all.
  */
 function getLocalUsername() {
-	return getActiveProfile()?.username;
+	return getCurrentProfile()?.username;
 }
 
 /**
