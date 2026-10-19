@@ -8,7 +8,7 @@ import which from 'which';
 import { CommandExitCodes } from '../consts.js';
 import { error, run, simpleLog, success } from '../outputs.js';
 import { tildify, userHomeDir } from '../utils.js';
-import { mergeServerEntry } from './file-config.js';
+import { mergeServerEntry, removeServerEntry } from './file-config.js';
 import { maskSecret, maskToken } from './url.js';
 
 const SERVER_KEY = 'apify';
@@ -31,7 +31,9 @@ interface InstallResult {
 }
 
 function printResult(result: InstallResult): void {
-	success({ message: `Apify MCP server configured for ${result.clientLabel}.` });
+	success({
+		message: `Apify MCP server configured for ${result.clientLabel}.`,
+	});
 
 	const lines = [
 		'',
@@ -92,7 +94,9 @@ async function runCliInstall({
 	} catch (err) {
 		const childStderr = isExecaError(err) ? String(err.stderr ?? '').trim() : '';
 		const reason = childStderr ? `${describeExecaError(err, binary)}\n${childStderr}` : describeExecaError(err, binary);
-		error({ message: maskSecret(`Failed to add the MCP server via ${clientLabel}: ${reason}`, token) });
+		error({
+			message: maskSecret(`Failed to add the MCP server via ${clientLabel}: ${reason}`, token),
+		});
 		process.exitCode = CommandExitCodes.RunFailed;
 		return false;
 	}
@@ -112,7 +116,9 @@ function fileClient({
 	return async ({ url, token, yes }) => {
 		const home = userHomeDir();
 		if (!home) {
-			error({ message: 'User home directory could not be determined. Set the HOME environment variable and re-run.' });
+			error({
+				message: 'User home directory could not be determined. Set the HOME environment variable and re-run.',
+			});
 			process.exitCode = CommandExitCodes.InvalidInput;
 			return;
 		}
@@ -172,7 +178,12 @@ const claudeCodeHandler: ClientHandler = async ({ url, token }) => {
 function vscodeHandler(binary: string, clientLabel: string): ClientHandler {
 	return async ({ url, token }) => {
 		const serverJson = (auth: string) =>
-			JSON.stringify({ name: SERVER_KEY, type: 'http', url, headers: { Authorization: auth } });
+			JSON.stringify({
+				name: SERVER_KEY,
+				type: 'http',
+				url,
+				headers: { Authorization: auth },
+			});
 
 		const ok = await runCliInstall({
 			binary,
@@ -195,7 +206,9 @@ function vscodeHandler(binary: string, clientLabel: string): ClientHandler {
 const codexHandler: ClientHandler = async ({ url }) => {
 	const home = userHomeDir();
 	if (!home) {
-		error({ message: 'User home directory could not be determined. Set the HOME environment variable and re-run.' });
+		error({
+			message: 'User home directory could not be determined. Set the HOME environment variable and re-run.',
+		});
 		process.exitCode = CommandExitCodes.InvalidInput;
 		return;
 	}
@@ -238,7 +251,12 @@ const HANDLERS = {
 	kiro: fileClient({
 		label: 'Kiro',
 		segments: ['.kiro', 'settings', 'mcp.json'],
-		entry: (url, token) => ({ url, headers: bearer(token), disabled: false, autoApprove: [] as string[] }),
+		entry: (url, token) => ({
+			url,
+			headers: bearer(token),
+			disabled: false,
+			autoApprove: [] as string[],
+		}),
 	}),
 	antigravity: fileClient({
 		label: 'Antigravity',
@@ -265,4 +283,144 @@ export function clientNeedsToken(name: ClientName): boolean {
 
 export function getClientHandler(name: ClientName): ClientHandler {
 	return HANDLERS[name];
+}
+
+// ── Uninstall ────────────────────────────────────────────────────────────────
+
+type ClientUninstallHandler = () => Promise<void>;
+
+/**
+ * Shell out to a client CLI to remove the server. Same failure contract as runCliInstall:
+ * sets process.exitCode and returns false without throwing on binary-not-found or run failure.
+ */
+async function runCliUninstall({
+	binary,
+	clientLabel,
+	args,
+	maskedCommand,
+	missingMessage,
+}: {
+	binary: string;
+	clientLabel: string;
+	args: string[];
+	maskedCommand: string;
+	missingMessage: string;
+}): Promise<boolean> {
+	if (!(await which(binary, { nothrow: true }))) {
+		error({ message: missingMessage });
+		process.exitCode = CommandExitCodes.NotFound;
+		return false;
+	}
+
+	run({ message: maskedCommand });
+	try {
+		await execa(binary, args, { stdio: ['ignore', 'ignore', 'pipe'] });
+	} catch (err) {
+		const childStderr = isExecaError(err) ? String(err.stderr ?? '').trim() : '';
+		const reason = childStderr ? `${describeExecaError(err, binary)}\n${childStderr}` : describeExecaError(err, binary);
+		error({
+			message: `Failed to remove MCP server via ${clientLabel}: ${reason}`,
+		});
+		process.exitCode = CommandExitCodes.RunFailed;
+		return false;
+	}
+	return true;
+}
+
+function fileClientUninstall({ label, segments }: { label: string; segments: string[] }): ClientUninstallHandler {
+	return async () => {
+		const home = userHomeDir();
+		if (!home) {
+			error({
+				message: 'User home directory could not be determined. Set the HOME environment variable and re-run.',
+			});
+			process.exitCode = CommandExitCodes.InvalidInput;
+			return;
+		}
+		const filePath = join(home, ...segments);
+		const removed = await removeServerEntry({
+			filePath,
+			topLevelKey: 'mcpServers',
+			entryKey: SERVER_KEY,
+		});
+		if (removed) {
+			success({
+				message: `Removed Apify MCP server from ${label} config (${tildify(filePath)}).`,
+			});
+		} else {
+			simpleLog({
+				message: `  No Apify MCP entry found in ${tildify(filePath)} — config already clean.`,
+			});
+		}
+	};
+}
+
+const claudeCodeUninstallHandler: ClientUninstallHandler = async () => {
+	const ok = await runCliUninstall({
+		binary: 'claude',
+		clientLabel: 'Claude Code',
+		args: ['mcp', 'remove', '--scope', 'user', SERVER_KEY],
+		maskedCommand: `claude mcp remove --scope user ${SERVER_KEY}`,
+		missingMessage: `The 'claude' CLI was not found on PATH. Remove manually:\n\n    claude mcp remove --scope user ${SERVER_KEY}`,
+	});
+	if (!ok) return;
+	success({ message: `Removed Apify MCP server from Claude Code.` });
+};
+
+function vscodeUninstallHandler(binary: string, clientLabel: string): ClientUninstallHandler {
+	return async () => {
+		const ok = await runCliUninstall({
+			binary,
+			clientLabel,
+			args: ['--remove-mcp', SERVER_KEY],
+			maskedCommand: `${binary} --remove-mcp ${SERVER_KEY}`,
+			missingMessage: `The '${binary}' CLI was not found on PATH. Remove manually:\n\n    ${binary} --remove-mcp ${SERVER_KEY}`,
+		});
+		if (!ok) return;
+		success({ message: `Removed Apify MCP server from ${clientLabel}.` });
+	};
+}
+
+const codexUninstallHandler: ClientUninstallHandler = async () => {
+	const home = userHomeDir();
+	if (!home) {
+		error({
+			message: 'User home directory could not be determined. Set the HOME environment variable and re-run.',
+		});
+		process.exitCode = CommandExitCodes.InvalidInput;
+		return;
+	}
+	const tomlPath = join(home, '.codex', 'config.toml');
+	const ok = await runCliUninstall({
+		binary: 'codex',
+		clientLabel: 'Codex CLI',
+		args: ['mcp', 'remove', SERVER_KEY],
+		maskedCommand: `codex mcp remove ${SERVER_KEY}`,
+		missingMessage: `The 'codex' CLI was not found on PATH. Remove the [mcp_servers.${SERVER_KEY}] block manually from ${tildify(tomlPath)}.`,
+	});
+	if (!ok) return;
+	success({ message: `Removed Apify MCP server from Codex CLI.` });
+};
+
+const UNINSTALL_HANDLERS: Record<ClientName, ClientUninstallHandler> = {
+	'claude-code': claudeCodeUninstallHandler,
+	cursor: fileClientUninstall({
+		label: 'Cursor',
+		segments: ['.cursor', 'mcp.json'],
+	}),
+	vscode: vscodeUninstallHandler('code', 'VS Code'),
+	'vscode-insiders': vscodeUninstallHandler('code-insiders', 'VS Code Insiders'),
+	codex: codexUninstallHandler,
+	kiro: fileClientUninstall({
+		label: 'Kiro',
+		segments: ['.kiro', 'settings', 'mcp.json'],
+	}),
+	antigravity: fileClientUninstall({
+		label: 'Antigravity',
+		segments: ['.gemini', 'antigravity', 'mcp_config.json'],
+	}),
+};
+
+export function getClientUninstallHandler(name: ClientName): ClientUninstallHandler {
+	return UNINSTALL_HANDLERS[name];
 }

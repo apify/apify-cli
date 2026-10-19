@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "mcpUrl": "https://mcp.apify.com",
+  "skillsRepo": "https://github.com/apify/agent-skills",
+  "clients": {
+    "claude-code": { "maxTier": "mcp", "plugin": null },
+    "cursor": { "maxTier": "mcp", "plugin": null },
+    "vscode": { "maxTier": "mcp", "plugin": null },
+    "vscode-insiders": { "maxTier": "mcp", "plugin": null },
+    "codex": { "maxTier": "mcp", "plugin": null },
+    "kiro": { "maxTier": "mcp", "plugin": null },
+    "antigravity": { "maxTier": "mcp", "plugin": null }
+  }
+}
