@@ -1,0 +1,318 @@
+import {
+	ACTOR_RUNTIME_CONTAINER_NAME,
+	buildRuntimeRunArgs,
+	DEFAULT_ACTOR_RUNTIME_IMAGE,
+	parsePodmanInfo,
+	runtimeNetworkMode,
+	runtimeSecurityOptions,
+	engineDaemonHint,
+	engineInstallHint,
+	isDigestPinned,
+	parseRuntimeContainerInfo,
+	requestedContainerEngine,
+	resolveEngineSocketPath,
+	socketMountArg,
+} from '../../../src/lib/runtime/docker.js';
+
+describe('runtime/docker', () => {
+	describe('socketMountArg()', () => {
+		it('mounts the host socket at the path the runtime expects, on Linux and macOS', () => {
+			expect(socketMountArg('/var/run/docker.sock', 'linux')).toBe('/var/run/docker.sock:/var/run/docker.sock');
+			expect(socketMountArg('/run/podman/podman.sock', 'darwin')).toBe('/run/podman/podman.sock:/var/run/docker.sock');
+		});
+
+		it('doubles the leading slash on Windows to prevent path mangling', () => {
+			expect(socketMountArg('/var/run/docker.sock', 'win32')).toBe('//var/run/docker.sock:/var/run/docker.sock');
+		});
+	});
+
+	describe('isDigestPinned()', () => {
+		it('only treats digest references as fixed - any tag can be moved to a new build', () => {
+			expect(isDigestPinned('apify/actor-runtime@sha256:abc')).toBe(true);
+			expect(isDigestPinned('apify/actor-runtime:latest@sha256:abc')).toBe(true);
+			expect(isDigestPinned(DEFAULT_ACTOR_RUNTIME_IMAGE)).toBe(false);
+			expect(isDigestPinned('apify/actor-runtime:master-5462005')).toBe(false);
+			expect(isDigestPinned('localhost:5000/apify/actor-runtime')).toBe(false);
+		});
+	});
+
+	describe('requestedContainerEngine()', () => {
+		it('reads APIFY_CONTAINER_ENGINE case-insensitively and ignores anything but docker or podman', () => {
+			expect(requestedContainerEngine({ APIFY_CONTAINER_ENGINE: 'podman' })).toBe('podman');
+			expect(requestedContainerEngine({ APIFY_CONTAINER_ENGINE: ' Docker ' })).toBe('docker');
+			expect(requestedContainerEngine({ APIFY_CONTAINER_ENGINE: 'nerdctl' })).toBeUndefined();
+			expect(requestedContainerEngine({})).toBeUndefined();
+		});
+	});
+
+	describe('resolveEngineSocketPath()', () => {
+		it('uses the default Docker socket unless DOCKER_HOST names a unix socket (rootless Docker) on Linux', async () => {
+			await expect(resolveEngineSocketPath('docker', {}, 'linux')).resolves.toBe('/var/run/docker.sock');
+			await expect(
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }, 'linux'),
+			).resolves.toBe('/run/user/1000/docker.sock');
+			await expect(resolveEngineSocketPath('docker', { DOCKER_HOST: 'tcp://localhost:2375' }, 'linux')).resolves.toBe(
+				'/var/run/docker.sock',
+			);
+		});
+		it('ignores a DOCKER_HOST unix socket on macOS and Windows, where the daemon lives in a VM', async () => {
+			// Colima's docs suggest exporting its host-side socket for tools that ignore docker contexts; a bind
+			// mount of that macOS path cannot reach into the VM, where the daemon serves /var/run/docker.sock.
+			await expect(
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///Users/me/.colima/default/docker.sock' }, 'darwin'),
+			).resolves.toBe('/var/run/docker.sock');
+			await expect(
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }, 'win32'),
+			).resolves.toBe('/var/run/docker.sock');
+			await expect(
+				resolveEngineSocketPath('docker', { DOCKER_HOST: 'unix:///run/user/1000/docker.sock' }, 'linux'),
+			).resolves.toBe('/run/user/1000/docker.sock');
+		});
+	});
+
+	describe('install and daemon hints', () => {
+		it('points each platform at the right Docker distribution', () => {
+			expect(engineInstallHint('docker', 'darwin')).toContain('Docker Desktop for Mac');
+			expect(engineInstallHint('docker', 'win32')).toContain('Docker Desktop for Windows');
+			expect(engineInstallHint('docker', 'linux')).toContain('Docker Engine');
+		});
+
+		it('points Podman users at the Podman installation docs on every platform', () => {
+			for (const platform of ['darwin', 'win32', 'linux'] as const) {
+				expect(engineInstallHint('podman', platform)).toContain('podman.io');
+			}
+		});
+
+		it('tells desktop users to start Docker Desktop and Linux users to start the daemon', () => {
+			expect(engineDaemonHint('docker', 'darwin')).toContain('Docker Desktop');
+			expect(engineDaemonHint('docker', 'win32')).toContain('Docker Desktop');
+			expect(engineDaemonHint('docker', 'linux')).toContain('systemctl start docker');
+		});
+
+		it('tells Podman users to serve the API socket on Linux and to start the machine on desktops', () => {
+			expect(engineDaemonHint('podman', 'linux')).toContain('podman.socket');
+			expect(engineDaemonHint('podman', 'linux')).toContain('podman system service');
+			expect(engineDaemonHint('podman', 'darwin')).toContain('podman machine start');
+			expect(engineDaemonHint('podman', 'win32')).toContain('podman machine start');
+		});
+	});
+
+	describe('parseRuntimeContainerInfo()', () => {
+		it("reads the image, data directory and published ports out of either engine's inspect payload", () => {
+			expect(
+				parseRuntimeContainerInfo(
+					'docker',
+					JSON.stringify({
+						Config: { Image: 'apify/actor-runtime:latest' },
+						State: { Status: 'running', StartedAt: '2026-09-11T08:00:00Z' },
+						Mounts: [
+							{ Destination: '/var/run/docker.sock', Source: '/var/run/docker.sock' },
+							{ Destination: '/data', Source: '/home/me/.apify/actor-runtime/data' },
+						],
+						NetworkSettings: {
+							Ports: {
+								'3000/tcp': [{ HostIp: '0.0.0.0', HostPort: '3000' }],
+								'3333/tcp': [{ HostIp: '127.0.0.1', HostPort: '3333' }],
+							},
+						},
+					}),
+				),
+			).toEqual({
+				engine: 'docker',
+				image: 'apify/actor-runtime:latest',
+				status: 'running',
+				startedAt: '2026-09-11T08:00:00Z',
+				dataDir: '/home/me/.apify/actor-runtime/data',
+				ports: [
+					{ containerPort: 3000, protocol: 'tcp', hostAddress: '0.0.0.0:3000' },
+					{ containerPort: 3333, protocol: 'tcp', hostAddress: '127.0.0.1:3333' },
+				],
+			});
+
+			// Podman names the image at the top level and can report the bindings under HostConfig.
+			expect(
+				parseRuntimeContainerInfo(
+					'podman',
+					JSON.stringify({
+						ImageName: 'docker.io/apify/actor-runtime:latest',
+						State: { Status: 'running' },
+						Mounts: [{ Destination: '/data', Source: '/home/me/data' }],
+						HostConfig: { PortBindings: { '3333/tcp': [{ HostIp: '', HostPort: '3333' }] } },
+					}),
+				),
+			).toMatchObject({
+				image: 'docker.io/apify/actor-runtime:latest',
+				dataDir: '/home/me/data',
+				ports: [{ containerPort: 3333, protocol: 'tcp', hostAddress: '0.0.0.0:3333' }],
+			});
+
+			expect(parseRuntimeContainerInfo('docker', 'not json')).toBeNull();
+		});
+	});
+
+	describe('buildRuntimeRunArgs()', () => {
+		it('builds the canonical run command around the resolved host socket', () => {
+			expect(
+				buildRuntimeRunArgs({
+					image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+					dataDir: '/home/me/data',
+					detach: false,
+					hostSocketPath: '/var/run/docker.sock',
+					platform: 'linux',
+				}),
+			).toEqual([
+				'run',
+				'--rm',
+				'--init',
+				'--name',
+				ACTOR_RUNTIME_CONTAINER_NAME,
+				'-p',
+				'3333:3333',
+				'-p',
+				'3000:3000',
+				'-v',
+				'/var/run/docker.sock:/var/run/docker.sock',
+				'-v',
+				'/home/me/data:/data',
+				DEFAULT_ACTOR_RUNTIME_IMAGE,
+			]);
+		});
+
+		it("mounts a rootless Podman socket at the runtime's expected path", () => {
+			const args = buildRuntimeRunArgs({
+				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+				dataDir: '/data',
+				detach: false,
+				hostSocketPath: '/run/user/1000/podman/podman.sock',
+				platform: 'linux',
+			});
+			expect(args).toContain('/run/user/1000/podman/podman.sock:/var/run/docker.sock');
+		});
+
+		it('adds --detach before the image when requested', () => {
+			const args = buildRuntimeRunArgs({
+				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+				dataDir: '/data',
+				detach: true,
+				hostSocketPath: '/var/run/docker.sock',
+				platform: 'linux',
+			});
+			expect(args).toContain('--detach');
+			expect(args.indexOf('--detach')).toBeLessThan(args.indexOf(DEFAULT_ACTOR_RUNTIME_IMAGE));
+		});
+
+		it('publishes moved ports under the same number and tells the runtime to listen on them', () => {
+			const args = buildRuntimeRunArgs({
+				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+				dataDir: '/data',
+				detach: false,
+				hostSocketPath: '/var/run/docker.sock',
+				ports: { api: 4333, console: 4000 },
+				platform: 'linux',
+			});
+			expect(args.join(' ')).toContain(
+				'-e ACTOR_RUNTIME_API_PORT=4333 -e ACTOR_RUNTIME_CONSOLE_PORT=4000 -p 4333:4333 -p 4000:4000',
+			);
+			expect(args.indexOf('-e')).toBeLessThan(args.indexOf(DEFAULT_ACTOR_RUNTIME_IMAGE));
+		});
+
+		it('gives the runtime container a route to the host loopback on rootless Podman 3.x, and nothing elsewhere', () => {
+			const podman3 = parsePodmanInfo('true false 3.4.4\n');
+			expect(podman3).toEqual({ rootless: true, selinux: false, majorVersion: 3 });
+			expect(runtimeNetworkMode('podman', podman3)).toBe('slirp4netns:allow_host_loopback=true');
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('false false 3.4.4'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('true false 4.9.3'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('true false 5.0.0-dev'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', parsePodmanInfo('true false'))).toBeUndefined();
+			expect(runtimeNetworkMode('podman', undefined)).toBeUndefined();
+			expect(runtimeNetworkMode('docker', podman3)).toBeUndefined();
+
+			// The same command the actor-runtime e2e suite starts the runtime with on that engine.
+			expect(
+				buildRuntimeRunArgs({
+					image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+					dataDir: '/home/me/data',
+					detach: true,
+					hostSocketPath: '/run/user/1000/podman/podman.sock',
+					platform: 'linux',
+					networkMode: runtimeNetworkMode('podman', podman3),
+				}),
+			).toEqual([
+				'run',
+				'--rm',
+				'--init',
+				'--name',
+				ACTOR_RUNTIME_CONTAINER_NAME,
+				'--detach',
+				'--network',
+				'slirp4netns:allow_host_loopback=true',
+				'-p',
+				'3333:3333',
+				'-p',
+				'3000:3000',
+				'-v',
+				'/run/user/1000/podman/podman.sock:/var/run/docker.sock',
+				'-v',
+				'/home/me/data:/data',
+				DEFAULT_ACTOR_RUNTIME_IMAGE,
+			]);
+		});
+
+		it('runs the runtime container unconfined by SELinux where Podman reports it enforcing, and nowhere else', () => {
+			const fedora = parsePodmanInfo('true true 5.4.0\n');
+			expect(fedora).toEqual({ rootless: true, selinux: true, majorVersion: 5 });
+			expect(runtimeSecurityOptions('podman', fedora)).toEqual(['label=disable']);
+			expect(runtimeSecurityOptions('podman', parsePodmanInfo('false true 4.9.3'))).toEqual(['label=disable']);
+			expect(runtimeSecurityOptions('podman', parsePodmanInfo('true false 5.4.0'))).toEqual([]);
+			expect(runtimeSecurityOptions('podman', parsePodmanInfo('true'))).toEqual([]);
+			expect(runtimeSecurityOptions('podman', undefined)).toEqual([]);
+			expect(runtimeSecurityOptions('docker', fedora)).toEqual([]);
+
+			// The same command the actor-runtime e2e suite starts the runtime with on that engine - a
+			// `podman machine` (Podman Desktop) on macOS is this case: rootless, SELinux enforcing in its VM.
+			expect(
+				buildRuntimeRunArgs({
+					image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+					dataDir: '/home/me/data',
+					detach: true,
+					hostSocketPath: '/run/user/501/podman/podman.sock',
+					platform: 'darwin',
+					networkMode: runtimeNetworkMode('podman', fedora),
+					securityOptions: runtimeSecurityOptions('podman', fedora),
+				}),
+			).toEqual([
+				'run',
+				'--rm',
+				'--init',
+				'--name',
+				ACTOR_RUNTIME_CONTAINER_NAME,
+				'--detach',
+				'--security-opt',
+				'label=disable',
+				'-p',
+				'3333:3333',
+				'-p',
+				'3000:3000',
+				'-v',
+				'/run/user/501/podman/podman.sock:/var/run/docker.sock',
+				'-v',
+				'/home/me/data:/data',
+				DEFAULT_ACTOR_RUNTIME_IMAGE,
+			]);
+		});
+
+		it('passes only the moved port to the runtime', () => {
+			const args = buildRuntimeRunArgs({
+				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+				dataDir: '/data',
+				detach: false,
+				hostSocketPath: '/var/run/docker.sock',
+				ports: { api: 3333, console: 4000 },
+				platform: 'linux',
+			});
+			expect(args).toContain('ACTOR_RUNTIME_CONSOLE_PORT=4000');
+			expect(args.join(' ')).not.toContain('ACTOR_RUNTIME_API_PORT');
+			expect(args).toContain('3333:3333');
+		});
+	});
+});
