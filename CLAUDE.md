@@ -11,7 +11,7 @@ Guidance for Claude Code working in this repository. Humans should read [README.
 
 Run `pnpm run lint && pnpm run format && pnpm run build && pnpm run test:local` before pushing. Run `pnpm run test:api` too if you changed anything that touches the Apify API.
 
-If you modified a command's flags, args, description, or added/removed a command, also run `pnpm run update-docs` and commit the regenerated `docs/` output.
+If you modified a command's flags, args, description, or added/removed a command, also run `pnpm run update-docs` and commit the regenerated `docs/` output. Then run `vale docs/reference.md` (`brew install vale`). It reports line numbers in the generated file; search `src/` for the quoted phrase, fix it there, and run `update-docs` again.
 
 ## Code conventions
 

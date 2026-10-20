@@ -27,3 +27,5 @@ package-lock.json
 scripts/temporary-reference.md
 
 bundles/*
+.github/vale/styles/*
+!.github/vale/styles/ApifyCli/

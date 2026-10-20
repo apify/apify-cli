@@ -1,0 +1,6 @@
+extends: existence
+message: "Use a contraction instead of '%s'."
+level: error
+scope: raw
+raw:
+  - '\b(?:(?:Does|Did|Is|Are|Was|Were|Will|Has|Have|Had|Would|Should)[ \t]+not|(?i:(?:does|do|did|is|are|was|were|has|have|had|could|would|should|will)[ \t]*\n\s*not|(?:it|you|there)[ \t]*\n\s*(?:is|will)))\b'
