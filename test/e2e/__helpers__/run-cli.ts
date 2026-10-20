@@ -4,8 +4,18 @@ import { fileURLToPath } from 'node:url';
 import { execa } from 'execa';
 
 const ProjectRoot = new URL('../../../', import.meta.url);
-const DistApify = fileURLToPath(new URL('./dist/apify.js', ProjectRoot));
-const DistActor = fileURLToPath(new URL('./dist/actor.js', ProjectRoot));
+export const DistApify = fileURLToPath(new URL('./dist/apify.js', ProjectRoot));
+export const DistActor = fileURLToPath(new URL('./dist/actor.js', ProjectRoot));
+
+export const CliTestEnv = {
+	APIFY_CLI_DISABLE_TELEMETRY: '1',
+	APIFY_CLI_SKIP_UPDATE_CHECK: '1',
+	APIFY_CLI_SKIP_RENTAL_SUNSET_NOTICE: '1',
+	// Pin the file backend so e2e subprocesses don't share the host's OS keyring across tests.
+	APIFY_DISABLE_KEYRING: '1',
+	// The resolver prefers APIFY_TOKEN, so a token on the host would pick the account.
+	APIFY_TOKEN: '',
+};
 
 export interface RunCliOptions {
 	cwd?: string | URL;
@@ -48,13 +58,7 @@ export async function runCli(
 		stdin: options.stdin ? 'pipe' : 'ignore',
 		input: options.stdin,
 		env: {
-			APIFY_CLI_DISABLE_TELEMETRY: '1',
-			APIFY_CLI_SKIP_UPDATE_CHECK: '1',
-			APIFY_CLI_SKIP_RENTAL_SUNSET_NOTICE: '1',
-			// Pin the file backend so e2e subprocesses don't share the host's OS keyring across tests.
-			APIFY_DISABLE_KEYRING: '1',
-			// The resolver prefers APIFY_TOKEN, so a token on the host would pick the account.
-			APIFY_TOKEN: '',
+			...CliTestEnv,
 			...options.env,
 		},
 	});
