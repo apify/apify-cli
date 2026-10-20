@@ -20,7 +20,7 @@ import {
 } from './templates/consts.js';
 import { getTemplateRecommendation } from './templates/getTemplateRecommendation.js';
 import { buildTemplateChoiceList, NON_EXACT_SEPARATOR_LABEL } from './templates/templateChoices.js';
-import { validateActorName } from './utils.js';
+import { validateActorName, validateActorNameForPrompt } from './utils.js';
 
 /** Filters coming from the `--use-case` / `--language` flags. `undefined` means "not provided". */
 export interface TemplateFilters {
@@ -165,14 +165,7 @@ async function executePrompts(manifest: Manifest, filters: TemplateFilters) {
 async function promptActorName() {
 	const answer = await useUserInput({
 		message: 'Name of your new Actor:',
-		validate: (promptText) => {
-			try {
-				validateActorName(promptText);
-			} catch (err) {
-				return (err as Error).message;
-			}
-			return true;
-		},
+		validate: validateActorNameForPrompt,
 	});
 
 	return answer;
