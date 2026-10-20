@@ -192,9 +192,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 			metadata = await fetchAuthorizationServerMetadata(issuer);
 		} catch (err) {
 			cliDebugPrint('oauth', 'discovery failed', err);
-			info({ message: 'OAuth login is not available for the Apify Console. Using the Console login instead.' });
-			this.telemetryData.login = { method: 'console', fellBackFrom: 'oauth2-discovery' };
-			await this.loginViaLegacyConsole();
+			this.reportUnavailableLogin(`Could not reach the Apify Console authorization server at ${issuer}.`);
 			return;
 		}
 
@@ -267,9 +265,14 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 		}
 
 		cliDebugPrint('oauth', 'authorization code flow unavailable', code.reason);
-		info({ message: 'Browser login is not available. Using the Console login instead.' });
-		this.telemetryData.login = { method: 'console', fellBackFrom: 'oauth2-code' };
-		await this.loginViaLegacyConsole();
+		this.reportUnavailableLogin('Browser login is not available.');
+	}
+
+	private reportUnavailableLogin(reason: string) {
+		error({
+			message: `${reason} Log in with "apify login --method manual" or "apify login --token <api-token>" instead.`,
+		});
+		process.exitCode = CommandExitCodes.MissingAuth;
 	}
 
 	private reportStoppedLogin({ stopReason, message }: { stopReason: string; message: string }) {

@@ -219,25 +219,32 @@ describe('apify login', () => {
 		expect(readActiveProfile()).toMatchObject({ authMethod: 'oauth2', refreshToken: 'rt-1' });
 	});
 
-	it('falls back to the legacy Console hand-off when discovery fails', async () => {
+	it('stops with a hint when discovery fails', async () => {
 		mockServer({ discovery: () => Promise.reject(new Error('ECONNREFUSED')), token: [] });
 
 		await testRunCommand(LoginCommand, {});
 
-		expect(allErrorOutput()).toContain('Using the Console login instead');
+		expect(open).not.toHaveBeenCalled();
+		expect(allErrorOutput()).toContain('Could not reach the Apify Console authorization server');
+		expect(allErrorOutput()).toContain('apify login --method manual');
+		expect(process.exitCode).toBe(CommandExitCodes.MissingAuth);
+		expect(existsSync(AUTH_FILE_PATH())).toBe(false);
+	});
 
-		const consoleUrl = lastOpenedUrl();
-		expect(consoleUrl.searchParams.get('localCliCommand')).toBe('login');
-		const port = consoleUrl.searchParams.get('localCliPort')!;
-		const token = consoleUrl.searchParams.get('localCliToken')!;
-
-		// Shut the loopback server down the way Console would.
-		const response = await realFetch(`http://127.0.0.1:${port}/api/v1/exit`, {
-			method: 'POST',
-			headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-			body: JSON.stringify({ actionCanceled: true }),
+	it('stops with a hint when neither OAuth flow is available', async () => {
+		mockServer({
+			discovery: () => json({ ...discovery, authorization_endpoint: undefined }),
+			device: () => json({ error: 'not_found' }, 404),
+			token: [],
 		});
-		expect(response.ok).toBe(true);
+
+		await testRunCommand(LoginCommand, {});
+
+		expect(open).not.toHaveBeenCalled();
+		expect(allErrorOutput()).toContain('Browser login is not available.');
+		expect(allErrorOutput()).toContain('apify login --token <api-token>');
+		expect(process.exitCode).toBe(CommandExitCodes.MissingAuth);
+		expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 	});
 
 	it('--token turns an OAuth login of the same account into a plain-token one', async () => {

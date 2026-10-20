@@ -45,8 +45,8 @@ interface CliCommandEvent {
 
 	login?: {
 		method: 'oauth2-device' | 'oauth2-code' | 'console' | 'manual' | 'token';
-		/** Set when the `oauth2` method could not run and another flow took over. */
-		fellBackFrom?: 'oauth2-discovery' | 'oauth2-device' | 'oauth2-code';
+		/** Set when the device code flow could not run and the authorization code flow took over. */
+		fellBackFrom?: 'oauth2-device';
 	};
 
 	// init command
