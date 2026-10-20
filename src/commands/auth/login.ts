@@ -89,8 +89,8 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 	static override description =
 		`Authenticates your Apify account and saves credentials to '${tildify(AUTH_FILE_PATH())}'.\n` +
 		`All other commands use these stored credentials.\n\n` +
-		`By default, the login is confirmed in Apify Console in your browser by putting in a code. ` +
-		`Run 'apify logout' to remove authentication.`;
+		`By default, you confirm logging in to Apify Console in your browser by entering a code. ` +
+		`To remove authentication, run 'apify logout'.`;
 
 	static override group = 'Authentication';
 
@@ -132,7 +132,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 		}),
 		method: Flags.string({
 			char: 'm',
-			description: `Method of logging in to Apify. The default method ('oauth2') confirms the login in Apify Console by putting in a code. The 'manual' method prompts for an API token. The 'console' method uses the legacy Console hand-off, which is deprecated.`,
+			description: `Method of logging in to Apify. The default method ('oauth2') confirms the login when you enter a code. The 'manual' method prompts for an API token. The 'console' method uses the legacy Console hand-off, which is deprecated.`,
 			choices: ['oauth2', 'console', 'manual'] as const,
 			default: 'oauth2' as const,
 			required: false,

@@ -82,7 +82,7 @@ To log in, run:
 apify login
 ```
 
-The CLI opens Apify Console in your browser, where you confirm the login. If the browser does not open, visit the printed URL and enter the code shown in your terminal.
+The CLI opens Apify Console in your browser, where you can confirm the login. If the browser doesn't open, go to the URL printed in your terminal. If prompted, enter the code.
 
 To use an [Apify API token](https://console.apify.com/settings/integrations) instead, pass it directly:
 

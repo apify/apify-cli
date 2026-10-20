@@ -11,7 +11,7 @@ export class AuthTokenCommand extends ApifyCommand<typeof AuthTokenCommand> {
 
 	static override description =
 		`Prints the API token the CLI authenticates with, resolved from APIFY_TOKEN or the token from 'apify login'.\n` +
-		'Tokens issued by an OAuth login expire after about an hour; the expiry is noted on stderr.';
+		'Tokens from an OAuth login expire after about an hour. The command prints the expiry time to stderr.';
 
 	static override examples = [
 		{
