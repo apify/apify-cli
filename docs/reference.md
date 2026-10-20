@@ -145,6 +145,8 @@ Use these commands to manage your Apify account authentication, access tokens, a
 DESCRIPTION
   Log in, log out, switch between stored accounts, and inspect your stored Apify
    API token. Also available as `apify login` / `apify logout`.
+  Demo line, remove before merge: it is here to test the Vale diff filter.
+  Does not follow the style on purpose.
 
 SUBCOMMANDS
   auth login   Authenticates your Apify account and saves credentials
