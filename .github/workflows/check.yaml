@@ -40,6 +40,14 @@ jobs:
             - name: Ensure the reference documentation builds
               run: pnpm run update-docs
 
+            - name: Lint the reference documentation style
+              uses: errata-ai/vale-action@518a9136acc6e6668ce7c00d367051e0941e87ff # reviewdog
+              with:
+                  files: docs/reference.md
+                  fail_on_error: true
+                  filter_mode: nofilter
+                  vale_flags: '--minAlertLevel=error'
+
     lint:
         if: ${{ !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[docs build]') }}
 

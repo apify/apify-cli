@@ -1,0 +1,6 @@
+extends: existence
+message: "Use a contraction instead of '%s'."
+level: error
+scope: raw
+raw:
+  - '(?i)\b(?:(?:does|do|did|is|are|was|were|has|have|had|could|would|should|will)\s+not|cannot|(?:it|you|there)\s+(?:is|will))\b'
