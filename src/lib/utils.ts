@@ -47,6 +47,7 @@ import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import { encodeRecordKey, readKvsRecordMetadata, recordMetadataFileName } from './kvs-metadata.js';
+import { getAccessToken } from './oauth/session.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -108,7 +109,8 @@ export const getLocalUserInfo = async (userId?: string): Promise<AuthJSON> => {
 	if (profile.username) result.username = profile.username;
 	if (profile.organizationOwnerUserId) result.organizationOwnerUserId = profile.organizationOwnerUserId;
 
-	const token = await getSecret(profile.id, 'token');
+	// Refreshes an OAuth-issued token when it is about to expire; a plain API token passes through.
+	const token = await getAccessToken(profile.id);
 	if (token) result.token = token;
 
 	const proxyPassword = await getSecret(profile.id, 'proxy-password');
@@ -678,6 +680,17 @@ export const validateActorName = (actorName: string) => {
 	if (actorName.length > ACTOR_NAME.MAX_LENGTH) {
 		throw new Error('The Actor name must be a maximum of 30 characters long.');
 	}
+};
+
+/** Adapts {@link validateActorName} to the `validate` contract of the inquirer prompts. */
+export const validateActorNameForPrompt = (actorName: string) => {
+	try {
+		validateActorName(actorName);
+	} catch (err) {
+		return (err as Error).message;
+	}
+
+	return true;
 };
 
 export const sanitizeActorName = (actorName: string) => {
