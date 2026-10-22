@@ -144,7 +144,7 @@ Use these commands to manage your Apify account authentication, access tokens, a
 ```sh
 DESCRIPTION
   Log in, log out, switch between stored accounts, and inspect your stored Apify
-   API token. Also available as `apify login` / `apify logout`.
+   API token. Also available as `apify login` and `apify logout`.
 
 SUBCOMMANDS
   auth login   Authenticates your Apify account and saves credentials
@@ -152,7 +152,7 @@ SUBCOMMANDS
   auth logout  Logs out of the active account by deleting its API
                token and account information from '~/.apify/auth.json'.
   auth list    Lists the stored Apify accounts and marks the active
-               one. Reads only the local login, so it works offline and does not
+               one. Reads only the local login, so it works offline and doesn't
                check that the tokens are still valid.
   auth switch  Sets the stored account that commands use. Without an
                argument, prompts you to pick one of the stored accounts.
@@ -201,8 +201,7 @@ FLAGS
       --all              Log out of every stored account.
       --profile=<value>  The stored account to log out of, by
                          name or user ID. See "apify auth list".
-  -y, --yes              Automatic yes to prompts; assume
-                         "yes" as answer to all prompts.
+  -y, --yes              Answer "yes" to all prompts.
 ```
 
 ##### `apify auth list`
@@ -210,8 +209,7 @@ FLAGS
 ```sh
 DESCRIPTION
   Lists the stored Apify accounts and marks the active one. Reads only the local
-   login, so it works offline and does not check that the tokens are still 
-  valid.
+   login, so it works offline and doesn't check that the tokens are still valid.
 
 USAGE
   $ apify auth list [--json]
@@ -453,8 +451,7 @@ FLAGS
       --dockerfile=<value>  Path to a Dockerfile to use for
                             the Actor (e.g., "./Dockerfile" or
                             "./docker/Dockerfile").
-  -y, --yes                 Automatic yes to prompts;
-                            assume "yes" as answer to all prompts.
+  -y, --yes                 Answer "yes" to all prompts.
 ```
 
 ##### `apify run`
@@ -840,8 +837,7 @@ ARGUMENTS
 FLAGS
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
-  -y, --yes              Automatic yes to prompts; assume
-                         "yes" as answer to all prompts.
+  -y, --yes              Answer "yes" to all prompts.
 ```
 <!-- actor-basic-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1189,8 +1185,7 @@ FLAGS
   -t, --tag=<value>      The tag to remove from the build.
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
-  -y, --yes              Automatic yes to prompts; assume
-                         "yes" as answer to all prompts.
+  -y, --yes              Answer "yes" to all prompts.
 ```
 
 ##### `apify builds rm`
@@ -1208,8 +1203,7 @@ ARGUMENTS
 FLAGS
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
-  -y, --yes              Automatic yes to prompts; assume
-                         "yes" as answer to all prompts.
+  -y, --yes              Answer "yes" to all prompts.
 ```
 
 ##### `apify builds wait`
@@ -1383,8 +1377,7 @@ ARGUMENTS
 FLAGS
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
-  -y, --yes              Automatic yes to prompts; assume
-                         "yes" as answer to all prompts.
+  -y, --yes              Answer "yes" to all prompts.
 ```
 
 ##### `apify runs wait`
@@ -1592,8 +1585,7 @@ ARGUMENTS
 FLAGS
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
-  -y, --yes              Automatic yes to prompts; assume
-                         "yes" as answer to all prompts.
+  -y, --yes              Answer "yes" to all prompts.
 ```
 <!-- dataset-commands-end -->
 <!-- prettier-ignore-end -->
@@ -1675,8 +1667,7 @@ ARGUMENTS
 FLAGS
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
-  -y, --yes              Automatic yes to prompts; assume
-                         "yes" as answer to all prompts.
+  -y, --yes              Answer "yes" to all prompts.
 ```
 
 ##### `apify key-value-stores get-value`
@@ -1813,8 +1804,7 @@ ARGUMENTS
 FLAGS
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
-  -y, --yes              Automatic yes to prompts; assume
-                         "yes" as answer to all prompts.
+  -y, --yes              Answer "yes" to all prompts.
 ```
 
 ##### `apify key-value-stores set-value`
