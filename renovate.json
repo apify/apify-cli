@@ -40,6 +40,12 @@
 			"matchPackageNames": ["@inquirer/**"]
 		},
 		{
+			"description": "Bump the CI Python version by hand, together with the Python Support matrix.",
+			"matchManagers": ["github-actions"],
+			"matchDepNames": ["python"],
+			"enabled": false
+		},
+		{
 			"matchPackageNames": [
 				"@apify/*",
 				"@crawlee/*",
