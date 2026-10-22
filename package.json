@@ -142,9 +142,9 @@
 	},
 	"volta": {
 		"node": "24.22.0",
-		"pnpm": "12.13.0"
+		"pnpm": "12.14.0"
 	},
-	"packageManager": "pnpm@12.13.0",
+	"packageManager": "pnpm@12.14.0",
 	"devEngines": {
 		"runtime": [
 			{
@@ -160,7 +160,7 @@
 		],
 		"packageManager": {
 			"name": "pnpm",
-			"version": "12.13.0",
+			"version": "12.14.0",
 			"onFail": "warn"
 		}
 	},
