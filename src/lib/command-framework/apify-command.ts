@@ -500,7 +500,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 			const camelCasedName = camelCaseString(rawBaseFlagName);
 
-			const usedShortFormOfTheFlag = rawTokens.some((token) => token.kind === 'option' && token.name === baseFlagName);
+			const usedShortFormOfTheFlag = rawTokens.some(
+				(token) => token.kind === 'option' && token.name === baseFlagName,
+			);
 
 			if (builderData.exclusive?.length) {
 				const existingExclusiveFlags = exclusiveFlagMap.get(baseFlagName) ?? new Set();
@@ -848,14 +850,20 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 						// All aliases of the base command + subcommand alias
 						if (this.aliases?.length) {
 							for (const alias of this.aliases) {
-								commandRegistry.set(`${alias} ${subcommandAlias}`, subcommand as typeof BuiltApifyCommand);
+								commandRegistry.set(
+									`${alias} ${subcommandAlias}`,
+									subcommand as typeof BuiltApifyCommand,
+								);
 							}
 						}
 
 						// All hidden aliases of the base command + subcommand alias
 						if (this.hiddenAliases?.length) {
 							for (const alias of this.hiddenAliases) {
-								commandRegistry.set(`${alias} ${subcommandAlias}`, subcommand as typeof BuiltApifyCommand);
+								commandRegistry.set(
+									`${alias} ${subcommandAlias}`,
+									subcommand as typeof BuiltApifyCommand,
+								);
 							}
 						}
 					}
@@ -870,14 +878,20 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 						// All aliases of the base command + subcommand hidden alias
 						if (this.aliases?.length) {
 							for (const alias of this.aliases) {
-								commandRegistry.set(`${alias} ${subcommandAlias}`, subcommand as typeof BuiltApifyCommand);
+								commandRegistry.set(
+									`${alias} ${subcommandAlias}`,
+									subcommand as typeof BuiltApifyCommand,
+								);
 							}
 						}
 
 						// All hidden aliases of the base command + subcommand hidden alias
 						if (this.hiddenAliases?.length) {
 							for (const alias of this.hiddenAliases) {
-								commandRegistry.set(`${alias} ${subcommandAlias}`, subcommand as typeof BuiltApifyCommand);
+								commandRegistry.set(
+									`${alias} ${subcommandAlias}`,
+									subcommand as typeof BuiltApifyCommand,
+								);
 							}
 						}
 					}
@@ -916,7 +930,9 @@ type StaticArgsFlagsInput<Cmd extends typeof BuiltApifyCommand> = Omit<
 	Omit<
 		{
 			// Fill in the rest of the args, this will not override what the code above does
-			[K in keyof InferArgsFromCommand<Cmd['args']> as `args_${string & K}`]?: InferArgsFromCommand<Cmd['args']>[K];
+			[K in keyof InferArgsFromCommand<Cmd['args']> as `args_${string & K}`]?: InferArgsFromCommand<
+				Cmd['args']
+			>[K];
 		},
 		'args_json'
 	> &

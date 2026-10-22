@@ -154,7 +154,8 @@ export class CommandHelp extends BaseCommandRenderer {
 					builder: null as never,
 					aliases: undefined,
 					char: undefined,
-					description: 'The stored account to use for this command, by name or user ID. See "apify auth list".',
+					description:
+						'The stored account to use for this command, by name or user ID. See "apify auth list".',
 					hidden: undefined,
 					exclusive: undefined,
 				},

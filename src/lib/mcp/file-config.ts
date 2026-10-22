@@ -68,7 +68,9 @@ export async function mergeServerEntry({
 		}
 
 		if (typeof document !== 'object' || document === null || Array.isArray(document)) {
-			throw new Error(`Cannot install: ${tildify(filePath)} is not a JSON object. Fix the file manually and re-run.`);
+			throw new Error(
+				`Cannot install: ${tildify(filePath)} is not a JSON object. Fix the file manually and re-run.`,
+			);
 		}
 
 		const existingTopLevel = document[topLevelKey];

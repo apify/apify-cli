@@ -289,7 +289,9 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 		const result = await loginWithToken(tokens.access_token, getApiBaseUrlForLogin());
 
 		if (!result) {
-			error({ message: 'Login to Apify failed, the token issued by Apify Console was not accepted by the Apify API.' });
+			error({
+				message: 'Login to Apify failed, the token issued by Apify Console was not accepted by the Apify API.',
+			});
 			process.exitCode = CommandExitCodes.MissingAuth;
 			return;
 		}

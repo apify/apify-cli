@@ -10,8 +10,14 @@ describe('resolvePushOutcome', () => {
 		[ACTOR_JOB_STATUSES.RUNNING, { resultLabel: 'RUNNING', ok: true }],
 		[ACTOR_JOB_STATUSES.ABORTING, { resultLabel: 'ABORTING', exitCode: CommandExitCodes.BuildAborted, ok: false }],
 		[ACTOR_JOB_STATUSES.ABORTED, { resultLabel: 'ABORTED', exitCode: CommandExitCodes.BuildAborted, ok: false }],
-		[ACTOR_JOB_STATUSES.TIMING_OUT, { resultLabel: 'TIMING_OUT', exitCode: CommandExitCodes.BuildTimedOut, ok: false }],
-		[ACTOR_JOB_STATUSES.TIMED_OUT, { resultLabel: 'TIMED_OUT', exitCode: CommandExitCodes.BuildTimedOut, ok: false }],
+		[
+			ACTOR_JOB_STATUSES.TIMING_OUT,
+			{ resultLabel: 'TIMING_OUT', exitCode: CommandExitCodes.BuildTimedOut, ok: false },
+		],
+		[
+			ACTOR_JOB_STATUSES.TIMED_OUT,
+			{ resultLabel: 'TIMED_OUT', exitCode: CommandExitCodes.BuildTimedOut, ok: false },
+		],
 		[ACTOR_JOB_STATUSES.FAILED, { resultLabel: 'FAILED', exitCode: CommandExitCodes.BuildFailed, ok: false }],
 		['SOME_UNKNOWN_STATUS', { resultLabel: 'UNKNOWN', exitCode: CommandExitCodes.BuildFailed, ok: false }],
 	])('maps build status %s to the expected outcome', (status, expected) => {

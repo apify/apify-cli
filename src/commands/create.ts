@@ -266,7 +266,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		};
 
 		if (!templateArchiveUrl) {
-			const templateDefinition = await getTemplateDefinition(templateName, manifestPromise, { useCase, language });
+			const templateDefinition = await getTemplateDefinition(templateName, manifestPromise, {
+				useCase,
+				language,
+			});
 			({ archiveUrl: templateArchiveUrl, messages } = templateDefinition);
 			templateId = templateDefinition.id;
 			this.telemetryData.create.templateId = templateDefinition.id;
@@ -303,12 +306,16 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// Catches a non-interactive run that named a repository but omitted --source, which would
 		// otherwise silently take the Apify path.
 		if (!gitProvider && gitRepo) {
-			throw new Error('--git-repo only applies to a Git source, so add --source github|gitlab|bitbucket or drop it.');
+			throw new Error(
+				'--git-repo only applies to a Git source, so add --source github|gitlab|bitbucket or drop it.',
+			);
 		}
 
 		// Only a Git source has a repository to rebuild from, so an Apify-sourced run would ignore this.
 		if (!gitProvider && this.flags.autoBuild) {
-			throw new Error('--auto-build only applies to a Git source, so add --source github|gitlab|bitbucket or drop it.');
+			throw new Error(
+				'--auto-build only applies to a Git source, so add --source github|gitlab|bitbucket or drop it.',
+			);
 		}
 
 		// The platform only accepts archive URLs listed in the official manifest.
@@ -381,7 +388,8 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				// environment, dependencies, and Python version. Install them with `uv sync` instead of the
 				// pip + requirements.txt flow. uv provides the Python pinned in `.python-version` on its own,
 				// so this runs even when no system Python is detected.
-				const isPythonProject = project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy;
+				const isPythonProject =
+					project.type === ProjectLanguage.Python || project.type === ProjectLanguage.Scrapy;
 
 				if (isPythonProject && project.packageManager === 'uv') {
 					const uvPath = await which('uv', { nothrow: true });
@@ -533,7 +541,15 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 
 						await execWithLog({
 							cmd: runtime.executablePath,
-							args: ['-m', 'pip', 'install', '--no-cache-dir', '--no-warn-script-location', '-r', 'requirements.txt'],
+							args: [
+								'-m',
+								'pip',
+								'install',
+								'--no-cache-dir',
+								'--no-warn-script-location',
+								'-r',
+								'requirements.txt',
+							],
 							opts: { cwd: actFolderDir },
 						});
 
@@ -568,7 +584,9 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}
 
 		// Suggest install command if dependencies were not installed
-		const installCommandSuggestion = !dependenciesInstalled ? await getInstallCommandSuggestion(actFolderDir) : null;
+		const installCommandSuggestion = !dependenciesInstalled
+			? await getInstallCommandSuggestion(actFolderDir)
+			: null;
 
 		// The Git path's clone makes it a repository too, not only `git init`.
 		const gitRepositoryInitialized = (gitInitAttempted && gitInitResult.success) || Boolean(actorDirHasGit);

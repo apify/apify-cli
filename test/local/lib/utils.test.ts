@@ -92,7 +92,9 @@ describe('Utils', () => {
 		it('should throw on non-2xx responses', async () => {
 			vitest.spyOn(axios, 'get').mockResolvedValue({ status: 403, data: Buffer.from('blocked') });
 
-			await expect(downloadAndUnzip({ url: 'https://example.com/a.zip', pathTo: '.' })).rejects.toThrow(/HTTP 403/);
+			await expect(downloadAndUnzip({ url: 'https://example.com/a.zip', pathTo: '.' })).rejects.toThrow(
+				/HTTP 403/,
+			);
 		});
 
 		it('should throw an actionable error when the response body is not a zip', async () => {
