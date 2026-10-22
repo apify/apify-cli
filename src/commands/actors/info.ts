@@ -1,4 +1,4 @@
-import type { Actor, ActorChargeEvent, ActorTaggedBuild, Build, User } from 'apify-client';
+import type { Actor, ActorChargeEvent, ActorTaggedBuild, ApifyApiError, ApifyClient, Build, User } from 'apify-client';
 import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -28,6 +28,19 @@ function formatEventPrice(price: number): string {
 	if (price === 0) return '$0.00';
 	if (price >= 0.01) return `$${price.toFixed(2)}`;
 	return `$${Number(price.toPrecision(2))}`;
+}
+
+async function getDefaultBuild(client: ApifyClient, actorId: string, fallback?: Build) {
+	try {
+		const build = await client.actor(actorId).defaultBuild();
+		return (await build.get()) ?? fallback;
+	} catch (err) {
+		if ((err as ApifyApiError).statusCode === 404) {
+			return fallback;
+		}
+
+		throw err;
+	}
 }
 
 const eventTitleColumn = '\u200b';
@@ -123,33 +136,24 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 			return;
 		}
 
-		const latest = actorInfo.taggedBuilds?.latest;
+		if (readme || input) {
+			const build = await getDefaultBuild(client, ctx.id, actorInfo.taggedBuilds?.latest?.build);
 
-		if (readme) {
-			if (!latest) {
-				error({
-					message: 'No README found for this Actor.',
-					stdout: true,
-				});
+			if (readme) {
+				if (!build?.readme) {
+					error({
+						message: 'No README found for this Actor.',
+						stdout: true,
+					});
 
+					return;
+				}
+
+				simpleLog({ message: build.readme, stdout: true });
 				return;
 			}
 
-			if (!latest.build?.readme) {
-				error({
-					message: 'No README found for this Actor.',
-					stdout: true,
-				});
-
-				return;
-			}
-
-			simpleLog({ message: latest.build.readme, stdout: true });
-			return;
-		}
-
-		if (input) {
-			if (!latest) {
+			if (!build?.inputSchema) {
 				error({
 					message: 'No input schema found for this Actor.',
 					stdout: true,
@@ -158,16 +162,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 				return;
 			}
 
-			if (!latest.build?.inputSchema) {
-				error({
-					message: 'No input schema found for this Actor.',
-					stdout: true,
-				});
-
-				return;
-			}
-
-			simpleLog({ message: latest.build.inputSchema, stdout: true });
+			simpleLog({ message: build.inputSchema, stdout: true });
 			return;
 		}
 
