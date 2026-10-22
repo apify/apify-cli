@@ -5,3 +5,4 @@
 /docs/*.md @szaganek
 /docs/*.mdx @szaganek
 /docs/changelog.md @szaganek
+/.github/workflows/factory_review.yaml @mtrunkat

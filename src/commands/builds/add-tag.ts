@@ -9,6 +9,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand> {
 	static override name = 'add-tag' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Adds a tag to a specific Actor build.';
 
 	static override examples = [

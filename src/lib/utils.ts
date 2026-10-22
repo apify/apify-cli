@@ -32,7 +32,7 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
-import { lookUpActiveProfile } from './auth-file.js';
+import { lookUpActiveProfile, lookUpProfile } from './auth-file.js';
 import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth, type ResolvedAuth } from './auth.js';
 import {
 	AUTH_FILE_PATH,
@@ -47,6 +47,7 @@ import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import { encodeRecordKey, readKvsRecordMetadata, recordMetadataFileName } from './kvs-metadata.js';
+import { getAccessToken } from './oauth/session.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -86,19 +87,19 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 };
 
 /**
- * The active profile in the flat shape the CLI consumes, or an empty object when nothing is
+ * The given profile, or the active one, in the flat shape the CLI consumes, or an empty object when nothing is
  * stored. Secrets come from whichever backend holds them; the metadata comes from auth.json.
  */
-export const getLocalUserInfo = async (): Promise<AuthJSON> => {
+export const getLocalUserInfo = async (userId?: string): Promise<AuthJSON> => {
 	await ensureCredentialsCurrent();
 
-	const { profile, missingProfile } = lookUpActiveProfile();
+	const { profile, missingProfile } = userId ? lookUpProfile(userId) : lookUpActiveProfile();
 
 	// Reported rather than swallowed: the commands that build `<username>/<name>` lookups would
 	// otherwise fail with a misleading "not found".
 	if (missingProfile) {
 		throw new Error(
-			`Your active profile "${missingProfile}" is missing from ${AUTH_FILE_PATH()}. Run "apify login" to log in again.`,
+			`Your ${userId ? '' : 'active '}profile "${missingProfile}" is missing from ${AUTH_FILE_PATH()}. Run "apify login" to log in again.`,
 		);
 	}
 
@@ -108,7 +109,8 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
 	if (profile.username) result.username = profile.username;
 	if (profile.organizationOwnerUserId) result.organizationOwnerUserId = profile.organizationOwnerUserId;
 
-	const token = await getSecret(profile.id, 'token');
+	// Refreshes an OAuth-issued token when it is about to expire; a plain API token passes through.
+	const token = await getAccessToken(profile.id);
 	if (token) result.token = token;
 
 	const proxyPassword = await getSecret(profile.id, 'proxy-password');
@@ -169,7 +171,7 @@ export async function getCurrentUserInfo(): Promise<AuthJSON> {
 	if (!auth) return getLocalUserInfo();
 
 	if (cachedUserInfo?.token === auth.token) return cachedUserInfo.userInfo;
-	if (auth.source === 'stored') return getLocalUserInfo();
+	if (auth.source !== 'env') return getLocalUserInfo(auth.profile?.id);
 
 	const apifyClient = new ApifyClient({
 		...getApifyClientOptionsForToken(auth.token),
@@ -673,11 +675,22 @@ export const validateActorName = (actorName: string) => {
 		throw new Error('The Actor name must be a DNS hostname-friendly string (e.g. my-newest-actor).');
 	}
 	if (actorName.length < ACTOR_NAME.MIN_LENGTH) {
-		throw new Error('The Actor name must be at least 3 characters long.');
+		throw new Error(`The Actor name must be at least ${ACTOR_NAME.MIN_LENGTH} characters long.`);
 	}
 	if (actorName.length > ACTOR_NAME.MAX_LENGTH) {
-		throw new Error('The Actor name must be a maximum of 30 characters long.');
+		throw new Error(`The Actor name must be at most ${ACTOR_NAME.MAX_LENGTH} characters long.`);
 	}
+};
+
+/** Adapts {@link validateActorName} to the `validate` contract of the inquirer prompts. */
+export const validateActorNameForPrompt = (actorName: string) => {
+	try {
+		validateActorName(actorName);
+	} catch (err) {
+		return (err as Error).message;
+	}
+
+	return true;
 };
 
 export const sanitizeActorName = (actorName: string) => {

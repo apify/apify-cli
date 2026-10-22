@@ -1,3 +1,4 @@
+import { lookUpProfile } from '../../lib/auth-file.js';
 import { resolveAuth } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { simpleLog } from '../../lib/outputs.js';
@@ -6,7 +7,11 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class AuthTokenCommand extends ApifyCommand<typeof AuthTokenCommand> {
 	static override name = 'token' as const;
 
-	static override description = `Prints the API token the CLI authenticates with, resolved from APIFY_TOKEN or the token from 'apify login'.`;
+	static override enableProfileFlag = true;
+
+	static override description =
+		`Prints the API token the CLI authenticates with, resolved from APIFY_TOKEN or the token from 'apify login'.\n` +
+		'Tokens from an OAuth login expire after about an hour. The command prints the expiry time to stderr.';
 
 	static override examples = [
 		{
@@ -19,8 +24,13 @@ export class AuthTokenCommand extends ApifyCommand<typeof AuthTokenCommand> {
 
 	async run() {
 		await getLoggedClientOrThrow();
-		const auth = await resolveAuth();
+		const auth = (await resolveAuth())!;
 
-		simpleLog({ message: auth!.token, stdout: true });
+		simpleLog({ message: auth.token, stdout: true });
+
+		const profile = auth.profile ? lookUpProfile(auth.profile.id).profile : undefined;
+		if (profile?.authMethod === 'oauth2' && profile.expiresAt) {
+			simpleLog({ message: `Note: this token expires at ${profile.expiresAt}.` });
+		}
 	}
 }

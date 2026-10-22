@@ -7,8 +7,8 @@ import {
 	ensureAuthFileCurrent,
 	getActiveProfile,
 	lookUpActiveProfile,
-	removeActiveProfile,
-	replaceStoredAccount,
+	removeProfile,
+	upsertProfile,
 } from '../../../src/lib/auth-file.js';
 import { resolveAuth } from '../../../src/lib/auth.js';
 import { AUTH_FILE_PATH, GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
@@ -217,7 +217,7 @@ describe('auth.json v2', () => {
 			const newer = { version: 3, activeProfile: 'uid', profiles: { uid: { username: 'me' } } };
 			write(newer);
 
-			expect(() => replaceStoredAccount('uid2', V2_PROFILE)).toThrow('written by a newer Apify CLI');
+			expect(() => upsertProfile('uid2', V2_PROFILE, 'file')).toThrow('written by a newer Apify CLI');
 			expect(readAuthFile()).toEqual(newer);
 		});
 
@@ -225,7 +225,7 @@ describe('auth.json v2', () => {
 		it('is discarded by a logout', () => {
 			write({ version: 3, activeProfile: 'uid', profiles: { uid: { username: 'me' } }, token: 'tok' });
 
-			removeActiveProfile();
+			removeProfile();
 
 			expect(existsSync(AUTH_FILE_PATH())).toBe(false);
 		});
@@ -237,8 +237,45 @@ describe('auth.json v2', () => {
 		});
 	});
 
-	describe('replacing the stored account', () => {
-		it('drops the previous account and its secrets', () => {
+	describe('adding or updating a profile', () => {
+		it('keeps the other profiles and makes the new one active', () => {
+			write({
+				version: 2,
+				activeProfile: 'old',
+				profiles: { old: { ...V2_PROFILE, username: 'old', token: 'apify_api_old' } },
+				secretsBackend: 'file',
+			});
+
+			upsertProfile('new', { ...V2_PROFILE, username: 'new' });
+
+			const file = readAuthFile();
+			expect(Object.keys(file.profiles!).sort()).toEqual(['new', 'old']);
+			expect(file.activeProfile).toBe('new');
+			expect(file.profiles!.old).toMatchObject({ token: 'apify_api_old' });
+		});
+
+		it('keeps a stored profile file secrets when it logs in again, until the caller writes new ones', () => {
+			write({
+				version: 2,
+				activeProfile: 'uid',
+				profiles: { uid: { ...V2_PROFILE, username: 'me', token: 'tok', proxy: { password: 'pw' } } },
+			});
+
+			upsertProfile('uid', { ...V2_PROFILE, username: 'renamed' });
+
+			expect(readActiveProfile()).toMatchObject({ username: 'renamed', token: 'tok', proxy: { password: 'pw' } });
+		});
+
+		it('writes no secrets backend marker', () => {
+			write({ version: 2, activeProfile: 'old', profiles: { old: { ...V2_PROFILE, username: 'old' } } });
+
+			upsertProfile('new', { ...V2_PROFILE, username: 'new' });
+
+			expect(readAuthFile()).not.toHaveProperty('secretsBackend');
+			expect(readAuthFile().profiles!.new).not.toHaveProperty('secretsBackend');
+		});
+
+		it('drops unkeyed secrets so they are never keyed to the new account', async () => {
 			write({
 				version: 2,
 				activeProfile: 'old',
@@ -248,28 +285,11 @@ describe('auth.json v2', () => {
 				proxy: { password: 'old_pw' },
 			});
 
-			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' });
+			upsertProfile('new', { ...V2_PROFILE, username: 'new' });
 
 			const file = readAuthFile();
-			expect(Object.keys(file.profiles!)).toEqual(['new']);
-			expect(file.activeProfile).toBe('new');
-			// A leftover token beside the new account authenticates as the wrong user.
 			expect(file).not.toHaveProperty('token');
 			expect(file).not.toHaveProperty('proxy');
-		});
-
-		it('leaves no token when the caller never writes one', async () => {
-			write({
-				version: 2,
-				activeProfile: 'old',
-				profiles: { old: { ...V2_PROFILE, username: 'old' } },
-				secretsBackend: 'file',
-				token: 'apify_api_old',
-			});
-
-			replaceStoredAccount('new', { ...V2_PROFILE, username: 'new' });
-
-			// Logged out, rather than logged in as the account that just went away.
 			await expect(getSecret('new', 'token')).resolves.toBeUndefined();
 		});
 	});
