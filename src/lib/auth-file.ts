@@ -10,6 +10,14 @@ import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 export const AUTH_FILE_VERSION = 2;
 
+/** Where an OAuth login came from and how long its refresh token lasts; the secrets live elsewhere. */
+export interface OAuthProfileState {
+	issuer: string;
+	clientId: string;
+	tokenEndpoint: string;
+	refreshTokenExpiresAt: string | null;
+}
+
 /**
  * One account. Keyed by user ID in {@link AuthFile.profiles}, so renaming a profile can never
  * orphan the secret that key names.
@@ -20,17 +28,20 @@ export interface AuthProfile {
 	name: string | null;
 	/** Set means the profile is an organization rather than a personal account. */
 	organizationOwnerUserId?: string;
-	/** These three are unread until the device flow lands, and reserved so it needs no migration. */
-	authMethod: 'token';
+	authMethod: 'token' | 'oauth2';
+	/** Access token expiry of an `oauth2` login; `null` for a plain API token. */
 	expiresAt: string | null;
 	hasRefreshToken: boolean;
 	loggedInAt: string | null;
+	/** Set for an `oauth2` login. */
+	oauth?: OAuthProfileState;
 	/**
 	 * Set only when the keyring is disabled, unavailable, or refused the write. A token here is
 	 * the record of where this profile's secrets live: no marker says so separately.
 	 */
 	token?: string;
 	proxy?: { password?: string };
+	refreshToken?: string;
 }
 
 /**
@@ -300,7 +311,14 @@ export function readProfileSecret(userId: string, kind: SecretKind): string | un
 	const profile = readAuthFile().profiles?.[userId];
 	if (!profile) return undefined;
 
-	return kind === 'token' ? profile.token : profile.proxy?.password;
+	switch (kind) {
+		case 'token':
+			return profile.token;
+		case 'refresh-token':
+			return profile.refreshToken;
+		default:
+			return profile.proxy?.password;
+	}
 }
 
 /**
@@ -314,17 +332,20 @@ export function writeProfileSecret(userId: string, kind: SecretKind, value: stri
 /** Forgets every file-backend secret of a profile, once its token is in the keyring. */
 export function clearProfileFileSecrets(userId: string) {
 	const profile = readAuthFile().profiles?.[userId];
-	if (profile?.token === undefined && profile?.proxy === undefined) return;
+	if (profile?.token === undefined && profile?.proxy === undefined && profile?.refreshToken === undefined) return;
 
 	updateProfile(userId, (edited) => {
 		delete edited.token;
 		delete edited.proxy;
+		delete edited.refreshToken;
 	});
 }
 
 function setProfileSecret(profile: AuthProfile, kind: SecretKind, value: string) {
 	if (kind === 'token') {
 		profile.token = value;
+	} else if (kind === 'refresh-token') {
+		profile.refreshToken = value;
 	} else {
 		profile.proxy = { ...profile.proxy, password: value };
 	}
@@ -337,6 +358,8 @@ export function deleteProfileSecret(userId: string, kind: SecretKind) {
 	updateProfile(userId, (profile) => {
 		if (kind === 'token') {
 			delete profile.token;
+		} else if (kind === 'refresh-token') {
+			delete profile.refreshToken;
 		} else {
 			// The profile's proxy object carries nothing but the password.
 			delete profile.proxy;
@@ -351,6 +374,23 @@ function updateProfile(userId: string, edit: (profile: AuthProfile) => void) {
 
 	edit(profile);
 	writeAuthFile(file);
+}
+
+/** Records how a stored profile authenticates. `oauth` left out means a plain API token. */
+export function updateProfileAuth(
+	userId: string,
+	auth: Pick<AuthProfile, 'authMethod' | 'expiresAt' | 'hasRefreshToken'> & { oauth?: OAuthProfileState },
+) {
+	updateProfile(userId, (profile) => {
+		profile.authMethod = auth.authMethod;
+		profile.expiresAt = auth.expiresAt;
+		profile.hasRefreshToken = auth.hasRefreshToken;
+		if (auth.oauth) {
+			profile.oauth = auth.oauth;
+		} else {
+			delete profile.oauth;
+		}
+	});
 }
 
 /**
@@ -374,6 +414,7 @@ export function upsertProfile(userId: string, profile: AuthProfile) {
 		...profile,
 		...(existing?.token ? { token: existing.token } : {}),
 		...(existing?.proxy ? { proxy: existing.proxy } : {}),
+		...(existing?.refreshToken ? { refreshToken: existing.refreshToken } : {}),
 	};
 
 	file.activeProfile = userId;
