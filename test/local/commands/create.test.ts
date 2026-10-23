@@ -64,7 +64,9 @@ describe('apify create', () => {
 		expect(existsSync(actorJsonPath)).toBeTruthy();
 		expect(JSON.parse(readFileSync(actorJsonPath, 'utf8')).name).to.be.eql(actName);
 		expect(
-			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
+			),
 		).to.be.eql(expectedInput);
 	});
 
@@ -93,7 +95,9 @@ describe('apify create', () => {
 		expect(existsSync(actorJsonPath)).toBeTruthy();
 		expect(JSON.parse(readFileSync(actorJsonPath, 'utf8')).name).to.be.eql(actName);
 		expect(
-			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
+			),
 		).to.be.eql(expectedInput);
 	});
 
@@ -122,7 +126,9 @@ describe('apify create', () => {
 		// The TypeScript template's prefilled input proves the --template value was used verbatim,
 		// not a template chosen by the (conflicting) --use-case / --language filters.
 		expect(
-			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
+			),
 		).to.be.eql(expectedInput);
 	});
 

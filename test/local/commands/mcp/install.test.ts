@@ -160,20 +160,24 @@ describe('apify mcp install', () => {
 
 		// Original token preserved.
 		const config = await readJson(joinPath('.cursor', 'mcp.json'));
-		expect((config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization).toBe(
-			`Bearer ${TEST_TOKEN}`,
-		);
+		expect(
+			(config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization,
+		).toBe(`Bearer ${TEST_TOKEN}`);
 	});
 
 	it('cursor: re-run with --yes overwrites the existing entry', async () => {
 		await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_token: TEST_TOKEN });
-		await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_token: OTHER_TEST_TOKEN, flags_yes: true });
+		await testRunCommand(MCPInstallCommand, {
+			args_client: 'cursor',
+			flags_token: OTHER_TEST_TOKEN,
+			flags_yes: true,
+		});
 
 		expect(process.exitCode).toBeUndefined();
 		const config = await readJson(joinPath('.cursor', 'mcp.json'));
-		expect((config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization).toBe(
-			`Bearer ${OTHER_TEST_TOKEN}`,
-		);
+		expect(
+			(config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization,
+		).toBe(`Bearer ${OTHER_TEST_TOKEN}`);
 	});
 
 	it('cursor: --tools is appended to the URL as a ?tools= query string', async () => {
@@ -224,9 +228,9 @@ describe('apify mcp install', () => {
 		await testRunCommand(MCPInstallCommand, { args_client: 'cursor' });
 
 		const config = await readJson(joinPath('.cursor', 'mcp.json'));
-		expect((config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization).toBe(
-			`Bearer ${OTHER_TEST_TOKEN}`,
-		);
+		expect(
+			(config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization,
+		).toBe(`Bearer ${OTHER_TEST_TOKEN}`);
 	});
 
 	it('antigravity: writes serverUrl (not url)', async () => {

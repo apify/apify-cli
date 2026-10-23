@@ -338,7 +338,10 @@ describe('multi-account UX', () => {
 				expect(read).not.toHaveBeenCalled();
 				expect(remove).not.toHaveBeenCalled();
 				const { profiles } = JSON.parse(lastLogMessage());
-				expect(profiles.map((p: { secretsBackend: unknown }) => p.secretsBackend)).toEqual(['keyring', 'keyring']);
+				expect(profiles.map((p: { secretsBackend: unknown }) => p.secretsBackend)).toEqual([
+					'keyring',
+					'keyring',
+				]);
 			});
 		});
 
@@ -364,7 +367,9 @@ describe('multi-account UX', () => {
 
 			await testRunCommand(AuthListCommand, {});
 
-			expect(lastErrorMessage()).toContain('APIFY_TOKEN is set, so commands use it instead of the active account.');
+			expect(lastErrorMessage()).toContain(
+				'APIFY_TOKEN is set, so commands use it instead of the active account.',
+			);
 		});
 	});
 

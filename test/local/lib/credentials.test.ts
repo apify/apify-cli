@@ -172,9 +172,13 @@ describe('credentials', () => {
 
 		it('writes auth.json with mode 0600', async () => {
 			await setSecret(TEST_USER_ID, 'token', 'tok_123');
-			expect(writeFileSyncSpy).toHaveBeenCalledWith(expect.stringContaining(AUTH_FILE_PATH()), expect.any(String), {
-				mode: 0o600,
-			});
+			expect(writeFileSyncSpy).toHaveBeenCalledWith(
+				expect.stringContaining(AUTH_FILE_PATH()),
+				expect.any(String),
+				{
+					mode: 0o600,
+				},
+			);
 		});
 
 		it.skipIf(process.platform === 'win32')('creates auth.json readable only by the owner', async () => {

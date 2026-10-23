@@ -54,11 +54,16 @@ describe('apify init', () => {
 			Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }),
 		);
 		expect(
-			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
+			),
 		).toStrictEqual({});
 		expect(
 			JSON.parse(
-				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.__metadata__.json`), 'utf8'),
+				readFileSync(
+					joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.__metadata__.json`),
+					'utf8',
+				),
 			),
 		).toStrictEqual({
 			key: KEY_VALUE_STORE_KEYS.INPUT,
@@ -102,7 +107,9 @@ describe('apify init', () => {
 		expect(existsSync(joinPath(apifyJsonPath))).toBeFalsy();
 		expect(JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'))).toStrictEqual(defaultActorJson);
 		expect(
-			JSON.parse(readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8')),
+			JSON.parse(
+				readFileSync(joinPath(getLocalKeyValueStorePath(), `${KEY_VALUE_STORE_KEYS.INPUT}.json`), 'utf8'),
+			),
 		).toStrictEqual({ url: 'https://www.apify.com/' });
 	});
 
