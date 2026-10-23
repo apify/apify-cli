@@ -1,8 +1,10 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, join } from 'node:path';
+import process from 'node:process';
 
 import { ValidateSchemaCommand } from '../../../src/commands/validate-schema.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
+import { CommandExitCodes } from '../../../src/lib/consts.js';
 import { validDatasetSchemaPath } from '../../__setup__/dataset-schemas/paths.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
@@ -20,11 +22,13 @@ async function setupActorConfig(
 	basePath: string,
 	{
 		inputSchema,
+		version,
 		datasetSchemaRef,
 		outputSchemaRef,
 		kvsSchemaRef,
 	}: {
 		inputSchema?: Record<string, unknown>;
+		version?: string;
 		datasetSchemaRef?: string | Record<string, unknown>;
 		outputSchemaRef?: string | Record<string, unknown>;
 		kvsSchemaRef?: string | Record<string, unknown>;
@@ -47,7 +51,7 @@ async function setupActorConfig(
 	const actorJson: Record<string, unknown> = {
 		actorSpecification: 1,
 		name: 'test-actor',
-		version: '0.1',
+		version: version ?? '0.1',
 		input: './input_schema.json',
 	};
 
@@ -131,6 +135,7 @@ describe('apify validate-schema', () => {
 		});
 
 		beforeEach(async () => {
+			process.exitCode = undefined;
 			await beforeAllCalls();
 		});
 
@@ -165,6 +170,33 @@ describe('apify validate-schema', () => {
 			expect(allMessages).not.toContain('Output');
 			expect(allMessages).not.toContain('Key-Value Store');
 		});
+
+		it.each(['1.0.0', '01.0', '1.01'])('should reject platform-invalid Actor version %s', async (version) => {
+			await setupActorConfig(joinPath(), { version });
+
+			await testRunCommand(ValidateSchemaCommand, {});
+
+			const allMessages = logMessages.error.join('\n');
+			expect(allMessages).toContain(
+				`Actor version in '.actor/actor.json' must be in MAJOR.MINOR format, for example "1.0". Received "${version}".`,
+			);
+			expect(allMessages).toContain('Input schema is valid');
+			expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
+		});
+
+		it.each(['0.0', '1.0', '99.99', '100.0', '1.100'])(
+			'should accept platform-valid Actor version %s',
+			async (version) => {
+				await setupActorConfig(joinPath(), { version });
+
+				await testRunCommand(ValidateSchemaCommand, {});
+
+				const allMessages = logMessages.error.join('\n');
+				expect(allMessages).toContain('Input schema is valid');
+				expect(allMessages).not.toContain('Actor version in');
+				expect(process.exitCode).toBeUndefined();
+			},
+		);
 
 		it('should report error for invalid dataset schema', async () => {
 			await setupActorConfig(joinPath(), {
@@ -214,6 +246,7 @@ describe('apify validate-schema', () => {
 
 		it('should only validate input schema when path arg is provided', async () => {
 			await setupActorConfig(joinPath(), {
+				version: '1.0.0',
 				datasetSchemaRef: validDatasetSchemaPath,
 				outputSchemaRef: validOutputSchemaPath,
 				kvsSchemaRef: validKvsSchemaPath,
@@ -225,6 +258,7 @@ describe('apify validate-schema', () => {
 
 			const allMessages = logMessages.error.join('\n');
 			expect(allMessages).toContain('Input schema is valid');
+			expect(allMessages).not.toContain('Actor version in');
 			expect(allMessages).not.toContain('Dataset');
 			expect(allMessages).not.toContain('Output');
 			expect(allMessages).not.toContain('Key-Value Store');
