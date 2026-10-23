@@ -15,6 +15,7 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { isTerminalStatus } from '../../lib/commands/agent-output.js';
 import { getConsoleUrl } from '../../lib/console-url.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { monorepoUnsupportedMessage, resolveDockerContext } from '../../lib/docker-context.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
@@ -283,6 +284,19 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
+
+		// A monorepo Actor builds from a Docker context above its folder, which a push of that folder cannot carry.
+		const dockerContext = resolveDockerContext(cwd, actorConfig?.dockerContextDir);
+		if (dockerContext.kind === 'invalid') {
+			error({ message: dockerContext.message });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
+			return;
+		}
+		if (dockerContext.kind === 'context') {
+			error({ message: monorepoUnsupportedMessage(actorConfig!.name as string) });
+			process.exitCode = CommandExitCodes.NotImplemented;
+			return;
+		}
 
 		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
