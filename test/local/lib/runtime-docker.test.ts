@@ -178,6 +178,20 @@ describe('runtime/docker', () => {
 			]);
 		});
 
+		it('mounts a CA bundle read-only and tells the runtime where it is, only when one is given', () => {
+			const options = {
+				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
+				dataDir: '/data',
+				detach: false,
+				hostSocketPath: '/var/run/docker.sock',
+				platform: 'linux' as const,
+			};
+			const args = buildRuntimeRunArgs({ ...options, caFile: '/etc/proxy-ca.pem' });
+			expect(args).toContain('/etc/proxy-ca.pem:/etc/actor-runtime/extra-ca.pem:ro');
+			expect(args).toContain('ACTOR_RUNTIME_EXTRA_CA_FILE=/etc/actor-runtime/extra-ca.pem');
+			expect(buildRuntimeRunArgs(options).join(' ')).not.toContain('EXTRA_CA');
+		});
+
 		it("mounts a rootless Podman socket at the runtime's expected path", () => {
 			const args = buildRuntimeRunArgs({
 				image: DEFAULT_ACTOR_RUNTIME_IMAGE,
