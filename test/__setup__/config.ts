@@ -15,8 +15,6 @@ if (!ENV_TEST_USER_TOKEN) {
 
 export const testUserClient = new ApifyClient(getApifyClientOptionsForToken(ENV_TEST_USER_TOKEN));
 
-export const badUserClient = new ApifyClient(getApifyClientOptionsForToken(TEST_USER_BAD_TOKEN));
-
 export const TEST_USER_TOKEN = ENV_TEST_USER_TOKEN;
 
 if (isCI) {
