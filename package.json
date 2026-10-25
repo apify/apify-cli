@@ -12,7 +12,7 @@
 		"test:e2e": "vitest run --testNamePattern \"\\[e2e\\]\" --exclude ./test/api",
 		"test:e2e:local": "vitest run --testNamePattern \"^(?=.*\\[e2e\\])(?!.*\\[api\\]).*$\" --exclude ./test/api",
 		"test:api": "vitest run --testNamePattern \"^(?=.*\\[api\\])(?!.*\\[e2e\\]).*$\" --exclude ./test/e2e",
-		"test:python": "vitest run --testNamePattern \"\\[python\\]\"",
+		"test:python": "vitest run --testNamePattern \"\\[python\\]\" --exclude ./test/api",
 		"lint": "oxlint --type-aware",
 		"lint:fix": "oxlint --type-aware --fix",
 		"format": "oxfmt --check",
