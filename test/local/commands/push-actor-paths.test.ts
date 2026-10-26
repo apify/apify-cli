@@ -73,10 +73,13 @@ async function writeActorConfig(fields: Record<string, unknown>) {
 	);
 }
 
+// The mocked copy may share the exit code with the real process, so both are restored.
 let originalExitCode: typeof process.exitCode;
+let originalGlobalExitCode: typeof process.exitCode;
 
 beforeEach(async () => {
 	originalExitCode = commandProcess.exitCode;
+	originalGlobalExitCode = process.exitCode;
 	actorGet.mockClear();
 	versionUpdate.mockClear();
 	versionCreate.mockClear();
@@ -92,6 +95,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
 	commandProcess.exitCode = originalExitCode;
+	process.exitCode = originalGlobalExitCode;
 	await afterAllCalls();
 });
 

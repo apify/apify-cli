@@ -1,13 +1,21 @@
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 import { checkActorPaths, formatActorPathProblems } from '../../../src/lib/actor-paths.js';
 import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
+import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 const ACTOR_PATH = 'actors/x';
 
 describe('checkActorPaths', () => {
+	const { tmpPath, beforeAllCalls, afterAllCalls } = useTempPath('actor-paths-test-dir', {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	// The checker works from real paths, so the expectations do too.
 	let root: string;
 	let actorDir: string;
 	let uploadedFiles: string[];
@@ -24,11 +32,13 @@ describe('checkActorPaths', () => {
 	) => checkActorPaths({ actorDir, uploadRoot: actorDir, uploadedFiles, config, ...options });
 
 	beforeAll(async () => {
-		root = mkdtempSync(join(tmpdir(), 'apify-cli-actor-paths-'));
+		await beforeAllCalls();
+		root = realpathSync(tmpPath);
 		actorDir = join(root, ACTOR_PATH);
 		write(`${ACTOR_PATH}/.actor/actor.json`, '{}');
 		write(`${ACTOR_PATH}/.actor/INPUT_SCHEMA.json`, '{}');
 		write(`${ACTOR_PATH}/.actor/README.md`);
+		write(`${ACTOR_PATH}/.actor/CHANGELOG.md`);
 		write(`${ACTOR_PATH}/.actorignore`, 'Dockerfile.ci\n');
 		write(`${ACTOR_PATH}/Dockerfile`, 'FROM apify/actor-node:20\n');
 		write(`${ACTOR_PATH}/Dockerfile.ci`, 'FROM apify/actor-node:20\n');
@@ -39,8 +49,8 @@ describe('checkActorPaths', () => {
 		uploadedFiles = await getActorLocalFilePaths(actorDir);
 	});
 
-	afterAll(() => {
-		rmSync(root, { recursive: true, force: true });
+	afterAll(async () => {
+		await afterAllCalls();
 	});
 
 	it('passes files inside the upload root, next to actor.json or above it', () => {
@@ -129,6 +139,18 @@ describe('checkActorPaths', () => {
 		]);
 	});
 
+	it('rejects a file whose case differs from the uploaded one', () => {
+		// A case-insensitive file system finds README.md, but the Git index lists it as readme.md.
+		expect(check({ readme: './README.md' }, { uploadedFiles: ['.actor/readme.md'] })).toEqual([
+			{
+				field: 'readme',
+				value: './README.md',
+				resolvedPath: join(actorDir, '.actor', 'README.md'),
+				reason: 'does not match the case of the uploaded file .actor/readme.md',
+			},
+		]);
+	});
+
 	it('judges a symlink by its own path, as push uploads its content there', () => {
 		// The link points outside the upload root; push reads through it and uploads the content at the link's path.
 		expect(uploadedFiles).toContain('.actor/linked_schema.json');
@@ -146,7 +168,7 @@ describe('checkActorPaths', () => {
 	});
 
 	it('matches the name of dockerfile, readme and changelog case-insensitively, and a schema exactly', () => {
-		expect(check({ dockerfile: '../dockerfile', readme: './readme.MD' })).toEqual([]);
+		expect(check({ dockerfile: '../dockerfile', readme: './readme.MD', changelog: './changelog.md' })).toEqual([]);
 		expect(check({ input: './input_schema.json' })).toEqual([
 			{
 				field: 'input',
