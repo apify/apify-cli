@@ -297,6 +297,13 @@ describe('apify push in a repository with several Actors', () => {
 			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
 		});
 
+		it('prints nothing on stdout when the actorId argument is rejected under --json', async () => {
+			await run({ args_actorId: ACTOR_A.id, flags_all: true, flags_json: true });
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidInput);
+			expect(logMessages.log).toEqual([]);
+		});
+
 		it('pushes to the actorId argument when exactly one Actor is selected', async () => {
 			await run({ args_actorId: ACTOR_C.id, flags_actorDir: ['actors/a'] });
 
