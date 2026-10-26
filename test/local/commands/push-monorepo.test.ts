@@ -28,7 +28,7 @@ const currentVersion = { versionNumber: '0.0', sourceType: ACTOR_SOURCE_TYPES.SO
 
 interface VersionPayload {
 	sourceType: string;
-	sourceFiles?: { name: string }[];
+	sourceFiles?: { name: string; content?: string }[];
 	tarballUrl?: string;
 	actorPath?: string;
 }
@@ -258,6 +258,44 @@ describe('apify push of a monorepo Actor', () => {
 		expect(names).not.toContain(`${ACTOR_PATH}/shared`);
 		expect(names).not.toContain('dangling');
 		expect(names).not.toContain('outside.txt');
+	});
+
+	it('accepts a schema reached through a symlink inside the repository and uploads it at the link path', async () => {
+		await write('shared/input_schema.json', '{"title":"Input","type":"object","properties":{}}');
+		symlinkSync('../../../shared/input_schema.json', joinPath(`${ACTOR_PATH}/.actor/input_schema.json`));
+		await writeActorConfig({
+			dockerContextDir: '../../..',
+			dockerfile: '../../../shared/TypeScript_Dockerfile',
+			input: './input_schema.json',
+		});
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		const linked = files.find((file) => file.name === `${ACTOR_PATH}/.actor/input_schema.json`);
+		expect(linked?.content).toContain('"title":"Input"');
+	});
+
+	it('rejects a schema reached through a symlink leaving the repository, which the upload leaves out', async () => {
+		await writeFile(outside.joinPath('input_schema.json'), '{}');
+		symlinkSync(outside.joinPath('input_schema.json'), joinPath(`${ACTOR_PATH}/.actor/input_schema.json`));
+		await writeActorConfig({
+			dockerContextDir: '../../..',
+			dockerfile: '../../../shared/TypeScript_Dockerfile',
+			input: './input_schema.json',
+		});
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toContain('"input": "./input_schema.json"');
+		expect(stderr).toContain('is not among the files apify push uploads');
+		expect(actorGet).not.toHaveBeenCalled();
+		expect(versionUpdate).not.toHaveBeenCalled();
 	});
 
 	it('warns about uncommitted changes, which the upload carries as they are', async () => {
