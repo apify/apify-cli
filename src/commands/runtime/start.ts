@@ -30,6 +30,7 @@ import {
 	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
 import { ensureActorRuntimeImage, installedActorRuntimeImage } from '../../lib/runtime/ensure.js';
+import { writeCaFileForRuntime } from '../../lib/runtime/host-ca.js';
 import { configuredRuntimePorts } from '../../lib/runtime/target.js';
 
 const isValidPort = (port: number) => Number.isInteger(port) && port >= 1 && port <= 65535;
@@ -88,8 +89,12 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		}),
 		'ca-file': Flags.string({
 			description:
-				`PEM file with extra CA certificates that Actor builds (and their runs) trust, for networks that re-sign outbound HTTPS. ` +
+				`PEM file with CA certificates to trust on top of the ones of this machine, which Actor builds (and their runs) trust, for networks that re-sign outbound HTTPS. ` +
 				`Defaults to the file named by NODE_EXTRA_CA_CERTS, SSL_CERT_FILE, REQUESTS_CA_BUNDLE or CURL_CA_BUNDLE, in that order.`,
+		}),
+		'no-host-ca': Flags.boolean({
+			description: `Do not hand this machine's trusted CA certificates to the runtime. By default Actor builds trust the ones its own image lacks.`,
+			default: false,
 		}),
 		'console-port': Flags.integer({
 			description: `Host port for the runtime console. Defaults to the port of the previous start, else ${ACTOR_RUNTIME_CONSOLE_PORT}.`,
@@ -130,6 +135,12 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		// A CA variable naming a missing file is that tool's own warning to give, not a reason to refuse starting.
 		const caFile = explicitCaFile ?? caFileFromEnv();
 		const extraCaFile = caFile ? resolve(caFile) : undefined;
+		// What this machine trusts is exported for the runtime, which cannot see it from its container; it keeps
+		// only the certificates its own image lacks, so a machine with nothing special changes no build.
+		const runtimeCaFile = await writeCaFileForRuntime(join(GLOBAL_CONFIGS_FOLDER(), 'actor-runtime', 'host-ca.pem'), {
+			extraCaFile,
+			hostStore: !this.flags.noHostCa,
+		});
 
 		const image = installedActorRuntimeImage();
 		const engine = await ensureActorRuntimeImage({ image });
@@ -149,7 +160,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 				'',
 				`  API:     ${runtimeApiUrl(ports.api)}`,
 				`  Console: ${runtimeConsoleUrl(ports.console)}`,
-				...(extraCaFile ? [`  Builds trust the CA certificates in ${extraCaFile}`] : []),
+				...(runtimeCaFile ? [`  Builds trust the CA certificates of this machine (exported to ${runtimeCaFile})`] : []),
 				'',
 				'Point the Apify CLI at the runtime with:',
 				...runtimeEnvExportLines(ports).map((line) => chalk.white.bold(`  ${line}`)),
@@ -167,7 +178,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			ports,
 			networkMode,
 			securityOptions,
-			caFile: extraCaFile,
+			caFile: runtimeCaFile,
 		});
 		run({ message: `${engine} ${args.join(' ')}` });
 
