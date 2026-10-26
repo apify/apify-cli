@@ -1,4 +1,4 @@
-import { readdirSync, realpathSync, statSync } from 'node:fs';
+import { readdirSync, type Stats, statSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
@@ -89,18 +89,17 @@ function checkPathField(
 		);
 	}
 
+	// push reads through a symlink and uploads the content at this path, so the path is judged as it is, not by its
+	// target; a dangling symlink has no content to upload.
 	const filePath = join(dir, name);
-	let realPath: string;
+	let stats: Stats;
 	try {
-		realPath = realpathSync(filePath);
+		stats = statSync(filePath);
 	} catch {
 		return problem(resolvedPath, 'does not exist');
 	}
-	if (isOutside(relative(realpathSync(root), realPath))) {
-		return problem(resolvedPath, `lies outside the uploaded folder ${root} (through a symlink)`);
-	}
-	if (statSync(realPath).isDirectory()) return problem(resolvedPath, 'is a directory, not a file');
-	if (dockerContextRoot && field === 'dockerfile' && isOutside(relative(realpathSync(dockerContextRoot), realPath))) {
+	if (stats.isDirectory()) return problem(resolvedPath, 'is a directory, not a file');
+	if (dockerContextRoot && field === 'dockerfile' && isOutside(relative(resolve(dockerContextRoot), filePath))) {
 		return problem(resolvedPath, `lies outside the Docker context ${dockerContextRoot}`);
 	}
 
@@ -120,7 +119,8 @@ function checkPathField(
 
 /**
  * Applies the platform's rules to every file path in `actor.json` before anything is uploaded: relative to
- * `.actor/`, inside the upload root (symlinks resolved), an existing file, and one that push sends.
+ * `.actor/`, inside the upload root, an existing file, and one that push sends. A symlink counts by its own path,
+ * as push uploads its content there.
  */
 export function checkActorPaths(options: ActorPathsOptions): ActorPathProblem[] {
 	return collectPathFields(options.config).flatMap((pathField) => checkPathField(pathField, options) ?? []);

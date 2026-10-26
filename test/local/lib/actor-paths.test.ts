@@ -114,13 +114,18 @@ describe('checkActorPaths', () => {
 		]);
 	});
 
-	it('rejects a symlink to a file outside the upload root', () => {
-		expect(check({ input: './linked_schema.json' })).toEqual([
+	it('judges a symlink by its own path, as push uploads its content there', () => {
+		// The link points outside the upload root; push reads through it and uploads the content at the link's path.
+		expect(uploadedFiles).toContain('.actor/linked_schema.json');
+		expect(check({ input: './linked_schema.json' })).toEqual([]);
+
+		const withoutLink = uploadedFiles.filter((file) => file !== '.actor/linked_schema.json');
+		expect(check({ input: './linked_schema.json' }, { uploadedFiles: withoutLink })).toEqual([
 			{
 				field: 'input',
 				value: './linked_schema.json',
 				resolvedPath: join(actorDir, '.actor', 'linked_schema.json'),
-				reason: `lies outside the uploaded folder ${actorDir} (through a symlink)`,
+				reason: 'is not among the files apify push uploads (excluded by .gitignore or .actorignore?)',
 			},
 		]);
 	});
