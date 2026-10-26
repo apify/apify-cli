@@ -1,3 +1,6 @@
+// The Docker context of an Actor: where `dockerContextDir` in `.actor/actor.json` points and what a push of it
+// would carry. `readGitProvenance` and `getContextFilePaths` have no caller in `apify push` yet; they serve the
+// stage 2 upload of the context and the `actor-runtime` branch.
 import { execFileSync } from 'node:child_process';
 import { lstatSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -146,8 +149,11 @@ function gitFileList(root: string, args: string[]): string[] | undefined {
 	return output?.split('\0').filter(Boolean);
 }
 
-/** What a Git clone of `root` has, as on disk now, plus untracked files Git does not ignore; `.actorignore`
- * does not apply, as on the platform. Outside Git, what an ordinary push of `root` sends. */
+/**
+ * What a Git clone of `root` has, as on disk now, plus untracked files Git does not ignore; `.actorignore` does not
+ * apply, as on the platform. Outside Git, what an ordinary push of `root` sends. The paths are relative to `root`
+ * with forward slashes on every platform, as `getActorLocalFilePaths` returns them.
+ */
 export async function getContextFilePaths(root: string): Promise<string[]> {
 	const tracked = gitFileList(root, ['--cached']);
 	const untracked = gitFileList(root, ['--others', '--exclude-standard']);
@@ -168,7 +174,7 @@ export async function getContextFilePaths(root: string): Promise<string[]> {
 			(filePath) =>
 				isPushable(filePath) && !filePath.split('/').some((segment) => UNTRACKED_IGNORED_SEGMENTS.has(segment)),
 		),
-	].map((filePath) => filePath.split('/').join(sep));
+	];
 }
 
 export function monorepoUnsupportedMessage(actorName: string): string {
