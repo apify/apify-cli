@@ -1,5 +1,8 @@
+// The Docker context of an Actor: where `dockerContextDir` in `.actor/actor.json` points and what a push of it
+// would carry. `readGitProvenance` and `getContextFilePaths` have no caller in `apify push` yet; they serve the
+// stage 2 upload of the context and the `actor-runtime` branch.
 import { execFileSync } from 'node:child_process';
-import { existsSync, lstatSync, realpathSync } from 'node:fs';
+import { lstatSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
@@ -30,45 +33,61 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 		return { kind: 'invalid', message: `"dockerContextDir" in .actor/actor.json must be a string.` };
 	}
 
-	const contextRoot = resolve(actorDir, ACTOR_SPECIFICATION_FOLDER, dockerContextDir);
-	const contextPathInActor = relative(actorDir, contextRoot);
+	// The platform resolves the context from the Actor folder's real path, so a symlinked `--dir` must too.
+	let realActorDir: string;
+	try {
+		realActorDir = realpathSync(actorDir);
+	} catch {
+		return { kind: 'invalid', message: `The Actor folder ${actorDir} does not exist.` };
+	}
+
+	const contextRoot = resolve(realActorDir, ACTOR_SPECIFICATION_FOLDER, dockerContextDir);
+	const contextPathInActor = relative(realActorDir, contextRoot);
 	if (contextPathInActor === '' || !isOutside(contextPathInActor)) return { kind: 'none' };
 
-	if (!existsSync(contextRoot)) {
+	const contextStats = statSync(contextRoot, { throwIfNoEntry: false });
+	if (!contextStats) {
 		return {
 			kind: 'invalid',
 			message: `"dockerContextDir" in .actor/actor.json points to ${contextRoot}, which does not exist.`,
 		};
 	}
+	if (!contextStats.isDirectory()) {
+		return {
+			kind: 'invalid',
+			message: `"dockerContextDir" in .actor/actor.json points to ${contextRoot}, which is not a directory.`,
+		};
+	}
+	const realContextRoot = realpathSync(contextRoot);
 
 	// The platform's clone holds nothing above the repository root.
-	const repoRoot = git(actorDir, ['rev-parse', '--show-toplevel']);
+	const repoRoot = git(realActorDir, ['rev-parse', '--show-toplevel']);
 	if (repoRoot) {
 		const sourceRoot = realpathSync(repoRoot);
-		if (isOutside(relative(sourceRoot, realpathSync(contextRoot)))) {
+		if (isOutside(relative(sourceRoot, realContextRoot))) {
 			return {
 				kind: 'invalid',
 				message:
-					`"dockerContextDir" in .actor/actor.json points to ${contextRoot}, outside the Git repository ${repoRoot}. ` +
+					`"dockerContextDir" in .actor/actor.json points to ${realContextRoot}, outside the Git repository ${sourceRoot}. ` +
 					'The Apify platform builds from a clone of the repository, so it could not build this Actor.',
 			};
 		}
 		return {
 			kind: 'context',
-			contextRoot,
+			contextRoot: realContextRoot,
 			sourceRoot,
-			actorPath: toPosix(relative(sourceRoot, realpathSync(actorDir))),
+			actorPath: toPosix(relative(sourceRoot, realActorDir)),
 		};
 	}
 
-	const actorPath = relative(contextRoot, actorDir);
+	const actorPath = relative(realContextRoot, realActorDir);
 	if (isOutside(actorPath)) {
 		return {
 			kind: 'invalid',
-			message: `"dockerContextDir" in .actor/actor.json points to ${contextRoot}, which does not contain the Actor's folder.`,
+			message: `"dockerContextDir" in .actor/actor.json points to ${realContextRoot}, which does not contain the Actor's folder.`,
 		};
 	}
-	return { kind: 'context', contextRoot, sourceRoot: contextRoot, actorPath: toPosix(actorPath) };
+	return { kind: 'context', contextRoot: realContextRoot, sourceRoot: realContextRoot, actorPath: toPosix(actorPath) };
 }
 
 function isOutside(relativePath: string): boolean {
@@ -130,8 +149,11 @@ function gitFileList(root: string, args: string[]): string[] | undefined {
 	return output?.split('\0').filter(Boolean);
 }
 
-/** What a Git clone of `root` has, as on disk now, plus untracked files Git does not ignore; `.actorignore`
- * does not apply, as on the platform. Outside Git, what an ordinary push of `root` sends. */
+/**
+ * What a Git clone of `root` has, as on disk now, plus untracked files Git does not ignore; `.actorignore` does not
+ * apply, as on the platform. Outside Git, what an ordinary push of `root` sends. The paths are relative to `root`
+ * with forward slashes on every platform, as `getActorLocalFilePaths` returns them.
+ */
 export async function getContextFilePaths(root: string): Promise<string[]> {
 	const tracked = gitFileList(root, ['--cached']);
 	const untracked = gitFileList(root, ['--others', '--exclude-standard']);
@@ -152,7 +174,7 @@ export async function getContextFilePaths(root: string): Promise<string[]> {
 			(filePath) =>
 				isPushable(filePath) && !filePath.split('/').some((segment) => UNTRACKED_IGNORED_SEGMENTS.has(segment)),
 		),
-	].map((filePath) => filePath.split('/').join(sep));
+	];
 }
 
 export function monorepoUnsupportedMessage(actorName: string): string {

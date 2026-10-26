@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, statSync, unlinkSync } from 'node:fs';
-import { isAbsolute, join, resolve } from 'node:path';
+import { basename, isAbsolute, join, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
@@ -462,7 +462,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			return;
 		}
 		if (dockerContext.kind === 'context') {
-			error({ message: monorepoUnsupportedMessage(actorConfig!.name as string) });
+			// Pushing by ID, actor.json may have no name; the folder then names the Actor.
+			error({ message: monorepoUnsupportedMessage((actorConfig?.name as string | undefined) ?? basename(cwd)) });
 			process.exitCode = CommandExitCodes.NotImplemented;
 			return;
 		}
