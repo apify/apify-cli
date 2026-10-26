@@ -141,6 +141,16 @@ describe('apify push of a monorepo Actor', () => {
 		expect(versionUpdate).not.toHaveBeenCalled();
 	});
 
+	it('names the Actor folder when actor.json has no name', async () => {
+		await writeActorConfig({ name: undefined, dockerContextDir: '../../..' });
+
+		await testRunCommand(ActorsPushCommand, { args_actorId: ACTOR_ID });
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
+		expect(logMessages.error.join('\n')).toContain('Actor typescript-actor sets "dockerContextDir"');
+		expect(actorGet).not.toHaveBeenCalled();
+	});
+
 	it('rejects a dockerContextDir outside the Git repository, which the platform could not build', async () => {
 		await writeActorConfig({ dockerContextDir: '../../../..' });
 
