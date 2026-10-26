@@ -43,6 +43,7 @@ describe('resolveDockerContext', () => {
 			mkdirSync(joinPath(ACTOR_PATH, 'src'), { recursive: true });
 			mkdirSync(joinPath('shared'), { recursive: true });
 			writeFileSync(joinPath('Dockerfile'), 'FROM apify/actor-node:20\n');
+			writeFileSync(joinPath(ACTOR_PATH, 'Dockerfile'), 'FROM apify/actor-node:20\n');
 			symlinkSync(ACTOR_PATH, joinPath('linked-actor'));
 			execFileSync('git', ['init', '--quiet'], { cwd: tmpPath, stdio: 'ignore' });
 			root = realpathSync(tmpPath);
@@ -52,17 +53,39 @@ describe('resolveDockerContext', () => {
 			await afterAllCalls();
 		});
 
-		it('treats a missing field, or a context at or below the Actor folder, as an ordinary push', () => {
+		it('reports a missing field as none', () => {
 			expect(resolveDockerContext(actorDir(), undefined)).toEqual({ kind: 'none' });
+			expect(resolveDockerContext(actorDir(), null)).toEqual({ kind: 'none' });
 			expect(resolveDockerContext(actorDir(), '')).toEqual({ kind: 'none' });
-			expect(resolveDockerContext(actorDir(), '..')).toEqual({ kind: 'none' });
-			expect(resolveDockerContext(actorDir(), '.')).toEqual({ kind: 'none' });
-			expect(resolveDockerContext(actorDir(), '../src')).toEqual({ kind: 'none' });
+		});
+
+		it('reports a context at or below the Actor folder as within, with its real path', () => {
+			const actorRoot = join(root, ACTOR_PATH);
+			expect(resolveDockerContext(actorDir(), '..')).toEqual({ kind: 'within', contextRoot: actorRoot });
+			expect(resolveDockerContext(actorDir(), '.')).toEqual({ kind: 'within', contextRoot: join(actorRoot, '.actor') });
+			expect(resolveDockerContext(actorDir(), '../src')).toEqual({
+				kind: 'within',
+				contextRoot: join(actorRoot, 'src'),
+			});
+		});
+
+		it('rejects a context inside the Actor folder that does not exist', () => {
+			expect(resolveDockerContext(actorDir(), '../missing')).toEqual({
+				kind: 'invalid',
+				message: `"dockerContextDir" in .actor/actor.json points to ${join(root, ACTOR_PATH, 'missing')}, which does not exist.`,
+			});
+		});
+
+		it('rejects a context inside the Actor folder that is not a directory', () => {
+			expect(resolveDockerContext(actorDir(), '../Dockerfile')).toEqual({
+				kind: 'invalid',
+				message: `"dockerContextDir" in .actor/actor.json points to ${join(root, ACTOR_PATH, 'Dockerfile')}, which is not a directory.`,
+			});
 		});
 
 		it('resolves a context above the Actor folder to the repository root and the Actor path in it', () => {
 			expect(resolveDockerContext(actorDir(), '../../..')).toEqual({
-				kind: 'context',
+				kind: 'outside',
 				contextRoot: root,
 				sourceRoot: root,
 				actorPath: ACTOR_PATH,
@@ -71,7 +94,7 @@ describe('resolveDockerContext', () => {
 
 		it('keeps the repository root as the source for a context elsewhere in the repository', () => {
 			expect(resolveDockerContext(actorDir(), '../../../shared')).toEqual({
-				kind: 'context',
+				kind: 'outside',
 				contextRoot: join(root, 'shared'),
 				sourceRoot: root,
 				actorPath: ACTOR_PATH,
@@ -80,7 +103,7 @@ describe('resolveDockerContext', () => {
 
 		it('resolves a symlinked Actor folder from its real path, as the platform does', () => {
 			expect(resolveDockerContext(joinPath('linked-actor'), '../../..')).toEqual({
-				kind: 'context',
+				kind: 'outside',
 				contextRoot: root,
 				sourceRoot: root,
 				actorPath: ACTOR_PATH,
@@ -151,7 +174,7 @@ describe('resolveDockerContext', () => {
 
 		it('makes the context the source when it contains the Actor folder', () => {
 			expect(resolveDockerContext(actorDir(), '../../..')).toEqual({
-				kind: 'context',
+				kind: 'outside',
 				contextRoot: root,
 				sourceRoot: root,
 				actorPath: ACTOR_PATH,
