@@ -42,7 +42,7 @@ export const checkboxImpl: ReturnType<typeof createPrompt<unknown[], CheckboxOpt
 	const [checked, setChecked] = useState<boolean[]>(() => choices.map((choice) => !!choice.checked));
 	const prefix = usePrefix({ status, theme });
 
-	useKeypress((key) => {
+	useKeypress((key, rl) => {
 		if (isEnterKey(key)) {
 			setStatus('done');
 			done(choices.filter((_, index) => checked[index]).map((choice) => choice.value));
@@ -58,26 +58,17 @@ export const checkboxImpl: ReturnType<typeof createPrompt<unknown[], CheckboxOpt
 			} else if (next >= 0 && next < choices.length) {
 				setActive(next);
 			}
-
-			return;
-		}
-
-		if (isSpaceKey(key)) {
+		} else if (isSpaceKey(key)) {
 			setChecked(checked.map((value, index) => (index === active ? !value : value)));
-
-			return;
-		}
-
-		if (key.name === 'a') {
+		} else if (key.name === 'a') {
 			const allChecked = checked.every(Boolean);
 			setChecked(checked.map(() => !allChecked));
-
-			return;
-		}
-
-		if (key.name === 'i') {
+		} else if (key.name === 'i') {
 			setChecked(checked.map((value) => !value));
 		}
+
+		// Readline still buffers every key; drop it so the cursor placement does not drift, as confirmImpl does.
+		rl.clearLine(0);
 	});
 
 	const page = usePagination({
