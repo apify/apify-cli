@@ -331,6 +331,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
+		let actorDir = cwd;
 		let uploadRoot = cwd;
 		let uploadedFiles = filePathsToPush;
 		let actorPath: string | undefined;
@@ -338,11 +339,13 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			uploadRoot = dockerContext.sourceRoot;
 			uploadedFiles = resolveLinksForUpload(uploadRoot, await getContextFilePaths(uploadRoot));
 			actorPath = dockerContext.actorPath;
+			// The source root is a real path, so the Actor folder has to be one too for its paths to fall inside it.
+			actorDir = join(uploadRoot, actorPath);
 		}
 
 		// The platform resolves these paths after the upload; a wrong one builds the wrong image or fails the build.
 		const pathProblems = checkActorPaths({
-			actorDir: cwd,
+			actorDir,
 			uploadRoot,
 			uploadedFiles,
 			config: actorConfig,

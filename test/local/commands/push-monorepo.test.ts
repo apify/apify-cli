@@ -370,6 +370,18 @@ describe('apify push of a monorepo Actor', () => {
 		expect(logMessages.error.join('\n')).toContain('Actor typescript-actor sets "dockerContextDir"');
 	});
 
+	it('checks the actor.json paths from the real Actor folder when --dir goes through a symlink', async () => {
+		symlinkSync(ACTOR_PATH, joinPath('linked-actor'));
+		forceNewCwd('linked-actor');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.actorPath).toBe(ACTOR_PATH);
+		expect(modifier.sourceFiles!.map((file) => file.name)).toContain(`${ACTOR_PATH}/.actor/actor.json`);
+	});
+
 	it.each([
 		['outside the Git repository, which the platform could not build', '../../../..', 'outside the Git repository'],
 		['that does not exist', '../../../missing', 'which does not exist'],
