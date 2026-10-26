@@ -397,8 +397,11 @@ describe('apify push of a monorepo Actor', () => {
 		expect(versionUpdate).not.toHaveBeenCalled();
 	});
 
-	it('pushes the Actor folder as usual when the Docker context lies inside it', async () => {
-		await writeActorConfig({ dockerContextDir: '../src' });
+	it.each([
+		['lies inside it', { dockerContextDir: '../src' }],
+		['is not set', {}],
+	])('pushes the Actor folder as usual when the Docker context %s', async (_, fields) => {
+		await writeActorConfig(fields);
 
 		await testRunCommand(ActorsPushCommand, {});
 

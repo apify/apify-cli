@@ -131,6 +131,19 @@ describe('apify push with file paths in actor.json', () => {
 		expect(versionUpdate).not.toHaveBeenCalled();
 	});
 
+	it('requires the Dockerfile inside a Docker context within the Actor folder', async () => {
+		await write('docker/Dockerfile', 'FROM apify/actor-node:20\n');
+		await writeActorConfig({ dockerContextDir: '../docker', dockerfile: '../Dockerfile' });
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		expect(logMessages.error.join('\n')).toContain(
+			`"dockerfile": "../Dockerfile" (${joinPath('Dockerfile')}) lies outside the Docker context ${joinPath('docker')}.`,
+		);
+		expect(versionUpdate).not.toHaveBeenCalled();
+	});
+
 	it('pushes as usual when every path points to an uploaded file', async () => {
 		await writeActorConfig({ dockerfile: '../dockerfile', input: './INPUT_SCHEMA.json' });
 

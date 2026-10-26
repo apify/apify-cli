@@ -331,11 +331,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
+		// A context inside the Actor folder ('none' or 'within') is an ordinary push of the folder.
 		let actorDir = cwd;
 		let uploadRoot = cwd;
 		let uploadedFiles = filePathsToPush;
 		let actorPath: string | undefined;
-		if (dockerContext.kind === 'context') {
+		if (dockerContext.kind === 'outside') {
 			uploadRoot = dockerContext.sourceRoot;
 			uploadedFiles = resolveLinksForUpload(uploadRoot, await getContextFilePaths(uploadRoot));
 			actorPath = dockerContext.actorPath;
@@ -349,7 +350,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			uploadRoot,
 			uploadedFiles,
 			config: actorConfig,
-			dockerContextRoot: dockerContext.kind === 'context' ? dockerContext.contextRoot : undefined,
+			// BuildKit reads the Dockerfile from the context, wherever the context lies.
+			dockerContextRoot: dockerContext.kind === 'none' ? undefined : dockerContext.contextRoot,
 		});
 		if (pathProblems.length > 0) {
 			error({ message: formatActorPathProblems(pathProblems) });
