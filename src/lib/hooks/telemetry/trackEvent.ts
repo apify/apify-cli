@@ -43,6 +43,12 @@ interface CliCommandEvent {
 		wasCreated?: boolean;
 	};
 
+	/** A push from a directory without an Actor of its own: how many Actors were chosen and how many failed. */
+	pushSelection?: {
+		selected: number;
+		failed: number;
+	};
+
 	// init command
 	actorWrapper?: string;
 

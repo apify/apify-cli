@@ -404,6 +404,10 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}
 
 		process.exitCode = firstFailureExitCode;
+		this.telemetryData.pushSelection = {
+			selected: selected.length,
+			failed: results.filter((entry) => !entry.ok && !entry.skipped).length,
+		};
 
 		if (this.flags.json) {
 			const summary: PushSelectionResult = {
