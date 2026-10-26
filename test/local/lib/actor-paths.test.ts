@@ -1,5 +1,5 @@
 import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { checkActorPaths, formatActorPathProblems } from '../../../src/lib/actor-paths.js';
 import { resolveDockerContext } from '../../../src/lib/docker-context.js';
@@ -103,7 +103,7 @@ describe('checkActorPaths', () => {
 	});
 
 	it('rejects an absolute path', () => {
-		const value = resolve('/x');
+		const value = '/x';
 
 		expect(check({ input: value })).toEqual([
 			{ field: 'input', value, resolvedPath: value, reason: 'is absolute; the path is relative to .actor/' },
