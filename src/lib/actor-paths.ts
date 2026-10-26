@@ -1,4 +1,4 @@
-import { readdirSync, type Stats, statSync } from 'node:fs';
+import { readdirSync, realpathSync, type Stats, statSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
@@ -74,9 +74,17 @@ function listDirectory(dir: string): string[] {
 	}
 }
 
+/** The options as every field sees them: real roots and the uploaded files as posix paths. */
+interface PathCheckScope {
+	actorDir: string;
+	uploadRoot: string;
+	uploadedFiles: Set<string>;
+	dockerContextRoot?: string;
+}
+
 function checkPathField(
 	{ field, value, caseInsensitive }: PathField,
-	{ actorDir, uploadRoot, uploadedFiles, dockerContextRoot }: ActorPathsOptions,
+	{ actorDir, uploadRoot, uploadedFiles, dockerContextRoot }: PathCheckScope,
 ): ActorPathProblem | undefined {
 	const problem = (resolvedPath: string, reason: string) => ({ field, value, resolvedPath, reason });
 	if (value.includes('\\')) {
@@ -85,8 +93,9 @@ function checkPathField(
 	if (isAbsolute(value)) return problem(value, `is absolute; the path is relative to ${ACTOR_SPECIFICATION_FOLDER}/`);
 
 	const resolvedPath = resolve(actorDir, ACTOR_SPECIFICATION_FOLDER, value);
-	const root = resolve(uploadRoot);
-	if (isOutside(relative(root, resolvedPath))) return problem(resolvedPath, `lies outside the uploaded folder ${root}`);
+	if (isOutside(relative(uploadRoot, resolvedPath))) {
+		return problem(resolvedPath, `lies outside the uploaded folder ${uploadRoot}`);
+	}
 
 	const dir = dirname(resolvedPath);
 	const wanted = basename(resolvedPath);
@@ -111,14 +120,13 @@ function checkPathField(
 		return problem(resolvedPath, 'does not exist');
 	}
 	if (stats.isDirectory()) return problem(resolvedPath, 'is a directory, not a file');
-	if (dockerContextRoot && field === 'dockerfile' && isOutside(relative(resolve(dockerContextRoot), filePath))) {
+	if (dockerContextRoot && field === 'dockerfile' && isOutside(relative(dockerContextRoot, filePath))) {
 		return problem(resolvedPath, `lies outside the Docker context ${dockerContextRoot}`);
 	}
 
-	const uploadedPath = toPosix(relative(root, filePath));
-	const uploaded = uploadedFiles.map(toPosix);
-	if (!uploaded.includes(uploadedPath)) {
-		const differentCase = uploaded.find((uploadedFile) => uploadedFile.toLowerCase() === uploadedPath.toLowerCase());
+	const uploadedPath = toPosix(relative(uploadRoot, filePath));
+	if (!uploadedFiles.has(uploadedPath)) {
+		const differentCase = [...uploadedFiles].find((file) => file.toLowerCase() === uploadedPath.toLowerCase());
 		return problem(
 			resolvedPath,
 			differentCase
@@ -135,7 +143,15 @@ function checkPathField(
  * as push uploads its content there.
  */
 export function checkActorPaths(options: ActorPathsOptions): ActorPathProblem[] {
-	return collectPathFields(options.config).flatMap((pathField) => checkPathField(pathField, options) ?? []);
+	// The roots are real paths, as the Docker context resolver returns them, so a symlinked Actor folder does not
+	// count as an escape; a referenced path is judged lexically below the real Actor folder.
+	const scope: PathCheckScope = {
+		actorDir: realpathSync(options.actorDir),
+		uploadRoot: realpathSync(options.uploadRoot),
+		uploadedFiles: new Set(options.uploadedFiles.map(toPosix)),
+		dockerContextRoot: options.dockerContextRoot === undefined ? undefined : realpathSync(options.dockerContextRoot),
+	};
+	return collectPathFields(options.config).flatMap((pathField) => checkPathField(pathField, scope) ?? []);
 }
 
 export function formatActorPathProblems(problems: ActorPathProblem[]): string {
