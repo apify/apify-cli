@@ -1,5 +1,6 @@
-import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { chmod, mkdir, writeFile } from 'node:fs/promises';
+import { dirname, join } from 'node:path';
+import process from 'node:process';
 
 import { findActorDirs, toPosixRelative } from '../../../src/lib/find-actor-dirs.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
@@ -80,6 +81,27 @@ describe('findActorDirs', () => {
 		await write('README.md');
 
 		await expect(findActorDirs(tmpPath)).resolves.toEqual([]);
+	});
+
+	// chmod 000 has no effect on Windows and root reads the directory anyway.
+	const canMakeUnreadable = process.platform !== 'win32' && process.getuid?.() !== 0;
+
+	it.skipIf(!canMakeUnreadable)('skips a directory it cannot read and keeps the rest', async () => {
+		await writeActor('actors/alpha');
+		await mkdir(joinPath('locked', 'inner'), { recursive: true });
+		await chmod(joinPath('locked'), 0o000);
+
+		try {
+			const dirs = (await findActorDirs(tmpPath)).map((actor) => actor.dir);
+
+			expect(dirs).toEqual(['actors/alpha']);
+		} finally {
+			await chmod(joinPath('locked'), 0o755);
+		}
+	});
+
+	it('returns an empty list for a root that does not exist', async () => {
+		await expect(findActorDirs(join(tmpPath, 'missing'))).resolves.toEqual([]);
 	});
 
 	it('uses / as the separator, also on Windows', async () => {

@@ -4,6 +4,7 @@ import { join, relative, sep } from 'node:path';
 
 import { LOCAL_CONFIG_PATH } from './consts.js';
 import { ACTOR_FILES_HARDCODED_IGNORE, getJsonFileContent } from './utils.js';
+import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 const SKIPPED_DIRECTORY_NAMES = new Set(ACTOR_FILES_HARDCODED_IGNORE.map((pattern) => pattern.replace(/\/\*\*$/, '')));
 
@@ -30,14 +31,25 @@ function readActorName(dir: string): string | undefined {
 }
 
 /**
- * Finds every directory below `root` with a `.actor/actor.json`, sorted by path. Skips the directories
- * `getActorLocalFilePaths` always ignores and does not descend below a found Actor.
+ * Finds every directory below `root` with a `.actor/actor.json`, sorted by path. Skips the directory names
+ * `getActorLocalFilePaths` always ignores (at any depth, not only at the root) and does not descend below a
+ * found Actor. A directory that cannot be read is skipped; when that is the root, nothing is found.
  */
 export async function findActorDirs(root: string): Promise<FoundActorDir[]> {
 	const found: FoundActorDir[] = [];
 
 	const walk = async (dir: string) => {
-		for (const entry of await readdir(dir, { withFileTypes: true })) {
+		let entries;
+
+		try {
+			entries = await readdir(dir, { withFileTypes: true });
+		} catch (err) {
+			cliDebugPrint('findActorDirs', { event: 'unreadable-directory', dir, err });
+
+			return;
+		}
+
+		for (const entry of entries) {
 			if (!entry.isDirectory() || SKIPPED_DIRECTORY_NAMES.has(entry.name)) {
 				continue;
 			}
