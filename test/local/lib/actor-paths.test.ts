@@ -73,6 +73,21 @@ describe('checkActorPaths', () => {
 		]);
 	});
 
+	it('skips an empty string, which the platform treats as an unset field', () => {
+		expect(check({ dockerfile: '', input: '', storages: { dataset: '', datasets: { main: '' } } })).toEqual([]);
+	});
+
+	it('rejects a backslash before resolving anything', () => {
+		expect(check({ dockerfile: '..\\Dockerfile' })).toEqual([
+			{
+				field: 'dockerfile',
+				value: '..\\Dockerfile',
+				resolvedPath: '..\\Dockerfile',
+				reason: 'uses a backslash; the platform resolves paths with forward slashes',
+			},
+		]);
+	});
+
 	it('rejects an absolute path', () => {
 		const value = resolve('/x');
 

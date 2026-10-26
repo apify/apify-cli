@@ -46,7 +46,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function collectPathFields(config: Record<string, unknown>): PathField[] {
 	const fields: PathField[] = [];
 	const add = (field: string, value: unknown, caseInsensitive = false) => {
-		if (typeof value === 'string') fields.push({ field, value, caseInsensitive });
+		// The worker treats an empty string as an unset field.
+		if (typeof value === 'string' && value !== '') fields.push({ field, value, caseInsensitive });
 	};
 
 	for (const field of LISTED_FILE_FIELDS) add(field, config[field], true);
@@ -78,6 +79,9 @@ function checkPathField(
 	{ actorDir, uploadRoot, uploadedFiles, dockerContextRoot }: ActorPathsOptions,
 ): ActorPathProblem | undefined {
 	const problem = (resolvedPath: string, reason: string) => ({ field, value, resolvedPath, reason });
+	if (value.includes('\\')) {
+		return problem(value, 'uses a backslash; the platform resolves paths with forward slashes');
+	}
 	if (isAbsolute(value)) return problem(value, `is absolute; the path is relative to ${ACTOR_SPECIFICATION_FOLDER}/`);
 
 	const resolvedPath = resolve(actorDir, ACTOR_SPECIFICATION_FOLDER, value);
