@@ -86,6 +86,16 @@ interface PathCheckScope {
 	dockerContextRoot?: string;
 }
 
+/**
+ * Applies the platform's rules to one path field of `actor.json`, in order; the first failing rule wins.
+ * 1. No backslashes and not absolute: the platform resolves the value relative to `.actor/` on Linux.
+ * 2. Resolved from `.actor/`, it lies inside the upload root; the platform never sees anything else.
+ * 3. The file exists in its directory: by any case for `dockerfile`, `readme` and `changelog`, which the
+ *    platform finds by listing the directory, and by the exact name for schema references.
+ * 4. It is a file, not a directory.
+ * 5. `dockerfile` lies inside the Docker context, as BuildKit reads it from there.
+ * 6. It is among the files push uploads: a file `.gitignore` or `.actorignore` drops never reaches the platform.
+ */
 function checkPathField(
 	{ field, value, caseInsensitive }: PathField,
 	{ actorDir, uploadRoot, uploadedFiles, dockerContextRoot }: PathCheckScope,
