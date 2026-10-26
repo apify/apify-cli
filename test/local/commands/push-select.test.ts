@@ -467,6 +467,20 @@ describe('apify push in a repository with several Actors', () => {
 			expect(pushedActorIds()).toEqual([ACTOR_A.id]);
 			expect(process.listenerCount('SIGTERM')).toBe(0);
 		});
+
+		it('stops after Ctrl+C at the Git-source question and names the ones not pushed', async () => {
+			platform.state.gitSourcedActorIds = [ACTOR_A.id];
+			yesNoConfirm.mockRejectedValueOnce(
+				Object.assign(new Error('User force closed the prompt with SIGINT'), { name: 'ExitPromptError' }),
+			);
+
+			await run({ flags_all: true });
+
+			expect(commandProcess.exitCode).toBe(1);
+			expect(pushedActorIds()).toEqual([]);
+			expect(stderr()).toContain('User force closed the prompt with SIGINT');
+			expect(stderr()).toContain('Interrupted. Not pushed: actors/b, tools/c');
+		});
 	});
 
 	describe('--json', () => {

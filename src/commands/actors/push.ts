@@ -412,6 +412,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			} catch (err) {
 				error({ message: (err as Error).message });
 				process.exitCode ||= 1;
+				// Ctrl+C at a prompt (the Git-source question) ends a single push; here it stops the loop too.
+				interrupted ||= (err as Error).name === 'ExitPromptError';
 			}
 
 			const exitCode = typeof process.exitCode === 'number' && process.exitCode !== 0 ? process.exitCode : undefined;
