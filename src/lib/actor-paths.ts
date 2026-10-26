@@ -18,7 +18,11 @@ export interface ActorPathsOptions {
 	/** Relative to `uploadRoot`, as the file collectors return them. */
 	uploadedFiles: string[];
 	config: Record<string, unknown>;
-	/** When given, `dockerfile` must lie inside it, as BuildKit reads the Dockerfile from the context. */
+	/**
+	 * When given, `dockerfile` must lie inside it. The worker runs BuildKit with `--local dockerfile=<context dir>`
+	 * and `filename=<Dockerfile relative to the context>`, so a Dockerfile outside the context cannot be read by the
+	 * build. The same holds for a context within the Actor folder, which today's push already sends.
+	 */
 	dockerContextRoot?: string;
 }
 
