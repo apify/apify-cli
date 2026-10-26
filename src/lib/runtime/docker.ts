@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import process from 'node:process';
 
 import { execa } from 'execa';
@@ -69,6 +70,14 @@ export const RUNTIME_DATA_PATH = '/data';
 
 /** Set inside the runtime container to a PEM bundle its builds should trust, for hosts whose outbound TLS is re-signed by a proxy. */
 export const RUNTIME_EXTRA_CA_FILE_ENV_VAR = 'ACTOR_RUNTIME_EXTRA_CA_FILE';
+
+/** The standard variables that name a PEM file of CA certificates, in the order the runtime looks at them. */
+export const CA_FILE_ENV_VARS = [
+	'NODE_EXTRA_CA_CERTS',
+	'SSL_CERT_FILE',
+	'REQUESTS_CA_BUNDLE',
+	'CURL_CA_BUNDLE',
+] as const;
 
 /** Where the extra CA bundle is mounted inside the runtime container. */
 export const RUNTIME_EXTRA_CA_PATH = '/etc/actor-runtime/extra-ca.pem';
@@ -388,6 +397,18 @@ export function socketMountArg(hostSocketPath: string, platform: NodeJS.Platform
 	// path; the leading double slash prevents MSYS/Git Bash shells from mangling it.
 	const hostSocket = platform === 'win32' && hostSocketPath.startsWith('/') ? `/${hostSocketPath}` : hostSocketPath;
 	return `${hostSocket}:${RUNTIME_SOCKET_PATH}`;
+}
+
+/** The first CA file named by a standard environment variable that exists on this machine. */
+export function caFileFromEnv(
+	env: NodeJS.ProcessEnv = process.env,
+	exists: (path: string) => boolean = existsSync,
+): string | undefined {
+	for (const name of CA_FILE_ENV_VARS) {
+		const path = env[name]?.trim();
+		if (path && exists(path)) return path;
+	}
+	return undefined;
 }
 
 export interface RuntimeRunArgsOptions {

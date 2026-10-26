@@ -18,6 +18,7 @@ import {
 	ACTOR_RUNTIME_CONSOLE_URL,
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	buildRuntimeRunArgs,
+	caFileFromEnv,
 	findRunningRuntimeEngine,
 	podmanInfo,
 	resolveEngineSocketPath,
@@ -87,8 +88,8 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		}),
 		'ca-file': Flags.string({
 			description:
-				`PEM file with extra CA certificates that Actor builds (and their runs) trust for Node.js tools, for networks that re-sign outbound HTTPS. ` +
-				`Defaults to the file named by NODE_EXTRA_CA_CERTS when that is set.`,
+				`PEM file with extra CA certificates that Actor builds (and their runs) trust, for networks that re-sign outbound HTTPS. ` +
+				`Defaults to the file named by NODE_EXTRA_CA_CERTS, SSL_CERT_FILE, REQUESTS_CA_BUNDLE or CURL_CA_BUNDLE, in that order.`,
 		}),
 		'console-port': Flags.integer({
 			description: `Host port for the runtime console. Defaults to the port of the previous start, else ${ACTOR_RUNTIME_CONSOLE_PORT}.`,
@@ -121,14 +122,14 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		}
 
 		const explicitCaFile = this.flags.caFile;
-		const caFile = explicitCaFile ?? process.env.NODE_EXTRA_CA_CERTS?.trim();
 		if (explicitCaFile && !existsSync(explicitCaFile)) {
 			error({ message: `The CA file '${explicitCaFile}' does not exist.` });
 			process.exitCode = 1;
 			return;
 		}
-		// An unusable NODE_EXTRA_CA_CERTS is Node's own warning to give, not a reason to refuse starting.
-		const extraCaFile = caFile && existsSync(caFile) ? resolve(caFile) : undefined;
+		// A CA variable naming a missing file is that tool's own warning to give, not a reason to refuse starting.
+		const caFile = explicitCaFile ?? caFileFromEnv();
+		const extraCaFile = caFile ? resolve(caFile) : undefined;
 
 		const image = installedActorRuntimeImage();
 		const engine = await ensureActorRuntimeImage({ image });

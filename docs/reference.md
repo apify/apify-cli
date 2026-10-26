@@ -640,10 +640,10 @@ FLAGS
       --api-port=<value>      Host port for the runtime API.
                               Defaults to the port of the previous start, else 3333.
       --ca-file=<value>       PEM file with extra CA
-                              certificates that Actor builds (and their runs) trust
-                              for Node.js tools, for networks that re-sign outbound
-                              HTTPS. Defaults to the file named by
-                              NODE_EXTRA_CA_CERTS when that is set.
+                              certificates that Actor builds (and their runs) trust,
+                              for networks that re-sign outbound HTTPS. Defaults to
+                              the file named by NODE_EXTRA_CA_CERTS, SSL_CERT_FILE,
+                              REQUESTS_CA_BUNDLE or CURL_CA_BUNDLE, in that order.
       --console-port=<value>  Host port for the runtime
                               console. Defaults to the port of the previous start,
                               else 3000.

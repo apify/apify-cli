@@ -1,6 +1,7 @@
 import {
 	ACTOR_RUNTIME_CONTAINER_NAME,
 	buildRuntimeRunArgs,
+	caFileFromEnv,
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
 	parsePodmanInfo,
 	runtimeNetworkMode,
@@ -147,6 +148,22 @@ describe('runtime/docker', () => {
 			});
 
 			expect(parseRuntimeContainerInfo('docker', 'not json')).toBeNull();
+		});
+	});
+
+	describe('caFileFromEnv()', () => {
+		const everything = () => true;
+
+		it('takes the first standard CA variable that names an existing file', () => {
+			const env = { SSL_CERT_FILE: '/b.pem', REQUESTS_CA_BUNDLE: '/c.pem', NODE_EXTRA_CA_CERTS: '/a.pem' };
+			expect(caFileFromEnv(env, everything)).toBe('/a.pem');
+			expect(caFileFromEnv(env, (path) => path !== '/a.pem')).toBe('/b.pem');
+		});
+
+		it('is undefined when no variable names a file that exists', () => {
+			expect(caFileFromEnv({}, everything)).toBeUndefined();
+			expect(caFileFromEnv({ SSL_CERT_FILE: '/b.pem' }, () => false)).toBeUndefined();
+			expect(caFileFromEnv({ SSL_CERT_FILE: '  ' }, everything)).toBeUndefined();
 		});
 	});
 
