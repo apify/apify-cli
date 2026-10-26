@@ -20,7 +20,8 @@ import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { finalizeRun } from '../../lib/commands/run-result.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { error, simpleLog } from '../../lib/outputs.js';
+import { error, info, simpleLog } from '../../lib/outputs.js';
+import { getServerInterfaceHint } from '../../lib/server-actor.js';
 import { getLocalConfig, getCurrentUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
@@ -128,6 +129,12 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			usernameOrId,
 			providedActorNameOrId: this.args.actorId,
 		});
+
+		const serverInterfaceHint = getServerInterfaceHint(actorData, userFriendlyId);
+
+		if (!this.flags.silent && serverInterfaceHint) {
+			info({ message: serverInterfaceHint });
+		}
 
 		const runOpts: ActorStartOptions = {
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
