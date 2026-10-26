@@ -1,8 +1,9 @@
-import { existsSync, readFileSync, statSync, unlinkSync } from 'node:fs';
+import { existsSync, readFileSync, statSync, unlinkSync, writeSync } from 'node:fs';
 import { basename, isAbsolute, join, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions } from 'apify-client';
+import chalk from 'chalk';
 import { isCI } from 'ci-info';
 import open from 'open';
 
@@ -28,11 +29,11 @@ import {
 import { monorepoUnsupportedMessage, resolveDockerContext } from '../../lib/docker-context.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { findActorDirs, type FoundActorDir, toPosixRelative } from '../../lib/find-actor-dirs.js';
-import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
+import { isAbortingJobOnSignal, useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { useMultiSelectFromList } from '../../lib/hooks/user-confirmations/useMultiSelectFromList.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
-import { useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
+import { reraiseSignal, useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
 import { useStdin } from '../../lib/hooks/useStdin.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
@@ -94,6 +95,24 @@ interface PushSelectionResult {
 }
 
 const SELECTION_HINT = 'Choose what to push: --all, or --actor-dir <path> for each Actor.';
+
+const interruptedMessage = (notPushed: string[]) => `Interrupted. Not pushed: ${notPushed.join(', ')}`;
+
+/**
+ * Says which Actors a signal left out, right before that signal ends the process. The writes are synchronous because
+ * output still queued when the process ends is lost; a failed write must not keep the process alive.
+ */
+function reportInterruptBeforeExit(notPushed: string[], summary: PushSelectionResult | undefined) {
+	try {
+		writeSync(2, `${chalk.yellow.bold('Warning:')} ${interruptedMessage(notPushed)}\n`);
+
+		if (summary) {
+			writeSync(1, `${JSON.stringify(summary, null, 2)}\n`);
+		}
+	} catch {
+		// The process ends either way.
+	}
+}
 
 interface PushOutcome {
 	resultLabel: string;
@@ -358,14 +377,26 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const results: SelectedPushResult[] = [];
 		let firstFailureExitCode: number | undefined;
 
-		// Each push aborts its own build on Ctrl+C and returns; without this, the loop would then push the next Actor.
+		// A signal during a build wait aborts that build and the push returns; the loop then stops instead of pushing
+		// the next Actor. A signal anywhere else ends the process, as it does for a single Actor, once the Actors left
+		// out are named.
 		let interrupted = false;
-		using _interruptWatcher = useSignalHandler({
+		using interruptWatcher = useSignalHandler({
 			signals: INTERRUPT_SIGNALS,
 			once: false,
-			cleanTerminalLine: false,
-			handler: () => {
+			handler: (signal) => {
 				interrupted = true;
+
+				if (isAbortingJobOnSignal()) {
+					return;
+				}
+
+				reportInterruptBeforeExit(
+					selected.slice(results.length),
+					this.flags.json ? { ok: false, operation: 'push', results } : undefined,
+				);
+				interruptWatcher[Symbol.dispose]();
+				reraiseSignal(signal);
 			},
 		});
 
@@ -397,7 +428,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			if (interrupted) {
 				const notPushed = selected.slice(index + 1);
 				if (notPushed.length) {
-					warning({ message: `Interrupted. Not pushed: ${notPushed.join(', ')}` });
+					warning({ message: interruptedMessage(notPushed) });
 				}
 				break;
 			}

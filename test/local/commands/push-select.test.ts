@@ -28,6 +28,13 @@ vitest.mock('../../../src/lib/hooks/user-confirmations/useYesNoConfirm.js', () =
 	useYesNoConfirm: yesNoConfirm,
 }));
 
+// The lines the command writes synchronously right before a signal ends the process.
+const writeSync = vitest.hoisted(() => vitest.fn());
+vitest.mock('node:fs', async (importOriginal) => ({
+	...(await importOriginal<typeof import('node:fs')>()),
+	writeSync,
+}));
+
 interface PlatformActor {
 	id: string;
 	name: string;
@@ -57,6 +64,7 @@ const platform = vitest.hoisted(() => {
 	const versionUpdate = vitest.fn(async (_actorId: string, _version: string, _modifier: unknown) => ({}));
 	// Stands in for the build wait; a test can emit a signal from here to interrupt the push.
 	const outputJobLog = vitest.fn(async () => {});
+	const buildAbort = vitest.fn(async (_buildId: string) => ({}));
 
 	const getLoggedClientOrThrow = vitest.fn(async () => ({
 		baseUrl: 'https://api.apify.com/v2',
@@ -80,14 +88,17 @@ const platform = vitest.hoisted(() => {
 				build: async () => buildFor(actor!.id),
 			};
 		},
-		build: (buildId: string) => ({ get: async () => buildFor(buildId.replace('build-', '')) }),
+		build: (buildId: string) => ({
+			get: async () => buildFor(buildId.replace('build-', '')),
+			abort: async () => buildAbort(buildId),
+		}),
 		log: () => ({ get: async () => 'npm ERR! boom\n' }),
 	}));
 
-	return { state, versionUpdate, outputJobLog, getLoggedClientOrThrow };
+	return { state, versionUpdate, outputJobLog, buildAbort, getLoggedClientOrThrow };
 });
 
-const { versionUpdate, outputJobLog, getLoggedClientOrThrow } = platform;
+const { versionUpdate, outputJobLog, buildAbort, getLoggedClientOrThrow } = platform;
 
 // Stands in for the platform: three Actors exist, and every version write is recorded with its Actor.
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
@@ -97,10 +108,15 @@ vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 	getLoggedClientOrThrow: platform.getLoggedClientOrThrow,
 }));
 
-// The mocked `node:process` copy has no signal handlers; nothing here needs them.
-vitest.mock('../../../src/lib/hooks/useAbortJobOnSignal.js', () => ({
-	useAbortJobOnSignal: () => ({ [Symbol.dispose]() {} }),
-}));
+// The real build-abort handler, kept off stdout so the --json document stays the only output there.
+vitest.mock('../../../src/lib/hooks/useAbortJobOnSignal.js', async (importOriginal) => {
+	const original = await importOriginal<typeof import('../../../src/lib/hooks/useAbortJobOnSignal.js')>();
+	return {
+		...original,
+		useAbortJobOnSignal: (input: Parameters<typeof original.useAbortJobOnSignal>[0]) =>
+			original.useAbortJobOnSignal({ ...input, silent: true }),
+	};
+});
 
 const { beforeAllCalls, afterAllCalls, joinPath, forceNewCwd } = useTempPath('push-select-root', {
 	create: true,
@@ -148,6 +164,8 @@ beforeEach(async () => {
 	platform.state.gitSourcedActorIds = [];
 	versionUpdate.mockClear();
 	outputJobLog.mockClear();
+	buildAbort.mockClear();
+	writeSync.mockClear();
 	getLoggedClientOrThrow.mockClear();
 	multiSelect.mockReset();
 	yesNoConfirm.mockReset();
@@ -405,8 +423,12 @@ describe('apify push in a repository with several Actors', () => {
 				process.emit('SIGINT', 'SIGINT');
 			});
 
+			const kill = vitest.spyOn(process, 'kill');
+
 			await run({ flags_all: true, flags_json: true });
 
+			expect(buildAbort).toHaveBeenCalledWith(`build-${ACTOR_A.id}`);
+			expect(kill).not.toHaveBeenCalled();
 			expect(commandProcess.exitCode).toBe(CommandExitCodes.BuildAborted);
 			expect(pushedActorIds()).toEqual([ACTOR_A.id]);
 			expect(stderr()).toContain('Interrupted. Not pushed: actors/b, tools/c');
@@ -416,6 +438,34 @@ describe('apify push in a repository with several Actors', () => {
 			expect(summary.results).toEqual([
 				expect.objectContaining({ dir: 'actors/a', ok: false, exitCode: CommandExitCodes.BuildAborted }),
 			]);
+		});
+		it('ends the process on a signal outside a build wait, after naming the Actors not pushed', async () => {
+			// What the process would do with the signal: no listener may be left, so Node's default action ends it.
+			const listenersAtKill: number[] = [];
+			const kill = vitest.spyOn(process, 'kill').mockImplementation(() => {
+				listenersAtKill.push(process.listenerCount('SIGTERM'));
+				return true;
+			});
+			// The signal arrives while Actor A's files are uploaded, before its build starts.
+			versionUpdate.mockImplementationOnce(async () => {
+				process.emit('SIGTERM', 'SIGTERM');
+				return {};
+			});
+
+			await run({ flags_all: true, flags_json: true });
+
+			expect(kill).toHaveBeenCalledExactlyOnceWith(process.pid, 'SIGTERM');
+			expect(listenersAtKill).toEqual([0]);
+			expect(buildAbort).not.toHaveBeenCalled();
+			expect(writeSync).toHaveBeenCalledWith(
+				2,
+				expect.stringContaining('Interrupted. Not pushed: actors/a, actors/b, tools/c'),
+			);
+			const [, document] = writeSync.mock.calls.find(([fd]) => fd === 1)!;
+			expect(JSON.parse(document as string)).toEqual({ ok: false, operation: 'push', results: [] });
+			// With the process gone, Actor A's push never finishes and no other Actor is written.
+			expect(pushedActorIds()).toEqual([ACTOR_A.id]);
+			expect(process.listenerCount('SIGTERM')).toBe(0);
 		});
 	});
 
