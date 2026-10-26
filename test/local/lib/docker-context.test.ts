@@ -1,10 +1,26 @@
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, realpathSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 import { resolveDockerContext } from '../../../src/lib/docker-context.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+
+// vi.mock is hoisted before imports, so the resolver gets the mocked version. With `gitAvailable` off, every git
+// call fails as it does without git, which sends the resolver down its non-Git branch.
+const gitState = vi.hoisted(() => ({ gitAvailable: true }));
+vi.mock('node:child_process', async (importOriginal) => {
+	const original = await importOriginal<typeof import('node:child_process')>();
+	const unavailable = () => {
+		throw new Error('not a git repository');
+	};
+	return {
+		...original,
+		execSync: ((...args: Parameters<typeof original.execSync>) =>
+			gitState.gitAvailable ? original.execSync(...args) : unavailable()) as typeof original.execSync,
+		execFileSync: ((...args: Parameters<typeof original.execFileSync>) =>
+			gitState.gitAvailable ? original.execFileSync(...args) : unavailable()) as typeof original.execFileSync,
+	};
+});
 
 const ACTOR_PATH = 'actors/x';
 
@@ -17,6 +33,8 @@ describe('resolveDockerContext', () => {
 			cwdParent: false,
 		});
 
+		// The resolver works from real paths, so the expectations do too.
+		let root: string;
 		const actorDir = () => joinPath(ACTOR_PATH);
 
 		beforeAll(async () => {
@@ -24,7 +42,10 @@ describe('resolveDockerContext', () => {
 			mkdirSync(joinPath(ACTOR_PATH, '.actor'), { recursive: true });
 			mkdirSync(joinPath(ACTOR_PATH, 'src'), { recursive: true });
 			mkdirSync(joinPath('shared'), { recursive: true });
+			writeFileSync(joinPath('Dockerfile'), 'FROM apify/actor-node:20\n');
+			symlinkSync(ACTOR_PATH, joinPath('linked-actor'));
 			execFileSync('git', ['init', '--quiet'], { cwd: tmpPath, stdio: 'ignore' });
+			root = realpathSync(tmpPath);
 		});
 
 		afterAll(async () => {
@@ -42,8 +63,8 @@ describe('resolveDockerContext', () => {
 		it('resolves a context above the Actor folder to the repository root and the Actor path in it', () => {
 			expect(resolveDockerContext(actorDir(), '../../..')).toEqual({
 				kind: 'context',
-				contextRoot: tmpPath,
-				sourceRoot: realpathSync(tmpPath),
+				contextRoot: root,
+				sourceRoot: root,
 				actorPath: ACTOR_PATH,
 			});
 		});
@@ -51,22 +72,26 @@ describe('resolveDockerContext', () => {
 		it('keeps the repository root as the source for a context elsewhere in the repository', () => {
 			expect(resolveDockerContext(actorDir(), '../../../shared')).toEqual({
 				kind: 'context',
-				contextRoot: joinPath('shared'),
-				sourceRoot: realpathSync(tmpPath),
+				contextRoot: join(root, 'shared'),
+				sourceRoot: root,
+				actorPath: ACTOR_PATH,
+			});
+		});
+
+		it('resolves a symlinked Actor folder from its real path, as the platform does', () => {
+			expect(resolveDockerContext(joinPath('linked-actor'), '../../..')).toEqual({
+				kind: 'context',
+				contextRoot: root,
+				sourceRoot: root,
 				actorPath: ACTOR_PATH,
 			});
 		});
 
 		it('rejects a context outside the Git repository', () => {
-			const repoRoot = execFileSync('git', ['rev-parse', '--show-toplevel'], {
-				cwd: actorDir(),
-				encoding: 'utf-8',
-			}).trim();
-
 			expect(resolveDockerContext(actorDir(), '../../../..')).toEqual({
 				kind: 'invalid',
 				message:
-					`"dockerContextDir" in .actor/actor.json points to ${resolve(tmpPath, '..')}, outside the Git repository ${repoRoot}. ` +
+					`"dockerContextDir" in .actor/actor.json points to ${dirname(root)}, outside the Git repository ${root}. ` +
 					'The Apify platform builds from a clone of the repository, so it could not build this Actor.',
 			});
 		});
@@ -74,7 +99,21 @@ describe('resolveDockerContext', () => {
 		it('rejects a context that does not exist', () => {
 			expect(resolveDockerContext(actorDir(), '../../../missing')).toEqual({
 				kind: 'invalid',
-				message: `"dockerContextDir" in .actor/actor.json points to ${joinPath('missing')}, which does not exist.`,
+				message: `"dockerContextDir" in .actor/actor.json points to ${join(root, 'missing')}, which does not exist.`,
+			});
+		});
+
+		it('rejects a context that is not a directory', () => {
+			expect(resolveDockerContext(actorDir(), '../../../Dockerfile')).toEqual({
+				kind: 'invalid',
+				message: `"dockerContextDir" in .actor/actor.json points to ${join(root, 'Dockerfile')}, which is not a directory.`,
+			});
+		});
+
+		it('rejects an Actor folder that does not exist', () => {
+			expect(resolveDockerContext(joinPath('missing-actor'), '../../..')).toEqual({
+				kind: 'invalid',
+				message: `The Actor folder ${joinPath('missing-actor')} does not exist.`,
 			});
 		});
 
@@ -87,22 +126,31 @@ describe('resolveDockerContext', () => {
 	});
 
 	describe('outside a Git repository', () => {
-		let root: string;
-		let actorDir: string;
-
-		beforeAll(() => {
-			root = mkdtempSync(join(tmpdir(), 'apify-cli-docker-context-'));
-			actorDir = join(root, ACTOR_PATH);
-			mkdirSync(join(actorDir, '.actor'), { recursive: true });
-			mkdirSync(join(root, 'other'), { recursive: true });
+		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-no-git-dir', {
+			create: true,
+			remove: true,
+			cwd: false,
+			cwdParent: false,
 		});
 
-		afterAll(() => {
-			rmSync(root, { recursive: true, force: true });
+		let root: string;
+		const actorDir = () => joinPath(ACTOR_PATH);
+
+		beforeAll(async () => {
+			await beforeAllCalls();
+			mkdirSync(joinPath(ACTOR_PATH, '.actor'), { recursive: true });
+			mkdirSync(joinPath('other'), { recursive: true });
+			root = realpathSync(tmpPath);
+			gitState.gitAvailable = false;
+		});
+
+		afterAll(async () => {
+			gitState.gitAvailable = true;
+			await afterAllCalls();
 		});
 
 		it('makes the context the source when it contains the Actor folder', () => {
-			expect(resolveDockerContext(actorDir, '../../..')).toEqual({
+			expect(resolveDockerContext(actorDir(), '../../..')).toEqual({
 				kind: 'context',
 				contextRoot: root,
 				sourceRoot: root,
@@ -111,19 +159,16 @@ describe('resolveDockerContext', () => {
 		});
 
 		it('rejects a sibling directory, which does not contain the Actor folder', () => {
-			expect(resolveDockerContext(actorDir, '../../../other')).toEqual({
+			expect(resolveDockerContext(actorDir(), '../../../other')).toEqual({
 				kind: 'invalid',
 				message: `"dockerContextDir" in .actor/actor.json points to ${join(root, 'other')}, which does not contain the Actor's folder.`,
 			});
 		});
 
 		it('rejects a context that does not exist', () => {
-			// `resolve`, not `join`: on Windows the resolved context carries the drive (`D:\repo`), as the command resolves it.
-			const repoDir = resolve('/repo');
-
-			expect(resolveDockerContext(join(repoDir, 'actors', 'a'), '../../..')).toEqual({
+			expect(resolveDockerContext(actorDir(), '../../../missing')).toEqual({
 				kind: 'invalid',
-				message: `"dockerContextDir" in .actor/actor.json points to ${repoDir}, which does not exist.`,
+				message: `"dockerContextDir" in .actor/actor.json points to ${join(root, 'missing')}, which does not exist.`,
 			});
 		});
 	});

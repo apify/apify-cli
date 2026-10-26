@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync, realpathSync, statSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, relative, resolve } from 'node:path';
+import { basename, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyApiError } from 'apify-client';
@@ -336,7 +336,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		let actorPath: string | undefined;
 		if (dockerContext.kind === 'context') {
 			uploadRoot = dockerContext.sourceRoot;
-			uploadedFiles = resolveLinksForUpload(uploadRoot, (await getContextFilePaths(uploadRoot)).map(toPosix));
+			uploadedFiles = resolveLinksForUpload(uploadRoot, await getContextFilePaths(uploadRoot));
 			actorPath = dockerContext.actorPath;
 		}
 
@@ -361,7 +361,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}
 
 		const refuseMonorepoPush = () => {
-			error({ message: monorepoUnsupportedMessage(actorConfig!.name as string) });
+			// Pushing by ID, actor.json may have no name; the folder then names the Actor.
+			error({ message: monorepoUnsupportedMessage((actorConfig?.name as string | undefined) ?? basename(cwd)) });
 			process.exitCode = CommandExitCodes.NotImplemented;
 		};
 

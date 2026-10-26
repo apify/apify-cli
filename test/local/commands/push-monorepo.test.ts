@@ -137,12 +137,13 @@ function expectRefusal() {
 	expect(logMessages.log.join('\n')).not.toContain('Apify push result');
 }
 
+// The command sets its exit code on the mocked copy, but the framework records a thrown error on the real `process`.
 let originalExitCode: typeof process.exitCode;
-let originalGlobalExitCode: typeof process.exitCode;
+let originalRealExitCode: typeof process.exitCode;
 
 beforeEach(async () => {
 	originalExitCode = commandProcess.exitCode;
-	originalGlobalExitCode = process.exitCode;
+	originalRealExitCode = process.exitCode;
 	gitState.gitAvailable = true;
 	actorGet.mockClear();
 	actorDelete.mockClear();
@@ -159,10 +160,9 @@ beforeEach(async () => {
 	await write('.gitignore', 'node_modules\n');
 	await write('shared/TypeScript_Dockerfile', 'FROM apify/actor-node:20\n');
 	await write('packages/typescript-utils/src/index.ts', 'export const x = 1;\n');
-	await write('node_modules/ignored/index.js', '');
 	await writeActorConfig({ dockerContextDir: '../../..', dockerfile: '../../../shared/TypeScript_Dockerfile' });
 	await write(`${ACTOR_PATH}/src/index.ts`, 'console.log(1);\n');
-	git('init', '--quiet', '--initial-branch=main');
+	git('init', '--quiet');
 	git('add', '.');
 	git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'init');
 
@@ -171,7 +171,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
 	commandProcess.exitCode = originalExitCode;
-	process.exitCode = originalGlobalExitCode;
+	process.exitCode = originalRealExitCode;
 	await afterAllCalls();
 });
 
@@ -360,13 +360,27 @@ describe('apify push of a monorepo Actor', () => {
 		expect(keyValueStoreGetOrCreate).not.toHaveBeenCalled();
 	});
 
-	it('rejects a dockerContextDir outside the Git repository, which the platform could not build', async () => {
-		await writeActorConfig({ dockerContextDir: '../../../..' });
+	it('names the Actor folder in the refusal when actor.json has no name', async () => {
+		await writeActorConfig({ name: undefined, dockerContextDir: '../../..' });
+		versionUpdate.mockRejectedValueOnce(actorPathRejected());
+
+		await testRunCommand(ActorsPushCommand, { args_actorId: ACTOR_ID });
+
+		expectRefusal();
+		expect(logMessages.error.join('\n')).toContain('Actor typescript-actor sets "dockerContextDir"');
+	});
+
+	it.each([
+		['outside the Git repository, which the platform could not build', '../../../..', 'outside the Git repository'],
+		['that does not exist', '../../../missing', 'which does not exist'],
+		['that is not a string', 42, 'must be a string'],
+	])('rejects a dockerContextDir %s as an invalid actor.json', async (_, dockerContextDir, message) => {
+		await writeActorConfig({ dockerContextDir });
 
 		await testRunCommand(ActorsPushCommand, {});
 
 		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
-		expect(logMessages.error.join('\n')).toContain('outside the Git repository');
+		expect(logMessages.error.join('\n')).toContain(message);
 		expect(actorGet).not.toHaveBeenCalled();
 		expect(versionUpdate).not.toHaveBeenCalled();
 	});
@@ -377,6 +391,7 @@ describe('apify push of a monorepo Actor', () => {
 		await testRunCommand(ActorsPushCommand, {});
 
 		expect(commandProcess.exitCode).toBeFalsy();
+		expect(process.exitCode).toBeFalsy();
 		const modifier = versionPayload(versionUpdate);
 		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 		expect(modifier.sourceFiles!.map((file) => file.name).sort()).toEqual(['.actor/actor.json', 'src/index.ts']);
