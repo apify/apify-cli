@@ -2,6 +2,7 @@ import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 
 import { checkActorPaths, formatActorPathProblems } from '../../../src/lib/actor-paths.js';
+import { resolveDockerContext } from '../../../src/lib/docker-context.js';
 import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
@@ -46,7 +47,10 @@ describe('checkActorPaths', () => {
 		write('shared/Dockerfile', 'FROM apify/actor-node:20\n');
 		write('shared/input_schema.json', '{}');
 		symlinkSync(join(root, 'shared', 'input_schema.json'), join(actorDir, '.actor', 'linked_schema.json'));
+		symlinkSync(join(root, 'shared', 'Dockerfile'), join(actorDir, 'Dockerfile.shared'));
 		uploadedFiles = await getActorLocalFilePaths(actorDir);
+		symlinkSync(join(root, 'shared', 'missing.json'), join(actorDir, '.actor', 'dangling.json'));
+		symlinkSync(actorDir, join(root, 'linked-actor'));
 	});
 
 	afterAll(async () => {
@@ -165,6 +169,39 @@ describe('checkActorPaths', () => {
 				reason: 'is not among the files apify push uploads (excluded by .gitignore or .actorignore?)',
 			},
 		]);
+	});
+
+	it('rejects a dangling symlink as missing', () => {
+		expect(check({ input: './dangling.json' }, { uploadedFiles: [...uploadedFiles, '.actor/dangling.json'] })).toEqual([
+			{
+				field: 'input',
+				value: './dangling.json',
+				resolvedPath: join(actorDir, '.actor', 'dangling.json'),
+				reason: 'does not exist',
+			},
+		]);
+	});
+
+	it('judges a symlinked Dockerfile against the Docker context by its own path', () => {
+		// The link's target lies outside the context, but push uploads its content at the link's path inside it.
+		expect(uploadedFiles).toContain('Dockerfile.shared');
+		expect(check({ dockerfile: '../Dockerfile.shared' }, { dockerContextRoot: actorDir })).toEqual([]);
+	});
+
+	it('accepts a Dockerfile in a context within a symlinked Actor folder', () => {
+		const linkedActorDir = join(root, 'linked-actor');
+		const dockerContext = resolveDockerContext(linkedActorDir, '..');
+		expect(dockerContext).toEqual({ kind: 'within', contextRoot: actorDir });
+
+		expect(
+			checkActorPaths({
+				actorDir: linkedActorDir,
+				uploadRoot: linkedActorDir,
+				uploadedFiles,
+				config: { dockerfile: '../Dockerfile' },
+				dockerContextRoot: actorDir,
+			}),
+		).toEqual([]);
 	});
 
 	it('matches the name of dockerfile, readme and changelog case-insensitively, and a schema exactly', () => {
