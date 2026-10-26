@@ -67,12 +67,6 @@ export const RUNTIME_SOCKET_PATH = '/var/run/docker.sock';
 /** Where the runtime container expects its data directory (storages, builds and run records). */
 export const RUNTIME_DATA_PATH = '/data';
 
-/** Set inside the runtime container to a PEM bundle its builds should trust, for hosts whose outbound TLS is re-signed by a proxy. */
-export const RUNTIME_EXTRA_CA_FILE_ENV_VAR = 'ACTOR_RUNTIME_EXTRA_CA_FILE';
-
-/** Where the extra CA bundle is mounted inside the runtime container. */
-export const RUNTIME_EXTRA_CA_PATH = '/etc/actor-runtime/extra-ca.pem';
-
 export function runtimeEnvExportLines(ports: RuntimePorts = DEFAULT_RUNTIME_PORTS): string[] {
 	return [
 		`export APIFY_CLIENT_BASE_URL=${runtimeApiUrl(ports.api)}`,
@@ -401,8 +395,6 @@ export interface RuntimeRunArgsOptions {
 	networkMode?: string;
 	/** From `runtimeSecurityOptions`; absent or empty means the engine's default confinement. */
 	securityOptions?: string[];
-	/** Host path of a PEM bundle the runtime's builds should trust; mounted read-only into the container. */
-	caFile?: string;
 }
 
 export function buildRuntimeRunArgs({
@@ -414,7 +406,6 @@ export function buildRuntimeRunArgs({
 	platform = process.platform,
 	networkMode,
 	securityOptions = [],
-	caFile,
 }: RuntimeRunArgsOptions): string[] {
 	// --init makes signals (Ctrl+C) reach the runtime process even though it runs as the container's PID 1.
 	const args = ['run', '--rm', '--init', '--name', ACTOR_RUNTIME_CONTAINER_NAME];
@@ -436,14 +427,6 @@ export function buildRuntimeRunArgs({
 	}
 	for (const option of securityOptions) {
 		args.push('--security-opt', option);
-	}
-	if (caFile) {
-		args.push(
-			'-v',
-			`${caFile}:${RUNTIME_EXTRA_CA_PATH}:ro`,
-			'-e',
-			`${RUNTIME_EXTRA_CA_FILE_ENV_VAR}=${RUNTIME_EXTRA_CA_PATH}`,
-		);
 	}
 
 	args.push(

@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import process from 'node:process';
@@ -64,10 +63,6 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			description: 'Start on other ports when 3333 or 3000 is already taken.',
 			command: 'apify runtime start --api-port 4333 --console-port 4000',
 		},
-		{
-			description: 'Let builds trust the CA of a proxy that re-signs outbound HTTPS.',
-			command: 'apify runtime start --ca-file ./proxy-ca.pem',
-		},
 	];
 
 	static override docsUrl = 'https://docs.apify.com/cli/docs/reference#apify-runtime-start';
@@ -84,11 +79,6 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		}),
 		'api-port': Flags.integer({
 			description: `Host port for the runtime API. Defaults to the port of the previous start, else ${ACTOR_RUNTIME_API_PORT}.`,
-		}),
-		'ca-file': Flags.string({
-			description:
-				`PEM file with CA certificates that Actor builds trust on top of the usual public ones, ` +
-				`for networks whose proxy re-signs outbound HTTPS and makes builds fail with certificate errors.`,
 		}),
 		'console-port': Flags.integer({
 			description: `Host port for the runtime console. Defaults to the port of the previous start, else ${ACTOR_RUNTIME_CONSOLE_PORT}.`,
@@ -120,13 +110,6 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			return;
 		}
 
-		const caFile = this.flags.caFile ? resolve(this.flags.caFile) : undefined;
-		if (caFile && !existsSync(caFile)) {
-			error({ message: `The CA file '${caFile}' does not exist.` });
-			process.exitCode = 1;
-			return;
-		}
-
 		const image = installedActorRuntimeImage();
 		const engine = await ensureActorRuntimeImage({ image });
 		if (!engine) return;
@@ -145,7 +128,6 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 				'',
 				`  API:     ${runtimeApiUrl(ports.api)}`,
 				`  Console: ${runtimeConsoleUrl(ports.console)}`,
-				...(caFile ? [`  Builds trust the CA certificates in ${caFile}`] : []),
 				'',
 				'Point the Apify CLI at the runtime with:',
 				...runtimeEnvExportLines(ports).map((line) => chalk.white.bold(`  ${line}`)),
@@ -163,7 +145,6 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			ports,
 			networkMode,
 			securityOptions,
-			caFile,
 		});
 		run({ message: `${engine} ${args.join(' ')}` });
 

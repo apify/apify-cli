@@ -633,16 +633,11 @@ DESCRIPTION
 
 USAGE
   $ apify runtime start [--api-port <value>]
-                        [--ca-file <value>] [--console-port <value>]
-                        [--data-dir <value>] [-d]
+                        [--console-port <value>] [--data-dir <value>] [-d]
 
 FLAGS
       --api-port=<value>      Host port for the runtime API.
                               Defaults to the port of the previous start, else 3333.
-      --ca-file=<value>       PEM file with CA certificates
-                              that Actor builds trust on top of the usual public
-                              ones, for networks whose proxy re-signs outbound HTTPS
-                              and makes builds fail with certificate errors.
       --console-port=<value>  Host port for the runtime
                               console. Defaults to the port of the previous start,
                               else 3000.
