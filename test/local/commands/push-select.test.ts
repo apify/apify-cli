@@ -22,6 +22,12 @@ vitest.mock('../../../src/lib/hooks/user-confirmations/useMultiSelectFromList.js
 	useMultiSelectFromList: multiSelect,
 }));
 
+// Answers the Git-source question; a test sets the answer with `mockResolvedValueOnce`.
+const yesNoConfirm = vitest.hoisted(() => vitest.fn());
+vitest.mock('../../../src/lib/hooks/user-confirmations/useYesNoConfirm.js', () => ({
+	useYesNoConfirm: yesNoConfirm,
+}));
+
 interface PlatformActor {
 	id: string;
 	name: string;
@@ -33,11 +39,12 @@ const ACTOR_B = { id: 'actorIdBBBBBBBBB', name: 'actor-b', modifiedAt: new Date(
 const ACTOR_C = { id: 'actorIdCCCCCCCCC', name: 'actor-c', modifiedAt: new Date(0) };
 
 // Hoisted so the `vitest.mock` factory below can reach it: the Actors on the platform, the status each
-// build ends with, the build wait, and every version write with its Actor.
+// build ends with, which Actors build from Git, the build wait, and every version write with its Actor.
 const platform = vitest.hoisted(() => {
 	const state = {
 		actors: [] as { id: string; name: string; modifiedAt: Date }[],
 		buildStatuses: {} as Record<string, string>,
+		gitSourcedActorIds: [] as string[],
 	};
 
 	const buildFor = (actorId: string) => ({
@@ -64,7 +71,10 @@ const platform = vitest.hoisted(() => {
 						taggedBuilds: { latest: { buildId: `build-${actor.id}` }, beta: { buildId: `build-${actor.id}` } },
 					},
 				version: (version: string) => ({
-					get: async () => ({ versionNumber: version, sourceType: 'SOURCE_FILES' }),
+					get: async () =>
+						state.gitSourcedActorIds.includes(actor!.id)
+							? { versionNumber: version, sourceType: 'GIT_REPO', gitRepoUrl: 'https://github.com/org/repo' }
+							: { versionNumber: version, sourceType: 'SOURCE_FILES' },
 					update: async (modifier: unknown) => versionUpdate(actor!.id, version, modifier),
 				}),
 				build: async () => buildFor(actor!.id),
@@ -135,10 +145,12 @@ beforeEach(async () => {
 	stdinState.isTTY = false;
 	platform.state.actors = [ACTOR_A, ACTOR_B, ACTOR_C];
 	platform.state.buildStatuses = {};
+	platform.state.gitSourcedActorIds = [];
 	versionUpdate.mockClear();
 	outputJobLog.mockClear();
 	getLoggedClientOrThrow.mockClear();
 	multiSelect.mockReset();
+	yesNoConfirm.mockReset();
 	cwdCache.clear();
 	await beforeAllCalls();
 
@@ -363,6 +375,21 @@ describe('apify push in a repository with several Actors', () => {
 			expect(summary.exitCode).toBe(1);
 			expect(summary.results[0]).toEqual({ dir: 'actors/a', ok: false, exitCode: 1 });
 			expect(summary.results[2]).toMatchObject({ dir: 'tools/c', ok: false, exitCode: CommandExitCodes.BuildTimedOut });
+		});
+
+		it('marks a declined Git-source switch as skipped and does not fail the run', async () => {
+			platform.state.gitSourcedActorIds = [ACTOR_A.id];
+			yesNoConfirm.mockResolvedValueOnce(false);
+
+			await run({ flags_all: true, flags_json: true });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			expect(yesNoConfirm).toHaveBeenCalledTimes(1);
+			expect(pushedActorIds()).toEqual([ACTOR_B.id, ACTOR_C.id]);
+			const summary = stdoutJson();
+			expect(summary).toMatchObject({ ok: true, exitCode: 0 });
+			expect(summary.results[0]).toEqual({ dir: 'actors/a', ok: false, skipped: true });
+			expect(summary.results[1]).toMatchObject({ dir: 'actors/b', ok: true, exitCode: 0 });
 		});
 
 		it('stops after the interrupted Actor and names the ones not pushed', async () => {

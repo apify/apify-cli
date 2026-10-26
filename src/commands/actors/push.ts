@@ -76,10 +76,14 @@ interface PushResult {
 	exitCode?: number;
 }
 
-/** One entry of a push from a root without an Actor of its own: the single push result, or what stopped it. */
+/**
+ * One entry of a push from a root without an Actor of its own: the single push result, or what stopped it.
+ * `skipped` marks an Actor left alone on purpose (a declined Git-source switch); it carries no exit code.
+ */
 interface SelectedPushResult extends Partial<PushResult> {
 	dir: string;
 	ok: boolean;
+	skipped?: true;
 }
 
 interface PushSelectionResult {
@@ -382,7 +386,9 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			const exitCode = typeof process.exitCode === 'number' && process.exitCode !== 0 ? process.exitCode : undefined;
 			firstFailureExitCode ??= exitCode;
 
-			const entry: SelectedPushResult = { dir, ...(result ?? { ok: false }) };
+			// A push that ends with neither a result nor an exit code was declined at the Git-source question.
+			const entry: SelectedPushResult =
+				!result && exitCode === undefined ? { dir, ok: false, skipped: true } : { dir, ...(result ?? { ok: false }) };
 			if (exitCode !== undefined && entry.exitCode === undefined) {
 				entry.exitCode = exitCode;
 			}
@@ -400,8 +406,14 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		process.exitCode = firstFailureExitCode;
 
 		if (this.flags.json) {
-			const summary: PushSelectionResult = { ok: results.every((entry) => entry.ok), operation: 'push', results };
-			const exitCode = firstFailureExitCode ?? (results.every((entry) => entry.exitCode !== undefined) ? 0 : undefined);
+			const summary: PushSelectionResult = {
+				ok: results.every((entry) => entry.ok || entry.skipped),
+				operation: 'push',
+				results,
+			};
+			const exitCode =
+				firstFailureExitCode ??
+				(results.every((entry) => entry.skipped || entry.exitCode !== undefined) ? 0 : undefined);
 			if (exitCode !== undefined) {
 				summary.exitCode = exitCode;
 			}
