@@ -93,7 +93,7 @@ apify key-value-stores keys <storeId> --json
 
 `apify runtime` runs a self-contained local Apify platform as a container on Docker or Podman. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account. It is experimental: it ships on the `runtime` npm dist-tag, not on `latest`, and may change in any release.
 
-This section covers only how to *get* a runtime. Once you have one, **run `apify runtime skill --install`** (or `apify runtime skill` to read it now) — the runtime ships its own Agent Skill on how to use it. That skill lives in the runtime image, so it always matches the runtime you actually have; read it rather than reconstructing it from memory.
+This section covers only how to *get* a runtime. **Before `apify runtime start`, read the runtime's own Agent Skill**: after `apify runtime install`, run `apify runtime skill` (add `--install` to keep it loaded in later sessions). It lives in the runtime image, so it always matches the runtime you actually have, and it covers what depends on your environment. Follow it rather than reconstructing it from memory.
 
 **Prerequisite: Docker or Podman.** One of them must be installed and running before any `apify runtime` command works; the CLI does not install either. It uses the first engine found on PATH (Docker before Podman); `APIFY_CONTAINER_ENGINE=podman` forces Podman.
 
@@ -142,8 +142,8 @@ export APIFY_CONSOLE_URL=http://localhost:3000
 export APIFY_DISABLE_KEYRING=1
 
 $APIFY runtime install
+$APIFY runtime skill                                      # read it BEFORE starting; it covers options your environment may need
 $APIFY runtime start --detach --data-dir ./runtime-data   # omit --detach to run in the foreground (Ctrl+C stops it)
-$APIFY runtime skill --install                            # install the runtime's own skill, then follow it
 $APIFY login --token local-dev-token                      # the runtime accepts any token
 $APIFY actors ls --json                                   # now talks to the local runtime
 $APIFY runtime stop
