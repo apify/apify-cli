@@ -102,6 +102,9 @@ const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, forceNewCwd } = useTem
 	cwdParent: false,
 });
 
+// A sibling folder of the repository: the target of links that leave it.
+const outside = useTempPath('push-monorepo-outside', { create: true, remove: true, cwd: false, cwdParent: false });
+
 const { logMessages } = useConsoleSpy();
 
 const { ActorsPushCommand } = await import('../../../src/commands/actors/push.js');
@@ -154,6 +157,7 @@ beforeEach(async () => {
 	setRecord.mockClear();
 	cwdCache.clear();
 	await beforeAllCalls();
+	await outside.beforeAllCalls();
 
 	// The layout of apify/actor-monorepo-example, as its own Git repository.
 	await write('package.json', '{"workspaces":["actors/**","packages/**"]}');
@@ -173,6 +177,7 @@ afterEach(async () => {
 	commandProcess.exitCode = originalExitCode;
 	process.exitCode = originalRealExitCode;
 	await afterAllCalls();
+	await outside.afterAllCalls();
 });
 
 describe('apify push of a monorepo Actor', () => {
@@ -237,9 +242,11 @@ describe('apify push of a monorepo Actor', () => {
 		expect(existsSync(joinPath('temp_file.zip'))).toBe(false);
 	});
 
-	it('uploads the files under a directory symlink as copies and leaves a dangling link out', async () => {
+	it('uploads the files under a directory symlink as copies and leaves dangling and outside links out', async () => {
 		symlinkSync('../../shared', joinPath(`${ACTOR_PATH}/shared`));
 		symlinkSync('missing', joinPath('dangling'));
+		await writeFile(outside.joinPath('outside.txt'), 'outside\n');
+		symlinkSync(outside.joinPath('outside.txt'), joinPath('outside.txt'));
 		git('add', '.');
 
 		await testRunCommand(ActorsPushCommand, {});
@@ -250,6 +257,7 @@ describe('apify push of a monorepo Actor', () => {
 		expect(names).toContain('shared/TypeScript_Dockerfile');
 		expect(names).not.toContain(`${ACTOR_PATH}/shared`);
 		expect(names).not.toContain('dangling');
+		expect(names).not.toContain('outside.txt');
 	});
 
 	it('warns about uncommitted changes, which the upload carries as they are', async () => {

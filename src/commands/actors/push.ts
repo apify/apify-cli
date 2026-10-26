@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { readFileSync, realpathSync, statSync, unlinkSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync, type Stats, statSync, unlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import process from 'node:process';
@@ -170,20 +170,36 @@ const rejectsActorPath = (err: unknown) => {
 };
 
 /**
- * The platform's multi-file and zip sources carry files only: a link to a file goes as that file, a link to a
- * directory inside the upload as copies of the uploaded files under its target, and a link to nothing is left out.
+ * The platform's multi-file and zip sources carry files only: a link to a file inside the upload goes as that file
+ * at the link's path, a link to a directory inside the upload as copies of the uploaded files under its target, and
+ * a link to nothing or to a target outside the upload is left out, as a clone of the repository could not follow it
+ * either. The `actor.json` path check then reports a config that refers to a left-out link as not uploaded.
  */
 const resolveLinksForUpload = (root: string, files: string[]) => {
-	const stats = new Map(files.map((file) => [file, statSync(join(root, file), { throwIfNoEntry: false })]));
+	const realRoot = realpathSync(root);
+	// Where an entry's content lies, relative to the root, and what it is; nothing for a link the upload drops.
+	const locate = (file: string): { target: string; stats: Stats } | undefined => {
+		const filePath = join(root, file);
+		const stats = lstatSync(filePath, { throwIfNoEntry: false });
+		if (!stats) return undefined;
+		if (!stats.isSymbolicLink()) return { target: file, stats };
+		try {
+			const realPath = realpathSync(filePath);
+			const target = relative(realRoot, realPath);
+			return isOutside(target) ? undefined : { target: toPosix(target), stats: statSync(realPath) };
+		} catch {
+			return undefined;
+		}
+	};
+	const located = new Map(files.map((file) => [file, locate(file)]));
 	return files.flatMap((file) => {
-		const fileStats = stats.get(file);
-		if (fileStats?.isFile()) return [file];
-		if (!fileStats?.isDirectory()) return [];
-		const target = relative(realpathSync(root), realpathSync(join(root, file)));
-		if (isOutside(target)) return [];
-		const prefix = `${toPosix(target)}/`;
+		const entry = located.get(file);
+		if (!entry) return [];
+		if (entry.stats.isFile()) return [file];
+		if (!entry.stats.isDirectory()) return [];
+		const prefix = `${entry.target}/`;
 		return files
-			.filter((other) => other.startsWith(prefix) && stats.get(other)?.isFile())
+			.filter((other) => other.startsWith(prefix) && located.get(other)?.stats.isFile())
 			.map((other) => `${file}/${other.slice(prefix.length)}`);
 	});
 };
