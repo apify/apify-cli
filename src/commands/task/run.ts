@@ -54,7 +54,7 @@ export class TaskRunCommand extends ApifyCommand<typeof TaskRunCommand> {
 			runOpts.build = this.flags.build;
 		}
 
-		if (this.flags.timeout) {
+		if (this.flags.timeout !== undefined) {
 			runOpts.timeout = this.flags.timeout;
 		}
 
