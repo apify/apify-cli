@@ -45,6 +45,14 @@ describe('[e2e] apify push in a repository with several Actors', () => {
 		expect(result.stdout).toBe('');
 	});
 
+	it('rejects --all together with --actor-dir', async () => {
+		const result = await runCli('apify', ['push', '--all', '--actor-dir', 'actors/first'], { cwd: root });
+
+		expect(result.exitCode, `stdout: ${result.stdout}\nstderr: ${result.stderr}`).not.toBe(0);
+		expect(result.stderr).toContain('cannot also be provided when using');
+		expect(result.stdout).toBe('');
+	});
+
 	it('exits with code 4 for an --actor-dir that is not an Actor', async () => {
 		const result = await runCli('apify', ['push', '--actor-dir', 'packages/shared'], { cwd: root });
 
