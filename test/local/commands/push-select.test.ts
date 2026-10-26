@@ -1,4 +1,4 @@
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
@@ -183,6 +183,28 @@ describe('apify push in a repository with several Actors', () => {
 			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
 		});
 
+		it('enters selection mode at a root whose only .actor-prefixed path is a .actorignore', async () => {
+			await write('.actorignore', '');
+
+			await run();
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
+			expect(stderr()).toContain('Choose what to push');
+			expect(stderr()).toContain('actors/a (actor-a)');
+			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
+		});
+
+		it('enters selection mode at a root whose .actor folder holds only shared files', async () => {
+			await write('.actor/input_schema.json', '{}');
+
+			await run();
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
+			expect(stderr()).toContain('Choose what to push');
+			expect(stderr()).toContain('tools/c (actor-c)');
+			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
+		});
+
 		it('keeps the exit-4 error for a directory with no Actors anywhere below it', async () => {
 			forceNewCwd('packages');
 			await run();
@@ -191,6 +213,39 @@ describe('apify push in a repository with several Actors', () => {
 			expect(stderr()).toContain('A valid Actor could not be found in the current directory.');
 			expect(stderr()).not.toContain('Choose what to push');
 			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
+		});
+
+		it('rejects --all in a directory that is an Actor itself', async () => {
+			forceNewCwd('actors/a');
+
+			await run({ flags_all: true });
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidInput);
+			expect(stderr()).toContain('This directory is an Actor itself, so --all and --actor-dir do not apply.');
+			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
+			expect(versionUpdate).not.toHaveBeenCalled();
+		});
+
+		it('rejects --actor-dir in a directory that is an Actor itself', async () => {
+			forceNewCwd('actors/a');
+
+			await run({ flags_actorDir: ['../b'] });
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidInput);
+			expect(stderr()).toContain('This directory is an Actor itself, so --all and --actor-dir do not apply.');
+			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
+			expect(versionUpdate).not.toHaveBeenCalled();
+		});
+
+		it('pushes an --actor-dir that discovery does not reach, such as a symlinked Actor', async () => {
+			await mkdir(joinPath('solo'), { recursive: true });
+			await symlink(joinPath('actors', 'b'), joinPath('solo', 'linked'), 'junction');
+			forceNewCwd('solo');
+
+			await run({ flags_actorDir: ['linked'] });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			expect(pushedActorIds()).toEqual([ACTOR_B.id]);
 		});
 
 		it('rejects an --actor-dir without an actor.json before the login check', async () => {

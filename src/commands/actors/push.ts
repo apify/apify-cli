@@ -173,6 +173,11 @@ const confirmGitSourceSwitch = async ({
 	});
 };
 
+/** The config files that make a directory an Actor of its own: `.actor/actor.json`, `actor.json`, or the legacy `apify.json`. */
+const OWN_CONFIG_FILES = [DEPRECATED_LOCAL_CONFIG_NAME, 'actor.json', '.actor/actor.json'];
+
+const hasOwnConfigFile = (filePaths: string[]) => filePaths.some((filePath) => OWN_CONFIG_FILES.includes(filePath));
+
 /** Whether the collected files include an Actor config `apify push` accepts: `.actor/`, `actor.json`, or the legacy `apify.json`. */
 const hasActorConfig = (filePaths: string[]) =>
 	[
@@ -297,10 +302,21 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const filePathsToPush = await getActorLocalFilePaths(cwd);
 
 		// A directory without an Actor of its own may hold Actors below it; then the user picks which to push.
-		if (!hasActorConfig(filePathsToPush)) {
+		// The selection flags have no meaning in an Actor directory, so they fail there instead of being ignored.
+		if (hasOwnConfigFile(filePathsToPush)) {
+			if (this.flags.all || this.flags.actorDir?.length) {
+				error({
+					message:
+						'This directory is an Actor itself, so --all and --actor-dir do not apply. Run the command without them, or from a directory above the Actors.',
+				});
+				process.exitCode = CommandExitCodes.InvalidInput;
+				return;
+			}
+		} else {
 			const actorDirs = await findActorDirs(cwd);
 
-			if (actorDirs.length) {
+			// An explicit --actor-dir may name an Actor discovery does not reach (a symlink, an ignored folder).
+			if (actorDirs.length || this.flags.actorDir?.length) {
 				await this.pushSelected(cwd, actorDirs);
 				return;
 			}
@@ -370,10 +386,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 	/** Resolves the Actor directories to push from the flags or a prompt; `undefined` when the command stops here. */
 	private async selectActorDirs(root: string, actorDirs: FoundActorDir[]): Promise<string[] | undefined> {
-		if (this.flags.all) {
-			return actorDirs.map((actor) => actor.dir);
-		}
-
 		if (this.flags.actorDir?.length) {
 			const dirs = [...new Set(this.flags.actorDir.map((actorDir) => toPosixRelative(root, resolve(root, actorDir))))];
 			const outside = dirs.find((dir) => isAbsolute(dir) || dir === '..' || dir.startsWith('../'));
@@ -395,6 +407,10 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			}
 
 			return dirs;
+		}
+
+		if (this.flags.all) {
+			return actorDirs.map((actor) => actor.dir);
 		}
 
 		const label = ({ dir, name }: FoundActorDir) => (name ? `${dir} (${name})` : dir);
