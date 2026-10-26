@@ -310,6 +310,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			uploadRoot: cwd,
 			uploadedFiles: filePathsToPush,
 			config: actorConfig,
+			dockerContextRoot: dockerContext.kind === 'within' ? dockerContext.contextRoot : undefined,
 		});
 		if (pathProblems.length > 0) {
 			error({ message: formatActorPathProblems(pathProblems) });
