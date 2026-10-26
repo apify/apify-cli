@@ -12,20 +12,28 @@ import { getActorLocalFilePaths } from './utils.js';
 export const MONOREPO_PLATFORM_SUPPORT_ISSUE_URL = 'https://github.com/apify/apify-core/issues/28685';
 
 export type DockerContextResolution =
+	/** `dockerContextDir` is absent: undefined, null, or an empty string. */
 	| { kind: 'none' }
+	/** The context is the Actor folder itself or a directory inside it, so a push of the folder carries it. */
+	| { kind: 'within'; contextRoot: string }
+	/** The context lies beyond the Actor folder (a monorepo Actor): above it, or elsewhere in the Git repository. */
 	| {
-			kind: 'context';
+			kind: 'outside';
 			contextRoot: string;
 			/** The Git repository's root, else the context. */
 			sourceRoot: string;
 			/** Relative to `sourceRoot`. */
 			actorPath: string;
 	  }
+	/** The field is not a string, or the directory it names is missing, not a directory, or out of reach. */
 	| { kind: 'invalid'; message: string };
 
 /**
- * `dockerContextDir` is relative to `.actor/`, as on the platform. A context at or below the Actor folder is an
- * ordinary push, which the platform builds as it is; one above or beside it is a monorepo Actor.
+ * `dockerContextDir` is relative to `.actor/`, as on the platform. An absent field is `none`, with no path work. A
+ * context at or below the Actor folder is `within`: an ordinary push, which the platform builds as it is. A context
+ * above or beside the Actor folder is `outside`: a monorepo Actor, with the source root a push would have to carry.
+ * A context that cannot be used is `invalid`, with the message to show. Paths come back real, as the platform sees
+ * them.
  */
 export function resolveDockerContext(actorDir: string, dockerContextDir: unknown): DockerContextResolution {
 	if (dockerContextDir === undefined || dockerContextDir === null || dockerContextDir === '') return { kind: 'none' };
@@ -42,9 +50,6 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	}
 
 	const contextRoot = resolve(realActorDir, ACTOR_SPECIFICATION_FOLDER, dockerContextDir);
-	const contextPathInActor = relative(realActorDir, contextRoot);
-	if (contextPathInActor === '' || !isOutside(contextPathInActor)) return { kind: 'none' };
-
 	const contextStats = statSync(contextRoot, { throwIfNoEntry: false });
 	if (!contextStats) {
 		return {
@@ -60,6 +65,11 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	}
 	const realContextRoot = realpathSync(contextRoot);
 
+	const contextPathInActor = relative(realActorDir, contextRoot);
+	if (contextPathInActor === '' || !isOutside(contextPathInActor)) {
+		return { kind: 'within', contextRoot: realContextRoot };
+	}
+
 	// The platform's clone holds nothing above the repository root.
 	const repoRoot = git(realActorDir, ['rev-parse', '--show-toplevel']);
 	if (repoRoot) {
@@ -73,7 +83,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 			};
 		}
 		return {
-			kind: 'context',
+			kind: 'outside',
 			contextRoot: realContextRoot,
 			sourceRoot,
 			actorPath: toPosix(relative(sourceRoot, realActorDir)),
@@ -87,7 +97,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 			message: `"dockerContextDir" in .actor/actor.json points to ${realContextRoot}, which does not contain the Actor's folder.`,
 		};
 	}
-	return { kind: 'context', contextRoot: realContextRoot, sourceRoot: realContextRoot, actorPath: toPosix(actorPath) };
+	return { kind: 'outside', contextRoot: realContextRoot, sourceRoot: realContextRoot, actorPath: toPosix(actorPath) };
 }
 
 export function isOutside(relativePath: string): boolean {

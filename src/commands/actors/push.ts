@@ -297,7 +297,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
-		if (dockerContext.kind === 'context') {
+		if (dockerContext.kind === 'outside') {
 			// Pushing by ID, actor.json may have no name; the folder then names the Actor.
 			error({ message: monorepoUnsupportedMessage((actorConfig?.name as string | undefined) ?? basename(cwd)) });
 			process.exitCode = CommandExitCodes.NotImplemented;
