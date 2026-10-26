@@ -24,7 +24,12 @@ export interface ActorPathsOptions {
 
 /** The platform finds these by a directory listing, so their names match case-insensitively. */
 const LISTED_FILE_FIELDS = ['dockerfile', 'readme', 'changelog'];
-const SCHEMA_FIELDS = ['input', 'output', 'webServerSchema'];
+/** The worker copies a set alias over its base key before resolving, so the alias wins and the base key is ignored. */
+const SCHEMA_FIELDS: { field: string; alias?: string }[] = [
+	{ field: 'input', alias: 'inputSchema' },
+	{ field: 'output', alias: 'outputSchema' },
+	{ field: 'webServerSchema' },
+];
 const STORAGE_SCHEMA_FIELDS = ['keyValueStore', 'dataset'];
 
 interface PathField {
@@ -45,7 +50,10 @@ function collectPathFields(config: Record<string, unknown>): PathField[] {
 	};
 
 	for (const field of LISTED_FILE_FIELDS) add(field, config[field], true);
-	for (const field of SCHEMA_FIELDS) add(field, config[field]);
+	for (const { field, alias } of SCHEMA_FIELDS) {
+		if (alias && config[alias]) add(alias, config[alias]);
+		else add(field, config[field]);
+	}
 	if (isRecord(config.storages)) {
 		for (const field of STORAGE_SCHEMA_FIELDS) add(`storages.${field}`, config.storages[field]);
 		if (isRecord(config.storages.datasets)) {

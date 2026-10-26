@@ -152,6 +152,17 @@ describe('checkActorPaths', () => {
 		).toEqual(['output', 'webServerSchema', 'storages.keyValueStore', 'storages.dataset', 'storages.datasets.main']);
 	});
 
+	it('checks inputSchema and outputSchema, which win over input and output', () => {
+		expect(check({ inputSchema: './in.json', outputSchema: './out.json' }).map((problem) => problem.field)).toEqual([
+			'inputSchema',
+			'outputSchema',
+		]);
+		// The worker copies a set alias over its base key, so the base key is never resolved.
+		expect(check({ input: './missing.json', inputSchema: './INPUT_SCHEMA.json' })).toEqual([]);
+		expect(check({ output: './missing.json', outputSchema: { type: 'object' } })).toEqual([]);
+		expect(check({ input: './missing.json', inputSchema: '' }).map((problem) => problem.field)).toEqual(['input']);
+	});
+
 	it('requires dockerfile inside the Docker context when one is given', () => {
 		const monorepoFiles = [`${ACTOR_PATH}/Dockerfile`, `${ACTOR_PATH}/.actor/actor.json`, 'shared/Dockerfile'];
 		const monorepo = { uploadRoot: root, uploadedFiles: monorepoFiles, dockerContextRoot: join(root, 'shared') };
