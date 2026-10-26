@@ -33,7 +33,7 @@ const ACTOR_B = { id: 'actorIdBBBBBBBBB', name: 'actor-b', modifiedAt: new Date(
 const ACTOR_C = { id: 'actorIdCCCCCCCCC', name: 'actor-c', modifiedAt: new Date(0) };
 
 // Hoisted so the `vitest.mock` factory below can reach it: the Actors on the platform, the status each
-// build ends with, and every version write with its Actor.
+// build ends with, the build wait, and every version write with its Actor.
 const platform = vitest.hoisted(() => {
 	const state = {
 		actors: [] as { id: string; name: string; modifiedAt: Date }[],
@@ -48,6 +48,8 @@ const platform = vitest.hoisted(() => {
 	});
 
 	const versionUpdate = vitest.fn(async (_actorId: string, _version: string, _modifier: unknown) => ({}));
+	// Stands in for the build wait; a test can emit a signal from here to interrupt the push.
+	const outputJobLog = vitest.fn(async () => {});
 
 	const getLoggedClientOrThrow = vitest.fn(async () => ({
 		baseUrl: 'https://api.apify.com/v2',
@@ -72,16 +74,16 @@ const platform = vitest.hoisted(() => {
 		log: () => ({ get: async () => 'npm ERR! boom\n' }),
 	}));
 
-	return { state, versionUpdate, getLoggedClientOrThrow };
+	return { state, versionUpdate, outputJobLog, getLoggedClientOrThrow };
 });
 
-const { versionUpdate, getLoggedClientOrThrow } = platform;
+const { versionUpdate, outputJobLog, getLoggedClientOrThrow } = platform;
 
 // Stands in for the platform: three Actors exist, and every version write is recorded with its Actor.
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../../src/lib/utils.js')>()),
 	getCurrentUserInfo: vitest.fn(async () => ({ id: 'userId', username: 'user' })),
-	outputJobLog: vitest.fn(async () => {}),
+	outputJobLog: platform.outputJobLog,
 	getLoggedClientOrThrow: platform.getLoggedClientOrThrow,
 }));
 
@@ -134,6 +136,7 @@ beforeEach(async () => {
 	platform.state.actors = [ACTOR_A, ACTOR_B, ACTOR_C];
 	platform.state.buildStatuses = {};
 	versionUpdate.mockClear();
+	outputJobLog.mockClear();
 	getLoggedClientOrThrow.mockClear();
 	multiSelect.mockReset();
 	cwdCache.clear();
@@ -360,6 +363,25 @@ describe('apify push in a repository with several Actors', () => {
 			expect(summary.exitCode).toBe(1);
 			expect(summary.results[0]).toEqual({ dir: 'actors/a', ok: false, exitCode: 1 });
 			expect(summary.results[2]).toMatchObject({ dir: 'tools/c', ok: false, exitCode: CommandExitCodes.BuildTimedOut });
+		});
+
+		it('stops after the interrupted Actor and names the ones not pushed', async () => {
+			platform.state.buildStatuses[ACTOR_A.id] = 'ABORTED';
+			outputJobLog.mockImplementationOnce(async () => {
+				process.emit('SIGINT', 'SIGINT');
+			});
+
+			await run({ flags_all: true, flags_json: true });
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.BuildAborted);
+			expect(pushedActorIds()).toEqual([ACTOR_A.id]);
+			expect(stderr()).toContain('Interrupted. Not pushed: actors/b, tools/c');
+			expect(process.listenerCount('SIGINT')).toBe(0);
+			const summary = stdoutJson();
+			expect(summary).toMatchObject({ ok: false, exitCode: CommandExitCodes.BuildAborted });
+			expect(summary.results).toEqual([
+				expect.objectContaining({ dir: 'actors/a', ok: false, exitCode: CommandExitCodes.BuildAborted }),
+			]);
 		});
 	});
 

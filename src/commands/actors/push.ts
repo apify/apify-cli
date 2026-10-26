@@ -19,7 +19,12 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { getConsoleUrl } from '../../lib/console-url.js';
-import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import {
+	CommandExitCodes,
+	DEPRECATED_LOCAL_CONFIG_NAME,
+	INTERRUPT_SIGNALS,
+	LOCAL_CONFIG_PATH,
+} from '../../lib/consts.js';
 import { monorepoUnsupportedMessage, resolveDockerContext } from '../../lib/docker-context.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { findActorDirs, type FoundActorDir, toPosixRelative } from '../../lib/find-actor-dirs.js';
@@ -27,6 +32,7 @@ import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { useMultiSelectFromList } from '../../lib/hooks/user-confirmations/useMultiSelectFromList.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
+import { useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
 import { useStdin } from '../../lib/hooks/useStdin.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
@@ -348,7 +354,18 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const results: SelectedPushResult[] = [];
 		let firstFailureExitCode: number | undefined;
 
-		for (const dir of selected) {
+		// Each push aborts its own build on Ctrl+C and returns; without this, the loop would then push the next Actor.
+		let interrupted = false;
+		using _interruptWatcher = useSignalHandler({
+			signals: INTERRUPT_SIGNALS,
+			once: false,
+			cleanTerminalLine: false,
+			handler: () => {
+				interrupted = true;
+			},
+		});
+
+		for (const [index, dir] of selected.entries()) {
 			info({ message: `Pushing the Actor in ${dir}` });
 
 			// Each push reports through process.exitCode; clear it so the code read back belongs to this push.
@@ -370,6 +387,14 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				entry.exitCode = exitCode;
 			}
 			results.push(entry);
+
+			if (interrupted) {
+				const notPushed = selected.slice(index + 1);
+				if (notPushed.length) {
+					warning({ message: `Interrupted. Not pushed: ${notPushed.join(', ')}` });
+				}
+				break;
+			}
 		}
 
 		process.exitCode = firstFailureExitCode;
