@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
 
-import { readGitProvenance } from '../../../src/lib/docker-context.js';
+import { readGitState } from '../../../src/lib/docker-context.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 // vi.mock is hoisted before imports, so the reader gets the mocked version. With `gitAvailable` off, every git
@@ -21,8 +21,8 @@ vi.mock('node:child_process', async (importOriginal) => {
 	};
 });
 
-describe('readGitProvenance', () => {
-	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-provenance-test-dir', {
+describe('readGitState', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-state-test-dir', {
 		create: true,
 		remove: true,
 		cwd: false,
@@ -46,30 +46,30 @@ describe('readGitProvenance', () => {
 	});
 
 	it('reads the commit and the branch of a clean checkout with no remote', () => {
-		expect(readGitProvenance(tmpPath)).toEqual({ commit: git('rev-parse', 'HEAD'), branch: 'main', dirty: false });
+		expect(readGitState(tmpPath)).toEqual({ commit: git('rev-parse', 'HEAD'), branch: 'main', dirty: false });
 	});
 
 	it('strips credentials from the origin URL and leaves an scp-like one alone', () => {
 		git('remote', 'add', 'origin', 'https://user:token@github.com/apify/actor-monorepo-example.git');
-		expect(readGitProvenance(tmpPath).remoteUrl).toBe('https://github.com/apify/actor-monorepo-example.git');
+		expect(readGitState(tmpPath).remoteUrl).toBe('https://github.com/apify/actor-monorepo-example.git');
 
 		git('remote', 'set-url', 'origin', 'git@github.com:apify/actor-monorepo-example.git');
-		expect(readGitProvenance(tmpPath).remoteUrl).toBe('git@github.com:apify/actor-monorepo-example.git');
+		expect(readGitState(tmpPath).remoteUrl).toBe('git@github.com:apify/actor-monorepo-example.git');
 	});
 
 	it('flags an untracked file as dirty', () => {
 		writeFileSync(joinPath('notes.txt'), 'content');
-		expect(readGitProvenance(tmpPath).dirty).toBe(true);
+		expect(readGitState(tmpPath).dirty).toBe(true);
 	});
 
 	it('reports no branch on a detached HEAD', () => {
 		git('checkout', '--quiet', '--detach');
-		expect(readGitProvenance(tmpPath)).not.toHaveProperty('branch');
-		expect(readGitProvenance(tmpPath).commit).toBe(git('rev-parse', 'HEAD'));
+		expect(readGitState(tmpPath)).not.toHaveProperty('branch');
+		expect(readGitState(tmpPath).commit).toBe(git('rev-parse', 'HEAD'));
 	});
 
 	it('reads nothing without git', () => {
 		gitState.gitAvailable = false;
-		expect(readGitProvenance(tmpPath)).toEqual({});
+		expect(readGitState(tmpPath)).toEqual({});
 	});
 });
