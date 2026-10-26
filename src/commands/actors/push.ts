@@ -279,7 +279,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}),
 		'actor-dir': Flags.string({
 			description:
-				'When the directory has no Actor of its own, push the Actor in this directory (relative to it). Repeat the flag to push several Actors.',
+				'When the directory has no Actor of its own, push the Actor in this directory (relative to it). Repeat the flag to push several Actors; they are pushed in path order.',
 			required: false,
 			multiple: true,
 			exclusive: ['all'],
@@ -443,7 +443,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				return;
 			}
 
-			return dirs;
+			return dirs.sort();
 		}
 
 		if (this.flags.all) {

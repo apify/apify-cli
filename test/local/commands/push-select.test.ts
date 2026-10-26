@@ -322,11 +322,11 @@ describe('apify push in a repository with several Actors', () => {
 			expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 		});
 
-		it('pushes the --actor-dir directories, normalized and without duplicates', async () => {
+		it('pushes the --actor-dir directories in path order, normalized and without duplicates', async () => {
 			await run({ flags_actorDir: ['./tools/c/', 'actors/a', 'tools/c'] });
 
 			expect(commandProcess.exitCode).toBeFalsy();
-			expect(pushedActorIds()).toEqual([ACTOR_C.id, ACTOR_A.id]);
+			expect(pushedActorIds()).toEqual([ACTOR_A.id, ACTOR_C.id]);
 		});
 
 		it('passes --version and --build-tag to every version payload', async () => {

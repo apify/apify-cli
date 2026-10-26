@@ -871,7 +871,7 @@ FLAGS
       --actor-dir=<value>        When the directory has
                                  no Actor of its own, push the Actor in this
                                  directory (relative to it). Repeat the flag to push
-                                 several Actors.
+                                 several Actors; they are pushed in path order.
       --all                      When the directory has
                                  no Actor of its own, push every Actor found in the
                                  directories below it.
