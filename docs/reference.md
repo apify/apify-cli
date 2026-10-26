@@ -634,17 +634,16 @@ DESCRIPTION
 USAGE
   $ apify runtime start [--api-port <value>]
                         [--ca-file <value>] [--console-port <value>]
-                        [--data-dir <value>] [-d] [--no-host-ca]
+                        [--data-dir <value>] [-d]
 
 FLAGS
       --api-port=<value>      Host port for the runtime API.
                               Defaults to the port of the previous start, else 3333.
       --ca-file=<value>       PEM file with CA certificates
-                              to trust on top of the ones of this machine, which
-                              Actor builds (and their runs) trust, for networks that
-                              re-sign outbound HTTPS. Defaults to the file named by
-                              NODE_EXTRA_CA_CERTS, SSL_CERT_FILE, REQUESTS_CA_BUNDLE
-                              or CURL_CA_BUNDLE, in that order.
+                              that Actor builds (and their runs) trust on top of the
+                              usual public ones, for networks whose proxy re-signs
+                              outbound HTTPS and makes builds fail with certificate
+                              errors.
       --console-port=<value>  Host port for the runtime
                               console. Defaults to the port of the previous start,
                               else 3000.
@@ -653,9 +652,6 @@ FLAGS
                               records). Defaults to ~/.apify/actor-runtime/data.
   -d, --detach                Run the runtime container
                               in the background. Stop it with 'apify runtime stop'.
-      --no-host-ca            Do not hand this machine's
-                              trusted CA certificates to the runtime. By default
-                              Actor builds trust the ones its own image lacks.
 ```
 
 ##### `apify runtime stop`

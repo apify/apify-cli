@@ -121,6 +121,21 @@ With Docker, check with `docker info` and act on what it tells you:
 
 `apify runtime install` runs the same engine checks and prints a platform-specific hint when something is missing. It installs `apify/actor-runtime:latest` unless another image is given (for example `apify runtime install apify/actor-runtime:master-5462005` for a pinned build); `apify runtime start` runs whichever image was installed last. Only name an image when the user asks for a specific one.
 
+**Builds fail on certificate errors.** If outbound HTTPS in your environment goes through a proxy that re-signs it (common in sandboxes, containers and corporate networks), the build container does not trust that proxy, because it inherits none of the host's CA settings. Typical signs in `apify push` or the build log: `SELF_SIGNED_CERT_IN_CHAIN`, `UNABLE_TO_VERIFY_LEAF_SIGNATURE`, `unable to get local issuer certificate`, `CERTIFICATE_VERIFY_FAILED`, or `npm`/`pip` reporting "no matching version" for a version that exists (the base image's stale package cache is used when the live registry cannot be reached). Without such a proxy, pass nothing.
+
+Fix it by starting the runtime with the CA certificate that **your** environment's proxy uses, so builds and the Actor's runs trust it on top of the usual public roots (Node.js, Python, `pip`, `curl`, `git`; not Java):
+
+1. Find the file for your own environment - do not guess it and do not copy a path from an example. Read the environment's own documentation first (sandboxes usually document their proxy CA). Otherwise look at the variables that name a PEM file: `NODE_EXTRA_CA_CERTS`, `SSL_CERT_FILE`, `REQUESTS_CA_BUNDLE`, `CURL_CA_BUNDLE`, `GIT_SSL_CAINFO`. To confirm a proxy is re-signing, look at the issuer of a live connection: `openssl s_client -connect registry.npmjs.org:443 -servername registry.npmjs.org </dev/null 2>/dev/null | openssl x509 -noout -issuer` - an issuer that is not a public CA is your proxy's. Then test the candidate file against it, and use it only if this prints `Verify return code: 0 (ok)`: `openssl s_client -connect registry.npmjs.org:443 -servername registry.npmjs.org -CAfile /path/to/ca.pem </dev/null 2>&1 | grep 'Verify return code'`. A proxy can use several CAs, so a single certificate file may fail where the bundle that holds the whole chain passes.
+2. Start (or restart, since the flag only applies at start: `apify runtime stop` first) with it, then push again so the Actor rebuilds:
+
+   ```sh
+   $APIFY runtime start --detach --data-dir ./runtime-data --ca-file /path/to/ca.pem
+   ```
+
+3. Never turn certificate checking off to get around the error (`NODE_TLS_REJECT_UNAUTHORIZED=0`, `strict-ssl=false`, `pip --trusted-host`), pass anything but certificates (never a private key), or commit the file into an Actor.
+
+Example, and only an example: in Claude Code's cloud sandboxes `/root/.ccr/ca-bundle.crt` (the value of `NODE_EXTRA_CA_CERTS`) passes that check, while the single proxy CA `/root/.ccr/agent-proxy-ca.crt` does not; other environments use other files.
+
 **Working directory.** Install the preview CLI locally in one dedicated directory rather than globally, so it cannot replace the user's stable `apify` install. Keep the runtime data and the Actor projects you create in the same directory - everything the session produced is then in one place and easy to clean up:
 
 ```sh
