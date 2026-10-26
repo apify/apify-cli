@@ -16,7 +16,8 @@ class CommandWithRepeatableFlag extends BuiltApifyCommand {
 	static override name = 'repeatable' as const;
 	static override description = 'Has a repeatable flag and a plain one.';
 	static override flags = {
-		'actor-dir': Flags.string({ description: 'repeatable', multiple: true }),
+		'actor-dir': Flags.string({ char: 'd', description: 'repeatable', multiple: true }),
+		kind: Flags.string({ description: 'repeatable with choices', multiple: true, choices: ['x', 'y'] }),
 		once: Flags.string({ description: 'plain' }),
 	};
 
@@ -62,6 +63,24 @@ describe('Flags.string({ multiple: true })', () => {
 		await runWith([]);
 
 		expect(receivedFlags.actorDir).toBeUndefined();
+	});
+
+	test('strips the = of the short form from every value', async () => {
+		await runWith(['-d=actors/a', '-d=actors/b']);
+
+		expect(receivedFlags.actorDir).toEqual(['actors/a', 'actors/b']);
+	});
+
+	test('accepts repeated values that are all among the choices', async () => {
+		await runWith(['--kind', 'x', '--kind', 'y']);
+
+		expect(receivedFlags.kind).toEqual(['x', 'y']);
+	});
+
+	test('rejects a repeated flag when one value is not among the choices', async () => {
+		await expect(runWith(['--kind', 'x', '--kind', 'z'])).rejects.toMatchObject({
+			code: CommandErrorCode.APIFY_INVALID_CHOICE,
+		});
 	});
 
 	test('still rejects a repeated flag that did not opt in', async () => {
