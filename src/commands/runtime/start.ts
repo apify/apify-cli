@@ -87,7 +87,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		}),
 		'ca-file': Flags.string({
 			description:
-				`PEM file with CA certificates that Actor builds (and their runs) trust on top of the usual public ones, ` +
+				`PEM file with CA certificates that Actor builds trust on top of the usual public ones, ` +
 				`for networks whose proxy re-signs outbound HTTPS and makes builds fail with certificate errors.`,
 		}),
 		'console-port': Flags.integer({
