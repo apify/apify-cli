@@ -107,7 +107,7 @@ export function toPosix(filePath: string): string {
 	return filePath.split(sep).join('/');
 }
 
-export interface GitProvenance {
+export interface GitState {
 	remoteUrl?: string;
 	branch?: string;
 	commit?: string;
@@ -136,18 +136,18 @@ function withoutCredentials(remoteUrl: string): string {
 	}
 }
 
-export function readGitProvenance(dir: string): GitProvenance {
+export function readGitState(dir: string): GitState {
 	const commit = git(dir, ['rev-parse', 'HEAD']);
 	if (!commit) return {};
 
-	const provenance: GitProvenance = { commit };
+	const state: GitState = { commit };
 	const branch = git(dir, ['rev-parse', '--abbrev-ref', 'HEAD']);
-	if (branch && branch !== 'HEAD') provenance.branch = branch;
+	if (branch && branch !== 'HEAD') state.branch = branch;
 	const remoteUrl = git(dir, ['remote', 'get-url', 'origin']);
-	if (remoteUrl) provenance.remoteUrl = withoutCredentials(remoteUrl);
+	if (remoteUrl) state.remoteUrl = withoutCredentials(remoteUrl);
 	const status = git(dir, ['status', '--porcelain', '--', '.']);
-	if (status !== undefined) provenance.dirty = status.length > 0;
-	return provenance;
+	if (status !== undefined) state.dirty = status.length > 0;
+	return state;
 }
 
 /** Untracked, these are never on the platform and too big to push by accident. */

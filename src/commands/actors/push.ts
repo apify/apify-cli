@@ -26,7 +26,7 @@ import {
 	getContextFilePaths,
 	isOutside,
 	monorepoUnsupportedMessage,
-	readGitProvenance,
+	readGitState,
 	resolveDockerContext,
 	toPosix,
 } from '../../lib/docker-context.js';
@@ -359,7 +359,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			return;
 		}
 
-		if (actorPath && readGitProvenance(uploadRoot).dirty) {
+		if (actorPath && readGitState(uploadRoot).dirty) {
 			warning({
 				message: `The repository ${uploadRoot} has uncommitted changes; the push uploads the files as they are.`,
 			});
