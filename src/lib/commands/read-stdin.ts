@@ -2,11 +2,7 @@ import { once } from 'node:events';
 
 import { useStdin } from '../hooks/useStdin.js';
 
-/**
- * How long an implicit read waits for stdin to say anything more. Long enough for a writer that has
- * to fetch or compute its next bytes, short enough that a pipe with nothing behind it does not look
- * like a hang.
- */
+/** Long enough for a writer that has to fetch its next bytes, short enough not to look like a hang. */
 const IMPLICIT_STDIN_IDLE_TIMEOUT_MILLIS = 2_000;
 
 let readPromise: Promise<Buffer | undefined> | undefined;
@@ -39,8 +35,8 @@ export async function readStdin(options: ReadStdinOptions = {}) {
 }
 
 /**
- * Whether stdin went quiet mid-stream and the read gave up on the rest. Explains a payload that
- * ends where nothing should end.
+ * Whether an implicit read gave up before the writer closed stdin. Explains both a payload that
+ * ends where nothing should end and a read that came back with nothing.
  */
 export function stdinWasCutShort() {
 	return readCutShort;
@@ -65,10 +61,8 @@ async function _readStdin({ implicit }: ReadStdinOptions) {
 		return;
 	}
 
-	// `waitDelay` guards the first byte on a socket, and nothing else. An implicit read needs a
-	// deadline on every byte: an inherited pipe may send nothing at all, and may stay open after it
-	// does, so waiting for the end of the stream never finishes (#1206). Where stdin already has a
-	// first-byte deadline, keep it — it is shorter, and dropping it slows down every spawned CLI.
+	// An inherited pipe may send nothing and stay open, so waiting for the end never finishes
+	// (#1206). Keep a shorter platform deadline where there is one: it speeds up every spawned CLI.
 	const firstByteTimeout = implicit ? waitDelay || IMPLICIT_STDIN_IDLE_TIMEOUT_MILLIS : waitDelay;
 
 	const bufferChunks: Buffer[] = [];
@@ -97,9 +91,8 @@ async function _readStdin({ implicit }: ReadStdinOptions) {
 
 		disarmTimeout();
 
-		// An implicit read has no other way to tell that the writer is done, so every chunk restarts
-		// the clock. An explicit one waits for the real end of the stream, and its deadline only ever
-		// guarded the first byte.
+		// An implicit read has no other way to tell the writer is done, so every chunk restarts the
+		// clock. An explicit one waits for the real end of the stream.
 		if (implicit) {
 			armTimeout(IMPLICIT_STDIN_IDLE_TIMEOUT_MILLIS);
 		}
@@ -119,11 +112,12 @@ async function _readStdin({ implicit }: ReadStdinOptions) {
 				return;
 			}
 
-			readCutShort = bufferChunks.length > 0;
+			// A socket's short first-byte guard fires for every spawned CLI, so only a read that
+			// outwaited the idle timeout counts as given up on.
+			readCutShort = bufferChunks.length > 0 || firstByteTimeout === IMPLICIT_STDIN_IDLE_TIMEOUT_MILLIS;
 		}
 	} finally {
-		// Stop reading from stdin so its open handle can't keep the event loop (and
-		// the CLI) alive after the command finishes (#1206).
+		// Stop reading so an open stdin handle can't keep the CLI alive after the command (#1206).
 		stream.off('data', onData);
 		stream.pause();
 	}

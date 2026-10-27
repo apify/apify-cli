@@ -5,7 +5,7 @@ import process from 'node:process';
 import mime from 'mime';
 
 import { CommandExitCodes } from '../consts.js';
-import { error } from '../outputs.js';
+import { error, warning } from '../outputs.js';
 import { getLocalInput } from '../utils.js';
 import { readStdin, stdinWasCutShort } from './read-stdin.js';
 
@@ -61,6 +61,15 @@ export async function getInputOverride(
 		// Nobody asked for stdin here, so it must not block: this command is reachable with a pipe
 		// it only inherited from whatever spawned it.
 		const stdin = await readStdin({ implicit: true });
+
+		// Giving up on a silent pipe is the only way not to hang on one, but a writer that was just
+		// slow would otherwise see its input vanish with nothing said.
+		if (!stdin && stdinWasCutShort()) {
+			warning({
+				message:
+					'Nothing arrived on standard input, so it was ignored. Use `--input-file=-` to wait for a slow writer.',
+			});
+		}
 
 		if (stdin) {
 			try {
