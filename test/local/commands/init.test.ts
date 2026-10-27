@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir } from 'node:fs/promises';
+import process from 'node:process';
 
 import { KEY_VALUE_STORE_KEYS } from '@apify/consts';
 
@@ -24,7 +25,18 @@ describe('apify init', () => {
 	});
 
 	afterEach(async () => {
+		process.exitCode = undefined;
 		await afterAllCalls();
+	});
+
+	it('rejects an Actor name that the platform cannot accept', async () => {
+		await testRunCommand(InitCommand, {
+			args_actorName: 'Bad Name!!',
+			flags_yes: true,
+		});
+
+		expect(process.exitCode).toBe(1);
+		expect(existsSync(joinPath(LOCAL_CONFIG_PATH))).toBeFalsy();
 	});
 
 	it('correctly creates basic structure with empty INPUT.json', async () => {
