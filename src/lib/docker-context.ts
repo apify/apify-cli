@@ -64,6 +64,9 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	}
 	const realContextRoot = realpathSync(contextRoot);
 
+	// Inside or outside the Actor folder is judged by the path as written, not by where a symlink on it leads. Push
+	// follows a symlink and uploads its files under the link's own name: with `"dockerContextDir": "../sym"` and `sym`
+	// linking to a folder outside, the platform receives `sym` as a normal folder inside the Actor and builds from it.
 	const contextPathInActor = relative(realActorDir, contextRoot);
 	if (contextPathInActor === '' || !isOutside(contextPathInActor)) {
 		return { kind: 'within', contextRoot: realContextRoot };
