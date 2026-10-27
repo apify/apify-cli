@@ -49,6 +49,12 @@ interface CliCommandEvent {
 		failed: number;
 	};
 
+	login?: {
+		method: 'oauth2-device' | 'oauth2-code' | 'console' | 'manual' | 'token';
+		/** Set when the device code flow could not run and the authorization code flow took over. */
+		fellBackFrom?: 'oauth2-device';
+	};
+
 	// init command
 	actorWrapper?: string;
 

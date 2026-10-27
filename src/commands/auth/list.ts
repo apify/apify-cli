@@ -29,7 +29,7 @@ export class AuthListCommand extends ApifyCommand<typeof AuthListCommand> {
 	static override aliases = ['ls'];
 
 	static override description =
-		'Lists the stored Apify accounts and marks the active one. Reads only the local login, so it works offline and does not check that the tokens are still valid.';
+		"Lists the stored Apify accounts and marks the active one. Reads only the local login, so it works offline and doesn't check that the tokens are still valid.";
 
 	static override enableJsonFlag = true;
 

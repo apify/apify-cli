@@ -72,7 +72,7 @@ export const Flags = {
 };
 
 /** Reusable `--yes` / `-y` flag for commands with confirmation prompts. */
-export function YesFlag(description = 'Automatic yes to prompts; assume "yes" as answer to all prompts.') {
+export function YesFlag(description = 'Answer "yes" to all prompts.') {
 	return {
 		yes: Flags.boolean({
 			char: 'y',
