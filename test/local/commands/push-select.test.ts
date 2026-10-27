@@ -501,7 +501,7 @@ describe('apify push in a repository with several Actors', () => {
 					id: `build-${ACTOR_A.id}`,
 					number: '0.0.1',
 					status: 'SUCCEEDED',
-					url: expect.stringContaining('#/builds/0.0.1'),
+					url: expect.stringContaining('/builds/0.0.1'),
 				},
 				exitCode: 0,
 			});
@@ -535,7 +535,7 @@ describe('apify push in a repository with several Actors', () => {
 					id: `build-${ACTOR_A.id}`,
 					number: '0.0.1',
 					status: 'SUCCEEDED',
-					url: expect.stringContaining('#/builds/0.0.1'),
+					url: expect.stringContaining('/builds/0.0.1'),
 				},
 				exitCode: 0,
 			});
