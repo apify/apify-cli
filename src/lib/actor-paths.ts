@@ -21,7 +21,8 @@ export interface ActorPathsOptions {
 	/**
 	 * When given, `dockerfile` must lie inside it. The worker runs BuildKit with `--local dockerfile=<context dir>`
 	 * and `filename=<Dockerfile relative to the context>`, so a Dockerfile outside the context cannot be read by the
-	 * build. The same holds for a context within the Actor folder, which today's push already sends.
+	 * build. The same holds for a context within the Actor folder, which today's push already sends. Pass it as
+	 * `resolveDockerContext` returns it: the path as written, from the real Actor folder.
 	 */
 	dockerContextRoot?: string;
 }
@@ -159,13 +160,14 @@ function checkPathField(
  * as push uploads its content there.
  */
 export function checkActorPaths(options: ActorPathsOptions): ActorPathProblem[] {
-	// The roots are real paths, as the Docker context resolver returns them, so a symlinked Actor folder does not
-	// count as an escape; a referenced path is judged lexically below the real Actor folder.
+	// The Actor folder and the upload root are real paths, as the Docker context resolver works from them, so a
+	// symlinked Actor folder does not count as an escape. A referenced path, like the Docker context the resolver
+	// returns, is judged as written below the real Actor folder, the way push lays out the upload.
 	const scope: PathCheckScope = {
 		actorDir: realpathSync(options.actorDir),
 		uploadRoot: realpathSync(options.uploadRoot),
 		uploadedFiles: new Set(options.uploadedFiles.map(toPosix)),
-		dockerContextRoot: options.dockerContextRoot === undefined ? undefined : realpathSync(options.dockerContextRoot),
+		dockerContextRoot: options.dockerContextRoot,
 	};
 	return collectPathFields(options.config).flatMap((pathField) => checkPathField(pathField, scope) ?? []);
 }

@@ -51,6 +51,7 @@ describe('checkActorPaths', () => {
 		uploadedFiles = await getActorLocalFilePaths(actorDir);
 		symlinkSync(join(root, 'shared', 'missing.json'), join(actorDir, '.actor', 'dangling.json'));
 		symlinkSync(actorDir, join(root, 'linked-actor'));
+		symlinkSync(join(root, 'shared'), join(actorDir, 'sym'));
 	});
 
 	afterAll(async () => {
@@ -200,6 +201,22 @@ describe('checkActorPaths', () => {
 				uploadedFiles,
 				config: { dockerfile: '../Dockerfile' },
 				dockerContextRoot: actorDir,
+			}),
+		).toEqual([]);
+	});
+
+	it('accepts a Dockerfile in a Docker context reached through a symlink inside the Actor folder', async () => {
+		// `sym` links to the shared folder outside the Actor; push uploads it as a normal folder `sym` inside.
+		const dockerContext = resolveDockerContext(actorDir, '../sym');
+		expect(dockerContext).toEqual({ kind: 'within', contextRoot: join(actorDir, 'sym') });
+
+		expect(
+			checkActorPaths({
+				actorDir,
+				uploadRoot: actorDir,
+				uploadedFiles: await getActorLocalFilePaths(actorDir),
+				config: { dockerContextDir: '../sym', dockerfile: '../sym/Dockerfile' },
+				dockerContextRoot: join(actorDir, 'sym'),
 			}),
 		).toEqual([]);
 	});
