@@ -248,7 +248,6 @@ describe('apify actor generate-schema-types', () => {
 				datasetSchemaRef: {
 					actorSpecification: 1,
 					fields: {
-						type: 'object',
 						properties: {
 							name: { type: 'string' },
 							value: { type: 'integer' },
@@ -264,7 +263,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('ds-output-embedded', 'dataset.ts'), 'utf-8');
-			expect(generatedFile).toContain('export type');
+			expect(generatedFile).toContain('export type dataset = ({');
 			expect(generatedFile).toContain('name');
 			expect(generatedFile).toContain('value');
 		});
@@ -311,7 +310,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('out-output', 'output.ts'), 'utf-8');
-			expect(generatedFile).toContain('export type');
+			expect(generatedFile).toContain('export type output = ({');
 			expect(generatedFile).toContain('productPage');
 			expect(generatedFile).toContain('screenshot');
 			expect(generatedFile).toContain('report');
@@ -325,7 +324,6 @@ describe('apify actor generate-schema-types', () => {
 			await setupActorConfig(joinPath(), {
 				outputSchemaRef: {
 					actorOutputSchemaVersion: 1,
-					type: 'object',
 					properties: {
 						resultPage: { type: 'string', template: 'https://example.com/{{id}}' },
 						dataExport: { type: 'string', template: 'https://example.com/export/{{id}}' },
@@ -339,7 +337,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('out-output-embedded', 'output.ts'), 'utf-8');
-			expect(generatedFile).toContain('export type');
+			expect(generatedFile).toContain('export type output = ({');
 			expect(generatedFile).toContain('resultPage');
 			expect(generatedFile).toContain('dataExport');
 		});
@@ -401,7 +399,6 @@ describe('apify actor generate-schema-types', () => {
 							contentTypes: ['application/json'],
 							key: 'METRICS',
 							jsonSchema: {
-								type: 'object',
 								properties: {
 									runCount: { type: 'integer' },
 									avgDuration: { type: 'number' },
@@ -418,7 +415,7 @@ describe('apify actor generate-schema-types', () => {
 			});
 
 			const generatedFile = await readFile(joinPath('kvs-output-embedded', 'key-value-store.ts'), 'utf-8');
-			expect(generatedFile).toContain('export type');
+			expect(generatedFile).toContain('export type keyValueStore = {');
 			expect(generatedFile).toContain('runCount');
 			expect(generatedFile).toContain('avgDuration');
 		});

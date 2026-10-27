@@ -1,6 +1,5 @@
 {
 	"actorOutputSchemaVersion": 1,
-	"type": "object",
 	"properties": {
 		"productPage": {
 			"type": "string",

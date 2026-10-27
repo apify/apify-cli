@@ -7,6 +7,14 @@ import { normalizeKvstoreSchema } from '../../../../../src/lib/schema-to-ts/prep
 describe('normalizeKvstoreSchema', () => {
 	const results = { type: 'object', properties: { totalItems: { type: 'integer' } }, required: ['totalItems'] };
 
+	test('defaults collection jsonSchema without a type to an object', () => {
+		const jsonSchema = { properties: { count: { type: 'integer' } }, required: ['count'] };
+		const normalized = normalizeKvstoreSchema({ collections: { results: { jsonSchema } } });
+		expect(normalized).toMatchObject({ properties: { results: { ...jsonSchema, type: 'object' } } });
+		expect(jsonSchema).not.toHaveProperty('type');
+		expect(jsonSchemaToIR(normalized).diagnostics).toEqual([]);
+	});
+
 	test('turns collections into properties and requires every key', () => {
 		expect(
 			normalizeKvstoreSchema({

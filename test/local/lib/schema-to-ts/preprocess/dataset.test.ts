@@ -4,6 +4,14 @@ import { jsonSchemaToIR } from '../../../../../src/lib/schema-to-ts/parser.js';
 import { normalizeDatasetSchema } from '../../../../../src/lib/schema-to-ts/preprocess/dataset.js';
 
 describe('normalizeDatasetSchema', () => {
+	test('defaults fields without a type to an object while preserving the source', () => {
+		const fields = { properties: { name: { type: 'string' } }, required: ['name'] };
+		const normalized = normalizeDatasetSchema({ fields });
+		expect(normalized).toEqual({ ...fields, type: 'object' });
+		expect(fields).not.toHaveProperty('type');
+		expect(jsonSchemaToIR(normalized).ir.root).toMatchObject({ kind: 'object' });
+	});
+
 	test('extracts fields and drops everything around it', () => {
 		const fields = { type: 'object', properties: { a: { type: 'string' } } };
 		expect(

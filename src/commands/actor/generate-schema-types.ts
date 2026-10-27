@@ -19,6 +19,7 @@ import {
 	normalizeDatasetSchema,
 	normalizeInputSchema,
 	normalizeKvstoreSchema,
+	normalizeOutputSchema,
 } from '../../lib/schema-to-ts/index.js';
 import type { CheckResult, CompileOptions, Diagnostic, Variant } from '../../lib/schema-to-ts/index.js';
 
@@ -308,7 +309,7 @@ just as if the command were run from that directory with no argument.`;
 			label: 'output',
 			outputDir,
 			fileName: 'output.ts',
-			schema: outputSchema,
+			schema: normalizeOutputSchema(outputSchema),
 			opts: { types: [{ name: 'output', variant: this.variants.outOfActor }] },
 		});
 	}

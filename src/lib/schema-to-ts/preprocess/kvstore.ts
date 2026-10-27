@@ -1,4 +1,5 @@
 import { normalizeNullable } from './nullable.js';
+import { defaultObjectType } from './object.js';
 
 type Obj = Record<string, unknown>;
 
@@ -34,7 +35,10 @@ export function normalizeKvstoreSchema(raw: unknown): unknown {
 	for (const [name, collection] of Object.entries(collections)) {
 		// `in` rather than a truthiness check: a `jsonSchema` that is present but malformed is
 		// passed on so the core names it, instead of being silently softened to `unknown`.
-		properties[name] = isObj(collection) && 'jsonSchema' in collection ? normalizeNullable(collection.jsonSchema) : {};
+		properties[name] =
+			isObj(collection) && 'jsonSchema' in collection
+				? defaultObjectType(normalizeNullable(collection.jsonSchema))
+				: {};
 	}
 
 	return { type: 'object', properties, required: Object.keys(properties), additionalProperties: false };
