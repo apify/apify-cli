@@ -15,10 +15,15 @@ export type DockerContextResolution =
 	/** `dockerContextDir` is absent: undefined, null, or an empty string. */
 	| { kind: 'none' }
 	/** The context is the Actor folder itself or a directory inside it, so a push of the folder carries it. */
-	| { kind: 'within'; contextRoot: string }
+	| {
+			kind: 'within';
+			/** As the upload lays it out: the path as written, from the Actor folder's real path. */
+			contextRoot: string;
+	  }
 	/** The context lies beyond the Actor folder (a monorepo Actor): above it, or elsewhere in the Git repository. */
 	| {
 			kind: 'outside';
+			/** As the upload lays it out: the path as written, from the Actor folder's real path. */
 			contextRoot: string;
 			/** The Git repository's root, else the context. */
 			sourceRoot: string;
@@ -32,8 +37,8 @@ export type DockerContextResolution =
  * `dockerContextDir` is relative to `.actor/`, as on the platform. An absent field is `none`, with no path work. A
  * context at or below the Actor folder is `within`: an ordinary push, which the platform builds as it is. A context
  * above or beside the Actor folder is `outside`: a monorepo Actor, with the source root a push would have to carry.
- * A context that cannot be used is `invalid`, with the message to show. Paths come back real, as the platform sees
- * them.
+ * A context that cannot be used is `invalid`, with the message to show. The context path comes back as the upload
+ * lays it out, the source root as a real path.
  */
 export function resolveDockerContext(actorDir: string, dockerContextDir: unknown): DockerContextResolution {
 	if (dockerContextDir === undefined || dockerContextDir === null || dockerContextDir === '') return { kind: 'none' };
@@ -65,12 +70,13 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	}
 	const realContextRoot = realpathSync(contextRoot);
 
-	// Inside or outside the Actor folder is judged by the path as written, not by where a symlink on it leads. Push
-	// follows a symlink and uploads its files under the link's own name: with `"dockerContextDir": "../sym"` and `sym`
-	// linking to a folder outside, the platform receives `sym` as a normal folder inside the Actor and builds from it.
+	// Inside or outside the Actor folder is judged, and returned, by the path as written, not by where a symlink on it
+	// leads. Push follows a symlink and uploads its files under the link's own name: with `"dockerContextDir": "../sym"`
+	// and `sym` linking to a folder outside, the platform receives `sym` as a normal folder inside the Actor and builds
+	// from it.
 	const contextPathInActor = relative(realActorDir, contextRoot);
 	if (contextPathInActor === '' || !isOutside(contextPathInActor)) {
-		return { kind: 'within', contextRoot: realContextRoot };
+		return { kind: 'within', contextRoot };
 	}
 
 	// The platform's clone holds nothing above the repository root.
@@ -87,7 +93,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 		}
 		return {
 			kind: 'outside',
-			contextRoot: realContextRoot,
+			contextRoot,
 			sourceRoot,
 			actorPath: toPosix(relative(sourceRoot, realActorDir)),
 		};
@@ -100,7 +106,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 			message: `"dockerContextDir" in .actor/actor.json points to ${realContextRoot}, which does not contain the Actor's folder.`,
 		};
 	}
-	return { kind: 'outside', contextRoot: realContextRoot, sourceRoot: realContextRoot, actorPath: toPosix(actorPath) };
+	return { kind: 'outside', contextRoot, sourceRoot: realContextRoot, actorPath: toPosix(actorPath) };
 }
 
 function isOutside(relativePath: string): boolean {

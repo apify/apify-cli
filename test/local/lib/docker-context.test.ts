@@ -60,7 +60,7 @@ describe('resolveDockerContext', () => {
 			expect(resolveDockerContext(actorDir(), '')).toEqual({ kind: 'none' });
 		});
 
-		it('reports a context at or below the Actor folder as within, with its real path', () => {
+		it('reports a context at or below the Actor folder as within, with its path as the upload lays it out', () => {
 			const actorRoot = join(root, ACTOR_PATH);
 			expect(resolveDockerContext(actorDir(), '..')).toEqual({ kind: 'within', contextRoot: actorRoot });
 			expect(resolveDockerContext(actorDir(), '.')).toEqual({ kind: 'within', contextRoot: join(actorRoot, '.actor') });
@@ -113,10 +113,14 @@ describe('resolveDockerContext', () => {
 
 		it('judges the context by its path as written, as push uploads a symlink under its own name', () => {
 			// `sym` inside the Actor folder links to the shared folder outside it; push uploads it as a folder inside.
-			expect(resolveDockerContext(actorDir(), '../sym')).toMatchObject({ kind: 'within' });
+			expect(resolveDockerContext(actorDir(), '../sym')).toEqual({
+				kind: 'within',
+				contextRoot: join(root, ACTOR_PATH, 'sym'),
+			});
 			// This path leaves the Actor folder through a link that leads back in; the upload has no such link.
-			expect(resolveDockerContext(actorDir(), '../../../linked-actor/src')).toMatchObject({
+			expect(resolveDockerContext(actorDir(), '../../../linked-actor/src')).toEqual({
 				kind: 'outside',
+				contextRoot: join(root, 'linked-actor', 'src'),
 				sourceRoot: root,
 				actorPath: ACTOR_PATH,
 			});
