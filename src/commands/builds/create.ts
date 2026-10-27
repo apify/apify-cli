@@ -53,7 +53,8 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 			description: 'Whether to print out the build log after the build is triggered.',
 		}),
 		wait: Flags.boolean({
-			description: 'Wait for the build to reach a terminal status. Returns exit code 0 only when the build SUCCEEDED.',
+			description:
+				'Wait for the build to reach a terminal status. Returns exit code 0 only when the build SUCCEEDED.',
 			default: false,
 		}),
 	};
@@ -96,7 +97,10 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		const actorInfo = (await client.actor(ctx.id).get())!;
 
-		const versionsByBuildTag = objectGroupBy(actorInfo.versions, (actorVersion) => actorVersion.buildTag ?? 'latest');
+		const versionsByBuildTag = objectGroupBy(
+			actorInfo.versions,
+			(actorVersion) => actorVersion.buildTag ?? 'latest',
+		);
 
 		const taggedVersions = versionsByBuildTag[tag ?? 'latest'];
 		const specificVersionExists = actorInfo.versions.find((v) => v.versionNumber === version);

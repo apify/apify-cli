@@ -171,7 +171,9 @@ export const readStorageSchema = ({
 
 		if (!schema) {
 			if (throwOnMissing) {
-				throw new Error(`${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`);
+				throw new Error(
+					`${label} schema file not found at ${fullPath} (referenced in '${LOCAL_CONFIG_PATH}').`,
+				);
 			}
 
 			warning({

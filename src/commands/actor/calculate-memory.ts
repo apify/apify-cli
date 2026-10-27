@@ -57,7 +57,8 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 			default: DEFAULT_INPUT_PATH,
 		}),
 		defaultMemoryMbytes: Flags.string({
-			description: 'Memory-calculation expression (in MB). If omitted, the value is loaded from the actor.json file.',
+			description:
+				'Memory-calculation expression (in MB). If omitted, the value is loaded from the actor.json file.',
 			required: false,
 		}),
 		build: Flags.string({

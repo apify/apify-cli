@@ -91,7 +91,9 @@ async function runCliInstall({
 		await execa(binary, args, { stdio: ['ignore', 'ignore', 'pipe'] });
 	} catch (err) {
 		const childStderr = isExecaError(err) ? String(err.stderr ?? '').trim() : '';
-		const reason = childStderr ? `${describeExecaError(err, binary)}\n${childStderr}` : describeExecaError(err, binary);
+		const reason = childStderr
+			? `${describeExecaError(err, binary)}\n${childStderr}`
+			: describeExecaError(err, binary);
 		error({ message: maskSecret(`Failed to add the MCP server via ${clientLabel}: ${reason}`, token) });
 		process.exitCode = CommandExitCodes.RunFailed;
 		return false;
@@ -112,7 +114,9 @@ function fileClient({
 	return async ({ url, token, yes }) => {
 		const home = userHomeDir();
 		if (!home) {
-			error({ message: 'User home directory could not be determined. Set the HOME environment variable and re-run.' });
+			error({
+				message: 'User home directory could not be determined. Set the HOME environment variable and re-run.',
+			});
 			process.exitCode = CommandExitCodes.InvalidInput;
 			return;
 		}
@@ -195,7 +199,9 @@ function vscodeHandler(binary: string, clientLabel: string): ClientHandler {
 const codexHandler: ClientHandler = async ({ url }) => {
 	const home = userHomeDir();
 	if (!home) {
-		error({ message: 'User home directory could not be determined. Set the HOME environment variable and re-run.' });
+		error({
+			message: 'User home directory could not be determined. Set the HOME environment variable and re-run.',
+		});
 		process.exitCode = CommandExitCodes.InvalidInput;
 		return;
 	}

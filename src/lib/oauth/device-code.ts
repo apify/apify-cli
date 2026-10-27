@@ -88,7 +88,10 @@ export async function loginWithDeviceCode({
 	onPrompt,
 }: DeviceCodeLoginOptions): Promise<DeviceCodeLoginResult> {
 	if (!metadata.device_authorization_endpoint) {
-		return { unsupported: true, reason: 'the authorization server does not advertise a device authorization endpoint' };
+		return {
+			unsupported: true,
+			reason: 'the authorization server does not advertise a device authorization endpoint',
+		};
 	}
 
 	const authorization = await requestDeviceAuthorization(metadata.device_authorization_endpoint, clientId);
@@ -158,5 +161,8 @@ export async function loginWithDeviceCode({
 		}
 	}
 
-	return { stopReason: 'expired', message: 'Login to Apify failed, the device code expired before it was confirmed.' };
+	return {
+		stopReason: 'expired',
+		message: 'Login to Apify failed, the device code expired before it was confirmed.',
+	};
 }

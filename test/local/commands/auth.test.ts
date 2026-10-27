@@ -491,7 +491,9 @@ describe('auth commands', () => {
 			try {
 				await testRunCommand(AuthLogoutCommand, {});
 
-				expect([...logMessages.log, ...logMessages.error].join('\n')).toContain(`${APIFY_ENV_VARS.TOKEN} is still set`);
+				expect([...logMessages.log, ...logMessages.error].join('\n')).toContain(
+					`${APIFY_ENV_VARS.TOKEN} is still set`,
+				);
 			} finally {
 				process.exitCode = 0;
 			}
@@ -528,7 +530,12 @@ describe('auth commands', () => {
 		// The keyring module loads on machines where the secret service does not answer, so a
 		// delete that throws there is not a secret left behind: nothing was ever stored.
 		it('logout succeeds when the keyring answers nothing', async () => {
-			for (const key of [TOKEN_KEY, PROXY_PASSWORD_KEY, LEGACY_KEYRING_TOKEN_KEY, LEGACY_KEYRING_PROXY_PASSWORD_KEY]) {
+			for (const key of [
+				TOKEN_KEY,
+				PROXY_PASSWORD_KEY,
+				LEGACY_KEYRING_TOKEN_KEY,
+				LEGACY_KEYRING_PROXY_PASSWORD_KEY,
+			]) {
 				keyringFailures.add(key);
 			}
 
@@ -556,7 +563,9 @@ describe('auth commands', () => {
 
 				expect(keyringStore.get(TOKEN_KEY)).toBe(TOKEN);
 				expect(lastErrorMessage()).toContain('Logout did not finish');
-				expect(lastErrorMessage()).toContain('Your secrets are still in the OS keyring at com.apify.cli.token/uid;');
+				expect(lastErrorMessage()).toContain(
+					'Your secrets are still in the OS keyring at com.apify.cli.token/uid;',
+				);
 				expect(lastErrorMessage()).toContain(`Your account was removed from ${tildify(AUTH_FILE_PATH())}`);
 				expect(process.exitCode).toBe(CommandExitCodes.RunFailed);
 			} finally {

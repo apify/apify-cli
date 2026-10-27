@@ -74,7 +74,10 @@ export async function useTelemetryState(): Promise<LatestTelemetryState> {
 
 		// First time we are tracking telemetry, so we want to notify user about it.
 		// Skip the notice if telemetry is disabled via env var — the user already opted out.
-		if (!process.env.APIFY_CLI_DISABLE_TELEMETRY || ['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)) {
+		if (
+			!process.env.APIFY_CLI_DISABLE_TELEMETRY ||
+			['false', '0'].includes(process.env.APIFY_CLI_DISABLE_TELEMETRY)
+		) {
 			info({ message: telemetryWarningText });
 		}
 
@@ -128,7 +131,8 @@ export async function checkAndUpdateLastCommand(commandString: string): Promise<
 		const state = await useTelemetryState();
 		const now = Date.now();
 
-		const wasRetried = state.lastCommand === commandString && now - (state.lastCommandTimestamp ?? 0) < RETRY_WINDOW_MS;
+		const wasRetried =
+			state.lastCommand === commandString && now - (state.lastCommandTimestamp ?? 0) < RETRY_WINDOW_MS;
 
 		updateTelemetryState(state, (stateToUpdate) => {
 			stateToUpdate.lastCommand = commandString;

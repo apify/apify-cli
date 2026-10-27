@@ -10,7 +10,8 @@ export class KeyValueStoresGetValueCommand extends ApifyCommand<typeof KeyValueS
 
 	static override enableProfileFlag = true;
 
-	static override description = 'Retrieves stored value for specified key. Use --only-content-type to check MIME type.';
+	static override description =
+		'Retrieves stored value for specified key. Use --only-content-type to check MIME type.';
 
 	static override examples = [
 		{

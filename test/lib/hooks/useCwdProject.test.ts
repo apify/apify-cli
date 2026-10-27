@@ -106,7 +106,8 @@ describe('useCwdProject - Python project detection', () => {
 
 			// ── Valid pkg name + no __init__.py but .py files → near-miss suggesting __init__.py ──
 			{
-				description: 'suggests adding __init__.py for flat valid package with .py files in a hyphenated directory',
+				description:
+					'suggests adding __init__.py for flat valid package with .py files in a hyphenated directory',
 				cwdName: 'my-dir',
 				structure: 'flat',
 				pkgName: 'my_package',
@@ -117,7 +118,8 @@ describe('useCwdProject - Python project detection', () => {
 				expectedErrorContains: 'add __init__.py',
 			},
 			{
-				description: 'suggests adding __init__.py for flat valid package with .py files in an underscored directory',
+				description:
+					'suggests adding __init__.py for flat valid package with .py files in an underscored directory',
 				cwdName: 'my_dir',
 				structure: 'flat',
 				pkgName: 'my_package',
@@ -154,7 +156,8 @@ describe('useCwdProject - Python project detection', () => {
 
 			// ── Valid pkg name + no __init__.py and no .py files → unknown ──
 			{
-				description: 'returns unknown for flat valid directory without any Python files in a hyphenated directory',
+				description:
+					'returns unknown for flat valid directory without any Python files in a hyphenated directory',
 				cwdName: 'my-dir',
 				structure: 'flat',
 				pkgName: 'my_package',
@@ -165,7 +168,8 @@ describe('useCwdProject - Python project detection', () => {
 				expectedErrorContains: null,
 			},
 			{
-				description: 'returns unknown for flat valid directory without any Python files in an underscored directory',
+				description:
+					'returns unknown for flat valid directory without any Python files in an underscored directory',
 				cwdName: 'my_dir',
 				structure: 'flat',
 				pkgName: 'my_package',
@@ -224,7 +228,8 @@ describe('useCwdProject - Python project detection', () => {
 				expectedErrorContains: 'rename to',
 			},
 			{
-				description: 'suggests rename for hyphenated package inside src/ with __init__.py in a hyphenated directory',
+				description:
+					'suggests rename for hyphenated package inside src/ with __init__.py in a hyphenated directory',
 				cwdName: 'my-dir',
 				structure: 'src',
 				pkgName: 'my-package',
@@ -235,7 +240,8 @@ describe('useCwdProject - Python project detection', () => {
 				expectedErrorContains: 'rename to',
 			},
 			{
-				description: 'suggests rename for hyphenated package inside src/ with __init__.py in an underscored directory',
+				description:
+					'suggests rename for hyphenated package inside src/ with __init__.py in an underscored directory',
 				cwdName: 'my_dir',
 				structure: 'src',
 				pkgName: 'my-package',
@@ -298,7 +304,8 @@ describe('useCwdProject - Python project detection', () => {
 
 			// ── Invalid pkg name + no __init__.py and no .py files → unknown ──
 			{
-				description: 'returns unknown for flat hyphenated directory without any Python files in a hyphenated directory',
+				description:
+					'returns unknown for flat hyphenated directory without any Python files in a hyphenated directory',
 				cwdName: 'my-dir',
 				structure: 'flat',
 				pkgName: 'my-package',

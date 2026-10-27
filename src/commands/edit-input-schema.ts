@@ -68,7 +68,9 @@ export class EditInputSchemaCommand extends ApifyCommand<typeof EditInputSchemaC
 		if (existingSchema && !inputSchemaPath) {
 			// If path is not returned, it means the input schema must be directly embedded as object in actor.json
 			// TODO - allow editing input schema embedded in actor.json
-			throw new Error(`Editing an input schema directly embedded in '${LOCAL_CONFIG_PATH}' is not yet supported.`);
+			throw new Error(
+				`Editing an input schema directly embedded in '${LOCAL_CONFIG_PATH}' is not yet supported.`,
+			);
 		}
 
 		warning({ message: 'This command is still experimental and might break at any time. Use at your own risk.\n' });

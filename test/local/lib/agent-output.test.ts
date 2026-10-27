@@ -95,8 +95,8 @@ describe('waitForTerminalStatus', () => {
 	it('throws when the job does not exist', async () => {
 		const apifyClient = fakeClient({ builds: [undefined] });
 
-		await expect(waitForTerminalStatus({ apifyClient, jobId: 'missing', kind: ACTOR_JOB_TYPES.BUILD })).rejects.toThrow(
-			'Build with ID "missing" was not found.',
-		);
+		await expect(
+			waitForTerminalStatus({ apifyClient, jobId: 'missing', kind: ACTOR_JOB_TYPES.BUILD }),
+		).rejects.toThrow('Build with ID "missing" was not found.');
 	});
 });

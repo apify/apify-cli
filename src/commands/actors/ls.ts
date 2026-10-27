@@ -241,7 +241,8 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 							(item.actor.taggedBuilds ?? {}) as Record<string, ActorTaggedBuild>,
 						).find(
 							([tag, data]) =>
-								data.buildNumber === item.actor!.defaultRunOptions.build || tag === item.actor!.defaultRunOptions.build,
+								data.buildNumber === item.actor!.defaultRunOptions.build ||
+								tag === item.actor!.defaultRunOptions.build,
 						);
 
 						if (buildVersionToTag) {
@@ -268,7 +269,10 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 						if (diff < Time.Week) {
 							stringParts.push('\n', chalk.gray(`${ShortDurationFormatter.format(diff)} ago`));
 						} else {
-							stringParts.push('\n', chalk.gray('On', DateOnlyTimestampFormatter.display(item.lastRun.finishedAt)));
+							stringParts.push(
+								'\n',
+								chalk.gray('On', DateOnlyTimestampFormatter.display(item.lastRun.finishedAt)),
+							);
 						}
 					}
 

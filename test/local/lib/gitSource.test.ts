@@ -170,7 +170,9 @@ describe('getGitConnectUrl', () => {
 
 		// Double-encoded, as Console builds it: the page decodes the value once before navigating there.
 		expect(redirectUri.searchParams.get('routePrefix')).toBe('%2Forganization%2FqTyaZThN7mnbef6iQ');
-		expect(decodeURIComponent(redirectUri.searchParams.get('routePrefix')!)).toBe('/organization/qTyaZThN7mnbef6iQ');
+		expect(decodeURIComponent(redirectUri.searchParams.get('routePrefix')!)).toBe(
+			'/organization/qTyaZThN7mnbef6iQ',
+		);
 	});
 
 	it('leaves a personal login on the root Console route', () => {
@@ -380,7 +382,9 @@ describe('logGitSourceOutcome', () => {
 	// must not imply anything was created.
 	it('says nothing was created when the stop came before the clone', () => {
 		const lines: string[] = [];
-		const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => lines.push(args.map(String).join(' ')));
+		const errorSpy = vi
+			.spyOn(console, 'error')
+			.mockImplementation((...args) => lines.push(args.map(String).join(' ')));
 		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
 		try {
@@ -398,7 +402,9 @@ describe('logGitSourceOutcome', () => {
 	// missing when it exists.
 	it('says the Actor exists when only the clone failed', () => {
 		const lines: string[] = [];
-		const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => lines.push(args.map(String).join(' ')));
+		const errorSpy = vi
+			.spyOn(console, 'error')
+			.mockImplementation((...args) => lines.push(args.map(String).join(' ')));
 		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
 		try {
@@ -416,7 +422,9 @@ describe('logGitSourceOutcome', () => {
 
 	it('keeps the scaffold wording when the clone had already landed', () => {
 		const lines: string[] = [];
-		const errorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => lines.push(args.map(String).join(' ')));
+		const errorSpy = vi
+			.spyOn(console, 'error')
+			.mockImplementation((...args) => lines.push(args.map(String).join(' ')));
 		const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
 		try {
@@ -536,15 +544,18 @@ describe('enableAutomaticBuilds', () => {
 	// a fully connected account can still be refused — and the API's own message says which.
 	it('reports the API message when the provider refuses the webhook', async () => {
 		const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-			new Response(JSON.stringify({ error: { type: 'integration-auth', message: 'Repository admin required' } }), {
-				status: 403,
-			}) as never,
+			new Response(
+				JSON.stringify({ error: { type: 'integration-auth', message: 'Repository admin required' } }),
+				{
+					status: 403,
+				},
+			) as never,
 		);
 
 		try {
-			await expect(enableAutomaticBuilds({ client, providerId: 'integration-1', actorId: 'abc123' })).rejects.toThrow(
-				'Repository admin required',
-			);
+			await expect(
+				enableAutomaticBuilds({ client, providerId: 'integration-1', actorId: 'abc123' }),
+			).rejects.toThrow('Repository admin required');
 		} finally {
 			fetchMock.mockRestore();
 		}

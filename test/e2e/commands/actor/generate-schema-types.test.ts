@@ -38,7 +38,9 @@ describe('[e2e] actor generate-schema-types', () => {
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		expect(result.stderr).toContain('Generated types written to');
 
-		await expect(access(path.join(actor.dir, 'src', '__generated__', 'actor', 'input.ts'))).resolves.toBeUndefined();
+		await expect(
+			access(path.join(actor.dir, 'src', '__generated__', 'actor', 'input.ts')),
+		).resolves.toBeUndefined();
 	});
 
 	it('respects --output flag', async () => {

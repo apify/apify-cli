@@ -67,7 +67,10 @@ export async function getInputOverride(
 
 				if (Array.isArray(parsed)) {
 					error({
-						message: withSchemaHint('The provided input is invalid. It should be an object, not an array.', schemaHint),
+						message: withSchemaHint(
+							'The provided input is invalid. It should be an object, not an array.',
+							schemaHint,
+						),
 					});
 					process.exitCode = CommandExitCodes.InvalidInput;
 					return false;
@@ -92,7 +95,8 @@ export async function getInputOverride(
 		switch (inputFlag[0]) {
 			case '-': {
 				error({
-					message: 'You need to pipe something into standard input when you specify the `-` value to `--input`.',
+					message:
+						'You need to pipe something into standard input when you specify the `-` value to `--input`.',
 				});
 				process.exitCode = CommandExitCodes.InvalidInput;
 				return false;
@@ -154,7 +158,8 @@ export async function getInputOverride(
 		switch (inputFileFlag[0]) {
 			case '-': {
 				error({
-					message: 'You need to pipe something into standard input when you specify the `-` value to `--input-file`.',
+					message:
+						'You need to pipe something into standard input when you specify the `-` value to `--input-file`.',
 				});
 				process.exitCode = CommandExitCodes.InvalidInput;
 				return false;

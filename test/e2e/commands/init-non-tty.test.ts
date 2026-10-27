@@ -35,9 +35,10 @@ describe('[e2e] apify init with no usable stdin', () => {
 
 		const result = await runCliBounded('apify', ['init', '--yes'], { cwd });
 
-		expect(result.outputCapExceeded, `the prompt retried instead of failing once (${result.bytesWritten} bytes)`).toBe(
-			false,
-		);
+		expect(
+			result.outputCapExceeded,
+			`the prompt retried instead of failing once (${result.bytesWritten} bytes)`,
+		).toBe(false);
 		expect(result.timedOut, `stderr: ${result.stderr}`).toBe(false);
 		expect(result.exitCode, `stderr: ${result.stderr}`).toBe(0);
 		expect(result.stderr).toContain('The Actor has been initialized in the current directory.');
@@ -52,9 +53,10 @@ describe('[e2e] apify init with no usable stdin', () => {
 
 		const result = await runCliBounded('apify', ['init'], { cwd });
 
-		expect(result.outputCapExceeded, `the prompt retried instead of failing once (${result.bytesWritten} bytes)`).toBe(
-			false,
-		);
+		expect(
+			result.outputCapExceeded,
+			`the prompt retried instead of failing once (${result.bytesWritten} bytes)`,
+		).toBe(false);
 		expect(result.timedOut, `stderr: ${result.stderr}`).toBe(false);
 		expect(result.exitCode).not.toBe(0);
 		expect(countOccurrences(result.stderr, MissingNameError)).toBe(1);
@@ -70,9 +72,10 @@ describe('[e2e] apify init with no usable stdin', () => {
 
 		const result = await runCliBounded('apify', ['init'], { cwd });
 
-		expect(result.outputCapExceeded, `the prompt retried instead of failing once (${result.bytesWritten} bytes)`).toBe(
-			false,
-		);
+		expect(
+			result.outputCapExceeded,
+			`the prompt retried instead of failing once (${result.bytesWritten} bytes)`,
+		).toBe(false);
 		expect(result.timedOut, `stderr: ${result.stderr}`).toBe(false);
 		expect(result.exitCode).not.toBe(0);
 		expect(result.stderr).toContain('Confirmation is required to continue');

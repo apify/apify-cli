@@ -68,7 +68,10 @@ describe('local storage helpers', () => {
 
 		await purgeDefaultKeyValueStore('INPUT', 'TEMP_INPUT');
 
-		expect(readdirSync(joinPath(getLocalKeyValueStorePath())).sort()).toStrictEqual(['INPUT.json', 'TEMP_INPUT.json']);
+		expect(readdirSync(joinPath(getLocalKeyValueStorePath())).sort()).toStrictEqual([
+			'INPUT.json',
+			'TEMP_INPUT.json',
+		]);
 	});
 
 	it('deletes the default dataset', async () => {

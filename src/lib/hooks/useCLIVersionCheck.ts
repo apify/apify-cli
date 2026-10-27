@@ -110,7 +110,9 @@ export async function useCLIVersionCheck(force = false) {
 
 	const shouldFetchFromApi = force || (stateIsOutdated && (await isOnline()));
 
-	const latestVersion = shouldFetchFromApi ? await getLatestVersion(localState) : localState.versionCheck?.lastVersion;
+	const latestVersion = shouldFetchFromApi
+		? await getLatestVersion(localState)
+		: localState.versionCheck?.lastVersion;
 
 	if (!latestVersion) {
 		return {
