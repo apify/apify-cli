@@ -45,6 +45,7 @@ describe('resolveDockerContext', () => {
 			writeFileSync(joinPath('Dockerfile'), 'FROM apify/actor-node:20\n');
 			writeFileSync(joinPath(ACTOR_PATH, 'Dockerfile'), 'FROM apify/actor-node:20\n');
 			symlinkSync(ACTOR_PATH, joinPath('linked-actor'));
+			symlinkSync('../../shared', joinPath(ACTOR_PATH, 'sym'));
 			execFileSync('git', ['init', '--quiet'], { cwd: tmpPath, stdio: 'ignore' });
 			root = realpathSync(tmpPath);
 		});
@@ -105,6 +106,17 @@ describe('resolveDockerContext', () => {
 			expect(resolveDockerContext(joinPath('linked-actor'), '../../..')).toEqual({
 				kind: 'outside',
 				contextRoot: root,
+				sourceRoot: root,
+				actorPath: ACTOR_PATH,
+			});
+		});
+
+		it('judges the context by its path as written, as push uploads a symlink under its own name', () => {
+			// `sym` inside the Actor folder links to the shared folder outside it; push uploads it as a folder inside.
+			expect(resolveDockerContext(actorDir(), '../sym')).toMatchObject({ kind: 'within' });
+			// This path leaves the Actor folder through a link that leads back in; the upload has no such link.
+			expect(resolveDockerContext(actorDir(), '../../../linked-actor/src')).toMatchObject({
+				kind: 'outside',
 				sourceRoot: root,
 				actorPath: ACTOR_PATH,
 			});
