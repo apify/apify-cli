@@ -1,16 +1,19 @@
-import { type CheckboxChoice, checkboxImpl } from '../../utils/inquirer/checkboxImpl.js';
+import checkbox from '@inquirer/checkbox';
+
 import { promptContext, type StdinCheckWrapperInput, stdinCheckWrapper } from './_stdinCheckWrapper.js';
+
+export type MultiSelectChoicesType<T = unknown> = Parameters<typeof checkbox<T>>[0]['choices'];
 
 interface UseMultiSelectFromListInput<T> {
 	message: string;
-	choices: CheckboxChoice<T>[];
+	choices: MultiSelectChoicesType<T>;
 	pageSize?: number;
 	loop?: boolean;
 }
 
 export const useMultiSelectFromList = stdinCheckWrapper(
 	async ({ message, choices, pageSize, loop }: UseMultiSelectFromListInput<unknown>) => {
-		const result = await checkboxImpl({ message, choices, pageSize, loop }, promptContext);
+		const result = await checkbox({ message, choices, pageSize, loop }, promptContext);
 
 		return result;
 	},
