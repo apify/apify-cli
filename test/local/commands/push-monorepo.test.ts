@@ -278,6 +278,22 @@ describe('apify push of a monorepo Actor', () => {
 		expect(linked?.content).toContain('"title":"Input"');
 	});
 
+	it('accepts a Dockerfile in a Docker context reached through a symlink inside the repository', async () => {
+		// `context-link` links to the shared folder; the upload carries it as a normal folder under the link's name.
+		symlinkSync('shared', joinPath('context-link'));
+		await writeActorConfig({
+			dockerContextDir: '../../../context-link',
+			dockerfile: '../../../context-link/TypeScript_Dockerfile',
+		});
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toContain('context-link/TypeScript_Dockerfile');
+	});
+
 	it('rejects a schema reached through a symlink leaving the repository, which the upload leaves out', async () => {
 		await writeFile(outside.joinPath('input_schema.json'), '{}');
 		symlinkSync(outside.joinPath('input_schema.json'), joinPath(`${ACTOR_PATH}/.actor/input_schema.json`));
