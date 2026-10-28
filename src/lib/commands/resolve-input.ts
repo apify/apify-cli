@@ -89,7 +89,7 @@ export async function getInputOverride(
 				// Standard input is only waited on for as long as it keeps talking, so a writer that stalls
 				// mid-payload leaves behind JSON that ends nowhere. Say so, or the message blames the data.
 				const cutShortHint = stdinWasCutShort()
-					? '\nStandard input went quiet before it closed, so only part of it was read. Use `--input-file=-` to wait for all of it.'
+					? '\nStandard input was still open when the CLI stopped waiting for it. If the input is incomplete, use `--input-file=-` to wait for all of it.'
 					: '';
 
 				error({
