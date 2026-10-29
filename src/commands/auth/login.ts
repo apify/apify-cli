@@ -26,18 +26,22 @@ import { type AuthorizationServerMetadata, fetchAuthorizationServerMetadata } fr
 import { saveOAuthSession } from '../../lib/oauth/session.js';
 import type { TokenResponse } from '../../lib/oauth/token-endpoint.js';
 import { error, info, success, warning } from '../../lib/outputs.js';
+import { runtimeApiUrl } from '../../lib/runtime/docker.js';
+import { configuredRuntimePorts, resolveApiBaseUrl } from '../../lib/runtime/target.js';
 import type { AuthJSON } from '../../lib/types.js';
 import { tildify } from '../../lib/utils.js';
 import { cliDebugPrint } from '../../lib/utils/cliDebugPrint.js';
 
-// When logging in against a local Console instance (local platform development), validate the token
-// against the local API rather than production.
-const LOCAL_API_BASE_URL = 'http://localhost:3333';
-
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
-const getApiBaseUrlForLogin = () => (getConsoleUrl().includes('localhost') ? LOCAL_API_BASE_URL : undefined);
+/** A local Console (a hand-started runtime, or local platform development) means the local API. */
+export function resolveLoginApiBaseUrl(): string | undefined {
+	const explicit = resolveApiBaseUrl();
+	if (explicit) return explicit;
+
+	return getConsoleUrl().includes('localhost') ? runtimeApiUrl(configuredRuntimePorts().api) : undefined;
+}
 
 const describeTokenLocation = async (userId: string) => {
 	const backend = await backendFor(userId);
@@ -70,7 +74,7 @@ const reportLoginSuccess = async (userInfo: AuthJSON, { refreshes }: { refreshes
 
 /** Logs in with a plain API token. `loginWithToken` drops any OAuth session so stale refresh state cannot outlive the token switch. */
 const tryToLogin = async (token: string) => {
-	const result = await loginWithToken(token, getApiBaseUrlForLogin());
+	const result = await loginWithToken(token, resolveLoginApiBaseUrl());
 
 	if (result) {
 		await reportLoginSuccess(result.userInfo, { refreshes: false });
@@ -286,7 +290,7 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 
 	private async finishOAuthLogin(tokens: TokenResponse, metadata: AuthorizationServerMetadata, clientId: string) {
 		// `loginWithToken` replaces auth.json wholesale, so the session must be saved after it, not before.
-		const result = await loginWithToken(tokens.access_token, getApiBaseUrlForLogin());
+		const result = await loginWithToken(tokens.access_token, resolveLoginApiBaseUrl());
 
 		if (!result) {
 			error({ message: 'Login to Apify failed, the token issued by Apify Console was not accepted by the Apify API.' });

@@ -26,6 +26,7 @@ import {
 } from './credentials.js';
 import { clearOAuthSession, getAccessToken } from './oauth/session.js';
 import { warning } from './outputs.js';
+import { resolveApiBaseUrl } from './runtime/target.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -227,7 +228,7 @@ type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } 
 
 /** Base URL and headers, with no token and so no credential lookup. */
 export const getAnonymousApifyClientOptions = (apiBaseUrl?: string): ApifyClientOptions => ({
-	baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
+	baseUrl: apiBaseUrl || resolveApiBaseUrl(),
 	requestInterceptors: [
 		(config) => {
 			config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;

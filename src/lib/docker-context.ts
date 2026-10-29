@@ -1,6 +1,5 @@
 // The Docker context of an Actor: where `dockerContextDir` in `.actor/actor.json` points and what a push of it
-// would carry. `readGitState` and `getContextFilePaths` have no caller in `apify push` yet; they serve the
-// stage 2 upload of the context and the `actor-runtime` branch.
+// would carry.
 import { execFileSync } from 'node:child_process';
 import { lstatSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -201,6 +200,6 @@ export function monorepoUnsupportedMessage(actorName: string): string {
 		`Actor ${actorName} sets "dockerContextDir" in .actor/actor.json, so it builds from a Docker context outside its own folder (a monorepo Actor).`,
 		'apify push does not support such Actors on the Apify platform yet. Follow the progress at:',
 		`  ${MONOREPO_PLATFORM_SUPPORT_ISSUE_URL}`,
-		`Until then, set the Actor's source in Apify Console to the Git repository with the folder (<repository URL>#<branch>:<folder>).`,
+		`Until then, set the Actor's source in Apify Console to the Git repository with the folder (<repository URL>#<branch>:<folder>), or push to a local Actor runtime ('apify runtime connect').`,
 	].join('\n');
 }
