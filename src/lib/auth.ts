@@ -22,9 +22,9 @@ import {
 	describeLeftovers,
 	ensureCredentialsCurrent,
 	ensureMigrated,
-	getSecret,
 	setSecret,
 } from './credentials.js';
+import { clearOAuthSession, getAccessToken } from './oauth/session.js';
 import { warning } from './outputs.js';
 import { resolveApiBaseUrl } from './runtime/target.js';
 import type { AuthJSON } from './types.js';
@@ -139,8 +139,8 @@ export async function selectProfile(nameOrId: string): Promise<void> {
  * Single-flighted like `getBackend()`, because several callers resolve per command and reading
  * the stored token is an uncached OS keyring hit.
  *
- * Read-only by contract, apart from the one-shot migration of an existing plaintext auth.json.
- * Only `apify login` writes credentials, through {@link loginWithToken}.
+ * Read-only by contract, apart from the credential migrations and the refresh of an expiring OAuth
+ * access token. Only `apify login` writes credentials, through {@link loginWithToken}.
  *
  * Throws when `APIFY_TOKEN` holds a placeholder value.
  */
@@ -167,7 +167,7 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 		await ensureCredentialsCurrent();
 
 		if (selectedProfile) {
-			const token = await getSecret(selectedProfile.id, 'token');
+			const token = await getAccessToken(selectedProfile.id);
 			if (!token) {
 				process.exitCode = CommandExitCodes.MissingAuth;
 				throw new Error(missingProfileTokenMessage(selectedProfile));
@@ -177,7 +177,7 @@ export const resolveAuth = async (): Promise<ResolvedAuth | undefined> => {
 		}
 
 		const userId = getActiveProfileId();
-		const storedToken = userId ? await getSecret(userId, 'token') : undefined;
+		const storedToken = userId ? await getAccessToken(userId) : undefined;
 		if (!storedToken) return undefined;
 
 		const profile = getActiveProfile();
@@ -248,7 +248,10 @@ export const getApifyClientOptionsForToken = (token: string, apiBaseUrl?: string
 	token,
 });
 
-/** The only credential writer in the CLI. Returns `null` when the token is rejected, writing nothing. */
+/**
+ * The only credential writer in the CLI. Returns `null` when the token is rejected, writing nothing.
+ * Any OAuth session of the account is dropped; an OAuth login saves its new session right after.
+ */
 export async function loginWithToken(
 	token: string,
 	apiBaseUrl?: string,
@@ -286,6 +289,8 @@ export async function loginWithToken(
 	// Only once the profile is on disk: a failed write leaves the previous account active, and it may
 	// still read the fixed names. Its keyed entries stay, because that account is still stored.
 	const leftovers = await clearKeyringSecrets();
+
+	await clearOAuthSession(userInfo.id);
 
 	// After the profile, which says where its secrets go. `skipIfUnchanged` avoids a Keychain prompt.
 	await setSecret(userInfo.id, 'token', token, { skipIfUnchanged: true });

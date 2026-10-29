@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { runUrl } from '../../../src/lib/commands/run-result.js';
+import { consoleRunUrl } from '../../../src/lib/commands/agent-output.js';
 import { getConsoleUrl } from '../../../src/lib/console-url.js';
 import { ACTOR_RUNTIME_CONFIG_FILE_PATH } from '../../../src/lib/consts.js';
 import { updateActorRuntimeConfig } from '../../../src/lib/runtime/config.js';
@@ -54,7 +54,7 @@ describe('runtime/target', () => {
 		expect(configuredRuntimePorts()).toEqual({ api: 4333, console: 4000 });
 		expect(resolveApiBaseUrl({})).toBe('http://localhost:4333');
 		expect(resolveConsoleUrl({})).toBe('http://localhost:4000');
-		expect(runUrl('actor', 'run')).toBe('http://localhost:4000/actors/actor/runs/run');
+		expect(consoleRunUrl('actor', 'run')).toBe('http://localhost:4000/actors/actor/runs/run');
 		expect(getConsoleUrl()).toBe('http://localhost:4000');
 	});
 

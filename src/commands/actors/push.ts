@@ -1,24 +1,26 @@
 import { readFileSync, statSync, unlinkSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { basename, join, resolve } from 'node:path';
 import process from 'node:process';
 
-import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyClient } from 'apify-client';
+import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyClient, Build } from 'apify-client';
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
-import {
-	ACTOR_JOB_STATUSES,
-	ACTOR_JOB_TERMINAL_STATUSES,
-	ACTOR_SOURCE_TYPES,
-	MAX_MULTIFILE_BYTES,
-} from '@apify/consts';
+import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
+import { isTerminalStatus } from '../../lib/commands/agent-output.js';
 import { getConsoleUrl } from '../../lib/console-url.js';
 import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import {
+	getContextFilePaths,
+	monorepoUnsupportedMessage,
+	readGitState,
+	resolveDockerContext,
+} from '../../lib/docker-context.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
@@ -27,12 +29,8 @@ import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { mayTargetActorRuntime, registerActorRuntimeDevFolder } from '../../lib/runtime/dev-folder.js';
 import {
 	createContextTarball,
-	getContextFilePaths,
 	monorepoOutdatedRuntimeMessage,
-	monorepoUnsupportedMessage,
 	pushActorRuntimeSourceContext,
-	readGitProvenance,
-	resolveDockerContext,
 } from '../../lib/runtime/source-context.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
@@ -300,21 +298,22 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		// A monorepo Actor pushes its whole repository.
+		// A monorepo Actor builds from a Docker context above its folder, which a push of that folder cannot carry.
 		const dockerContext = resolveDockerContext(cwd, actorConfig?.dockerContextDir);
 		if (dockerContext.kind === 'invalid') {
 			error({ message: dockerContext.message });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
-		if (dockerContext.kind === 'context' && !mayTargetActorRuntime(apifyClient)) {
-			error({ message: monorepoUnsupportedMessage(actorConfig!.name as string) });
+		if (dockerContext.kind === 'outside' && !mayTargetActorRuntime(apifyClient)) {
+			// Pushing by ID, actor.json may have no name; the folder then names the Actor.
+			error({ message: monorepoUnsupportedMessage((actorConfig?.name as string | undefined) ?? basename(cwd)) });
 			process.exitCode = CommandExitCodes.NotImplemented;
 			return;
 		}
-		const sourceRoot = dockerContext.kind === 'context' ? dockerContext.sourceRoot : cwd;
+		const sourceRoot = dockerContext.kind === 'outside' ? dockerContext.sourceRoot : cwd;
 		const sourcePaths =
-			dockerContext.kind === 'context' ? await getContextFilePaths(dockerContext.sourceRoot) : filePathsToPush;
+			dockerContext.kind === 'outside' ? await getContextFilePaths(dockerContext.sourceRoot) : filePathsToPush;
 
 		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
@@ -393,7 +392,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
-		const filesSize = dockerContext.kind === 'context' ? 0 : await sumFilesSizeInBytes(sourcePaths, sourceRoot);
+		const filesSize = dockerContext.kind === 'outside' ? 0 : await sumFilesSizeInBytes(sourcePaths, sourceRoot);
 
 		if (filesSize < MAX_MULTIFILE_BYTES && !isActorCreatedNow) {
 			const client = await actorClient.get();
@@ -442,7 +441,7 @@ Skipping push. Use --force to override.`,
 		let sourceType;
 		let sourceFiles;
 		let tarballUrl;
-		if (dockerContext.kind === 'context') {
+		if (dockerContext.kind === 'outside') {
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else if (filesSize < MAX_MULTIFILE_BYTES) {
 			sourceFiles = await createSourceFiles(filePathsToPush, cwd);
@@ -497,11 +496,11 @@ Skipping push. Use --force to override.`,
 
 		// Pushed before the version update, so a runtime that refuses it leaves the version untouched.
 		const pushDockerContext = async () => {
-			if (dockerContext.kind !== 'context') return true;
+			if (dockerContext.kind !== 'outside') return true;
 			run({
 				message: `Pushing ${sourceRoot} (${sourcePaths.length} files) with the Actor in ${dockerContext.actorPath}; the build takes its Docker context ${dockerContext.contextRoot} from it.`,
 			});
-			const gitProvenance = readGitProvenance(sourceRoot);
+			const gitProvenance = readGitState(sourceRoot);
 			if (gitProvenance.dirty) {
 				warning({
 					message:
@@ -568,7 +567,7 @@ Skipping push. Use --force to override.`,
 			apifyClient,
 			actorId,
 			actor.name,
-			dockerContext.kind === 'context' ? dockerContext.contextRoot : cwd,
+			dockerContext.kind === 'outside' ? dockerContext.contextRoot : cwd,
 		);
 
 		// Build Actor on Apify and wait for build to finish
@@ -577,7 +576,7 @@ Skipping push. Use --force to override.`,
 		// share one budget. Without this, a log stream that dies near the cap
 		// would let the poll loop wait another full --wait-for-finish on top.
 		const deadline = waitForFinishMillis === undefined ? Infinity : Date.now() + waitForFinishMillis;
-		let build = await actorClient.build(version, {
+		let build: Build | undefined = await actorClient.build(version, {
 			useCache: true,
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
 		});
@@ -587,7 +586,7 @@ Skipping push. Use --force to override.`,
 		// build doesn't keep running after the user gives up waiting.
 		using _signalHandler = useAbortJobOnSignal({
 			apifyClient,
-			kind: 'build',
+			kind: ACTOR_JOB_TYPES.BUILD,
 			jobId: build.id,
 		});
 
@@ -599,18 +598,18 @@ Skipping push. Use --force to override.`,
 			console.error(err);
 		}
 
-		const refreshedBuild = await apifyClient.build(build.id).get();
-		if (!refreshedBuild) {
-			error({ message: `Could not fetch build with ID "${build.id}" after deployment.` });
+		const buildId = build.id;
+		build = await apifyClient.build(buildId).get();
+		if (!build) {
+			error({ message: `Could not fetch build with ID "${buildId}" after deployment.` });
 			process.exitCode = CommandExitCodes.BuildFailed;
 			return;
 		}
-		build = refreshedBuild;
 
 		// `outputJobLog` can return before the build is actually terminal (stream
 		// ended early, timeout hit). Poll the remaining budget so the status
 		// branches below see the real outcome.
-		while (!ACTOR_JOB_TERMINAL_STATUSES.includes(build.status as never) && Date.now() < deadline) {
+		while (!isTerminalStatus(build.status) && Date.now() < deadline) {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 			build = (await apifyClient.build(build.id).get())!;
 		}
@@ -643,7 +642,7 @@ Skipping push. Use --force to override.`,
 		const outcome = resolvePushOutcome(buildStatus);
 
 		const actorUrl = `${getConsoleUrl()}${redirectUrlPart}/actors/${build.actId}`;
-		const buildUrl = `${actorUrl}#/builds/${build.buildNumber}`;
+		const buildUrl = `${actorUrl}/builds/${build.buildNumber}`;
 
 		// Surface the tail of the build log as the failure reason. Best-effort:
 		// the build status already conveys the outcome if the log can't be read.

@@ -9,7 +9,7 @@ export class AuthIndexCommand extends ApifyCommand<typeof AuthIndexCommand> {
 	static override name = 'auth' as const;
 
 	static override description =
-		'Log in, log out, switch between stored accounts, and inspect your stored Apify API token. Also available as `apify login` / `apify logout`.';
+		'Log in, log out, switch between stored accounts, and inspect your stored Apify API token. Also available as `apify login` and `apify logout`.';
 
 	static override group = 'Authentication';
 

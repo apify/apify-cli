@@ -11,6 +11,7 @@ import { __resetAuthForTests } from '../../../src/lib/auth.js';
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { GLOBAL_CONFIGS_FOLDER } from '../../../src/lib/consts.js';
 import { __resetCredentialsForTests } from '../../../src/lib/credentials.js';
+import { __resetOAuthSessionForTests } from '../../../src/lib/oauth/session.js';
 import { __resetUserInfoCacheForTests, getLocalUserInfo } from '../../../src/lib/utils.js';
 
 /**
@@ -22,6 +23,7 @@ function resetAuthCaches() {
 	__resetUserInfoCacheForTests();
 	__resetAuthForTests();
 	__resetAuthFileForTests();
+	__resetOAuthSessionForTests();
 }
 
 export interface UseAuthSetupOptions {

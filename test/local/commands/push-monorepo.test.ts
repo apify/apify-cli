@@ -7,8 +7,8 @@ import { ACTOR_SOURCE_TYPES } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { CommandExitCodes } from '../../../src/lib/consts.js';
+import { MONOREPO_PLATFORM_SUPPORT_ISSUE_URL } from '../../../src/lib/docker-context.js';
 import { cwdCache } from '../../../src/lib/hooks/useActorConfig.js';
-import { MONOREPO_PLATFORM_SUPPORT_ISSUE_URL } from '../../../src/lib/runtime/source-context.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
@@ -21,6 +21,7 @@ const CLOUD_BASE_URL = 'https://api.apify.com/v2';
 const actor = {
 	id: ACTOR_ID,
 	name: actName,
+	// Older than any local file, so the "modified on the platform" check never trips.
 	modifiedAt: new Date(0),
 	taggedBuilds: { latest: { buildId: 'build1' } },
 };
@@ -35,6 +36,7 @@ const versionCreates: unknown[] = [];
 const versionDeletes = vitest.fn(async () => {});
 const actorDeletes = vitest.fn(async () => {});
 const actorGets = vitest.fn(async () => actor);
+const keyValueStoreGetOrCreate = vitest.fn(async () => ({ id: 'store1' }));
 
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../../src/lib/utils.js')>()),
@@ -62,6 +64,7 @@ vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 			}),
 			build: async () => build,
 		}),
+		keyValueStores: () => ({ getOrCreate: keyValueStoreGetOrCreate }),
 		build: () => ({ get: async () => build }),
 	})),
 }));
@@ -140,14 +143,24 @@ async function write(relativePath: string, content: string) {
 	await writeFile(joinPath(relativePath), content);
 }
 
+async function writeActorConfig(fields: Record<string, unknown>) {
+	await write(
+		`${ACTOR_PATH}/.actor/actor.json`,
+		JSON.stringify({ actorSpecification: 1, name: actName, version: '0.0', buildTag: 'latest', ...fields }),
+	);
+}
+
 function git(...args: string[]) {
 	execFileSync('git', args, { cwd: tmpPath, stdio: 'ignore' });
 }
 
+// The command sets its exit code on the mocked copy, but the framework records a thrown error on the real `process`.
 let originalExitCode: typeof process.exitCode;
+let originalRealExitCode: typeof process.exitCode;
 
 beforeEach(async () => {
 	originalExitCode = commandProcess.exitCode;
+	originalRealExitCode = process.exitCode;
 	baseUrl = RUNTIME_BASE_URL;
 	sourceContextResponse = undefined;
 	versionUpdates.length = 0;
@@ -156,6 +169,7 @@ beforeEach(async () => {
 	versionDeletes.mockClear();
 	actorDeletes.mockClear();
 	actorGets.mockClear();
+	keyValueStoreGetOrCreate.mockClear();
 	cwdCache.clear();
 	fetchMock.mockClear();
 	vitest.stubGlobal('fetch', fetchMock);
@@ -167,17 +181,7 @@ beforeEach(async () => {
 	await write('shared/TypeScript_Dockerfile', 'FROM apify/actor-node:20\n');
 	await write('packages/typescript-utils/src/index.ts', 'export const x = 1;\n');
 	await write('node_modules/ignored/index.js', '');
-	await write(
-		`${ACTOR_PATH}/.actor/actor.json`,
-		JSON.stringify({
-			actorSpecification: 1,
-			name: actName,
-			version: '0.0',
-			buildTag: 'latest',
-			dockerContextDir: '../../..',
-			dockerfile: '../../../shared/TypeScript_Dockerfile',
-		}),
-	);
+	await writeActorConfig({ dockerContextDir: '../../..', dockerfile: '../../../shared/TypeScript_Dockerfile' });
 	await write(`${ACTOR_PATH}/src/index.ts`, 'console.log(1);\n');
 	git('init', '--quiet', '--initial-branch=main');
 	git('remote', 'add', 'origin', 'https://someone:secret-token@github.com/acme/monorepo.git');
@@ -190,6 +194,7 @@ beforeEach(async () => {
 afterEach(async () => {
 	vitest.unstubAllGlobals();
 	commandProcess.exitCode = originalExitCode;
+	process.exitCode = originalRealExitCode;
 	await afterAllCalls();
 });
 
@@ -302,19 +307,6 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 		expect(logMessages.error.join('\n')).toContain('changes that are not committed');
 	});
 
-	it('rejects a dockerContextDir outside the Git repository, which the platform could not build', async () => {
-		await write(
-			`${ACTOR_PATH}/.actor/actor.json`,
-			JSON.stringify({ actorSpecification: 1, name: actName, version: '0.0', dockerContextDir: '../../../..' }),
-		);
-
-		await testRunCommand(ActorsPushCommand, {});
-
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
-		expect(logMessages.error.join('\n')).toContain('outside the Git repository');
-		expect(fetchMock).not.toHaveBeenCalled();
-	});
-
 	it('pushes the whole repository, like a clone, when the Docker context is only part of it', async () => {
 		await write(
 			`${ACTOR_PATH}/.actor/actor.json`,
@@ -341,17 +333,80 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 });
 
 describe('apify push of a monorepo Actor to the Apify platform', () => {
-	it('stops before touching the platform, pointing at the tracking issue', async () => {
+	beforeEach(() => {
 		baseUrl = CLOUD_BASE_URL;
+	});
 
+	it('stops before touching the platform, pointing at the tracking issue', async () => {
 		await testRunCommand(ActorsPushCommand, {});
 
 		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
-		const errors = logMessages.error.join('\n');
-		expect(errors).toContain('does not support such Actors on the Apify platform yet');
-		expect(errors).toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toContain(
+			`Actor ${actName} sets "dockerContextDir" in .actor/actor.json, so it builds from a Docker context outside its own folder (a monorepo Actor).`,
+		);
+		expect(stderr).toContain('apify push does not support such Actors on the Apify platform yet');
+		expect(stderr).toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
+		expect(stderr).toContain("set the Actor's source in Apify Console to the Git repository with the folder");
+		expect(actorGets).not.toHaveBeenCalled();
+		expect(versionCreates).toEqual([]);
+		expect(versionUpdates).toEqual([]);
+		expect(keyValueStoreGetOrCreate).not.toHaveBeenCalled();
+		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it('keeps stdout clean with --json', async () => {
+		await testRunCommand(ActorsPushCommand, { flags_json: true });
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
+		expect(logMessages.log).toEqual([]);
+		expect(logMessages.error.join('\n')).toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
+		expect(versionUpdates).toEqual([]);
+	});
+
+	it('names the Actor folder when actor.json has no name', async () => {
+		await writeActorConfig({ name: undefined, dockerContextDir: '../../..' });
+
+		await testRunCommand(ActorsPushCommand, { args_actorId: ACTOR_ID });
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
+		expect(logMessages.error.join('\n')).toContain('Actor typescript-actor sets "dockerContextDir"');
+		expect(actorGets).not.toHaveBeenCalled();
+	});
+});
+
+describe('apify push with a dockerContextDir that is not a monorepo', () => {
+	it.each([
+		['outside the Git repository, which the platform could not build', '../../../..', 'outside the Git repository'],
+		['that does not exist', '../../../missing', 'which does not exist'],
+		['that is not a string', 42, 'must be a string'],
+	])('rejects a dockerContextDir %s as an invalid actor.json', async (_, dockerContextDir, message) => {
+		await writeActorConfig({ dockerContextDir });
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		expect(logMessages.error.join('\n')).toContain(message);
 		expect(actorGets).not.toHaveBeenCalled();
 		expect(versionUpdates).toEqual([]);
 		expect(fetchMock).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		['lies inside it', { dockerContextDir: '../src' }],
+		['is not set', {}],
+	])('pushes the Actor folder as usual when the Docker context %s', async (_, fields) => {
+		await writeActorConfig(fields);
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(process.exitCode).toBeFalsy();
+		expect(versionUpdates).toHaveLength(1);
+		const modifier = versionUpdates[0] as { sourceType: string; sourceFiles: { name: string }[] };
+		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.SOURCE_FILES);
+		expect(modifier.sourceFiles.map((file) => file.name).sort()).toEqual(['.actor/actor.json', 'src/index.ts']);
+		expect(callsTo('source-context')).toEqual([]);
+		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 	});
 });

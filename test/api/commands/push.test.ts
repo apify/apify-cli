@@ -18,8 +18,8 @@ import { useUniqueId } from '../../__setup__/hooks/useUniqueId.js';
 import { resetCwdCaches } from '../../__setup__/reset-cwd-caches.js';
 
 const ACTOR_NAME = useUniqueId('cli-push');
+// No name here: each create needs a unique one, or an Actor left behind by a failed test breaks every later create.
 const TEST_ACTOR: ActorCollectionCreateOptions = {
-	name: ACTOR_NAME,
 	isPublic: false,
 	versions: [
 		{
@@ -131,7 +131,10 @@ describe('[api] apify push', () => {
 	it(
 		'should work with actorId',
 		async () => {
-			let testActor = await testUserClient.actors().create(TEST_ACTOR);
+			let testActor = await testUserClient
+				.actors()
+				.create({ ...TEST_ACTOR, name: useUniqueId('cli-push-with-actor-id') });
+			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 
@@ -140,8 +143,6 @@ describe('[api] apify push', () => {
 				flags_noPrompt: true,
 				flags_force: true,
 			});
-
-			actorsForCleanup.add(testActor.id);
 
 			testActor = (await testActorClient.get())!;
 			const testActorVersion = await testActorClient.version(actorJson!.version).get();
@@ -189,7 +190,9 @@ describe('[api] apify push', () => {
 					],
 				},
 			];
-			let testActor = await testUserClient.actors().create(testActorWithEnvVars);
+			let testActor = await testUserClient
+				.actors()
+				.create({ ...testActorWithEnvVars, name: useUniqueId('cli-push-keep-env-vars') });
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
 
@@ -218,7 +221,9 @@ describe('[api] apify push', () => {
 	it(
 		'should set applyEnvVarsToBuild when the flag is passed and keep it when omitted',
 		async () => {
-			const testActor = await testUserClient.actors().create(TEST_ACTOR);
+			const testActor = await testUserClient
+				.actors()
+				.create({ ...TEST_ACTOR, name: useUniqueId('cli-push-apply-env-vars-flag') });
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
@@ -264,7 +269,9 @@ describe('[api] apify push', () => {
 	it(
 		'should read applyEnvVarsToBuild from actor.json, with the flag taking precedence',
 		async () => {
-			const testActor = await testUserClient.actors().create(TEST_ACTOR);
+			const testActor = await testUserClient
+				.actors()
+				.create({ ...TEST_ACTOR, name: useUniqueId('cli-push-apply-env-vars-json') });
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
@@ -349,7 +356,9 @@ describe('[api] apify push', () => {
 					],
 				},
 			];
-			let testActor = await testUserClient.actors().create(testActorWithEnvVars);
+			let testActor = await testUserClient
+				.actors()
+				.create({ ...testActorWithEnvVars, name: useUniqueId('cli-push-zip-upload') });
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
@@ -429,7 +438,9 @@ describe('[api] apify push', () => {
 	it(
 		'should not push Actor when there is newer version on platform',
 		async () => {
-			const testActor = await testUserClient.actors().create(TEST_ACTOR);
+			const testActor = await testUserClient
+				.actors()
+				.create({ ...TEST_ACTOR, name: useUniqueId('cli-push-newer-version') });
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
 			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
@@ -479,7 +490,9 @@ describe('[api] apify push', () => {
 				title: 'Original Title',
 				description: 'Original description.',
 			};
-			let testActor = await testUserClient.actors().create(testActorWithTitleDesc);
+			let testActor = await testUserClient
+				.actors()
+				.create({ ...testActorWithTitleDesc, name: useUniqueId('cli-push-keep-title-desc') });
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
 
@@ -542,11 +555,9 @@ describe('[api] apify push', () => {
 		'should sync standby mode on existing actor based on usesStandbyMode in actor.json',
 		async () => {
 			// Create an actor without standby mode first
-			const testActorWithTitleDesc = {
-				...TEST_ACTOR,
-				name: `${TEST_ACTOR.name}-standBy-rewrite-test`,
-			};
-			const testActor = await testUserClient.actors().create(testActorWithTitleDesc);
+			const testActor = await testUserClient
+				.actors()
+				.create({ ...TEST_ACTOR, name: useUniqueId('cli-push-standby-rewrite') });
 			actorsForCleanup.add(testActor.id);
 			const testActorClient = testUserClient.actor(testActor.id);
 
