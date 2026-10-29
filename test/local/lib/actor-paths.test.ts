@@ -271,6 +271,100 @@ describe('checkActorPaths', () => {
 	});
 });
 
+describe('checkActorPaths without dockerfile', () => {
+	const { tmpPath, beforeAllCalls, afterAllCalls } = useTempPath('actor-paths-default-dockerfile-test-dir', {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	let root: string;
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+		root = realpathSync(tmpPath);
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	// A fresh Actor folder with the given files, checked as push checks it: the folder is the upload root.
+	const checkActor = async (
+		name: string,
+		files: string[],
+		dockerContextDir: string | undefined,
+		config: Record<string, unknown> = {},
+	) => {
+		const actorDir = join(root, name);
+		for (const file of ['.actor/actor.json', ...files]) {
+			mkdirSync(dirname(join(actorDir, file)), { recursive: true });
+			writeFileSync(join(actorDir, file), 'FROM apify/actor-node:20\n');
+		}
+		const dockerContext = resolveDockerContext(actorDir, dockerContextDir);
+		const problems = checkActorPaths({
+			actorDir,
+			uploadRoot: actorDir,
+			uploadedFiles: await getActorLocalFilePaths(actorDir),
+			config: { dockerContextDir, ...config },
+			dockerContextRoot: dockerContext.kind === 'within' ? dockerContext.contextRoot : undefined,
+		});
+		return { actorDir, problems };
+	};
+
+	it('rejects a default Dockerfile outside the Docker context', async () => {
+		const { actorDir, problems } = await checkActor('outside', ['Dockerfile', 'docker/Dockerfile'], '../docker');
+
+		expect(problems).toEqual([
+			{
+				field: 'dockerfile',
+				value: '',
+				resolvedPath: join(actorDir, 'Dockerfile'),
+				reason: `is not set, so the platform would use the default ${join(actorDir, 'Dockerfile')}, which lies outside the Docker context ${join(actorDir, 'docker')}`,
+			},
+		]);
+	});
+
+	it('rejects the built-in Dockerfile in a Docker context other than the Actor folder', async () => {
+		const { actorDir, problems } = await checkActor('built-in', ['docker/Dockerfile'], '../docker');
+
+		expect(problems).toEqual([
+			{
+				field: 'dockerfile',
+				value: '',
+				resolvedPath: join(actorDir, 'docker', 'Dockerfile'),
+				reason: expect.stringContaining(
+					`so the platform would build the Docker context ${join(actorDir, 'docker')} with its built-in Node.js Dockerfile`,
+				),
+			},
+		]);
+	});
+
+	it('accepts the built-in Dockerfile when the Docker context is the Actor folder', async () => {
+		expect((await checkActor('actor-context', ['src/main.js'], '..')).problems).toEqual([]);
+	});
+
+	it('does nothing without a Docker context', async () => {
+		expect((await checkActor('no-context', ['src/main.js'], undefined)).problems).toEqual([]);
+		expect((await checkActor('no-context-outside', ['Dockerfile', 'docker/Dockerfile'], undefined)).problems).toEqual(
+			[],
+		);
+	});
+
+	it('accepts a default .actor/Dockerfile inside the Docker context, found by any case and before Dockerfile', async () => {
+		expect((await checkActor('in-actor-folder', ['.actor/dockerfile', 'Dockerfile'], '.')).problems).toEqual([]);
+	});
+
+	it('leaves a set dockerfile to the usual rules', async () => {
+		const { problems } = await checkActor('set', ['Dockerfile', 'docker/Dockerfile'], '../docker', {
+			dockerfile: '../docker/Dockerfile',
+		});
+
+		expect(problems).toEqual([]);
+	});
+});
+
 describe('formatActorPathProblems', () => {
 	it('lists every problem with its field, value, resolved path and reason', () => {
 		const message = formatActorPathProblems([
