@@ -1986,9 +1986,8 @@ FLAGS
       --tools=<value>  Comma-separated tool IDs or Actor full names
                        to expose. Forwarded as a '?tools=' query parameter.
       --url=<value>    Apify MCP server URL.
-  -y, --yes            Answer the confirmation prompts with
-                       yes: overwrite an existing 'apify' entry, and write a token
-                       that's about to expire.
+  -y, --yes            Overwrite an existing 'apify' entry, and
+                       accept a token that's about to expire, without prompting.
 ```
 <!-- mcp-commands-end -->
 <!-- prettier-ignore-end -->

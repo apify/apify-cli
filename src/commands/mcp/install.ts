@@ -53,12 +53,10 @@ async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<b
 			`Pass --token with an API token from Apify Console (${tokensUrl}) to configure a client that keeps working.`,
 	});
 
-	// `--yes` has to answer this prompt even on a TTY, where `useYesNoConfirm` would otherwise ask anyway.
-	if (yes) return true;
-
 	return useYesNoConfirm({
 		message: 'Write the expiring token to the client config anyway?',
 		default: false,
+		providedConfirmFromStdin: yes || undefined,
 		errorMessageForStdin: `The token from 'apify login' ${expiry}. Re-run with --token <api-token>, or with --yes to write the expiring token anyway.`,
 	});
 }
@@ -73,7 +71,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts before overwriting an existing JSON config entry (cursor, kiro, antigravity), and before writing a token that expires within the hour. Pass --yes to confirm without prompting. For clients delegated to their own CLI (claude-code, vscode, vscode-insiders, codex), overwrite behavior is controlled by that CLI.';
+		'Prompts before overwriting an existing JSON config entry (cursor, kiro, antigravity), and before embedding a token that expires within the hour. Pass --yes to confirm without prompting. For clients delegated to their own CLI (claude-code, vscode, vscode-insiders, codex), overwrite behavior is controlled by that CLI.';
 
 	static override examples = [
 		{
@@ -104,9 +102,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	};
 
 	static override flags = {
-		...YesFlag(
-			`Answer the confirmation prompts with yes: overwrite an existing 'apify' entry, and write a token that's about to expire.`,
-		),
+		...YesFlag(`Overwrite an existing 'apify' entry, and accept a token that's about to expire, without prompting.`),
 		token: Flags.string({
 			char: 't',
 			description: `Apify API token to embed in the config. Defaults to APIFY_TOKEN, then the token from 'apify login'. A token from an OAuth 'apify login' expires after about an hour, so pass a long-lived one from Apify Console.`,
