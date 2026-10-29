@@ -2,8 +2,11 @@ import { once } from 'node:events';
 
 import { useStdin } from '../hooks/useStdin.js';
 
-/** Long enough for a writer that has to fetch its next bytes, short enough not to look like a hang. */
-const IMPLICIT_STDIN_IDLE_TIMEOUT_MILLIS = 2_000;
+/** A first byte can wait on a cold API or a big file, so give it room before giving up. */
+const IMPLICIT_STDIN_FIRST_BYTE_TIMEOUT_MILLIS = 5_000;
+
+/** Once bytes are flowing, a pipe delivers the rest in milliseconds, so a gap this long ends it. */
+const IMPLICIT_STDIN_IDLE_TIMEOUT_MILLIS = 1_000;
 
 let readPromise: Promise<Buffer | undefined> | undefined;
 let readResult: Buffer | undefined;
@@ -63,7 +66,7 @@ async function _readStdin({ implicit }: ReadStdinOptions) {
 
 	// An inherited pipe may send nothing and stay open, so waiting for the end never finishes
 	// (#1206). Keep a shorter platform deadline where there is one: it speeds up every spawned CLI.
-	const firstByteTimeout = implicit ? waitDelay || IMPLICIT_STDIN_IDLE_TIMEOUT_MILLIS : waitDelay;
+	const firstByteTimeout = implicit ? waitDelay || IMPLICIT_STDIN_FIRST_BYTE_TIMEOUT_MILLIS : waitDelay;
 
 	const bufferChunks: Buffer[] = [];
 
@@ -113,8 +116,8 @@ async function _readStdin({ implicit }: ReadStdinOptions) {
 			}
 
 			// A socket's short first-byte guard fires for every spawned CLI, so only a read that
-			// outwaited the idle timeout counts as given up on.
-			readCutShort = bufferChunks.length > 0 || firstByteTimeout === IMPLICIT_STDIN_IDLE_TIMEOUT_MILLIS;
+			// outwaited the full first-byte budget counts as given up on.
+			readCutShort = bufferChunks.length > 0 || firstByteTimeout === IMPLICIT_STDIN_FIRST_BYTE_TIMEOUT_MILLIS;
 		}
 	} finally {
 		// Stop reading so an open stdin handle can't keep the CLI alive after the command (#1206).

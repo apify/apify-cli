@@ -485,7 +485,10 @@ FLAGS
       --input-file=<value>     Optional path to a file with
                                JSON input to be given to the Actor. The file must be
                                a valid JSON file. You can also specify `-` to read
-                               from standard input.
+                               from standard input. With neither this flag nor
+                               `--input`, the CLI still reads standard input, but
+                               gives up once the pipe goes quiet. Use `-` to wait
+                               for a slow writer.
       --profile=<value>        The stored account to use
                                for this command, by name or user ID. See "apify auth
                                list".
@@ -966,7 +969,9 @@ FLAGS
   -f, --input-file=<value>  Optional path to a file with
                             JSON input to be given to the Actor. The file must be a
                             valid JSON file. You can also specify `-` to read from
-                            standard input.
+                            standard input. With neither this flag nor `--input`,
+                            the CLI still reads standard input, but gives up once
+                            the pipe goes quiet. Use `-` to wait for a slow writer.
       --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
@@ -1006,7 +1011,9 @@ FLAGS
       --input-file=<value>  Optional path to a file with JSON
                             input to be given to the Actor. The file must be a valid
                             JSON file. You can also specify `-` to read from
-                            standard input.
+                            standard input. With neither this flag nor `--input`,
+                            the CLI still reads standard input, but gives up once
+                            the pipe goes quiet. Use `-` to wait for a slow writer.
       --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
