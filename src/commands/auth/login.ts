@@ -179,7 +179,10 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 
 		console.log(`Enter your Apify API token. You can find it at ${getConsoleIntegrationsUrl()}`);
 
-		const tokenAnswer = await useMaskedInput({ message: 'token:' });
+		const tokenAnswer = await useMaskedInput({
+			message: 'token:',
+			errorMessageForStdin: 'Pass the token with --token to log in without a prompt.',
+		});
 		await tryToLogin(tokenAnswer);
 	}
 
