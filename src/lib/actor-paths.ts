@@ -4,12 +4,19 @@ import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:pat
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
 import { isOutside, toPosix } from './docker-context.js';
 
+/**
+ * An `error` would fail the build or build the wrong thing, so push stops. A `warning` is a path the platform cannot
+ * find but recovers from with its default lookup, so the build succeeds and push continues.
+ */
+export type ActorPathSeverity = 'error' | 'warning';
+
 export interface ActorPathProblem {
 	field: string;
 	/** Empty when the field is not set and the problem lies with what the platform uses by default. */
 	value: string;
 	resolvedPath: string;
 	reason: string;
+	severity: ActorPathSeverity;
 }
 
 export interface ActorPathsOptions {
@@ -38,6 +45,12 @@ const SCHEMA_FIELDS: { field: string; alias?: string }[] = [
 	{ field: 'webServerSchema' },
 ];
 const STORAGE_SCHEMA_FIELDS = ['keyValueStore', 'dataset'];
+/**
+ * When the worker cannot find the file these name, it logs a warning and falls back to its default lookup
+ * (`.actor/ACTOR.md`, `.actor/README.md`, then `README.md` or `README` in the Actor folder; likewise for the
+ * changelog), so the build succeeds. A missing `dockerfile` falls back too, but to a Dockerfile the user did not choose.
+ */
+const FALLBACK_FIELDS = new Set(['readme', 'changelog']);
 /**
  * Without `dockerfile`, the worker takes the first of these that exists, relative to `.actor/`; with none, it copies
  * its built-in Node.js Dockerfile into the Docker context.
@@ -115,14 +128,24 @@ interface PathCheckScope {
  * 5. `dockerfile`, set or found by default, lies inside the Docker context, as BuildKit reads it from there.
  * 6. It is among the files push uploads, in the same case: a file `.gitignore` or `.actorignore` drops never
  *    reaches the platform.
+ *
+ * Every problem is an error, except for `readme` and `changelog` failing rules 1 (a backslash), 3, or 6: the worker
+ * does not find such a file and falls back to its default, so these are warnings. An absolute path, a path outside
+ * the upload root, or a directory fails the build for those fields too.
  */
 function checkPathField(
 	{ field, value, caseInsensitive }: PathField,
 	{ actorDir, uploadRoot, uploadedFiles, dockerContextRoot }: PathCheckScope,
 ): ActorPathProblem | undefined {
-	const problem = (resolvedPath: string, reason: string) => ({ field, value, resolvedPath, reason });
+	const problem = (resolvedPath: string, reason: string, platformFallsBack = false): ActorPathProblem => ({
+		field,
+		value,
+		resolvedPath,
+		reason,
+		severity: platformFallsBack && FALLBACK_FIELDS.has(field) ? 'warning' : 'error',
+	});
 	if (value.includes('\\')) {
-		return problem(value, 'uses a backslash; the platform resolves paths with forward slashes');
+		return problem(value, 'uses a backslash; the platform resolves paths with forward slashes', true);
 	}
 	if (isAbsolute(value)) return problem(value, `is absolute; the path is relative to ${ACTOR_SPECIFICATION_FOLDER}/`);
 
@@ -137,6 +160,7 @@ function checkPathField(
 		return problem(
 			resolvedPath,
 			anyCase ? `does not exist (the name must match ${anyCase} exactly)` : 'does not exist',
+			true,
 		);
 	}
 
@@ -147,7 +171,7 @@ function checkPathField(
 	try {
 		stats = statSync(filePath);
 	} catch {
-		return problem(resolvedPath, 'does not exist');
+		return problem(resolvedPath, 'does not exist', true);
 	}
 	if (stats.isDirectory()) return problem(resolvedPath, 'is a directory, not a file');
 	if (dockerContextRoot && field === 'dockerfile' && isOutside(relative(dockerContextRoot, filePath))) {
@@ -162,6 +186,7 @@ function checkPathField(
 			differentCase
 				? `does not match the case of the uploaded file ${differentCase}`
 				: 'is not among the files apify push uploads (excluded by .gitignore or .actorignore?)',
+			true,
 		);
 	}
 	return undefined;
@@ -197,6 +222,7 @@ function checkDefaultDockerfile(scope: PathCheckScope & { dockerContextRoot: str
 			`is not set and there is no ${ACTOR_SPECIFICATION_FOLDER}/Dockerfile or Dockerfile in the Actor folder, ` +
 			`so the platform would build the Docker context ${dockerContextRoot} with its built-in Node.js Dockerfile; ` +
 			'add a Dockerfile, or set "dockerfile" to one inside the Docker context',
+		severity: 'error',
 	};
 }
 
@@ -226,10 +252,20 @@ export function checkActorPaths(options: ActorPathsOptions): ActorPathProblem[] 
 	return problems;
 }
 
-export function formatActorPathProblems(problems: ActorPathProblem[]): string {
+const PROBLEM_HEADERS: Record<ActorPathSeverity, string> = {
+	error: '.actor/actor.json refers to files the Apify platform could not use:',
+	warning:
+		'.actor/actor.json refers to files the Apify platform will not find. ' +
+		'The push continues, and the platform falls back to its default README or CHANGELOG:',
+};
+
+/** The message for the problems of one severity, with a header that says what happens; empty when there are none. */
+export function formatActorPathProblems(problems: ActorPathProblem[], severity: ActorPathSeverity): string {
+	const selected = problems.filter((problem) => problem.severity === severity);
+	if (selected.length === 0) return '';
 	return [
-		'.actor/actor.json refers to files the Apify platform could not use:',
-		...problems.map(({ field, value, resolvedPath, reason }) =>
+		PROBLEM_HEADERS[severity],
+		...selected.map(({ field, value, resolvedPath, reason }) =>
 			value ? `  "${field}": "${value}" (${resolvedPath}) ${reason}.` : `  "${field}" ${reason}.`,
 		),
 		`Paths are relative to ${ACTOR_SPECIFICATION_FOLDER}/ and must point to files inside the uploaded folder.`,

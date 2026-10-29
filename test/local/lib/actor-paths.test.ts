@@ -1,7 +1,7 @@
 import { mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { checkActorPaths, formatActorPathProblems } from '../../../src/lib/actor-paths.js';
+import { type ActorPathProblem, checkActorPaths, formatActorPathProblems } from '../../../src/lib/actor-paths.js';
 import { resolveDockerContext } from '../../../src/lib/docker-context.js';
 import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
@@ -84,6 +84,7 @@ describe('checkActorPaths', () => {
 				value: '../../../shared/Dockerfile',
 				resolvedPath: join(root, 'shared', 'Dockerfile'),
 				reason: `lies outside the uploaded folder ${actorDir}`,
+				severity: 'error',
 			},
 		]);
 	});
@@ -99,6 +100,7 @@ describe('checkActorPaths', () => {
 				value: '..\\Dockerfile',
 				resolvedPath: '..\\Dockerfile',
 				reason: 'uses a backslash; the platform resolves paths with forward slashes',
+				severity: 'error',
 			},
 		]);
 	});
@@ -107,7 +109,13 @@ describe('checkActorPaths', () => {
 		const value = '/x';
 
 		expect(check({ input: value })).toEqual([
-			{ field: 'input', value, resolvedPath: value, reason: 'is absolute; the path is relative to .actor/' },
+			{
+				field: 'input',
+				value,
+				resolvedPath: value,
+				reason: 'is absolute; the path is relative to .actor/',
+				severity: 'error',
+			},
 		]);
 	});
 
@@ -118,6 +126,7 @@ describe('checkActorPaths', () => {
 				value: './missing.json',
 				resolvedPath: join(actorDir, '.actor', 'missing.json'),
 				reason: 'does not exist',
+				severity: 'error',
 			},
 		]);
 	});
@@ -129,6 +138,7 @@ describe('checkActorPaths', () => {
 				value: '../src',
 				resolvedPath: join(actorDir, 'src'),
 				reason: 'is a directory, not a file',
+				severity: 'error',
 			},
 		]);
 	});
@@ -140,6 +150,7 @@ describe('checkActorPaths', () => {
 				value: '../Dockerfile.ci',
 				resolvedPath: join(actorDir, 'Dockerfile.ci'),
 				reason: 'is not among the files apify push uploads (excluded by .gitignore or .actorignore?)',
+				severity: 'error',
 			},
 		]);
 	});
@@ -152,6 +163,7 @@ describe('checkActorPaths', () => {
 				value: './README.md',
 				resolvedPath: join(actorDir, '.actor', 'README.md'),
 				reason: 'does not match the case of the uploaded file .actor/readme.md',
+				severity: 'warning',
 			},
 		]);
 	});
@@ -168,6 +180,7 @@ describe('checkActorPaths', () => {
 				value: './linked_schema.json',
 				resolvedPath: join(actorDir, '.actor', 'linked_schema.json'),
 				reason: 'is not among the files apify push uploads (excluded by .gitignore or .actorignore?)',
+				severity: 'error',
 			},
 		]);
 	});
@@ -179,6 +192,7 @@ describe('checkActorPaths', () => {
 				value: './dangling.json',
 				resolvedPath: join(actorDir, '.actor', 'dangling.json'),
 				reason: 'does not exist',
+				severity: 'error',
 			},
 		]);
 	});
@@ -229,6 +243,7 @@ describe('checkActorPaths', () => {
 				value: './input_schema.json',
 				resolvedPath: join(actorDir, '.actor', 'input_schema.json'),
 				reason: 'does not exist (the name must match INPUT_SCHEMA.json exactly)',
+				severity: 'error',
 			},
 		]);
 	});
@@ -254,6 +269,62 @@ describe('checkActorPaths', () => {
 		expect(check({ input: './missing.json', inputSchema: '' }).map((problem) => problem.field)).toEqual(['input']);
 	});
 
+	it('warns about a readme or changelog the platform falls back from', () => {
+		const severities = (config: Record<string, unknown>) =>
+			check(config, { uploadedFiles: [...uploadedFiles, '.actor/dangling.json'] }).map(
+				({ field, reason, severity }) => ({ field, reason, severity }),
+			);
+
+		expect(severities({ readme: '../README.md', changelog: '../CHANGELOG.md' })).toEqual([
+			{ field: 'readme', reason: 'does not exist', severity: 'warning' },
+			{ field: 'changelog', reason: 'does not exist', severity: 'warning' },
+		]);
+		expect(severities({ readme: './dangling.json' })).toEqual([
+			{ field: 'readme', reason: 'does not exist', severity: 'warning' },
+		]);
+		expect(severities({ changelog: '../Dockerfile.ci' })).toEqual([
+			{
+				field: 'changelog',
+				reason: 'is not among the files apify push uploads (excluded by .gitignore or .actorignore?)',
+				severity: 'warning',
+			},
+		]);
+		expect(severities({ readme: '.\\README.md' })).toEqual([
+			{
+				field: 'readme',
+				reason: 'uses a backslash; the platform resolves paths with forward slashes',
+				severity: 'warning',
+			},
+		]);
+	});
+
+	it('rejects a readme or changelog that fails the build', () => {
+		expect(
+			check({ readme: '/README.md', changelog: '../../../shared/Dockerfile' }).map(({ field, severity }) => ({
+				field,
+				severity,
+			})),
+		).toEqual([
+			{ field: 'readme', severity: 'error' },
+			{ field: 'changelog', severity: 'error' },
+		]);
+		expect(check({ readme: '../src' }).map(({ reason, severity }) => ({ reason, severity }))).toEqual([
+			{ reason: 'is a directory, not a file', severity: 'error' },
+		]);
+	});
+
+	it('rejects a missing dockerfile or schema, which the platform does not recover from', () => {
+		expect(
+			check({ dockerfile: '../Dockerfile.prod', input: './missing.json' }).map(({ field, severity }) => ({
+				field,
+				severity,
+			})),
+		).toEqual([
+			{ field: 'dockerfile', severity: 'error' },
+			{ field: 'input', severity: 'error' },
+		]);
+	});
+
 	it('requires dockerfile inside the Docker context when one is given', () => {
 		const monorepoFiles = [`${ACTOR_PATH}/Dockerfile`, `${ACTOR_PATH}/.actor/actor.json`, 'shared/Dockerfile'];
 		const monorepo = { uploadRoot: root, uploadedFiles: monorepoFiles, dockerContextRoot: join(root, 'shared') };
@@ -265,6 +336,7 @@ describe('checkActorPaths', () => {
 				value: '../Dockerfile',
 				resolvedPath: join(actorDir, 'Dockerfile'),
 				reason: `lies outside the Docker context ${join(root, 'shared')}`,
+				severity: 'error',
 			},
 		]);
 		expect(check({ dockerfile: '../Dockerfile' }, { ...monorepo, dockerContextRoot: root })).toEqual([]);
@@ -322,6 +394,7 @@ describe('checkActorPaths without dockerfile', () => {
 				value: '',
 				resolvedPath: join(actorDir, 'Dockerfile'),
 				reason: `is not set, so the platform would use the default ${join(actorDir, 'Dockerfile')}, which lies outside the Docker context ${join(actorDir, 'docker')}`,
+				severity: 'error',
 			},
 		]);
 	});
@@ -337,6 +410,7 @@ describe('checkActorPaths without dockerfile', () => {
 				reason: expect.stringContaining(
 					`so the platform would build the Docker context ${join(actorDir, 'docker')} with its built-in Node.js Dockerfile`,
 				),
+				severity: 'error',
 			},
 		]);
 	});
@@ -366,24 +440,54 @@ describe('checkActorPaths without dockerfile', () => {
 });
 
 describe('formatActorPathProblems', () => {
-	it('lists every problem with its field, value, resolved path and reason', () => {
-		const message = formatActorPathProblems([
-			{
-				field: 'dockerfile',
-				value: '../Dockerfile.prod',
-				resolvedPath: '/actor/Dockerfile.prod',
-				reason: 'does not exist',
-			},
-			{ field: 'input', value: '/schema.json', resolvedPath: '/schema.json', reason: 'is absolute' },
-		]);
+	const problems: ActorPathProblem[] = [
+		{
+			field: 'dockerfile',
+			value: '../Dockerfile.prod',
+			resolvedPath: '/actor/Dockerfile.prod',
+			reason: 'does not exist',
+			severity: 'error',
+		},
+		{
+			field: 'readme',
+			value: './README.md',
+			resolvedPath: '/actor/.actor/README.md',
+			reason: 'does not exist',
+			severity: 'warning',
+		},
+		{ field: 'input', value: '/schema.json', resolvedPath: '/schema.json', reason: 'is absolute', severity: 'error' },
+		{
+			field: 'dockerfile',
+			value: '',
+			resolvedPath: '/actor/Dockerfile',
+			reason: 'is not set, so the platform would use the default /actor/Dockerfile',
+			severity: 'error',
+		},
+	];
 
-		expect(message).toBe(
+	it('lists the errors with their field, value, resolved path and reason', () => {
+		expect(formatActorPathProblems(problems, 'error')).toBe(
 			[
 				'.actor/actor.json refers to files the Apify platform could not use:',
 				'  "dockerfile": "../Dockerfile.prod" (/actor/Dockerfile.prod) does not exist.',
 				'  "input": "/schema.json" (/schema.json) is absolute.',
+				'  "dockerfile" is not set, so the platform would use the default /actor/Dockerfile.',
 				'Paths are relative to .actor/ and must point to files inside the uploaded folder.',
 			].join('\n'),
 		);
+	});
+
+	it('lists the warnings under a header that says the push continues', () => {
+		expect(formatActorPathProblems(problems, 'warning')).toBe(
+			[
+				'.actor/actor.json refers to files the Apify platform will not find. The push continues, and the platform falls back to its default README or CHANGELOG:',
+				'  "readme": "./README.md" (/actor/.actor/README.md) does not exist.',
+				'Paths are relative to .actor/ and must point to files inside the uploaded folder.',
+			].join('\n'),
+		);
+	});
+
+	it('returns an empty string when no problem has the severity', () => {
+		expect(formatActorPathProblems(problems.slice(0, 1), 'warning')).toBe('');
 	});
 });

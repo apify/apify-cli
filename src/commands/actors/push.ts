@@ -308,8 +308,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			config: actorConfig,
 			dockerContextRoot: dockerContext.kind === 'within' ? dockerContext.contextRoot : undefined,
 		});
-		if (pathProblems.length > 0) {
-			error({ message: formatActorPathProblems(pathProblems) });
+		// A readme or changelog the platform cannot find only falls back to its default, so push goes on.
+		const pathWarnings = formatActorPathProblems(pathProblems, 'warning');
+		if (pathWarnings) warning({ message: pathWarnings });
+		const pathErrors = formatActorPathProblems(pathProblems, 'error');
+		if (pathErrors) {
+			error({ message: pathErrors });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
