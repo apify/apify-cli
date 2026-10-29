@@ -19,7 +19,7 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for confirmation before deleting the record. Cannot be bypassed; deletion is irreversible.';
+		'Prompts for confirmation before deleting the record, unless you pass --yes. Deletion is irreversible.';
 
 	static override examples = [
 		{
@@ -73,7 +73,7 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 
 		const confirm = await useYesNoConfirm({
 			message: `Are you sure you want to delete this record?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirm) {

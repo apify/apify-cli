@@ -17,7 +17,7 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for confirmation before deleting. Cannot be bypassed; deletion is irreversible.';
+		'Prompts for confirmation before deleting, unless you pass --yes. Deletion is irreversible.';
 
 	static override examples = [
 		{
@@ -54,7 +54,7 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 
 		const confirmedDelete = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Actor?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirmedDelete) {
