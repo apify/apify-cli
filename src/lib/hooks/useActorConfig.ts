@@ -111,7 +111,7 @@ async function handleBothConfigVersionsFound(deprecatedConfigPath: string) {
 	const confirmed = await useYesNoConfirm({
 		message: `The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Since we have found both files in your Actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use ".actor/actor.json". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?`,
 		errorMessageForStdin:
-			'Re-run in an interactive terminal to let the CLI migrate "apify.json", or update it manually by following https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md.',
+			'Re-run in an interactive terminal to let the CLI rename the stale "apify.json", or rename or remove it yourself. The ".actor/actor.json" file is already in use either way.',
 	});
 
 	// If users refuse to migrate, 🤷

@@ -46,7 +46,7 @@ interface StdinCheckWrapperOptions {
 export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 	fn: Fn,
 	{
-		errorMessageForStdin = "Can't prompt for an answer here. Re-run in an interactive terminal, or pass the answer using the command's options.",
+		errorMessageForStdin = 'Confirmation is required. Pass --yes to confirm without a prompt.',
 	}: StdinCheckWrapperOptions = {},
 ): (...args: NewFunctionArgs<Fn>) => Promise<Awaited<ReturnType<Fn>>> {
 	return async (input, ...rest) => {

@@ -82,13 +82,14 @@ describe('stdinCheckWrapper', () => {
 			expect(prompt).not.toHaveBeenCalled();
 		});
 
-		// The wrapper is generic and its remaining default-message callers (auth/login, the
-		// useActorConfig migrations) have no --yes, so the default must not name any flag.
-		it('names no flag in the default error message', async () => {
+		// Every caller that can still reach this default has a --yes flag; the ones that don't
+		// (auth/login, the useActorConfig prompts) pass their own errorMessageForStdin. A new
+		// caller without --yes has to do the same rather than inherit advice that won't work.
+		it('names --yes, not a flag that does not exist, in the default error message', async () => {
 			const { wrapped } = makePrompt();
 
-			await expect(wrapped({ message: 'Delete?' })).rejects.toThrow(/interactive terminal/);
-			await expect(wrapped({ message: 'Delete?' })).rejects.not.toThrow(/--/);
+			await expect(wrapped({ message: 'Delete?' })).rejects.toThrow(/--yes/);
+			await expect(wrapped({ message: 'Delete?' })).rejects.not.toThrow(/--no-confirm/);
 		});
 
 		it('throws when neither answer is available', async () => {
