@@ -12,6 +12,19 @@ import { clientNeedsToken, getClientHandler, isSupportedClient, SUPPORTED_CLIENT
 import { buildMcpUrl, DEFAULT_MCP_URL } from '../../lib/mcp/url.js';
 import { error, simpleLog, warning } from '../../lib/outputs.js';
 
+/** How long the token has left, as a clause that follows the token it describes. */
+function describeExpiry(remainingMs: number): string {
+	if (!Number.isFinite(remainingMs)) return 'expires within the hour';
+	// A refresh that could not reach the token endpoint hands back the stored token, which by then
+	// may have minutes or seconds left — never round that down to a reassuring "0 minutes".
+	if (remainingMs <= 0) return 'has already expired';
+
+	const minutes = Math.round(remainingMs / 60_000);
+	if (minutes < 1) return 'expires in under a minute';
+
+	return `expires in about ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+}
+
 /**
  * The token this command writes into a client's config is a copy: nothing refreshes it there. An
  * OAuth login's access token expires after about an hour, so the install silently stops working
@@ -25,11 +38,7 @@ async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<b
 	const { profile } = lookUpProfile(auth.profile.id);
 	if (profile?.authMethod !== 'oauth2' || !profile.expiresAt) return true;
 
-	const remainingMs = Date.parse(profile.expiresAt) - Date.now();
-	const minutes = Math.max(0, Math.round(remainingMs / 60_000));
-	const expiry = Number.isFinite(remainingMs)
-		? `in about ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`
-		: 'within the hour';
+	const expiry = describeExpiry(Date.parse(profile.expiresAt) - Date.now());
 	// The Console account the token has to be created under: a bare URL would act on whatever
 	// account the browser was last on, which for an organization login is the wrong one.
 	const tokensUrl = getConsoleIntegrationsUrl({
@@ -39,7 +48,7 @@ async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<b
 
 	warning({
 		message:
-			`You're logged in through your Apify account, and that login's API token expires ${expiry}. ` +
+			`You're logged in through your Apify account, and that login's API token ${expiry}. ` +
 			`The MCP client reads the token from its config file and can't refresh it, so the server stops working once the token expires.\n` +
 			`Pass --token with an API token from Apify Console (${tokensUrl}) to configure a client that keeps working.`,
 	});
@@ -50,7 +59,7 @@ async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<b
 	return useYesNoConfirm({
 		message: 'Write the expiring token to the client config anyway?',
 		default: false,
-		errorMessageForStdin: `The token from 'apify login' expires ${expiry}. Re-run with --token <api-token>, or with --yes to write the expiring token anyway.`,
+		errorMessageForStdin: `The token from 'apify login' ${expiry}. Re-run with --token <api-token>, or with --yes to write the expiring token anyway.`,
 	});
 }
 

@@ -343,6 +343,22 @@ describe('apify mcp install', () => {
 			expect(logMessages.error.join('\n')).toMatch(/expires in about 1 minute\b/);
 		});
 
+		it('cursor: a token seconds from expiry is not rounded down to a reassuring zero', async () => {
+			// Under TOKEN_REFRESH_SKEW_MS, so resolveAuth tries to refresh; the failed refresh hands the
+			// stored token back because it has not expired yet. That is the path that used to print "0 minutes".
+			const fetchSpy = vitest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
+			await seedLogin(oauthProfile(30_000));
+			await setSecret(TEST_USER_ID, 'refresh-token', 'rt_1');
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_yes: true });
+
+			expect(fetchSpy).toHaveBeenCalled();
+			const stderr = logMessages.error.join('\n');
+			expect(stderr).toMatch(/expires in under a minute/);
+			expect(stderr).not.toMatch(/0 minutes/);
+			fetchSpy.mockRestore();
+		});
+
 		it("cursor: an organization login is pointed at that organization's Console tokens page", async () => {
 			await seedLogin({ ...oauthProfile(50 * 60_000), organizationOwnerUserId: 'owner-uid' });
 
