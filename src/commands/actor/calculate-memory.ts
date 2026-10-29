@@ -1,8 +1,6 @@
 import { join, resolve } from 'node:path';
 import process from 'node:process';
 
-import { calculateRunDynamicMemory } from '@apify/actor-memory-expression';
-
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
@@ -93,6 +91,9 @@ export class ActorCalculateMemoryCommand extends ApifyCommand<typeof ActorCalcul
 		info({ message: `Evaluating memory expression: ${memoryExpression}` });
 
 		try {
+			// This package loads mathjs, which is expensive to initialize.
+			// The registry eagerly imports command modules, so load this only when the command runs.
+			const { calculateRunDynamicMemory } = await import('@apify/actor-memory-expression');
 			const result = await calculateRunDynamicMemory(memoryExpression, {
 				input: inputJson,
 				runOptions,
