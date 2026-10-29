@@ -7,24 +7,15 @@ export const DEFAULT_ACTOR_RUNTIME_IMAGE = 'apify/actor-runtime:latest';
 
 export const ACTOR_RUNTIME_CONTAINER_NAME = 'apify-actor-runtime';
 
-/** Official Docker documentation: Docker Desktop for macOS, Windows and Linux desktops. */
 export const DOCKER_GET_DOCKER_URL = 'https://docs.docker.com/get-started/get-docker/';
 
-/** Official Docker documentation: Docker Engine (server/headless Linux installs). */
 export const DOCKER_ENGINE_INSTALL_URL = 'https://docs.docker.com/engine/install/';
 
-/** Official Podman documentation: installation on every platform. */
 export const PODMAN_INSTALL_URL = 'https://podman.io/docs/installation';
 
-/** Default ports; 'apify runtime start --api-port/--console-port' moves them. */
 export const ACTOR_RUNTIME_API_PORT = 3333;
 
 export const ACTOR_RUNTIME_CONSOLE_PORT = 3000;
-
-/** The runtime's own environment variables that move its ports; the same number is published on the host. */
-export const RUNTIME_API_PORT_ENV_VAR = 'ACTOR_RUNTIME_API_PORT';
-
-export const RUNTIME_CONSOLE_PORT_ENV_VAR = 'ACTOR_RUNTIME_CONSOLE_PORT';
 
 export interface RuntimePorts {
 	api: number;
@@ -44,16 +35,7 @@ export const ACTOR_RUNTIME_API_URL = runtimeApiUrl(ACTOR_RUNTIME_API_PORT);
 
 export const ACTOR_RUNTIME_CONSOLE_URL = runtimeConsoleUrl(ACTOR_RUNTIME_CONSOLE_PORT);
 
-/**
- * Environment variables that point the Apify CLI (and the Apify SDKs/clients that honour them)
- * at a locally running Actor runtime instead of the Apify cloud.
- */
-export const ACTOR_RUNTIME_ENV_VARS = {
-	APIFY_CLIENT_BASE_URL: ACTOR_RUNTIME_API_URL,
-	APIFY_CONSOLE_URL: ACTOR_RUNTIME_CONSOLE_URL,
-} as const;
-
-/** The container engines the runtime can run on. Both serve the Docker-compatible API the runtime uses. */
+/** Both serve the Docker-compatible API the runtime uses. */
 export type ContainerEngine = 'docker' | 'podman';
 
 const CONTAINER_ENGINES: readonly ContainerEngine[] = ['docker', 'podman'];
@@ -61,11 +43,10 @@ const CONTAINER_ENGINES: readonly ContainerEngine[] = ['docker', 'podman'];
 /** Set to `docker` or `podman` to pick the engine instead of taking the first one found on PATH. */
 export const CONTAINER_ENGINE_ENV_VAR = 'APIFY_CONTAINER_ENGINE';
 
-/** Where the runtime container expects the engine's API socket. */
-export const RUNTIME_SOCKET_PATH = '/var/run/docker.sock';
+/** Where the runtime container expects the engine's API socket and its data directory. */
+const RUNTIME_SOCKET_PATH = '/var/run/docker.sock';
 
-/** Where the runtime container expects its data directory (storages, builds and run records). */
-export const RUNTIME_DATA_PATH = '/data';
+const RUNTIME_DATA_PATH = '/data';
 
 export function runtimeEnvExportLines(ports: RuntimePorts = DEFAULT_RUNTIME_PORTS): string[] {
 	return [
@@ -74,17 +55,13 @@ export function runtimeEnvExportLines(ports: RuntimePorts = DEFAULT_RUNTIME_PORT
 	];
 }
 
-/** The engine the user asked for via `APIFY_CONTAINER_ENGINE`, or undefined for "whichever is installed". */
 export function requestedContainerEngine(env: NodeJS.ProcessEnv = process.env): ContainerEngine | undefined {
 	const value = env[CONTAINER_ENGINE_ENV_VAR]?.trim().toLowerCase();
 	return CONTAINER_ENGINES.find((engine) => engine === value);
 }
 
-/**
- * The engines whose command is on PATH, in preference order: only the requested one when
- * `APIFY_CONTAINER_ENGINE` is set, else Docker before Podman.
- */
-export async function installedContainerEngines(env: NodeJS.ProcessEnv = process.env): Promise<ContainerEngine[]> {
+/** Only the requested engine when `APIFY_CONTAINER_ENGINE` is set, else Docker before Podman. */
+async function installedContainerEngines(env: NodeJS.ProcessEnv = process.env): Promise<ContainerEngine[]> {
 	const requested = requestedContainerEngine(env);
 	const candidates = requested ? [requested] : CONTAINER_ENGINES;
 	const installed: ContainerEngine[] = [];
@@ -94,8 +71,7 @@ export async function installedContainerEngines(env: NodeJS.ProcessEnv = process
 	return installed;
 }
 
-/** The first installed engine that is actually ready to run containers, else the first installed one
- * (so its problem gets reported), else null when no engine command is on PATH. */
+/** The first ready engine, else the first installed one so its problem gets reported, else null. */
 export async function findContainerEngine(
 	env: NodeJS.ProcessEnv = process.env,
 ): Promise<{ engine: ContainerEngine; ready: boolean } | null> {
@@ -106,8 +82,7 @@ export async function findContainerEngine(
 	return installed[0] ? { engine: installed[0], ready: false } : null;
 }
 
-/** The engine on which the runtime container is currently running, if any - checked on every installed
- * engine, since the container may live on Podman while Docker is also on PATH. */
+/** Checked on every installed engine: the container may live on Podman while Docker is also on PATH. */
 export async function findRunningRuntimeEngine(env: NodeJS.ProcessEnv = process.env): Promise<ContainerEngine | null> {
 	for (const engine of await installedContainerEngines(env)) {
 		if (await isRuntimeContainerRunning(engine)) return engine;
@@ -125,7 +100,7 @@ export function engineInstallHint(engine: ContainerEngine, platform: NodeJS.Plat
 		case 'win32':
 			return 'Install Docker Desktop for Windows (WSL 2 backend): https://docs.docker.com/desktop/setup/install/windows-install/';
 		default:
-			return 'Install Docker Engine: https://docs.docker.com/engine/install/';
+			return `Install Docker Engine: ${DOCKER_ENGINE_INSTALL_URL}`;
 	}
 }
 
@@ -151,12 +126,8 @@ export function engineDaemonHint(engine: ContainerEngine, platform: NodeJS.Platf
 	}
 }
 
-/**
- * True when the engine can run containers for us. For Podman that also means its API socket is being
- * served - the runtime container needs to mount it - which `podman info` reports separately from Podman
- * itself working.
- */
-export async function isEngineReady(engine: ContainerEngine): Promise<boolean> {
+/** For Podman, ready also means its API socket is served: the runtime container mounts it. */
+async function isEngineReady(engine: ContainerEngine): Promise<boolean> {
 	try {
 		if (engine === 'podman') {
 			const { stdout } = await execa('podman', ['info', '--format', '{{.Host.RemoteSocket.Exists}}']);
@@ -169,10 +140,7 @@ export async function isEngineReady(engine: ContainerEngine): Promise<boolean> {
 	}
 }
 
-/**
- * Whether the image reference is pinned to a digest. Any tag can be moved to a new build in the
- * registry, so a local copy of a tagged image can be outdated - a digest always is what it names.
- */
+/** A tag can be moved to a new build in the registry, so only a digest makes a local copy current for sure. */
 export function isDigestPinned(image: string): boolean {
 	return image.includes('@');
 }
@@ -186,7 +154,7 @@ export async function imageExistsLocally(engine: ContainerEngine, image: string)
 	}
 }
 
-export async function isRuntimeContainerRunning(engine: ContainerEngine): Promise<boolean> {
+async function isRuntimeContainerRunning(engine: ContainerEngine): Promise<boolean> {
 	try {
 		const { stdout } = await execa(engine, [
 			'ps',
@@ -201,7 +169,6 @@ export async function isRuntimeContainerRunning(engine: ContainerEngine): Promis
 	}
 }
 
-/** A port the runtime container publishes: `containerPort/protocol` reachable at `hostAddress`. */
 export interface PublishedPort {
 	containerPort: number;
 	protocol: string;
@@ -213,7 +180,6 @@ export interface RuntimeContainerInfo {
 	image?: string;
 	status?: string;
 	startedAt?: string;
-	/** The host directory mounted as the runtime's `/data`, where storages, builds and run records live. */
 	dataDir?: string;
 	ports: PublishedPort[];
 }
@@ -247,7 +213,7 @@ function parsePublishedPorts(container: InspectedContainer): PublishedPort[] {
 	return ports.sort((a, b) => a.containerPort - b.containerPort);
 }
 
-/** Reads one `inspect --format '{{json .}}'` payload, in either engine's shape. Null when it is unusable. */
+/** Reads one `inspect --format '{{json .}}'` payload, in either engine's shape. */
 export function parseRuntimeContainerInfo(engine: ContainerEngine, raw: string): RuntimeContainerInfo | null {
 	let container: InspectedContainer;
 	try {
@@ -269,10 +235,6 @@ export function parseRuntimeContainerInfo(engine: ContainerEngine, raw: string):
 	};
 }
 
-/**
- * What the engine knows about the runtime container - its image, published ports and data directory.
- * Null when the container is gone or the engine cannot be asked about it.
- */
 export async function inspectRuntimeContainer(engine: ContainerEngine): Promise<RuntimeContainerInfo | null> {
 	try {
 		const { stdout } = await execa(engine, ['inspect', ACTOR_RUNTIME_CONTAINER_NAME, '--format', '{{json .}}']);
@@ -287,14 +249,11 @@ function unixSocketPath(url: string | undefined): string | undefined {
 }
 
 /**
- * Host path of the engine's API socket, to be mounted into the runtime container - a path on the machine the
- * containers run on, since that machine's engine resolves the mount. Docker on Linux: the `DOCKER_HOST` socket
- * when it is a unix socket (rootless Docker), else the default one. Docker on macOS and Windows: always the
- * default one - the daemon lives in a VM (Docker Desktop, Colima, OrbStack, Rancher Desktop all serve it at
- * `/var/run/docker.sock` in there), and a `DOCKER_HOST` unix socket is a path on the host, which a bind mount
- * cannot carry into the VM (Colima's docs suggest exporting one for tools that ignore docker contexts).
- * Podman: the socket `podman info` reports serving, which is the path on the machine the containers run on
- * (rootful, rootless, or inside a `podman machine` VM alike).
+ * The engine's API socket as a path on the machine the containers run on, since that machine's engine
+ * resolves the bind mount. On macOS and Windows the Docker daemon lives in a VM that serves the default
+ * path, and a `DOCKER_HOST` unix socket is a host path a bind mount can't carry into the VM. For Podman,
+ * `podman info` reports the served socket as seen from where containers run (rootful, rootless, or a
+ * `podman machine` VM alike).
  */
 export async function resolveEngineSocketPath(
 	engine: ContainerEngine,
@@ -315,11 +274,9 @@ export async function resolveEngineSocketPath(
 	}
 }
 
-/** What `podman info` says about the Podman the runtime will run on, as far as its start command depends on it. */
 export interface PodmanInfo {
 	rootless: boolean;
-	/** SELinux enforcing on the machine the containers run on: Fedora and RHEL, and the Fedora-based VM of
-	 * `podman machine` (so Podman Desktop on macOS and Windows). */
+	/** Enforcing on Fedora and RHEL, and in the Fedora-based VM of `podman machine` (Podman Desktop). */
 	selinux: boolean;
 	majorVersion?: number;
 }
@@ -348,33 +305,24 @@ export async function podmanInfo(): Promise<PodmanInfo | undefined> {
 }
 
 /**
- * Under rootless Podman 3.x the runtime container and the Actor containers each run under slirp4netns,
- * whose gateway reaches the host's loopback only with this option. The runtime needs that route to reach
- * the web servers of the Actor runs it starts (their `containerUrl`); elsewhere it reaches them directly.
+ * The `--network` mode the runtime container needs. Under rootless Podman 3.x the containers run under
+ * slirp4netns, which reaches the host's loopback only with this option; the runtime needs that route to
+ * reach the web servers of the Actor runs it starts.
  */
-export const PODMAN3_ROOTLESS_NETWORK_MODE = 'slirp4netns:allow_host_loopback=true';
-
-/** The `--network` mode the runtime container needs on this engine, or undefined for the engine's default. */
 export function runtimeNetworkMode(engine: ContainerEngine, podman: PodmanInfo | undefined): string | undefined {
 	if (engine !== 'podman' || !podman?.rootless || podman.majorVersion !== 3) return undefined;
-	return PODMAN3_ROOTLESS_NETWORK_MODE;
+	return 'slirp4netns:allow_host_loopback=true';
 }
 
 /**
- * Under SELinux enforcing, a container's processes may not connect to the engine's API socket bind-mounted
- * into it: the socket carries the engine's label, not a container's, so SELinux refuses the connection even
- * though the mount itself works. The runtime does everything through that socket, so it would report the
- * engine as unavailable. `label=disable` runs this one container unconfined by SELinux - the documented way
- * to run a container that manages the engine. The Actor containers the runtime starts stay confined as
- * usual. Relabelling the socket (`:z`/`:Z`) is not an option: it would change the label of the engine's own
- * socket for every other client, and the engine recreates it on restart anyway.
+ * The `--security-opt` values the runtime container needs. Under SELinux enforcing, a confined container
+ * may not connect to the engine's socket bind-mounted into it (the socket carries the engine's label), so
+ * this one container runs unconfined; the Actor containers the runtime starts stay confined. Relabelling
+ * the socket (`:z`/`:Z`) would change it for every other client.
  */
-export const SELINUX_SECURITY_OPTION = 'label=disable';
-
-/** The `--security-opt` values the runtime container needs on this engine; empty for the engine's default. */
 export function runtimeSecurityOptions(engine: ContainerEngine, podman: PodmanInfo | undefined): string[] {
 	if (engine !== 'podman' || !podman?.selinux) return [];
-	return [SELINUX_SECURITY_OPTION];
+	return ['label=disable'];
 }
 
 export function socketMountArg(hostSocketPath: string, platform: NodeJS.Platform = process.platform): string {
@@ -391,9 +339,7 @@ export interface RuntimeRunArgsOptions {
 	hostSocketPath: string;
 	ports?: RuntimePorts;
 	platform?: NodeJS.Platform;
-	/** From `runtimeNetworkMode`; absent means the engine's default network. */
 	networkMode?: string;
-	/** From `runtimeSecurityOptions`; absent or empty means the engine's default confinement. */
 	securityOptions?: string[];
 }
 
@@ -414,13 +360,13 @@ export function buildRuntimeRunArgs({
 		args.push('--detach');
 	}
 
-	// Same number inside and out: the runtime builds its URLs, and Actors may reach its API through the
-	// host, from the port it listens on. Defaults are left implicit so older runtime images keep working.
+	// The runtime listens on the same number it is published on, since it builds its URLs from it.
+	// Defaults are left implicit so older runtime images keep working.
 	if (ports.api !== ACTOR_RUNTIME_API_PORT) {
-		args.push('-e', `${RUNTIME_API_PORT_ENV_VAR}=${ports.api}`);
+		args.push('-e', `ACTOR_RUNTIME_API_PORT=${ports.api}`);
 	}
 	if (ports.console !== ACTOR_RUNTIME_CONSOLE_PORT) {
-		args.push('-e', `${RUNTIME_CONSOLE_PORT_ENV_VAR}=${ports.console}`);
+		args.push('-e', `ACTOR_RUNTIME_CONSOLE_PORT=${ports.console}`);
 	}
 	if (networkMode) {
 		args.push('--network', networkMode);
@@ -444,9 +390,7 @@ export function buildRuntimeRunArgs({
 	return args;
 }
 
-/** The one line that tells an agent this runtime documents itself, printed wherever the CLI has just
- * given it a runtime ('runtime install', 'start', 'connect', 'status'). An agent reads the output of the
- * command it ran and has no other reason to go looking, so this is the moment that reaches it. */
+/** Printed wherever the CLI has just given an agent a runtime, since that output is all it reads. */
 export function runtimeSkillHintLines(): string[] {
 	return [
 		`Agents: run 'apify runtime skill --install' to install this runtime's Agent Skill,`,

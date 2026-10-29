@@ -38,18 +38,11 @@ export interface RunOnCloudOptions {
 	 * the caller renders its own final result summary and owns the exit code.
 	 */
 	suppressFinalStatus?: boolean;
-	/**
-	 * Extra query parameters for the run-start request that the Apify API itself does not know - local
-	 * Actor runtime extensions such as `devFolder=false`. apify-client's `start()` rejects unknown
-	 * options, so a run with these is started through a raw request instead. Actors only.
-	 */
+	/** Local Actor runtime extensions such as `devFolder=false`, which apify-client's `start()` rejects. Actors only. */
 	extraStartParams?: Record<string, string>;
 }
 
-/**
- * `POST .../actors/:actorId/runs` by hand, with `extraStartParams` alongside the standard run options,
- * then re-read through the client so the result has the exact shape `start()` would have returned.
- */
+/** Starts the run through a raw request, then re-reads it so the result has the shape `start()` returns. */
 async function startActorWithExtraParams(
 	apifyClient: ApifyClient,
 	actorId: string,
@@ -125,8 +118,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 	} catch (err: any) {
 		// TODO: Better error message in apify-client-js
 		if (err.type === 'record-not-found') {
-			// The API's own message says what exactly is missing - e.g. a local runtime reports an Actor that
-			// exists but has no build under the requested tag with this same error type.
+			// A local runtime reports a missing build under this type too; its message says which.
 			const reason = typeof err.message === 'string' && err.message ? `: ${err.message}` : '!';
 			throw new Error(`${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id}) not found${reason}`);
 		}

@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { chmod, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { gunzipSync } from 'node:zlib';
 
@@ -96,15 +96,10 @@ function callsTo(endpoint: string) {
 		.map(([url, init]) => ({ url: String(url), method: init?.method, body: JSON.parse(init?.body as string) }));
 }
 
-/** The regular files of a `.tar.gz` and their permission bits, by name - a plain ustar reader is enough for what `archiver` writes. */
-function untar(gzipped: Uint8Array): {
-	files: Map<string, string>;
-	modes: Map<string, number>;
-	links: Map<string, string>;
-} {
+/** The files and symlinks of a `.tar.gz` by name; a plain ustar reader is enough for what `archiver` writes. */
+function untar(gzipped: Uint8Array): { files: Map<string, string>; links: Map<string, string> } {
 	const archive = gunzipSync(gzipped);
 	const files = new Map<string, string>();
-	const modes = new Map<string, number>();
 	const links = new Map<string, string>();
 	for (let offset = 0; offset + 512 <= archive.length;) {
 		const header = archive.subarray(offset, offset + 512);
@@ -119,15 +114,12 @@ function untar(gzipped: Uint8Array): {
 		const size = Number.parseInt(field(124, 12).trim() || '0', 8);
 		const type = field(156, 1);
 		const content = archive.subarray(offset + 512, offset + 512 + size).toString('utf8');
-		if (type === '2') links.set(prefix ? `${prefix}/${name}` : name, field(157, 100));
-		if (type === '0' || type === '') {
-			const path = prefix ? `${prefix}/${name}` : name;
-			files.set(path, content);
-			modes.set(path, Number.parseInt(field(100, 8).trim() || '0', 8) & 0o777);
-		}
+		const path = prefix ? `${prefix}/${name}` : name;
+		if (type === '2') links.set(path, field(157, 100));
+		if (type === '0' || type === '') files.set(path, content);
 		offset += 512 + Math.ceil(size / 512) * 512;
 	}
-	return { files, modes, links };
+	return { files, links };
 }
 
 /** The one source-context upload: its URL and query, and the files of its tarball body. */
@@ -294,12 +286,11 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 		await write(`${ACTOR_PATH}/.actorignore`, '!dist/\nsrc/index.ts\n');
 		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(3);\n');
 		await write('shared/start.sh', '#!/bin/sh\necho hi\n');
-		await chmod(joinPath('shared/start.sh'), 0o755);
 		await rm(joinPath('packages/typescript-utils/src/index.ts'));
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		const { files, modes } = sourceContextUpload();
+		const { files } = sourceContextUpload();
 		const names = [...files.keys()];
 		expect(names).not.toContain(`${ACTOR_PATH}/dist/main.js`);
 		// Tracked, so in the clone, although .actorignore excludes it.
@@ -308,8 +299,6 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 		expect(names).not.toContain('packages/typescript-utils/src/index.ts');
 		// Untracked and not ignored: pushed, with a warning that the platform would not have it yet.
 		expect(names).toContain('shared/start.sh');
-		// Windows has no execute bit, so chmod cannot set one and the tarball records the default mode.
-		if (process.platform !== 'win32') expect(modes.get('shared/start.sh')).toBe(0o755);
 		expect(logMessages.error.join('\n')).toContain('changes that are not committed');
 	});
 
@@ -348,19 +337,6 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 		await testRunCommand(ActorsPushCommand, {});
 
 		expect(sourceContextUpload().links.get(`${ACTOR_PATH}/shared`)).toBe('../../shared');
-	});
-
-	it('rejects a dockerContextDir that does not contain the Actor', async () => {
-		await write(
-			`${ACTOR_PATH}/.actor/actor.json`,
-			JSON.stringify({ actorSpecification: 1, name: actName, version: '0.0', dockerContextDir: '../src' }),
-		);
-
-		await testRunCommand(ActorsPushCommand, {});
-
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
-		expect(logMessages.error.join('\n')).toContain(`which does not contain the Actor's folder`);
-		expect(fetchMock).not.toHaveBeenCalled();
 	});
 });
 

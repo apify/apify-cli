@@ -136,7 +136,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			].join('\n'),
 		});
 
-		// Spawned without a shell so interrupt signals reach the engine's 'run' directly instead of dying in 'sh -c'.
+		// No shell, so interrupt signals reach the engine's 'run' directly.
 		const args = buildRuntimeRunArgs({
 			image,
 			dataDir,

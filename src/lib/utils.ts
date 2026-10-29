@@ -588,7 +588,7 @@ export const outputJobLog = async ({
 			return;
 		}
 
-		// Undefined when the job has no log at all (it failed before its container ever started).
+		// Undefined when the job failed before its container started.
 		const log = await client.log(logId).get();
 		if (log) process.stderr.write(log);
 		return;

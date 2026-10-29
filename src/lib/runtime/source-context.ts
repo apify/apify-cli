@@ -8,7 +8,6 @@ import { TarArchive } from 'archiver';
 import { ACTOR_SPECIFICATION_FOLDER, APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
 import { getActorLocalFilePaths } from '../utils.js';
 
-/** Tracks pushing Actors with `dockerContextDir` (monorepo Actors) to the Apify platform. */
 export const MONOREPO_PLATFORM_SUPPORT_ISSUE_URL = 'https://github.com/apify/apify-core/issues/28685';
 
 export type DockerContextResolution =
@@ -16,9 +15,8 @@ export type DockerContextResolution =
 	| {
 			kind: 'context';
 			contextRoot: string;
-			/** The Git repository's root, else the context. */
+			/** The Git repository's root, else the context; `actorPath` is relative to it. */
 			sourceRoot: string;
-			/** Relative to `sourceRoot`. */
 			actorPath: string;
 	  }
 	| { kind: 'invalid'; message: string };
@@ -40,7 +38,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 		};
 	}
 
-	// The platform's clone holds nothing above the repository root.
+	// The platform builds from a clone, which holds nothing above the repository root.
 	const repoRoot = git(actorDir, ['rev-parse', '--show-toplevel']);
 	if (repoRoot && !existsSync(contextRoot)) {
 		return {
@@ -82,7 +80,6 @@ function git(cwd: string, args: string[]): string | undefined {
 	}
 }
 
-/** A remote URL may carry credentials (`https://user:token@host/...`); they never leave this machine. */
 function withoutCredentials(remoteUrl: string): string {
 	try {
 		const url = new URL(remoteUrl);
@@ -120,7 +117,6 @@ export async function createContextTarball(paths: string[], root: string): Promi
 	for (const filePath of paths) {
 		const name = filePath.split(sep).join('/');
 		const absolutePath = join(root, filePath);
-		// A link stays a link, as in a Git clone.
 		if (lstatSync(absolutePath).isSymbolicLink()) archive.symlink(name, readlinkSync(absolutePath));
 		else archive.file(absolutePath, { name });
 	}
@@ -142,7 +138,6 @@ export async function pushActorRuntimeSourceContext(
 	versionNumber: string,
 	upload: SourceContextUpload,
 ): Promise<{ ok: true } | { ok: false; unsupported: boolean; error: string }> {
-	// `baseUrl` already ends in `/v2`; the runtime serves `/v2/actor-runtime/*` as an alias of `/actor-runtime/*`.
 	const url = new URL(
 		`${client.baseUrl}/actor-runtime/source-context/${encodeURIComponent(actorId)}/${encodeURIComponent(versionNumber)}`,
 	);
@@ -171,7 +166,7 @@ export async function pushActorRuntimeSourceContext(
 	return { ok: false, unsupported, error };
 }
 
-/** Untracked, these are never on the platform and too big to push by accident. */
+/** Never on the platform, and too big to push by accident. */
 const UNTRACKED_IGNORED_SEGMENTS = new Set(['node_modules', 'storage', 'apify_storage', 'crawlee_storage']);
 
 function gitFileList(root: string, args: string[]): string[] | undefined {
@@ -179,8 +174,8 @@ function gitFileList(root: string, args: string[]): string[] | undefined {
 	return output?.split('\0').filter(Boolean);
 }
 
-/** What a Git clone of `root` has, as on disk now, plus untracked files Git does not ignore; `.actorignore`
- * does not apply, as on the platform. Outside Git, what an ordinary push of `root` sends. */
+/** What a Git clone of `root` has, as on disk now, plus untracked files Git doesn't ignore. `.actorignore`
+ * doesn't apply, as on the platform. Outside Git, what an ordinary push of `root` sends. */
 export async function getContextFilePaths(root: string): Promise<string[]> {
 	const tracked = gitFileList(root, ['--cached']);
 	const untracked = gitFileList(root, ['--others', '--exclude-standard']);

@@ -707,11 +707,7 @@ Skipping push. Use --force to override.`,
 	}
 }
 
-/**
- * Against a local Actor runtime, registers the pushed directory as the Actor's live dev folder, so later
- * runs mount it over the built image. Against the Apify platform this is a no-op without a request.
- * Success is announced by the runtime itself in the build log; only a refusal is reported here.
- */
+/** On a local Actor runtime, later runs mount the dev folder over the built image. Success shows in the build log. */
 async function registerDevFolderOnActorRuntime(
 	apifyClient: ApifyClient,
 	actorId: string,

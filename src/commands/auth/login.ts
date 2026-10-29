@@ -27,11 +27,7 @@ import { tildify } from '../../lib/utils.js';
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
-/**
- * Where the token is validated. `APIFY_CLIENT_BASE_URL` and a connected Actor runtime win. Otherwise a local
- * Console (a hand-started runtime, or local platform development) means the local API: the port the
- * runtime was last started on, or 3333 when none is known.
- */
+/** A local Console (a hand-started runtime, or local platform development) means the local API. */
 export function resolveLoginApiBaseUrl(): string | undefined {
 	const explicit = resolveApiBaseUrl();
 	if (explicit) return explicit;

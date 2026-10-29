@@ -74,7 +74,7 @@ export class RuntimeSkillCommand extends ApifyCommand<typeof RuntimeSkillCommand
 		const { content, source } = resolved;
 
 		if (!this.flags.install) {
-			// stdout only, so 'apify runtime skill > SKILL.md' stays clean, like 'apify help --skill'.
+			// stdout only, so 'apify runtime skill > SKILL.md' stays clean.
 			simpleLog({
 				stdout: true,
 				message: (this.flags.raw ? content : frameSkillForReading(content, source)).trimEnd(),
@@ -90,7 +90,6 @@ export class RuntimeSkillCommand extends ApifyCommand<typeof RuntimeSkillCommand
 				await writeSkillTo(target, stamped);
 				written.push(`  ${tildify(target.directory)}  ${chalk.gray(`(${target.label})`)}`);
 			} catch (err) {
-				// One unwritable location must not lose the installs that did work.
 				info({ message: chalk.gray(`Skipped ${tildify(target.directory)}: ${(err as Error).message}`) });
 			}
 		}
