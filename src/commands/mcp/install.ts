@@ -1,13 +1,48 @@
 import process from 'node:process';
 
-import { resolveAuth } from '../../lib/auth.js';
+import { lookUpProfile } from '../../lib/auth-file.js';
+import { type ResolvedAuth, resolveAuth } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes } from '../../lib/consts.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { clientNeedsToken, getClientHandler, isSupportedClient, SUPPORTED_CLIENTS } from '../../lib/mcp/clients.js';
 import { buildMcpUrl, DEFAULT_MCP_URL } from '../../lib/mcp/url.js';
-import { error } from '../../lib/outputs.js';
+import { error, simpleLog, warning } from '../../lib/outputs.js';
+
+const CONSOLE_API_TOKENS_URL = 'https://console.apify.com/settings/integrations';
+
+/**
+ * The token this command writes into a client's config is a copy: nothing refreshes it there. An
+ * OAuth login's access token expires after about an hour, so the install silently stops working
+ * unless the user passes a long-lived API token instead.
+ *
+ * Returns false when the user declines, in which case nothing should be written.
+ */
+async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<boolean> {
+	const profile = auth.profile ? lookUpProfile(auth.profile.id).profile : undefined;
+	if (profile?.authMethod !== 'oauth2' || !profile.expiresAt) return true;
+
+	const remainingMs = Date.parse(profile.expiresAt) - Date.now();
+	const expiry = Number.isFinite(remainingMs)
+		? `in about ${Math.max(0, Math.round(remainingMs / 60_000))} minutes`
+		: 'within the hour';
+
+	warning({
+		message:
+			`You're logged in through your Apify account, and that login's API token expires ${expiry}. ` +
+			`The MCP client reads the token from its config file and can't refresh it, so the server stops working once the token expires.\n` +
+			`Pass --token with an API token from Apify Console (${CONSOLE_API_TOKENS_URL}) to configure a client that keeps working.`,
+	});
+
+	return useYesNoConfirm({
+		message: 'Write the expiring token to the client config anyway?',
+		default: false,
+		providedConfirmFromStdin: yes || undefined,
+		errorMessageForStdin: `The token from 'apify login' expires ${expiry}. Re-run with --token <api-token>, or with --yes to write the expiring token anyway.`,
+	});
+}
 
 export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override name = 'install' as const;
@@ -19,7 +54,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts before overwriting an existing JSON config entry (cursor, kiro, antigravity). Pass --yes to overwrite without prompting. For clients delegated to their own CLI (claude-code, vscode, vscode-insiders, codex), overwrite behavior is controlled by that CLI.';
+		'Prompts before overwriting an existing JSON config entry (cursor, kiro, antigravity), and before writing a token that expires within the hour. Pass --yes to confirm without prompting. For clients delegated to their own CLI (claude-code, vscode, vscode-insiders, codex), overwrite behavior is controlled by that CLI.';
 
 	static override examples = [
 		{
@@ -50,10 +85,12 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	};
 
 	static override flags = {
-		...YesFlag(`Overwrite an existing 'apify' entry without prompting.`),
+		...YesFlag(
+			`Answer the confirmation prompts with yes: overwrite an existing 'apify' entry, and write a token that's about to expire.`,
+		),
 		token: Flags.string({
 			char: 't',
-			description: `Apify API token to embed in the config. Defaults to APIFY_TOKEN, then the token from 'apify login'.`,
+			description: `Apify API token to embed in the config. Defaults to APIFY_TOKEN, then the token from 'apify login'. A token from an OAuth 'apify login' expires after about an hour, so pass a long-lived one from Apify Console.`,
 		}),
 		url: Flags.string({
 			description: 'Apify MCP server URL.',
@@ -76,9 +113,9 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 			return;
 		}
 
-		let token = '';
-		if (clientNeedsToken(client)) {
-			const auth = tokenFlag ? { token: tokenFlag } : await resolveAuth();
+		let token = tokenFlag ?? '';
+		if (clientNeedsToken(client) && !tokenFlag) {
+			const auth = await resolveAuth();
 			if (!auth) {
 				error({
 					message: `You are not logged in to Apify. Run 'apify login' first, or pass --token <api-token>.`,
@@ -86,6 +123,12 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 				process.exitCode = CommandExitCodes.MissingAuth;
 				return;
 			}
+
+			if (!(await confirmExpiringToken(auth, yes))) {
+				simpleLog({ message: 'No changes written.' });
+				return;
+			}
+
 			token = auth.token;
 		}
 

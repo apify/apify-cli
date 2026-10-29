@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import process from 'node:process';
@@ -11,8 +12,11 @@ vitest.mock('ci-info', async (importOriginal) => {
 });
 
 import { MCPInstallCommand } from '../../../../src/commands/mcp/install.js';
+import type { AuthProfile } from '../../../../src/lib/auth-file.js';
 import { testRunCommand } from '../../../../src/lib/command-framework/apify-command.js';
-import { CommandExitCodes } from '../../../../src/lib/consts.js';
+import { AUTH_FILE_PATH, CommandExitCodes, GLOBAL_CONFIGS_FOLDER } from '../../../../src/lib/consts.js';
+import { setSecret } from '../../../../src/lib/credentials.js';
+import { TEST_USER_ID, v2AuthFile } from '../../../__setup__/auth-file.js';
 import { useAuthSetup } from '../../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../../__setup__/hooks/useTempPath.js';
@@ -270,6 +274,92 @@ describe('apify mcp install', () => {
 			'claude mcp add --transport http --scope user apify "https://mcp.apify.com" --header "Authorization: Bearer <your-token>"',
 		);
 		expect(stderr).not.toContain(TEST_TOKEN);
+	});
+
+	describe('expiring OAuth token', () => {
+		const STORED_TOKEN = 'apify_api_STORED_zzzzzzzzzzzzzzzzzzzz';
+
+		/** A stored login, written straight to disk so the test needs no Apify API round trip. */
+		async function seedLogin(profile: Partial<AuthProfile>) {
+			await mkdir(GLOBAL_CONFIGS_FOLDER(), { recursive: true });
+			await writeFile(AUTH_FILE_PATH(), JSON.stringify(v2AuthFile(profile)), 'utf-8');
+			await setSecret(TEST_USER_ID, 'token', STORED_TOKEN);
+		}
+
+		const oauthProfile = (expiresInMs: number): Partial<AuthProfile> => ({
+			authMethod: 'oauth2',
+			expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
+			hasRefreshToken: true,
+			oauth: {
+				issuer: 'https://issuer.test',
+				clientId: 'https://client.test/oauth-client.json',
+				tokenEndpoint: 'https://issuer.test/oauth/apps/token',
+				refreshTokenExpiresAt: new Date(Date.now() + 60 * 24 * 60 * 60_000).toISOString(),
+			},
+		});
+
+		it('cursor: refuses to embed an OAuth token in a non-TTY without --yes', async () => {
+			await seedLogin(oauthProfile(50 * 60_000));
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor' });
+
+			expect(process.exitCode).toBe(1);
+			const stderr = logMessages.error.join('\n');
+			expect(stderr).toMatch(/expires in about 50 minutes/);
+			expect(stderr).toMatch(/--token <api-token>/);
+			expect(existsSync(joinPath('.cursor', 'mcp.json'))).toBe(false);
+			expect(stderr).not.toContain(STORED_TOKEN);
+		});
+
+		it('cursor: --yes writes the OAuth token but warns that it expires', async () => {
+			await seedLogin(oauthProfile(50 * 60_000));
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_yes: true });
+
+			expect(process.exitCode).toBeUndefined();
+			const config = await readJson(joinPath('.cursor', 'mcp.json'));
+			expect((config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization).toBe(
+				`Bearer ${STORED_TOKEN}`,
+			);
+			const stderr = logMessages.error.join('\n');
+			expect(stderr).toMatch(/Warning:.*expires in about 50 minutes/s);
+			expect(stderr).toMatch(/console\.apify\.com\/settings\/integrations/);
+		});
+
+		it('cursor: a token minutes from expiry is reported in minutes, not rounded up to an hour', async () => {
+			// Above TOKEN_REFRESH_SKEW_MS, so resolveAuth hands the token over without a refresh.
+			await seedLogin(oauthProfile(2 * 60_000));
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_yes: true });
+
+			expect(logMessages.error.join('\n')).toMatch(/expires in about 2 minutes/);
+		});
+
+		it('cursor: a plain API-token login is embedded without a warning', async () => {
+			await seedLogin({ authMethod: 'token', expiresAt: null, hasRefreshToken: false });
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor' });
+
+			expect(process.exitCode).toBeUndefined();
+			const config = await readJson(joinPath('.cursor', 'mcp.json'));
+			expect((config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization).toBe(
+				`Bearer ${STORED_TOKEN}`,
+			);
+			expect(logMessages.error.join('\n')).not.toMatch(/expires in about/);
+		});
+
+		it('cursor: --token wins over a stored OAuth login, so no expiry prompt', async () => {
+			await seedLogin(oauthProfile(50 * 60_000));
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_token: TEST_TOKEN });
+
+			expect(process.exitCode).toBeUndefined();
+			const config = await readJson(joinPath('.cursor', 'mcp.json'));
+			expect((config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization).toBe(
+				`Bearer ${TEST_TOKEN}`,
+			);
+			expect(logMessages.error.join('\n')).not.toMatch(/expires in about/);
+		});
 	});
 
 	it('codex: emits a friendly error with the TOML snippet (no token leak) when codex is not on PATH', async () => {
