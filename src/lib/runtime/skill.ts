@@ -8,7 +8,7 @@ import { execa } from 'execa';
 
 import { APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
 import { userHomeDir } from '../utils.js';
-import { findRunningRuntimeEngine, imageExistsLocally, runtimeUrl, type ContainerEngine } from './docker.js';
+import { findRunningRuntimeEngine, imageExistsLocally, runtimeApiUrl, type ContainerEngine } from './docker.js';
 import { installedActorRuntimeImage } from './ensure.js';
 import { configuredRuntimePorts, resolveApiBaseUrl } from './target.js';
 
@@ -66,7 +66,7 @@ async function readSkillFromImage(engine: ContainerEngine, image: string): Promi
 
 /** Over HTTP from a running runtime, else from the installed image. */
 export async function resolveRuntimeSkill(): Promise<ResolvedSkill | null> {
-	const baseUrl = resolveApiBaseUrl() ?? runtimeUrl(configuredRuntimePorts().api);
+	const baseUrl = resolveApiBaseUrl() ?? runtimeApiUrl(configuredRuntimePorts().api);
 
 	const overHttp = await fetchSkillFromRuntime(baseUrl);
 	if (overHttp) return { content: overHttp, source: { kind: 'runtime', baseUrl } };

@@ -27,11 +27,13 @@ export const DEFAULT_RUNTIME_PORTS: RuntimePorts = {
 	console: ACTOR_RUNTIME_CONSOLE_PORT,
 };
 
-export const runtimeUrl = (port: number) => `http://localhost:${port}`;
+export const runtimeApiUrl = (port: number) => `http://localhost:${port}`;
 
-export const ACTOR_RUNTIME_API_URL = runtimeUrl(ACTOR_RUNTIME_API_PORT);
+export const runtimeConsoleUrl = (port: number) => `http://localhost:${port}`;
 
-export const ACTOR_RUNTIME_CONSOLE_URL = runtimeUrl(ACTOR_RUNTIME_CONSOLE_PORT);
+export const ACTOR_RUNTIME_API_URL = runtimeApiUrl(ACTOR_RUNTIME_API_PORT);
+
+export const ACTOR_RUNTIME_CONSOLE_URL = runtimeConsoleUrl(ACTOR_RUNTIME_CONSOLE_PORT);
 
 /** Both serve the Docker-compatible API the runtime uses. */
 export type ContainerEngine = 'docker' | 'podman';
@@ -48,8 +50,8 @@ const RUNTIME_DATA_PATH = '/data';
 
 export function runtimeEnvExportLines(ports: RuntimePorts = DEFAULT_RUNTIME_PORTS): string[] {
 	return [
-		`export APIFY_CLIENT_BASE_URL=${runtimeUrl(ports.api)}`,
-		`export APIFY_CONSOLE_URL=${runtimeUrl(ports.console)}`,
+		`export APIFY_CLIENT_BASE_URL=${runtimeApiUrl(ports.api)}`,
+		`export APIFY_CONSOLE_URL=${runtimeConsoleUrl(ports.console)}`,
 	];
 }
 

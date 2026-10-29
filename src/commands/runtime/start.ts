@@ -22,7 +22,8 @@ import {
 	resolveEngineSocketPath,
 	runtimeNetworkMode,
 	runtimeSecurityOptions,
-	runtimeUrl,
+	runtimeApiUrl,
+	runtimeConsoleUrl,
 	runtimeEnvExportLines,
 	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
@@ -125,8 +126,8 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			message: [
 				`Starting the Actor runtime (data directory: ${dataDir})...`,
 				'',
-				`  API:     ${runtimeUrl(ports.api)}`,
-				`  Console: ${runtimeUrl(ports.console)}`,
+				`  API:     ${runtimeApiUrl(ports.api)}`,
+				`  Console: ${runtimeConsoleUrl(ports.console)}`,
 				'',
 				'Point the Apify CLI at the runtime with:',
 				...runtimeEnvExportLines(ports).map((line) => chalk.white.bold(`  ${line}`)),

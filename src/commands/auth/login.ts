@@ -20,7 +20,7 @@ import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInpu
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { createLocalApiServer } from '../../lib/local-api-server.js';
 import { error, info, success, warning } from '../../lib/outputs.js';
-import { runtimeUrl } from '../../lib/runtime/docker.js';
+import { runtimeApiUrl } from '../../lib/runtime/docker.js';
 import { configuredRuntimePorts, resolveApiBaseUrl } from '../../lib/runtime/target.js';
 import { tildify } from '../../lib/utils.js';
 
@@ -32,7 +32,7 @@ export function resolveLoginApiBaseUrl(): string | undefined {
 	const explicit = resolveApiBaseUrl();
 	if (explicit) return explicit;
 
-	return getConsoleUrl().includes('localhost') ? runtimeUrl(configuredRuntimePorts().api) : undefined;
+	return getConsoleUrl().includes('localhost') ? runtimeApiUrl(configuredRuntimePorts().api) : undefined;
 }
 
 const tryToLogin = async (token: string) => {

@@ -1,7 +1,7 @@
 import process from 'node:process';
 
 import { readActorRuntimeConfig, updateActorRuntimeConfig } from './config.js';
-import { DEFAULT_RUNTIME_PORTS, runtimeUrl, type RuntimePorts } from './docker.js';
+import { DEFAULT_RUNTIME_PORTS, runtimeApiUrl, runtimeConsoleUrl, type RuntimePorts } from './docker.js';
 
 /** The variables that point the CLI somewhere else; they win over the connection wherever they are set. */
 const RUNTIME_ENV_VARS = ['APIFY_CLIENT_BASE_URL', 'APIFY_CONSOLE_URL'];
@@ -31,13 +31,14 @@ export function overridingRuntimeEnvVars(env: NodeJS.ProcessEnv = process.env): 
  */
 export function resolveApiBaseUrl(env: NodeJS.ProcessEnv = process.env): string | undefined {
 	return (
-		env.APIFY_CLIENT_BASE_URL || (isConnectedToActorRuntime() ? runtimeUrl(configuredRuntimePorts().api) : undefined)
+		env.APIFY_CLIENT_BASE_URL || (isConnectedToActorRuntime() ? runtimeApiUrl(configuredRuntimePorts().api) : undefined)
 	);
 }
 
 /** The Console the CLI links to, resolved the same way as {@link resolveApiBaseUrl}. */
 export function resolveConsoleUrl(env: NodeJS.ProcessEnv = process.env): string | undefined {
 	return (
-		env.APIFY_CONSOLE_URL || (isConnectedToActorRuntime() ? runtimeUrl(configuredRuntimePorts().console) : undefined)
+		env.APIFY_CONSOLE_URL ||
+		(isConnectedToActorRuntime() ? runtimeConsoleUrl(configuredRuntimePorts().console) : undefined)
 	);
 }
