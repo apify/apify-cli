@@ -52,7 +52,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		'input-file': Flags.string({
 			aliases: ['if'],
 			description:
-				'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file. You can also specify `-` to read from standard input. With neither this flag nor `--input`, the CLI still reads standard input, but gives up once the pipe goes quiet. Use `-` to wait for a slow writer.',
+				'Optional path to a JSON file with input for the Actor. To read from standard input and wait until all input arrives, use `-`. Without this flag or `--input`, the CLI still reads standard input, but stops waiting if input is slow to start or pauses.',
 			required: false,
 			stdin: StdinMode.Stringified,
 			exclusive: ['input'],
