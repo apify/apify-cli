@@ -378,6 +378,27 @@ describe('apify mcp install', () => {
 			expect(logMessages.error.join('\n')).toContain('https://console.staging.test/settings/integrations');
 		});
 
+		it('cursor: a token with days left is embedded silently - the warning is for short-lived ones', async () => {
+			await seedLogin(oauthProfile(3 * 24 * 60 * 60_000));
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor' });
+
+			expect(process.exitCode).toBeUndefined();
+			const config = await readJson(joinPath('.cursor', 'mcp.json'));
+			expect((config.mcpServers as { apify: { headers: { Authorization: string } } }).apify.headers.Authorization).toBe(
+				`Bearer ${STORED_TOKEN}`,
+			);
+			expect(logMessages.error.join('\n')).not.toMatch(/expires in/);
+		});
+
+		it('cursor: hours are reported in hours rather than a three-digit minute count', async () => {
+			await seedLogin(oauthProfile(5 * 60 * 60_000));
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_yes: true });
+
+			expect(logMessages.error.join('\n')).toMatch(/expires in about 5 hours/);
+		});
+
 		it('cursor: a plain API-token login is embedded without a warning', async () => {
 			await seedLogin({ authMethod: 'token', expiresAt: null, hasRefreshToken: false });
 

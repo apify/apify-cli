@@ -12,17 +12,30 @@ import { clientNeedsToken, getClientHandler, isSupportedClient, SUPPORTED_CLIENT
 import { buildMcpUrl, DEFAULT_MCP_URL } from '../../lib/mcp/url.js';
 import { error, simpleLog, warning } from '../../lib/outputs.js';
 
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+
+/**
+ * Above this, the embedded token outlives any one working session and the warning would be noise.
+ * The authorization server picks the lifetime, so a longer-lived token is the server's call to make.
+ */
+const EXPIRY_WARNING_THRESHOLD_MS = DAY_MS;
+
+function plural(count: number, unit: string): string {
+	return `${count} ${count === 1 ? unit : `${unit}s`}`;
+}
+
 /** How long the token has left, as a clause that follows the token it describes. */
 function describeExpiry(remainingMs: number): string {
-	if (!Number.isFinite(remainingMs)) return 'expires within the hour';
 	// A refresh that could not reach the token endpoint hands back the stored token, which by then
 	// may have minutes or seconds left — never round that down to a reassuring "0 minutes".
 	if (remainingMs <= 0) return 'has already expired';
+	if (remainingMs < MINUTE_MS) return 'expires in under a minute';
+	if (remainingMs < HOUR_MS) return `expires in about ${plural(Math.round(remainingMs / MINUTE_MS), 'minute')}`;
+	if (remainingMs < DAY_MS) return `expires in about ${plural(Math.round(remainingMs / HOUR_MS), 'hour')}`;
 
-	const minutes = Math.round(remainingMs / 60_000);
-	if (minutes < 1) return 'expires in under a minute';
-
-	return `expires in about ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`;
+	return `expires in about ${plural(Math.round(remainingMs / DAY_MS), 'day')}`;
 }
 
 /**
@@ -38,7 +51,11 @@ async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<b
 	const { profile } = lookUpProfile(auth.profile.id);
 	if (profile?.authMethod !== 'oauth2' || !profile.expiresAt) return true;
 
-	const expiry = describeExpiry(Date.parse(profile.expiresAt) - Date.now());
+	// An unparseable expiry is not evidence of a short-lived token, and `getAccessToken` ignores it too.
+	const remainingMs = Date.parse(profile.expiresAt) - Date.now();
+	if (!Number.isFinite(remainingMs) || remainingMs > EXPIRY_WARNING_THRESHOLD_MS) return true;
+
+	const expiry = describeExpiry(remainingMs);
 	// The Console account the token has to be created under: a bare URL would act on whatever
 	// account the browser was last on, which for an organization login is the wrong one.
 	const tokensUrl = getConsoleIntegrationsUrl({
@@ -56,7 +73,7 @@ async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<b
 	return useYesNoConfirm({
 		message: 'Write the expiring token to the client config anyway?',
 		default: false,
-		providedConfirmFromStdin: yes || undefined,
+		preAnswered: yes || undefined,
 		errorMessageForStdin: `The token from 'apify login' ${expiry}. Re-run with --token <api-token>, or with --yes to write the expiring token anyway.`,
 	});
 }
@@ -71,7 +88,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts before overwriting an existing JSON config entry (cursor, kiro, antigravity), and before embedding a token that expires within the hour. Pass --yes to confirm without prompting. For clients delegated to their own CLI (claude-code, vscode, vscode-insiders, codex), overwrite behavior is controlled by that CLI.';
+		'Prompts before overwriting an existing JSON config entry (cursor, kiro, antigravity), and before embedding a token that expires within a day. Pass --yes to confirm without prompting. For clients delegated to their own CLI (claude-code, vscode, vscode-insiders, codex), overwrite behavior is controlled by that CLI.';
 
 	static override examples = [
 		{

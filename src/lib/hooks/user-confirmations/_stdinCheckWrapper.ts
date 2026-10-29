@@ -15,6 +15,12 @@ export interface StdinCheckWrapperInput<ReturnedType> extends StdinCheckWrapperO
 	 * When set, this value will be used in environments where stdin is not available.
 	 */
 	providedConfirmFromStdin?: ReturnedType;
+	/**
+	 * The answer the user already gave on the command line, typically through `--yes`. Unlike
+	 * {@link providedConfirmFromStdin}, which only fills in for a stdin nobody can type into, this
+	 * skips the prompt everywhere — a flag that promises "without prompting" has to hold on a TTY too.
+	 */
+	preAnswered?: ReturnedType;
 }
 
 type AllButFirst<T extends any[]> = T extends [any, ...infer Rest] ? Rest : never;
@@ -47,9 +53,13 @@ export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 	}: StdinCheckWrapperOptions = {},
 ): (...args: NewFunctionArgs<Fn>) => Promise<Awaited<ReturnType<Fn>>> {
 	return async (input, ...rest) => {
-		const { isTTY, hasData } = await useStdin();
-
 		const casted = input as StdinCheckWrapperInput<Awaited<ReturnType<Fn>>>;
+
+		if (typeof casted.preAnswered !== 'undefined') {
+			return casted.preAnswered;
+		}
+
+		const { isTTY, hasData } = await useStdin();
 
 		if (isCI || (!isTTY && !hasData)) {
 			if (typeof casted.providedConfirmFromStdin === 'undefined') {
