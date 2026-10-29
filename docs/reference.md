@@ -482,10 +482,12 @@ FLAGS
                                provided that directory contains an "index.js" file.
   -i, --input=<value>          Optional JSON input to
                                be given to the Actor.
-      --input-file=<value>     Optional path to a file with
-                               JSON input to be given to the Actor. The file must be
-                               a valid JSON file. You can also specify `-` to read
-                               from standard input.
+      --input-file=<value>     Optional path to a JSON file
+                               with input for the Actor. To read from standard input
+                               and wait until all input arrives, use `-`. Without
+                               this flag or `--input`, the CLI still reads standard
+                               input, but stops waiting if input is slow to start or
+                               pauses.
       --profile=<value>        The stored account to use
                                for this command, by name or user ID. See "apify auth
                                list".
@@ -963,10 +965,11 @@ FLAGS
   -i, --input=<value>       Optional inline JSON object
                             input for the Actor. To avoid shell parsing issues, wrap
                             the JSON in quotes. For JSON files, use --input-file.
-  -f, --input-file=<value>  Optional path to a file with
-                            JSON input to be given to the Actor. The file must be a
-                            valid JSON file. You can also specify `-` to read from
-                            standard input.
+  -f, --input-file=<value>  Optional path to a JSON file
+                            with input for the Actor. To read from standard input
+                            and wait until all input arrives, use `-`. Without this
+                            flag or `--input`, the CLI still reads standard input,
+                            but stops waiting if input is slow to start or pauses.
       --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
@@ -1003,10 +1006,11 @@ FLAGS
                             run (e.g. "latest" or "1.2.34").
   -i, --input=<value>       Optional JSON input to be
                             given to the Actor.
-      --input-file=<value>  Optional path to a file with JSON
-                            input to be given to the Actor. The file must be a valid
-                            JSON file. You can also specify `-` to read from
-                            standard input.
+      --input-file=<value>  Optional path to a JSON file with
+                            input for the Actor. To read from standard input and
+                            wait until all input arrives, use `-`. Without this flag
+                            or `--input`, the CLI still reads standard input, but
+                            stops waiting if input is slow to start or pauses.
       --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.

@@ -59,9 +59,11 @@ export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 			return casted.preAnswered;
 		}
 
-		const { isTTY, hasData } = await useStdin();
+		const { isTTY } = await useStdin();
 
-		if (isCI || (!isTTY && !hasData)) {
+		// Prompts need a terminal to read the answer from. Piped stdin is command input, not an
+		// answer source.
+		if (isCI || !isTTY) {
 			if (typeof casted.defaultWhenNonInteractive === 'undefined') {
 				throw new Error(casted.errorMessageForStdin ?? errorMessageForStdin);
 			}

@@ -11,7 +11,10 @@ vitest.mock('ci-info', async (importOriginal) => {
 });
 
 /** What the wrapper sees when the user is sitting at a terminal. */
-const interactiveStdin = () => useStdinMock.mockResolvedValue({ isTTY: true, hasData: false });
+const interactiveStdin = () => useStdinMock.mockResolvedValue({ isTTY: true });
+
+/** What the wrapper sees under `cmd | apify ...`: input to read, but nobody to answer a prompt. */
+const pipedStdin = () => useStdinMock.mockResolvedValue({ isTTY: undefined });
 
 describe('stdinCheckWrapper', () => {
 	it('returns preAnswered without prompting, even on a TTY', async () => {
@@ -39,5 +42,23 @@ describe('stdinCheckWrapper', () => {
 		// `defaultWhenNonInteractive` is what to assume when nobody can be asked, not an answer.
 		await expect(wrapped({ defaultWhenNonInteractive: true })).resolves.toBe(false);
 		expect(prompt).toHaveBeenCalledOnce();
+	});
+
+	it('falls back to defaultWhenNonInteractive on piped stdin instead of prompting', async () => {
+		pipedStdin();
+		const prompt = vitest.fn();
+		const wrapped = stdinCheckWrapper(prompt);
+
+		await expect(wrapped({ defaultWhenNonInteractive: true })).resolves.toBe(true);
+		expect(prompt).not.toHaveBeenCalled();
+	});
+
+	it('throws the stdin hint on piped stdin when there is no default to fall back on', async () => {
+		pipedStdin();
+		const prompt = vitest.fn();
+		const wrapped = stdinCheckWrapper(prompt, { errorMessageForStdin: 'pass --confirm' });
+
+		await expect(wrapped({})).rejects.toThrow('pass --confirm');
+		expect(prompt).not.toHaveBeenCalled();
 	});
 });
