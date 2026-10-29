@@ -91,7 +91,7 @@ apify key-value-stores keys <storeId> --json
 
 ## Local Actor runtime
 
-`apify runtime` runs a self-contained local Apify platform as a container on Docker or Podman. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account. It is experimental: it ships on the `runtime` npm dist-tag, not on `latest`, and may change in any release.
+`apify runtime` runs a self-contained local Apify platform as a container on Docker or Podman. Use it to develop and test Actors against a platform-compatible API without touching the user's cloud account. It is experimental and may change in any release.
 
 This section covers only how to *get* a runtime. **Before `apify runtime start`, read the runtime's own Agent Skill**: after `apify runtime install`, run `apify runtime skill` (add `--install` to keep it loaded in later sessions). It lives in the runtime image, so it always matches the runtime you actually have, and it covers what depends on your environment. Follow it rather than reconstructing it from memory.
 
@@ -121,12 +121,10 @@ With Docker, check with `docker info` and act on what it tells you:
 
 `apify runtime install` runs the same engine checks and prints a platform-specific hint when something is missing. It installs `apify/actor-runtime:latest` unless another image is given (for example `apify runtime install apify/actor-runtime:master-5462005` for a pinned build); `apify runtime start` runs whichever image was installed last. Only name an image when the user asks for a specific one.
 
-**Working directory.** Install the preview CLI locally in one dedicated directory rather than globally, so it cannot replace the user's stable `apify` install. Keep the runtime data and the Actor projects you create in the same directory - everything the session produced is then in one place and easy to clean up:
+**Working directory.** Keep the runtime data and the Actor projects you create in one dedicated directory - everything the session produced is then in one place and easy to clean up:
 
 ```sh
 mkdir -p apify-runtime-work && cd apify-runtime-work
-npm init -y >/dev/null && npm i apify-cli@runtime
-APIFY=./node_modules/.bin/apify        # use $APIFY for every command below
 ```
 
 **Start it and point the CLI at it.** The runtime publishes two ports on `localhost`. Export these variables in the shell you drive the CLI from (they are the same values `apify runtime -h` and `apify runtime start` print):
@@ -141,12 +139,12 @@ export APIFY_CLIENT_BASE_URL=http://localhost:3333
 export APIFY_CONSOLE_URL=http://localhost:3000
 export APIFY_DISABLE_KEYRING=1
 
-$APIFY runtime install
-$APIFY runtime skill                                      # read it BEFORE starting; it covers options your environment may need
-$APIFY runtime start --detach --data-dir ./runtime-data   # omit --detach to run in the foreground (Ctrl+C stops it)
-$APIFY login --token local-dev-token                      # the runtime accepts any token
-$APIFY actors ls --json                                   # now talks to the local runtime
-$APIFY runtime stop
+apify runtime install
+apify runtime skill                                      # read it BEFORE starting; it covers options your environment may need
+apify runtime start --detach --data-dir ./runtime-data   # omit --detach to run in the foreground (Ctrl+C stops it)
+apify login --token local-dev-token                      # the runtime accepts any token
+apify actors ls --json                                   # now talks to the local runtime
+apify runtime stop
 ```
 
 `APIFY_DISABLE_KEYRING=1` makes `apify login` store the token in `~/.apify/auth.json` instead of the OS keyring. Set it for agent flows: sandboxes rarely have a keyring, and the runtime token is a throwaway placeholder anyway, so there is nothing worth protecting. Note that this login still replaces whatever credentials `~/.apify/auth.json` held - fine in a throwaway sandbox, but on a developer's machine ask first or have the user run `apify login` with their real token afterwards.
