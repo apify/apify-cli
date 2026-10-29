@@ -303,7 +303,7 @@ describe('apify mcp install', () => {
 
 			await testRunCommand(MCPInstallCommand, { args_client: 'cursor' });
 
-			expect(process.exitCode).toBe(1);
+			expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
 			const stderr = logMessages.error.join('\n');
 			expect(stderr).toMatch(/expires in about 50 minutes/);
 			expect(stderr).toMatch(/--token <api-token>/);

@@ -1,5 +1,7 @@
 import process from 'node:process';
 
+import { isCI } from 'ci-info';
+
 import { lookUpProfile } from '../../lib/auth-file.js';
 import { type ResolvedAuth, resolveAuth } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
@@ -8,6 +10,7 @@ import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { getConsoleIntegrationsUrl } from '../../lib/console-url.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
+import { useStdin } from '../../lib/hooks/useStdin.js';
 import { clientNeedsToken, getClientHandler, isSupportedClient, SUPPORTED_CLIENTS } from '../../lib/mcp/clients.js';
 import { buildMcpUrl, DEFAULT_MCP_URL } from '../../lib/mcp/url.js';
 import { error, simpleLog, warning } from '../../lib/outputs.js';
@@ -70,12 +73,20 @@ async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<b
 			`Pass --token with an API token from Apify Console (${tokensUrl}) to configure a client that keeps working.`,
 	});
 
-	return useYesNoConfirm({
-		message: 'Write the expiring token to the client config anyway?',
-		default: false,
-		preAnswered: yes || undefined,
-		errorMessageForStdin: `The token from 'apify login' ${expiry}. Re-run with --token <api-token>, or with --yes to write the expiring token anyway.`,
-	});
+	if (yes) return true;
+
+	// `useStdin` reports `hasData` for any stdin that is not a terminal, /dev/null and a closed
+	// descriptor included, so the prompt hook would ask a question nobody can answer and then wait
+	// on input that never comes. A Docker build or a cron job has to fail with the hint instead.
+	const { isTTY } = await useStdin();
+	if (isCI || !isTTY) {
+		process.exitCode = CommandExitCodes.InvalidInput;
+		throw new Error(
+			`The token from 'apify login' ${expiry}. Re-run with --token <api-token>, or with --yes to write the expiring token anyway.`,
+		);
+	}
+
+	return useYesNoConfirm({ message: 'Write the expiring token to the client config anyway?', default: false });
 }
 
 export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
