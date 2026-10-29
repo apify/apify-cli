@@ -20,23 +20,19 @@ import { useMaskedInput } from '../../lib/hooks/user-confirmations/useMaskedInpu
 import { useSelectFromList } from '../../lib/hooks/user-confirmations/useSelectFromList.js';
 import { createLocalApiServer } from '../../lib/local-api-server.js';
 import { error, info, success, warning } from '../../lib/outputs.js';
-import { runtimeApiUrl } from '../../lib/runtime/docker.js';
+import { runtimeUrl } from '../../lib/runtime/docker.js';
 import { configuredRuntimePorts, resolveApiBaseUrl } from '../../lib/runtime/target.js';
 import { tildify } from '../../lib/utils.js';
 
 // Not really checked right now, but it might come useful if we ever need to do some breaking changes
 const API_VERSION = 'v1';
 
-/**
- * Where the token is validated. `APIFY_CLIENT_BASE_URL` and a connected Actor runtime win. Otherwise a local
- * Console (a hand-started runtime, or local platform development) means the local API: the port the
- * runtime was last started on, or 3333 when none is known.
- */
+/** A local Console (a hand-started runtime, or local platform development) means the local API. */
 export function resolveLoginApiBaseUrl(): string | undefined {
 	const explicit = resolveApiBaseUrl();
 	if (explicit) return explicit;
 
-	return getConsoleUrl().includes('localhost') ? runtimeApiUrl(configuredRuntimePorts().api) : undefined;
+	return getConsoleUrl().includes('localhost') ? runtimeUrl(configuredRuntimePorts().api) : undefined;
 }
 
 const tryToLogin = async (token: string) => {

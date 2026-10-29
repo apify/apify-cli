@@ -8,14 +8,12 @@ import { execa } from 'execa';
 
 import { APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
 import { userHomeDir } from '../utils.js';
-import { findRunningRuntimeEngine, imageExistsLocally, runtimeApiUrl, type ContainerEngine } from './docker.js';
+import { findRunningRuntimeEngine, imageExistsLocally, runtimeUrl, type ContainerEngine } from './docker.js';
 import { installedActorRuntimeImage } from './ensure.js';
 import { configuredRuntimePorts, resolveApiBaseUrl } from './target.js';
 
-/** Matches the `name` in the file's own frontmatter. */
 export const RUNTIME_SKILL_NAME = 'apify-actor-runtime';
 
-/** Under the image's WORKDIR. */
 const SKILL_DIR_IN_IMAGE = '/usr/src/app/skills/actor-runtime';
 
 const SKILL_FILE = 'SKILL.md';
@@ -31,7 +29,7 @@ export function describeSkillSource(source: SkillSource): string {
 	return source.kind === 'runtime' ? `the runtime at ${source.baseUrl}` : `the '${source.image}' image`;
 }
 
-/** Unauthenticated by design, so it works before `apify login`. Null for anything that isn't a runtime. */
+/** Unauthenticated, so it works before `apify login`. */
 async function fetchSkillFromRuntime(baseUrl: string): Promise<string | null> {
 	try {
 		const response = await fetch(`${baseUrl.replace(/\/v2\/?$/, '')}/actor-runtime/skill`, {
@@ -46,8 +44,7 @@ async function fetchSkillFromRuntime(baseUrl: string): Promise<string | null> {
 	}
 }
 
-/** Without starting the image, so 'apify runtime install' is the prerequisite rather than a running
- * container. Copies the whole directory so material added to the skill later comes along unchanged. */
+/** Reads the skill out of the image without starting it. */
 async function readSkillFromImage(engine: ContainerEngine, image: string): Promise<string | null> {
 	const scratch = await mkdtemp(join(tmpdir(), 'apify-runtime-skill-'));
 	let container: string | undefined;
@@ -67,10 +64,9 @@ async function readSkillFromImage(engine: ContainerEngine, image: string): Promi
 	}
 }
 
-/** Cheapest-first: HTTP, then the installed image. Deliberately no copy bundled with the CLI - one could
- * only ever describe the image the CLI was released against, not the one present. */
+/** Over HTTP from a running runtime, else from the installed image. */
 export async function resolveRuntimeSkill(): Promise<ResolvedSkill | null> {
-	const baseUrl = resolveApiBaseUrl() ?? runtimeApiUrl(configuredRuntimePorts().api);
+	const baseUrl = resolveApiBaseUrl() ?? runtimeUrl(configuredRuntimePorts().api);
 
 	const overHttp = await fetchSkillFromRuntime(baseUrl);
 	if (overHttp) return { content: overHttp, source: { kind: 'runtime', baseUrl } };
@@ -78,8 +74,7 @@ export async function resolveRuntimeSkill(): Promise<ResolvedSkill | null> {
 	const engine = await findRunningRuntimeEngine();
 	const image = installedActorRuntimeImage();
 
-	// A running container that did not answer means an older runtime without the endpoint; its image is
-	// still worth reading. Otherwise try whichever engine has the image on disk.
+	// A running container that did not answer is an older runtime without the endpoint; its image still has the skill.
 	for (const candidate of engine ? [engine] : (['docker', 'podman'] as const)) {
 		if (!(await imageExistsLocally(candidate, image))) continue;
 
@@ -90,8 +85,7 @@ export async function resolveRuntimeSkill(): Promise<ResolvedSkill | null> {
 	return null;
 }
 
-/** Frontmatter is metadata for a skill loader; a caller that prints has none, so swap it for a line
- * saying what the reader is holding. The body is passed through untouched. */
+/** Swaps the frontmatter, which only a skill loader needs, for a line saying what the reader is holding. */
 export function frameSkillForReading(content: string, source: SkillSource): string {
 	const body = content.replace(/^---\r?\n[\s\S]*?\r?\n---\r?\n/, '').trimStart();
 
@@ -110,7 +104,6 @@ export interface SkillTarget {
 	label: string;
 }
 
-/** The directories of the Agent Skills convention. */
 export function skillTargets(home = userHomeDir(), cwd = process.cwd()): SkillTarget[] {
 	const targets: SkillTarget[] = [];
 
@@ -121,8 +114,7 @@ export function skillTargets(home = userHomeDir(), cwd = process.cwd()): SkillTa
 		);
 	}
 
-	// Only where the project already keeps skills: creating these in whatever repository the user happens
-	// to be standing in is a tracked, committable change they did not ask for.
+	// Only where the project already keeps skills, so no new tracked files appear in a repository uninvited.
 	for (const [directory, label] of [
 		['.claude', 'this project (Claude Code)'],
 		['.agents', 'this project'],
@@ -135,8 +127,7 @@ export function skillTargets(home = userHomeDir(), cwd = process.cwd()): SkillTa
 	return targets;
 }
 
-/** Under the frontmatter, so a loader still reads that first. An installed skill is a snapshot; this is
- * what makes a stale one recognisable. */
+/** Marks the installed snapshot with its source and date, below the frontmatter so a loader still reads that first. */
 export function stampSkill(content: string, source: SkillSource, now = new Date()): string {
 	const stamp = `<!-- Installed by 'apify runtime skill --install' from ${describeSkillSource(source)} on ${now.toISOString().slice(0, 10)}. Re-run it after upgrading the runtime. -->`;
 	const frontmatter = /^(---\r?\n[\s\S]*?\r?\n---\r?\n)/.exec(content);

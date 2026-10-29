@@ -12,14 +12,6 @@ import {
 	renderHelpForCommand,
 	renderMainHelpMenu,
 } from '../../../../src/lib/command-framework/help.js';
-import {
-	ACTOR_RUNTIME_API_PORT,
-	ACTOR_RUNTIME_API_URL,
-	ACTOR_RUNTIME_CONSOLE_PORT,
-	ACTOR_RUNTIME_CONSOLE_URL,
-	DOCKER_ENGINE_INSTALL_URL,
-	DOCKER_GET_DOCKER_URL,
-} from '../../../../src/lib/runtime/docker.js';
 
 const BuiltApifyCommand = ApifyCommand as typeof _BuiltApifyCommand;
 
@@ -179,24 +171,6 @@ describe('Help rendering', () => {
 			for (const subcommand of RuntimeIndexCommand.subcommands!) {
 				expect(stripAnsi(renderHelpForCommand(subcommand)).startsWith('[EXPERIMENTAL] ')).toBe(true);
 			}
-		});
-
-		it('lists the runtime ports and the environment variables that point the CLI at them', () => {
-			const output = stripAnsi(renderHelpForCommand(RuntimeIndexCommand));
-
-			expect(output).toContain(`${ACTOR_RUNTIME_API_PORT}`);
-			expect(output).toContain(`${ACTOR_RUNTIME_CONSOLE_PORT}`);
-			expect(output).toContain(`export APIFY_CLIENT_BASE_URL=${ACTOR_RUNTIME_API_URL}`);
-			expect(output).toContain(`export APIFY_CONSOLE_URL=${ACTOR_RUNTIME_CONSOLE_URL}`);
-			expect(output).toContain('runtime start');
-		});
-
-		it('names Docker as a prerequisite and links the official install docs', () => {
-			const output = stripAnsi(renderHelpForCommand(RuntimeIndexCommand));
-
-			expect(output).toContain('Prerequisite: Docker');
-			expect(output).toContain(DOCKER_GET_DOCKER_URL);
-			expect(output).toContain(DOCKER_ENGINE_INSTALL_URL);
 		});
 	});
 

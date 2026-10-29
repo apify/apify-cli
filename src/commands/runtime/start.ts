@@ -22,8 +22,7 @@ import {
 	resolveEngineSocketPath,
 	runtimeNetworkMode,
 	runtimeSecurityOptions,
-	runtimeApiUrl,
-	runtimeConsoleUrl,
+	runtimeUrl,
 	runtimeEnvExportLines,
 	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
@@ -126,8 +125,8 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			message: [
 				`Starting the Actor runtime (data directory: ${dataDir})...`,
 				'',
-				`  API:     ${runtimeApiUrl(ports.api)}`,
-				`  Console: ${runtimeConsoleUrl(ports.console)}`,
+				`  API:     ${runtimeUrl(ports.api)}`,
+				`  Console: ${runtimeUrl(ports.console)}`,
 				'',
 				'Point the Apify CLI at the runtime with:',
 				...runtimeEnvExportLines(ports).map((line) => chalk.white.bold(`  ${line}`)),
@@ -136,7 +135,7 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			].join('\n'),
 		});
 
-		// Spawned without a shell so interrupt signals reach the engine's 'run' directly instead of dying in 'sh -c'.
+		// No shell, so interrupt signals reach the engine's 'run' directly.
 		const args = buildRuntimeRunArgs({
 			image,
 			dataDir,

@@ -2,10 +2,7 @@ import type { ApifyClient } from 'apify-client';
 
 import { APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
 
-/**
- * Whether the client talks to something other than the Apify cloud API - the only case in which it can be
- * a local Actor runtime. Runtime-only calls are skipped without a request otherwise.
- */
+/** Anything but the Apify cloud API may be a local Actor runtime; runtime-only calls are skipped otherwise. */
 export function mayTargetActorRuntime(client: Pick<ApifyClient, 'baseUrl'>): boolean {
 	try {
 		const { hostname } = new URL(client.baseUrl);
@@ -15,18 +12,13 @@ export function mayTargetActorRuntime(client: Pick<ApifyClient, 'baseUrl'>): boo
 	}
 }
 
-/**
- * `POST /actor-runtime/dev-folder/:actorId` - registers `path` as the Actor's live dev folder on a local
- * Actor runtime. On failure, `error` carries the runtime's reason; it is absent when the target has no such
- * endpoint at all (not an Actor runtime), which is not worth reporting.
- */
+/** Registers `path` as the Actor's live dev folder. `error` is absent when the target has no such endpoint. */
 export async function registerActorRuntimeDevFolder(
 	client: Pick<ApifyClient, 'baseUrl' | 'token'>,
 	actorId: string,
 	path: string,
 ): Promise<{ ok: true } | { ok: false; error?: string }> {
 	try {
-		// `baseUrl` already ends in `/v2`; the runtime serves `/v2/actor-runtime/*` as an alias of `/actor-runtime/*`.
 		const response = await fetch(`${client.baseUrl}/actor-runtime/dev-folder/${actorId}`, {
 			method: 'POST',
 			headers: {

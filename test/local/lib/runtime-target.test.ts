@@ -4,8 +4,12 @@ import { runUrl } from '../../../src/lib/commands/run-result.js';
 import { getConsoleUrl } from '../../../src/lib/console-url.js';
 import { ACTOR_RUNTIME_CONFIG_FILE_PATH } from '../../../src/lib/consts.js';
 import { updateActorRuntimeConfig } from '../../../src/lib/runtime/config.js';
-import { ACTOR_RUNTIME_API_URL, ACTOR_RUNTIME_CONSOLE_URL } from '../../../src/lib/runtime/docker.js';
-import { rememberInstalledActorRuntimeImage } from '../../../src/lib/runtime/ensure.js';
+import {
+	ACTOR_RUNTIME_API_URL,
+	ACTOR_RUNTIME_CONSOLE_URL,
+	DEFAULT_ACTOR_RUNTIME_IMAGE,
+} from '../../../src/lib/runtime/docker.js';
+import { installedActorRuntimeImage, rememberInstalledActorRuntimeImage } from '../../../src/lib/runtime/ensure.js';
 import {
 	configuredRuntimePorts,
 	overridingRuntimeEnvVars,
@@ -19,7 +23,9 @@ useAuthSetup();
 
 describe('runtime/target', () => {
 	it('targets the runtime while connected and the platform otherwise, keeping the installed image', () => {
+		expect(installedActorRuntimeImage()).toBe(DEFAULT_ACTOR_RUNTIME_IMAGE);
 		rememberInstalledActorRuntimeImage('apify/actor-runtime:master-5462005');
+		expect(installedActorRuntimeImage()).toBe('apify/actor-runtime:master-5462005');
 
 		expect(resolveApiBaseUrl({})).toBeUndefined();
 		expect(resolveConsoleUrl({})).toBeUndefined();

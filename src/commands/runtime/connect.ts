@@ -2,12 +2,7 @@ import chalk from 'chalk';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { simpleLog, success, warning } from '../../lib/outputs.js';
-import {
-	findRunningRuntimeEngine,
-	runtimeApiUrl,
-	runtimeConsoleUrl,
-	runtimeSkillHintLines,
-} from '../../lib/runtime/docker.js';
+import { findRunningRuntimeEngine, runtimeUrl, runtimeSkillHintLines } from '../../lib/runtime/docker.js';
 import {
 	configuredRuntimePorts,
 	overridingRuntimeEnvVars,
@@ -42,8 +37,8 @@ export class RuntimeConnectCommand extends ApifyCommand<typeof RuntimeConnectCom
 		success({ message: 'The Apify CLI now targets the local Actor runtime.' });
 		simpleLog({
 			message: [
-				`  API:     ${runtimeApiUrl(ports.api)}`,
-				`  Console: ${runtimeConsoleUrl(ports.console)}`,
+				`  API:     ${runtimeUrl(ports.api)}`,
+				`  Console: ${runtimeUrl(ports.console)}`,
 				'',
 				`Run ${chalk.white.bold('apify runtime disconnect')} to target the Apify platform again.`,
 				'',
