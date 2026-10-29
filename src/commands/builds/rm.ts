@@ -18,7 +18,7 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts for confirmation before deleting. Tagged builds additionally require typing the tag name. Pass --yes to skip both prompts.';
+		'Prompts for confirmation before deleting. Tagged builds require typing the tag name instead. Pass --yes to skip the prompt.';
 
 	static override examples = [
 		{

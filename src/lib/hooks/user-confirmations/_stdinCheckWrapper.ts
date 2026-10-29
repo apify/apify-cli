@@ -30,9 +30,6 @@ type NewFunctionArgs<Fn extends (...args: any[]) => any> = [
 	...AllButFirst<Parameters<Fn>>,
 ];
 
-const ConfirmFlag = 'confirm';
-const NoConfirmFlag = `no-${ConfirmFlag}`;
-
 interface StdinCheckWrapperOptions {
 	/**
 	 * When set, this value will be used in environments where stdin is not available to provide a custom error message.
@@ -49,7 +46,7 @@ interface StdinCheckWrapperOptions {
 export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 	fn: Fn,
 	{
-		errorMessageForStdin = `Please use the --${ConfirmFlag}/--${NoConfirmFlag} flags to confirm the action.`,
+		errorMessageForStdin = "Confirmation is required. Pass the command's confirmation flag (such as --yes) to confirm without a prompt.",
 	}: StdinCheckWrapperOptions = {},
 ): (...args: NewFunctionArgs<Fn>) => Promise<Awaited<ReturnType<Fn>>> {
 	return async (input, ...rest) => {
