@@ -12,15 +12,15 @@ export const promptContext = { output: process.stderr };
 
 export interface StdinCheckWrapperInput<ReturnedType> extends StdinCheckWrapperOptions {
 	/**
-	 * When set, this value will be used in environments where stdin is not available.
-	 */
-	providedConfirmFromStdin?: ReturnedType;
-	/**
-	 * The answer the user already gave on the command line, typically through `--yes`. Unlike
-	 * {@link providedConfirmFromStdin}, which only fills in for a stdin nobody can type into, this
-	 * skips the prompt everywhere — a flag that promises "without prompting" has to hold on a TTY too.
+	 * The answer the user already gave on the command line, typically through `--yes`. Skips the
+	 * prompt everywhere, a TTY included: a flag that promises "without prompting" has to hold there too.
 	 */
 	preAnswered?: ReturnedType;
+	/**
+	 * What to assume when there is nobody to ask. Unlike {@link preAnswered} this is not the user's
+	 * answer, so it never suppresses a prompt someone could actually have answered.
+	 */
+	defaultWhenNonInteractive?: ReturnedType;
 }
 
 type AllButFirst<T extends any[]> = T extends [any, ...infer Rest] ? Rest : never;
@@ -62,11 +62,11 @@ export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 		const { isTTY, hasData } = await useStdin();
 
 		if (isCI || (!isTTY && !hasData)) {
-			if (typeof casted.providedConfirmFromStdin === 'undefined') {
+			if (typeof casted.defaultWhenNonInteractive === 'undefined') {
 				throw new Error(casted.errorMessageForStdin ?? errorMessageForStdin);
 			}
 
-			return casted.providedConfirmFromStdin;
+			return casted.defaultWhenNonInteractive;
 		}
 
 		const res = await fn(input, ...rest);

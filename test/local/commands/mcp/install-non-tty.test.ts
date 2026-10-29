@@ -63,7 +63,7 @@ describe('apify mcp install, non-interactive but not CI', () => {
 		await testRunCommand(MCPInstallCommand, { args_client: 'cursor' });
 
 		expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
-		expect(logMessages.error.join('\n')).toMatch(/--token <api-token>/);
+		expect(logMessages.error.join('\n')).toMatch(/Pass --token with an API token/);
 		expect(existsSync(joinPath('.cursor', 'mcp.json'))).toBe(false);
 	});
 

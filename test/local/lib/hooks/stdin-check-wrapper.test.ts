@@ -36,8 +36,8 @@ describe('stdinCheckWrapper', () => {
 		const prompt = vitest.fn().mockResolvedValue(false);
 		const wrapped = stdinCheckWrapper(prompt);
 
-		// `providedConfirmFromStdin` is a fallback for a stdin nobody can type into, not an answer.
-		await expect(wrapped({ providedConfirmFromStdin: true })).resolves.toBe(false);
+		// `defaultWhenNonInteractive` is what to assume when nobody can be asked, not an answer.
+		await expect(wrapped({ defaultWhenNonInteractive: true })).resolves.toBe(false);
 		expect(prompt).toHaveBeenCalledOnce();
 	});
 });

@@ -306,7 +306,8 @@ describe('apify mcp install', () => {
 			expect(process.exitCode).toBe(CommandExitCodes.InvalidInput);
 			const stderr = logMessages.error.join('\n');
 			expect(stderr).toMatch(/expires in about 50 minutes/);
-			expect(stderr).toMatch(/--token <api-token>/);
+			expect(stderr).toMatch(/Pass --token with an API token/);
+			expect(stderr).toMatch(/--yes to write the expiring token anyway/);
 			expect(existsSync(joinPath('.cursor', 'mcp.json'))).toBe(false);
 			expect(stderr).not.toContain(STORED_TOKEN);
 		});

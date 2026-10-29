@@ -66,14 +66,15 @@ async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<b
 		organizationOwnerUserId: profile.organizationOwnerUserId,
 	});
 
-	warning({
-		message:
-			`You're logged in through your Apify account, and that login's API token ${expiry}. ` +
-			`The MCP client reads the token from its config file and can't refresh it, so the server stops working once the token expires.\n` +
-			`Pass --token with an API token from Apify Console (${tokensUrl}) to configure a client that keeps working.`,
-	});
+	const explanation =
+		`You're logged in through your Apify account, and that login's API token ${expiry}. ` +
+		`The MCP client reads the token from its config file and can't refresh it, so the server stops working once the token expires.\n` +
+		`Pass --token with an API token from Apify Console (${tokensUrl}) to configure a client that keeps working.`;
 
-	if (yes) return true;
+	if (yes) {
+		warning({ message: explanation });
+		return true;
+	}
 
 	// `useStdin` reports `hasData` for any stdin that is not a terminal, /dev/null and a closed
 	// descriptor included, so the prompt hook would ask a question nobody can answer and then wait
@@ -81,10 +82,11 @@ async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<b
 	const { isTTY } = await useStdin();
 	if (isCI || !isTTY) {
 		process.exitCode = CommandExitCodes.InvalidInput;
-		throw new Error(
-			`The token from 'apify login' ${expiry}. Re-run with --token <api-token>, or with --yes to write the expiring token anyway.`,
-		);
+		// The whole explanation, as one message: there is no prompt to follow it up with.
+		throw new Error(`${explanation}\nRe-run with --yes to write the expiring token anyway.`);
 	}
+
+	warning({ message: explanation });
 
 	return useYesNoConfirm({ message: 'Write the expiring token to the client config anyway?', default: false });
 }
