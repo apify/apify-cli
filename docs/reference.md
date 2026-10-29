@@ -1984,12 +1984,14 @@ ARGUMENTS
 
 FLAGS
   -t, --token=<value>  Apify API token to embed in the config.
-                       Defaults to APIFY_TOKEN, then the token from 'apify login'.
+                       Defaults to APIFY_TOKEN, then the token from 'apify login'. A
+                       token from an OAuth 'apify login' expires after about an
+                       hour, so pass a long-lived one from Apify Console.
       --tools=<value>  Comma-separated tool IDs or Actor full names
                        to expose. Forwarded as a '?tools=' query parameter.
       --url=<value>    Apify MCP server URL.
-  -y, --yes            Overwrite an existing 'apify' entry
-                       without prompting.
+  -y, --yes            Overwrite an existing 'apify' entry, and
+                       accept a token that's about to expire, without prompting.
 ```
 <!-- mcp-commands-end -->
 <!-- prettier-ignore-end -->

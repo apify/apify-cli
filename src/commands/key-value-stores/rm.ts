@@ -59,7 +59,7 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 
 		const confirmed = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Key-value store?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirmed) {
