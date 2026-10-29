@@ -5,13 +5,12 @@ import { type ResolvedAuth, resolveAuth } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
+import { getConsoleIntegrationsUrl } from '../../lib/console-url.js';
 import { CommandExitCodes } from '../../lib/consts.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { clientNeedsToken, getClientHandler, isSupportedClient, SUPPORTED_CLIENTS } from '../../lib/mcp/clients.js';
 import { buildMcpUrl, DEFAULT_MCP_URL } from '../../lib/mcp/url.js';
 import { error, simpleLog, warning } from '../../lib/outputs.js';
-
-const CONSOLE_API_TOKENS_URL = 'https://console.apify.com/settings/integrations';
 
 /**
  * The token this command writes into a client's config is a copy: nothing refreshes it there. An
@@ -21,25 +20,36 @@ const CONSOLE_API_TOKENS_URL = 'https://console.apify.com/settings/integrations'
  * Returns false when the user declines, in which case nothing should be written.
  */
 async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<boolean> {
-	const profile = auth.profile ? lookUpProfile(auth.profile.id).profile : undefined;
+	if (!auth.profile) return true;
+
+	const { profile } = lookUpProfile(auth.profile.id);
 	if (profile?.authMethod !== 'oauth2' || !profile.expiresAt) return true;
 
 	const remainingMs = Date.parse(profile.expiresAt) - Date.now();
+	const minutes = Math.max(0, Math.round(remainingMs / 60_000));
 	const expiry = Number.isFinite(remainingMs)
-		? `in about ${Math.max(0, Math.round(remainingMs / 60_000))} minutes`
+		? `in about ${minutes} ${minutes === 1 ? 'minute' : 'minutes'}`
 		: 'within the hour';
+	// The Console account the token has to be created under: a bare URL would act on whatever
+	// account the browser was last on, which for an organization login is the wrong one.
+	const tokensUrl = getConsoleIntegrationsUrl({
+		id: auth.profile.id,
+		organizationOwnerUserId: profile.organizationOwnerUserId,
+	});
 
 	warning({
 		message:
 			`You're logged in through your Apify account, and that login's API token expires ${expiry}. ` +
 			`The MCP client reads the token from its config file and can't refresh it, so the server stops working once the token expires.\n` +
-			`Pass --token with an API token from Apify Console (${CONSOLE_API_TOKENS_URL}) to configure a client that keeps working.`,
+			`Pass --token with an API token from Apify Console (${tokensUrl}) to configure a client that keeps working.`,
 	});
+
+	// `--yes` has to answer this prompt even on a TTY, where `useYesNoConfirm` would otherwise ask anyway.
+	if (yes) return true;
 
 	return useYesNoConfirm({
 		message: 'Write the expiring token to the client config anyway?',
 		default: false,
-		providedConfirmFromStdin: yes || undefined,
 		errorMessageForStdin: `The token from 'apify login' expires ${expiry}. Re-run with --token <api-token>, or with --yes to write the expiring token anyway.`,
 	});
 }

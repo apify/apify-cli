@@ -335,6 +335,33 @@ describe('apify mcp install', () => {
 			expect(logMessages.error.join('\n')).toMatch(/expires in about 2 minutes/);
 		});
 
+		it('cursor: a single remaining minute is worded in the singular', async () => {
+			await seedLogin(oauthProfile(75_000));
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_yes: true });
+
+			expect(logMessages.error.join('\n')).toMatch(/expires in about 1 minute\b/);
+		});
+
+		it("cursor: an organization login is pointed at that organization's Console tokens page", async () => {
+			await seedLogin({ ...oauthProfile(50 * 60_000), organizationOwnerUserId: 'owner-uid' });
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_yes: true });
+
+			expect(logMessages.error.join('\n')).toContain(
+				`https://console.apify.com/organization/${TEST_USER_ID}/settings/integrations`,
+			);
+		});
+
+		it('cursor: APIFY_CONSOLE_URL is honoured in the hint', async () => {
+			vitest.stubEnv('APIFY_CONSOLE_URL', 'https://console.staging.test');
+			await seedLogin(oauthProfile(50 * 60_000));
+
+			await testRunCommand(MCPInstallCommand, { args_client: 'cursor', flags_yes: true });
+
+			expect(logMessages.error.join('\n')).toContain('https://console.staging.test/settings/integrations');
+		});
+
 		it('cursor: a plain API-token login is embedded without a warning', async () => {
 			await seedLogin({ authMethod: 'token', expiresAt: null, hasRefreshToken: false });
 

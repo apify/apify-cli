@@ -16,11 +16,13 @@ interface ConfirmOverwriteOptions {
 }
 
 async function confirmOverwrite({ filePath, entryKey, yes }: ConfirmOverwriteOptions): Promise<boolean> {
+	// `--yes` has to answer this prompt even on a TTY, where `useYesNoConfirm` would otherwise ask anyway.
+	if (yes) return true;
+
 	// Skip the existing-entry preview — it contains a bearer token we should not reprint.
 	return useYesNoConfirm({
 		message: `A server entry named '${entryKey}' already exists in ${tildify(filePath)}. Overwrite it?`,
 		default: false,
-		providedConfirmFromStdin: yes || undefined,
 		errorMessageForStdin: `An '${entryKey}' entry already exists in ${tildify(filePath)}. Re-run with --yes to overwrite.`,
 	});
 }
