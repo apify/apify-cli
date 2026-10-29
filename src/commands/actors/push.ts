@@ -287,7 +287,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			required: false,
 		}),
 		all: Flags.boolean({
-			description: 'When the directory has no Actor of its own, push every Actor found in the directories below it.',
+			description: 'Push every Actor found in the subdirectories. Works only from a directory without an Actor config of its own.',
 			default: false,
 			required: false,
 			exclusive: ['actor-dir'],
