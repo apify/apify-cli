@@ -122,7 +122,7 @@ export class InitCommand extends ApifyCommand<typeof InitCommand> {
 			}
 		}
 
-		const actorConfig = await useActorConfig({ cwd });
+		const actorConfig = await useActorConfig({ cwd, yes: this.flags.yes });
 
 		if (actorConfig.isOkAnd((cfg) => cfg.exists && !cfg.migrated)) {
 			warning({

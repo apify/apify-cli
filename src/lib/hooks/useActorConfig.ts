@@ -30,12 +30,14 @@ export interface ActorConfigInput {
 	cwd?: string;
 	migrateConfig?: boolean;
 	warnAboutOldConfig?: boolean;
+	/** Set from the caller's `--yes` flag, when it has one, to answer the migration prompts. */
+	yes?: boolean;
 }
 
 export const cwdCache = new Map<string, ActorConfigResult>();
 
 export async function useActorConfig(
-	{ cwd = process.cwd(), migrateConfig = true, warnAboutOldConfig = true }: ActorConfigInput = {
+	{ cwd = process.cwd(), migrateConfig = true, warnAboutOldConfig = true, yes }: ActorConfigInput = {
 		cwd: process.cwd(),
 		migrateConfig: true,
 		warnAboutOldConfig: true,
@@ -78,7 +80,7 @@ export async function useActorConfig(
 
 	// Handle cleanup of deprecated config, we just ignore the deprecated config if both exist
 	if (config && deprecatedConfig && warnAboutOldConfig) {
-		await handleBothConfigVersionsFound(deprecatedConfigPath);
+		await handleBothConfigVersionsFound(deprecatedConfigPath, yes);
 	}
 
 	if (!config && !deprecatedConfig) {
@@ -90,7 +92,7 @@ export async function useActorConfig(
 	let migrated = false;
 
 	if (!config && deprecatedConfig && migrateConfig) {
-		const migratedConfig = await handleMigrationFlow(deprecatedConfig, deprecatedConfigPath, newConfigPath);
+		const migratedConfig = await handleMigrationFlow(deprecatedConfig, deprecatedConfigPath, newConfigPath, yes);
 
 		if (migratedConfig.isErr()) {
 			return err(migratedConfig.unwrapErr());
@@ -107,11 +109,13 @@ export async function useActorConfig(
 	return ok({ exists: true, migrated, config: config || deprecatedConfig || {} });
 }
 
-async function handleBothConfigVersionsFound(deprecatedConfigPath: string) {
+async function handleBothConfigVersionsFound(deprecatedConfigPath: string, yes?: boolean) {
 	const confirmed = await useYesNoConfirm({
 		message: `The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Since we have found both files in your Actor directory, "apify.json" will be renamed to "apify.json.deprecated". Going forward, all commands will use ".actor/actor.json". You can read about the differences between the old and the new config at https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md. Do you want to continue?`,
-		errorMessageForStdin:
-			'Re-run in an interactive terminal to let the CLI rename the stale "apify.json", or rename or remove it yourself. The ".actor/actor.json" file is already in use either way.',
+		preAnswered: yes || undefined,
+		// Declining only warns and leaves ".actor/actor.json" in use, so assume no when we can't ask
+		// rather than aborting the command over a stale file.
+		providedConfirmFromStdin: false,
 	});
 
 	// If users refuse to migrate, 🤷
@@ -150,6 +154,7 @@ async function handleMigrationFlow(
 	deprecatedConfig: Record<string, unknown>,
 	deprecatedConfigPath: string,
 	configPath: string,
+	yes?: boolean,
 ): Promise<Result<Record<string, unknown>, ActorConfigError>> {
 	let migratedConfig = { ...deprecatedConfig };
 
@@ -171,8 +176,9 @@ async function handleMigrationFlow(
 
 	const confirmed = await useYesNoConfirm({
 		message: `The new version of Apify CLI uses the ".actor/actor.json" instead of the "apify.json" file. Your "apify.json" file will be automatically updated to the new format under ".actor/actor.json". The original file will be renamed by adding the ".deprecated" suffix. Do you want to continue?`,
-		errorMessageForStdin:
-			'Re-run in an interactive terminal to let the CLI migrate "apify.json", or update it manually by following https://github.com/apify/apify-cli/blob/master/MIGRATIONS.md.',
+		preAnswered: yes || undefined,
+		// Assume no when we can't ask; the decline branch below explains the migration properly.
+		providedConfirmFromStdin: false,
 	});
 
 	if (!confirmed) {

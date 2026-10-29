@@ -62,6 +62,38 @@ describe('stdinCheckWrapper', () => {
 		});
 	});
 
+	// The shape useActorConfig's migration prompts use: --yes answers them, and when we can't ask
+	// at all they decline rather than aborting the command.
+	describe('with both preAnswered and providedConfirmFromStdin', () => {
+		it('prefers preAnswered on a TTY', async () => {
+			const { prompt, wrapped } = makePrompt();
+
+			await expect(wrapped({ message: 'Migrate?', preAnswered: true, providedConfirmFromStdin: false })).resolves.toBe(
+				true,
+			);
+			expect(prompt).not.toHaveBeenCalled();
+		});
+
+		it('prompts on a TTY when preAnswered is undefined', async () => {
+			const { prompt, wrapped } = makePrompt(true);
+
+			await expect(
+				wrapped({ message: 'Migrate?', preAnswered: undefined, providedConfirmFromStdin: false }),
+			).resolves.toBe(true);
+			expect(prompt).toHaveBeenCalledOnce();
+		});
+
+		it('declines instead of throwing without a usable stdin', async () => {
+			stdinState.isTTY = false;
+			const { prompt, wrapped } = makePrompt();
+
+			await expect(
+				wrapped({ message: 'Migrate?', preAnswered: undefined, providedConfirmFromStdin: false }),
+			).resolves.toBe(false);
+			expect(prompt).not.toHaveBeenCalled();
+		});
+	});
+
 	describe('without a usable stdin', () => {
 		beforeEach(() => {
 			stdinState.isTTY = false;
