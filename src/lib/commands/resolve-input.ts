@@ -4,10 +4,10 @@ import process from 'node:process';
 
 import mime from 'mime';
 
-import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { CommandExitCodes } from '../consts.js';
-import { error } from '../outputs.js';
+import { error, warning } from '../outputs.js';
 import { getLocalInput } from '../utils.js';
+import { readStdin, stdinWasCutShort } from './read-stdin.js';
 
 interface InputOverrideOptions {
 	schemaHint?: string;
@@ -58,8 +58,18 @@ export async function getInputOverride(
 	const { schemaHint } = options;
 
 	if (!inputFlag && !inputFileFlag) {
-		// Try reading stdin
-		const stdin = cachedStdinInput;
+		// Nobody asked for stdin here, so it must not block: this command is reachable with a pipe
+		// it only inherited from whatever spawned it.
+		const stdin = await readStdin({ implicit: true });
+
+		// Giving up on a silent pipe is the only way not to hang on one, but a writer that was just
+		// slow would otherwise see its input vanish with nothing said.
+		if (!stdin && stdinWasCutShort()) {
+			warning({
+				message:
+					'Nothing arrived on standard input, so it was ignored. Use `--input-file=-` to wait for a slow writer.',
+			});
+		}
 
 		if (stdin) {
 			try {
@@ -76,9 +86,15 @@ export async function getInputOverride(
 				input = parsed;
 				source = 'stdin';
 			} catch (err) {
+				// Standard input is only waited on for as long as it keeps talking, so a writer that stalls
+				// mid-payload leaves behind JSON that ends nowhere. Say so, or the message blames the data.
+				const cutShortHint = stdinWasCutShort()
+					? '\nStandard input was still open when the CLI stopped waiting for it. If the input is incomplete, use `--input-file=-` to wait for all of it.'
+					: '';
+
 				error({
 					message: withSchemaHint(
-						`Cannot parse JSON input from standard input.\n  ${(err as Error).message}`,
+						`Cannot parse JSON input from standard input.\n  ${(err as Error).message}${cutShortHint}`,
 						schemaHint,
 					),
 				});
