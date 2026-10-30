@@ -873,13 +873,15 @@ ARGUMENTS
            modify the Actor with the name specified in '.actor/actor.json' file.
 
 FLAGS
-      --actor-dir=<value>        When the directory has
-                                 no Actor of its own, push the Actor in this
-                                 directory (relative to it). Repeat the flag to push
-                                 several Actors; they are pushed in path order.
-      --all                      When the directory has
-                                 no Actor of its own, push every Actor found in the
-                                 directories below it.
+      --actor-dir=<value>        Push the Actor in this
+                                 subdirectory. The path is relative to the directory
+                                 you push from. To push several Actors, repeat the
+                                 flag. Actors are pushed in path order. Works only
+                                 from a directory without an Actor config of its
+                                 own.
+      --all                      Push every Actor found
+                                 in the subdirectories. Works only from a directory
+                                 without an Actor config of its own.
       --allow-missing-secrets    Allow the command to
                                  continue even when secret values are not found in
                                  the local secrets storage.
