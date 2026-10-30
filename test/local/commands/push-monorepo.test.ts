@@ -460,9 +460,15 @@ describe('apify push of a monorepo Actor', () => {
 	});
 
 	it.each([
-		['lies inside it', { dockerContextDir: '../src' }],
-		['is not set', {}],
-	])('pushes the Actor folder as usual when the Docker context %s', async (_, fields) => {
+		['is the Actor folder itself', { dockerContextDir: '..' }, []],
+		[
+			'lies inside it, with a Dockerfile there',
+			{ dockerContextDir: '../src', dockerfile: '../src/Dockerfile' },
+			['src/Dockerfile'],
+		],
+		['is not set', {}, []],
+	])('pushes the Actor folder as usual when the Docker context %s', async (_, fields, extraFiles) => {
+		for (const file of extraFiles) await write(`${ACTOR_PATH}/${file}`, 'FROM apify/actor-node:20\n');
 		await writeActorConfig(fields);
 
 		await testRunCommand(ActorsPushCommand, {});
@@ -471,7 +477,9 @@ describe('apify push of a monorepo Actor', () => {
 		expect(process.exitCode).toBeFalsy();
 		const modifier = versionPayload(versionUpdate);
 		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.SOURCE_FILES);
-		expect(modifier.sourceFiles!.map((file) => file.name).sort()).toEqual(['.actor/actor.json', 'src/index.ts']);
+		expect(modifier.sourceFiles!.map((file) => file.name).sort()).toEqual(
+			['.actor/actor.json', 'src/index.ts', ...extraFiles].sort(),
+		);
 		expect(modifier).not.toHaveProperty('actorPath');
 		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 	});

@@ -323,8 +323,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			return;
 		}
 
-		const apifyClient = await getLoggedClientOrThrow();
-
+		// Everything up to the path checks is local, so a broken Actor fails the same way with or without a login.
 		const actorConfigResult = await useActorConfig({ cwd });
 
 		if (actorConfigResult.isErr()) {
@@ -365,8 +364,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			// BuildKit reads the Dockerfile from the context, wherever the context lies.
 			dockerContextRoot: dockerContext.kind === 'none' ? undefined : dockerContext.contextRoot,
 		});
-		if (pathProblems.length > 0) {
-			error({ message: formatActorPathProblems(pathProblems) });
+		// A readme or changelog the platform cannot find only falls back to its default, so push goes on.
+		const pathWarnings = formatActorPathProblems(pathProblems, 'warning');
+		if (pathWarnings) warning({ message: pathWarnings });
+		const pathErrors = formatActorPathProblems(pathProblems, 'error');
+		if (pathErrors) {
+			error({ message: pathErrors });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
@@ -383,6 +386,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			process.exitCode = CommandExitCodes.NotImplemented;
 		};
 
+		const apifyClient = await getLoggedClientOrThrow();
 		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
