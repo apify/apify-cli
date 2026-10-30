@@ -3,7 +3,7 @@ import { readdir } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 
 import { LOCAL_CONFIG_PATH } from './consts.js';
-import { ACTOR_FILES_HARDCODED_IGNORE, getJsonFileContent } from './utils.js';
+import { ACTOR_FILES_HARDCODED_IGNORE, getGitignoreMatcher, getJsonFileContent } from './utils.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
 const SKIPPED_DIRECTORY_NAMES = new Set(ACTOR_FILES_HARDCODED_IGNORE.map((pattern) => pattern.replace(/\/\*\*$/, '')));
@@ -13,6 +13,8 @@ export interface FoundActorDir {
 	dir: string;
 	/** The `name` from its `.actor/actor.json`, when the file could be read. */
 	name: string | undefined;
+	/** Whether .gitignore rules exclude the directory, judged from the root the same way the upload judges files. */
+	ignored: boolean;
 }
 
 /** Turns a directory below `root` into the `/`-separated relative path used to address it. */
@@ -34,9 +36,10 @@ function readActorName(dir: string): string | undefined {
  * Finds every directory below `root` with a `.actor/actor.json`, sorted by path. Skips the directory names
  * `getActorLocalFilePaths` always ignores (at any depth, not only at the root) and does not descend below a
  * found Actor. A directory that cannot be read is skipped; when that is the root, nothing is found.
+ * An Actor in a directory .gitignore ignores is still found, marked `ignored`.
  */
 export async function findActorDirs(root: string): Promise<FoundActorDir[]> {
-	const found: FoundActorDir[] = [];
+	const found: Omit<FoundActorDir, 'ignored'>[] = [];
 
 	const walk = async (dir: string) => {
 		let entries;
@@ -66,5 +69,13 @@ export async function findActorDirs(root: string): Promise<FoundActorDir[]> {
 
 	await walk(root);
 
-	return found.sort((a, b) => (a.dir < b.dir ? -1 : a.dir > b.dir ? 1 : 0));
+	if (!found.length) {
+		return [];
+	}
+
+	const isGitignored = await getGitignoreMatcher(root);
+
+	return found
+		.map((actor) => ({ ...actor, ignored: isGitignored(`${actor.dir}/`) }))
+		.sort((a, b) => (a.dir < b.dir ? -1 : a.dir > b.dir ? 1 : 0));
 }

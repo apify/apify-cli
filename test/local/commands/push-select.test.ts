@@ -1,3 +1,4 @@
+import { execSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
@@ -200,6 +201,7 @@ describe('apify push in a repository with several Actors', () => {
 			expect(output).toContain('actors/b (actor-b)');
 			expect(output).toContain('tools/c (actor-c)');
 			expect(output).not.toContain('node_modules');
+			expect(output).not.toContain('ignored by .gitignore');
 			expect(output).toContain('Choose what to push: --all, or run apify push --dir <path> for each Actor.');
 			expect(output.indexOf('actors/a')).toBeLessThan(output.indexOf('actors/b'));
 			expect(output.indexOf('actors/b')).toBeLessThan(output.indexOf('tools/c'));
@@ -543,6 +545,83 @@ describe('apify push in a repository with several Actors', () => {
 
 			expect(multiSelect).not.toHaveBeenCalled();
 			expect(pushedActorIds()).toHaveLength(3);
+		});
+	});
+
+	describe('Actors in directories .gitignore ignores', () => {
+		// The root becomes a Git repository whose .gitignore ignores tools/, the directory of Actor C.
+		beforeEach(async () => {
+			execSync('git init', { cwd: joinPath(), stdio: 'ignore' });
+			await write('.gitignore', 'tools/\n');
+		});
+
+		it('skips them with --all, names them on stderr, and pushes the rest', async () => {
+			await run({ flags_all: true });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			expect(pushedActorIds()).toEqual([ACTOR_A.id, ACTOR_B.id]);
+			expect(stderr()).toContain(
+				"Skipping tools/c (actor-c) because it's ignored by .gitignore. Run apify push --dir tools/c to push it.",
+			);
+		});
+
+		it('pushes nothing and exits 4 when --all finds only ignored Actors', async () => {
+			await write('.gitignore', 'actors/\ntools/\n');
+
+			await run({ flags_all: true, flags_json: true });
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
+			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
+			expect(logMessages.log).toEqual([]);
+			const output = stderr();
+			expect(output).toContain('Run apify push --dir actors/a to push it.');
+			expect(output).toContain('Run apify push --dir tools/c to push it.');
+			expect(output).toContain(
+				'Every Actor below this directory is ignored by .gitignore, so --all has nothing to push.',
+			);
+		});
+
+		it('leaves them out of the --json results and keeps stdout to the document', async () => {
+			await run({ flags_all: true, flags_json: true });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const summary = stdoutJson();
+			expect(summary).toMatchObject({ ok: true, operation: 'push', exitCode: 0 });
+			expect(summary.results.map((entry: { dir: string }) => entry.dir)).toEqual(['actors/a', 'actors/b']);
+			expect(stderr()).toContain('Skipping tools/c (actor-c)');
+		});
+
+		it('labels them in the prompt, unchecked like the rest, and pushes one when picked', async () => {
+			stdinState.isTTY = true;
+			multiSelect.mockResolvedValueOnce(['tools/c']);
+
+			await run();
+
+			expect(multiSelect.mock.calls[0][0].choices).toEqual([
+				{ name: 'actors/a (actor-a)', value: 'actors/a' },
+				{ name: 'actors/b (actor-b)', value: 'actors/b' },
+				{ name: 'tools/c (actor-c) [ignored by .gitignore]', value: 'tools/c' },
+			]);
+			expect(commandProcess.exitCode).toBeFalsy();
+			expect(pushedActorIds()).toEqual([ACTOR_C.id]);
+		});
+
+		it('labels them in the list and says --all skips them when it cannot ask', async () => {
+			await run();
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
+			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
+			const output = stderr();
+			expect(output).toContain('  actors/a (actor-a)\n');
+			expect(output).toContain('  tools/c (actor-c) [ignored by .gitignore]');
+			expect(output).toContain('--all skips the Actors ignored by .gitignore.');
+		});
+
+		it('pushes one named with --dir', async () => {
+			await run({ flags_dir: 'tools/c' });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			expect(pushedActorIds()).toEqual([ACTOR_C.id]);
 		});
 	});
 });

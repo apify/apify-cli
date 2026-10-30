@@ -1,9 +1,27 @@
+import { execSync } from 'node:child_process';
 import { chmod, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
 import { findActorDirs, toPosixRelative } from '../../../src/lib/find-actor-dirs.js';
+import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+
+// vi.mock is hoisted before imports, so the gitignore matcher gets the mocked version. With `gitAvailable` off, every
+// git call fails as it does without git, which sends the matcher to its own .gitignore parsing.
+const gitState = vi.hoisted(() => ({ gitAvailable: true }));
+vi.mock('node:child_process', async (importOriginal) => {
+	const original = await importOriginal<typeof import('node:child_process')>();
+	return {
+		...original,
+		execSync: ((...args: Parameters<typeof original.execSync>) => {
+			if (!gitState.gitAvailable) {
+				throw new Error('not a git repository');
+			}
+			return original.execSync(...args);
+		}) as typeof original.execSync,
+	};
+});
 
 const { beforeAllCalls, afterAllCalls, joinPath, tmpPath } = useTempPath('find-actor-dirs', {
 	create: true,
@@ -22,6 +40,7 @@ async function writeActor(dir: string, name: string | undefined = dir.split('/')
 }
 
 beforeEach(async () => {
+	gitState.gitAvailable = true;
 	await beforeAllCalls();
 });
 
@@ -37,9 +56,9 @@ describe('findActorDirs', () => {
 		await write('packages/shared/index.js');
 
 		await expect(findActorDirs(tmpPath)).resolves.toEqual([
-			{ dir: 'actors/alpha', name: 'alpha' },
-			{ dir: 'actors/zeta', name: 'zeta' },
-			{ dir: 'tools/beta', name: 'tool-beta' },
+			{ dir: 'actors/alpha', name: 'alpha', ignored: false },
+			{ dir: 'actors/zeta', name: 'zeta', ignored: false },
+			{ dir: 'tools/beta', name: 'tool-beta', ignored: false },
 		]);
 	});
 
@@ -71,8 +90,8 @@ describe('findActorDirs', () => {
 		await write('nameless/.actor/actor.json', '{}');
 
 		await expect(findActorDirs(tmpPath)).resolves.toEqual([
-			{ dir: 'broken', name: undefined },
-			{ dir: 'nameless', name: undefined },
+			{ dir: 'broken', name: undefined, ignored: false },
+			{ dir: 'nameless', name: undefined, ignored: false },
 		]);
 	});
 
@@ -112,5 +131,43 @@ describe('findActorDirs', () => {
 		expect(found.dir).toBe('group/sub/actor');
 		expect(found.dir).not.toContain('\\');
 		expect(toPosixRelative(tmpPath, joinPath('group', 'sub', 'actor'))).toBe('group/sub/actor');
+	});
+
+	describe('Actors in directories .gitignore ignores', () => {
+		// The root .gitignore ignores a parent directory, and a nested .gitignore ignores an Actor directory itself.
+		// An ignored file inside an Actor leaves the Actor alone.
+		async function writeRepository() {
+			await write('.gitignore', 'archive/\n*.log\n');
+			await write('actors/.gitignore', 'gamma\n');
+			await writeActor('actors/beta');
+			await writeActor('actors/gamma');
+			await writeActor('archive/old/alpha');
+			await write('actors/beta/debug.log');
+		}
+
+		const expected = [
+			{ dir: 'actors/beta', name: 'beta', ignored: false },
+			{ dir: 'actors/gamma', name: 'gamma', ignored: true },
+			{ dir: 'archive/old/alpha', name: 'alpha', ignored: true },
+		];
+
+		it('finds them and marks them ignored, as the upload leaves them out', async () => {
+			execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+			await writeRepository();
+
+			await expect(findActorDirs(tmpPath)).resolves.toEqual(expected);
+
+			const uploaded = await getActorLocalFilePaths(tmpPath);
+			expect(uploaded).toContain('actors/beta/.actor/actor.json');
+			expect(uploaded).not.toContain('actors/gamma/.actor/actor.json');
+			expect(uploaded).not.toContain('archive/old/alpha/.actor/actor.json');
+		});
+
+		it('marks them the same way when git is unavailable', async () => {
+			gitState.gitAvailable = false;
+			await writeRepository();
+
+			await expect(findActorDirs(tmpPath)).resolves.toEqual(expected);
+		});
 	});
 });

@@ -93,6 +93,9 @@ interface PushSelectionResult {
 
 const SELECTION_HINT = 'Choose what to push: --all, or run apify push --dir <path> for each Actor.';
 
+/** Marks an Actor in a directory .gitignore ignores. --all skips it; picking it or naming it with --dir pushes it. */
+const IGNORED_TAG = '[ignored by .gitignore]';
+
 const interruptedMessage = (notPushed: string[]) => `Interrupted. Not pushed: ${notPushed.join(', ')}`;
 
 /**
@@ -289,7 +292,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}),
 		all: Flags.boolean({
 			description:
-				'Push every Actor found in the subdirectories. Works only from a directory without an Actor config of its own.',
+				'Push every Actor found in the subdirectories, except the ones ignored by .gitignore. Works only from a directory without an Actor config of its own.',
 			default: false,
 			required: false,
 		}),
@@ -447,23 +450,43 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}
 	}
 
-	/** Resolves the Actor directories to push from --all or a prompt; `undefined` when the command stops here. */
+	/**
+	 * Resolves the Actor directories to push from --all or a prompt; `undefined` when the command stops here.
+	 * An Actor in an ignored directory is never pushed implicitly: --all skips it, the prompt and the list mark it.
+	 */
 	private async selectActorDirs(root: string, actorDirs: FoundActorDir[]): Promise<string[] | undefined> {
+		// Paths relative to where the command ran, so each one works as the --dir value.
+		const dirForFlag = (dir: string) => toPosixRelative(process.cwd(), join(root, dir));
+		const describe = ({ dir, name }: FoundActorDir) => (name ? `${dir} (${name})` : dir);
+		const label = (actor: FoundActorDir) => (actor.ignored ? `${describe(actor)} ${IGNORED_TAG}` : describe(actor));
+
 		if (this.flags.all) {
-			return actorDirs.map((actor) => actor.dir);
+			for (const actor of actorDirs.filter(({ ignored }) => ignored)) {
+				const dir = dirForFlag(actor.dir);
+				info({
+					message: `Skipping ${describe({ ...actor, dir })} because it's ignored by .gitignore. Run apify push --dir ${dir} to push it.`,
+				});
+			}
+
+			const dirs = actorDirs.filter(({ ignored }) => !ignored).map((actor) => actor.dir);
+
+			if (!dirs.length) {
+				error({ message: 'Every Actor below this directory is ignored by .gitignore, so --all has nothing to push.' });
+				process.exitCode = CommandExitCodes.NoFilesToPush;
+				return;
+			}
+
+			return dirs;
 		}
 
-		const label = ({ dir, name }: FoundActorDir) => (name ? `${dir} (${name})` : dir);
 		const { isTTY } = await useStdin();
 
 		if (isCI || !isTTY) {
-			// Paths relative to where the command ran, so each one works as the --dir value.
-			const dirForFlag = (dir: string) => toPosixRelative(process.cwd(), join(root, dir));
-
 			simpleLog({
 				message: [
 					'This directory has no Actor of its own, but these directories below it do:',
 					...actorDirs.map((actor) => `  ${label({ ...actor, dir: dirForFlag(actor.dir) })}`),
+					...(actorDirs.some(({ ignored }) => ignored) ? ['--all skips the Actors ignored by .gitignore.'] : []),
 				].join('\n'),
 			});
 			error({ message: SELECTION_HINT });
