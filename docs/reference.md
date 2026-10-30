@@ -862,7 +862,7 @@ DESCRIPTION
   Use --force to override newer remote versions.
 
 USAGE
-  $ apify actors push [actorId] [--actor-dir <value> | --all]
+  $ apify actors push [actorId] [--all]
                       [--allow-missing-secrets] [--apply-env-vars-to-build]
                       [-b <value>] [--dir <value>] [-f] [--json] [--open]
                       [--profile <value>] [-v <value>] [-w <value>]
@@ -873,12 +873,6 @@ ARGUMENTS
            modify the Actor with the name specified in '.actor/actor.json' file.
 
 FLAGS
-      --actor-dir=<value>        Push the Actor in this
-                                 subdirectory. The path is relative to the directory
-                                 you push from. To push several Actors, repeat the
-                                 flag. Actors are pushed in path order. Works only
-                                 from a directory without an Actor config of its
-                                 own.
       --all                      Push every Actor found
                                  in the subdirectories. Works only from a directory
                                  without an Actor config of its own.

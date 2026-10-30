@@ -1,5 +1,5 @@
-import { existsSync, readFileSync, statSync, unlinkSync, writeSync } from 'node:fs';
-import { basename, isAbsolute, join, resolve } from 'node:path';
+import { readFileSync, statSync, unlinkSync, writeSync } from 'node:fs';
+import { basename, join, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, Build } from 'apify-client';
@@ -91,7 +91,7 @@ interface PushSelectionResult {
 	exitCode?: number;
 }
 
-const SELECTION_HINT = 'Choose what to push: --all, or --actor-dir <path> for each Actor.';
+const SELECTION_HINT = 'Choose what to push: --all, or run apify push --dir <path> for each Actor.';
 
 const interruptedMessage = (notPushed: string[]) => `Interrupted. Not pushed: ${notPushed.join(', ')}`;
 
@@ -245,8 +245,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			command: 'apify push --no-wait-for-finish',
 		},
 		{
-			description: 'From the root of a repository with several Actors, deploy two of them.',
-			command: 'apify push --actor-dir actors/first --actor-dir actors/second',
+			description: 'From the root of a repository with several Actors, deploy all of them.',
+			command: 'apify push --all',
 		},
 	];
 
@@ -292,14 +292,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 				'Push every Actor found in the subdirectories. Works only from a directory without an Actor config of its own.',
 			default: false,
 			required: false,
-			exclusive: ['actor-dir'],
-		}),
-		'actor-dir': Flags.string({
-			description:
-				'Push the Actor in this subdirectory. The path is relative to the directory you push from. To push several Actors, repeat the flag. Actors are pushed in path order. Works only from a directory without an Actor config of its own.',
-			required: false,
-			multiple: true,
-			exclusive: ['all'],
 		}),
 		'allow-missing-secrets': Flags.boolean({
 			description: 'Allow the command to continue even when secret values are not found in the local secrets storage.',
@@ -329,12 +321,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const filePathsToPush = await getActorLocalFilePaths(cwd);
 
 		// A directory without an Actor of its own may hold Actors below it; then the user picks which to push.
-		// The selection flags have no meaning in an Actor directory, so they fail there instead of being ignored.
+		// --all has no meaning in an Actor directory, so it fails there instead of being ignored.
 		if (hasOwnConfigFile(filePathsToPush)) {
-			if (this.flags.all || this.flags.actorDir?.length) {
+			if (this.flags.all) {
 				error({
 					message:
-						'This directory is an Actor itself, so --all and --actor-dir do not apply. Run the command without them, or from a directory above the Actors.',
+						"This directory is an Actor itself, so --all doesn't apply. Run the command without it, or from a directory above the Actors.",
 				});
 				process.exitCode = CommandExitCodes.InvalidInput;
 				return;
@@ -342,8 +334,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		} else {
 			const actorDirs = await findActorDirs(cwd);
 
-			// An explicit --actor-dir may name an Actor discovery does not reach (a symlink, an ignored folder).
-			if (actorDirs.length || this.flags.actorDir?.length) {
+			if (actorDirs.length) {
 				await this.pushSelected(cwd, actorDirs);
 				return;
 			}
@@ -366,7 +357,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		if (selected.length > 1 && this.args.actorId) {
 			error({
-				message: `The actorId argument applies to a single Actor, but ${selected.length} Actors are selected. Pass --actor-dir with one directory, or drop the argument.`,
+				message: `The actorId argument applies to a single Actor, but ${selected.length} Actors are selected. Run apify push --dir <path> for one Actor, or drop the argument.`,
 			});
 			process.exitCode = CommandExitCodes.InvalidInput;
 			return;
@@ -456,31 +447,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		}
 	}
 
-	/** Resolves the Actor directories to push from the flags or a prompt; `undefined` when the command stops here. */
+	/** Resolves the Actor directories to push from --all or a prompt; `undefined` when the command stops here. */
 	private async selectActorDirs(root: string, actorDirs: FoundActorDir[]): Promise<string[] | undefined> {
-		if (this.flags.actorDir?.length) {
-			const dirs = [...new Set(this.flags.actorDir.map((actorDir) => toPosixRelative(root, resolve(root, actorDir))))];
-			const outside = dirs.find((dir) => isAbsolute(dir) || dir === '..' || dir.startsWith('../'));
-
-			if (outside !== undefined) {
-				error({
-					message: `Directory "${outside}" from --actor-dir is outside the pushed directory. Pass a path below it.`,
-				});
-				process.exitCode = CommandExitCodes.NoFilesToPush;
-				return;
-			}
-
-			const missing = dirs.find((dir) => !existsSync(join(root, dir, LOCAL_CONFIG_PATH)));
-
-			if (missing !== undefined) {
-				error({ message: `Directory "${missing || '.'}" from --actor-dir has no .actor/actor.json.` });
-				process.exitCode = CommandExitCodes.NoFilesToPush;
-				return;
-			}
-
-			return dirs.sort();
-		}
-
 		if (this.flags.all) {
 			return actorDirs.map((actor) => actor.dir);
 		}
@@ -489,10 +457,13 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const { isTTY } = await useStdin();
 
 		if (isCI || !isTTY) {
+			// Paths relative to where the command ran, so each one works as the --dir value.
+			const dirForFlag = (dir: string) => toPosixRelative(process.cwd(), join(root, dir));
+
 			simpleLog({
 				message: [
 					'This directory has no Actor of its own, but these directories below it do:',
-					...actorDirs.map((actor) => `  ${label(actor)}`),
+					...actorDirs.map((actor) => `  ${label({ ...actor, dir: dirForFlag(actor.dir) })}`),
 				].join('\n'),
 			});
 			error({ message: SELECTION_HINT });

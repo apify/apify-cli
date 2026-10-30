@@ -1,4 +1,4 @@
-import { mkdir, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
@@ -200,9 +200,21 @@ describe('apify push in a repository with several Actors', () => {
 			expect(output).toContain('actors/b (actor-b)');
 			expect(output).toContain('tools/c (actor-c)');
 			expect(output).not.toContain('node_modules');
-			expect(output).toContain('Choose what to push: --all, or --actor-dir <path> for each Actor.');
+			expect(output).toContain('Choose what to push: --all, or run apify push --dir <path> for each Actor.');
 			expect(output.indexOf('actors/a')).toBeLessThan(output.indexOf('actors/b'));
 			expect(output.indexOf('actors/b')).toBeLessThan(output.indexOf('tools/c'));
+		});
+
+		it('lists the paths to pass to --dir from where the command ran when --dir points elsewhere', async () => {
+			await run({ flags_dir: 'actors' });
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
+			const output = stderr();
+			expect(output).toContain('  actors/a (actor-a)');
+			expect(output).toContain('  actors/b (actor-b)');
+			expect(output).not.toContain('tools/c');
+			expect(output).toContain('run apify push --dir <path> for each Actor.');
+			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
 		});
 
 		it('exits 4 with a single Actor below too, instead of guessing', async () => {
@@ -254,55 +266,7 @@ describe('apify push in a repository with several Actors', () => {
 			await run({ flags_all: true });
 
 			expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidInput);
-			expect(stderr()).toContain('This directory is an Actor itself, so --all and --actor-dir do not apply.');
-			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
-			expect(versionUpdate).not.toHaveBeenCalled();
-		});
-
-		it('rejects --actor-dir in a directory that is an Actor itself', async () => {
-			forceNewCwd('actors/a');
-
-			await run({ flags_actorDir: ['../b'] });
-
-			expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidInput);
-			expect(stderr()).toContain('This directory is an Actor itself, so --all and --actor-dir do not apply.');
-			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
-			expect(versionUpdate).not.toHaveBeenCalled();
-		});
-
-		it('pushes an --actor-dir that discovery does not reach, such as a symlinked Actor', async () => {
-			await mkdir(joinPath('solo'), { recursive: true });
-			await symlink(joinPath('actors', 'b'), joinPath('solo', 'linked'), 'junction');
-			forceNewCwd('solo');
-
-			await run({ flags_actorDir: ['linked'] });
-
-			expect(commandProcess.exitCode).toBeFalsy();
-			expect(pushedActorIds()).toEqual([ACTOR_B.id]);
-		});
-
-		it('rejects an --actor-dir without an actor.json before the login check', async () => {
-			await run({ flags_actorDir: ['actors/a', 'packages/shared'] });
-
-			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
-			expect(stderr()).toContain('Directory "packages/shared" from --actor-dir has no .actor/actor.json.');
-			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
-			expect(versionUpdate).not.toHaveBeenCalled();
-		});
-
-		it('rejects an --actor-dir outside the root before the login check', async () => {
-			await writeActor('../push-select-outside', ACTOR_B.name);
-
-			try {
-				await run({ flags_actorDir: ['actors/a', '../push-select-outside'] });
-			} finally {
-				await rm(joinPath('..', 'push-select-outside'), { recursive: true, force: true });
-			}
-
-			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
-			expect(stderr()).toContain(
-				'Directory "../push-select-outside" from --actor-dir is outside the pushed directory.',
-			);
+			expect(stderr()).toContain("This directory is an Actor itself, so --all doesn't apply.");
 			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
 			expect(versionUpdate).not.toHaveBeenCalled();
 		});
@@ -312,6 +276,7 @@ describe('apify push in a repository with several Actors', () => {
 
 			expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidInput);
 			expect(stderr()).toContain('actorId argument applies to a single Actor');
+			expect(stderr()).toContain('Run apify push --dir <path> for one Actor, or drop the argument.');
 			expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
 		});
 
@@ -323,7 +288,10 @@ describe('apify push in a repository with several Actors', () => {
 		});
 
 		it('pushes to the actorId argument when exactly one Actor is selected', async () => {
-			await run({ args_actorId: ACTOR_C.id, flags_actorDir: ['actors/a'] });
+			stdinState.isTTY = true;
+			multiSelect.mockResolvedValueOnce(['actors/a']);
+
+			await run({ args_actorId: ACTOR_C.id });
 
 			expect(commandProcess.exitCode).toBeFalsy();
 			expect(pushedActorIds()).toEqual([ACTOR_C.id]);
@@ -345,13 +313,6 @@ describe('apify push in a repository with several Actors', () => {
 				['.actor/actor.json', 'src/main.js'],
 			]);
 			expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
-		});
-
-		it('pushes the --actor-dir directories in path order, normalized and without duplicates', async () => {
-			await run({ flags_actorDir: ['./tools/c/', 'actors/a', 'tools/c'] });
-
-			expect(commandProcess.exitCode).toBeFalsy();
-			expect(pushedActorIds()).toEqual([ACTOR_A.id, ACTOR_C.id]);
 		});
 
 		it('passes --version and --build-tag to every version payload', async () => {
@@ -507,8 +468,11 @@ describe('apify push in a repository with several Actors', () => {
 			});
 		});
 
-		it('wraps even a single --actor-dir push in the results document', async () => {
-			await run({ flags_actorDir: ['actors/b'], flags_json: true });
+		it('wraps even a single selected push in the results document', async () => {
+			stdinState.isTTY = true;
+			multiSelect.mockResolvedValueOnce(['actors/b']);
+
+			await run({ flags_json: true });
 
 			const summary = stdoutJson();
 			expect(summary.results).toEqual([expect.objectContaining({ dir: 'actors/b', ok: true })]);
@@ -574,7 +538,7 @@ describe('apify push in a repository with several Actors', () => {
 			expect(stdoutJson()).toEqual({ ok: true, operation: 'push', results: [], exitCode: 0 });
 		});
 
-		it('is skipped when a flag already chose', async () => {
+		it('is skipped with --all', async () => {
 			await run({ flags_all: true });
 
 			expect(multiSelect).not.toHaveBeenCalled();

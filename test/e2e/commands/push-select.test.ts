@@ -31,33 +31,18 @@ describe('[e2e] apify push in a repository with several Actors', () => {
 		expect(result.exitCode, `stdout: ${result.stdout}\nstderr: ${result.stderr}`).toBe(4);
 		expect(result.stderr).toContain('actors/first (first-actor)');
 		expect(result.stderr).toContain('actors/second (second-actor)');
-		expect(result.stderr).toContain('Choose what to push: --all, or --actor-dir <path> for each Actor.');
+		expect(result.stderr).toContain('Choose what to push: --all, or run apify push --dir <path> for each Actor.');
 		expect(result.stderr).not.toContain('login');
 		expect(result.stdout).toBe('');
 	});
 
-	it('exits with code 4 for an --actor-dir outside the root', async () => {
-		const result = await runCli('apify', ['push', '--actor-dir', '../outside', '--json'], { cwd: root });
+	it('lists the paths to pass to --dir from where the command ran', async () => {
+		const result = await runCli('apify', ['push', '--dir', 'actors', '--json'], { cwd: root });
 
 		expect(result.exitCode, `stdout: ${result.stdout}\nstderr: ${result.stderr}`).toBe(4);
-		expect(result.stderr).toContain('Directory "../outside" from --actor-dir is outside the pushed directory.');
+		expect(result.stderr).toContain('  actors/first (first-actor)');
+		expect(result.stderr).toContain('  actors/second (second-actor)');
 		expect(result.stderr).not.toContain('login');
-		expect(result.stdout).toBe('');
-	});
-
-	it('rejects --all together with --actor-dir', async () => {
-		const result = await runCli('apify', ['push', '--all', '--actor-dir', 'actors/first'], { cwd: root });
-
-		expect(result.exitCode, `stdout: ${result.stdout}\nstderr: ${result.stderr}`).not.toBe(0);
-		expect(result.stderr).toContain('cannot also be provided when using');
-		expect(result.stdout).toBe('');
-	});
-
-	it('exits with code 4 for an --actor-dir that is not an Actor', async () => {
-		const result = await runCli('apify', ['push', '--actor-dir', 'packages/shared'], { cwd: root });
-
-		expect(result.exitCode, `stdout: ${result.stdout}\nstderr: ${result.stderr}`).toBe(4);
-		expect(result.stderr).toContain('Directory "packages/shared" from --actor-dir has no .actor/actor.json.');
 		expect(result.stdout).toBe('');
 	});
 });
