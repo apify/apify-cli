@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
@@ -366,5 +366,191 @@ describe('Utils - no .actorignore present (git)', () => {
 
 		expect(paths).toContain('main.js');
 		expect(paths).toContain('docs/README.md');
+	});
+});
+
+const NON_ASCII_TEST_DIR = 'gitignore-non-ascii-test-dir';
+
+describe('Utils - gitignored files with non-ASCII names (git)', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NON_ASCII_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+		// git's default, set here in case a global config turns it off. It prints such names quoted and escaped.
+		execSync('git config core.quotePath true', { cwd: tmpPath, stdio: 'ignore' });
+
+		ensureFolderExistsSync(tmpPath, 'sub');
+
+		writeFileSync(joinPath('main.js'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('příliš.log'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('sub/žluťoučký.log'), 'content', { flag: 'w' });
+
+		writeFileSync(joinPath('.gitignore'), '*.log\n', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should exclude them', async () => {
+		const paths = await getActorLocalFilePaths(tmpPath);
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('příliš.log');
+		expect(paths).not.toContain('sub/žluťoučký.log');
+	});
+});
+
+const PATTERN_NAMES_TEST_DIR = 'gitignore-pattern-names-test-dir';
+
+describe('Utils - gitignored files whose names look like patterns (git)', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(PATTERN_NAMES_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+
+		writeFileSync(joinPath('a.js'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('#hash.txt'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('[ab].js'), 'content', { flag: 'w' });
+
+		// Escaped, so both lines match the literal names only.
+		writeFileSync(joinPath('.gitignore'), '\\#hash.txt\n\\[ab\\].js\n', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should exclude exactly the files git lists', async () => {
+		const paths = await getActorLocalFilePaths(tmpPath);
+
+		expect(paths).not.toContain('#hash.txt');
+		expect(paths).not.toContain('[ab].js');
+		expect(paths).toContain('a.js');
+	});
+});
+
+const GIT_FORCE_INCLUDE_TEST_DIR = 'actorignore-git-force-include-test-dir';
+
+describe('Utils - .actorignore negation with directories and files git lists (git)', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(GIT_FORCE_INCLUDE_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+
+		ensureFolderExistsSync(tmpPath, 'build/nested');
+
+		writeFileSync(joinPath('main.js'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('build/out.js'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('build/nested/chunk.js'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('keep.log'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('drop.log'), 'content', { flag: 'w' });
+
+		// git lists build/ as a directory and the two logs as files.
+		writeFileSync(joinPath('.gitignore'), 'build/\n*.log\n', { flag: 'w' });
+		writeFileSync(joinPath('.actorignore'), '!build/\n!keep.log\n', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should include the force-included files and exclude the rest', async () => {
+		const paths = await getActorLocalFilePaths(tmpPath);
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('build/out.js');
+		expect(paths).toContain('build/nested/chunk.js');
+		expect(paths).toContain('keep.log');
+		expect(paths).not.toContain('drop.log');
+	});
+});
+
+const IGNORED_DIR_GIT_TEST_DIR = 'gitignore-ignored-dir-git-test-dir';
+
+describe('Utils - pushing a directory .gitignore ignores (git)', () => {
+	// The root .gitignore ignores ghost/, so git lists only `./` from inside it. The push is explicit, so every other
+	// rule still applies: the root .gitignore, ghost/.gitignore, .git/info/exclude, and the excludes file git config
+	// names. ghost/.actorignore force-includes a directory ghost/.gitignore ignores.
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(IGNORED_DIR_GIT_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+		execSync('git config core.excludesFile global-excludes', { cwd: tmpPath, stdio: 'ignore' });
+
+		mkdirSync(joinPath('ghost', 'src'), { recursive: true });
+		mkdirSync(joinPath('ghost', 'dist'), { recursive: true });
+
+		writeFileSync(joinPath('.gitignore'), 'ghost/\n*.log\n', { flag: 'w' });
+		writeFileSync(joinPath('.git', 'info', 'exclude'), '*.pem\n', { flag: 'w' });
+		writeFileSync(joinPath('global-excludes'), '*.bak\n', { flag: 'w' });
+		writeFileSync(joinPath('ghost', '.gitignore'), 'secret.env\ndist/\n', { flag: 'w' });
+		writeFileSync(joinPath('ghost', '.actorignore'), '!dist/\n', { flag: 'w' });
+
+		['main.js', 'src/index.js', 'secret.env', 'x.log', 'src/y.log', 'key.pem', 'notes.bak', 'dist/bundle.js'].forEach(
+			(file) => writeFileSync(joinPath('ghost', file), 'content', { flag: 'w' }),
+		);
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should exclude the files its own .gitignore lists', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('src/index.js');
+		expect(paths).not.toContain('secret.env');
+	});
+
+	it('should exclude the files the rules above it list', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost'));
+
+		expect(paths).not.toContain('x.log');
+		expect(paths).not.toContain('src/y.log');
+		expect(paths).not.toContain('key.pem');
+		expect(paths).not.toContain('notes.bak');
+	});
+
+	it('should apply the rules above it in a subdirectory too', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost', 'src'));
+
+		expect(paths).toContain('index.js');
+		expect(paths).not.toContain('y.log');
+	});
+
+	it('should include the files .actorignore force-includes', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost'));
+
+		expect(paths).toContain('dist/bundle.js');
 	});
 });

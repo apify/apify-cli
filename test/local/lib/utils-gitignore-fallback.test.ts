@@ -121,8 +121,8 @@ describe('Utils - parent .gitignore applied to subproject (no git)', () => {
 		subprojectPath = join(tmpPath, 'subproject');
 
 		// Parent .gitignore — rules that should apply to everything inside subproject/.
-		// No fake .git is needed: the ancestor-walker already stops at the apify-cli
-		// repo root (.git lives there) before touching its own .gitignore.
+		// No fake .git is needed. The walk ends with the .gitignore of the apify-cli
+		// repo root, and drops its lines that ignore test/tmp.
 		writeFileSync(join(tmpPath, '.gitignore'), '*.secret\nbuild/\n', { flag: 'w' });
 
 		// Subproject directory structure
@@ -158,5 +158,80 @@ describe('Utils - parent .gitignore applied to subproject (no git)', () => {
 		const paths = await getActorLocalFilePaths(subprojectPath);
 
 		expect(paths).not.toContain('build/output.js');
+	});
+});
+
+const ROOT_TEST_DIR = 'gitignore-root-test-dir';
+
+describe('Utils - repository root .gitignore applied to a subdirectory (no git)', () => {
+	// repo/ has a .git, so it's the repository root. The .gitignore above it belongs to an outer repository.
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(ROOT_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		mkdirSync(joinPath('repo', '.git'), { recursive: true });
+		mkdirSync(joinPath('repo', 'actors', 'a', 'root-ignored'), { recursive: true });
+		writeFileSync(joinPath('.gitignore'), 'outer.txt\n');
+		writeFileSync(joinPath('repo', '.gitignore'), '*.log\nroot-ignored/\n');
+		['main.js', 'x.log', 'root-ignored/f.txt', 'outer.txt'].forEach((file) =>
+			writeFileSync(joinPath('repo', 'actors', 'a', file), 'content'),
+		);
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should exclude files matched by the repository root .gitignore, but not by an outer one', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('repo', 'actors', 'a'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('outer.txt');
+		expect(paths).not.toContain('x.log');
+		expect(paths).not.toContain('root-ignored/f.txt');
+	});
+});
+
+const IGNORED_DIR_TEST_DIR = 'gitignore-ignored-dir-test-dir';
+
+describe('Utils - pushing a directory .gitignore ignores (no git)', () => {
+	// The root .gitignore ignores ghost/, which is pushed explicitly. Its other rules still apply, and so does
+	// ghost/.gitignore.
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(IGNORED_DIR_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		mkdirSync(joinPath('.git'), { recursive: true });
+		mkdirSync(joinPath('ghost', 'src'), { recursive: true });
+		writeFileSync(joinPath('.gitignore'), 'ghost/\n*.log\n');
+		writeFileSync(joinPath('ghost', '.gitignore'), 'secret.env\n');
+		['main.js', 'src/index.js', 'secret.env', 'x.log'].forEach((file) =>
+			writeFileSync(joinPath('ghost', file), 'content'),
+		);
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should apply every rule except the one that ignores the pushed directory', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('src/index.js');
+		expect(paths).not.toContain('secret.env');
+		expect(paths).not.toContain('x.log');
 	});
 });
