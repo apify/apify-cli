@@ -235,3 +235,49 @@ describe('Utils - pushing a directory .gitignore ignores (no git)', () => {
 		expect(paths).not.toContain('x.log');
 	});
 });
+
+const RANK_TEST_DIR = 'gitignore-rank-test-dir';
+
+describe('Utils - a deeper .gitignore wins over the repository root one (no git)', () => {
+	// As in git, the `!` lines of an Actor's own .gitignore re-include what the root .gitignore ignores, except below a
+	// directory the root ignores.
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(RANK_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		mkdirSync(joinPath('.git'), { recursive: true });
+		mkdirSync(joinPath('actors', 'a', 'dist'), { recursive: true });
+		mkdirSync(joinPath('actors', 'a', 'build'), { recursive: true });
+		writeFileSync(joinPath('.gitignore'), 'dist/\nbuild/\n*.log\n*.map\n');
+		writeFileSync(joinPath('actors', 'a', '.gitignore'), '!dist/\n!keep.log\n!build/keep.js\n');
+		['main.js', 'dist/bundle.js', 'dist/bundle.map', 'keep.log', 'other.log', 'build/keep.js'].forEach((file) =>
+			writeFileSync(joinPath('actors', 'a', file), 'content'),
+		);
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should include the files the deeper .gitignore re-includes', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('actors', 'a'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('dist/bundle.js');
+		expect(paths).toContain('keep.log');
+		expect(paths).not.toContain('other.log');
+		expect(paths).not.toContain('dist/bundle.map');
+	});
+
+	it('should keep a file below an ignored directory ignored', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('actors', 'a'));
+
+		expect(paths).not.toContain('build/keep.js');
+	});
+});

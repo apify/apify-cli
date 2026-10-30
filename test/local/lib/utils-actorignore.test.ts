@@ -536,7 +536,8 @@ const IGNORED_DIR_GIT_TEST_DIR = 'gitignore-ignored-dir-git-test-dir';
 describe('Utils - pushing a directory .gitignore ignores (git)', () => {
 	// The root .gitignore ignores ghost/, so git lists only `./` from inside it. The push is explicit, so every other
 	// rule still applies: the root .gitignore, ghost/.gitignore, .git/info/exclude, and the excludes file git config
-	// names. ghost/.actorignore force-includes a directory ghost/.gitignore ignores.
+	// names. ghost/.actorignore force-includes a directory ghost/.gitignore ignores. The `!` lines of a deeper file
+	// re-include what a shallower one ignores.
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(IGNORED_DIR_GIT_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -556,12 +557,22 @@ describe('Utils - pushing a directory .gitignore ignores (git)', () => {
 		writeFileSync(joinPath('.gitignore'), 'ghost/\n*.log\n', { flag: 'w' });
 		writeFileSync(joinPath('.git', 'info', 'exclude'), '*.pem\n', { flag: 'w' });
 		writeFileSync(joinPath('global-excludes'), '*.bak\n', { flag: 'w' });
-		writeFileSync(joinPath('ghost', '.gitignore'), 'secret.env\ndist/\n', { flag: 'w' });
+		writeFileSync(joinPath('ghost', '.gitignore'), 'secret.env\ndist/\n!public.pem\n', { flag: 'w' });
+		writeFileSync(joinPath('ghost', 'src', '.gitignore'), '!keep.log\n', { flag: 'w' });
 		writeFileSync(joinPath('ghost', '.actorignore'), '!dist/\n', { flag: 'w' });
 
-		['main.js', 'src/index.js', 'secret.env', 'x.log', 'src/y.log', 'key.pem', 'notes.bak', 'dist/bundle.js'].forEach(
-			(file) => writeFileSync(joinPath('ghost', file), 'content', { flag: 'w' }),
-		);
+		[
+			'main.js',
+			'src/index.js',
+			'secret.env',
+			'x.log',
+			'src/y.log',
+			'src/keep.log',
+			'key.pem',
+			'public.pem',
+			'notes.bak',
+			'dist/bundle.js',
+		].forEach((file) => writeFileSync(joinPath('ghost', file), 'content', { flag: 'w' }));
 	});
 
 	afterAll(async () => {
@@ -590,6 +601,14 @@ describe('Utils - pushing a directory .gitignore ignores (git)', () => {
 
 		expect(paths).toContain('index.js');
 		expect(paths).not.toContain('y.log');
+	});
+
+	it('should let a deeper file re-include what a shallower one ignores, as git does', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost'));
+
+		expect(paths).toContain('src/keep.log');
+		expect(paths).toContain('public.pem');
+		expect(await getActorLocalFilePaths(joinPath('ghost', 'src'))).toContain('keep.log');
 	});
 
 	it('should include the files .actorignore force-includes', async () => {
