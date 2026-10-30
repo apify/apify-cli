@@ -313,6 +313,17 @@ describe('checkActorPaths', () => {
 		]);
 	});
 
+	it('reads a backslash as the platform does, so an absolute or escaping readme still fails the build', () => {
+		expect(
+			check({ readme: '/docs\\README.md', changelog: '../../../docs\\CHANGELOG.md' }).map(
+				({ field, reason, severity }) => ({ field, reason, severity }),
+			),
+		).toEqual([
+			{ field: 'readme', reason: 'is absolute; the path is relative to .actor/', severity: 'error' },
+			{ field: 'changelog', reason: `lies outside the uploaded folder ${actorDir}`, severity: 'error' },
+		]);
+	});
+
 	it('rejects a missing dockerfile or schema, which the platform does not recover from', () => {
 		expect(
 			check({ dockerfile: '../Dockerfile.prod', input: './missing.json' }).map(({ field, severity }) => ({
@@ -428,6 +439,30 @@ describe('checkActorPaths without dockerfile', () => {
 
 	it('accepts a default .actor/Dockerfile inside the Docker context, found by any case and before Dockerfile', async () => {
 		expect((await checkActor('in-actor-folder', ['.actor/dockerfile', 'Dockerfile'], '.')).problems).toEqual([]);
+	});
+
+	it('skips a default Dockerfile push does not upload, as the platform never sees it', async () => {
+		// `.actor/` is always uploaded, so only the Dockerfile in the Actor folder can be left out.
+		for (const name of ['ignored-actor-context', 'ignored-docker-context']) {
+			mkdirSync(join(root, name), { recursive: true });
+			writeFileSync(join(root, name, '.actorignore'), 'Dockerfile\n');
+		}
+
+		expect((await checkActor('ignored-actor-context', ['Dockerfile'], '..')).problems).toEqual([]);
+		const { actorDir, problems } = await checkActor(
+			'ignored-docker-context',
+			['Dockerfile', 'docker/main.js'],
+			'../docker',
+		);
+		expect(problems).toEqual([
+			{
+				field: 'dockerfile',
+				value: '',
+				resolvedPath: join(actorDir, 'docker', 'Dockerfile'),
+				reason: expect.stringContaining('is not set and push uploads no .actor/Dockerfile or Dockerfile'),
+				severity: 'error',
+			},
+		]);
 	});
 
 	it('leaves a set dockerfile to the usual rules', async () => {

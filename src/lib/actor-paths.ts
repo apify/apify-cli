@@ -1,5 +1,5 @@
 import { readdirSync, realpathSync, type Stats, statSync } from 'node:fs';
-import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, posix, relative, resolve } from 'node:path';
 
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
 import { isOutside, toPosix } from './docker-context.js';
@@ -119,8 +119,9 @@ interface PathCheckScope {
 
 /**
  * Applies the platform's rules to one path field of `actor.json`, in order; the first failing rule wins.
- * 1. No backslashes and not absolute: the platform resolves the value relative to `.actor/` on Linux.
- * 2. Resolved from `.actor/`, it lies inside the upload root; the platform never sees anything else.
+ * 1. Not absolute, and resolved from `.actor/`, inside the upload root; the platform never sees anything else. The
+ *    platform resolves the value on Linux, where a backslash is part of a name, so this rule reads it that way first.
+ * 2. No backslashes: on Linux, such a name matches no file a push from another system uploads.
  * 3. The file exists in its directory: by any case for `dockerfile`, `readme` and `changelog`, which the
  *    platform finds by listing the directory, and by the exact name for schema references. A dangling symlink
  *    does not exist.
@@ -129,7 +130,7 @@ interface PathCheckScope {
  * 6. It is among the files push uploads, in the same case: a file `.gitignore` or `.actorignore` drops never
  *    reaches the platform.
  *
- * Every problem is an error, except for `readme` and `changelog` failing rules 1 (a backslash), 3, or 6: the worker
+ * Every problem is an error, except for `readme` and `changelog` failing rules 2 (a backslash), 3, or 6: the worker
  * does not find such a file and falls back to its default, so these are warnings. An absolute path, a path outside
  * the upload root, or a directory fails the build for those fields too.
  */
@@ -144,15 +145,20 @@ function checkPathField(
 		reason,
 		severity: platformFallsBack && FALLBACK_FIELDS.has(field) ? 'warning' : 'error',
 	});
+	const absolute = () => problem(value, `is absolute; the path is relative to ${ACTOR_SPECIFICATION_FOLDER}/`);
+	const resolvedPath = resolve(actorDir, ACTOR_SPECIFICATION_FOLDER, value);
+	const outside = () => problem(resolvedPath, `lies outside the uploaded folder ${uploadRoot}`);
+
+	// As the platform reads the value: an absolute or escaping path fails the build, even with a backslash in it.
+	if (value.startsWith('/')) return absolute();
+	const uploadedPath = posix.join(toPosix(relative(uploadRoot, actorDir)), ACTOR_SPECIFICATION_FOLDER, value);
+	if (uploadedPath === '..' || uploadedPath.startsWith('../')) return outside();
 	if (value.includes('\\')) {
 		return problem(value, 'uses a backslash; the platform resolves paths with forward slashes', true);
 	}
-	if (isAbsolute(value)) return problem(value, `is absolute; the path is relative to ${ACTOR_SPECIFICATION_FOLDER}/`);
-
-	const resolvedPath = resolve(actorDir, ACTOR_SPECIFICATION_FOLDER, value);
-	if (isOutside(relative(uploadRoot, resolvedPath))) {
-		return problem(resolvedPath, `lies outside the uploaded folder ${uploadRoot}`);
-	}
+	// As this system reads it, for a Windows drive path.
+	if (isAbsolute(value)) return absolute();
+	if (isOutside(relative(uploadRoot, resolvedPath))) return outside();
 
 	const { sameCase, anyCase } = findEntry(resolvedPath);
 	const name = sameCase ?? (caseInsensitive ? anyCase : undefined);
@@ -178,9 +184,9 @@ function checkPathField(
 		return problem(resolvedPath, `lies outside the Docker context ${dockerContextRoot}`);
 	}
 
-	const uploadedPath = toPosix(relative(uploadRoot, filePath));
-	if (!uploadedFiles.has(uploadedPath)) {
-		const differentCase = [...uploadedFiles].find((file) => file.toLowerCase() === uploadedPath.toLowerCase());
+	const uploadedFilePath = toPosix(relative(uploadRoot, filePath));
+	if (!uploadedFiles.has(uploadedFilePath)) {
+		const differentCase = [...uploadedFiles].find((file) => file.toLowerCase() === uploadedFilePath.toLowerCase());
 		return problem(
 			resolvedPath,
 			differentCase
@@ -192,17 +198,27 @@ function checkPathField(
 	return undefined;
 }
 
+/** Whether push sends this file, or files inside this directory, so the platform finds it among the uploaded files. */
+function isUploaded(filePath: string, { uploadRoot, uploadedFiles }: PathCheckScope): boolean {
+	const uploadedPath = toPosix(relative(uploadRoot, filePath));
+	return uploadedFiles.has(uploadedPath) || [...uploadedFiles].some((file) => file.startsWith(`${uploadedPath}/`));
+}
+
 /**
- * Without `dockerfile`, the platform takes the first default Dockerfile that exists, else copies its built-in one into
- * the Docker context. The found default must pass the same rules as a set `dockerfile`. The built-in one is the
- * documented default for a context that is the Actor folder itself; in any other context it would build files the
- * built-in Dockerfile was never meant for, and silently ignore a Dockerfile the context may hold.
+ * Without `dockerfile`, the platform takes the first default Dockerfile among the uploaded files, else copies its
+ * built-in one into the Docker context. A default that `.gitignore` or `.actorignore` drops never reaches the
+ * platform, so the lookup moves on to the next one. The found default must pass the same rules as a set `dockerfile`.
+ * The built-in one is the documented default for a context that is the Actor folder itself; in any other context it
+ * would build files the built-in Dockerfile was never meant for, and silently ignore a Dockerfile the context may hold.
  */
 function checkDefaultDockerfile(scope: PathCheckScope & { dockerContextRoot: string }): ActorPathProblem | undefined {
 	const { actorDir, dockerContextRoot } = scope;
-	const value = DEFAULT_DOCKERFILE_PATHS.find(
-		(candidate) => findEntry(resolve(actorDir, ACTOR_SPECIFICATION_FOLDER, candidate)).anyCase,
-	);
+	const value = DEFAULT_DOCKERFILE_PATHS.find((candidate) => {
+		const candidatePath = resolve(actorDir, ACTOR_SPECIFICATION_FOLDER, candidate);
+		const { sameCase, anyCase } = findEntry(candidatePath);
+		const name = sameCase ?? anyCase;
+		return name !== undefined && isUploaded(join(dirname(candidatePath), name), scope);
+	});
 	if (value) {
 		const problem = checkPathField({ field: 'dockerfile', value, caseInsensitive: true }, scope);
 		return (
@@ -219,7 +235,7 @@ function checkDefaultDockerfile(scope: PathCheckScope & { dockerContextRoot: str
 		value: '',
 		resolvedPath: join(dockerContextRoot, 'Dockerfile'),
 		reason:
-			`is not set and there is no ${ACTOR_SPECIFICATION_FOLDER}/Dockerfile or Dockerfile in the Actor folder, ` +
+			`is not set and push uploads no ${ACTOR_SPECIFICATION_FOLDER}/Dockerfile or Dockerfile in the Actor folder, ` +
 			`so the platform would build the Docker context ${dockerContextRoot} with its built-in Node.js Dockerfile; ` +
 			'add a Dockerfile, or set "dockerfile" to one inside the Docker context',
 		severity: 'error',

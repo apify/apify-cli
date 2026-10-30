@@ -234,7 +234,7 @@ describe('apify push with file paths in actor.json', () => {
 
 		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
 		expect(logMessages.error.join('\n')).toContain(
-			`"dockerfile" is not set and there is no .actor/Dockerfile or Dockerfile in the Actor folder, so the platform would build the Docker context ${joinPath('docker')} with its built-in Node.js Dockerfile`,
+			`"dockerfile" is not set and push uploads no .actor/Dockerfile or Dockerfile in the Actor folder, so the platform would build the Docker context ${joinPath('docker')} with its built-in Node.js Dockerfile`,
 		);
 		expect(versionUpdate).not.toHaveBeenCalled();
 	});
