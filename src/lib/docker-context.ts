@@ -109,11 +109,11 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	return { kind: 'outside', contextRoot, sourceRoot: realContextRoot, actorPath: toPosix(actorPath) };
 }
 
-function isOutside(relativePath: string): boolean {
+export function isOutside(relativePath: string): boolean {
 	return isAbsolute(relativePath) || relativePath === '..' || relativePath.startsWith(`..${sep}`);
 }
 
-function toPosix(filePath: string): string {
+export function toPosix(filePath: string): string {
 	return filePath.split(sep).join('/');
 }
 
