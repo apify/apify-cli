@@ -11,6 +11,7 @@ import { fetchManifest } from '@apify/actor-templates';
 import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES, ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 import { createHmacSignature } from '@apify/utilities';
 
+import { checkActorPaths, formatActorPathProblems } from '../../lib/actor-paths.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -529,8 +530,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			return;
 		}
 
-		const apifyClient = await getLoggedClientOrThrow();
-
+		// Everything up to the path checks is local, so a broken Actor fails the same way with or without a login.
 		const actorConfigResult = await useActorConfig({ cwd });
 
 		if (actorConfigResult.isErr()) {
@@ -555,6 +555,25 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			return;
 		}
 
+		// The platform resolves these paths after the upload; a wrong one builds the wrong image or fails the build.
+		const pathProblems = checkActorPaths({
+			actorDir: cwd,
+			uploadRoot: cwd,
+			uploadedFiles: filePathsToPush,
+			config: actorConfig,
+			dockerContextRoot: dockerContext.kind === 'within' ? dockerContext.contextRoot : undefined,
+		});
+		// A readme or changelog the platform cannot find only falls back to its default, so push goes on.
+		const pathWarnings = formatActorPathProblems(pathProblems, 'warning');
+		if (pathWarnings) warning({ message: pathWarnings });
+		const pathErrors = formatActorPathProblems(pathProblems, 'error');
+		if (pathErrors) {
+			error({ message: pathErrors });
+			process.exitCode = CommandExitCodes.InvalidActorJson;
+			return;
+		}
+
+		const apifyClient = await getLoggedClientOrThrow();
 		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
