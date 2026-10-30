@@ -24,9 +24,8 @@ See https://apify.com/auth.md for how to authenticate. Do not assume `APIFY_TOKE
 
 `APIFY_TOKEN` wins over a stored login, for every command. When it is set, `apify login` refuses to run unless `--token` passes the same token — unset `APIFY_TOKEN` first, or skip the login.
 
-- Persist a session explicitly: `apify login --token <token>` (plain `apify login` opens a browser confirmation, which agents cannot complete). Exits non-zero on a rejected token, so `apify login --token <t> && apify push` is safe to chain.
+- Persist a session explicitly: `apify login --token <token>` (plain `apify login` prints a URL and a one-time code, then waits until the user approves it in a browser; run it in the background and show the user both). Exits non-zero on a rejected token, so `apify login --token <t> && apify push` is safe to chain.
 - Verify auth: `apify info` (prints the username, user ID, and which source the token came from; non-zero exit / error if not authenticated).
-- Print the token in use: `apify auth token` (the `APIFY_TOKEN` one when set, otherwise the stored login's).
 
 ## Structured output
 
@@ -54,10 +53,10 @@ Pricing matters, but weigh it alongside popularity, rating, and how well-maintai
 
 ```sh
 apify create my-actor --template <template>     # or run `apify create` and pick interactively
-# template names: https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json
+# template IDs: apify templates ls --json
 cd my-actor
 apify run                                        # run locally; --input / --input-file - for input
-apify push                                       # build & deploy to the platform
+apify push                                       # build & deploy; a Git-sourced Actor deploys with git push
 ```
 
 **Run an Actor in the cloud and get results**
