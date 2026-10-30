@@ -874,8 +874,9 @@ ARGUMENTS
 
 FLAGS
       --all                      Push every Actor found
-                                 in the subdirectories. Works only from a directory
-                                 without an Actor config of its own.
+                                 in the subdirectories, except the ones ignored by
+                                 .gitignore. Works only from a directory without an
+                                 Actor config of its own.
       --allow-missing-secrets    Allow the command to
                                  continue even when secret values are not found in
                                  the local secrets storage.
