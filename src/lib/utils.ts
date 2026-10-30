@@ -400,12 +400,12 @@ const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 	return { excludeFilter, forceIncludePatterns };
 };
 
+export const ACTOR_FILES_HARDCODED_IGNORE = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+
 /**
  * Get Actor local files, omit files defined in .gitignore, .actorignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
  */
-export const ACTOR_FILES_HARDCODED_IGNORE = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
-
 export const getActorLocalFilePaths = async (cwd?: string) => {
 	const resolvedCwd = cwd ?? process.cwd();
 
