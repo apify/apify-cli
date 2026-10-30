@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { ACTOR_SOURCE_TYPES } from '@apify/consts';
@@ -113,6 +113,8 @@ describe('apify push with file paths in actor.json', () => {
 		const stderr = logMessages.error.join('\n');
 		expect(stderr).toContain('.actor/actor.json refers to files the Apify platform could not use:');
 		expect(stderr).toContain(`"dockerfile": "../Dockerfile.prod" (${joinPath('Dockerfile.prod')}) does not exist.`);
+		// The platform falls back from a readme it cannot find, so that one is only a warning.
+		expect(stderr).toContain('The push continues, and the platform falls back to its default README or CHANGELOG:');
 		expect(stderr).toContain(
 			`"readme": "../Dockerfile.ci" (${joinPath('Dockerfile.ci')}) is not among the files apify push uploads (excluded by .gitignore or .actorignore?).`,
 		);
@@ -146,6 +148,119 @@ describe('apify push with file paths in actor.json', () => {
 			`"dockerfile": "../Dockerfile" (${joinPath('Dockerfile')}) lies outside the Docker context ${joinPath('docker')}.`,
 		);
 		expect(versionUpdate).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		['dockerfile', '../Dockerfile.prod', 'Dockerfile.prod'],
+		['input', './missing.json', '.actor/missing.json'],
+	])('stops on a missing %s file', async (field, value, resolvedPath) => {
+		await writeActorConfig({ [field]: value });
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		expect(logMessages.error.join('\n')).toContain(
+			`"${field}": "${value}" (${joinPath(resolvedPath)}) does not exist.`,
+		);
+		expect(versionUpdate).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		['absolute', '/README.md', 'is absolute'],
+		['outside the uploaded folder', '../../README.md', 'lies outside the uploaded folder'],
+	])('stops on an %s readme, which fails the build', async (_, readme, reason) => {
+		await writeActorConfig({ readme });
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toContain('.actor/actor.json refers to files the Apify platform could not use:');
+		expect(stderr).toContain(`"readme": "${readme}"`);
+		expect(stderr).toContain(reason);
+		expect(versionUpdate).not.toHaveBeenCalled();
+	});
+
+	it('warns about a readme only in the Actor folder and pushes, keeping stdout clean with --json', async () => {
+		// The shape of the js-cypress template: the platform finds no .actor/README.md and falls back to README.md.
+		await write('README.md', '# Actor\n');
+		await writeActorConfig({ readme: './README.md', dockerfile: '../Dockerfile' });
+
+		await testRunCommand(ActorsPushCommand, { flags_json: true });
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+		const stderr = logMessages.error.join('\n');
+		expect(stderr).toContain('The push continues, and the platform falls back to its default README or CHANGELOG:');
+		expect(stderr).toContain(`"readme": "./README.md" (${joinPath('.actor', 'README.md')}) does not exist.`);
+		expect(stderr).not.toContain('could not use');
+		const stdout = logMessages.log.join('\n');
+		expect(stdout).not.toContain('README');
+		expect(() => JSON.parse(stdout)).not.toThrow();
+	});
+
+	it('warns about a missing changelog and pushes', async () => {
+		await writeActorConfig({ changelog: '../CHANGELOG.md' });
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+		expect(logMessages.error.join('\n')).toContain(
+			`"changelog": "../CHANGELOG.md" (${joinPath('CHANGELOG.md')}) does not exist.`,
+		);
+		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
+	});
+
+	it('stops when the default Dockerfile lies outside the Docker context', async () => {
+		await write('docker/Dockerfile', 'FROM apify/actor-node:20\n');
+		await writeActorConfig({ dockerContextDir: '../docker' });
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		expect(logMessages.error.join('\n')).toContain(
+			`"dockerfile" is not set, so the platform would use the default ${joinPath('Dockerfile')}, which lies outside the Docker context ${joinPath('docker')}.`,
+		);
+		expect(versionUpdate).not.toHaveBeenCalled();
+	});
+
+	it('stops when the platform would build a Docker context with its built-in Dockerfile', async () => {
+		await rm(joinPath('Dockerfile'));
+		await write('docker/Dockerfile', 'FROM apify/actor-node:20\n');
+		await writeActorConfig({ dockerContextDir: '../docker' });
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		expect(logMessages.error.join('\n')).toContain(
+			`"dockerfile" is not set and there is no .actor/Dockerfile or Dockerfile in the Actor folder, so the platform would build the Docker context ${joinPath('docker')} with its built-in Node.js Dockerfile`,
+		);
+		expect(versionUpdate).not.toHaveBeenCalled();
+	});
+
+	it.each([
+		['the Actor folder as the Docker context', { dockerContextDir: '..' }],
+		['no Docker context', {}],
+	])('pushes without any Dockerfile and with %s', async (_, fields) => {
+		await rm(joinPath('Dockerfile'));
+		await writeActorConfig(fields);
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(logMessages.error.join('\n')).not.toContain('actor.json refers to files');
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+	});
+
+	it('pushes with a default .actor/Dockerfile inside the Docker context', async () => {
+		await write('.actor/Dockerfile', 'FROM apify/actor-node:20\n');
+		await writeActorConfig({ dockerContextDir: '.' });
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
 	});
 
 	it('pushes as usual when every path points to an uploaded file', async () => {
