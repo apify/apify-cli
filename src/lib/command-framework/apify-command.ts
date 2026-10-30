@@ -49,18 +49,7 @@ type InferArgTypeFromArg<Builder extends TaggedArgBuilder<ArgTag, unknown>> =
 type If<T, Y, N> = T extends true ? Y : N;
 type IfNotUnknown<T, Y, N> = T extends unknown ? Y : N;
 
-// A flag that keeps every value (`multiple: true`) is typed as an array of the single-value type
 type InferFlagTypeFromFlag<
-	Builder extends TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>,
-	OptionalIfHasDefault = false,
-> =
-	Builder extends TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown, true>
-		?
-				| Exclude<InferSingleFlagTypeFromFlag<Builder, OptionalIfHasDefault>, undefined>[]
-				| Extract<InferSingleFlagTypeFromFlag<Builder, OptionalIfHasDefault>, undefined>
-		: InferSingleFlagTypeFromFlag<Builder, OptionalIfHasDefault>;
-
-type InferSingleFlagTypeFromFlag<
 	Builder extends TaggedFlagBuilder<FlagTag, string[] | null, unknown, unknown>,
 	OptionalIfHasDefault = false,
 > =
@@ -560,34 +549,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				});
 			}
 
-			const invalidChoiceError = (choices: readonly (string | number)[]) =>
-				new CommandError({
-					code: CommandErrorCode.APIFY_INVALID_CHOICE,
-					command: this.ctor,
-					metadata: {
-						flag: baseFlagName,
-						choices: choices.map((choice) => chalk.white.bold(choice)).join(', '),
-					},
-				});
-
-			// -i='{"foo":"bar"}'
-			if (Array.isArray(rawFlag) && usedShortFormOfTheFlag) {
-				rawFlag = rawFlag.map((value) => (typeof value === 'string' && value.startsWith('=') ? value.slice(1) : value));
-			}
-
-			// A flag that opted into `multiple` keeps every value; otherwise --a 1 --a 2 is not allowed
-			if (Array.isArray(rawFlag) && builderData.multiple) {
-				const { choices } = builderData;
-
-				if (choices && rawFlag.some((value) => !choices.includes(value as never))) {
-					throw invalidChoiceError(choices);
-				}
-
-				this.flags[camelCasedName] = rawFlag;
-
-				continue;
-			}
-
+			// If you provide --a 1 --a 2, it's <currently> not allowed
 			if (Array.isArray(rawFlag)) {
 				if (rawFlag.length > 1) {
 					throw new CommandError({
@@ -600,6 +562,11 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				}
 
 				rawFlag = rawFlag[0]! as string | boolean;
+			}
+
+			// -i='{"foo":"bar"}'
+			if (usedShortFormOfTheFlag && typeof rawFlag === 'string' && rawFlag.startsWith('=')) {
+				rawFlag = rawFlag.slice(1);
 			}
 
 			if (typeof rawFlag !== 'undefined') {
@@ -661,7 +628,14 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 				// And the flag is not one of the choices
 				!builderData.choices.includes(this.flags[camelCasedName] as string)
 			) {
-				throw invalidChoiceError(builderData.choices);
+				throw new CommandError({
+					code: CommandErrorCode.APIFY_INVALID_CHOICE,
+					command: this.ctor,
+					metadata: {
+						flag: baseFlagName,
+						choices: builderData.choices.map((choice) => chalk.white.bold(choice)).join(', '),
+					},
+				});
 			}
 
 			// Re-validate required (we don't have the flag and it's either required or passed in)
