@@ -289,12 +289,12 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 };
 
 /**
- * Fallback for when git is unavailable: find all .gitignore files and build a filter
+ * Fallback for when git is unavailable: find all .gitignore files and build a matcher
  * using the `ignore` package, scoped to each file's directory.
  * Also walks ancestor directories to pick up parent .gitignore files (e.g. monorepo root),
  * stopping at the first .git boundary found.
  */
-const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]) => string[]> => {
+const getGitignoreFallbackMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
 	const gitignoreFiles = await glob('**/.gitignore', {
 		dot: true,
 		cwd,
@@ -338,26 +338,48 @@ const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]
 	}
 
 	if (filters.length === 0) {
-		return (paths) => paths;
+		return () => false;
 	}
 
-	return (paths) =>
-		paths.filter((filePath) => {
-			for (const { dir, ig, ancestorPrefix } of filters) {
-				let relativePath: string | null;
-				if (!dir) {
-					relativePath = ancestorPrefix ? `${ancestorPrefix}/${filePath}` : filePath;
-				} else if (filePath.startsWith(`${dir}/`)) {
-					relativePath = filePath.slice(dir.length + 1);
-				} else {
-					relativePath = null;
-				}
-				if (relativePath !== null && ig.ignores(relativePath)) {
-					return false;
-				}
+	return (filePath) =>
+		filters.some(({ dir, ig, ancestorPrefix }) => {
+			let relativePath: string | null;
+			if (!dir) {
+				relativePath = ancestorPrefix ? `${ancestorPrefix}/${filePath}` : filePath;
+			} else if (filePath.startsWith(`${dir}/`)) {
+				relativePath = filePath.slice(dir.length + 1);
+			} else {
+				relativePath = null;
 			}
-			return true;
+			return relativePath !== null && ig.ignores(relativePath);
 		});
+};
+
+/**
+ * Returns a function that says whether .gitignore rules exclude a path relative to `cwd`. A directory path needs a
+ * trailing slash. Asks `git ls-files`, which handles ancestor and nested .gitignore files, .git/info/exclude, and the
+ * global gitignore config. When git fails (not installed, not a repository), reads the .gitignore files itself.
+ * `getActorLocalFilePaths` and the Actor discovery of `apify push` both use it, so they agree on what's ignored.
+ */
+export const getGitignoreMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
+	try {
+		const gitIgnored = execSync('git ls-files --others --ignored --exclude-standard --directory', {
+			cwd,
+			encoding: 'utf-8',
+			stdio: ['ignore', 'pipe', 'ignore'],
+		})
+			.split('\n')
+			.filter(Boolean);
+
+		if (gitIgnored.length === 0) {
+			return () => false;
+		}
+
+		const ig = makeIg().add(gitIgnored);
+		return (path) => ig.ignores(path);
+	} catch {
+		return getGitignoreFallbackMatcher(cwd);
+	}
 };
 
 interface ActorIgnoreResult {
@@ -414,27 +436,7 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 	// Parse .actorignore early to get both exclude filter and force-include patterns
 	const { excludeFilter: actorignoreFilter, forceIncludePatterns } = await parseActorIgnore(resolvedCwd);
 
-	let gitIgnoreFilter: ((paths: string[]) => string[]) | null = null;
-
-	// Use git ls-files to get gitignored paths — this correctly handles ancestor .gitignore files,
-	// nested .gitignore files, .git/info/exclude, and global gitignore config
-	try {
-		const gitIgnored = execSync('git ls-files --others --ignored --exclude-standard --directory', {
-			cwd: resolvedCwd,
-			encoding: 'utf-8',
-			stdio: ['ignore', 'pipe', 'ignore'],
-		})
-			.split('\n')
-			.filter(Boolean);
-
-		if (gitIgnored.length > 0) {
-			const ig = makeIg().add(gitIgnored);
-			gitIgnoreFilter = (paths) => paths.filter((p) => !ig.ignores(p));
-		}
-	} catch {
-		// git is unavailable or directory is not a git repo — fall back to parsing .gitignore files
-		gitIgnoreFilter = await getGitignoreFallbackFilter(resolvedCwd);
-	}
+	const isGitignored = await getGitignoreMatcher(resolvedCwd);
 
 	const allFiles = await glob(['*', '**/**'], {
 		ignore: hardcodedIgnore,
@@ -443,7 +445,7 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 		cwd: resolvedCwd,
 	});
 
-	let paths = gitIgnoreFilter ? gitIgnoreFilter(allFiles) : allFiles;
+	let paths = allFiles.filter((filePath) => !isGitignored(filePath));
 
 	if (actorignoreFilter) {
 		paths = actorignoreFilter(paths);
