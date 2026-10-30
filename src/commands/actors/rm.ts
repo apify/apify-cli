@@ -54,7 +54,7 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 
 		const confirmedDelete = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Actor?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirmedDelete) {

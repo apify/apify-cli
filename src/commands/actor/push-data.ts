@@ -1,7 +1,7 @@
-import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { APIFY_STORAGE_TYPES, getApifyStorageClient, getDefaultStorageId } from '../../lib/actor.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { readStdin } from '../../lib/commands/read-stdin.js';
 import { error } from '../../lib/outputs.js';
 
 export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataCommand> {
@@ -34,7 +34,8 @@ export class ActorPushDataCommand extends ApifyCommand<typeof ActorPushDataComma
 	async run() {
 		const { item: _item } = this.args;
 
-		const item = _item || cachedStdinInput;
+		// Piping items in is the documented way to use this command, so wait for the writer to close.
+		const item = _item || (await readStdin());
 
 		if (!item) {
 			error({ message: 'No item was provided.' });
