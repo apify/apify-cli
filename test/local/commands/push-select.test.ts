@@ -640,6 +640,19 @@ describe('apify push in a repository with several Actors', () => {
 			expect(commandProcess.exitCode).toBeFalsy();
 			expect(pushedActorIds()).toEqual([ACTOR_C.id]);
 		});
+
+		it('quotes a path with a space in the --dir advice', async () => {
+			await write('.gitignore', 'tools/\nold actors/\n');
+			await writeActor('old actors/d', 'actor-d');
+
+			await run({ flags_all: true });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			expect(pushedActorIds()).toEqual([ACTOR_A.id, ACTOR_B.id]);
+			const output = stderr();
+			expect(output).toContain('Run apify push --dir "old actors/d" to push it.');
+			expect(output).toContain('Run apify push --dir tools/c to push it.');
+		});
 	});
 
 	describe('without git, in a folder of Actors that each have a .gitignore', () => {

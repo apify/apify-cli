@@ -96,6 +96,9 @@ const SELECTION_HINT = 'Choose what to push: --all, or run apify push --dir <pat
 /** Marks an Actor in a directory .gitignore ignores. --all skips it; picking it or naming it with --dir pushes it. */
 const IGNORED_TAG = '[ignored by .gitignore]';
 
+/** Quotes a path a shell would split or expand, so a printed command still works when copied. */
+const quoteForShell = (path: string) => (/^[\w./-]+$/.test(path) ? path : `"${path}"`);
+
 const interruptedMessage = (notPushed: string[]) => `Interrupted. Not pushed: ${notPushed.join(', ')}`;
 
 /**
@@ -464,7 +467,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			for (const actor of actorDirs.filter(({ ignored }) => ignored)) {
 				const dir = dirForFlag(actor.dir);
 				info({
-					message: `Skipping ${describe({ ...actor, dir })} because it's ignored by .gitignore. Run apify push --dir ${dir} to push it.`,
+					message: `Skipping ${describe({ ...actor, dir })} because it's ignored by .gitignore. Run apify push --dir ${quoteForShell(dir)} to push it.`,
 				});
 			}
 
