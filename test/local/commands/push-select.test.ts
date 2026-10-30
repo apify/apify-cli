@@ -29,6 +29,22 @@ vitest.mock('../../../src/lib/hooks/user-confirmations/useYesNoConfirm.js', () =
 	useYesNoConfirm: yesNoConfirm,
 }));
 
+// With `gitAvailable` off, every git call fails as it does without git, which sends the gitignore matcher to its own
+// .gitignore parsing.
+const gitState = vitest.hoisted(() => ({ gitAvailable: true }));
+vitest.mock('node:child_process', async (importOriginal) => {
+	const original = await importOriginal<typeof import('node:child_process')>();
+	return {
+		...original,
+		execSync: ((...args: Parameters<typeof original.execSync>) => {
+			if (!gitState.gitAvailable && args[0].startsWith('git ')) {
+				throw new Error('not a git repository');
+			}
+			return original.execSync(...args);
+		}) as typeof original.execSync,
+	};
+});
+
 // The lines the command writes synchronously right before a signal ends the process.
 const writeSync = vitest.hoisted(() => vitest.fn());
 vitest.mock('node:fs', async (importOriginal) => ({
@@ -160,6 +176,7 @@ let originalExitCode: typeof process.exitCode;
 beforeEach(async () => {
 	originalExitCode = commandProcess.exitCode;
 	stdinState.isTTY = false;
+	gitState.gitAvailable = true;
 	platform.state.actors = [ACTOR_A, ACTOR_B, ACTOR_C];
 	platform.state.buildStatuses = {};
 	platform.state.gitSourcedActorIds = [];
@@ -622,6 +639,34 @@ describe('apify push in a repository with several Actors', () => {
 
 			expect(commandProcess.exitCode).toBeFalsy();
 			expect(pushedActorIds()).toEqual([ACTOR_C.id]);
+		});
+	});
+
+	describe('without git, in a folder of Actors that each have a .gitignore', () => {
+		// What apify create leaves in a plain folder: the folder isn't a repository, and every Actor has a .gitignore.
+		beforeEach(async () => {
+			gitState.gitAvailable = false;
+			for (const dir of ['actors/a', 'actors/b', 'tools/c']) {
+				await write(`${dir}/.gitignore`, 'node_modules\nstorage\n');
+			}
+		});
+
+		it('lists every Actor without the ignored label when it cannot ask', async () => {
+			await run();
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
+			const output = stderr();
+			expect(output).toContain('  actors/a (actor-a)\n');
+			expect(output).toContain('  actors/b (actor-b)\n');
+			expect(output).toContain('  tools/c (actor-c)');
+			expect(output).not.toContain('ignored by .gitignore');
+		});
+
+		it('pushes every Actor with --all', async () => {
+			await run({ flags_all: true });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			expect(pushedActorIds()).toEqual([ACTOR_A.id, ACTOR_B.id, ACTOR_C.id]);
 		});
 	});
 });

@@ -351,7 +351,8 @@ const getGitignoreFallbackMatcher = async (cwd: string): Promise<(path: string) 
 			} else {
 				relativePath = null;
 			}
-			return relativePath !== null && ig.ignores(relativePath);
+			// An empty path is the directory of this .gitignore, which it can't ignore. `ignore` throws on it.
+			return !!relativePath && ig.ignores(relativePath);
 		});
 };
 
@@ -359,7 +360,8 @@ const getGitignoreFallbackMatcher = async (cwd: string): Promise<(path: string) 
  * Returns a function that says whether .gitignore rules exclude a path relative to `cwd`. A directory path needs a
  * trailing slash. Asks `git ls-files`, which handles ancestor and nested .gitignore files, .git/info/exclude, and the
  * global gitignore config. When git fails (not installed, not a repository), reads the .gitignore files itself.
- * `getActorLocalFilePaths` and the Actor discovery of `apify push` both use it, so they agree on what's ignored.
+ * `getActorLocalFilePaths` and the Actor discovery of `apify push` both use it. Discovery asks from the root it
+ * searches, the upload from the Actor directory.
  */
 export const getGitignoreMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
 	try {

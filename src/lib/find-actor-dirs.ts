@@ -13,7 +13,7 @@ export interface FoundActorDir {
 	dir: string;
 	/** The `name` from its `.actor/actor.json`, when the file could be read. */
 	name: string | undefined;
-	/** Whether .gitignore rules exclude the directory, judged from the root the same way the upload judges files. */
+	/** Whether .gitignore rules exclude the directory, judged from the root with the matcher the upload uses. */
 	ignored: boolean;
 }
 

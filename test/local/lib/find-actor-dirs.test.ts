@@ -135,39 +135,45 @@ describe('findActorDirs', () => {
 
 	describe('Actors in directories .gitignore ignores', () => {
 		// The root .gitignore ignores a parent directory, and a nested .gitignore ignores an Actor directory itself.
-		// An ignored file inside an Actor leaves the Actor alone.
+		// .git/info/exclude ignores actors/delta, which only git reads. An Actor's own .gitignore, as every template
+		// ships, and an ignored file inside an Actor leave the Actor alone.
 		async function writeRepository() {
+			execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+			await write('.git/info/exclude', 'actors/delta/\n');
 			await write('.gitignore', 'archive/\n*.log\n');
 			await write('actors/.gitignore', 'gamma\n');
 			await writeActor('actors/beta');
+			await write('actors/beta/.gitignore', 'node_modules\nstorage\n');
+			await write('actors/beta/debug.log');
+			await writeActor('actors/delta');
 			await writeActor('actors/gamma');
 			await writeActor('archive/old/alpha');
-			await write('actors/beta/debug.log');
 		}
 
-		const expected = [
+		const expected = ({ deltaIgnored }: { deltaIgnored: boolean }) => [
 			{ dir: 'actors/beta', name: 'beta', ignored: false },
+			{ dir: 'actors/delta', name: 'delta', ignored: deltaIgnored },
 			{ dir: 'actors/gamma', name: 'gamma', ignored: true },
 			{ dir: 'archive/old/alpha', name: 'alpha', ignored: true },
 		];
 
-		it('finds them and marks them ignored, as the upload leaves them out', async () => {
-			execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+		it('asks git and marks them ignored, as the upload leaves them out', async () => {
 			await writeRepository();
 
-			await expect(findActorDirs(tmpPath)).resolves.toEqual(expected);
+			await expect(findActorDirs(tmpPath)).resolves.toEqual(expected({ deltaIgnored: true }));
 
 			const uploaded = await getActorLocalFilePaths(tmpPath);
 			expect(uploaded).toContain('actors/beta/.actor/actor.json');
+			expect(uploaded).not.toContain('actors/delta/.actor/actor.json');
 			expect(uploaded).not.toContain('actors/gamma/.actor/actor.json');
 			expect(uploaded).not.toContain('archive/old/alpha/.actor/actor.json');
 		});
 
-		it('marks them the same way when git is unavailable', async () => {
-			gitState.gitAvailable = false;
+		it('reads the .gitignore files itself when git is unavailable', async () => {
 			await writeRepository();
+			gitState.gitAvailable = false;
 
-			await expect(findActorDirs(tmpPath)).resolves.toEqual(expected);
+			await expect(findActorDirs(tmpPath)).resolves.toEqual(expected({ deltaIgnored: false }));
 		});
 	});
 });
