@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { createWriteStream, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
@@ -289,99 +289,171 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 };
 
 /**
- * Fallback for when git is unavailable: find all .gitignore files and build a matcher
- * using the `ignore` package, scoped to each file's directory.
- * Also walks ancestor directories to pick up parent .gitignore files (e.g. monorepo root),
- * stopping at the first .git boundary found.
+ * Output of a git command run in `cwd`, or `null` when git fails (not installed, not a repository, refuses to run) or
+ * exits with an error code.
  */
-const getGitignoreFallbackMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
+const gitOutput = (args: string, cwd: string, input?: string): string | null => {
+	try {
+		return execSync(`git ${args}`, {
+			cwd,
+			input,
+			encoding: 'utf-8',
+			stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'ignore'],
+		});
+	} catch {
+		return null;
+	}
+};
+
+const readFileOrEmpty = async (path: string) => readFile(path, 'utf-8').catch(() => '');
+
+/** `to` relative to `from`, with `/` separators, as ignore rules and the paths they match use. */
+const posixRelative = (from: string, to: string) => relative(from, to).split(sep).join('/');
+
+/**
+ * Lines of an ignore file in a directory above `cwd`, where `cwdPath` leads from that directory to `cwd`. When they
+ * ignore `cwd` or a directory between, the lines that do are dropped, so the files inside still get the other rules.
+ * Pushing an ignored directory is explicit, as `apify push --dir` is.
+ */
+const keepLinesForCwd = (content: string, cwdPath: string): string[] => {
+	const lines = content.split(/\r?\n/);
+	const cwdDir = `${cwdPath}/`;
+	if (!cwdPath || !makeIg().add(lines).ignores(cwdDir)) {
+		return lines;
+	}
+
+	return lines.filter((line) => !makeIg().add(line).ignores(cwdDir));
+};
+
+/**
+ * Rewrites the lines of an ignore file in the directory `dir` to match paths relative to the directory `dir` is relative
+ * to, as git scopes them: a pattern with a slash before its end is anchored to `dir`, one without matches at any depth
+ * below it.
+ */
+const scopeLines = (lines: string[], dir: string): string[] => {
+	if (!dir) {
+		return lines;
+	}
+
+	// The directory starts every rewritten pattern, so its glob characters, and a leading ! or #, are escaped.
+	const base = dir.replace(/[\\*?[\]]/g, '\\$&').replace(/^[!#]/, '\\$&');
+	return lines.flatMap((line) => {
+		// Git drops trailing spaces unless a backslash escapes them.
+		const rule = line.replace(/(?<!\\) +$/, '');
+		const negation = rule.startsWith('!') ? '!' : '';
+		const pattern = rule.slice(negation.length);
+		if (!pattern || rule.startsWith('#')) {
+			return [];
+		}
+
+		const anchored = pattern.slice(0, -1).includes('/');
+		return [`${negation}${base}/${anchored ? pattern.replace(/^\//, '') : `**/${pattern}`}`];
+	});
+};
+
+/**
+ * Paths of the global excludes file (core.excludesFile, by default $XDG_CONFIG_HOME/git/ignore) and .git/info/exclude,
+ * whose rules apply from the repository root `root`. Empty when git fails.
+ */
+const getGitExcludeFilePaths = (cwd: string, root: string): string[] => {
+	const infoExclude = gitOutput('rev-parse --git-path info/exclude', cwd)?.trim();
+	if (!infoExclude) {
+		return [];
+	}
+
+	const globalExcludes =
+		gitOutput('config --path --get core.excludesFile', cwd)?.trim() ||
+		join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'git', 'ignore');
+
+	return [resolve(root, globalExcludes), resolve(cwd, infoExclude)];
+};
+
+/**
+ * Reads the ignore rules itself, for when git can't answer: git fails, or `cwd` is itself ignored. Applies every
+ * .gitignore inside `cwd` and every one above it up to and including the repository root, the first directory with a
+ * .git, so an outer repository's rules don't apply. When git names them, also applies .git/info/exclude and the global
+ * excludes file, as `git ls-files --exclude-standard` does. In the files above `cwd`, the lines that ignore `cwd` are
+ * dropped.
+ *
+ * The rules rank as git ranks them. A deeper .gitignore wins over a shallower one, so its `!` lines re-include files.
+ * Every .gitignore wins over .git/info/exclude, which wins over the global excludes file. A file below an ignored
+ * directory stays ignored.
+ */
+const getGitignoreRulesMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
+	// Directories above cwd from the top down: the repository root, or the filesystem root when there's none.
+	const ancestors: string[] = [];
+	let root = cwd;
+	while (!existsSync(join(root, '.git')) && root !== dirname(root)) {
+		root = dirname(root);
+		ancestors.unshift(root);
+	}
+
 	const gitignoreFiles = await glob('**/.gitignore', {
 		dot: true,
 		cwd,
 		ignore: ['.git/**'],
 		expandDirectories: false,
 	});
+	gitignoreFiles.sort((a, b) => a.split('/').length - b.split('/').length);
 
-	const filters: { dir: string; ig: Ignore; ancestorPrefix?: string }[] = [];
+	// One `ignore` instance holds every line, scoped to match paths relative to root. The last matching line wins, so
+	// the files go in from the lowest rank to the highest.
+	const cwdPath = posixRelative(root, cwd);
+	const lines: string[] = [];
+	for (const excludeFile of getGitExcludeFilePaths(cwd, root)) {
+		lines.push(...keepLinesForCwd(await readFileOrEmpty(excludeFile), cwdPath));
+	}
+
+	for (const dir of ancestors) {
+		const content = await readFileOrEmpty(join(dir, '.gitignore'));
+		lines.push(...scopeLines(keepLinesForCwd(content, posixRelative(dir, cwd)), posixRelative(root, dir)));
+	}
 
 	for (const gitignoreFile of gitignoreFiles) {
-		const gitignoreDir = dirname(gitignoreFile); // e.g. 'src' or '.'
 		const content = await readFile(join(cwd, gitignoreFile), 'utf-8');
-		filters.push({ dir: gitignoreDir === '.' ? '' : gitignoreDir, ig: makeIg().add(content) });
+		lines.push(...scopeLines(content.split(/\r?\n/), posixRelative(root, join(cwd, dirname(gitignoreFile)))));
 	}
 
-	// Walk ancestor directories to pick up parent .gitignore files (e.g. monorepo root).
-	// Check for a .git boundary FIRST so we stop before processing the git root's own
-	// .gitignore — that file is handled by `git ls-files` when git is available, and
-	// avoids accidentally applying rules from an unrelated outer repository.
-	let parentDir = dirname(cwd);
-	while (parentDir !== dirname(parentDir)) {
-		if (existsSync(join(parentDir, '.git'))) {
-			break;
-		}
-
-		const parentGitignorePath = join(parentDir, '.gitignore');
-		if (existsSync(parentGitignorePath)) {
-			try {
-				const content = await readFile(parentGitignorePath, 'utf-8');
-				// Paths passed to this filter are relative to cwd. To test them against
-				// a .gitignore that lives above cwd we need to prepend the relative path
-				// from the ancestor dir to cwd so the ignore patterns see the right scope.
-				const ancestorPrefix = relative(parentDir, cwd);
-				filters.push({ dir: '', ig: makeIg().add(content), ancestorPrefix });
-			} catch {
-				// Ignore read errors
-			}
-		}
-
-		parentDir = dirname(parentDir);
-	}
-
-	if (filters.length === 0) {
-		return () => false;
-	}
-
-	return (filePath) =>
-		filters.some(({ dir, ig, ancestorPrefix }) => {
-			let relativePath: string | null;
-			if (!dir) {
-				relativePath = ancestorPrefix ? `${ancestorPrefix}/${filePath}` : filePath;
-			} else if (filePath.startsWith(`${dir}/`)) {
-				relativePath = filePath.slice(dir.length + 1);
-			} else {
-				relativePath = null;
-			}
-			// An empty path is the directory of this .gitignore, which it can't ignore. `ignore` throws on it.
-			return !!relativePath && ig.ignores(relativePath);
-		});
+	// Names are compared in NFC, as git on macOS prints them, whatever form they have on disk.
+	const ig = makeIg().add(lines.map((line) => line.normalize('NFC')));
+	return (path) => ig.ignores((cwdPath ? `${cwdPath}/${path}` : path).normalize('NFC'));
 };
 
 /**
- * Returns a function that says whether .gitignore rules exclude a path relative to `cwd`. A directory path needs a
- * trailing slash. Asks `git ls-files`, which handles ancestor and nested .gitignore files, .git/info/exclude, and the
- * global gitignore config. When git fails (not installed, not a repository), reads the .gitignore files itself.
+ * Returns a function that says whether ignore rules exclude a path relative to `cwd`. A directory path needs a trailing
+ * slash. Asks `git ls-files`, which applies ancestor and nested .gitignore files, .git/info/exclude, and the global
+ * excludes file. When git fails, or the rules ignore `cwd` itself, reads the rules itself.
  * `getActorLocalFilePaths` and the Actor discovery of `apify push` both use it. Discovery asks from the root it
- * searches, the upload from the Actor directory.
+ * searches, the upload from the Actor directory. Discovery names the directories it asks about in `dirs`, with a
+ * trailing slash: git lists a directory that holds tracked files file by file, even when the rules ignore it, so the
+ * rules decide about those directories directly.
  */
-export const getGitignoreMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
-	try {
-		const gitIgnored = execSync('git ls-files --others --ignored --exclude-standard --directory', {
-			cwd,
-			encoding: 'utf-8',
-			stdio: ['ignore', 'pipe', 'ignore'],
-		})
-			.split('\n')
-			.filter(Boolean);
+export const getGitignoreMatcher = async (cwd: string, dirs: string[] = []): Promise<(path: string) => boolean> => {
+	// Git can't re-include files below an ignored directory, so it can't say which files the rules inside an ignored cwd
+	// exclude. Asked from inside, it lists only `./`, or each untracked file when cwd holds tracked ones.
+	const cwdIgnored = gitOutput('check-ignore -q --no-index ./', cwd) !== null;
+	// -z prints names as they are. Without it, git quotes names with special characters.
+	const listed = cwdIgnored
+		? null
+		: gitOutput('ls-files -z --others --ignored --exclude-standard --directory', cwd)?.split('\0').filter(Boolean);
 
-		if (gitIgnored.length === 0) {
-			return () => false;
-		}
-
-		const ig = makeIg().add(gitIgnored);
-		return (path) => ig.ignores(path);
-	} catch {
-		return getGitignoreFallbackMatcher(cwd);
+	if (!listed || listed.includes('./')) {
+		return getGitignoreRulesMatcher(cwd);
 	}
+
+	// The rules decide about the directories the caller names. Exit code 1 means they ignore none of them.
+	const ignoredDirs = dirs.length
+		? (gitOutput('check-ignore --no-index -z --stdin', cwd, dirs.join('\0'))?.split('\0') ?? [])
+		: [];
+
+	// Each entry is an exact path, not a pattern, and covers everything below it. A directory entry ends with `/`, but a
+	// symlink to a directory doesn't. Names are compared in NFC, as git on macOS prints them.
+	const ignored = new Set([...listed, ...ignoredDirs].map((entry) => entry.normalize('NFC')));
+	const prefixes = listed.map((entry) => (entry.endsWith('/') ? entry : `${entry}/`).normalize('NFC'));
+	return (path) => {
+		const name = path.normalize('NFC');
+		return ignored.has(name) || prefixes.some((prefix) => name.startsWith(prefix));
+	};
 };
 
 interface ActorIgnoreResult {

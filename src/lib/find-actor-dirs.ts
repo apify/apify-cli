@@ -73,7 +73,10 @@ export async function findActorDirs(root: string): Promise<FoundActorDir[]> {
 		return [];
 	}
 
-	const isGitignored = await getGitignoreMatcher(root);
+	const isGitignored = await getGitignoreMatcher(
+		root,
+		found.map((actor) => `${actor.dir}/`),
+	);
 
 	return found
 		.map((actor) => ({ ...actor, ignored: isGitignored(`${actor.dir}/`) }))

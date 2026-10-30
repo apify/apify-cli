@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
@@ -31,6 +31,9 @@ describe('Utils - .actorignore with .gitignore fallback (no git)', () => {
 
 	beforeAll(async () => {
 		await beforeAllCalls();
+
+		// The fake .git stops the walk here, so the apify-cli .gitignore doesn't apply.
+		mkdirSync(joinPath('.git'));
 
 		FOLDERS.forEach((folder) => {
 			ensureFolderExistsSync(tmpPath, folder);
@@ -72,6 +75,9 @@ describe('Utils - .actorignore negation overrides gitignore (no git)', () => {
 
 	beforeAll(async () => {
 		await beforeAllCalls();
+
+		// The fake .git stops the walk here, so the apify-cli .gitignore doesn't apply.
+		mkdirSync(joinPath('.git'));
 
 		NEGATE_FOLDERS.forEach((folder) => {
 			ensureFolderExistsSync(tmpPath, folder);
