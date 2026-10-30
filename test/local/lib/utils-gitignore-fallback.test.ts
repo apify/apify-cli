@@ -36,6 +36,8 @@ describe('Utils - gitignore fallback (no git)', () => {
 		await beforeAllCalls();
 
 		// NOTE: No git init here — execSync is mocked to throw, triggering the fallback path.
+		// The fake .git stops the walk here, so the apify-cli .gitignore doesn't apply.
+		mkdirSync(joinPath('.git'));
 
 		FOLDERS.concat(FOLDERS_TO_IGNORE).forEach((folder) => {
 			ensureFolderExistsSync(tmpPath, folder);
@@ -73,6 +75,9 @@ describe('Utils - nested .gitignore scoping (no git)', () => {
 
 	beforeAll(async () => {
 		await beforeAllCalls();
+
+		// The fake .git stops the walk here, so the apify-cli .gitignore doesn't apply.
+		mkdirSync(joinPath('.git'));
 
 		// Create directory structure
 		ensureFolderExistsSync(tmpPath, 'src');
@@ -121,8 +126,9 @@ describe('Utils - parent .gitignore applied to subproject (no git)', () => {
 		subprojectPath = join(tmpPath, 'subproject');
 
 		// Parent .gitignore — rules that should apply to everything inside subproject/.
-		// No fake .git is needed. The walk ends with the .gitignore of the apify-cli
-		// repo root, and drops its lines that ignore test/tmp.
+		// The fake .git makes tmpPath the repository root, so the walk reads its
+		// .gitignore and stops there, before the apify-cli .gitignore.
+		mkdirSync(join(tmpPath, '.git'));
 		writeFileSync(join(tmpPath, '.gitignore'), '*.secret\nbuild/\n', { flag: 'w' });
 
 		// Subproject directory structure
