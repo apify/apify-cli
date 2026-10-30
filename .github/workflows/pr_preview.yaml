@@ -1,12 +1,10 @@
-# This workflow publishes a preview build of a pull request to pkg.pr.new, so that
-# reviewers can install the CLI from the pull request without a local checkout.
-# Previews are opt-in: add the `cli-preview` label to the pull request.
+# This workflow publishes a preview build of every pull request to pkg.pr.new, so that
+# reviewers can install the CLI from a pull request without a local checkout.
 
 name: PR preview
 
 on:
     pull_request:
-        types: [labeled, synchronize]
 
 permissions: {}
 
@@ -20,7 +18,8 @@ concurrency:
 
 jobs:
     publish:
-        if: ${{ contains(github.event.pull_request.labels.*.name, 'cli-preview') && github.event.pull_request.head.repo.full_name == github.repository }}
+        # No previews from forks, and a dependency bump never needs one.
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.type != 'Bot' }}
 
         name: Publish preview
 
