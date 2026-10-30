@@ -148,11 +148,11 @@ beforeEach(async () => {
 	originalExitCode = commandProcess.exitCode;
 	originalRealExitCode = process.exitCode;
 	gitState.gitAvailable = true;
-	actorGet.mockClear();
-	actorDelete.mockClear();
-	actorsCreate.mockClear();
-	versionUpdate.mockClear();
-	versionCreate.mockClear();
+	actorGet.mockReset();
+	actorDelete.mockReset();
+	actorsCreate.mockReset();
+	versionUpdate.mockReset();
+	versionCreate.mockReset();
 	keyValueStoreGetOrCreate.mockClear();
 	setRecord.mockClear();
 	cwdCache.clear();
@@ -422,8 +422,42 @@ describe('apify push of a monorepo Actor', () => {
 		expect(keyValueStoreGetOrCreate).not.toHaveBeenCalled();
 	});
 
+	describe('with the Docker context at the repository root and no dockerfile field', () => {
+		beforeEach(async () => {
+			await writeActorConfig({ dockerContextDir: '../../..' });
+		});
+
+		it('pushes with the default Dockerfile in the Actor folder, which lies inside the context', async () => {
+			await write(`${ACTOR_PATH}/Dockerfile`, 'FROM apify/actor-node:20\n');
+			git('add', '.');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const modifier = versionPayload(versionUpdate);
+			expect(modifier.actorPath).toBe(ACTOR_PATH);
+			expect(modifier.sourceFiles!.map((file) => file.name)).toContain(`${ACTOR_PATH}/Dockerfile`);
+			expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
+		});
+
+		it('exits as an invalid actor.json without a Dockerfile at the default locations', async () => {
+			git('add', '.');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+			expect(logMessages.error.join('\n')).toContain('"dockerfile" is not set');
+			expect(actorGet).not.toHaveBeenCalled();
+			expect(versionUpdate).not.toHaveBeenCalled();
+		});
+	});
+
 	it('names the Actor folder in the refusal when actor.json has no name', async () => {
-		await writeActorConfig({ name: undefined, dockerContextDir: '../../..' });
+		await writeActorConfig({
+			name: undefined,
+			dockerContextDir: '../../..',
+			dockerfile: '../../../shared/TypeScript_Dockerfile',
+		});
 		versionUpdate.mockRejectedValueOnce(actorPathRejected());
 
 		await testRunCommand(ActorsPushCommand, { args_actorId: ACTOR_ID });
