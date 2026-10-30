@@ -34,6 +34,9 @@ const TEST_ACTOR: ActorCollectionCreateOptions = {
 
 const ACT_TEMPLATE = 'project_empty';
 
+// The API and the local file listing don't guarantee the same order, so source files are compared sorted by name.
+const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
+
 useAuthSetup({ perTest: false });
 
 const {
@@ -117,7 +120,7 @@ describe('[api] apify push', () => {
 				},
 			]);
 			// TODO: vlad, fix this too
-			expect((createdActorVersion as any)!.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect((createdActorVersion as any)!.sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(createdActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 
 			// eslint-disable-next-line dot-notation
@@ -161,7 +164,7 @@ describe('[api] apify push', () => {
 					value: 'envVarValue',
 				},
 			]);
-			expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect((testActorVersion as any).sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 
 			// eslint-disable-next-line dot-notation
@@ -213,7 +216,7 @@ describe('[api] apify push', () => {
 
 			expect(testActorVersion!.versionNumber).to.be.eql(actorJson.version);
 			expect(testActorVersion!.envVars).to.be.eql(testActorWithEnvVars.versions[0].envVars);
-			expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect((testActorVersion as any).sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 		},
 		TEST_TIMEOUT,

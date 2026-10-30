@@ -482,10 +482,12 @@ FLAGS
                                provided that directory contains an "index.js" file.
   -i, --input=<value>          Optional JSON input to
                                be given to the Actor.
-      --input-file=<value>     Optional path to a file with
-                               JSON input to be given to the Actor. The file must be
-                               a valid JSON file. You can also specify `-` to read
-                               from standard input.
+      --input-file=<value>     Optional path to a JSON file
+                               with input for the Actor. To read from standard input
+                               and wait until all input arrives, use `-`. Without
+                               this flag or `--input`, the CLI still reads standard
+                               input, but stops waiting if input is slow to start or
+                               pauses.
       --profile=<value>        The stored account to use
                                for this command, by name or user ID. See "apify auth
                                list".
@@ -970,10 +972,11 @@ FLAGS
   -i, --input=<value>       Optional inline JSON object
                             input for the Actor. To avoid shell parsing issues, wrap
                             the JSON in quotes. For JSON files, use --input-file.
-  -f, --input-file=<value>  Optional path to a file with
-                            JSON input to be given to the Actor. The file must be a
-                            valid JSON file. You can also specify `-` to read from
-                            standard input.
+  -f, --input-file=<value>  Optional path to a JSON file
+                            with input for the Actor. To read from standard input
+                            and wait until all input arrives, use `-`. Without this
+                            flag or `--input`, the CLI still reads standard input,
+                            but stops waiting if input is slow to start or pauses.
       --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
@@ -1010,10 +1013,11 @@ FLAGS
                             run (e.g. "latest" or "1.2.34").
   -i, --input=<value>       Optional JSON input to be
                             given to the Actor.
-      --input-file=<value>  Optional path to a file with JSON
-                            input to be given to the Actor. The file must be a valid
-                            JSON file. You can also specify `-` to read from
-                            standard input.
+      --input-file=<value>  Optional path to a JSON file with
+                            input for the Actor. To read from standard input and
+                            wait until all input arrives, use `-`. Without this flag
+                            or `--input`, the CLI still reads standard input, but
+                            stops waiting if input is slow to start or pauses.
       --json                Format the command output as JSON.
   -m, --memory=<value>      Amount of memory allocated for
                             the Actor run, in megabytes.
@@ -1987,12 +1991,14 @@ ARGUMENTS
 
 FLAGS
   -t, --token=<value>  Apify API token to embed in the config.
-                       Defaults to APIFY_TOKEN, then the token from 'apify login'.
+                       Defaults to APIFY_TOKEN, then the token from 'apify login'. A
+                       token from an OAuth 'apify login' expires after about an
+                       hour, so pass a long-lived one from Apify Console.
       --tools=<value>  Comma-separated tool IDs or Actor full names
                        to expose. Forwarded as a '?tools=' query parameter.
       --url=<value>    Apify MCP server URL.
-  -y, --yes            Overwrite an existing 'apify' entry
-                       without prompting.
+  -y, --yes            Overwrite an existing 'apify' entry, and
+                       accept a token that's about to expire, without prompting.
 ```
 <!-- mcp-commands-end -->
 <!-- prettier-ignore-end -->
