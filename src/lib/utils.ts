@@ -412,10 +412,14 @@ export const getGitignoreMatcher = async (cwd: string): Promise<(path: string) =
 		return getGitignoreRulesMatcher(cwd);
 	}
 
-	// Each entry is an exact path, not a pattern. A directory entry ends with `/` and covers everything below it.
-	const ignored = new Set(listed);
-	const ignoredDirs = listed.filter((entry) => entry.endsWith('/'));
-	return (path) => ignored.has(path) || ignoredDirs.some((dir) => path.startsWith(dir));
+	// Each entry is an exact path, not a pattern, and covers everything below it. A directory entry ends with `/`, but a
+	// symlink to a directory doesn't. Names are compared in NFC, as git on macOS prints them.
+	const ignored = new Set(listed.map((entry) => entry.normalize('NFC')));
+	const prefixes = listed.map((entry) => (entry.endsWith('/') ? entry : `${entry}/`).normalize('NFC'));
+	return (path) => {
+		const name = path.normalize('NFC');
+		return ignored.has(name) || prefixes.some((prefix) => name.startsWith(prefix));
+	};
 };
 
 interface ActorIgnoreResult {

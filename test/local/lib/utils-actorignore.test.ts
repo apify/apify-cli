@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
+import process from 'node:process';
 
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
@@ -385,12 +386,16 @@ describe('Utils - gitignored files with non-ASCII names (git)', () => {
 		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
 		// git's default, set here in case a global config turns it off. It prints such names quoted and escaped.
 		execSync('git config core.quotePath true', { cwd: tmpPath, stdio: 'ignore' });
+		// git's default on macOS, where it prints names in NFC whatever their form on disk. Other systems ignore it.
+		execSync('git config core.precomposeUnicode true', { cwd: tmpPath, stdio: 'ignore' });
 
 		ensureFolderExistsSync(tmpPath, 'sub');
 
 		writeFileSync(joinPath('main.js'), 'content', { flag: 'w' });
 		writeFileSync(joinPath('příliš.log'), 'content', { flag: 'w' });
 		writeFileSync(joinPath('sub/žluťoučký.log'), 'content', { flag: 'w' });
+		// Decomposed, as macOS archives and older macOS volumes store names.
+		writeFileSync(joinPath('čaj.log'.normalize('NFD')), 'content', { flag: 'w' });
 
 		writeFileSync(joinPath('.gitignore'), '*.log\n', { flag: 'w' });
 	});
@@ -400,11 +405,50 @@ describe('Utils - gitignored files with non-ASCII names (git)', () => {
 	});
 
 	it('should exclude them', async () => {
-		const paths = await getActorLocalFilePaths(tmpPath);
+		const paths = (await getActorLocalFilePaths(tmpPath)).map((path) => path.normalize('NFC'));
 
 		expect(paths).toContain('main.js');
 		expect(paths).not.toContain('příliš.log');
 		expect(paths).not.toContain('sub/žluťoučký.log');
+		expect(paths).not.toContain('čaj.log');
+	});
+});
+
+const IGNORED_SYMLINK_TEST_DIR = 'gitignore-ignored-symlink-test-dir';
+
+// Creating a symlink on Windows needs extra rights.
+describe.skipIf(process.platform === 'win32')('Utils - gitignored symlink to a directory (git)', () => {
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(IGNORED_SYMLINK_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		mkdirSync(joinPath('repo'), { recursive: true });
+		mkdirSync(joinPath('outside'), { recursive: true });
+		execSync('git init', { cwd: joinPath('repo'), stdio: 'ignore' });
+
+		writeFileSync(joinPath('outside', 'o1.txt'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('repo', 'main.js'), 'content', { flag: 'w' });
+		symlinkSync(joinPath('outside'), joinPath('repo', 'data'), 'dir');
+
+		// git lists the ignored symlink as `data`, without the trailing slash of a directory.
+		writeFileSync(joinPath('repo', '.gitignore'), 'data\n', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should exclude the files below it', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('repo'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('data/o1.txt');
 	});
 });
 
