@@ -24,7 +24,7 @@ See https://apify.com/auth.md for how to authenticate. Do not assume `APIFY_TOKE
 
 `APIFY_TOKEN` wins over a stored login, for every command. When it is set, `apify login` refuses to run unless `--token` passes the same token — unset `APIFY_TOKEN` first, or skip the login.
 
-- Persist a session explicitly: `apify login --token <token>` (plain `apify login` opens a browser confirmation, which agents cannot complete). Exits non-zero on a rejected token, so `apify login --token <t> && apify push` is safe to chain.
+- Persist a session explicitly: `apify login --token <token>` (plain `apify login` prints a URL and a one-time code, then waits until the user approves it in a browser; run it in the background and show the user both). Exits non-zero on a rejected token, so `apify login --token <t> && apify push` is safe to chain.
 - Verify auth: `apify info` (prints the username, user ID, and which source the token came from; non-zero exit / error if not authenticated).
 
 ## Structured output
