@@ -1,13 +1,95 @@
 import process from 'node:process';
 
-import { resolveAuth } from '../../lib/auth.js';
+import { isCI } from 'ci-info';
+
+import { lookUpProfile } from '../../lib/auth-file.js';
+import { type ResolvedAuth, resolveAuth } from '../../lib/auth.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
+import { getConsoleIntegrationsUrl } from '../../lib/console-url.js';
 import { CommandExitCodes } from '../../lib/consts.js';
+import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
+import { useStdin } from '../../lib/hooks/useStdin.js';
 import { clientNeedsToken, getClientHandler, isSupportedClient, SUPPORTED_CLIENTS } from '../../lib/mcp/clients.js';
 import { buildMcpUrl, DEFAULT_MCP_URL } from '../../lib/mcp/url.js';
-import { error } from '../../lib/outputs.js';
+import { error, simpleLog, warning } from '../../lib/outputs.js';
+
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+
+/**
+ * Above this, the embedded token outlives any one working session and the warning would be noise.
+ * The authorization server picks the lifetime, so a longer-lived token is the server's call to make.
+ */
+const EXPIRY_WARNING_THRESHOLD_MS = DAY_MS;
+
+function plural(count: number, unit: string): string {
+	return `${count} ${count === 1 ? unit : `${unit}s`}`;
+}
+
+/** How long the token has left, as a clause that follows the token it describes. */
+function describeExpiry(remainingMs: number): string {
+	// A refresh that could not reach the token endpoint hands back the stored token, which by then
+	// may have minutes or seconds left — never round that down to a reassuring "0 minutes".
+	if (remainingMs <= 0) return 'has already expired';
+	if (remainingMs < MINUTE_MS) return 'expires in under a minute';
+	if (remainingMs < HOUR_MS) return `expires in about ${plural(Math.round(remainingMs / MINUTE_MS), 'minute')}`;
+	if (remainingMs < DAY_MS) return `expires in about ${plural(Math.round(remainingMs / HOUR_MS), 'hour')}`;
+
+	return `expires in about ${plural(Math.round(remainingMs / DAY_MS), 'day')}`;
+}
+
+/**
+ * The token this command writes into a client's config is a copy: nothing refreshes it there. An
+ * OAuth login's access token expires after about an hour, so the install silently stops working
+ * unless the user passes a long-lived API token instead.
+ *
+ * Returns false when the user declines, in which case nothing should be written.
+ */
+async function confirmExpiringToken(auth: ResolvedAuth, yes: boolean): Promise<boolean> {
+	if (!auth.profile) return true;
+
+	const { profile } = lookUpProfile(auth.profile.id);
+	if (profile?.authMethod !== 'oauth2' || !profile.expiresAt) return true;
+
+	// An unparseable expiry is not evidence of a short-lived token, and `getAccessToken` ignores it too.
+	const remainingMs = Date.parse(profile.expiresAt) - Date.now();
+	if (!Number.isFinite(remainingMs) || remainingMs > EXPIRY_WARNING_THRESHOLD_MS) return true;
+
+	const expiry = describeExpiry(remainingMs);
+	// The Console account the token has to be created under: a bare URL would act on whatever
+	// account the browser was last on, which for an organization login is the wrong one.
+	const tokensUrl = getConsoleIntegrationsUrl({
+		id: auth.profile.id,
+		organizationOwnerUserId: profile.organizationOwnerUserId,
+	});
+
+	const explanation =
+		`You're logged in through your Apify account, and that login's API token ${expiry}. ` +
+		`The MCP client reads the token from its config file and can't refresh it, so the server stops working once the token expires.\n` +
+		`Pass --token with an API token from Apify Console (${tokensUrl}) to configure a client that keeps working.`;
+
+	if (yes) {
+		warning({ message: explanation });
+		return true;
+	}
+
+	// `useStdin` reports `hasData` for any stdin that is not a terminal, /dev/null and a closed
+	// descriptor included, so the prompt hook would ask a question nobody can answer and then wait
+	// on input that never comes. A Docker build or a cron job has to fail with the hint instead.
+	const { isTTY } = await useStdin();
+	if (isCI || !isTTY) {
+		process.exitCode = CommandExitCodes.InvalidInput;
+		// The whole explanation, as one message: there is no prompt to follow it up with.
+		throw new Error(`${explanation}\nRe-run with --yes to write the expiring token anyway.`);
+	}
+
+	warning({ message: explanation });
+
+	return useYesNoConfirm({ message: 'Write the expiring token to the client config anyway?', default: false });
+}
 
 export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override name = 'install' as const;
@@ -19,7 +101,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	static override interactive = true;
 
 	static override interactiveNote =
-		'Prompts before overwriting an existing JSON config entry (cursor, kiro, antigravity). Pass --yes to overwrite without prompting. For clients delegated to their own CLI (claude-code, vscode, vscode-insiders, codex), overwrite behavior is controlled by that CLI.';
+		'Prompts before overwriting an existing JSON config entry (cursor, kiro, antigravity), and before embedding a token that expires within a day. Pass --yes to confirm without prompting. For clients delegated to their own CLI (claude-code, vscode, vscode-insiders, codex), overwrite behavior is controlled by that CLI.';
 
 	static override examples = [
 		{
@@ -50,10 +132,10 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 	};
 
 	static override flags = {
-		...YesFlag(`Overwrite an existing 'apify' entry without prompting.`),
+		...YesFlag(`Overwrite an existing 'apify' entry, and accept a token that's about to expire, without prompting.`),
 		token: Flags.string({
 			char: 't',
-			description: `Apify API token to embed in the config. Defaults to APIFY_TOKEN, then the token from 'apify login'.`,
+			description: `Apify API token to embed in the config. Defaults to APIFY_TOKEN, then the token from 'apify login'. A token from an OAuth 'apify login' expires after about an hour, so pass a long-lived one from Apify Console.`,
 		}),
 		url: Flags.string({
 			description: 'Apify MCP server URL.',
@@ -76,9 +158,9 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 			return;
 		}
 
-		let token = '';
-		if (clientNeedsToken(client)) {
-			const auth = tokenFlag ? { token: tokenFlag } : await resolveAuth();
+		let token = tokenFlag ?? '';
+		if (clientNeedsToken(client) && !tokenFlag) {
+			const auth = await resolveAuth();
 			if (!auth) {
 				error({
 					message: `You are not logged in to Apify. Run 'apify login' first, or pass --token <api-token>.`,
@@ -86,6 +168,12 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 				process.exitCode = CommandExitCodes.MissingAuth;
 				return;
 			}
+
+			if (!(await confirmExpiringToken(auth, yes))) {
+				simpleLog({ message: 'No changes written.' });
+				return;
+			}
+
 			token = auth.token;
 		}
 

@@ -59,7 +59,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 
 		const confirmed = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Dataset?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirmed) {
