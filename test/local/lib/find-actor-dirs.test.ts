@@ -136,11 +136,15 @@ describe('findActorDirs', () => {
 	describe('Actors in directories .gitignore ignores', () => {
 		// The root .gitignore ignores a parent directory, and a nested .gitignore ignores an Actor directory itself.
 		// .git/info/exclude ignores actors/delta, which only git reads. An Actor's own .gitignore, as every template
-		// ships, and an ignored file inside an Actor leave the Actor alone.
+		// ships, and an ignored file inside an Actor leave the Actor alone. The root .gitignore also ignores legacy,
+		// which holds a tracked file, so git lists its other files one by one.
 		async function writeRepository() {
 			execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
 			await write('.git/info/exclude', 'actors/delta/\n');
-			await write('.gitignore', 'archive/\n*.log\n');
+			await write('.gitignore', 'archive/\nlegacy/\n*.log\n');
+			await writeActor('legacy');
+			await write('legacy/main.js');
+			execSync('git add -f legacy/main.js', { cwd: tmpPath, stdio: 'ignore' });
 			await write('actors/.gitignore', 'gamma\n');
 			await writeActor('actors/beta');
 			await write('actors/beta/.gitignore', 'node_modules\nstorage\n');
@@ -155,6 +159,7 @@ describe('findActorDirs', () => {
 			{ dir: 'actors/delta', name: 'delta', ignored: deltaIgnored },
 			{ dir: 'actors/gamma', name: 'gamma', ignored: true },
 			{ dir: 'archive/old/alpha', name: 'alpha', ignored: true },
+			{ dir: 'legacy', name: 'legacy', ignored: true },
 		];
 
 		it('asks git and marks them ignored, as the upload leaves them out', async () => {
@@ -167,6 +172,7 @@ describe('findActorDirs', () => {
 			expect(uploaded).not.toContain('actors/delta/.actor/actor.json');
 			expect(uploaded).not.toContain('actors/gamma/.actor/actor.json');
 			expect(uploaded).not.toContain('archive/old/alpha/.actor/actor.json');
+			expect(uploaded).not.toContain('legacy/.actor/actor.json');
 		});
 
 		it('reads the .gitignore files itself when git is unavailable', async () => {

@@ -288,10 +288,18 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 	});
 };
 
-/** Output of a git command run in `cwd`, or `null` when git fails (not installed, not a repository, refuses to run). */
-const gitOutput = (args: string, cwd: string): string | null => {
+/**
+ * Output of a git command run in `cwd`, or `null` when git fails (not installed, not a repository, refuses to run) or
+ * exits with an error code.
+ */
+const gitOutput = (args: string, cwd: string, input?: string): string | null => {
 	try {
-		return execSync(`git ${args}`, { cwd, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
+		return execSync(`git ${args}`, {
+			cwd,
+			input,
+			encoding: 'utf-8',
+			stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'ignore'],
+		});
 	} catch {
 		return null;
 	}
@@ -414,25 +422,33 @@ const getGitignoreRulesMatcher = async (cwd: string): Promise<(path: string) => 
 /**
  * Returns a function that says whether ignore rules exclude a path relative to `cwd`. A directory path needs a trailing
  * slash. Asks `git ls-files`, which applies ancestor and nested .gitignore files, .git/info/exclude, and the global
- * excludes file. When git fails, or lists `cwd` itself as ignored, reads the rules itself.
+ * excludes file. When git fails, or the rules ignore `cwd` itself, reads the rules itself.
  * `getActorLocalFilePaths` and the Actor discovery of `apify push` both use it. Discovery asks from the root it
- * searches, the upload from the Actor directory.
+ * searches, the upload from the Actor directory. Discovery names the directories it asks about in `dirs`, with a
+ * trailing slash: git lists a directory that holds tracked files file by file, even when the rules ignore it, so the
+ * rules decide about those directories directly.
  */
-export const getGitignoreMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
+export const getGitignoreMatcher = async (cwd: string, dirs: string[] = []): Promise<(path: string) => boolean> => {
+	// Git can't re-include files below an ignored directory, so it can't say which files the rules inside an ignored cwd
+	// exclude. Asked from inside, it lists only `./`, or each untracked file when cwd holds tracked ones.
+	const cwdIgnored = gitOutput('check-ignore -q --no-index ./', cwd) !== null;
 	// -z prints names as they are. Without it, git quotes names with special characters.
-	const listed = gitOutput('ls-files -z --others --ignored --exclude-standard --directory', cwd)
-		?.split('\0')
-		.filter(Boolean);
+	const listed = cwdIgnored
+		? null
+		: gitOutput('ls-files -z --others --ignored --exclude-standard --directory', cwd)?.split('\0').filter(Boolean);
 
-	// When cwd is ignored, git lists only `./`: it can't re-include files below an ignored directory, so it can't say
-	// which files the rules inside cwd exclude.
 	if (!listed || listed.includes('./')) {
 		return getGitignoreRulesMatcher(cwd);
 	}
 
+	// The rules decide about the directories the caller names. Exit code 1 means they ignore none of them.
+	const ignoredDirs = dirs.length
+		? (gitOutput('check-ignore --no-index -z --stdin', cwd, dirs.join('\0'))?.split('\0') ?? [])
+		: [];
+
 	// Each entry is an exact path, not a pattern, and covers everything below it. A directory entry ends with `/`, but a
 	// symlink to a directory doesn't. Names are compared in NFC, as git on macOS prints them.
-	const ignored = new Set(listed.map((entry) => entry.normalize('NFC')));
+	const ignored = new Set([...listed, ...ignoredDirs].map((entry) => entry.normalize('NFC')));
 	const prefixes = listed.map((entry) => (entry.endsWith('/') ? entry : `${entry}/`).normalize('NFC'));
 	return (path) => {
 		const name = path.normalize('NFC');

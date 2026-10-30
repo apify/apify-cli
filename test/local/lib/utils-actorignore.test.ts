@@ -617,3 +617,46 @@ describe('Utils - pushing a directory .gitignore ignores (git)', () => {
 		expect(paths).toContain('dist/bundle.js');
 	});
 });
+
+const IGNORED_TRACKED_DIR_TEST_DIR = 'gitignore-ignored-tracked-dir-test-dir';
+
+describe('Utils - pushing a directory .gitignore ignores that holds a tracked file (git)', () => {
+	// The root .gitignore ignores legacy/, which holds a file committed before. git lists the untracked files in it one by
+	// one, not `./`, but the push applies the rules as it does for any ignored directory.
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(IGNORED_TRACKED_DIR_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+
+		ensureFolderExistsSync(tmpPath, 'legacy');
+
+		writeFileSync(joinPath('.gitignore'), 'legacy/\n*.log\n', { flag: 'w' });
+		writeFileSync(joinPath('legacy', '.gitignore'), 'secret.env\n', { flag: 'w' });
+		['tracked.js', 'main.js', 'secret.env', 'x.log'].forEach((file) =>
+			writeFileSync(joinPath('legacy', file), 'content', { flag: 'w' }),
+		);
+
+		execSync('git add -f legacy/tracked.js', { cwd: tmpPath, stdio: 'ignore' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should apply every rule except the one that ignores the pushed directory', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('legacy'));
+
+		expect(paths).toContain('tracked.js');
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('.gitignore');
+		expect(paths).not.toContain('secret.env');
+		expect(paths).not.toContain('x.log');
+	});
+});
