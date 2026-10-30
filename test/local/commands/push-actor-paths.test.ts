@@ -58,6 +58,7 @@ const { beforeAllCalls, afterAllCalls, joinPath, tmpPath } = useTempPath(actName
 const { logMessages } = useConsoleSpy();
 
 const { ActorsPushCommand } = await import('../../../src/commands/actors/push.js');
+const { getLoggedClientOrThrow } = await import('../../../src/lib/utils.js');
 // The command sets the exit code on this mocked copy of `node:process`, not on the global one.
 const { default: commandProcess } = await import('node:process');
 
@@ -83,6 +84,7 @@ beforeEach(async () => {
 	actorGet.mockClear();
 	versionUpdate.mockClear();
 	versionCreate.mockClear();
+	vitest.mocked(getLoggedClientOrThrow).mockClear();
 	cwdCache.clear();
 	await beforeAllCalls();
 
@@ -100,7 +102,7 @@ afterEach(async () => {
 });
 
 describe('apify push with file paths in actor.json', () => {
-	it('stops before reading or writing the Actor, listing every wrong path', async () => {
+	it('stops before logging in or reading or writing the Actor, listing every wrong path', async () => {
 		await writeActorConfig({
 			dockerfile: '../Dockerfile.prod',
 			readme: '../Dockerfile.ci',
@@ -121,6 +123,7 @@ describe('apify push with file paths in actor.json', () => {
 		expect(stderr).toContain(
 			`"input": "../../INPUT_SCHEMA.json" (${joinPath('..', 'INPUT_SCHEMA.json')}) lies outside the uploaded folder ${tmpPath}.`,
 		);
+		expect(getLoggedClientOrThrow).not.toHaveBeenCalled();
 		expect(actorGet).not.toHaveBeenCalled();
 		expect(versionCreate).not.toHaveBeenCalled();
 		expect(versionUpdate).not.toHaveBeenCalled();
