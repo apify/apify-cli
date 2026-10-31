@@ -12,6 +12,7 @@ import { ApifyCommand } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import {
+	CommandExitCodes,
 	EMPTY_LOCAL_CONFIG,
 	LOCAL_CONFIG_PATH,
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
@@ -40,6 +41,7 @@ import {
 	runGitSourceFlow,
 	toGitAccount,
 } from '../lib/git-source/gitSource.js';
+import { runImport } from '../lib/git-source/importActor.js';
 import { usePythonRuntime } from '../lib/hooks/runtimes/python.js';
 import { getInstallCommandSuggestion } from '../lib/hooks/runtimes/utils.js';
 import { ProjectLanguage, useCwdProject } from '../lib/hooks/useCwdProject.js';
@@ -58,6 +60,7 @@ import {
 	setLocalConfig,
 	setLocalEnv,
 } from '../lib/utils.js';
+import { importFlags } from './import.js';
 
 export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 	static override name = 'create' as const;
@@ -99,6 +102,10 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		{
 			description: 'Name the account and the repository to create, instead of being asked.',
 			command: 'apify create my-actor --template js-crawlee-cheerio --source github --git-repo my-org/my-scraper',
+		},
+		{
+			description: 'Turn the current directory into an Actor instead of scaffolding one. Same as "apify import".',
+			command: 'apify create my-actor --import',
 		},
 	];
 
@@ -161,6 +168,12 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 			// typed one — and a flag typed against the wrong source has to be caught, not ignored.
 			required: false,
 		}),
+		import: Flags.boolean({
+			description:
+				'Import the current directory instead of creating a new one from a template, as "apify import" does: no scaffold, no git init, no dependency install. With --source, "apify" binds the Actor only, and a Git provider has to match the origin remote.',
+			required: false,
+		}),
+		...importFlags,
 		origin: Flags.string({
 			description: 'Where the command was invoked from. Used for funnel telemetry.',
 			choices: ['console', 'cli'],
@@ -196,6 +209,45 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		// for testing of templates that are not yet published in the manifest
 		let { templateArchiveUrl } = this.flags;
 		let skipOptionalDeps = false;
+
+		if (this.flags.import) {
+			const scaffoldOnly = {
+				template: templateName,
+				'use-case': useCase,
+				language,
+				'skip-dependency-install': skipDependencyInstall,
+				'skip-git-init': skipGitInit,
+				'omit-optional-deps': this.flags.omitOptionalDeps,
+				'git-repo': gitRepo,
+				'template-archive-url': templateArchiveUrl,
+			};
+			const ignored = Object.keys(scaffoldOnly).filter((flag) => scaffoldOnly[flag as keyof typeof scaffoldOnly]);
+			if (ignored.length) {
+				process.exitCode = CommandExitCodes.InvalidInput;
+				throw new Error(`--import does not scaffold, so drop --${ignored.join(', --')}.`);
+			}
+
+			const { source } = this.flags;
+			const { isTTY } = await useStdin();
+
+			await runImport({
+				dir: process.cwd(),
+				name: actorName,
+				actor: this.flags.actor,
+				source: source === undefined ? undefined : source === 'apify' ? 'none' : 'git',
+				provider: source && isGitProvider(source) ? source : undefined,
+				branch: this.flags.branch,
+				autoBuild: this.flags.autoBuild,
+				force: this.flags.force,
+				json: !!json,
+				isInteractive: isTTY && !isCI && !json,
+			});
+			return;
+		}
+
+		if (this.flags.actor || this.flags.branch || this.flags.force) {
+			throw new Error('--actor, --branch, and --force only apply with --import.');
+		}
 
 		// A caller parsing stdout cannot answer a prompt. The name and the template have no default, so
 		// reject a run missing either before any directory is created. Both are reported at once, so one

@@ -570,7 +570,7 @@ const createGitActor = async ({
  *
  * Runs after `createGitActor`: the key is generated with the Actor, and this endpoint reads it from there.
  */
-const registerDeploymentKey = async ({
+export const registerDeploymentKey = async ({
 	client,
 	providerId,
 	actorId,
@@ -609,16 +609,17 @@ const registerDeploymentKey = async ({
  * rebuilds the Actor. Console calls this "Automatic builds", and leaves it off.
  *
  * The API resolves the provider token from `providerId` itself, so nothing about the repository is passed.
- * The version is the only one `createGitActor` makes. Registering a webhook needs admin rights on the
- * repository, which connecting the account does not, so this is the one platform step a fully connected
- * account can still be refused.
+ * The webhook belongs to one version. Registering it needs admin rights on the repository, which
+ * connecting the account does not, so this is the one platform step a fully connected account can still
+ * be refused.
  */
 export const enableAutomaticBuilds = async ({
 	client,
 	providerId,
 	actorId,
-}: ApiCallOptions & { providerId: string; actorId: string }) => {
-	const url = apiUrl({ client }, `actors/${actorId}/versions/0.0/build-on-push`);
+	versionNumber,
+}: ApiCallOptions & { providerId: string; actorId: string; versionNumber: string }) => {
+	const url = apiUrl({ client }, `actors/${actorId}/versions/${versionNumber}/build-on-push`);
 	const body = JSON.stringify({ providerId, enabled: true });
 	cliDebugPrint('git-source', 'PUT', url, body);
 
@@ -807,7 +808,8 @@ export const runGitSourceFlow = async ({
 	let automaticBuilds: AutomaticBuilds = 'off';
 	if (autoBuild) {
 		try {
-			await enableAutomaticBuilds({ client, providerId: workspace.providerId, actorId });
+			// The only version `createGitActor` makes.
+			await enableAutomaticBuilds({ client, providerId: workspace.providerId, actorId, versionNumber: '0.0' });
 			automaticBuilds = 'on';
 			info({ message: 'Turned on automatic builds.' });
 		} catch (err) {

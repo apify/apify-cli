@@ -26,6 +26,7 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.templates },
 		{ command: Commands.templatesLs },
 		{ command: Commands.init },
+		{ command: Commands.import },
 		{ command: Commands.run },
 		{ command: Commands.validateSchema },
 

@@ -19,6 +19,7 @@ import { CreateCommand } from './create.js';
 import { DatasetsIndexCommand } from './datasets/_index.js';
 import { EditInputSchemaCommand } from './edit-input-schema.js';
 import { HelpCommand } from './help.js';
+import { ImportCommand } from './import.js';
 import { InfoCommand } from './info.js';
 import { WrapScrapyCommand } from './init-wrap-scrapy.js';
 import { InitCommand } from './init.js';
@@ -60,6 +61,7 @@ export const apifyCommands = [
 	InstallCommand,
 	CreateCommand,
 	EditInputSchemaCommand,
+	ImportCommand,
 	InfoCommand,
 	WrapScrapyCommand,
 	InitCommand,

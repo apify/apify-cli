@@ -521,7 +521,7 @@ describe('enableAutomaticBuilds', () => {
 		const fetchMock = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }) as never);
 
 		try {
-			await enableAutomaticBuilds({ client, providerId: 'integration-1', actorId: 'abc123' });
+			await enableAutomaticBuilds({ client, providerId: 'integration-1', actorId: 'abc123', versionNumber: '0.0' });
 
 			const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
 			expect(url).toBe('https://api.example.com/v2/actors/abc123/versions/0.0/build-on-push');
@@ -542,9 +542,9 @@ describe('enableAutomaticBuilds', () => {
 		);
 
 		try {
-			await expect(enableAutomaticBuilds({ client, providerId: 'integration-1', actorId: 'abc123' })).rejects.toThrow(
-				'Repository admin required',
-			);
+			await expect(
+				enableAutomaticBuilds({ client, providerId: 'integration-1', actorId: 'abc123', versionNumber: '0.0' }),
+			).rejects.toThrow('Repository admin required');
 		} finally {
 			fetchMock.mockRestore();
 		}

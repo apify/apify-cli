@@ -333,8 +333,9 @@ DESCRIPTION
   directory.
 
 USAGE
-  $ apify create [actorName] [--auto-build on|off]
-                 [--git-repo <value>] [--json]
+  $ apify create [actorName] [--actor <value>]
+                 [--auto-build on|off] [--branch <value>] [--force]
+                 [--git-repo <value>] [--import] [--json]
                  [-l javascript|js|typescript|ts|python|py]
                  [--omit-optional-deps] [--profile <value>]
                  [--skip-dependency-install] [--skip-git-init]
@@ -345,12 +346,20 @@ ARGUMENTS
   actorName  Name of the Actor and its directory.
 
 FLAGS
+      --actor=<value>            Link an existing Actor,
+                                 by ID or name, instead of creating one.
       --auto-build=<option>      Whether a push to the
                                  repository rebuilds the Actor. On by default.
                                  Turning it on registers a push webhook on the new
                                  repository, which needs admin rights on it. Only
                                  used when --source is a Git provider.
                                  <options: on|off>
+      --branch=<value>           Branch the Actor builds
+                                 from. Defaults to the current branch. Only used
+                                 with a Git source.
+      --force                    Switch an Actor that
+                                 already builds from another Git source without
+                                 asking.
       --git-repo=<value>         Repository to create, as
                                  "workspace/name" — a workspace being an account or
                                  organization you have given Apify access to. A bare
@@ -359,6 +368,12 @@ FLAGS
                                  is asked for when you have more than one. List
                                  yours with "apify api integrations/git". Only used
                                  when --source is a Git provider.
+      --import                   Import the current
+                                 directory instead of creating a new one from a
+                                 template, as "apify import" does: no scaffold, no
+                                 git init, no dependency install. With --source,
+                                 "apify" binds the Actor only, and a Git provider
+                                 has to match the origin remote.
       --json                     Format the command
                                  output as JSON.
   -l, --language=<option>        Filter templates by
@@ -448,6 +463,50 @@ FLAGS
                             "./docker/Dockerfile").
   -y, --yes                 Automatic yes to prompts;
                             assume "yes" as answer to all prompts.
+```
+
+##### `apify import`
+
+```sh
+DESCRIPTION
+  Turns an existing directory into an Actor. Creates the Actor, or links an 
+  existing one, so the next "apify push" from the directory targets it. When the
+   directory is in a Git repository with an origin remote on GitHub, GitLab, or 
+  Bitbucket, the Actor builds from that repository, branch, and folder.
+
+USAGE
+  $ apify import [actorName] [--actor <value>]
+                 [--auto-build on|off] [--branch <value>] [--dir <value>]
+                 [--force] [--json] [--source git|none]
+
+ARGUMENTS
+  actorName  Name of the Actor to create or link. Defaults to the name
+             in .actor/actor.json.
+
+FLAGS
+      --actor=<value>        Link an existing Actor, by ID or
+                             name, instead of creating one.
+      --auto-build=<option>  Whether a push to the repository
+                             rebuilds the Actor. On by default. Turning it on
+                             registers a push webhook, which needs admin rights on
+                             the repository. Only used with a Git source.
+                             <options: on|off>
+      --branch=<value>       Branch the Actor builds from.
+                             Defaults to the current branch. Only used with a Git
+                             source.
+      --dir=<value>          Directory to import. Defaults to
+                             the current directory.
+      --force                Switch an Actor that already
+                             builds from another Git source without asking.
+      --json                 Format the command output as
+                             JSON.
+      --source=<option>      Where the Actor builds from.
+                             With "git", the origin remote at the current branch and
+                             folder. With "none", nothing on the platform points at
+                             Git, and "apify push" uploads the directory. Defaults
+                             to "git" when the directory has an origin remote on
+                             GitHub, GitLab, or Bitbucket.
+                             <options: git|none>
 ```
 
 ##### `apify run`
