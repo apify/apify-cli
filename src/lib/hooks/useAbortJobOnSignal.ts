@@ -29,6 +29,14 @@ export type UseAbortJobOnSignalInput = {
 	  }
 );
 
+// How many handlers from `useAbortJobOnSignal` are registered right now.
+let registeredHandlers = 0;
+
+/** Whether an interrupt signal received now aborts a job on the platform through a {@link useAbortJobOnSignal} handler. */
+export function isAbortingJobOnSignal(): boolean {
+	return registeredHandlers > 0;
+}
+
 /**
  * Registers a signal handler that aborts the given build or run on the Apify
  * platform, and returns a `Disposable` that removes it. Pair with the `using`
@@ -63,7 +71,7 @@ export function useAbortJobOnSignal(input: UseAbortJobOnSignalInput): Disposable
 
 	let abortAttempt = 0;
 
-	return useSignalHandler({
+	const signalHandler = useSignalHandler({
 		signals: INTERRUPT_SIGNALS,
 		once: false,
 		handler: async (signal) => {
@@ -120,4 +128,19 @@ export function useAbortJobOnSignal(input: UseAbortJobOnSignalInput): Disposable
 			}
 		},
 	});
+
+	registeredHandlers += 1;
+	let disposed = false;
+
+	return {
+		[Symbol.dispose]() {
+			if (disposed) {
+				return;
+			}
+
+			disposed = true;
+			registeredHandlers -= 1;
+			signalHandler[Symbol.dispose]();
+		},
+	};
 }

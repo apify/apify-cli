@@ -1,8 +1,10 @@
-import { readFileSync, statSync, unlinkSync } from 'node:fs';
+import { readFileSync, statSync, unlinkSync, writeSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, Build } from 'apify-client';
+import chalk from 'chalk';
+import { isCI } from 'ci-info';
 import open from 'open';
 
 import { fetchManifest } from '@apify/actor-templates';
@@ -15,12 +17,21 @@ import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { isTerminalStatus } from '../../lib/commands/agent-output.js';
 import { getConsoleUrl } from '../../lib/console-url.js';
-import { CommandExitCodes, DEPRECATED_LOCAL_CONFIG_NAME, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import {
+	CommandExitCodes,
+	DEPRECATED_LOCAL_CONFIG_NAME,
+	INTERRUPT_SIGNALS,
+	LOCAL_CONFIG_PATH,
+} from '../../lib/consts.js';
 import { monorepoUnsupportedMessage, resolveDockerContext } from '../../lib/docker-context.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
-import { useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
+import { findActorDirs, type FoundActorDir, toPosixRelative } from '../../lib/find-actor-dirs.js';
+import { isAbortingJobOnSignal, useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
+import { useMultiSelectFromList } from '../../lib/hooks/user-confirmations/useMultiSelectFromList.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
+import { reraiseSignal, useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
+import { useStdin } from '../../lib/hooks/useStdin.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
@@ -61,6 +72,49 @@ interface PushResult {
 	build: { id: string; number: string; status: string; url: string };
 	error?: { phase: 'build'; message: string; logTail: string[] };
 	exitCode?: number;
+}
+
+/**
+ * One entry of a push from a root without an Actor of its own: the single push result, or what stopped it.
+ * `skipped` marks an Actor left alone on purpose (a declined Git-source switch); it carries no exit code.
+ */
+interface SelectedPushResult extends Partial<PushResult> {
+	dir: string;
+	ok: boolean;
+	skipped?: true;
+}
+
+interface PushSelectionResult {
+	ok: boolean;
+	operation: 'push';
+	results: SelectedPushResult[];
+	exitCode?: number;
+}
+
+const SELECTION_HINT = 'Choose what to push: --all, or run apify push --dir <path> for each Actor.';
+
+/** Marks an Actor in a directory .gitignore ignores. --all skips it; picking it or naming it with --dir pushes it. */
+const IGNORED_TAG = '[ignored by .gitignore]';
+
+/** Quotes a path a shell would split or expand, so a printed command still works when copied. */
+const quoteForShell = (path: string) => (/^[\w./-]+$/.test(path) ? path : `"${path}"`);
+
+const interruptedMessage = (notPushed: string[]) => `Interrupted. Not pushed: ${notPushed.join(', ')}`;
+
+/**
+ * Says which Actors a signal left out, right before that signal ends the process. The writes are synchronous because
+ * output still queued when the process ends is lost; a failed write must not keep the process alive.
+ */
+function reportInterruptBeforeExit(notPushed: string[], summary: PushSelectionResult | undefined) {
+	try {
+		writeSync(2, `${chalk.yellow.bold('Warning:')} ${interruptedMessage(notPushed)}\n`);
+
+		if (summary) {
+			writeSync(1, `${JSON.stringify(summary, null, 2)}\n`);
+		}
+	} catch {
+		// The process ends either way.
+	}
 }
 
 interface PushOutcome {
@@ -151,6 +205,23 @@ const confirmGitSourceSwitch = async ({
 	});
 };
 
+/** The config files that make a directory an Actor of its own: `.actor/actor.json`, `actor.json`, or the legacy `apify.json`. */
+const OWN_CONFIG_FILES = [DEPRECATED_LOCAL_CONFIG_NAME, 'actor.json', '.actor/actor.json'];
+
+const hasOwnConfigFile = (filePaths: string[]) => filePaths.some((filePath) => OWN_CONFIG_FILES.includes(filePath));
+
+/** Whether the collected files include an Actor config `apify push` accepts: `.actor/`, `actor.json`, or the legacy `apify.json`. */
+const hasActorConfig = (filePaths: string[]) =>
+	[
+		// old apify project
+		DEPRECATED_LOCAL_CONFIG_NAME,
+		// new apify project
+		'actor.json',
+		'.actor/actor.json',
+		// The .actor folder existing in general
+		'.actor',
+	].some((filePath) => filePaths.some((fp) => fp === filePath || fp.startsWith(filePath)));
+
 export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 	static override name = 'push' as const;
 
@@ -178,6 +249,10 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		{
 			description: 'Deploy without waiting for the build to finish.',
 			command: 'apify push --no-wait-for-finish',
+		},
+		{
+			description: 'From the root of a repository with several Actors, deploy all of them.',
+			command: 'apify push --all',
 		},
 	];
 
@@ -218,6 +293,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			description: 'Directory where the Actor is located.',
 			required: false,
 		}),
+		all: Flags.boolean({
+			description:
+				'Push every Actor found in the subdirectories, except the ones ignored by .gitignore. Works only from a directory without an Actor config of its own.',
+			default: false,
+			required: false,
+		}),
 		'allow-missing-secrets': Flags.boolean({
 			description: 'Allow the command to continue even when secret values are not found in the local secrets storage.',
 			required: false,
@@ -245,24 +326,196 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		// Validate there are files before rest of the logic
 		const filePathsToPush = await getActorLocalFilePaths(cwd);
 
+		// A directory without an Actor of its own may hold Actors below it; then the user picks which to push.
+		// --all has no meaning in an Actor directory, so it fails there instead of being ignored.
+		if (hasOwnConfigFile(filePathsToPush)) {
+			if (this.flags.all) {
+				error({
+					message:
+						"This directory is an Actor itself, so --all doesn't apply. Run the command without it, or from a directory above the Actors.",
+				});
+				process.exitCode = CommandExitCodes.InvalidInput;
+				return;
+			}
+		} else {
+			const actorDirs = await findActorDirs(cwd);
+
+			if (actorDirs.length) {
+				await this.pushSelected(cwd, actorDirs);
+				return;
+			}
+		}
+
+		const result = await this.pushActor(cwd, filePathsToPush);
+
+		if (result && this.flags.json) {
+			printJsonToStdout(result);
+		}
+	}
+
+	/** Pushes the chosen Actors below `root` one after another; a failure does not stop the ones after it. */
+	private async pushSelected(root: string, actorDirs: FoundActorDir[]) {
+		const selected = await this.selectActorDirs(root, actorDirs);
+
+		if (!selected) {
+			return;
+		}
+
+		if (selected.length > 1 && this.args.actorId) {
+			error({
+				message: `The actorId argument applies to a single Actor, but ${selected.length} Actors are selected. Run apify push --dir <path> for one Actor, or drop the argument.`,
+			});
+			process.exitCode = CommandExitCodes.InvalidInput;
+			return;
+		}
+
+		const results: SelectedPushResult[] = [];
+		let firstFailureExitCode: number | undefined;
+
+		// A signal during a build wait aborts that build and the push returns; the loop then stops instead of pushing
+		// the next Actor. A signal anywhere else ends the process, as it does for a single Actor, once the Actors left
+		// out are named.
+		let interrupted = false;
+		using interruptWatcher = useSignalHandler({
+			signals: INTERRUPT_SIGNALS,
+			once: false,
+			handler: (signal) => {
+				interrupted = true;
+
+				if (isAbortingJobOnSignal()) {
+					return;
+				}
+
+				reportInterruptBeforeExit(
+					selected.slice(results.length),
+					this.flags.json ? { ok: false, operation: 'push', results } : undefined,
+				);
+				interruptWatcher[Symbol.dispose]();
+				reraiseSignal(signal);
+			},
+		});
+
+		for (const [index, dir] of selected.entries()) {
+			info({ message: `Pushing the Actor in ${dir}` });
+
+			// Each push reports through process.exitCode; clear it so the code read back belongs to this push.
+			process.exitCode = undefined;
+			let result: PushResult | undefined;
+
+			try {
+				result = await this.pushActor(join(root, dir));
+			} catch (err) {
+				error({ message: (err as Error).message });
+				process.exitCode ||= 1;
+				// Ctrl+C at a prompt (the Git-source question) ends a single push; here it stops the loop too.
+				interrupted ||= (err as Error).name === 'ExitPromptError';
+			}
+
+			const exitCode = typeof process.exitCode === 'number' && process.exitCode !== 0 ? process.exitCode : undefined;
+			firstFailureExitCode ??= exitCode;
+
+			// A push that ends with neither a result nor an exit code was declined at the Git-source question.
+			const entry: SelectedPushResult =
+				!result && exitCode === undefined ? { dir, ok: false, skipped: true } : { dir, ...(result ?? { ok: false }) };
+			if (exitCode !== undefined && entry.exitCode === undefined) {
+				entry.exitCode = exitCode;
+			}
+			results.push(entry);
+
+			if (interrupted) {
+				const notPushed = selected.slice(index + 1);
+				if (notPushed.length) {
+					warning({ message: interruptedMessage(notPushed) });
+				}
+				break;
+			}
+		}
+
+		process.exitCode = firstFailureExitCode;
+		this.telemetryData.pushSelection = {
+			selected: selected.length,
+			failed: results.filter((entry) => !entry.ok && !entry.skipped).length,
+		};
+
+		if (this.flags.json) {
+			const summary: PushSelectionResult = {
+				ok: results.every((entry) => entry.ok || entry.skipped),
+				operation: 'push',
+				results,
+			};
+			const exitCode =
+				firstFailureExitCode ??
+				(results.every((entry) => entry.skipped || entry.exitCode !== undefined) ? 0 : undefined);
+			if (exitCode !== undefined) {
+				summary.exitCode = exitCode;
+			}
+			printJsonToStdout(summary);
+		}
+	}
+
+	/**
+	 * Resolves the Actor directories to push from --all or a prompt; `undefined` when the command stops here.
+	 * An Actor in an ignored directory is never pushed implicitly: --all skips it, the prompt and the list mark it.
+	 */
+	private async selectActorDirs(root: string, actorDirs: FoundActorDir[]): Promise<string[] | undefined> {
+		// Paths relative to where the command ran, so each one works as the --dir value.
+		const dirForFlag = (dir: string) => toPosixRelative(process.cwd(), join(root, dir));
+		const describe = ({ dir, name }: FoundActorDir) => (name ? `${dir} (${name})` : dir);
+		const label = (actor: FoundActorDir) => (actor.ignored ? `${describe(actor)} ${IGNORED_TAG}` : describe(actor));
+
+		if (this.flags.all) {
+			for (const actor of actorDirs.filter(({ ignored }) => ignored)) {
+				const dir = dirForFlag(actor.dir);
+				info({
+					message: `Skipping ${describe({ ...actor, dir })} because it's ignored by .gitignore. Run apify push --dir ${quoteForShell(dir)} to push it.`,
+				});
+			}
+
+			const dirs = actorDirs.filter(({ ignored }) => !ignored).map((actor) => actor.dir);
+
+			if (!dirs.length) {
+				error({ message: 'Every Actor below this directory is ignored by .gitignore, so --all has nothing to push.' });
+				process.exitCode = CommandExitCodes.NoFilesToPush;
+				return;
+			}
+
+			return dirs;
+		}
+
+		const { isTTY } = await useStdin();
+
+		if (isCI || !isTTY) {
+			simpleLog({
+				message: [
+					'This directory has no Actor of its own, but these directories below it do:',
+					...actorDirs.map((actor) => `  ${label({ ...actor, dir: dirForFlag(actor.dir) })}`),
+					...(actorDirs.some(({ ignored }) => ignored) ? ['--all skips the Actors ignored by .gitignore.'] : []),
+				].join('\n'),
+			});
+			error({ message: SELECTION_HINT });
+			process.exitCode = CommandExitCodes.NoFilesToPush;
+			return;
+		}
+
+		return useMultiSelectFromList({
+			message: 'Which Actors do you want to push?',
+			choices: actorDirs.map((actor) => ({ name: label(actor), value: actor.dir })),
+			pageSize: Math.min(actorDirs.length, 15),
+			loop: false,
+		});
+	}
+
+	/** The single-Actor push: `cwd` is the Actor directory. Returns the result once a build was started. */
+	private async pushActor(cwd: string, collectedFilePaths?: string[]): Promise<PushResult | undefined> {
+		const filePathsToPush = collectedFilePaths ?? (await getActorLocalFilePaths(cwd));
+
 		if (!filePathsToPush.length) {
 			error({ message: 'You need to call this command from a folder that has an Actor in it!' });
 			process.exitCode = CommandExitCodes.NoFilesToPush;
 			return;
 		}
 
-		if (
-			// Check that some of these files exist, cuz otherwise we cannot do much
-			![
-				// old apify project
-				DEPRECATED_LOCAL_CONFIG_NAME,
-				// new apify project
-				'actor.json',
-				'.actor/actor.json',
-				// The .actor folder existing in general
-				'.actor',
-			].some((filePath) => filePathsToPush.some((fp) => fp === filePath || fp.startsWith(filePath)))
-		) {
+		if (!hasActorConfig(filePathsToPush)) {
 			error({
 				message: [
 					'A valid Actor could not be found in the current directory. Please make sure you are in the correct directory.',
@@ -635,8 +888,7 @@ Skipping push. Use --force to override.`,
 		}
 
 		if (this.flags.json) {
-			printJsonToStdout(result);
-			return;
+			return result;
 		}
 
 		const lines = [
@@ -658,5 +910,7 @@ Skipping push. Use --force to override.`,
 		if (this.flags.open) {
 			await open(actorUrl);
 		}
+
+		return result;
 	}
 }

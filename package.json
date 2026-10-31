@@ -73,6 +73,7 @@
 		"@apify/json_schemas": "^1.0.1",
 		"@apify/utilities": "^3.0.1",
 		"@crawlee/memory-storage": "^3.18.1",
+		"@inquirer/checkbox": "^5.2.7",
 		"@inquirer/core": "^12.0.3",
 		"@inquirer/input": "^5.1.6",
 		"@inquirer/password": "^5.2.2",

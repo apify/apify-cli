@@ -151,3 +151,11 @@ export function useSignalHandler({
 		},
 	};
 }
+
+/**
+ * Sends `signal` to the process again, so that with the caller's own handler disposed the process ends as it does when
+ * nothing handles the signal (Node's default action).
+ */
+export function reraiseSignal(signal: NodeJS.Signals): void {
+	process.kill(process.pid, signal);
+}
