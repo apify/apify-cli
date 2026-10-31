@@ -29,6 +29,8 @@ export const importFlags = {
 export class ImportCommand extends ApifyCommand<typeof ImportCommand> {
 	static override name = 'import' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		'Turns an existing directory into an Actor. Creates the Actor, or links an existing one, so the next "apify push" from the directory targets it. ' +
 		'When the directory is in a Git repository with an origin remote on GitHub, GitLab, or Bitbucket, the Actor builds from that repository, branch, and folder.';
@@ -68,7 +70,7 @@ export class ImportCommand extends ApifyCommand<typeof ImportCommand> {
 		...importFlags,
 		source: Flags.string({
 			description:
-				'Where the Actor builds from. With "git", the origin remote at the current branch and folder. With "none", nothing on the platform points at Git, and "apify push" uploads the directory. Defaults to "git" when the directory has an origin remote on GitHub, GitLab, or Bitbucket.',
+				'Where the Actor builds from. With "git", the origin remote at the current branch and folder. With "none", the Actor is not pointed at Git, and "apify push" uploads the directory; an Actor that already builds from Git keeps that source until a push replaces it. Defaults to "git" when the directory has an origin remote on GitHub, GitLab, or Bitbucket.',
 			choices: [...IMPORT_SOURCE_CHOICES],
 			required: false,
 		}),

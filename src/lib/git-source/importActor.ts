@@ -77,7 +77,7 @@ export const parseGitRemote = (remote: string): GitRemote | null => {
 };
 
 /** `<url>#<branch>`, plus `:<folder>` below the repository root — the form a version's `gitRepoUrl` takes. */
-export const buildGitRepoUrl = (sshUrl: string, branch: string, folder: string) =>
+const buildGitRepoUrl = (sshUrl: string, branch: string, folder: string) =>
 	`${sshUrl}#${branch}${folder ? `:${folder}` : ''}`;
 
 const git = async (dir: string, args: string[]) => (await execa('git', args, { cwd: dir })).stdout.trim();
@@ -111,6 +111,8 @@ export interface RunImportOptions {
 	source?: ImportSource;
 	/** Set by `apify create --source <provider> --import`: the remote has to be on that provider. */
 	provider?: GitProvider;
+	/** How the caller's `--source` spells `none`; `apify create` calls it `apify`. */
+	noneSourceValue?: string;
 	branch?: string;
 	autoBuild?: string;
 	force: boolean;
@@ -157,6 +159,7 @@ const importActor = async ({
 	actor: actorFlag,
 	source,
 	provider,
+	noneSourceValue = 'none',
 	branch: branchFlag,
 	autoBuild,
 	force,
@@ -194,8 +197,8 @@ const importActor = async ({
 		throw new ImportInputError(
 			// The remote itself is not echoed: an HTTPS one can carry a token.
 			workingCopy?.remote
-				? 'The origin remote is not on GitHub, GitLab, or Bitbucket. Use --source none to bind the Actor without a Git source.'
-				: `${dir} is not in a Git repository with an origin remote. Use --source none to bind the Actor without a Git source.`,
+				? `The origin remote is not on GitHub, GitLab, or Bitbucket. Use --source ${noneSourceValue} to bind the Actor without a Git source.`
+				: `${dir} is not in a Git repository with an origin remote. Use --source ${noneSourceValue} to bind the Actor without a Git source.`,
 		);
 	}
 
@@ -250,6 +253,8 @@ const importActor = async ({
 
 	// Set when the Actor already built from this repository, so its deploy key is in place.
 	let sameRepository = false;
+	// Set when there is no Git source to bind but the version already builds from one, which import leaves in place.
+	let keptGitRepoUrl: string | null = null;
 
 	if (!actor) {
 		actor = await client.actors().create({
@@ -287,6 +292,9 @@ const importActor = async ({
 				.versions()
 				.create({ versionNumber, buildTag, ...gitVersion });
 		}
+	} else {
+		const current = await client.actor(actor.id).version(versionNumber).get();
+		if (current?.sourceType === ACTOR_SOURCE_TYPES.GIT_REPO) keptGitRepoUrl = current.gitRepoUrl;
 	}
 
 	// Written after the Actor changed, so the next push does not see it as newer than every local file.
@@ -300,6 +308,12 @@ const importActor = async ({
 	}
 
 	const actorUrl = `${getConsoleUrl()}${userInfo.organizationOwnerUserId ? `/organization/${userInfo.id}` : ''}/actors/${actor.id}`;
+
+	if (keptGitRepoUrl) {
+		warning({
+			message: `Actor ${actor.name} still builds from ${keptGitRepoUrl}. "apify push" asks before replacing that source with the local files.`,
+		});
+	}
 
 	let automaticBuilds: AutomaticBuilds = 'off';
 	if (remote) {
@@ -328,7 +342,11 @@ const importActor = async ({
 	if (json) {
 		printJsonToStdout({
 			actor: { id: actor.id, name: actor.name, url: actorUrl },
-			source: remote ? { type: 'git', gitRepoUrl, versionNumber, automaticBuilds } : { type: 'none' },
+			source: remote
+				? { type: 'git', gitRepoUrl, versionNumber, automaticBuilds }
+				: keptGitRepoUrl
+					? { type: 'git', gitRepoUrl: keptGitRepoUrl, versionNumber }
+					: { type: 'none' },
 		});
 		return;
 	}
@@ -338,8 +356,10 @@ const importActor = async ({
 			`Actor ${actor.name} is bound to ${dir}: ${actorUrl}`,
 			remote
 				? `It builds from ${gitRepoUrl}. ${automaticBuilds === 'on' ? 'A git push rebuilds it.' : 'Build it with "apify builds create", or turn on automatic builds in the Actor\'s Source settings.'}`
-				: 'Deploy it with "apify push".',
-		].join('\n'),
+				: !keptGitRepoUrl && 'Deploy it with "apify push".',
+		]
+			.filter(Boolean)
+			.join('\n'),
 	});
 };
 

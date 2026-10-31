@@ -236,6 +236,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				actor: this.flags.actor,
 				source: source === undefined ? undefined : source === 'apify' ? 'none' : 'git',
 				provider: source && isGitProvider(source) ? source : undefined,
+				noneSourceValue: 'apify',
 				branch: this.flags.branch,
 				autoBuild: this.flags.autoBuild,
 				force: this.flags.force,
@@ -246,6 +247,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		}
 
 		if (this.flags.actor || this.flags.branch || this.flags.force) {
+			process.exitCode = CommandExitCodes.InvalidInput;
 			throw new Error('--actor, --branch, and --force only apply with --import.');
 		}
 

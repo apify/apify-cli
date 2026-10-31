@@ -477,7 +477,7 @@ DESCRIPTION
 USAGE
   $ apify import [actorName] [--actor <value>]
                  [--auto-build on|off] [--branch <value>] [--dir <value>]
-                 [--force] [--json] [--source git|none]
+                 [--force] [--json] [--profile <value>] [--source git|none]
 
 ARGUMENTS
   actorName  Name of the Actor to create or link. Defaults to the name
@@ -500,12 +500,16 @@ FLAGS
                              builds from another Git source without asking.
       --json                 Format the command output as
                              JSON.
+      --profile=<value>      The stored account to use for
+                             this command, by name or user ID. See "apify auth
+                             list".
       --source=<option>      Where the Actor builds from.
                              With "git", the origin remote at the current branch and
-                             folder. With "none", nothing on the platform points at
-                             Git, and "apify push" uploads the directory. Defaults
-                             to "git" when the directory has an origin remote on
-                             GitHub, GitLab, or Bitbucket.
+                             folder. With "none", the Actor is not pointed at Git,
+                             and "apify push" uploads the directory; an Actor that
+                             already builds from Git keeps that source until a push
+                             replaces it. Defaults to "git" when the directory has
+                             an origin remote on GitHub, GitLab, or Bitbucket.
                              <options: git|none>
 ```
 

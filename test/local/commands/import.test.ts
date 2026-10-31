@@ -137,3 +137,16 @@ it('does not ask to switch when Console stored the same repository in HTTPS form
 	expect(logMessages.error.join('\n')).not.toContain('another Git source');
 	expect(versionUpdate).toHaveBeenCalled();
 });
+
+it('--source none reports the Git source an existing Actor keeps', async () => {
+	existingVersion = { sourceType: ACTOR_SOURCE_TYPES.GIT_REPO, gitRepoUrl: `${REPO}#main:actors/x` };
+
+	await testRunCommand(ImportCommand, { flags_dir: 'actors/x', flags_source: 'none', flags_json: true });
+
+	expect(versionUpdate).not.toHaveBeenCalled();
+	expect(JSON.parse(logMessages.log.join('\n')).source).toEqual({
+		type: 'git',
+		gitRepoUrl: `${REPO}#main:actors/x`,
+		versionNumber: '0.1',
+	});
+});
