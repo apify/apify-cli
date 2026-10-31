@@ -1,6 +1,5 @@
 // The Docker context of an Actor: where `dockerContextDir` in `.actor/actor.json` points and what a push of it
-// would carry. `readGitState` and `getContextFilePaths` have no caller in `apify push` yet; they serve the
-// stage 2 upload of the context and the `actor-runtime` branch.
+// carries.
 import { execFileSync } from 'node:child_process';
 import { lstatSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
