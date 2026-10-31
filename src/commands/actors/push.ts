@@ -68,7 +68,7 @@ const BUILD_LOG_TAIL_LINES = 10;
 interface PushResult {
 	ok: boolean;
 	operation: 'push';
-	actor: { id: string; url: string };
+	actor: { id: string; url: string; standbyUrl?: string };
 	build: { id: string; number: string; status: string; url: string };
 	error?: { phase: 'build'; message: string; logTail: string[] };
 	exitCode?: number;
@@ -874,10 +874,18 @@ Skipping push. Use --force to override.`,
 			process.exitCode = outcome.exitCode;
 		}
 
+		// Read the URL from the API: the hostname format differs between Actors and environments.
+		let standbyUrl: string | undefined;
+
+		if (outcome.ok && actorConfig!.usesStandbyMode) {
+			const pushedActor = (await actorClient.get()) as (Actor & { standbyUrl?: string | null }) | undefined;
+			standbyUrl = pushedActor?.standbyUrl ?? undefined;
+		}
+
 		const result: PushResult = {
 			ok: outcome.ok,
 			operation: 'push',
-			actor: { id: build.actId, url: actorUrl },
+			actor: { id: build.actId, url: actorUrl, ...(standbyUrl && { standbyUrl }) },
 			build: { id: build.id, number: build.buildNumber, status: buildStatus, url: buildUrl },
 		};
 		if (outcome.exitCode !== undefined) {
@@ -903,6 +911,12 @@ Skipping push. Use --force to override.`,
 			'',
 			`Actor URL: ${actorUrl}`,
 			`Build URL: ${buildUrl}`,
+			...(standbyUrl
+				? [
+						`Server interface URL: ${standbyUrl}`,
+						`Send a request: apify server request ${actor.username}/${actor.name} /`,
+					]
+				: []),
 			...(outcome.errorMessage && logTail.length ? ['', 'Reason:', ...logTail] : []),
 		];
 		simpleLog({ stdout: true, message: lines.join('\n') });

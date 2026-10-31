@@ -466,8 +466,8 @@ DESCRIPTION
 
 USAGE
   $ apify run [--allow-missing-secrets] [--entrypoint <value>]
-              [-i <value> | --input-file <value>] [--profile <value>]
-              [-p | --resurrect]
+              [-i <value> | --input-file <value>] [--port <value>]
+              [--profile <value>] [-p | --resurrect] [--standby]
 
 FLAGS
       --allow-missing-secrets  Allow the command to
@@ -488,6 +488,9 @@ FLAGS
                                this flag or `--input`, the CLI still reads standard
                                input, but stops waiting if input is slow to start or
                                pauses.
+      --port=<value>           The port the Actor's web
+                               server listens on. Use with --standby. Defaults to
+                               4321.
       --profile=<value>        The stored account to use
                                for this command, by name or user ID. See "apify auth
                                list".
@@ -500,6 +503,11 @@ FLAGS
       --resurrect              Whether to keep the default
                                request queue, dataset and key-value store before the
                                run starts.
+      --standby                Run the Actor the way the
+                               platform starts it for its server interface: sets
+                               APIFY_META_ORIGIN=STANDBY and the web server port,
+                               then sends the readiness probe and prints the local
+                               URL.
 ```
 
 ##### `apify validate-schema`
@@ -1948,6 +1956,133 @@ FLAGS
                          command, by name or user ID. See "apify auth list".
 ```
 <!-- task-commands-end -->
+<!-- prettier-ignore-end -->
+
+### Server Actors
+
+These commands let you call a Server Actor's HTTP endpoints and inspect its server interface.
+
+<!-- prettier-ignore-start -->
+<!-- server-commands-start -->
+##### `apify server`
+
+```sh
+DESCRIPTION
+  Send requests to a Server Actor and inspect its server interface.
+
+SUBCOMMANDS
+  server request    Sends an authenticated HTTP request to a
+                    Server Actor's server interface and prints the response.
+  server status     Shows how a Server Actor's server interface
+                    is configured and, for single-tenant Actors, the runs serving
+                    you. Never sends a request to the Actor, so it cannot start a
+                    run.
+  server endpoints  Lists the HTTP endpoints of a Server Actor,
+                    read from the web server schema of the build that serves its
+                    server interface.
+  server url        Prints the URL of a Server Actor's server
+                    interface.
+```
+
+##### `apify server request`
+
+```sh
+DESCRIPTION
+  Sends an authenticated HTTP request to a Server Actor's server interface and 
+  prints the response.
+  The host always comes from the Actor; pass a path, never a full URL. The API 
+  token is sent in the Authorization header and never reaches the Actor.
+
+USAGE
+  $ apify server request [methodOrTarget] [targetOrPath]
+                         [path] [-d <value>] [-H <value>]
+                         [-X GET|POST|PUT|PATCH|DELETE] [-p <value>]
+                         [--profile <value>]
+
+ARGUMENTS
+  methodOrTarget  The HTTP method (defaults to GET), or the Actor
+                  when the method is omitted.
+  targetOrPath    The Actor ID or "username/name" (defaults to the
+                  Actor in the current directory), or the path.
+  path            The path on the Actor's server, starting with
+                  "/". Defaults to "/".
+
+FLAGS
+  -d, --body=<value>     The request body. Use "-" to read
+                         from stdin.
+      -H, --header=<value>   Additional HTTP header(s). Pass a
+                         single "key:value" string, or a JSON object like '{"X-Foo":
+                         "bar", "X-Baz": "qux"}' to send multiple headers.
+      -X, --method=<option>  The HTTP method to use. Defaults to
+                         GET.
+                         <options: GET|POST|PUT|PATCH|DELETE>
+  -p, --params=<value>   Query parameters as a JSON object,
+                         e.g. '{"query": "apify"}'.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+```
+
+##### `apify server status`
+
+```sh
+DESCRIPTION
+  Shows how a Server Actor's server interface is configured and, for 
+  single-tenant Actors, the runs serving you. Never sends a request to the 
+  Actor, so it cannot start a run.
+
+USAGE
+  $ apify server status [target] [--json]
+                        [--profile <value>]
+
+ARGUMENTS
+  target  The Actor ID or "username/name". Defaults to the Actor in the
+          current directory.
+
+FLAGS
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+```
+
+##### `apify server endpoints`
+
+```sh
+DESCRIPTION
+  Lists the HTTP endpoints of a Server Actor, read from the web server schema of
+   the build that serves its server interface.
+
+USAGE
+  $ apify server endpoints [target] [--json]
+                           [--profile <value>]
+
+ARGUMENTS
+  target  The Actor ID or "username/name". Defaults to the Actor in the
+          current directory.
+
+FLAGS
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+```
+
+##### `apify server url`
+
+```sh
+DESCRIPTION
+  Prints the URL of a Server Actor's server interface.
+
+USAGE
+  $ apify server url [target] [--profile <value>]
+
+ARGUMENTS
+  target  The Actor ID or "username/name". Defaults to the Actor in the
+          current directory.
+
+FLAGS
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+```
+<!-- server-commands-end -->
 <!-- prettier-ignore-end -->
 
 ### MCP
