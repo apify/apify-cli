@@ -33,13 +33,13 @@ describe('detectAiAgent', () => {
 	});
 
 	test('returns correct agent for a known env var', () => {
-		process.env.GEMINI_CLI = '1';
+		vi.stubEnv('GEMINI_CLI', '1');
 		expect(detectAiAgent()).toBe('gemini_cli');
 	});
 
 	test('returns first match when multiple agent env vars are set', () => {
-		process.env.CURSOR_AGENT = '1';
-		process.env.GEMINI_CLI = '1';
+		vi.stubEnv('CURSOR_AGENT', '1');
+		vi.stubEnv('GEMINI_CLI', '1');
 
 		// CURSOR_AGENT appears before GEMINI_CLI in the lookup table
 		expect(detectAiAgent()).toBe('cursor');
