@@ -2,6 +2,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.11.0](https://github.com/apify/apify-cli/releases/tag/v1.11.0) (2026-10-29)
+
+### 🚀 Features
+
+- Require Node.js 22 or newer ([#1403](https://github.com/apify/apify-cli/pull/1403)) ([f26ca62](https://github.com/apify/apify-cli/commit/f26ca62569253eb62c39c011a00a8e9e7d95a705)) by [@l2ysho](https://github.com/l2ysho)
+- Add --apply-env-vars-to-build flag to push (#734) ([#1345](https://github.com/apify/apify-cli/pull/1345)) ([216cc15](https://github.com/apify/apify-cli/commit/216cc155ecbcabcc750b124a9f56ff8a9f3fd930)) by [@MatousMarik](https://github.com/MatousMarik)
+- Read applyEnvVarsToBuild from actor.json in push (#734) ([#1346](https://github.com/apify/apify-cli/pull/1346)) ([4e9f83d](https://github.com/apify/apify-cli/commit/4e9f83de3a13d00f36ecc8c9821f60a73261d1bf)) by [@MatousMarik](https://github.com/MatousMarik), closes [#734](https://github.com/apify/apify-cli/issues/734)
+- One token resolution order across every command ([#1431](https://github.com/apify/apify-cli/pull/1431)) ([c01872b](https://github.com/apify/apify-cli/commit/c01872bdc3fa684197aadb4ff7035599d7498fcd)) by [@l2ysho](https://github.com/l2ysho), closes [#720](https://github.com/apify/apify-cli/issues/720), [#1418](https://github.com/apify/apify-cli/issues/1418)
+- Auth.json v2 with profiles keyed by user ID ([#1434](https://github.com/apify/apify-cli/pull/1434)) ([56475cc](https://github.com/apify/apify-cli/commit/56475ccf0258a096e1742d06a9f6c16c65c4793c)) by [@l2ysho](https://github.com/l2ysho), closes [#1383](https://github.com/apify/apify-cli/issues/1383), [#1419](https://github.com/apify/apify-cli/issues/1419)
+- Key secrets by user ID on both backends ([#1450](https://github.com/apify/apify-cli/pull/1450)) ([3cfddd5](https://github.com/apify/apify-cli/commit/3cfddd52e0db4f1fe5f7ea06b2ad4a78fba1e98e)) by [@l2ysho](https://github.com/l2ysho), closes [#1383](https://github.com/apify/apify-cli/issues/1383), [#1420](https://github.com/apify/apify-cli/issues/1420)
+- Make token login additive across accounts ([#1458](https://github.com/apify/apify-cli/pull/1458)) ([4708c1c](https://github.com/apify/apify-cli/commit/4708c1cac78e327003287e11f74461b75a915252)) by [@l2ysho](https://github.com/l2ysho), closes [#1297](https://github.com/apify/apify-cli/issues/1297), [#1386](https://github.com/apify/apify-cli/issues/1386)
+- Add --profile, auth switch, auth list and per-account logout ([#1459](https://github.com/apify/apify-cli/pull/1459)) ([22812c6](https://github.com/apify/apify-cli/commit/22812c6e276b6bc830fb85682c9fac5ee7cfddd3)) by [@l2ysho](https://github.com/l2ysho), closes [#1297](https://github.com/apify/apify-cli/issues/1297), [#1384](https://github.com/apify/apify-cli/issues/1384)
+- Log in through OAuth 2.0 device code by default ([#1402](https://github.com/apify/apify-cli/pull/1402)) ([75603a8](https://github.com/apify/apify-cli/commit/75603a8e7d1241958e39ce432ffbaa3569a49fc8)) by [@vladfrangu](https://github.com/vladfrangu), closes [#1385](https://github.com/apify/apify-cli/issues/1385)
+- Detect `dockerContextDir` in `apify push` and refuse monorepo Actors before any write ([#1502](https://github.com/apify/apify-cli/pull/1502)) ([bd0f69d](https://github.com/apify/apify-cli/commit/bd0f69d5bfeaa274a0e4b1689ab3574c80835d18)) by [@DaveHanns](https://github.com/DaveHanns), closes [#1524](https://github.com/apify/apify-cli/issues/1524)
+- Warn before `apify mcp install` embeds an expiring OAuth token ([#1529](https://github.com/apify/apify-cli/pull/1529)) ([556263b](https://github.com/apify/apify-cli/commit/556263bf9775ba3b3253e4ca791f6caf7d701d21)) by [@l2ysho](https://github.com/l2ysho)
+
+### 🐛 Bug Fixes
+
+- **run:** Purge local stores from the correct directory ([#1404](https://github.com/apify/apify-cli/pull/1404)) ([d292f92](https://github.com/apify/apify-cli/commit/d292f92f76e4f523e8ccabd3308d2f5f54eaf1a5)) by [@l2ysho](https://github.com/l2ysho)
+- Restore retry backoff when removing files ([#1394](https://github.com/apify/apify-cli/pull/1394)) ([7c97865](https://github.com/apify/apify-cli/commit/7c978655b2ab38f1265364bc830501a96ab15abe)) by [@roli-lpci](https://github.com/roli-lpci), closes [#1319](https://github.com/apify/apify-cli/issues/1319)
+- **kvs:** Write record metadata sidecars for input files ([#1416](https://github.com/apify/apify-cli/pull/1416)) ([e9fb806](https://github.com/apify/apify-cli/commit/e9fb8068064acd1565afe1b5c41b84797ecbb3d8)) by [@janbuchar](https://github.com/janbuchar)
+- **create:** Make the local-only source option say nothing is uploaded ([#1397](https://github.com/apify/apify-cli/pull/1397)) ([44ea854](https://github.com/apify/apify-cli/commit/44ea85470dc21df5481ee1978310b7721bde7406)) by [@l2ysho](https://github.com/l2ysho), closes [#1396](https://github.com/apify/apify-cli/issues/1396)
+- **deps:** Align devEngines pnpm with packageManager to 11.11.0 ([#1412](https://github.com/apify/apify-cli/pull/1412)) ([05669c4](https://github.com/apify/apify-cli/commit/05669c4458e35762ba78c2a7ed2f895a6f01c85f)) by [@l2ysho](https://github.com/l2ysho)
+- **actors ls:** Do not crash when an Actor record has no stats ([#1435](https://github.com/apify/apify-cli/pull/1435)) ([af22f50](https://github.com/apify/apify-cli/commit/af22f5009dd7ccf2a87d1e009f009785099a4256)) by [@l2ysho](https://github.com/l2ysho)
+- Include $schema line in actor.json generated by `apify init` ([#1507](https://github.com/apify/apify-cli/pull/1507)) ([a97643d](https://github.com/apify/apify-cli/commit/a97643da127b1c7c87018a08681d3c3b7c7d6d7a)) by [@janbuchar](https://github.com/janbuchar)
+- **actors info:** Follow the Actor&#x27;s default build for --input and --readme ([#1473](https://github.com/apify/apify-cli/pull/1473)) ([6cb3b29](https://github.com/apify/apify-cli/commit/6cb3b29e5402a53fdfd7b027aef903109bfd5443)) by [@l2ysho](https://github.com/l2ysho), closes [#1454](https://github.com/apify/apify-cli/issues/1454)
+- **init:** Stop the name prompt looping when stdin is not a TTY ([#1479](https://github.com/apify/apify-cli/pull/1479)) ([23d6b54](https://github.com/apify/apify-cli/commit/23d6b543fd68c566fe0e7be57a084adcfedbbe4e)) by [@l2ysho](https://github.com/l2ysho)
+- Report the real Actor name length limit ([#1484](https://github.com/apify/apify-cli/pull/1484)) ([9f312ec](https://github.com/apify/apify-cli/commit/9f312ece9dcf6db6909dc5f1dcd005ee5b4543bc)) by [@l2ysho](https://github.com/l2ysho)
+- Stop `apify upgrade` reporting success after a failed binary write ([#1462](https://github.com/apify/apify-cli/pull/1462)) ([84e7fb0](https://github.com/apify/apify-cli/commit/84e7fb026d2e770135104754af1d09201eaa6455)) by [@l2ysho](https://github.com/l2ysho), closes [#1460](https://github.com/apify/apify-cli/issues/1460)
+- Send --timeout 0 (no timeout) to the API in call, actors start and task run ([#1491](https://github.com/apify/apify-cli/pull/1491)) ([6a54259](https://github.com/apify/apify-cli/commit/6a5425998e7150344e07647a412328481ab83103)) by [@Pijukatel](https://github.com/Pijukatel)
+- **cli:** Read stdin lazily so open pipes don&#x27;t hang the CLI ([#1330](https://github.com/apify/apify-cli/pull/1330)) ([b908820](https://github.com/apify/apify-cli/commit/b908820384318ef2eeda63f597213a22bf16ef5e)) by [@l2ysho](https://github.com/l2ysho), closes [#1206](https://github.com/apify/apify-cli/issues/1206)
+
+
 ## [1.10.0](https://github.com/apify/apify-cli/releases/tag/v1.10.0) (2026-09-02)
 
 ### 🚀 Features

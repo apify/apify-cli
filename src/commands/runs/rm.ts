@@ -19,6 +19,8 @@ const deletableStatuses = [
 export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 	static override name = 'rm' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Deletes an Actor Run.';
 
 	static override interactive = true;
@@ -69,7 +71,7 @@ export class RunsRmCommand extends ApifyCommand<typeof RunsRmCommand> {
 
 		const confirmedDelete = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Actor Run?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirmedDelete) {

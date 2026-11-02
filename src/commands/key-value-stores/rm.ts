@@ -12,6 +12,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresRmCommand> {
 	static override name = 'rm' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Permanently removes a key-value store.';
 
 	static override interactive = true;
@@ -57,7 +59,7 @@ export class KeyValueStoresRmCommand extends ApifyCommand<typeof KeyValueStoresR
 
 		const confirmed = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Key-value store?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirmed) {

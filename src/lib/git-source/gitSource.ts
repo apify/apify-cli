@@ -15,7 +15,7 @@ import type { AuthJSON } from '../types.js';
 import { cliDebugPrint } from '../utils/cliDebugPrint.js';
 import { CONNECT_TIMEOUT_MS, connectViaConsole } from './connectViaConsole.js';
 
-/** Where a new Actor's source code lives. `apify` is the existing, Git-less path. */
+/** How a new Actor's source code is set up. `apify` is the Git-less path: the code stays on this machine. */
 export const GIT_SOURCE_CHOICES = ['apify', 'github', 'gitlab', 'bitbucket'] as const;
 export type GitSource = (typeof GIT_SOURCE_CHOICES)[number];
 export type GitProvider = Exclude<GitSource, 'apify'>;
@@ -150,14 +150,22 @@ export const getAddWorkspaceUrl = (provider: GitProvider, account?: GitAccount):
 /** Final wizard step, mirroring the Console. Skipped when `--source` is passed. */
 export const promptGitSource = async (): Promise<GitSource> =>
 	useSelectFromList<GitSource>({
-		message: 'Where will the source code live?',
+		message: 'How do you want to set up the source code?',
 		choices: [
-			{ name: 'Apify', value: 'apify', description: 'Deploy with "apify push". No Git provider involved.' },
-			...GIT_SOURCE_CHOICES.filter(isGitProvider).map((provider) => ({
-				name: GIT_PROVIDERS[provider].label,
-				value: provider,
-				description: `Apify creates a private repository on ${GIT_PROVIDERS[provider].label} and builds the Actor from it.`,
-			})),
+			{
+				name: 'Local only',
+				value: 'apify',
+				description: 'Everything stays on this machine and nothing is uploaded. Deploy with "apify push".',
+			},
+			...GIT_SOURCE_CHOICES.filter(isGitProvider).map((provider) => {
+				const { label } = GIT_PROVIDERS[provider];
+
+				return {
+					name: `Host on ${label}`,
+					value: provider,
+					description: `Apify creates a private repository on ${label}, clones it into the Actor directory, and creates an Actor that builds from it.`,
+				};
+			}),
 		],
 		default: 'apify',
 		loop: false,

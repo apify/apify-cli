@@ -12,9 +12,15 @@ export const promptContext = { output: process.stderr };
 
 export interface StdinCheckWrapperInput<ReturnedType> extends StdinCheckWrapperOptions {
 	/**
-	 * When set, this value will be used in environments where stdin is not available.
+	 * The answer the user already gave on the command line, typically through `--yes`. Skips the
+	 * prompt everywhere, a TTY included: a flag that promises "without prompting" has to hold there too.
 	 */
-	providedConfirmFromStdin?: ReturnedType;
+	preAnswered?: ReturnedType;
+	/**
+	 * What to assume when there is nobody to ask. Unlike {@link preAnswered} this is not the user's
+	 * answer, so it never suppresses a prompt someone could actually have answered.
+	 */
+	defaultWhenNonInteractive?: ReturnedType;
 }
 
 type AllButFirst<T extends any[]> = T extends [any, ...infer Rest] ? Rest : never;
@@ -47,16 +53,22 @@ export function stdinCheckWrapper<Fn extends (...args: any[]) => any>(
 	}: StdinCheckWrapperOptions = {},
 ): (...args: NewFunctionArgs<Fn>) => Promise<Awaited<ReturnType<Fn>>> {
 	return async (input, ...rest) => {
-		const { isTTY, hasData } = await useStdin();
-
 		const casted = input as StdinCheckWrapperInput<Awaited<ReturnType<Fn>>>;
 
-		if (isCI || (!isTTY && !hasData)) {
-			if (typeof casted.providedConfirmFromStdin === 'undefined') {
+		if (typeof casted.preAnswered !== 'undefined') {
+			return casted.preAnswered;
+		}
+
+		const { isTTY } = await useStdin();
+
+		// Prompts need a terminal to read the answer from. Piped stdin is command input, not an
+		// answer source.
+		if (isCI || !isTTY) {
+			if (typeof casted.defaultWhenNonInteractive === 'undefined') {
 				throw new Error(casted.errorMessageForStdin ?? errorMessageForStdin);
 			}
 
-			return casted.providedConfirmFromStdin;
+			return casted.defaultWhenNonInteractive;
 		}
 
 		const res = await fn(input, ...rest);

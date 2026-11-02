@@ -12,6 +12,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 	static override name = 'rm' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Permanently removes a dataset.';
 
 	static override interactive = true;
@@ -57,7 +59,7 @@ export class DatasetsRmCommand extends ApifyCommand<typeof DatasetsRmCommand> {
 
 		const confirmed = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Dataset?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirmed) {

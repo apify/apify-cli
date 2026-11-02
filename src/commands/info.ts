@@ -1,10 +1,13 @@
 import chalk from 'chalk';
 
+import { resolveAuth, TOKEN_SOURCE_LABELS } from '../lib/auth.js';
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
-import { getLocalUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
+import { getCurrentUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
 
 export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 	static override name = 'info' as const;
+
+	static override enableProfileFlag = true;
 
 	static override description = 'Prints details about your currently authenticated Apify account.';
 
@@ -21,17 +24,17 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 
 	async run() {
 		await getLoggedClientOrThrow();
-		const info = await getLocalUserInfo();
+		const info = await getCurrentUserInfo();
+		const auth = await resolveAuth();
 
-		if (info) {
-			const niceInfo = {
-				username: info.username,
-				userId: info.id,
-			} as const;
+		const rows = {
+			'username': info.username,
+			'userId': info.id,
+			'token source': TOKEN_SOURCE_LABELS[auth!.source],
+		};
 
-			for (const key of Object.keys(niceInfo) as (keyof typeof niceInfo)[]) {
-				console.log(`${chalk.gray(key)}: ${chalk.bold(niceInfo[key])}`);
-			}
+		for (const [key, value] of Object.entries(rows)) {
+			console.log(`${chalk.gray(key)}: ${chalk.bold(value)}`);
 		}
 	}
 }

@@ -6,17 +6,18 @@ import chalk from 'chalk';
 import { ApifyCommand, StdinMode } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
-import { consoleRunUrl } from '../../lib/commands/agent-output.js';
+import { consoleActorUrl, consoleRunUrl } from '../../lib/commands/agent-output.js';
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
-import { getConsoleUrl } from '../../lib/console-url.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { simpleLog } from '../../lib/outputs.js';
-import { getLocalConfig, getLocalUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { getLocalConfig, getCurrentUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
 	static override name = 'start' as const;
+
+	static override enableProfileFlag = true;
 
 	static override description =
 		'Starts Actor remotely and returns run details immediately.\n' +
@@ -51,7 +52,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		'input-file': Flags.string({
 			aliases: ['if'],
 			description:
-				'Optional path to a file with JSON input to be given to the Actor. The file must be a valid JSON file. You can also specify `-` to read from standard input.',
+				'Optional path to a JSON file with input for the Actor. To read from standard input and wait until all input arrives, use `-`. Without this flag or `--input`, the CLI still reads standard input, but stops waiting if input is slow to start or pauses.',
 			required: false,
 			stdin: StdinMode.Stringified,
 			exclusive: ['input'],
@@ -73,7 +74,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		const cwd = process.cwd();
 		const localConfig = getLocalConfig(cwd) || {};
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getLocalUserInfo();
+		const userInfo = await getCurrentUserInfo();
 		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		const {
@@ -93,7 +94,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			runOpts.build = this.flags.build;
 		}
 
-		if (this.flags.timeout) {
+		if (this.flags.timeout !== undefined) {
 			runOpts.timeout = this.flags.timeout;
 		}
 
@@ -142,7 +143,7 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 				waited: false,
 				actor: {
 					id: actorId,
-					url: `${getConsoleUrl()}/actors/${actorId}`,
+					url: consoleActorUrl(actorId),
 				},
 				run: {
 					id: run.id,

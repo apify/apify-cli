@@ -4,7 +4,8 @@ import { dirname } from 'node:path';
 import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
-import { AUTH_FILE_PATH, EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { EMPTY_LOCAL_CONFIG, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
+import { getSecret, type SecretKind } from '../../../src/lib/credentials.js';
 import { rimrafPromised } from '../../../src/lib/files.js';
 import {
 	getLocalDatasetPath,
@@ -12,10 +13,13 @@ import {
 	getLocalRequestQueuePath,
 	getLocalStorageDir,
 } from '../../../src/lib/utils.js';
+import { readActiveProfile } from '../../__setup__/auth-file.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+
+const storedSecret = (kind: SecretKind) => getSecret(readActiveProfile()!.id, kind);
 import {
 	defaultsInputSchemaPath,
 	missingRequiredPropertyInputSchemaPath,
@@ -123,11 +127,11 @@ describe('apify run', () => {
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
 		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
-		const auth = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
-
-		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
-		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(auth.id);
-		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(auth.token);
+		// Read from disk, not through getLocalUserInfo: `run` sources these from that same
+		// function, so asserting against it would only prove it agrees with itself.
+		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(await storedSecret('proxy-password'));
+		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(readActiveProfile()!.id);
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(await storedSecret('token'));
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
 	});
 
@@ -164,11 +168,9 @@ describe('apify run', () => {
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
 		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
-		const auth = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
-
-		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
-		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(auth.id);
-		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(auth.token);
+		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(await storedSecret('proxy-password'));
+		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(readActiveProfile()!.id);
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(await storedSecret('token'));
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
 
 		const actOutputPath2 = joinPath(getLocalKeyValueStorePath(), 'owo.json');
@@ -204,11 +206,9 @@ describe('apify run', () => {
 		const actOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT.json');
 
 		const localEnvVars = JSON.parse(readFileSync(actOutputPath, 'utf8'));
-		const auth = JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf8'));
-
-		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(auth.proxy.password);
-		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(auth.id);
-		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(auth.token);
+		expect(localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD]).toStrictEqual(await storedSecret('proxy-password'));
+		expect(localEnvVars[APIFY_ENV_VARS.USER_ID]).toStrictEqual(readActiveProfile()!.id);
+		expect(localEnvVars[APIFY_ENV_VARS.TOKEN]).toStrictEqual(await storedSecret('token'));
 		expect(localEnvVars.TEST_LOCAL).toStrictEqual(testEnvVars.TEST_LOCAL);
 
 		const actOutputPath2 = joinPath(getLocalKeyValueStorePath(), 'two.json');

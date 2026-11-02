@@ -97,6 +97,8 @@ interface HydratedListData {
 export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 	static override name = 'ls' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Prints a list of recently executed Actors or Actors you own.';
 
 	static override examples = [
@@ -287,7 +289,7 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 				'Last run': lastRunDisplayedTimestamp,
 				'Last run status': item.lastRun ? prettyPrintStatus(item.lastRun.status) : '',
 				'Modified at': MultilineTimestampFormatter.display(item.modifiedAt),
-				Builds: item.actor ? chalk.cyan(item.actor.stats.totalBuilds) : chalk.gray('Unknown'),
+				Builds: item.actor?.stats ? chalk.cyan(item.actor.stats.totalBuilds) : chalk.gray('Unknown'),
 				'Last run duration': ResponsiveTable.isSmallTerminal() ? kSkipColumn : chalk.cyan(lastRunDuration),
 				'Default build': defaultBuild,
 				_Small_LastRunText: runStatus,

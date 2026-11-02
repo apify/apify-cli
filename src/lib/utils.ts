@@ -9,9 +9,9 @@ import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapp
 import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
-import { type ActorRun, ApifyClient, type ApifyClientOptions, type Build } from 'apify-client';
+import { type ActorRun, ApifyClient, type Build } from 'apify-client';
 import { ZipArchive } from 'archiver';
-import axios, { AxiosHeaders } from 'axios';
+import axios from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
 import ignoreModule, { type Ignore } from 'ignore';
 import { getEncoding } from 'istextorbinary';
@@ -32,8 +32,9 @@ import {
 	SOURCE_FILE_FORMATS,
 } from '@apify/consts';
 
+import { lookUpActiveProfile, lookUpProfile } from './auth-file.js';
+import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth, type ResolvedAuth } from './auth.js';
 import {
-	APIFY_CLIENT_DEFAULT_HEADERS,
 	AUTH_FILE_PATH,
 	CommandExitCodes,
 	DEFAULT_LOCAL_STORAGE_DIR,
@@ -41,11 +42,12 @@ import {
 	MINIMUM_SUPPORTED_PYTHON_VERSION,
 	SUPPORTED_NODEJS_VERSION,
 } from './consts.js';
-import { ensureMigrated, getBackend, getProxyPassword, getToken, setProxyPassword, setToken } from './credentials.js';
-import { deleteFile, ensureApifyDirectory, ensureFolderExistsSync, rimrafPromised } from './files.js';
+import { ensureCredentialsCurrent, getSecret } from './credentials.js';
+import { deleteFile, ensureFolderExistsSync, rimrafPromised } from './files.js';
 import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import { encodeRecordKey, readKvsRecordMetadata, recordMetadataFileName } from './kvs-metadata.js';
+import { getAccessToken } from './oauth/session.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -85,34 +87,34 @@ export const getLocalRequestQueuePath = (storeId?: string) => {
 };
 
 /**
- * Returns object from auth file or empty object. Secrets (token, proxy password) are
- * pulled from the keyring when that backend is active; user metadata lives in auth.json.
+ * The given profile, or the active one, in the flat shape the CLI consumes, or an empty object when nothing is
+ * stored. Secrets come from whichever backend holds them; the metadata comes from auth.json.
  */
-export const getLocalUserInfo = async (): Promise<AuthJSON> => {
-	await ensureMigrated();
+export const getLocalUserInfo = async (userId?: string): Promise<AuthJSON> => {
+	await ensureCredentialsCurrent();
 
-	let result: AuthJSON = {};
-	try {
-		const raw = await readFile(AUTH_FILE_PATH(), 'utf-8');
-		result = JSON.parse(raw) as AuthJSON;
-	} catch {
-		// auth.json may not exist yet (fresh keyring-only state); fall through
+	const { profile, missingProfile } = userId ? lookUpProfile(userId) : lookUpActiveProfile();
+
+	// Reported rather than swallowed: the commands that build `<username>/<name>` lookups would
+	// otherwise fail with a misleading "not found".
+	if (missingProfile) {
+		throw new Error(
+			`Your ${userId ? '' : 'active '}profile "${missingProfile}" is missing from ${AUTH_FILE_PATH()}. Run "apify login" to log in again.`,
+		);
 	}
 
-	if ((await getBackend()) === 'keyring') {
-		const token = await getToken();
-		if (token) result.token = token;
+	if (!profile) return {};
 
-		const proxyPassword = await getProxyPassword();
-		if (proxyPassword) result.proxy = { ...result.proxy, password: proxyPassword };
-	}
+	const result: AuthJSON = { id: profile.id };
+	if (profile.username) result.username = profile.username;
+	if (profile.organizationOwnerUserId) result.organizationOwnerUserId = profile.organizationOwnerUserId;
 
-	const hasUserMetadata = !!(result.username || result.id);
-	const isComplete = hasUserMetadata || !!result.token;
-	if (!isComplete) return {};
-	if (!hasUserMetadata) {
-		throw new Error('Stale credentials found without user metadata. Please run "apify login" again.');
-	}
+	// Refreshes an OAuth-issued token when it is about to expire; a plain API token passes through.
+	const token = await getAccessToken(profile.id);
+	if (token) result.token = token;
+
+	const proxyPassword = await getSecret(profile.id, 'proxy-password');
+	if (proxyPassword) result.proxy = { password: proxyPassword };
 
 	return result;
 };
@@ -121,98 +123,65 @@ export const getLocalUserInfo = async (): Promise<AuthJSON> => {
  * Gets instance of ApifyClient for user otherwise throws error
  */
 export async function getLoggedClientOrThrow() {
-	const loggedClient = await getLoggedClient();
+	const { client, auth, error } = await getLoggedClient();
 
-	if (!loggedClient) {
+	if (!client) {
 		process.exitCode = CommandExitCodes.MissingAuth;
-		throw new Error('You are not logged in with your Apify account. Call "apify login" to fix that.');
+		throw new Error(describeAuthFailure(auth, error));
 	}
-	return loggedClient;
+	return client;
 }
 
-const resolveToken = async (existingToken?: string): Promise<string | undefined> => {
-	if (existingToken) return existingToken;
-	await ensureMigrated();
-	return getToken();
-};
+let cachedUserInfo: { token: string; userInfo: AuthJSON } | undefined;
 
-type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
-
-/**
- * Returns options for ApifyClient
- */
-export const getApifyClientOptions = async (token?: string, apiBaseUrl?: string): Promise<ApifyClientOptions> => {
-	const resolvedToken = await resolveToken(token);
-
-	return {
-		token: resolvedToken,
-		baseUrl: apiBaseUrl || process.env.APIFY_CLIENT_BASE_URL,
-		requestInterceptors: [
-			(config) => {
-				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
-
-				for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
-					config.headers![key] = value;
-				}
-
-				return config;
-			},
-		],
-	};
-};
+/** Test-only: drop the in-memory account metadata so each test starts fresh. */
+export function __resetUserInfoCacheForTests() {
+	cachedUserInfo = undefined;
+}
 
 /**
- * Gets instance of ApifyClient for token or for params from global auth file.
+ * `client` is `null` when no token is available or the lookup failed; `error` carries that
+ * failure, so the caller can tell a rejected token from an API it could not reach.
  *
- * Refreshes the user metadata in auth.json each run. Secrets (token, proxy.password) only
- * get written when their value actually changes — avoids macOS Keychain prompts on every command.
+ * Read-only: the resolved token is never persisted.
  */
-export async function getLoggedClient(token?: string, apiBaseUrl?: string) {
-	const resolvedToken = await resolveToken(token);
+async function getLoggedClient(): Promise<{ client: ApifyClient | null; auth?: ResolvedAuth; error?: unknown }> {
+	const auth = await resolveAuth();
+	if (!auth) return { client: null };
 
-	const apifyClient = new ApifyClient(await getApifyClientOptions(resolvedToken, apiBaseUrl));
+	const apifyClient = new ApifyClient(getApifyClientOptionsForToken(auth.token));
 
-	let userInfo;
 	try {
-		userInfo = await apifyClient.user('me').get();
+		const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
+		cachedUserInfo = { token: auth.token, userInfo };
 	} catch (err) {
-		cliDebugPrint('[getLoggedClient] error getting user info', { error: err, apiBaseUrl });
-		return null;
+		cliDebugPrint('[getLoggedClient] error getting user info', { error: err });
+		return { client: null, auth, error: err };
 	}
 
-	if (apifyClient.token) {
-		await setToken(apifyClient.token, { skipIfUnchanged: true });
-	}
+	return { client: apifyClient, auth };
+}
 
-	const proxyPassword = userInfo.proxy?.password;
-	if (proxyPassword) {
-		await setProxyPassword(proxyPassword, { skipIfUnchanged: true });
-	}
+/**
+ * Account metadata for the resolved token. An env token has no auth.json entry, so it needs an API
+ * call — kept short because `apify run` waits on this and the client defaults retry for minutes.
+ */
+export async function getCurrentUserInfo(): Promise<AuthJSON> {
+	const auth = await resolveAuth();
+	if (!auth) return getLocalUserInfo();
 
-	ensureApifyDirectory(AUTH_FILE_PATH());
-	const existingFile = (() => {
-		try {
-			return JSON.parse(readFileSync(AUTH_FILE_PATH(), 'utf-8')) as Record<string, unknown>;
-		} catch {
-			return {};
-		}
-	})();
-	const backend = await getBackend();
-	const fileContents: Record<string, unknown> = { ...existingFile, ...userInfo, secretsBackend: backend };
-	if (backend === 'keyring') {
-		delete fileContents.token;
-		if (fileContents.proxy && typeof fileContents.proxy === 'object') {
-			const { password: _password, ...rest } = fileContents.proxy as { password?: string };
-			if (Object.keys(rest).length > 0) {
-				fileContents.proxy = rest;
-			} else {
-				delete fileContents.proxy;
-			}
-		}
-	}
-	writeFileSync(AUTH_FILE_PATH(), JSON.stringify(fileContents, null, '\t'), { mode: 0o600 });
+	if (cachedUserInfo?.token === auth.token) return cachedUserInfo.userInfo;
+	if (auth.source !== 'env') return getLocalUserInfo(auth.profile?.id);
 
-	return apifyClient;
+	const apifyClient = new ApifyClient({
+		...getApifyClientOptionsForToken(auth.token),
+		maxRetries: 1,
+		timeoutSecs: 10,
+	});
+	const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
+	cachedUserInfo = { token: auth.token, userInfo };
+
+	return userInfo;
 }
 
 export const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);
@@ -320,12 +289,12 @@ export const createSourceFiles = async (paths: string[], cwd: string) => {
 };
 
 /**
- * Fallback for when git is unavailable: find all .gitignore files and build a filter
+ * Fallback for when git is unavailable: find all .gitignore files and build a matcher
  * using the `ignore` package, scoped to each file's directory.
  * Also walks ancestor directories to pick up parent .gitignore files (e.g. monorepo root),
  * stopping at the first .git boundary found.
  */
-const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]) => string[]> => {
+const getGitignoreFallbackMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
 	const gitignoreFiles = await glob('**/.gitignore', {
 		dot: true,
 		cwd,
@@ -369,26 +338,50 @@ const getGitignoreFallbackFilter = async (cwd: string): Promise<(paths: string[]
 	}
 
 	if (filters.length === 0) {
-		return (paths) => paths;
+		return () => false;
 	}
 
-	return (paths) =>
-		paths.filter((filePath) => {
-			for (const { dir, ig, ancestorPrefix } of filters) {
-				let relativePath: string | null;
-				if (!dir) {
-					relativePath = ancestorPrefix ? `${ancestorPrefix}/${filePath}` : filePath;
-				} else if (filePath.startsWith(`${dir}/`)) {
-					relativePath = filePath.slice(dir.length + 1);
-				} else {
-					relativePath = null;
-				}
-				if (relativePath !== null && ig.ignores(relativePath)) {
-					return false;
-				}
+	return (filePath) =>
+		filters.some(({ dir, ig, ancestorPrefix }) => {
+			let relativePath: string | null;
+			if (!dir) {
+				relativePath = ancestorPrefix ? `${ancestorPrefix}/${filePath}` : filePath;
+			} else if (filePath.startsWith(`${dir}/`)) {
+				relativePath = filePath.slice(dir.length + 1);
+			} else {
+				relativePath = null;
 			}
-			return true;
+			// An empty path is the directory of this .gitignore, which it can't ignore. `ignore` throws on it.
+			return !!relativePath && ig.ignores(relativePath);
 		});
+};
+
+/**
+ * Returns a function that says whether .gitignore rules exclude a path relative to `cwd`. A directory path needs a
+ * trailing slash. Asks `git ls-files`, which handles ancestor and nested .gitignore files, .git/info/exclude, and the
+ * global gitignore config. When git fails (not installed, not a repository), reads the .gitignore files itself.
+ * `getActorLocalFilePaths` and the Actor discovery of `apify push` both use it. Discovery asks from the root it
+ * searches, the upload from the Actor directory.
+ */
+export const getGitignoreMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
+	try {
+		const gitIgnored = execSync('git ls-files --others --ignored --exclude-standard --directory', {
+			cwd,
+			encoding: 'utf-8',
+			stdio: ['ignore', 'pipe', 'ignore'],
+		})
+			.split('\n')
+			.filter(Boolean);
+
+		if (gitIgnored.length === 0) {
+			return () => false;
+		}
+
+		const ig = makeIg().add(gitIgnored);
+		return (path) => ig.ignores(path);
+	} catch {
+		return getGitignoreFallbackMatcher(cwd);
+	}
 };
 
 interface ActorIgnoreResult {
@@ -431,6 +424,8 @@ const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 	return { excludeFilter, forceIncludePatterns };
 };
 
+export const ACTOR_FILES_HARDCODED_IGNORE = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+
 /**
  * Get Actor local files, omit files defined in .gitignore, .actorignore and .git folder
  * All dot files(.file) and folders(.folder/) are included.
@@ -438,32 +433,12 @@ const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 export const getActorLocalFilePaths = async (cwd?: string) => {
 	const resolvedCwd = cwd ?? process.cwd();
 
-	const hardcodedIgnore = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+	const hardcodedIgnore = ACTOR_FILES_HARDCODED_IGNORE;
 
 	// Parse .actorignore early to get both exclude filter and force-include patterns
 	const { excludeFilter: actorignoreFilter, forceIncludePatterns } = await parseActorIgnore(resolvedCwd);
 
-	let gitIgnoreFilter: ((paths: string[]) => string[]) | null = null;
-
-	// Use git ls-files to get gitignored paths — this correctly handles ancestor .gitignore files,
-	// nested .gitignore files, .git/info/exclude, and global gitignore config
-	try {
-		const gitIgnored = execSync('git ls-files --others --ignored --exclude-standard --directory', {
-			cwd: resolvedCwd,
-			encoding: 'utf-8',
-			stdio: ['ignore', 'pipe', 'ignore'],
-		})
-			.split('\n')
-			.filter(Boolean);
-
-		if (gitIgnored.length > 0) {
-			const ig = makeIg().add(gitIgnored);
-			gitIgnoreFilter = (paths) => paths.filter((p) => !ig.ignores(p));
-		}
-	} catch {
-		// git is unavailable or directory is not a git repo — fall back to parsing .gitignore files
-		gitIgnoreFilter = await getGitignoreFallbackFilter(resolvedCwd);
-	}
+	const isGitignored = await getGitignoreMatcher(resolvedCwd);
 
 	const allFiles = await glob(['*', '**/**'], {
 		ignore: hardcodedIgnore,
@@ -472,7 +447,7 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 		cwd: resolvedCwd,
 	});
 
-	let paths = gitIgnoreFilter ? gitIgnoreFilter(allFiles) : allFiles;
+	let paths = allFiles.filter((filePath) => !isGitignored(filePath));
 
 	if (actorignoreFilter) {
 		paths = actorignoreFilter(paths);
@@ -665,14 +640,6 @@ export const outputJobLog = async ({
 };
 
 /**
- * Returns npm command for current os
- * NOTE: For window we have to returns npm.cmd instead of npm, otherwise it doesn't work
- */
-export const getNpmCmd = (): string => {
-	return process.platform.startsWith('win') ? 'npm.cmd' : 'npm';
-};
-
-/**
  * Returns true if the local storage holds nothing but the input record, either
  * the user's own `<inputKey>` / `<inputKey>.*` or the temporary copy the CLI writes next to it.
  */
@@ -706,11 +673,22 @@ export const validateActorName = (actorName: string) => {
 		throw new Error('The Actor name must be a DNS hostname-friendly string (e.g. my-newest-actor).');
 	}
 	if (actorName.length < ACTOR_NAME.MIN_LENGTH) {
-		throw new Error('The Actor name must be at least 3 characters long.');
+		throw new Error(`The Actor name must be at least ${ACTOR_NAME.MIN_LENGTH} characters long.`);
 	}
 	if (actorName.length > ACTOR_NAME.MAX_LENGTH) {
-		throw new Error('The Actor name must be a maximum of 30 characters long.');
+		throw new Error(`The Actor name must be at most ${ACTOR_NAME.MAX_LENGTH} characters long.`);
 	}
+};
+
+/** Adapts {@link validateActorName} to the `validate` contract of the inquirer prompts. */
+export const validateActorNameForPrompt = (actorName: string) => {
+	try {
+		validateActorName(actorName);
+	} catch (err) {
+		return (err as Error).message;
+	}
+
+	return true;
 };
 
 export const sanitizeActorName = (actorName: string) => {
@@ -825,27 +803,6 @@ export function objectGroupBy<K extends PropertyKey, T>(
 	}
 
 	return result;
-}
-
-/**
- * A "polyfill" for Map.groupBy
- */
-export function mapGroupBy<K, T>(items: Iterable<T>, keySelector: (item: T, index: number) => K): Map<K, T[]> {
-	const map = new Map<K, T[]>();
-	let index = 0;
-
-	for (const value of items) {
-		const key = keySelector(value, index++);
-		const list = map.get(key);
-
-		if (list) {
-			list.push(value);
-		} else {
-			map.set(key, [value]);
-		}
-	}
-
-	return map;
 }
 
 export function printJsonToStdout(object: unknown) {

@@ -140,6 +140,8 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 
 	static override name = 'api' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description =
 		'Makes an authenticated HTTP request to the Apify API and prints the response.\n' +
 		'The endpoint can be a relative path (e.g. "acts", "v2/acts", or "/v2/acts"); ' +

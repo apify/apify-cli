@@ -1,15 +1,17 @@
 import type { ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
-import { cachedStdinInput } from '../../entrypoints/_shared.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
+import { readStdin } from '../../lib/commands/read-stdin.js';
 import { tryToGetDataset } from '../../lib/commands/storages.js';
 import { error, success } from '../../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../../lib/utils.js';
 
 export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDataCommand> {
 	static override name = 'push-items' as const;
+
+	static override enableProfileFlag = true;
 
 	static override description = 'Adds data items to specified dataset. Accepts single object or array of objects.';
 
@@ -55,7 +57,8 @@ export class DatasetsPushDataCommand extends ApifyCommand<typeof DatasetsPushDat
 
 		let parsedData: Record<string, unknown> | Record<string, unknown>[];
 
-		const item = _item || cachedStdinInput;
+		// Piping items in is the documented way to use this command, so wait for the writer to close.
+		const item = _item || (await readStdin());
 
 		if (!item) {
 			error({ message: 'No items were provided.' });

@@ -20,6 +20,7 @@ If you modified a command's flags, args, description, or added/removed a command
 - Commands extend `ApifyCommand` from `src/lib/command-framework/apify-command.ts`. Follow the pattern of existing commands: `static override name`, `static override description`, `static override flags/args`, and an `async run()` method.
 - New commands must be registered in `src/commands/_register.ts` (or the parent `_index.ts` for subcommands).
 - Do not add docstrings, comments, or type annotations to code you did not change. Keep diffs tight.
+- Use contractions in command, flag, and arg descriptions, and in docs text: "doesn't", "can't", "aren't", not "does not", "cannot", "are not". `docs/` is generated from these strings, so fix the source.
 
 ## Install size
 

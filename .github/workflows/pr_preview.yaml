@@ -1,0 +1,41 @@
+# This workflow publishes a preview build of every pull request to pkg.pr.new, so that
+# reviewers can install the CLI from a pull request without a local checkout.
+
+name: PR preview
+
+on:
+    pull_request:
+
+permissions: {}
+
+env:
+    LATEST_NODE_VERSION: 24
+    APIFY_CLI_DISABLE_TELEMETRY: 1
+
+concurrency:
+    cancel-in-progress: true
+    group: pr-preview-${{ github.ref }}
+
+jobs:
+    publish:
+        # No previews from forks, and a dependency bump never needs one.
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.type != 'Bot' }}
+
+        name: Publish preview
+
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+            - name: Use Node.js ${{ env.LATEST_NODE_VERSION }}
+              uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+              with:
+                  node-version: ${{ env.LATEST_NODE_VERSION }}
+
+            - name: Install pnpm and dependencies
+              uses: apify/actions/pnpm-install@v1.6.2
+
+            # `pnpm pack` runs the `prepack` script, which builds the CLI.
+            - name: Publish to pkg.pr.new
+              run: pnpm exec pkg-pr-new publish --pnpm --bin --comment=update

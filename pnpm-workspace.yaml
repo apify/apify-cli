@@ -9,7 +9,7 @@ allowBuilds:
   esbuild: true
   unrs-resolver: true
 
-minimumReleaseAge: 1440
+minimumReleaseAge: 10080
 minimumReleaseAgeExclude:
   - "@apify/*"
   - "@crawlee/*"
@@ -21,9 +21,6 @@ minimumReleaseAgeExclude:
   - adm-zip@0.6.0
   # Renovate security update: pnpm@11.11.0
   - pnpm@11.11.0
-
-overrides:
-  tar: 7.5.22
 
 # Install native deps for all platforms, not just the current machine's, so the
 # cross-platform bundle builds (scripts/build-cli-bundles.ts) can embed them.
@@ -44,3 +41,6 @@ supportedArchitectures:
 nodeLinker: hoisted
 publicHoistPattern:
   - "*"
+
+patchedDependencies:
+  '@signalwire/docusaurus-plugin-llms-txt@1.2.2': patches/@signalwire__docusaurus-plugin-llms-txt@1.2.2.patch

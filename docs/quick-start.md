@@ -31,7 +31,7 @@ The CLI then asks you for the following:
 
     :::
 
-1. Choose where to host the source code of your Actor: on Apify, GitHub, GitLab, or Bitbucket. Let's choose **Apify**.
+1. Choose where to keep the source code of your Actor: on your machine, or hosted on GitHub, GitLab, or Bitbucket. Let's choose **Local only** so the code stays on your machine.
 
 The CLI creates a new directory with the boilerplate code and installs all project dependencies.
 
@@ -82,10 +82,13 @@ To log in, run:
 apify login
 ```
 
-You can then choose one of the following methods:
+The CLI opens Apify Console in your browser, where you can confirm the login. If the browser doesn't open, go to the URL printed in your terminal. If prompted, enter the code.
 
-- _(Recommended)_ Sign in through the Apify Console in your browser.
-- Provide an [Apify API token](https://console.apify.com/settings/integrations).
+To use an [Apify API token](https://console.apify.com/settings/integrations) instead, pass it directly:
+
+```bash
+apify login --token <your-api-token>
+```
 
 ### Push your Actor to Apify
 

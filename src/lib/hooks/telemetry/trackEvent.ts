@@ -43,6 +43,18 @@ interface CliCommandEvent {
 		wasCreated?: boolean;
 	};
 
+	/** A push from a directory without an Actor of its own: how many Actors were chosen and how many failed. */
+	pushSelection?: {
+		selected: number;
+		failed: number;
+	};
+
+	login?: {
+		method: 'oauth2-device' | 'oauth2-code' | 'console' | 'manual' | 'token';
+		/** Set when the device code flow could not run and the authorization code flow took over. */
+		fellBackFrom?: 'oauth2-device';
+	};
+
 	// init command
 	actorWrapper?: string;
 

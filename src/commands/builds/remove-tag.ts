@@ -10,6 +10,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagCommand> {
 	static override name = 'remove-tag' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Removes a tag from a specific Actor build.';
 
 	static override examples = [
@@ -82,7 +84,7 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 		// Confirm removal
 		const confirmed = await useYesNoConfirm({
 			message: `Are you sure you want to remove tag "${chalk.yellow(tag)}" from build ${chalk.gray(build.buildNumber)}?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirmed) {

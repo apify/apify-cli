@@ -10,6 +10,8 @@ import { getLoggedClientOrThrow } from '../../lib/utils.js';
 export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 	static override name = 'rm' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Permanently removes an Actor from your account.';
 
 	static override interactive = true;
@@ -52,7 +54,7 @@ export class ActorsRmCommand extends ApifyCommand<typeof ActorsRmCommand> {
 
 		const confirmedDelete = await useYesNoConfirm({
 			message: `Are you sure you want to delete this Actor?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirmedDelete) {

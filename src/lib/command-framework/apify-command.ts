@@ -9,7 +9,8 @@ import indentString from 'indent-string';
 import widestLine from 'widest-line';
 import wrapAnsi from 'wrap-ansi';
 
-import { cachedStdinInput } from '../../entrypoints/_shared.js';
+import { selectProfile } from '../auth.js';
+import { readStdin } from '../commands/read-stdin.js';
 import { keepStdoutClean } from '../exec.js';
 import { detectAiAgent, detectCi, detectIsInteractive } from '../hooks/telemetry/detectEnvironment.js';
 import type { TrackEventMap } from '../hooks/telemetry/trackEvent.js';
@@ -122,6 +123,7 @@ type InferFlagsFromCommand<
 	? Record<string, unknown>
 	: _InferFlagsFromCommand<Exclude<O, undefined>, OptionalIfHasDefault>) & {
 	json: boolean;
+	profile?: string;
 };
 
 export function camelCaseString(str: string): string {
@@ -144,6 +146,11 @@ const helpFlagDefinition = {
 
 const jsonFlagDefinition = {
 	type: 'boolean',
+	multiple: false,
+} as const satisfies ParseArgsOptionDescriptor;
+
+const profileFlagDefinition = {
+	type: 'string',
 	multiple: false,
 } as const satisfies ParseArgsOptionDescriptor;
 
@@ -212,6 +219,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	static subcommands?: (typeof BuiltApifyCommand)[];
 
 	static enableJsonFlag = false;
+
+	/** Adds `--profile`, which picks the stored account this command authenticates with. */
+	static enableProfileFlag = false;
 
 	static name: string;
 
@@ -368,7 +378,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 							this.args[camelCasedName] = String(rawArg);
 
 							if (rawArg === '-' && builderData.stdin) {
-								this.args[camelCasedName] = this._handleStdin(builderData.stdin);
+								this.args[camelCasedName] = await this._handleStdin(builderData.stdin);
 							}
 
 							if (builderData.catchAll) {
@@ -389,9 +399,14 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 			return;
 		}
 
-		this._parseFlags(rawFlags, rawTokens);
+		await this._parseFlags(rawFlags, rawTokens);
 
 		try {
+			if (this.ctor.enableProfileFlag && typeof rawFlags.profile === 'string') {
+				this.flags.profile = rawFlags.profile;
+				await selectProfile(rawFlags.profile);
+			}
+
 			await this.run();
 		} catch (err: any) {
 			error({ message: err.message });
@@ -464,7 +479,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		return flagKey;
 	}
 
-	private _parseFlags(rawFlags: ParseResult['values'], rawTokens: ParseResult['tokens']) {
+	private async _parseFlags(rawFlags: ParseResult['values'], rawTokens: ParseResult['tokens']) {
 		if (!this.ctor.flags) {
 			return;
 		}
@@ -594,7 +609,7 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 							flagThatUsedStdin = baseFlagName;
 
-							this.flags[camelCasedName] = this._handleStdin(builderData.stdin);
+							this.flags[camelCasedName] = await this._handleStdin(builderData.stdin);
 						}
 
 						break;
@@ -719,12 +734,14 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 		});
 	}
 
-	private _handleStdin(mode: StdinMode) {
+	private async _handleStdin(mode: StdinMode) {
+		const input = await readStdin();
+
 		switch (mode) {
 			case StdinMode.Stringified:
-				return (cachedStdinInput?.toString('utf8') ?? '').trim();
+				return (input?.toString('utf8') ?? '').trim();
 			default:
-				return cachedStdinInput;
+				return input;
 		}
 	}
 
@@ -776,6 +793,10 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 
 		if (this.ctor.enableJsonFlag) {
 			object.options!.json = jsonFlagDefinition;
+		}
+
+		if (this.ctor.enableProfileFlag) {
+			object.options!.profile = profileFlagDefinition;
 		}
 
 		return object;

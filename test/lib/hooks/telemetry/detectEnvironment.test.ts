@@ -17,11 +17,10 @@ describe('detectAiAgent', () => {
 		'OPENCLAW_SHELL',
 	];
 
-	// The suite may run inside an AI coding tool, which sets some of these,
-	// so clear them all instead of relying on the ambient environment.
 	beforeEach(() => {
+		// The suite itself may run inside one of these agents, so clear the vars before each test
 		for (const key of agentEnvVars) {
-			vi.stubEnv(key, '');
+			vi.stubEnv(key, undefined);
 		}
 	});
 

@@ -28,6 +28,8 @@ const table = new ResponsiveTable({
 export class RunsLsCommand extends ApifyCommand<typeof RunsLsCommand> {
 	static override name = 'ls' as const;
 
+	static override enableProfileFlag = true;
+
 	static override description = 'Lists all runs of the Actor.';
 
 	static override examples = [
