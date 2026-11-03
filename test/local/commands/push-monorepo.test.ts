@@ -4,6 +4,8 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import AdmZip from 'adm-zip';
+
 import { ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
@@ -243,6 +245,21 @@ describe('apify push of a monorepo Actor', () => {
 
 		expect(existsSync(join(process.cwd(), 'temp_file.zip'))).toBe(false);
 		expect(existsSync(joinPath('temp_file.zip'))).toBe(false);
+	});
+
+	it('zips a file reached through a symlink as its content, as the multi-file upload sends it', async () => {
+		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
+		await write('shared/input_schema.json', '{"title":"Input","type":"object","properties":{}}');
+		symlinkSync('../../../shared/input_schema.json', joinPath(`${ACTOR_PATH}/.actor/input_schema.json`));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const record = setRecord.mock.calls[0][0] as { value: Buffer };
+		const entry = new AdmZip(record.value).getEntry(`${ACTOR_PATH}/.actor/input_schema.json`);
+		// A link entry would hold the link's target path, which the platform unzips as a link to a file it lacks.
+		expect(entry?.getData().toString()).toContain('"title":"Input"');
 	});
 
 	it('uploads the files under a directory symlink as copies and leaves dangling and outside links out', async () => {

@@ -220,10 +220,10 @@ const rejectsActorPath = (err: unknown) => {
 };
 
 /**
- * The platform's multi-file and zip sources carry files only: a link to a file inside the upload goes as that file
- * at the link's path, a link to a directory inside the upload as copies of the uploaded files under its target, and
- * a link to nothing or to a target outside the upload is left out, as a clone of the repository could not follow it
- * either. The `actor.json` path check then reports a config that refers to a left-out link as not uploaded.
+ * Push sends files only, in the multi-file and the zip upload alike: a link to a file inside the upload goes as that
+ * file at the link's path, a link to a directory inside the upload as copies of the uploaded files under its target,
+ * and a link to nothing or to a target outside the upload is left out, as a clone of the repository could not follow
+ * it either. The `actor.json` path check then reports a config that refers to a left-out link as not uploaded.
  */
 const resolveLinksForUpload = (root: string, files: string[]) => {
 	const realRoot = realpathSync(root);
