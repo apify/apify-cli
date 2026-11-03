@@ -1,6 +1,7 @@
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import process from 'node:process';
 
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
@@ -17,6 +18,12 @@ vi.mock('node:child_process', async (importOriginal) => {
 			throw new Error('not a git repository');
 		},
 	};
+});
+
+// Lets a test see which files the push reads.
+vi.mock('node:fs/promises', async (importOriginal) => {
+	const original = await importOriginal<typeof import('node:fs/promises')>();
+	return { ...original, readFile: vi.fn(original.readFile) };
 });
 
 const TEST_DIR = 'gitignore-fallback-test-dir';
@@ -487,9 +494,7 @@ describe('Utils - .gitignore inside a dot directory (no git)', () => {
 
 const INSIDE_DOT_GIT_TEST_DIR = 'gitignore-inside-dot-git-test-dir';
 
-// chmod 000 has no effect on Windows and root reads the file anyway.
-describe.skipIf(process.platform === 'win32' || process.getuid?.() === 0)('Utils - files inside .git (no git)', () => {
-	// An unreadable .gitignore inside .git shows whether the push reads it.
+describe('Utils - files inside .git (no git)', () => {
 	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(INSIDE_DOT_GIT_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -502,17 +507,20 @@ describe.skipIf(process.platform === 'win32' || process.getuid?.() === 0)('Utils
 
 		mkdirSync(joinPath('.git', 'hooks'), { recursive: true });
 		writeFileSync(joinPath('.git', 'hooks', '.gitignore'), '*\n');
-		chmodSync(joinPath('.git', 'hooks', '.gitignore'), 0o000);
 		writeFileSync(joinPath('main.js'), 'content');
 	});
 
 	afterAll(async () => {
-		chmodSync(joinPath('.git', 'hooks', '.gitignore'), 0o644);
 		await afterAllCalls();
 	});
 
 	it('should not read a .gitignore inside .git', async () => {
-		await expect(getActorLocalFilePaths(tmpPath)).resolves.toContain('main.js');
+		vi.mocked(readFile).mockClear();
+
+		await getActorLocalFilePaths(tmpPath);
+
+		const readPaths = vi.mocked(readFile).mock.calls.map(([path]) => String(path));
+		expect(readPaths.filter((path) => path.includes(`${sep}.git${sep}`))).toEqual([]);
 	});
 });
 
