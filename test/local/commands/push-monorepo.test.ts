@@ -2,7 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, symlinkSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import AdmZip from 'adm-zip';
@@ -593,6 +593,23 @@ describe('apify push of a monorepo Actor', () => {
 		expect(names).toContain(`${actorPath}/.actor/actor.json`);
 		expect(names.filter((name) => name.normalize('NFC') === 'actors/café-actor/.actor/actor.json')).toHaveLength(1);
 	});
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'uploads a link in the Actor folder whose target names the repository in another letter case',
+		async () => {
+			const repositoryInUpperCase = basename(tmpPath).toUpperCase();
+			symlinkSync(
+				`../../../${repositoryInUpperCase}/packages/typescript-utils/src/index.ts`,
+				joinPath(`${ACTOR_PATH}/case-link.ts`),
+			);
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toContain(`${ACTOR_PATH}/case-link.ts`);
+		},
+	);
 
 	describe.runIf(caseInsensitiveFileSystem)('with --dir typed in another case', () => {
 		it.each([

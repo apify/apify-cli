@@ -30,6 +30,7 @@ import {
 	isOutside,
 	monorepoUnsupportedMessage,
 	readGitState,
+	realPath,
 	resolveDockerContext,
 	toPosix,
 } from '../../lib/docker-context.js';
@@ -236,9 +237,9 @@ const resolveLinksForUpload = (root: string, files: string[]) => {
 		if (!stats) return undefined;
 		if (!stats.isSymbolicLink()) return { target: file, stats };
 		try {
-			const realPath = realpathSync(filePath);
-			const target = relative(realRoot, realPath);
-			return isOutside(target) ? undefined : { target: toPosix(target), stats: statSync(realPath) };
+			const realFilePath = realpathSync(filePath);
+			const target = relative(realRoot, realFilePath);
+			return isOutside(target) ? undefined : { target: toPosix(target), stats: statSync(realFilePath) };
 		} catch {
 			return undefined;
 		}
@@ -262,10 +263,11 @@ const resolveLinksForUpload = (root: string, files: string[]) => {
  * the upload stays out, as in the rest of the upload.
  */
 const withActorFolderFiles = (root: string, actorPath: string, contextFiles: string[], actorFiles: string[]) => {
-	const realRoot = realpathSync(root);
+	// The root has its names in their case on disk, so a link that spells a folder in another case must resolve so too.
+	const realRoot = realPath(root);
 	const isInUpload = (file: string) => {
 		try {
-			return !isOutside(relative(realRoot, realpathSync(join(root, file))));
+			return !isOutside(relative(realRoot, realPath(join(root, file))));
 		} catch {
 			return false;
 		}
