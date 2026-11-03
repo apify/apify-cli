@@ -1,4 +1,4 @@
-import { chmodSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import process from 'node:process';
@@ -422,10 +422,15 @@ describe('Utils - a deeper .gitignore wins over a shallower one inside the pushe
 		await beforeAllCalls();
 
 		mkdirSync(joinPath('.git'));
-		mkdirSync(joinPath('sub'));
+		// '-' sorts before '.', so by name -sub/.gitignore would come before the root .gitignore.
+		['sub', '-sub'].forEach((folder) => {
+			mkdirSync(joinPath(folder));
+			writeFileSync(joinPath(folder, '.gitignore'), '!keep.log\n');
+		});
 		writeFileSync(joinPath('.gitignore'), '*.log\n');
-		writeFileSync(joinPath('sub', '.gitignore'), '!keep.log\n');
-		['main.js', 'x.log', 'sub/keep.log', 'sub/other.log'].forEach((file) => writeFileSync(joinPath(file), 'content'));
+		['main.js', 'x.log', 'sub/keep.log', 'sub/other.log', '-sub/keep.log', '-sub/other.log'].forEach((file) =>
+			writeFileSync(joinPath(file), 'content'),
+		);
 	});
 
 	afterAll(async () => {
@@ -439,6 +444,13 @@ describe('Utils - a deeper .gitignore wins over a shallower one inside the pushe
 		expect(paths).toContain('sub/keep.log');
 		expect(paths).not.toContain('x.log');
 		expect(paths).not.toContain('sub/other.log');
+	});
+
+	it('should rank the files by depth, not by name', async () => {
+		const paths = await getActorLocalFilePaths(tmpPath);
+
+		expect(paths).toContain('-sub/keep.log');
+		expect(paths).not.toContain('-sub/other.log');
 	});
 });
 
@@ -587,6 +599,43 @@ describe('Utils - non-ASCII names in another Unicode form than the rules (no git
 
 		expect(paths).toContain('main.js');
 		expect(paths).not.toContain('local/x.txt');
+	});
+});
+
+const NFC_TYPED_TEST_DIR = 'gitignore-nfc-typed-test-dir';
+
+describe('Utils - pushing an ignored directory stored decomposed by its composed name (no git)', () => {
+	// The directory is stored decomposed (NFD), as macOS archives store names, and the push names it composed (NFC), as
+	// a keyboard types it. The line of the root .gitignore that ignores it is in NFC too.
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NFC_TYPED_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		mkdirSync(joinPath('.git'));
+		mkdirSync(joinPath('čaj'.normalize('NFD')));
+		writeFileSync(joinPath('.gitignore'), `${'čaj'.normalize('NFC')}/\n*.log\n`);
+		['main.js', 'x.log'].forEach((file) => writeFileSync(joinPath('čaj'.normalize('NFD'), file), 'content'));
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should drop the line that ignores it and apply the rest', async ({ skip }) => {
+		const typed = joinPath('čaj'.normalize('NFC'));
+		// Only a file system that ignores the Unicode form of names, as macOS does, finds the directory by this path.
+		skip(!existsSync(typed), 'the file system tells the Unicode forms of names apart');
+
+		const paths = await getActorLocalFilePaths(typed);
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('x.log');
 	});
 });
 
@@ -846,9 +895,9 @@ describe.skipIf(process.platform === 'win32')(
 			await beforeAllCalls();
 
 			mkdirSync(joinPath('.git'));
-			['a*b', 'aXb', 'c?d', 'cXd', 'e\\f'].forEach((folder) => mkdirSync(joinPath(folder)));
-			['a*b', 'c?d', 'e\\f'].forEach((folder) => writeFileSync(joinPath(folder, '.gitignore'), '*.log\n'));
-			['a*b/x.log', 'aXb/y.log', 'c?d/x.log', 'cXd/y.log', 'e\\f/x.log'].forEach((file) =>
+			['a*b', 'aXb', 'c?d', 'cXd', 'e\\f', 'a*b*c', 'a*bXc'].forEach((folder) => mkdirSync(joinPath(folder)));
+			['a*b', 'c?d', 'e\\f', 'a*b*c'].forEach((folder) => writeFileSync(joinPath(folder, '.gitignore'), '*.log\n'));
+			['a*b/x.log', 'aXb/y.log', 'c?d/x.log', 'cXd/y.log', 'e\\f/x.log', 'a*b*c/x.log', 'a*bXc/y.log'].forEach((file) =>
 				writeFileSync(joinPath(file), 'content'),
 			);
 		});
@@ -865,6 +914,13 @@ describe.skipIf(process.platform === 'win32')(
 			expect(paths).not.toContain('c?d/x.log');
 			expect(paths).toContain('cXd/y.log');
 			expect(paths).not.toContain('e\\f/x.log');
+		});
+
+		it('should match every glob character of the name literally', async () => {
+			const paths = await getActorLocalFilePaths(tmpPath);
+
+			expect(paths).not.toContain('a*b*c/x.log');
+			expect(paths).toContain('a*bXc/y.log');
 		});
 	},
 );

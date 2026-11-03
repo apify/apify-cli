@@ -4,38 +4,10 @@ import process from 'node:process';
 
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
 import { getActorLocalFilePaths, getGitignoreMatcher } from '../../../src/lib/utils.js';
+import { useIsolatedGit } from '../../__setup__/hooks/useIsolatedGit.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
-// Git gets an empty home and global config, so the developer's own settings and global excludes file don't apply.
-const gitHome = useTempPath('actorignore-git-home', {
-	create: true,
-	remove: true,
-	cwd: false,
-	cwdParent: false,
-});
-
-// os.homedir() reads USERPROFILE on Windows and HOME elsewhere. Git reads HOME everywhere.
-function stubGitHome(home = gitHome.joinPath('home'), xdgConfigHome = gitHome.joinPath('xdg')) {
-	vitest.stubEnv('HOME', home);
-	vitest.stubEnv('USERPROFILE', home);
-	vitest.stubEnv('XDG_CONFIG_HOME', xdgConfigHome);
-	vitest.stubEnv('GIT_CONFIG_GLOBAL', gitHome.joinPath('gitconfig'));
-	vitest.stubEnv('GIT_CONFIG_NOSYSTEM', '1');
-}
-
-beforeAll(async () => {
-	await gitHome.beforeAllCalls();
-
-	mkdirSync(gitHome.joinPath('home'), { recursive: true });
-	mkdirSync(gitHome.joinPath('xdg'), { recursive: true });
-	writeFileSync(gitHome.joinPath('gitconfig'), '');
-	stubGitHome();
-});
-
-afterAll(async () => {
-	vitest.unstubAllEnvs();
-	await gitHome.afterAllCalls();
-});
+const { stubGitHome } = useIsolatedGit('actorignore-git-home');
 
 const TEST_DIR = 'actorignore-test-dir';
 const FOLDERS = ['src', 'docs', 'assets'];
@@ -790,7 +762,7 @@ describe('Utils - getGitignoreMatcher asked directly (git)', () => {
 		ensureFolderExistsSync(tmpPath, 'dist');
 		ensureFolderExistsSync(tmpPath, 'src');
 
-		['dist/bundle.js', 'src/index.js', 'x.log'].forEach((file) =>
+		['dist/bundle.js', 'src/index.js', 'x.log', 'x.logs'].forEach((file) =>
 			writeFileSync(joinPath(file), 'content', { flag: 'w' }),
 		);
 		writeFileSync(joinPath('.gitignore'), 'dist/\n*.log\n', { flag: 'w' });
@@ -807,10 +779,18 @@ describe('Utils - getGitignoreMatcher asked directly (git)', () => {
 		expect(isGitignored('src/')).toBe(false);
 	});
 
-	it('should not say the empty path is ignored', async () => {
+	it('should not say a path that only starts with the name of an ignored file is ignored', async () => {
 		const isGitignored = await getGitignoreMatcher(tmpPath);
 
 		expect(isGitignored('x.log')).toBe(true);
+		expect(isGitignored('x.logs')).toBe(false);
+	});
+
+	it('should drop the empty entry after the last NUL of the git listing', async () => {
+		const isGitignored = await getGitignoreMatcher(tmpPath);
+
+		expect(isGitignored('x.log')).toBe(true);
+		// -z ends the listing with a NUL, so the split leaves an empty entry. '' is the only path it would match.
 		expect(isGitignored('')).toBe(false);
 	});
 });
@@ -1119,7 +1099,7 @@ describe('Utils - the global excludes file when pushing a directory .gitignore i
 	it('should read $XDG_CONFIG_HOME/git/ignore when core.excludesFile is unset', async () => {
 		mkdirSync(joinPath('xdg', 'git'), { recursive: true });
 		writeFileSync(joinPath('xdg', 'git', 'ignore'), '*.bak\n', { flag: 'w' });
-		stubGitHome(gitHome.joinPath('home'), joinPath('xdg'));
+		stubGitHome(undefined, joinPath('xdg'));
 
 		const paths = await getActorLocalFilePaths(joinPath('repo', 'ghost'));
 

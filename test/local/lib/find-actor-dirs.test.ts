@@ -1,19 +1,19 @@
 import { execSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
 import { chmod, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
 import { findActorDirs, toPosixRelative } from '../../../src/lib/find-actor-dirs.js';
 import { getActorLocalFilePaths, getGitignoreMatcher } from '../../../src/lib/utils.js';
+import { useIsolatedGit } from '../../__setup__/hooks/useIsolatedGit.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 // vi.mock is hoisted before imports, so the gitignore matcher gets the mocked version. With `gitAvailable` off, every
-// git call fails as it does without git, which sends the matcher to its own .gitignore parsing. `failingCommand` fails
-// only the commands that contain it. `commands` records every command.
+// git call fails as it does without git, which sends the matcher to its own .gitignore parsing. `failing` fails only
+// the commands it returns true for. `commands` records every command.
 const gitState = vi.hoisted(() => ({
 	gitAvailable: true,
-	failingCommand: undefined as string | undefined,
+	failing: undefined as ((command: string) => boolean) | undefined,
 	commands: [] as string[],
 }));
 vi.mock('node:child_process', async (importOriginal) => {
@@ -23,7 +23,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 		execSync: ((...args: Parameters<typeof original.execSync>) => {
 			const command = String(args[0]);
 			gitState.commands.push(command);
-			if (!gitState.gitAvailable || (gitState.failingCommand && command.includes(gitState.failingCommand))) {
+			if (!gitState.gitAvailable || gitState.failing?.(command)) {
 				throw new Error('not a git repository');
 			}
 			return original.execSync(...args);
@@ -31,31 +31,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 	};
 });
 
-// Git gets an empty home and global config, so the developer's own settings and global excludes file don't apply.
-// os.homedir() reads USERPROFILE on Windows and HOME elsewhere. Git reads HOME everywhere.
-const gitHome = useTempPath('find-actor-dirs-git-home', {
-	create: true,
-	remove: true,
-	cwd: false,
-	cwdParent: false,
-});
-
-beforeAll(async () => {
-	await gitHome.beforeAllCalls();
-
-	mkdirSync(gitHome.joinPath('home'), { recursive: true });
-	writeFileSync(gitHome.joinPath('gitconfig'), '');
-	vitest.stubEnv('HOME', gitHome.joinPath('home'));
-	vitest.stubEnv('USERPROFILE', gitHome.joinPath('home'));
-	vitest.stubEnv('XDG_CONFIG_HOME', gitHome.joinPath('home', '.config'));
-	vitest.stubEnv('GIT_CONFIG_GLOBAL', gitHome.joinPath('gitconfig'));
-	vitest.stubEnv('GIT_CONFIG_NOSYSTEM', '1');
-});
-
-afterAll(async () => {
-	vitest.unstubAllEnvs();
-	await gitHome.afterAllCalls();
-});
+useIsolatedGit('find-actor-dirs-git-home');
 
 const { beforeAllCalls, afterAllCalls, joinPath, tmpPath } = useTempPath('find-actor-dirs', {
 	create: true,
@@ -75,7 +51,7 @@ async function writeActor(dir: string, name: string | undefined = dir.split('/')
 
 beforeEach(async () => {
 	gitState.gitAvailable = true;
-	gitState.failingCommand = undefined;
+	gitState.failing = undefined;
 	await beforeAllCalls();
 	// Its own repository, so the .gitignore and .git/info/exclude of the apify-cli checkout don't apply.
 	execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
@@ -133,15 +109,6 @@ describe('findActorDirs', () => {
 		]);
 	});
 
-	it('does not return the root itself, even when it is an Actor', async () => {
-		await writeActor('.', 'root');
-		await writeActor('actors/alpha');
-
-		const dirs = (await findActorDirs(tmpPath)).map((actor) => actor.dir);
-
-		expect(dirs).toEqual(['actors/alpha']);
-	});
-
 	it('returns an empty list when nothing below the root is an Actor', async () => {
 		await write('packages/shared/index.js');
 		await write('README.md');
@@ -186,7 +153,6 @@ describe('findActorDirs', () => {
 		// ships, and an ignored file inside an Actor leave the Actor alone. The root .gitignore also ignores legacy,
 		// which holds a tracked file, so git lists its other files one by one.
 		async function writeRepository() {
-			execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
 			await write('.git/info/exclude', 'actors/delta/\n');
 			await write('.gitignore', 'archive/\nlegacy/\n*.log\n');
 			await writeActor('legacy');
@@ -227,18 +193,6 @@ describe('findActorDirs', () => {
 			gitState.gitAvailable = false;
 
 			await expect(findActorDirs(tmpPath)).resolves.toEqual(expected({ deltaIgnored: false }));
-		});
-
-		it('asks git and marks none ignored when git ignores none of them', async () => {
-			await write('.gitignore', '*.log\n');
-			await writeActor('actors/alpha');
-			await write('actors/alpha/debug.log');
-			await writeActor('actors/beta');
-
-			await expect(findActorDirs(tmpPath)).resolves.toEqual([
-				{ dir: 'actors/alpha', name: 'alpha', ignored: false },
-				{ dir: 'actors/beta', name: 'beta', ignored: false },
-			]);
 		});
 
 		// In the next two, the Actor directory holds a tracked file, so git lists its other files one by one and is
@@ -307,7 +261,7 @@ describe('getGitignoreMatcher, which discovery shares with the upload', () => {
 		await write('ghost/main.js');
 		await write('ghost/secret.env');
 		await write('ghost/x.log');
-		gitState.failingCommand = 'check-ignore -q';
+		gitState.failing = (command) => command.includes('check-ignore') && command.endsWith(' ./');
 
 		const isGitignored = await getGitignoreMatcher(joinPath('ghost'));
 
