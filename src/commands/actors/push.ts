@@ -272,10 +272,29 @@ const withActorFolderFiles = (root: string, actorPath: string, contextFiles: str
 			return false;
 		}
 	};
-	// Git on macOS lists names composed (NFC), while actorPath has the folder names as stored on disk.
-	const actorPrefix = `${actorPath}/`.normalize('NFC');
+	// Git lists names as its index has them: composed (NFC) on macOS, and in the old case after a case-only rename on a
+	// case-insensitive file system. actorPath has the names as stored on disk, so a match is confirmed on disk, once
+	// for each spelling of the folder.
+	const actorPrefix = `${actorPath}/`.normalize('NFC').toLowerCase();
+	const depth = actorPath.split('/').length;
+	const actorDir = join(realRoot, actorPath);
+	const spellings = new Map<string, boolean>();
+	const isInActorFolder = (file: string) => {
+		if (!file.normalize('NFC').toLowerCase().startsWith(actorPrefix)) return false;
+		const folder = file.split('/').slice(0, depth).join('/');
+		let isActorFolder = spellings.get(folder);
+		if (isActorFolder === undefined) {
+			try {
+				isActorFolder = realPath(join(root, folder)) === actorDir;
+			} catch {
+				isActorFolder = false;
+			}
+			spellings.set(folder, isActorFolder);
+		}
+		return isActorFolder;
+	};
 	return [
-		...contextFiles.filter((file) => !file.normalize('NFC').startsWith(actorPrefix)),
+		...contextFiles.filter((file) => !isInActorFolder(file)),
 		...actorFiles.map((file) => `${actorPath}/${file}`).filter(isInUpload),
 	];
 };

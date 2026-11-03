@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, symlinkSync } from 'node:fs';
+import { existsSync, readdirSync, renameSync, symlinkSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
@@ -593,6 +593,31 @@ describe('apify push of a monorepo Actor', () => {
 		expect(names).toContain(`${actorPath}/.actor/actor.json`);
 		expect(names.filter((name) => name.normalize('NFC') === 'actors/café-actor/.actor/actor.json')).toHaveLength(1);
 	});
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'pushes an Actor folder renamed by case only, which Git still lists in its old case, with one copy of its files',
+		async () => {
+			await write(`${ACTOR_PATH}/.actorignore`, 'fixtures/\n');
+			await write(`${ACTOR_PATH}/fixtures/big.json`, '{}');
+			git('add', '.');
+			git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'fixtures');
+			// Without git mv, Git on a case-insensitive file system keeps the old case in its index.
+			renameSync(joinPath(ACTOR_PATH), joinPath('actors/renaming'));
+			renameSync(joinPath('actors/renaming'), joinPath('actors/TypeScript-Actor'));
+			forceNewCwd('actors/TypeScript-Actor');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const { actorPath, sourceFiles } = versionPayload(versionUpdate);
+			const names = sourceFiles!.map((file) => file.name);
+			expect(actorPath).toBe('actors/TypeScript-Actor');
+			expect(names.filter((name) => name.toLowerCase().startsWith('actors/typescript-actor/fixtures/'))).toEqual([]);
+			expect(names.filter((name) => name.toLowerCase() === 'actors/typescript-actor/.actor/actor.json')).toHaveLength(
+				1,
+			);
+		},
+	);
 
 	it.runIf(caseInsensitiveFileSystem)(
 		'uploads a link in the Actor folder whose target names the repository in another letter case',
