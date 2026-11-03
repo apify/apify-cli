@@ -517,4 +517,49 @@ describe('apify push of a monorepo Actor', () => {
 		expect(modifier).not.toHaveProperty('actorPath');
 		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 	});
+
+	it('pushes each Actor with --all from the repository root, a monorepo one as the root with its own actorPath', async () => {
+		const SECOND_ACTOR_PATH = 'actors/python-actor';
+		const PLAIN_ACTOR_PATH = 'tools/plain-actor';
+		await write(
+			`${SECOND_ACTOR_PATH}/.actor/actor.json`,
+			JSON.stringify({
+				actorSpecification: 1,
+				name: 'push-monorepo-python',
+				version: '0.0',
+				buildTag: 'latest',
+				dockerContextDir: '../../..',
+				dockerfile: '../../../shared/TypeScript_Dockerfile',
+			}),
+		);
+		await write(`${SECOND_ACTOR_PATH}/main.py`, 'print(1)\n');
+		// Without dockerContextDir, an Actor in the same repository pushes its own folder.
+		await write(
+			`${PLAIN_ACTOR_PATH}/.actor/actor.json`,
+			JSON.stringify({ actorSpecification: 1, name: 'push-plain', version: '0.0', buildTag: 'latest' }),
+		);
+		await write(`${PLAIN_ACTOR_PATH}/main.js`, 'console.log(1);\n');
+		git('add', '.');
+		git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'more Actors');
+		forceNewCwd('.');
+
+		await testRunCommand(ActorsPushCommand, { flags_all: true });
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(3);
+		const [second, first, plain] = versionUpdate.mock.calls.map(([modifier]) => modifier as VersionPayload);
+		expect(second.actorPath).toBe(SECOND_ACTOR_PATH);
+		expect(first.actorPath).toBe(ACTOR_PATH);
+		for (const modifier of [second, first]) {
+			expect(modifier.sourceFiles!.map((file) => file.name)).toEqual(
+				expect.arrayContaining([
+					`${SECOND_ACTOR_PATH}/.actor/actor.json`,
+					`${ACTOR_PATH}/.actor/actor.json`,
+					'shared/TypeScript_Dockerfile',
+				]),
+			);
+		}
+		expect(plain).not.toHaveProperty('actorPath');
+		expect(plain.sourceFiles!.map((file) => file.name).sort()).toEqual(['.actor/actor.json', 'main.js']);
+	});
 });
