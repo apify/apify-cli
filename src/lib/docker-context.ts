@@ -178,7 +178,8 @@ const UNTRACKED_IGNORED_SEGMENTS = new Set(['node_modules', 'storage', 'apify_st
 
 function gitFileList(root: string, args: string[]): string[] | undefined {
 	const output = git(root, ['ls-files', '-z', ...args]);
-	return output?.split('\0').filter(Boolean);
+	// During an unresolved merge, --cached lists a conflicted path once per index stage.
+	return output === undefined ? undefined : [...new Set(output.split('\0').filter(Boolean))];
 }
 
 /**

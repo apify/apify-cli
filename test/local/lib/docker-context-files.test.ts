@@ -102,6 +102,46 @@ describe('getContextFilePaths', () => {
 		});
 	});
 
+	describe('during an unresolved merge', () => {
+		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-files-merge-dir', {
+			create: true,
+			remove: true,
+			cwd: false,
+			cwdParent: false,
+		});
+
+		const git = (...args: string[]) =>
+			execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', ...args], {
+				cwd: tmpPath,
+				stdio: 'ignore',
+			});
+
+		beforeAll(async () => {
+			await beforeAllCalls();
+
+			git('init', '--quiet');
+			writeFileSync(joinPath('shared.txt'), 'base\n');
+			git('add', '.');
+			git('commit', '--quiet', '-m', 'base');
+			git('checkout', '--quiet', '-b', 'other');
+			writeFileSync(joinPath('shared.txt'), 'other\n');
+			git('commit', '--quiet', '-am', 'other');
+			git('checkout', '--quiet', '-');
+			writeFileSync(joinPath('shared.txt'), 'main\n');
+			git('commit', '--quiet', '-am', 'main');
+			// The merge stops on the conflict and leaves shared.txt in the index once per stage.
+			expect(() => git('merge', '--quiet', 'other')).toThrow();
+		});
+
+		afterAll(async () => {
+			await afterAllCalls();
+		});
+
+		it('lists a conflicted path once', async () => {
+			expect(await getContextFilePaths(tmpPath)).toEqual(['shared.txt']);
+		});
+	});
+
 	describe('without git', () => {
 		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-files-no-git-dir', {
 			create: true,
