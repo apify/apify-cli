@@ -466,6 +466,18 @@ describe('apify push of a monorepo Actor', () => {
 		expect(logMessages.error.join('\n')).toContain('Actor typescript-actor sets "dockerContextDir"');
 	});
 
+	it('refuses an Actor folder ignored by .gitignore, which the upload of the repository leaves out', async () => {
+		await write('.gitignore', 'node_modules\nactors/\n');
+		git('rm', '-r', '--cached', '--quiet', 'actors');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
+		expect(logMessages.error.join('\n')).toContain(`The Actor folder ${ACTOR_PATH} is ignored`);
+		expect(actorGet).not.toHaveBeenCalled();
+		expect(versionUpdate).not.toHaveBeenCalled();
+	});
+
 	it('checks the actor.json paths from the real Actor folder when --dir goes through a symlink', async () => {
 		symlinkSync(ACTOR_PATH, joinPath('linked-actor'));
 		forceNewCwd('linked-actor');

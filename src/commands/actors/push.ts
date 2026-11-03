@@ -606,6 +606,14 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			actorPath = dockerContext.actorPath;
 			// The source root is a real path, so the Actor folder has to be one too for its paths to fall inside it.
 			actorDir = join(uploadRoot, actorPath);
+			// An ignored Actor folder can still be picked or named with --dir, but the upload leaves it out like a clone.
+			if (!uploadedFiles.includes(`${actorPath}/${toPosix(LOCAL_CONFIG_PATH)}`)) {
+				error({
+					message: `The Actor folder ${actorPath} is ignored, so the upload of ${uploadRoot} leaves it out and the platform could not find the Actor. Stop ignoring the folder in .gitignore (or .actorignore outside Git) to push it.`,
+				});
+				process.exitCode = CommandExitCodes.NoFilesToPush;
+				return;
+			}
 		}
 
 		// The platform resolves these paths after the upload; a wrong one builds the wrong image or fails the build.
