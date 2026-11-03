@@ -4,6 +4,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
+import { finished } from 'node:stream/promises';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
@@ -497,6 +498,8 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 	pathsToZip.forEach((filePath) => archive.file(join(cwd, filePath), { name: filePath }));
 
 	await archive.finalize();
+	// The archive ends before the file stream has written all of it, and push reads the file right away.
+	await finished(writeStream);
 };
 
 export interface LocalInput {
