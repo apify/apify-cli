@@ -1,12 +1,14 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+
+import AdmZip from 'adm-zip';
 
 import { ACTOR_SOURCE_TYPES } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { CommandExitCodes } from '../../../src/lib/consts.js';
-import { MONOREPO_PLATFORM_SUPPORT_ISSUE_URL } from '../../../src/lib/docker-context.js';
 import { cwdCache } from '../../../src/lib/hooks/useActorConfig.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
@@ -28,6 +30,9 @@ const currentVersion = { versionNumber: '0.0', sourceType: ACTOR_SOURCE_TYPES.SO
 const actorGet = vitest.fn(async () => actor);
 const versionUpdate = vitest.fn(async (_modifier: unknown) => ({}));
 const versionCreate = vitest.fn(async (created: unknown) => created);
+const setRecord = vitest.fn(async (_record: { value: Buffer }) => {});
+const zipPaths: string[] = [];
+const sourceRoots: string[] = [];
 const keyValueStoreGetOrCreate = vitest.fn(async () => ({ id: 'store1' }));
 
 // Stands in for the platform: the Actor and its version exist, and every write is recorded.
@@ -35,6 +40,12 @@ vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../../src/lib/utils.js')>()),
 	getCurrentUserInfo: vitest.fn(async () => ({ id: 'userId', username: 'user' })),
 	outputJobLog: vitest.fn(async () => {}),
+	createActZip: async (zipPath: string, files: string[], root: string) => {
+		zipPaths.push(zipPath);
+		sourceRoots.push(root);
+		const { createActZip } = await importOriginal<typeof import('../../../src/lib/utils.js')>();
+		return createActZip(zipPath, files, root);
+	},
 	getLoggedClientOrThrow: vitest.fn(async () => ({
 		baseUrl: 'https://api.apify.com/v2',
 		token: 'my-token',
@@ -45,6 +56,7 @@ vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 			build: async () => build,
 		}),
 		keyValueStores: () => ({ getOrCreate: keyValueStoreGetOrCreate }),
+		keyValueStore: () => ({ setRecord }),
 		build: () => ({ get: async () => build }),
 	})),
 }));
@@ -94,6 +106,9 @@ beforeEach(async () => {
 	versionUpdate.mockClear();
 	versionCreate.mockClear();
 	keyValueStoreGetOrCreate.mockClear();
+	setRecord.mockReset();
+	zipPaths.length = 0;
+	sourceRoots.length = 0;
 	cwdCache.clear();
 	await beforeAllCalls();
 
@@ -118,40 +133,192 @@ afterEach(async () => {
 });
 
 describe('apify push of a monorepo Actor', () => {
-	it('stops before touching the platform, pointing at the tracking issue', async () => {
+	function uploadedZip() {
+		return new AdmZip(setRecord.mock.calls[0][0].value);
+	}
+
+	it('uploads a ZIP with shared sources and hoisted Actor metadata, without changing local files', async () => {
+		await write(`${ACTOR_PATH}/.actor/INPUT_SCHEMA.json`, '{"type":"object"}');
+		await write('shared/OUTPUT_SCHEMA.json', '{"type":"object"}');
+		await write('shared/dataset.json', '{}');
+		await write('shared/README.md', '# Shared');
+		await writeActorConfig({
+			dockerContextDir: '../../..',
+			dockerfile: '../../../shared/TypeScript_Dockerfile',
+			input: './INPUT_SCHEMA.json',
+			output: '../../../shared/OUTPUT_SCHEMA.json',
+			readme: '../../../shared/README.md',
+			storages: { datasets: { 'named.dataset': '../../../shared/dataset.json' } },
+		});
+		const original = await readFile(joinPath(`${ACTOR_PATH}/.actor/actor.json`), 'utf8');
+
 		await testRunCommand(ActorsPushCommand, {});
 
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
-		const stderr = logMessages.error.join('\n');
-		expect(stderr).toContain(
-			`Actor ${actName} sets "dockerContextDir" in .actor/actor.json, so it builds from a Docker context outside its own folder (a monorepo Actor).`,
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+		expect(versionUpdate.mock.calls[0][0]).toMatchObject({ sourceType: ACTOR_SOURCE_TYPES.TARBALL });
+		const zip = uploadedZip();
+		expect(zip.getEntries().map((entry) => entry.entryName)).toEqual(
+			expect.arrayContaining([
+				'package.json',
+				'packages/typescript-utils/src/index.ts',
+				`${ACTOR_PATH}/src/index.ts`,
+				'.actor/actor.json',
+				'.actor/INPUT_SCHEMA.json',
+				'shared/TypeScript_Dockerfile',
+			]),
 		);
-		expect(stderr).toContain('apify push does not support such Actors on the Apify platform yet');
-		expect(stderr).toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
-		expect(stderr).toContain("set the Actor's source in Apify Console to the Git repository with the folder");
-		expect(actorGet).not.toHaveBeenCalled();
-		expect(versionCreate).not.toHaveBeenCalled();
-		expect(versionUpdate).not.toHaveBeenCalled();
-		expect(keyValueStoreGetOrCreate).not.toHaveBeenCalled();
+		expect(JSON.parse(zip.readAsText('.actor/actor.json'))).toMatchObject({
+			dockerContextDir: '..',
+			dockerfile: '../shared/TypeScript_Dockerfile',
+			input: './INPUT_SCHEMA.json',
+			output: '../shared/OUTPUT_SCHEMA.json',
+			readme: '../shared/README.md',
+			storages: { datasets: { 'named.dataset': '../shared/dataset.json' } },
+		});
+		expect(await readFile(joinPath(`${ACTOR_PATH}/.actor/actor.json`), 'utf8')).toBe(original);
+		expect(zipPaths.every((path) => !existsSync(path))).toBe(true);
+		expect(sourceRoots.every((path) => !existsSync(path))).toBe(true);
 	});
 
-	it('keeps stdout clean with --json', async () => {
+	it('checks newer remote changes against the original files before a monorepo ZIP upload', async () => {
+		actorGet.mockResolvedValueOnce(actor).mockResolvedValueOnce({ ...actor, modifiedAt: new Date('2099-01-01') });
+		await testRunCommand(ActorsPushCommand, {});
+		expect(logMessages.error.join('')).toContain('has newer changes than your local copy');
+		expect(setRecord).not.toHaveBeenCalled();
+		expect(versionUpdate).not.toHaveBeenCalled();
+	});
+
+	it('preserves an inline schema object', async () => {
+		await writeActorConfig({
+			dockerContextDir: '../../..',
+			dockerfile: '../../../shared/TypeScript_Dockerfile',
+			input: { type: 'object', properties: { url: { type: 'string' } } },
+		});
+		await testRunCommand(ActorsPushCommand, {});
+		expect(JSON.parse(uploadedZip().readAsText('.actor/actor.json')).input).toEqual({
+			type: 'object',
+			properties: { url: { type: 'string' } },
+		});
+	});
+
+	it('keeps the JSON success envelope', async () => {
 		await testRunCommand(ActorsPushCommand, { flags_json: true });
-
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
-		expect(logMessages.log).toEqual([]);
-		expect(logMessages.error.join('\n')).toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
-		expect(versionUpdate).not.toHaveBeenCalled();
+		expect(commandProcess.exitCode).toBeFalsy();
+		const result = JSON.parse(logMessages.log.join(''));
+		expect(result).toMatchObject({ ok: true, operation: 'push', actor: { id: ACTOR_ID } });
 	});
 
-	it('names the Actor folder when actor.json has no name', async () => {
-		await writeActorConfig({ name: undefined, dockerContextDir: '../../..' });
-
+	it('pushes by ID without a name', async () => {
+		await writeActorConfig({
+			name: undefined,
+			dockerContextDir: '../../..',
+			dockerfile: '../../../shared/TypeScript_Dockerfile',
+		});
 		await testRunCommand(ActorsPushCommand, { args_actorId: ACTOR_ID });
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+	});
 
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
-		expect(logMessages.error.join('\n')).toContain('Actor typescript-actor sets "dockerContextDir"');
+	it('cleans up both temporary directories when uploading fails', async () => {
+		setRecord.mockRejectedValueOnce(new Error('upload failed'));
+		await testRunCommand(ActorsPushCommand, {});
+		expect(logMessages.error.join('')).toContain('upload failed');
+		expect(versionUpdate).not.toHaveBeenCalled();
+		expect(zipPaths).toHaveLength(1);
+		expect(sourceRoots).toHaveLength(1);
+		expect(zipPaths.every((path) => !existsSync(path))).toBe(true);
+		expect(sourceRoots.every((path) => !existsSync(path))).toBe(true);
+	});
+
+	it('retains only the selected Actor specification at the upload root', async () => {
+		await write('.actor/actor.json', '{"name":"root-actor"}');
+		await write('.actor/unrelated-schema.json', '{}');
+		await write(`${ACTOR_PATH}/README.md`, '# Selected Actor');
+		await write(`${ACTOR_PATH}/.actor/README.md`, '# Preferred metadata README');
+		await testRunCommand(ActorsPushCommand, {});
+		const zip = uploadedZip();
+		expect(zip.getEntry('.actor/unrelated-schema.json')).toBeNull();
+		expect(JSON.parse(zip.readAsText('.actor/actor.json'))).toMatchObject({ name: actName, readme: 'README.md' });
+	});
+
+	it('preserves fallback files beside the original Actor', async () => {
+		await write(`${ACTOR_PATH}/Dockerfile`, 'FROM scratch');
+		await write(`${ACTOR_PATH}/README.md`, '# Selected');
+		await write(`${ACTOR_PATH}/INPUT_SCHEMA.json`, '{"type":"object"}');
+		await writeActorConfig({ dockerContextDir: '../../..' });
+		await testRunCommand(ActorsPushCommand, {});
+		expect(JSON.parse(uploadedZip().readAsText('.actor/actor.json'))).toMatchObject({
+			dockerfile: `../${ACTOR_PATH}/Dockerfile`,
+			readme: `../${ACTOR_PATH}/README.md`,
+			input: `../${ACTOR_PATH}/INPUT_SCHEMA.json`,
+		});
+	});
+
+	it('validates missing schema paths before making platform calls', async () => {
+		await writeActorConfig({
+			dockerContextDir: '../../..',
+			dockerfile: '../../../shared/TypeScript_Dockerfile',
+			input: '../../../shared/missing.json',
+		});
+		await testRunCommand(ActorsPushCommand, {});
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
 		expect(actorGet).not.toHaveBeenCalled();
+		expect(setRecord).not.toHaveBeenCalled();
+	});
+
+	it('keeps Dockerfiles in a nested Docker context instead of moving them outside it', async () => {
+		await write(`${ACTOR_PATH}/.actor/Dockerfile`, 'FROM scratch');
+		await writeActorConfig({ dockerContextDir: '../..', dockerfile: './Dockerfile' });
+		await testRunCommand(ActorsPushCommand, {});
+		expect(JSON.parse(uploadedZip().readAsText('.actor/actor.json'))).toMatchObject({
+			dockerContextDir: '../actors',
+			dockerfile: `../${ACTOR_PATH}/.actor/Dockerfile`,
+		});
+	});
+
+	it('follows repository-local symlinks but excludes external and dangling links', async () => {
+		await symlink('shared/TypeScript_Dockerfile', joinPath('linked-file'));
+		await symlink('shared', joinPath('linked-directory'));
+		await symlink('missing', joinPath('dangling-link'));
+		await symlink('/etc/hostname', joinPath('external-link'));
+		await testRunCommand(ActorsPushCommand, {});
+		const zip = uploadedZip();
+		expect(zip.readAsText('linked-file')).toBe('FROM apify/actor-node:20\n');
+		expect(zip.readAsText('linked-directory/TypeScript_Dockerfile')).toBe('FROM apify/actor-node:20\n');
+		expect(zip.getEntry('dangling-link')).toBeNull();
+		expect(zip.getEntry('external-link')).toBeNull();
+	});
+
+	it('honors source-root ignore files while retaining the selected specification', async () => {
+		await write('.actorignore', 'excluded.txt\nactors/**/.actor/\n');
+		await write('excluded.txt', 'excluded');
+		await write('node_modules/secret.txt', 'ignored');
+		await testRunCommand(ActorsPushCommand, {});
+		const zip = uploadedZip();
+		expect(zip.getEntry('excluded.txt')).toBeNull();
+		expect(zip.getEntry('node_modules/secret.txt')).toBeNull();
+		expect(zip.getEntry('.actor/actor.json')).not.toBeNull();
+	});
+
+	it('works without a Git repository using the Docker context as the source root', async () => {
+		await rm(joinPath('.git'), { recursive: true });
+		vitest.stubEnv('GIT_CEILING_DIRECTORIES', dirname(tmpPath));
+		try {
+			await testRunCommand(ActorsPushCommand, {});
+		} finally {
+			vitest.unstubAllEnvs();
+		}
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(uploadedZip().getEntry('packages/typescript-utils/src/index.ts')).not.toBeNull();
+	});
+
+	it('rejects a Dockerfile outside the Docker context before touching the platform', async () => {
+		await writeActorConfig({ dockerContextDir: '../..', dockerfile: '../../../shared/TypeScript_Dockerfile' });
+		await testRunCommand(ActorsPushCommand, {});
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		expect(actorGet).not.toHaveBeenCalled();
+		expect(setRecord).not.toHaveBeenCalled();
 	});
 
 	it.each([

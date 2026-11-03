@@ -855,8 +855,10 @@ These commands handle the deployment workflow of Actors to Apify platform. Use t
 ```sh
 DESCRIPTION
   Deploys Actor to Apify platform using settings from '.actor/actor.json'.
-  Files under '3' MB upload as "Multiple source files"; larger projects upload 
-  as ZIP file.
+  Files under '3' MB upload as "Multiple source files".
+  Larger projects and monorepo Actors upload as ZIP file.
+  Monorepo pushes include the source root, hoist the selected .actor folder,
+  and rewrite its file paths.
   Files matched by .gitignore and .actorignore are excluded. Use negation 
   patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.
   Use --force to override newer remote versions.

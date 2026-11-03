@@ -4,6 +4,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
+import { finished } from 'node:stream/promises';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
@@ -492,11 +493,12 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 	const archive = new ZipArchive({
 		zlib: { level: 6 },
 	});
+	archive.on('error', (err) => writeStream.destroy(err));
 	archive.pipe(writeStream);
 
 	pathsToZip.forEach((filePath) => archive.file(join(cwd, filePath), { name: filePath }));
 
-	await archive.finalize();
+	await Promise.all([finished(writeStream), archive.finalize()]);
 };
 
 export interface LocalInput {

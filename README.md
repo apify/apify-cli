@@ -121,6 +121,23 @@ The table below lists the most common commands. For the full reference, see the 
 
 Actor configuration lives in `.actor/actor.json`. See the [Actor configuration docs](https://docs.apify.com/platform/actors/development/actor-definition/actor-json) for the full schema (name, version, build tag, environment variables, Dockerfile, input schema, storages).
 
+## Monorepo push experiment
+
+On this branch, `apify push --dir actors/my-actor` supports Actors whose
+`dockerContextDir` points outside their own folder. The path remains relative to
+`.actor/actor.json`, for example `"../../.."` for an Actor in `actors/my-actor`.
+
+The CLI collects the Git repository root (or the Docker context outside Git),
+using that root's `.gitignore` and `.actorignore` rules. It keeps the source tree
+in place, overlays the selected Actor's `.actor/` at the upload root, rewrites
+configuration paths, and uploads a ZIP. Local files stay unchanged. Dockerfiles
+must remain inside the declared Docker context. Links outside the source root
+and dangling links are excluded.
+
+This experiments with the approach in `apify-test-tools`; it does not implement
+the platform `actorPath` design tracked in [#1525](https://github.com/apify/apify-cli/issues/1525).
+Live platform builds still need verification with a test account.
+
 ## Documentation
 
 - [Apify CLI documentation](https://docs.apify.com/cli)

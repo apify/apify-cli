@@ -1,5 +1,7 @@
-import { readFileSync, statSync, unlinkSync, writeSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { readFileSync, realpathSync, statSync, writeSync } from 'node:fs';
+import { mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, Build } from 'apify-client';
@@ -23,7 +25,7 @@ import {
 	INTERRUPT_SIGNALS,
 	LOCAL_CONFIG_PATH,
 } from '../../lib/consts.js';
-import { monorepoUnsupportedMessage, resolveDockerContext } from '../../lib/docker-context.js';
+import { resolveDockerContext } from '../../lib/docker-context.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { findActorDirs, type FoundActorDir, toPosixRelative } from '../../lib/find-actor-dirs.js';
 import { isAbortingJobOnSignal, useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -32,6 +34,7 @@ import { useMultiSelectFromList } from '../../lib/hooks/user-confirmations/useMu
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
 import { reraiseSignal, useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
 import { useStdin } from '../../lib/hooks/useStdin.js';
+import { filterMonorepoFiles, flattenMonorepoUpload } from '../../lib/monorepo-upload.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
@@ -45,7 +48,6 @@ import {
 	printJsonToStdout,
 } from '../../lib/utils.js';
 
-const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
 const DEFAULT_RUN_OPTIONS = {
 	build: 'latest',
 	memoryMbytes: 4096,
@@ -229,8 +231,10 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 	static override description =
 		`Deploys Actor to Apify platform using settings from '${LOCAL_CONFIG_PATH}'.\n` +
-		`Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files"; ` +
-		`larger projects upload as ZIP file.\n` +
+		`Files under '${MAX_MULTIFILE_BYTES / 1024 ** 2}' MB upload as "Multiple source files".\n` +
+		`Larger projects and monorepo Actors upload as ZIP file.\n` +
+		`Monorepo pushes include the source root, hoist the selected .actor folder,\n` +
+		`and rewrite its file paths.\n` +
 		`Files matched by .gitignore and .actorignore are excluded. ` +
 		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.\n` +
 		`Use --force to override newer remote versions.`;
@@ -507,7 +511,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 	/** The single-Actor push: `cwd` is the Actor directory. Returns the result once a build was started. */
 	private async pushActor(cwd: string, collectedFilePaths?: string[]): Promise<PushResult | undefined> {
-		const filePathsToPush = collectedFilePaths ?? (await getActorLocalFilePaths(cwd));
+		let filePathsToPush = collectedFilePaths ?? (await getActorLocalFilePaths(cwd));
 
 		if (!filePathsToPush.length) {
 			error({ message: 'You need to call this command from a folder that has an Actor in it!' });
@@ -545,20 +549,31 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
+		const uploadRoot = dockerContext.kind === 'outside' ? dockerContext.sourceRoot : cwd;
 		if (dockerContext.kind === 'outside') {
-			// Pushing by ID, actor.json may have no name; the folder then names the Actor.
-			error({ message: monorepoUnsupportedMessage((actorConfig?.name as string | undefined) ?? basename(cwd)) });
-			process.exitCode = CommandExitCodes.NotImplemented;
-			return;
+			const contextFiles = await getActorLocalFilePaths(uploadRoot);
+			// Always retain the selected specification even when a parent ignore rule excludes its folder.
+			const actorFiles = filePathsToPush.filter((file) => file.startsWith('.actor/'));
+			filePathsToPush = filterMonorepoFiles(uploadRoot, [
+				...new Set([
+					...contextFiles,
+					...actorFiles.map((file) =>
+						relative(uploadRoot, join(realpathSync(cwd), file))
+							.split('\\')
+							.join('/'),
+					),
+				]),
+			]);
 		}
 
 		// The platform resolves these paths after the upload; a wrong one builds the wrong image or fails the build.
 		const pathProblems = checkActorPaths({
 			actorDir: cwd,
-			uploadRoot: cwd,
+			uploadRoot,
 			uploadedFiles: filePathsToPush,
 			config: actorConfig,
-			dockerContextRoot: dockerContext.kind === 'within' ? dockerContext.contextRoot : undefined,
+			dockerContextRoot:
+				dockerContext.kind === 'within' || dockerContext.kind === 'outside' ? dockerContext.contextRoot : undefined,
 		});
 		// A readme or changelog the platform cannot find only falls back to its default, so push goes on.
 		const pathWarnings = formatActorPathProblems(pathProblems, 'warning');
@@ -568,6 +583,31 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			error({ message: pathErrors });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
+		}
+
+		await using flattened =
+			dockerContext.kind === 'outside'
+				? await flattenMonorepoUpload(cwd, uploadRoot, filePathsToPush, actorConfig)
+				: null;
+		const sourceRoot = flattened?.root ?? cwd;
+		const sourceFilesToPush = flattened?.files ?? filePathsToPush;
+		if (flattened) {
+			const flattenedErrors = formatActorPathProblems(
+				checkActorPaths({
+					actorDir: sourceRoot,
+					uploadRoot: sourceRoot,
+					uploadedFiles: sourceFilesToPush,
+					config: flattened.config,
+					dockerContextRoot: resolve(sourceRoot, '.actor', flattened.config.dockerContextDir as string),
+				}),
+				'error',
+			);
+			if (flattenedErrors) {
+				error({ message: flattenedErrors });
+				process.exitCode = CommandExitCodes.InvalidActorJson;
+				return;
+			}
+			info({ message: 'Preparing monorepo ZIP with the selected .actor folder at the source root.' });
 		}
 
 		const apifyClient = await getLoggedClientOrThrow();
@@ -648,14 +688,14 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
-		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
+		const filesSize = await sumFilesSizeInBytes(sourceFilesToPush, sourceRoot);
 
-		if (filesSize < MAX_MULTIFILE_BYTES && !isActorCreatedNow) {
+		if ((filesSize < MAX_MULTIFILE_BYTES || flattened) && !isActorCreatedNow) {
 			const client = await actorClient.get();
 
 			// Check when was files modified last
 			const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
-				const { mtimeMs, ctimeMs } = statSync(join(cwd, filePath));
+				const { mtimeMs, ctimeMs } = statSync(join(uploadRoot, filePath));
 
 				// Sometimes it's possible mtimeMs is some messed up value (like 2000/01/01 midnight), then we want to check created if it's newer
 				const fileModifiedMs = mtimeMs > ctimeMs ? mtimeMs : ctimeMs;
@@ -697,44 +737,49 @@ Skipping push. Use --force to override.`,
 		let sourceType;
 		let sourceFiles;
 		let tarballUrl;
-		if (filesSize < MAX_MULTIFILE_BYTES) {
-			sourceFiles = await createSourceFiles(filePathsToPush, cwd);
+		if (filesSize < MAX_MULTIFILE_BYTES && !flattened) {
+			sourceFiles = await createSourceFiles(sourceFilesToPush, sourceRoot);
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else {
 			// Create zip
 			run({ message: 'Zipping Actor files' });
-			await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush, cwd);
+			const zipDir = await mkdtemp(join(tmpdir(), 'apify-push-zip-'));
+			const zipPath = join(zipDir, 'source.zip');
+			try {
+				await createActZip(zipPath, sourceFilesToPush, sourceRoot);
 
-			// Upload it to Apify.keyValueStores
-			const store = await apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
-			const key = `version-${version}.zip`;
-			const buffer = readFileSync(TEMP_ZIP_FILE_NAME);
-			await apifyClient.keyValueStore(store.id).setRecord({
-				key,
-				// TODO: fix this type too
-				value: buffer as never,
-				contentType: 'application/zip',
-			});
-			unlinkSync(TEMP_ZIP_FILE_NAME);
-			const tempTarballUrl = new URL(
-				`${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
-			);
+				// Upload it to Apify.keyValueStores
+				const store = await apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
+				const key = `version-${version}.zip`;
+				const buffer = readFileSync(zipPath);
+				await apifyClient.keyValueStore(store.id).setRecord({
+					key,
+					// TODO: fix this type too
+					value: buffer as never,
+					contentType: 'application/zip',
+				});
+				const tempTarballUrl = new URL(
+					`${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
+				);
 
-			/**
-			 * Signs the tarball URL to grant temporary access for restricted resources.
-			 * When a store is set to 'RESTRICTED', direct URLs are disabled. Instead of
-			 * appending a security token, we add a signature to the URL parameters.
-			 * https://github.com/apify/apify-core/issues/22197
-			 *
-			 * TODO: Use keyValueStore(:storeId).getRecordPublicUrl from apify-client instead once it is released.
-			 */
-			if (store?.urlSigningSecretKey) {
-				const signature = createHmacSignature(store.urlSigningSecretKey, key);
-				tempTarballUrl.searchParams.set('signature', signature);
+				/**
+				 * Signs the tarball URL to grant temporary access for restricted resources.
+				 * When a store is set to 'RESTRICTED', direct URLs are disabled. Instead of
+				 * appending a security token, we add a signature to the URL parameters.
+				 * https://github.com/apify/apify-core/issues/22197
+				 *
+				 * TODO: Use keyValueStore(:storeId).getRecordPublicUrl from apify-client instead once it is released.
+				 */
+				if (store?.urlSigningSecretKey) {
+					const signature = createHmacSignature(store.urlSigningSecretKey, key);
+					tempTarballUrl.searchParams.set('signature', signature);
+				}
+
+				tarballUrl = tempTarballUrl.toString();
+				sourceType = ACTOR_SOURCE_TYPES.TARBALL;
+			} finally {
+				await rm(zipDir, { recursive: true, force: true });
 			}
-
-			tarballUrl = tempTarballUrl.toString();
-			sourceType = ACTOR_SOURCE_TYPES.TARBALL;
 		}
 
 		// Update Actor version
