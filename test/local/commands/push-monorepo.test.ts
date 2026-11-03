@@ -423,6 +423,20 @@ describe('apify push of a monorepo Actor', () => {
 			expect(actorDelete).not.toHaveBeenCalled();
 		});
 
+		it("passes the field's own validation errors through", async () => {
+			versionUpdate.mockRejectedValueOnce(
+				Object.assign(new Error('Invalid value provided in version: actorPath must be at most 255 characters long'), {
+					statusCode: 400,
+				}),
+			);
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(process.exitCode).toBe(1);
+			expect(logMessages.error.join('\n')).toContain('actorPath must be at most 255 characters long');
+			expect(logMessages.error.join('\n')).not.toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
+		});
+
 		it('passes other API errors through', async () => {
 			versionUpdate.mockRejectedValueOnce(Object.assign(new Error('Version is locked'), { statusCode: 400 }));
 

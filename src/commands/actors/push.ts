@@ -213,10 +213,12 @@ const confirmGitSourceSwitch = async ({
 	});
 };
 
-/** A platform without the `actorPath` version field rejects the key with a schema error. */
+/** A platform without the `actorPath` version field rejects the key as unknown; the field's own validation errors pass through. */
 const rejectsActorPath = (err: unknown) => {
 	const { statusCode, message } = err as ApifyApiError;
-	return statusCode === 400 && typeof message === 'string' && message.includes('actorPath');
+	return (
+		statusCode === 400 && typeof message === 'string' && message.includes('actorPath is not allowed by the schema')
+	);
 };
 
 /**
