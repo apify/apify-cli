@@ -414,8 +414,9 @@ const getGitignoreRulesMatcher = async (typedCwd: string): Promise<(path: string
 		lines.push(...scopeLines(keepLinesForCwd(content, posixRelative(dir, cwd)), posixRelative(root, dir)));
 	}
 
+	// Git skips a .gitignore it can't read, with a warning.
 	for (const gitignoreFile of gitignoreFiles) {
-		const content = await readFile(join(cwd, gitignoreFile), 'utf-8');
+		const content = await readFileOrEmpty(join(cwd, gitignoreFile));
 		lines.push(...scopeLines(content.split(/\r?\n/), posixRelative(root, join(cwd, dirname(gitignoreFile)))));
 	}
 

@@ -516,6 +516,41 @@ describe.skipIf(process.platform === 'win32' || process.getuid?.() === 0)('Utils
 	});
 });
 
+const UNREADABLE_TEST_DIR = 'gitignore-unreadable-test-dir';
+
+// chmod 000 has no effect on Windows and root reads the file anyway.
+describe.skipIf(process.platform === 'win32' || process.getuid?.() === 0)(
+	'Utils - an unreadable .gitignore inside the pushed directory (no git)',
+	() => {
+		// Git skips such a file with a warning.
+		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(UNREADABLE_TEST_DIR, {
+			create: true,
+			remove: true,
+			cwd: false,
+			cwdParent: false,
+		});
+
+		beforeAll(async () => {
+			await beforeAllCalls();
+
+			mkdirSync(joinPath('.git'));
+			mkdirSync(joinPath('sub'));
+			writeFileSync(joinPath('sub', '.gitignore'), '*\n');
+			chmodSync(joinPath('sub', '.gitignore'), 0o000);
+			['main.js', 'sub/x.js'].forEach((file) => writeFileSync(joinPath(file), 'content'));
+		});
+
+		afterAll(async () => {
+			chmodSync(joinPath('sub', '.gitignore'), 0o644);
+			await afterAllCalls();
+		});
+
+		it('should skip it', async () => {
+			await expect(getActorLocalFilePaths(tmpPath)).resolves.toEqual(expect.arrayContaining(['main.js', 'sub/x.js']));
+		});
+	},
+);
+
 const MISSING_TEST_DIR = 'gitignore-missing-test-dir';
 
 describe('Utils - pushing a directory that does not exist (no git)', () => {
