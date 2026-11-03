@@ -49,7 +49,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	// call also gives the names their case on disk, which a `--dir` typed in another case on macOS or Windows lacks.
 	let realActorDir: string;
 	try {
-		realActorDir = realpathSync.native(actorDir);
+		realActorDir = realPath(actorDir);
 	} catch {
 		return { kind: 'invalid', message: `The Actor folder ${actorDir} does not exist.` };
 	}
@@ -68,7 +68,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 			message: `"dockerContextDir" in .actor/actor.json points to ${contextRoot}, which is not a directory.`,
 		};
 	}
-	const realContextRoot = realpathSync.native(contextRoot);
+	const realContextRoot = realPath(contextRoot);
 
 	// Inside or outside the Actor folder is judged, and returned, by the path as written, not by where a symlink on it
 	// leads. Push follows a symlink and uploads its files under the link's own name: with `"dockerContextDir": "../sym"`
@@ -83,7 +83,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	const repoRoot = git(realActorDir, ['rev-parse', '--show-toplevel']);
 	let sourceRoot = realContextRoot;
 	if (repoRoot) {
-		sourceRoot = realpathSync.native(repoRoot);
+		sourceRoot = realPath(repoRoot);
 		if (isOutside(relative(sourceRoot, realContextRoot))) {
 			return {
 				kind: 'invalid',
@@ -111,6 +111,15 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 		};
 	}
 	return { kind: 'outside', contextRoot, sourceRoot, actorPath: toPosix(actorPath) };
+}
+
+/** The real path with names in their case on disk; the JS implementation where the native call fails, as on Windows RAM or virtual disks. */
+export function realPath(path: string): string {
+	try {
+		return realpathSync.native(path);
+	} catch {
+		return realpathSync(path);
+	}
 }
 
 export function isOutside(relativePath: string): boolean {
