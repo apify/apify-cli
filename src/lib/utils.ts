@@ -382,8 +382,8 @@ const getGitExcludeFilePaths = (cwd: string, root: string): string[] => {
 const getGitignoreRulesMatcher = async (typedCwd: string): Promise<(path: string) => boolean> => {
 	// Git applies the rules by the real path, so a directory pushed through a symlink gets the ancestors and the
 	// .git/info/exclude path git uses. Unlike realpathSync.native, it keeps the names as typed: keepLinesForCwd compares
-	// them with the lines without normalizing.
-	const cwd = realpathSync(typedCwd);
+	// them with the lines without normalizing. A directory that doesn't exist holds no files, and the push says so.
+	const cwd = existsSync(typedCwd) ? realpathSync(typedCwd) : typedCwd;
 
 	// Directories above cwd from the top down: the repository root, or the filesystem root when there's none.
 	const ancestors: string[] = [];

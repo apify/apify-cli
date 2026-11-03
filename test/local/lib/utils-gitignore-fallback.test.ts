@@ -516,6 +516,29 @@ describe.skipIf(process.platform === 'win32' || process.getuid?.() === 0)('Utils
 	});
 });
 
+const MISSING_TEST_DIR = 'gitignore-missing-test-dir';
+
+describe('Utils - pushing a directory that does not exist (no git)', () => {
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(MISSING_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should find no files', async () => {
+		await expect(getActorLocalFilePaths(joinPath('missing'))).resolves.toEqual([]);
+	});
+});
+
 const CRLF_TEST_DIR = 'gitignore-crlf-test-dir';
 
 describe('Utils - .gitignore files with CRLF line endings (no git)', () => {
