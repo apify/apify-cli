@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process';
-import { createWriteStream, existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { createWriteStream, existsSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
@@ -379,7 +379,12 @@ const getGitExcludeFilePaths = (cwd: string, root: string): string[] => {
  * Every .gitignore wins over .git/info/exclude, which wins over the global excludes file. A file below an ignored
  * directory stays ignored.
  */
-const getGitignoreRulesMatcher = async (cwd: string): Promise<(path: string) => boolean> => {
+const getGitignoreRulesMatcher = async (typedCwd: string): Promise<(path: string) => boolean> => {
+	// Git applies the rules by the real path, so a directory pushed through a symlink gets the ancestors and the
+	// .git/info/exclude path git uses. Unlike realpathSync.native, it keeps the names as typed: keepLinesForCwd compares
+	// them with the lines without normalizing.
+	const cwd = realpathSync(typedCwd);
+
 	// Directories above cwd from the top down: the repository root, or the filesystem root when there's none.
 	const ancestors: string[] = [];
 	let root = cwd;

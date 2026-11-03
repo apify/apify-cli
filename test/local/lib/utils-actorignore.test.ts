@@ -660,3 +660,47 @@ describe('Utils - pushing a directory .gitignore ignores that holds a tracked fi
 		expect(paths).not.toContain('x.log');
 	});
 });
+
+const IGNORED_DIR_SYMLINK_TEST_DIR = 'gitignore-ignored-dir-symlink-test-dir';
+
+// Creating a symlink on Windows needs extra rights.
+describe.skipIf(process.platform === 'win32')(
+	'Utils - pushing a directory .gitignore ignores through a symlink (git)',
+	() => {
+		// The root .gitignore ignores actors/, and linked leads to actors/a. Git applies the rules by the real path, so
+		// a push through the link applies the same rules as a push of actors/a.
+		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(IGNORED_DIR_SYMLINK_TEST_DIR, {
+			create: true,
+			remove: true,
+			cwd: false,
+			cwdParent: false,
+		});
+
+		beforeAll(async () => {
+			await beforeAllCalls();
+
+			execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+
+			mkdirSync(joinPath('actors', 'a', 'local'), { recursive: true });
+
+			writeFileSync(joinPath('.gitignore'), 'actors/\n/actors/a/local/\n', { flag: 'w' });
+			writeFileSync(joinPath('.git', 'info', 'exclude'), '*.pem\n', { flag: 'w' });
+			['main.js', 'local/x.txt', 'key.pem'].forEach((file) =>
+				writeFileSync(joinPath('actors', 'a', file), 'content', { flag: 'w' }),
+			);
+			symlinkSync(joinPath('actors', 'a'), joinPath('linked'), 'dir');
+		});
+
+		afterAll(async () => {
+			await afterAllCalls();
+		});
+
+		it('should apply the rules by the real path', async () => {
+			const paths = await getActorLocalFilePaths(joinPath('linked'));
+
+			expect(paths).toContain('main.js');
+			expect(paths).not.toContain('local/x.txt');
+			expect(paths).not.toContain('key.pem');
+		});
+	},
+);
