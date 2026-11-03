@@ -361,11 +361,12 @@ const getGitExcludeFilePaths = (cwd: string, root: string): string[] => {
 		return [];
 	}
 
+	// An empty core.excludesFile turns the global excludes file off.
 	const globalExcludes =
-		gitOutput('config --path --get core.excludesFile', cwd)?.trim() ||
+		gitOutput('config --path --get core.excludesFile', cwd)?.trim() ??
 		join(process.env.XDG_CONFIG_HOME || join(homedir(), '.config'), 'git', 'ignore');
 
-	return [resolve(root, globalExcludes), resolve(cwd, infoExclude)];
+	return [...(globalExcludes ? [resolve(root, globalExcludes)] : []), resolve(cwd, infoExclude)];
 };
 
 /**

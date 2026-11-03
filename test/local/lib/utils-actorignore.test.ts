@@ -1119,6 +1119,18 @@ describe('Utils - the global excludes file when pushing a directory .gitignore i
 		expect(paths).not.toContain('notes.bak');
 	});
 
+	it('should apply no global excludes when core.excludesFile is empty, as git does', async () => {
+		mkdirSync(joinPath('xdg-off', 'git'), { recursive: true });
+		writeFileSync(joinPath('xdg-off', 'git', 'ignore'), '*.bak\n', { flag: 'w' });
+		stubGitHome(undefined, joinPath('xdg-off'));
+		spawnSync('git', ['config', 'core.excludesFile', ''], { cwd: joinPath('repo'), stdio: 'ignore' });
+
+		const paths = await getActorLocalFilePaths(joinPath('repo', 'ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('notes.bak');
+	});
+
 	it('should read ~/.config/git/ignore when XDG_CONFIG_HOME is empty, as git does', async () => {
 		mkdirSync(joinPath('home-empty', '.config', 'git'), { recursive: true });
 		writeFileSync(joinPath('home-empty', '.config', 'git', 'ignore'), '*.bak\n', { flag: 'w' });
