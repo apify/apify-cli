@@ -1,10 +1,41 @@
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import process from 'node:process';
 
 import { ensureFolderExistsSync } from '../../../src/lib/files.js';
-import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
+import { getActorLocalFilePaths, getGitignoreMatcher } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
+
+// Git gets an empty home and global config, so the developer's own settings and global excludes file don't apply.
+const gitHome = useTempPath('actorignore-git-home', {
+	create: true,
+	remove: true,
+	cwd: false,
+	cwdParent: false,
+});
+
+// os.homedir() reads USERPROFILE on Windows and HOME elsewhere. Git reads HOME everywhere.
+function stubGitHome(home = gitHome.joinPath('home'), xdgConfigHome = gitHome.joinPath('xdg')) {
+	vitest.stubEnv('HOME', home);
+	vitest.stubEnv('USERPROFILE', home);
+	vitest.stubEnv('XDG_CONFIG_HOME', xdgConfigHome);
+	vitest.stubEnv('GIT_CONFIG_GLOBAL', gitHome.joinPath('gitconfig'));
+	vitest.stubEnv('GIT_CONFIG_NOSYSTEM', '1');
+}
+
+beforeAll(async () => {
+	await gitHome.beforeAllCalls();
+
+	mkdirSync(gitHome.joinPath('home'), { recursive: true });
+	mkdirSync(gitHome.joinPath('xdg'), { recursive: true });
+	writeFileSync(gitHome.joinPath('gitconfig'), '');
+	stubGitHome();
+});
+
+afterAll(async () => {
+	vitest.unstubAllEnvs();
+	await gitHome.afterAllCalls();
+});
 
 const TEST_DIR = 'actorignore-test-dir';
 const FOLDERS = ['src', 'docs', 'assets'];
@@ -704,3 +735,456 @@ describe.skipIf(process.platform === 'win32')(
 		});
 	},
 );
+
+const TRACKED_FILE_TEST_DIR = 'gitignore-tracked-file-test-dir';
+
+describe('Utils - tracked file the .gitignore matches (git)', () => {
+	// Git lists only untracked files, so a file committed before the rule stays in the upload, as it stays in the
+	// repository.
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(TRACKED_FILE_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+
+		['main.js', 'keep.log', 'other.log'].forEach((file) => writeFileSync(joinPath(file), 'content', { flag: 'w' }));
+		writeFileSync(joinPath('.gitignore'), '*.log\n', { flag: 'w' });
+
+		execSync('git add -f keep.log', { cwd: tmpPath, stdio: 'ignore' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should keep the tracked file, as git lists only untracked files', async () => {
+		const paths = await getActorLocalFilePaths(tmpPath);
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('keep.log');
+		expect(paths).not.toContain('other.log');
+	});
+});
+
+const MATCHER_TEST_DIR = 'gitignore-matcher-test-dir';
+
+describe('Utils - getGitignoreMatcher asked directly (git)', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(MATCHER_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+
+		ensureFolderExistsSync(tmpPath, 'dist');
+		ensureFolderExistsSync(tmpPath, 'src');
+
+		['dist/bundle.js', 'src/index.js', 'x.log'].forEach((file) =>
+			writeFileSync(joinPath(file), 'content', { flag: 'w' }),
+		);
+		writeFileSync(joinPath('.gitignore'), 'dist/\n*.log\n', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should say an ignored directory asked with a trailing slash is ignored', async () => {
+		const isGitignored = await getGitignoreMatcher(tmpPath);
+
+		expect(isGitignored('dist/')).toBe(true);
+		expect(isGitignored('src/')).toBe(false);
+	});
+
+	it('should not say the empty path is ignored', async () => {
+		const isGitignored = await getGitignoreMatcher(tmpPath);
+
+		expect(isGitignored('x.log')).toBe(true);
+		expect(isGitignored('')).toBe(false);
+	});
+});
+
+const NFD_DIR_TEST_DIR = 'gitignore-nfd-dir-test-dir';
+
+describe('Utils - gitignored directory with a decomposed non-ASCII name (git)', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NFD_DIR_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+		// Git then prints names as stored, as it does on Linux and Windows.
+		execSync('git config core.precomposeUnicode false', { cwd: tmpPath, stdio: 'ignore' });
+
+		// Decomposed, as macOS archives and older macOS volumes store names.
+		ensureFolderExistsSync(tmpPath, 'čaj'.normalize('NFD'));
+
+		writeFileSync(joinPath('main.js'), 'content', { flag: 'w' });
+		writeFileSync(joinPath('čaj'.normalize('NFD'), 'a.txt'), 'content', { flag: 'w' });
+
+		// ASCII, so it matches either form.
+		writeFileSync(joinPath('.gitignore'), '*aj/\n', { flag: 'w' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should exclude the files below it', async () => {
+		const paths = (await getActorLocalFilePaths(tmpPath)).map((path) => path.normalize('NFC'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('čaj/a.txt');
+	});
+});
+
+const EXCLUDE_RANK_TEST_DIR = 'gitignore-exclude-rank-test-dir';
+
+describe('Utils - pushing a directory .gitignore ignores ranks the exclude files as git does (git)', () => {
+	// .git/info/exclude ranks above the global excludes file, and every .gitignore above both.
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(EXCLUDE_RANK_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+		execSync('git config core.excludesFile global-excludes', { cwd: tmpPath, stdio: 'ignore' });
+
+		ensureFolderExistsSync(tmpPath, 'ghost');
+
+		writeFileSync(joinPath('global-excludes'), '*.bak\n', { flag: 'w' });
+		writeFileSync(joinPath('.git', 'info', 'exclude'), '!keep.bak\n*.pem\n', { flag: 'w' });
+		writeFileSync(joinPath('.gitignore'), 'ghost/\n!public.pem\n', { flag: 'w' });
+		['main.js', 'keep.bak', 'other.bak', 'public.pem', 'key.pem'].forEach((file) =>
+			writeFileSync(joinPath('ghost', file), 'content', { flag: 'w' }),
+		);
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should let .git/info/exclude re-include what the global excludes file ignores', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('keep.bak');
+		expect(paths).not.toContain('other.bak');
+	});
+
+	it('should let a .gitignore re-include what .git/info/exclude ignores', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost'));
+
+		expect(paths).toContain('public.pem');
+		expect(paths).not.toContain('key.pem');
+	});
+});
+
+const IGNORING_LINES_TEST_DIR = 'gitignore-ignoring-lines-test-dir';
+
+describe('Utils - pushing a directory a line above it ignores (git)', () => {
+	// Whatever the form of the line that ignores the pushed directory, only that line is dropped. The other lines of its
+	// file still apply, its ! lines among them.
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(IGNORING_LINES_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+
+		['ghost', 'actors/a', 'actors/delta'].forEach((folder) => mkdirSync(joinPath(folder), { recursive: true }));
+
+		writeFileSync(joinPath('.gitignore'), 'ghost*\na/\n*.log\n!keep.log\n', { flag: 'w' });
+		writeFileSync(joinPath('.git', 'info', 'exclude'), 'actors/delta/\n*.pem\n', { flag: 'w' });
+		[
+			'ghost/main.js',
+			'ghost/x.log',
+			'ghost/keep.log',
+			'actors/a/main.js',
+			'actors/a/x.log',
+			'actors/delta/main.js',
+			'actors/delta/key.pem',
+		].forEach((file) => writeFileSync(joinPath(file), 'content', { flag: 'w' }));
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should drop a line without a trailing slash', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('x.log');
+	});
+
+	it('should drop a line without a slash that matches at any depth', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('actors', 'a'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('x.log');
+	});
+
+	it('should keep the ! lines of the file', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('ghost'));
+
+		expect(paths).toContain('keep.log');
+	});
+
+	it('should drop the line of .git/info/exclude', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('actors', 'delta'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('key.pem');
+	});
+});
+
+const NOT_A_REPOSITORY_TEST_DIR = 'gitignore-not-a-repository-test-dir';
+
+describe('Utils - pushing an ignored directory with a .git that is not a repository (git)', () => {
+	// inner/.git is an empty directory, so git answers from the outer repository, whose .gitignore ignores inner/. The
+	// rules are read from inner/, the first directory with a .git, and the outer .git/info/exclude applies there.
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NOT_A_REPOSITORY_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+
+		mkdirSync(joinPath('inner', '.git'), { recursive: true });
+
+		writeFileSync(joinPath('.gitignore'), 'inner/\n', { flag: 'w' });
+		writeFileSync(joinPath('.git', 'info', 'exclude'), '*.pem\n', { flag: 'w' });
+		['main.js', 'key.pem'].forEach((file) => writeFileSync(joinPath('inner', file), 'content', { flag: 'w' }));
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should apply .git/info/exclude', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('inner'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('key.pem');
+	});
+});
+
+const LINKED_WORKTREE_TEST_DIR = 'gitignore-linked-worktree-test-dir';
+
+describe('Utils - pushing a directory .gitignore ignores in a linked worktree (git)', () => {
+	// In a linked worktree .git is a file, and .git/info/exclude is the main repository's.
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(LINKED_WORKTREE_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		mkdirSync(joinPath('main'));
+		execSync('git init', { cwd: joinPath('main'), stdio: 'ignore' });
+		execSync('git -c user.name=Test -c user.email=test@example.com commit --quiet --allow-empty -m init', {
+			cwd: joinPath('main'),
+			stdio: 'ignore',
+		});
+		execSync(`git worktree add --detach "${joinPath('linked')}"`, { cwd: joinPath('main'), stdio: 'ignore' });
+
+		mkdirSync(joinPath('linked', 'ghost'));
+
+		writeFileSync(joinPath('main', '.git', 'info', 'exclude'), '*.pem\n', { flag: 'w' });
+		writeFileSync(joinPath('linked', '.gitignore'), 'ghost/\n', { flag: 'w' });
+		['main.js', 'key.pem'].forEach((file) =>
+			writeFileSync(joinPath('linked', 'ghost', file), 'content', { flag: 'w' }),
+		);
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should exclude the files the main repository .git/info/exclude lists', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('linked', 'ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('key.pem');
+	});
+});
+
+const GLOBAL_EXCLUDES_TEST_DIR = 'gitignore-global-excludes-test-dir';
+
+describe('Utils - the global excludes file when pushing a directory .gitignore ignores (git)', () => {
+	// The root .gitignore ignores ghost/, so the push finds the global excludes file itself, as git does.
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(GLOBAL_EXCLUDES_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		mkdirSync(joinPath('repo', 'ghost'), { recursive: true });
+		execSync('git init', { cwd: joinPath('repo'), stdio: 'ignore' });
+
+		writeFileSync(joinPath('repo', '.gitignore'), 'ghost/\n', { flag: 'w' });
+		['main.js', 'notes.bak'].forEach((file) =>
+			writeFileSync(joinPath('repo', 'ghost', file), 'content', { flag: 'w' }),
+		);
+	});
+
+	beforeEach(() => {
+		try {
+			execSync('git config --unset-all core.excludesFile', { cwd: joinPath('repo'), stdio: 'ignore' });
+		} catch {
+			// It wasn't set.
+		}
+	});
+
+	afterEach(() => {
+		stubGitHome();
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should apply no global excludes when the file does not exist', async () => {
+		// The empty home holds no git/ignore.
+		const paths = await getActorLocalFilePaths(joinPath('repo', 'ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).toContain('notes.bak');
+	});
+
+	it('should read core.excludesFile when it is an absolute path', async () => {
+		writeFileSync(joinPath('elsewhere-excludes'), '*.bak\n', { flag: 'w' });
+		execSync(`git config core.excludesFile "${joinPath('elsewhere-excludes').replaceAll('\\', '/')}"`, {
+			cwd: joinPath('repo'),
+			stdio: 'ignore',
+		});
+
+		const paths = await getActorLocalFilePaths(joinPath('repo', 'ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('notes.bak');
+	});
+
+	it('should expand a leading ~ in core.excludesFile to the home directory', async () => {
+		mkdirSync(joinPath('home'), { recursive: true });
+		writeFileSync(joinPath('home', 'my-excludes'), '*.bak\n', { flag: 'w' });
+		stubGitHome(joinPath('home'));
+		execSync('git config core.excludesFile "~/my-excludes"', { cwd: joinPath('repo'), stdio: 'ignore' });
+
+		const paths = await getActorLocalFilePaths(joinPath('repo', 'ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('notes.bak');
+	});
+
+	it('should read $XDG_CONFIG_HOME/git/ignore when core.excludesFile is unset', async () => {
+		mkdirSync(joinPath('xdg', 'git'), { recursive: true });
+		writeFileSync(joinPath('xdg', 'git', 'ignore'), '*.bak\n', { flag: 'w' });
+		stubGitHome(gitHome.joinPath('home'), joinPath('xdg'));
+
+		const paths = await getActorLocalFilePaths(joinPath('repo', 'ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('notes.bak');
+	});
+
+	it('should read ~/.config/git/ignore when XDG_CONFIG_HOME is unset', async () => {
+		mkdirSync(joinPath('home-unset', '.config', 'git'), { recursive: true });
+		writeFileSync(joinPath('home-unset', '.config', 'git', 'ignore'), '*.bak\n', { flag: 'w' });
+		stubGitHome(joinPath('home-unset'));
+		vitest.stubEnv('XDG_CONFIG_HOME', undefined);
+
+		const paths = await getActorLocalFilePaths(joinPath('repo', 'ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('notes.bak');
+	});
+
+	it('should read ~/.config/git/ignore when XDG_CONFIG_HOME is empty, as git does', async () => {
+		mkdirSync(joinPath('home-empty', '.config', 'git'), { recursive: true });
+		writeFileSync(joinPath('home-empty', '.config', 'git', 'ignore'), '*.bak\n', { flag: 'w' });
+		stubGitHome(joinPath('home-empty'), '');
+
+		const paths = await getActorLocalFilePaths(joinPath('repo', 'ghost'));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('notes.bak');
+	});
+});
+
+const GIT_ERRORS_TEST_DIR = 'gitignore-git-errors-test-dir';
+
+describe('Utils - git errors (git)', () => {
+	const { tmpPath, beforeAllCalls, afterAllCalls } = useTempPath(GIT_ERRORS_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should not print them when git fails', () => {
+		// git writes to the terminal directly, so the push runs in a process of its own. GIT_DIR naming a missing
+		// directory makes every git command fail with "fatal: not a git repository".
+		const utils = new URL('../../../src/lib/utils.ts', import.meta.url).href;
+		const script = `const { getActorLocalFilePaths } = await import(${JSON.stringify(utils)}); await getActorLocalFilePaths(process.cwd());`;
+		const { status, stderr } = spawnSync(
+			process.execPath,
+			['--import', 'tsx', '--input-type=module', '--eval', script],
+			{
+				cwd: tmpPath,
+				env: { ...process.env, GIT_DIR: `${tmpPath}-missing` },
+				encoding: 'utf-8',
+			},
+		);
+
+		expect(status).toBe(0);
+		expect(stderr).not.toContain('fatal');
+	});
+});
