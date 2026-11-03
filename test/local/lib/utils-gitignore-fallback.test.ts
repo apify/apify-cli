@@ -713,6 +713,39 @@ describe('Utils - pushing an ignored directory whose name is stored decomposed (
 	});
 });
 
+const NFD_RULE_TEST_DIR = 'gitignore-nfd-rule-test-dir';
+
+describe('Utils - pushing a directory a line written decomposed ignores (no git)', () => {
+	// The line of the root .gitignore is decomposed (NFD), as a file from a macOS archive may hold it, and the directory
+	// is stored and pushed composed (NFC).
+	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NFD_RULE_TEST_DIR, {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+
+		mkdirSync(joinPath('.git'));
+		mkdirSync(joinPath('čaj'.normalize('NFC')));
+		writeFileSync(joinPath('.gitignore'), `${'čaj'.normalize('NFD')}/\n*.log\n`);
+		['main.js', 'x.log'].forEach((file) => writeFileSync(joinPath('čaj'.normalize('NFC'), file), 'content'));
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('should drop the line that ignores it and apply the rest', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('čaj'.normalize('NFC')));
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('x.log');
+	});
+});
+
 const PARTLY_IGNORED_TEST_DIR = 'gitignore-partly-ignored-test-dir';
 
 describe('Utils - a .gitignore that ignores the pushed directory only in part (no git)', () => {
