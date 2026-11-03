@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { lstatSync, readFileSync, realpathSync, type Stats, statSync, unlinkSync, writeSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync, rmSync, type Stats, statSync, writeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, relative, resolve } from 'node:path';
 import process from 'node:process';
@@ -802,13 +802,13 @@ Skipping push. Use --force to override.`,
 		} else {
 			// Create zip
 			run({ message: 'Zipping Actor files' });
-			const zipPath = join(tmpdir(), `apify-push-${randomUUID()}.zip`);
-			await createActZip(zipPath, uploadedFiles, uploadRoot);
-
-			// Upload it to Apify.keyValueStores
 			const store = await apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
 			const key = `version-${version}.zip`;
+			const zipPath = join(tmpdir(), `apify-push-${randomUUID()}.zip`);
 			try {
+				await createActZip(zipPath, uploadedFiles, uploadRoot);
+
+				// Upload it to Apify.keyValueStores
 				const buffer = readFileSync(zipPath);
 				await apifyClient.keyValueStore(store.id).setRecord({
 					key,
@@ -817,7 +817,7 @@ Skipping push. Use --force to override.`,
 					contentType: 'application/zip',
 				});
 			} finally {
-				unlinkSync(zipPath);
+				rmSync(zipPath, { force: true });
 			}
 			const tempTarballUrl = new URL(
 				`${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,

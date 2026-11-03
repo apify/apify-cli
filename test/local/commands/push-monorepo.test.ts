@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { existsSync, symlinkSync } from 'node:fs';
+import { existsSync, readdirSync, symlinkSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -245,6 +246,19 @@ describe('apify push of a monorepo Actor', () => {
 
 		expect(existsSync(join(process.cwd(), 'temp_file.zip'))).toBe(false);
 		expect(existsSync(joinPath('temp_file.zip'))).toBe(false);
+	});
+
+	it('leaves no zip in the OS temp directory when getting the source store fails', async () => {
+		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
+		const pushZips = () => readdirSync(tmpdir()).filter((name) => /^apify-push-.*\.zip$/.test(name));
+		const zipsBefore = pushZips();
+		keyValueStoreGetOrCreate.mockRejectedValueOnce(new Error('network down'));
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(process.exitCode).toBe(1);
+		expect(logMessages.error.join('\n')).toContain('network down');
+		expect(pushZips().filter((name) => !zipsBefore.includes(name))).toEqual([]);
 	});
 
 	it('zips a file reached through a symlink as its content, as the multi-file upload sends it', async () => {
