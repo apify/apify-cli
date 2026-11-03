@@ -393,8 +393,8 @@ importers:
   website:
     dependencies:
       '@apify/docs-theme':
-        specifier: ^1.0.275
-        version: 1.0.275(c61aa43a82b8957fc6379ac76026cbaa)
+        specifier: ^1.0.278
+        version: 1.0.278(c61aa43a82b8957fc6379ac76026cbaa)
       '@docusaurus/core':
         specifier: ^3.10.2
         version: 3.10.2(@docusaurus/faster@3.10.2(@docusaurus/types@3.10.2(@swc/core@1.16.18)(@swc/html@1.16.18)(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.31))(csso@5.0.5)(esbuild@0.28.2)(html-minifier-terser@7.2.0)(lightningcss@1.33.0)(postcss@8.5.31)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@5.5.0)(svgo@3.3.5)(uglify-js@3.19.3))(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.31))(csso@5.0.5)(esbuild@0.28.2)(html-minifier-terser@7.2.0)(postcss@8.5.31)(svgo@3.3.5)(uglify-js@3.19.3))(@mdx-js/react@3.1.1(@types/react@19.3.0)(react@19.3.1))(@rspack/core@1.7.12)(@swc/core@1.16.18)(@swc/html@1.16.18)(clean-css@5.3.3)(cssnano@6.1.2(postcss@8.5.31))(csso@5.0.5)(debug@4.4.3(supports-color@5.5.0))(esbuild@0.28.2)(html-minifier-terser@7.2.0)(lightningcss@1.33.0)(postcss@8.5.31)(react-dom@19.3.1(react@19.3.1))(react@19.3.1)(supports-color@5.5.0)(svgo@3.3.5)(typescript@7.0.2)(uglify-js@3.19.3)
@@ -628,8 +628,8 @@ packages:
       react: '> 18.0.0'
       react-dom: '> 18.0.0'
 
-  '@apify/docs-theme@1.0.275':
-    resolution: {integrity: sha512-O3e/jx65VK6soqA6FoCi9mMC5vtdAz7Juux1quKi8M6P4oDmwY5WR0HzWPgjDMFBwU6xYEY2qbBDmVUsB6ALBA==}
+  '@apify/docs-theme@1.0.278':
+    resolution: {integrity: sha512-9Uq5llE5Jzn5tkjTJFDHXlcHc9LjmB5CH+L320JhWfwBMmsfJK0dxyf8F4ZeKHzrYUOTTjLtn588kpN5RW9MfQ==}
     peerDependencies:
       clsx: '*'
       react: '*'
@@ -9693,7 +9693,7 @@ snapshots:
       - search-insights
       - supports-color
 
-  '@apify/docs-theme@1.0.275(c61aa43a82b8957fc6379ac76026cbaa)':
+  '@apify/docs-theme@1.0.278(c61aa43a82b8957fc6379ac76026cbaa)':
     dependencies:
       '@apify/docs-search-modal': 1.4.0(@algolia/client-search@5.60.0)(@babel/core@7.29.7(supports-color@5.5.0))(@types/react@19.3.0)(react-dom@19.3.1(react@19.3.1))(react-is@16.13.1)(react@19.3.1)(search-insights@2.17.3)(supports-color@5.5.0)
       '@apify/ui-icons': 1.57.0(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
