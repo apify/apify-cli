@@ -230,7 +230,7 @@ describe('apify push of a monorepo Actor', () => {
 		expect(keyValueStoreGetOrCreate).toHaveBeenCalledWith(`actor-${ACTOR_ID}-source`);
 		expect(setRecord).toHaveBeenCalledTimes(1);
 		const record = setRecord.mock.calls[0][0] as { key: string; value: Buffer; contentType: string };
-		expect(record.key).toBe('version-0.0.zip');
+		expect(record.key).toBe('version-0.0-monorepo.zip');
 		expect(record.contentType).toBe('application/zip');
 		expect(Buffer.isBuffer(record.value)).toBe(true);
 		expect(record.value.length).toBeGreaterThan(0);
@@ -240,7 +240,7 @@ describe('apify push of a monorepo Actor', () => {
 		expect(modifier.sourceFiles).toBeUndefined();
 		expect(modifier.actorPath).toBe(ACTOR_PATH);
 		const tarballUrl = new URL(modifier.tarballUrl!);
-		expect(tarballUrl.pathname).toBe('/v2/key-value-stores/store1/records/version-0.0.zip');
+		expect(tarballUrl.pathname).toBe('/v2/key-value-stores/store1/records/version-0.0-monorepo.zip');
 		expect(tarballUrl.searchParams.get('disableRedirect')).toBe('true');
 		expect(tarballUrl.searchParams.get('signature')).toBeTruthy();
 
@@ -368,6 +368,16 @@ describe('apify push of a monorepo Actor', () => {
 
 			expectRefusal();
 			expect(actorDelete).not.toHaveBeenCalled();
+		});
+
+		it('leaves the zip record of the existing version alone', async () => {
+			await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
+			versionUpdate.mockRejectedValueOnce(actorPathRejected());
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expectRefusal();
+			expect(setRecord.mock.calls.map(([record]) => (record as { key: string }).key)).not.toContain('version-0.0.zip');
 		});
 
 		it('keeps stdout clean with --json', async () => {

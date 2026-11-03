@@ -803,7 +803,9 @@ Skipping push. Use --force to override.`,
 			// Create zip
 			run({ message: 'Zipping Actor files' });
 			const store = await apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
-			const key = `version-${version}.zip`;
+			// A monorepo zip has the repository layout, so it gets its own key: when the version update then fails, an
+			// existing version without actorPath still builds from its own record.
+			const key = actorPath ? `version-${version}-monorepo.zip` : `version-${version}.zip`;
 			const zipPath = join(tmpdir(), `apify-push-${randomUUID()}.zip`);
 			try {
 				await createActZip(zipPath, uploadedFiles, uploadRoot);
