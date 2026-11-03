@@ -1,6 +1,7 @@
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import AdmZip from 'adm-zip';
 import axios from 'axios';
 
 import { execWithLog } from '../../../src/lib/exec.js';
@@ -85,6 +86,18 @@ describe('Utils', () => {
 			FILES_IN_IGNORED_DIR.concat(FILES_TO_IGNORE).forEach((file) =>
 				expect(existsSync(join(tempFolder, file))).toBeFalsy(),
 			);
+		});
+
+		it('has the whole zip written when it resolves', async () => {
+			const zipName = joinPath('complete.zip');
+			await createActZip(zipName, FILES, tmpPath);
+
+			expect(
+				new AdmZip(readFileSync(zipName))
+					.getEntries()
+					.map((entry) => entry.entryName)
+					.sort(),
+			).toEqual([...FILES].sort());
 		});
 	});
 
