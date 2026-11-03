@@ -164,6 +164,38 @@ describe('resolveDockerContext', () => {
 		});
 	});
 
+	describe('with the Actor folder at the Git repository root', () => {
+		const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-root-actor-dir', {
+			create: true,
+			remove: true,
+			cwd: false,
+			cwdParent: false,
+		});
+
+		let repo: string;
+
+		beforeAll(async () => {
+			await beforeAllCalls();
+			mkdirSync(joinPath('repo', '.actor'), { recursive: true });
+			symlinkSync('repo', joinPath('link'));
+			execFileSync('git', ['init', '--quiet'], { cwd: joinPath('repo'), stdio: 'ignore' });
+			repo = realpathSync(joinPath('repo'));
+		});
+
+		afterAll(async () => {
+			await afterAllCalls();
+		});
+
+		it('rejects a context that leaves the Actor folder through a symlink leading back to it', () => {
+			expect(resolveDockerContext(joinPath('repo'), '../../link')).toEqual({
+				kind: 'invalid',
+				message:
+					`"dockerContextDir" in .actor/actor.json leaves the Actor folder, then leads back into it at ${repo}, ` +
+					'through a symlink or a folder name in another letter case. Write the path without leaving the Actor folder.',
+			});
+		});
+	});
+
 	describe('outside a Git repository', () => {
 		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-no-git-dir', {
 			create: true,
@@ -216,8 +248,8 @@ describe('resolveDockerContext', () => {
 			expect(resolveDockerContext(actorDir(), '../../x-link')).toEqual({
 				kind: 'invalid',
 				message:
-					`"dockerContextDir" in .actor/actor.json leaves the Actor folder, but a symlink on the way leads back to ${join(root, ACTOR_PATH)}, ` +
-					'which does not lie above the Actor folder. Write the path without the symlink.',
+					`"dockerContextDir" in .actor/actor.json leaves the Actor folder, then leads back into it at ${join(root, ACTOR_PATH)}, ` +
+					'through a symlink or a folder name in another letter case. Write the path without leaving the Actor folder.',
 			});
 		});
 	});

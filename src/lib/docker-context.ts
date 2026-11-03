@@ -106,8 +106,8 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 		return {
 			kind: 'invalid',
 			message:
-				`"dockerContextDir" in .actor/actor.json leaves the Actor folder, but a symlink on the way leads back to ${realContextRoot}, ` +
-				'which does not lie above the Actor folder. Write the path without the symlink.',
+				`"dockerContextDir" in .actor/actor.json leaves the Actor folder, then leads back into it at ${realContextRoot}, ` +
+				'through a symlink or a folder name in another letter case. Write the path without leaving the Actor folder.',
 		};
 	}
 	return { kind: 'outside', contextRoot, sourceRoot, actorPath: toPosix(actorPath) };
