@@ -179,6 +179,7 @@ describe('resolveDockerContext', () => {
 			await beforeAllCalls();
 			mkdirSync(joinPath(ACTOR_PATH, '.actor'), { recursive: true });
 			mkdirSync(joinPath('other'), { recursive: true });
+			symlinkSync('x', joinPath('actors', 'x-link'));
 			root = realpathSync(tmpPath);
 			gitState.gitAvailable = false;
 		});
@@ -208,6 +209,15 @@ describe('resolveDockerContext', () => {
 			expect(resolveDockerContext(actorDir(), '../../../missing')).toEqual({
 				kind: 'invalid',
 				message: `"dockerContextDir" in .actor/actor.json points to ${join(root, 'missing')}, which does not exist.`,
+			});
+		});
+
+		it('rejects a context that leaves the Actor folder through a symlink leading back to it', () => {
+			expect(resolveDockerContext(actorDir(), '../../x-link')).toEqual({
+				kind: 'invalid',
+				message:
+					`"dockerContextDir" in .actor/actor.json leaves the Actor folder, but a symlink on the way leads back to ${join(root, ACTOR_PATH)}, ` +
+					'which does not lie above the Actor folder. Write the path without the symlink.',
 			});
 		});
 	});

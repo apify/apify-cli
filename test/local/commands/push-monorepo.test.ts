@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, symlinkSync } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 
@@ -15,6 +16,8 @@ import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 const actName = 'push-monorepo-actor';
 const ACTOR_ID = 'mOnO1234efGh';
 const ACTOR_PATH = 'actors/typescript-actor';
+// As on macOS and Windows by default: this file is found under its name in upper case too.
+const caseInsensitiveFileSystem = existsSync(fileURLToPath(import.meta.url).toUpperCase());
 
 const actor = {
 	id: ACTOR_ID,
@@ -392,8 +395,12 @@ describe('apify push of a monorepo Actor', () => {
 	});
 
 	it('uploads the Docker context with .actorignore applied outside Git', async () => {
-		await rm(joinPath('.git'), { recursive: true, force: true });
+		// The fixture's .git stays, though git itself is unavailable: it ends the walk for .gitignore files above the
+		// fixture, so the .gitignore of this checkout never applies.
 		await write('.actorignore', 'packages/\n');
+		// Local run state of the Actor, which an ordinary push of its folder leaves out too.
+		await write(`${ACTOR_PATH}/node_modules/dep/index.js`, 'module.exports = 1;\n');
+		await write(`${ACTOR_PATH}/storage/key_value_stores/default/INPUT.json`, '{}');
 		gitState.gitAvailable = false;
 
 		await testRunCommand(ActorsPushCommand, {});
@@ -408,6 +415,9 @@ describe('apify push of a monorepo Actor', () => {
 		);
 		expect(names.some((name) => name.startsWith('packages/'))).toBe(false);
 		expect(names.some((name) => name.startsWith('node_modules'))).toBe(false);
+		expect(
+			names.filter((name) => ['node_modules', 'storage'].some((dir) => name.startsWith(`${ACTOR_PATH}/${dir}/`))),
+		).toEqual([]);
 	});
 
 	it('rejects a dockerfile outside the Docker context before touching the platform', async () => {
@@ -466,16 +476,93 @@ describe('apify push of a monorepo Actor', () => {
 		expect(logMessages.error.join('\n')).toContain('Actor typescript-actor sets "dockerContextDir"');
 	});
 
-	it('refuses an Actor folder ignored by .gitignore, which the upload of the repository leaves out', async () => {
+	it('adds the files of an Actor folder ignored by .gitignore when --dir names it, as a clone has none of them', async () => {
 		await write('.gitignore', 'node_modules\nactors/\n');
 		git('rm', '-r', '--cached', '--quiet', 'actors');
+		forceNewCwd('.');
+
+		await testRunCommand(ActorsPushCommand, { flags_dir: ACTOR_PATH });
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.actorPath).toBe(ACTOR_PATH);
+		expect(modifier.sourceFiles!.map((file) => file.name)).toEqual(
+			expect.arrayContaining([
+				`${ACTOR_PATH}/.actor/actor.json`,
+				`${ACTOR_PATH}/src/index.ts`,
+				'shared/TypeScript_Dockerfile',
+			]),
+		);
+	});
+
+	it("applies the Actor folder's .actorignore, negations included, and leaves the rest of the repository as a clone has it", async () => {
+		await write('.gitignore', 'node_modules\ndist\n');
+		await write(`${ACTOR_PATH}/.actorignore`, 'local-secrets.json\n!dist/\n');
+		await write(`${ACTOR_PATH}/local-secrets.json`, '{}');
+		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+		await write('packages/typescript-utils/dist/index.js', 'export const x = 1;\n');
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.NoFilesToPush);
-		expect(logMessages.error.join('\n')).toContain(`The Actor folder ${ACTOR_PATH} is ignored`);
-		expect(actorGet).not.toHaveBeenCalled();
-		expect(versionUpdate).not.toHaveBeenCalled();
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toEqual(
+			expect.arrayContaining([`${ACTOR_PATH}/dist/main.js`, 'packages/typescript-utils/src/index.ts']),
+		);
+		expect(names).not.toContain(`${ACTOR_PATH}/local-secrets.json`);
+		expect(names).not.toContain('packages/typescript-utils/dist/index.js');
+	});
+
+	it('pushes an Actor folder whose name is stored decomposed with one copy of its files under actorPath', async () => {
+		// Finder stores names decomposed (NFD), and git on macOS lists them composed (NFC).
+		const decomposedPath = 'actors/café-actor';
+		await write(
+			`${decomposedPath}/.actor/actor.json`,
+			JSON.stringify({
+				actorSpecification: 1,
+				name: actName,
+				version: '0.0',
+				buildTag: 'latest',
+				dockerContextDir: '../../..',
+				dockerfile: '../../../shared/TypeScript_Dockerfile',
+			}),
+		);
+		git('add', '.');
+		forceNewCwd(decomposedPath);
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const { actorPath, sourceFiles } = versionPayload(versionUpdate);
+		const names = sourceFiles!.map((file) => file.name);
+		expect(names).toContain(`${actorPath}/.actor/actor.json`);
+		expect(names.filter((name) => name.normalize('NFC') === 'actors/café-actor/.actor/actor.json')).toHaveLength(1);
+	});
+
+	describe.runIf(caseInsensitiveFileSystem)('with --dir typed in another case', () => {
+		it.each([
+			[
+				'a monorepo Actor with actorPath in the case on disk',
+				{ dockerContextDir: '../../..', dockerfile: '../../../shared/TypeScript_Dockerfile' },
+				ACTOR_PATH,
+			],
+			[
+				'an Actor with the Docker context inside its folder',
+				{ dockerContextDir: '../src', dockerfile: '../src/Dockerfile' },
+				undefined,
+			],
+		])('pushes %s', async (_, fields, expectedActorPath) => {
+			await write(`${ACTOR_PATH}/src/Dockerfile`, 'FROM apify/actor-node:20\n');
+			await writeActorConfig(fields);
+			forceNewCwd('.');
+
+			await testRunCommand(ActorsPushCommand, { flags_dir: 'actors/TypeScript-Actor' });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const modifier = versionPayload(versionUpdate);
+			expect(modifier.actorPath).toBe(expectedActorPath);
+			expect(modifier.sourceFiles!.some((file) => file.name.startsWith('actors/TypeScript-Actor/'))).toBe(false);
+		});
 	});
 
 	it('checks the actor.json paths from the real Actor folder when --dir goes through a symlink', async () => {

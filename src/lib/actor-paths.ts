@@ -248,12 +248,12 @@ function checkDefaultDockerfile(scope: PathCheckScope & { dockerContextRoot: str
  * as push uploads its content there. With a Docker context and no `dockerfile`, the default Dockerfile is checked too.
  */
 export function checkActorPaths(options: ActorPathsOptions): ActorPathProblem[] {
-	// The Actor folder and the upload root are real paths, as the Docker context resolver works from them, so a
-	// symlinked Actor folder does not count as an escape. A referenced path, like the Docker context the resolver
-	// returns, is judged as written below the real Actor folder, the way push lays out the upload.
+	// The Actor folder and the upload root are real paths, in their case on disk, as the Docker context resolver works
+	// from them, so a symlinked Actor folder does not count as an escape. A referenced path, like the Docker context the
+	// resolver returns, is judged as written below the real Actor folder, the way push lays out the upload.
 	const scope: PathCheckScope = {
-		actorDir: realpathSync(options.actorDir),
-		uploadRoot: realpathSync(options.uploadRoot),
+		actorDir: realpathSync.native(options.actorDir),
+		uploadRoot: realpathSync.native(options.uploadRoot),
 		uploadedFiles: new Set(options.uploadedFiles.map(toPosix)),
 		dockerContextRoot: options.dockerContextRoot,
 	};

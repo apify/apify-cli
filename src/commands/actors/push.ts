@@ -254,6 +254,28 @@ const resolveLinksForUpload = (root: string, files: string[]) => {
 	});
 };
 
+/**
+ * The Actor folder goes as an ordinary push of it would send it: its .gitignore and .actorignore apply, negations
+ * included, and an ignored folder that was picked or named with --dir goes too. Only a file whose link leads out of
+ * the upload stays out, as in the rest of the upload.
+ */
+const withActorFolderFiles = (root: string, actorPath: string, contextFiles: string[], actorFiles: string[]) => {
+	const realRoot = realpathSync(root);
+	const isInUpload = (file: string) => {
+		try {
+			return !isOutside(relative(realRoot, realpathSync(join(root, file))));
+		} catch {
+			return false;
+		}
+	};
+	// Git on macOS lists names composed (NFC), while actorPath has the folder names as stored on disk.
+	const actorPrefix = `${actorPath}/`.normalize('NFC');
+	return [
+		...contextFiles.filter((file) => !file.normalize('NFC').startsWith(actorPrefix)),
+		...actorFiles.map((file) => `${actorPath}/${file}`).filter(isInUpload),
+	];
+};
+
 /** The config files that make a directory an Actor of its own: `.actor/actor.json`, `actor.json`, or the legacy `apify.json`. */
 const OWN_CONFIG_FILES = [DEPRECATED_LOCAL_CONFIG_NAME, 'actor.json', '.actor/actor.json'];
 
@@ -602,18 +624,11 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		let actorPath: string | undefined;
 		if (dockerContext.kind === 'outside') {
 			uploadRoot = dockerContext.sourceRoot;
-			uploadedFiles = resolveLinksForUpload(uploadRoot, await getContextFilePaths(uploadRoot));
 			actorPath = dockerContext.actorPath;
 			// The source root is a real path, so the Actor folder has to be one too for its paths to fall inside it.
 			actorDir = join(uploadRoot, actorPath);
-			// An ignored Actor folder can still be picked or named with --dir, but the upload leaves it out like a clone.
-			if (!uploadedFiles.includes(`${actorPath}/${toPosix(LOCAL_CONFIG_PATH)}`)) {
-				error({
-					message: `The Actor folder ${actorPath} is ignored, so the upload of ${uploadRoot} leaves it out and the platform could not find the Actor. Stop ignoring the folder in .gitignore (or .actorignore outside Git) to push it.`,
-				});
-				process.exitCode = CommandExitCodes.NoFilesToPush;
-				return;
-			}
+			const contextFiles = resolveLinksForUpload(uploadRoot, await getContextFilePaths(uploadRoot));
+			uploadedFiles = withActorFolderFiles(uploadRoot, actorPath, contextFiles, filePathsToPush);
 		}
 
 		// The platform resolves these paths after the upload; a wrong one builds the wrong image or fails the build.

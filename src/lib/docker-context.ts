@@ -26,7 +26,7 @@ export type DockerContextResolution =
 			contextRoot: string;
 			/** The Git repository's root, else the context. */
 			sourceRoot: string;
-			/** Relative to `sourceRoot`. */
+			/** Relative to `sourceRoot`, never empty, with the names as stored on disk. */
 			actorPath: string;
 	  }
 	/** The field is not a string, or the directory it names is missing, not a directory, or out of reach. */
@@ -45,10 +45,11 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 		return { kind: 'invalid', message: `"dockerContextDir" in .actor/actor.json must be a string.` };
 	}
 
-	// The platform resolves the context from the Actor folder's real path, so a symlinked `--dir` must too.
+	// The platform resolves the context from the Actor folder's real path, so a symlinked `--dir` must too. The native
+	// call also gives the names their case on disk, which a `--dir` typed in another case on macOS or Windows lacks.
 	let realActorDir: string;
 	try {
-		realActorDir = realpathSync(actorDir);
+		realActorDir = realpathSync.native(actorDir);
 	} catch {
 		return { kind: 'invalid', message: `The Actor folder ${actorDir} does not exist.` };
 	}
@@ -67,7 +68,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 			message: `"dockerContextDir" in .actor/actor.json points to ${contextRoot}, which is not a directory.`,
 		};
 	}
-	const realContextRoot = realpathSync(contextRoot);
+	const realContextRoot = realpathSync.native(contextRoot);
 
 	// Inside or outside the Actor folder is judged, and returned, by the path as written, not by where a symlink on it
 	// leads. Push follows a symlink and uploads its files under the link's own name: with `"dockerContextDir": "../sym"`
@@ -80,8 +81,9 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 
 	// The platform's clone holds nothing above the repository root.
 	const repoRoot = git(realActorDir, ['rev-parse', '--show-toplevel']);
+	let sourceRoot = realContextRoot;
 	if (repoRoot) {
-		const sourceRoot = realpathSync(repoRoot);
+		sourceRoot = realpathSync.native(repoRoot);
 		if (isOutside(relative(sourceRoot, realContextRoot))) {
 			return {
 				kind: 'invalid',
@@ -90,22 +92,25 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 					'The Apify platform builds from a clone of the repository, so it could not build this Actor.',
 			};
 		}
-		return {
-			kind: 'outside',
-			contextRoot,
-			sourceRoot,
-			actorPath: toPosix(relative(sourceRoot, realActorDir)),
-		};
 	}
 
-	const actorPath = relative(realContextRoot, realActorDir);
+	const actorPath = relative(sourceRoot, realActorDir);
 	if (isOutside(actorPath)) {
 		return {
 			kind: 'invalid',
 			message: `"dockerContextDir" in .actor/actor.json points to ${realContextRoot}, which does not contain the Actor's folder.`,
 		};
 	}
-	return { kind: 'outside', contextRoot, sourceRoot: realContextRoot, actorPath: toPosix(actorPath) };
+	// The path as written leaves the Actor folder, so it isn't an ordinary push, yet the upload root would be the folder.
+	if (actorPath === '') {
+		return {
+			kind: 'invalid',
+			message:
+				`"dockerContextDir" in .actor/actor.json leaves the Actor folder, but a symlink on the way leads back to ${realContextRoot}, ` +
+				'which does not lie above the Actor folder. Write the path without the symlink.',
+		};
+	}
+	return { kind: 'outside', contextRoot, sourceRoot, actorPath: toPosix(actorPath) };
 }
 
 export function isOutside(relativePath: string): boolean {
