@@ -1,26 +1,60 @@
 import { execSync } from 'node:child_process';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { chmod, mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import process from 'node:process';
 
 import { findActorDirs, toPosixRelative } from '../../../src/lib/find-actor-dirs.js';
-import { getActorLocalFilePaths } from '../../../src/lib/utils.js';
+import { getActorLocalFilePaths, getGitignoreMatcher } from '../../../src/lib/utils.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 // vi.mock is hoisted before imports, so the gitignore matcher gets the mocked version. With `gitAvailable` off, every
-// git call fails as it does without git, which sends the matcher to its own .gitignore parsing.
-const gitState = vi.hoisted(() => ({ gitAvailable: true }));
+// git call fails as it does without git, which sends the matcher to its own .gitignore parsing. `failingCommand` fails
+// only the commands that contain it. `commands` records every command.
+const gitState = vi.hoisted(() => ({
+	gitAvailable: true,
+	failingCommand: undefined as string | undefined,
+	commands: [] as string[],
+}));
 vi.mock('node:child_process', async (importOriginal) => {
 	const original = await importOriginal<typeof import('node:child_process')>();
 	return {
 		...original,
 		execSync: ((...args: Parameters<typeof original.execSync>) => {
-			if (!gitState.gitAvailable) {
+			const command = String(args[0]);
+			gitState.commands.push(command);
+			if (!gitState.gitAvailable || (gitState.failingCommand && command.includes(gitState.failingCommand))) {
 				throw new Error('not a git repository');
 			}
 			return original.execSync(...args);
 		}) as typeof original.execSync,
 	};
+});
+
+// Git gets an empty home and global config, so the developer's own settings and global excludes file don't apply.
+// os.homedir() reads USERPROFILE on Windows and HOME elsewhere. Git reads HOME everywhere.
+const gitHome = useTempPath('find-actor-dirs-git-home', {
+	create: true,
+	remove: true,
+	cwd: false,
+	cwdParent: false,
+});
+
+beforeAll(async () => {
+	await gitHome.beforeAllCalls();
+
+	mkdirSync(gitHome.joinPath('home'), { recursive: true });
+	writeFileSync(gitHome.joinPath('gitconfig'), '');
+	vitest.stubEnv('HOME', gitHome.joinPath('home'));
+	vitest.stubEnv('USERPROFILE', gitHome.joinPath('home'));
+	vitest.stubEnv('XDG_CONFIG_HOME', gitHome.joinPath('home', '.config'));
+	vitest.stubEnv('GIT_CONFIG_GLOBAL', gitHome.joinPath('gitconfig'));
+	vitest.stubEnv('GIT_CONFIG_NOSYSTEM', '1');
+});
+
+afterAll(async () => {
+	vitest.unstubAllEnvs();
+	await gitHome.afterAllCalls();
 });
 
 const { beforeAllCalls, afterAllCalls, joinPath, tmpPath } = useTempPath('find-actor-dirs', {
@@ -41,7 +75,11 @@ async function writeActor(dir: string, name: string | undefined = dir.split('/')
 
 beforeEach(async () => {
 	gitState.gitAvailable = true;
+	gitState.failingCommand = undefined;
 	await beforeAllCalls();
+	// Its own repository, so the .gitignore and .git/info/exclude of the apify-cli checkout don't apply.
+	execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
+	gitState.commands = [];
 });
 
 afterEach(async () => {
@@ -93,6 +131,15 @@ describe('findActorDirs', () => {
 			{ dir: 'broken', name: undefined, ignored: false },
 			{ dir: 'nameless', name: undefined, ignored: false },
 		]);
+	});
+
+	it('does not return the root itself, even when it is an Actor', async () => {
+		await writeActor('.', 'root');
+		await writeActor('actors/alpha');
+
+		const dirs = (await findActorDirs(tmpPath)).map((actor) => actor.dir);
+
+		expect(dirs).toEqual(['actors/alpha']);
 	});
 
 	it('returns an empty list when nothing below the root is an Actor', async () => {
@@ -181,5 +228,92 @@ describe('findActorDirs', () => {
 
 			await expect(findActorDirs(tmpPath)).resolves.toEqual(expected({ deltaIgnored: false }));
 		});
+
+		it('asks git and marks none ignored when git ignores none of them', async () => {
+			await write('.gitignore', '*.log\n');
+			await writeActor('actors/alpha');
+			await write('actors/alpha/debug.log');
+			await writeActor('actors/beta');
+
+			await expect(findActorDirs(tmpPath)).resolves.toEqual([
+				{ dir: 'actors/alpha', name: 'alpha', ignored: false },
+				{ dir: 'actors/beta', name: 'beta', ignored: false },
+			]);
+		});
+
+		// In the next two, the Actor directory holds a tracked file, so git lists its other files one by one and is
+		// asked about the directory itself.
+		it('asks git about an ignored Actor with a non-ASCII name that holds a tracked file', async () => {
+			// git's default, set here in case a config turns it off. Without -z, git prints such names quoted and
+			// escaped.
+			execSync('git config core.quotePath true', { cwd: tmpPath, stdio: 'ignore' });
+			await write('.gitignore', 'old/\n');
+			await writeActor('old/příliš');
+			await write('old/příliš/main.js');
+			execSync('git add -f old', { cwd: tmpPath, stdio: 'ignore' });
+
+			await expect(findActorDirs(tmpPath)).resolves.toEqual([{ dir: 'old/příliš', name: 'příliš', ignored: true }]);
+		});
+
+		it('asks git about an ignored Actor whose name is stored decomposed', async () => {
+			// Decomposed, as macOS archives and older macOS volumes store names. Git prints the name back as it was
+			// asked.
+			const name = 'čaj'.normalize('NFD');
+			await write('.gitignore', 'old/\n');
+			await writeActor(`old/${name}`);
+			await write(`old/${name}/main.js`);
+			execSync('git add -f old', { cwd: tmpPath, stdio: 'ignore' });
+
+			const found = await findActorDirs(tmpPath);
+
+			expect(found.map((actor) => ({ ...actor, dir: actor.dir.normalize('NFC') }))).toEqual([
+				{ dir: 'old/čaj', name, ignored: true },
+			]);
+		});
+
+		it('judges from a root that .gitignore ignores, even when it holds a tracked file', async () => {
+			// Discovery from group/ drops the line that ignores group/ itself, as the upload does, and keeps the rest.
+			await write('.gitignore', 'group/\n');
+			await write('group/.gitignore', 'old/\n');
+			await write('group/README.md');
+			execSync('git add -f group/README.md', { cwd: tmpPath, stdio: 'ignore' });
+			await writeActor('group/actors/alpha');
+			await writeActor('group/old/beta');
+
+			await expect(findActorDirs(joinPath('group'))).resolves.toEqual([
+				{ dir: 'actors/alpha', name: 'alpha', ignored: false },
+				{ dir: 'old/beta', name: 'beta', ignored: true },
+			]);
+		});
+	});
+});
+
+describe('getGitignoreMatcher, which discovery shares with the upload', () => {
+	it('asks git about directories only when the caller names some', async () => {
+		await writeActor('actors/alpha');
+		const stdinCommands = () => gitState.commands.filter((command) => command.includes('--stdin'));
+
+		await getActorLocalFilePaths(tmpPath);
+		expect(stdinCommands()).toEqual([]);
+
+		await findActorDirs(tmpPath);
+		expect(stdinCommands()).toHaveLength(1);
+	});
+
+	it('reads the rules itself when git lists ./ from a directory .gitignore ignores', async () => {
+		// The check whether the rules ignore the directory fails, so git is asked for its listing, which is only `./`.
+		await write('.gitignore', 'ghost/\n*.log\n');
+		await write('ghost/.gitignore', 'secret.env\n');
+		await write('ghost/main.js');
+		await write('ghost/secret.env');
+		await write('ghost/x.log');
+		gitState.failingCommand = 'check-ignore -q';
+
+		const isGitignored = await getGitignoreMatcher(joinPath('ghost'));
+
+		expect(gitState.commands.some((command) => command.includes('ls-files'))).toBe(true);
+		expect(isGitignored('main.js')).toBe(false);
+		expect(isGitignored('secret.env')).toBe(true);
+		expect(isGitignored('x.log')).toBe(true);
 	});
 });
