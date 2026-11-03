@@ -662,9 +662,10 @@ describe('Utils - non-ASCII names in another Unicode form than the rules (no git
 
 const NFC_TYPED_TEST_DIR = 'gitignore-nfc-typed-test-dir';
 
-describe('Utils - pushing an ignored directory stored decomposed by its composed name (no git)', () => {
-	// The directory is stored decomposed (NFD), as macOS archives store names, and the push names it composed (NFC), as
-	// a keyboard types it. The line of the root .gitignore that ignores it is in NFC too.
+describe('Utils - pushing an ignored directory whose name is stored decomposed (no git)', () => {
+	// The directory is stored decomposed (NFD), as macOS archives store names. The push names it composed (NFC), as a
+	// keyboard types it, or as stored, as the current directory gives it. The line of the root .gitignore that ignores it
+	// is in NFC.
 	const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath(NFC_TYPED_TEST_DIR, {
 		create: true,
 		remove: true,
@@ -685,12 +686,19 @@ describe('Utils - pushing an ignored directory stored decomposed by its composed
 		await afterAllCalls();
 	});
 
-	it('should drop the line that ignores it and apply the rest', async ({ skip }) => {
+	it('should drop the line that ignores it and apply the rest, named composed', async ({ skip }) => {
 		const typed = joinPath('čaj'.normalize('NFC'));
 		// Only a file system that ignores the Unicode form of names, as macOS does, finds the directory by this path.
 		skip(!existsSync(typed), 'the file system tells the Unicode forms of names apart');
 
 		const paths = await getActorLocalFilePaths(typed);
+
+		expect(paths).toContain('main.js');
+		expect(paths).not.toContain('x.log');
+	});
+
+	it('should drop the line that ignores it and apply the rest, named as stored', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('čaj'.normalize('NFD')));
 
 		expect(paths).toContain('main.js');
 		expect(paths).not.toContain('x.log');
