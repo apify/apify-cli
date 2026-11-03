@@ -503,7 +503,7 @@ describe('Utils - .actorignore negation with directories and files git lists (gi
 
 		execSync('git init', { cwd: tmpPath, stdio: 'ignore' });
 
-		ensureFolderExistsSync(tmpPath, 'build/nested');
+		mkdirSync(joinPath('build', 'nested'), { recursive: true });
 
 		writeFileSync(joinPath('main.js'), 'content', { flag: 'w' });
 		writeFileSync(joinPath('build/out.js'), 'content', { flag: 'w' });
