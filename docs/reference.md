@@ -862,10 +862,10 @@ DESCRIPTION
   Use --force to override newer remote versions.
 
 USAGE
-  $ apify actors push [actorId] [--allow-missing-secrets]
-                      [--apply-env-vars-to-build] [-b <value>] [--dir <value>]
-                      [-f] [--json] [--open] [--profile <value>] [-v <value>]
-                      [-w <value>]
+  $ apify actors push [actorId] [--all]
+                      [--allow-missing-secrets] [--apply-env-vars-to-build]
+                      [-b <value>] [--dir <value>] [-f] [--json] [--open]
+                      [--profile <value>] [-v <value>] [-w <value>]
 
 ARGUMENTS
   actorId  Name or ID of the Actor to push (e.g. "apify/hello-world" or
@@ -873,6 +873,10 @@ ARGUMENTS
            modify the Actor with the name specified in '.actor/actor.json' file.
 
 FLAGS
+      --all                      Push every Actor found
+                                 in the subdirectories, except the ones ignored by
+                                 .gitignore. Works only from a directory without an
+                                 Actor config of its own.
       --allow-missing-secrets    Allow the command to
                                  continue even when secret values are not found in
                                  the local secrets storage.
