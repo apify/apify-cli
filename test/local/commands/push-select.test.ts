@@ -6,6 +6,7 @@ import { testRunCommand } from '../../../src/lib/command-framework/apify-command
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../../src/lib/consts.js';
 import { cwdCache } from '../../../src/lib/hooks/useActorConfig.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
+import { useIsolatedGit } from '../../__setup__/hooks/useIsolatedGit.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 // Whether the terminal is interactive is decided by `useStdin` and `ci-info`; both are under test control.
@@ -141,6 +142,10 @@ const { beforeAllCalls, afterAllCalls, joinPath, forceNewCwd } = useTempPath('pu
 	cwd: true,
 	cwdParent: false,
 });
+
+// The Actors sit in test/tmp, which the apify-cli .gitignore ignores, so the push reads the ignore rules itself, the
+// global excludes file included.
+useIsolatedGit('push-select-git-home');
 
 const { logMessages } = useConsoleSpy();
 
