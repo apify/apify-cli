@@ -252,6 +252,20 @@ describe('apify push of a monorepo Actor', () => {
 		expect(existsSync(joinPath('temp_file.zip'))).toBe(false);
 	});
 
+	it('zips the upload into one folder, which the platform takes as the root, also with only folders at the repository root', async () => {
+		// The platform unpacks a zip with no file at its top level from its last folder, as it does a GitHub archive.
+		git('rm', '--quiet', 'package.json', '.gitignore');
+		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const record = setRecord.mock.calls[0][0] as { value: Buffer };
+		const names = new AdmZip(record.value).getEntries().map((entry) => entry.entryName);
+		expect(new Set(names.map((name) => name.split('/')[0]))).toEqual(new Set(['source']));
+		expect(names).toContain(`source/${versionPayload(versionUpdate).actorPath}/.actor/actor.json`);
+	});
+
 	it('leaves no zip in the OS temp directory when getting the source store fails', async () => {
 		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
 		const pushZips = () => readdirSync(tmpdir()).filter((name) => /^apify-push-.*\.zip$/.test(name));
@@ -275,7 +289,7 @@ describe('apify push of a monorepo Actor', () => {
 
 		expect(commandProcess.exitCode).toBeFalsy();
 		const record = setRecord.mock.calls[0][0] as { value: Buffer };
-		const entry = new AdmZip(record.value).getEntry(`${ACTOR_PATH}/.actor/input_schema.json`);
+		const entry = new AdmZip(record.value).getEntry(`source/${ACTOR_PATH}/.actor/input_schema.json`);
 		// A link entry would hold the link's target path, which the platform unzips as a link to a file it lacks.
 		expect(entry?.getData().toString()).toContain('"title":"Input"');
 	});

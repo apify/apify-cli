@@ -569,7 +569,8 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 /**
  * Create zip file with all Actor files specified with pathsToZip
  */
-export const createActZip = async (zipName: string, pathsToZip: string[], cwd: string) => {
+/** With `rootFolder`, every entry goes in that folder. */
+export const createActZip = async (zipName: string, pathsToZip: string[], cwd: string, rootFolder?: string) => {
 	// NOTE: There can be a zip from a previous unfinished operation.
 	if (existsSync(zipName)) {
 		await deleteFile(zipName);
@@ -585,7 +586,8 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 	pathsToZip.forEach((filePath) => {
 		const absolutePath = join(cwd, filePath);
 		// The platform unzips links as links; send a linked file as its content, as the multi-file upload does.
-		archive.file(absolutePath, { name: filePath, stats: statSync(absolutePath) });
+		const name = rootFolder ? `${rootFolder}/${filePath}` : filePath;
+		archive.file(absolutePath, { name, stats: statSync(absolutePath) });
 	});
 
 	await archive.finalize();
