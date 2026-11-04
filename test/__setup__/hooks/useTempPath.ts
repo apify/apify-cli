@@ -63,6 +63,10 @@ export function useTempPath(
 		mockedStdin = stdin;
 	}
 
+	const resetCwd = () => {
+		usedCwd = cwdPath;
+	};
+
 	return {
 		tmpPath,
 		joinPath: (...paths: string[]) => join(tmpPath, ...paths),
@@ -77,13 +81,19 @@ export function useTempPath(
 			}
 
 			// Always reset the usedCwd to the expected initial state
-			usedCwd = cwdPath;
+			resetCwd();
 		},
 		afterAllCalls: async () => {
 			if (remove) {
 				await rimrafPromised(tmpPath);
 			}
 		},
+
+		/**
+		 * Puts the mocked cwd back to the initial one. Call it from `beforeEach` in a test that toggles
+		 * the cwd mid-test, so a vitest retry doesn't inherit the toggled cwd from the failed attempt.
+		 */
+		resetCwd,
 
 		toggleCwdBetweenFullAndParentPath: () => {
 			usedCwd = usedCwd === cwdPath ? tmpPath : cwdPath;

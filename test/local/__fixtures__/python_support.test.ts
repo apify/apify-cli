@@ -5,17 +5,27 @@ import { testRunCommand } from '../../../src/lib/command-framework/apify-command
 import { usePythonRuntime } from '../../../src/lib/hooks/runtimes/python.js';
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
+import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 import { resetCwdCaches } from '../../__setup__/reset-cwd-caches.js';
 
 const actorName = 'my-python-actor';
 const PYTHON_START_TEMPLATE_ID = 'python-start';
-const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, toggleCwdBetweenFullAndParentPath } = useTempPath(actorName, {
-	create: true,
-	remove: true,
-	cwd: true,
-	cwdParent: true,
-});
+const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, resetCwd, toggleCwdBetweenFullAndParentPath } = useTempPath(
+	actorName,
+	{
+		create: true,
+		remove: true,
+		cwd: true,
+		cwdParent: true,
+	},
+);
+
+const { logMessages } = useConsoleSpy();
+
+// Both commands below report a failed child process through the CLI's own output and then keep going,
+// so without this every failure here surfaces as a missing file several steps later.
+const cliOutput = () => [...logMessages.error, ...logMessages.log].join('\n') || '(the CLI printed nothing)';
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { RunCommand } = await import('../../../src/commands/run.js');
@@ -30,6 +40,9 @@ describe('[python] Python support', () => {
 	});
 
 	beforeEach(() => {
+		// A retry re-runs the test body but not the hooks, so the cwd toggled below would leak into the
+		// next attempt and make "apify create" scaffold one directory too deep.
+		resetCwd();
 		resetCwdCaches();
 	});
 
@@ -57,7 +70,10 @@ describe('[python] Python support', () => {
 		// Check file structure
 		expect(existsSync(tmpPath)).toBeTruthy();
 
-		expect(existsSync(joinPath('.venv'))).toBeTruthy();
+		expect(
+			existsSync(joinPath('.venv')),
+			`No virtual environment was created. CLI output:\n${cliOutput()}`,
+		).toBeTruthy();
 		expect(existsSync(joinPath('requirements.txt'))).toBeTruthy();
 
 		const expectedOutput = {
@@ -80,6 +96,9 @@ async def main():
 
 		// Check Actor output
 		const actorOutputPath = joinPath(getLocalKeyValueStorePath(), 'OUTPUT');
+
+		expect(existsSync(actorOutputPath), `The Actor run wrote no OUTPUT. CLI output:\n${cliOutput()}`).toBeTruthy();
+
 		const actorOutput = JSON.parse(readFileSync(actorOutputPath, 'utf8'));
 		expect(actorOutput).toStrictEqual(expectedOutput);
 	});

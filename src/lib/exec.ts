@@ -71,6 +71,20 @@ const spawnPromised = async (
 					message = execaError.shortMessage;
 				}
 
+				// Nothing streamed the child's output in this mode, so an exit code on its own leaves the
+				// caller with no cause at all. Carry the tail of what the child printed instead.
+				if (process.env.APIFY_NO_LOGS_IN_TESTS) {
+					const childOutput = [execaError.stderr, execaError.stdout]
+						.map((output) => (typeof output === 'string' ? output.trim() : ''))
+						.filter(Boolean)
+						.join('\n')
+						.slice(-4000);
+
+					if (childOutput) {
+						message += `\n${childOutput}`;
+					}
+				}
+
 				throw new Error(message, { cause: execaError });
 			}),
 		)) as Result<Awaited<typeof childProcess>, Error & { cause: ExecaError }>;
