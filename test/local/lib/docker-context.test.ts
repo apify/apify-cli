@@ -156,6 +156,24 @@ describe('resolveDockerContext', () => {
 			});
 		});
 
+		it('rejects an absolute path, which the platform resolves from .actor/', () => {
+			for (const value of [root, join(root, ACTOR_PATH)]) {
+				expect(resolveDockerContext(actorDir(), value)).toEqual({
+					kind: 'invalid',
+					message: `"dockerContextDir" in .actor/actor.json is absolute (${value}); the path is relative to .actor/.`,
+				});
+			}
+		});
+
+		it('rejects a path with backslashes, which the platform reads as part of a name', () => {
+			expect(resolveDockerContext(actorDir(), '..\\..\\..')).toEqual({
+				kind: 'invalid',
+				message:
+					'"dockerContextDir" in .actor/actor.json uses a backslash (..\\..\\..); ' +
+					'the platform resolves paths with forward slashes.',
+			});
+		});
+
 		it('rejects a field that is not a string', () => {
 			expect(resolveDockerContext(actorDir(), 42)).toEqual({
 				kind: 'invalid',

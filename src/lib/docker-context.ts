@@ -44,6 +44,21 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	if (typeof dockerContextDir !== 'string') {
 		return { kind: 'invalid', message: `"dockerContextDir" in .actor/actor.json must be a string.` };
 	}
+	// The platform resolves the path from .actor/ on Linux, as the paths to files in actor.json.
+	if (isAbsolute(dockerContextDir)) {
+		return {
+			kind: 'invalid',
+			message: `"dockerContextDir" in .actor/actor.json is absolute (${dockerContextDir}); the path is relative to .actor/.`,
+		};
+	}
+	if (dockerContextDir.includes('\\')) {
+		return {
+			kind: 'invalid',
+			message:
+				`"dockerContextDir" in .actor/actor.json uses a backslash (${dockerContextDir}); ` +
+				'the platform resolves paths with forward slashes.',
+		};
+	}
 
 	// The platform resolves the context from the Actor folder's real path, so a symlinked `--dir` must too. The native
 	// call also gives the names their case on disk, which a `--dir` typed in another case on macOS or Windows lacks.
