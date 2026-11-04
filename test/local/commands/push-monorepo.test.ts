@@ -311,7 +311,7 @@ describe('apify push of a monorepo Actor', () => {
 		expect(names).not.toContain('outside.txt');
 	});
 
-	it('sends a link to a file the upload holds as that file and leaves out one to a file a clone lacks', async () => {
+	it('sends a link to a file the upload holds as that file and leaves out one to a file the upload lacks', async () => {
 		// A workspace package shares the root .env, which only the root .gitignore line covers.
 		await write('.gitignore', 'node_modules\n/.env\n');
 		await write('.env', 'API_TOKEN=secret\n');
@@ -328,6 +328,21 @@ describe('apify push of a monorepo Actor', () => {
 		expect(names).not.toContain('packages/typescript-utils/.env');
 		expect(names).not.toContain('shared/git-config');
 		expect(files.find((file) => file.name === 'shared/package.json')?.content).toContain('workspaces');
+	});
+
+	it('sends a link elsewhere in the repository to a file only the Actor folder adds', async () => {
+		// The Actor folder's .actorignore takes back its gitignored dist, which a clone lacks.
+		await write('.gitignore', 'node_modules\ndist\n');
+		await write(`${ACTOR_PATH}/.actorignore`, '!dist/\n');
+		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+		symlinkSync(`../${ACTOR_PATH}/dist/main.js`, joinPath('shared/main.js'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		expect(files.find((file) => file.name === 'shared/main.js')?.content).toContain('console.log(1)');
 	});
 
 	it('accepts a schema reached through a symlink inside the repository and uploads it at the link path', async () => {
@@ -667,6 +682,55 @@ describe('apify push of a monorepo Actor', () => {
 			expect(names.filter((name) => name.toLowerCase() === 'actors/typescript-actor/.actor/actor.json')).toHaveLength(
 				1,
 			);
+		},
+	);
+
+	// As on macOS: a name composed (NFC) finds the folder stored decomposed (NFD).
+	it.runIf(process.platform === 'darwin')(
+		'uploads links elsewhere that compose the name of an Actor folder stored decomposed',
+		async () => {
+			const decomposedPath = 'actors/cafe\u0301-actor';
+			const composedPath = 'actors/caf\u00e9-actor';
+			await write(
+				`${decomposedPath}/.actor/actor.json`,
+				JSON.stringify({
+					actorSpecification: 1,
+					name: actName,
+					version: '0.0',
+					dockerContextDir: '../../..',
+					dockerfile: '../../../shared/TypeScript_Dockerfile',
+				}),
+			);
+			await write(`${decomposedPath}/src/main.js`, 'console.log(1);\n');
+			symlinkSync(`../${composedPath}/src/main.js`, joinPath('shared/main.js'));
+			symlinkSync(`../${composedPath}/src`, joinPath('shared/actor-src'));
+			git('add', '.');
+			forceNewCwd(decomposedPath);
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toEqual(expect.arrayContaining(['shared/main.js', 'shared/actor-src/main.js']));
+		},
+	);
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'uploads links elsewhere that spell an Actor folder renamed by case only in its old case',
+		async () => {
+			symlinkSync(`../${ACTOR_PATH}/src/index.ts`, joinPath('shared/index.ts'));
+			symlinkSync(`../${ACTOR_PATH}/src`, joinPath('shared/actor-src'));
+			git('add', '.');
+			git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'links');
+			renameSync(joinPath(ACTOR_PATH), joinPath('actors/renaming'));
+			renameSync(joinPath('actors/renaming'), joinPath('actors/TypeScript-Actor'));
+			forceNewCwd('actors/TypeScript-Actor');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toEqual(expect.arrayContaining(['shared/index.ts', 'shared/actor-src/index.ts']));
 		},
 	);
 

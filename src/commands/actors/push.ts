@@ -226,13 +226,16 @@ const rejectsActorPath = (err: unknown) => {
  * Push sends files only, in the multi-file and the zip upload alike: a link to a file the upload holds goes as that
  * file at the link's path, a link to a directory inside the upload as copies of the uploaded files under its target,
  * and a link to nothing, to a file the upload leaves out (such as a gitignored .env), or to a target outside the
- * upload is left out, as a clone of the repository could not follow it either. The `actor.json` path check then
- * reports a config that refers to a left-out link as not uploaded.
+ * upload is left out, as a clone of the repository could not follow it either. A link to a file that only the Actor
+ * folder's upload adds, such as a gitignored dist that its .actorignore takes back, goes too. The `actor.json` path
+ * check then reports a config that refers to a left-out link as not uploaded.
  */
-const resolveLinksForUpload = (root: string, files: string[]) => {
+const resolveLinksForUpload = (root: string, files: string[], actorFolderFiles: string[]) => {
 	const realRoot = realpathSync(root);
 	// Git lists names composed (NFC) on macOS, while a link's target keeps the form its text has.
 	const listed = new Set(files.map((file) => file.normalize('NFC')));
+	// The Actor folder's files have their names as stored on disk, as a target's native real path spells them.
+	const actorFolderUpload = new Set(actorFolderFiles);
 	// Outside Git, the file list follows folder links, so a file that is no link itself can lie outside the upload too.
 	// Its folder's real path tells, once per folder.
 	const folders = new Map<string, boolean>();
@@ -259,7 +262,13 @@ const resolveLinksForUpload = (root: string, files: string[]) => {
 			const target = relative(realRoot, realFilePath);
 			if (isOutside(target)) return undefined;
 			const targetStats = statSync(realFilePath);
-			if (targetStats.isFile() && !listed.has(toPosix(target).normalize('NFC'))) return undefined;
+			if (
+				targetStats.isFile() &&
+				!listed.has(toPosix(target).normalize('NFC')) &&
+				!actorFolderUpload.has(toPosix(relative(realRoot, realPath(filePath))))
+			) {
+				return undefined;
+			}
 			return { target: toPosix(target), stats: targetStats };
 		} catch {
 			return undefined;
@@ -671,7 +680,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			actorPath = dockerContext.actorPath;
 			// The source root is a real path, so the Actor folder has to be one too for its paths to fall inside it.
 			actorDir = join(uploadRoot, actorPath);
-			const contextFiles = resolveLinksForUpload(uploadRoot, await getContextFilePaths(uploadRoot));
+			const actorFolderFiles = filePathsToPush.map((file) => `${actorPath}/${file}`);
+			const contextFiles = resolveLinksForUpload(uploadRoot, await getContextFilePaths(uploadRoot), actorFolderFiles);
 			uploadedFiles = withActorFolderFiles(uploadRoot, actorPath, contextFiles, filePathsToPush);
 		}
 
