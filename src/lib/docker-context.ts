@@ -139,8 +139,15 @@ export interface GitState {
 
 function git(cwd: string, args: string[]): string | undefined {
 	try {
-		const output = execFileSync('git', args, { cwd, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
-		return output.trim();
+		// A large repository lists more than the default 1 MiB of file names.
+		const output = execFileSync('git', args, {
+			cwd,
+			encoding: 'utf-8',
+			stdio: ['ignore', 'pipe', 'ignore'],
+			maxBuffer: Number.POSITIVE_INFINITY,
+		});
+		// Only the line end goes: a file or folder name can start or end with a space.
+		return output.replace(/\r?\n$/, '');
 	} catch {
 		return undefined;
 	}
