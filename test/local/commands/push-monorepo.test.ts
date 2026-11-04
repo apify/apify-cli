@@ -14,6 +14,7 @@ import { CommandExitCodes } from '../../../src/lib/consts.js';
 import { MONOREPO_PLATFORM_SUPPORT_ISSUE_URL } from '../../../src/lib/docker-context.js';
 import { cwdCache } from '../../../src/lib/hooks/useActorConfig.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
+import { useIsolatedGit } from '../../__setup__/hooks/useIsolatedGit.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 const actName = 'push-monorepo-actor';
@@ -110,6 +111,9 @@ const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, forceNewCwd } = useTem
 
 // A sibling folder of the repository: the target of links that leave it.
 const outside = useTempPath('push-monorepo-outside', { create: true, remove: true, cwd: false, cwdParent: false });
+
+// Git reads the global excludes file, so the developer's own one could leave out the files these tests push.
+useIsolatedGit('push-monorepo-git-home');
 
 const { logMessages } = useConsoleSpy();
 
