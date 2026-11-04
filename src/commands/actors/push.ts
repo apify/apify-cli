@@ -852,9 +852,7 @@ Skipping push. Use --force to override.`,
 			const key = actorPath ? `version-${version}-monorepo.zip` : `version-${version}.zip`;
 			const zipPath = join(tmpdir(), `apify-push-${randomUUID()}.zip`);
 			try {
-				// The platform takes a zip's lone top-level folder as its root, as in a GitHub archive, and with only folders
-				// at the top level, the last one. A monorepo zip goes in one folder, so actorPath is resolved from it.
-				await createActZip(zipPath, uploadedFiles, uploadRoot, actorPath ? 'source' : undefined);
+				await createActZip(zipPath, uploadedFiles, uploadRoot);
 
 				// Upload it to Apify.keyValueStores
 				const buffer = readFileSync(zipPath);
