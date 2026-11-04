@@ -503,7 +503,9 @@ const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 	return { excludeFilter, forceIncludePatterns };
 };
 
-export const ACTOR_FILES_HARDCODED_IGNORE = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+// `**/.git` matches at any depth, both the .git directory of a nested repository and the .git file of a submodule or
+// linked worktree. The .gitignore rules don't exclude either.
+export const ACTOR_FILES_HARDCODED_IGNORE = ['**/.git', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
 
 /**
  * Get Actor local files, omit files defined in .gitignore, .actorignore and .git folder
