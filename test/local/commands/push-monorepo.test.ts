@@ -312,6 +312,25 @@ describe('apify push of a monorepo Actor', () => {
 		expect(names).not.toContain('outside.txt');
 	});
 
+	it('sends a link to a file the upload holds as that file and leaves out one to a file a clone lacks', async () => {
+		// A workspace package shares the root .env, which only the root .gitignore line covers.
+		await write('.gitignore', 'node_modules\n/.env\n');
+		await write('.env', 'API_TOKEN=secret\n');
+		symlinkSync('../../.env', joinPath('packages/typescript-utils/.env'));
+		symlinkSync('../.git/config', joinPath('shared/git-config'));
+		symlinkSync('../package.json', joinPath('shared/package.json'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		const names = files.map((file) => file.name);
+		expect(names).not.toContain('packages/typescript-utils/.env');
+		expect(names).not.toContain('shared/git-config');
+		expect(files.find((file) => file.name === 'shared/package.json')?.content).toContain('workspaces');
+	});
+
 	it('accepts a schema reached through a symlink inside the repository and uploads it at the link path', async () => {
 		await write('shared/input_schema.json', '{"title":"Input","type":"object","properties":{}}');
 		symlinkSync('../../../shared/input_schema.json', joinPath(`${ACTOR_PATH}/.actor/input_schema.json`));

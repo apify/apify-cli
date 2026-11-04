@@ -223,13 +223,16 @@ const rejectsActorPath = (err: unknown) => {
 };
 
 /**
- * Push sends files only, in the multi-file and the zip upload alike: a link to a file inside the upload goes as that
+ * Push sends files only, in the multi-file and the zip upload alike: a link to a file the upload holds goes as that
  * file at the link's path, a link to a directory inside the upload as copies of the uploaded files under its target,
- * and a link to nothing or to a target outside the upload is left out, as a clone of the repository could not follow
- * it either. The `actor.json` path check then reports a config that refers to a left-out link as not uploaded.
+ * and a link to nothing, to a file the upload leaves out (such as a gitignored .env), or to a target outside the
+ * upload is left out, as a clone of the repository could not follow it either. The `actor.json` path check then
+ * reports a config that refers to a left-out link as not uploaded.
  */
 const resolveLinksForUpload = (root: string, files: string[]) => {
 	const realRoot = realpathSync(root);
+	// Git lists names composed (NFC) on macOS, while a link's target keeps the form its text has.
+	const listed = new Set(files.map((file) => file.normalize('NFC')));
 	// Outside Git, the file list follows folder links, so a file that is no link itself can lie outside the upload too.
 	// Its folder's real path tells, once per folder.
 	const folders = new Map<string, boolean>();
@@ -254,7 +257,10 @@ const resolveLinksForUpload = (root: string, files: string[]) => {
 		try {
 			const realFilePath = realpathSync(filePath);
 			const target = relative(realRoot, realFilePath);
-			return isOutside(target) ? undefined : { target: toPosix(target), stats: statSync(realFilePath) };
+			if (isOutside(target)) return undefined;
+			const targetStats = statSync(realFilePath);
+			if (targetStats.isFile() && !listed.has(toPosix(target).normalize('NFC'))) return undefined;
+			return { target: toPosix(target), stats: targetStats };
 		} catch {
 			return undefined;
 		}
