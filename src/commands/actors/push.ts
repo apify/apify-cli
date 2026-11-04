@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { lstatSync, readFileSync, realpathSync, rmSync, type Stats, statSync, writeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
 import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyApiError, Build } from 'apify-client';
@@ -230,12 +230,27 @@ const rejectsActorPath = (err: unknown) => {
  */
 const resolveLinksForUpload = (root: string, files: string[]) => {
 	const realRoot = realpathSync(root);
+	// Outside Git, the file list follows folder links, so a file that is no link itself can lie outside the upload too.
+	// Its folder's real path tells, once per folder.
+	const folders = new Map<string, boolean>();
+	const isFolderInUpload = (folder: string) => {
+		let inUpload = folders.get(folder);
+		if (inUpload === undefined) {
+			try {
+				inUpload = !isOutside(relative(realRoot, realpathSync(join(root, folder))));
+			} catch {
+				inUpload = false;
+			}
+			folders.set(folder, inUpload);
+		}
+		return inUpload;
+	};
 	// Where an entry's content lies, relative to the root, and what it is; nothing for a link the upload drops.
 	const locate = (file: string): { target: string; stats: Stats } | undefined => {
 		const filePath = join(root, file);
 		const stats = lstatSync(filePath, { throwIfNoEntry: false });
 		if (!stats) return undefined;
-		if (!stats.isSymbolicLink()) return { target: file, stats };
+		if (!stats.isSymbolicLink()) return isFolderInUpload(dirname(file)) ? { target: file, stats } : undefined;
 		try {
 			const realFilePath = realpathSync(filePath);
 			const target = relative(realRoot, realFilePath);

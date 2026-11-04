@@ -493,6 +493,21 @@ describe('apify push of a monorepo Actor', () => {
 		).toEqual([]);
 	});
 
+	it('leaves out the files under a folder symlink leading out of the Docker context outside Git', async () => {
+		await mkdir(outside.joinPath('folder'), { recursive: true });
+		await writeFile(outside.joinPath('folder/outside.txt'), 'outside\n');
+		symlinkSync(outside.joinPath('folder'), joinPath('external'));
+		symlinkSync('shared', joinPath('internal'));
+		gitState.gitAvailable = false;
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toContain('internal/TypeScript_Dockerfile');
+		expect(names.filter((name) => name.startsWith('external/'))).toEqual([]);
+	});
+
 	it('rejects a dockerfile outside the Docker context before touching the platform', async () => {
 		await writeActorConfig({ dockerContextDir: '../..', dockerfile: '../../../shared/TypeScript_Dockerfile' });
 
