@@ -40,6 +40,13 @@ describe('Utils - Git internals below the top level of the Actor directory (git)
 		await afterAllCalls();
 	});
 
+	it('should exclude the .git directory at the top level', async () => {
+		const paths = await getActorLocalFilePaths(joinPath('actor'));
+
+		expect(paths).toContain('main.js');
+		expect(paths.filter((path) => path.startsWith('.git/'))).toEqual([]);
+	});
+
 	it('should exclude the .git directory of a nested repository', async () => {
 		const paths = await getActorLocalFilePaths(joinPath('actor'));
 
