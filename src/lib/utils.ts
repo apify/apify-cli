@@ -1,9 +1,18 @@
 import { execSync } from 'node:child_process';
-import { createWriteStream, existsSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import {
+	createWriteStream,
+	existsSync,
+	readdirSync,
+	readFileSync,
+	realpathSync,
+	statSync,
+	writeFileSync,
+} from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
+import { finished } from 'node:stream/promises';
 
 import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapphire/duration';
 import { Timestamp } from '@sapphire/timestamp';
@@ -573,9 +582,15 @@ export const createActZip = async (zipName: string, pathsToZip: string[], cwd: s
 	});
 	archive.pipe(writeStream);
 
-	pathsToZip.forEach((filePath) => archive.file(join(cwd, filePath), { name: filePath }));
+	pathsToZip.forEach((filePath) => {
+		const absolutePath = join(cwd, filePath);
+		// The platform unzips links as links; send a linked file as its content, as the multi-file upload does.
+		archive.file(absolutePath, { name: filePath, stats: statSync(absolutePath) });
+	});
 
 	await archive.finalize();
+	// The archive ends before the file stream has written all of it, and push reads the file right away.
+	await finished(writeStream);
 };
 
 export interface LocalInput {
