@@ -74,12 +74,12 @@ export class BuildsRmCommand extends ApifyCommand<typeof BuildsRmCommand> {
 				message: `Are you sure you want to delete this Actor Build? If so, please type in "${confirmationPrompt}":`,
 				expectedValue: confirmationPrompt,
 				failureMessage: 'Your provided value does not match the build tag.',
-				providedConfirmFromStdin: yes ? confirmationPrompt : undefined,
+				preAnswered: yes ? confirmationPrompt : undefined,
 			});
 		} else {
 			confirmed = await useYesNoConfirm({
 				message: `Are you sure you want to delete this Actor Build?`,
-				providedConfirmFromStdin: yes || undefined,
+				preAnswered: yes || undefined,
 			});
 		}
 

@@ -263,7 +263,7 @@ export class InstallCommand extends ApifyCommand<typeof InstallCommand> {
 			allowedToAutomaticallyDo = await useYesNoConfirm({
 				message: confirmMessage,
 				// For now, no stdin -> always false
-				providedConfirmFromStdin: false,
+				defaultWhenNonInteractive: false,
 			});
 		}
 

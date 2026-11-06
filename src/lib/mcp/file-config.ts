@@ -20,7 +20,7 @@ async function confirmOverwrite({ filePath, entryKey, yes }: ConfirmOverwriteOpt
 	return useYesNoConfirm({
 		message: `A server entry named '${entryKey}' already exists in ${tildify(filePath)}. Overwrite it?`,
 		default: false,
-		providedConfirmFromStdin: yes || undefined,
+		preAnswered: yes || undefined,
 		errorMessageForStdin: `An '${entryKey}' entry already exists in ${tildify(filePath)}. Re-run with --yes to overwrite.`,
 	});
 }
