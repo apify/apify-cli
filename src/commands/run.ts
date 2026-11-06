@@ -7,7 +7,7 @@ import type { ExecaError } from 'execa';
 import mime from 'mime';
 import { minVersion } from 'semver';
 
-import { ACTOR_ENV_VARS, APIFY_ENV_VARS } from '@apify/consts';
+import { ACTOR_ENV_VARS, APIFY_ENV_VARS, META_ORIGINS } from '@apify/consts';
 import { validateInputSchema, validateInputUsingValidator } from '@apify/input_schema';
 
 import { lookUpProfile } from '../lib/auth-file.js';
@@ -33,6 +33,7 @@ import { deleteKvsRecord, writeKvsRecord } from '../lib/kvs-metadata.js';
 import { getAccessToken, OAuthSessionError } from '../lib/oauth/session.js';
 import { error, info, warning } from '../lib/outputs.js';
 import { replaceSecretsValue } from '../lib/secrets.js';
+import { DEFAULT_LOCAL_SERVER_PORT, watchLocalServerReadiness } from '../lib/server-actor.js';
 import type { AuthJSON } from '../lib/types.js';
 import {
 	Ajv2019,
@@ -184,10 +185,25 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			required: false,
 			default: false,
 		}),
+		standby: Flags.boolean({
+			description:
+				'Run the Actor the way the platform starts it for its server interface: sets APIFY_META_ORIGIN=STANDBY ' +
+				'and the web server port, then sends the readiness probe and prints the local URL.',
+			required: false,
+			default: false,
+		}),
+		port: Flags.integer({
+			description: `The port the Actor's web server listens on. Use with --standby. Defaults to ${DEFAULT_LOCAL_SERVER_PORT}.`,
+			required: false,
+		}),
 	};
 
 	async run() {
 		const cwd = process.cwd();
+
+		if (this.flags.port !== undefined && !this.flags.standby) {
+			throw new Error('The --port flag can only be used together with --standby.');
+		}
 
 		let authFailure: string | undefined;
 		const auth = await resolveAuth().catch((err): undefined => {
@@ -214,6 +230,14 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 		}
 
 		const { config: localConfig } = localConfigResult.unwrap();
+
+		if (localConfig!.usesStandbyMode && !this.flags.standby) {
+			info({
+				message:
+					'This Actor has a server interface ("usesStandbyMode" in actor.json). ' +
+					'Pass --standby to run it the way the platform does for HTTP requests.',
+			});
+		}
 
 		const actualStoragePath = getLocalStorageDir();
 		const resolvedInputKey = resolveInputKey();
@@ -385,6 +409,16 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			[CRAWLEE_INPUT_KEY_ENV]: effectiveInputKey,
 		};
 
+		const serverPort = this.flags.port ?? DEFAULT_LOCAL_SERVER_PORT;
+
+		if (this.flags.standby) {
+			localEnvVars[APIFY_ENV_VARS.META_ORIGIN] = META_ORIGINS.STANDBY;
+			localEnvVars[ACTOR_ENV_VARS.WEB_SERVER_PORT] = String(serverPort);
+			// The platform still injects the legacy name, and older templates read it.
+			localEnvVars[ACTOR_ENV_VARS.STANDBY_PORT] = String(serverPort);
+			localEnvVars[ACTOR_ENV_VARS.STANDBY_URL] = `http://localhost:${serverPort}`;
+		}
+
 		if (proxy && proxy.password) localEnvVars[APIFY_ENV_VARS.PROXY_PASSWORD] = proxy.password;
 		if (userId) localEnvVars[APIFY_ENV_VARS.USER_ID] = userId;
 		if (token) localEnvVars[APIFY_ENV_VARS.TOKEN] = token;
@@ -404,6 +438,12 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 					authFailure ??
 					'You are not logged in with your Apify Account. Some features like Apify Proxy will not work. Call "apify login" to fix that.',
 			});
+		}
+
+		const readinessProbe = new AbortController();
+
+		if (this.flags.standby) {
+			void watchLocalServerReadiness(serverPort, readinessProbe.signal);
 		}
 
 		try {
@@ -511,6 +551,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			// The command framework only defaults exitCode to 1; preserve the Actor's own code when present.
 			process.exitCode = (err as ExecaError).exitCode ?? 1;
 		} finally {
+			readinessProbe.abort();
+
 			if (storedInputResults) {
 				if ('tempInputKey' in storedInputResults) {
 					// Temp input record: just delete it, user's INPUT.json was never touched

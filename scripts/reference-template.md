@@ -111,6 +111,15 @@ These commands help you manage scheduled and configured Actor runs. Use them to 
 <!-- task-commands-end -->
 <!-- prettier-ignore-end -->
 
+### Server Actors
+
+These commands let you call a Server Actor's HTTP endpoints and inspect its server interface.
+
+<!-- prettier-ignore-start -->
+<!-- server-commands-start -->
+<!-- server-commands-end -->
+<!-- prettier-ignore-end -->
+
 ### MCP
 
 Use these commands to configure the Apify MCP server in your AI client.

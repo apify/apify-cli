@@ -5,12 +5,17 @@ import chalk from 'chalk';
 import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.js';
 import { Args } from '../lib/command-framework/args.js';
 import { Flags } from '../lib/command-framework/flags.js';
+import {
+	HTTP_METHODS,
+	mergeHeaders,
+	METHODS_WITHOUT_BODY,
+	parseHeaders,
+	parseParams,
+} from '../lib/commands/http-request.js';
 import { APIFY_CLIENT_DEFAULT_HEADERS, CommandExitCodes } from '../lib/consts.js';
 import { error, simpleLog } from '../lib/outputs.js';
 import { getLoggedClientOrThrow } from '../lib/utils.js';
 
-const HTTP_METHODS: string[] = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'];
-const METHODS_WITHOUT_BODY = new Set(['GET', 'HEAD']);
 const OPENAPI_SPEC_URL = 'https://docs.apify.com/api/openapi.json';
 
 interface OpenAPISpec {
@@ -21,89 +26,6 @@ interface Endpoint {
 	method: string;
 	path: string;
 	summary: string;
-}
-
-function parseParams(raw: string | undefined): string {
-	if (!raw) {
-		return '';
-	}
-
-	let parsed: unknown;
-
-	try {
-		parsed = JSON.parse(raw);
-	} catch {
-		throw new Error('Invalid JSON in --params flag. Please provide a valid JSON object, e.g. \'{"limit": 1}\'.');
-	}
-
-	if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-		throw new Error('--params must be a JSON object (e.g. \'{"limit": 1}\').');
-	}
-
-	const searchParams = new URLSearchParams();
-
-	for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-		if (value === undefined || value === null) {
-			continue;
-		}
-
-		if (typeof value === 'object') {
-			throw new Error(
-				`--params value for "${key}" must be a scalar (string, number, or boolean), got ${Array.isArray(value) ? 'array' : 'object'}. ` +
-					'Query parameters cannot contain nested objects or arrays.',
-			);
-		}
-
-		searchParams.append(key, String(value));
-	}
-
-	return searchParams.toString();
-}
-
-function parseHeaders(raw: string | undefined): Record<string, string> {
-	if (!raw) {
-		return {};
-	}
-
-	const trimmed = raw.trim();
-
-	// JSON object form: --header '{"X-Foo": "bar", "X-Baz": "qux"}'
-	if (trimmed.startsWith('{')) {
-		let parsed: unknown;
-
-		try {
-			parsed = JSON.parse(trimmed);
-		} catch {
-			throw new Error('Invalid JSON in --header flag. Provide a JSON object like \'{"X-Foo": "bar"}\'.');
-		}
-
-		if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {
-			throw new Error('--header JSON must be an object mapping header names to string values.');
-		}
-
-		const result: Record<string, string> = {};
-
-		for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-			if (typeof value !== 'string') {
-				throw new Error(`--header value for "${key}" must be a string, got ${typeof value}.`);
-			}
-
-			result[key.trim()] = value.trim();
-		}
-
-		return result;
-	}
-
-	// "key:value" form
-	const colonIndex = trimmed.indexOf(':');
-
-	if (colonIndex === -1) {
-		throw new Error('Header must be in "key:value" format, or a JSON object for multiple headers.');
-	}
-
-	return {
-		[trimmed.slice(0, colonIndex).trim()]: trimmed.slice(colonIndex + 1).trim(),
-	};
 }
 
 const METHOD_COLORS: Record<string, (text: string) => string> = {
@@ -325,25 +247,16 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 			url = `${url}${separator}${queryString}`;
 		}
 
-		// Build headers. Custom headers overwrite defaults case-insensitively so
-		// callers can override e.g. Content-Type without creating duplicate entries.
-		const headers: Record<string, string> = {
+		const defaultHeaders: Record<string, string> = {
 			...APIFY_CLIENT_DEFAULT_HEADERS,
 			Authorization: `Bearer ${token}`,
 		};
 
 		if (this.flags.body) {
-			headers['Content-Type'] = 'application/json';
+			defaultHeaders['Content-Type'] = 'application/json';
 		}
 
-		for (const [key, value] of Object.entries(customHeaders)) {
-			for (const existingKey of Object.keys(headers)) {
-				if (existingKey.toLowerCase() === key.toLowerCase()) {
-					delete headers[existingKey];
-				}
-			}
-			headers[key] = value;
-		}
+		const headers = mergeHeaders(defaultHeaders, customHeaders);
 
 		// Make the request
 		const response = await fetch(url, {
