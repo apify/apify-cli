@@ -73,7 +73,7 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 
 		const confirm = await useYesNoConfirm({
 			message: `Are you sure you want to delete this record?`,
-			providedConfirmFromStdin: yes || undefined,
+			preAnswered: yes || undefined,
 		});
 
 		if (!confirm) {

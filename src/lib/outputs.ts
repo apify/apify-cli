@@ -55,13 +55,3 @@ export function info(options: SimpleLogOptions) {
 		[options.stdout ? 'stdoutOutput' : 'stderrOutput']: [chalk.white('Info:'), options.message],
 	});
 }
-
-export interface SimpleLinkOptions extends SimpleLogOptions {
-	url: string;
-}
-
-export function link(options: SimpleLinkOptions) {
-	internalLog({
-		[options.stdout ? 'stdoutOutput' : 'stderrOutput']: [chalk.blue(options.message), options.url],
-	});
-}

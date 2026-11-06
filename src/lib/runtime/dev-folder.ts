@@ -2,8 +2,12 @@ import type { ApifyClient } from 'apify-client';
 
 import { APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
 
-/** Anything but the Apify cloud API may be a local Actor runtime; runtime-only calls are skipped otherwise. */
-export function mayTargetActorRuntime(client: Pick<ApifyClient, 'baseUrl'>): boolean {
+/**
+ * Anything but the Apify cloud API may be a local Actor runtime; runtime-only calls are skipped otherwise.
+ * No `baseUrl` means the platform default.
+ */
+export function mayTargetActorRuntime(client: { baseUrl?: string }): boolean {
+	if (!client.baseUrl) return false;
 	try {
 		const { hostname } = new URL(client.baseUrl);
 		return hostname !== 'apify.com' && !hostname.endsWith('.apify.com');

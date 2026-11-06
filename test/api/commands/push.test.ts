@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 
 import type { ActorCollectionCreateOptions } from 'apify-client';
 
@@ -33,6 +34,9 @@ const TEST_ACTOR: ActorCollectionCreateOptions = {
 
 const ACT_TEMPLATE = 'project_empty';
 
+// The API and the local file listing don't guarantee the same order, so source files are compared sorted by name.
+const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name);
+
 useAuthSetup({ perTest: false });
 
 const {
@@ -45,7 +49,7 @@ const {
 	forceNewCwd,
 } = useTempPath(ACTOR_NAME, { create: true, remove: true, cwd: true, cwdParent: true });
 
-const { lastErrorMessage } = useConsoleSpy();
+const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { ActorsPushCommand } = await import('../../../src/commands/actors/push.js');
@@ -116,7 +120,7 @@ describe('[api] apify push', () => {
 				},
 			]);
 			// TODO: vlad, fix this too
-			expect((createdActorVersion as any)!.sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect((createdActorVersion as any)!.sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(createdActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 
 			// eslint-disable-next-line dot-notation
@@ -160,7 +164,7 @@ describe('[api] apify push', () => {
 					value: 'envVarValue',
 				},
 			]);
-			expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect((testActorVersion as any).sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 
 			// eslint-disable-next-line dot-notation
@@ -212,7 +216,7 @@ describe('[api] apify push', () => {
 
 			expect(testActorVersion!.versionNumber).to.be.eql(actorJson.version);
 			expect(testActorVersion!.envVars).to.be.eql(testActorWithEnvVars.versions[0].envVars);
-			expect((testActorVersion as any).sourceFiles.sort()).to.be.eql(sourceFiles.sort());
+			expect((testActorVersion as any).sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
 		},
 		TEST_TIMEOUT,
@@ -627,6 +631,47 @@ describe('[api] apify push', () => {
 			await testRunCommand(ActorsPushCommand, { flags_noPrompt: true });
 
 			expect(lastErrorMessage()).to.include('A valid Actor could not be found in the current directory.');
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should push every Actor below a root without an Actor of its own with --all',
+		async () => {
+			const rootName = useUniqueId('cli-push-all');
+			const root = join(tmpPath, '..', rootName);
+			const actorNames = [useUniqueId('cli-push-first'), useUniqueId('cli-push-second')];
+
+			try {
+				// Two copies of the created Actor, each with its own name, below a root that is not an Actor.
+				for (const [index, dir] of ['actors/first', 'actors/second'].entries()) {
+					await cp(tmpPath, join(root, dir), { recursive: true });
+					const actorJson = JSON.parse(readFileSync(join(root, dir, LOCAL_CONFIG_PATH), 'utf8'));
+					actorJson.name = actorNames[index];
+					writeFileSync(join(root, dir, LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+				}
+
+				forceNewCwd(rootName);
+				logMessages.log.length = 0;
+
+				await testRunCommand(ActorsPushCommand, { flags_all: true, flags_json: true, flags_force: true });
+
+				const userInfo = await getLocalUserInfo();
+				for (const name of actorNames) {
+					actorsForCleanup.add(`${userInfo.username}/${name}`);
+				}
+
+				const summary = JSON.parse(logMessages.log.at(-1)!);
+
+				expect(summary).toMatchObject({ ok: true, operation: 'push', exitCode: 0 });
+				expect(summary.results.map((entry: { dir: string }) => entry.dir)).toEqual(['actors/first', 'actors/second']);
+				expect(summary.results.map((entry: { build: { status: string } }) => entry.build.status)).toEqual([
+					'SUCCEEDED',
+					'SUCCEEDED',
+				]);
+			} finally {
+				await rm(root, { recursive: true, force: true });
+			}
 		},
 		TEST_TIMEOUT,
 	);

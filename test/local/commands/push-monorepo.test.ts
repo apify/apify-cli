@@ -10,6 +10,7 @@ import { CommandExitCodes } from '../../../src/lib/consts.js';
 import { MONOREPO_PLATFORM_SUPPORT_ISSUE_URL } from '../../../src/lib/docker-context.js';
 import { cwdCache } from '../../../src/lib/hooks/useActorConfig.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
+import { useIsolatedGit } from '../../__setup__/hooks/useIsolatedGit.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 
 const actName = 'push-monorepo-actor';
@@ -79,6 +80,9 @@ const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, forceNewCwd } = useTem
 	cwd: true,
 	cwdParent: false,
 });
+
+// Git reads the global excludes file, so the developer's own one could leave out the files these tests push.
+useIsolatedGit('push-monorepo-git-home');
 
 const { logMessages } = useConsoleSpy();
 
@@ -162,6 +166,8 @@ beforeEach(async () => {
 	originalExitCode = commandProcess.exitCode;
 	originalRealExitCode = process.exitCode;
 	baseUrl = RUNTIME_BASE_URL;
+	// The monorepo gate reads the target before any login, from the same source the client's base URL comes from.
+	vitest.stubEnv('APIFY_CLIENT_BASE_URL', baseUrl);
 	sourceContextResponse = undefined;
 	versionUpdates.length = 0;
 	versionCreates.length = 0;
@@ -193,6 +199,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
 	vitest.unstubAllGlobals();
+	vitest.unstubAllEnvs();
 	commandProcess.exitCode = originalExitCode;
 	process.exitCode = originalRealExitCode;
 	await afterAllCalls();
@@ -335,6 +342,7 @@ describe('apify push of a monorepo Actor to a local Actor runtime', () => {
 describe('apify push of a monorepo Actor to the Apify platform', () => {
 	beforeEach(() => {
 		baseUrl = CLOUD_BASE_URL;
+		vitest.stubEnv('APIFY_CLIENT_BASE_URL', baseUrl);
 	});
 
 	it('stops before touching the platform, pointing at the tracking issue', async () => {
@@ -393,9 +401,15 @@ describe('apify push with a dockerContextDir that is not a monorepo', () => {
 	});
 
 	it.each([
-		['lies inside it', { dockerContextDir: '../src' }],
-		['is not set', {}],
-	])('pushes the Actor folder as usual when the Docker context %s', async (_, fields) => {
+		['is the Actor folder itself', { dockerContextDir: '..' }, []],
+		[
+			'lies inside it, with a Dockerfile there',
+			{ dockerContextDir: '../src', dockerfile: '../src/Dockerfile' },
+			['src/Dockerfile'],
+		],
+		['is not set', {}, []],
+	])('pushes the Actor folder as usual when the Docker context %s', async (_, fields, extraFiles) => {
+		for (const file of extraFiles) await write(`${ACTOR_PATH}/${file}`, 'FROM apify/actor-node:20\n');
 		await writeActorConfig(fields);
 
 		await testRunCommand(ActorsPushCommand, {});
@@ -405,7 +419,9 @@ describe('apify push with a dockerContextDir that is not a monorepo', () => {
 		expect(versionUpdates).toHaveLength(1);
 		const modifier = versionUpdates[0] as { sourceType: string; sourceFiles: { name: string }[] };
 		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.SOURCE_FILES);
-		expect(modifier.sourceFiles.map((file) => file.name).sort()).toEqual(['.actor/actor.json', 'src/index.ts']);
+		expect(modifier.sourceFiles.map((file) => file.name).sort()).toEqual(
+			['.actor/actor.json', 'src/index.ts', ...extraFiles].sort(),
+		);
 		expect(callsTo('source-context')).toEqual([]);
 		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 	});
