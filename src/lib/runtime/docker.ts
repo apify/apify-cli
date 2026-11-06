@@ -1,4 +1,5 @@
 import process from 'node:process';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 import { execa } from 'execa';
 import which from 'which';
@@ -167,6 +168,23 @@ async function isRuntimeContainerRunning(engine: ContainerEngine): Promise<boole
 	} catch {
 		return false;
 	}
+}
+
+/**
+ * Resolves true once the engine reports the runtime container running, false on timeout or once
+ * `signal` aborts (the start failed, or the container already exited).
+ */
+export async function waitForRuntimeContainer(
+	engine: ContainerEngine,
+	signal: AbortSignal,
+	timeoutMillis = 30_000,
+): Promise<boolean> {
+	const deadline = Date.now() + timeoutMillis;
+	while (!signal.aborted && Date.now() < deadline) {
+		if ((await isRuntimeContainerRunning(engine)) && !signal.aborted) return true;
+		await sleep(250, undefined, { signal }).catch(() => {});
+	}
+	return false;
 }
 
 export interface PublishedPort {

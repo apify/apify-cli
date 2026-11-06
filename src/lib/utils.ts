@@ -33,7 +33,13 @@ import {
 } from '@apify/consts';
 
 import { lookUpActiveProfile, lookUpProfile } from './auth-file.js';
-import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth, type ResolvedAuth } from './auth.js';
+import {
+	describeAuthFailure,
+	getAnonymousApifyClientOptions,
+	getApifyClientOptionsForToken,
+	resolveAuth,
+	type ResolvedAuth,
+} from './auth.js';
 import {
 	AUTH_FILE_PATH,
 	CommandExitCodes,
@@ -48,7 +54,6 @@ import { useCLIMetadata } from './hooks/useCLIMetadata.js';
 import { inputFileRegExp, TEMP_INPUT_KEY_PREFIX } from './input-key.js';
 import { encodeRecordKey, readKvsRecordMetadata, recordMetadataFileName } from './kvs-metadata.js';
 import { getAccessToken } from './oauth/session.js';
-import { resolveApiBaseUrl } from './runtime/target.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -582,7 +587,7 @@ export const outputJobLog = async ({
 	apifyClient?: ApifyClient;
 }) => {
 	const { id: logId, status } = job;
-	const client = apifyClient || new ApifyClient({ baseUrl: resolveApiBaseUrl() });
+	const client = apifyClient || new ApifyClient(getAnonymousApifyClientOptions());
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {

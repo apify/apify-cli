@@ -8,7 +8,7 @@ import { execa, type ExecaError } from 'execa';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { GLOBAL_CONFIGS_FOLDER, INTERRUPT_SIGNALS } from '../../lib/consts.js';
-import { error, info, run } from '../../lib/outputs.js';
+import { error, info, run, warning } from '../../lib/outputs.js';
 import { updateActorRuntimeConfig } from '../../lib/runtime/config.js';
 import {
 	ACTOR_RUNTIME_API_PORT,
@@ -26,9 +26,10 @@ import {
 	runtimeConsoleUrl,
 	runtimeEnvExportLines,
 	runtimeSkillHintLines,
+	waitForRuntimeContainer,
 } from '../../lib/runtime/docker.js';
 import { ensureActorRuntimeImage, installedActorRuntimeImage } from '../../lib/runtime/ensure.js';
-import { configuredRuntimePorts } from '../../lib/runtime/target.js';
+import { configuredRuntimePorts, isConnectedToActorRuntime } from '../../lib/runtime/target.js';
 
 const isValidPort = (port: number) => Number.isInteger(port) && port >= 1 && port <= 65535;
 
@@ -120,7 +121,6 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		const securityOptions = runtimeSecurityOptions(engine, podman);
 		const dataDir = resolve(this.flags.dataDir ?? defaultDataDir());
 		await mkdir(dataDir, { recursive: true });
-		updateActorRuntimeConfig({ apiPort: ports.api, consolePort: ports.console });
 
 		info({
 			message: [
@@ -150,6 +150,14 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 
 		const child = execa(engine, args, { stdio: 'inherit' });
 
+		// The ports are remembered only once the engine reports the container running: a start that fails
+		// (a port already taken, say) must not leave later commands pointing at a port nothing listens on.
+		const startWatch = new AbortController();
+		const remembered = waitForRuntimeContainer(engine, startWatch.signal).then((up) => {
+			if (up) updateActorRuntimeConfig({ apiPort: ports.api, consolePort: ports.console });
+			return up;
+		});
+
 		let interrupted = false;
 		const cleanupSignalHandlers = INTERRUPT_SIGNALS.map((signal) => {
 			const handler = () => {
@@ -163,8 +171,16 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 		try {
 			await child;
 		} catch (err) {
+			startWatch.abort();
 			if (!interrupted) {
 				error({ message: `The Actor runtime exited with an error: ${(err as ExecaError).shortMessage ?? err}` });
+				if (isConnectedToActorRuntime()) {
+					warning({
+						message:
+							`The Apify CLI is still connected to the Actor runtime at ${runtimeApiUrl(previous.api)}. Commands will ` +
+							`fail until a start succeeds, or run 'apify runtime disconnect' to target the Apify platform.`,
+					});
+				}
 				process.exitCode = 1;
 				return;
 			}
@@ -172,9 +188,19 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 			for (const cleanup of cleanupSignalHandlers) cleanup();
 		}
 
-		if (this.flags.detach) {
+		// In the foreground the container is gone once 'run' returns; detached, 'run' returns as soon as it is up.
+		if (!this.flags.detach) {
+			startWatch.abort();
+			return;
+		}
+
+		if (await remembered) {
 			info({
 				message: `The Actor runtime is running in the background. Stop it with 'apify runtime stop'.`,
+			});
+		} else {
+			warning({
+				message: `The Actor runtime container didn't report running in time, so its ports weren't remembered. Check it with 'apify runtime status'.`,
 			});
 		}
 	}

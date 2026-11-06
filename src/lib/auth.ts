@@ -26,6 +26,7 @@ import {
 } from './credentials.js';
 import { clearOAuthSession, getAccessToken } from './oauth/session.js';
 import { warning } from './outputs.js';
+import { ActorRuntimeNotRunningError, runtimeDownInterceptor, targetsConnectedRuntime } from './runtime/client.js';
 import { resolveApiBaseUrl } from './runtime/target.js';
 import type { AuthJSON } from './types.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
@@ -207,6 +208,8 @@ export function describeAuthFailure(auth: ResolvedAuth | undefined, error?: unkn
 		return 'You are not logged in with your Apify account. Call "apify login" to fix that.';
 	}
 
+	if (error instanceof ActorRuntimeNotRunningError) return error.message;
+
 	// Only the API can reject a token, so a failure that carries no auth status is something else.
 	const statusCode = error instanceof ApifyApiError ? error.statusCode : undefined;
 	if (error && statusCode !== 401 && statusCode !== 403) {
@@ -227,20 +230,24 @@ export function describeAuthFailure(auth: ResolvedAuth | undefined, error?: unkn
 type CJSAxiosHeaders = import('axios', { with: { 'resolution-mode': 'require' } }).AxiosRequestConfig['headers'];
 
 /** Base URL and headers, with no token and so no credential lookup. */
-export const getAnonymousApifyClientOptions = (apiBaseUrl?: string): ApifyClientOptions => ({
-	baseUrl: apiBaseUrl || resolveApiBaseUrl(),
-	requestInterceptors: [
-		(config) => {
-			config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
+export const getAnonymousApifyClientOptions = (apiBaseUrl?: string): ApifyClientOptions => {
+	const baseUrl = apiBaseUrl || resolveApiBaseUrl();
+	return {
+		baseUrl,
+		requestInterceptors: [
+			(config) => {
+				config.headers ??= new AxiosHeaders() as CJSAxiosHeaders;
 
-			for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
-				config.headers![key] = value;
-			}
+				for (const [key, value] of Object.entries(APIFY_CLIENT_DEFAULT_HEADERS)) {
+					config.headers![key] = value;
+				}
 
-			return config;
-		},
-	],
-});
+				return config;
+			},
+			...(targetsConnectedRuntime(baseUrl) ? [runtimeDownInterceptor] : []),
+		],
+	};
+};
 
 /** Options for a caller that already holds a token, so nothing is resolved. */
 export const getApifyClientOptionsForToken = (token: string, apiBaseUrl?: string): ApifyClientOptions => ({

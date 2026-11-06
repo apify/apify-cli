@@ -2,8 +2,9 @@ import process from 'node:process';
 
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { execWithLog } from '../../lib/exec.js';
-import { info, success } from '../../lib/outputs.js';
+import { info, success, warning } from '../../lib/outputs.js';
 import { ACTOR_RUNTIME_CONTAINER_NAME, findRunningRuntimeEngine } from '../../lib/runtime/docker.js';
+import { isConnectedToActorRuntime } from '../../lib/runtime/target.js';
 
 export class RuntimeStopCommand extends ApifyCommand<typeof RuntimeStopCommand> {
 	static override name = 'stop' as const;
@@ -36,5 +37,13 @@ export class RuntimeStopCommand extends ApifyCommand<typeof RuntimeStopCommand> 
 		}
 
 		success({ message: 'The Actor runtime was stopped.' });
+
+		if (isConnectedToActorRuntime()) {
+			warning({
+				message:
+					`The Apify CLI is still connected to the Actor runtime, so commands will fail until you start it again ` +
+					`with 'apify runtime start --detach' or run 'apify runtime disconnect'.`,
+			});
+		}
 	}
 }
