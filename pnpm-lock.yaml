@@ -170,8 +170,8 @@ importers:
   .:
     dependencies:
       '@apify/actor-memory-expression':
-        specifier: ^1.0.1
-        version: 1.0.1
+        specifier: ^1.0.2
+        version: 1.0.2
       '@apify/actor-templates':
         specifier: ^0.1.5
         version: 0.1.5
@@ -661,8 +661,8 @@ packages:
     resolution: {integrity: sha512-60vepv88RwcJtSHrD6MjIL6Ta3SOYbgfnkHb+ppAVK+o9mXprRtulx7VlRl3lN3bbvysAfCS7WMVfhUYemB0IQ==}
     engines: {node: '>= 16'}
 
-  '@apify/actor-memory-expression@1.0.1':
-    resolution: {integrity: sha512-8ki7KeFG8p+2KiX3y29ta0giWGtxHOKKTy1pTpJ3P/ZlLhYs+hM7H03e6BiShNGPzb8iR7PfvYiT1SxIXRsmPg==}
+  '@apify/actor-memory-expression@1.0.2':
+    resolution: {integrity: sha512-vYYoCwTj/jDxaQ+pOJJxOWKe4ysKN1Hyk2DlmjrJ3E8FuuDNaESSF1R81mvTKDzXd5TLgl+0WNVDD2Eljc24eQ==}
     engines: {node: '>=22'}
 
   '@apify/actor-templates@0.1.5':
@@ -9807,7 +9807,7 @@ snapshots:
       '@types/json-schema': 7.0.15
       js-yaml: 4.3.2
 
-  '@apify/actor-memory-expression@1.0.1':
+  '@apify/actor-memory-expression@1.0.2':
     dependencies:
       '@apify/consts': 3.0.1
       '@apify/log': 3.0.1
