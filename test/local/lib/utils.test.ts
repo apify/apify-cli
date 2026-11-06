@@ -1,5 +1,6 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import process from 'node:process';
 
 import AdmZip from 'adm-zip';
 import axios from 'axios';
@@ -98,6 +99,19 @@ describe('Utils', () => {
 					.map((entry) => entry.entryName)
 					.sort(),
 			).toEqual([...FILES].sort());
+		});
+
+		// Creating a symlink on Windows needs extra rights.
+		it.skipIf(process.platform === 'win32')('zips a file reached through a symlink as its content', async () => {
+			// A link entry would hold the link's target path, which the platform unzips as a link to a file the upload
+			// may not hold.
+			const zipName = joinPath('linked.zip');
+			writeFileSync(joinPath('linked-target.json'), '{"title":"Input"}');
+			symlinkSync('linked-target.json', joinPath('linked.json'));
+
+			await createActZip(zipName, ['linked.json'], tmpPath);
+
+			expect(new AdmZip(readFileSync(zipName)).getEntry('linked.json')?.getData().toString()).toBe('{"title":"Input"}');
 		});
 	});
 
