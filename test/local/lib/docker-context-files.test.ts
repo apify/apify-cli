@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { getContextFilePaths } from '../../../src/lib/docker-context.js';
 import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
@@ -43,6 +43,8 @@ describe('getContextFilePaths', () => {
 			await beforeAllCalls();
 
 			write('package.json', '{}');
+			// Git sorts names by their bytes, so this name comes first in its list.
+			write(' notes.txt');
 			write('.gitignore', 'dist\n');
 			write('shared/Dockerfile', 'FROM apify/actor-node:20\n');
 			write(`${ACTOR_PATH}/.actor/actor.json`, '{}');
@@ -85,6 +87,10 @@ describe('getContextFilePaths', () => {
 			expect(paths).not.toContain(`${ACTOR_PATH}/dist/main.js`);
 		});
 
+		it('keeps the space at the start of a name', async () => {
+			expect(await getContextFilePaths(tmpPath)).toContain(' notes.txt');
+		});
+
 		it('skips a tracked file that is deleted locally', async () => {
 			expect(await getContextFilePaths(tmpPath)).not.toContain('packages/utils/src/index.ts');
 		});
@@ -99,6 +105,73 @@ describe('getContextFilePaths', () => {
 
 		it('keeps a symlink, as a Git clone does', async () => {
 			expect(await getContextFilePaths(tmpPath)).toContain(`${ACTOR_PATH}/shared`);
+		});
+	});
+
+	describe('during an unresolved merge', () => {
+		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-files-merge-dir', {
+			create: true,
+			remove: true,
+			cwd: false,
+			cwdParent: false,
+		});
+
+		const git = (...args: string[]) =>
+			execFileSync('git', ['-c', 'user.name=Test', '-c', 'user.email=test@example.com', ...args], {
+				cwd: tmpPath,
+				stdio: 'ignore',
+			});
+
+		beforeAll(async () => {
+			await beforeAllCalls();
+
+			git('init', '--quiet');
+			writeFileSync(joinPath('shared.txt'), 'base\n');
+			git('add', '.');
+			git('commit', '--quiet', '-m', 'base');
+			git('checkout', '--quiet', '-b', 'other');
+			writeFileSync(joinPath('shared.txt'), 'other\n');
+			git('commit', '--quiet', '-am', 'other');
+			git('checkout', '--quiet', '-');
+			writeFileSync(joinPath('shared.txt'), 'main\n');
+			git('commit', '--quiet', '-am', 'main');
+			// The merge stops on the conflict and leaves shared.txt in the index once per stage.
+			expect(() => git('merge', '--quiet', 'other')).toThrow();
+		});
+
+		afterAll(async () => {
+			await afterAllCalls();
+		});
+
+		it('lists a conflicted path once', async () => {
+			expect(await getContextFilePaths(tmpPath)).toEqual(['shared.txt']);
+		});
+	});
+
+	describe('with a file list over 1 MiB', () => {
+		const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-files-large-dir', {
+			create: true,
+			remove: true,
+			cwd: false,
+			cwdParent: false,
+		});
+
+		beforeAll(async () => {
+			await beforeAllCalls();
+			writeFileSync(joinPath('package.json'), '{}');
+			execFileSync('git', ['init', '--quiet'], { cwd: tmpPath, stdio: 'ignore' });
+			// A workspace package's own node_modules, which no .gitignore covers: Git lists over 1 MiB of untracked names.
+			const dependency = joinPath('packages/utils/node_modules/dependency');
+			mkdirSync(dependency, { recursive: true });
+			for (let i = 0; i < 5000; i++) writeFileSync(join(dependency, `${i}-${'x'.repeat(200)}.js`), '');
+		});
+
+		afterAll(async () => {
+			await afterAllCalls();
+		});
+
+		it('still lists the files as Git has them, without the untracked node_modules', async () => {
+			expect(await getContextFilePaths(tmpPath)).toEqual(['package.json']);
 		});
 	});
 

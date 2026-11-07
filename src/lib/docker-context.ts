@@ -1,6 +1,5 @@
 // The Docker context of an Actor: where `dockerContextDir` in `.actor/actor.json` points and what a push of it
-// would carry. `readGitState` and `getContextFilePaths` have no caller in `apify push` yet; they serve the
-// stage 2 upload of the context and the `actor-runtime` branch.
+// carries.
 import { execFileSync } from 'node:child_process';
 import { lstatSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, join, relative, resolve, sep } from 'node:path';
@@ -27,7 +26,7 @@ export type DockerContextResolution =
 			contextRoot: string;
 			/** The Git repository's root, else the context. */
 			sourceRoot: string;
-			/** Relative to `sourceRoot`. */
+			/** Relative to `sourceRoot`, never empty, with the names as stored on disk. */
 			actorPath: string;
 	  }
 	/** The field is not a string, or the directory it names is missing, not a directory, or out of reach. */
@@ -45,11 +44,27 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 	if (typeof dockerContextDir !== 'string') {
 		return { kind: 'invalid', message: `"dockerContextDir" in .actor/actor.json must be a string.` };
 	}
+	// The platform resolves the path from .actor/ on Linux, as the paths to files in actor.json.
+	if (isAbsolute(dockerContextDir)) {
+		return {
+			kind: 'invalid',
+			message: `"dockerContextDir" in .actor/actor.json is absolute (${dockerContextDir}); the path is relative to .actor/.`,
+		};
+	}
+	if (dockerContextDir.includes('\\')) {
+		return {
+			kind: 'invalid',
+			message:
+				`"dockerContextDir" in .actor/actor.json uses a backslash (${dockerContextDir}); ` +
+				'the platform resolves paths with forward slashes.',
+		};
+	}
 
-	// The platform resolves the context from the Actor folder's real path, so a symlinked `--dir` must too.
+	// The platform resolves the context from the Actor folder's real path, so a symlinked `--dir` must too. The native
+	// call also gives the names their case on disk, which a `--dir` typed in another case on macOS or Windows lacks.
 	let realActorDir: string;
 	try {
-		realActorDir = realpathSync(actorDir);
+		realActorDir = realPath(actorDir);
 	} catch {
 		return { kind: 'invalid', message: `The Actor folder ${actorDir} does not exist.` };
 	}
@@ -68,7 +83,7 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 			message: `"dockerContextDir" in .actor/actor.json points to ${contextRoot}, which is not a directory.`,
 		};
 	}
-	const realContextRoot = realpathSync(contextRoot);
+	const realContextRoot = realPath(contextRoot);
 
 	// Inside or outside the Actor folder is judged, and returned, by the path as written, not by where a symlink on it
 	// leads. Push follows a symlink and uploads its files under the link's own name: with `"dockerContextDir": "../sym"`
@@ -81,8 +96,9 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 
 	// The platform's clone holds nothing above the repository root.
 	const repoRoot = git(realActorDir, ['rev-parse', '--show-toplevel']);
+	let sourceRoot = realContextRoot;
 	if (repoRoot) {
-		const sourceRoot = realpathSync(repoRoot);
+		sourceRoot = realPath(repoRoot);
 		if (isOutside(relative(sourceRoot, realContextRoot))) {
 			return {
 				kind: 'invalid',
@@ -91,22 +107,34 @@ export function resolveDockerContext(actorDir: string, dockerContextDir: unknown
 					'The Apify platform builds from a clone of the repository, so it could not build this Actor.',
 			};
 		}
-		return {
-			kind: 'outside',
-			contextRoot,
-			sourceRoot,
-			actorPath: toPosix(relative(sourceRoot, realActorDir)),
-		};
 	}
 
-	const actorPath = relative(realContextRoot, realActorDir);
+	const actorPath = relative(sourceRoot, realActorDir);
 	if (isOutside(actorPath)) {
 		return {
 			kind: 'invalid',
 			message: `"dockerContextDir" in .actor/actor.json points to ${realContextRoot}, which does not contain the Actor's folder.`,
 		};
 	}
-	return { kind: 'outside', contextRoot, sourceRoot: realContextRoot, actorPath: toPosix(actorPath) };
+	// The path as written leaves the Actor folder, so it isn't an ordinary push, yet the upload root would be the folder.
+	if (actorPath === '') {
+		return {
+			kind: 'invalid',
+			message:
+				`"dockerContextDir" in .actor/actor.json leaves the Actor folder, then leads back into it at ${realContextRoot}, ` +
+				'through a symlink or a folder name in another letter case. Write the path without leaving the Actor folder.',
+		};
+	}
+	return { kind: 'outside', contextRoot, sourceRoot, actorPath: toPosix(actorPath) };
+}
+
+/** The real path with names in their case on disk; the JS implementation where the native call fails, as on Windows RAM or virtual disks. */
+export function realPath(path: string): string {
+	try {
+		return realpathSync.native(path);
+	} catch {
+		return realpathSync(path);
+	}
 }
 
 export function isOutside(relativePath: string): boolean {
@@ -126,8 +154,15 @@ export interface GitState {
 
 function git(cwd: string, args: string[]): string | undefined {
 	try {
-		const output = execFileSync('git', args, { cwd, encoding: 'utf-8', stdio: ['ignore', 'pipe', 'ignore'] });
-		return output.trim();
+		// A large repository lists more than the default 1 MiB of file names.
+		const output = execFileSync('git', args, {
+			cwd,
+			encoding: 'utf-8',
+			stdio: ['ignore', 'pipe', 'ignore'],
+			maxBuffer: Number.POSITIVE_INFINITY,
+		});
+		// Only the line end goes: a file or folder name can start or end with a space.
+		return output.replace(/\r?\n$/, '');
 	} catch {
 		return undefined;
 	}
@@ -148,14 +183,15 @@ function withoutCredentials(remoteUrl: string): string {
 
 export function readGitState(dir: string): GitState {
 	const commit = git(dir, ['rev-parse', 'HEAD']);
-	if (!commit) return {};
+	const status = git(dir, ['status', '--porcelain', '--', '.']);
+	// Before the first commit, every file is uncommitted.
+	if (!commit) return status ? { dirty: true } : {};
 
 	const state: GitState = { commit };
 	const branch = git(dir, ['rev-parse', '--abbrev-ref', 'HEAD']);
 	if (branch && branch !== 'HEAD') state.branch = branch;
 	const remoteUrl = git(dir, ['remote', 'get-url', 'origin']);
 	if (remoteUrl) state.remoteUrl = withoutCredentials(remoteUrl);
-	const status = git(dir, ['status', '--porcelain', '--', '.']);
 	if (status !== undefined) state.dirty = status.length > 0;
 	return state;
 }
@@ -165,7 +201,8 @@ const UNTRACKED_IGNORED_SEGMENTS = new Set(['node_modules', 'storage', 'apify_st
 
 function gitFileList(root: string, args: string[]): string[] | undefined {
 	const output = git(root, ['ls-files', '-z', ...args]);
-	return output?.split('\0').filter(Boolean);
+	// During an unresolved merge, --cached lists a conflicted path once per index stage.
+	return output === undefined ? undefined : [...new Set(output.split('\0').filter(Boolean))];
 }
 
 /**
