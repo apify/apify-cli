@@ -87,8 +87,9 @@ export class AuthLoginCommand extends ApifyCommand<typeof AuthLoginCommand> {
 	static override name = 'login' as const;
 
 	static override description =
-		`Authenticates your Apify account and saves credentials to '${tildify(AUTH_FILE_PATH())}'.\n` +
-		`All other commands use these stored credentials.\n\n` +
+		`Authenticates your Apify account and stores the credentials.\n` +
+		`The API token goes to your OS keyring, or to '${tildify(AUTH_FILE_PATH())}' when the keyring is unavailable or disabled.\n` +
+		`All other commands use these stored credentials. To print the stored API token, run 'apify auth token'.\n\n` +
 		`By default, you confirm logging in to Apify Console in your browser by entering a code. ` +
 		`To remove authentication, run 'apify logout'.`;
 
