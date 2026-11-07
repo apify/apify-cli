@@ -14,7 +14,7 @@ jobs:
             name: github-pages
 
         permissions:
-            contents: write
+            contents: read
             pages: write
             id-token: write
 
@@ -22,8 +22,6 @@ jobs:
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-              with:
-                  token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Use Node.js
               uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
@@ -37,21 +35,11 @@ jobs:
             - name: Build docs
               run: |
                   pnpm run update-docs
-                  pnpm --filter apify-cli-website add @apify/docs-theme@latest
                   pnpm --filter apify-cli-website run build
               env:
                   SMARTLOOK_PROJECT_KEY: ${{ secrets.SMARTLOOK_DOCS_PROJECT_KEY }}
-                  GIT_USER: "apify-service-account:${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}"
-                  GH_TOKEN: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
                   APIFY_SIGNING_TOKEN: ${{ secrets.APIFY_SIGNING_TOKEN }}
                   SEGMENT_TOKEN: ${{ secrets.SEGMENT_TOKEN }}
-
-            - name: Commit the updated package(-lock).json
-              uses: apify/actions/signed-commit@v1.6.2
-              with:
-                  message: "chore: Automatic theme updating workflow [skip ci]"
-                  add: 'website/package.json pnpm-lock.yaml'
-                  github-token: ${{ secrets.APIFY_SERVICE_ACCOUNT_GITHUB_TOKEN }}
 
             - name: Set up GitHub Pages
               uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
