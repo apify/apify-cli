@@ -15,7 +15,7 @@ Before a user connects to the Apify platform, we collect anonymous information a
 
 - Usage of all commands
 - Internal attributes of the local environment (OS, shell, Node.js version, Python version, Apify CLI version)
-- For the `actor create` command, we identify which template was used to create the Actor (language, template name, template ID)
+- For the `apify create` command, we identify which template was used to create the Actor (language, template name, template ID)
 
 After a user connects to the Apify platform (successful `apify login`), we collect the same information about CLI usage along with the ID of the connected user. You can read more about how we protect personal information in our [Privacy Policy](https://apify.com/privacy-policy).
 
