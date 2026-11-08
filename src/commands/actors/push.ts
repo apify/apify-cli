@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { lstatSync, readFileSync, realpathSync, rmSync, type Stats, statSync, writeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, resolve } from 'node:path';
@@ -61,6 +61,8 @@ const DEFAULT_RUN_OPTIONS = {
 	timeoutSecs: 3600,
 };
 const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
+/** The longest name of a multi-file source file the platform accepts. */
+const MAX_SOURCE_FILE_NAME_LENGTH = 255;
 
 // It would be better to use `version-0.0` or similar,
 // or even have no default tag, but the platform complains when
@@ -224,13 +226,14 @@ const rejectsActorPath = (err: unknown) => {
 
 /**
  * Push sends files only, in the multi-file and the zip upload alike: a link to a file the upload holds goes as that
- * file at the link's path, a link to a directory inside the upload as copies of the uploaded files under its target,
- * and a link to nothing, to a file the upload leaves out (such as a gitignored .env), or to a target outside the
- * upload is left out, as a clone of the repository could not follow it either. A link to a file that only the Actor
- * folder's upload adds, such as a gitignored dist that its .actorignore takes back, goes too. The `actor.json` path
- * check then reports a config that refers to a left-out link as not uploaded.
+ * file at the link's path, a link to a directory inside the upload as copies of the uploaded files under its target
+ * (directory links there included), and a link to nothing, to a file the upload leaves out (such as a gitignored
+ * .env), or to a target outside the upload is left out, as a clone of the repository could not follow it either. A
+ * link to a file that only the Actor folder's upload adds, such as a gitignored dist that its .actorignore takes back,
+ * goes too, and so does a directory link to such files. The `actor.json` path check then reports a config that refers
+ * to a left-out link as not uploaded.
  */
-const resolveLinksForUpload = (root: string, files: string[], actorFolderFiles: string[]) => {
+const resolveLinksForUpload = (root: string, files: string[], actorPath: string, actorFolderFiles: string[]) => {
 	const realRoot = realpathSync(root);
 	// Git lists names composed (NFC) on macOS, while a link's target keeps the form its text has.
 	const listed = new Set(files.map((file) => file.normalize('NFC')));
@@ -251,40 +254,106 @@ const resolveLinksForUpload = (root: string, files: string[], actorFolderFiles: 
 		}
 		return inUpload;
 	};
-	// Where an entry's content lies, relative to the root, and what it is; nothing for a link the upload drops.
-	const locate = (file: string): { target: string; stats: Stats } | undefined => {
+	// Where an entry's content lies, relative to the root, as the link spells it and as stored on disk, and what it is;
+	// nothing for a link the upload drops.
+	interface Located {
+		target: string;
+		diskTarget: string;
+		stats: Stats;
+	}
+	const locate = (file: string): Located | undefined => {
 		const filePath = join(root, file);
 		const stats = lstatSync(filePath, { throwIfNoEntry: false });
 		if (!stats) return undefined;
-		if (!stats.isSymbolicLink()) return isFolderInUpload(dirname(file)) ? { target: file, stats } : undefined;
+		if (!stats.isSymbolicLink()) {
+			return isFolderInUpload(dirname(file)) ? { target: file, diskTarget: file, stats } : undefined;
+		}
 		try {
 			const realFilePath = realpathSync(filePath);
 			const target = relative(realRoot, realFilePath);
 			if (isOutside(target)) return undefined;
 			const targetStats = statSync(realFilePath);
-			if (
-				targetStats.isFile() &&
-				!listed.has(toPosix(target).normalize('NFC')) &&
-				!actorFolderUpload.has(toPosix(relative(realRoot, realPath(filePath))))
-			) {
+			const diskTarget = toPosix(relative(realRoot, realPath(filePath)));
+			if (targetStats.isFile() && !listed.has(toPosix(target).normalize('NFC')) && !actorFolderUpload.has(diskTarget)) {
 				return undefined;
 			}
-			return { target: toPosix(target), stats: targetStats };
+			return { target: toPosix(target), diskTarget, stats: targetStats };
 		} catch {
 			return undefined;
 		}
 	};
 	const located = new Map(files.map((file) => [file, locate(file)]));
-	return files.flatMap((file) => {
+	// Git may spell the Actor folder otherwise than the disk stores it: composed (NFC) on macOS, or in its old case after
+	// a case-only rename. Its spelling in Git's list is confirmed on disk, as that of another folder can match too.
+	const fold = (name: string) => name.normalize('NFC').toLowerCase();
+	const actorDepth = actorPath.split('/').length;
+	const gitActorPath =
+		[
+			...new Set(
+				files
+					.filter((file) => fold(file).startsWith(fold(`${actorPath}/`)))
+					.map((file) => file.split('/').slice(0, actorDepth).join('/')),
+			),
+		].find((folder) => {
+			try {
+				return realPath(join(root, folder)) === join(realRoot, actorPath);
+			} catch {
+				return false;
+			}
+		}) ?? actorPath;
+	// The Actor folder's upload adds files a clone lacks, such as its gitignored dist, which a directory link copies too.
+	// A file Git lists in another spelling is no such file, which the disk confirms, as on a case-sensitive file system
+	// names that differ in case only are two files. Each maps to its name with the Actor folder as Git spells it.
+	const listedByFold = new Map(files.map((file) => [fold(file), file]));
+	const isListed = (file: string) => {
+		if (listed.has(file.normalize('NFC'))) return true;
+		const spelling = listedByFold.get(fold(file));
+		if (spelling === undefined) return false;
+		try {
+			return realPath(join(root, spelling)) === realPath(join(root, file));
+		} catch {
+			return false;
+		}
+	};
+	const actorFolderOnly = new Map(
+		actorFolderFiles
+			.filter((file) => !isListed(file))
+			.map((file) => [file, `${gitActorPath}${file.slice(actorPath.length)}`]),
+	);
+	for (const file of actorFolderOnly.keys()) {
+		let entry: Located | undefined;
+		try {
+			const realFilePath = realPath(join(root, file));
+			const stats = statSync(realFilePath);
+			if (stats.isFile() && !isOutside(relative(realRoot, realFilePath)))
+				entry = { target: file, diskTarget: file, stats };
+		} catch {
+			// A file that vanished since it was listed goes nowhere.
+		}
+		located.set(file, entry);
+	}
+	const uploaded = [...files, ...actorFolderOnly.keys()];
+	// A directory link copies the files under its target, and through a directory link there, the files under that
+	// one's target, as a clone resolves them; a link back to a target on the way copies nothing, which ends a cycle.
+	// The Actor folder's own files match the target as Git spells the Actor folder, so their copies sit beside those of
+	// its listed files, else as the disk stores it.
+	const expand = (file: string, targets: string[]): string[] => {
 		const entry = located.get(file);
 		if (!entry) return [];
 		if (entry.stats.isFile()) return [file];
-		if (!entry.stats.isDirectory()) return [];
-		const prefix = `${entry.target}/`;
-		return files
-			.filter((other) => other.startsWith(prefix) && located.get(other)?.stats.isFile())
-			.map((other) => `${file}/${other.slice(prefix.length)}`);
-	});
+		if (!entry.stats.isDirectory() || targets.includes(entry.target)) return [];
+		return uploaded.flatMap((other) => {
+			const gitSpelling = actorFolderOnly.get(other);
+			const [name, prefix] =
+				gitSpelling === undefined || gitSpelling.startsWith(`${entry.target}/`)
+					? [gitSpelling ?? other, `${entry.target}/`]
+					: [other, `${entry.diskTarget}/`];
+			if (!name.startsWith(prefix)) return [];
+			const copyPath = `${file}/${name.slice(prefix.length)}`;
+			return expand(other, [...targets, entry.target]).map((copy) => `${copyPath}${copy.slice(other.length)}`);
+		});
+	};
+	return files.flatMap((file) => expand(file, []));
 };
 
 /**
@@ -303,29 +372,48 @@ const withActorFolderFiles = (root: string, actorPath: string, contextFiles: str
 		}
 	};
 	// Git lists names as its index has them: composed (NFC) on macOS, and in the old case after a case-only rename on a
-	// case-insensitive file system. actorPath has the names as stored on disk, so a match is confirmed on disk, once
-	// for each spelling of the folder.
-	const actorPrefix = `${actorPath}/`.normalize('NFC').toLowerCase();
-	const depth = actorPath.split('/').length;
-	const actorDir = join(realRoot, actorPath);
+	// case-insensitive file system. actorPath has the names as stored on disk, so a folder on its way matches when its
+	// name differs only so and it is the same folder on disk, checked once for each spelling.
+	const actorSegments = actorPath.split('/');
+	const fold = (name: string) => name.normalize('NFC').toLowerCase();
 	const spellings = new Map<string, boolean>();
-	const isInActorFolder = (file: string) => {
-		if (!file.normalize('NFC').toLowerCase().startsWith(actorPrefix)) return false;
-		const folder = file.split('/').slice(0, depth).join('/');
-		let isActorFolder = spellings.get(folder);
-		if (isActorFolder === undefined) {
+	const isActorFolderOnTheWay = (segments: string[], depth: number) => {
+		const folder = segments.slice(0, depth).join('/');
+		let matches = spellings.get(folder);
+		if (matches === undefined) {
 			try {
-				isActorFolder = realPath(join(root, folder)) === actorDir;
+				// A link named like the folder in another case, on a case-sensitive file system, is a folder of its own.
+				matches =
+					!lstatSync(join(root, folder)).isSymbolicLink() &&
+					realPath(join(root, folder)) === join(realRoot, ...actorSegments.slice(0, depth));
 			} catch {
-				isActorFolder = false;
+				matches = false;
 			}
-			spellings.set(folder, isActorFolder);
+			spellings.set(folder, matches);
 		}
-		return isActorFolder;
+		return matches;
 	};
+	const contextFilesOutsideActorFolder = contextFiles.flatMap((file) => {
+		const segments = file.split('/');
+		let depth = 0;
+		while (
+			depth < actorSegments.length &&
+			depth < segments.length - 1 &&
+			fold(segments[depth]) === fold(actorSegments[depth]) &&
+			isActorFolderOnTheWay(segments, depth + 1)
+		) {
+			depth++;
+		}
+		if (depth === actorSegments.length) return [];
+		// A folder on the Actor folder's way goes under one name, as actorPath spells it, or the platform would write
+		// the Actor folder and its siblings into two folders.
+		return [[...actorSegments.slice(0, depth), ...segments.slice(depth)].join('/')];
+	});
 	return [
-		...contextFiles.filter((file) => !isInActorFolder(file)),
-		...actorFiles.map((file) => `${actorPath}/${file}`).filter(isInUpload),
+		...new Set([
+			...contextFilesOutsideActorFolder,
+			...actorFiles.map((file) => `${actorPath}/${file}`).filter(isInUpload),
+		]),
 	];
 };
 
@@ -681,7 +769,12 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			// The source root is a real path, so the Actor folder has to be one too for its paths to fall inside it.
 			actorDir = join(uploadRoot, actorPath);
 			const actorFolderFiles = filePathsToPush.map((file) => `${actorPath}/${file}`);
-			const contextFiles = resolveLinksForUpload(uploadRoot, await getContextFilePaths(uploadRoot), actorFolderFiles);
+			const contextFiles = resolveLinksForUpload(
+				uploadRoot,
+				await getContextFilePaths(uploadRoot),
+				actorPath,
+				actorFolderFiles,
+			);
 			uploadedFiles = withActorFolderFiles(uploadRoot, actorPath, contextFiles, filePathsToPush);
 		}
 
@@ -848,18 +941,35 @@ Skipping push. Use --force to override.`,
 		}
 
 		let sourceType;
-		let sourceFiles;
 		let tarballUrl;
-		if (filesSize < MAX_MULTIFILE_BYTES) {
-			sourceFiles = await createSourceFiles(uploadedFiles, uploadRoot);
+		// The platform rejects a source file name over its limit, which a deep path from the repository root can reach,
+		// and measures the content as sent, where a binary file grows by a third in base64 and each character beyond the
+		// Basic Multilingual Plane, such as an emoji, counts five bytes; a zip has neither limit.
+		let sourceFiles =
+			filesSize < MAX_MULTIFILE_BYTES && uploadedFiles.every((file) => file.length <= MAX_SOURCE_FILE_NAME_LENGTH)
+				? await createSourceFiles(uploadedFiles, uploadRoot)
+				: undefined;
+		if (
+			sourceFiles &&
+			sourceFiles.reduce(
+				(size, file) => size + Buffer.byteLength(file.content) + (file.content.match(/[\uD800-\uDBFF]/g)?.length ?? 0),
+				0,
+			) > MAX_MULTIFILE_BYTES
+		) {
+			sourceFiles = undefined;
+		}
+		if (sourceFiles) {
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else {
 			// Create zip
 			run({ message: 'Zipping Actor files' });
 			const store = await apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
-			// A monorepo zip has the repository layout, so it gets its own key: when the version update then fails, an
-			// existing version without actorPath still builds from its own record.
-			const key = actorPath ? `version-${version}-monorepo.zip` : `version-${version}.zip`;
+			// A monorepo zip has the repository layout, so it gets a key of its own for each actorPath: when the version
+			// update then fails, the existing version still builds from its own record, whether it has no actorPath or
+			// another one, such as the Actor folder's name before a rename.
+			const key = actorPath
+				? `version-${version}-monorepo-${createHash('sha256').update(actorPath).digest('hex').slice(0, 16)}.zip`
+				: `version-${version}.zip`;
 			const zipPath = join(tmpdir(), `apify-push-${randomUUID()}.zip`);
 			try {
 				await createActZip(zipPath, uploadedFiles, uploadRoot);

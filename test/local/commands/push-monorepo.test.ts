@@ -234,7 +234,7 @@ describe('apify push of a monorepo Actor', () => {
 		expect(keyValueStoreGetOrCreate).toHaveBeenCalledWith(`actor-${ACTOR_ID}-source`);
 		expect(setRecord).toHaveBeenCalledTimes(1);
 		const record = setRecord.mock.calls[0][0] as { key: string; value: Buffer; contentType: string };
-		expect(record.key).toBe('version-0.0-monorepo.zip');
+		expect(record.key).toMatch(/^version-0\.0-monorepo-[0-9a-f]{16}\.zip$/);
 		expect(record.contentType).toBe('application/zip');
 		expect(Buffer.isBuffer(record.value)).toBe(true);
 		expect(record.value.length).toBeGreaterThan(0);
@@ -244,7 +244,7 @@ describe('apify push of a monorepo Actor', () => {
 		expect(modifier.sourceFiles).toBeUndefined();
 		expect(modifier.actorPath).toBe(ACTOR_PATH);
 		const tarballUrl = new URL(modifier.tarballUrl!);
-		expect(tarballUrl.pathname).toBe('/v2/key-value-stores/store1/records/version-0.0-monorepo.zip');
+		expect(tarballUrl.pathname).toBe(`/v2/key-value-stores/store1/records/${record.key}`);
 		expect(tarballUrl.searchParams.get('disableRedirect')).toBe('true');
 		expect(tarballUrl.searchParams.get('signature')).toBeTruthy();
 
@@ -263,6 +263,62 @@ describe('apify push of a monorepo Actor', () => {
 		expect(names).toEqual(
 			expect.arrayContaining(['package.json', `${versionPayload(versionUpdate).actorPath}/.actor/actor.json`]),
 		);
+	});
+
+	it('gives each actorPath its own zip record, so a failed update leaves the record of the version as it was', async () => {
+		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
+		await testRunCommand(ActorsPushCommand, {});
+		expect(commandProcess.exitCode).toBeFalsy();
+
+		// The version now builds from that record with the old actorPath; a push after a rename then fails its update.
+		renameSync(joinPath(ACTOR_PATH), joinPath('actors/renamed-actor'));
+		forceNewCwd('actors/renamed-actor');
+		cwdCache.clear();
+		versionUpdate.mockRejectedValueOnce(new Error('network down'));
+		await testRunCommand(ActorsPushCommand, { flags_force: true });
+
+		expect(logMessages.error.join('\n')).toContain('network down');
+		const keys = setRecord.mock.calls.map(([record]) => (record as { key: string }).key);
+		expect(keys).toHaveLength(2);
+		expect(keys[1]).not.toBe(keys[0]);
+	});
+
+	it('zips a repository under the multi-file limit when a file name exceeds what the platform accepts', async () => {
+		const longPath = `packages/${'a'.repeat(120)}/${'b'.repeat(120)}/fixture.json`;
+		await write(longPath, '{}');
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.TARBALL);
+		expect(modifier.sourceFiles).toBeUndefined();
+		const record = setRecord.mock.calls[0][0] as { value: Buffer };
+		expect(new AdmZip(record.value).getEntry(longPath)).toBeTruthy();
+	});
+
+	it('zips a repository under the multi-file limit whose content grows over it as sent, as base64 does to binary files', async () => {
+		// Raw bytes under the limit, but a binary file goes as base64, which the platform counts at four thirds.
+		await write(`${ACTOR_PATH}/image.bin`, '\u0000'.repeat(Math.floor(MAX_MULTIFILE_BYTES * 0.9)));
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.TARBALL);
+		expect(modifier.sourceFiles).toBeUndefined();
+		expect(setRecord).toHaveBeenCalledTimes(1);
+	});
+
+	it('zips a repository whose text holds emoji the platform counts over the multi-file limit', async () => {
+		// Four bytes each in UTF-8, so the raw size stays under the limit, but the platform counts five.
+		await write(`${ACTOR_PATH}/emoji.txt`, '\u{1F600}'.repeat(700_000));
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionPayload(versionUpdate).sourceType).toBe(ACTOR_SOURCE_TYPES.TARBALL);
 	});
 
 	it('leaves no zip in the OS temp directory when getting the source store fails', async () => {
@@ -343,6 +399,43 @@ describe('apify push of a monorepo Actor', () => {
 		expect(commandProcess.exitCode).toBeFalsy();
 		const files = versionPayload(versionUpdate).sourceFiles!;
 		expect(files.find((file) => file.name === 'shared/main.js')?.content).toContain('console.log(1)');
+	});
+
+	it('sends a directory link elsewhere in the repository to files only the Actor folder adds as copies', async () => {
+		await write('.gitignore', 'node_modules\ndist\n');
+		await write(`${ACTOR_PATH}/.actorignore`, '!dist/\n');
+		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+		symlinkSync(`../${ACTOR_PATH}/dist`, joinPath('shared/actor-dist'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		expect(files.find((file) => file.name === 'shared/actor-dist/main.js')?.content).toContain('console.log(1)');
+	});
+
+	it('copies the files under a directory link inside a linked directory, as a clone resolves both, and ends a cycle', async () => {
+		await write('config/app.json', '{"app":true}');
+		symlinkSync('packages/typescript-utils', joinPath('linked-utils'));
+		symlinkSync('../../config', joinPath('packages/typescript-utils/config'));
+		symlinkSync('.', joinPath('packages/typescript-utils/self'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		const names = files.map((file) => file.name);
+		expect(names).toEqual(
+			expect.arrayContaining([
+				'linked-utils/src/index.ts',
+				'packages/typescript-utils/config/app.json',
+				'packages/typescript-utils/self/src/index.ts',
+			]),
+		);
+		expect(files.find((file) => file.name === 'linked-utils/config/app.json')?.content).toBe('{"app":true}');
+		expect(names.some((name) => name.includes('/self/self/'))).toBe(false);
 	});
 
 	it('accepts a schema reached through a symlink inside the repository and uploads it at the link path', async () => {
@@ -682,6 +775,118 @@ describe('apify push of a monorepo Actor', () => {
 			expect(names.filter((name) => name.toLowerCase() === 'actors/typescript-actor/.actor/actor.json')).toHaveLength(
 				1,
 			);
+		},
+	);
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'sends the siblings of the Actor folder under the folder name actorPath spells after a case-only rename',
+		async () => {
+			await write('actors/lib/util.js', 'export const y = 2;\n');
+			git('add', '.');
+			git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'lib');
+			renameSync(joinPath('actors'), joinPath('renaming'));
+			renameSync(joinPath('renaming'), joinPath('Actors'));
+			forceNewCwd('Actors/typescript-actor');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const { actorPath, sourceFiles } = versionPayload(versionUpdate);
+			const names = sourceFiles!.map((file) => file.name);
+			expect(actorPath).toBe('Actors/typescript-actor');
+			expect(names).toEqual(expect.arrayContaining(['Actors/lib/util.js', 'Actors/typescript-actor/src/index.ts']));
+			expect(names.filter((name) => name.startsWith('actors/'))).toEqual([]);
+		},
+	);
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'copies through directory links after a case-only rename of the Actor folder, its gitignored dist included, under one spelling',
+		async () => {
+			await write('.gitignore', 'node_modules\ndist\n');
+			await write(`${ACTOR_PATH}/.actorignore`, '!dist/\n');
+			await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+			symlinkSync(`../${ACTOR_PATH}/dist`, joinPath('shared/actor-dist'));
+			symlinkSync('actors', joinPath('linked-actors'));
+			git('add', '.');
+			git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'links');
+			renameSync(joinPath(ACTOR_PATH), joinPath('actors/renaming'));
+			renameSync(joinPath('actors/renaming'), joinPath('actors/TypeScript-Actor'));
+			forceNewCwd('actors/TypeScript-Actor');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toEqual(
+				expect.arrayContaining(['shared/actor-dist/main.js', 'linked-actors/typescript-actor/src/index.ts']),
+			);
+			expect(names.filter((name) => name.startsWith('linked-actors/TypeScript-Actor/'))).toEqual([]);
+		},
+	);
+
+	it.runIf(!caseInsensitiveFileSystem)(
+		'keeps a link named like a folder of the Actor folder in another case as a folder of its own',
+		async () => {
+			await write('actors/lib/util.js', 'export const y = 2;\n');
+			symlinkSync('actors', joinPath('Actors'));
+			git('add', '.');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toEqual(expect.arrayContaining(['actors/lib/util.js', 'Actors/lib/util.js']));
+		},
+	);
+
+	it.runIf(!caseInsensitiveFileSystem)(
+		'copies a gitignored Actor file through a directory link when a tracked file differs from it in case only',
+		async () => {
+			await write('.gitignore', 'node_modules\ndist\n');
+			await write(`${ACTOR_PATH}/.actorignore`, '!dist/\n');
+			await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+			await write(`${ACTOR_PATH}/Dist/main.js`, 'console.log(2);\n');
+			symlinkSync(`../${ACTOR_PATH}/dist`, joinPath('shared/actor-dist'));
+			git('add', '.');
+			git('add', '--force', `${ACTOR_PATH}/Dist/main.js`);
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const files = versionPayload(versionUpdate).sourceFiles!;
+			expect(files.find((file) => file.name === 'shared/actor-dist/main.js')?.content).toContain('console.log(1)');
+		},
+	);
+
+	// As on macOS: git lists the folder composed (NFC) while it is stored decomposed (NFD).
+	it.runIf(process.platform === 'darwin')(
+		'sends the siblings of an Actor folder in a folder stored decomposed under the name actorPath spells',
+		async () => {
+			const decomposedParent = 'packages/cafe\u0301';
+			await write(
+				`${decomposedParent}/actor/.actor/actor.json`,
+				JSON.stringify({
+					actorSpecification: 1,
+					name: actName,
+					version: '0.0',
+					dockerContextDir: '../../../..',
+					dockerfile: '../../../../shared/TypeScript_Dockerfile',
+				}),
+			);
+			await write(`${decomposedParent}/lib/util.py`, 'x = 1\n');
+			git('add', '.');
+			forceNewCwd(`${decomposedParent}/actor`);
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const { actorPath, sourceFiles } = versionPayload(versionUpdate);
+			const names = sourceFiles!.map((file) => file.name);
+			expect(actorPath).toBe(`${decomposedParent}/actor`);
+			expect(names).toEqual(
+				expect.arrayContaining([`${decomposedParent}/lib/util.py`, `${decomposedParent}/actor/.actor/actor.json`]),
+			);
+			expect(names.filter((name) => name.startsWith('packages/caf\u00e9/'))).toEqual([]);
 		},
 	);
 
