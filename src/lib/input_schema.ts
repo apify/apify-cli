@@ -48,15 +48,18 @@ export const readInputSchema = async ({
 
 	const localConfig = getLocalConfig(cwd);
 
-	if (typeof localConfig?.input === 'object' && localConfig.input !== null) {
+	// The platform copies `inputSchema` over `input` before resolving, so the alias wins.
+	const inputRef = localConfig?.inputSchema ?? localConfig?.input;
+
+	if (typeof inputRef === 'object' && inputRef !== null) {
 		return {
-			inputSchema: localConfig.input as Record<string, unknown>,
+			inputSchema: inputRef as Record<string, unknown>,
 			inputSchemaPath: null,
 		};
 	}
 
-	if (typeof localConfig?.input === 'string') {
-		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, localConfig.input);
+	if (typeof inputRef === 'string') {
+		const fullPath = join(cwd, ACTOR_SPECIFICATION_FOLDER, inputRef);
 		const schema = getJsonFileContent(fullPath);
 
 		if (!schema) {
@@ -220,7 +223,13 @@ export const readOutputSchema = ({
 }: {
 	cwd: string;
 }): { outputSchema: Record<string, unknown>; outputSchemaPath: string | null } | null => {
-	const result = readStorageSchema({ cwd, key: 'output', label: 'Output', getRef: (config) => config?.output });
+	// The platform copies `outputSchema` over `output` before resolving, so the alias wins.
+	const result = readStorageSchema({
+		cwd,
+		key: 'output',
+		label: 'Output',
+		getRef: (config) => config?.outputSchema ?? config?.output,
+	});
 
 	if (!result) {
 		return null;

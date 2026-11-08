@@ -512,9 +512,9 @@ DESCRIPTION
   path.
 
   When no path is provided, validates all schemas found in '.actor/actor.json':
-    - Input schema (from "input" key or default locations)
+    - Input schema (from "inputSchema" or "input" key, or default locations)
     - Dataset schema (from "storages.dataset")
-    - Output schema (from "output")
+    - Output schema (from "outputSchema" or "output" key)
     - Key-Value Store schema (from "storages.keyValueStore")
 
 USAGE
@@ -625,8 +625,8 @@ DESCRIPTION
   schemas defined in '.actor/actor.json'.
 
   Reads the input schema from one of these locations (in priority order):
-    1. Object in '.actor/actor.json' under "input" key
-    2. JSON file path in '.actor/actor.json' "input" key
+    1. Object in '.actor/actor.json' under "inputSchema" or "input" key
+    2. JSON file path in '.actor/actor.json' "inputSchema" or "input" key
     3. .actor/INPUT_SCHEMA.json
     4. INPUT_SCHEMA.json
 
