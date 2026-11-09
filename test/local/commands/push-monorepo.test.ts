@@ -267,6 +267,9 @@ describe('apify push of a monorepo Actor', () => {
 	it('zips a repository under the multi-file limit when a file name exceeds what the platform accepts', async () => {
 		const longPath = `packages/${'a'.repeat(120)}/${'b'.repeat(120)}/fixture.json`;
 		await write(longPath, '{}');
+		// Over 260 characters, Git on Windows skips the folder unless told otherwise, and the system config of a
+		// Windows runner, which does, doesn't apply here.
+		git('config', 'core.longpaths', 'true');
 		git('add', '.');
 
 		await testRunCommand(ActorsPushCommand, {});
