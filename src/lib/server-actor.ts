@@ -33,8 +33,10 @@ type ActorDefinitionWithServerFields = NonNullable<Build['actorDefinition']> & {
 export interface ServerActor {
 	id: string;
 	userFriendlyId: string;
+	ownerUsername: string;
 	standbyUrl: string;
 	tenancy?: string;
+	pricingModel?: string;
 	buildRef?: string;
 	taggedBuilds: Actor['taggedBuilds'];
 	standby: NonNullable<ActorWithServerFields['actorStandby']>;
@@ -42,6 +44,61 @@ export interface ServerActor {
 
 export function isMultiTenant(actor: Pick<ServerActor, 'tenancy'>) {
 	return actor.tenancy === 'MULTI_TENANT';
+}
+
+/** The pricing record in effect now; the API returns past and scheduled records together. */
+export function getEffectivePricingModel(
+	pricingInfos: { pricingModel: string; startedAt: Date | string }[] | undefined,
+	now = Date.now(),
+): string | undefined {
+	let effective: { pricingModel: string; startedAt: number } | undefined;
+
+	for (const info of pricingInfos ?? []) {
+		const startedAt = new Date(info.startedAt).getTime();
+
+		if (Number.isNaN(startedAt) || startedAt > now) {
+			continue;
+		}
+
+		if (!effective || startedAt > effective.startedAt) {
+			effective = { pricingModel: info.pricingModel, startedAt };
+		}
+	}
+
+	return effective?.pricingModel;
+}
+
+/**
+ * Says whose account the runs live in and who pays. A multi-tenant Actor bills its owner and its callers
+ * differently, and only a pay-per-event Actor charges the caller events, so neither can be stated without
+ * knowing who is asking and how the Actor is priced.
+ */
+export function describeTenancy(
+	actor: Pick<ServerActor, 'tenancy' | 'ownerUsername' | 'pricingModel'>,
+	viewerUsername: string | undefined,
+): string {
+	if (!isMultiTenant(actor)) {
+		return `single-tenant (runs in your account "${viewerUsername}", which pays the platform usage)`;
+	}
+
+	if (viewerUsername === actor.ownerUsername) {
+		return 'multi-tenant (runs in your account; your own requests pay the platform usage, never events)';
+	}
+
+	return `multi-tenant (runs in "${actor.ownerUsername}"'s account; ${describeCallerCost(actor.pricingModel)})`;
+}
+
+function describeCallerCost(pricingModel: string | undefined): string {
+	switch (pricingModel) {
+		case 'PAY_PER_EVENT':
+			return 'you pay per event';
+		case 'PRICE_PER_DATASET_ITEM':
+			return 'you pay per dataset item';
+		case 'FLAT_PRICE_PER_MONTH':
+			return 'your monthly subscription covers it';
+		default:
+			return "it's free for you";
+	}
 }
 
 /** Points callers of the input interface to the server interface; dual-mode Actors are legitimate, so it only informs. */
@@ -89,8 +146,10 @@ export async function resolveServerActor(client: ApifyClient, target: string | u
 	return {
 		id: actor.id,
 		userFriendlyId: ctx.userFriendlyId,
+		ownerUsername: actor.username,
 		standbyUrl: actor.standbyUrl,
 		tenancy: actor.actorStandby.tenancy,
+		pricingModel: getEffectivePricingModel(actor.pricingInfos),
 		buildRef: actor.actorStandby.build,
 		taggedBuilds: actor.taggedBuilds,
 		standby: actor.actorStandby,
@@ -248,10 +307,13 @@ export function describeServerError(status: number, body: string): string | unde
 	let type: string | undefined;
 
 	try {
-		type = (JSON.parse(body) as { error?: { type?: unknown } }).error?.type as string | undefined;
+		const parsedType = (JSON.parse(body) as { error?: { type?: unknown } } | null)?.error?.type;
+		type = typeof parsedType === 'string' ? parsedType : undefined;
 	} catch {
 		// Not a router error body; the Actor answered.
 	}
+
+	const isRouterError = type !== undefined;
 
 	switch (type) {
 		case 'failed-to-choose-actor-run':
@@ -264,7 +326,8 @@ export function describeServerError(status: number, body: string): string | unde
 			break;
 	}
 
-	if (status === 504) {
+	// An Actor can answer 504 itself, instantly; only the router's own timeout means it went silent.
+	if (status === 504 && (isRouterError || !body.trim())) {
 		return 'The Actor did not respond within 5 minutes.';
 	}
 

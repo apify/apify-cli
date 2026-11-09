@@ -24,6 +24,7 @@ import {
 import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const SLOW_RESPONSE_NOTICE_MILLIS = 2_000;
+const COLD_START_NOTICE_MILLIS = 20_000;
 
 export class ServerRequestCommand extends ApifyCommand<typeof ServerRequestCommand> {
 	static override name = 'request' as const;
@@ -137,10 +138,15 @@ export class ServerRequestCommand extends ApifyCommand<typeof ServerRequestComma
 		const controller = new AbortController();
 		const timeout = setTimeout(() => controller.abort(), SERVER_REQUEST_TIMEOUT_MILLIS);
 		const slowNotice = setTimeout(() => {
-			info({
-				message: 'Waiting for the Actor. If no run is ready, the platform starts one, which can take up to 2 minutes.',
-			});
+			info({ message: 'Waiting for the Actor to respond.' });
 		}, SLOW_RESPONSE_NOTICE_MILLIS);
+		// A warm Actor can simply be slow, so the cold start is only worth mentioning after a long wait.
+		const coldStartNotice = setTimeout(() => {
+			info({
+				message:
+					'Still waiting. If the Actor had no run ready, the platform is starting one, which can take up to 2 minutes.',
+			});
+		}, COLD_START_NOTICE_MILLIS);
 
 		let response: Response;
 
@@ -162,6 +168,7 @@ export class ServerRequestCommand extends ApifyCommand<typeof ServerRequestComma
 		} finally {
 			clearTimeout(timeout);
 			clearTimeout(slowNotice);
+			clearTimeout(coldStartNotice);
 		}
 
 		if (response.status >= 300 && response.status < 400) {

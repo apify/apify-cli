@@ -6,6 +6,8 @@ import type { Actor, ApifyClient, Build } from 'apify-client';
 import type { ServerActor } from '../../../src/lib/server-actor.js';
 import {
 	describeServerError,
+	describeTenancy,
+	getEffectivePricingModel,
 	getServerInterfaceHint,
 	listServerOperations,
 	parseServerRequestArgs,
@@ -34,6 +36,7 @@ function serverActor(overrides: Partial<ServerActor> = {}): ServerActor {
 	return {
 		id: 'actorId',
 		userFriendlyId: 'apify/rag-web-browser',
+		ownerUsername: 'apify',
 		standbyUrl: STANDBY_URL,
 		taggedBuilds: {},
 		standby: { isEnabled: true },
@@ -174,6 +177,69 @@ describe('server-actor', () => {
 		it('adds no hint for an error the Actor returned', () => {
 			expect(describeServerError(400, 'Missing query parameter')).toBeUndefined();
 			expect(describeServerError(429, '{"message":"slow down"}')).toBeUndefined();
+		});
+
+		it('does not blame a timeout for a 504 the Actor answered itself', () => {
+			expect(describeServerError(504, 'Upstream is down')).toBeUndefined();
+			expect(describeServerError(504, '{"message":"upstream is down"}')).toBeUndefined();
+			expect(describeServerError(504, '')).toContain('5 minutes');
+		});
+	});
+
+	describe('getEffectivePricingModel()', () => {
+		const info = (pricingModel: string, startedAt: string) => ({ pricingModel, startedAt });
+
+		it('takes the latest record that has already started', () => {
+			const model = getEffectivePricingModel(
+				[info('FREE', '2024-01-01T00:00:00.000Z'), info('PAY_PER_EVENT', '2024-06-01T00:00:00.000Z')],
+				Date.parse('2024-09-01T00:00:00.000Z'),
+			);
+
+			expect(model).toBe('PAY_PER_EVENT');
+		});
+
+		it('ignores a scheduled change that has not started yet', () => {
+			const model = getEffectivePricingModel(
+				[info('FREE', '2024-01-01T00:00:00.000Z'), info('PAY_PER_EVENT', '2024-12-01T00:00:00.000Z')],
+				Date.parse('2024-09-01T00:00:00.000Z'),
+			);
+
+			expect(model).toBe('FREE');
+		});
+
+		it('returns nothing when the Actor has no pricing', () => {
+			expect(getEffectivePricingModel(undefined)).toBeUndefined();
+			expect(getEffectivePricingModel([])).toBeUndefined();
+		});
+	});
+
+	describe('describeTenancy()', () => {
+		it('names the caller account for a single-tenant Actor', () => {
+			expect(describeTenancy(serverActor(), 'caller')).toBe(
+				'single-tenant (runs in your account "caller", which pays the platform usage)',
+			);
+		});
+
+		it('never charges the owner events for their own multi-tenant Actor', () => {
+			const actor = serverActor({ tenancy: 'MULTI_TENANT', pricingModel: 'PAY_PER_EVENT' });
+
+			expect(describeTenancy(actor, 'apify')).toBe(
+				'multi-tenant (runs in your account; your own requests pay the platform usage, never events)',
+			);
+		});
+
+		it('charges a caller per event only when the Actor is pay-per-event', () => {
+			const ppe = serverActor({ tenancy: 'MULTI_TENANT', pricingModel: 'PAY_PER_EVENT' });
+			const free = serverActor({ tenancy: 'MULTI_TENANT', pricingModel: 'FREE' });
+
+			expect(describeTenancy(ppe, 'caller')).toBe('multi-tenant (runs in "apify"\'s account; you pay per event)');
+			expect(describeTenancy(free, 'caller')).toBe('multi-tenant (runs in "apify"\'s account; it\'s free for you)');
+		});
+
+		it('treats an Actor with unknown pricing as free for the caller', () => {
+			const actor = serverActor({ tenancy: 'MULTI_TENANT' });
+
+			expect(describeTenancy(actor, 'caller')).toContain("it's free for you");
 		});
 	});
 	describe('shortenSummary()', () => {

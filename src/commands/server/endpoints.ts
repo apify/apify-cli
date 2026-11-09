@@ -57,13 +57,21 @@ export class ServerEndpointsCommand extends ApifyCommand<typeof ServerEndpointsC
 			return;
 		}
 
-		for (const operation of operations) {
-			const summary = operation.summary ? `  ${shortenSummary(operation.summary)}` : '';
-			simpleLog({ message: `${operation.method.padEnd(7)} ${operation.path}${summary}`, stdout: true });
-		}
+		const rows = operations.map((operation) => ({
+			method: operation.method,
+			path: operation.path,
+			summary: operation.summary ? shortenSummary(operation.summary) : '',
+		}));
 
 		if (webServerMcpPath) {
-			simpleLog({ message: `${'MCP'.padEnd(7)} ${webServerMcpPath}`, stdout: true });
+			rows.push({ method: 'MCP', path: webServerMcpPath, summary: '' });
+		}
+
+		const widestPath = Math.max(0, ...rows.map((row) => row.path.length));
+
+		for (const row of rows) {
+			const path = row.summary ? `${row.path.padEnd(widestPath)}  ${row.summary}` : row.path;
+			simpleLog({ message: `${row.method.padEnd(7)} ${path}`, stdout: true });
 		}
 
 		if (operations.length === 0 && !webServerMcpPath) {

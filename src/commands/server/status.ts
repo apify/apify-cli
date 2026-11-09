@@ -4,6 +4,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { simpleLog } from '../../lib/outputs.js';
 import {
+	describeTenancy,
 	getServerDefinition,
 	isMultiTenant,
 	listServerOperations,
@@ -51,22 +52,23 @@ export class ServerStatusCommand extends ApifyCommand<typeof ServerStatusCommand
 		const multiTenant = isMultiTenant(actor);
 		const { standby } = actor;
 
+		const { username } = await getCurrentUserInfo();
+
 		// A multi-tenant Actor runs in the developer's account, so the caller has no runs to list.
 		let runs: { id: string; startedAt: Date }[] | undefined;
-		let username: string | undefined;
 
 		if (!multiTenant) {
 			const { items } = await client.runs().list({ status: 'RUNNING', desc: true, limit: 1000 });
 			runs = items
 				.filter((run) => run.actId === actor.id && run.meta?.origin === META_ORIGINS.STANDBY)
 				.map(({ id, startedAt }) => ({ id, startedAt }));
-			({ username } = await getCurrentUserInfo());
 		}
 
 		if (this.flags.json) {
 			printJsonToStdout({
 				url: actor.standbyUrl,
 				tenancy: actor.tenancy ?? null,
+				pricingModel: actor.pricingModel ?? null,
 				build: { ref: actor.buildRef, id: build.id, buildNumber: build.buildNumber },
 				memoryMbytes: standby.memoryMbytes ?? null,
 				idleTimeoutSecs: standby.idleTimeoutSecs ?? null,
@@ -79,9 +81,7 @@ export class ServerStatusCommand extends ApifyCommand<typeof ServerStatusCommand
 			return;
 		}
 
-		const tenancyLine = multiTenant
-			? "multi-tenant (runs in the developer's account; you pay per event)"
-			: `single-tenant (runs in your account "${username}", which pays the platform usage)`;
+		const tenancyLine = describeTenancy(actor, username);
 
 		const endpointsLine =
 			operations.length > 0
