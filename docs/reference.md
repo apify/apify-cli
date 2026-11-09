@@ -859,6 +859,10 @@ DESCRIPTION
   as ZIP file.
   Files matched by .gitignore and .actorignore are excluded. Use negation 
   patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.
+  If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push 
+  uploads the whole Git repository: the Actor folder as above, and everything 
+  else that Git tracks or doesn't ignore (.actorignore doesn't apply there). 
+  Outside Git, it uploads the whole Docker context as above.
   Use --force to override newer remote versions.
 
 USAGE

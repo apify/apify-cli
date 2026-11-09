@@ -7,9 +7,6 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
 import { getActorLocalFilePaths } from './utils.js';
 
-/** Tracks pushing Actors with `dockerContextDir` (monorepo Actors) to the Apify platform. */
-export const MONOREPO_PLATFORM_SUPPORT_ISSUE_URL = 'https://github.com/apify/apify-core/issues/28685';
-
 export type DockerContextResolution =
 	/** `dockerContextDir` is absent: undefined, null, or an empty string. */
 	| { kind: 'none' }
@@ -231,13 +228,4 @@ export async function getContextFilePaths(root: string): Promise<string[]> {
 				isPushable(filePath) && !filePath.split('/').some((segment) => UNTRACKED_IGNORED_SEGMENTS.has(segment)),
 		),
 	];
-}
-
-export function monorepoUnsupportedMessage(actorName: string): string {
-	return [
-		`Actor ${actorName} sets "dockerContextDir" in .actor/actor.json, so it builds from a Docker context outside its own folder (a monorepo Actor).`,
-		'apify push does not support such Actors on the Apify platform yet. Follow the progress at:',
-		`  ${MONOREPO_PLATFORM_SUPPORT_ISSUE_URL}`,
-		`Until then, set the Actor's source in Apify Console to the Git repository with the folder (<repository URL>#<branch>:<folder>).`,
-	].join('\n');
 }

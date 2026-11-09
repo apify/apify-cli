@@ -11,7 +11,6 @@ import { ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { CommandExitCodes } from '../../../src/lib/consts.js';
-import { MONOREPO_PLATFORM_SUPPORT_ISSUE_URL } from '../../../src/lib/docker-context.js';
 import { cwdCache } from '../../../src/lib/hooks/useActorConfig.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useIsolatedGit } from '../../__setup__/hooks/useIsolatedGit.js';
@@ -41,19 +40,11 @@ interface VersionPayload {
 }
 
 const actorGet = vitest.fn(async (): Promise<typeof actor | null> => actor);
-const actorDelete = vitest.fn(async () => {});
 const actorsCreate = vitest.fn(async (_created: unknown) => actor);
 const versionUpdate = vitest.fn(async (_modifier: unknown) => ({}));
 const versionCreate = vitest.fn(async (created: unknown) => created);
 const keyValueStoreGetOrCreate = vitest.fn(async () => ({ id: 'store1', urlSigningSecretKey: 'secret' }));
 const setRecord = vitest.fn(async (_record: unknown) => {});
-
-// What apify-client throws when a platform without the `actorPath` version field rejects the key.
-const actorPathRejected = () =>
-	Object.assign(new Error('Invalid actor version: actorPath is not allowed by the schema'), {
-		statusCode: 400,
-		type: 'invalid-request',
-	});
 
 // Stands in for the platform: the Actor and its version exist, and every write is recorded.
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
@@ -65,7 +56,6 @@ vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 		token: 'my-token',
 		actor: () => ({
 			get: actorGet,
-			delete: actorDelete,
 			version: () => ({ get: async () => currentVersion, update: versionUpdate }),
 			versions: () => ({ create: versionCreate }),
 			build: async () => build,
@@ -142,14 +132,6 @@ function versionPayload(mock: typeof versionUpdate | typeof actorsCreate) {
 	return mock.mock.calls[0][0] as VersionPayload;
 }
 
-function expectRefusal() {
-	expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
-	const stderr = logMessages.error.join('\n');
-	expect(stderr).toContain('apify push does not support such Actors on the Apify platform yet');
-	expect(stderr).toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
-	expect(logMessages.log.join('\n')).not.toContain('Apify push result');
-}
-
 // The command sets its exit code on the mocked copy, but the framework records a thrown error on the real `process`.
 let originalExitCode: typeof process.exitCode;
 let originalRealExitCode: typeof process.exitCode;
@@ -159,7 +141,6 @@ beforeEach(async () => {
 	originalRealExitCode = process.exitCode;
 	gitState.gitAvailable = true;
 	actorGet.mockReset();
-	actorDelete.mockReset();
 	actorsCreate.mockReset();
 	versionUpdate.mockReset();
 	versionCreate.mockReset();
@@ -504,93 +485,14 @@ describe('apify push of a monorepo Actor', () => {
 		expect(warningLine!.split('\n')).toHaveLength(1);
 	});
 
-	describe('on a platform without the actorPath field', () => {
-		it('turns the 400 into the refusal with the tracking issue', async () => {
-			versionUpdate.mockRejectedValueOnce(actorPathRejected());
+	it('creates a new Actor with actorPath on its inline version and on the version it pushes', async () => {
+		actorGet.mockResolvedValueOnce(null);
 
-			await testRunCommand(ActorsPushCommand, {});
+		await testRunCommand(ActorsPushCommand, {});
 
-			expectRefusal();
-			expect(actorDelete).not.toHaveBeenCalled();
-		});
-
-		it('leaves the zip record of the existing version alone', async () => {
-			await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
-			versionUpdate.mockRejectedValueOnce(actorPathRejected());
-
-			await testRunCommand(ActorsPushCommand, {});
-
-			expectRefusal();
-			expect(setRecord.mock.calls.map(([record]) => (record as { key: string }).key)).not.toContain('version-0.0.zip');
-		});
-
-		it('keeps stdout clean with --json', async () => {
-			versionUpdate.mockRejectedValueOnce(actorPathRejected());
-
-			await testRunCommand(ActorsPushCommand, { flags_json: true });
-
-			expectRefusal();
-			expect(logMessages.log).toEqual([]);
-		});
-
-		it('deletes the Actor it has just created', async () => {
-			actorGet.mockResolvedValueOnce(null);
-			versionUpdate.mockRejectedValueOnce(actorPathRejected());
-
-			await testRunCommand(ActorsPushCommand, {});
-
-			expectRefusal();
-			expect(versionPayload(actorsCreate)).toMatchObject({ versions: [{ actorPath: ACTOR_PATH }] });
-			expect(actorDelete).toHaveBeenCalledTimes(1);
-		});
-
-		it('still reports the refusal when deleting the just created Actor fails', async () => {
-			actorGet.mockResolvedValueOnce(null);
-			versionUpdate.mockRejectedValueOnce(actorPathRejected());
-			actorDelete.mockRejectedValueOnce(new Error('delete failed'));
-
-			await testRunCommand(ActorsPushCommand, {});
-
-			expectRefusal();
-			expect(actorDelete).toHaveBeenCalledTimes(1);
-			expect(logMessages.error.join('\n')).toContain('delete failed');
-		});
-
-		it('refuses when the Actor create itself rejects actorPath, leaving nothing to delete', async () => {
-			actorGet.mockResolvedValueOnce(null);
-			actorsCreate.mockRejectedValueOnce(actorPathRejected());
-
-			await testRunCommand(ActorsPushCommand, {});
-
-			expectRefusal();
-			expect(versionUpdate).not.toHaveBeenCalled();
-			expect(actorDelete).not.toHaveBeenCalled();
-		});
-
-		it("passes the field's own validation errors through", async () => {
-			versionUpdate.mockRejectedValueOnce(
-				Object.assign(new Error('Invalid value provided in version: actorPath must be at most 255 characters long'), {
-					statusCode: 400,
-				}),
-			);
-
-			await testRunCommand(ActorsPushCommand, {});
-
-			expect(process.exitCode).toBe(1);
-			expect(logMessages.error.join('\n')).toContain('actorPath must be at most 255 characters long');
-			expect(logMessages.error.join('\n')).not.toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
-		});
-
-		it('passes other API errors through', async () => {
-			versionUpdate.mockRejectedValueOnce(Object.assign(new Error('Version is locked'), { statusCode: 400 }));
-
-			await testRunCommand(ActorsPushCommand, {});
-
-			expect(commandProcess.exitCode).toBeFalsy();
-			expect(process.exitCode).toBe(1);
-			expect(logMessages.error.join('\n')).toContain('Version is locked');
-			expect(logMessages.error.join('\n')).not.toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
-		});
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionPayload(actorsCreate)).toMatchObject({ versions: [{ actorPath: ACTOR_PATH }] });
+		expect(versionPayload(versionUpdate).actorPath).toBe(ACTOR_PATH);
 	});
 
 	it('uploads the Docker context with .actorignore applied outside Git', async () => {
@@ -674,20 +576,6 @@ describe('apify push of a monorepo Actor', () => {
 			expect(actorGet).not.toHaveBeenCalled();
 			expect(versionUpdate).not.toHaveBeenCalled();
 		});
-	});
-
-	it('names the Actor folder in the refusal when actor.json has no name', async () => {
-		await writeActorConfig({
-			name: undefined,
-			dockerContextDir: '../../..',
-			dockerfile: '../../../shared/TypeScript_Dockerfile',
-		});
-		versionUpdate.mockRejectedValueOnce(actorPathRejected());
-
-		await testRunCommand(ActorsPushCommand, { args_actorId: ACTOR_ID });
-
-		expectRefusal();
-		expect(logMessages.error.join('\n')).toContain('Actor typescript-actor sets "dockerContextDir"');
 	});
 
 	it('adds the files of an Actor folder ignored by .gitignore when --dir names it, as a clone has none of them', async () => {

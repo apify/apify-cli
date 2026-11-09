@@ -1,10 +1,10 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { lstatSync, readFileSync, realpathSync, rmSync, type Stats, statSync, writeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, relative, resolve } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
-import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyApiError, Build } from 'apify-client';
+import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, Build } from 'apify-client';
 import chalk from 'chalk';
 import { isCI } from 'ci-info';
 import open from 'open';
@@ -28,7 +28,6 @@ import {
 import {
 	getContextFilePaths,
 	isOutside,
-	monorepoUnsupportedMessage,
 	readGitState,
 	realPath,
 	resolveDockerContext,
@@ -214,14 +213,6 @@ const confirmGitSourceSwitch = async ({
 		default: false,
 		errorMessageForStdin: `Actor ${actorName} builds from a Git repository. To switch the source to the local files, use --force.`,
 	});
-};
-
-/** A platform without the `actorPath` version field rejects the key as unknown; the field's own validation errors pass through. */
-const rejectsActorPath = (err: unknown) => {
-	const { statusCode, message } = err as ApifyApiError;
-	return (
-		statusCode === 400 && typeof message === 'string' && message.includes('actorPath is not allowed by the schema')
-	);
 };
 
 /**
@@ -445,6 +436,9 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`larger projects upload as ZIP file.\n` +
 		`Files matched by .gitignore and .actorignore are excluded. ` +
 		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.\n` +
+		`If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push uploads the whole Git repository: ` +
+		`the Actor folder as above, and everything else that Git tracks or doesn't ignore (.actorignore doesn't apply there). ` +
+		`Outside Git, it uploads the whole Docker context as above.\n` +
 		`Use --force to override newer remote versions.`;
 
 	static override group = 'Local Actor Development';
@@ -803,12 +797,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			});
 		}
 
-		const refuseMonorepoPush = () => {
-			// Pushing by ID, actor.json may have no name; the folder then names the Actor.
-			error({ message: monorepoUnsupportedMessage((actorConfig?.name as string | undefined) ?? basename(cwd)) });
-			process.exitCode = CommandExitCodes.NotImplemented;
-		};
-
 		const apifyClient = await getLoggedClientOrThrow();
 		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
@@ -872,13 +860,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 					newActor.actorStandby = { isEnabled: true };
 				}
 
-				try {
-					actor = await apifyClient.actors().create(newActor);
-				} catch (err) {
-					if (!rejectsActorPath(err)) throw err;
-					refuseMonorepoPush();
-					return;
-				}
+				actor = await apifyClient.actors().create(newActor);
 				actorId = actor.id;
 				isActorCreatedNow = true;
 				info({ message: `Created Actor with name ${actorConfig!.name} on Apify.` });
@@ -1018,41 +1000,25 @@ Skipping push. Use --force to override.`,
 			this.flags.applyEnvVarsToBuild ?? (actorConfig!.applyEnvVarsToBuild as boolean | undefined);
 
 		const actorVersionSource = { tarballUrl, sourceFiles, sourceType, ...(actorPath ? { actorPath } : {}) };
-		try {
-			if (actorCurrentVersion) {
-				const actorVersionModifier = { ...actorVersionSource, buildTag, envVars, applyEnvVarsToBuild };
-				// TODO: fix this type too -.-
-				await actorClient.version(version).update(actorVersionModifier as never);
-				run({ message: `Updated version ${version} for Actor ${actor.name}.` });
-			} else {
-				const actorNewVersion = {
-					versionNumber: version,
-					...actorVersionSource,
-					buildTag,
-					envVars,
-					applyEnvVarsToBuild,
-				};
+		if (actorCurrentVersion) {
+			const actorVersionModifier = { ...actorVersionSource, buildTag, envVars, applyEnvVarsToBuild };
+			// TODO: fix this type too -.-
+			await actorClient.version(version).update(actorVersionModifier as never);
+			run({ message: `Updated version ${version} for Actor ${actor.name}.` });
+		} else {
+			const actorNewVersion = {
+				versionNumber: version,
+				...actorVersionSource,
+				buildTag,
+				envVars,
+				applyEnvVarsToBuild,
+			};
 
-				await actorClient.versions().create({
-					...actorNewVersion,
-				} as never);
+			await actorClient.versions().create({
+				...actorNewVersion,
+			} as never);
 
-				run({ message: `Created version ${version} for Actor ${actor.name}.` });
-			}
-		} catch (err) {
-			if (!rejectsActorPath(err)) throw err;
-			if (isActorCreatedNow) {
-				try {
-					await actorClient.delete();
-					info({ message: `Deleted the just created Actor ${actor.name} again.` });
-				} catch (deleteErr) {
-					warning({
-						message: `Could not delete the just created Actor ${actor.name}: ${(deleteErr as Error).message}`,
-					});
-				}
-			}
-			refuseMonorepoPush();
-			return;
+			run({ message: `Created version ${version} for Actor ${actor.name}.` });
 		}
 
 		// Sync standby mode on existing actors with actor.json
