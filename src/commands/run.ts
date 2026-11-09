@@ -185,7 +185,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			required: false,
 			default: false,
 		}),
-		standby: Flags.boolean({
+		server: Flags.boolean({
+			aliases: ['standby'],
 			description:
 				'Run the Actor the way the platform starts it for its server interface: sets APIFY_META_ORIGIN=STANDBY ' +
 				'and the web server port, then sends the readiness probe and prints the local URL.',
@@ -193,7 +194,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 			default: false,
 		}),
 		port: Flags.integer({
-			description: `The port the Actor's web server listens on. Use with --standby. Defaults to ${DEFAULT_LOCAL_SERVER_PORT}.`,
+			description: `The port the Actor's web server listens on. Use with --server. Defaults to ${DEFAULT_LOCAL_SERVER_PORT}.`,
 			required: false,
 		}),
 	};
@@ -201,8 +202,8 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 	async run() {
 		const cwd = process.cwd();
 
-		if (this.flags.port !== undefined && !this.flags.standby) {
-			throw new Error('The --port flag can only be used together with --standby.');
+		if (this.flags.port !== undefined && !this.flags.server) {
+			throw new Error('The --port flag can only be used together with --server.');
 		}
 
 		let authFailure: string | undefined;
@@ -231,11 +232,11 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const { config: localConfig } = localConfigResult.unwrap();
 
-		if (localConfig!.usesStandbyMode && !this.flags.standby) {
+		if (localConfig!.usesStandbyMode && !this.flags.server) {
 			info({
 				message:
 					'This Actor has a server interface ("usesStandbyMode" in actor.json). ' +
-					'Pass --standby to run it the way the platform does for HTTP requests.',
+					'Pass --server to run it the way the platform does for HTTP requests.',
 			});
 		}
 
@@ -411,7 +412,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const serverPort = this.flags.port ?? DEFAULT_LOCAL_SERVER_PORT;
 
-		if (this.flags.standby) {
+		if (this.flags.server) {
 			localEnvVars[APIFY_ENV_VARS.META_ORIGIN] = META_ORIGINS.STANDBY;
 			localEnvVars[ACTOR_ENV_VARS.WEB_SERVER_PORT] = String(serverPort);
 			// The platform still injects the legacy name, and older templates read it.
@@ -442,7 +443,7 @@ export class RunCommand extends ApifyCommand<typeof RunCommand> {
 
 		const readinessProbe = new AbortController();
 
-		if (this.flags.standby) {
+		if (this.flags.server) {
 			void watchLocalServerReadiness(serverPort, readinessProbe.signal);
 		}
 

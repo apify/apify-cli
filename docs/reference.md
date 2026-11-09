@@ -467,7 +467,7 @@ DESCRIPTION
 USAGE
   $ apify run [--allow-missing-secrets] [--entrypoint <value>]
               [-i <value> | --input-file <value>] [--port <value>]
-              [--profile <value>] [-p | --resurrect] [--standby]
+              [--profile <value>] [-p | --resurrect] [--server]
 
 FLAGS
       --allow-missing-secrets  Allow the command to
@@ -489,7 +489,7 @@ FLAGS
                                input, but stops waiting if input is slow to start or
                                pauses.
       --port=<value>           The port the Actor's web
-                               server listens on. Use with --standby. Defaults to
+                               server listens on. Use with --server. Defaults to
                                4321.
       --profile=<value>        The stored account to use
                                for this command, by name or user ID. See "apify auth
@@ -503,7 +503,7 @@ FLAGS
       --resurrect              Whether to keep the default
                                request queue, dataset and key-value store before the
                                run starts.
-      --standby                Run the Actor the way the
+      --server                 Run the Actor the way the
                                platform starts it for its server interface: sets
                                APIFY_META_ORIGIN=STANDBY and the web server port,
                                then sends the readiness probe and prints the local
