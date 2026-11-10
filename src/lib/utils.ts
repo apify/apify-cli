@@ -695,16 +695,20 @@ export const outputJobLog = async ({
 	}
 
 	// In other case stream it to stderr
-	// eslint-disable-next-line no-async-promise-executor
-	return new Promise<'no-logs' | 'finished' | 'timeouts'>(async (resolve) => {
-		const stream = await client.log(logId).stream();
+	const stream = await client.log(logId).stream();
 
-		if (!stream) {
-			resolve('no-logs');
-			return;
-		}
+	if (!stream) {
+		return 'no-logs';
+	}
 
+	return new Promise<'no-logs' | 'finished' | 'timeouts'>((resolve, reject) => {
 		let nodeTimeout: NodeJS.Timeout | null = null;
+
+		const clearPendingTimeout = () => {
+			if (nodeTimeout) {
+				clearTimeout(nodeTimeout);
+			}
+		};
 
 		stream.on('data', (chunk) => {
 			// In tests, writing to process.stderr directly messes with vitest's output
@@ -717,11 +721,21 @@ export const outputJobLog = async ({
 		});
 
 		stream.once('end', () => {
+			clearPendingTimeout();
 			resolve('finished');
+		});
 
-			if (nodeTimeout) {
-				clearTimeout(nodeTimeout);
-			}
+		// A dropped connection emits `close`, and sometimes `error`, without ever emitting `end`.
+		// Unhandled, those leave this promise pending, which empties the event loop and exits
+		// Node with code 13 in the middle of the command.
+		stream.once('close', () => {
+			clearPendingTimeout();
+			resolve('finished');
+		});
+
+		stream.once('error', (err) => {
+			clearPendingTimeout();
+			reject(err);
 		});
 
 		if (timeoutMillis !== undefined) {
