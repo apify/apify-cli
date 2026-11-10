@@ -13,9 +13,6 @@
 		"automerge": true,
 		"automergeType": "branch"
 	},
-	"constraints": {
-		"pnpm": "^12.0.0"
-	},
 	"packageRules": [
 		{
 			"matchUpdateTypes": ["patch", "minor"],
