@@ -524,6 +524,25 @@ describe('apify push of a monorepo Actor', () => {
 		).toEqual([]);
 	});
 
+	it("leaves out another Actor's local run state outside Git", async () => {
+		await write('actors/javascript-actor/src/main.js', 'console.log(1);\n');
+		for (const dir of ['storage', 'apify_storage', 'crawlee_storage']) {
+			await write(`actors/javascript-actor/${dir}/key_value_stores/default/INPUT.json`, '{"message":"x"}');
+		}
+		// Source code in a folder that is only named storage still goes.
+		await write('packages/typescript-utils/src/storage/kv.ts', 'export const kv = 1;\n');
+		gitState.gitAvailable = false;
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toEqual(
+			expect.arrayContaining(['actors/javascript-actor/src/main.js', 'packages/typescript-utils/src/storage/kv.ts']),
+		);
+		expect(names.filter((name) => name.includes('INPUT.json'))).toEqual([]);
+	});
+
 	it('leaves out the files under a folder symlink leading out of the Docker context outside Git', async () => {
 		await mkdir(outside.joinPath('folder'), { recursive: true });
 		await writeFile(outside.joinPath('folder/outside.txt'), 'outside\n');

@@ -193,8 +193,22 @@ export function readGitState(dir: string): GitState {
 	return state;
 }
 
-/** Untracked, these are never on the platform and too big to push by accident. */
-const UNTRACKED_IGNORED_SEGMENTS = new Set(['node_modules', 'storage', 'apify_storage', 'crawlee_storage']);
+const RUN_STATE_FOLDERS = new Set(['storage', 'apify_storage', 'crawlee_storage']);
+const RUN_STATE_SUBFOLDERS = new Set(['datasets', 'key_value_stores', 'request_queues']);
+
+/**
+ * Dependencies, and what a local run stores, always as `<storage folder>/<type>/<store>/<file>`. Untracked (and outside
+ * Git nothing is tracked), these are never on the platform and too big to push by accident. The ordinary list drops
+ * them only at its root, which in a monorepo lies above the Actor folders. Other files in a `storage` folder stay.
+ */
+function isDependencyOrRunState(filePath: string): boolean {
+	const segments = filePath.split('/');
+	return segments.some(
+		(segment, index) =>
+			segment === 'node_modules' ||
+			(RUN_STATE_FOLDERS.has(segment) && RUN_STATE_SUBFOLDERS.has(segments[index + 1]) && index + 3 < segments.length),
+	);
+}
 
 function gitFileList(root: string, args: string[]): string[] | undefined {
 	const output = git(root, ['ls-files', '-z', ...args]);
@@ -204,13 +218,16 @@ function gitFileList(root: string, args: string[]): string[] | undefined {
 
 /**
  * What a Git clone of `root` has, as on disk now, plus untracked files Git does not ignore; `.actorignore` does not
- * apply, as on the platform. Outside Git, what an ordinary push of `root` sends. The paths are relative to `root`
- * with forward slashes on every platform, as `getActorLocalFilePaths` returns them.
+ * apply, as on the platform. Outside Git, what an ordinary push of `root` sends, without dependencies and local run
+ * state at any depth. The paths are relative to `root` with forward slashes on every platform, as
+ * `getActorLocalFilePaths` returns them.
  */
 export async function getContextFilePaths(root: string): Promise<string[]> {
 	const tracked = gitFileList(root, ['--cached']);
 	const untracked = gitFileList(root, ['--others', '--exclude-standard']);
-	if (!tracked || !untracked) return getActorLocalFilePaths(root);
+	if (!tracked || !untracked) {
+		return (await getActorLocalFilePaths(root)).filter((filePath) => !isDependencyOrRunState(filePath));
+	}
 
 	// Skips files deleted locally and submodules (listed as directories).
 	const isPushable = (filePath: string) => {
@@ -223,9 +240,6 @@ export async function getContextFilePaths(root: string): Promise<string[]> {
 	};
 	return [
 		...tracked.filter(isPushable),
-		...untracked.filter(
-			(filePath) =>
-				isPushable(filePath) && !filePath.split('/').some((segment) => UNTRACKED_IGNORED_SEGMENTS.has(segment)),
-		),
+		...untracked.filter((filePath) => isPushable(filePath) && !isDependencyOrRunState(filePath)),
 	];
 }
