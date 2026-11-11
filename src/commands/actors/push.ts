@@ -2,7 +2,7 @@ import { readFileSync, statSync, unlinkSync, writeSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import process from 'node:process';
 
-import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, Build } from 'apify-client';
+import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyClient, Build } from 'apify-client';
 import chalk from 'chalk';
 import { isCI } from 'ci-info';
 import open from 'open';
@@ -23,7 +23,12 @@ import {
 	INTERRUPT_SIGNALS,
 	LOCAL_CONFIG_PATH,
 } from '../../lib/consts.js';
-import { monorepoUnsupportedMessage, resolveDockerContext } from '../../lib/docker-context.js';
+import {
+	getContextFilePaths,
+	monorepoUnsupportedMessage,
+	readGitState,
+	resolveDockerContext,
+} from '../../lib/docker-context.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { findActorDirs, type FoundActorDir, toPosixRelative } from '../../lib/find-actor-dirs.js';
 import { isAbortingJobOnSignal, useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -33,6 +38,13 @@ import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConf
 import { reraiseSignal, useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
 import { useStdin } from '../../lib/hooks/useStdin.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
+import { mayTargetActorRuntime, registerActorRuntimeDevFolder } from '../../lib/runtime/dev-folder.js';
+import {
+	createContextTarball,
+	monorepoOutdatedRuntimeMessage,
+	pushActorRuntimeSourceContext,
+} from '../../lib/runtime/source-context.js';
+import { resolveApiBaseUrl } from '../../lib/runtime/target.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
 	createActZip,
@@ -233,6 +245,8 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`larger projects upload as ZIP file.\n` +
 		`Files matched by .gitignore and .actorignore are excluded. ` +
 		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.\n` +
+		`Experimental: an Actor whose '${LOCAL_CONFIG_PATH}' sets "dockerContextDir" (a monorepo Actor) pushes that whole Docker context; ` +
+		`this works only against a local Actor runtime for now.\n` +
 		`Use --force to override newer remote versions.`;
 
 	static override group = 'Local Actor Development';
@@ -545,18 +559,24 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
-		if (dockerContext.kind === 'outside') {
+		// Judged from the target URL alone, so a monorepo Actor is refused for the platform before any login.
+		if (dockerContext.kind === 'outside' && !mayTargetActorRuntime({ baseUrl: resolveApiBaseUrl() })) {
 			// Pushing by ID, actor.json may have no name; the folder then names the Actor.
 			error({ message: monorepoUnsupportedMessage((actorConfig?.name as string | undefined) ?? basename(cwd)) });
 			process.exitCode = CommandExitCodes.NotImplemented;
 			return;
 		}
+		const sourceRoot = dockerContext.kind === 'outside' ? dockerContext.sourceRoot : cwd;
+		const sourcePaths =
+			dockerContext.kind === 'outside' ? await getContextFilePaths(dockerContext.sourceRoot) : filePathsToPush;
 
 		// The platform resolves these paths after the upload; a wrong one builds the wrong image or fails the build.
+		// A monorepo Actor uploads its whole source root, so its paths are judged against that upload; the runtime
+		// resolves its Dockerfile and Docker context itself.
 		const pathProblems = checkActorPaths({
 			actorDir: cwd,
-			uploadRoot: cwd,
-			uploadedFiles: filePathsToPush,
+			uploadRoot: sourceRoot,
+			uploadedFiles: sourcePaths,
 			config: actorConfig,
 			dockerContextRoot: dockerContext.kind === 'within' ? dockerContext.contextRoot : undefined,
 		});
@@ -648,14 +668,14 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
-		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
+		const filesSize = dockerContext.kind === 'outside' ? 0 : await sumFilesSizeInBytes(sourcePaths, sourceRoot);
 
 		if (filesSize < MAX_MULTIFILE_BYTES && !isActorCreatedNow) {
 			const client = await actorClient.get();
 
 			// Check when was files modified last
-			const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
-				const { mtimeMs, ctimeMs } = statSync(join(cwd, filePath));
+			const mostRecentModifiedFileMs = sourcePaths.reduce((modifiedMs, filePath) => {
+				const { mtimeMs, ctimeMs } = statSync(join(sourceRoot, filePath));
 
 				// Sometimes it's possible mtimeMs is some messed up value (like 2000/01/01 midnight), then we want to check created if it's newer
 				const fileModifiedMs = mtimeMs > ctimeMs ? mtimeMs : ctimeMs;
@@ -697,7 +717,9 @@ Skipping push. Use --force to override.`,
 		let sourceType;
 		let sourceFiles;
 		let tarballUrl;
-		if (filesSize < MAX_MULTIFILE_BYTES) {
+		if (dockerContext.kind === 'outside') {
+			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
+		} else if (filesSize < MAX_MULTIFILE_BYTES) {
 			sourceFiles = await createSourceFiles(filePathsToPush, cwd);
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else {
@@ -748,6 +770,39 @@ Skipping push. Use --force to override.`,
 		const applyEnvVarsToBuild =
 			this.flags.applyEnvVarsToBuild ?? (actorConfig!.applyEnvVarsToBuild as boolean | undefined);
 
+		// Pushed before the version update, so a runtime that refuses it leaves the version untouched.
+		const pushDockerContext = async () => {
+			if (dockerContext.kind !== 'outside') return true;
+			run({
+				message: `Pushing ${sourceRoot} (${sourcePaths.length} files) with the Actor in ${dockerContext.actorPath}; the build takes its Docker context ${dockerContext.contextRoot} from it.`,
+			});
+			const gitProvenance = readGitState(sourceRoot);
+			if (gitProvenance.dirty) {
+				warning({
+					message:
+						'The Docker context has changes that are not committed. They are built here, but the Apify platform builds only what is committed and pushed to Git.',
+				});
+			}
+			const result = await pushActorRuntimeSourceContext(apifyClient, actorId, version, {
+				actorPath: dockerContext.actorPath,
+				tarball: await createContextTarball(sourcePaths, sourceRoot),
+				git: gitProvenance,
+			});
+			if (result.ok) return true;
+			error({
+				message: result.unsupported
+					? monorepoOutdatedRuntimeMessage(apifyClient.baseUrl)
+					: `Could not push the Docker context of Actor ${actor.name}: ${result.error}`,
+			});
+			process.exitCode = result.unsupported ? CommandExitCodes.NotImplemented : CommandExitCodes.BuildFailed;
+			return false;
+		};
+
+		if (actorCurrentVersion && !(await pushDockerContext())) {
+			if (isActorCreatedNow) await actorClient.delete();
+			return;
+		}
+
 		if (actorCurrentVersion) {
 			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars, applyEnvVarsToBuild };
 			// TODO: fix this type too -.-
@@ -769,6 +824,12 @@ Skipping push. Use --force to override.`,
 			} as never);
 
 			run({ message: `Created version ${version} for Actor ${actor.name}.` });
+
+			// So a failed push leaves no empty version behind.
+			if (!(await pushDockerContext())) {
+				await actorClient.version(version).delete();
+				return;
+			}
 		}
 
 		// Sync standby mode on existing actors with actor.json
@@ -777,6 +838,13 @@ Skipping push. Use --force to override.`,
 			await actorClient.update({ actorStandby: { isEnabled } });
 			info({ message: `${isEnabled ? 'Enabled' : 'Disabled'} standby mode for Actor ${actor.name}.` });
 		}
+
+		await registerDevFolderOnActorRuntime(
+			apifyClient,
+			actorId,
+			actor.name,
+			dockerContext.kind === 'outside' ? dockerContext.contextRoot : cwd,
+		);
 
 		// Build Actor on Apify and wait for build to finish
 		run({ message: `Building Actor ${actor.name}` });
@@ -912,5 +980,22 @@ Skipping push. Use --force to override.`,
 		}
 
 		return result;
+	}
+}
+
+/** On a local Actor runtime, later runs mount the dev folder over the built image. Success shows in the build log. */
+async function registerDevFolderOnActorRuntime(
+	apifyClient: ApifyClient,
+	actorId: string,
+	actorName: string,
+	cwd: string,
+) {
+	if (!mayTargetActorRuntime(apifyClient)) return;
+
+	const result = await registerActorRuntimeDevFolder(apifyClient, actorId, cwd);
+	if (!result.ok && result.error) {
+		warning({
+			message: `Could not register ${cwd} as the live dev folder of Actor ${actorName} on the local Actor runtime: ${result.error}`,
+		});
 	}
 }
