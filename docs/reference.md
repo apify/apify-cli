@@ -1994,7 +1994,7 @@ FLAGS
   -t, --token=<value>  Apify API token to embed in the config.
                        Defaults to APIFY_TOKEN, then the token from 'apify login'. A
                        token from an OAuth 'apify login' expires after about an
-                       hour, so pass a long-lived one from Apify Console.
+                       hour, so pass a personal one from Apify Console.
       --tools=<value>  Comma-separated tool IDs or Actor full names
                        to expose. Forwarded as a '?tools=' query parameter.
       --url=<value>    Apify MCP server URL.
