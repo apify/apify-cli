@@ -44,7 +44,7 @@ function describeExpiry(remainingMs: number): string {
 /**
  * The token this command writes into a client's config is a copy: nothing refreshes it there. An
  * OAuth login's access token expires after about an hour, so the install silently stops working
- * unless the user passes a long-lived API token instead.
+ * unless the user passes a personal API token instead.
  *
  * Returns false when the user declines, in which case nothing should be written.
  */
@@ -135,7 +135,7 @@ export class MCPInstallCommand extends ApifyCommand<typeof MCPInstallCommand> {
 		...YesFlag(`Overwrite an existing 'apify' entry, and accept a token that's about to expire, without prompting.`),
 		token: Flags.string({
 			char: 't',
-			description: `Apify API token to embed in the config. Defaults to APIFY_TOKEN, then the token from 'apify login'. A token from an OAuth 'apify login' expires after about an hour, so pass a long-lived one from Apify Console.`,
+			description: `Apify API token to embed in the config. Defaults to APIFY_TOKEN, then the token from 'apify login'. A token from an OAuth 'apify login' expires after about an hour, so pass a personal one from Apify Console.`,
 		}),
 		url: Flags.string({
 			description: 'Apify MCP server URL.',
