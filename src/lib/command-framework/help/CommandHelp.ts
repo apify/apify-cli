@@ -321,7 +321,7 @@ export class CommandHelp extends BaseCommandRenderer {
 				.split('\n')
 				.map((line) => {
 					// For lines that don't start with a short flag, add 4 spaces to indent them further, and align with the flags that also have a short form
-					if (!/^-[a-z]/.test(line.trim())) {
+					if (!/^-[a-z]/i.test(line.trim())) {
 						return `    ${line}`;
 					}
 
