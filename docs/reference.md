@@ -147,8 +147,8 @@ DESCRIPTION
    API token. Also available as `apify login` and `apify logout`.
 
 SUBCOMMANDS
-  auth login   Authenticates your Apify account and saves credentials
-               to '~/.apify/auth.json'.
+  auth login   Authenticates your Apify account and stores the
+               credentials.
   auth logout  Logs out of the active account by deleting its API
                token and account information from '~/.apify/auth.json'.
   auth list    Lists the stored Apify accounts and marks the active
@@ -164,9 +164,11 @@ SUBCOMMANDS
 
 ```sh
 DESCRIPTION
-  Authenticates your Apify account and saves credentials to 
-  '~/.apify/auth.json'.
-  All other commands use these stored credentials.
+  Authenticates your Apify account and stores the credentials.
+  The API token goes to your OS keyring, or to '~/.apify/auth.json' when the 
+  keyring is unavailable or disabled.
+  All other commands use these stored credentials. To print the stored API 
+  token, run 'apify auth token'.
 
   By default, you confirm logging in to Apify Console in your browser by 
   entering a code. To remove authentication, run 'apify logout'.
@@ -390,9 +392,8 @@ FLAGS
                                  <options: apify|github|gitlab|bitbucket>
   -t, --template=<value>         Template for the
                                  Actor. If not provided, the command will prompt for
-                                 it. Visit
-                                 https://raw.githubusercontent.com/apify/actor-templates/master/templates/manifest.json
-                                 to find available template names.
+                                 it. Run 'apify templates ls' to list available
+                                 template names.
   -u, --use-case=<option>        Filter templates by
                                  use case. Ignored when --template is provided. To
                                  see the use cases each template supports, run
