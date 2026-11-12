@@ -58,9 +58,9 @@ export class ServerStatusCommand extends ApifyCommand<typeof ServerStatusCommand
 		let runs: { id: string; startedAt: Date }[] | undefined;
 
 		if (!multiTenant) {
-			const { items } = await client.runs().list({ status: 'RUNNING', desc: true, limit: 1000 });
+			const { items } = await client.actor(actor.id).runs().list({ status: 'RUNNING', desc: true });
 			runs = items
-				.filter((run) => run.actId === actor.id && run.meta?.origin === META_ORIGINS.STANDBY)
+				.filter((run) => run.meta?.origin === META_ORIGINS.STANDBY)
 				.map(({ id, startedAt }) => ({ id, startedAt }));
 		}
 
