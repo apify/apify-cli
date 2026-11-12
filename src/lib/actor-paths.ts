@@ -1,8 +1,8 @@
-import { readdirSync, realpathSync, type Stats, statSync } from 'node:fs';
+import { readdirSync, type Stats, statSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, posix, relative, resolve } from 'node:path';
 
 import { ACTOR_SPECIFICATION_FOLDER } from './consts.js';
-import { isOutside, toPosix } from './docker-context.js';
+import { isOutside, realPath, toPosix } from './docker-context.js';
 
 /**
  * An `error` would fail the build or build the wrong thing, so push stops. A `warning` is a path the platform cannot
@@ -248,12 +248,12 @@ function checkDefaultDockerfile(scope: PathCheckScope & { dockerContextRoot: str
  * as push uploads its content there. With a Docker context and no `dockerfile`, the default Dockerfile is checked too.
  */
 export function checkActorPaths(options: ActorPathsOptions): ActorPathProblem[] {
-	// The Actor folder and the upload root are real paths, as the Docker context resolver works from them, so a
-	// symlinked Actor folder does not count as an escape. A referenced path, like the Docker context the resolver
-	// returns, is judged as written below the real Actor folder, the way push lays out the upload.
+	// The Actor folder and the upload root are real paths, in their case on disk, as the Docker context resolver works
+	// from them, so a symlinked Actor folder does not count as an escape. A referenced path, like the Docker context the
+	// resolver returns, is judged as written below the real Actor folder, the way push lays out the upload.
 	const scope: PathCheckScope = {
-		actorDir: realpathSync(options.actorDir),
-		uploadRoot: realpathSync(options.uploadRoot),
+		actorDir: realPath(options.actorDir),
+		uploadRoot: realPath(options.uploadRoot),
 		uploadedFiles: new Set(options.uploadedFiles.map(toPosix)),
 		dockerContextRoot: options.dockerContextRoot,
 	};

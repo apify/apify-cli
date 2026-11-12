@@ -859,6 +859,10 @@ DESCRIPTION
   as ZIP file.
   Files matched by .gitignore and .actorignore are excluded. Use negation 
   patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.
+  If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push 
+  uploads the whole Git repository: the Actor folder as above, and everything 
+  else that Git tracks or doesn't ignore (.actorignore doesn't apply there). 
+  Outside Git, it uploads the whole Docker context as above.
   Use --force to override newer remote versions.
 
 USAGE
@@ -1990,7 +1994,7 @@ FLAGS
   -t, --token=<value>  Apify API token to embed in the config.
                        Defaults to APIFY_TOKEN, then the token from 'apify login'. A
                        token from an OAuth 'apify login' expires after about an
-                       hour, so pass a long-lived one from Apify Console.
+                       hour, so pass a personal one from Apify Console.
       --tools=<value>  Comma-separated tool IDs or Actor full names
                        to expose. Forwarded as a '?tools=' query parameter.
       --url=<value>    Apify MCP server URL.
