@@ -46,6 +46,11 @@ module.exports = [
         },
         {
             type: 'doc',
+            id: 'telemetry',
+            label: 'Telemetry',
+        },
+        {
+            type: 'doc',
             id: 'troubleshooting',
             label: 'Troubleshooting',
         },
