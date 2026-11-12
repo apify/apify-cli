@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { getLocalKeyValueStorePath } from '../../../src/lib/utils.js';
-import { waitForBuildToFinishWithTimeout } from '../../__setup__/build-utils.js';
+import { waitForLatestBuildToFinish } from '../../__setup__/build-utils.js';
 import { testUserClient } from '../../__setup__/config.js';
 import { TEST_TIMEOUT } from '../../__setup__/consts.js';
 import { safeLogin, useAuthSetup } from '../../__setup__/hooks/useAuthSetup.js';
@@ -75,9 +75,7 @@ describe('[api] apify call', () => {
 		actorId = `${username}/${ACTOR_NAME}`;
 
 		// Build must finish before doing `apify call`, otherwise we would get nonexisting build with "LATEST" tag error.
-		const builds = await testUserClient.actor(actorId).builds().list();
-		const lastBuild = builds.items.pop();
-		await waitForBuildToFinishWithTimeout(testUserClient, lastBuild!.id);
+		await waitForLatestBuildToFinish(testUserClient, actorId);
 
 		apifyId = await testUserClient
 			.actor(actorId)
