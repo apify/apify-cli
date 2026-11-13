@@ -1,6 +1,6 @@
-import type { BuildCollectionClientListItem } from 'apify-client';
 import chalk from 'chalk';
 
+import type { ApiBuildListItem } from '../../lib/api-overrides.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -89,10 +89,10 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 		const allBuilds = await client.actor(ctx.id).builds().list({ desc, limit, offset });
 		const actorInfo = (await client.actor(ctx.id).get())!;
 
-		const buildsByActorVersion = objectGroupBy(allBuilds.items, (item) => {
-			const versionNumber = Reflect.get(item, 'buildNumber') as string;
+		const builds = allBuilds.items as ApiBuildListItem[];
 
-			const [major, minor] = versionNumber.split('.');
+		const buildsByActorVersion = objectGroupBy(builds, (item) => {
+			const [major, minor] = item.buildNumber.split('.');
 
 			return `${major}.${minor}`;
 		});
@@ -108,11 +108,8 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 
 		if (json) {
 			// Hydrate the builds with their tags
-			for (const build of allBuilds.items) {
-				// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
-				const buildNumber = Reflect.get(build, 'buildNumber') as string;
-
-				const hasTag = buildTagToActorVersion[buildNumber];
+			for (const build of builds) {
+				const hasTag = buildTagToActorVersion[build.buildNumber];
 
 				if (hasTag) {
 					Reflect.set(build, 'buildTag', hasTag);
@@ -167,14 +164,13 @@ export class BuildsLsCommand extends ApifyCommand<typeof BuildsLsCommand> {
 		buildsForVersion,
 		buildTagToActorVersion,
 	}: {
-		buildsForVersion: BuildCollectionClientListItem[];
+		buildsForVersion: ApiBuildListItem[];
 		buildTagToActorVersion: Record<string, string>;
 	}) {
 		const table = tableFactory();
 
 		for (const build of buildsForVersion) {
-			// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
-			const buildNumber = Reflect.get(build, 'buildNumber') as string;
+			const { buildNumber } = build;
 
 			const hasTag = buildTagToActorVersion[buildNumber]
 				? ` (${chalk.yellow(buildTagToActorVersion[buildNumber])})`

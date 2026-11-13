@@ -62,9 +62,7 @@ export class KeyValueStoresDeleteValueCommand extends ApifyCommand<typeof KeyVal
 
 		const { keyValueStoreClient: client } = maybeStore;
 
-		const existing = await client.getRecord(itemKey);
-
-		if (!existing) {
+		if (!(await client.recordExists(itemKey))) {
 			error({
 				message: `Item with key "${itemKey}" not found in the key-value store.`,
 			});
