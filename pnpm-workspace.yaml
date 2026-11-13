@@ -45,8 +45,3 @@ publicHoistPattern:
 patchedDependencies:
   '@signalwire/docusaurus-plugin-llms-txt@1.2.2': patches/@signalwire__docusaurus-plugin-llms-txt@1.2.2.patch
 
-overrides:
-  # deps-sweep: 1.176.1 (pulled in by this run's lockfile refresh) breaks the website build
-  # ("Module not found: Can't resolve 'lodash/kebabCase'") despite declaring the same lodash
-  # range as 1.176.0 - held at the last known-good version until upstream fixes the build.
-  "@apify/ui-library": 1.176.0
