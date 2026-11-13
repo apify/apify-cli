@@ -22,6 +22,16 @@ If you modified a command's flags, args, description, or added/removed a command
 - Do not add docstrings, comments, or type annotations to code you did not change. Keep diffs tight.
 - Use contractions in command, flag, and arg descriptions, and in docs text: "doesn't", "can't", "aren't", not "does not", "cannot", "are not". `docs/` is generated from these strings, so fix the source.
 
+## Apify API usage
+
+`apify-client` types are hand-written and lag behind the API. The API is the source of truth, not the client types. Apply this when you write or review code that calls the API.
+
+- Check the endpoint in the OpenAPI spec (`https://docs.apify.com/api/openapi.json`) before you use a client method. If the spec is unclear, check the live response with `apify api <endpoint>`; list and single-item endpoints can return different fields.
+- Before you filter, sort, paginate, or poll on the client side, check whether the API has a parameter for it (`sortBy`, `status`, `prefix`, `waitForFinish`, a `HEAD` endpoint).
+- Field missing from the client types: add a type to `src/lib/api-overrides.ts` with the spec schema name, and use that type at the call site. Don't use `Reflect.get`, `as never`, or `@ts-expect-error` to read API data.
+- Parameter missing from the client: the client rejects unknown options at runtime, so send the request directly, as `src/lib/git-source/gitSource.ts` does.
+- On each `apify-client` bump, remove the overrides the client now covers.
+
 ## Install size
 
 The CLI is installed globally by many users and in Actors, so keep the npm install footprint lean. Always look for opportunities to shrink it:

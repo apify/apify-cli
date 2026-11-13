@@ -86,7 +86,7 @@ export class DatasetsRenameCommand extends ApifyCommand<typeof DatasetsRenameCom
 		})();
 
 		try {
-			await existingDataset.datasetClient.update({ name: unname ? (null as never) : newName! });
+			await existingDataset.datasetClient.update({ name: unname ? null : newName! });
 
 			success({
 				message: successMessage,

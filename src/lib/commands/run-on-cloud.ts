@@ -145,7 +145,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 
 	if (waitForRunToFinish) {
 		while (!TerminalStatuses.includes(run.status as never)) {
-			run = (await apifyClient.run(run.id).get())!;
+			run = (await apifyClient.run(run.id).get({ waitForFinish: 60 }))!;
 
 			if (TerminalStatuses.includes(run.status as never)) {
 				break;

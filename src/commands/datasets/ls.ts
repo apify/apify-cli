@@ -79,8 +79,7 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 		}
 
 		for (const dataset of rawDatasetList.items) {
-			// TODO: update apify-client types
-			const size = Reflect.get(dataset.stats, 's3StorageBytes') as number | undefined;
+			const size = dataset.stats?.storageBytes;
 
 			table.pushRow({
 				'Dataset ID': dataset.id,
