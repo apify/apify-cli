@@ -398,6 +398,80 @@ describe('apify actor generate-schema-types', () => {
 			const errorMessages = logMessages.error.join('\n');
 			expect(errorMessages).not.toContain('Output schema');
 		});
+
+		it('should generate output types when "outputSchema" alias key is used in actor.json', async () => {
+			const outputDir = joinPath('out-alias-output');
+			// Write actor.json with `outputSchema` instead of `output`
+			const actorDir = join(joinPath(), '.actor');
+			await mkdir(actorDir, { recursive: true });
+			const inputSchema = {
+				title: 'Test',
+				type: 'object',
+				schemaVersion: 1,
+				properties: {
+					foo: { title: 'Foo', description: 'A foo', type: 'string', editor: 'textfield' },
+				},
+			};
+			const outputSchema = {
+				actorOutputSchemaVersion: 1,
+				properties: {
+					resultUrl: { type: 'string', template: 'https://example.com/{{id}}' },
+				},
+			};
+			await writeFile(join(actorDir, 'input_schema.json'), JSON.stringify(inputSchema, null, '\t'));
+			await writeFile(join(actorDir, 'output_schema.json'), JSON.stringify(outputSchema, null, '\t'));
+			await writeFile(
+				join(actorDir, 'actor.json'),
+				JSON.stringify(
+					{
+						actorSpecification: 1,
+						name: 'test',
+						version: '0.1',
+						input: './input_schema.json',
+						outputSchema: './output_schema.json',
+					},
+					null,
+					'\t',
+				),
+			);
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, { flags_output: outputDir });
+
+			const generatedFile = await readFile(joinPath('out-alias-output', 'output.ts'), 'utf-8');
+			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('resultUrl');
+		});
+	});
+
+	describe('inputSchema alias key', () => {
+		it('should generate input types when "inputSchema" alias key is used in actor.json', async () => {
+			const outputDir = joinPath('input-alias-output');
+			const actorDir = join(joinPath(), '.actor');
+			await mkdir(actorDir, { recursive: true });
+			const inputSchema = {
+				title: 'Test',
+				type: 'object',
+				schemaVersion: 1,
+				properties: {
+					myField: { title: 'My Field', description: 'A field', type: 'string', editor: 'textfield' },
+				},
+			};
+			await writeFile(join(actorDir, 'input_schema.json'), JSON.stringify(inputSchema, null, '\t'));
+			await writeFile(
+				join(actorDir, 'actor.json'),
+				JSON.stringify(
+					{ actorSpecification: 1, name: 'test', version: '0.1', inputSchema: './input_schema.json' },
+					null,
+					'\t',
+				),
+			);
+
+			await testRunCommand(ActorGenerateSchemaTypesCommand, { flags_output: outputDir });
+
+			const generatedFile = await readFile(joinPath('input-alias-output', 'input.ts'), 'utf-8');
+			expect(generatedFile).toContain('export interface');
+			expect(generatedFile).toContain('myField');
+		});
 	});
 
 	describe('key-value store schema', () => {
