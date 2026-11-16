@@ -1,5 +1,6 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { info, success, warning } from '../../lib/outputs.js';
+import { RUNTIME_EXPERIMENTAL_NOTE } from '../../lib/runtime/docker.js';
 import {
 	isConnectedToActorRuntime,
 	overridingRuntimeEnvVars,
@@ -10,9 +11,10 @@ export class RuntimeDisconnectCommand extends ApifyCommand<typeof RuntimeDisconn
 	static override name = 'disconnect' as const;
 
 	static override description =
-		`Reverts 'apify runtime connect': the Apify CLI targets the Apify platform again, unless the API and console URL ` +
-		`environment variables point it somewhere else.\n` +
-		`The runtime itself keeps running - stop it with 'apify runtime stop'.`;
+		`Disconnects the Apify CLI from the local Actor runtime, so commands go to the Apify platform again. In a shell ` +
+		`where APIFY_CLIENT_BASE_URL or APIFY_CONSOLE_URL is set, those still apply.\n` +
+		`The runtime keeps running. To stop it, run 'apify runtime stop'.\n\n` +
+		RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override group = 'Local Actor Development';
 

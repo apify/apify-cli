@@ -10,6 +10,7 @@ import {
 	inspectRuntimeContainer,
 	type PublishedPort,
 	type RuntimePorts,
+	RUNTIME_EXPERIMENTAL_NOTE,
 	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
 import { installedActorRuntimeImage } from '../../lib/runtime/ensure.js';
@@ -38,7 +39,8 @@ export class RuntimeStatusCommand extends ApifyCommand<typeof RuntimeStatusComma
 	static override description =
 		`Prints whether the Actor runtime is running, the ports it publishes, the host directory it keeps its data in, ` +
 		`and which API the Apify CLI currently talks to.\n` +
-		`Exits with code 1 when the runtime is not running, so scripts can test for it.`;
+		`Exits with code 1 when the runtime isn't running, so scripts can test for it.\n\n` +
+		RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override group = 'Local Actor Development';
 

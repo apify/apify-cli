@@ -20,6 +20,7 @@ import {
 	findRunningRuntimeEngine,
 	podmanInfo,
 	resolveEngineSocketPath,
+	RUNTIME_EXPERIMENTAL_NOTE,
 	runtimeNetworkMode,
 	runtimeSecurityOptions,
 	runtimeApiUrl,
@@ -40,10 +41,11 @@ export class RuntimeStartCommand extends ApifyCommand<typeof RuntimeStartCommand
 
 	static override description =
 		`Starts the Actor runtime, a local Apify platform running as a container on Docker or Podman.\n` +
-		`Installs the runtime first when needed (like 'apify runtime install'). The runtime API listens on ` +
-		`${ACTOR_RUNTIME_API_URL} and the console on ${ACTOR_RUNTIME_CONSOLE_URL} unless moved with --api-port and ` +
-		`--console-port, which are remembered for later starts and for 'apify runtime connect'. Run 'apify runtime -h' ` +
-		`for the environment variables that point the CLI at it.`;
+		`If the runtime isn't installed yet, installs it first.\n` +
+		`By default, the API runs on ${ACTOR_RUNTIME_API_URL}/ and the Console on ${ACTOR_RUNTIME_CONSOLE_URL}/. ` +
+		`Use --api-port and --console-port to change them.\n` +
+		`To send CLI commands to the runtime, run 'apify runtime connect'.\n\n` +
+		RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override group = 'Local Actor Development';
 

@@ -6,6 +6,7 @@ import {
 	DEFAULT_ACTOR_RUNTIME_IMAGE,
 	DOCKER_GET_DOCKER_URL,
 	PODMAN_INSTALL_URL,
+	RUNTIME_EXPERIMENTAL_NOTE,
 	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
 import { ensureActorRuntimeImage } from '../../lib/runtime/ensure.js';
@@ -14,10 +15,11 @@ export class RuntimeInstallCommand extends ApifyCommand<typeof RuntimeInstallCom
 	static override name = 'install' as const;
 
 	static override description =
-		`Installs the Actor runtime: verifies this machine has a working container engine (Docker or Podman) and downloads the Actor runtime image ('${DEFAULT_ACTOR_RUNTIME_IMAGE}' unless another one is given).\n` +
+		`Installs the Actor runtime: verifies your machine has a working container engine (Docker or Podman) and downloads the Actor runtime image.\n` +
 		`Tagged images are always re-checked against the registry, so an outdated local copy gets updated.\n` +
 		`'apify runtime start' then runs the image installed last.\n` +
-		`The engine itself is a prerequisite and is not installed by this command - see ${DOCKER_GET_DOCKER_URL} or ${PODMAN_INSTALL_URL}.`;
+		`Requires Docker or Podman. For installation steps, see ${DOCKER_GET_DOCKER_URL} or ${PODMAN_INSTALL_URL}.\n\n` +
+		RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override group = 'Local Actor Development';
 
@@ -47,7 +49,7 @@ export class RuntimeInstallCommand extends ApifyCommand<typeof RuntimeInstallCom
 	static override flags = {
 		force: Flags.boolean({
 			char: 'f',
-			description: 'Download the Actor runtime image even when it is already available locally.',
+			description: "Re-download the Actor runtime image even if it's already present.",
 			default: false,
 		}),
 	};

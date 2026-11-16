@@ -1,15 +1,5 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
-import {
-	ACTOR_RUNTIME_API_PORT,
-	ACTOR_RUNTIME_API_URL,
-	ACTOR_RUNTIME_CONSOLE_PORT,
-	ACTOR_RUNTIME_CONSOLE_URL,
-	CONTAINER_ENGINE_ENV_VAR,
-	DOCKER_ENGINE_INSTALL_URL,
-	DOCKER_GET_DOCKER_URL,
-	PODMAN_INSTALL_URL,
-	runtimeEnvExportLines,
-} from '../../lib/runtime/docker.js';
+import { ACTOR_RUNTIME_API_URL, ACTOR_RUNTIME_GUIDE_URL, RUNTIME_EXPERIMENTAL_NOTE } from '../../lib/runtime/docker.js';
 import { RuntimeConnectCommand } from './connect.js';
 import { RuntimeDisconnectCommand } from './disconnect.js';
 import { RuntimeInstallCommand } from './install.js';
@@ -23,36 +13,9 @@ export class RuntimeIndexCommand extends ApifyCommand<typeof RuntimeIndexCommand
 
 	static override description = [
 		'Manages the Actor runtime, a self-contained local Apify platform running as a container on Docker or Podman.',
+		`For setup and usage, see ${ACTOR_RUNTIME_GUIDE_URL}.`,
 		'',
-		'The Actor runtime is experimental: these commands, and what they add to other commands, may change in any release.',
-		'',
-		'Prerequisite: Docker or Podman must be installed and running. Follow the official documentation to set one up:',
-		'',
-		'  Docker Desktop (macOS, Windows, Linux desktop):',
-		`    ${DOCKER_GET_DOCKER_URL}`,
-		'  Docker Engine (Linux servers, headless):',
-		`    ${DOCKER_ENGINE_INSTALL_URL}`,
-		'  Podman (rootful or rootless; its API socket must be served, e.g. via the podman.socket systemd unit):',
-		`    ${PODMAN_INSTALL_URL}`,
-		'',
-		`The first engine found on PATH is used, Docker before Podman. Set ${CONTAINER_ENGINE_ENV_VAR}=docker or =podman to choose.`,
-		'',
-		`'apify runtime install' checks that the engine is available and pulls the runtime image, 'apify runtime start' runs it, and 'apify runtime status' says whether it is up.`,
-		'',
-		`The runtime publishes two ports on localhost, by default (move them with 'apify runtime start --api-port <port> --console-port <port>'):`,
-		'',
-		`  ${String(ACTOR_RUNTIME_API_PORT).padEnd(5)}  API      ${ACTOR_RUNTIME_API_URL}  (Apify API compatible endpoint)`,
-		`  ${String(ACTOR_RUNTIME_CONSOLE_PORT).padEnd(5)}  Console  ${ACTOR_RUNTIME_CONSOLE_URL}  (web UI)`,
-		'',
-		`Run 'apify runtime connect' to send every Apify CLI command to the runtime instead of the Apify cloud, and 'apify runtime disconnect' to go back. The connection is remembered across terminals and does not touch your login.`,
-		'',
-		'These environment variables point the CLI (and the Apify SDKs and API clients that honour them) at the runtime for one shell only, and take precedence over the connection wherever they are set (shown for the default ports):',
-		'',
-		...runtimeEnvExportLines().map((line) => `  ${line}`),
-		'',
-		`Unset them to let 'apify runtime connect' decide where commands go.`,
-		'',
-		`Pointed at the runtime, 'apify push' also registers the pushed directory as the Actor's live dev folder, so runs pick up local edits without another push; 'apify call --no-dev-folder' runs from the built image alone.`,
+		RUNTIME_EXPERIMENTAL_NOTE,
 	].join('\n');
 
 	static override group = 'Local Actor Development';

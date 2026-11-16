@@ -6,6 +6,7 @@ import {
 	findRunningRuntimeEngine,
 	runtimeApiUrl,
 	runtimeConsoleUrl,
+	RUNTIME_EXPERIMENTAL_NOTE,
 	runtimeSkillHintLines,
 } from '../../lib/runtime/docker.js';
 import {
@@ -18,11 +19,10 @@ export class RuntimeConnectCommand extends ApifyCommand<typeof RuntimeConnectCom
 	static override name = 'connect' as const;
 
 	static override description =
-		`Points the Apify CLI at the local Actor runtime instead of the Apify platform, for every command from now on ` +
-		`and in every terminal.\n` +
-		`The API and console URL environment variables keep taking precedence where they are set, so a shell that ` +
-		`exports them is unaffected. Your login is untouched - run 'apify runtime disconnect' to target the Apify ` +
-		`platform again.`;
+		`Sends all Apify CLI commands to the local Actor runtime instead of the Apify platform. Applies in every ` +
+		`terminal until you run 'apify runtime disconnect'. Your login stays the same.\n` +
+		`In a shell where APIFY_CLIENT_BASE_URL or APIFY_CONSOLE_URL is set, those variables override this setting.\n\n` +
+		RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override group = 'Local Actor Development';
 

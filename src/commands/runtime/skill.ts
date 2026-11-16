@@ -5,6 +5,7 @@ import chalk from 'chalk';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { error, info, simpleLog, success } from '../../lib/outputs.js';
+import { RUNTIME_EXPERIMENTAL_NOTE } from '../../lib/runtime/docker.js';
 import {
 	describeSkillSource,
 	frameSkillForReading,
@@ -19,12 +20,12 @@ export class RuntimeSkillCommand extends ApifyCommand<typeof RuntimeSkillCommand
 	static override name = 'skill' as const;
 
 	static override description =
-		`Prints the Actor runtime's Agent Skill - the runtime's own instructions for how to use it.\n` +
-		`The skill ships inside the runtime image, so it always describes the runtime you actually have. ` +
-		`It is read over HTTP when the runtime is running, and straight out of the installed image when ` +
-		`it is not - so 'apify runtime install' is all it needs.\n` +
-		`Use --install to put it in your agent's skills directory, where it loads on demand in this and ` +
-		`later sessions instead of only the terminal it was printed into.`;
+		`Prints the Agent Skill that teaches coding agents how to use the Actor runtime.\n` +
+		`The skill comes with the runtime image, so it always matches the version you have installed. ` +
+		`The runtime doesn't need to be running.\n` +
+		`To keep the skill available to your agents in later sessions, use --install. It writes the skill to ` +
+		`every agent skills directory it finds.\n\n` +
+		RUNTIME_EXPERIMENTAL_NOTE;
 
 	static override group = 'Local Actor Development';
 

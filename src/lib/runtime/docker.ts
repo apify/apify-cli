@@ -14,6 +14,10 @@ export const DOCKER_ENGINE_INSTALL_URL = 'https://docs.docker.com/engine/install
 
 export const PODMAN_INSTALL_URL = 'https://podman.io/docs/installation';
 
+export const ACTOR_RUNTIME_GUIDE_URL = 'https://docs.apify.com/cli/docs/actor-runtime';
+
+export const RUNTIME_EXPERIMENTAL_NOTE = 'NOTE: This command is experimental and might change in future releases.';
+
 export const ACTOR_RUNTIME_API_PORT = 3333;
 
 export const ACTOR_RUNTIME_CONSOLE_PORT = 3000;

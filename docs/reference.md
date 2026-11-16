@@ -531,56 +531,14 @@ ARGUMENTS
 DESCRIPTION
   Manages the Actor runtime, a self-contained local Apify platform running as a 
   container on Docker or Podman.
+  For setup and usage, see https://docs.apify.com/cli/docs/actor-runtime.
 
-  The Actor runtime is experimental: these commands, and what they add to other 
-  commands, may change in any release.
-
-  Prerequisite: Docker or Podman must be installed and running. Follow the 
-  official documentation to set one up:
-
-    Docker Desktop (macOS, Windows, Linux desktop):
-      https://docs.docker.com/get-started/get-docker/
-    Docker Engine (Linux servers, headless):
-      https://docs.docker.com/engine/install/
-    Podman (rootful or rootless; its API socket must be served, e.g. via the 
-  podman.socket systemd unit):
-      https://podman.io/docs/installation
-
-  The first engine found on PATH is used, Docker before Podman. Set 
-  APIFY_CONTAINER_ENGINE=docker or =podman to choose.
-
-  'apify runtime install' checks that the engine is available and pulls the 
-  runtime image, 'apify runtime start' runs it, and 'apify runtime status' says 
-  whether it is up.
-
-  The runtime publishes two ports on localhost, by default (move them with 
-  'apify runtime start --api-port <port> --console-port <port>'):
-
-    3333   API      http://localhost:3333  (Apify API compatible endpoint)
-    3000   Console  http://localhost:3000  (web UI)
-
-  Run 'apify runtime connect' to send every Apify CLI command to the runtime 
-  instead of the Apify cloud, and 'apify runtime disconnect' to go back. The 
-  connection is remembered across terminals and does not touch your login.
-
-  These environment variables point the CLI (and the Apify SDKs and API clients 
-  that honour them) at the runtime for one shell only, and take precedence over 
-  the connection wherever they are set (shown for the default ports):
-
-    export APIFY_CLIENT_BASE_URL=http://localhost:3333
-    export APIFY_CONSOLE_URL=http://localhost:3000
-
-  Unset them to let 'apify runtime connect' decide where commands go.
-
-  Pointed at the runtime, 'apify push' also registers the pushed directory as 
-  the Actor's live dev folder, so runs pick up local edits without another push;
-   'apify call --no-dev-folder' runs from the built image alone.
+  NOTE: This command is experimental and might change in future releases.
 
 SUBCOMMANDS
   runtime install     Installs the Actor runtime: verifies
-                      this machine has a working container engine (Docker or
-                      Podman) and downloads the Actor runtime image
-                      ('apify/actor-runtime:latest' unless another one is given).
+                      your machine has a working container engine (Docker or
+                      Podman) and downloads the Actor runtime image.
   runtime start       Starts the Actor runtime, a local Apify
                       platform running as a container on Docker or Podman.
   runtime stop        Stops the Actor runtime container
@@ -588,30 +546,32 @@ SUBCOMMANDS
   runtime status      Prints whether the Actor runtime is
                       running, the ports it publishes, the host directory it keeps
                       its data in, and which API the Apify CLI currently talks to.
-  runtime connect     Points the Apify CLI at the local Actor
-                      runtime instead of the Apify platform, for every command
-                      from now on and in every terminal.
-  runtime disconnect  Reverts 'apify runtime connect': the
-                      Apify CLI targets the Apify platform again, unless the API
-                      and console URL environment variables point it somewhere
-                      else.
-  runtime skill       Prints the Actor runtime's Agent Skill -
-                      the runtime's own instructions for how to use it.
+  runtime connect     Sends all Apify CLI commands to the
+                      local Actor runtime instead of the Apify platform. Applies
+                      in every terminal until you run 'apify runtime disconnect'.
+                      Your login stays the same.
+  runtime disconnect  Disconnects the Apify CLI from the local
+                      Actor runtime, so commands go to the Apify platform again.
+                      In a shell where APIFY_CLIENT_BASE_URL or APIFY_CONSOLE_URL
+                      is set, those still apply.
+  runtime skill       Prints the Agent Skill that teaches
+                      coding agents how to use the Actor runtime.
 ```
 
 ##### `apify runtime install`
 
 ```sh
 DESCRIPTION
-  Installs the Actor runtime: verifies this machine has a working container 
-  engine (Docker or Podman) and downloads the Actor runtime image 
-  ('apify/actor-runtime:latest' unless another one is given).
+  Installs the Actor runtime: verifies your machine has a working container 
+  engine (Docker or Podman) and downloads the Actor runtime image.
   Tagged images are always re-checked against the registry, so an outdated local
    copy gets updated.
   'apify runtime start' then runs the image installed last.
-  The engine itself is a prerequisite and is not installed by this command - see
-   https://docs.docker.com/get-started/get-docker/ or 
+  Requires Docker or Podman. For installation steps, see 
+  https://docs.docker.com/get-started/get-docker/ or 
   https://podman.io/docs/installation.
+
+  NOTE: This command is experimental and might change in future releases.
 
 USAGE
   $ apify runtime install [image] [-f]
@@ -621,8 +581,8 @@ ARGUMENTS
          'apify/actor-runtime:latest'.
 
 FLAGS
-  -f, --force  Download the Actor runtime image even when it is already
-               available locally.
+  -f, --force  Re-download the Actor runtime image even if it's already
+               present.
 ```
 
 ##### `apify runtime start`
@@ -631,11 +591,12 @@ FLAGS
 DESCRIPTION
   Starts the Actor runtime, a local Apify platform running as a container on 
   Docker or Podman.
-  Installs the runtime first when needed (like 'apify runtime install'). The 
-  runtime API listens on http://localhost:3333 and the console on 
-  http://localhost:3000 unless moved with --api-port and --console-port, which 
-  are remembered for later starts and for 'apify runtime connect'. Run 'apify 
-  runtime -h' for the environment variables that point the CLI at it.
+  If the runtime isn't installed yet, installs it first.
+  By default, the API runs on http://localhost:3333/ and the Console on 
+  http://localhost:3000/. Use --api-port and --console-port to change them.
+  To send CLI commands to the runtime, run 'apify runtime connect'.
+
+  NOTE: This command is experimental and might change in future releases.
 
 USAGE
   $ apify runtime start [--api-port <value>]
@@ -660,6 +621,8 @@ FLAGS
 DESCRIPTION
   Stops the Actor runtime container started with 'apify runtime start --detach'.
 
+  NOTE: This command is experimental and might change in future releases.
+
 USAGE
   $ apify runtime stop
 ```
@@ -671,7 +634,9 @@ DESCRIPTION
   Prints whether the Actor runtime is running, the ports it publishes, the host 
   directory it keeps its data in, and which API the Apify CLI currently talks 
   to.
-  Exits with code 1 when the runtime is not running, so scripts can test for it.
+  Exits with code 1 when the runtime isn't running, so scripts can test for it.
+
+  NOTE: This command is experimental and might change in future releases.
 
 USAGE
   $ apify runtime status [--json]
@@ -684,11 +649,13 @@ FLAGS
 
 ```sh
 DESCRIPTION
-  Points the Apify CLI at the local Actor runtime instead of the Apify platform,
-   for every command from now on and in every terminal.
-  The API and console URL environment variables keep taking precedence where 
-  they are set, so a shell that exports them is unaffected. Your login is 
-  untouched - run 'apify runtime disconnect' to target the Apify platform again.
+  Sends all Apify CLI commands to the local Actor runtime instead of the Apify 
+  platform. Applies in every terminal until you run 'apify runtime disconnect'. 
+  Your login stays the same.
+  In a shell where APIFY_CLIENT_BASE_URL or APIFY_CONSOLE_URL is set, those 
+  variables override this setting.
+
+  NOTE: This command is experimental and might change in future releases.
 
 USAGE
   $ apify runtime connect
@@ -698,10 +665,12 @@ USAGE
 
 ```sh
 DESCRIPTION
-  Reverts 'apify runtime connect': the Apify CLI targets the Apify platform 
-  again, unless the API and console URL environment variables point it somewhere
-   else.
-  The runtime itself keeps running - stop it with 'apify runtime stop'.
+  Disconnects the Apify CLI from the local Actor runtime, so commands go to the 
+  Apify platform again. In a shell where APIFY_CLIENT_BASE_URL or 
+  APIFY_CONSOLE_URL is set, those still apply.
+  The runtime keeps running. To stop it, run 'apify runtime stop'.
+
+  NOTE: This command is experimental and might change in future releases.
 
 USAGE
   $ apify runtime disconnect
@@ -711,15 +680,14 @@ USAGE
 
 ```sh
 DESCRIPTION
-  Prints the Actor runtime's Agent Skill - the runtime's own instructions for 
-  how to use it.
-  The skill ships inside the runtime image, so it always describes the runtime 
-  you actually have. It is read over HTTP when the runtime is running, and 
-  straight out of the installed image when it is not - so 'apify runtime 
-  install' is all it needs.
-  Use --install to put it in your agent's skills directory, where it loads on 
-  demand in this and later sessions instead of only the terminal it was printed 
-  into.
+  Prints the Agent Skill that teaches coding agents how to use the Actor 
+  runtime.
+  The skill comes with the runtime image, so it always matches the version you 
+  have installed. The runtime doesn't need to be running.
+  To keep the skill available to your agents in later sessions, use --install. 
+  It writes the skill to every agent skills directory it finds.
+
+  NOTE: This command is experimental and might change in future releases.
 
 USAGE
   $ apify runtime skill [--install] [--raw]
