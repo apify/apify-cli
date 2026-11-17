@@ -11,6 +11,7 @@ import {
 	getServerInterfaceHint,
 	listServerOperations,
 	parseServerRequestArgs,
+	resolveLocalServerInterface,
 	resolveServerBuild,
 	resolveServerRequestUrl,
 	shortenSummary,
@@ -269,6 +270,52 @@ describe('server-actor', () => {
 
 		it('gives no hint for an Actor without one', () => {
 			expect(getServerInterfaceHint({} as Actor, 'apify/hello-world')).toBeUndefined();
+		});
+	});
+
+	describe('resolveLocalServerInterface()', () => {
+		it('uses the server interface when actor.json sets usesStandbyMode', () => {
+			expect(resolveLocalServerInterface({ serverFlag: undefined, usesStandbyMode: true })).toEqual({
+				useServerInterface: true,
+				detectedFromConfig: true,
+			});
+		});
+
+		it('uses the input interface when actor.json does not set usesStandbyMode', () => {
+			expect(resolveLocalServerInterface({ serverFlag: undefined, usesStandbyMode: undefined })).toEqual({
+				useServerInterface: false,
+				detectedFromConfig: false,
+			});
+		});
+
+		it('lets --no-server run a Server Actor through its input interface', () => {
+			expect(resolveLocalServerInterface({ serverFlag: false, usesStandbyMode: true })).toEqual({
+				useServerInterface: false,
+				detectedFromConfig: false,
+			});
+		});
+
+		it('lets --server run an Actor whose actor.json does not set usesStandbyMode', () => {
+			expect(resolveLocalServerInterface({ serverFlag: true, usesStandbyMode: undefined })).toEqual({
+				useServerInterface: true,
+				detectedFromConfig: false,
+			});
+		});
+
+		it('reports no detection when --server repeats what actor.json already says', () => {
+			expect(resolveLocalServerInterface({ serverFlag: true, usesStandbyMode: true })).toEqual({
+				useServerInterface: true,
+				detectedFromConfig: false,
+			});
+		});
+
+		it('treats a falsy usesStandbyMode value as the input interface', () => {
+			expect(resolveLocalServerInterface({ serverFlag: undefined, usesStandbyMode: false }).useServerInterface).toBe(
+				false,
+			);
+			expect(resolveLocalServerInterface({ serverFlag: undefined, usesStandbyMode: null }).useServerInterface).toBe(
+				false,
+			);
 		});
 	});
 
