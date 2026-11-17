@@ -9,6 +9,68 @@ useAuthSetup();
 const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 describe('apify api (local)', () => {
+	describe('unresolved path parameters', () => {
+		it('should error when the endpoint still contains a placeholder', async () => {
+			await testRunCommand(ApiCommand, {
+				args_methodOrEndpoint: 'actor-runs/{runId}',
+			});
+
+			expect(lastErrorMessage()).toMatch(/still contains the path parameter/i);
+			expect(lastErrorMessage()).toContain('{runId}');
+		});
+
+		it('should list every placeholder in the endpoint', async () => {
+			await testRunCommand(ApiCommand, {
+				args_methodOrEndpoint: '/v2/acts/{actorId}/runs/{runId}',
+			});
+
+			expect(lastErrorMessage()).toMatch(/still contains the path parameters/i);
+			expect(lastErrorMessage()).toContain('{actorId}');
+			expect(lastErrorMessage()).toContain('{runId}');
+		});
+
+		it('should not error on a resolved endpoint', async () => {
+			await testRunCommand(ApiCommand, {
+				args_methodOrEndpoint: 'v2/actor-runs/abc123',
+			});
+
+			// Passes validation; reaches the auth check
+			expect(lastErrorMessage()).toMatch(/you are not logged in/i);
+		});
+
+		it('should tell the user to substitute placeholders when suggesting endpoints', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_describe: 'actor-runs/runId',
+				});
+
+				const combined = logMessages.error.join('\n');
+				expect(combined).toMatch(/did you mean/i);
+				expect(combined).toMatch(/replace every \{name\} with a real value/i);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+
+		it('should not mention placeholders when no suggested path has one', async () => {
+			const fetchSpy = mockFetchSpec();
+
+			try {
+				await testRunCommand(ApiCommand, {
+					flags_describe: 'datasetz',
+				});
+
+				const combined = logMessages.error.join('\n');
+				expect(combined).toMatch(/did you mean/i);
+				expect(combined).not.toMatch(/replace every \{name\}/i);
+			} finally {
+				fetchSpy.mockRestore();
+			}
+		});
+	});
+
 	describe('--params validation', () => {
 		it('should error on invalid JSON', async () => {
 			await testRunCommand(ApiCommand, {

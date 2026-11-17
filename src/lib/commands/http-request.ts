@@ -102,3 +102,20 @@ export function mergeHeaders(defaults: Record<string, string>, custom: Record<st
 
 	return headers;
 }
+
+const PATH_PARAM_SEGMENT = /^\{([A-Za-z0-9_]+)\}$/;
+
+/** "actors/{actorId}/runs" yields ["actorId"]. */
+export function findUnresolvedPathParams(path: string): string[] {
+	const found: string[] = [];
+
+	for (const segment of path.split(/[?#]/)[0].split('/')) {
+		const match = PATH_PARAM_SEGMENT.exec(segment);
+
+		if (match && !found.includes(match[1])) {
+			found.push(match[1]);
+		}
+	}
+
+	return found;
+}

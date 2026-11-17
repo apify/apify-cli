@@ -6,6 +6,7 @@ import { ApifyCommand, StdinMode } from '../lib/command-framework/apify-command.
 import { Args } from '../lib/command-framework/args.js';
 import { Flags } from '../lib/command-framework/flags.js';
 import {
+	findUnresolvedPathParams,
 	HTTP_METHODS,
 	mergeHeaders,
 	METHODS_WITHOUT_BODY,
@@ -51,6 +52,13 @@ function printSuggestions(suggestions: Endpoint[]) {
 
 		for (const ep of suggestions) {
 			simpleLog({ message: `  ${formatEndpointLine(ep)}`, stdout: false });
+		}
+
+		if (suggestions.some((ep) => findUnresolvedPathParams(ep.path).length > 0)) {
+			simpleLog({
+				message: chalk.gray('\nReplace every {name} with a real value before you call these paths.'),
+				stdout: false,
+			});
 		}
 	}
 
@@ -142,7 +150,9 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		}),
 		params: Flags.string({
 			char: 'p',
-			description: 'Query parameters as a JSON object, e.g. \'{"limit": 1, "desc": true}\'.',
+			description:
+				'Query parameters as a JSON object, e.g. \'{"limit": 1, "desc": true}\'. ' +
+				'The flag can only be used once; pass every parameter in the same JSON object.',
 			required: false,
 		}),
 		'list-endpoints': Flags.boolean({
@@ -211,6 +221,20 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		if (!endpointArg) {
 			this.printHelp();
 			return;
+		}
+
+		// --list-endpoints and the 404 suggester print spec paths; sending one verbatim just 404s.
+		const unresolvedPathParams = findUnresolvedPathParams(endpointArg);
+
+		if (unresolvedPathParams.length > 0) {
+			const names = unresolvedPathParams.map((name) => `{${name}}`).join(', ');
+			const isSingle = unresolvedPathParams.length === 1;
+			const noun = isSingle ? 'path parameter' : 'path parameters';
+			const replace = isSingle ? 'Replace it' : 'Replace each one';
+
+			throw new Error(
+				`The endpoint still contains the ${noun} ${names}. ${replace} with a real value before you send the request.`,
+			);
 		}
 
 		// Parse and validate --params before any I/O so bad input fails fast
@@ -329,7 +353,7 @@ export class ApiCommand extends ApifyCommand<typeof ApiCommand> {
 		const matches = endpoints.filter((ep) => normalizePath(ep.path) === normalized);
 
 		if (matches.length > 0) {
-			const pathParams = extractPathParams(matches[0].path);
+			const pathParams = findUnresolvedPathParams(matches[0].path);
 
 			console.log(chalk.bold(matches[0].path));
 			console.log('');
@@ -428,16 +452,6 @@ function filterEndpoints(endpoints: Endpoint[], query: string): Endpoint[] {
 		const haystack = `${ep.method} ${ep.path} ${ep.summary}`.toLowerCase();
 		return tokens.every((token) => haystack.includes(token));
 	});
-}
-
-function extractPathParams(path: string): string[] {
-	const matches = path.match(/\{([^}]+)\}/g);
-
-	if (!matches) {
-		return [];
-	}
-
-	return matches.map((m) => m.slice(1, -1));
 }
 
 function findClosestEndpoints(endpoints: Endpoint[], input: string, maxPaths = 5): Endpoint[] {

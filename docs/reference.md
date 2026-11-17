@@ -89,7 +89,8 @@ FLAGS
                           to GET.
                           <options: GET|POST|PUT|PATCH|DELETE>
   -p, --params=<value>    Query parameters as a JSON object,
-                          e.g. '{"limit": 1, "desc": true}'.
+                          e.g. '{"limit": 1, "desc": true}'. The flag can only be
+                          used once; pass every parameter in the same JSON object.
       --profile=<value>   The stored account to use for this
                           command, by name or user ID. See "apify auth list".
   -s, --search=<value>    Filter results returned by
@@ -2016,12 +2017,15 @@ FLAGS
                          from stdin.
       -H, --header=<value>   Additional HTTP header(s). Pass a
                          single "key:value" string, or a JSON object like '{"X-Foo":
-                         "bar", "X-Baz": "qux"}' to send multiple headers.
+                         "bar", "X-Baz": "qux"}' to send multiple headers. The flag
+                         can only be used once; use the JSON form for multiple
+                         headers.
       -X, --method=<option>  The HTTP method to use. Defaults to
                          GET.
                          <options: GET|POST|PUT|PATCH|DELETE>
   -p, --params=<value>   Query parameters as a JSON object,
-                         e.g. '{"query": "apify"}'.
+                         e.g. '{"query": "apify"}'. The flag can only be used once;
+                         pass every parameter in the same JSON object.
       --profile=<value>  The stored account to use for this
                          command, by name or user ID. See "apify auth list".
 ```

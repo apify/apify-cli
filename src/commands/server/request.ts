@@ -81,12 +81,15 @@ export class ServerRequestCommand extends ApifyCommand<typeof ServerRequestComma
 			char: 'H',
 			description:
 				'Additional HTTP header(s). Pass a single "key:value" string, or a JSON object ' +
-				'like \'{"X-Foo": "bar", "X-Baz": "qux"}\' to send multiple headers.',
+				'like \'{"X-Foo": "bar", "X-Baz": "qux"}\' to send multiple headers. ' +
+				'The flag can only be used once; use the JSON form for multiple headers.',
 			required: false,
 		}),
 		params: Flags.string({
 			char: 'p',
-			description: 'Query parameters as a JSON object, e.g. \'{"query": "apify"}\'.',
+			description:
+				'Query parameters as a JSON object, e.g. \'{"query": "apify"}\'. ' +
+				'The flag can only be used once; pass every parameter in the same JSON object.',
 			required: false,
 		}),
 	};
