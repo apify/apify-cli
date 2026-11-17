@@ -1,7 +1,7 @@
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { simpleLog } from '../../lib/outputs.js';
-import type { ServerRun, ServerRunListItem } from '../../lib/server-actor.js';
+import type { ServerRun } from '../../lib/server-actor.js';
 import {
 	describeServerRuns,
 	describeServerSettings,
@@ -12,6 +12,7 @@ import {
 	listServerOperations,
 	resolveServerActor,
 	resolveServerBuild,
+	statusLine,
 	toServerRuns,
 } from '../../lib/server-actor.js';
 import { getCurrentUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
@@ -22,8 +23,8 @@ export class ServerStatusCommand extends ApifyCommand<typeof ServerStatusCommand
 	static override enableProfileFlag = true;
 
 	static override description =
-		"Shows how a Server Actor's server interface is configured, and the runs serving requests when they are in your account. " +
-		'Never sends a request to the Actor, so it cannot start a run.';
+		"Shows how a Server Actor's server interface is configured, and the runs serving it from your account. " +
+		"Never sends a request to the Actor, so it can't start a run.";
 
 	static override examples = [
 		{
@@ -58,14 +59,14 @@ export class ServerStatusCommand extends ApifyCommand<typeof ServerStatusCommand
 		const { username } = await getCurrentUserInfo();
 
 		const poolOwnerUsername = getPoolOwnerUsername(actor);
-		const isPoolOwner = multiTenant && username === actor.ownerUsername;
+		const isPoolOwner = poolOwnerUsername !== undefined && poolOwnerUsername === username;
 
 		// The pools of a multi-tenant Actor run in the owner's account, so only the owner can list them.
 		let runs: ServerRun[] | undefined;
 
 		if (!multiTenant || isPoolOwner) {
 			const { items } = await client.actor(actor.id).runs().list({ status: 'RUNNING', desc: true });
-			runs = toServerRuns(items as ServerRunListItem[]);
+			runs = toServerRuns(items);
 		}
 
 		if (this.flags.json) {
@@ -95,12 +96,12 @@ export class ServerStatusCommand extends ApifyCommand<typeof ServerStatusCommand
 				: 'not documented (see the Actor README)';
 
 		const lines = [
-			`URL:            ${actor.standbyUrl}`,
-			`Tenancy:        ${tenancyLine}`,
-			`Build:          ${actor.buildRef} (${build.buildNumber})`,
+			statusLine('URL', actor.standbyUrl),
+			statusLine('Tenancy', tenancyLine),
+			statusLine('Build', `${actor.buildRef} (${build.buildNumber})`),
 			...describeServerSettings(standby, poolOwnerUsername, username),
-			`Endpoints:      ${endpointsLine}`,
-			...(webServerMcpPath ? [`MCP path:       ${webServerMcpPath}`] : []),
+			statusLine('Endpoints', endpointsLine),
+			...(webServerMcpPath ? [statusLine('MCP path', webServerMcpPath)] : []),
 			...(runs ? describeServerRuns(runs, isPoolOwner) : []),
 		];
 

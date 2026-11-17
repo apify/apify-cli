@@ -308,7 +308,7 @@ describe('server-actor', () => {
 		});
 
 		it('says "your account" to the owner', () => {
-			expect(describeServerSettings(standby, 'apify', 'apify')[0]).toBe('Pool in your account:');
+			expect(describeServerSettings(standby, 'apify', 'apify')[0]).toBe('Pools in your account:');
 		});
 
 		it('names the owner account when the viewer is unknown', () => {
@@ -325,7 +325,7 @@ describe('server-actor', () => {
 	});
 
 	describe('describeServerRuns()', () => {
-		function run(id: string, pool: string | null): ServerRun {
+		function run(id: string, pool: ServerRun['pool']): ServerRun {
 			return { id, startedAt: new Date(), pool };
 		}
 
@@ -369,6 +369,26 @@ describe('server-actor', () => {
 				'  Paying users: none',
 				'  Free users:   none',
 				'  Other:        2 (a, b)',
+			]);
+		});
+
+		it('names only the newest few runs of a busy pool', () => {
+			const runs = Array.from({ length: 7 }, (_, index) => run(`r${index}`, 'MULTI_TENANT_PAYING_USERS'));
+
+			expect(describeServerRuns(runs, true)).toContain('  Paying users: 7 (r0, r1, r2, r3, r4, +2 more)');
+		});
+
+		it('adds no "more" to a pool filled to the listing limit', () => {
+			const runs = Array.from({ length: 5 }, (_, index) => run(`r${index}`, 'MULTI_TENANT_PAYING_USERS'));
+
+			expect(describeServerRuns(runs, true)).toContain('  Paying users: 5 (r0, r1, r2, r3, r4)');
+		});
+
+		it('names every run on the single-tenant line, which must not change', () => {
+			const runs = Array.from({ length: 7 }, (_, index) => run(`r${index}`, 'SINGLE_TENANT'));
+
+			expect(describeServerRuns(runs, false)).toEqual([
+				'Runs:           7 running (r0, r1, r2, r3, r4, r5, r6); the next request is served warm',
 			]);
 		});
 

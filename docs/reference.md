@@ -1978,9 +1978,8 @@ SUBCOMMANDS
   server request    Sends an authenticated HTTP request to a
                     Server Actor's server interface and prints the response.
   server status     Shows how a Server Actor's server interface
-                    is configured, and the runs serving requests when they are in
-                    your account. Never sends a request to the Actor, so it cannot
-                    start a run.
+                    is configured, and the runs serving it from your account.
+                    Never sends a request to the Actor, so it can't start a run.
   server endpoints  Lists the HTTP endpoints of a Server Actor,
                     read from the web server schema of the build that serves its
                     server interface.
@@ -2031,8 +2030,8 @@ FLAGS
 ```sh
 DESCRIPTION
   Shows how a Server Actor's server interface is configured, and the runs 
-  serving requests when they are in your account. Never sends a request to the 
-  Actor, so it cannot start a run.
+  serving it from your account. Never sends a request to the Actor, so it can't 
+  start a run.
 
 USAGE
   $ apify server status [target] [--json]
