@@ -181,7 +181,7 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 						const fileContent =
 							file.format === 'BASE64' ? Buffer.from(file.content, 'base64').toString() : file.content;
 
-						if (file.name === LOCAL_CONFIG_PATH) {
+						if (target === join(root, LOCAL_CONFIG_PATH)) {
 							const actorJson = jju.parse(fileContent);
 							actorJson.name = actor.name;
 							writeFileSync(target, jju.update(fileContent, actorJson));
