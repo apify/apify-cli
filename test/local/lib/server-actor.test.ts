@@ -3,17 +3,21 @@ import type { AddressInfo } from 'node:net';
 
 import type { Actor, ApifyClient, Build } from 'apify-client';
 
-import type { ServerActor } from '../../../src/lib/server-actor.js';
+import type { ServerActor, ServerRun, ServerRunListItem } from '../../../src/lib/server-actor.js';
 import {
 	describeServerError,
+	describeServerRuns,
+	describeServerSettings,
 	describeTenancy,
 	getEffectivePricingModel,
+	getPoolOwnerUsername,
 	getServerInterfaceHint,
 	listServerOperations,
 	parseServerRequestArgs,
 	resolveServerBuild,
 	resolveServerRequestUrl,
 	shortenSummary,
+	toServerRuns,
 	watchLocalServerReadiness,
 } from '../../../src/lib/server-actor.js';
 
@@ -242,6 +246,139 @@ describe('server-actor', () => {
 			expect(describeTenancy(actor, 'caller')).toContain("it's free for you");
 		});
 	});
+	describe('getPoolOwnerUsername()', () => {
+		it('names no other account for a single-tenant Actor', () => {
+			expect(getPoolOwnerUsername(serverActor())).toBeUndefined();
+		});
+
+		it('names the owner for a multi-tenant Actor', () => {
+			expect(getPoolOwnerUsername(serverActor({ tenancy: 'MULTI_TENANT' }))).toBe('apify');
+		});
+	});
+
+	describe('toServerRuns()', () => {
+		const startedAt = new Date('2026-01-01T00:00:00.000Z');
+
+		function listItem(id: string, origin: string, deployment?: string): ServerRunListItem {
+			return {
+				id,
+				startedAt,
+				meta: { origin },
+				...(deployment ? { standby: { deployment } } : {}),
+			} as unknown as ServerRunListItem;
+		}
+
+		it('keeps only the runs started by the server interface', () => {
+			const runs = toServerRuns([listItem('a', 'STANDBY'), listItem('b', 'API')]);
+
+			expect(runs).toEqual([{ id: 'a', startedAt, pool: null }]);
+		});
+
+		it('records the pool that serves each run', () => {
+			const runs = toServerRuns([listItem('a', 'STANDBY', 'MULTI_TENANT_OWNER_PAID')]);
+
+			expect(runs).toEqual([{ id: 'a', startedAt, pool: 'MULTI_TENANT_OWNER_PAID' }]);
+		});
+	});
+
+	describe('describeServerSettings()', () => {
+		const standby = {
+			isEnabled: true,
+			memoryMbytes: 1024,
+			idleTimeoutSecs: 300,
+			desiredRequestsPerActorRun: 8,
+			maxRequestsPerActorRun: 10,
+		};
+
+		it('leaves the single-tenant block unlabelled', () => {
+			expect(describeServerSettings(standby, undefined, 'caller')).toEqual([
+				'Memory:         1024 MB',
+				'Idle timeout:   300 s',
+				'Requests/run:   8 desired, 10 max',
+			]);
+		});
+
+		it('names the owner account for a caller of a multi-tenant Actor', () => {
+			expect(describeServerSettings(standby, 'apify', 'caller')).toEqual([
+				'Pool in "apify"\'s account:',
+				'  Memory:       1024 MB',
+				'  Idle timeout: 300 s',
+				'  Requests/run: 8 desired, 10 max',
+			]);
+		});
+
+		it('says "your account" to the owner', () => {
+			expect(describeServerSettings(standby, 'apify', 'apify')[0]).toBe('Pool in your account:');
+		});
+
+		it('names the owner account when the viewer is unknown', () => {
+			expect(describeServerSettings(standby, 'apify', undefined)[0]).toBe('Pool in "apify"\'s account:');
+		});
+
+		it('prints a dash for a setting the Actor does not set', () => {
+			expect(describeServerSettings({ isEnabled: true }, undefined, 'caller')).toEqual([
+				'Memory:         - MB',
+				'Idle timeout:   - s',
+				'Requests/run:   - desired, - max',
+			]);
+		});
+	});
+
+	describe('describeServerRuns()', () => {
+		function run(id: string, pool: string | null): ServerRun {
+			return { id, startedAt: new Date(), pool };
+		}
+
+		it("lists a caller's own runs on one line", () => {
+			expect(describeServerRuns([run('a', 'SINGLE_TENANT'), run('b', 'SINGLE_TENANT')], false)).toEqual([
+				'Runs:           2 running (a, b); the next request is served warm',
+			]);
+		});
+
+		it('tells a caller with no runs that the next request starts one', () => {
+			expect(describeServerRuns([], false)).toEqual([
+				'Runs:           none running; the next request starts one (cold start)',
+			]);
+		});
+
+		it('breaks the pools out for the owner, empty ones included', () => {
+			const runs = [
+				run('a', 'MULTI_TENANT_OWNER_PAID'),
+				run('b', 'MULTI_TENANT_PAYING_USERS'),
+				run('c', 'MULTI_TENANT_PAYING_USERS'),
+			];
+
+			expect(describeServerRuns(runs, true)).toEqual([
+				'Runs:           3 running; your own requests are served warm',
+				'  Owner-paid:   1 (a)',
+				'  Paying users: 2 (b, c)',
+				'  Free users:   none',
+			]);
+		});
+
+		it("reads only the owner-paid pool for the owner's own cold start", () => {
+			const [summary] = describeServerRuns([run('a', 'MULTI_TENANT_PAYING_USERS')], true);
+
+			expect(summary).toBe('Runs:           1 running; your own requests start one (cold start)');
+		});
+
+		it('accounts for a run the platform reports under no known pool', () => {
+			expect(describeServerRuns([run('a', null), run('b', 'SINGLE_TENANT')], true)).toEqual([
+				'Runs:           2 running; your own requests start one (cold start)',
+				'  Owner-paid:   none',
+				'  Paying users: none',
+				'  Free users:   none',
+				'  Other:        2 (a, b)',
+			]);
+		});
+
+		it('drops the breakdown when the owner has no runs at all', () => {
+			expect(describeServerRuns([], true)).toEqual([
+				'Runs:           none running; your own requests start one (cold start)',
+			]);
+		});
+	});
+
 	describe('shortenSummary()', () => {
 		it('keeps a short summary unchanged', () => {
 			expect(shortenSummary('Fetch a URL')).toBe('Fetch a URL');
