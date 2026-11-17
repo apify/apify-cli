@@ -19,7 +19,7 @@ module.exports = [
 				{
 					type: 'doc',
 					id: 'agent-skill',
-					label: 'Agent skill'
+					label: 'Agent Skill'
 				},
 			],
 		},
