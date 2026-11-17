@@ -18,8 +18,8 @@
 		"@apify/tsconfig": "^0.2.0",
 		"@types/react": "^19.3.0",
 		"path-browserify": "^1.0.1",
-		"prettier": "^3.9.6",
-		"rimraf": "^6.1.3"
+		"prettier": "^3.9.10",
+		"rimraf": "^6.1.4"
 	},
 	"dependencies": {
 		"@apify/docs-theme": "^1.0.285",
@@ -32,9 +32,9 @@
 		"docusaurus-gtm-plugin": "^0.0.2",
 		"prop-types": "^15.8.1",
 		"raw-loader": "^4.0.2",
-		"react": "^19.3.0",
-		"react-dom": "^19.3.0",
-		"unist-util-visit": "^5.1.0"
+		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
+		"unist-util-visit": "^5.2.0"
 	},
 	"volta": {
 		"node": "24.22.1",

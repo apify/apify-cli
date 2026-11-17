@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.12.0](https://github.com/apify/apify-cli/releases/tag/v1.12.0) (2026-11-12)
+
+### 🚀 Features
+
+- Validate `actor.json` paths before `apify push` uploads anything ([#1503](https://github.com/apify/apify-cli/pull/1503)) ([3bff862](https://github.com/apify/apify-cli/commit/3bff862dab81fc7bc6ba6228191f7e74e729da27)) by [@DaveHanns](https://github.com/DaveHanns), closes [#1500](https://github.com/apify/apify-cli/issues/1500)
+- Let `apify push` select which Actors to push in a repository with several ([#1504](https://github.com/apify/apify-cli/pull/1504)) ([85405bf](https://github.com/apify/apify-cli/commit/85405bf9e6c62caa684ba6aceaca8dc2a46c33b9)) by [@DaveHanns](https://github.com/DaveHanns), closes [#1499](https://github.com/apify/apify-cli/issues/1499)
+- Push monorepo Actors by uploading the repository root with `actorPath` ([#1505](https://github.com/apify/apify-cli/pull/1505)) ([13d2577](https://github.com/apify/apify-cli/commit/13d25778d9cb86fde5d790a9b8b35b445fc43bb1)) by [@DaveHanns](https://github.com/DaveHanns), closes [#1525](https://github.com/apify/apify-cli/issues/1525)
+
+### 🐛 Bug Fixes
+
+- Isolate detectAiAgent test from ambient environment ([#1421](https://github.com/apify/apify-cli/pull/1421)) ([7e944ac](https://github.com/apify/apify-cli/commit/7e944aca9b7069c32b23ed617b23adcbbab580da)) by [@l2ysho](https://github.com/l2ysho)
+- Leave out every gitignored file when apify push collects files ([#1537](https://github.com/apify/apify-cli/pull/1537)) ([1668bd5](https://github.com/apify/apify-cli/commit/1668bd534c86b1be06c8491d356c2428bc244aa2)) by [@DaveHanns](https://github.com/DaveHanns), closes [#1536](https://github.com/apify/apify-cli/issues/1536)
+- Zip symlinked files as their content and finish writing the zip before upload ([#1549](https://github.com/apify/apify-cli/pull/1549)) ([cd0dad4](https://github.com/apify/apify-cli/commit/cd0dad49de1870ae9bb174606c2bf16049a1fb59)) by [@DaveHanns](https://github.com/DaveHanns), closes [#1548](https://github.com/apify/apify-cli/issues/1548)
+- Settle the job log stream promise when the connection drops ([#1561](https://github.com/apify/apify-cli/pull/1561)) ([3f4a024](https://github.com/apify/apify-cli/commit/3f4a024c568c59b3f6c2a70a4618dacdf43c15d5)) by [@l2ysho](https://github.com/l2ysho)
+- Make the Actor context fallback error generic and actionable ([#1563](https://github.com/apify/apify-cli/pull/1563)) ([9d3eee5](https://github.com/apify/apify-cli/commit/9d3eee55be8b2e79feddbe5404216dcdb4449202)) by [@l2ysho](https://github.com/l2ysho)
+- Leave out .git at any depth when apify push collects files ([#1551](https://github.com/apify/apify-cli/pull/1551)) ([d72a751](https://github.com/apify/apify-cli/commit/d72a7510b204ca5ba7358b8a4be548de1af51f45)) by [@DaveHanns](https://github.com/DaveHanns), closes [#1550](https://github.com/apify/apify-cli/issues/1550)
+- Say personal token instead of long-lived in `apify mcp install` ([#1583](https://github.com/apify/apify-cli/pull/1583)) ([be03664](https://github.com/apify/apify-cli/commit/be03664bbcac00816a509fb5ef00f4e40e829b4f)) by [@l2ysho](https://github.com/l2ysho)
+
+### ⚡ Performance
+
+- Lazy-load actor-memory-expression ([#1541](https://github.com/apify/apify-cli/pull/1541)) ([9190b28](https://github.com/apify/apify-cli/commit/9190b28a2d0ec52dcda6a4560bf9dd680056d476)) by [@JuanGalilea](https://github.com/JuanGalilea)
+
+
 ## [1.11.0](https://github.com/apify/apify-cli/releases/tag/v1.11.0) (2026-10-29)
 
 ### 🚀 Features

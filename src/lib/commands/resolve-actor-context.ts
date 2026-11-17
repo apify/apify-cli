@@ -85,6 +85,7 @@ export async function resolveActorContext({
 
 	return {
 		valid: false as const,
-		reason: 'Unable to detect what Actor to create a build for',
+		reason:
+			'No Actor specified. Pass an Actor ID or "username/name", or run this command from an Actor project directory',
 	};
 }
