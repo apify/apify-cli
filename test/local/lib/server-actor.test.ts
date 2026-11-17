@@ -9,6 +9,7 @@ import {
 	describeTenancy,
 	getEffectivePricingModel,
 	getServerInterfaceHint,
+	isActorOwner,
 	listServerOperations,
 	parseServerRequestArgs,
 	resolveServerBuild,
@@ -240,6 +241,23 @@ describe('server-actor', () => {
 			const actor = serverActor({ tenancy: 'MULTI_TENANT' });
 
 			expect(describeTenancy(actor, 'caller')).toContain("it's free for you");
+		});
+
+		it('recognizes the owner whatever the casing of their username', () => {
+			const actor = serverActor({ tenancy: 'MULTI_TENANT', ownerUsername: 'jane.doe' });
+
+			expect(describeTenancy(actor, 'Jane.Doe')).toContain('runs in your account');
+		});
+	});
+
+	describe('isActorOwner()', () => {
+		it('compares usernames case-insensitively', () => {
+			const actor = serverActor({ ownerUsername: 'jane.doe' });
+
+			expect(isActorOwner(actor, 'Jane.Doe')).toBe(true);
+			expect(isActorOwner(actor, 'jane.doe')).toBe(true);
+			expect(isActorOwner(actor, 'john.doe')).toBe(false);
+			expect(isActorOwner(actor, undefined)).toBe(false);
 		});
 	});
 	describe('shortenSummary()', () => {
