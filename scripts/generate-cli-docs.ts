@@ -121,6 +121,14 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.taskPublish },
 		{ command: Commands.taskUnpublish },
 	],
+	'server': [
+		//
+		{ command: Commands.server },
+		{ command: Commands.serverRequest },
+		{ command: Commands.serverStatus },
+		{ command: Commands.serverEndpoints },
+		{ command: Commands.serverUrl },
+	],
 	'mcp': [
 		//
 		{ command: Commands.mcp },
