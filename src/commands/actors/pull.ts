@@ -159,7 +159,7 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 				const { sourceFiles } = correctVersion;
 
 				// Validate every name first, so a rejected Actor leaves no partial checkout.
-				const targets = sourceFiles.map((file) => {
+				const files = sourceFiles.map((file) => {
 					const target = resolve(root, file.name);
 					const rel = relative(root, target);
 
@@ -169,11 +169,10 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 						);
 					}
 
-					return target;
+					return { file, target };
 				});
 
-				for (const [index, file] of sourceFiles.entries()) {
-					const target = targets[index];
+				for (const { file, target } of files) {
 					mkdirSync(dirname(target), { recursive: true });
 
 					// @ts-expect-error TODO: is this an actual field?
