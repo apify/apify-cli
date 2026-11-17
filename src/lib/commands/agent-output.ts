@@ -70,8 +70,12 @@ export async function waitForTerminalStatus(options: WaitForJobOptions): Promise
 	const startedAt = Date.now();
 
 	while (true) {
+		const remainingSecs = maxWaitMillis ? Math.floor((maxWaitMillis - (Date.now() - startedAt)) / 1000) : 60;
+		const waitForFinish = Math.max(0, Math.min(60, remainingSecs));
 		const job =
-			kind === ACTOR_JOB_TYPES.BUILD ? await apifyClient.build(jobId).get() : await apifyClient.run(jobId).get();
+			kind === ACTOR_JOB_TYPES.BUILD
+				? await apifyClient.build(jobId).get({ waitForFinish })
+				: await apifyClient.run(jobId).get({ waitForFinish });
 
 		if (!job) {
 			throw new Error(`${kind === ACTOR_JOB_TYPES.BUILD ? 'Build' : 'Run'} with ID "${jobId}" was not found.`);

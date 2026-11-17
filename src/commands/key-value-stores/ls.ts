@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 
+import type { ApiKeyValueStoreListItem } from '../../lib/api-overrides.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
@@ -76,9 +77,7 @@ export class KeyValueStoresLsCommand extends ApifyCommand<typeof KeyValueStoresL
 		}
 
 		for (const store of rawKvsList.items) {
-			// TODO: update apify-client types
-			const statsObject = Reflect.get(store, 'stats') as { s3StorageBytes?: number };
-			const size = statsObject.s3StorageBytes;
+			const size = (store as ApiKeyValueStoreListItem).stats?.s3StorageBytes;
 
 			table.pushRow({
 				'Store ID': store.id,

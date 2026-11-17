@@ -81,12 +81,8 @@ export class BuildsAddTagCommand extends ApifyCommand<typeof BuildsAddTagCommand
 		try {
 			// Update only the specific tag
 			await apifyClient.actor(build.actId).update({
-				taggedBuilds: {
-					[tag]: {
-						buildId: build.id,
-					},
-				},
-			} as never);
+				taggedBuilds: { [tag]: { buildId: build.id } },
+			});
 
 			const previousBuildInfo = existingTagData?.buildNumber
 				? ` (previously pointed to build ${chalk.gray(existingTagData.buildNumber)})`

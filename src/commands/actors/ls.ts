@@ -1,5 +1,11 @@
 import { Time } from '@sapphire/duration';
-import type { Actor, ActorRunListItem, ActorTaggedBuild, PaginatedList } from 'apify-client';
+import {
+	type Actor,
+	ActorListSortBy,
+	type ActorRunListItem,
+	type ActorTaggedBuild,
+	type PaginatedList,
+} from 'apify-client';
 import chalk from 'chalk';
 
 import type { ACTOR_JOB_STATUSES } from '@apify/consts';
@@ -144,7 +150,14 @@ export class ActorsLsCommand extends ApifyCommand<typeof ActorsLsCommand> {
 
 		const client = await getLoggedClientOrThrow();
 
-		const rawActorList = await client.actors().list({ limit, offset, desc, my });
+		const rawActorList = await client.actors().list({
+			limit,
+			offset,
+			// Without --my the list is "recently used", so the most recent run always comes first.
+			desc: my ? desc : true,
+			my,
+			sortBy: my ? ActorListSortBy.CREATED_AT : ActorListSortBy.LAST_RUN_STARTED_AT,
+		});
 
 		if (rawActorList.count === 0) {
 			if (json) {

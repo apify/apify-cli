@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 
+import type { ApiBuild } from '../../lib/api-overrides.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { consoleBuildUrl } from '../../lib/commands/agent-output.js';
@@ -38,7 +39,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 
 		const apifyClient = await getLoggedClientOrThrow();
 
-		const build = await apifyClient.build(buildId).get();
+		const build: ApiBuild | undefined = await apifyClient.build(buildId).get();
 
 		if (!build) {
 			error({ message: `Build with ID "${buildId}" was not found on your account.`, stdout: true });
@@ -64,8 +65,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 			}
 		}
 
-		// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
-		const exitCode = Reflect.get(build, 'exitCode') as number | undefined;
+		const { exitCode } = build;
 
 		const fullActorName = actor?.username ? `${actor.username}/${actor.name}` : (actor?.name ?? 'unknown-actor');
 		const versionTaggedAs = buildTag ? ` (tagged as ${chalk.yellow(buildTag)})` : '';
@@ -95,8 +95,7 @@ export class BuildsInfoCommand extends ApifyCommand<typeof BuildsInfoCommand> {
 			message.push(`  ${chalk.yellow('Compute Units')}: ${build.stats.computeUnits.toFixed(3)}`);
 		}
 
-		// TODO: untyped field, https://github.com/apify/apify-client-js/issues/526
-		const dockerImageSize = Reflect.get(build.stats ?? {}, 'imageSizeBytes') as number | undefined;
+		const dockerImageSize = build.stats?.imageSizeBytes;
 
 		if (dockerImageSize) {
 			message.push(`  ${chalk.yellow('Docker Image Size')}: ${prettyPrintBytes({ bytes: dockerImageSize })}`);

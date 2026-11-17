@@ -6,6 +6,7 @@ import { downloadTemplate } from 'giget';
 import jju from 'jju';
 import { gt } from 'semver';
 
+import type { ApiSourceFile } from '../../lib/api-overrides.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -155,13 +156,12 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 					throwMissingSourceCodeAccessError();
 				}
 
-				const { sourceFiles } = correctVersion;
+				const sourceFiles: ApiSourceFile[] = correctVersion.sourceFiles;
 				for (const file of sourceFiles) {
 					const folderPath = dirname(file.name);
 					mkdirSync(`${dirpath}/${folderPath}`, { recursive: true });
 
-					// @ts-expect-error TODO: is this an actual field?
-					if (!file.folder) {
+					if (!('folder' in file)) {
 						const fileContent =
 							file.format === 'BASE64' ? Buffer.from(file.content, 'base64').toString() : file.content;
 

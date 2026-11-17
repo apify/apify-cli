@@ -102,11 +102,10 @@ export class DatasetsInfoCommand extends ApifyCommand<typeof DatasetsInfoCommand
 			const pricing = getUserPlanPricing(user.plan);
 
 			if (pricing) {
-				const storeCostPerHour = pricing.KEY_VALUE_STORE_TIMED_STORAGE_GBYTE_HOURS * (fullSizeInBytes / 1000 ** 3);
+				const storeCostPerHour = pricing.DATASET_TIMED_STORAGE_GBYTE_HOURS * (fullSizeInBytes / 1000 ** 3);
 				const storeCostPerMonth = storeCostPerHour * 24 * 30;
 
-				const usdAmountString =
-					storeCostPerMonth > 1 ? `$${storeCostPerMonth.toFixed(2)}` : `$${storeCostPerHour.toFixed(3)}`;
+				const usdAmountString = `$${storeCostPerMonth.toFixed(storeCostPerMonth > 1 ? 2 : 3)}`;
 
 				row3 += `\nStorage size: ${prettyPrintBytes({ bytes: fullSizeInBytes, shortBytes: true, precision: 1 })} / ${chalk.gray(`${usdAmountString} per month`)}`;
 			}

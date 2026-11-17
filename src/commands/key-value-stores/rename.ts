@@ -86,7 +86,7 @@ export class KeyValueStoresRenameCommand extends ApifyCommand<typeof KeyValueSto
 		})();
 
 		try {
-			await existingDataset.keyValueStoreClient.update({ name: unname ? (null as never) : newName! });
+			await existingDataset.keyValueStoreClient.update({ name: unname ? null : newName! });
 
 			success({
 				message: successMessage,

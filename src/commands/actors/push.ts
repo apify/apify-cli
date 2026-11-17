@@ -879,8 +879,6 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		const filesSize = await sumFilesSizeInBytes(uploadedFiles, uploadRoot);
 
 		if ((filesSize < MAX_MULTIFILE_BYTES || actorPath) && !isActorCreatedNow) {
-			const client = await actorClient.get();
-
 			// Check when was files modified last
 			const mostRecentModifiedFileMs = uploadedFiles.reduce((modifiedMs, filePath) => {
 				const { mtimeMs, ctimeMs } = statSync(join(uploadRoot, filePath));
@@ -890,7 +888,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 				return modifiedMs > fileModifiedMs ? modifiedMs : fileModifiedMs;
 			}, 0);
-			const actorModifiedMs = client?.modifiedAt.valueOf();
+			const actorModifiedMs = actor.modifiedAt.valueOf();
 
 			if (
 				!this.flags.force &&
@@ -1069,7 +1067,8 @@ Skipping push. Use --force to override.`,
 		// branches below see the real outcome.
 		while (!isTerminalStatus(build.status) && Date.now() < deadline) {
 			await new Promise((resolve) => setTimeout(resolve, 1000));
-			build = (await apifyClient.build(build.id).get())!;
+			const waitForFinish = Math.max(0, Math.min(60, Math.ceil((deadline - Date.now()) / 1000)));
+			build = (await apifyClient.build(build.id).get({ waitForFinish }))!;
 		}
 
 		// Platform updates `taggedBuilds[buildTag]` asynchronously after the

@@ -1,6 +1,7 @@
 import type { ActorTaggedBuild, ApifyApiError } from 'apify-client';
 import chalk from 'chalk';
 
+import type { ApiTaggedBuildsUpdate } from '../../lib/api-overrides.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Flags, YesFlag } from '../../lib/command-framework/flags.js';
 import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConfirm.js';
@@ -98,10 +99,8 @@ export class BuildsRemoveTagCommand extends ApifyCommand<typeof BuildsRemoveTagC
 		try {
 			// To remove a tag, set it to null
 			await apifyClient.actor(build.actId).update({
-				taggedBuilds: {
-					[tag]: null,
-				},
-			} as never);
+				taggedBuilds: { [tag]: null } satisfies ApiTaggedBuildsUpdate as never,
+			});
 
 			success({
 				message: `Tag "${chalk.yellow(tag)}" removed from build ${chalk.gray(build.buildNumber)} (${chalk.gray(buildId)})`,

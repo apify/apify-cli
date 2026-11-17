@@ -1,6 +1,7 @@
-import type { Actor, ActorChargeEvent, ActorTaggedBuild, ApifyApiError, ApifyClient, Build, User } from 'apify-client';
+import type { ActorChargeEvent, ActorTaggedBuild, ApifyApiError, ApifyClient, Build, User } from 'apify-client';
 import chalk from 'chalk';
 
+import type { ApiActor } from '../../lib/api-overrides.js';
 import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
@@ -9,7 +10,7 @@ import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-tabl
 import { error, simpleLog } from '../../lib/outputs.js';
 import { DurationFormatter, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
 
-interface HydratedActorInfo extends Omit<Actor, 'taggedBuilds'> {
+interface HydratedActorInfo extends Omit<ApiActor, 'taggedBuilds'> {
 	taggedBuilds?: Record<string, ActorTaggedBuild & { build?: Build }>;
 	actorMaker?: User;
 }
@@ -191,8 +192,7 @@ export class ActorsInfoCommand extends ApifyCommand<typeof ActorsInfoCommand> {
 				`${chalk.yellow('Made by:')} ${chalk.cyan(actorInfo.actorMaker.profile.name ?? actorInfo.actorMaker.username)}`,
 			);
 
-			// Missing types who?
-			if (Reflect.get(actorInfo, 'isCritical')) {
+			if (actorInfo.isCritical) {
 				message[message.length - 1] += ` ${chalk.bgGray('Maintained by Apify')}`;
 			}
 		}
