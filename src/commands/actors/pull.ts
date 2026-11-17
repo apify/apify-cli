@@ -157,16 +157,24 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 				const root = resolve(dirpath);
 				const { sourceFiles } = correctVersion;
-				for (const file of sourceFiles) {
-					const rel = relative(root, resolve(root, file.name));
-					if (rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+
+				// Validate every name first, so a rejected Actor leaves no partial checkout.
+				const targets = sourceFiles.map((file) => {
+					const target = resolve(root, file.name);
+					const rel = relative(root, target);
+
+					if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
 						throw new Error(
 							`Cannot pull Actor: source file "${file.name}" would be written outside the target directory.`,
 						);
 					}
 
-					const folderPath = dirname(file.name);
-					mkdirSync(`${dirpath}/${folderPath}`, { recursive: true });
+					return target;
+				});
+
+				for (const [index, file] of sourceFiles.entries()) {
+					const target = targets[index];
+					mkdirSync(dirname(target), { recursive: true });
 
 					// @ts-expect-error TODO: is this an actual field?
 					if (!file.folder) {
@@ -176,9 +184,9 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 						if (file.name === LOCAL_CONFIG_PATH) {
 							const actorJson = jju.parse(fileContent);
 							actorJson.name = actor.name;
-							writeFileSync(`${dirpath}/${file.name}`, jju.update(fileContent, actorJson));
+							writeFileSync(target, jju.update(fileContent, actorJson));
 						} else {
-							writeFileSync(`${dirpath}/${file.name}`, fileContent);
+							writeFileSync(target, fileContent);
 						}
 					}
 				}
