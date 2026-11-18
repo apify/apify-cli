@@ -1,13 +1,16 @@
 import { execFileSync } from 'node:child_process';
-import { mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
-import { gunzipSync } from 'node:zlib';
+import { existsSync, readdirSync, renameSync, symlinkSync } from 'node:fs';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { basename, dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { ACTOR_SOURCE_TYPES } from '@apify/consts';
+import AdmZip from 'adm-zip';
+
+import { ACTOR_SOURCE_TYPES, MAX_MULTIFILE_BYTES } from '@apify/consts';
 
 import { testRunCommand } from '../../../src/lib/command-framework/apify-command.js';
 import { CommandExitCodes } from '../../../src/lib/consts.js';
-import { MONOREPO_PLATFORM_SUPPORT_ISSUE_URL } from '../../../src/lib/docker-context.js';
 import { cwdCache } from '../../../src/lib/hooks/useActorConfig.js';
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 import { useIsolatedGit } from '../../__setup__/hooks/useIsolatedGit.js';
@@ -16,8 +19,8 @@ import { useTempPath } from '../../__setup__/hooks/useTempPath.js';
 const actName = 'push-monorepo-actor';
 const ACTOR_ID = 'mOnO1234efGh';
 const ACTOR_PATH = 'actors/typescript-actor';
-const RUNTIME_BASE_URL = 'http://localhost:3333/v2';
-const CLOUD_BASE_URL = 'https://api.apify.com/v2';
+// As on macOS and Windows by default: this file is found under its name in upper case too.
+const caseInsensitiveFileSystem = existsSync(fileURLToPath(import.meta.url).toUpperCase());
 
 const actor = {
 	id: ACTOR_ID,
@@ -29,50 +32,65 @@ const actor = {
 const build = { id: 'build1', actId: ACTOR_ID, buildNumber: '0.0.1', status: 'SUCCEEDED' };
 const currentVersion = { versionNumber: '0.0', sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES };
 
-let baseUrl = RUNTIME_BASE_URL;
-/** `null` makes the pushed version a new one. */
-let existingVersion: typeof currentVersion | null = currentVersion;
-const versionUpdates: unknown[] = [];
-const versionCreates: unknown[] = [];
-const versionDeletes = vitest.fn(async () => {});
-const actorDeletes = vitest.fn(async () => {});
-const actorGets = vitest.fn(async () => actor);
-const keyValueStoreGetOrCreate = vitest.fn(async () => ({ id: 'store1' }));
+interface VersionPayload {
+	sourceType: string;
+	sourceFiles?: { name: string; content?: string }[];
+	tarballUrl?: string;
+	actorPath?: string;
+}
 
+const actorGet = vitest.fn(async (): Promise<typeof actor | null> => actor);
+const actorsCreate = vitest.fn(async (_created: unknown) => actor);
+const versionUpdate = vitest.fn(async (_modifier: unknown) => ({}));
+const versionCreate = vitest.fn(async (created: unknown) => created);
+const keyValueStoreGetOrCreate = vitest.fn(async () => ({ id: 'store1', urlSigningSecretKey: 'secret' }));
+const setRecord = vitest.fn(async (_record: unknown) => {});
+
+// Stands in for the platform: the Actor and its version exist, and every write is recorded.
 vitest.mock('../../../src/lib/utils.js', async (importOriginal) => ({
 	...(await importOriginal<typeof import('../../../src/lib/utils.js')>()),
 	getCurrentUserInfo: vitest.fn(async () => ({ id: 'userId', username: 'user' })),
 	outputJobLog: vitest.fn(async () => {}),
 	getLoggedClientOrThrow: vitest.fn(async () => ({
-		baseUrl,
+		baseUrl: 'https://api.apify.com/v2',
 		token: 'my-token',
 		actor: () => ({
-			get: actorGets,
-			delete: actorDeletes,
-			version: () => ({
-				get: async () => existingVersion,
-				update: async (modifier: unknown) => {
-					versionUpdates.push(modifier);
-					return {};
-				},
-				delete: versionDeletes,
-			}),
-			versions: () => ({
-				create: async (created: unknown) => {
-					versionCreates.push(created);
-					return created;
-				},
-			}),
+			get: actorGet,
+			version: () => ({ get: async () => currentVersion, update: versionUpdate }),
+			versions: () => ({ create: versionCreate }),
 			build: async () => build,
 		}),
+		actors: () => ({ create: actorsCreate }),
 		keyValueStores: () => ({ getOrCreate: keyValueStoreGetOrCreate }),
+		keyValueStore: () => ({ setRecord }),
 		build: () => ({ get: async () => build }),
 	})),
 }));
 
+// Creating an Actor looks its template up in the manifest; nothing here needs the network.
+vitest.mock('@apify/actor-templates', () => ({ fetchManifest: async () => ({ templates: [] }) }));
+
+// The mocked `node:process` copy has no signal handlers; nothing here needs them.
 vitest.mock('../../../src/lib/hooks/useAbortJobOnSignal.js', () => ({
 	useAbortJobOnSignal: () => ({ [Symbol.dispose]() {} }),
 }));
+
+// With `gitAvailable` off, every git call fails as it does without git, so the fixture counts as outside Git
+// even though it lives inside this repository's checkout.
+const gitState = vitest.hoisted(() => ({ gitAvailable: true }));
+vitest.mock('node:child_process', async (importOriginal) => {
+	const original = await importOriginal<typeof import('node:child_process')>();
+	const unavailable = () => {
+		throw new Error('not a git repository');
+	};
+	return {
+		...original,
+		execSync: ((...args: Parameters<typeof original.execSync>) =>
+			gitState.gitAvailable ? original.execSync(...args) : unavailable()) as typeof original.execSync,
+		execFileSync: ((...args: Parameters<typeof original.execFileSync>) =>
+			gitState.gitAvailable ? original.execFileSync(...args) : unavailable()) as typeof original.execFileSync,
+	};
+});
 
 const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, forceNewCwd } = useTempPath(actName, {
 	create: true,
@@ -80,6 +98,9 @@ const { beforeAllCalls, afterAllCalls, joinPath, tmpPath, forceNewCwd } = useTem
 	cwd: true,
 	cwdParent: false,
 });
+
+// A sibling folder of the repository: the target of links that leave it.
+const outside = useTempPath('push-monorepo-outside', { create: true, remove: true, cwd: false, cwdParent: false });
 
 // Git reads the global excludes file, so the developer's own one could leave out the files these tests push.
 useIsolatedGit('push-monorepo-git-home');
@@ -89,58 +110,6 @@ const { logMessages } = useConsoleSpy();
 const { ActorsPushCommand } = await import('../../../src/commands/actors/push.js');
 // The command sets the exit code on this mocked copy of `node:process`, not on the global one.
 const { default: commandProcess } = await import('node:process');
-
-/** Answers the runtime's source-context and dev-folder endpoints; `sourceContextResponse` overrides the former. */
-let sourceContextResponse: (() => Response) | undefined;
-const fetchMock = vitest.fn<typeof fetch>(async (url) => {
-	if (String(url).includes('/actor-runtime/source-context/') && sourceContextResponse) return sourceContextResponse();
-	return new Response(JSON.stringify({ data: {} }), { status: 200, headers: { 'content-type': 'application/json' } });
-});
-
-function callsTo(endpoint: string) {
-	return fetchMock.mock.calls
-		.filter(([url]) => String(url).includes(`/actor-runtime/${endpoint}/`))
-		.map(([url, init]) => ({ url: String(url), method: init?.method, body: JSON.parse(init?.body as string) }));
-}
-
-/** The files and symlinks of a `.tar.gz` by name; a plain ustar reader is enough for what `archiver` writes. */
-function untar(gzipped: Uint8Array): { files: Map<string, string>; links: Map<string, string> } {
-	const archive = gunzipSync(gzipped);
-	const files = new Map<string, string>();
-	const links = new Map<string, string>();
-	for (let offset = 0; offset + 512 <= archive.length;) {
-		const header = archive.subarray(offset, offset + 512);
-		const field = (start: number, length: number) => {
-			const raw = header.subarray(start, start + length);
-			const end = raw.indexOf(0);
-			return raw.subarray(0, end === -1 ? raw.length : end).toString('utf8');
-		};
-		const name = field(0, 100);
-		if (!name) break;
-		const prefix = field(345, 155);
-		const size = Number.parseInt(field(124, 12).trim() || '0', 8);
-		const type = field(156, 1);
-		const content = archive.subarray(offset + 512, offset + 512 + size).toString('utf8');
-		const path = prefix ? `${prefix}/${name}` : name;
-		if (type === '2') links.set(path, field(157, 100));
-		if (type === '0' || type === '') files.set(path, content);
-		offset += 512 + Math.ceil(size / 512) * 512;
-	}
-	return { files, links };
-}
-
-/** The one source-context upload: its URL and query, and the files of its tarball body. */
-function sourceContextUpload() {
-	const [[url, init]] = fetchMock.mock.calls.filter(([u]) => String(u).includes('/actor-runtime/source-context/'));
-	const parsed = new URL(String(url));
-	return {
-		path: `${parsed.origin}${parsed.pathname}`,
-		method: init?.method,
-		contentType: (init!.headers as Record<string, string>)['Content-Type'],
-		query: Object.fromEntries(parsed.searchParams),
-		...untar(init?.body as Uint8Array),
-	};
-}
 
 async function write(relativePath: string, content: string) {
 	await mkdir(dirname(joinPath(relativePath)), { recursive: true });
@@ -158,6 +127,11 @@ function git(...args: string[]) {
 	execFileSync('git', args, { cwd: tmpPath, stdio: 'ignore' });
 }
 
+function versionPayload(mock: typeof versionUpdate | typeof actorsCreate) {
+	expect(mock).toHaveBeenCalledTimes(1);
+	return mock.mock.calls[0][0] as VersionPayload;
+}
+
 // The command sets its exit code on the mocked copy, but the framework records a thrown error on the real `process`.
 let originalExitCode: typeof process.exitCode;
 let originalRealExitCode: typeof process.exitCode;
@@ -165,32 +139,25 @@ let originalRealExitCode: typeof process.exitCode;
 beforeEach(async () => {
 	originalExitCode = commandProcess.exitCode;
 	originalRealExitCode = process.exitCode;
-	baseUrl = RUNTIME_BASE_URL;
-	// The monorepo gate reads the target before any login, from the same source the client's base URL comes from.
-	vitest.stubEnv('APIFY_CLIENT_BASE_URL', baseUrl);
-	sourceContextResponse = undefined;
-	versionUpdates.length = 0;
-	versionCreates.length = 0;
-	existingVersion = currentVersion;
-	versionDeletes.mockClear();
-	actorDeletes.mockClear();
-	actorGets.mockClear();
+	gitState.gitAvailable = true;
+	actorGet.mockReset();
+	actorsCreate.mockReset();
+	versionUpdate.mockReset();
+	versionCreate.mockReset();
 	keyValueStoreGetOrCreate.mockClear();
+	setRecord.mockClear();
 	cwdCache.clear();
-	fetchMock.mockClear();
-	vitest.stubGlobal('fetch', fetchMock);
 	await beforeAllCalls();
+	await outside.beforeAllCalls();
 
 	// The layout of apify/actor-monorepo-example, as its own Git repository.
 	await write('package.json', '{"workspaces":["actors/**","packages/**"]}');
 	await write('.gitignore', 'node_modules\n');
 	await write('shared/TypeScript_Dockerfile', 'FROM apify/actor-node:20\n');
 	await write('packages/typescript-utils/src/index.ts', 'export const x = 1;\n');
-	await write('node_modules/ignored/index.js', '');
 	await writeActorConfig({ dockerContextDir: '../../..', dockerfile: '../../../shared/TypeScript_Dockerfile' });
 	await write(`${ACTOR_PATH}/src/index.ts`, 'console.log(1);\n');
-	git('init', '--quiet', '--initial-branch=main');
-	git('remote', 'add', 'origin', 'https://someone:secret-token@github.com/acme/monorepo.git');
+	git('init', '--quiet');
 	git('add', '.');
 	git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'init');
 
@@ -198,192 +165,745 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-	vitest.unstubAllGlobals();
-	vitest.unstubAllEnvs();
 	commandProcess.exitCode = originalExitCode;
 	process.exitCode = originalRealExitCode;
 	await afterAllCalls();
+	await outside.afterAllCalls();
 });
 
-describe('apify push of a monorepo Actor to a local Actor runtime', () => {
-	it('pushes the whole Docker context, with the Actor path and the Git details', async () => {
+describe('apify push of a monorepo Actor', () => {
+	it('uploads the repository root as source files with the Actor folder as actorPath', async () => {
 		await testRunCommand(ActorsPushCommand, {});
 
 		expect(commandProcess.exitCode).toBeFalsy();
-		const upload = sourceContextUpload();
-		expect(upload.path).toBe(`${RUNTIME_BASE_URL}/actor-runtime/source-context/${ACTOR_ID}/0.0`);
-		expect(upload.method).toBe('PUT');
-		expect(upload.contentType).toBe('application/gzip');
-		expect(upload.query).toMatchObject({
-			actorPath: ACTOR_PATH,
-			gitBranch: 'main',
-			gitRemoteUrl: 'https://github.com/acme/monorepo.git',
-			gitDirty: 'false',
-		});
-		expect(upload.query.gitCommit).toMatch(/^[0-9a-f]{40}$/);
-		const names = [...upload.files.keys()];
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.SOURCE_FILES);
+		expect(modifier.actorPath).toBe(ACTOR_PATH);
+		expect(modifier.tarballUrl).toBeUndefined();
+		const names = modifier.sourceFiles!.map((file) => file.name);
 		expect(names).toEqual(
 			expect.arrayContaining([
+				`${ACTOR_PATH}/.actor/actor.json`,
+				`${ACTOR_PATH}/src/index.ts`,
 				'package.json',
 				'shared/TypeScript_Dockerfile',
 				'packages/typescript-utils/src/index.ts',
-				`${ACTOR_PATH}/.actor/actor.json`,
-				`${ACTOR_PATH}/src/index.ts`,
 			]),
 		);
 		expect(names.some((name) => name.startsWith('node_modules'))).toBe(false);
-
-		// The version update carries no files of its own; the context replaces them.
-		expect(versionUpdates).toEqual([expect.not.objectContaining({ sourceFiles: expect.anything() })]);
-		// The dev folder is the context root, so a run mounts the whole workspace.
-		expect(callsTo('dev-folder').map((c) => c.body)).toEqual([tmpPath]);
+		expect(names.some((name) => name.includes('\\'))).toBe(false);
+		expect(keyValueStoreGetOrCreate).not.toHaveBeenCalled();
+		expect(logMessages.error.join('\n')).not.toContain('uncommitted changes');
 		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
 	});
 
-	it('pushes the working copy as it is on disk, uncommitted and untracked files included', async () => {
-		await write(`${ACTOR_PATH}/src/index.ts`, 'console.log(2);\n');
-		await write('packages/typescript-utils/src/new.ts', 'export const y = 2;\n');
+	it('keeps the --json envelope on stdout', async () => {
+		await testRunCommand(ActorsPushCommand, { flags_json: true });
 
-		await testRunCommand(ActorsPushCommand, {});
-
-		const { files, query } = sourceContextUpload();
-		expect(files.get(`${ACTOR_PATH}/src/index.ts`)).toBe('console.log(2);\n');
-		expect(files.get('packages/typescript-utils/src/new.ts')).toBe('export const y = 2;\n');
-		expect(query.gitDirty).toBe('true');
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionPayload(versionUpdate).actorPath).toBe(ACTOR_PATH);
+		expect(logMessages.log).toHaveLength(1);
+		expect(JSON.parse(logMessages.log[0])).toMatchObject({ ok: true, operation: 'push', actor: { id: ACTOR_ID } });
 	});
 
-	it('asks to update a runtime that has no source-context endpoint', async () => {
-		sourceContextResponse = () =>
-			new Response(JSON.stringify({ error: { type: 'not-found', message: 'Not found' } }), { status: 404 });
-
-		await testRunCommand(ActorsPushCommand, {});
-
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
-		expect(logMessages.error.join('\n')).toContain(`update it with 'apify runtime install'`);
-		expect(logMessages.error.join('\n')).not.toContain('apify runtime connect');
-		expect(callsTo('dev-folder')).toEqual([]);
-		// The existing version is left as it was.
-		expect(versionUpdates).toEqual([]);
-	});
-
-	it('creates a new version before pushing its context, and removes it again when the push fails', async () => {
-		existingVersion = null;
+	it('zips a repository over the multi-file limit into the OS temp directory and pushes it as a tarball', async () => {
+		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
 
 		await testRunCommand(ActorsPushCommand, {});
 
 		expect(commandProcess.exitCode).toBeFalsy();
-		expect(versionCreates).toEqual([expect.objectContaining({ versionNumber: '0.0', buildTag: 'latest' })]);
-		expect(sourceContextUpload().query.actorPath).toBe(ACTOR_PATH);
-		expect(versionDeletes).not.toHaveBeenCalled();
+		expect(keyValueStoreGetOrCreate).toHaveBeenCalledWith(`actor-${ACTOR_ID}-source`);
+		expect(setRecord).toHaveBeenCalledTimes(1);
+		const record = setRecord.mock.calls[0][0] as { key: string; value: Buffer; contentType: string };
+		expect(record.key).toMatch(/^version-0\.0-monorepo-[0-9a-f]{16}\.zip$/);
+		expect(record.contentType).toBe('application/zip');
+		expect(Buffer.isBuffer(record.value)).toBe(true);
+		expect(record.value.length).toBeGreaterThan(0);
 
-		fetchMock.mockClear();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.TARBALL);
+		expect(modifier.sourceFiles).toBeUndefined();
+		expect(modifier.actorPath).toBe(ACTOR_PATH);
+		const tarballUrl = new URL(modifier.tarballUrl!);
+		expect(tarballUrl.pathname).toBe(`/v2/key-value-stores/store1/records/${record.key}`);
+		expect(tarballUrl.searchParams.get('disableRedirect')).toBe('true');
+		expect(tarballUrl.searchParams.get('signature')).toBeTruthy();
+
+		expect(existsSync(join(process.cwd(), 'temp_file.zip'))).toBe(false);
+		expect(existsSync(joinPath('temp_file.zip'))).toBe(false);
+	});
+
+	it('zips the upload with the repository root at the top level, where the platform resolves actorPath', async () => {
+		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const record = setRecord.mock.calls[0][0] as { value: Buffer };
+		const names = new AdmZip(record.value).getEntries().map((entry) => entry.entryName);
+		expect(names).toEqual(
+			expect.arrayContaining(['package.json', `${versionPayload(versionUpdate).actorPath}/.actor/actor.json`]),
+		);
+	});
+
+	it('gives each actorPath its own zip record, so a failed update leaves the record of the version as it was', async () => {
+		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
+		await testRunCommand(ActorsPushCommand, {});
+		expect(commandProcess.exitCode).toBeFalsy();
+
+		// The version now builds from that record with the old actorPath; a push after a rename then fails its update.
+		renameSync(joinPath(ACTOR_PATH), joinPath('actors/renamed-actor'));
+		forceNewCwd('actors/renamed-actor');
 		cwdCache.clear();
-		sourceContextResponse = () =>
-			new Response(JSON.stringify({ error: { type: 'invalid-request', message: 'Archive is broken' } }), {
-				status: 400,
-			});
+		versionUpdate.mockRejectedValueOnce(new Error('network down'));
+		await testRunCommand(ActorsPushCommand, { flags_force: true });
+
+		expect(logMessages.error.join('\n')).toContain('network down');
+		const keys = setRecord.mock.calls.map(([record]) => (record as { key: string }).key);
+		expect(keys).toHaveLength(2);
+		expect(keys[1]).not.toBe(keys[0]);
+	});
+
+	it('zips a repository under the multi-file limit when a file name exceeds what the platform accepts', async () => {
+		const longPath = `packages/${'a'.repeat(120)}/${'b'.repeat(120)}/fixture.json`;
+		await write(longPath, '{}');
+		// Over 260 characters, Git on Windows skips the folder unless told otherwise, and the system config of a
+		// Windows runner, which does, doesn't apply here.
+		git('config', 'core.longpaths', 'true');
+		git('add', '.');
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.BuildFailed);
-		expect(logMessages.error.join('\n')).toContain('Could not push the Docker context');
-		expect(logMessages.error.join('\n')).toContain('Archive is broken');
-		expect(versionDeletes).toHaveBeenCalledOnce();
-		expect(callsTo('dev-folder')).toEqual([]);
+		expect(commandProcess.exitCode).toBeFalsy();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.TARBALL);
+		expect(modifier.sourceFiles).toBeUndefined();
+		const record = setRecord.mock.calls[0][0] as { value: Buffer };
+		expect(new AdmZip(record.value).getEntry(longPath)).toBeTruthy();
 	});
 
-	it('pushes the files a Git clone has, as they are on disk, and not what .actorignore changes', async () => {
-		// `dist` is git-ignored: the platform's clone has no `dist`, whatever .actorignore force-includes.
-		await write(`${ACTOR_PATH}/.gitignore`, 'dist\n');
-		await write(`${ACTOR_PATH}/.actorignore`, '!dist/\nsrc/index.ts\n');
-		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(3);\n');
-		await write('shared/start.sh', '#!/bin/sh\necho hi\n');
-		await rm(joinPath('packages/typescript-utils/src/index.ts'));
+	it('zips a repository under the multi-file limit whose content grows over it as sent, as base64 does to binary files', async () => {
+		// Raw bytes under the limit, but a binary file goes as base64, which the platform counts at four thirds.
+		await write(`${ACTOR_PATH}/image.bin`, '\u0000'.repeat(Math.floor(MAX_MULTIFILE_BYTES * 0.9)));
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		const { files } = sourceContextUpload();
-		const names = [...files.keys()];
-		expect(names).not.toContain(`${ACTOR_PATH}/dist/main.js`);
-		// Tracked, so in the clone, although .actorignore excludes it.
-		expect(names).toContain(`${ACTOR_PATH}/src/index.ts`);
-		// Deleted locally, so not pushed although still committed.
-		expect(names).not.toContain('packages/typescript-utils/src/index.ts');
-		// Untracked and not ignored: pushed, with a warning that the platform would not have it yet.
-		expect(names).toContain('shared/start.sh');
-		expect(logMessages.error.join('\n')).toContain('changes that are not committed');
+		expect(commandProcess.exitCode).toBeFalsy();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.TARBALL);
+		expect(modifier.sourceFiles).toBeUndefined();
+		expect(setRecord).toHaveBeenCalledTimes(1);
 	});
 
-	it('pushes the whole repository, like a clone, when the Docker context is only part of it', async () => {
-		await write(
-			`${ACTOR_PATH}/.actor/actor.json`,
-			(await readFile(joinPath(`${ACTOR_PATH}/.actor/actor.json`), 'utf8')).replace('"../../.."', '"../.."'),
+	it('zips a repository whose text holds emoji the platform counts over the multi-file limit', async () => {
+		// Four bytes each in UTF-8, so the raw size stays under the limit, but the platform counts five.
+		await write(`${ACTOR_PATH}/emoji.txt`, '\u{1F600}'.repeat(700_000));
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionPayload(versionUpdate).sourceType).toBe(ACTOR_SOURCE_TYPES.TARBALL);
+	});
+
+	it('leaves no zip in the OS temp directory when getting the source store fails', async () => {
+		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
+		const pushZips = () => readdirSync(tmpdir()).filter((name) => /^apify-push-.*\.zip$/.test(name));
+		const zipsBefore = pushZips();
+		keyValueStoreGetOrCreate.mockRejectedValueOnce(new Error('network down'));
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(process.exitCode).toBe(1);
+		expect(logMessages.error.join('\n')).toContain('network down');
+		expect(pushZips().filter((name) => !zipsBefore.includes(name))).toEqual([]);
+	});
+
+	it('zips a file reached through a symlink as its content, as the multi-file upload sends it', async () => {
+		await write(`${ACTOR_PATH}/big.bin`, 'x'.repeat(MAX_MULTIFILE_BYTES + 1));
+		await write('shared/input_schema.json', '{"title":"Input","type":"object","properties":{}}');
+		symlinkSync('../../../shared/input_schema.json', joinPath(`${ACTOR_PATH}/.actor/input_schema.json`));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const record = setRecord.mock.calls[0][0] as { value: Buffer };
+		const entry = new AdmZip(record.value).getEntry(`${ACTOR_PATH}/.actor/input_schema.json`);
+		// A link entry would hold the link's target path, which the platform unzips as a link to a file it lacks.
+		expect(entry?.getData().toString()).toContain('"title":"Input"');
+	});
+
+	it('uploads the files under a directory symlink as copies and leaves dangling and outside links out', async () => {
+		symlinkSync('../../shared', joinPath(`${ACTOR_PATH}/shared`));
+		symlinkSync('missing', joinPath('dangling'));
+		await writeFile(outside.joinPath('outside.txt'), 'outside\n');
+		symlinkSync(outside.joinPath('outside.txt'), joinPath('outside.txt'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toContain(`${ACTOR_PATH}/shared/TypeScript_Dockerfile`);
+		expect(names).toContain('shared/TypeScript_Dockerfile');
+		expect(names).not.toContain(`${ACTOR_PATH}/shared`);
+		expect(names).not.toContain('dangling');
+		expect(names).not.toContain('outside.txt');
+	});
+
+	it('sends a link to a file the upload holds as that file and leaves out one to a file the upload lacks', async () => {
+		// A workspace package shares the root .env, which only the root .gitignore line covers.
+		await write('.gitignore', 'node_modules\n/.env\n');
+		await write('.env', 'API_TOKEN=secret\n');
+		symlinkSync('../../.env', joinPath('packages/typescript-utils/.env'));
+		symlinkSync('../.git/config', joinPath('shared/git-config'));
+		symlinkSync('../package.json', joinPath('shared/package.json'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		const names = files.map((file) => file.name);
+		expect(names).not.toContain('packages/typescript-utils/.env');
+		expect(names).not.toContain('shared/git-config');
+		expect(files.find((file) => file.name === 'shared/package.json')?.content).toContain('workspaces');
+	});
+
+	it('sends a link elsewhere in the repository to a file only the Actor folder adds', async () => {
+		// The Actor folder's .actorignore takes back its gitignored dist, which a clone lacks.
+		await write('.gitignore', 'node_modules\ndist\n');
+		await write(`${ACTOR_PATH}/.actorignore`, '!dist/\n');
+		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+		symlinkSync(`../${ACTOR_PATH}/dist/main.js`, joinPath('shared/main.js'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		expect(files.find((file) => file.name === 'shared/main.js')?.content).toContain('console.log(1)');
+	});
+
+	it('sends a directory link elsewhere in the repository to files only the Actor folder adds as copies', async () => {
+		await write('.gitignore', 'node_modules\ndist\n');
+		await write(`${ACTOR_PATH}/.actorignore`, '!dist/\n');
+		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+		symlinkSync(`../${ACTOR_PATH}/dist`, joinPath('shared/actor-dist'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		expect(files.find((file) => file.name === 'shared/actor-dist/main.js')?.content).toContain('console.log(1)');
+	});
+
+	it('copies the files under a directory link inside a linked directory, as a clone resolves both, and ends a cycle', async () => {
+		await write('config/app.json', '{"app":true}');
+		symlinkSync('packages/typescript-utils', joinPath('linked-utils'));
+		symlinkSync('../../config', joinPath('packages/typescript-utils/config'));
+		symlinkSync('.', joinPath('packages/typescript-utils/self'));
+		git('add', '.');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		const names = files.map((file) => file.name);
+		expect(names).toEqual(
+			expect.arrayContaining([
+				'linked-utils/src/index.ts',
+				'packages/typescript-utils/config/app.json',
+				'packages/typescript-utils/self/src/index.ts',
+			]),
 		);
+		expect(files.find((file) => file.name === 'linked-utils/config/app.json')?.content).toBe('{"app":true}');
+		expect(names.some((name) => name.includes('/self/self/'))).toBe(false);
+	});
+
+	it('accepts a schema reached through a symlink inside the repository and uploads it at the link path', async () => {
+		await write('shared/input_schema.json', '{"title":"Input","type":"object","properties":{}}');
+		symlinkSync('../../../shared/input_schema.json', joinPath(`${ACTOR_PATH}/.actor/input_schema.json`));
+		await writeActorConfig({
+			dockerContextDir: '../../..',
+			dockerfile: '../../../shared/TypeScript_Dockerfile',
+			input: './input_schema.json',
+		});
+		git('add', '.');
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		const { files, query } = sourceContextUpload();
-		// The Actor's path is relative to the repository, as the folder part of a Git source URL is.
-		expect(query.actorPath).toBe(ACTOR_PATH);
-		expect([...files.keys()]).toEqual(expect.arrayContaining(['package.json', 'shared/TypeScript_Dockerfile']));
-		// The image holds the context, so that is the dev folder.
-		expect(callsTo('dev-folder').map((c) => c.body)).toEqual([joinPath('actors')]);
+		expect(commandProcess.exitCode).toBeFalsy();
+		const files = versionPayload(versionUpdate).sourceFiles!;
+		const linked = files.find((file) => file.name === `${ACTOR_PATH}/.actor/input_schema.json`);
+		expect(linked?.content).toContain('"title":"Input"');
 	});
 
-	it('keeps a symlink a link, as a Git clone does', async () => {
-		await symlink('../../shared', joinPath(`${ACTOR_PATH}/shared`));
+	it('accepts a Dockerfile in a Docker context reached through a symlink inside the repository', async () => {
+		// `context-link` links to the shared folder; the upload carries it as a normal folder under the link's name.
+		symlinkSync('shared', joinPath('context-link'));
+		await writeActorConfig({
+			dockerContextDir: '../../../context-link',
+			dockerfile: '../../../context-link/TypeScript_Dockerfile',
+		});
+		git('add', '.');
 
 		await testRunCommand(ActorsPushCommand, {});
 
-		expect(sourceContextUpload().links.get(`${ACTOR_PATH}/shared`)).toBe('../../shared');
-	});
-});
-
-describe('apify push of a monorepo Actor to the Apify platform', () => {
-	beforeEach(() => {
-		baseUrl = CLOUD_BASE_URL;
-		vitest.stubEnv('APIFY_CLIENT_BASE_URL', baseUrl);
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toContain('context-link/TypeScript_Dockerfile');
 	});
 
-	it('stops before touching the platform, pointing at the tracking issue', async () => {
+	it('rejects a schema reached through a symlink leaving the repository, which the upload leaves out', async () => {
+		await writeFile(outside.joinPath('input_schema.json'), '{}');
+		symlinkSync(outside.joinPath('input_schema.json'), joinPath(`${ACTOR_PATH}/.actor/input_schema.json`));
+		await writeActorConfig({
+			dockerContextDir: '../../..',
+			dockerfile: '../../../shared/TypeScript_Dockerfile',
+			input: './input_schema.json',
+		});
+		git('add', '.');
+
 		await testRunCommand(ActorsPushCommand, {});
 
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
 		const stderr = logMessages.error.join('\n');
-		expect(stderr).toContain(
-			`Actor ${actName} sets "dockerContextDir" in .actor/actor.json, so it builds from a Docker context outside its own folder (a monorepo Actor).`,
+		expect(stderr).toContain('"input": "./input_schema.json"');
+		expect(stderr).toContain('is not among the files apify push uploads');
+		expect(actorGet).not.toHaveBeenCalled();
+		expect(versionUpdate).not.toHaveBeenCalled();
+	});
+
+	it('warns about uncommitted changes, which the upload carries as they are', async () => {
+		await write(`${ACTOR_PATH}/src/index.ts`, 'console.log(2);\n');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(1);
+		const warningLine = logMessages.error.find((line) => line.includes('uncommitted changes'));
+		expect(warningLine).toBeDefined();
+		expect(warningLine!.split('\n')).toHaveLength(1);
+	});
+
+	it('creates a new Actor with actorPath on its inline version and on the version it pushes', async () => {
+		actorGet.mockResolvedValueOnce(null);
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionPayload(actorsCreate)).toMatchObject({ versions: [{ actorPath: ACTOR_PATH }] });
+		expect(versionPayload(versionUpdate).actorPath).toBe(ACTOR_PATH);
+	});
+
+	it('uploads the Docker context with .actorignore applied outside Git', async () => {
+		// The fixture's .git stays, though git itself is unavailable: it ends the walk for .gitignore files above the
+		// fixture, so the .gitignore of this checkout never applies.
+		await write('.actorignore', 'packages/\n');
+		// Local run state of the Actor, which an ordinary push of its folder leaves out too.
+		await write(`${ACTOR_PATH}/node_modules/dep/index.js`, 'module.exports = 1;\n');
+		await write(`${ACTOR_PATH}/storage/key_value_stores/default/INPUT.json`, '{}');
+		gitState.gitAvailable = false;
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.SOURCE_FILES);
+		expect(modifier.actorPath).toBe(ACTOR_PATH);
+		const names = modifier.sourceFiles!.map((file) => file.name);
+		expect(names).toEqual(
+			expect.arrayContaining([`${ACTOR_PATH}/.actor/actor.json`, 'package.json', 'shared/TypeScript_Dockerfile']),
 		);
-		expect(stderr).toContain('apify push does not support such Actors on the Apify platform yet');
-		expect(stderr).toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
-		expect(stderr).toContain("set the Actor's source in Apify Console to the Git repository with the folder");
-		expect(actorGets).not.toHaveBeenCalled();
-		expect(versionCreates).toEqual([]);
-		expect(versionUpdates).toEqual([]);
+		expect(names.some((name) => name.startsWith('packages/'))).toBe(false);
+		expect(names.some((name) => name.startsWith('node_modules'))).toBe(false);
+		expect(
+			names.filter((name) => ['node_modules', 'storage'].some((dir) => name.startsWith(`${ACTOR_PATH}/${dir}/`))),
+		).toEqual([]);
+	});
+
+	it("leaves out another Actor's local run state outside Git", async () => {
+		await write('actors/javascript-actor/src/main.js', 'console.log(1);\n');
+		for (const dir of ['storage', 'apify_storage', 'crawlee_storage']) {
+			await write(`actors/javascript-actor/${dir}/key_value_stores/default/INPUT.json`, '{"message":"x"}');
+		}
+		// Source code in a folder that is only named storage still goes.
+		await write('packages/typescript-utils/src/storage/kv.ts', 'export const kv = 1;\n');
+		gitState.gitAvailable = false;
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toEqual(
+			expect.arrayContaining(['actors/javascript-actor/src/main.js', 'packages/typescript-utils/src/storage/kv.ts']),
+		);
+		expect(names.filter((name) => name.includes('INPUT.json'))).toEqual([]);
+	});
+
+	it('leaves out the files under a folder symlink leading out of the Docker context outside Git', async () => {
+		await mkdir(outside.joinPath('folder'), { recursive: true });
+		await writeFile(outside.joinPath('folder/outside.txt'), 'outside\n');
+		symlinkSync(outside.joinPath('folder'), joinPath('external'));
+		symlinkSync('shared', joinPath('internal'));
+		gitState.gitAvailable = false;
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toContain('internal/TypeScript_Dockerfile');
+		expect(names.filter((name) => name.startsWith('external/'))).toEqual([]);
+	});
+
+	it('rejects a dockerfile outside the Docker context before touching the platform', async () => {
+		await writeActorConfig({ dockerContextDir: '../..', dockerfile: '../../../shared/TypeScript_Dockerfile' });
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+		expect(logMessages.error.join('\n')).toContain('lies outside the Docker context');
+		expect(actorGet).not.toHaveBeenCalled();
+		expect(versionUpdate).not.toHaveBeenCalled();
 		expect(keyValueStoreGetOrCreate).not.toHaveBeenCalled();
-		expect(fetchMock).not.toHaveBeenCalled();
 	});
 
-	it('keeps stdout clean with --json', async () => {
-		await testRunCommand(ActorsPushCommand, { flags_json: true });
+	describe('with the Docker context at the repository root and no dockerfile field', () => {
+		beforeEach(async () => {
+			await writeActorConfig({ dockerContextDir: '../../..' });
+		});
 
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
-		expect(logMessages.log).toEqual([]);
-		expect(logMessages.error.join('\n')).toContain(MONOREPO_PLATFORM_SUPPORT_ISSUE_URL);
-		expect(versionUpdates).toEqual([]);
+		it('pushes with the default Dockerfile in the Actor folder, which lies inside the context', async () => {
+			await write(`${ACTOR_PATH}/Dockerfile`, 'FROM apify/actor-node:20\n');
+			git('add', '.');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const modifier = versionPayload(versionUpdate);
+			expect(modifier.actorPath).toBe(ACTOR_PATH);
+			expect(modifier.sourceFiles!.map((file) => file.name)).toContain(`${ACTOR_PATH}/Dockerfile`);
+			expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
+		});
+
+		it('exits as an invalid actor.json without a Dockerfile at the default locations', async () => {
+			git('add', '.');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
+			expect(logMessages.error.join('\n')).toContain('"dockerfile" is not set');
+			expect(actorGet).not.toHaveBeenCalled();
+			expect(versionUpdate).not.toHaveBeenCalled();
+		});
 	});
 
-	it('names the Actor folder when actor.json has no name', async () => {
-		await writeActorConfig({ name: undefined, dockerContextDir: '../../..' });
+	it('adds the files of an Actor folder ignored by .gitignore when --dir names it, as a clone has none of them', async () => {
+		await write('.gitignore', 'node_modules\nactors/\n');
+		git('rm', '-r', '--cached', '--quiet', 'actors');
+		forceNewCwd('.');
 
-		await testRunCommand(ActorsPushCommand, { args_actorId: ACTOR_ID });
+		await testRunCommand(ActorsPushCommand, { flags_dir: ACTOR_PATH });
 
-		expect(commandProcess.exitCode).toBe(CommandExitCodes.NotImplemented);
-		expect(logMessages.error.join('\n')).toContain('Actor typescript-actor sets "dockerContextDir"');
-		expect(actorGets).not.toHaveBeenCalled();
+		expect(commandProcess.exitCode).toBeFalsy();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.actorPath).toBe(ACTOR_PATH);
+		expect(modifier.sourceFiles!.map((file) => file.name)).toEqual(
+			expect.arrayContaining([
+				`${ACTOR_PATH}/.actor/actor.json`,
+				`${ACTOR_PATH}/src/index.ts`,
+				'shared/TypeScript_Dockerfile',
+			]),
+		);
 	});
-});
 
-describe('apify push with a dockerContextDir that is not a monorepo', () => {
+	it("applies the Actor folder's .actorignore, negations included, and leaves the rest of the repository as a clone has it", async () => {
+		await write('.gitignore', 'node_modules\ndist\n');
+		await write(`${ACTOR_PATH}/.actorignore`, 'local-secrets.json\n!dist/\n');
+		await write(`${ACTOR_PATH}/local-secrets.json`, '{}');
+		await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+		await write('packages/typescript-utils/dist/index.js', 'export const x = 1;\n');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+		expect(names).toEqual(
+			expect.arrayContaining([`${ACTOR_PATH}/dist/main.js`, 'packages/typescript-utils/src/index.ts']),
+		);
+		expect(names).not.toContain(`${ACTOR_PATH}/local-secrets.json`);
+		expect(names).not.toContain('packages/typescript-utils/dist/index.js');
+	});
+
+	it('pushes an Actor folder whose name is stored decomposed with one copy of its files under actorPath', async () => {
+		// Finder stores names decomposed (NFD), and git on macOS lists them composed (NFC).
+		const decomposedPath = 'actors/café-actor';
+		await write(
+			`${decomposedPath}/.actor/actor.json`,
+			JSON.stringify({
+				actorSpecification: 1,
+				name: actName,
+				version: '0.0',
+				buildTag: 'latest',
+				dockerContextDir: '../../..',
+				dockerfile: '../../../shared/TypeScript_Dockerfile',
+			}),
+		);
+		git('add', '.');
+		forceNewCwd(decomposedPath);
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const { actorPath, sourceFiles } = versionPayload(versionUpdate);
+		const names = sourceFiles!.map((file) => file.name);
+		expect(names).toContain(`${actorPath}/.actor/actor.json`);
+		expect(names.filter((name) => name.normalize('NFC') === 'actors/café-actor/.actor/actor.json')).toHaveLength(1);
+	});
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'pushes an Actor folder renamed by case only, which Git still lists in its old case, with one copy of its files',
+		async () => {
+			await write(`${ACTOR_PATH}/.actorignore`, 'fixtures/\n');
+			await write(`${ACTOR_PATH}/fixtures/big.json`, '{}');
+			git('add', '.');
+			git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'fixtures');
+			// Without git mv, Git on a case-insensitive file system keeps the old case in its index.
+			renameSync(joinPath(ACTOR_PATH), joinPath('actors/renaming'));
+			renameSync(joinPath('actors/renaming'), joinPath('actors/TypeScript-Actor'));
+			forceNewCwd('actors/TypeScript-Actor');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const { actorPath, sourceFiles } = versionPayload(versionUpdate);
+			const names = sourceFiles!.map((file) => file.name);
+			expect(actorPath).toBe('actors/TypeScript-Actor');
+			expect(names.filter((name) => name.toLowerCase().startsWith('actors/typescript-actor/fixtures/'))).toEqual([]);
+			expect(names.filter((name) => name.toLowerCase() === 'actors/typescript-actor/.actor/actor.json')).toHaveLength(
+				1,
+			);
+		},
+	);
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'sends the siblings of the Actor folder under the folder name actorPath spells after a case-only rename',
+		async () => {
+			await write('actors/lib/util.js', 'export const y = 2;\n');
+			git('add', '.');
+			git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'lib');
+			renameSync(joinPath('actors'), joinPath('renaming'));
+			renameSync(joinPath('renaming'), joinPath('Actors'));
+			forceNewCwd('Actors/typescript-actor');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const { actorPath, sourceFiles } = versionPayload(versionUpdate);
+			const names = sourceFiles!.map((file) => file.name);
+			expect(actorPath).toBe('Actors/typescript-actor');
+			expect(names).toEqual(expect.arrayContaining(['Actors/lib/util.js', 'Actors/typescript-actor/src/index.ts']));
+			expect(names.filter((name) => name.startsWith('actors/'))).toEqual([]);
+		},
+	);
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'copies through directory links after a case-only rename of the Actor folder, its gitignored dist included, under one spelling',
+		async () => {
+			await write('.gitignore', 'node_modules\ndist\n');
+			await write(`${ACTOR_PATH}/.actorignore`, '!dist/\n');
+			await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+			symlinkSync(`../${ACTOR_PATH}/dist`, joinPath('shared/actor-dist'));
+			symlinkSync('actors', joinPath('linked-actors'));
+			git('add', '.');
+			git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'links');
+			renameSync(joinPath(ACTOR_PATH), joinPath('actors/renaming'));
+			renameSync(joinPath('actors/renaming'), joinPath('actors/TypeScript-Actor'));
+			forceNewCwd('actors/TypeScript-Actor');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toEqual(
+				expect.arrayContaining(['shared/actor-dist/main.js', 'linked-actors/typescript-actor/src/index.ts']),
+			);
+			expect(names.filter((name) => name.startsWith('linked-actors/TypeScript-Actor/'))).toEqual([]);
+		},
+	);
+
+	it.runIf(!caseInsensitiveFileSystem)(
+		'keeps a link named like a folder of the Actor folder in another case as a folder of its own',
+		async () => {
+			await write('actors/lib/util.js', 'export const y = 2;\n');
+			symlinkSync('actors', joinPath('Actors'));
+			git('add', '.');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toEqual(expect.arrayContaining(['actors/lib/util.js', 'Actors/lib/util.js']));
+		},
+	);
+
+	it.runIf(!caseInsensitiveFileSystem)(
+		'copies a gitignored Actor file through a directory link when a tracked file differs from it in case only',
+		async () => {
+			await write('.gitignore', 'node_modules\ndist\n');
+			await write(`${ACTOR_PATH}/.actorignore`, '!dist/\n');
+			await write(`${ACTOR_PATH}/dist/main.js`, 'console.log(1);\n');
+			await write(`${ACTOR_PATH}/Dist/main.js`, 'console.log(2);\n');
+			symlinkSync(`../${ACTOR_PATH}/dist`, joinPath('shared/actor-dist'));
+			git('add', '.');
+			git('add', '--force', `${ACTOR_PATH}/Dist/main.js`);
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const files = versionPayload(versionUpdate).sourceFiles!;
+			expect(files.find((file) => file.name === 'shared/actor-dist/main.js')?.content).toContain('console.log(1)');
+		},
+	);
+
+	// As on macOS: git lists the folder composed (NFC) while it is stored decomposed (NFD).
+	it.runIf(process.platform === 'darwin')(
+		'sends the siblings of an Actor folder in a folder stored decomposed under the name actorPath spells',
+		async () => {
+			const decomposedParent = 'packages/cafe\u0301';
+			await write(
+				`${decomposedParent}/actor/.actor/actor.json`,
+				JSON.stringify({
+					actorSpecification: 1,
+					name: actName,
+					version: '0.0',
+					dockerContextDir: '../../../..',
+					dockerfile: '../../../../shared/TypeScript_Dockerfile',
+				}),
+			);
+			await write(`${decomposedParent}/lib/util.py`, 'x = 1\n');
+			git('add', '.');
+			forceNewCwd(`${decomposedParent}/actor`);
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const { actorPath, sourceFiles } = versionPayload(versionUpdate);
+			const names = sourceFiles!.map((file) => file.name);
+			expect(actorPath).toBe(`${decomposedParent}/actor`);
+			expect(names).toEqual(
+				expect.arrayContaining([`${decomposedParent}/lib/util.py`, `${decomposedParent}/actor/.actor/actor.json`]),
+			);
+			expect(names.filter((name) => name.startsWith('packages/caf\u00e9/'))).toEqual([]);
+		},
+	);
+
+	// As on macOS: a name composed (NFC) finds the folder stored decomposed (NFD).
+	it.runIf(process.platform === 'darwin')(
+		'uploads links elsewhere that compose the name of an Actor folder stored decomposed',
+		async () => {
+			const decomposedPath = 'actors/cafe\u0301-actor';
+			const composedPath = 'actors/caf\u00e9-actor';
+			await write(
+				`${decomposedPath}/.actor/actor.json`,
+				JSON.stringify({
+					actorSpecification: 1,
+					name: actName,
+					version: '0.0',
+					dockerContextDir: '../../..',
+					dockerfile: '../../../shared/TypeScript_Dockerfile',
+				}),
+			);
+			await write(`${decomposedPath}/src/main.js`, 'console.log(1);\n');
+			symlinkSync(`../${composedPath}/src/main.js`, joinPath('shared/main.js'));
+			symlinkSync(`../${composedPath}/src`, joinPath('shared/actor-src'));
+			git('add', '.');
+			forceNewCwd(decomposedPath);
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toEqual(expect.arrayContaining(['shared/main.js', 'shared/actor-src/main.js']));
+		},
+	);
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'uploads links elsewhere that spell an Actor folder renamed by case only in its old case',
+		async () => {
+			symlinkSync(`../${ACTOR_PATH}/src/index.ts`, joinPath('shared/index.ts'));
+			symlinkSync(`../${ACTOR_PATH}/src`, joinPath('shared/actor-src'));
+			git('add', '.');
+			git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'links');
+			renameSync(joinPath(ACTOR_PATH), joinPath('actors/renaming'));
+			renameSync(joinPath('actors/renaming'), joinPath('actors/TypeScript-Actor'));
+			forceNewCwd('actors/TypeScript-Actor');
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toEqual(expect.arrayContaining(['shared/index.ts', 'shared/actor-src/index.ts']));
+		},
+	);
+
+	it.runIf(caseInsensitiveFileSystem)(
+		'uploads a link in the Actor folder whose target names the repository in another letter case',
+		async () => {
+			const repositoryInUpperCase = basename(tmpPath).toUpperCase();
+			symlinkSync(
+				`../../../${repositoryInUpperCase}/packages/typescript-utils/src/index.ts`,
+				joinPath(`${ACTOR_PATH}/case-link.ts`),
+			);
+
+			await testRunCommand(ActorsPushCommand, {});
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const names = versionPayload(versionUpdate).sourceFiles!.map((file) => file.name);
+			expect(names).toContain(`${ACTOR_PATH}/case-link.ts`);
+		},
+	);
+
+	describe.runIf(caseInsensitiveFileSystem)('with --dir typed in another case', () => {
+		it.each([
+			[
+				'a monorepo Actor with actorPath in the case on disk',
+				{ dockerContextDir: '../../..', dockerfile: '../../../shared/TypeScript_Dockerfile' },
+				ACTOR_PATH,
+			],
+			[
+				'an Actor with the Docker context inside its folder',
+				{ dockerContextDir: '../src', dockerfile: '../src/Dockerfile' },
+				undefined,
+			],
+		])('pushes %s', async (_, fields, expectedActorPath) => {
+			await write(`${ACTOR_PATH}/src/Dockerfile`, 'FROM apify/actor-node:20\n');
+			await writeActorConfig(fields);
+			forceNewCwd('.');
+
+			await testRunCommand(ActorsPushCommand, { flags_dir: 'actors/TypeScript-Actor' });
+
+			expect(commandProcess.exitCode).toBeFalsy();
+			const modifier = versionPayload(versionUpdate);
+			expect(modifier.actorPath).toBe(expectedActorPath);
+			expect(modifier.sourceFiles!.some((file) => file.name.startsWith('actors/TypeScript-Actor/'))).toBe(false);
+		});
+	});
+
+	it('checks the actor.json paths from the real Actor folder when --dir goes through a symlink', async () => {
+		symlinkSync(ACTOR_PATH, joinPath('linked-actor'));
+		forceNewCwd('linked-actor');
+
+		await testRunCommand(ActorsPushCommand, {});
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		const modifier = versionPayload(versionUpdate);
+		expect(modifier.actorPath).toBe(ACTOR_PATH);
+		expect(modifier.sourceFiles!.map((file) => file.name)).toContain(`${ACTOR_PATH}/.actor/actor.json`);
+	});
+
 	it.each([
 		['outside the Git repository, which the platform could not build', '../../../..', 'outside the Git repository'],
 		['that does not exist', '../../../missing', 'which does not exist'],
@@ -395,9 +915,8 @@ describe('apify push with a dockerContextDir that is not a monorepo', () => {
 
 		expect(commandProcess.exitCode).toBe(CommandExitCodes.InvalidActorJson);
 		expect(logMessages.error.join('\n')).toContain(message);
-		expect(actorGets).not.toHaveBeenCalled();
-		expect(versionUpdates).toEqual([]);
-		expect(fetchMock).not.toHaveBeenCalled();
+		expect(actorGet).not.toHaveBeenCalled();
+		expect(versionUpdate).not.toHaveBeenCalled();
 	});
 
 	it.each([
@@ -416,13 +935,57 @@ describe('apify push with a dockerContextDir that is not a monorepo', () => {
 
 		expect(commandProcess.exitCode).toBeFalsy();
 		expect(process.exitCode).toBeFalsy();
-		expect(versionUpdates).toHaveLength(1);
-		const modifier = versionUpdates[0] as { sourceType: string; sourceFiles: { name: string }[] };
+		const modifier = versionPayload(versionUpdate);
 		expect(modifier.sourceType).toBe(ACTOR_SOURCE_TYPES.SOURCE_FILES);
-		expect(modifier.sourceFiles.map((file) => file.name).sort()).toEqual(
+		expect(modifier.sourceFiles!.map((file) => file.name).sort()).toEqual(
 			['.actor/actor.json', 'src/index.ts', ...extraFiles].sort(),
 		);
-		expect(callsTo('source-context')).toEqual([]);
+		expect(modifier).not.toHaveProperty('actorPath');
 		expect(logMessages.log.join('\n')).toContain('Apify push result: SUCCEEDED');
+	});
+
+	it('pushes each Actor with --all from the repository root, a monorepo one as the root with its own actorPath', async () => {
+		const SECOND_ACTOR_PATH = 'actors/python-actor';
+		const PLAIN_ACTOR_PATH = 'tools/plain-actor';
+		await write(
+			`${SECOND_ACTOR_PATH}/.actor/actor.json`,
+			JSON.stringify({
+				actorSpecification: 1,
+				name: 'push-monorepo-python',
+				version: '0.0',
+				buildTag: 'latest',
+				dockerContextDir: '../../..',
+				dockerfile: '../../../shared/TypeScript_Dockerfile',
+			}),
+		);
+		await write(`${SECOND_ACTOR_PATH}/main.py`, 'print(1)\n');
+		// Without dockerContextDir, an Actor in the same repository pushes its own folder.
+		await write(
+			`${PLAIN_ACTOR_PATH}/.actor/actor.json`,
+			JSON.stringify({ actorSpecification: 1, name: 'push-plain', version: '0.0', buildTag: 'latest' }),
+		);
+		await write(`${PLAIN_ACTOR_PATH}/main.js`, 'console.log(1);\n');
+		git('add', '.');
+		git('-c', 'user.name=Test', '-c', 'user.email=test@example.com', 'commit', '--quiet', '-m', 'more Actors');
+		forceNewCwd('.');
+
+		await testRunCommand(ActorsPushCommand, { flags_all: true });
+
+		expect(commandProcess.exitCode).toBeFalsy();
+		expect(versionUpdate).toHaveBeenCalledTimes(3);
+		const [second, first, plain] = versionUpdate.mock.calls.map(([modifier]) => modifier as VersionPayload);
+		expect(second.actorPath).toBe(SECOND_ACTOR_PATH);
+		expect(first.actorPath).toBe(ACTOR_PATH);
+		for (const modifier of [second, first]) {
+			expect(modifier.sourceFiles!.map((file) => file.name)).toEqual(
+				expect.arrayContaining([
+					`${SECOND_ACTOR_PATH}/.actor/actor.json`,
+					`${ACTOR_PATH}/.actor/actor.json`,
+					'shared/TypeScript_Dockerfile',
+				]),
+			);
+		}
+		expect(plain).not.toHaveProperty('actorPath');
+		expect(plain.sourceFiles!.map((file) => file.name).sort()).toEqual(['.actor/actor.json', 'main.js']);
 	});
 });

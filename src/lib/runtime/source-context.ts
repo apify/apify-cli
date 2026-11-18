@@ -5,7 +5,7 @@ import type { ApifyClient } from 'apify-client';
 import { TarArchive } from 'archiver';
 
 import { APIFY_CLIENT_DEFAULT_HEADERS } from '../consts.js';
-import { type GitState, MONOREPO_PLATFORM_SUPPORT_ISSUE_URL } from '../docker-context.js';
+import type { GitState } from '../docker-context.js';
 
 export async function createContextTarball(paths: string[], root: string): Promise<Buffer> {
 	const archive = new TarArchive({ gzip: true, gzipOptions: { level: 6 } });
@@ -68,8 +68,5 @@ export async function pushActorRuntimeSourceContext(
 }
 
 export function monorepoOutdatedRuntimeMessage(baseUrl: string): string {
-	return [
-		`${baseUrl} does not accept monorepo Actors. If it is a local Actor runtime, update it with 'apify runtime install'.`,
-		`The Apify platform does not accept them from apify push yet: ${MONOREPO_PLATFORM_SUPPORT_ISSUE_URL}`,
-	].join('\n');
+	return `${baseUrl} does not accept monorepo Actors. If it is a local Actor runtime, update it with 'apify runtime install'.`;
 }
