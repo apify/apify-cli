@@ -131,5 +131,6 @@ describe('apify init', () => {
 		const config = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
 		expect(config).toStrictEqual(Object.assign(EMPTY_LOCAL_CONFIG, { name: actName }));
 		expect(config.dockerfile).toBeUndefined();
+		expect(config).not.toHaveProperty('environmentVariables');
 	});
 });

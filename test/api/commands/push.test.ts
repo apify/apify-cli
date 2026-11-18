@@ -53,6 +53,7 @@ const { lastErrorMessage, logMessages } = useConsoleSpy();
 
 const { CreateCommand } = await import('../../../src/commands/create.js');
 const { ActorsPushCommand } = await import('../../../src/commands/actors/push.js');
+const { InitCommand } = await import('../../../src/commands/init.js');
 
 describe('[api] apify push', () => {
 	const actorsForCleanup = new Set<string>();
@@ -218,6 +219,63 @@ describe('[api] apify push', () => {
 			expect(testActorVersion!.envVars).to.be.eql(testActorWithEnvVars.versions[0].envVars);
 			expect((testActorVersion as any).sourceFiles.sort(byName)).to.be.eql(sourceFiles.sort(byName));
 			expect(testActorVersion!.sourceType).to.be.eql(ACTOR_SOURCE_TYPES.SOURCE_FILES);
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should not rewrite current Actor envVars when environmentVariables is empty',
+		async () => {
+			const existingEnvVars = [{ name: 'MY_TEST', value: 'myValue' }];
+			const testActor = await testUserClient.actors().create({
+				...TEST_ACTOR,
+				versions: [{ ...TEST_ACTOR.versions![0], envVars: existingEnvVars }],
+				name: useUniqueId('cli-push-empty-env-vars'),
+			});
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+
+			const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+			actorJson.environmentVariables = {};
+			writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(actorJson, null, '\t'), { flag: 'w' });
+
+			await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+
+			const testActorVersion = await testActorClient.version(actorJson.version).get();
+			expect(testActorVersion!.envVars).to.be.eql(existingEnvVars);
+		},
+		TEST_TIMEOUT,
+	);
+
+	it(
+		'should not rewrite current Actor envVars after apify init',
+		async () => {
+			const existingEnvVars = [{ name: 'MY_TEST', value: 'myValue' }];
+			const testActor = await testUserClient.actors().create({
+				...TEST_ACTOR,
+				versions: [{ ...TEST_ACTOR.versions![0], envVars: existingEnvVars }],
+				name: useUniqueId('cli-push-init-env-vars'),
+			});
+			actorsForCleanup.add(testActor.id);
+			const testActorClient = testUserClient.actor(testActor.id);
+
+			const originalActorJson = readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8');
+			try {
+				unlinkSync(joinPath(LOCAL_CONFIG_PATH));
+				await testRunCommand(InitCommand, { args_actorName: ACTOR_NAME, flags_yes: true });
+				resetCwdCaches();
+
+				const actorJson = JSON.parse(readFileSync(joinPath(LOCAL_CONFIG_PATH), 'utf8'));
+				expect(actorJson).not.toHaveProperty('environmentVariables');
+
+				await testRunCommand(ActorsPushCommand, { args_actorId: testActor.id, flags_noPrompt: true });
+
+				const testActorVersion = await testActorClient.version(actorJson.version).get();
+				expect(testActorVersion!.envVars).to.be.eql(existingEnvVars);
+			} finally {
+				writeFileSync(joinPath(LOCAL_CONFIG_PATH), originalActorJson, { flag: 'w' });
+				resetCwdCaches();
+			}
 		},
 		TEST_TIMEOUT,
 	);

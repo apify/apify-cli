@@ -118,8 +118,7 @@ describe('apify run', () => {
         `;
 		writeFileSync(joinPath('src/main.js'), actCode, { flag: 'w' });
 
-		const apifyJson = EMPTY_LOCAL_CONFIG;
-		apifyJson.environmentVariables = testEnvVars;
+		const apifyJson = { ...EMPTY_LOCAL_CONFIG, environmentVariables: testEnvVars };
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
 
 		await testRunCommand(RunCommand, {});
@@ -154,8 +153,7 @@ describe('apify run', () => {
 
 		writeFileSync(joinPath('src/other.js'), actCode, { flag: 'w' });
 
-		const apifyJson = EMPTY_LOCAL_CONFIG;
-		apifyJson.environmentVariables = testEnvVars;
+		const apifyJson = { ...EMPTY_LOCAL_CONFIG, environmentVariables: testEnvVars };
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
 
 		const pkgJson = readFileSync(joinPath('package.json'), 'utf8');
@@ -197,8 +195,7 @@ describe('apify run', () => {
 
 		writeFileSync(joinPath('src/other.js'), actCode, { flag: 'w' });
 
-		const apifyJson = EMPTY_LOCAL_CONFIG;
-		apifyJson.environmentVariables = testEnvVars;
+		const apifyJson = { ...EMPTY_LOCAL_CONFIG, environmentVariables: testEnvVars };
 		writeFileSync(joinPath(LOCAL_CONFIG_PATH), JSON.stringify(apifyJson, null, '\t'), { flag: 'w' });
 
 		await testRunCommand(RunCommand, { flags_entrypoint: 'src/other.js' });

@@ -331,7 +331,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 		const applyLocalConfig = async (dir: string) => {
 			// There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
 			const localConfig = getJsonFileContent(join(dir, LOCAL_CONFIG_PATH));
-			await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), dir);
+			await setLocalConfig({ ...(localConfig || EMPTY_LOCAL_CONFIG), name: actorName }, dir);
 			await setLocalEnv(dir);
 
 			// Create prefilled INPUT.json file from the input schema prefills
