@@ -10,6 +10,7 @@ import { ApifyCommand } from '../../lib/command-framework/apify-command.js';
 import { Args } from '../../lib/command-framework/args.js';
 import { Flags } from '../../lib/command-framework/flags.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
+import { parseGitRepoUrl, withAllowedGitProtocols } from '../../lib/git-repo-url.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
 import { downloadZip, getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
@@ -185,9 +186,11 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 
 				const { gitRepoUrl } = correctVersion;
 
+				parseGitRepoUrl(gitRepoUrl);
+
 				// giget's git: provider parses `<url>#<branch>:<subdir>` natively, matching gitRepoUrl.
 				try {
-					await downloadTemplate(`git:${gitRepoUrl}`, { dir: dirpath });
+					await withAllowedGitProtocols(async () => downloadTemplate(`git:${gitRepoUrl}`, { dir: dirpath }));
 				} catch (err) {
 					throw new Error(`Failed to pull Actor from ${gitRepoUrl}. ${(err as Error).message}`);
 				}
