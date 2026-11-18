@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatCreateSuccessMessage } from '../../../src/lib/create-utils.js';
+import { buildNextSteps, formatCreateSuccessMessage } from '../../../src/lib/create-utils.js';
 
 describe('formatCreateSuccessMessage', () => {
 	const base = { actorName: 'my-scraper', dependenciesInstalled: true };
@@ -38,10 +38,49 @@ describe('formatCreateSuccessMessage', () => {
 		expect(message).not.toContain('Every push');
 	});
 
+	// The success banner is the only place a human sees the next steps, so the hint has to reach it.
+	it('carries the server hint into the success message', () => {
+		expect(formatCreateSuccessMessage({ ...base, usesStandbyMode: true })).toContain('apify run --server');
+		expect(formatCreateSuccessMessage(base)).not.toContain('apify run --server');
+	});
+
 	it('keeps pointing a template without a Git remote at apify push', () => {
 		const message = formatCreateSuccessMessage({ ...base, gitRepositoryInitialized: true });
 
 		expect(message).toContain("Use 'apify push'");
 		expect(message).not.toContain('builds from this repository');
+	});
+});
+
+describe('buildNextSteps', () => {
+	const base = { actorName: 'my-scraper', dependenciesInstalled: true };
+
+	it('points a Server Actor at apify run --server', () => {
+		expect(buildNextSteps({ ...base, usesStandbyMode: true })).toEqual(['cd "my-scraper"', 'apify run --server']);
+	});
+
+	it('points an ordinary Actor at apify run', () => {
+		expect(buildNextSteps(base)).toEqual(['cd "my-scraper"', 'apify run']);
+		expect(buildNextSteps({ ...base, usesStandbyMode: false })).toEqual(['cd "my-scraper"', 'apify run']);
+	});
+
+	it('treats a non-boolean usesStandbyMode by its truthiness', () => {
+		const truthy = buildNextSteps({ ...base, usesStandbyMode: 'true' as unknown as boolean });
+		const falsy = buildNextSteps({ ...base, usesStandbyMode: '' as unknown as boolean });
+
+		expect(truthy).toContain('apify run --server');
+		expect(falsy).toContain('apify run');
+		expect(falsy).not.toContain('apify run --server');
+	});
+
+	it('keeps the install step ahead of the run step', () => {
+		const steps = buildNextSteps({
+			actorName: 'my-scraper',
+			dependenciesInstalled: false,
+			installCommandSuggestion: 'npm install',
+			usesStandbyMode: true,
+		});
+
+		expect(steps).toEqual(['cd "my-scraper"', 'npm install', 'apify run --server']);
 	});
 });
