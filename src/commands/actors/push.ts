@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
-import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, Build } from 'apify-client';
+import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyClient, Build } from 'apify-client';
 import chalk from 'chalk';
 import { isCI } from 'ci-info';
 import open from 'open';
@@ -42,6 +42,12 @@ import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConf
 import { reraiseSignal, useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
 import { useStdin } from '../../lib/hooks/useStdin.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
+import { mayTargetActorRuntime, registerActorRuntimeDevFolder } from '../../lib/runtime/dev-folder.js';
+import {
+	createContextTarball,
+	monorepoOutdatedRuntimeMessage,
+	pushActorRuntimeSourceContext,
+} from '../../lib/runtime/source-context.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
 	createActZip,
@@ -791,13 +797,15 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			return;
 		}
 
-		if (actorPath && readGitState(uploadRoot).dirty) {
+		const gitState = actorPath ? readGitState(uploadRoot) : undefined;
+		if (gitState?.dirty) {
 			warning({
 				message: `The repository ${uploadRoot} has uncommitted changes; the push uploads the files as they are.`,
 			});
 		}
 
 		const apifyClient = await getLoggedClientOrThrow();
+		const contextToRuntime = Boolean(actorPath) && mayTargetActorRuntime(apifyClient);
 		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
@@ -928,7 +936,9 @@ Skipping push. Use --force to override.`,
 		// and measures the content as sent, where a binary file grows by a third in base64 and each character beyond the
 		// Basic Multilingual Plane, such as an emoji, counts five bytes; a zip has neither limit.
 		let sourceFiles =
-			filesSize < MAX_MULTIFILE_BYTES && uploadedFiles.every((file) => file.length <= MAX_SOURCE_FILE_NAME_LENGTH)
+			!contextToRuntime &&
+			filesSize < MAX_MULTIFILE_BYTES &&
+			uploadedFiles.every((file) => file.length <= MAX_SOURCE_FILE_NAME_LENGTH)
 				? await createSourceFiles(uploadedFiles, uploadRoot)
 				: undefined;
 		if (
@@ -940,7 +950,10 @@ Skipping push. Use --force to override.`,
 		) {
 			sourceFiles = undefined;
 		}
-		if (sourceFiles) {
+		if (contextToRuntime) {
+			// The runtime keeps the repository only while the version carries no files of its own.
+			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
+		} else if (sourceFiles) {
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else {
 			// Create zip
@@ -999,6 +1012,34 @@ Skipping push. Use --force to override.`,
 		const applyEnvVarsToBuild =
 			this.flags.applyEnvVarsToBuild ?? (actorConfig!.applyEnvVarsToBuild as boolean | undefined);
 
+		// A local Actor runtime takes the repository through its own endpoint, before the version update so a
+		// runtime that refuses it leaves the version untouched.
+		const pushDockerContext = async () => {
+			if (!contextToRuntime || dockerContext.kind !== 'outside') return true;
+			const files = await getContextFilePaths(uploadRoot);
+			run({
+				message: `Pushing ${uploadRoot} (${files.length} files) with the Actor in ${dockerContext.actorPath}; the build takes its Docker context ${dockerContext.contextRoot} from it.`,
+			});
+			const result = await pushActorRuntimeSourceContext(apifyClient, actorId, version, {
+				actorPath: dockerContext.actorPath,
+				tarball: await createContextTarball(files, uploadRoot),
+				git: gitState,
+			});
+			if (result.ok) return true;
+			error({
+				message: result.unsupported
+					? monorepoOutdatedRuntimeMessage(apifyClient.baseUrl)
+					: `Could not push the Docker context of Actor ${actor.name}: ${result.error}`,
+			});
+			process.exitCode = result.unsupported ? CommandExitCodes.NotImplemented : CommandExitCodes.BuildFailed;
+			return false;
+		};
+
+		if (actorCurrentVersion && !(await pushDockerContext())) {
+			if (isActorCreatedNow) await actorClient.delete();
+			return;
+		}
+
 		const actorVersionSource = { tarballUrl, sourceFiles, sourceType, ...(actorPath ? { actorPath } : {}) };
 		if (actorCurrentVersion) {
 			const actorVersionModifier = { ...actorVersionSource, buildTag, envVars, applyEnvVarsToBuild };
@@ -1019,6 +1060,12 @@ Skipping push. Use --force to override.`,
 			} as never);
 
 			run({ message: `Created version ${version} for Actor ${actor.name}.` });
+
+			// So a failed push leaves no empty version behind.
+			if (!(await pushDockerContext())) {
+				await actorClient.version(version).delete();
+				return;
+			}
 		}
 
 		// Sync standby mode on existing actors with actor.json
@@ -1027,6 +1074,13 @@ Skipping push. Use --force to override.`,
 			await actorClient.update({ actorStandby: { isEnabled } });
 			info({ message: `${isEnabled ? 'Enabled' : 'Disabled'} standby mode for Actor ${actor.name}.` });
 		}
+
+		await registerDevFolderOnActorRuntime(
+			apifyClient,
+			actorId,
+			actor.name,
+			dockerContext.kind === 'outside' ? dockerContext.contextRoot : cwd,
+		);
 
 		// Build Actor on Apify and wait for build to finish
 		run({ message: `Building Actor ${actor.name}` });
@@ -1176,5 +1230,22 @@ Skipping push. Use --force to override.`,
 		}
 
 		return result;
+	}
+}
+
+/** On a local Actor runtime, later runs mount the dev folder over the built image. Success shows in the build log. */
+async function registerDevFolderOnActorRuntime(
+	apifyClient: ApifyClient,
+	actorId: string,
+	actorName: string,
+	cwd: string,
+) {
+	if (!mayTargetActorRuntime(apifyClient)) return;
+
+	const result = await registerActorRuntimeDevFolder(apifyClient, actorId, cwd);
+	if (!result.ok && result.error) {
+		warning({
+			message: `Could not register ${cwd} as the live dev folder of Actor ${actorName} on the local Actor runtime: ${result.error}`,
+		});
 	}
 }
