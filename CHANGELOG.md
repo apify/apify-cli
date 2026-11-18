@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.13.0](https://github.com/apify/apify-cli/releases/tag/v1.13.0) (2026-11-18)
+
+### 🚀 Features
+
+- Add apify server commands for Server Actors  ([#1522](https://github.com/apify/apify-cli/pull/1522)) ([1253156](https://github.com/apify/apify-cli/commit/125315652f3741f3bc26f7106170e8e4cee097d4)) by [@l2ysho](https://github.com/l2ysho), closes [#1553](https://github.com/apify/apify-cli/issues/1553)
+- **create:** Suggest apify run --server for Server Actors ([#1598](https://github.com/apify/apify-cli/pull/1598)) ([d2fb49c](https://github.com/apify/apify-cli/commit/d2fb49ccb359b782ea04ed8d162cd7c1c01aee20)) by [@l2ysho](https://github.com/l2ysho), closes [#1590](https://github.com/apify/apify-cli/issues/1590)
+
+### 🐛 Bug Fixes
+
+- **actors pull:** Reject source file names that escape the target directory ([#1589](https://github.com/apify/apify-cli/pull/1589)) ([e1c5f59](https://github.com/apify/apify-cli/commit/e1c5f59c50dfeca5e6e16fd4e4e6b16441a8f7bc)) by [@l2ysho](https://github.com/l2ysho), closes [#1191](https://github.com/apify/apify-cli/issues/1191)
+
+
 ## [1.12.0](https://github.com/apify/apify-cli/releases/tag/v1.12.0) (2026-11-12)
 
 ### 🚀 Features

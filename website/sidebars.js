@@ -21,6 +21,11 @@ module.exports = [
 					id: 'agent-skill',
 					label: 'Agent Skill'
 				},
+				{
+					type: 'doc',
+					id: 'actor-runtime',
+					label: 'Actor runtime'
+				},
 			],
 		},
         {
