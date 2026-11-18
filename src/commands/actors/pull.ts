@@ -1,5 +1,5 @@
 import { mkdirSync, readdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
 
 import { downloadTemplate } from 'giget';
@@ -155,22 +155,37 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 					throwMissingSourceCodeAccessError();
 				}
 
+				const root = resolve(dirpath);
 				const { sourceFiles } = correctVersion;
-				for (const file of sourceFiles) {
-					const folderPath = dirname(file.name);
-					mkdirSync(`${dirpath}/${folderPath}`, { recursive: true });
+
+				// Validate every name first, so a rejected Actor leaves no partial checkout.
+				const files = sourceFiles.map((file) => {
+					const target = resolve(root, file.name);
+					const rel = relative(root, target);
+
+					if (!rel || rel === '..' || rel.startsWith(`..${sep}`) || isAbsolute(rel)) {
+						throw new Error(
+							`Cannot pull Actor: source file "${file.name}" would be written outside the target directory.`,
+						);
+					}
+
+					return { file, target };
+				});
+
+				for (const { file, target } of files) {
+					mkdirSync(dirname(target), { recursive: true });
 
 					// @ts-expect-error TODO: is this an actual field?
 					if (!file.folder) {
 						const fileContent =
 							file.format === 'BASE64' ? Buffer.from(file.content, 'base64').toString() : file.content;
 
-						if (file.name === LOCAL_CONFIG_PATH) {
+						if (target === join(root, LOCAL_CONFIG_PATH)) {
 							const actorJson = jju.parse(fileContent);
 							actorJson.name = actor.name;
-							writeFileSync(`${dirpath}/${file.name}`, jju.update(fileContent, actorJson));
+							writeFileSync(target, jju.update(fileContent, actorJson));
 						} else {
-							writeFileSync(`${dirpath}/${file.name}`, fileContent);
+							writeFileSync(target, fileContent);
 						}
 					}
 				}
