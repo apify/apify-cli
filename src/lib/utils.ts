@@ -228,6 +228,16 @@ export async function getCurrentUsernameOrId(): Promise<string> {
 	return username || id!;
 }
 
+/** For display only: `undefined` when the token may not read its account details. */
+export async function getCurrentUsernameForDisplay(): Promise<string | undefined> {
+	try {
+		return (await getCurrentUserInfo()).username;
+	} catch (err) {
+		if (err instanceof AccountDetailsForbiddenError) return undefined;
+		throw err;
+	}
+}
+
 export const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);
 
 export const getJsonFileContent = <T = Record<string, unknown>>(filePath: string) => {

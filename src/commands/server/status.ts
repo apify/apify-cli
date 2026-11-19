@@ -11,7 +11,7 @@ import {
 	resolveServerActor,
 	resolveServerBuild,
 } from '../../lib/server-actor.js';
-import { getCurrentUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { getCurrentUsernameForDisplay, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 
 export class ServerStatusCommand extends ApifyCommand<typeof ServerStatusCommand> {
 	static override name = 'status' as const;
@@ -52,7 +52,7 @@ export class ServerStatusCommand extends ApifyCommand<typeof ServerStatusCommand
 		const multiTenant = isMultiTenant(actor);
 		const { standby } = actor;
 
-		const { username } = await getCurrentUserInfo();
+		const username = await getCurrentUsernameForDisplay();
 
 		// A multi-tenant Actor runs in the developer's account, so the caller has no runs to list.
 		let runs: { id: string; startedAt: Date }[] | undefined;
