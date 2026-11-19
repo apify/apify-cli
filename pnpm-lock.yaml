@@ -218,8 +218,8 @@ importers:
         specifier: ^2.8.0
         version: 2.8.0
       '@sapphire/timestamp':
-        specifier: ^1.0.5
-        version: 1.0.5
+        specifier: ^2.0.0
+        version: 2.0.0
       '@skyra/jaro-winkler':
         specifier: ^1.1.1
         version: 1.1.1
@@ -3748,9 +3748,9 @@ packages:
     resolution: {integrity: sha512-4It2mxPSr4OGn4HSQWGmhFMsNFGfFVhWeRPCRwbH972Ek2pzfGRZtb0pJ4Ze6oIzcyh2jw7nUDa6qGlWofgd9g==}
     engines: {node: '>=v16'}
 
-  '@sapphire/timestamp@1.0.5':
-    resolution: {integrity: sha512-oNwWyNdbt5wm4aYZvlHl1+64U3g0xrFmRIHsnER7RgMxNnp/wmAE4yTK2oUHeadg3t4V9iYctPAQCF+aINke4g==}
-    engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+  '@sapphire/timestamp@2.0.0':
+    resolution: {integrity: sha512-iM1W6KgxBQSHp/LLXv6bkLP+tqFJAl1KyueQuCcwKEHTMqhqqYpmkHthcvcy3L7toij55JaBOKJLSmT98Y6g8Q==}
+    engines: {node: '>=v24.0.0', npm: '>=11.0.0'}
 
   '@sec-ant/readable-stream@0.4.1':
     resolution: {integrity: sha512-831qok9r2t8AlxLko40y2ebgSDhenenCatLVeW/uBtnHPyhHOvG0C7TvfgecV+wHzIm5KUICgzmVpWS+IMEAeg==}
@@ -8721,10 +8721,13 @@ packages:
     resolution: {integrity: sha512-drKKsqvDBxVRn4ySU67iQ5nQBuo/1xyYeBfdhDde112PkqrS3+95KPnpDs5hFRcmrW+q6+gbyywYYYR14oWFtw==}
     engines: {node: '>= 16'}
     peerDependencies:
+      css-to-react-native: '>= 3.2.0'
       react: '>= 16.8.0'
       react-dom: '>= 16.8.0'
       react-native: '>= 0.68.0'
     peerDependenciesMeta:
+      css-to-react-native:
+        optional: true
       react-dom:
         optional: true
       react-native:
@@ -13865,7 +13868,7 @@ snapshots:
       fast-deep-equal: 3.1.3
       lodash: 4.18.1
 
-  '@sapphire/timestamp@1.0.5': {}
+  '@sapphire/timestamp@2.0.0': {}
 
   '@sec-ant/readable-stream@0.4.1': {}
 
