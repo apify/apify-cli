@@ -69,6 +69,14 @@ function Download-File-To-Location {
         Write-Output "Downloading $FileName to $FullPath"
     }
 
+    # `curl.exe` is resolved through PATH, so warn when it isn't the copy that ships with Windows.
+    $CurlPath = (Get-Command curl.exe -CommandType Application -ErrorAction Ignore | Select-Object -First 1).Source
+    $SystemCurlPath = Join-Path $env:SystemRoot "System32\curl.exe"
+
+    if ($CurlPath -and $CurlPath -ne $SystemCurlPath) {
+        Write-Warning "Using curl.exe from $CurlPath instead of $SystemCurlPath"
+    }
+
     curl.exe "-#SfLo" "$FullPath" "$URL"
 
     if ($LASTEXITCODE -ne 0) {
