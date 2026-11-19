@@ -82,7 +82,7 @@
 		"@root/walk": "~1.1.0",
 		"@sapphire/duration": "^1.2.0",
 		"@sapphire/result": "^2.8.0",
-		"@sapphire/timestamp": "^1.0.5",
+		"@sapphire/timestamp": "^2.0.0",
 		"@skyra/jaro-winkler": "^1.1.1",
 		"adm-zip": "~0.6.1",
 		"ajv": "~8.20.0",
