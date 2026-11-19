@@ -10,7 +10,8 @@ import { consoleActorUrl, consoleRunUrl } from '../../lib/commands/agent-output.
 import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { simpleLog } from '../../lib/outputs.js';
+import { info, simpleLog } from '../../lib/outputs.js';
+import { getServerInterfaceHint } from '../../lib/server-actor.js';
 import { getLocalConfig, getCurrentUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
 
@@ -87,6 +88,12 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 			usernameOrId,
 			providedActorNameOrId: this.args.actorId,
 		});
+
+		const serverInterfaceHint = getServerInterfaceHint(actorData, userFriendlyId);
+
+		if (serverInterfaceHint) {
+			info({ message: serverInterfaceHint });
+		}
 
 		const runOpts: ActorStartOptions = {};
 

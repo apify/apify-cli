@@ -42,7 +42,13 @@ import {
 } from '@apify/consts';
 
 import { lookUpActiveProfile, lookUpProfile } from './auth-file.js';
-import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth, type ResolvedAuth } from './auth.js';
+import {
+	describeAuthFailure,
+	getAnonymousApifyClientOptions,
+	getApifyClientOptionsForToken,
+	resolveAuth,
+	type ResolvedAuth,
+} from './auth.js';
 import {
 	AUTH_FILE_PATH,
 	CommandExitCodes,
@@ -512,7 +518,9 @@ const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 	return { excludeFilter, forceIncludePatterns };
 };
 
-export const ACTOR_FILES_HARDCODED_IGNORE = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+// `**/.git` matches at any depth, both the .git directory of a nested repository and the .git file of a submodule or
+// linked worktree. The .gitignore rules don't exclude either.
+export const ACTOR_FILES_HARDCODED_IGNORE = ['**/.git', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
 
 /**
  * Get Actor local files, omit files defined in .gitignore, .actorignore and .git folder
@@ -681,7 +689,7 @@ export const outputJobLog = async ({
 	apifyClient?: ApifyClient;
 }) => {
 	const { id: logId, status } = job;
-	const client = apifyClient || new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
+	const client = apifyClient || new ApifyClient(getAnonymousApifyClientOptions());
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
@@ -689,22 +697,27 @@ export const outputJobLog = async ({
 			return;
 		}
 
+		// Undefined when the job failed before its container started.
 		const log = await client.log(logId).get();
-		process.stderr.write(log!);
+		if (log) process.stderr.write(log);
 		return;
 	}
 
 	// In other case stream it to stderr
-	// eslint-disable-next-line no-async-promise-executor
-	return new Promise<'no-logs' | 'finished' | 'timeouts'>(async (resolve) => {
-		const stream = await client.log(logId).stream();
+	const stream = await client.log(logId).stream();
 
-		if (!stream) {
-			resolve('no-logs');
-			return;
-		}
+	if (!stream) {
+		return 'no-logs';
+	}
 
+	return new Promise<'no-logs' | 'finished' | 'timeouts'>((resolve, reject) => {
 		let nodeTimeout: NodeJS.Timeout | null = null;
+
+		const clearPendingTimeout = () => {
+			if (nodeTimeout) {
+				clearTimeout(nodeTimeout);
+			}
+		};
 
 		stream.on('data', (chunk) => {
 			// In tests, writing to process.stderr directly messes with vitest's output
@@ -717,11 +730,21 @@ export const outputJobLog = async ({
 		});
 
 		stream.once('end', () => {
+			clearPendingTimeout();
 			resolve('finished');
+		});
 
-			if (nodeTimeout) {
-				clearTimeout(nodeTimeout);
-			}
+		// A dropped connection emits `close`, and sometimes `error`, without ever emitting `end`.
+		// Unhandled, those leave this promise pending, which empties the event loop and exits
+		// Node with code 13 in the middle of the command.
+		stream.once('close', () => {
+			clearPendingTimeout();
+			resolve('finished');
+		});
+
+		stream.once('error', (err) => {
+			clearPendingTimeout();
+			reject(err);
 		});
 
 		if (timeoutMillis !== undefined) {

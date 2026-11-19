@@ -156,10 +156,60 @@ describe('resolveDockerContext', () => {
 			});
 		});
 
+		it('rejects an absolute path, which the platform resolves from .actor/', () => {
+			for (const value of [root, join(root, ACTOR_PATH)]) {
+				expect(resolveDockerContext(actorDir(), value)).toEqual({
+					kind: 'invalid',
+					message: `"dockerContextDir" in .actor/actor.json is absolute (${value}); the path is relative to .actor/.`,
+				});
+			}
+		});
+
+		it('rejects a path with backslashes, which the platform reads as part of a name', () => {
+			expect(resolveDockerContext(actorDir(), '..\\..\\..')).toEqual({
+				kind: 'invalid',
+				message:
+					'"dockerContextDir" in .actor/actor.json uses a backslash (..\\..\\..); ' +
+					'the platform resolves paths with forward slashes.',
+			});
+		});
+
 		it('rejects a field that is not a string', () => {
 			expect(resolveDockerContext(actorDir(), 42)).toEqual({
 				kind: 'invalid',
 				message: '"dockerContextDir" in .actor/actor.json must be a string.',
+			});
+		});
+	});
+
+	describe('with the Actor folder at the Git repository root', () => {
+		const { joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-root-actor-dir', {
+			create: true,
+			remove: true,
+			cwd: false,
+			cwdParent: false,
+		});
+
+		let repo: string;
+
+		beforeAll(async () => {
+			await beforeAllCalls();
+			mkdirSync(joinPath('repo', '.actor'), { recursive: true });
+			symlinkSync('repo', joinPath('link'));
+			execFileSync('git', ['init', '--quiet'], { cwd: joinPath('repo'), stdio: 'ignore' });
+			repo = realpathSync(joinPath('repo'));
+		});
+
+		afterAll(async () => {
+			await afterAllCalls();
+		});
+
+		it('rejects a context that leaves the Actor folder through a symlink leading back to it', () => {
+			expect(resolveDockerContext(joinPath('repo'), '../../link')).toEqual({
+				kind: 'invalid',
+				message:
+					`"dockerContextDir" in .actor/actor.json leaves the Actor folder, then leads back into it at ${repo}, ` +
+					'through a symlink or a folder name in another letter case. Write the path without leaving the Actor folder.',
 			});
 		});
 	});
@@ -179,6 +229,7 @@ describe('resolveDockerContext', () => {
 			await beforeAllCalls();
 			mkdirSync(joinPath(ACTOR_PATH, '.actor'), { recursive: true });
 			mkdirSync(joinPath('other'), { recursive: true });
+			symlinkSync('x', joinPath('actors', 'x-link'));
 			root = realpathSync(tmpPath);
 			gitState.gitAvailable = false;
 		});
@@ -208,6 +259,15 @@ describe('resolveDockerContext', () => {
 			expect(resolveDockerContext(actorDir(), '../../../missing')).toEqual({
 				kind: 'invalid',
 				message: `"dockerContextDir" in .actor/actor.json points to ${join(root, 'missing')}, which does not exist.`,
+			});
+		});
+
+		it('rejects a context that leaves the Actor folder through a symlink leading back to it', () => {
+			expect(resolveDockerContext(actorDir(), '../../x-link')).toEqual({
+				kind: 'invalid',
+				message:
+					`"dockerContextDir" in .actor/actor.json leaves the Actor folder, then leads back into it at ${join(root, ACTOR_PATH)}, ` +
+					'through a symlink or a folder name in another letter case. Write the path without leaving the Actor folder.',
 			});
 		});
 	});

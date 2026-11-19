@@ -87,7 +87,7 @@ export class BuildsCreateCommand extends ApifyCommand<typeof BuildsCreateCommand
 
 		if (!ctx.valid) {
 			error({
-				message: `${ctx.reason}. Please run this command in an Actor directory, or specify the Actor ID.`,
+				message: `${ctx.reason}.`,
 				stdout: true,
 			});
 

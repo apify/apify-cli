@@ -16,6 +16,10 @@ export interface SelectiveRenderOptions {
 	showLearnMore?: boolean;
 }
 
+export function experimentalLabel(command: Pick<typeof BuiltApifyCommand, 'experimental'>): string {
+	return command.experimental ? `${chalk.yellow('[EXPERIMENTAL]')} ` : '';
+}
+
 export abstract class BaseCommandRenderer {
 	protected readonly command: typeof BuiltApifyCommand;
 
@@ -31,13 +35,13 @@ export abstract class BaseCommandRenderer {
 	public abstract selectiveRender(options: SelectiveRenderOptions): string;
 
 	protected pushShortDescription(result: string[]) {
-		const interactiveLabel = this.command.interactive ? `${chalk.yellow('[INTERACTIVE]')} ` : '';
+		const labels = `${experimentalLabel(this.command)}${this.command.interactive ? `${chalk.yellow('[INTERACTIVE]')} ` : ''}`;
 
 		if (this.command.shortDescription) {
-			result.push(`${interactiveLabel}${this.command.shortDescription}`, '');
+			result.push(`${labels}${this.command.shortDescription}`, '');
 			// Fallback to first line of description
 		} else if (this.command.description) {
-			result.push(`${interactiveLabel}${this.command.description.split('\n')[0]}`, '');
+			result.push(`${labels}${this.command.description.split('\n')[0]}`, '');
 		}
 	}
 

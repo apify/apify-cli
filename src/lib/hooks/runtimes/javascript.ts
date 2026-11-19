@@ -6,21 +6,19 @@ import which from 'which';
 
 import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 import type { Runtime } from '../useCwdProject.js';
-import { normalizeExecutablePath } from './utils.js';
 
 const cwdCache = new Map<string, Option<Runtime>>();
 
 // Runtimes, in order of preference
 const runtimesToCheck = {
 	node: ['--version'],
-	deno: ['eval', '"console.log(process.versions.node)"'],
-	bun: ['--eval', '"console.log(process.versions.node)"'],
+	deno: ['eval', 'console.log(process.versions.node)'],
+	bun: ['--eval', 'console.log(process.versions.node)'],
 };
 
 async function getRuntimeVersion(runtimePath: string, args: string[]) {
 	try {
 		const result = await execa(runtimePath, args, {
-			shell: true,
 			windowsHide: true,
 			verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 		});
@@ -38,7 +36,6 @@ async function getRuntimeVersion(runtimePath: string, args: string[]) {
 
 async function getNpmVersion(npmPath: string) {
 	const result = await execa(npmPath, ['--version'], {
-		shell: true,
 		windowsHide: true,
 		verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 	});
@@ -60,7 +57,7 @@ export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<
 
 	for (const [runtime, args] of Object.entries(runtimesToCheck) as [keyof typeof runtimesToCheck, string[]][]) {
 		try {
-			const runtimePath = normalizeExecutablePath(await which(runtime));
+			const runtimePath = await which(runtime);
 
 			const version = await getRuntimeVersion(runtimePath, args);
 
@@ -72,7 +69,7 @@ export async function useJavaScriptRuntime(cwd = process.cwd()): Promise<Option<
 
 				// For npm, we also fetch the npm version
 				if (runtime === 'node') {
-					const npmPath = normalizeExecutablePath(await which('npm').catch(() => null));
+					const npmPath = await which('npm').catch(() => null);
 
 					if (npmPath) {
 						res.pmPath = npmPath;

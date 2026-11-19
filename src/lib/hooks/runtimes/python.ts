@@ -8,14 +8,12 @@ import which from 'which';
 
 import { cliDebugPrint } from '../../utils/cliDebugPrint.js';
 import type { Runtime } from '../useCwdProject.js';
-import { normalizeExecutablePath } from './utils.js';
 
 const cwdCache = new Map<string, Option<Runtime>>();
 
 async function getPythonVersion(runtimePath: string) {
 	try {
-		const result = await execa(runtimePath, ['-c', '"import platform; print(platform.python_version())"'], {
-			shell: true,
+		const result = await execa(runtimePath, ['-c', 'import platform; print(platform.python_version())'], {
 			windowsHide: true,
 			verbose: process.env.APIFY_CLI_DEBUG ? 'full' : undefined,
 		});
@@ -60,8 +58,6 @@ export async function usePythonRuntime({ cwd = process.cwd(), force = false }: U
 		fullPythonVenvPath = join(cwd, '.venv', ...pathParts);
 	}
 
-	fullPythonVenvPath = normalizeExecutablePath(fullPythonVenvPath);
-
 	try {
 		const version = await getPythonVersion(fullPythonVenvPath);
 
@@ -86,7 +82,7 @@ export async function usePythonRuntime({ cwd = process.cwd(), force = false }: U
 
 	for (const fallback of fallbacks) {
 		try {
-			const fullPath = normalizeExecutablePath(await which(fallback));
+			const fullPath = await which(fallback);
 
 			const version = await getPythonVersion(fullPath);
 
