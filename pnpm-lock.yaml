@@ -215,8 +215,8 @@ importers:
         specifier: ^1.2.0
         version: 1.2.0
       '@sapphire/result':
-        specifier: ^2.8.0
-        version: 2.8.0
+        specifier: ^3.0.0
+        version: 3.0.0
       '@sapphire/timestamp':
         specifier: ^2.0.0
         version: 2.0.0
@@ -3740,9 +3740,9 @@ packages:
     resolution: {integrity: sha512-LxjOAFXz81WmrI8XX9YaVcAZDjQj/1p78lZCvkAWZB1nphOwz/D0dU3CBejmhOWx5dO5CszTkLJMNR0xuCK+Zg==}
     engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
 
-  '@sapphire/result@2.8.0':
-    resolution: {integrity: sha512-693yWouX+hR9uJm1Jgq0uSSjbSD3UrblMaxiuGbHPjSwzLCSZTcm0h3kvdVhq3o/yl4+oeAWW3hiaJ0TELuRJQ==}
-    engines: {node: '>=v14.0.0', npm: '>=7.0.0'}
+  '@sapphire/result@3.0.0':
+    resolution: {integrity: sha512-HIK0PwBYfM26CewxqAi61SI710HiRzEpYL9K1WPDKGyVyWrqm0rC2CDJUeSZQhXwTNaCqfLMvz5lvnyv+5wW+g==}
+    engines: {node: '>=v24.0.0', npm: '>=11.0.0'}
 
   '@sapphire/shapeshift@3.9.7':
     resolution: {integrity: sha512-4It2mxPSr4OGn4HSQWGmhFMsNFGfFVhWeRPCRwbH972Ek2pzfGRZtb0pJ4Ze6oIzcyh2jw7nUDa6qGlWofgd9g==}
@@ -13861,7 +13861,7 @@ snapshots:
 
   '@sapphire/duration@1.2.0': {}
 
-  '@sapphire/result@2.8.0': {}
+  '@sapphire/result@3.0.0': {}
 
   '@sapphire/shapeshift@3.9.7':
     dependencies:
