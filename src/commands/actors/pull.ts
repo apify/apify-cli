@@ -13,7 +13,7 @@ import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { parseGitRepoUrl, withAllowedGitProtocols } from '../../lib/git-repo-url.js';
 import { useActorConfig } from '../../lib/hooks/useActorConfig.js';
 import { error, success } from '../../lib/outputs.js';
-import { downloadZip, getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { downloadZip, getCurrentUsernameOrId, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const extractGitHubZip = async (url: string, directoryPath: string) => {
 	const zipFile = await downloadZip(url);
@@ -84,15 +84,11 @@ export class ActorsPullCommand extends ApifyCommand<typeof ActorsPullCommand> {
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getCurrentUserInfo();
-
 		const isActorAutomaticallyDetected = !this.args.actorId;
-		const usernameOrId = userInfo.username || userInfo.id;
-
 		const actorId =
 			this.args?.actorId ||
 			(actorConfig?.id as string | undefined) ||
-			(actorConfig?.name ? `${usernameOrId}/${actorConfig.name}` : undefined);
+			(actorConfig?.name ? `${await getCurrentUsernameOrId()}/${actorConfig.name}` : undefined);
 
 		if (!actorId) throw new Error('Cannot find Actor in this directory.');
 

@@ -222,6 +222,12 @@ export async function getCurrentUserInfo(): Promise<AuthJSON> {
 	return cachedUserInfo.userInfo;
 }
 
+/** Prefix for resolving a bare Actor, task or storage name in the caller's account. */
+export async function getCurrentUsernameOrId(): Promise<string> {
+	const { username, id } = await getCurrentUserInfo();
+	return username || id!;
+}
+
 export const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);
 
 export const getJsonFileContent = <T = Record<string, unknown>>(filePath: string) => {
