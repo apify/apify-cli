@@ -29,6 +29,15 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.run },
 		{ command: Commands.validateSchema },
 
+		{ command: Commands.runtime },
+		{ command: Commands.runtimeInstall },
+		{ command: Commands.runtimeStart },
+		{ command: Commands.runtimeStop },
+		{ command: Commands.runtimeStatus },
+		{ command: Commands.runtimeConnect },
+		{ command: Commands.runtimeDisconnect },
+		{ command: Commands.runtimeSkill },
+
 		{ command: Commands.actor },
 		{ command: Commands.actorCalculateMemory },
 		{ command: Commands.actorCharge },
