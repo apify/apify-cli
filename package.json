@@ -80,7 +80,7 @@
 		"@inquirer/select": "^5.3.0",
 		"@napi-rs/keyring": "^2.1.2",
 		"@root/walk": "~1.1.0",
-		"@sapphire/duration": "^1.2.0",
+		"@sapphire/duration": "^2.0.0",
 		"@sapphire/result": "^3.0.0",
 		"@sapphire/timestamp": "^2.0.0",
 		"@skyra/jaro-winkler": "^1.1.1",
