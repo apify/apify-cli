@@ -2,7 +2,8 @@ import chalk from 'chalk';
 
 import { resolveAuth, TOKEN_SOURCE_LABELS } from '../lib/auth.js';
 import { ApifyCommand } from '../lib/command-framework/apify-command.js';
-import { getCurrentUserInfo, getLoggedClientOrThrow } from '../lib/utils.js';
+import { info } from '../lib/outputs.js';
+import { getCurrentUserInfo, getLoggedClientOrThrow, AccountDetailsForbiddenError } from '../lib/utils.js';
 
 export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 	static override name = 'info' as const;
@@ -24,14 +25,21 @@ export class InfoCommand extends ApifyCommand<typeof InfoCommand> {
 
 	async run() {
 		await getLoggedClientOrThrow();
-		const info = await getCurrentUserInfo();
 		const auth = await resolveAuth();
+		const tokenSource = { 'token source': TOKEN_SOURCE_LABELS[auth!.source] };
 
-		const rows = {
-			'username': info.username,
-			'userId': info.id,
-			'token source': TOKEN_SOURCE_LABELS[auth!.source],
-		};
+		let rows: Record<string, string | undefined>;
+		try {
+			const user = await getCurrentUserInfo();
+			rows = { 'username': user.username, 'userId': user.id, ...tokenSource };
+		} catch (err) {
+			if (!(err instanceof AccountDetailsForbiddenError)) throw err;
+			info({
+				message:
+					"Your API token can't read your account details (it probably has limited permissions), so only the token source is shown.",
+			});
+			rows = tokenSource;
+		}
 
 		for (const [key, value] of Object.entries(rows)) {
 			console.log(`${chalk.gray(key)}: ${chalk.bold(value)}`);

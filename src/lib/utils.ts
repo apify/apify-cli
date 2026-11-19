@@ -18,7 +18,7 @@ import { DurationFormatter as SapphireDurationFormatter, TimeTypes } from '@sapp
 import { Timestamp } from '@sapphire/timestamp';
 import AdmZip from 'adm-zip';
 import _Ajv2019 from 'ajv/dist/2019.js';
-import { type ActorRun, ApifyClient, type Build } from 'apify-client';
+import { type ActorRun, ApifyApiError, ApifyClient, type Build } from 'apify-client';
 import { ZipArchive } from 'archiver';
 import axios from 'axios';
 import escapeStringRegexp from 'escape-string-regexp';
@@ -147,7 +147,30 @@ export async function getLoggedClientOrThrow() {
 	return client;
 }
 
-let cachedUserInfo: { token: string; userInfo: AuthJSON } | undefined;
+/** `userInfo` is `null` when the token isn't allowed to read its own account details. */
+let cachedUserInfo: { token: string; userInfo: AuthJSON | null } | undefined;
+
+export class AccountDetailsForbiddenError extends Error {
+	constructor() {
+		super(
+			"Your API token can't read your account details, which this command needs. This usually means the token has limited permissions; use one without them.",
+		);
+	}
+}
+
+/**
+ * `null` when the token may not read its account details, typically a token with limited permissions.
+ */
+async function fetchCurrentUser(client: ApifyClient): Promise<AuthJSON | null> {
+	try {
+		return (await client.user('me').get()) as AuthJSON;
+	} catch (err) {
+		if (err instanceof ApifyApiError && err.statusCode === 403 && err.type === 'insufficient-permissions') {
+			return null;
+		}
+		throw err;
+	}
+}
 
 /** Test-only: drop the in-memory account metadata so each test starts fresh. */
 export function __resetUserInfoCacheForTests() {
@@ -167,8 +190,7 @@ async function getLoggedClient(): Promise<{ client: ApifyClient | null; auth?: R
 	const apifyClient = new ApifyClient(getApifyClientOptionsForToken(auth.token));
 
 	try {
-		const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
-		cachedUserInfo = { token: auth.token, userInfo };
+		cachedUserInfo = { token: auth.token, userInfo: await fetchCurrentUser(apifyClient) };
 	} catch (err) {
 		cliDebugPrint('[getLoggedClient] error getting user info', { error: err });
 		return { client: null, auth, error: err };
@@ -185,18 +207,19 @@ export async function getCurrentUserInfo(): Promise<AuthJSON> {
 	const auth = await resolveAuth();
 	if (!auth) return getLocalUserInfo();
 
-	if (cachedUserInfo?.token === auth.token) return cachedUserInfo.userInfo;
-	if (auth.source !== 'env') return getLocalUserInfo(auth.profile?.id);
+	if (cachedUserInfo?.token !== auth.token) {
+		if (auth.source !== 'env') return getLocalUserInfo(auth.profile?.id);
 
-	const apifyClient = new ApifyClient({
-		...getApifyClientOptionsForToken(auth.token),
-		maxRetries: 1,
-		timeoutSecs: 10,
-	});
-	const userInfo = (await apifyClient.user('me').get()) as AuthJSON;
-	cachedUserInfo = { token: auth.token, userInfo };
+		const apifyClient = new ApifyClient({
+			...getApifyClientOptionsForToken(auth.token),
+			maxRetries: 1,
+			timeoutSecs: 10,
+		});
+		cachedUserInfo = { token: auth.token, userInfo: await fetchCurrentUser(apifyClient) };
+	}
 
-	return userInfo;
+	if (!cachedUserInfo.userInfo) throw new AccountDetailsForbiddenError();
+	return cachedUserInfo.userInfo;
 }
 
 export const getLocalConfigPath = (cwd: string) => join(cwd, LOCAL_CONFIG_PATH);
