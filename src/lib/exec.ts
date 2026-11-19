@@ -3,7 +3,6 @@ import process from 'node:process';
 import { Result } from '@sapphire/result';
 import { execa, type ExecaError, type Options } from 'execa';
 
-import { normalizeExecutablePath } from './hooks/runtimes/utils.js';
 import { error, run } from './outputs.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
@@ -30,12 +29,9 @@ const spawnPromised = async (
 	opts: Options,
 	{ forwardSignals }: SpawnPromisedInternalOptions = {},
 ) => {
-	const escapedCommand = normalizeExecutablePath(cmd);
+	cliDebugPrint('spawnPromised', { cmd, args, opts, forwardSignals });
 
-	cliDebugPrint('spawnPromised', { escapedCommand, args, opts, forwardSignals });
-
-	const childProcess = execa(escapedCommand, args, {
-		shell: true,
+	const childProcess = execa(cmd, args, {
 		windowsHide: true,
 		env: opts.env,
 		cwd: opts.cwd,
