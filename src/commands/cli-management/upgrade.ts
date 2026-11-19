@@ -5,6 +5,7 @@ import process from 'node:process';
 
 import chalk from 'chalk';
 import { gte } from 'semver';
+import which from 'which';
 
 import { USER_AGENT } from '../../entrypoints/_shared.js';
 import { writeEntrypointShims } from '../../lib/bundleMigration.js';
@@ -31,6 +32,19 @@ const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: strin
 const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '1.0.1';
 
 declare const __APIFY_WINDOWS_UPGRADE_SCRIPT__: string | undefined;
+
+/**
+ * Resolves `name` from PATH, accepting only copies under the Windows or Program Files directory. `which` checks
+ * the CWD first on Windows, so an unfiltered lookup would run whatever `cmd.exe` sits in the user's project.
+ */
+async function resolveSystemExecutable(name: string) {
+	const roots = [process.env.SystemRoot, process.env.ProgramFiles]
+		.filter((root): root is string => Boolean(root))
+		.map((root) => `${root.replace(/\\+$/, '').toLowerCase()}\\`);
+	const matches = (await which(name, { all: true, nothrow: true })) ?? [];
+
+	return matches.find((match) => roots.some((root) => match.toLowerCase().startsWith(root)));
+}
 
 export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	static override name = 'upgrade' as const;
@@ -221,9 +235,15 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		const urls = assets.map((asset) => asset.browser_download_url).join(',');
 
-		// Absolute paths: bare `cmd.exe`/`powershell.exe` are looked up in the CWD first on Windows.
-		const system32 = join(process.env.SystemRoot || 'C:\\Windows', 'System32');
-		const powershell = join(system32, 'WindowsPowerShell', 'v1.0', 'powershell.exe');
+		const cmd = await resolveSystemExecutable('cmd.exe');
+		const powershell = await resolveSystemExecutable('powershell.exe');
+
+		if (!cmd || !powershell) {
+			error({
+				message: `Couldn't find ${cmd ? 'powershell.exe' : 'cmd.exe'} in the Windows or Program Files directory.`,
+			});
+			return;
+		}
 
 		// Start the child process with it, and exit the cli
 		const command = [
@@ -248,7 +268,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		// Going through `cmd.exe` is what gives PowerShell its own console window: a detached process has no
 		// console, so the console app it starts gets a fresh one. This mirrors what `shell: true` does.
-		const upgradeProcess = spawn(join(system32, 'cmd.exe'), ['/d', '/s', '/c', `"${command}"`], {
+		const upgradeProcess = spawn(cmd, ['/d', '/s', '/c', `"${command}"`], {
 			detached: true,
 			stdio: 'inherit',
 			windowsHide: false,
