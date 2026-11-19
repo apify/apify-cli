@@ -1,24 +1,36 @@
+import { EventEmitter } from 'node:events';
+import { join } from 'node:path';
 import process from 'node:process';
 
 import { useConsoleSpy } from '../../__setup__/hooks/useConsoleSpy.js';
 
 const fsMocks = vi.hoisted(() => ({
 	rename: vi.fn<(from: string, to: string) => Promise<void>>(),
+	writeFile: vi.fn(async () => {}),
+}));
+
+const spawn = vi.hoisted(() => vi.fn());
+
+vi.mock('node:child_process', async (importOriginal) => ({
+	...(await importOriginal<typeof import('node:child_process')>()),
+	spawn,
 }));
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
 	...(await importOriginal<typeof import('node:fs/promises')>()),
 	readdir: vi.fn(async () => ['apify-cli']),
-	writeFile: vi.fn(async () => {}),
+	writeFile: fsMocks.writeFile,
 	rename: fsMocks.rename,
 	rm: vi.fn(async () => {}),
 }));
 
 vi.mock('../../../src/lib/bundleMigration.js', () => ({ writeEntrypointShims: vi.fn() }));
 
+const metadata = vi.hoisted(() => ({ platform: 'linux' }));
+
 vi.mock('../../../src/lib/hooks/useCLIMetadata.js', async (importOriginal) => {
 	const original = await importOriginal<typeof import('../../../src/lib/hooks/useCLIMetadata.js')>();
-	const metadata = { ...original.useCLIMetadata(), installMethod: 'bundle', platform: 'linux', arch: 'x64' };
+	Object.assign(metadata, original.useCLIMetadata(), { installMethod: 'bundle', platform: 'linux', arch: 'x64' });
 
 	return { ...original, useCLIMetadata: () => metadata };
 });
@@ -81,5 +93,32 @@ describe('apify upgrade (bundle, unix)', () => {
 		expect(allOutput()).toMatch(/Failed to fetch the apify-cli bundle/);
 		expect(allOutput()).not.toMatch(/Successfully upgraded/);
 		expect(process.exitCode).toBe(1);
+	});
+});
+
+describe('apify upgrade (bundle, windows)', () => {
+	beforeEach(() => {
+		metadata.platform = 'windows';
+		vi.stubGlobal('fetch', vi.fn());
+		vi.stubGlobal('__APIFY_WINDOWS_UPGRADE_SCRIPT__', 'embedded script');
+		// Never emits `spawn`, so the command doesn't `process.exit` the test runner.
+		spawn.mockReset().mockReturnValue(new EventEmitter());
+	});
+
+	afterEach(() => {
+		metadata.platform = 'linux';
+		vi.unstubAllGlobals();
+	});
+
+	it('runs the upgrade script embedded in the bundle, never a downloaded one', async () => {
+		await testRunCommand(UpgradeCommand, { flags_version: '1.10.0' });
+
+		const scriptPath = join(process.execPath, '..', 'upgrade.ps1');
+		expect(fsMocks.writeFile).toHaveBeenCalledWith(scriptPath, 'embedded script');
+		expect(fetch).not.toHaveBeenCalled();
+
+		const [command, args] = spawn.mock.calls[0]!;
+		expect(command).toMatch(/[\\/]System32[\\/]cmd\.exe$/);
+		expect(args.at(-1)).toMatch(/^""[^"]*[\\/]System32[\\/]WindowsPowerShell[\\/]v1\.0[\\/]powershell\.exe"/);
 	});
 });
