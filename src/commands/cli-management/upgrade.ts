@@ -1,11 +1,11 @@
 import { spawn } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { readdir, rename, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import process from 'node:process';
 
 import chalk from 'chalk';
 import { gte } from 'semver';
-import which from 'which';
 
 import { USER_AGENT } from '../../entrypoints/_shared.js';
 import { writeEntrypointShims } from '../../lib/bundleMigration.js';
@@ -34,16 +34,19 @@ const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '1.0.1';
 declare const __APIFY_WINDOWS_UPGRADE_SCRIPT__: string | undefined;
 
 /**
- * Resolves `name` from PATH, accepting only copies under the Windows or Program Files directory. `which` checks
- * the CWD first on Windows, so an unfiltered lookup would run whatever `cmd.exe` sits in the user's project.
+ * Builds the path to an executable under `System32` directly, instead of looking it up in PATH. A PATH lookup
+ * checks the CWD first on Windows, so it would run whatever `cmd.exe` sits in the user's project.
  */
-async function resolveSystemExecutable(name: string) {
-	const roots = [process.env.SystemRoot, process.env.ProgramFiles]
-		.filter((root): root is string => Boolean(root))
-		.map((root) => `${root.replace(/\\+$/, '').toLowerCase()}\\`);
-	const matches = (await which(name, { all: true, nothrow: true })) ?? [];
+function resolveSystemExecutable(...segments: string[]) {
+	const systemRoot = process.env.SystemRoot;
 
-	return matches.find((match) => roots.some((root) => match.toLowerCase().startsWith(root)));
+	if (!systemRoot || !isAbsolute(systemRoot)) {
+		return undefined;
+	}
+
+	const executablePath = join(systemRoot, 'System32', ...segments);
+
+	return existsSync(executablePath) ? executablePath : undefined;
 }
 
 export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
@@ -235,12 +238,12 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 
 		const urls = assets.map((asset) => asset.browser_download_url).join(',');
 
-		const cmd = await resolveSystemExecutable('cmd.exe');
-		const powershell = await resolveSystemExecutable('powershell.exe');
+		const cmd = resolveSystemExecutable('cmd.exe');
+		const powershell = resolveSystemExecutable('WindowsPowerShell', 'v1.0', 'powershell.exe');
 
 		if (!cmd || !powershell) {
 			error({
-				message: `Couldn't find ${cmd ? 'powershell.exe' : 'cmd.exe'} in the Windows or Program Files directory.`,
+				message: `Couldn't find ${cmd ? 'powershell.exe' : 'cmd.exe'} in the Windows system directory.`,
 			});
 			return;
 		}
@@ -248,6 +251,7 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		// Start the child process with it, and exit the cli
 		const command = [
 			`"${powershell}"`,
+			'-NoProfile',
 			'-ExecutionPolicy',
 			'Bypass',
 			'-File',
