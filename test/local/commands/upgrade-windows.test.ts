@@ -54,6 +54,8 @@ describe.runIf(process.platform === 'win32')('[windows] apify upgrade (bundle)',
 		const system32 = join(process.env.SystemRoot!, 'System32').toLowerCase();
 		const [command, args] = spawn.mock.calls[0]!;
 		expect(command.toLowerCase()).toBe(join(system32, 'cmd.exe'));
-		expect(args.at(-1).toLowerCase()).toContain(`""${join(system32, 'WindowsPowerShell', 'v1.0', 'powershell.exe')}"`);
+		expect(args.at(-1).toLowerCase()).toContain(
+			`""${join(system32, 'WindowsPowerShell', 'v1.0', 'powershell.exe').toLowerCase()}"`,
+		);
 	});
 });
