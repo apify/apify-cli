@@ -23,7 +23,7 @@ import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { error, info, simpleLog, warning } from '../../lib/outputs.js';
 import { mayTargetActorRuntime } from '../../lib/runtime/dev-folder.js';
 import { getServerInterfaceHint } from '../../lib/server-actor.js';
-import { getLocalConfig, getCurrentUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
+import { getCurrentUsernameOrId, getLocalConfig, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static override name = 'call' as const;
@@ -113,8 +113,6 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		const cwd = process.cwd();
 		const localConfig = getLocalConfig(cwd) || {};
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getCurrentUserInfo();
-		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		if (this.flags.json && this.flags.outputDataset) {
 			error({
@@ -133,7 +131,6 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		} = await ActorsCallCommand.resolveActorId({
 			client: apifyClient,
 			localActorName: localConfig.name as string | undefined,
-			usernameOrId,
 			providedActorNameOrId: this.args.actorId,
 		});
 
@@ -298,12 +295,10 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 	static async resolveActorId({
 		client,
 		localActorName,
-		usernameOrId,
 		providedActorNameOrId,
 	}: {
 		client: ApifyClient;
 		localActorName: string | undefined;
-		usernameOrId: string;
 		providedActorNameOrId?: string;
 	}) {
 		// Full ID
@@ -332,7 +327,9 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 				};
 			}
 
-			const actorByName = await client.actor(`${usernameOrId}/${providedActorNameOrId.toLowerCase()}`).get();
+			const actorByName = await client
+				.actor(`${await getCurrentUsernameOrId()}/${providedActorNameOrId.toLowerCase()}`)
+				.get();
 
 			if (actorByName) {
 				return {
@@ -346,11 +343,12 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 		}
 
 		if (localActorName) {
-			const actor = await client.actor(`${usernameOrId}/${localActorName}`).get();
+			const fullName = `${await getCurrentUsernameOrId()}/${localActorName}`;
+			const actor = await client.actor(fullName).get();
 
 			if (!actor) {
 				throw new Error(
-					`Cannot find Actor with ID '${usernameOrId}/${localActorName}' ` +
+					`Cannot find Actor with ID '${fullName}' ` +
 						'in your account. Call "apify push" to push this Actor to Apify platform.',
 				);
 			}

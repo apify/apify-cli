@@ -12,7 +12,7 @@ import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands
 import { LOCAL_CONFIG_PATH } from '../../lib/consts.js';
 import { info, simpleLog } from '../../lib/outputs.js';
 import { getServerInterfaceHint } from '../../lib/server-actor.js';
-import { getLocalConfig, getCurrentUserInfo, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
+import { getLocalConfig, getLoggedClientOrThrow, printJsonToStdout } from '../../lib/utils.js';
 import { ActorsCallCommand } from './call.js';
 
 export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> {
@@ -75,8 +75,6 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		const cwd = process.cwd();
 		const localConfig = getLocalConfig(cwd) || {};
 		const apifyClient = await getLoggedClientOrThrow();
-		const userInfo = await getCurrentUserInfo();
-		const usernameOrId = userInfo.username || (userInfo.id as string);
 
 		const {
 			id: actorId,
@@ -85,7 +83,6 @@ export class ActorsStartCommand extends ApifyCommand<typeof ActorsStartCommand> 
 		} = await ActorsCallCommand.resolveActorId({
 			client: apifyClient,
 			localActorName: localConfig.name as string | undefined,
-			usernameOrId,
 			providedActorNameOrId: this.args.actorId,
 		});
 

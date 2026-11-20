@@ -5,7 +5,12 @@ import { Flags } from '../../lib/command-framework/flags.js';
 import { prettyPrintBytes } from '../../lib/commands/pretty-print-bytes.js';
 import { CompactMode, ResponsiveTable } from '../../lib/commands/responsive-table.js';
 import { info, simpleLog } from '../../lib/outputs.js';
-import { getCurrentUserInfo, getLoggedClientOrThrow, printJsonToStdout, TimestampFormatter } from '../../lib/utils.js';
+import {
+	getCurrentUsernameForDisplay,
+	getLoggedClientOrThrow,
+	printJsonToStdout,
+	TimestampFormatter,
+} from '../../lib/utils.js';
 
 const table = new ResponsiveTable({
 	allColumns: ['Dataset ID', 'Name', 'Items', 'Size', 'Created', 'Modified'],
@@ -60,7 +65,7 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 		const { desc, offset, limit, json, unnamed } = this.flags;
 
 		const client = await getLoggedClientOrThrow();
-		const user = await getCurrentUserInfo();
+		const username = await getCurrentUsernameForDisplay();
 
 		const rawDatasetList = await client.datasets().list({ desc, offset, limit, unnamed });
 
@@ -87,7 +92,7 @@ export class DatasetsLsCommand extends ApifyCommand<typeof DatasetsLsCommand> {
 				Created: TimestampFormatter.display(dataset.createdAt),
 				Items: `${dataset.itemCount}`,
 				Modified: TimestampFormatter.display(dataset.modifiedAt),
-				Name: dataset.name ? `${user.username!}/${dataset.name}` : '',
+				Name: dataset.name ? [username, dataset.name].filter(Boolean).join('/') : '',
 				Size:
 					typeof size === 'number'
 						? prettyPrintBytes({ bytes: size, shortBytes: true, colorFunc: chalk.gray, precision: 0 })

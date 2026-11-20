@@ -21,7 +21,7 @@ import {
 	resolveServerRequestUrl,
 	SERVER_REQUEST_TIMEOUT_MILLIS,
 } from '../../lib/server-actor.js';
-import { getCurrentUserInfo, getLoggedClientOrThrow } from '../../lib/utils.js';
+import { getCurrentUsernameForDisplay, getLoggedClientOrThrow } from '../../lib/utils.js';
 
 const SLOW_RESPONSE_NOTICE_MILLIS = 2_000;
 const COLD_START_NOTICE_MILLIS = 20_000;
@@ -117,9 +117,10 @@ export class ServerRequestCommand extends ApifyCommand<typeof ServerRequestComma
 
 		// Single-tenant is the platform default; only multi-tenant Actors run in the developer's account.
 		if (!isMultiTenant(actor)) {
-			const { username } = await getCurrentUserInfo();
+			const username = await getCurrentUsernameForDisplay();
+			const account = username ? `account "${username}"` : 'your account';
 			info({
-				message: `${actor.userFriendlyId} is single-tenant: it runs in account "${username}", which pays the platform usage.`,
+				message: `${actor.userFriendlyId} is single-tenant: it runs in ${account}, which pays the platform usage.`,
 			});
 		}
 
