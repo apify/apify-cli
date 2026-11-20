@@ -1,6 +1,6 @@
 import process from 'node:process';
 
-import type { ActorRun, ApifyClient, TaskStartOptions } from 'apify-client';
+import type { ActorRun, ActorStartOptions, ApifyClient, TaskStartOptions } from 'apify-client';
 import chalk from 'chalk';
 
 import { ACTOR_JOB_STATUSES, ACTOR_JOB_TYPES } from '@apify/consts';
@@ -38,6 +38,29 @@ export interface RunOnCloudOptions {
 	 * the caller renders its own final result summary and owns the exit code.
 	 */
 	suppressFinalStatus?: boolean;
+	/** Local Actor runtime extensions such as `devFolder=false`, which apify-client's `start()` rejects. Actors only. */
+	extraStartParams?: Record<string, string>;
+}
+
+/** Starts the run through a raw request, then re-reads it so the result has the shape `start()` returns. */
+async function startActorWithExtraParams(
+	apifyClient: ApifyClient,
+	actorId: string,
+	input: { inputToUse: unknown; contentType: string } | null,
+	runOptions: ActorStartOptions,
+	extraStartParams: Record<string, string>,
+): Promise<ActorRun> {
+	const { waitForFinish, timeout, memory, build } = runOptions;
+
+	const response = await apifyClient.httpClient.call<{ data: { id: string } }>({
+		url: `${apifyClient.actor(actorId).url}/runs`,
+		method: 'POST',
+		data: input?.inputToUse,
+		headers: input ? { 'content-type': input.contentType } : undefined,
+		params: { waitForFinish, timeout, memory, build, ...extraStartParams },
+	});
+
+	return (await apifyClient.run(response.data.data.id).get())!;
 }
 
 export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: RunOnCloudOptions) {
@@ -52,6 +75,7 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 		waitForRunToFinish,
 		printRunLogs,
 		suppressFinalStatus,
+		extraStartParams,
 	} = options;
 
 	const clientMethod = type === 'Actor' ? 'actor' : 'task';
@@ -78,7 +102,9 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 	let run: ActorRun;
 
 	try {
-		if (actorInput && type === 'Actor') {
+		if (extraStartParams && type === 'Actor') {
+			run = await startActorWithExtraParams(apifyClient, actorOrTaskData.id, actorInput, runOptions, extraStartParams);
+		} else if (actorInput && type === 'Actor') {
 			// TODO: For some reason we cannot pass json as buffer with right contentType into apify-client.
 			// It will save malformed JSON which looks like buffer as INPUT.
 			// We need to fix this in v1 during removing call under Actor namespace.
@@ -92,7 +118,9 @@ export async function* runActorOrTaskOnCloud(apifyClient: ApifyClient, options: 
 	} catch (err: any) {
 		// TODO: Better error message in apify-client-js
 		if (err.type === 'record-not-found') {
-			throw new Error(`${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id}) not found!`);
+			// A local runtime reports a missing build under this type too; its message says which.
+			const reason = typeof err.message === 'string' && err.message ? `: ${err.message}` : '!';
+			throw new Error(`${type} ${actorOrTaskData.userFriendlyId} (${actorOrTaskData.id}) not found${reason}`);
 		}
 
 		if (err.type === 'full-permission-actor-not-approved') {

@@ -1,11 +1,13 @@
 /* eslint-disable max-classes-per-file */
 import stripAnsi from 'strip-ansi';
 
+import { RuntimeIndexCommand } from '../../../../src/commands/runtime/_index.js';
 import {
 	ApifyCommand,
 	type BuiltApifyCommand as _BuiltApifyCommand,
 	commandRegistry,
 } from '../../../../src/lib/command-framework/apify-command.js';
+import { Flags } from '../../../../src/lib/command-framework/flags.js';
 import {
 	registerCommandForHelpGeneration,
 	renderHelpForCommand,
@@ -63,6 +65,17 @@ class FakeActorPushData extends BuiltApifyCommand {
 	];
 }
 
+class FakeMixedFlags extends BuiltApifyCommand {
+	static override name = 'mixed-flags' as const;
+	static override description = 'A command with lowercase, uppercase and long-only flags.';
+	static override flags = {
+		body: Flags.string({ char: 'd', description: 'The request body.' }),
+		header: Flags.string({ char: 'H', description: 'Additional HTTP headers.' }),
+		method: Flags.string({ char: 'X', description: 'The HTTP method to use.' }),
+		profile: Flags.string({ description: 'The stored account to use for this command.' }),
+	};
+}
+
 class FakeUtility extends BuiltApifyCommand {
 	static override name = 'utility' as const;
 	static override description = 'A utility command.';
@@ -94,6 +107,7 @@ describe('Help rendering', () => {
 		registerCommandForHelpGeneration('apify', FakeRunsIndex);
 		registerCommandForHelpGeneration('apify', FakeUtility);
 		registerCommandForHelpGeneration('apify', FakeInteractiveNamespace);
+		registerCommandForHelpGeneration('apify', RuntimeIndexCommand);
 
 		// The `actor push-data` subcommand is registered twice with different entrypoints,
 		// once as a subcommand of `apify actor` and once as a standalone `actor` command.
@@ -132,6 +146,19 @@ describe('Help rendering', () => {
 			expect(output).toContain('Pass --template to skip the prompt.');
 		});
 
+		test('aligns short flags of any case in the same column', () => {
+			registerCommandForHelpGeneration('apify', FakeMixedFlags);
+			const output = stripAnsi(renderHelpForCommand(FakeMixedFlags));
+
+			const flagLines = output.split('\n').filter((line) => /^\s+(-\w, )?--/.test(line));
+			const shortFlagColumns = flagLines.filter((line) => /^\s+-\w, --/.test(line)).map((line) => line.indexOf('-'));
+			const longFlagColumns = flagLines.map((line) => line.indexOf('--'));
+
+			expect(shortFlagColumns).toHaveLength(3);
+			expect(new Set(shortFlagColumns).size).toBe(1);
+			expect(new Set(longFlagColumns).size).toBe(1);
+		});
+
 		test('renders example descriptions as shell-style # comments', () => {
 			registerCommandForHelpGeneration('apify', FakeRunsAbort);
 			const output = stripAnsi(renderHelpForCommand(FakeRunsAbort));
@@ -158,6 +185,17 @@ describe('Help rendering', () => {
 			expect(output).toContain('[INTERACTIVE]');
 			expect(output).toContain('NOTE');
 			expect(output).toContain('Pass --token to skip prompts.');
+		});
+	});
+
+	describe('apify runtime help', () => {
+		it('is labelled experimental, in its own help and in the main menu', () => {
+			expect(stripAnsi(renderHelpForCommand(RuntimeIndexCommand)).startsWith('[EXPERIMENTAL] ')).toBe(true);
+			expect(stripAnsi(renderMainHelpMenu('apify'))).toMatch(/runtime\s+\[EXPERIMENTAL\] Manages the Actor runtime/);
+
+			for (const subcommand of RuntimeIndexCommand.subcommands!) {
+				expect(stripAnsi(renderHelpForCommand(subcommand)).startsWith('[EXPERIMENTAL] ')).toBe(true);
+			}
 		});
 	});
 

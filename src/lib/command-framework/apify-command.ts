@@ -246,6 +246,9 @@ export abstract class ApifyCommand<T extends typeof BuiltApifyCommand = typeof B
 	 */
 	static interactiveNote?: string;
 
+	/** Labels the command [EXPERIMENTAL] in help: it may change in any release. */
+	static experimental?: boolean;
+
 	/**
 	 * Grouping label shown in the main help menu. Commands are grouped by this value
 	 * and rendered as separate sections. Commands without a group fall into "OTHER".

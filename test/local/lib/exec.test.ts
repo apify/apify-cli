@@ -29,7 +29,7 @@ describe('keepStdoutClean', () => {
 		});
 
 		keepStdoutClean();
-		await execWithLog({ cmd: 'echo', args: ['marker-from-child'] });
+		await execWithLog({ cmd: process.execPath, args: ['-e', "console.log('marker-from-child')"] });
 
 		expect(stderrChunks.join('')).toContain('marker-from-child');
 		expect(stdoutChunks.join('')).not.toContain('marker-from-child');
