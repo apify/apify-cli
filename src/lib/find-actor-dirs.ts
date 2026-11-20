@@ -6,7 +6,7 @@ import { LOCAL_CONFIG_PATH } from './consts.js';
 import { ACTOR_FILES_HARDCODED_IGNORE, getGitignoreMatcher, getJsonFileContent } from './utils.js';
 import { cliDebugPrint } from './utils/cliDebugPrint.js';
 
-const SKIPPED_DIRECTORY_NAMES = new Set(ACTOR_FILES_HARDCODED_IGNORE.map((pattern) => pattern.replace(/\/\*\*$/, '')));
+const SKIPPED_DIRECTORY_NAMES = new Set(ACTOR_FILES_HARDCODED_IGNORE.map((pattern) => pattern.replace(/^\*\*\//, '')));
 
 export interface FoundActorDir {
 	/** Path of the Actor directory relative to the root, with `/` separators. */

@@ -42,7 +42,13 @@ import {
 } from '@apify/consts';
 
 import { lookUpActiveProfile, lookUpProfile } from './auth-file.js';
-import { describeAuthFailure, getApifyClientOptionsForToken, resolveAuth, type ResolvedAuth } from './auth.js';
+import {
+	describeAuthFailure,
+	getAnonymousApifyClientOptions,
+	getApifyClientOptionsForToken,
+	resolveAuth,
+	type ResolvedAuth,
+} from './auth.js';
 import {
 	AUTH_FILE_PATH,
 	CommandExitCodes,
@@ -512,7 +518,9 @@ const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 	return { excludeFilter, forceIncludePatterns };
 };
 
-export const ACTOR_FILES_HARDCODED_IGNORE = ['.git/**', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
+// `**/.git` matches at any depth, both the .git directory of a nested repository and the .git file of a submodule or
+// linked worktree. The .gitignore rules don't exclude either.
+export const ACTOR_FILES_HARDCODED_IGNORE = ['**/.git', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
 
 /**
  * Get Actor local files, omit files defined in .gitignore, .actorignore and .git folder
@@ -681,7 +689,7 @@ export const outputJobLog = async ({
 	apifyClient?: ApifyClient;
 }) => {
 	const { id: logId, status } = job;
-	const client = apifyClient || new ApifyClient({ baseUrl: process.env.APIFY_CLIENT_BASE_URL });
+	const client = apifyClient || new ApifyClient(getAnonymousApifyClientOptions());
 
 	// In case job was already done just output log
 	if (ACTOR_JOB_TERMINAL_STATUSES.includes(status as never)) {
@@ -689,8 +697,9 @@ export const outputJobLog = async ({
 			return;
 		}
 
+		// Undefined when the job failed before its container started.
 		const log = await client.log(logId).get();
-		process.stderr.write(log!);
+		if (log) process.stderr.write(log);
 		return;
 	}
 

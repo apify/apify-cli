@@ -327,10 +327,13 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 				}
 			: null;
 
+		let usesStandbyMode = false;
+
 		// Local-only setup, applied to the unzipped archive or to the clone, whichever the run produced.
 		const applyLocalConfig = async (dir: string) => {
 			// There may be .actor/actor.json file in used template - let's try to load it and change the name prop value to actorName
 			const localConfig = getJsonFileContent(join(dir, LOCAL_CONFIG_PATH));
+			usesStandbyMode = Boolean(localConfig?.usesStandbyMode);
 			await setLocalConfig(Object.assign(localConfig || EMPTY_LOCAL_CONFIG, { name: actorName }), dir);
 			await setLocalEnv(dir);
 
@@ -592,7 +595,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 						actorId: gitResult.actorId,
 						account: gitSetup.account,
 					})
-				: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion });
+				: buildNextSteps({ actorName, dependenciesInstalled, installCommandSuggestion, usesStandbyMode });
 
 		const reportSuccess = !gitResult?.stopReason;
 
@@ -625,6 +628,7 @@ export class CreateCommand extends ApifyCommand<typeof CreateCommand> {
 					postCreate: messages?.postCreate ?? null,
 					gitRepositoryInitialized,
 					installCommandSuggestion,
+					usesStandbyMode,
 					gitRemote:
 						gitResult?.remoteUrl && gitResult.actorId
 							? {
