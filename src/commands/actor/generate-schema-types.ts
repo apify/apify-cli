@@ -49,8 +49,8 @@ also from the Dataset, Output (experimental), and Key-Value Store (experimental)
 schemas defined in '${LOCAL_CONFIG_PATH}'.
 
 Reads the input schema from one of these locations (in priority order):
-  1. Object in '${LOCAL_CONFIG_PATH}' under "input" key
-  2. JSON file path in '${LOCAL_CONFIG_PATH}' "input" key
+  1. Object in '${LOCAL_CONFIG_PATH}' under "inputSchema" or "input" key
+  2. JSON file path in '${LOCAL_CONFIG_PATH}' "inputSchema" or "input" key
   3. .actor/INPUT_SCHEMA.json
   4. INPUT_SCHEMA.json
 

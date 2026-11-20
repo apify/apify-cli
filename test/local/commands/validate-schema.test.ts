@@ -249,5 +249,74 @@ describe('apify validate-schema', () => {
 			expect(allMessages).toContain('Output schema is valid');
 			expect(allMessages).toContain('Key-Value Store schema is valid');
 		});
+
+		it('should validate input schema referenced via "inputSchema" alias key', async () => {
+			// Write actor.json with `inputSchema` instead of `input`
+			const actorDir = join(joinPath(), '.actor');
+			await mkdir(actorDir, { recursive: true });
+			const schema = {
+				title: 'Test',
+				type: 'object',
+				schemaVersion: 1,
+				properties: {
+					foo: { title: 'Foo', description: 'A foo', type: 'string', editor: 'textfield' },
+				},
+			};
+			await writeFile(join(actorDir, 'input_schema.json'), JSON.stringify(schema, null, '\t'));
+			await writeFile(
+				join(actorDir, 'actor.json'),
+				JSON.stringify(
+					{ actorSpecification: 1, name: 'test', version: '0.1', inputSchema: './input_schema.json' },
+					null,
+					'\t',
+				),
+			);
+
+			await testRunCommand(ValidateSchemaCommand, {});
+
+			expect(logMessages.error.join('\n')).toContain('Input schema is valid');
+		});
+
+		it('should validate output schema referenced via "outputSchema" alias key', async () => {
+			// Write actor.json with `outputSchema` instead of `output`
+			const actorDir = join(joinPath(), '.actor');
+			await mkdir(actorDir, { recursive: true });
+			const inputSchema = {
+				title: 'Test',
+				type: 'object',
+				schemaVersion: 1,
+				properties: {
+					foo: { title: 'Foo', description: 'A foo', type: 'string', editor: 'textfield' },
+				},
+			};
+			const outputSchema = {
+				actorOutputSchemaVersion: 1,
+				properties: {
+					resultUrl: { type: 'string', template: 'https://example.com/{{id}}' },
+				},
+			};
+			await writeFile(join(actorDir, 'input_schema.json'), JSON.stringify(inputSchema, null, '\t'));
+			await writeFile(join(actorDir, 'output_schema.json'), JSON.stringify(outputSchema, null, '\t'));
+			await writeFile(
+				join(actorDir, 'actor.json'),
+				JSON.stringify(
+					{
+						actorSpecification: 1,
+						name: 'test',
+						version: '0.1',
+						input: './input_schema.json',
+						outputSchema: './output_schema.json',
+					},
+					null,
+					'\t',
+				),
+			);
+
+			await testRunCommand(ValidateSchemaCommand, {});
+
+			const allMessages = logMessages.error.join('\n');
+			expect(allMessages).toContain('Input schema is valid');
+			expect(allMessages).toContain('Output schema is valid');
+		});
 	});
 });

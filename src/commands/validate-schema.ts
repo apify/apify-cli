@@ -24,9 +24,9 @@ export class ValidateSchemaCommand extends ApifyCommand<typeof ValidateSchemaCom
 When a path argument is provided, validates only the input schema at that path.
 
 When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
-  - Input schema (from "input" key or default locations)
+  - Input schema (from "inputSchema" or "input" key, or default locations)
   - Dataset schema (from "storages.dataset")
-  - Output schema (from "output")
+  - Output schema (from "outputSchema" or "output" key)
   - Key-Value Store schema (from "storages.keyValueStore")`;
 
 	static override group = 'Local Actor Development';
@@ -113,7 +113,7 @@ When no path is provided, validates all schemas found in '${LOCAL_CONFIG_PATH}':
 						cwd,
 						key: 'output',
 						label: 'Output',
-						getRef: (config) => config?.output,
+						getRef: (config) => config?.outputSchema ?? config?.output,
 						throwOnMissing: true,
 					}),
 				validate: validateOutputSchema,
