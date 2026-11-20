@@ -116,7 +116,7 @@
 		"wrap-ansi": "^10.0.2"
 	},
 	"devDependencies": {
-		"@apify/oxlint-config": "^0.3.0",
+		"@apify/oxlint-config": "^0.4.0",
 		"@apify/tsconfig": "^0.2.0",
 		"@crawlee/types": "^3.18.2",
 		"@types/archiver": "^8.0.0",
