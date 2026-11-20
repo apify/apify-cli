@@ -78,14 +78,14 @@ FLAGS
                           Leading slashes and a version prefix in the path are
                           optional. For example, "actor-runs/{runId}" and
                           "/v2/actor-runs/{runId}" are both accepted.
-      -H, --header=<value>    Additional HTTP header(s). Pass a
+  -H, --header=<value>    Additional HTTP header(s). Pass a
                           single "key:value" string, or a JSON object like
                           '{"X-Foo": "bar", "X-Baz": "qux"}' to send multiple
                           headers. The flag can only be used once; use the JSON form
                           for multiple headers.
   -l, --list-endpoints    List all available Apify API
                           endpoints.
-      -X, --method=<option>   The HTTP method to use. Defaults
+  -X, --method=<option>   The HTTP method to use. Defaults
                           to GET.
                           <options: GET|POST|PUT|PATCH|DELETE>
   -p, --params=<value>    Query parameters as a JSON object,

@@ -7,6 +7,7 @@ import {
 	type BuiltApifyCommand as _BuiltApifyCommand,
 	commandRegistry,
 } from '../../../../src/lib/command-framework/apify-command.js';
+import { Flags } from '../../../../src/lib/command-framework/flags.js';
 import {
 	registerCommandForHelpGeneration,
 	renderHelpForCommand,
@@ -62,6 +63,17 @@ class FakeActorPushData extends BuiltApifyCommand {
 			command: 'cat ./items.json | actor push-data',
 		},
 	];
+}
+
+class FakeMixedFlags extends BuiltApifyCommand {
+	static override name = 'mixed-flags' as const;
+	static override description = 'A command with lowercase, uppercase and long-only flags.';
+	static override flags = {
+		body: Flags.string({ char: 'd', description: 'The request body.' }),
+		header: Flags.string({ char: 'H', description: 'Additional HTTP headers.' }),
+		method: Flags.string({ char: 'X', description: 'The HTTP method to use.' }),
+		profile: Flags.string({ description: 'The stored account to use for this command.' }),
+	};
 }
 
 class FakeUtility extends BuiltApifyCommand {
@@ -132,6 +144,19 @@ describe('Help rendering', () => {
 			expect(output).toContain('[INTERACTIVE]');
 			expect(output).toContain('NOTE');
 			expect(output).toContain('Pass --template to skip the prompt.');
+		});
+
+		test('aligns short flags of any case in the same column', () => {
+			registerCommandForHelpGeneration('apify', FakeMixedFlags);
+			const output = stripAnsi(renderHelpForCommand(FakeMixedFlags));
+
+			const flagLines = output.split('\n').filter((line) => /^\s+(-\w, )?--/.test(line));
+			const shortFlagColumns = flagLines.filter((line) => /^\s+-\w, --/.test(line)).map((line) => line.indexOf('-'));
+			const longFlagColumns = flagLines.map((line) => line.indexOf('--'));
+
+			expect(shortFlagColumns).toHaveLength(3);
+			expect(new Set(shortFlagColumns).size).toBe(1);
+			expect(new Set(longFlagColumns).size).toBe(1);
 		});
 
 		test('renders example descriptions as shell-style # comments', () => {
