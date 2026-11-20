@@ -27,3 +27,5 @@ package-lock.json
 scripts/temporary-reference.md
 
 bundles/*
+
+.claude/settings.local.json
