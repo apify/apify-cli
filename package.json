@@ -100,7 +100,7 @@
 		"giget": "^3.3.1",
 		"handlebars": "~4.7.10",
 		"ignore": "^7.0.14",
-		"indent-string": "^5.0.0",
+		"indent-string": "^6.0.0",
 		"istextorbinary": "~9.5.0",
 		"jju": "~1.4.0",
 		"js-levenshtein": "^1.1.6",
