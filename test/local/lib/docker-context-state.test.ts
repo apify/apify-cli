@@ -73,3 +73,26 @@ describe('readGitState', () => {
 		expect(readGitState(tmpPath)).toEqual({});
 	});
 });
+
+describe('readGitState before the first commit', () => {
+	const { tmpPath, joinPath, beforeAllCalls, afterAllCalls } = useTempPath('docker-context-state-unborn-dir', {
+		create: true,
+		remove: true,
+		cwd: false,
+		cwdParent: false,
+	});
+
+	beforeAll(async () => {
+		await beforeAllCalls();
+		writeFileSync(joinPath('README.md'), 'content');
+		execFileSync('git', ['init', '--quiet'], { cwd: tmpPath, stdio: 'ignore' });
+	});
+
+	afterAll(async () => {
+		await afterAllCalls();
+	});
+
+	it('flags the files as dirty, as no commit has them yet', () => {
+		expect(readGitState(tmpPath)).toEqual({ dirty: true });
+	});
+});

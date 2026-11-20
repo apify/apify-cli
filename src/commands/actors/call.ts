@@ -20,7 +20,9 @@ import { getInputOverride } from '../../lib/commands/resolve-input.js';
 import { runActorOrTaskOnCloud, SharedRunOnCloudFlags } from '../../lib/commands/run-on-cloud.js';
 import { finalizeRun } from '../../lib/commands/run-result.js';
 import { CommandExitCodes, LOCAL_CONFIG_PATH } from '../../lib/consts.js';
-import { error, simpleLog } from '../../lib/outputs.js';
+import { error, info, simpleLog, warning } from '../../lib/outputs.js';
+import { mayTargetActorRuntime } from '../../lib/runtime/dev-folder.js';
+import { getServerInterfaceHint } from '../../lib/server-actor.js';
 import { getLocalConfig, getCurrentUserInfo, getLoggedClientOrThrow, TimestampFormatter } from '../../lib/utils.js';
 
 export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
@@ -87,6 +89,12 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			char: 'o',
 			description: 'Prints out the entire default dataset on successful run of the Actor.',
 		}),
+		'dev-folder': Flags.boolean({
+			description:
+				"Experimental, local Actor runtime only: mount the Actor's registered live dev folder into the run, so it picks up local edits (the default). " +
+				'Use --no-dev-folder to run from the built image alone this once; the registration itself stays. Ignored when calling on the Apify platform.',
+			default: true,
+		}),
 		// TODO: do we want to do the --stream-x flags? Can we even do them?
 	};
 
@@ -129,6 +137,12 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			providedActorNameOrId: this.args.actorId,
 		});
 
+		const serverInterfaceHint = getServerInterfaceHint(actorData, userFriendlyId);
+
+		if (!this.flags.silent && serverInterfaceHint) {
+			info({ message: serverInterfaceHint });
+		}
+
 		const runOpts: ActorStartOptions = {
 			waitForFinish: 2, // NOTE: We need to wait some time to Apify open stream and we can create connection
 		};
@@ -143,6 +157,18 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 
 		if (this.flags.memory) {
 			runOpts.memory = this.flags.memory;
+		}
+
+		let extraStartParams: Record<string, string> | undefined;
+		if (!this.flags.devFolder) {
+			if (mayTargetActorRuntime(apifyClient)) {
+				extraStartParams = { devFolder: 'false' };
+			} else {
+				warning({
+					message:
+						'--no-dev-folder only applies to runs on a local Actor runtime; the Apify platform has no live dev folder to skip. Ignoring it.',
+				});
+			}
 		}
 
 		const inputOverride = await getInputOverride(cwd, this.flags.input, this.flags.inputFile, {
@@ -169,6 +195,7 @@ export class ActorsCallCommand extends ApifyCommand<typeof ActorsCallCommand> {
 			waitForRunToFinish: true,
 			printRunLogs: true,
 			suppressFinalStatus: true,
+			extraStartParams,
 		});
 
 		for await (const yieldedRun of iterator) {

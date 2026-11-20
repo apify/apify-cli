@@ -71,6 +71,7 @@ const backupBundleNames = ['apify', 'actor'];
 // embeds that one native `.node`. Must match the specifier in `src/lib/credentials.ts`.
 const KEYRING_PLACEHOLDER = '__APIFY_KEYRING_NATIVE_SUBPACKAGE__';
 const APIFY_CLI_SKILL = readFileSync(new URL('../skills/apify/SKILL.md', import.meta.url), 'utf-8');
+const WINDOWS_UPGRADE_SCRIPT = readFileSync(new URL('./install/upgrade.ps1', import.meta.url), 'utf-8');
 
 // Maps the compiled (os, arch, libc) to the napi-rs keyring subpackage that ships its `.node`.
 // `supportedArchitectures` (pnpm-workspace.yaml) forces all of these into node_modules at build
@@ -117,6 +118,7 @@ for (const entryPoint of entryPoints) {
 		},
 		define: {
 			__APIFY_CLI_SKILL__: JSON.stringify(APIFY_CLI_SKILL),
+			__APIFY_WINDOWS_UPGRADE_SCRIPT__: JSON.stringify(WINDOWS_UPGRADE_SCRIPT),
 		},
 		outdir: fileURLToPath(new URL(`../bundles/fat-clis`, import.meta.url)),
 		conditions: 'node',

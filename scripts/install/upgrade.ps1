@@ -13,8 +13,6 @@ param(
     [String]$Version
 )
 
-$UpgradeScriptURL = "https://raw.githubusercontent.com/apify/apify-cli/refs/heads/master/scripts/install/upgrade.ps1"
-
 $URLArray = $AllUrls -split ','
 
 if ($URLArray.Count -lt 1) {
@@ -58,32 +56,11 @@ function Download-File-To-Location {
         [Parameter(Mandatory = $true)]
         [String]$FileName,
         [Parameter(Mandatory = $true)]
-        [Int]$Type,
-        [Parameter(Mandatory = $true)]
         [String]$Location,
-        [String]$Version,
-        [Boolean]$ExitOnError = $true
+        [String]$Version
     )
-    switch ($Type) {
-        0 {
-            $FileName += ".exe"
-        }
-        1 {
-            $FileName += ".ps1"
-        }
-    }
 
     $FullPath = Join-Path $Location $FileName
-
-    if (-not $ExitOnError) {
-        try {
-            # Delete the file if it exists
-            Remove-Item -Path $FullPath -Force 2>$null
-        }
-        catch {
-            Write-Warning "Failed to delete $FullPath`: $($_.Exception.Message)"
-        }
-    }
 
     if ($Version) {
         Write-Output "Downloading $FileName version $Version to $FullPath"
@@ -92,9 +69,17 @@ function Download-File-To-Location {
         Write-Output "Downloading $FileName to $FullPath"
     }
 
+    # `curl.exe` is resolved through PATH, so warn when it isn't the copy that ships with Windows.
+    $CurlPath = (Get-Command curl.exe -CommandType Application -ErrorAction Ignore | Select-Object -First 1).Source
+    $SystemCurlPath = Join-Path $env:SystemRoot "System32\curl.exe"
+
+    if ($CurlPath -and $CurlPath -ne $SystemCurlPath) {
+        Write-Warning "Using curl.exe from $CurlPath instead of $SystemCurlPath"
+    }
+
     curl.exe "-#SfLo" "$FullPath" "$URL"
 
-    if ($LASTEXITCODE -ne 0 -and $ExitOnError) {
+    if ($LASTEXITCODE -ne 0) {
         Write-Warning "The command 'curl.exe $URL -o $FullPath' exited with code ${LASTEXITCODE}`nTrying an alternative download method..."
 
         try {
@@ -113,12 +98,11 @@ function Download-File-To-Location {
             exit 1
         }
     }
-
 }
 
 # We now ship a single `apify-cli` bundle. Download it (the URL list may contain backwards-compatible
 # backup URLs too, but they are all copies of the same bundle, so the first one is enough).
-Download-File-To-Location -URL $URLArray[0] -FileName "apify-cli" -Location $InstallLocation -Type 0 -Version $Version
+Download-File-To-Location -URL $URLArray[0] -FileName "apify-cli.exe" -Location $InstallLocation -Version $Version
 
 # Let the freshly downloaded bundle (re)create the `apify`/`actor` wrapper scripts (.cmd, .ps1 and a POSIX
 # shim), so the shim content lives in one place rather than being duplicated here.
@@ -131,9 +115,6 @@ foreach ($Entrypoint in @("apify", "actor")) {
     Remove-Item -Path (Join-Path $InstallLocation "${Entrypoint}.exe") -Force -ErrorAction Ignore
     Remove-Item -Path (Join-Path $InstallLocation "${Entrypoint}.exe.old") -Force -ErrorAction Ignore
 }
-
-# Download the updated upgrade script (should rarely change but just in case)
-Download-File-To-Location -URL $UpgradeScriptURL -FileName "upgrade" -Location $InstallLocation -Type 1 -ExitOnError $false
 
 $C_RESET = [char]27 + "[0m"
 $C_GREEN = [char]27 + "[1;32m"

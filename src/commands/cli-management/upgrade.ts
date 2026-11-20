@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { readdir, rename, rm, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import process from 'node:process';
 
 import chalk from 'chalk';
@@ -31,13 +31,23 @@ const UPDATE_COMMANDS: Record<InstallMethod, (version: string, entrypoint: strin
 // TODO: update this once we bump the CLI version and release it with this command available
 const MINIMUM_VERSION_FOR_UPGRADE_COMMAND = '1.0.1';
 
+declare const __APIFY_WINDOWS_UPGRADE_SCRIPT__: string | undefined;
+
 /**
- * The link to the upgrade script needed for windows when upgrading CLI bundles (as a fallback for when the script is missing)
- * Unix-based systems do not require a similar script as they allow the executing process to override itself
- * (so we can replace the binary while it is running)
+ * Builds the path to an executable under `System32` directly, instead of looking it up in PATH. A PATH lookup
+ * checks the CWD first on Windows, so it would run whatever `cmd.exe` sits in the user's project.
  */
-const WINDOWS_UPGRADE_SCRIPT_URL =
-	'https://raw.githubusercontent.com/apify/apify-cli/refs/heads/master/scripts/install/upgrade.ps1';
+function resolveSystemExecutable(...segments: string[]) {
+	const systemRoot = process.env.SystemRoot;
+
+	if (!systemRoot || !isAbsolute(systemRoot)) {
+		return undefined;
+	}
+
+	const executablePath = join(systemRoot, 'System32', ...segments);
+
+	return existsSync(executablePath) ? executablePath : undefined;
+}
 
 export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	static override name = 'upgrade' as const;
@@ -217,34 +227,53 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 	}
 
 	private async startUpgradeProcess(bundleDirectory: string, version: string, assets: Asset[]) {
-		// Assert that we have the upgrade script, and download if it is missing
-		await this.upsertUpgradeScript(bundleDirectory);
+		if (typeof __APIFY_WINDOWS_UPGRADE_SCRIPT__ !== 'string') {
+			error({ message: 'The Windows upgrade script is only available in CLI bundles.' });
+			return;
+		}
+
+		// Always overwrite: the script must match this bundle, never a stale or foreign copy.
+		const scriptPath = join(bundleDirectory, 'upgrade.ps1');
+		await writeFile(scriptPath, __APIFY_WINDOWS_UPGRADE_SCRIPT__);
+
+		const urls = assets.map((asset) => asset.browser_download_url).join(',');
+
+		const cmd = resolveSystemExecutable('cmd.exe');
+		const powershell = resolveSystemExecutable('WindowsPowerShell', 'v1.0', 'powershell.exe');
+
+		if (!cmd || !powershell) {
+			error({
+				message: `Couldn't find ${cmd ? 'powershell.exe' : 'cmd.exe'} in the Windows system directory.`,
+			});
+			return;
+		}
 
 		// Start the child process with it, and exit the cli
-		const args = [
+		const command = [
+			`"${powershell}"`,
+			'-NoProfile',
 			'-ExecutionPolicy',
 			'Bypass',
 			'-File',
-			`"${join(bundleDirectory, 'upgrade.ps1')}"`,
+			`"${scriptPath}"`,
 			'-ProcessId',
 			process.pid.toString(),
 			'-InstallLocation',
 			`"${bundleDirectory}"`,
 			'-Version',
 			`"${version}"`,
-		];
+			'-AllUrls',
+			`"${urls}"`,
+		].join(' ');
 
-		const urls = assets.map((asset) => asset.browser_download_url).join(',');
-
-		args.push('-AllUrls', `"${urls}"`);
-
-		cliDebugPrint('[upgrade] starting upgrade process with args', args);
+		cliDebugPrint('[upgrade] starting upgrade process with command', command);
 
 		info({ message: `Starting upgrade process...` });
 
-		const upgradeProcess = spawn('powershell.exe', args, {
+		// Going through `cmd.exe` is what gives PowerShell its own console window: a detached process has no
+		// console, so the console app it starts gets a fresh one. This mirrors what `shell: true` does.
+		const upgradeProcess = spawn(cmd, ['/d', '/s', '/c', `"${command}"`], {
 			detached: true,
-			shell: true,
 			stdio: 'inherit',
 			windowsHide: false,
 			windowsVerbatimArguments: true,
@@ -261,37 +290,6 @@ export class UpgradeCommand extends ApifyCommand<typeof UpgradeCommand> {
 		upgradeProcess.on('error', (err) => {
 			error({ message: `Failed to start the upgrade process: ${err.message}` });
 		});
-	}
-
-	private async upsertUpgradeScript(bundleDirectory: string) {
-		const filePath = join(bundleDirectory, 'upgrade.ps1');
-
-		if (existsSync(filePath)) {
-			return;
-		}
-
-		const metadata = useCLIMetadata();
-
-		const res = await fetch(WINDOWS_UPGRADE_SCRIPT_URL, { headers: { 'User-Agent': USER_AGENT } });
-
-		if (!res.ok) {
-			error({
-				message: [
-					`Failed to fetch the upgrade script. Please open an issue on https://github.com/apify/apify-cli/issues/new and provide the following information:`,
-					`- The system you are running on: ${metadata.platform} ${metadata.arch}`,
-					`- The URL of the asset that failed to fetch: ${WINDOWS_UPGRADE_SCRIPT_URL}`,
-					`- The status code of the response: ${res.status}`,
-				].join('\n'),
-			});
-
-			process.exit(1);
-		}
-
-		const buffer = await res.arrayBuffer();
-
-		await writeFile(filePath, Buffer.from(buffer));
-
-		cliDebugPrint('[upgrade] downloaded upgrade script to', filePath);
 	}
 
 	private async handleUnixUpgrade(bundleDirectory: string, version: string, assets: Asset[]): Promise<boolean> {

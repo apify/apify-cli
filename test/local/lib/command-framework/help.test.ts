@@ -1,6 +1,7 @@
 /* eslint-disable max-classes-per-file */
 import stripAnsi from 'strip-ansi';
 
+import { RuntimeIndexCommand } from '../../../../src/commands/runtime/_index.js';
 import {
 	ApifyCommand,
 	type BuiltApifyCommand as _BuiltApifyCommand,
@@ -106,6 +107,7 @@ describe('Help rendering', () => {
 		registerCommandForHelpGeneration('apify', FakeRunsIndex);
 		registerCommandForHelpGeneration('apify', FakeUtility);
 		registerCommandForHelpGeneration('apify', FakeInteractiveNamespace);
+		registerCommandForHelpGeneration('apify', RuntimeIndexCommand);
 
 		// The `actor push-data` subcommand is registered twice with different entrypoints,
 		// once as a subcommand of `apify actor` and once as a standalone `actor` command.
@@ -183,6 +185,17 @@ describe('Help rendering', () => {
 			expect(output).toContain('[INTERACTIVE]');
 			expect(output).toContain('NOTE');
 			expect(output).toContain('Pass --token to skip prompts.');
+		});
+	});
+
+	describe('apify runtime help', () => {
+		it('is labelled experimental, in its own help and in the main menu', () => {
+			expect(stripAnsi(renderHelpForCommand(RuntimeIndexCommand)).startsWith('[EXPERIMENTAL] ')).toBe(true);
+			expect(stripAnsi(renderMainHelpMenu('apify'))).toMatch(/runtime\s+\[EXPERIMENTAL\] Manages the Actor runtime/);
+
+			for (const subcommand of RuntimeIndexCommand.subcommands!) {
+				expect(stripAnsi(renderHelpForCommand(subcommand)).startsWith('[EXPERIMENTAL] ')).toBe(true);
+			}
 		});
 	});
 

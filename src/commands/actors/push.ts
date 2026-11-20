@@ -1,8 +1,10 @@
-import { readFileSync, statSync, unlinkSync, writeSync } from 'node:fs';
-import { basename, join, resolve } from 'node:path';
+import { createHash, randomUUID } from 'node:crypto';
+import { lstatSync, readFileSync, realpathSync, rmSync, type Stats, statSync, writeSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, relative, resolve } from 'node:path';
 import process from 'node:process';
 
-import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, Build } from 'apify-client';
+import type { Actor, ActorCollectionCreateOptions, ActorDefaultRunOptions, ApifyClient, Build } from 'apify-client';
 import chalk from 'chalk';
 import { isCI } from 'ci-info';
 import open from 'open';
@@ -23,7 +25,14 @@ import {
 	INTERRUPT_SIGNALS,
 	LOCAL_CONFIG_PATH,
 } from '../../lib/consts.js';
-import { monorepoUnsupportedMessage, resolveDockerContext } from '../../lib/docker-context.js';
+import {
+	getContextFilePaths,
+	isOutside,
+	readGitState,
+	realPath,
+	resolveDockerContext,
+	toPosix,
+} from '../../lib/docker-context.js';
 import { sumFilesSizeInBytes } from '../../lib/files.js';
 import { findActorDirs, type FoundActorDir, toPosixRelative } from '../../lib/find-actor-dirs.js';
 import { isAbortingJobOnSignal, useAbortJobOnSignal } from '../../lib/hooks/useAbortJobOnSignal.js';
@@ -33,6 +42,12 @@ import { useYesNoConfirm } from '../../lib/hooks/user-confirmations/useYesNoConf
 import { reraiseSignal, useSignalHandler } from '../../lib/hooks/useSignalHandler.js';
 import { useStdin } from '../../lib/hooks/useStdin.js';
 import { error, info, run, simpleLog, warning } from '../../lib/outputs.js';
+import { mayTargetActorRuntime, registerActorRuntimeDevFolder } from '../../lib/runtime/dev-folder.js';
+import {
+	createContextTarball,
+	monorepoOutdatedRuntimeMessage,
+	pushActorRuntimeSourceContext,
+} from '../../lib/runtime/source-context.js';
 import { transformEnvToEnvVars } from '../../lib/secrets.js';
 import {
 	createActZip,
@@ -45,13 +60,14 @@ import {
 	printJsonToStdout,
 } from '../../lib/utils.js';
 
-const TEMP_ZIP_FILE_NAME = 'temp_file.zip';
 const DEFAULT_RUN_OPTIONS = {
 	build: 'latest',
 	memoryMbytes: 4096,
 	timeoutSecs: 3600,
 };
 const DEFAULT_ACTOR_VERSION_NUMBER = '0.0';
+/** The longest name of a multi-file source file the platform accepts. */
+const MAX_SOURCE_FILE_NAME_LENGTH = 255;
 
 // It would be better to use `version-0.0` or similar,
 // or even have no default tag, but the platform complains when
@@ -68,7 +84,7 @@ const BUILD_LOG_TAIL_LINES = 10;
 interface PushResult {
 	ok: boolean;
 	operation: 'push';
-	actor: { id: string; url: string };
+	actor: { id: string; url: string; standbyUrl?: string };
 	build: { id: string; number: string; status: string; url: string };
 	error?: { phase: 'build'; message: string; logTail: string[] };
 	exitCode?: number;
@@ -205,6 +221,199 @@ const confirmGitSourceSwitch = async ({
 	});
 };
 
+/**
+ * Push sends files only, in the multi-file and the zip upload alike: a link to a file the upload holds goes as that
+ * file at the link's path, a link to a directory inside the upload as copies of the uploaded files under its target
+ * (directory links there included), and a link to nothing, to a file the upload leaves out (such as a gitignored
+ * .env), or to a target outside the upload is left out, as a clone of the repository could not follow it either. A
+ * link to a file that only the Actor folder's upload adds, such as a gitignored dist that its .actorignore takes back,
+ * goes too, and so does a directory link to such files. The `actor.json` path check then reports a config that refers
+ * to a left-out link as not uploaded.
+ */
+const resolveLinksForUpload = (root: string, files: string[], actorPath: string, actorFolderFiles: string[]) => {
+	const realRoot = realpathSync(root);
+	// Git lists names composed (NFC) on macOS, while a link's target keeps the form its text has.
+	const listed = new Set(files.map((file) => file.normalize('NFC')));
+	// The Actor folder's files have their names as stored on disk, as a target's native real path spells them.
+	const actorFolderUpload = new Set(actorFolderFiles);
+	// Outside Git, the file list follows folder links, so a file that is no link itself can lie outside the upload too.
+	// Its folder's real path tells, once per folder.
+	const folders = new Map<string, boolean>();
+	const isFolderInUpload = (folder: string) => {
+		let inUpload = folders.get(folder);
+		if (inUpload === undefined) {
+			try {
+				inUpload = !isOutside(relative(realRoot, realpathSync(join(root, folder))));
+			} catch {
+				inUpload = false;
+			}
+			folders.set(folder, inUpload);
+		}
+		return inUpload;
+	};
+	// Where an entry's content lies, relative to the root, as the link spells it and as stored on disk, and what it is;
+	// nothing for a link the upload drops.
+	interface Located {
+		target: string;
+		diskTarget: string;
+		stats: Stats;
+	}
+	const locate = (file: string): Located | undefined => {
+		const filePath = join(root, file);
+		const stats = lstatSync(filePath, { throwIfNoEntry: false });
+		if (!stats) return undefined;
+		if (!stats.isSymbolicLink()) {
+			return isFolderInUpload(dirname(file)) ? { target: file, diskTarget: file, stats } : undefined;
+		}
+		try {
+			const realFilePath = realpathSync(filePath);
+			const target = relative(realRoot, realFilePath);
+			if (isOutside(target)) return undefined;
+			const targetStats = statSync(realFilePath);
+			const diskTarget = toPosix(relative(realRoot, realPath(filePath)));
+			if (targetStats.isFile() && !listed.has(toPosix(target).normalize('NFC')) && !actorFolderUpload.has(diskTarget)) {
+				return undefined;
+			}
+			return { target: toPosix(target), diskTarget, stats: targetStats };
+		} catch {
+			return undefined;
+		}
+	};
+	const located = new Map(files.map((file) => [file, locate(file)]));
+	// Git may spell the Actor folder otherwise than the disk stores it: composed (NFC) on macOS, or in its old case after
+	// a case-only rename. Its spelling in Git's list is confirmed on disk, as that of another folder can match too.
+	const fold = (name: string) => name.normalize('NFC').toLowerCase();
+	const actorDepth = actorPath.split('/').length;
+	const gitActorPath =
+		[
+			...new Set(
+				files
+					.filter((file) => fold(file).startsWith(fold(`${actorPath}/`)))
+					.map((file) => file.split('/').slice(0, actorDepth).join('/')),
+			),
+		].find((folder) => {
+			try {
+				return realPath(join(root, folder)) === join(realRoot, actorPath);
+			} catch {
+				return false;
+			}
+		}) ?? actorPath;
+	// The Actor folder's upload adds files a clone lacks, such as its gitignored dist, which a directory link copies too.
+	// A file Git lists in another spelling is no such file, which the disk confirms, as on a case-sensitive file system
+	// names that differ in case only are two files. Each maps to its name with the Actor folder as Git spells it.
+	const listedByFold = new Map(files.map((file) => [fold(file), file]));
+	const isListed = (file: string) => {
+		if (listed.has(file.normalize('NFC'))) return true;
+		const spelling = listedByFold.get(fold(file));
+		if (spelling === undefined) return false;
+		try {
+			return realPath(join(root, spelling)) === realPath(join(root, file));
+		} catch {
+			return false;
+		}
+	};
+	const actorFolderOnly = new Map(
+		actorFolderFiles
+			.filter((file) => !isListed(file))
+			.map((file) => [file, `${gitActorPath}${file.slice(actorPath.length)}`]),
+	);
+	for (const file of actorFolderOnly.keys()) {
+		let entry: Located | undefined;
+		try {
+			const realFilePath = realPath(join(root, file));
+			const stats = statSync(realFilePath);
+			if (stats.isFile() && !isOutside(relative(realRoot, realFilePath)))
+				entry = { target: file, diskTarget: file, stats };
+		} catch {
+			// A file that vanished since it was listed goes nowhere.
+		}
+		located.set(file, entry);
+	}
+	const uploaded = [...files, ...actorFolderOnly.keys()];
+	// A directory link copies the files under its target, and through a directory link there, the files under that
+	// one's target, as a clone resolves them; a link back to a target on the way copies nothing, which ends a cycle.
+	// The Actor folder's own files match the target as Git spells the Actor folder, so their copies sit beside those of
+	// its listed files, else as the disk stores it.
+	const expand = (file: string, targets: string[]): string[] => {
+		const entry = located.get(file);
+		if (!entry) return [];
+		if (entry.stats.isFile()) return [file];
+		if (!entry.stats.isDirectory() || targets.includes(entry.target)) return [];
+		return uploaded.flatMap((other) => {
+			const gitSpelling = actorFolderOnly.get(other);
+			const [name, prefix] =
+				gitSpelling === undefined || gitSpelling.startsWith(`${entry.target}/`)
+					? [gitSpelling ?? other, `${entry.target}/`]
+					: [other, `${entry.diskTarget}/`];
+			if (!name.startsWith(prefix)) return [];
+			const copyPath = `${file}/${name.slice(prefix.length)}`;
+			return expand(other, [...targets, entry.target]).map((copy) => `${copyPath}${copy.slice(other.length)}`);
+		});
+	};
+	return files.flatMap((file) => expand(file, []));
+};
+
+/**
+ * The Actor folder goes as an ordinary push of it would send it: its .gitignore and .actorignore apply, negations
+ * included, and an ignored folder that was picked or named with --dir goes too. Only a file whose link leads out of
+ * the upload stays out, as in the rest of the upload.
+ */
+const withActorFolderFiles = (root: string, actorPath: string, contextFiles: string[], actorFiles: string[]) => {
+	// The root has its names in their case on disk, so a link that spells a folder in another case must resolve so too.
+	const realRoot = realPath(root);
+	const isInUpload = (file: string) => {
+		try {
+			return !isOutside(relative(realRoot, realPath(join(root, file))));
+		} catch {
+			return false;
+		}
+	};
+	// Git lists names as its index has them: composed (NFC) on macOS, and in the old case after a case-only rename on a
+	// case-insensitive file system. actorPath has the names as stored on disk, so a folder on its way matches when its
+	// name differs only so and it is the same folder on disk, checked once for each spelling.
+	const actorSegments = actorPath.split('/');
+	const fold = (name: string) => name.normalize('NFC').toLowerCase();
+	const spellings = new Map<string, boolean>();
+	const isActorFolderOnTheWay = (segments: string[], depth: number) => {
+		const folder = segments.slice(0, depth).join('/');
+		let matches = spellings.get(folder);
+		if (matches === undefined) {
+			try {
+				// A link named like the folder in another case, on a case-sensitive file system, is a folder of its own.
+				matches =
+					!lstatSync(join(root, folder)).isSymbolicLink() &&
+					realPath(join(root, folder)) === join(realRoot, ...actorSegments.slice(0, depth));
+			} catch {
+				matches = false;
+			}
+			spellings.set(folder, matches);
+		}
+		return matches;
+	};
+	const contextFilesOutsideActorFolder = contextFiles.flatMap((file) => {
+		const segments = file.split('/');
+		let depth = 0;
+		while (
+			depth < actorSegments.length &&
+			depth < segments.length - 1 &&
+			fold(segments[depth]) === fold(actorSegments[depth]) &&
+			isActorFolderOnTheWay(segments, depth + 1)
+		) {
+			depth++;
+		}
+		if (depth === actorSegments.length) return [];
+		// A folder on the Actor folder's way goes under one name, as actorPath spells it, or the platform would write
+		// the Actor folder and its siblings into two folders.
+		return [[...actorSegments.slice(0, depth), ...segments.slice(depth)].join('/')];
+	});
+	return [
+		...new Set([
+			...contextFilesOutsideActorFolder,
+			...actorFiles.map((file) => `${actorPath}/${file}`).filter(isInUpload),
+		]),
+	];
+};
+
 /** The config files that make a directory an Actor of its own: `.actor/actor.json`, `actor.json`, or the legacy `apify.json`. */
 const OWN_CONFIG_FILES = [DEPRECATED_LOCAL_CONFIG_NAME, 'actor.json', '.actor/actor.json'];
 
@@ -233,6 +442,9 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 		`larger projects upload as ZIP file.\n` +
 		`Files matched by .gitignore and .actorignore are excluded. ` +
 		`Use negation patterns (e.g. !dist/) in .actorignore to force-include git-ignored files.\n` +
+		`If "dockerContextDir" leads outside the Actor folder (a monorepo Actor), push uploads the whole Git repository: ` +
+		`the Actor folder as above, and everything else that Git tracks or doesn't ignore (.actorignore doesn't apply there). ` +
+		`Outside Git, it uploads the whole Docker context as above.\n` +
 		`Use --force to override newer remote versions.`;
 
 	static override group = 'Local Actor Development';
@@ -538,27 +750,42 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		const { config: actorConfig } = actorConfigResult.unwrap();
 
-		// A monorepo Actor builds from a Docker context above its folder, which a push of that folder cannot carry.
+		// A monorepo Actor builds from a Docker context above its folder, so the push uploads its repository
+		// (or, outside Git, the context) and tells the platform where the Actor lies in it.
 		const dockerContext = resolveDockerContext(cwd, actorConfig?.dockerContextDir);
 		if (dockerContext.kind === 'invalid') {
 			error({ message: dockerContext.message });
 			process.exitCode = CommandExitCodes.InvalidActorJson;
 			return;
 		}
+		// A context inside the Actor folder ('none' or 'within') is an ordinary push of the folder.
+		let actorDir = cwd;
+		let uploadRoot = cwd;
+		let uploadedFiles = filePathsToPush;
+		let actorPath: string | undefined;
 		if (dockerContext.kind === 'outside') {
-			// Pushing by ID, actor.json may have no name; the folder then names the Actor.
-			error({ message: monorepoUnsupportedMessage((actorConfig?.name as string | undefined) ?? basename(cwd)) });
-			process.exitCode = CommandExitCodes.NotImplemented;
-			return;
+			uploadRoot = dockerContext.sourceRoot;
+			actorPath = dockerContext.actorPath;
+			// The source root is a real path, so the Actor folder has to be one too for its paths to fall inside it.
+			actorDir = join(uploadRoot, actorPath);
+			const actorFolderFiles = filePathsToPush.map((file) => `${actorPath}/${file}`);
+			const contextFiles = resolveLinksForUpload(
+				uploadRoot,
+				await getContextFilePaths(uploadRoot),
+				actorPath,
+				actorFolderFiles,
+			);
+			uploadedFiles = withActorFolderFiles(uploadRoot, actorPath, contextFiles, filePathsToPush);
 		}
 
 		// The platform resolves these paths after the upload; a wrong one builds the wrong image or fails the build.
 		const pathProblems = checkActorPaths({
-			actorDir: cwd,
-			uploadRoot: cwd,
-			uploadedFiles: filePathsToPush,
+			actorDir,
+			uploadRoot,
+			uploadedFiles,
 			config: actorConfig,
-			dockerContextRoot: dockerContext.kind === 'within' ? dockerContext.contextRoot : undefined,
+			// BuildKit reads the Dockerfile from the context, wherever the context lies.
+			dockerContextRoot: dockerContext.kind === 'none' ? undefined : dockerContext.contextRoot,
 		});
 		// A readme or changelog the platform cannot find only falls back to its default, so push goes on.
 		const pathWarnings = formatActorPathProblems(pathProblems, 'warning');
@@ -570,7 +797,15 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 			return;
 		}
 
+		const gitState = actorPath ? readGitState(uploadRoot) : undefined;
+		if (gitState?.dirty) {
+			warning({
+				message: `The repository ${uploadRoot} has uncommitted changes; the push uploads the files as they are.`,
+			});
+		}
+
 		const apifyClient = await getLoggedClientOrThrow();
+		const contextToRuntime = Boolean(actorPath) && mayTargetActorRuntime(apifyClient);
 		const userInfo = await getCurrentUserInfo();
 		const isOrganizationLoggedIn = !!userInfo.organizationOwnerUserId;
 		const redirectUrlPart = isOrganizationLoggedIn ? `/organization/${userInfo.id}` : '';
@@ -623,6 +858,7 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 							// TODO: export enum from apify-client
 							sourceType: ACTOR_SOURCE_TYPES.SOURCE_FILES as never,
 							sourceFiles: [],
+							...(actorPath ? { actorPath } : {}),
 						},
 					],
 				};
@@ -648,14 +884,14 @@ export class ActorsPushCommand extends ApifyCommand<typeof ActorsPushCommand> {
 
 		info({ message: `Deploying Actor '${actorConfig!.name}' to Apify.` });
 
-		const filesSize = await sumFilesSizeInBytes(filePathsToPush, cwd);
+		const filesSize = await sumFilesSizeInBytes(uploadedFiles, uploadRoot);
 
-		if (filesSize < MAX_MULTIFILE_BYTES && !isActorCreatedNow) {
+		if ((filesSize < MAX_MULTIFILE_BYTES || actorPath) && !isActorCreatedNow) {
 			const client = await actorClient.get();
 
 			// Check when was files modified last
-			const mostRecentModifiedFileMs = filePathsToPush.reduce((modifiedMs, filePath) => {
-				const { mtimeMs, ctimeMs } = statSync(join(cwd, filePath));
+			const mostRecentModifiedFileMs = uploadedFiles.reduce((modifiedMs, filePath) => {
+				const { mtimeMs, ctimeMs } = statSync(join(uploadRoot, filePath));
 
 				// Sometimes it's possible mtimeMs is some messed up value (like 2000/01/01 midnight), then we want to check created if it's newer
 				const fileModifiedMs = mtimeMs > ctimeMs ? mtimeMs : ctimeMs;
@@ -695,27 +931,55 @@ Skipping push. Use --force to override.`,
 		}
 
 		let sourceType;
-		let sourceFiles;
 		let tarballUrl;
-		if (filesSize < MAX_MULTIFILE_BYTES) {
-			sourceFiles = await createSourceFiles(filePathsToPush, cwd);
+		// The platform rejects a source file name over its limit, which a deep path from the repository root can reach,
+		// and measures the content as sent, where a binary file grows by a third in base64 and each character beyond the
+		// Basic Multilingual Plane, such as an emoji, counts five bytes; a zip has neither limit.
+		let sourceFiles =
+			!contextToRuntime &&
+			filesSize < MAX_MULTIFILE_BYTES &&
+			uploadedFiles.every((file) => file.length <= MAX_SOURCE_FILE_NAME_LENGTH)
+				? await createSourceFiles(uploadedFiles, uploadRoot)
+				: undefined;
+		if (
+			sourceFiles &&
+			sourceFiles.reduce(
+				(size, file) => size + Buffer.byteLength(file.content) + (file.content.match(/[\uD800-\uDBFF]/g)?.length ?? 0),
+				0,
+			) > MAX_MULTIFILE_BYTES
+		) {
+			sourceFiles = undefined;
+		}
+		if (contextToRuntime) {
+			// The runtime keeps the repository only while the version carries no files of its own.
+			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
+		} else if (sourceFiles) {
 			sourceType = ACTOR_SOURCE_TYPES.SOURCE_FILES;
 		} else {
 			// Create zip
 			run({ message: 'Zipping Actor files' });
-			await createActZip(TEMP_ZIP_FILE_NAME, filePathsToPush, cwd);
-
-			// Upload it to Apify.keyValueStores
 			const store = await apifyClient.keyValueStores().getOrCreate(`actor-${actorId}-source`);
-			const key = `version-${version}.zip`;
-			const buffer = readFileSync(TEMP_ZIP_FILE_NAME);
-			await apifyClient.keyValueStore(store.id).setRecord({
-				key,
-				// TODO: fix this type too
-				value: buffer as never,
-				contentType: 'application/zip',
-			});
-			unlinkSync(TEMP_ZIP_FILE_NAME);
+			// A monorepo zip has the repository layout, so it gets a key of its own for each actorPath: when the version
+			// update then fails, the existing version still builds from its own record, whether it has no actorPath or
+			// another one, such as the Actor folder's name before a rename.
+			const key = actorPath
+				? `version-${version}-monorepo-${createHash('sha256').update(actorPath).digest('hex').slice(0, 16)}.zip`
+				: `version-${version}.zip`;
+			const zipPath = join(tmpdir(), `apify-push-${randomUUID()}.zip`);
+			try {
+				await createActZip(zipPath, uploadedFiles, uploadRoot);
+
+				// Upload it to Apify.keyValueStores
+				const buffer = readFileSync(zipPath);
+				await apifyClient.keyValueStore(store.id).setRecord({
+					key,
+					// TODO: fix this type too
+					value: buffer as never,
+					contentType: 'application/zip',
+				});
+			} finally {
+				rmSync(zipPath, { force: true });
+			}
 			const tempTarballUrl = new URL(
 				`${apifyClient.baseUrl}/key-value-stores/${store.id}/records/${key}?disableRedirect=true`,
 			);
@@ -748,18 +1012,45 @@ Skipping push. Use --force to override.`,
 		const applyEnvVarsToBuild =
 			this.flags.applyEnvVarsToBuild ?? (actorConfig!.applyEnvVarsToBuild as boolean | undefined);
 
+		// A local Actor runtime takes the repository through its own endpoint, before the version update so a
+		// runtime that refuses it leaves the version untouched.
+		const pushDockerContext = async () => {
+			if (!contextToRuntime || dockerContext.kind !== 'outside') return true;
+			const files = await getContextFilePaths(uploadRoot);
+			run({
+				message: `Pushing ${uploadRoot} (${files.length} files) with the Actor in ${dockerContext.actorPath}; the build takes its Docker context ${dockerContext.contextRoot} from it.`,
+			});
+			const result = await pushActorRuntimeSourceContext(apifyClient, actorId, version, {
+				actorPath: dockerContext.actorPath,
+				tarball: await createContextTarball(files, uploadRoot),
+				git: gitState,
+			});
+			if (result.ok) return true;
+			error({
+				message: result.unsupported
+					? monorepoOutdatedRuntimeMessage(apifyClient.baseUrl)
+					: `Could not push the Docker context of Actor ${actor.name}: ${result.error}`,
+			});
+			process.exitCode = result.unsupported ? CommandExitCodes.NotImplemented : CommandExitCodes.BuildFailed;
+			return false;
+		};
+
+		if (actorCurrentVersion && !(await pushDockerContext())) {
+			if (isActorCreatedNow) await actorClient.delete();
+			return;
+		}
+
+		const actorVersionSource = { tarballUrl, sourceFiles, sourceType, ...(actorPath ? { actorPath } : {}) };
 		if (actorCurrentVersion) {
-			const actorVersionModifier = { tarballUrl, sourceFiles, buildTag, sourceType, envVars, applyEnvVarsToBuild };
+			const actorVersionModifier = { ...actorVersionSource, buildTag, envVars, applyEnvVarsToBuild };
 			// TODO: fix this type too -.-
 			await actorClient.version(version).update(actorVersionModifier as never);
 			run({ message: `Updated version ${version} for Actor ${actor.name}.` });
 		} else {
 			const actorNewVersion = {
 				versionNumber: version,
-				tarballUrl,
-				sourceFiles,
+				...actorVersionSource,
 				buildTag,
-				sourceType,
 				envVars,
 				applyEnvVarsToBuild,
 			};
@@ -769,6 +1060,12 @@ Skipping push. Use --force to override.`,
 			} as never);
 
 			run({ message: `Created version ${version} for Actor ${actor.name}.` });
+
+			// So a failed push leaves no empty version behind.
+			if (!(await pushDockerContext())) {
+				await actorClient.version(version).delete();
+				return;
+			}
 		}
 
 		// Sync standby mode on existing actors with actor.json
@@ -777,6 +1074,13 @@ Skipping push. Use --force to override.`,
 			await actorClient.update({ actorStandby: { isEnabled } });
 			info({ message: `${isEnabled ? 'Enabled' : 'Disabled'} standby mode for Actor ${actor.name}.` });
 		}
+
+		await registerDevFolderOnActorRuntime(
+			apifyClient,
+			actorId,
+			actor.name,
+			dockerContext.kind === 'outside' ? dockerContext.contextRoot : cwd,
+		);
 
 		// Build Actor on Apify and wait for build to finish
 		run({ message: `Building Actor ${actor.name}` });
@@ -874,10 +1178,18 @@ Skipping push. Use --force to override.`,
 			process.exitCode = outcome.exitCode;
 		}
 
+		// Read the URL from the API: the hostname format differs between Actors and environments.
+		let standbyUrl: string | undefined;
+
+		if (outcome.ok && actorConfig!.usesStandbyMode) {
+			const pushedActor = (await actorClient.get()) as (Actor & { standbyUrl?: string | null }) | undefined;
+			standbyUrl = pushedActor?.standbyUrl ?? undefined;
+		}
+
 		const result: PushResult = {
 			ok: outcome.ok,
 			operation: 'push',
-			actor: { id: build.actId, url: actorUrl },
+			actor: { id: build.actId, url: actorUrl, ...(standbyUrl && { standbyUrl }) },
 			build: { id: build.id, number: build.buildNumber, status: buildStatus, url: buildUrl },
 		};
 		if (outcome.exitCode !== undefined) {
@@ -903,6 +1215,12 @@ Skipping push. Use --force to override.`,
 			'',
 			`Actor URL: ${actorUrl}`,
 			`Build URL: ${buildUrl}`,
+			...(standbyUrl
+				? [
+						`Server interface URL: ${standbyUrl}`,
+						`Send a request: apify server request ${actor.username}/${actor.name} /`,
+					]
+				: []),
 			...(outcome.errorMessage && logTail.length ? ['', 'Reason:', ...logTail] : []),
 		];
 		simpleLog({ stdout: true, message: lines.join('\n') });
@@ -912,5 +1230,22 @@ Skipping push. Use --force to override.`,
 		}
 
 		return result;
+	}
+}
+
+/** On a local Actor runtime, later runs mount the dev folder over the built image. Success shows in the build log. */
+async function registerDevFolderOnActorRuntime(
+	apifyClient: ApifyClient,
+	actorId: string,
+	actorName: string,
+	cwd: string,
+) {
+	if (!mayTargetActorRuntime(apifyClient)) return;
+
+	const result = await registerActorRuntimeDevFolder(apifyClient, actorId, cwd);
+	if (!result.ok && result.error) {
+		warning({
+			message: `Could not register ${cwd} as the live dev folder of Actor ${actorName} on the local Actor runtime: ${result.error}`,
+		});
 	}
 }

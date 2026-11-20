@@ -29,8 +29,6 @@ if ($WinVer.Major -lt 10 -or ($WinVer.Major -eq 10 -and $WinVer.Build -lt $MinBu
 
 $ErrorActionPreference = "Stop"
 
-$UpgradeScriptURL = "https://raw.githubusercontent.com/apify/apify-cli/refs/heads/master/scripts/install/upgrade.ps1"
-
 # These three environment functions are roughly copied from https://github.com/prefix-dev/pixi/pull/692
 # They are used instead of `SetEnvironmentVariable` because of unwanted variable expansions.
 function Publish-Env {
@@ -235,24 +233,6 @@ function Install-Apify {
     if ($LASTEXITCODE -ne 0) {
         Write-Output "Install Failed - could not create the apify/actor wrapper scripts (exit code ${LASTEXITCODE})`n"
         return 1
-    }
-
-    $UpgradeScriptPath = "${ApifyBin}\upgrade.ps1"
-    curl.exe "-#SfLo" "$UpgradeScriptPath" "$UpgradeScriptURL"
-
-    if ($LASTEXITCODE -ne 0) {
-        Write-Warning "The command 'curl.exe $UpgradeScriptURL -o $UpgradeScriptPath' exited with code ${LASTEXITCODE}`nTrying an alternative download method..."
-
-        try {
-            # Use Invoke-RestMethod instead of Invoke-WebRequest because Invoke-WebRequest breaks on
-            # some machines
-            Invoke-RestMethod -Uri $UpgradeScriptURL -OutFile $UpgradeScriptPath
-        }
-        catch {
-            Write-Output "Install Failed - could not download $UpgradeScriptURL"
-            Write-Output "The command 'Invoke-RestMethod $UpgradeScriptURL -OutFile $UpgradeScriptPath' exited with code ${LASTEXITCODE}`n"
-            return 1
-        }
     }
 
     $C_RESET = [char]27 + "[0m"
