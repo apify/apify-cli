@@ -69,7 +69,7 @@ class FakeMixedFlags extends BuiltApifyCommand {
 	static override description = 'A command with lowercase, uppercase and long-only flags.';
 	static override flags = {
 		body: Flags.string({ char: 'd', description: 'The request body.' }),
-		header: Flags.string({ char: 'H', description: 'Additional HTTP header(s).' }),
+		header: Flags.string({ char: 'H', description: 'Additional HTTP headers.' }),
 		method: Flags.string({ char: 'X', description: 'The HTTP method to use.' }),
 		profile: Flags.string({ description: 'The stored account to use for this command.' }),
 	};
