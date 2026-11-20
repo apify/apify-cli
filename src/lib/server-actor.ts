@@ -1,6 +1,8 @@
 import { setTimeout as delay } from 'node:timers/promises';
 
-import type { Actor, ApifyClient, Build } from 'apify-client';
+import type { Actor, ActorRun, ActorRunListItem, ActorRunStandby, ApifyClient, Build } from 'apify-client';
+
+import { META_ORIGINS } from '@apify/consts';
 
 import { HTTP_METHODS } from './commands/http-request.js';
 import { resolveActorContext } from './commands/resolve-actor-context.js';
@@ -99,6 +101,133 @@ function describeCallerCost(pricingModel: string | undefined): string {
 		default:
 			return "it's free for you";
 	}
+}
+
+type ServerPool = ActorRunStandby['deployment'];
+
+/** The pool that serves the owner's own requests to their multi-tenant Actor. */
+const OWNER_PAID_POOL = 'MULTI_TENANT_OWNER_PAID' satisfies ServerPool;
+
+/** The pools a multi-tenant Server Actor serves from, in the order the CLI prints them. */
+const MULTI_TENANT_POOLS = [
+	{ deployment: OWNER_PAID_POOL, label: 'Owner-paid' },
+	{ deployment: 'MULTI_TENANT_PAYING_USERS', label: 'Paying users' },
+	{ deployment: 'MULTI_TENANT_FREE_USERS', label: 'Free users' },
+] as const satisfies readonly { deployment: ServerPool; label: string }[];
+
+/** Width of the label column in the status output, indented sub-lines included. */
+const LABEL_WIDTH = 16;
+
+/** Run IDs past this stay off the line; "apify runs ls" lists them all. */
+const MAX_LISTED_RUN_IDS = 5;
+
+// apify-client 2.26.0 types `standby` on a full run only; the runs list returns it too.
+export type ServerRunListItem = ActorRunListItem & Pick<ActorRun, 'standby'>;
+
+export interface ServerRun {
+	id: string;
+	startedAt: Date;
+	pool: ServerPool | null;
+}
+
+/**
+ * The account whose pool the memory, idle timeout and requests-per-run settings describe. A single-tenant Actor
+ * starts a run in the caller's own account, so there is no other account to name and this is undefined.
+ */
+export function getPoolOwnerUsername(actor: Pick<ServerActor, 'tenancy' | 'ownerUsername'>): string | undefined {
+	return isMultiTenant(actor) ? actor.ownerUsername : undefined;
+}
+
+/**
+ * Keeps only the runs the server interface started, and records the pool that serves each one. A run of the same
+ * Actor started any other way does not serve requests.
+ */
+export function toServerRuns(items: ServerRunListItem[]): ServerRun[] {
+	return items
+		.filter((run) => run.meta?.origin === META_ORIGINS.STANDBY)
+		.map(({ id, startedAt, standby }) => ({ id, startedAt, pool: standby?.deployment ?? null }));
+}
+
+export function statusLine(label: string, value: string, indent = 0): string {
+	return `${' '.repeat(indent)}${`${label}:`.padEnd(LABEL_WIDTH - indent)}${value}`;
+}
+
+function listRunIds(runs: ServerRun[]): string {
+	const named = runs.slice(0, MAX_LISTED_RUN_IDS).map((run) => run.id);
+	const rest = runs.length - named.length;
+
+	return rest > 0 ? `${named.join(', ')}, +${rest} more` : named.join(', ');
+}
+
+/**
+ * The memory, idle timeout and requests-per-run block. For a multi-tenant Actor these describe the pool in the
+ * owner's account, which a caller neither pays for nor can override, so the block says whose pool it is.
+ */
+export function describeServerSettings(
+	standby: ServerActor['standby'],
+	poolOwnerUsername: string | undefined,
+	viewerUsername: string | undefined,
+): string[] {
+	const indent = poolOwnerUsername ? 2 : 0;
+	const lines = [
+		statusLine('Memory', `${standby.memoryMbytes ?? '-'} MB`, indent),
+		statusLine('Idle timeout', `${standby.idleTimeoutSecs ?? '-'} s`, indent),
+		statusLine(
+			'Requests/run',
+			`${standby.desiredRequestsPerActorRun ?? '-'} desired, ${standby.maxRequestsPerActorRun ?? '-'} max`,
+			indent,
+		),
+	];
+
+	if (!poolOwnerUsername) {
+		return lines;
+	}
+
+	const heading =
+		poolOwnerUsername === viewerUsername ? 'Pools in your account:' : `Pool in "${poolOwnerUsername}"'s account:`;
+
+	return [heading, ...lines];
+}
+
+/**
+ * The `Runs:` block. The owner of a multi-tenant Actor sees the pools broken out, because the pool that serves
+ * their own requests is only one of the three.
+ */
+export function describeServerRuns(runs: ServerRun[], isPoolOwner: boolean): string[] {
+	if (!isPoolOwner) {
+		return [
+			statusLine(
+				'Runs',
+				runs.length > 0
+					? `${runs.length} running (${runs.map((run) => run.id).join(', ')}); the next request is served warm`
+					: 'none running; the next request starts one (cold start)',
+			),
+		];
+	}
+
+	const servedWarm = runs.some((run) => run.pool === OWNER_PAID_POOL);
+	const warmth = servedWarm ? 'your own requests are served warm' : 'your own requests start one (cold start)';
+
+	if (runs.length === 0) {
+		return [statusLine('Runs', `none running; ${warmth}`)];
+	}
+
+	const groups: { label: string; runs: ServerRun[] }[] = MULTI_TENANT_POOLS.map(({ deployment, label }) => ({
+		label,
+		runs: runs.filter((run) => run.pool === deployment),
+	}));
+	const other = runs.filter((run) => !MULTI_TENANT_POOLS.some(({ deployment }) => deployment === run.pool));
+
+	if (other.length > 0) {
+		groups.push({ label: 'Other', runs: other });
+	}
+
+	return [
+		statusLine('Runs', `${runs.length} running; ${warmth}`),
+		...groups.map((group) =>
+			statusLine(group.label, group.runs.length > 0 ? `${group.runs.length} (${listRunIds(group.runs)})` : 'none', 2),
+		),
+	];
 }
 
 /** Points callers of the input interface to the server interface; dual-mode Actors are legitimate, so it only informs. */
