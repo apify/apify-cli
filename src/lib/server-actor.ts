@@ -113,6 +113,20 @@ export function getServerInterfaceHint(actor: Actor, userFriendlyId: string): st
 	);
 }
 
+/** Decides whether a local run serves the server interface; `--server` / `--no-server` wins over `usesStandbyMode`. */
+export function resolveLocalServerInterface(options: { serverFlag: boolean | undefined; usesStandbyMode: unknown }): {
+	useServerInterface: boolean;
+	detectedFromConfig: boolean;
+} {
+	if (options.serverFlag !== undefined) {
+		return { useServerInterface: options.serverFlag, detectedFromConfig: false };
+	}
+
+	const useServerInterface = Boolean(options.usesStandbyMode);
+
+	return { useServerInterface, detectedFromConfig: useServerInterface };
+}
+
 export interface ServerOperation {
 	method: string;
 	path: string;
