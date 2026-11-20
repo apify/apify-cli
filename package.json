@@ -99,7 +99,7 @@
 		"execa": "^10.2.1",
 		"giget": "^3.3.1",
 		"handlebars": "~4.7.10",
-		"ignore": "^7.0.14",
+		"ignore": "^7.0.16",
 		"indent-string": "^5.0.0",
 		"istextorbinary": "~9.5.0",
 		"jju": "~1.4.0",
@@ -128,9 +128,9 @@
 		"@types/node": "^26.6.6",
 		"@types/semver": "^7.8.0",
 		"@types/which": "^3.0.4",
-		"apify": "^3.7.2",
+		"apify": "^3.8.0",
 		"husky": "^9.1.7",
-		"lint-staged": "^17.6.0",
+		"lint-staged": "^17.6.1",
 		"mock-stdin": "^1.0.0",
 		"oxfmt": "0.73.0",
 		"oxlint": "1.89.0",
@@ -140,7 +140,7 @@
 		"tsdown": "^0.23.7",
 		"tsx": "^4.23.15",
 		"typescript": "^7.0.2",
-		"vitest": "^5.1.0"
+		"vitest": "^5.1.1"
 	},
 	"volta": {
 		"node": "26.13.1",
