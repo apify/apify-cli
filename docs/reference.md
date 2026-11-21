@@ -459,6 +459,8 @@ FLAGS
 ```sh
 DESCRIPTION
   Executes Actor locally with simulated Apify environment variables.
+  Loads environment variables from a '.env' file in the Actor directory, when 
+  there is one.
   Stores data in local 'storage' directory.
 
   NOTE: For Node.js Actors, customize behavior by modifying the 'start' script 
