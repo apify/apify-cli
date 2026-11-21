@@ -67,6 +67,27 @@ describe('apify init', () => {
 		});
 	});
 
+	it('adds .env to .gitignore', async () => {
+		await testRunCommand(InitCommand, {
+			args_actorName: actName,
+			flags_yes: true,
+		});
+
+		expect(readFileSync(joinPath('.gitignore'), 'utf8').split('\n')).toContain('.env');
+	});
+
+	it('does not add .env to .gitignore twice', async () => {
+		writeFileSync(joinPath('.gitignore'), 'dist\n.env\n');
+
+		await testRunCommand(InitCommand, {
+			args_actorName: actName,
+			flags_yes: true,
+		});
+
+		const lines = readFileSync(joinPath('.gitignore'), 'utf8').split('\n');
+		expect(lines.filter((line) => line === '.env')).toHaveLength(1);
+	});
+
 	it('correctly creates structure with prefilled INPUT.json', async () => {
 		const input = {
 			title: 'Scrape data from a web page',

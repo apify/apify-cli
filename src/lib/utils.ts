@@ -10,7 +10,7 @@ import {
 } from 'node:fs';
 import { mkdir, readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import process from 'node:process';
 import { finished } from 'node:stream/promises';
 
@@ -219,7 +219,7 @@ export const setLocalConfig = async (localConfig: Record<string, unknown>, actDi
 	writeFileSync(fullPath, JSON.stringify(localConfig, null, '\t'));
 };
 
-const GITIGNORE_REQUIRED_CONTENTS = [getLocalStorageDir(), 'node_modules', '.venv'];
+const GITIGNORE_REQUIRED_CONTENTS = [getLocalStorageDir(), 'node_modules', '.venv', '.env'];
 
 export const setLocalEnv = async (actDir: string) => {
 	// Create folders for emulation Apify stores
@@ -522,9 +522,16 @@ const parseActorIgnore = async (cwd: string): Promise<ActorIgnoreResult> => {
 // linked worktree. The .gitignore rules don't exclude either.
 export const ACTOR_FILES_HARDCODED_IGNORE = ['**/.git', 'apify_storage', 'node_modules', 'storage', 'crawlee_storage'];
 
+// Local env files can hold secrets, so they're left out even when .actorignore or the .actor/ rule would include them.
+// `.env.example` documents the keys and stays.
+const isLocalEnvFile = (filePath: string) => {
+	const name = basename(filePath);
+	return (name === '.env' || name.startsWith('.env.')) && name !== '.env.example';
+};
+
 /**
  * Get Actor local files, omit files defined in .gitignore, .actorignore and .git folder
- * All dot files(.file) and folders(.folder/) are included.
+ * All dot files(.file) and folders(.folder/) are included, except local .env files.
  */
 export const getActorLocalFilePaths = async (cwd?: string) => {
 	const resolvedCwd = cwd ?? process.cwd();
@@ -571,7 +578,7 @@ export const getActorLocalFilePaths = async (cwd?: string) => {
 		paths = [...pathSet];
 	}
 
-	return paths;
+	return paths.filter((filePath) => !isLocalEnvFile(filePath));
 };
 
 /**
