@@ -9,17 +9,20 @@ import { getLocalConfig, getCurrentUserInfo } from '../utils.js';
  * thus assuming the actor is the one the command should be ran on. If no actor id is provided, try to resolve the actor from the local
  * configuration file. If none of these are successful, return null, signaling an unknown context, and thus no way to continue.
  * @param providedActorNameOrId Actor name or id provided via command line
+ * @param cwd Directory whose local configuration is used when no Actor is provided. Defaults to the current directory.
  */
 export async function resolveActorContext({
 	providedActorNameOrId,
 	client,
+	cwd = process.cwd(),
 }: {
 	providedActorNameOrId: string | undefined;
 	client: ApifyClient;
+	cwd?: string;
 }) {
 	const userInfo = await getCurrentUserInfo();
 	const usernameOrId = userInfo.username || (userInfo.id as string);
-	const localConfig = getLocalConfig(process.cwd()) || {};
+	const localConfig = getLocalConfig(cwd) || {};
 
 	// Full ID
 	if (providedActorNameOrId?.includes('/')) {
