@@ -1254,8 +1254,39 @@ DESCRIPTION
   Manages the environment variables of an Actor version on the Apify platform.
 
 SUBCOMMANDS
-  env ls  Lists the environment variables of an Actor version on the Apify
-          platform. Secret values aren't shown.
+  env diff  Compares '.env' with the environment variables of an Actor
+            version on the Apify platform.
+  env ls    Lists the environment variables of an Actor version on the
+            Apify platform. Secret values aren't shown.
+```
+
+##### `apify env diff`
+
+```sh
+DESCRIPTION
+  Compares '.env' with the environment variables of an Actor version on the 
+  Apify platform.
+  Lists the names that are only in '.env', only on the platform, or that have 
+  different values. Secrets are compared by name only. Values are never printed.
+
+  Exits with 0 when both sides are in sync and with 1 on any difference, so it 
+  fits pre-commit hooks and CI.
+
+USAGE
+  $ apify env diff [--actor <value> | --dir <value>] [--json]
+                   [--profile <value>] [-v <value>]
+
+FLAGS
+      --actor=<value>    Actor ID or "username/name". Use it to
+                         target an Actor without a local project.
+      --dir=<value>      Directory of the Actor whose
+                         '.actor/actor.json' picks the Actor. Defaults to the
+                         current directory.
+      --json             Format the command output as JSON.
+      --profile=<value>  The stored account to use for this
+                         command, by name or user ID. See "apify auth list".
+  -v, --version=<value>  Actor version number. Defaults to
+                         the version in '.actor/actor.json', or 0.0 with --actor.
 ```
 
 ##### `apify env ls`

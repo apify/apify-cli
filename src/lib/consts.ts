@@ -88,6 +88,8 @@ export enum CommandExitCodes {
 	BuildFailed = 1,
 	RunFailed = 1,
 	MissingAuth = 1,
+	// `apify env diff` found a difference between .env and the platform.
+	EnvDiffFound = 1,
 
 	BuildTimedOut = 2,
 	RunTimedOut = 2,
