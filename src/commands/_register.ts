@@ -18,6 +18,7 @@ import { UpgradeCommand } from './cli-management/upgrade.js';
 import { CreateCommand } from './create.js';
 import { DatasetsIndexCommand } from './datasets/_index.js';
 import { EditInputSchemaCommand } from './edit-input-schema.js';
+import { EnvIndexCommand } from './env/_index.js';
 import { HelpCommand } from './help.js';
 import { InfoCommand } from './info.js';
 import { WrapScrapyCommand } from './init-wrap-scrapy.js';
@@ -46,6 +47,7 @@ export const apifyCommands = [
 	AuthIndexCommand,
 	BuildsIndexCommand,
 	DatasetsIndexCommand,
+	EnvIndexCommand,
 	KeyValueStoresIndexCommand,
 	MCPIndexCommand,
 	RequestQueuesIndexCommand,

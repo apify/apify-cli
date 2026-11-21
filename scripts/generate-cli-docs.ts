@@ -63,6 +63,11 @@ const categories: Record<string, CommandsInCategory[]> = {
 		{ command: Commands.actorsStart },
 		{ command: Commands.actorsInfo },
 	],
+	'actor-env': [
+		//
+		{ command: Commands.env },
+		{ command: Commands.envLs },
+	],
 	'actor-build': [
 		//
 		{ command: Commands.builds },
